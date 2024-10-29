@@ -5,7 +5,8 @@
 namespace GoudEngine
 {
 
-    Engine::Engine() : renderer(std::make_unique<SDL2_OpenGLRenderer>()) {}
+    Engine::Engine(const std::string &title, int width, int height)
+        : renderer(std::make_unique<SDL2_OpenGLRenderer>(title, width, height)) {}
 
     Engine::~Engine()
     {

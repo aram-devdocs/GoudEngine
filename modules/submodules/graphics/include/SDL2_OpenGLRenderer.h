@@ -4,12 +4,13 @@
 #include "Renderer.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+#include <string>
 
 namespace GoudEngine {
 
 class SDL2_OpenGLRenderer : public Renderer {
 public:
-    SDL2_OpenGLRenderer();
+    SDL2_OpenGLRenderer(const std::string &title, int width, int height);
     ~SDL2_OpenGLRenderer() override;
 
     bool Initialize() override;
@@ -20,6 +21,9 @@ public:
 private:
     SDL_Window* window = nullptr;
     SDL_GLContext glContext = nullptr;
+    std::string windowTitle;
+    int windowWidth;
+    int windowHeight;
 };
 
 } // namespace GoudEngine

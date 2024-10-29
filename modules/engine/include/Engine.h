@@ -3,6 +3,7 @@
 
 #include "Renderer.h"
 #include <memory>
+#include <string>
 
 namespace GoudEngine
 {
@@ -10,7 +11,7 @@ namespace GoudEngine
     class Engine
     {
     public:
-        Engine();
+        Engine(const std::string &title, int width, int height);
         ~Engine();
 
         bool Initialize();
@@ -19,6 +20,9 @@ namespace GoudEngine
 
     private:
         std::unique_ptr<Renderer> renderer;
+        std::string title;
+        int width;
+        int height;
     };
 
 } // namespace GoudEngine
