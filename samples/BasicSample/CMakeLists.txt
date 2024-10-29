@@ -2,7 +2,7 @@ project(BasicSample)
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/modules/engine/include  
-    ${CMAKE_SOURCE_DIR}/modules/graphics/include  
+    ${CMAKE_SOURCE_DIR}/modules/submodules/graphics/include  
 )
 
 add_executable(BasicSample main.cpp)

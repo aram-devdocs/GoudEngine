@@ -3,7 +3,7 @@ project(EngineModule)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/modules/graphics/include  # Add this line
+    ${CMAKE_SOURCE_DIR}/modules/submodules/graphics/include  # Add this line
 )
 
 
