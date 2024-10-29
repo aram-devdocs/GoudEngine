@@ -1,22 +1,56 @@
 #include "Engine.h"
+#include "SDL2_OpenGLRenderer.h"
 #include <iostream>
 
-namespace GoudEngine {
+namespace GoudEngine
+{
 
-Engine::Engine() {}
+    Engine::Engine() : renderer(std::make_unique<SDL2_OpenGLRenderer>()) {}
 
-Engine::~Engine() {}
+    Engine::~Engine()
+    {
+        Shutdown();
+    }
 
-void Engine::Initialize() {
-    std::cout << "Engine initialized." << std::endl;
-}
+    bool Engine::Initialize()
+    {
+        if (!renderer->Initialize())
+        {
+            std::cerr << "Renderer initialization failed." << std::endl;
+            return false;
+        }
+        std::cout << "Engine initialized." << std::endl;
+        return true;
+    }
 
-void Engine::Run() {
-    std::cout << "Engine running." << std::endl;
-}
+    void Engine::Run()
+    {
+        bool isRunning = true;
+        SDL_Event event;
 
-void Engine::Shutdown() {
-    std::cout << "Engine shutting down." << std::endl;
-}
+        while (isRunning)
+        {
+            while (SDL_PollEvent(&event))
+            {
+                if (event.type == SDL_QUIT)
+                {
+                    isRunning = false;
+                }
+            }
+
+            renderer->Clear();
+            // TODO: Add rendering and update logic here
+            renderer->Present();
+        }
+    }
+
+    void Engine::Shutdown()
+    {
+        if (renderer)
+        {
+            renderer->Shutdown();
+        }
+        std::cout << "Engine shutting down." << std::endl;
+    }
 
 } // namespace GoudEngine

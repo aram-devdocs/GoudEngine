@@ -1,17 +1,25 @@
 #ifndef GOUDENGINE_ENGINE_H
 #define GOUDENGINE_ENGINE_H
 
-namespace GoudEngine {
+#include "Renderer.h"
+#include <memory>
 
-class Engine {
-public:
-    Engine();
-    ~Engine();
+namespace GoudEngine
+{
 
-    void Initialize();
-    void Run();
-    void Shutdown();
-};
+    class Engine
+    {
+    public:
+        Engine();
+        ~Engine();
+
+        bool Initialize();
+        void Run();
+        void Shutdown();
+
+    private:
+        std::unique_ptr<Renderer> renderer;
+    };
 
 } // namespace GoudEngine
 

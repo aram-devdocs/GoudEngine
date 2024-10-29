@@ -7,7 +7,7 @@
   - [ ] Flexibility: Ensure the engine can run on clients, servers, or any combination, allowing developers to choose their architecture.
   - [ ] Cross-Platform Support: Aim for “build once, deploy anywhere” across Windows, macOS, Linux, iOS, Android, and major consoles.
 - [ ] **Design Modular Architecture**
-  - [ ] Monorepo Structure: Organize code in a monorepository with clear separation of concerns into different libraries/modules.
+  - [x] Monorepo Structure: Organize code in a monorepository with clear separation of concerns into different libraries/modules.
   - [ ] Pyramid Dependency Structure: Start from high-level systems and work down to atomic components.
   - [ ] Open-Source Compliance: Use only open-source libraries to ensure broad availability and compliance.
 
