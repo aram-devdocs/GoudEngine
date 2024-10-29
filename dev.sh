@@ -16,5 +16,11 @@ cmake --build . --config Debug
 
 echo "Development build complete. Running BasicSample..."
 
-# Run the BasicSample executable
-./samples/BasicSample/BasicSample
+# Check if a run URL is provided
+if [ -z "$1" ]; then
+    # No URL provided, run the BasicSample executable
+    ./samples/BasicSample/BasicSample
+else
+    # URL provided, run the executable with the URL
+    ./samples/BasicSample/BasicSample "$1"
+fi
