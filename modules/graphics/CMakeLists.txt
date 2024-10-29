@@ -2,7 +2,7 @@ project(GraphicsModule)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/engine/include
+    ${CMAKE_SOURCE_DIR}/modules/engine/include
 )
 
 file(GLOB GRAPHICS_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)

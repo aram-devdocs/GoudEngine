@@ -21,7 +21,7 @@ else()
 endif()
 
 # Add subdirectories
-add_subdirectory(engine)
+add_subdirectory(modules/engine)
 add_subdirectory(modules)
 add_subdirectory(tests)
 add_subdirectory(samples/BasicSample)

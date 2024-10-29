@@ -1,6 +1,6 @@
 # GoudEngine
 
-GoudEngine is a modular, cross-platform 2D game engine written in C++ with future C# interoperability. This engine provides foundational systems like rendering (via SDL2 and OpenGL), with a design that anticipates future Vulkan support.
+GoudEngine is a modular, cross-platform game engine written in C++ with future C# interoperability. This engine provides foundational systems like rendering (via SDL2 and OpenGL), with a design that anticipates future Vulkan support.
 
 ## Building the Engine
 

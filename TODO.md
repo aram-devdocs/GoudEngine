@@ -3,7 +3,7 @@
 ## Project 1: Define Engine Goals and Architecture
 
 - [ ] **Establish Core Objectives**
-  - [ ] Purpose: Create a modular, non-opinionated, code-first 2D game engine with built-in networking capabilities.
+  - [ ] Purpose: Create a modular, non-opinionated, code-first game engine with built-in networking capabilities.
   - [ ] Flexibility: Ensure the engine can run on clients, servers, or any combination, allowing developers to choose their architecture.
   - [ ] Cross-Platform Support: Aim for “build once, deploy anywhere” across Windows, macOS, Linux, iOS, Android, and major consoles.
 - [ ] **Design Modular Architecture**
@@ -15,10 +15,11 @@
 
 - [ ] **Toolchain Selection**
   - [ ] Programming Languages: Use C++ for the engine core and C# for game development.
-  - [ ] Graphics API: Choose between OpenGL, SDL2, or Vulkan as the base graphics API, favoring open-source options.
+  - [x] Graphics API: Choose between OpenGL, SDL2, or Vulkan as the base graphics API, favoring open-source options.
+    - Notes: Went with SDL2 and OpenGL for initial development, with future Vulkan support planned.
   - [ ] Build Systems: Configure cross-platform build systems (e.g., CMake) to handle multiple platforms.
 - [ ] **Monorepo Configuration**
-  - [ ] Version Control: Initialize a Git repository with branching strategies suitable for collaborative development.
+  - [X] Version Control: Initialize a Git repository with branching strategies suitable for collaborative development.
   - [ ] Continuous Integration: Set up CI pipelines for automated testing and building on all target platforms.
 
 ## Project 3: Cross-Platform Foundation
@@ -34,7 +35,7 @@
 ## Project 4: Core Systems Development
 
 - [ ] **Graphics System**
-  - [ ] Rendering Engine: Implement a 2D rendering engine with support for sprites, tilemaps, and shaders.
+  - [ ] Rendering Engine: Implement a rendering engine with support for sprites, tilemaps, and shaders.
   - [ ] Shader Support: Allow for custom shaders to enable advanced visual effects.
   - [ ] Camera Control: Provide systems for camera movement, zoom, and viewport management.
 - [ ] **Input System**
@@ -57,7 +58,7 @@
 ## Project 6: Physics and Collision System
 
 - [ ] **Physics Engine**
-  - [ ] 2D Physics: Implement or integrate an open-source physics library for realistic movement and interactions.
+  - [ ] Physics: Implement or integrate an open-source physics library for realistic movement and interactions.
   - [ ] Collision Detection: Develop systems for detecting and resolving collisions between entities.
 - [ ] **Modular Design**
   - [ ] Flexible Deployment: Allow physics calculations to occur on the client, server, or both.

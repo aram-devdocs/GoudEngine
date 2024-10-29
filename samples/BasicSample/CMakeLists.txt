@@ -1,7 +1,7 @@
 project(BasicSample)
 
 include_directories(
-    ${CMAKE_SOURCE_DIR}/engine/include  
+    ${CMAKE_SOURCE_DIR}/modules/engine/include  
     ${CMAKE_SOURCE_DIR}/modules/graphics/include  
 )
 
