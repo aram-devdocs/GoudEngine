@@ -1,6 +1,11 @@
 project(GoudEngineCore)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/modules/graphics/include  # Add this line
+)
+
 
 file(GLOB ENGINE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 

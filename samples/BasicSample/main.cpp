@@ -1,11 +1,12 @@
 #include "Engine.h"
-#include "Renderer.h"
+#include "SDL2_OpenGLRenderer.h"
 
 using namespace GoudEngine;
 
-int main() {
+int main()
+{
     Engine engine;
-    Renderer renderer;
+    SDL2_OpenGLRenderer renderer; // Use the concrete renderer here
 
     engine.Initialize();
     renderer.Initialize();
