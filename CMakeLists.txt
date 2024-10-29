@@ -28,4 +28,4 @@ add_subdirectory(samples/BasicSample)
 
 # Link libraries to specific targets
 target_link_libraries(GraphicsModule PUBLIC ${SDL2_LIBRARIES} ${OpenGL_LIBRARIES})
-target_link_libraries(BasicSample PUBLIC GoudEngineCore GraphicsModule ${SDL2_LIBRARIES} ${OpenGL_LIBRARIES})
+target_link_libraries(BasicSample PUBLIC EngineModule GraphicsModule ${SDL2_LIBRARIES} ${OpenGL_LIBRARIES})
