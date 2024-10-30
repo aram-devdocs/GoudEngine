@@ -3,25 +3,38 @@
 
 using namespace GoudEngine;
 
-bool CustomInit() {
+Game game("Basic Sample", 400, 600);
+
+bool CustomInit()
+{
+
     // Custom initialization logic
     std::cout << "Custom game initialization." << std::endl;
+    // Add a polygon to the game
+    std::vector<std::pair<float, float>> vertices = {
+        {100.0f, 100.0f},
+        {200.0f, 100.0f},
+        {150.0f, 200.0f}};
+
+    game.AddPolygon(vertices);
+
     return true;
 }
 
-void CustomUpdate() {
+void CustomUpdate()
+{
     // Custom update logic
     std::cout << "Custom game updating." << std::endl;
 }
 
-void CustomShutdown() {
+void CustomShutdown()
+{
     // Custom shutdown logic
     std::cout << "Custom game shutting down." << std::endl;
 }
 
 int main()
 {
-    Game game("Basic Sample", 400, 600);
 
     game.SetOnInit(CustomInit);
     game.SetOnUpdate(CustomUpdate);
