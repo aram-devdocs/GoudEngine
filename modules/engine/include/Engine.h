@@ -4,6 +4,7 @@
 #include "Renderer.h"
 #include <memory>
 #include <string>
+#include <functional>
 
 namespace GoudEngine
 {
@@ -12,7 +13,7 @@ namespace GoudEngine
     {
     public:
         Engine(const std::string &title, int width, int height);
-        ~Engine();
+        virtual ~Engine();
 
         bool Initialize();
         void Run();
@@ -25,11 +26,20 @@ namespace GoudEngine
             }
         }
 
+        // Set lifecycle callbacks
+        void SetOnInit(const std::function<bool()>& callback) { onInit = callback; }
+        void SetOnUpdate(const std::function<void()>& callback) { onUpdate = callback; }
+        void SetOnShutdown(const std::function<void()>& callback) { onShutdown = callback; }
+
     private:
         std::unique_ptr<Renderer> renderer;
         std::string title;
         int width;
         int height;
+
+        std::function<bool()> onInit;
+        std::function<void()> onUpdate;
+        std::function<void()> onShutdown;
     };
 
 } // namespace GoudEngine

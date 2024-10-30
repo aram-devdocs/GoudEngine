@@ -1,19 +1,40 @@
-#include "Engine.h"
+#include "Game.h"
+#include <iostream>
 
 using namespace GoudEngine;
 
+bool CustomInit() {
+    // Custom initialization logic
+    std::cout << "Custom game initialization." << std::endl;
+    return true;
+}
+
+void CustomUpdate() {
+    // Custom update logic
+    std::cout << "Custom game updating." << std::endl;
+}
+
+void CustomShutdown() {
+    // Custom shutdown logic
+    std::cout << "Custom game shutting down." << std::endl;
+}
+
 int main()
 {
-    Engine engine("Basic Sample", 400, 600);
+    Game game("Basic Sample", 400, 600);
 
-    if (!engine.Initialize())
+    game.SetOnInit(CustomInit);
+    game.SetOnUpdate(CustomUpdate);
+    game.SetOnShutdown(CustomShutdown);
+
+    if (!game.Initialize())
     {
         return -1;
     }
 
-    engine.Run();
+    game.Run();
 
-    engine.Shutdown();
+    game.Shutdown();
 
     return 0;
 }

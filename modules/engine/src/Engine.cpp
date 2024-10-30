@@ -15,9 +15,9 @@ namespace GoudEngine
 
     bool Engine::Initialize()
     {
-        if (!renderer->Initialize())
+        if (!renderer->Initialize() || (onInit && !onInit()))
         {
-            std::cerr << "Renderer initialization failed." << std::endl;
+            std::cerr << "Initialization failed." << std::endl;
             return false;
         }
         std::cout << "Engine initialized." << std::endl;
@@ -40,13 +40,14 @@ namespace GoudEngine
             }
 
             renderer->Clear();
-            // TODO: Add rendering and update logic here
+            if (onUpdate) onUpdate();
             renderer->Present();
         }
     }
 
     void Engine::Shutdown()
     {
+        if (onShutdown) onShutdown();
         if (renderer)
         {
             renderer->Shutdown();
