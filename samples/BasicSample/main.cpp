@@ -6,7 +6,10 @@ int main()
 {
     Engine engine("Basic Sample", 400, 600);
 
-    engine.Initialize();
+    if (!engine.Initialize())
+    {
+        return -1;
+    }
 
     engine.Run();
 

@@ -18,6 +18,13 @@ namespace GoudEngine
         void Run();
         void Shutdown();
 
+        // Add Polygon to the engine to be drawn
+        void AddPolygon(const std::vector<std::pair<float, float>>& vertices) {
+            if (renderer) {
+                renderer->DrawPolygon(vertices);
+            }
+        }
+
     private:
         std::unique_ptr<Renderer> renderer;
         std::string title;
