@@ -1,5 +1,7 @@
 #include "SDL2_OpenGLRenderer.h"
 #include <iostream>
+#include <vector>
+#include <utility>
 
 namespace GoudEngine
 {
@@ -72,6 +74,16 @@ namespace GoudEngine
             window = nullptr;
         }
         SDL_Quit();
+    }
+
+    void SDL2_OpenGLRenderer::DrawPolygon(const std::vector<std::pair<float, float>>& vertices)
+    {
+        glBegin(GL_POLYGON);
+        for (const auto& vertex : vertices)
+        {
+            glVertex2f(vertex.first, vertex.second);
+        }
+        glEnd();
     }
 
 } // namespace GoudEngine
