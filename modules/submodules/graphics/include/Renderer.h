@@ -6,7 +6,7 @@
 namespace GoudEngine
 {
 
-    class Renderer : public PolygonService
+    class Renderer : public virtual PolygonService
     {
     public:
         virtual ~Renderer() = default;

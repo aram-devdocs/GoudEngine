@@ -2,6 +2,7 @@
 #define GOUDENGINE_GAME_H
 
 #include "Engine.h"
+#include "Renderer.h"
 
 namespace GoudEngine
 {
@@ -9,8 +10,8 @@ namespace GoudEngine
     class Game : public Engine
     {
     public:
-        Game(const std::string &title, int width, int height)
-            : Engine(title, width, height) {}
+        Game(const std::string &title, int width, int height, std::unique_ptr<Renderer> renderer)
+            : Engine(title, width, height, std::move(renderer)) {}
     };
 
 } // namespace GoudEngine
