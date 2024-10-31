@@ -5,6 +5,9 @@ edition = "2021"
 
 
 [dependencies]
+cpal = "0.15.3"
+egui = "0.29.1"
+wgpu = "23.0.0"
 winit = "0.30.5"
 
 [lib]
