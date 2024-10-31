@@ -41,6 +41,9 @@ namespace GoudEngine
 
             renderer->Clear();
             if (onUpdate) onUpdate();
+            for (const auto& polygon : polygons) {
+                renderer->DrawPolygon(polygon);
+            }
             renderer->Present();
         }
     }

@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include <vector>
 
 namespace GoudEngine
 {
@@ -21,9 +22,7 @@ namespace GoudEngine
 
         // Add Polygon to the engine to be drawn
         void AddPolygon(const std::vector<std::pair<float, float>>& vertices) {
-            if (renderer) {
-                renderer->DrawPolygon(vertices);
-            }
+            polygons.push_back(vertices);
         }
 
         // Set lifecycle callbacks
@@ -40,6 +39,7 @@ namespace GoudEngine
         std::function<bool()> onInit;
         std::function<void()> onUpdate;
         std::function<void()> onShutdown;
+        std::vector<std::vector<std::pair<float, float>>> polygons; // Store polygons
     };
 
 } // namespace GoudEngine

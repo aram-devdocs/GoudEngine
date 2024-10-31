@@ -47,6 +47,19 @@ namespace GoudEngine
         glViewport(0, 0, windowWidth, windowHeight);
         glEnable(GL_DEPTH_TEST);
 
+        // Set up the projection matrix
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0.0, windowWidth, windowHeight, 0.0, -1.0, 1.0);
+
+        // Set up the modelview matrix
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        // Enable blending for transparency
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
         return true;
     }
 
@@ -78,7 +91,21 @@ namespace GoudEngine
 
     void SDL2_OpenGLRenderer::DrawPolygon(const std::vector<std::pair<float, float>>& vertices)
     {
+        std::cout << "Drawing polygon with " << vertices.size() << " vertices." << std::endl;
+
+        // Set the color to red for the polygon
+        glColor3f(1.0f, 0.0f, 0.0f);
         glBegin(GL_POLYGON);
+        for (const auto& vertex : vertices)
+        {
+            std::cout << "Vertex: (" << vertex.first << ", " << vertex.second << ")" << std::endl;
+            glVertex2f(vertex.first, vertex.second);
+        }
+        glEnd();
+
+        // Set the color to black for the outline
+        glColor3f(0.0f, 0.0f, 0.0f);
+        glBegin(GL_LINE_LOOP);
         for (const auto& vertex : vertices)
         {
             glVertex2f(vertex.first, vertex.second);

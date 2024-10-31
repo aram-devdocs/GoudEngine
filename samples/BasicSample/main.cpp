@@ -3,11 +3,10 @@
 
 using namespace GoudEngine;
 
-Game game("Basic Sample", 400, 600);
+Game game("Basic Sample", 1200, 800);
 
 bool CustomInit()
 {
-
     // Custom initialization logic
     std::cout << "Custom game initialization." << std::endl;
     // Add a polygon to the game
@@ -35,7 +34,6 @@ void CustomShutdown()
 
 int main()
 {
-
     game.SetOnInit(CustomInit);
     game.SetOnUpdate(CustomUpdate);
     game.SetOnShutdown(CustomShutdown);
@@ -46,7 +44,6 @@ int main()
     }
 
     game.Run();
-
     game.Shutdown();
 
     return 0;
