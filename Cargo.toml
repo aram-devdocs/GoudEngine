@@ -1,0 +1,16 @@
+[package]
+name = "goud_engine"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+winit = "0.30.5"
+
+[lib]
+name = "goud_engine"
+path = "src/lib.rs"
+
+[[bin]]
+name = "goud_engine_bin"
+path = "src/main.rs"
