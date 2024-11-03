@@ -1,1 +1,21 @@
+# Rust build and cargo files
 /target
+**/*.rs.bk
+Cargo.lock
+
+# IDE/Editor files
+*.swp
+*.swo
+.idea
+.vscode/
+*.DS_Store
+
+# Output binary
+/debug
+/release
+
+# Generated bindings
+sdk_bindings/bindings.h
+
+# MacOS system files
+.DS_Store

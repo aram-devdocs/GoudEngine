@@ -1,0 +1,8 @@
+[package]
+name = "platform"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+glutin = "0.32.1"
+winit = "0.30.5"

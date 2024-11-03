@@ -1,0 +1,8 @@
+[package]
+name = "sample_game"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+engine_core = { version = "0.1.0", path = "../engine_core" }
+platform = { version = "0.1.0", path = "../platform" }
