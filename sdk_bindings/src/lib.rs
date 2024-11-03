@@ -1,6 +1,6 @@
 use std::ffi::c_void;
-use std::mem;
-use std::ptr;
+// use std::mem;
+// use std::ptr;
 
 #[repr(C)]
 pub struct Point {
@@ -28,7 +28,7 @@ pub extern "C" fn get_y(point: *const Point) -> f64 {
 pub extern "C" fn free_point(point: *mut c_void) {
     if !point.is_null() {
         unsafe {
-            Box::from_raw(point as *mut Point);
+           let _ = Box::from_raw(point as *mut Point);
         }
     }
 }
