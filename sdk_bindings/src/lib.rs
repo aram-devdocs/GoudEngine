@@ -1,14 +1,16 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+
+#[no_mangle]
+pub extern "C" fn add(a: i32, b: i32) -> i32 {
+    a + b
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[repr(C)]
+pub struct Point {
+    x: f64,
+    y: f64,
+}
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+#[no_mangle]
+pub extern "C" fn create_point(x: f64, y: f64) -> Point {
+    Point { x, y }
 }

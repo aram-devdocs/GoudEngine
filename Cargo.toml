@@ -1,2 +1,3 @@
 [workspace]
 members = ["engine_core", "platform", "sdk_bindings", "sample_game"]
+

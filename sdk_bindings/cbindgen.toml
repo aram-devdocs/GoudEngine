@@ -1,0 +1,7 @@
+# cbindgen.toml
+
+language = "C"
+
+[export]
+# sdk_bindings/src/lib.rs
+include = ["sdk_bindings/src/lib.rs"]
