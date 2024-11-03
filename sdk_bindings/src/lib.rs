@@ -1,16 +1,34 @@
-
-#[no_mangle]
-pub extern "C" fn add(a: i32, b: i32) -> i32 {
-    a + b
-}
+use std::ffi::c_void;
+use std::mem;
+use std::ptr;
 
 #[repr(C)]
 pub struct Point {
-    x: f64,
-    y: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 #[no_mangle]
-pub extern "C" fn create_point(x: f64, y: f64) -> Point {
-    Point { x, y }
+pub extern "C" fn create_point(x: f64, y: f64) -> *mut Point {
+    let point = Box::new(Point { x, y });
+    Box::into_raw(point)
+}
+
+#[no_mangle]
+pub extern "C" fn get_x(point: *const Point) -> f64 {
+    unsafe { (*point).x }
+}
+
+#[no_mangle]
+pub extern "C" fn get_y(point: *const Point) -> f64 {
+    unsafe { (*point).y }
+}
+
+#[no_mangle]
+pub extern "C" fn free_point(point: *mut c_void) {
+    if !point.is_null() {
+        unsafe {
+            Box::from_raw(point as *mut Point);
+        }
+    }
 }
