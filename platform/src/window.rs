@@ -3,11 +3,22 @@ use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{Window, WindowId};
 
+
+mod open_gl_renderer;
+use open_gl_renderer::draw_polygon;
+
 #[derive(Default)]
 pub struct App {
     window: Option<Window>,
 }
 
+impl App {
+    pub fn draw_polygon(&self) {
+        // Drawing logic for the polygon
+        // This is a placeholder for the actual drawing code
+        println!("Drawing a polygon in the window...");
+    }
+}
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
@@ -32,6 +43,7 @@ impl ApplicationHandler for App {
                 // the program to gracefully handle redraws requested by the OS.
 
                 // Draw.
+                self.draw_polygon();
 
                 // Queue a RedrawRequested event.
                 //
