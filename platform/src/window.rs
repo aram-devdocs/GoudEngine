@@ -8,6 +8,7 @@ pub struct App {
     window: Option<Window>,
 }
 
+
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         self.window = Some(
@@ -44,7 +45,9 @@ impl ApplicationHandler for App {
     }
 }
 
-pub fn create_event_loop() -> EventLoop<()> {
+pub type EventLoop_ = EventLoop<()>;
+
+pub fn create_event_loop() -> EventLoop_ {
     let event_loop = EventLoop::new().unwrap();
 
     // ControlFlow::Poll continuously runs the event loop, even if the OS hasn't

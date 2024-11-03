@@ -2,4 +2,4 @@
 
 mod window;
 
-pub use window::{create_event_loop, App};
+pub use window::{App, create_event_loop, EventLoop_};

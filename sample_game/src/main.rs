@@ -1,9 +1,8 @@
-// sample_app/src/main.rs
-
-use platform::{create_event_loop, App};
+use game::Game;
 
 fn main() {
-    let event_loop = create_event_loop();
-    let mut app = App::default();
+    let game = Game::new();
+    let event_loop = (game.create_event_loop)();
+    let mut app = game.app;
     let _ = event_loop.run_app(&mut app);
 }
