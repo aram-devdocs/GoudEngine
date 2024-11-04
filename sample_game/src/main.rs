@@ -1,5 +1,4 @@
-use game::{Game, TriangleProps};
-use platform::graphics::{gl_wrapper::VertexAttributeProps, window::WindowBuilder};
+use game::{Game, TriangleProps, VertexAttributeProps, WindowBuilder};
 
 fn main() {
     let mut game = Game::new(WindowBuilder {
@@ -19,8 +18,7 @@ fn main() {
         VertexAttributeProps {
             index: 0,
             size: 3,
-            r#type: gl::FLOAT,
-            normalized: gl::FALSE,
+
             stride: 0,
             pointer: std::ptr::null(),
         },

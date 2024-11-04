@@ -46,6 +46,20 @@ impl Vao {
     }
 }
 
+pub fn clear() {
+    unsafe {
+        gl::Clear(gl::COLOR_BUFFER_BIT);
+    }
+}
+
+pub fn draw_arrays(first: GLint, count: GLsizei) {
+    // TODO: we want to pass what is being drawn without exposing game to gl
+    let mode = gl::TRIANGLES;
+    unsafe {
+        gl::DrawArrays(mode, first, count);
+    }
+}
+
 /// # Buffer Object
 /// An object for storing data
 ///
@@ -63,7 +77,10 @@ pub struct BufferObject {
 }
 
 impl BufferObject {
-    pub fn new(r#type: gl::types::GLenum, usage: gl::types::GLenum) -> BufferObject {
+    pub fn new() -> BufferObject {
+        // gl::ARRAY_BUFFER, gl::STATIC_DRAW
+        let r#type = gl::ARRAY_BUFFER;
+        let usage = gl::STATIC_DRAW;
         let mut id = 0;
         unsafe {
             gl::GenBuffers(1, &mut id);
@@ -121,31 +138,26 @@ pub struct VertexAttribute {
 pub struct VertexAttributeProps {
     pub index: u32,
     pub size: i32,
-    pub r#type: GLenum,
-    pub normalized: GLboolean,
+    // pub r#type: GLenum,
+    // pub normalized: GLboolean,
     pub stride: GLsizei,
     pub pointer: *const c_void,
 }
 
-
 impl VertexAttribute {
-    pub fn new(
-        // index: u32,
-        // size: i32,
-        // r#type: GLenum,
-        // normalized: GLboolean,
-        // stride: GLsizei,
-        // pointer: *const c_void,
-        props: VertexAttributeProps,
-    ) -> VertexAttribute {
+    pub fn new(props: VertexAttributeProps) -> VertexAttribute {
         let VertexAttributeProps {
             index,
             size,
-            r#type,
-            normalized,
+            // r#type,
+            // normalized,
             stride,
             pointer,
         } = props;
+
+
+        let r#type = gl::FLOAT;
+        let normalized = gl::FALSE;
         unsafe {
             gl::VertexAttribPointer(index, size, r#type, normalized, stride, pointer);
         }

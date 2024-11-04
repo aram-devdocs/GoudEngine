@@ -555,7 +555,6 @@ name = "game"
 version = "0.1.0"
 dependencies = [
  "engine_core",
- "gl",
  "platform",
 ]
 
@@ -1419,8 +1418,6 @@ name = "sample_game"
 version = "0.1.0"
 dependencies = [
  "game",
- "gl",
- "platform",
 ]
 
 [[package]]
