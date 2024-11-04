@@ -5,6 +5,7 @@ use std::cell::RefCell;
 struct Player {
     position: (f32, f32),
     speed: f32,
+    rotation: f32, // New field for rotation
 }
 
 impl Player {
@@ -12,6 +13,7 @@ impl Player {
         Player {
             position: (0.0, 0.0), // Starting position at the center
             speed: 0.05,          // Adjust speed as needed
+            rotation: 0.0,        // Initial rotation
         }
     }
 
@@ -27,6 +29,12 @@ impl Player {
         }
         if game.window.input_handler.is_key_pressed(KeyInput::D) {
             self.position.0 += self.speed;
+        }
+        if game.window.input_handler.is_key_pressed(KeyInput::Q) {
+            self.rotation -= 0.05; // Rotate counter-clockwise
+        }
+        if game.window.input_handler.is_key_pressed(KeyInput::E) {
+            self.rotation += 0.05; // Rotate clockwise
         }
     }
 }
@@ -66,13 +74,14 @@ fn main() {
 
     let player_clone = Rc::clone(&player);
     game.run(move |game| {
-        // Update player position based on input
+        // Update player position and rotation based on input
         player_clone.borrow_mut().update_position(game);
 
-        // Render logic would use player.position to set sprite location here
-        game.renderer.as_mut().unwrap().update_sprite_position(
+        // Render logic would use player.position and player.rotation to set sprite location and rotation here
+        game.renderer.as_mut().unwrap().update_sprite_transform(
             0,
-            cgmath::Vector2::new(player_clone.borrow().position.0, player_clone.borrow().position.1),
+            cgmath::Vecutor2::new(player_clone.borrow().position.0, player_clone.borrow().position.1),
+            player_clone.borrow().rotation,
         );
 
         // Exit game if Escape is pressed

@@ -500,6 +500,39 @@ impl Renderer {
         sprite.vbo.store_f32_data(&vertices);
     }
 
+    pub fn update_sprite_transform(&mut self, index: usize, position: Vector2<f32>, rotation: f32) {
+        let sprite = &mut self.sprites[index];
+        let cos_theta = rotation.cos();
+        let sin_theta = rotation.sin();
+        let vertices = [
+            // Apply rotation to each vertex
+            position.x + cos_theta * 0.5 - sin_theta * 0.5,
+            position.y + sin_theta * 0.5 + cos_theta * 0.5,
+            0.0,
+            1.0,
+            1.0, // top right
+            position.x + cos_theta * 0.5 - sin_theta * -0.5,
+            position.y + sin_theta * 0.5 + cos_theta * -0.5,
+            0.0,
+            1.0,
+            0.0, // bottom right
+            position.x + cos_theta * -0.5 - sin_theta * -0.5,
+            position.y + sin_theta * -0.5 + cos_theta * -0.5,
+            0.0,
+            0.0,
+            0.0, // bottom left
+            position.x + cos_theta * -0.5 - sin_theta * 0.5,
+            position.y + sin_theta * -0.5 + cos_theta * 0.5,
+            0.0,
+            0.0,
+            1.0, // top left
+        ];
+
+        sprite.vao.bind();
+        sprite.vbo.bind();
+        sprite.vbo.store_f32_data(&vertices);
+    }
+
     pub fn render(&mut self) {
         self.shader_program.bind();
 
