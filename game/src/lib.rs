@@ -21,11 +21,16 @@ pub type KeyInput = _KeyInput;
 // Input props
 pub struct TriangleProps {
     pub vertices: [f32; 9],
+    pub position: Option<(f32, f32)>,
+    pub rotation: Option<f32>,
 }
 
 pub struct TriangleData {
     vao: Vao,
     vbo: BufferObject,
+    position: (f32, f32),
+    rotation: f32,
+    vertices: [f32; 9],
 }
 // Single entry point for the game
 pub struct Game {
@@ -74,7 +79,16 @@ impl Game {
         vao.unbind();
         vbo.unbind();
 
-        let triangle_data = TriangleData { vao, vbo };
+        let position = (0.0, 0.0);
+        let rotation = 0.0;
+
+        let triangle_data = TriangleData {
+            vao,
+            vbo,
+            position,
+            rotation,
+            vertices: triangle_props.vertices,
+        };
 
         self.triangles.push(triangle_data);
 
@@ -89,8 +103,20 @@ impl Game {
         vertex_attribute_props: VertexAttributeProps,
     ) {
         let triangle_data = &mut self.triangles[index as usize];
+
+        // only update position if it is Some
+        if let Some(position) = triangle_props.position {
+            triangle_data.position = position;
+        }
+
+        // only update rotation if it is Some
+        if let Some(rotation) = triangle_props.rotation {
+            triangle_data.rotation = rotation;
+        }
+
         triangle_data.vao.bind();
         triangle_data.vbo.bind();
+       
         triangle_data.vbo.store_f32_data(&triangle_props.vertices);
 
         let vertex_attribute = VertexAttribute::new(vertex_attribute_props);
@@ -98,6 +124,19 @@ impl Game {
 
         triangle_data.vao.unbind();
         triangle_data.vbo.unbind();
+    }
+
+    pub fn get_triangle_position(&self, index: u32) -> (f32, f32) {
+        self.triangles[index as usize].position
+    }
+
+    pub fn get_triangle_rotation(&self, index: u32) -> f32 {
+        self.triangles[index as usize].rotation
+    }
+
+    pub fn get_triangle_vertices(&self, index: u32) -> [f32; 9] {
+        let triangle_data = &self.triangles[index as usize];
+        triangle_data.vertices
     }
 
     pub fn run<F>(&mut self, update_callback: F)

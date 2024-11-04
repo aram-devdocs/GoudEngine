@@ -80,6 +80,10 @@ impl Window {
         }
     }
 
+    pub fn close_window(&mut self) {
+        self.window_handle.set_should_close(true);
+    }
+
     fn process_events(&mut self) {
         for (_, event) in glfw::flush_messages(&self.events) {
             match event {
