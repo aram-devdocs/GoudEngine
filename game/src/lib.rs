@@ -9,12 +9,14 @@ use platform::graphics::gl_wrapper::{
     VertexAttribute,
     VertexAttributeProps as _VertextAttributeProps,
 };
+use platform::graphics::window::KeyInput as _KeyInput;
 use platform::graphics::window::WindowBuilder as _WindowBuilder;
 use platform::logger;
 
 // Expose the types from the platform module
 pub type VertexAttributeProps = _VertextAttributeProps;
 pub type WindowBuilder = _WindowBuilder;
+pub type KeyInput = _KeyInput;
 
 // Input props
 pub struct TriangleProps {

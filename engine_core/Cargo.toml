@@ -1,8 +1,0 @@
-[package]
-name = "engine_core"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-glium = "0.36.0"
-hecs = "0.10.5"

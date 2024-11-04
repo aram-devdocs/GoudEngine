@@ -155,7 +155,6 @@ impl VertexAttribute {
             pointer,
         } = props;
 
-
         let r#type = gl::FLOAT;
         let normalized = gl::FALSE;
         unsafe {

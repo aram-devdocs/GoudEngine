@@ -1,6 +1,9 @@
 use glfw::{Action, Context, Key, WindowEvent};
 use std::sync::mpsc::Receiver;
 
+mod input_handler;
+use input_handler::{InputHandler, KeyInput as _KeyInput};
+
 /// # Window
 ///
 /// An abstraction layer for creating a glfw window.
@@ -13,13 +16,16 @@ use std::sync::mpsc::Receiver;
 /// while !window.should_close() {
 ///     window.update;
 /// }
-/// 
+///
 /// ```
 pub struct Window {
     glfw: glfw::Glfw,
     window_handle: glfw::Window,
     events: Receiver<(f64, WindowEvent)>,
+    pub input_handler: InputHandler,
 }
+
+pub type KeyInput = _KeyInput;
 
 pub struct WindowBuilder {
     pub width: u32,
@@ -30,8 +36,12 @@ pub struct WindowBuilder {
 impl Window {
     /// Create new window with settings
     pub fn new(data: WindowBuilder) -> Window {
-        let WindowBuilder { width, height, title } = data;
-        
+        let WindowBuilder {
+            width,
+            height,
+            title,
+        } = data;
+
         let glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
         let (mut window, events) = glfw
@@ -45,6 +55,7 @@ impl Window {
             glfw,
             window_handle: window,
             events,
+            input_handler: InputHandler::new(),
         }
     }
 
@@ -63,6 +74,10 @@ impl Window {
         self.process_events();
         self.glfw.poll_events();
         self.window_handle.swap_buffers();
+
+        for (_, event) in glfw::flush_messages(&self.events) {
+            self.input_handler.handle_event(&event);
+        }
     }
 
     fn process_events(&mut self) {
