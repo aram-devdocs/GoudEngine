@@ -470,6 +470,36 @@ impl Renderer {
         self.sprites.len() - 1
     }
 
+    pub fn update_sprite_position(&mut self, index: usize, position: Vector2<f32>) {
+        let sprite = &mut self.sprites[index];
+        let vertices = [
+            position.x + 0.5,
+            position.y + 0.5,
+            0.0,
+            1.0,
+            1.0, // top right
+            position.x + 0.5,
+            position.y - 0.5,
+            0.0,
+            1.0,
+            0.0, // bottom right
+            position.x - 0.5,
+            position.y - 0.5,
+            0.0,
+            0.0,
+            0.0, // bottom left
+            position.x - 0.5,
+            position.y + 0.5,
+            0.0,
+            0.0,
+            1.0, // top left
+        ];
+
+        sprite.vao.bind();
+        sprite.vbo.bind();
+        sprite.vbo.store_f32_data(&vertices);
+    }
+
     pub fn render(&mut self) {
         self.shader_program.bind();
 
