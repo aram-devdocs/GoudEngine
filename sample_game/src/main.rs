@@ -7,8 +7,11 @@ fn main() {
         title: "Sample Game".to_string(),
     });
 
-    // Initialize game
-    game.init();
+    // Initialize game with custom logic
+    game.init(|| {
+        // Custom initialization logic here
+        println!("Custom initialization logic");
+    });
 
     // Create and add a triangle to the game
     game.create_triangle(
@@ -18,12 +21,14 @@ fn main() {
         VertexAttributeProps {
             index: 0,
             size: 3,
-
             stride: 0,
             pointer: std::ptr::null(),
         },
     );
 
-    // Run the game loop
-    game.run();
+    // Run the game loop with custom update logic
+    game.run(|| {
+        // Custom update logic here
+        println!("Custom update logic");
+    });
 }
