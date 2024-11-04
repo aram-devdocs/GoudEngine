@@ -1,3 +1,5 @@
+// window.rs
+
 use glfw::{Action, Context, Key, WindowEvent};
 use std::sync::mpsc::Receiver;
 
@@ -6,7 +8,7 @@ use input_handler::{InputHandler, KeyInput as _KeyInput};
 
 /// # Window
 ///
-/// An abstraction layer for creating a glfw window.
+/// An abstraction layer for creating a GLFW window.
 ///
 /// ## Example
 /// ```
@@ -14,13 +16,12 @@ use input_handler::{InputHandler, KeyInput as _KeyInput};
 /// window.init_gl();
 ///
 /// while !window.should_close() {
-///     window.update;
+///     window.update();
 /// }
-///
 /// ```
 pub struct Window {
     glfw: glfw::Glfw,
-    window_handle: glfw::Window,
+    pub window_handle: glfw::Window,
     events: Receiver<(f64, WindowEvent)>,
     pub input_handler: InputHandler,
 }
@@ -42,7 +43,15 @@ impl Window {
             title,
         } = data;
 
-        let glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
+        let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
+
+        // Set OpenGL version (e.g., 3.3 Core)
+        glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
+        glfw.window_hint(glfw::WindowHint::OpenGlProfile(
+            glfw::OpenGlProfileHint::Core,
+        ));
+        // **Add this line to set forward compatibility**
+        glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
 
         let (mut window, events) = glfw
             .create_window(width, height, &title, glfw::WindowMode::Windowed)
@@ -59,7 +68,7 @@ impl Window {
         }
     }
 
-    /// Load gl functions.
+    /// Load GL functions.
     pub fn init_gl(&mut self) {
         self.window_handle.make_current();
         gl::load_with(|s| self.window_handle.get_proc_address(s) as *const _);
