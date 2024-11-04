@@ -21,9 +21,15 @@ pub struct TriangleProps {
     pub vertices: [f32; 9],
 }
 
+pub struct TriangleData {
+    vao: Vao,
+    vbo: BufferObject,
+}
 // Single entry point for the game
 pub struct Game {
     pub window: graphics::window::Window,
+    pub triangles: Vec<TriangleData>,
+    pub elapsed_time: f32,
     // shader_program: Option<ShaderProgram>,
 }
 
@@ -32,6 +38,9 @@ impl Game {
         logger::init();
         Game {
             window: graphics::window::Window::new(data),
+            triangles: vec![],
+            elapsed_time: 0.0,
+            // triangles should be
             // shader_program: None,
         }
     }
@@ -41,6 +50,7 @@ impl Game {
         F: FnOnce(),
     {
         self.window.init_gl();
+        self.triangles = vec![];
         init_callback();
     }
 
@@ -48,7 +58,7 @@ impl Game {
         &mut self,
         triangle_props: TriangleProps,
         vertex_attribute_props: VertexAttributeProps,
-    ) {
+    ) -> u32 {
         let vao = Vao::new();
         vao.bind();
 
@@ -61,11 +71,36 @@ impl Game {
 
         vao.unbind();
         vbo.unbind();
+
+        let triangle_data = TriangleData { vao, vbo };
+
+        self.triangles.push(triangle_data);
+
+        let index = self.triangles.len() as u32 - 1;
+        index
+    }
+
+    pub fn update_triangle(
+        &mut self,
+        index: u32,
+        triangle_props: TriangleProps,
+        vertex_attribute_props: VertexAttributeProps,
+    ) {
+        let triangle_data = &mut self.triangles[index as usize];
+        triangle_data.vao.bind();
+        triangle_data.vbo.bind();
+        triangle_data.vbo.store_f32_data(&triangle_props.vertices);
+
+        let vertex_attribute = VertexAttribute::new(vertex_attribute_props);
+        vertex_attribute.enable();
+
+        triangle_data.vao.unbind();
+        triangle_data.vbo.unbind();
     }
 
     pub fn run<F>(&mut self, update_callback: F)
     where
-        F: Fn(),
+        F: Fn(&mut Game),
     {
         while !self.window.should_close() {
             self.update(&update_callback);
@@ -76,8 +111,11 @@ impl Game {
 
     fn update<F>(&mut self, update_callback: &F)
     where
-        F: Fn(),
+        F: Fn(&mut Game),
     {
+        // Update elapsed time
+        self.elapsed_time += 0.01;
+
         // Clear the screen
         clear();
 
@@ -85,7 +123,7 @@ impl Game {
         draw_arrays(0, 3);
 
         // Execute custom update logic
-        update_callback();
+        update_callback(self);
 
         // Update window
         self.window.update();
