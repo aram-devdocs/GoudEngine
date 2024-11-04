@@ -10,7 +10,7 @@ use std::ptr;
 
 use cgmath::*;
 use gl::types::*;
-use image::GenericImageView;
+// use image::GenericImageView;
 
 /// # Vertex Array Object
 ///
@@ -303,12 +303,9 @@ impl ShaderProgram {
     }
 
     pub fn create_uniform(&mut self, uniform_name: &str) {
-        let uniform_location = unsafe {
-            gl::GetUniformLocation(
-                self.program_handle,
-                CString::new(uniform_name).unwrap().as_ptr(),
-            )
-        };
+        let c_str = CString::new(uniform_name).unwrap();
+        let uniform_location =
+            unsafe { gl::GetUniformLocation(self.program_handle, c_str.as_ptr()) };
         if uniform_location < 0 {
             panic!("Cannot locate uniform: {}", uniform_name);
         } else {
@@ -329,9 +326,7 @@ impl ShaderProgram {
     }
 
     pub fn set_int_uniform(&self, uniform_name: &str, value: i32) {
-        unsafe {
-            gl::Uniform1i(self.uniform_ids[uniform_name], value)
-        }
+        unsafe { gl::Uniform1i(self.uniform_ids[uniform_name], value) }
     }
 }
 
@@ -404,14 +399,13 @@ pub struct Renderer {
 pub struct Sprite {
     vao: Vao,
     vbo: BufferObject,
-    ebo: BufferObject,
+    // ebo: BufferObject,
     texture: Texture,
     indices_count: i32,
 }
 
 impl Renderer {
-    pub fn new(
-        // vertex_shader_path: &str, fragment_shader_path: &str
+    pub fn new(// vertex_shader_path: &str, fragment_shader_path: &str
     ) -> Renderer {
         let vertex_shader_path = "platform/src/graphics/shaders/vertex_shader.glsl";
         let fragment_shader_path = "platform/src/graphics/shaders/fragment_shader.glsl";
@@ -431,9 +425,9 @@ impl Renderer {
         vbo.store_f32_data(vertices);
 
         let ebo = BufferObject::new_element_buffer();
-        ebo.bind();
-        ebo.store_u32_data(indices);
-
+        let element_buffer = BufferObject::new_element_buffer();
+        element_buffer.bind();
+        element_buffer.store_u32_data(indices);
         let stride = 5 * mem::size_of::<f32>() as i32;
 
         let position_attribute = VertexAttribute::new(VertexAttributeProps {
@@ -455,13 +449,13 @@ impl Renderer {
         vao.unbind();
         vbo.unbind();
         ebo.unbind();
-
+        element_buffer.unbind();
         let texture = Texture::new(texture_path);
 
         let sprite = Sprite {
             vao,
             vbo,
-            ebo,
+            // ebo,
             texture,
             indices_count: indices.len() as i32,
         };
