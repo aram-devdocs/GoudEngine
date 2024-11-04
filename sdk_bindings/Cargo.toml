@@ -1,0 +1,10 @@
+[package]
+name = "sdk_bindings"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cbindgen = "0.27.0"
+
+[lib]
+crate-type = ["cdylib"]

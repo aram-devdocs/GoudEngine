@@ -1,0 +1,2 @@
+[workspace]
+members = ["platform", "sdk_bindings", "sample_game", "game"]

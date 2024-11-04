@@ -1,5 +1,0 @@
-add_subdirectory(submodules/graphics)
-add_subdirectory(submodules/audio)
-add_subdirectory(submodules/input)
-add_subdirectory(submodules/physics)
-add_subdirectory(submodules/networking)
