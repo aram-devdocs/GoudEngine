@@ -118,15 +118,34 @@ pub struct VertexAttribute {
     index: GLuint,
 }
 
+pub struct VertexAttributeProps {
+    pub index: u32,
+    pub size: i32,
+    pub r#type: GLenum,
+    pub normalized: GLboolean,
+    pub stride: GLsizei,
+    pub pointer: *const c_void,
+}
+
+
 impl VertexAttribute {
     pub fn new(
-        index: u32,
-        size: i32,
-        r#type: GLenum,
-        normalized: GLboolean,
-        stride: GLsizei,
-        pointer: *const c_void,
+        // index: u32,
+        // size: i32,
+        // r#type: GLenum,
+        // normalized: GLboolean,
+        // stride: GLsizei,
+        // pointer: *const c_void,
+        props: VertexAttributeProps,
     ) -> VertexAttribute {
+        let VertexAttributeProps {
+            index,
+            size,
+            r#type,
+            normalized,
+            stride,
+            pointer,
+        } = props;
         unsafe {
             gl::VertexAttribPointer(index, size, r#type, normalized, stride, pointer);
         }

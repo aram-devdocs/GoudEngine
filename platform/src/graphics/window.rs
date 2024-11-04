@@ -21,13 +21,21 @@ pub struct Window {
     events: Receiver<(f64, WindowEvent)>,
 }
 
+pub struct WindowBuilder {
+    pub width: u32,
+    pub height: u32,
+    pub title: String,
+}
+
 impl Window {
     /// Create new window with settings
-    pub fn new(width: u32, height: u32, title: &str) -> Window {
+    pub fn new(data: WindowBuilder) -> Window {
+        let WindowBuilder { width, height, title } = data;
+        
         let glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
         let (mut window, events) = glfw
-            .create_window(width, height, title, glfw::WindowMode::Windowed)
+            .create_window(width, height, &title, glfw::WindowMode::Windowed)
             .expect("Failed to create GLFW window!");
 
         window.set_framebuffer_size_polling(true);

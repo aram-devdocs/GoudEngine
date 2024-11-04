@@ -555,6 +555,7 @@ name = "game"
 version = "0.1.0"
 dependencies = [
  "engine_core",
+ "gl",
  "platform",
 ]
 
