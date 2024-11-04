@@ -1,21 +1,26 @@
-use platform::{create_event_loop, App, EventLoop_};
+use platform::custom_errors;
+use platform::graphics;
+use platform::logger;
 
 pub struct Game {
-    pub app: App,
-    pub create_event_loop: fn() -> EventLoop_,
+    pub window: graphics::window::Window,
 }
 
 impl Game {
-    pub fn new() -> Self {
-        Self {
-            app: App::default(),
-            create_event_loop,
+    pub fn new(width: u32, height: u32, title: &str) -> Game {
+        logger::init();
+        Game {
+            window: graphics::window::Window::new(width, height, title),
         }
     }
 
-    pub fn draw_polygon(&self, app: &mut App) {
-        // Drawing logic for the polygon
-        // This is a placeholder for the actual drawing code
-        println!("Drawing a polygon...");
+    pub fn run(&mut self) {
+        self.window.init_gl();
+
+        while !self.window.should_close() {
+            self.window.update();
+        }
+
+        println!("Window closed!");
     }
 }
