@@ -80,7 +80,7 @@ fn main() {
         // Render logic would use player.position and player.rotation to set sprite location and rotation here
         game.renderer.as_mut().unwrap().update_sprite_transform(
             0,
-            cgmath::Vecutor2::new(player_clone.borrow().position.0, player_clone.borrow().position.1),
+            cgmath::Vector2::new(player_clone.borrow().position.0, player_clone.borrow().position.1),
             player_clone.borrow().rotation,
         );
 
