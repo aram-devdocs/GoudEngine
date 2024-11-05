@@ -34,6 +34,19 @@ namespace CsBindgen
     [StructLayout(LayoutKind.Sequential)]
     internal unsafe partial struct GameSdk
     {
+        public Window window;
+        public Renderer2D renderer_2d;
+        public float elapsed_time;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal unsafe partial struct Window
+    {
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal unsafe partial struct Renderer2D
+    {
     }
 
 

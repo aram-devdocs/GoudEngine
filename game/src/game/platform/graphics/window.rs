@@ -19,6 +19,7 @@ use input_handler::{InputHandler, KeyInput as _KeyInput};
 ///     window.update();
 /// }
 /// ```
+// #[repr(C)]
 pub struct Window {
     glfw: glfw::Glfw,
     pub window_handle: glfw::Window,

@@ -1,7 +1,8 @@
-// lib.rs
-
+// game.rs
+mod platform;
 pub use platform::graphics::gl_wrapper::{clear, Renderer, Renderer2D};
 use platform::logger;
+
 
 pub use platform::graphics::gl_wrapper::{Rectangle, Sprite, Texture};
 pub use platform::graphics::window::{KeyInput, WindowBuilder};
@@ -9,6 +10,7 @@ pub use platform::graphics::window::{KeyInput, WindowBuilder};
 pub use platform::graphics::cgmath;
 
 /// Single entry point for the game
+#[repr(C)]
 pub struct GameSdk {
     pub window: platform::graphics::window::Window,
     pub renderer_2d: Option<Renderer2D>,
@@ -18,7 +20,8 @@ pub struct GameSdk {
 
 impl GameSdk {
     /// Creates a new game instance.
-    pub fn new(data: WindowBuilder) -> GameSdk {
+    #[no_mangle]
+    pub extern "C" fn new(data: WindowBuilder) -> GameSdk {
         logger::init();
         let window = platform::graphics::window::Window::new(data);
 

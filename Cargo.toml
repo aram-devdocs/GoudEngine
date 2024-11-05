@@ -1,2 +1,2 @@
 [workspace]
-members = ["platform",  "sample_game", "game"]
+members = ["sample_game", "game"]
