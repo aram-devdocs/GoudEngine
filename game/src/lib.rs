@@ -1,12 +1,14 @@
 // lib.rs
 
 use platform::graphics::gl_wrapper::{clear, Renderer, Renderer2D};
-use platform::graphics::window::KeyInput as _KeyInput;
-use platform::graphics::window::WindowBuilder as _WindowBuilder;
 use platform::logger;
 
-pub type WindowBuilder = _WindowBuilder;
-pub type KeyInput = _KeyInput;
+pub use platform::graphics::gl_wrapper::{Rectangle, Sprite, Texture};
+pub use platform::graphics::window::{KeyInput, WindowBuilder};
+
+pub use platform::graphics::cgmath;
+// pub type WindowBuilder = _WindowBuilder;
+// pub type KeyInput = _KeyInput;
 
 /// Single entry point for the game
 pub struct Game {

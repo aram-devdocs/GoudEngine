@@ -1,11 +1,11 @@
 // main.rs
 
-use game::{Game, KeyInput, WindowBuilder};
+use game::{Game, KeyInput, Rectangle, Sprite, Texture, WindowBuilder};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use cgmath::Vector2;
-use platform::graphics::gl_wrapper::{Rectangle, Sprite, Texture};
+use game::cgmath::Vector2;
+
 
 struct Player {
     position: Vector2<f32>,
