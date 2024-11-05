@@ -23,9 +23,16 @@ class Program
 
                 NativeMethods.game_init(gamePtr);
 
+
+                fixed (byte* spritePath = System.Text.Encoding.ASCII.GetBytes("../sample_game/assets/bluebird-midflap.png"))
+                {
+                    NativeMethods.game_add_sprite(gamePtr, spritePath, 0, 0, 1, 1, 0);
+                }
                 NativeMethods.game_run(gamePtr);
 
+
                 NativeMethods.game_destroy(gamePtr);
+
 
             }
         }
