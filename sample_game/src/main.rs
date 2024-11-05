@@ -73,10 +73,10 @@ fn main() {
 
         // Define source rectangle (portion of the spritesheet)
         let source_rect = Rectangle {
-            x: 50.0,
+            x: 0.0,
             y: 0.0,
-            width: 2.0,
-            height: 0.5,
+            width: 1.0,
+            height: 1.0,
         };
 
         // Create sprite
