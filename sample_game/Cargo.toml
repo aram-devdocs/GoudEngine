@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 cgmath = "0.18.0" # todo: remove dependency
 game = { version = "0.1.0", path = "../game" }
+platform = { version = "0.1.0", path = "../platform" }
