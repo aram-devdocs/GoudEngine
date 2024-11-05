@@ -3,16 +3,16 @@ mod platform;
 pub use platform::graphics::gl_wrapper::{clear, Renderer, Renderer2D};
 use platform::logger;
 
+// pub use platform::graphics::gl_wrapper::Sprite;
+pub use platform::graphics::window::Window;
+pub use platform::graphics::window::WindowBuilder;
 
-pub use platform::graphics::gl_wrapper::{Rectangle, Sprite, Texture};
-pub use platform::graphics::window::{KeyInput, WindowBuilder};
-
-pub use platform::graphics::cgmath;
+// pub use platform::graphics::cgmath;
 
 /// Single entry point for the game
 #[repr(C)]
 pub struct GameSdk {
-    pub window: platform::graphics::window::Window,
+    pub window: Window,
     pub renderer_2d: Option<Renderer2D>,
     // pub renderer_3d: Option<Renderer3D>, // If you implement Renderer3D
     pub elapsed_time: f32,
@@ -20,8 +20,7 @@ pub struct GameSdk {
 
 impl GameSdk {
     /// Creates a new game instance.
-    #[no_mangle]
-    pub extern "C" fn new(data: WindowBuilder) -> GameSdk {
+    pub fn new(data: WindowBuilder) -> GameSdk {
         logger::init();
         let window = platform::graphics::window::Window::new(data);
 
@@ -34,7 +33,7 @@ impl GameSdk {
     }
 
     /// Initializes the game.
-    pub fn init<F>(&mut self, init_callback: F)
+    pub extern "C" fn init<F>(&mut self, init_callback: F)
     where
         F: FnOnce(&mut GameSdk),
     {
@@ -48,7 +47,7 @@ impl GameSdk {
     }
 
     /// Runs the game loop.
-    pub fn run<F>(&mut self, update_callback: F)
+    pub extern "C" fn run<F>(&mut self, update_callback: F)
     where
         F: Fn(&mut GameSdk),
     {
@@ -59,7 +58,8 @@ impl GameSdk {
         println!("Window closed!");
     }
 
-    fn update<F>(&mut self, update_callback: &F)
+    /// Updates the game.
+    pub extern "C" fn update<F>(&mut self, update_callback: &F)
     where
         F: Fn(&mut GameSdk),
     {

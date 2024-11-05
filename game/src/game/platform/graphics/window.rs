@@ -4,7 +4,7 @@ use glfw::{Action, Context, Key, WindowEvent};
 use std::sync::mpsc::Receiver;
 
 mod input_handler;
-use input_handler::{InputHandler, KeyInput as _KeyInput};
+use input_handler::InputHandler;
 
 /// # Window
 ///
@@ -19,30 +19,40 @@ use input_handler::{InputHandler, KeyInput as _KeyInput};
 ///     window.update();
 /// }
 /// ```
-// #[repr(C)]
+///
+
+#[repr(C)]
 pub struct Window {
-    glfw: glfw::Glfw,
-    pub window_handle: glfw::Window,
-    events: Receiver<(f64, WindowEvent)>,
+    pub glfw: glfw::Glfw,
+    pub window_handle: Box<glfw::Window>,
+    pub events: Receiver<(f64, WindowEvent)>,
     pub input_handler: InputHandler,
 }
 
-pub type KeyInput = _KeyInput;
+// pub type KeyInput = _KeyInput;
 
+#[repr(C)]
 pub struct WindowBuilder {
     pub width: u32,
     pub height: u32,
-    pub title: String,
+    pub title: *const std::ffi::c_char,
 }
 
 impl Window {
     /// Create new window with settings
+    #[no_mangle]
     pub fn new(data: WindowBuilder) -> Window {
         let WindowBuilder {
             width,
             height,
             title,
         } = data;
+
+        let title = unsafe {
+            std::ffi::CStr::from_ptr(title)
+                .to_string_lossy()
+                .into_owned()
+        };
 
         let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
@@ -63,7 +73,7 @@ impl Window {
 
         Window {
             glfw,
-            window_handle: window,
+            window_handle: Box::new(window),
             events,
             input_handler: InputHandler::new(),
         }

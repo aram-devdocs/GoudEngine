@@ -5,7 +5,6 @@ use std::collections::HashSet;
 pub struct InputHandler {
     keys_pressed: HashSet<Key>,
 }
-#[no_mangle]
 pub type KeyInput = glfw::Key;
 impl InputHandler {
     pub fn new() -> InputHandler {

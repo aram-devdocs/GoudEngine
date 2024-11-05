@@ -15,7 +15,8 @@ Cargo.lock
 /release
 
 # Generated bindings
-sdk_bindings/bindings.h
+sample_net_app/NativeMethods.g.cs
+sample_net_app/libgame.dylib
 
 # MacOS system files
 .DS_Store
