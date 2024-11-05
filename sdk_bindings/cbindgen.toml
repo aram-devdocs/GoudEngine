@@ -1,5 +1,7 @@
 # cbindgen.toml
 
+
+# __ Deprecated for csbindgen __  /build.rs
 language = "C"
 
 [export]
