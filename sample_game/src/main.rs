@@ -124,5 +124,12 @@ fn main() {
         if game.window.input_handler.is_key_pressed(KeyInput::Escape) {
             game.window.close_window();
         }
+
+        // if R is pressed, reset player position
+        if game.window.input_handler.is_key_pressed(KeyInput::R) {
+            player_clone.borrow_mut().position = Vector2::new(0.0, 0.0);
+            player_clone.borrow_mut().scale = Vector2::new(0.1, 0.1);
+            player_clone.borrow_mut().rotation = 0.0;
+        }
     });
 }

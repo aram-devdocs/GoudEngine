@@ -1,46 +1,36 @@
-use std::ffi::c_void;
-// use std::mem;
-// use std::ptr;
-
 use game::Game;
+use platform::graphics::window::WindowBuilder;
+use std::ffi::CStr;
+use std::os::raw::c_char;
 
-
-#[repr(C)]
-pub struct Point {
-    pub x: f64,
-    pub y: f64,
+#[no_mangle]
+pub extern "C" fn game_create(width: u32, height: u32, title: *const c_char) -> *mut Game {
+    let title_str = unsafe { CStr::from_ptr(title).to_str().unwrap() };
+    let window_builder = WindowBuilder {
+        width,
+        height,
+        title: title_str.to_string(),
+    };
+    Box::into_raw(Box::new(Game::new(window_builder)))
 }
 
 #[no_mangle]
-pub extern "C" fn create_point(x: f64, y: f64) -> *mut Point {
-    let point = Box::new(Point { x, y });
-    Box::into_raw(point)
-}
-
-#[no_mangle]
-pub extern "C" fn get_x(point: *const Point) -> f64 {
-    unsafe { (*point).x }
-}
-
-#[no_mangle]
-pub extern "C" fn get_y(point: *const Point) -> f64 {
-    unsafe { (*point).y }
-}
-
-#[no_mangle]
-pub extern "C" fn free_point(point: *mut c_void) {
-    if !point.is_null() {
-        unsafe {
-            let _ = Box::from_raw(point as *mut Point);
-        }
+pub extern "C" fn game_init(game: *mut Game) {
+    unsafe {
+        (*game).init(|_| {});
     }
 }
 
-// generate csbindgen bindings for game
 #[no_mangle]
-pub extern "C" fn create_game(window_builder: *const c_void) -> *mut Game {
-    let window_builder =
-        unsafe { Box::from_raw(window_builder as *mut platform::graphics::window::WindowBuilder) };
-    let game = Box::new(Game::new(*window_builder));
-    Box::into_raw(game)
+pub extern "C" fn game_run(game: *mut Game) {
+    unsafe {
+        (*game).run(|_| {});
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn game_destroy(game: *mut Game) {
+    if !game.is_null() {
+        unsafe { Box::from_raw(game) }; // Automatically deallocates
+    }
 }

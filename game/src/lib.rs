@@ -7,8 +7,6 @@ pub use platform::graphics::gl_wrapper::{Rectangle, Sprite, Texture};
 pub use platform::graphics::window::{KeyInput, WindowBuilder};
 
 pub use platform::graphics::cgmath;
-// pub type WindowBuilder = _WindowBuilder;
-// pub type KeyInput = _KeyInput;
 
 /// Single entry point for the game
 pub struct Game {

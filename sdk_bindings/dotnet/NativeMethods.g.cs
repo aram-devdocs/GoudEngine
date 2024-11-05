@@ -16,29 +16,19 @@ namespace CsBindgen
 
 
 
-        [DllImport(__DllName, EntryPoint = "create_point", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        internal static extern Point* create_point(double x, double y);
+        [DllImport(__DllName, EntryPoint = "game_create", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern Game* game_create(uint width, uint height, byte* title);
 
-        [DllImport(__DllName, EntryPoint = "get_x", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        internal static extern double get_x(Point* point);
+        [DllImport(__DllName, EntryPoint = "game_init", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern void game_init(Game* game);
 
-        [DllImport(__DllName, EntryPoint = "get_y", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        internal static extern double get_y(Point* point);
+        [DllImport(__DllName, EntryPoint = "game_run", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern void game_run(Game* game);
 
-        [DllImport(__DllName, EntryPoint = "free_point", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        internal static extern void free_point(void* point);
-
-        [DllImport(__DllName, EntryPoint = "create_game", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        internal static extern Game* create_game(void* window_builder);
+        [DllImport(__DllName, EntryPoint = "game_destroy", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern void game_destroy(Game* game);
 
 
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal unsafe partial struct Point
-    {
-        public double x;
-        public double y;
     }
 
 
