@@ -523,9 +523,16 @@ impl Renderer2D {
 
         for sprite in &self.sprites {
             // Calculate model matrix
+            let aspect_ratio = sprite.texture.width() as f32 / sprite.texture.height() as f32;
+            let scale = if sprite.scale.x / sprite.scale.y > aspect_ratio {
+                Vector3::new(sprite.scale.y * aspect_ratio, sprite.scale.y, 1.0)
+            } else {
+                Vector3::new(sprite.scale.x, sprite.scale.x / aspect_ratio, 1.0)
+            };
+
             let model = Matrix4::from_translation(Vector3::new(sprite.position.x, sprite.position.y, 0.0))
                 * Matrix4::from_angle_z(Rad(sprite.rotation))
-                * Matrix4::from_nonuniform_scale(sprite.scale.x, sprite.scale.y, 1.0);
+                * Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z);
 
             self.shader_program.set_uniform_mat4(&self.model_uniform, &model)?;
 

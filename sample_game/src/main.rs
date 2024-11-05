@@ -63,6 +63,8 @@ fn main() {
 
     // Wrap player in Rc<RefCell> for shared mutability
     let player = Rc::new(RefCell::new(Player::new()));
+    player.borrow_mut().position = Vector2::new(0.0, 0.0);
+    player.borrow_mut().scale = Vector2::new(0.1, 0.1);
     let player_clone = Rc::clone(&player);
 
     // Initialize game with custom logic
@@ -75,8 +77,8 @@ fn main() {
         let source_rect = Rectangle {
             x: 0.0,
             y: 0.0,
-            width: 1.0,
-            height: 1.0,
+            width: 1.0,  // Adjust width as needed
+            height: 1.0, // Adjust height as needed
         };
 
         // Create sprite
@@ -107,8 +109,8 @@ fn main() {
             Some(Rectangle {
                 x: 0.0,
                 y: 0.0,
-                width: 1.0,
-                height: 1.0,
+                width: 1.0,  // Adjust width as needed
+                height: 1.0, // Adjust height as needed
             }),
         );
 
