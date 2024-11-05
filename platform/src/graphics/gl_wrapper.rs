@@ -453,8 +453,10 @@ impl Renderer2D {
     pub fn new() -> Result<Renderer2D, String> {
         // Initialize shader program
         let mut shader_program = ShaderProgram::new(
-            "platform/src/graphics/shaders/vertex_shader.glsl",
-            "platform/src/graphics/shaders/fragment_shader.glsl",
+            // "platform/src/graphics/shaders/vertex_shader.glsl",
+            // "platform/src/graphics/shaders/fragment_shader.glsl",
+            "shaders/vertex_shader.glsl",
+            "shaders/fragment_shader.glsl",
         )?;
 
         // Create VAO, VBO, and EBO
@@ -476,7 +478,14 @@ impl Renderer2D {
         VertexAttribute::pointer(0, 3, gl::FLOAT, gl::FALSE, stride, 0);
 
         VertexAttribute::enable(1);
-        VertexAttribute::pointer(1, 2, gl::FLOAT, gl::FALSE, stride, 3 * mem::size_of::<f32>());
+        VertexAttribute::pointer(
+            1,
+            2,
+            gl::FLOAT,
+            gl::FALSE,
+            stride,
+            3 * mem::size_of::<f32>(),
+        );
 
         Vao::unbind();
         BufferObject::unbind(gl::ARRAY_BUFFER);
@@ -530,11 +539,13 @@ impl Renderer2D {
                 Vector3::new(sprite.scale.x, sprite.scale.x / aspect_ratio, 1.0)
             };
 
-            let model = Matrix4::from_translation(Vector3::new(sprite.position.x, sprite.position.y, 0.0))
-                * Matrix4::from_angle_z(Rad(sprite.rotation))
-                * Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z);
+            let model =
+                Matrix4::from_translation(Vector3::new(sprite.position.x, sprite.position.y, 0.0))
+                    * Matrix4::from_angle_z(Rad(sprite.rotation))
+                    * Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z);
 
-            self.shader_program.set_uniform_mat4(&self.model_uniform, &model)?;
+            self.shader_program
+                .set_uniform_mat4(&self.model_uniform, &model)?;
 
             // Bind texture
             sprite.texture.bind(gl::TEXTURE0);
@@ -612,10 +623,10 @@ impl Sprite {
 // Constants for quad vertices and indices
 const QUAD_VERTICES: [f32; 20] = [
     // positions    // texture coords
-    0.5, 0.5, 0.0, 1.0, 1.0,  // top right
+    0.5, 0.5, 0.0, 1.0, 1.0, // top right
     0.5, -0.5, 0.0, 1.0, 0.0, // bottom right
     -0.5, -0.5, 0.0, 0.0, 0.0, // bottom left
-    -0.5, 0.5, 0.0, 0.0, 1.0,  // top left
+    -0.5, 0.5, 0.0, 0.0, 1.0, // top left
 ];
 
 const QUAD_INDICES: [u32; 6] = [0, 1, 3, 1, 2, 3];

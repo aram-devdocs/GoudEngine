@@ -278,6 +278,9 @@ dependencies = [
 name = "game"
 version = "0.1.0"
 dependencies = [
+ "bindgen",
+ "cc",
+ "csbindgen",
  "platform",
 ]
 
@@ -658,17 +661,6 @@ name = "sample_game"
 version = "0.1.0"
 dependencies = [
  "game",
-]
-
-[[package]]
-name = "sdk_bindings"
-version = "0.1.0"
-dependencies = [
- "bindgen",
- "cc",
- "csbindgen",
- "game",
- "platform",
 ]
 
 [[package]]

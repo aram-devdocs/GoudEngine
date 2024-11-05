@@ -5,3 +5,16 @@ edition = "2021"
 
 [dependencies]
 platform = { version = "0.1.0", path = "../platform" }
+
+
+
+[lib]
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[build-dependencies]
+cc = "1.0.79"
+bindgen = "0.64.0"
+csbindgen = "1.2.0"
+
+
