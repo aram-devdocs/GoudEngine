@@ -4,7 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cbindgen = "0.27.0"
+# cbindgen = "0.27.0"
+game = { path = "../game" }
+platform = { path = "../platform" }
+
 
 [lib]
 crate-type = ["cdylib"]

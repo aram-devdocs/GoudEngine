@@ -2,6 +2,9 @@ use std::ffi::c_void;
 // use std::mem;
 // use std::ptr;
 
+use game::Game;
+
+
 #[repr(C)]
 pub struct Point {
     pub x: f64,
@@ -28,7 +31,16 @@ pub extern "C" fn get_y(point: *const Point) -> f64 {
 pub extern "C" fn free_point(point: *mut c_void) {
     if !point.is_null() {
         unsafe {
-           let _ = Box::from_raw(point as *mut Point);
+            let _ = Box::from_raw(point as *mut Point);
         }
     }
+}
+
+// generate csbindgen bindings for game
+#[no_mangle]
+pub extern "C" fn create_game(window_builder: *const c_void) -> *mut Game {
+    let window_builder =
+        unsafe { Box::from_raw(window_builder as *mut platform::graphics::window::WindowBuilder) };
+    let game = Box::new(Game::new(*window_builder));
+    Box::into_raw(game)
 }

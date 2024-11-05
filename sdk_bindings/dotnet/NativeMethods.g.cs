@@ -28,6 +28,9 @@ namespace CsBindgen
         [DllImport(__DllName, EntryPoint = "free_point", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         internal static extern void free_point(void* point);
 
+        [DllImport(__DllName, EntryPoint = "create_game", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        internal static extern Game* create_game(void* window_builder);
+
 
     }
 
