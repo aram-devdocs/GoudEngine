@@ -1,5 +1,4 @@
-// game.rs
-mod platform;
+use crate::libs::platform;
 pub use platform::graphics::gl_wrapper::{clear, Rectangle, Renderer, Renderer2D, Sprite, Texture};
 use platform::logger;
 
