@@ -1,14 +1,12 @@
 mod game;
 
-use game::{GameSdk, WindowBuilder, Texture, Rectangle, Sprite};
-use std::cell::RefCell;
+use game::cgmath::Vector2;
+use game::{GameSdk, Rectangle, Sprite, Texture, WindowBuilder};
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
-use std::rc::Rc;
-use game::cgmath::Vector2;
 
 #[no_mangle]
-pub extern "C" fn game_new(width: u32, height: u32, title: *const c_char) -> *mut GameSdk {
+pub extern "C" fn game_create(width: u32, height: u32, title: *const c_char) -> *mut GameSdk {
     println!("Creating game instance");
     let title_str = unsafe { CStr::from_ptr(title).to_str().unwrap() };
     let title_cstring = CString::new(title_str).unwrap();
@@ -22,28 +20,36 @@ pub extern "C" fn game_new(width: u32, height: u32, title: *const c_char) -> *mu
 }
 
 #[no_mangle]
-pub extern "C" fn game_init(game: *mut GameSdk) {
+pub extern "C" fn game_initialize(game: *mut GameSdk) {
     let game = unsafe { &mut *game };
     game.init(|_| {});
 }
 
 #[no_mangle]
-pub extern "C" fn game_run(game: *mut GameSdk) {
+pub extern "C" fn game_start(game: *mut GameSdk) {
     let game = unsafe { &mut *game };
     game.run(|_| {});
 }
 
 #[no_mangle]
-pub extern "C" fn game_destroy(game: *mut GameSdk) {
+pub extern "C" fn game_terminate(game: *mut GameSdk) {
     if !game.is_null() {
         unsafe {
-            drop(Box::from_raw(game)); // Automatically drops the game instance
+            drop(Box::from_raw(game));
         }
     }
 }
 
 #[no_mangle]
-pub extern "C" fn game_add_sprite(game: *mut GameSdk, texture_path: *const c_char, x: f32, y: f32, scale_x: f32, scale_y: f32, rotation: f32) {
+pub extern "C" fn game_add_sprite(
+    game: *mut GameSdk,
+    texture_path: *const c_char,
+    x: f32,
+    y: f32,
+    scale_x: f32,
+    scale_y: f32,
+    rotation: f32,
+) {
     let game = unsafe { &mut *game };
     let texture_path_str = unsafe { CStr::from_ptr(texture_path).to_str().unwrap() };
     let texture = Texture::new(texture_path_str).expect("Failed to load texture");
@@ -67,7 +73,15 @@ pub extern "C" fn game_add_sprite(game: *mut GameSdk, texture_path: *const c_cha
 }
 
 #[no_mangle]
-pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, x: f32, y: f32, scale_x: f32, scale_y: f32, rotation: f32) {
+pub extern "C" fn game_update_sprite(
+    game: *mut GameSdk,
+    index: usize,
+    x: f32,
+    y: f32,
+    scale_x: f32,
+    scale_y: f32,
+    rotation: f32,
+) {
     let game = unsafe { &mut *game };
     let sprite = Sprite::new(
         game.renderer_2d.as_ref().unwrap().sprites[index]
@@ -90,12 +104,6 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, x: f32, y
         .update_sprite(index, sprite)
         .expect("Failed to update sprite");
 }
-
-// #[no_mangle]
-// pub extern "C" fn game_is_key_pressed(game: *mut GameSdk, key: i32) -> bool {
-//     let game = unsafe { &mut *game };
-//     game.window.input_handler.is_key_pressed(key.into())
-// }
 
 #[no_mangle]
 pub extern "C" fn game_close_window(game: *mut GameSdk) {
