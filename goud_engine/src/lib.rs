@@ -1,10 +1,12 @@
 mod game;
+mod types;
 
 use game::cgmath::Vector2;
 use game::{GameSdk, Rectangle, Sprite, Texture, WindowBuilder};
 use glfw::Key;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
+use types::SpriteData;
 
 #[no_mangle]
 pub extern "C" fn game_create(width: u32, height: u32, title: *const c_char) -> *mut GameSdk {
@@ -52,11 +54,7 @@ pub extern "C" fn game_terminate(game: *mut GameSdk) {
 pub extern "C" fn game_add_sprite(
     game: *mut GameSdk,
     texture_path: *const c_char,
-    x: f32,
-    y: f32,
-    scale_x: f32,
-    scale_y: f32,
-    rotation: f32,
+    data: SpriteData,
 ) -> usize {
     let game = unsafe { &mut *game };
     let texture_path_str = unsafe { CStr::from_ptr(texture_path).to_str().unwrap() };
@@ -71,9 +69,9 @@ pub extern "C" fn game_add_sprite(
 
     let sprite = Sprite::new(
         texture,
-        Vector2::new(x, y),
-        Vector2::new(scale_x, scale_y),
-        rotation,
+        Vector2::new(data.x, data.y),
+        Vector2::new(data.scale_x, data.scale_y),
+        data.rotation,
         Some(source_rect),
     );
 
@@ -86,20 +84,16 @@ pub extern "C" fn game_add_sprite(
 pub extern "C" fn game_update_sprite(
     game: *mut GameSdk,
     index: usize,
-    x: f32,
-    y: f32,
-    scale_x: f32,
-    scale_y: f32,
-    rotation: f32,
+    data: SpriteData,
 ) {
     let game = unsafe { &mut *game };
     let sprite = Sprite::new(
         game.renderer_2d.as_ref().unwrap().sprites[index]
             .texture
             .clone(),
-        Vector2::new(x, y),
-        Vector2::new(scale_x, scale_y),
-        rotation,
+        Vector2::new(data.x, data.y),
+        Vector2::new(data.scale_x, data.scale_y),
+        data.rotation,
         Some(Rectangle {
             x: 0.0,
             y: 0.0,
@@ -142,6 +136,18 @@ pub extern "C" fn game_should_close(game: *mut GameSdk) -> bool {
     let game = unsafe { &mut *game };
     game.window.should_close()
 }
+
+// Shared types
+// Types
+// TODO: https://github.com/aram-devdocs/GoudEngine/issues/5
+// public struct SpriteData
+// {
+//     public float X;
+//     public float Y;
+//     public float ScaleX;
+//     public float ScaleY;
+//     public float Rotation;
+// }
 
 // Opaque pointers for additional structures
 #[repr(C)]

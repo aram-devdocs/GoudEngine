@@ -1,5 +1,6 @@
 ﻿using System;
 
+using CsBindgen;
 class Program
 {
     static void Main(string[] args)
@@ -16,7 +17,7 @@ class Program
 
             // TODO: https://github.com/aram-devdocs/GoudEngine/issues/3
 
-            GoudGame.SpriteData backgroundData = new GoudGame.SpriteData { X = 0, Y = 0, ScaleX = 1, ScaleY = 1, Rotation = 0 };
+            SpriteData backgroundData = new SpriteData { x = 0, y = 0, scale_x = 1, scale_y = 1, rotation = 0 };
             // Background
             game.AddSprite("assets/sprites/background-day.png", backgroundData);
 

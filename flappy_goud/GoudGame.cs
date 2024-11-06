@@ -3,6 +3,9 @@ using CsBindgen;
 
 public class GoudGame
 {
+
+
+
     private unsafe GameSdk* gameInstance;
 
     public delegate void GameCallback();
@@ -81,7 +84,7 @@ public class GoudGame
         {
             fixed (byte* texturePathBytes = System.Text.Encoding.ASCII.GetBytes(texturePath + "\0"))
             {
-                return (int)NativeMethods.game_add_sprite(gameInstance, texturePathBytes, data.X, data.Y, data.ScaleX, data.ScaleY, data.Rotation);
+                return (int)NativeMethods.game_add_sprite(gameInstance, texturePathBytes, data);
             }
         }
     }
@@ -90,7 +93,7 @@ public class GoudGame
     {
         unsafe
         {
-            NativeMethods.game_update_sprite(gameInstance, (nuint)index, data.X, data.Y, data.ScaleX, data.ScaleY, data.Rotation);
+            NativeMethods.game_update_sprite(gameInstance, (nuint)index, data);
         }
     }
 
@@ -103,14 +106,5 @@ public class GoudGame
     }
 
 
-    // Types 
-    // TODO: https://github.com/aram-devdocs/GoudEngine/issues/5
-    public struct SpriteData
-    {
-        public float X;
-        public float Y;
-        public float ScaleX;
-        public float ScaleY;
-        public float Rotation;
-    }
+
 }

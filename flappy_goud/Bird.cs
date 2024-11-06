@@ -1,3 +1,4 @@
+using CsBindgen;
 public class Bird
 {
     private GoudGame game;
@@ -7,12 +8,12 @@ public class Bird
     // TODO: https://github.com/aram-devdocs/GoudEngine/issues/3
     private float yPosition = 0f; // Starting position
 
-    public GoudGame.SpriteData data;
+    public SpriteData data;
 
     public Bird(GoudGame game, float xPosition)
     {
         this.game = game;
-        this.data = new GoudGame.SpriteData { X = xPosition, Y = yPosition, ScaleX = 0.3f, ScaleY = 0.3f, Rotation = 0 };
+        this.data = new SpriteData { x = xPosition, y = yPosition, scale_x = 0.3f, scale_y = 0.3f, rotation = 0 };
         this.birdSpriteIndex = game.AddSprite("assets/sprites/bluebird-midflap.png", data);
 
     }

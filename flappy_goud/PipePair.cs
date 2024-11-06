@@ -1,20 +1,21 @@
+using CsBindgen;
 public class PipePair
 {
-    private GoudGame game;
+        private GoudGame game;
     private int topPipeIndex;
     private int bottomPipeIndex;
     private float xPosition;
     private float gapY;
 
-    private GoudGame.SpriteData topData;
-    private GoudGame.SpriteData bottomData;
+    private SpriteData topData;
+    private SpriteData bottomData;
     public PipePair(GoudGame game, float xPosition)
     {
         this.game = game;
         this.xPosition = xPosition;
         gapY = new Random().Next(150, 350); // Randomize the gap position
-        this.topData = new GoudGame.SpriteData { X = xPosition, Y = gapY, ScaleX = 1, ScaleY = 1, Rotation = 0 };
-        this.bottomData = new GoudGame.SpriteData { X = xPosition, Y = gapY, ScaleX = 1, ScaleY = 1, Rotation = 0 };
+        this.topData = new SpriteData { x = xPosition, y = gapY, scale_x = 1, scale_y = 1, rotation = 0 };
+        this.bottomData = new SpriteData { x = xPosition, y = gapY, scale_x = 1, scale_y = 1, rotation = 0 };
 
 
         topPipeIndex = game.AddSprite("assets/sprites/pipe-green.png", topData);
@@ -28,8 +29,8 @@ public class PipePair
         xPosition -= GameConstants.PipeSpeed;
 
         // Update the pipe's position
-        topData.X = xPosition;
-        bottomData.X = xPosition;
+        topData.x = xPosition;
+        bottomData.x = xPosition;
 
         game.UpdateSprite(topPipeIndex, topData);
         game.UpdateSprite(bottomPipeIndex, bottomData);

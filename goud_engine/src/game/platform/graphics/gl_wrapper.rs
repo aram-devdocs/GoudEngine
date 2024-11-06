@@ -637,7 +637,7 @@ pub struct Renderer3D {
 }
 
 impl Renderer3D {
-    /// Creates a new Renderer3D.
+    // Creates a new Renderer3D.
     // pub fn new() -> Result<Renderer3D, String> {
     //     // Initialize shaders, buffers, etc.
     //     Ok(Renderer3D {
