@@ -388,23 +388,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "game"
-version = "0.1.0"
-dependencies = [
- "bindgen",
- "cbindgen",
- "cc",
- "cgmath",
- "csbindgen",
- "env_logger",
- "gl",
- "glfw",
- "image",
- "log",
- "thiserror",
-]
-
-[[package]]
 name = "gif"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -461,6 +444,23 @@ name = "glob"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
+
+[[package]]
+name = "goud_engine"
+version = "0.1.0"
+dependencies = [
+ "bindgen",
+ "cbindgen",
+ "cc",
+ "cgmath",
+ "csbindgen",
+ "env_logger",
+ "gl",
+ "glfw",
+ "image",
+ "log",
+ "thiserror",
+]
 
 [[package]]
 name = "half"
@@ -802,13 +802,6 @@ name = "ryu"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
-
-[[package]]
-name = "sample_game"
-version = "0.1.0"
-dependencies = [
- "game",
-]
 
 [[package]]
 name = "serde"

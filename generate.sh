@@ -1,8 +1,8 @@
 #!/bin/bash
 # generate.sh
 
-echo "Warning: Deprecated in favor of csbindgen, which runs at build time and is configured in game/Cargo.toml and game/build.rs."
+echo "Warning: Deprecated in favor of csbindgen, which runs at build time and is configured in goud_engineCargo.toml and goud_enginebuild.rs."
 
 # echo "Generating C bindings for SDK..."
-# cbindgen --config game/cbindgen.toml --crate game --output game/bindings.h
-# echo "Bindings generated in game/bindings.h."
+# cbindgen --config goud_enginecbindgen.toml --crate game --output goud_enginebindings.h
+# echo "Bindings generated in goud_enginebindings.h."

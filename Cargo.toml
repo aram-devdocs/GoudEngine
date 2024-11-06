@@ -1,2 +1,2 @@
 [workspace]
-members = ["sample_game", "game"]
+members = ["goud_engine"]
