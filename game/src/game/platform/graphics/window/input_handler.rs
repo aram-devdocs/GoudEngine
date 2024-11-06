@@ -5,7 +5,7 @@ use std::collections::HashSet;
 pub struct InputHandler {
     keys_pressed: HashSet<Key>,
 }
-pub type KeyInput = glfw::Key;
+
 impl InputHandler {
     pub fn new() -> InputHandler {
         InputHandler {
@@ -28,7 +28,7 @@ impl InputHandler {
         }
     }
 
-    pub fn is_key_pressed(&self, key: KeyInput) -> bool {
+    pub fn is_key_pressed(&self, key: Key) -> bool {
         self.keys_pressed.contains(&key)
     }
 }

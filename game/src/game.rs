@@ -36,14 +36,11 @@ impl GameSdk {
         init_callback(self);
     }
 
-    pub extern "C" fn run<F>(&mut self, update_callback: F)
+    pub extern "C" fn start<F>(&mut self, start_callback: F)
     where
-        F: Fn(&mut GameSdk),
+        F: FnOnce(&mut GameSdk),
     {
-        while !self.window.should_close() {
-            self.update(&update_callback);
-        }
-        println!("Window closed!");
+        start_callback(self);
     }
 
     pub extern "C" fn update<F>(&mut self, update_callback: &F)
@@ -60,4 +57,9 @@ impl GameSdk {
         update_callback(self);
         self.window.update();
     }
+
+    pub fn should_close(&self) -> bool {
+        self.window.should_close()
+    }
+    
 }

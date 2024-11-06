@@ -11,7 +11,7 @@ public class GoudGame
     {
         unsafe
         {
-            fixed (byte* titleBytes = System.Text.Encoding.ASCII.GetBytes(title))
+            fixed (byte* titleBytes = System.Text.Encoding.ASCII.GetBytes(title + "\0"))
             {
                 gameInstance = NativeMethods.game_create(width, height, titleBytes);
             }
@@ -27,15 +27,32 @@ public class GoudGame
         }
     }
 
-    public void Run(GameCallback updateCallback)
+    public void Start(GameCallback startCallback)
     {
         unsafe
         {
-            // while (!NativeMethods.game_should_close(gameInstance))
-            // {
             NativeMethods.game_start(gameInstance);
-            updateCallback?.Invoke();
-            // }
+            startCallback?.Invoke();
+        }
+    }
+
+    public void Update(GameCallback updateCallback)
+    {
+        unsafe
+        {
+            while (!ShouldClose())
+            {
+                NativeMethods.game_update(gameInstance);
+                updateCallback?.Invoke();
+            }
+        }
+    }
+
+    public bool ShouldClose()
+    {
+        unsafe
+        {
+            return NativeMethods.game_should_close(gameInstance);
         }
     }
 
@@ -47,14 +64,30 @@ public class GoudGame
         }
     }
 
+    public bool IsKeyPressed(int keyCode)
+    {
+        unsafe
+        {
+            return NativeMethods.game_is_key_pressed(gameInstance, keyCode);
+        }
+    }
+
     public void AddSprite(string texturePath, float x, float y, float scaleX, float scaleY, float rotation)
     {
         unsafe
         {
-            fixed (byte* texturePathBytes = System.Text.Encoding.ASCII.GetBytes(texturePath))
+            fixed (byte* texturePathBytes = System.Text.Encoding.ASCII.GetBytes(texturePath + "\0"))
             {
                 NativeMethods.game_add_sprite(gameInstance, texturePathBytes, x, y, scaleX, scaleY, rotation);
             }
+        }
+    }
+
+    public void UpdateSprite(int index, float x, float y, float scaleX, float scaleY, float rotation)
+    {
+        unsafe
+        {
+            NativeMethods.game_update_sprite(gameInstance, (nuint)index, x, y, scaleX, scaleY, rotation);
         }
     }
 
@@ -62,7 +95,7 @@ public class GoudGame
     {
         unsafe
         {
-            NativeMethods.game_close_window(gameInstance);
+            NativeMethods.game_terminate(gameInstance);
         }
     }
 }

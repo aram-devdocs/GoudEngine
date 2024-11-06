@@ -2,8 +2,9 @@ mod game;
 
 use game::cgmath::Vector2;
 use game::{GameSdk, Rectangle, Sprite, Texture, WindowBuilder};
+use glfw::Key;
 use std::ffi::{CStr, CString};
-use std::os::raw::c_char;
+use std::os::raw::{c_char, c_int};
 
 #[no_mangle]
 pub extern "C" fn game_create(width: u32, height: u32, title: *const c_char) -> *mut GameSdk {
@@ -28,12 +29,19 @@ pub extern "C" fn game_initialize(game: *mut GameSdk) {
 #[no_mangle]
 pub extern "C" fn game_start(game: *mut GameSdk) {
     let game = unsafe { &mut *game };
-    game.run(|_| {});
+    game.start(|_| {});
+}
+
+#[no_mangle]
+pub extern "C" fn game_update(game: *mut GameSdk) {
+    let game = unsafe { &mut *game };
+    game.update(&|_| {});
 }
 
 #[no_mangle]
 pub extern "C" fn game_terminate(game: *mut GameSdk) {
     if !game.is_null() {
+        println!("Terminating game instance");
         unsafe {
             drop(Box::from_raw(game));
         }
@@ -106,16 +114,29 @@ pub extern "C" fn game_update_sprite(
 }
 
 #[no_mangle]
-pub extern "C" fn game_close_window(game: *mut GameSdk) {
-    let game = unsafe { &mut *game };
-    game.window.close_window();
+pub extern "C" fn game_is_key_pressed(game: *mut GameSdk, key_code: c_int) -> bool {
+    let game = unsafe { &*game };
+    let key = from_glfw_key_code(key_code);
+    game.window.is_key_pressed(key)
 }
 
-// Add sprite
+fn from_glfw_key_code(key_code: c_int) -> Key {
+    match key_code {
+        87 => Key::W, // W
+        65 => Key::A, // A
+        83 => Key::S, // S
+        68 => Key::D, // D
+        _ => Key::Unknown,
+    }
+}
 
+#[no_mangle]
+pub extern "C" fn game_should_close(game: *mut GameSdk) -> bool {
+    let game = unsafe { &mut *game };
+    game.window.should_close()
+}
 
-// TODO: This is inefficient.
-// Opaque pointer to the game instance
+// Opaque pointers for additional structures
 #[repr(C)]
 pub struct Glfw {
     _private: [u8; 0],

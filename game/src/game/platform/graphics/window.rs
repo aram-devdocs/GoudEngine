@@ -1,8 +1,8 @@
 // window.rs
 
-use glfw::{Action, Context, Key, WindowEvent};
-use std::sync::mpsc::Receiver;
-
+use glfw::Key;
+use glfw::{Action, Context, WindowEvent};
+use std::{collections::btree_map::Keys, sync::mpsc::Receiver};
 mod input_handler;
 use input_handler::InputHandler;
 
@@ -29,8 +29,6 @@ pub struct Window {
     pub input_handler: InputHandler,
 }
 
-// pub type KeyInput = _KeyInput;
-
 #[repr(C)]
 pub struct WindowBuilder {
     pub width: u32,
@@ -39,8 +37,6 @@ pub struct WindowBuilder {
 }
 
 impl Window {
-    /// Create new window with settings
-    #[no_mangle]
     pub fn new(data: WindowBuilder) -> Window {
         let WindowBuilder {
             width,
@@ -55,13 +51,10 @@ impl Window {
         };
 
         let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
-
-        // Set OpenGL version (e.g., 3.3 Core)
         glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
         glfw.window_hint(glfw::WindowHint::OpenGlProfile(
             glfw::OpenGlProfileHint::Core,
         ));
-        // **Add this line to set forward compatibility**
         glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
 
         let (mut window, events) = glfw
@@ -79,7 +72,6 @@ impl Window {
         }
     }
 
-    /// Load GL functions.
     pub fn init_gl(&mut self) {
         self.window_handle.make_current();
         gl::load_with(|s| self.window_handle.get_proc_address(s) as *const _);
@@ -89,32 +81,21 @@ impl Window {
         self.window_handle.should_close()
     }
 
-    /// Poll events and swap buffers.
     pub fn update(&mut self) {
         self.process_events();
         self.glfw.poll_events();
         self.window_handle.swap_buffers();
-
-        for (_, event) in glfw::flush_messages(&self.events) {
-            self.input_handler.handle_event(&event);
-        }
     }
 
-    pub fn close_window(&mut self) {
-        self.window_handle.set_should_close(true);
+    pub fn is_key_pressed(&self, key: Key) -> bool {
+        self.input_handler.is_key_pressed(key)
     }
 
     fn process_events(&mut self) {
         for (_, event) in glfw::flush_messages(&self.events) {
-            match event {
-                glfw::WindowEvent::FramebufferSize(width, height) => {
-                    // Make sure the viewport matches the new window dimensions.
-                    unsafe { gl::Viewport(0, 0, width, height) }
-                }
-                glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
-                    self.window_handle.set_should_close(true)
-                }
-                _ => {}
+            self.input_handler.handle_event(&event);
+            if let WindowEvent::Key(Key::Escape, _, Action::Press, _) = event {
+                self.window_handle.set_should_close(true);
             }
         }
     }
