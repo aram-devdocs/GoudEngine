@@ -5,7 +5,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        GoudGame game = new GoudGame(800, 600, "Flappy Bird");
+        GoudGame game = new GoudGame(288, 512, "Flappy Bird");
 
         GameManager gameManager;
 
