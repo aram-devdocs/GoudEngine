@@ -4,7 +4,7 @@ public class Bird
     public int birdSpriteIndex;
     private float velocity = 0;
 
-    // TODO: Fix once we have proper x y calibrations
+    // TODO: https://github.com/aram-devdocs/GoudEngine/issues/3
     private float yPosition = 0f; // Starting position
 
     public GoudGame.SpriteData data;
@@ -20,7 +20,7 @@ public class Bird
     public void Update()
     {
 
-        // TODO: Gravity is being applied too quickly. Is this because of game fps? We want to normalize that, then check
+        // TODO: https://github.com/aram-devdocs/GoudEngine/issues/4
         // Apply gravity
         // velocity += GameConstants.Gravity;
 

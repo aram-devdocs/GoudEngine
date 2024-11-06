@@ -132,7 +132,7 @@ fn from_glfw_key_code(key_code: c_int) -> Key {
         81 => Key::Q,      // Q
         32 => Key::Space,  // Space
         27 => Key::Escape, // Escape
-        // TODO: Add more keys
+        // TODO: https://github.com/aram-devdocs/GoudEngine/issues/9
         _ => Key::Unknown,
     }
 }

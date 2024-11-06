@@ -14,7 +14,7 @@ class Program
 
 
 
-            // TODO: Fix once we have proper x y calibrations
+            // TODO: https://github.com/aram-devdocs/GoudEngine/issues/3
 
             GoudGame.SpriteData backgroundData = new GoudGame.SpriteData { X = 0, Y = 0, ScaleX = 1, ScaleY = 1, Rotation = 0 };
             // Background
