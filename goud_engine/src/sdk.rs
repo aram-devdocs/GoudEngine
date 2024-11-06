@@ -1,7 +1,7 @@
 use crate::game::cgmath::Vector2;
 use crate::game::{GameSdk, WindowBuilder};
 use crate::libs::platform::graphics::rendering::{Rectangle, Sprite, Texture};
-use crate::types::SpriteData;
+use crate::types::{SpriteData, UpdateResponseData};
 use glfw::Key;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
@@ -33,9 +33,12 @@ pub extern "C" fn game_start(game: *mut GameSdk) {
 }
 
 #[no_mangle]
-pub extern "C" fn game_update(game: *mut GameSdk) {
+pub extern "C" fn game_update(game: *mut GameSdk) -> UpdateResponseData {
     let game = unsafe { &mut *game };
     game.update(&|_| {});
+    UpdateResponseData {
+        delta_time: game.window.delta_time,
+    }
 }
 
 #[no_mangle]
