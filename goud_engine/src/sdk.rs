@@ -1,9 +1,9 @@
 use crate::game::cgmath::Vector2;
 use crate::game::{GameSdk, Rectangle, Sprite, Texture, WindowBuilder};
+use crate::types::SpriteData;
 use glfw::Key;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
-use crate::types::SpriteData;
 
 #[no_mangle]
 pub extern "C" fn game_create(width: u32, height: u32, title: *const c_char) -> *mut GameSdk {
