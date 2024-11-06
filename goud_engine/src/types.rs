@@ -6,8 +6,8 @@ pub struct SpriteData {
     pub y: f32,
     pub scale_x: Option<f32>,
     pub scale_y: Option<f32>,
-    pub px_x: Option<f32>,
-    pub px_y: Option<f32>,
+    pub dimmension_x: Option<f32>,
+    pub dimmension_y: Option<f32>,
     pub rotation: f32,
 }
 

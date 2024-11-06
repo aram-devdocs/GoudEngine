@@ -545,16 +545,12 @@ impl Renderer2D {
         self.vao.bind();
 
         for sprite in &self.sprites {
-            // TODO: While we fixed the top left corner, the rotation and scaling functionality is now broken
             // Use positions and scales directly
             let position = Vector3::new(sprite.position.x, sprite.position.y, 0.0);
-            let mut dimmensions = Vector3::new(sprite.pxy.x, sprite.pxy.y, 1.0);
-            dimmensions.x *= sprite.scale.x;
-            dimmensions.y *= sprite.scale.y;
+            let dimmensions = Vector3::new(sprite.dimmensions.x, sprite.dimmensions.y, 1.0);
 
             // Build the model matrix
             let model = Matrix4::from_translation(position)
-                // * Matrix4::from_angle_z(Rad(sprite.rotation))
                 * Matrix4::from_nonuniform_scale(dimmensions.x, dimmensions.y, dimmensions.z);
 
             self.shader_program
@@ -609,7 +605,7 @@ impl Renderer for Renderer2D {
 pub struct Sprite {
     pub position: Vector2<f32>,
     pub scale: Vector2<f32>,
-    pub pxy: Vector2<f32>,
+    pub dimmensions: Vector2<f32>,
     pub rotation: f32,
     pub texture: Rc<Texture>,
     pub source_rect: Option<Rectangle>,
@@ -621,14 +617,14 @@ impl Sprite {
         texture: Rc<Texture>,
         position: Vector2<f32>,
         scale: Vector2<f32>,
-        pxy: Vector2<f32>,
+        dimmensions: Vector2<f32>,
         rotation: f32,
         source_rect: Option<Rectangle>,
     ) -> Sprite {
         Sprite {
             position,
             scale,
-            pxy,
+            dimmensions,
             rotation,
             texture,
             source_rect,

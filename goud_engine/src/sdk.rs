@@ -70,8 +70,8 @@ pub extern "C" fn game_add_sprite(
         Vector2::new(data.x, data.y),
         Vector2::new(data.scale_x.unwrap_or(1.0), data.scale_y.unwrap_or(1.0)),
         Vector2::new(
-            data.px_x.unwrap_or(texture_clone.width() as f32),
-            data.px_y.unwrap_or(texture_clone.height() as f32),
+            data.dimmension_x.unwrap_or(texture_clone.width() as f32),
+            data.dimmension_y.unwrap_or(texture_clone.height() as f32),
         ),
         data.rotation,
         Some(source_rect),
@@ -95,8 +95,8 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, data: Spr
         Vector2::new(data.x, data.y),
         Vector2::new(data.scale_x.unwrap_or(1.0), data.scale_y.unwrap_or(1.0)),
         Vector2::new(
-            data.px_x.unwrap_or(texture_clone.width() as f32),
-            data.px_y.unwrap_or(texture_clone.height() as f32),
+            data.dimmension_x.unwrap_or(texture_clone.width() as f32),
+            data.dimmension_y.unwrap_or(texture_clone.height() as f32),
         ),
         data.rotation,
         Some(Rectangle {
