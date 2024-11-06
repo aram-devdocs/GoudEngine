@@ -1,10 +1,11 @@
 ﻿using System;
 
+using CsBindgen;
 class Program
 {
     static void Main(string[] args)
     {
-        GoudGame game = new GoudGame(800, 600, "Flappy Bird");
+        GoudGame game = new GoudGame(288, 512, "Flappy Bird");
 
         GameManager gameManager;
 
@@ -16,7 +17,15 @@ class Program
 
             // TODO: https://github.com/aram-devdocs/GoudEngine/issues/3
 
-            GoudGame.SpriteData backgroundData = new GoudGame.SpriteData { X = 0, Y = 0, ScaleX = 1, ScaleY = 1, Rotation = 0 };
+            SpriteData backgroundData = new SpriteData
+            {
+                x = 0,
+                y = 0,
+
+                // TODO: Passing values here breaks the game
+                // px_x = 800, // Set to window width
+                // px_y = 600, // Set to window height
+            };
             // Background
             game.AddSprite("assets/sprites/background-day.png", backgroundData);
 
