@@ -1,6 +1,6 @@
 # GoudEngine
 
-GoudEngine is a game engine written in Rust, designed to be used with C# applications. It provides a set of tools and libraries for creating 2D and 3D* games.
+GoudEngine is a game engine written in Rust, designed to be used with C# applications. It provides a set of tools and libraries for creating 2D and 3D\* games.
 
 ## Features
 
@@ -50,7 +50,6 @@ The Rust library provides the core functionality of the game engine. The main en
 Example:
 
 ```rust
-// filepath: /Users/aramhammoudeh/dev/game/GoudEngine/goud_engine/src/lib.rs
 mod game;
 
 use game::cgmath::Vector2;
@@ -84,7 +83,6 @@ The C# integration allows you to use the Rust game engine in your C# application
 Example
 
 ```csharp
-// filepath: /Users/aramhammoudeh/dev/game/GoudEngine/flappy_goud/Program.cs
 using System;
 
 class Program
