@@ -31,7 +31,11 @@ impl GameSdk {
         F: FnOnce(&mut GameSdk),
     {
         self.window.init_gl();
-        self.renderer_2d = Some(Renderer2D::new().expect("Failed to create Renderer2D"));
+        let window_width = self.window.width;
+        let window_height = self.window.height;
+        self.renderer_2d = Some(
+            Renderer2D::new(window_width, window_height).expect("Failed to create Renderer2D"),
+        );
         init_callback(self);
     }
 

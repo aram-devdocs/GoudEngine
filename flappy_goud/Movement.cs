@@ -5,7 +5,11 @@ public class Movement
 {
     private GoudGame game;
     private Dictionary<int, SpriteData> sprites;
-    private float speed = 0.05f;
+    private float speed = 7f;
+    private float rotation = 0.1f;
+
+    private float scale = 2f;
+
 
     public Movement(GoudGame gameInstance)
     {
@@ -17,7 +21,6 @@ public class Movement
 
     {
 
-        // sprites[index] = new SpriteData { X = x, Y = y, ScaleX = scaleX, ScaleY = scaleY, Rotation = rotation };
         sprites[index] = data;
         Console.WriteLine("Added sprite with index " + index);
     }
@@ -30,25 +33,25 @@ public class Movement
 
             // Check if WASD keys are pressed
             // TODO: https://github.com/aram-devdocs/GoudEngine/issues/6
-            if (game.IsKeyPressed(87)) data.y += speed; // W
-            if (game.IsKeyPressed(83)) data.y -= speed; // S
+            if (game.IsKeyPressed(87)) data.y -= speed; // W
+            if (game.IsKeyPressed(83)) data.y += speed; // S
             if (game.IsKeyPressed(65)) data.x -= speed; // A
             if (game.IsKeyPressed(68)) data.x += speed; // D
 
-            if (game.IsKeyPressed(81)) data.rotation += speed; // Q
-            if (game.IsKeyPressed(69)) data.rotation -= speed; // E
+            if (game.IsKeyPressed(81)) data.rotation += rotation; // Q
+            if (game.IsKeyPressed(69)) data.rotation -= rotation; // E
 
             // scale z x
             if (game.IsKeyPressed(90))
             {
-                data.scale_x += speed;
-                data.scale_y += speed;
+                data.scale_x += scale;
+                data.scale_y += scale;
             }
 
             if (game.IsKeyPressed(88))
             {
-                data.scale_x -= speed;
-                data.scale_y -= speed;
+                data.scale_x -= scale;
+                data.scale_y -= scale;
             }
 
             sprites[key] = data;

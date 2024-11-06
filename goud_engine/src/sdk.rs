@@ -64,10 +64,15 @@ pub extern "C" fn game_add_sprite(
         height: 1.0,
     };
 
+    let texture_clone = texture.clone();
     let sprite = Sprite::new(
         texture,
         Vector2::new(data.x, data.y),
-        Vector2::new(data.scale_x, data.scale_y),
+        Vector2::new(data.scale_x.unwrap_or(1.0), data.scale_y.unwrap_or(1.0)),
+        Vector2::new(
+            data.px_x.unwrap_or(texture_clone.width() as f32),
+            data.px_y.unwrap_or(texture_clone.height() as f32),
+        ),
         data.rotation,
         Some(source_rect),
     );
@@ -80,12 +85,19 @@ pub extern "C" fn game_add_sprite(
 #[no_mangle]
 pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, data: SpriteData) {
     let game = unsafe { &mut *game };
+    let renderer = game.renderer_2d.as_ref().unwrap();
+    let sprite_ref = &renderer.sprites[index];
+    let texture = sprite_ref.texture.clone();
+
+    let texture_clone = texture.clone();
     let sprite = Sprite::new(
-        game.renderer_2d.as_ref().unwrap().sprites[index]
-            .texture
-            .clone(),
+        texture,
         Vector2::new(data.x, data.y),
-        Vector2::new(data.scale_x, data.scale_y),
+        Vector2::new(data.scale_x.unwrap_or(1.0), data.scale_y.unwrap_or(1.0)),
+        Vector2::new(
+            data.px_x.unwrap_or(texture_clone.width() as f32),
+            data.px_y.unwrap_or(texture_clone.height() as f32),
+        ),
         data.rotation,
         Some(Rectangle {
             x: 0.0,

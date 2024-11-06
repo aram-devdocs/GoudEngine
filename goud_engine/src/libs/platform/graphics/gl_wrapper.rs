@@ -233,6 +233,7 @@ impl ShaderProgram {
                 return Err(error);
             }
         }
+
         Ok(shader)
     }
 
@@ -450,10 +451,11 @@ pub struct Renderer2D {
 
 impl Renderer2D {
     /// Creates a new Renderer2D.
-    pub fn new() -> Result<Renderer2D, String> {
+    pub fn new(window_width: u32, window_height: u32) -> Result<Renderer2D, String> {
         // Initialize shader program
-        let mut shader_program =
+
         // TODO: https://github.com/aram-devdocs/GoudEngine/issues/10
+        let mut shader_program =
             ShaderProgram::new("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl")?;
 
         // Create VAO, VBO, and EBO
@@ -491,9 +493,24 @@ impl Renderer2D {
         // Set up uniforms
         shader_program.bind();
         shader_program.create_uniform("model")?;
+        shader_program.create_uniform("projection")?;
         shader_program.create_uniform("texture1")?;
         shader_program.create_uniform("sourceRect")?;
         shader_program.set_uniform_int("texture1", 0)?;
+
+        // Create projection matrix
+        use cgmath::{ortho, Matrix4};
+        let projection = ortho(
+            0.0,
+            window_width as f32,
+            window_height as f32,
+            0.0,
+            -1.0,
+            1.0,
+        );
+
+        // Set the projection matrix
+        shader_program.set_uniform_mat4("projection", &projection)?;
 
         Ok(Renderer2D {
             shader_program,
@@ -528,18 +545,17 @@ impl Renderer2D {
         self.vao.bind();
 
         for sprite in &self.sprites {
-            // Calculate model matrix
-            let aspect_ratio = sprite.texture.width() as f32 / sprite.texture.height() as f32;
-            let scale = if sprite.scale.x / sprite.scale.y > aspect_ratio {
-                Vector3::new(sprite.scale.y * aspect_ratio, sprite.scale.y, 1.0)
-            } else {
-                Vector3::new(sprite.scale.x, sprite.scale.x / aspect_ratio, 1.0)
-            };
+            // TODO: While we fixed the top left corner, the rotation and scaling functionality is now broken
+            // Use positions and scales directly
+            let position = Vector3::new(sprite.position.x, sprite.position.y, 0.0);
+            let mut dimmensions = Vector3::new(sprite.pxy.x, sprite.pxy.y, 1.0);
+            dimmensions.x *= sprite.scale.x;
+            dimmensions.y *= sprite.scale.y;
 
-            let model =
-                Matrix4::from_translation(Vector3::new(sprite.position.x, sprite.position.y, 0.0))
-                    * Matrix4::from_angle_z(Rad(sprite.rotation))
-                    * Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z);
+            // Build the model matrix
+            let model = Matrix4::from_translation(position)
+                // * Matrix4::from_angle_z(Rad(sprite.rotation))
+                * Matrix4::from_nonuniform_scale(dimmensions.x, dimmensions.y, dimmensions.z);
 
             self.shader_program
                 .set_uniform_mat4(&self.model_uniform, &model)?;
@@ -593,6 +609,7 @@ impl Renderer for Renderer2D {
 pub struct Sprite {
     pub position: Vector2<f32>,
     pub scale: Vector2<f32>,
+    pub pxy: Vector2<f32>,
     pub rotation: f32,
     pub texture: Rc<Texture>,
     pub source_rect: Option<Rectangle>,
@@ -604,12 +621,14 @@ impl Sprite {
         texture: Rc<Texture>,
         position: Vector2<f32>,
         scale: Vector2<f32>,
+        pxy: Vector2<f32>,
         rotation: f32,
         source_rect: Option<Rectangle>,
     ) -> Sprite {
         Sprite {
             position,
             scale,
+            pxy,
             rotation,
             texture,
             source_rect,
@@ -620,12 +639,11 @@ impl Sprite {
 // Constants for quad vertices and indices
 const QUAD_VERTICES: [f32; 20] = [
     // positions    // texture coords
-    0.5, 0.5, 0.0, 1.0, 1.0, // top right
-    0.5, -0.5, 0.0, 1.0, 0.0, // bottom right
-    -0.5, -0.5, 0.0, 0.0, 0.0, // bottom left
-    -0.5, 0.5, 0.0, 0.0, 1.0, // top left
+    1.0, 1.0, 0.0, 1.0, 1.0, // top right
+    1.0, 0.0, 0.0, 1.0, 0.0, // bottom right
+    0.0, 0.0, 0.0, 0.0, 0.0, // bottom left
+    0.0, 1.0, 0.0, 0.0, 1.0, // top left
 ];
-
 const QUAD_INDICES: [u32; 6] = [0, 1, 3, 1, 2, 3];
 
 /// Renderer3D

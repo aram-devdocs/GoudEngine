@@ -27,6 +27,8 @@ pub struct Window {
     pub window_handle: Box<glfw::Window>,
     pub events: Receiver<(f64, WindowEvent)>,
     pub input_handler: InputHandler,
+    pub width: u32,
+    pub height: u32,
 }
 
 #[repr(C)]
@@ -69,6 +71,8 @@ impl Window {
             window_handle: Box::new(window),
             events,
             input_handler: InputHandler::new(),
+            width,
+            height,
         }
     }
 

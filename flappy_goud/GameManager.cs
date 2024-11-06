@@ -15,7 +15,7 @@ public class GameManager
     public GameManager(GoudGame game)
     {
         this.game = game;
-        bird = new Bird(game, 0);
+        bird = new Bird(game, 400);
         movement = new Movement(game);
         movement.AddSprite(bird.birdSpriteIndex, bird.data);
         Console.WriteLine("Game Manager Initialized!");

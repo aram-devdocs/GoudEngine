@@ -6,14 +6,14 @@ public class Bird
     private float velocity = 0;
 
     // TODO: https://github.com/aram-devdocs/GoudEngine/issues/3
-    private float yPosition = 0f; // Starting position
+    private float yPosition = 300f; // Starting position
 
     public SpriteData data;
 
     public Bird(GoudGame game, float xPosition)
     {
         this.game = game;
-        this.data = new SpriteData { x = xPosition, y = yPosition, scale_x = 0.3f, scale_y = 0.3f, rotation = 0 };
+        this.data = new SpriteData { x = xPosition, y = yPosition, scale_x = 1.0f, scale_y = 1.0f, rotation = 0 };
         this.birdSpriteIndex = game.AddSprite("assets/sprites/bluebird-midflap.png", data);
 
     }
