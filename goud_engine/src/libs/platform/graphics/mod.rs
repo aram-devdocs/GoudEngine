@@ -1,3 +1,3 @@
-pub mod gl_wrapper;
+pub mod rendering;
 pub mod window;
 pub use cgmath;

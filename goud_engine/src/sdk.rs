@@ -1,5 +1,6 @@
 use crate::game::cgmath::Vector2;
-use crate::game::{GameSdk, Rectangle, Sprite, Texture, WindowBuilder};
+use crate::game::{GameSdk, WindowBuilder};
+use crate::libs::platform::graphics::rendering::{Rectangle, Sprite, Texture};
 use crate::types::SpriteData;
 use glfw::Key;
 use std::ffi::{CStr, CString};

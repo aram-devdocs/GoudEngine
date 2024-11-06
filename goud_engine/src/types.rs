@@ -30,3 +30,20 @@ pub struct Receiver {
 pub struct HashSet {
     _private: [u8; 0],
 }
+
+#[repr(C)]
+pub struct ShaderProgram {
+    _private: [u8; 0],
+}
+
+// vao vec
+
+#[repr(C)]
+pub struct Vao {
+    _private: [u8; 0],
+}
+
+#[repr(C)]
+pub struct Vec {
+    _private: [u8; 0],
+}
