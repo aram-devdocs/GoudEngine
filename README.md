@@ -84,7 +84,7 @@ Example
 
 ```csharp
 using System;
-
+using CsBindGen
 class Program
 {
     static void Main(string[] args)

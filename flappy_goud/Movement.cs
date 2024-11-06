@@ -38,21 +38,23 @@ public class Movement
             if (game.IsKeyPressed(65)) data.x -= speed; // A
             if (game.IsKeyPressed(68)) data.x += speed; // D
 
-            if (game.IsKeyPressed(81)) data.rotation += rotation; // Q
-            if (game.IsKeyPressed(69)) data.rotation -= rotation; // E
 
-            // scale z x
-            if (game.IsKeyPressed(90))
-            {
-                data.scale_x += scale;
-                data.scale_y += scale;
-            }
+            // TODO: Rotation and scaling are not working
+            // if (game.IsKeyPressed(81)) data.rotation += rotation; // Q
+            // if (game.IsKeyPressed(69)) data.rotation -= rotation; // E
 
-            if (game.IsKeyPressed(88))
-            {
-                data.scale_x -= scale;
-                data.scale_y -= scale;
-            }
+            // // scale z x
+            // if (game.IsKeyPressed(90))
+            // {
+            //     data.scale_x += scale;
+            //     data.scale_y += scale;
+            // }
+
+            // if (game.IsKeyPressed(88))
+            // {
+            //     data.scale_x -= scale;
+            //     data.scale_y -= scale;
+            // }
 
             sprites[key] = data;
             // TODO: https://github.com/aram-devdocs/GoudEngine/issues/7

@@ -23,8 +23,8 @@ class Program
                 y = 0,
 
                 // TODO: Passing values here breaks the game
-                // px_x = 800, // Set to window width
-                // px_y = 600, // Set to window height
+                // dimmension_x = 800, // Set to window width
+                // dimmension_y = 600, // Set to window height
             };
             // Background
             game.AddSprite("assets/sprites/background-day.png", backgroundData);

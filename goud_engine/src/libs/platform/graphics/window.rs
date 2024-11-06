@@ -65,8 +65,7 @@ impl Window {
 
         window.set_framebuffer_size_polling(true);
         window.set_key_polling(true);
-        window.set_size_polling(true); // Add size polling
-
+        window.set_size_polling(true);
         Window {
             glfw,
             window_handle: Box::new(window),
@@ -97,7 +96,6 @@ impl Window {
         self.input_handler.is_key_pressed(key)
     }
 
-
     // TODO: Is this going to add a lot of overhead?
     fn maintain_aspect_ratio(&mut self) {
         let (current_width, current_height) = self.window_handle.get_size();
@@ -119,7 +117,7 @@ impl Window {
             if let WindowEvent::Key(Key::Escape, _, Action::Press, _) = event {
                 self.window_handle.set_should_close(true);
             }
-            if let WindowEvent::Size(width, height) = event {
+            if let WindowEvent::Size(_width, _height) = event {
                 self.maintain_aspect_ratio(); // Maintain aspect ratio on resize
             }
         }
