@@ -72,14 +72,14 @@ public class GoudGame
         }
     }
 
-    public void AddSprite(string texturePath, SpriteData data)
+    public int AddSprite(string texturePath, SpriteData data)
 
     {
         unsafe
         {
             fixed (byte* texturePathBytes = System.Text.Encoding.ASCII.GetBytes(texturePath + "\0"))
             {
-                NativeMethods.game_add_sprite(gameInstance, texturePathBytes, data.X, data.Y, data.ScaleX, data.ScaleY, data.Rotation);
+                return (int)NativeMethods.game_add_sprite(gameInstance, texturePathBytes, data.X, data.Y, data.ScaleX, data.ScaleY, data.Rotation);
             }
         }
     }

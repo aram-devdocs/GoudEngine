@@ -57,7 +57,7 @@ pub extern "C" fn game_add_sprite(
     scale_x: f32,
     scale_y: f32,
     rotation: f32,
-) {
+) -> usize {
     let game = unsafe { &mut *game };
     let texture_path_str = unsafe { CStr::from_ptr(texture_path).to_str().unwrap() };
     let texture = Texture::new(texture_path_str).expect("Failed to load texture");
@@ -78,6 +78,8 @@ pub extern "C" fn game_add_sprite(
     );
 
     game.renderer_2d.as_mut().unwrap().add_sprite(sprite);
+
+    game.renderer_2d.as_ref().unwrap().sprites.len() - 1
 }
 
 #[no_mangle]

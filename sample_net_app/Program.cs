@@ -4,40 +4,34 @@ class Program
 {
     static void Main(string[] args)
     {
-        GoudGame game = new GoudGame(800, 600, "Hello, World!");
+        GoudGame game = new GoudGame(800, 600, "Flappy Bird");
 
-        Movement movement = new Movement(game);
+        GameManager gameManager;
 
         game.Initialize(() =>
         {
+            Console.WriteLine("Game Initialized!");
 
-            GoudGame.SpriteData data = new GoudGame.SpriteData { X = 0, Y = 0, ScaleX = 0.2f, ScaleY = 0.2f, Rotation = 0 };
-            // Add a sprite and get its index (assuming index is 0)
-            game.AddSprite("../sample_game/assets/bluebird-midflap.png", data);
+            // update the game manager on line 9
 
-            // Initialize movement
-            movement.AddSprite(0, data);
+            GoudGame.SpriteData backgroundData = new GoudGame.SpriteData { X = 0, Y = 0, ScaleX = 1, ScaleY = 1, Rotation = 0 };
+            // Background
+            game.AddSprite("assets/sprites/background-day.png", backgroundData);
+
         });
+
+        gameManager = new GameManager(game);
+
 
         game.Start(() =>
         {
-            Console.WriteLine("Game started.");
+            Console.WriteLine("Game Started!");
         });
 
         game.Update(() =>
         {
-            // Update movement logic
-            movement.Update();
 
-            // Handle input (e.g., close window on Escape key)
-            if (Console.KeyAvailable)
-            {
-                var key = Console.ReadKey(true);
-                if (key.Key == ConsoleKey.Escape)
-                {
-                    game.Close();
-                }
-            }
+            gameManager.Update();
         });
 
         game.Terminate();
