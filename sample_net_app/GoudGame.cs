@@ -72,22 +72,23 @@ public class GoudGame
         }
     }
 
-    public void AddSprite(string texturePath, float x, float y, float scaleX, float scaleY, float rotation)
+    public void AddSprite(string texturePath, SpriteData data)
+
     {
         unsafe
         {
             fixed (byte* texturePathBytes = System.Text.Encoding.ASCII.GetBytes(texturePath + "\0"))
             {
-                NativeMethods.game_add_sprite(gameInstance, texturePathBytes, x, y, scaleX, scaleY, rotation);
+                NativeMethods.game_add_sprite(gameInstance, texturePathBytes, data.X, data.Y, data.ScaleX, data.ScaleY, data.Rotation);
             }
         }
     }
 
-    public void UpdateSprite(int index, float x, float y, float scaleX, float scaleY, float rotation)
+    public void UpdateSprite(int index, SpriteData data)
     {
         unsafe
         {
-            NativeMethods.game_update_sprite(gameInstance, (nuint)index, x, y, scaleX, scaleY, rotation);
+            NativeMethods.game_update_sprite(gameInstance, (nuint)index, data.X, data.Y, data.ScaleX, data.ScaleY, data.Rotation);
         }
     }
 
@@ -97,5 +98,16 @@ public class GoudGame
         {
             NativeMethods.game_terminate(gameInstance);
         }
+    }
+
+
+    // Types TODO move to separate file
+    public struct SpriteData
+    {
+        public float X;
+        public float Y;
+        public float ScaleX;
+        public float ScaleY;
+        public float Rotation;
     }
 }

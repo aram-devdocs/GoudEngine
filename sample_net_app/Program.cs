@@ -10,11 +10,13 @@ class Program
 
         game.Initialize(() =>
         {
+
+            GoudGame.SpriteData data = new GoudGame.SpriteData { X = 0, Y = 0, ScaleX = 0.2f, ScaleY = 0.2f, Rotation = 0 };
             // Add a sprite and get its index (assuming index is 0)
-            game.AddSprite("../sample_game/assets/bluebird-midflap.png", 0, 0, 1, 1, 0);
+            game.AddSprite("../sample_game/assets/bluebird-midflap.png", data);
 
             // Initialize movement
-            movement.AddSprite(0, 0, 0, 1, 1, 0);
+            movement.AddSprite(0, data);
         });
 
         game.Start(() =>
