@@ -138,11 +138,11 @@ impl VertexAttribute {
     }
 
     /// Disables a vertex attribute array.
-    pub fn disable(index: GLuint) {
-        unsafe {
-            gl::DisableVertexAttribArray(index);
-        }
-    }
+    // pub fn disable(index: GLuint) {
+    //     unsafe {
+    //         gl::DisableVertexAttribArray(index);
+    //     }
+    // }
 
     /// Defines an array of generic vertex attribute data.
     pub fn pointer(
@@ -274,11 +274,11 @@ impl ShaderProgram {
     }
 
     /// Deactivates any shader program.
-    pub fn unbind() {
-        unsafe {
-            gl::UseProgram(0);
-        }
-    }
+    // pub fn unbind() {
+    //     unsafe {
+    //         gl::UseProgram(0);
+    //     }
+    // }
 
     /// Creates a uniform variable.
     pub fn create_uniform(&mut self, name: &str) -> Result<(), String> {
@@ -638,12 +638,12 @@ pub struct Renderer3D {
 
 impl Renderer3D {
     /// Creates a new Renderer3D.
-    pub fn new() -> Result<Renderer3D, String> {
-        // Initialize shaders, buffers, etc.
-        Ok(Renderer3D {
-            // Initialization
-        })
-    }
+    // pub fn new() -> Result<Renderer3D, String> {
+    //     // Initialize shaders, buffers, etc.
+    //     Ok(Renderer3D {
+    //         // Initialization
+    //     })
+    // }
 
     // Additional methods for 3D rendering
 }

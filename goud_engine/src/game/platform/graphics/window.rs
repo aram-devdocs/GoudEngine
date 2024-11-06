@@ -2,7 +2,7 @@
 
 use glfw::Key;
 use glfw::{Action, Context, WindowEvent};
-use std::{collections::btree_map::Keys, sync::mpsc::Receiver};
+use std::sync::mpsc::Receiver;
 mod input_handler;
 use input_handler::InputHandler;
 
