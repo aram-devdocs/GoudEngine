@@ -13,7 +13,8 @@ public class PipePair
     {
         this.game = game;
         this.xPosition = xPosition;
-        gapY = new Random().Next(150, 350); // Randomize the gap position
+        // TODO: align the gap with the center of the screen
+        gapY = new Random().Next(-10, 10); // Randomize the gap position
         this.topData = new SpriteData { x = xPosition, y = gapY, scale_x = 1, scale_y = 1, rotation = 0 };
         this.bottomData = new SpriteData { x = xPosition, y = gapY, scale_x = 1, scale_y = 1, rotation = 0 };
 

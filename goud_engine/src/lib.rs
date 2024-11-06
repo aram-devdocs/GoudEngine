@@ -81,11 +81,7 @@ pub extern "C" fn game_add_sprite(
 }
 
 #[no_mangle]
-pub extern "C" fn game_update_sprite(
-    game: *mut GameSdk,
-    index: usize,
-    data: SpriteData,
-) {
+pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, data: SpriteData) {
     let game = unsafe { &mut *game };
     let sprite = Sprite::new(
         game.renderer_2d.as_ref().unwrap().sprites[index]
@@ -101,7 +97,7 @@ pub extern "C" fn game_update_sprite(
             height: 1.0,
         }),
     );
-
+ 
     game.renderer_2d
         .as_mut()
         .unwrap()
@@ -126,6 +122,8 @@ fn from_glfw_key_code(key_code: c_int) -> Key {
         81 => Key::Q,      // Q
         32 => Key::Space,  // Space
         27 => Key::Escape, // Escape
+        90 => Key::Z,      // Z
+        88 => Key::X,      // X
         // TODO: https://github.com/aram-devdocs/GoudEngine/issues/9
         _ => Key::Unknown,
     }

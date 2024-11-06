@@ -35,6 +35,22 @@ public class Movement
             if (game.IsKeyPressed(65)) data.x -= speed; // A
             if (game.IsKeyPressed(68)) data.x += speed; // D
 
+            if (game.IsKeyPressed(81)) data.rotation += speed; // Q
+            if (game.IsKeyPressed(69)) data.rotation -= speed; // E
+
+            // scale z x
+            if (game.IsKeyPressed(90))
+            {
+                data.scale_x += speed;
+                data.scale_y += speed;
+            }
+
+            if (game.IsKeyPressed(88))
+            {
+                data.scale_x -= speed;
+                data.scale_y -= speed;
+            }
+
             sprites[key] = data;
             // TODO: https://github.com/aram-devdocs/GoudEngine/issues/7
             game.UpdateSprite(key, data);
