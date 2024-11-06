@@ -3,14 +3,16 @@ name = "goud_engine"
 version = "0.1.0"
 edition = "2021"
 
+
+# TODO: https://github.com/aram-devdocs/GoudEngine/issues/8
 [dependencies]
 cc = "1.0.79"
 bindgen = "0.64.0"
 csbindgen = "1.2.0"
 cgmath = "0.18.0"
-env_logger = "0.9.0" # TODO: Update to 0.11.5
+env_logger = "0.9.0"
 gl = "0.14.0"
-glfw = "0.45.0" # TODO: Update to 0.58.0
+glfw = "0.45.0"
 log = "0.4.17"
 thiserror = "1.0.31"
 image = "0.24"
@@ -22,16 +24,5 @@ crate-type = ["cdylib"]
 path = "src/lib.rs"
 
 [build-dependencies]
-# cc = "1.0.79"
-# bindgen = "0.64.0"
 csbindgen = "1.2.0"
-# cgmath = "0.18.0"
-# env_logger = "0.9.0" # TODO: Update to 0.11.5
-# gl = "0.14.0"
-# glfw = "0.45.0" # TODO: Update to 0.58.0
-# log = "0.4.17"
-# thiserror = "1.0.31"
-# image = "0.24"
 cbindgen = "0.27.0"
-
-

@@ -28,14 +28,14 @@ public class Movement
             GoudGame.SpriteData data = sprites[key];
 
             // Check if WASD keys are pressed
-            // TODO: Get current key pressed rather than checking all keys, as this is inefficient and expensive for interop calls
+            // TODO: https://github.com/aram-devdocs/GoudEngine/issues/6
             if (game.IsKeyPressed(87)) data.Y += speed; // W
             if (game.IsKeyPressed(83)) data.Y -= speed; // S
             if (game.IsKeyPressed(65)) data.X -= speed; // A
             if (game.IsKeyPressed(68)) data.X += speed; // D
 
             sprites[key] = data;
-            // TODO: Batch updates and send them to the game engine rather than updating each sprite individually, as interop calls can be expensive to the Rust engine
+            // TODO: https://github.com/aram-devdocs/GoudEngine/issues/7
             game.UpdateSprite(key, data);
         }
     }

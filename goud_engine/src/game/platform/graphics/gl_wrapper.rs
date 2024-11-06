@@ -453,7 +453,7 @@ impl Renderer2D {
     pub fn new() -> Result<Renderer2D, String> {
         // Initialize shader program
         let mut shader_program =
-        // TODO: We want to take the shaders as input from the c# code, as this implementation requires them to have a shaders/ folder in the root of their c# app for it to work
+        // TODO: https://github.com/aram-devdocs/GoudEngine/issues/10
             ShaderProgram::new("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl")?;
 
         // Create VAO, VBO, and EBO

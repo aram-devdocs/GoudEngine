@@ -49,7 +49,7 @@ public class GameManager
             }
 
 
-            // TODO: Fix once we have proper x y calibrations
+            // TODO: https://github.com/aram-devdocs/GoudEngine/issues/3
 
             // Check for collision
             // if (pipe.CheckCollision(bird.GetYPosition()))
@@ -63,7 +63,7 @@ public class GameManager
         pipes.RemoveAll(pipe => pipe.IsOffScreen());
 
 
-        // TODO: Fix once we have proper x y calibrations
+        // TODO: https://github.com/aram-devdocs/GoudEngine/issues/3
 
         // Check if bird hit the ground
         // if (bird.HasHitGround())

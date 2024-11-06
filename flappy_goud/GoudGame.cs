@@ -14,7 +14,7 @@ public class GoudGame
             fixed (byte* titleBytes = System.Text.Encoding.ASCII.GetBytes(title + "\0"))
             {
 
-            
+
                 gameInstance = NativeMethods.game_create(width, height, titleBytes);
             }
         }
@@ -103,7 +103,8 @@ public class GoudGame
     }
 
 
-    // Types TODO move to separate file
+    // Types 
+    // TODO: https://github.com/aram-devdocs/GoudEngine/issues/5
     public struct SpriteData
     {
         public float X;
