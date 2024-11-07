@@ -7,8 +7,6 @@ use std::time::{Duration, Instant};
 mod input_handler;
 use input_handler::InputHandler;
 
-const TARGET_FPS: u32 = 120;
-const FRAME_DURATION: Duration = Duration::from_millis(1000 / TARGET_FPS as u64);
 
 /// # Window
 ///
@@ -38,6 +36,7 @@ pub struct Window {
     elapsed_time: Duration,
     fps: u32,
     last_frame_time: Instant,
+    target_fps: u32,
 }
 
 #[repr(C)]
@@ -45,6 +44,7 @@ pub struct WindowBuilder {
     pub width: u32,
     pub height: u32,
     pub title: *const std::ffi::c_char,
+    pub target_fps: u32,
 }
 
 impl Window {
@@ -53,6 +53,7 @@ impl Window {
             width,
             height,
             title,
+            target_fps,
         } = data;
 
         let title = unsafe {
@@ -88,6 +89,7 @@ impl Window {
             elapsed_time: Duration::new(0, 0),
             fps: 0,
             last_frame_time: Instant::now(), // Set initial frame time
+            target_fps,
         }
     }
 
@@ -113,6 +115,7 @@ impl Window {
         self.glfw.poll_events();
         self.window_handle.swap_buffers();
         self.maintain_aspect_ratio();
+        self.glfw.set_swap_interval(glfw::SwapInterval::Sync(0)); // Disable VSync
 
         // FPS counter
         self.frame_count += 1;
@@ -128,10 +131,10 @@ impl Window {
             ));
         }
 
-        // FPS control: sleep if the frame finished early
-        if frame_time < FRAME_DURATION {
-            sleep(FRAME_DURATION - frame_time);
-        }
+        let frame_duration = Duration::from_millis(1000 / self.target_fps as u64);
+
+        let frame_end = Instant::now();
+        while Instant::now().duration_since(frame_end) < frame_duration {}
     }
 
     pub fn is_key_pressed(&self, key: Key) -> bool {

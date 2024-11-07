@@ -7,7 +7,12 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
 
 #[no_mangle]
-pub extern "C" fn game_create(width: u32, height: u32, title: *const c_char) -> *mut GameSdk {
+pub extern "C" fn game_create(
+    width: u32,
+    height: u32,
+    title: *const c_char,
+    target_fps: u32,
+) -> *mut GameSdk {
     println!("Creating game instance");
     let title_str = unsafe { CStr::from_ptr(title).to_str().unwrap() };
     let title_cstring = CString::new(title_str).unwrap();
@@ -15,6 +20,7 @@ pub extern "C" fn game_create(width: u32, height: u32, title: *const c_char) -> 
         width,
         height,
         title: title_cstring.as_ptr(),
+        target_fps,
     };
     let game = GameSdk::new(builder);
     Box::into_raw(Box::new(game))

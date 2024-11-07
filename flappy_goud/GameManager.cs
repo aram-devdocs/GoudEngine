@@ -27,15 +27,10 @@ public class GameManager
         {
             x = 0,
             y = 0,
-
-            // TODO: Passing values here breaks the game
-            // dimmension_x = 800, // Set to window width
-            // dimmension_y = 600, // Set to window height
         };
-        // Background
+
         game.AddSprite("assets/sprites/background-day.png", backgroundData);
         bird.Initialize();
-
     }
 
     public void Start()
@@ -46,9 +41,8 @@ public class GameManager
         pipeSpawnTimer = 0;
     }
 
-    public void Update()
+    public void Update(float deltaTime)
     {
-
         // If R is pressed, restart the game
         if (game.IsKeyPressed(82))
         {
@@ -56,14 +50,13 @@ public class GameManager
             return;
         }
 
+        // Update Bird Movement with deltaTime
+        bird.Update(deltaTime);
 
-        // Update Bird Movement
-        bird.Update();
-
-        // Check for collisions
+        // Update Pipes with deltaTime and check for collisions
         foreach (var pipe in pipes)
         {
-            pipe.Update();
+            pipe.Update(deltaTime);
             if (bird.CollidesWith(pipe))
             {
                 ResetGame();
@@ -72,7 +65,7 @@ public class GameManager
         }
 
         // Spawn new pipes
-        pipeSpawnTimer += GameConstants.DeltaTime;
+        pipeSpawnTimer += deltaTime;
         if (pipeSpawnTimer > GameConstants.PipeSpawnInterval)
         {
             pipeSpawnTimer = 0;

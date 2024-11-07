@@ -2,9 +2,9 @@
 
 public class Movement
 {
-    public float Velocity { get; private set; }
-    private float gravity;
-    private float jumpStrength;
+    public float Velocity { get; set; }
+    private readonly float gravity;
+    private readonly float jumpStrength;
 
     public Movement(float gravity, float jumpStrength)
     {
@@ -13,13 +13,18 @@ public class Movement
         this.Velocity = 0;
     }
 
-    public void ApplyGravity()
+    public void ApplyGravity(float deltaTime)
     {
-        Velocity += gravity * GameConstants.DeltaTime;
+        Velocity += gravity * deltaTime * GameConstants.TargetFPS;
     }
 
-    public void Jump()
+    public void Jump(float deltaTime)
     {
-        Velocity = jumpStrength;
+        Velocity = jumpStrength * GameConstants.TargetFPS;
+    }
+
+    public void UpdatePosition(ref float positionY, float deltaTime)
+    {
+        positionY += Velocity * deltaTime;
     }
 }

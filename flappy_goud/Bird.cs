@@ -1,13 +1,13 @@
 // Bird.cs
 
 using System;
-
 using CsBindgen;
+
 public class Bird
 {
-    private GoudGame game;
+    private readonly GoudGame game;
+    private readonly Movement movement;
     private int spriteIndex;
-    private Movement movement;
     public float X { get; private set; }
     public float Y { get; private set; }
 
@@ -32,19 +32,22 @@ public class Bird
     {
         X = GameConstants.ScreenWidth / 4;
         Y = GameConstants.ScreenHeight / 2;
-        movement = new Movement(GameConstants.Gravity, GameConstants.JumpStrength);
+        movement.Velocity = 0;
     }
 
-    public void Update()
+    public void Update(float deltaTime)
     {
-        if (game.IsKeyPressed(32)) // Space bar
+        if (game.IsKeyPressed(32)) // Space bar for jump
         {
-            movement.Jump();
+            movement.Jump(deltaTime);
         }
-        movement.ApplyGravity();
-        Y += movement.Velocity;
 
-        // Update the bird sprite position
+        movement.ApplyGravity(deltaTime);
+        float yPosition = Y;
+        movement.UpdatePosition(ref yPosition, deltaTime);
+        Y = yPosition;
+
+        // Update the bird's position in the game
         game.UpdateSprite(spriteIndex, new SpriteData { x = X, y = Y });
     }
 

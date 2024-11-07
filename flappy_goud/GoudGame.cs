@@ -6,11 +6,15 @@ public class GoudGame
 
 
 
+
     private unsafe GameSdk* gameInstance;
 
     public delegate void GameCallback();
 
-    public GoudGame(uint width, uint height, string title)
+
+    public UpdateResponseData UpdateResponseData { get; private set; }
+
+    public GoudGame(uint width, uint height, string title, uint TargetFPS = 60)
     {
         unsafe
         {
@@ -18,7 +22,7 @@ public class GoudGame
             {
 
 
-                gameInstance = NativeMethods.game_create(width, height, titleBytes);
+                gameInstance = NativeMethods.game_create(width, height, titleBytes, target_fps: TargetFPS);
             }
         }
     }
@@ -47,7 +51,7 @@ public class GoudGame
         {
             while (!ShouldClose())
             {
-                NativeMethods.game_update(gameInstance);
+                UpdateResponseData = NativeMethods.game_update(gameInstance);
                 updateCallback?.Invoke();
             }
         }

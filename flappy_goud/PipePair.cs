@@ -1,11 +1,11 @@
 // Pipe.cs
-using CsBindgen;
-using System;
 
+using System;
+using CsBindgen;
 
 public class Pipe
 {
-    private GoudGame game;
+    private readonly GoudGame game;
     private int topSpriteIndex;
     private int bottomSpriteIndex;
     public float X { get; private set; }
@@ -17,43 +17,41 @@ public class Pipe
         this.X = GameConstants.ScreenWidth;
         this.GapY = new Random().Next(GameConstants.PipeGap, (int)GameConstants.ScreenHeight - GameConstants.PipeGap);
 
-        // Top Pipe
         topSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteData
         {
             x = X,
-            y = 0,
+            y = GapY - GameConstants.PipeGap - GameConstants.PipeWidth,
         });
 
-        // Bottom Pipe
         bottomSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteData
         {
             x = X,
             y = GapY + GameConstants.PipeGap,
         });
-
-
-
-
     }
 
-    public void Update()
+    public void Update(float deltaTime)
     {
+        X -= GameConstants.PipeSpeed * deltaTime * GameConstants.TargetFPS;
 
+        // Update top and bottom pipe positions
+        game.UpdateSprite(topSpriteIndex, new SpriteData { x = X });
+        game.UpdateSprite(bottomSpriteIndex, new SpriteData { x = X });
     }
 
     public bool IsOffScreen()
     {
-        return false;
+        return X + GameConstants.PipeWidth < 0;
     }
 
     public bool Intersects(float birdX, float birdY, int birdWidth, int birdHeight)
     {
-        return false;
+        return (birdX < X + GameConstants.PipeWidth && birdX + birdWidth > X &&
+                (birdY < GapY || birdY + birdHeight > GapY + GameConstants.PipeGap));
     }
 
     public bool IsPassed(float birdX)
     {
-        return false;
-
+        return birdX > X + GameConstants.PipeWidth;
     }
 }
