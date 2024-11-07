@@ -1,3 +1,5 @@
+pub type EntityId = u32;
+
 #[repr(C)]
 
 // Data Transfer Objects
@@ -6,8 +8,8 @@ pub struct SpriteData {
     pub y: f32,
     pub scale_x: Option<f32>,
     pub scale_y: Option<f32>,
-    pub dimmension_x: Option<f32>,
-    pub dimmension_y: Option<f32>,
+    pub dimension_x: Option<f32>,
+    pub dimension_y: Option<f32>,
     pub rotation: f32,
 }
 
