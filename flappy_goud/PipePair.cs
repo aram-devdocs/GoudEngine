@@ -1,56 +1,59 @@
+// Pipe.cs
 using CsBindgen;
-public class PipePair
+using System;
+
+
+public class Pipe
 {
     private GoudGame game;
-    private int topPipeIndex;
-    private int bottomPipeIndex;
-    private float xPosition;
-    private float gapY;
+    private int topSpriteIndex;
+    private int bottomSpriteIndex;
+    public float X { get; private set; }
+    public float GapY { get; private set; }
 
-    private SpriteData topData;
-    private SpriteData bottomData;
-    public PipePair(GoudGame game, float xPosition)
+    public Pipe(GoudGame game)
     {
         this.game = game;
-        this.xPosition = xPosition;
-        // TODO: align the gap with the center of the screen
-        gapY = new Random().Next(100, 500);
+        this.X = GameConstants.ScreenWidth;
+        this.GapY = new Random().Next(GameConstants.PipeGap, (int)GameConstants.ScreenHeight - GameConstants.PipeGap);
 
-        this.topData = new SpriteData { x = xPosition, y = gapY, rotation = 0 };
-        this.bottomData = new SpriteData { x = xPosition, y = gapY, rotation = 180 };
+        // Top Pipe
+        topSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteData
+        {
+            x = X,
+            y = 0,
+        });
+
+        // Bottom Pipe
+        bottomSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteData
+        {
+            x = X,
+            y = GapY + GameConstants.PipeGap,
+        });
 
 
-        topPipeIndex = game.AddSprite("assets/sprites/pipe-green.png", topData);
-        bottomPipeIndex = game.AddSprite("assets/sprites/pipe-green.png", bottomData);
 
-        Console.WriteLine("Added pipe pair with top index " + topPipeIndex + " and bottom index " + bottomPipeIndex);
+
     }
 
     public void Update()
     {
-        xPosition -= GameConstants.PipeSpeed;
-
-        // Update the pipe's position
-        topData.x = xPosition;
-        bottomData.x = xPosition;
-
-        game.UpdateSprite(topPipeIndex, topData);
-        game.UpdateSprite(bottomPipeIndex, bottomData);
 
     }
 
     public bool IsOffScreen()
     {
-        return xPosition < -50;
+        return false;
     }
 
-    public bool CheckCollision(float birdY)
+    public bool Intersects(float birdX, float birdY, int birdWidth, int birdHeight)
     {
-        return birdY < gapY - GameConstants.PipeGap || birdY > gapY + GameConstants.PipeGap;
+        return false;
     }
 
-    public float GetXPosition()
+    public bool IsPassed(float birdX)
     {
-        return xPosition;
+        return false;
+
     }
 }
