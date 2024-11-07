@@ -1,56 +1,57 @@
-using CsBindgen;
-public class PipePair
-{
-    private GoudGame game;
-    private int topPipeIndex;
-    private int bottomPipeIndex;
-    private float xPosition;
-    private float gapY;
+// Pipe.cs
 
-    private SpriteData topData;
-    private SpriteData bottomData;
-    public PipePair(GoudGame game, float xPosition)
+using System;
+using CsBindgen;
+
+public class Pipe
+{
+    private readonly GoudGame game;
+    private int topSpriteIndex;
+    private int bottomSpriteIndex;
+    public float X { get; private set; }
+    public float GapY { get; private set; }
+
+    public Pipe(GoudGame game)
     {
         this.game = game;
-        this.xPosition = xPosition;
-        // TODO: align the gap with the center of the screen
-        gapY = new Random().Next(100, 500);
+        this.X = GameConstants.ScreenWidth;
+        this.GapY = new Random().Next(GameConstants.PipeGap, (int)GameConstants.ScreenHeight - GameConstants.PipeGap);
 
-        this.topData = new SpriteData { x = xPosition, y = gapY, rotation = 0 };
-        this.bottomData = new SpriteData { x = xPosition, y = gapY, rotation = 180 };
+        topSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteData
+        {
+            x = X,
+            y = GapY - GameConstants.PipeGap - GameConstants.PipeWidth,
+        });
 
-
-        topPipeIndex = game.AddSprite("assets/sprites/pipe-green.png", topData);
-        bottomPipeIndex = game.AddSprite("assets/sprites/pipe-green.png", bottomData);
-
-        Console.WriteLine("Added pipe pair with top index " + topPipeIndex + " and bottom index " + bottomPipeIndex);
+        bottomSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteData
+        {
+            x = X,
+            y = GapY + GameConstants.PipeGap,
+        });
     }
 
-    public void Update()
+    public void Update(float deltaTime)
     {
-        xPosition -= GameConstants.PipeSpeed;
+        X -= GameConstants.PipeSpeed * deltaTime * GameConstants.TargetFPS;
 
-        // Update the pipe's position
-        topData.x = xPosition;
-        bottomData.x = xPosition;
-
-        game.UpdateSprite(topPipeIndex, topData);
-        game.UpdateSprite(bottomPipeIndex, bottomData);
-
+        // Update top and bottom pipe positions
+        game.UpdateSprite(topSpriteIndex, new SpriteData { x = X });
+        game.UpdateSprite(bottomSpriteIndex, new SpriteData { x = X });
     }
 
     public bool IsOffScreen()
     {
-        return xPosition < -50;
+        return X + GameConstants.PipeWidth < 0;
     }
 
-    public bool CheckCollision(float birdY)
+    public bool Intersects(float birdX, float birdY, int birdWidth, int birdHeight)
     {
-        return birdY < gapY - GameConstants.PipeGap || birdY > gapY + GameConstants.PipeGap;
+        return (birdX < X + GameConstants.PipeWidth && birdX + birdWidth > X &&
+                (birdY < GapY || birdY + birdHeight > GapY + GameConstants.PipeGap));
     }
 
-    public float GetXPosition()
+    public bool IsPassed(float birdX)
     {
-        return xPosition;
+        return birdX > X + GameConstants.PipeWidth;
     }
 }

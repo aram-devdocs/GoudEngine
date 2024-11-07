@@ -1,81 +1,86 @@
+// GameManager.cs
+
 using System;
 using System.Collections.Generic;
+using CsBindgen;
 
 public class GameManager
 {
     private GoudGame game;
     private Bird bird;
-    private List<PipePair> pipes = new List<PipePair>();
-    private int score = 0;
-
-    private float pipeSpawnTimer = 0.0f;
-
-    private Movement movement;
+    private List<Pipe> pipes;
+    private int score;
+    private float pipeSpawnTimer;
 
     public GameManager(GoudGame game)
     {
         this.game = game;
-        bird = new Bird(game, 80);
-        movement = new Movement(game);
-        movement.AddSprite(bird.birdSpriteIndex, bird.data);
-        Console.WriteLine("Game Manager Initialized!");
-
-
+        this.bird = new Bird(game);
+        this.pipes = new List<Pipe>();
+        this.score = 0;
+        this.pipeSpawnTimer = 0;
     }
 
-    public void Update()
+    public void Initialize()
     {
-        bird.Update();
-        movement.Update();
-
-        // Spawn pipes every 2 seconds
-        pipeSpawnTimer += GameConstants.PipeSpeed;
-        if (pipeSpawnTimer > 200)
+        SpriteData backgroundData = new SpriteData
         {
-            pipes.Add(new PipePair(game, 800)); // Start from the right
-            pipeSpawnTimer = 0;
+            x = 0,
+            y = 0,
+        };
+
+        game.AddSprite("assets/sprites/background-day.png", backgroundData);
+        bird.Initialize();
+    }
+
+    public void Start()
+    {
+        bird.Reset();
+        pipes.Clear();
+        score = 0;
+        pipeSpawnTimer = 0;
+    }
+
+    public void Update(float deltaTime)
+    {
+        // If R is pressed, restart the game
+        if (game.IsKeyPressed(82))
+        {
+            ResetGame();
+            return;
         }
 
-        // Update pipes and check for collisions
+        // Update Bird Movement with deltaTime
+        bird.Update(deltaTime);
+
+        // Update Pipes with deltaTime and check for collisions
         foreach (var pipe in pipes)
         {
-            pipe.Update();
-
-            // Check if the bird passed the pipe
-            if (pipe.GetXPosition() < 90 && !pipe.CheckCollision(bird.GetYPosition()))
+            pipe.Update(deltaTime);
+            if (bird.CollidesWith(pipe))
             {
-                score++;
-                Console.WriteLine("Score: " + score);
+                ResetGame();
+                return;
             }
-
-
-            // TODO: https://github.com/aram-devdocs/GoudEngine/issues/3
-
-            // Check for collision
-            // if (pipe.CheckCollision(bird.GetYPosition()))
-            // {
-            //     EndGame();
-            //     return;
-            // }
         }
 
-        // Remove offscreen pipes
+        // Spawn new pipes
+        pipeSpawnTimer += deltaTime;
+        if (pipeSpawnTimer > GameConstants.PipeSpawnInterval)
+        {
+            pipeSpawnTimer = 0;
+            pipes.Add(new Pipe(game));
+        }
+
+        // Remove off-screen pipes
         pipes.RemoveAll(pipe => pipe.IsOffScreen());
 
-
-        // TODO: https://github.com/aram-devdocs/GoudEngine/issues/3
-
-        // Check if bird hit the ground
-        // if (bird.HasHitGround())
-        // {
-        //     EndGame();
-        // }
+        // Update Score
+        score += bird.PassedPipes(pipes);
     }
 
-    private void EndGame()
+    private void ResetGame()
     {
-        Console.WriteLine("Game Over!");
-        Console.WriteLine("Final Score: " + score);
-        game.Terminate();
+        Start(); // Restart the game
     }
 }

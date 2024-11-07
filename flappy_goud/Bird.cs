@@ -1,56 +1,71 @@
+// Bird.cs
+
+using System;
 using CsBindgen;
+
 public class Bird
 {
-    private GoudGame game;
-    public int birdSpriteIndex;
-    private float velocity = 0;
+    private readonly GoudGame game;
+    private readonly Movement movement;
+    private int spriteIndex;
+    public float X { get; private set; }
+    public float Y { get; private set; }
 
-    // TODO: https://github.com/aram-devdocs/GoudEngine/issues/3
-    private float yPosition = 300f; // Starting position
-
-    public SpriteData data;
-
-    public Bird(GoudGame game, float xPosition)
+    public Bird(GoudGame game)
     {
         this.game = game;
-        this.data = new SpriteData { x = xPosition, y = yPosition, scale_x = 1.0f, scale_y = 1.0f, rotation = 0 };
-        this.birdSpriteIndex = game.AddSprite("assets/sprites/bluebird-midflap.png", data);
-
+        this.movement = new Movement(GameConstants.Gravity, GameConstants.JumpStrength);
+        this.X = GameConstants.ScreenWidth / 4;
+        this.Y = GameConstants.ScreenHeight / 2;
     }
 
-    public void Update()
+    public void Initialize()
     {
-
-        // TODO: https://github.com/aram-devdocs/GoudEngine/issues/4
-        // Apply gravity
-        // velocity += GameConstants.Gravity;
-
-        // // Jump if spacebar is pressed
-        // if (game.IsKeyPressed(32)) // Spacebar
-        // {
-        //     velocity = GameConstants.JumpStrength;
-        // }
-
-
-        // yPosition += velocity;
-
-        // // update data
-        // data.Y = yPosition;
-        // data.Rotation = velocity * 5; // Rotate the bird based on velocity
-
-
-
-        // // Update the bird's position
-        // game.UpdateSprite(birdSpriteIndex, data);
+        spriteIndex = game.AddSprite("assets/sprites/bluebird-midflap.png", new SpriteData
+        {
+            x = X,
+            y = Y,
+        });
     }
 
-    public bool HasHitGround()
+    public void Reset()
     {
-        return yPosition >= GameConstants.GroundYPosition;
+        X = GameConstants.ScreenWidth / 4;
+        Y = GameConstants.ScreenHeight / 2;
+        movement.Velocity = 0;
     }
 
-    public float GetYPosition()
+    public void Update(float deltaTime)
     {
-        return yPosition;
+        if (game.IsKeyPressed(32)) // Space bar for jump
+        {
+            movement.Jump(deltaTime);
+        }
+
+        movement.ApplyGravity(deltaTime);
+        float yPosition = Y;
+        movement.UpdatePosition(ref yPosition, deltaTime);
+        Y = yPosition;
+
+        // Update the bird's position in the game
+        game.UpdateSprite(spriteIndex, new SpriteData { x = X, y = Y });
+    }
+
+    public bool CollidesWith(Pipe pipe)
+    {
+        return pipe.Intersects(X, Y, GameConstants.BirdWidth, GameConstants.BirdHeight);
+    }
+
+    public int PassedPipes(List<Pipe> pipes)
+    {
+        int count = 0;
+        foreach (var pipe in pipes)
+        {
+            if (pipe.IsPassed(X))
+            {
+                count++;
+            }
+        }
+        return count;
     }
 }

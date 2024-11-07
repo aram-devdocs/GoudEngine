@@ -1,5 +1,8 @@
 use crate::libs::platform;
-pub use platform::graphics::gl_wrapper::{clear, Rectangle, Renderer, Renderer2D, Sprite, Texture};
+use crate::libs::platform::graphics::rendering::clear;
+use crate::libs::platform::graphics::rendering::renderer2d::Renderer2D;
+use crate::libs::platform::graphics::rendering::Renderer;
+// pub use platform::graphics::gl_wrapper::{clear, Rectangle, Renderer, Renderer2D, Sprite, Texture};
 use platform::logger;
 
 pub use platform::graphics::cgmath;

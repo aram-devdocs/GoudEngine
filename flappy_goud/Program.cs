@@ -1,49 +1,18 @@
-﻿using System;
+﻿// Program.cs
 
-using CsBindgen;
-class Program
+using System;
+
+public class Program
 {
     static void Main(string[] args)
     {
-        GoudGame game = new GoudGame(288, 512, "Flappy Bird");
-
-        GameManager gameManager;
-
-        game.Initialize(() =>
-        {
-            Console.WriteLine("Game Initialized!");
+        GoudGame game = new GoudGame(GameConstants.ScreenWidth, GameConstants.ScreenHeight, "Flappy Bird Clone", GameConstants.TargetFPS);
+        GameManager gameManager = new GameManager(game);
 
 
-
-            // TODO: https://github.com/aram-devdocs/GoudEngine/issues/3
-
-            SpriteData backgroundData = new SpriteData
-            {
-                x = 0,
-                y = 0,
-
-                // TODO: Passing values here breaks the game
-                // dimmension_x = 800, // Set to window width
-                // dimmension_y = 600, // Set to window height
-            };
-            // Background
-            game.AddSprite("assets/sprites/background-day.png", backgroundData);
-
-        });
-
-        gameManager = new GameManager(game);
-
-
-        game.Start(() =>
-        {
-            Console.WriteLine("Game Started!");
-        });
-
-        game.Update(() =>
-        {
-
-            gameManager.Update();
-        });
+        game.Initialize(() => gameManager.Initialize());
+        game.Start(() => gameManager.Start());
+        game.Update(() => gameManager.Update(game.UpdateResponseData.delta_time));
 
         game.Terminate();
     }

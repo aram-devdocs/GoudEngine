@@ -1,10 +1,12 @@
-// window.rs
-
 use glfw::Key;
 use glfw::{Action, Context, WindowEvent};
 use std::sync::mpsc::Receiver;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
+
 mod input_handler;
 use input_handler::InputHandler;
+
 
 /// # Window
 ///
@@ -20,7 +22,7 @@ use input_handler::InputHandler;
 /// }
 /// ```
 ///
-
+// window.rs
 #[repr(C)]
 pub struct Window {
     pub glfw: glfw::Glfw,
@@ -29,6 +31,12 @@ pub struct Window {
     pub input_handler: InputHandler,
     pub width: u32,
     pub height: u32,
+    pub delta_time: f32, // Delta time in seconds
+    frame_count: u32,
+    elapsed_time: Duration,
+    fps: u32,
+    last_frame_time: Instant,
+    target_fps: u32,
 }
 
 #[repr(C)]
@@ -36,6 +44,7 @@ pub struct WindowBuilder {
     pub width: u32,
     pub height: u32,
     pub title: *const std::ffi::c_char,
+    pub target_fps: u32,
 }
 
 impl Window {
@@ -44,6 +53,7 @@ impl Window {
             width,
             height,
             title,
+            target_fps,
         } = data;
 
         let title = unsafe {
@@ -66,6 +76,7 @@ impl Window {
         window.set_framebuffer_size_polling(true);
         window.set_key_polling(true);
         window.set_size_polling(true);
+
         Window {
             glfw,
             window_handle: Box::new(window),
@@ -73,6 +84,12 @@ impl Window {
             input_handler: InputHandler::new(),
             width,
             height,
+            delta_time: 0.0, // Initialize delta time as 0
+            frame_count: 0,
+            elapsed_time: Duration::new(0, 0),
+            fps: 0,
+            last_frame_time: Instant::now(), // Set initial frame time
+            target_fps,
         }
     }
 
@@ -86,10 +103,38 @@ impl Window {
     }
 
     pub fn update(&mut self) {
+        let current_time = Instant::now();
+        let frame_time = current_time.duration_since(self.last_frame_time); // Calculate frame time
+        self.last_frame_time = current_time;
+
+        // Update delta time in seconds
+        self.delta_time = frame_time.as_secs_f32();
+
+        // Handle frame-based processing
         self.process_events();
         self.glfw.poll_events();
         self.window_handle.swap_buffers();
-        self.maintain_aspect_ratio(); // Maintain aspect ratio on update
+        self.maintain_aspect_ratio();
+        self.glfw.set_swap_interval(glfw::SwapInterval::Sync(0)); // Disable VSync
+
+        // FPS counter
+        self.frame_count += 1;
+        self.elapsed_time += frame_time;
+
+        if self.elapsed_time >= Duration::from_secs(1) {
+            self.fps = self.frame_count;
+            self.frame_count = 0;
+            self.elapsed_time = Duration::new(0, 0);
+            self.window_handle.set_title(&format!(
+                "FPS: {} | Delta Time: {:.4}",
+                self.fps, self.delta_time
+            ));
+        }
+
+        let frame_duration = Duration::from_millis(1000 / self.target_fps as u64);
+
+        let frame_end = Instant::now();
+        while Instant::now().duration_since(frame_end) < frame_duration {}
     }
 
     pub fn is_key_pressed(&self, key: Key) -> bool {

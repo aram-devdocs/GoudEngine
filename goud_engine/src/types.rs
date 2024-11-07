@@ -11,6 +11,11 @@ pub struct SpriteData {
     pub rotation: f32,
 }
 
+#[repr(C)]
+pub struct UpdateResponseData {
+    pub delta_time: f32,
+}
+
 // Shared types
 // Types
 // TODO: https://github.com/aram-devdocs/GoudEngine/issues/5
@@ -29,4 +34,33 @@ pub struct Receiver {
 #[repr(C)]
 pub struct HashSet {
     _private: [u8; 0],
+}
+
+#[repr(C)]
+pub struct ShaderProgram {
+    _private: [u8; 0],
+}
+
+// vao vec
+
+#[repr(C)]
+pub struct Vao {
+    _private: [u8; 0],
+}
+
+#[repr(C)]
+pub struct Vec {
+    _private: [u8; 0],
+}
+
+#[repr(C)]
+pub struct Duration {
+    secs: u64,
+    nanos: u32, // Duration is a struct with two fields: secs and nanos. Nanos is nanoseconds coming from std::time::Duration.
+}
+
+#[repr(C)]
+pub struct Instant {
+    secs: u64,
+    nanos: u32, // Instant is a struct with two fields: secs and nanos. Nanos is nanoseconds coming from std::time::Instant.
 }
