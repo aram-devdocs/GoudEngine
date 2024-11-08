@@ -39,8 +39,8 @@ public class GameManager
         pipes.ForEach(pipe => pipe.Remove());
         pipes.Clear();
 
-        // score = 0;
-        // pipeSpawnTimer = 0;
+        score = 0;
+        pipeSpawnTimer = 0;
     }
 
     public void Update(float deltaTime)
@@ -58,12 +58,14 @@ public class GameManager
         // Update Pipes with deltaTime and check for collisions
         foreach (var pipe in pipes)
         {
+
+            // TODO: Fix collision detection
             pipe.Update(deltaTime);
-            // if (bird.CollidesWith(pipe))
-            // {
-            //     ResetGame();
-            //     return;
-            // }
+            if (bird.CollidesWith(pipe))
+            {
+                // ResetGame();
+                // return;
+            }
         }
 
         // Spawn new pipes
