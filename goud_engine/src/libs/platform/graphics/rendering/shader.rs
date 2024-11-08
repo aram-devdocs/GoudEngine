@@ -155,6 +155,12 @@ impl ShaderProgram {
             Err(format!("Uniform '{}' not found", name))
         }
     }
+
+    pub fn terminate(&self) {
+        unsafe {
+            gl::UseProgram(0);
+        }
+    }
 }
 
 impl Drop for ShaderProgram {

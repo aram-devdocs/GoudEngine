@@ -33,6 +33,12 @@ impl Vao {
             gl::BindVertexArray(0);
         }
     }
+
+    pub fn terminate(&self) {
+        unsafe {
+            gl::DeleteVertexArrays(1, &self.id);
+        }
+    }
 }
 
 impl Drop for Vao {

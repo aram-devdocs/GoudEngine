@@ -68,6 +68,12 @@ impl Texture {
     pub fn height(&self) -> u32 {
         self.height
     }
+
+    pub fn terminate(&self) {
+        unsafe {
+            gl::DeleteTextures(1, &self.id);
+        }
+    }
 }
 
 impl Drop for Texture {

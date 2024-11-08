@@ -153,6 +153,11 @@ impl Renderer for Renderer2D {
             eprintln!("Error rendering sprites: {}", e);
         }
     }
+
+    fn terminate(&self) {
+        self.shader_program.terminate();
+        self.vao.terminate();
+    }
 }
 
 // Constants for quad vertices and indices

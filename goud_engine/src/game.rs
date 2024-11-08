@@ -61,11 +61,18 @@ impl GameSdk {
 
         if let Some(renderer) = &mut self.renderer_2d {
             renderer.render(self.ecs.sprites.clone());
-            
         }
 
         update_callback(self);
         self.window.update();
+    }
+
+    pub extern "C" fn terminate(&mut self) {
+        self.window.terminate();
+        self.ecs.terminate();
+        if let Some(renderer) = &mut self.renderer_2d {
+            renderer.terminate();
+        }
     }
 
     // pub fn should_close(&self) -> bool {

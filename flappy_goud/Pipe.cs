@@ -11,22 +11,28 @@ public class Pipe
     public float X { get; private set; }
     public float GapY { get; private set; }
 
+
+    // Img Dimennsions: 52 × 320
     public Pipe(GoudGame game)
     {
         this.game = game;
         this.X = GameConstants.ScreenWidth;
+
+        // Set the gap to a random vertical position on the screen
         this.GapY = new Random().Next(GameConstants.PipeGap, (int)GameConstants.ScreenHeight - GameConstants.PipeGap);
 
+        // Position the top pipe above the screen by its height
         topSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
         {
             x = X,
-            y = GapY - GameConstants.PipeGap - GameConstants.PipeWidth,
+            y = GapY - GameConstants.PipeGap - 320  // Position top pipe above the gap by its height
         });
 
+        // Position the bottom pipe below the gap
         bottomSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
         {
             x = X,
-            y = GapY + GameConstants.PipeGap,
+            y = GapY + GameConstants.PipeGap // Position bottom pipe just below the gap
         });
     }
 

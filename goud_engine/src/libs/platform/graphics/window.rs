@@ -165,4 +165,8 @@ impl Window {
             }
         }
     }
+
+    pub fn terminate(&mut self) {
+            self.window_handle.set_should_close(true);
+        }
 }

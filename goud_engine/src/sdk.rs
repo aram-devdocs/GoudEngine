@@ -50,6 +50,7 @@ pub extern "C" fn game_update(game: *mut GameSdk) -> UpdateResponseData {
 
 #[no_mangle]
 pub extern "C" fn game_terminate(game: *mut GameSdk) {
+    game.terminate()
     if !game.is_null() {
         println!("Terminating game instance");
         unsafe {
@@ -125,6 +126,7 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: Spr
 #[no_mangle]
 pub extern "C" fn game_remove_sprite(game: *mut GameSdk, id: EntityId) {
     let game = unsafe { &mut *game };
+    println!("Removing sprite with id: {}", id);
     game.ecs.remove_sprite(id).expect("Failed to remove sprite");
 }
 
