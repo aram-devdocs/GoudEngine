@@ -93,11 +93,11 @@ public class GoudGame
         }
     }
 
-    public void UpdateSprite(int index, SpriteDto data)
+    public void UpdateSprite(int id, SpriteDto data)
     {
         unsafe
         {
-            NativeMethods.game_update_sprite(gameInstance, (nuint)index, data);
+            NativeMethods.game_update_sprite(gameInstance, (uint)id, data);
         }
     }
 

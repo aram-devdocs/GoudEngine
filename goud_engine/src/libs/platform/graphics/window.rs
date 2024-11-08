@@ -1,12 +1,10 @@
 use glfw::Key;
 use glfw::{Action, Context, WindowEvent};
 use std::sync::mpsc::Receiver;
-use std::thread::sleep;
 use std::time::{Duration, Instant};
 
 mod input_handler;
 use input_handler::InputHandler;
-
 
 /// # Window
 ///

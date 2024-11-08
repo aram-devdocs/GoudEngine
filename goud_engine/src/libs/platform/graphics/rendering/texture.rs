@@ -1,7 +1,6 @@
 // src/texture.rs
 
 use gl::types::*;
-use image::GenericImageView;
 use std::ffi::c_void;
 use std::path::Path;
 use std::rc::Rc;

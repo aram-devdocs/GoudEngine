@@ -4,7 +4,7 @@ use std::ptr;
 
 use crate::{
     libs::platform::graphics::rendering::{BufferObject, ShaderProgram, Vao, VertexAttribute},
-    types::{Rectangle, Sprite},
+    types::{Rectangle, Sprite, SpriteMap},
 };
 
 use super::Renderer;
@@ -148,8 +148,8 @@ impl Renderer2D {
 
 impl Renderer for Renderer2D {
     /// Renders the 2D scene.
-    fn render(&mut self, sprites: Vec<Sprite>) {
-        if let Err(e) = self.render_sprites(sprites) {
+    fn render(&mut self, sprites: SpriteMap) {
+        if let Err(e) = self.render_sprites(sprites.values().cloned().collect()) {
             eprintln!("Error rendering sprites: {}", e);
         }
     }

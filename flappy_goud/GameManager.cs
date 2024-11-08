@@ -30,12 +30,12 @@ public class GameManager
         };
 
         game.AddSprite("assets/sprites/background-day.png", backgroundData);
-        // bird.Initialize();
+        bird.Initialize();
     }
 
     public void Start()
     {
-        // bird.Reset();
+        bird.Reset();
         // pipes.Clear();
         // score = 0;
         // pipeSpawnTimer = 0;
@@ -43,15 +43,15 @@ public class GameManager
 
     public void Update(float deltaTime)
     {
-        // // If R is pressed, restart the game
-        // if (game.IsKeyPressed(82))
-        // {
-        //     ResetGame();
-        //     return;
-        // }
+        // If R is pressed, restart the game
+        if (game.IsKeyPressed(82))
+        {
+            ResetGame();
+            return;
+        }
 
-        // // Update Bird Movement with deltaTime
-        // bird.Update(deltaTime);
+        // Update Bird Movement with deltaTime
+        bird.Update(deltaTime);
 
         // // Update Pipes with deltaTime and check for collisions
         // foreach (var pipe in pipes)

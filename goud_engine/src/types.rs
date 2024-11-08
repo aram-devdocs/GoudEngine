@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::os::raw::c_char;
 use std::{ffi::c_uint, rc::Rc};
 pub type EntityId = u32;
@@ -23,6 +24,8 @@ pub struct Sprite {
     pub texture: Rc<Texture>,
 }
 
+
+pub type SpriteMap = HashMap<EntityId, Sprite>;
 // Data Transfer Objects
 #[repr(C)]
 pub struct SpriteDto {

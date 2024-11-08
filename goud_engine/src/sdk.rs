@@ -1,7 +1,7 @@
 use crate::game::cgmath::Vector2;
 use crate::game::{GameSdk, WindowBuilder};
 // use crate::libs::platform::graphics::rendering::{Rectangle, Sprite, Texture};
-use crate::types::{Rectangle, Sprite, Texture};
+use crate::types::{EntityId, Rectangle, Sprite, Texture};
 use crate::types::{SpriteDto, UpdateResponseData};
 use glfw::Key;
 use std::ffi::{CStr, CString};
@@ -63,7 +63,7 @@ pub extern "C" fn game_add_sprite(
     game: *mut GameSdk,
     texture_path: *const c_char,
     data: SpriteDto,
-) -> usize {
+) -> u32 {
     let game = unsafe { &mut *game };
     let texture_path_str = unsafe { CStr::from_ptr(texture_path).to_str().unwrap() };
     let texture = Texture::new(texture_path_str).expect("Failed to load texture");
@@ -88,16 +88,15 @@ pub extern "C" fn game_add_sprite(
         Some(source_rect),
     );
 
-    game.ecs.add_sprite(sprite);
-
-    game.ecs.sprites.len() - 1
+    let id = game.ecs.add_sprite(sprite);
+    id
 }
 
 #[no_mangle]
-pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, data: SpriteDto) {
+pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: SpriteDto) {
     let game = unsafe { &mut *game };
     // let renderer = game.renderer_2d.as_ref().unwrap();
-    let sprite_ref = &game.ecs.sprites[index];
+    let sprite_ref = game.ecs.get_sprite(id).expect("Sprite not found");
     let texture = sprite_ref.texture.clone();
 
     let texture_clone = texture.clone();
@@ -119,7 +118,7 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, data: Spr
     );
 
     game.ecs
-        .update_sprite(index, sprite)
+        .update_sprite(id, sprite)
         .expect("Failed to update sprite");
 }
 

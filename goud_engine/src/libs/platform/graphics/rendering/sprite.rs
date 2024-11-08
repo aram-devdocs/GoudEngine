@@ -1,10 +1,7 @@
 // src/sprite.rs
 
 use crate::{types::Rectangle, types::Sprite, types::Texture};
-use cgmath::Vector2;
 use std::rc::Rc;
-
-use super::texture;
 
 impl Sprite {
     /// Creates a new Sprite.

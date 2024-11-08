@@ -1,7 +1,6 @@
 // src/vao.rs
 
 use gl::types::*;
-use std::ptr;
 
 #[derive(Debug)]
 pub struct Vao {

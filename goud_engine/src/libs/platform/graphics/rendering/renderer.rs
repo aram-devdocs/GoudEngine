@@ -1,4 +1,4 @@
-use crate::types::Sprite;
+use crate::types::SpriteMap;
 
 pub mod renderer2d;
 pub mod renderer3d;
@@ -9,5 +9,5 @@ pub mod renderer3d;
 pub trait Renderer {
     /// Renders the scene.
     // TODO: We need to abstract this so it works better for 3d
-    fn render(&mut self, sprites: Vec<Sprite>);
+    fn render(&mut self, sprites: SpriteMap);
 }
