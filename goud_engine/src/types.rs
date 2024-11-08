@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::os::raw::c_char;
 use std::{ffi::c_uint, rc::Rc};
 pub type EntityId = u32;

@@ -14,7 +14,6 @@ use super::Renderer;
 pub struct Renderer2D {
     shader_program: ShaderProgram,
     vao: Vao,
-    // pub sprites: Vec<Sprite>,
     model_uniform: String,
     source_rect_uniform: String,
     window_width: u32,
