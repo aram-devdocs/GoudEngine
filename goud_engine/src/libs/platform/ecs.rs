@@ -3,6 +3,7 @@ use crate::types::{EntityId, Sprite};
 pub struct ECS {
     pub sprites: Vec<Option<Sprite>>, // Vec for storing sprites with optional entries
     next_id: EntityId,                // Tracks the next unused ID
+    free_list: Vec<EntityId>,         // List of reusable indices
 }
 
 impl ECS {
@@ -10,23 +11,22 @@ impl ECS {
         ECS {
             sprites: Vec::new(),
             next_id: 0,
+            free_list: Vec::new(),
         }
     }
 
     /// Adds a sprite to the ECS and returns its unique EntityId.
     pub fn add_sprite(&mut self, sprite: Sprite) -> EntityId {
-        // Check if there's a reusable slot
-        for (id, slot) in self.sprites.iter_mut().enumerate() {
-            if slot.is_none() {
-                *slot = Some(sprite);
-                return id as EntityId;
-            }
+        if let Some(id) = self.free_list.pop() {
+            // Reuse an index from the free list
+            self.sprites[id as usize] = Some(sprite);
+            id
+        } else {
+            // No reusable slots; push to the end
+            self.sprites.push(Some(sprite));
+            self.next_id += 1;
+            self.next_id - 1
         }
-
-        // If no reusable slot, push to the end
-        self.sprites.push(Some(sprite));
-        self.next_id += 1;
-        self.next_id - 1
     }
 
     /// Updates a sprite for a given EntityId.
@@ -52,6 +52,7 @@ impl ECS {
     pub fn remove_sprite(&mut self, entity_id: EntityId) -> Result<Sprite, String> {
         if let Some(slot) = self.sprites.get_mut(entity_id as usize) {
             if let Some(sprite) = slot.take() {
+                self.free_list.push(entity_id); // Mark index as reusable
                 return Ok(sprite);
             }
         }
@@ -60,6 +61,7 @@ impl ECS {
 
     pub fn terminate(&mut self) {
         self.sprites.clear();
+        self.free_list.clear();
         self.next_id = 0;
     }
 }
