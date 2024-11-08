@@ -149,10 +149,11 @@ impl Renderer2D {
 impl Renderer for Renderer2D {
     /// Renders the 2D scene.
     fn render(&mut self, sprites: SpriteMap) {
-        if let Err(e) = self.render_sprites(sprites.values().cloned().collect()) {
-            eprintln!("Error rendering sprites: {}", e);
+            let sprites: Vec<Sprite> = sprites.into_iter().filter_map(|s| s).collect();
+            if let Err(e) = self.render_sprites(sprites) {
+                eprintln!("Error rendering sprites: {}", e);
+            }
         }
-    }
 
     fn terminate(&self) {
         self.shader_program.terminate();

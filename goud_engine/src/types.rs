@@ -25,7 +25,7 @@ pub struct Sprite {
 }
 
 
-pub type SpriteMap = HashMap<EntityId, Sprite>;
+pub type SpriteMap = Vec<Option<Sprite>>;
 // Data Transfer Objects
 #[repr(C)]
 pub struct SpriteDto {
@@ -95,9 +95,9 @@ pub struct Vao {
 }
 
 #[repr(C)]
-pub struct Vec {
-    _private: [u8; 0],
-}
+// pub struct Vec {
+//     _private: [u8; 0],
+// }
 
 #[repr(C)]
 pub struct Duration {

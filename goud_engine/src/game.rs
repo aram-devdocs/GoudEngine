@@ -6,7 +6,6 @@ use crate::libs::platform::graphics::rendering::Renderer;
 // pub use platform::graphics::gl_wrapper::{clear, Rectangle, Renderer, Renderer2D, Sprite, Texture};
 use platform::logger;
 
-pub use platform::graphics::cgmath;
 pub use platform::graphics::window::Window;
 pub use platform::graphics::window::WindowBuilder;
 

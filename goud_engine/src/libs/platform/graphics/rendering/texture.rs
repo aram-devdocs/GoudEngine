@@ -69,11 +69,11 @@ impl Texture {
         self.height
     }
 
-    pub fn terminate(&self) {
-        unsafe {
-            gl::DeleteTextures(1, &self.id);
-        }
-    }
+    // pub fn terminate(&self) {
+    //     unsafe {
+    //         gl::DeleteTextures(1, &self.id);
+    //     }
+    // }
 }
 
 impl Drop for Texture {
