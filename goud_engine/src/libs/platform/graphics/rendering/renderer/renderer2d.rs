@@ -14,7 +14,7 @@ use super::Renderer;
 pub struct Renderer2D {
     shader_program: ShaderProgram,
     vao: Vao,
-    pub sprites: Vec<Sprite>,
+    // pub sprites: Vec<Sprite>,
     model_uniform: String,
     source_rect_uniform: String,
     window_width: u32,
@@ -84,7 +84,7 @@ impl Renderer2D {
         Ok(Renderer2D {
             shader_program,
             vao,
-            sprites: Vec::new(),
+            // sprites: Vec::new(),
             model_uniform: "model".into(),
             source_rect_uniform: "sourceRect".into(),
             window_width,
@@ -92,28 +92,12 @@ impl Renderer2D {
         })
     }
 
-    /// Adds a sprite to be rendered.
-    pub fn add_sprite(&mut self, sprite: Sprite) -> usize {
-        self.sprites.push(sprite);
-        self.sprites.len() - 1
-    }
-
-    /// Updates a sprite at a given index.
-    pub fn update_sprite(&mut self, index: usize, sprite: Sprite) -> Result<(), String> {
-        if index < self.sprites.len() {
-            self.sprites[index] = sprite;
-            Ok(())
-        } else {
-            Err("Sprite index out of bounds".into())
-        }
-    }
-
     /// Renders all added sprites.
-    fn render_sprites(&mut self) -> Result<(), String> {
+    fn render_sprites(&mut self, sprites: Vec<Sprite>) -> Result<(), String> {
         self.shader_program.bind();
         self.vao.bind();
 
-        for sprite in &self.sprites {
+        for sprite in sprites {
             // Use positions and scales directly
             let position = Vector3::new(sprite.x, sprite.y, 0.0);
             let dimensions = Vector3::new(
@@ -164,8 +148,8 @@ impl Renderer2D {
 
 impl Renderer for Renderer2D {
     /// Renders the 2D scene.
-    fn render(&mut self) {
-        if let Err(e) = self.render_sprites() {
+    fn render(&mut self, sprites: Vec<Sprite>) {
+        if let Err(e) = self.render_sprites(sprites) {
             eprintln!("Error rendering sprites: {}", e);
         }
     }

@@ -1,3 +1,5 @@
+use crate::types::Sprite;
+
 use super::Renderer;
 
 #[derive(Debug)]
@@ -19,7 +21,7 @@ impl Renderer3D {
 
 impl Renderer for Renderer3D {
     /// Renders the 3D scene.
-    fn render(&mut self) {
+    fn render(&mut self, _sprites: Vec<Sprite>) {
         // Implement 3D rendering logic
     }
 }

@@ -1,4 +1,5 @@
 use crate::libs::platform;
+use crate::libs::platform::ecs::ECS;
 use crate::libs::platform::graphics::rendering::clear;
 use crate::libs::platform::graphics::rendering::renderer2d::Renderer2D;
 use crate::libs::platform::graphics::rendering::Renderer;
@@ -15,6 +16,7 @@ pub struct GameSdk {
     pub window: Window,
     pub renderer_2d: Option<Renderer2D>,
     pub elapsed_time: f32,
+    pub ecs: ECS,
 }
 
 impl GameSdk {
@@ -26,6 +28,7 @@ impl GameSdk {
             window,
             renderer_2d: None,
             elapsed_time: 0.0,
+            ecs: ECS::new(),
         }
     }
 
@@ -57,7 +60,7 @@ impl GameSdk {
         clear();
 
         if let Some(renderer) = &mut self.renderer_2d {
-            renderer.render();
+            renderer.render(self.ecs.sprites.clone());
         }
 
         update_callback(self);

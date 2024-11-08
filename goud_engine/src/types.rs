@@ -107,3 +107,7 @@ pub struct Instant {
     secs: u64,
     nanos: u32, // Instant is a struct with two fields: secs and nanos. Nanos is nanoseconds coming from std::time::Instant.
 }
+
+pub struct ECS {
+    _private: [u8; 0],
+}

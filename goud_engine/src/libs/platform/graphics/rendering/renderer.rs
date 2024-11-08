@@ -1,3 +1,4 @@
+use crate::types::Sprite;
 
 pub mod renderer2d;
 pub mod renderer3d;
@@ -7,5 +8,6 @@ pub mod renderer3d;
 /// Defines common functionality for renderers.
 pub trait Renderer {
     /// Renders the scene.
-    fn render(&mut self);
+    // TODO: We need to abstract this so it works better for 3d
+    fn render(&mut self, sprites: Vec<Sprite>);
 }

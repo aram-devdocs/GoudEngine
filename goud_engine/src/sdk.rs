@@ -1,8 +1,8 @@
 use crate::game::cgmath::Vector2;
 use crate::game::{GameSdk, WindowBuilder};
 // use crate::libs::platform::graphics::rendering::{Rectangle, Sprite, Texture};
-use crate::types::{SpriteDto, UpdateResponseData};
 use crate::types::{Rectangle, Sprite, Texture};
+use crate::types::{SpriteDto, UpdateResponseData};
 use glfw::Key;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
@@ -75,7 +75,6 @@ pub extern "C" fn game_add_sprite(
         height: 1.0,
     };
 
-
     let texture_clone = texture.clone();
     let sprite = Sprite::new(
         texture,
@@ -89,16 +88,16 @@ pub extern "C" fn game_add_sprite(
         Some(source_rect),
     );
 
-    game.renderer_2d.as_mut().unwrap().add_sprite(sprite);
+    game.ecs.add_sprite(sprite);
 
-    game.renderer_2d.as_ref().unwrap().sprites.len() - 1
+    game.ecs.sprites.len() - 1
 }
 
 #[no_mangle]
 pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, data: SpriteDto) {
     let game = unsafe { &mut *game };
-    let renderer = game.renderer_2d.as_ref().unwrap();
-    let sprite_ref = &renderer.sprites[index];
+    // let renderer = game.renderer_2d.as_ref().unwrap();
+    let sprite_ref = &game.ecs.sprites[index];
     let texture = sprite_ref.texture.clone();
 
     let texture_clone = texture.clone();
@@ -119,9 +118,7 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, data: Spr
         }),
     );
 
-    game.renderer_2d
-        .as_mut()
-        .unwrap()
+    game.ecs
         .update_sprite(index, sprite)
         .expect("Failed to update sprite");
 }
