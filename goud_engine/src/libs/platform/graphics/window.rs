@@ -94,6 +94,11 @@ impl Window {
     pub fn init_gl(&mut self) {
         self.window_handle.make_current();
         gl::load_with(|s| self.window_handle.get_proc_address(s) as *const _);
+
+        unsafe {
+            gl::Enable(gl::BLEND);
+            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+        }
     }
 
     pub fn should_close(&self) -> bool {
@@ -167,6 +172,6 @@ impl Window {
     }
 
     pub fn terminate(&mut self) {
-            self.window_handle.set_should_close(true);
-        }
+        self.window_handle.set_should_close(true);
+    }
 }
