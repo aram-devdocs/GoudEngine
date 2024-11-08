@@ -5,7 +5,6 @@ use gl::types::*;
 use std::collections::HashMap;
 use std::ffi::CString;
 use std::fs;
-use std::os::raw::c_void;
 use std::ptr;
 
 use cgmath::Matrix4;
@@ -154,6 +153,12 @@ impl ShaderProgram {
             Ok(())
         } else {
             Err(format!("Uniform '{}' not found", name))
+        }
+    }
+
+    pub fn terminate(&self) {
+        unsafe {
+            gl::UseProgram(0);
         }
     }
 }

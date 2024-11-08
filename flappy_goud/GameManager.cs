@@ -23,7 +23,7 @@ public class GameManager
 
     public void Initialize()
     {
-        SpriteData backgroundData = new SpriteData
+        SpriteDto backgroundData = new SpriteDto
         {
             x = 0,
             y = 0,
@@ -36,7 +36,9 @@ public class GameManager
     public void Start()
     {
         bird.Reset();
+        pipes.ForEach(pipe => pipe.Remove());
         pipes.Clear();
+
         score = 0;
         pipeSpawnTimer = 0;
     }
@@ -56,11 +58,13 @@ public class GameManager
         // Update Pipes with deltaTime and check for collisions
         foreach (var pipe in pipes)
         {
+
+            // TODO: Fix collision detection
             pipe.Update(deltaTime);
             if (bird.CollidesWith(pipe))
             {
-                ResetGame();
-                return;
+                // ResetGame();
+                // return;
             }
         }
 
@@ -73,7 +77,15 @@ public class GameManager
         }
 
         // Remove off-screen pipes
-        pipes.RemoveAll(pipe => pipe.IsOffScreen());
+        pipes.RemoveAll(pipe =>
+        {
+            if (pipe.IsOffScreen())
+            {
+                pipe.Remove();
+                return true;
+            }
+            return false;
+        });
 
         // Update Score
         score += bird.PassedPipes(pipes);

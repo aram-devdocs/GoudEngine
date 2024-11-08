@@ -1,11 +1,11 @@
 use crate::libs::platform;
+use crate::libs::platform::ecs::ECS;
 use crate::libs::platform::graphics::rendering::clear;
 use crate::libs::platform::graphics::rendering::renderer2d::Renderer2D;
 use crate::libs::platform::graphics::rendering::Renderer;
 // pub use platform::graphics::gl_wrapper::{clear, Rectangle, Renderer, Renderer2D, Sprite, Texture};
 use platform::logger;
 
-pub use platform::graphics::cgmath;
 pub use platform::graphics::window::Window;
 pub use platform::graphics::window::WindowBuilder;
 
@@ -15,6 +15,7 @@ pub struct GameSdk {
     pub window: Window,
     pub renderer_2d: Option<Renderer2D>,
     pub elapsed_time: f32,
+    pub ecs: ECS,
 }
 
 impl GameSdk {
@@ -26,6 +27,7 @@ impl GameSdk {
             window,
             renderer_2d: None,
             elapsed_time: 0.0,
+            ecs: ECS::new(),
         }
     }
 
@@ -56,15 +58,23 @@ impl GameSdk {
         self.elapsed_time += 0.01;
         clear();
 
+        update_callback(self);
+
         if let Some(renderer) = &mut self.renderer_2d {
-            renderer.render();
+            renderer.render(self.ecs.sprites.clone());
         }
 
-        update_callback(self);
         self.window.update();
     }
-
-    pub fn should_close(&self) -> bool {
-        self.window.should_close()
+    pub extern "C" fn terminate(&mut self) {
+        self.window.terminate();
+        self.ecs.terminate();
+        if let Some(renderer) = &mut self.renderer_2d {
+            renderer.terminate();
+        }
     }
+
+    // pub fn should_close(&self) -> bool {
+    //     self.window.should_close()
+    // }
 }

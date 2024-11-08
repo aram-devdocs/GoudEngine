@@ -1,3 +1,5 @@
+use crate::types::SpriteMap;
+
 use super::Renderer;
 
 #[derive(Debug)]
@@ -19,7 +21,12 @@ impl Renderer3D {
 
 impl Renderer for Renderer3D {
     /// Renders the 3D scene.
-    fn render(&mut self) {
+    fn render(&mut self, _sprites: SpriteMap) {
         // Implement 3D rendering logic
+    }
+
+    /// Terminates the 3D renderer.
+    fn terminate(&self) {
+        // Cleanup 3D rendering resources
     }
 }

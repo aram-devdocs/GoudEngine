@@ -1,7 +1,6 @@
 // src/vao.rs
 
 use gl::types::*;
-use std::ptr;
 
 #[derive(Debug)]
 pub struct Vao {
@@ -32,6 +31,12 @@ impl Vao {
     pub fn unbind() {
         unsafe {
             gl::BindVertexArray(0);
+        }
+    }
+
+    pub fn terminate(&self) {
+        unsafe {
+            gl::DeleteVertexArrays(1, &self.id);
         }
     }
 }

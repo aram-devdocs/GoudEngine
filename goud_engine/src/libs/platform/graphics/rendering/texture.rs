@@ -1,17 +1,11 @@
 // src/texture.rs
 
 use gl::types::*;
-use image::GenericImageView;
 use std::ffi::c_void;
 use std::path::Path;
 use std::rc::Rc;
 
-#[derive(Debug, Clone)]
-pub struct Texture {
-    id: GLuint,
-    width: u32,
-    height: u32,
-}
+use crate::types::Texture;
 
 impl Texture {
     /// Loads a texture from a file.
@@ -74,6 +68,12 @@ impl Texture {
     pub fn height(&self) -> u32 {
         self.height
     }
+
+    // pub fn terminate(&self) {
+    //     unsafe {
+    //         gl::DeleteTextures(1, &self.id);
+    //     }
+    // }
 }
 
 impl Drop for Texture {

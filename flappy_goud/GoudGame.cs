@@ -81,26 +81,32 @@ public class GoudGame
         }
     }
 
-    public int AddSprite(string texturePath, SpriteData data)
-
+    public uint AddSprite(string texturePath, SpriteDto data)
     {
         unsafe
         {
             fixed (byte* texturePathBytes = System.Text.Encoding.ASCII.GetBytes(texturePath + "\0"))
             {
-                return (int)NativeMethods.game_add_sprite(gameInstance, texturePathBytes, data);
+                return NativeMethods.game_add_sprite(gameInstance, texturePathBytes, data);
             }
         }
     }
 
-    public void UpdateSprite(int index, SpriteData data)
+    public void UpdateSprite(uint id, SpriteDto data)
     {
         unsafe
         {
-            NativeMethods.game_update_sprite(gameInstance, (nuint)index, data);
+            NativeMethods.game_update_sprite(gameInstance, id, data);
         }
     }
 
+    public void RemoveSprite(uint id)
+    {
+        unsafe
+        {
+            NativeMethods.game_remove_sprite(gameInstance, id);
+        }
+    }
     public void Close()
     {
         unsafe
@@ -108,6 +114,8 @@ public class GoudGame
             NativeMethods.game_terminate(gameInstance);
         }
     }
+
+
 
 
 

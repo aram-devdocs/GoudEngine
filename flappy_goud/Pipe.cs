@@ -6,27 +6,32 @@ using CsBindgen;
 public class Pipe
 {
     private readonly GoudGame game;
-    private int topSpriteIndex;
-    private int bottomSpriteIndex;
+    private uint topSpriteId;
+    private uint bottomSpriteId;
     public float X { get; private set; }
     public float GapY { get; private set; }
 
+    // Img Dimensions: 52 × 320
     public Pipe(GoudGame game)
     {
         this.game = game;
         this.X = GameConstants.ScreenWidth;
+
+        // Set the gap to a random vertical position on the screen
         this.GapY = new Random().Next(GameConstants.PipeGap, (int)GameConstants.ScreenHeight - GameConstants.PipeGap);
 
-        topSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteData
+        // Position the top pipe above the screen by its height
+        topSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
         {
             x = X,
-            y = GapY - GameConstants.PipeGap - GameConstants.PipeWidth,
+            y = GapY - GameConstants.PipeGap - 320, // Adjusted to position the top pipe correctly
+            rotation = 180
         });
 
-        bottomSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteData
+        bottomSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
         {
             x = X,
-            y = GapY + GameConstants.PipeGap,
+            y = GapY + GameConstants.PipeGap // Adjusted to position the bottom pipe correctly
         });
     }
 
@@ -35,8 +40,8 @@ public class Pipe
         X -= GameConstants.PipeSpeed * deltaTime * GameConstants.TargetFPS;
 
         // Update top and bottom pipe positions
-        game.UpdateSprite(topSpriteIndex, new SpriteData { x = X });
-        game.UpdateSprite(bottomSpriteIndex, new SpriteData { x = X });
+        game.UpdateSprite(topSpriteId, new SpriteDto { x = X, y = GapY - GameConstants.PipeGap - 320 });
+        game.UpdateSprite(bottomSpriteId, new SpriteDto { x = X, y = GapY + GameConstants.PipeGap });
     }
 
     public bool IsOffScreen()
@@ -53,5 +58,12 @@ public class Pipe
     public bool IsPassed(float birdX)
     {
         return birdX > X + GameConstants.PipeWidth;
+    }
+
+    public bool Remove()
+    {
+        game.RemoveSprite(topSpriteId);
+        game.RemoveSprite(bottomSpriteId);
+        return true;
     }
 }

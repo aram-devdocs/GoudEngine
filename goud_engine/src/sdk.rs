@@ -1,7 +1,7 @@
-use crate::game::cgmath::Vector2;
 use crate::game::{GameSdk, WindowBuilder};
-use crate::libs::platform::graphics::rendering::{Rectangle, Sprite, Texture};
-use crate::types::{SpriteData, UpdateResponseData};
+// use crate::libs::platform::graphics::rendering::{Rectangle, Sprite, Texture};
+use crate::types::{EntityId, Rectangle, Sprite, Texture};
+use crate::types::{SpriteDto, UpdateResponseData};
 use glfw::Key;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
@@ -50,6 +50,8 @@ pub extern "C" fn game_update(game: *mut GameSdk) -> UpdateResponseData {
 #[no_mangle]
 pub extern "C" fn game_terminate(game: *mut GameSdk) {
     if !game.is_null() {
+        let game = unsafe { &mut *game };
+        game.terminate();
         println!("Terminating game instance");
         unsafe {
             drop(Box::from_raw(game));
@@ -61,8 +63,8 @@ pub extern "C" fn game_terminate(game: *mut GameSdk) {
 pub extern "C" fn game_add_sprite(
     game: *mut GameSdk,
     texture_path: *const c_char,
-    data: SpriteData,
-) -> usize {
+    data: SpriteDto,
+) -> u32 {
     let game = unsafe { &mut *game };
     let texture_path_str = unsafe { CStr::from_ptr(texture_path).to_str().unwrap() };
     let texture = Texture::new(texture_path_str).expect("Failed to load texture");
@@ -77,37 +79,36 @@ pub extern "C" fn game_add_sprite(
     let texture_clone = texture.clone();
     let sprite = Sprite::new(
         texture,
-        Vector2::new(data.x, data.y),
-        Vector2::new(data.scale_x.unwrap_or(1.0), data.scale_y.unwrap_or(1.0)),
-        Vector2::new(
-            data.dimmension_x.unwrap_or(texture_clone.width() as f32),
-            data.dimmension_y.unwrap_or(texture_clone.height() as f32),
-        ),
+        data.x,
+        data.y,
+        data.scale_x.unwrap_or(1.0),
+        data.scale_y.unwrap_or(1.0),
+        data.dimension_x.unwrap_or(texture_clone.width() as f32),
+        data.dimension_y.unwrap_or(texture_clone.height() as f32),
         data.rotation,
         Some(source_rect),
     );
 
-    game.renderer_2d.as_mut().unwrap().add_sprite(sprite);
-
-    game.renderer_2d.as_ref().unwrap().sprites.len() - 1
+    let id = game.ecs.add_sprite(sprite);
+    id
 }
 
 #[no_mangle]
-pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, data: SpriteData) {
+pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: SpriteDto) {
     let game = unsafe { &mut *game };
-    let renderer = game.renderer_2d.as_ref().unwrap();
-    let sprite_ref = &renderer.sprites[index];
+    // let renderer = game.renderer_2d.as_ref().unwrap();
+    let sprite_ref = game.ecs.get_sprite(id).expect("Sprite not found");
     let texture = sprite_ref.texture.clone();
 
     let texture_clone = texture.clone();
     let sprite = Sprite::new(
         texture,
-        Vector2::new(data.x, data.y),
-        Vector2::new(data.scale_x.unwrap_or(1.0), data.scale_y.unwrap_or(1.0)),
-        Vector2::new(
-            data.dimmension_x.unwrap_or(texture_clone.width() as f32),
-            data.dimmension_y.unwrap_or(texture_clone.height() as f32),
-        ),
+        data.x,
+        data.y,
+        data.scale_x.unwrap_or(1.0),
+        data.scale_y.unwrap_or(1.0),
+        data.dimension_x.unwrap_or(texture_clone.width() as f32),
+        data.dimension_y.unwrap_or(texture_clone.height() as f32),
         data.rotation,
         Some(Rectangle {
             x: 0.0,
@@ -117,11 +118,16 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, data: Spr
         }),
     );
 
-    game.renderer_2d
-        .as_mut()
-        .unwrap()
-        .update_sprite(index, sprite)
+    game.ecs
+        .update_sprite(id, sprite)
         .expect("Failed to update sprite");
+}
+
+#[no_mangle]
+pub extern "C" fn game_remove_sprite(game: *mut GameSdk, id: EntityId) {
+    let game = unsafe { &mut *game };
+    println!("Removing sprite with id: {}", id);
+    game.ecs.remove_sprite(id).expect("Failed to remove sprite");
 }
 
 #[no_mangle]

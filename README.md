@@ -97,7 +97,7 @@ class Program
         {
             Console.WriteLine("Game Initialized!");
 
-            SpriteData backgroundData = new SpriteData { X = 0, Y = 0, ScaleX = 1, ScaleY = 1, Rotation = 0 };
+            Sprite backgroundData = new Sprite { X = 0, Y = 0, ScaleX = 1, ScaleY = 1, Rotation = 0 };
             game.AddSprite("assets/sprites/background-day.png", backgroundData);
         });
 
