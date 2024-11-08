@@ -6,12 +6,7 @@ use std::ffi::c_void;
 use std::path::Path;
 use std::rc::Rc;
 
-#[derive(Debug, Clone)]
-pub struct Texture {
-    id: GLuint,
-    width: u32,
-    height: u32,
-}
+use crate::types::Texture;
 
 impl Texture {
     /// Loads a texture from a file.

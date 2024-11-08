@@ -11,8 +11,8 @@ pub mod vertex_attribute;
 pub use buffer::BufferObject;
 pub use renderer::{renderer2d, Renderer};
 pub use shader::ShaderProgram;
-pub use sprite::{Rectangle, Sprite};
-pub use texture::Texture;
+// pub use sprite::{Rectangle, Sprite};
+// pub use texture::Texture;
 pub use vao::Vao;
 pub use vertex_attribute::VertexAttribute;
 

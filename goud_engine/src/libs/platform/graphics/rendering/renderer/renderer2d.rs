@@ -2,8 +2,9 @@ use cgmath::{ortho, Matrix4, Vector3, Vector4};
 use gl::types::*;
 use std::ptr;
 
-use crate::libs::platform::graphics::rendering::{
-    BufferObject, Rectangle, ShaderProgram, Sprite, Vao, VertexAttribute,
+use crate::{
+    libs::platform::graphics::rendering::{BufferObject, ShaderProgram, Vao, VertexAttribute},
+    types::{Rectangle, Sprite},
 };
 
 use super::Renderer;
@@ -114,8 +115,12 @@ impl Renderer2D {
 
         for sprite in &self.sprites {
             // Use positions and scales directly
-            let position = Vector3::new(sprite.position.x, sprite.position.y, 0.0);
-            let dimensions = Vector3::new(sprite.dimensions.x, sprite.dimensions.y, 1.0);
+            let position = Vector3::new(sprite.x, sprite.y, 0.0);
+            let dimensions = Vector3::new(
+                sprite.dimension_x.unwrap_or(sprite.texture.width() as f32),
+                sprite.dimension_y.unwrap_or(sprite.texture.height() as f32),
+                1.0,
+            );
 
             // Build the model matrix
             let model = Matrix4::from_translation(position)

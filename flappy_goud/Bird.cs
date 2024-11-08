@@ -21,7 +21,7 @@ public class Bird
 
     public void Initialize()
     {
-        spriteIndex = game.AddSprite("assets/sprites/bluebird-midflap.png", new SpriteData
+        spriteIndex = game.AddSprite("assets/sprites/bluebird-midflap.png", new SpriteDto
         {
             x = X,
             y = Y,
@@ -48,7 +48,7 @@ public class Bird
         Y = yPosition;
 
         // Update the bird's position in the game
-        game.UpdateSprite(spriteIndex, new SpriteData { x = X, y = Y });
+        game.UpdateSprite(spriteIndex, new SpriteDto { x = X, y = Y });
     }
 
     public bool CollidesWith(Pipe pipe)

@@ -1,7 +1,8 @@
 use crate::game::cgmath::Vector2;
 use crate::game::{GameSdk, WindowBuilder};
-use crate::libs::platform::graphics::rendering::{Rectangle, Sprite, Texture};
-use crate::types::{SpriteData, UpdateResponseData};
+// use crate::libs::platform::graphics::rendering::{Rectangle, Sprite, Texture};
+use crate::types::{SpriteDto, UpdateResponseData};
+use crate::types::{Rectangle, Sprite, Texture};
 use glfw::Key;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
@@ -61,7 +62,7 @@ pub extern "C" fn game_terminate(game: *mut GameSdk) {
 pub extern "C" fn game_add_sprite(
     game: *mut GameSdk,
     texture_path: *const c_char,
-    data: SpriteData,
+    data: SpriteDto,
 ) -> usize {
     let game = unsafe { &mut *game };
     let texture_path_str = unsafe { CStr::from_ptr(texture_path).to_str().unwrap() };
@@ -74,15 +75,16 @@ pub extern "C" fn game_add_sprite(
         height: 1.0,
     };
 
+
     let texture_clone = texture.clone();
     let sprite = Sprite::new(
         texture,
-        Vector2::new(data.x, data.y),
-        Vector2::new(data.scale_x.unwrap_or(1.0), data.scale_y.unwrap_or(1.0)),
-        Vector2::new(
-            data.dimension_x.unwrap_or(texture_clone.width() as f32),
-            data.dimension_y.unwrap_or(texture_clone.height() as f32),
-        ),
+        data.x,
+        data.y,
+        data.scale_x.unwrap_or(1.0),
+        data.scale_y.unwrap_or(1.0),
+        data.dimension_x.unwrap_or(texture_clone.width() as f32),
+        data.dimension_y.unwrap_or(texture_clone.height() as f32),
         data.rotation,
         Some(source_rect),
     );
@@ -93,7 +95,7 @@ pub extern "C" fn game_add_sprite(
 }
 
 #[no_mangle]
-pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, data: SpriteData) {
+pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, data: SpriteDto) {
     let game = unsafe { &mut *game };
     let renderer = game.renderer_2d.as_ref().unwrap();
     let sprite_ref = &renderer.sprites[index];
@@ -102,12 +104,12 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, index: usize, data: Spr
     let texture_clone = texture.clone();
     let sprite = Sprite::new(
         texture,
-        Vector2::new(data.x, data.y),
-        Vector2::new(data.scale_x.unwrap_or(1.0), data.scale_y.unwrap_or(1.0)),
-        Vector2::new(
-            data.dimension_x.unwrap_or(texture_clone.width() as f32),
-            data.dimension_y.unwrap_or(texture_clone.height() as f32),
-        ),
+        data.x,
+        data.y,
+        data.scale_x.unwrap_or(1.0),
+        data.scale_y.unwrap_or(1.0),
+        data.dimension_x.unwrap_or(texture_clone.width() as f32),
+        data.dimension_y.unwrap_or(texture_clone.height() as f32),
         data.rotation,
         Some(Rectangle {
             x: 0.0,

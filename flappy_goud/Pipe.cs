@@ -17,13 +17,13 @@ public class Pipe
         this.X = GameConstants.ScreenWidth;
         this.GapY = new Random().Next(GameConstants.PipeGap, (int)GameConstants.ScreenHeight - GameConstants.PipeGap);
 
-        topSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteData
+        topSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
         {
             x = X,
             y = GapY - GameConstants.PipeGap - GameConstants.PipeWidth,
         });
 
-        bottomSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteData
+        bottomSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
         {
             x = X,
             y = GapY + GameConstants.PipeGap,
@@ -35,8 +35,8 @@ public class Pipe
         X -= GameConstants.PipeSpeed * deltaTime * GameConstants.TargetFPS;
 
         // Update top and bottom pipe positions
-        game.UpdateSprite(topSpriteIndex, new SpriteData { x = X });
-        game.UpdateSprite(bottomSpriteIndex, new SpriteData { x = X });
+        game.UpdateSprite(topSpriteIndex, new SpriteDto { x = X });
+        game.UpdateSprite(bottomSpriteIndex, new SpriteDto { x = X });
     }
 
     public bool IsOffScreen()
