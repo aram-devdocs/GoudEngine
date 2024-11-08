@@ -11,8 +11,7 @@ public class Pipe
     public float X { get; private set; }
     public float GapY { get; private set; }
 
-
-    // Img Dimennsions: 52 × 320
+    // Img Dimensions: 52 × 320
     public Pipe(GoudGame game)
     {
         this.game = game;
@@ -25,12 +24,14 @@ public class Pipe
         topSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
         {
             x = X,
+            y = GapY - GameConstants.PipeGap - 320, // Adjusted to position the top pipe correctly
             rotation = 180
         });
 
         bottomSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
         {
             x = X,
+            y = GapY + GameConstants.PipeGap // Adjusted to position the bottom pipe correctly
         });
     }
 
@@ -39,8 +40,8 @@ public class Pipe
         X -= GameConstants.PipeSpeed * deltaTime * GameConstants.TargetFPS;
 
         // Update top and bottom pipe positions
-        game.UpdateSprite(topSpriteId, new SpriteDto { x = X, y = GapY - GameConstants.PipeGap });
-        game.UpdateSprite(bottomSpriteId, new SpriteDto { x = X , y = GameConstants.ScreenHeight - GapY + GameConstants.PipeGap });
+        game.UpdateSprite(topSpriteId, new SpriteDto { x = X, y = GapY - GameConstants.PipeGap - 320 });
+        game.UpdateSprite(bottomSpriteId, new SpriteDto { x = X, y = GapY + GameConstants.PipeGap });
     }
 
     public bool IsOffScreen()
@@ -66,5 +67,3 @@ public class Pipe
         return true;
     }
 }
-
-
