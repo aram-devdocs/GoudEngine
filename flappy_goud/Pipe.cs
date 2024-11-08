@@ -6,8 +6,8 @@ using CsBindgen;
 public class Pipe
 {
     private readonly GoudGame game;
-    private int topSpriteIndex;
-    private int bottomSpriteIndex;
+    private int topSpriteId;
+    private int bottomSpriteId;
     public float X { get; private set; }
     public float GapY { get; private set; }
 
@@ -17,13 +17,13 @@ public class Pipe
         this.X = GameConstants.ScreenWidth;
         this.GapY = new Random().Next(GameConstants.PipeGap, (int)GameConstants.ScreenHeight - GameConstants.PipeGap);
 
-        topSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
+        topSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
         {
             x = X,
             y = GapY - GameConstants.PipeGap - GameConstants.PipeWidth,
         });
 
-        bottomSpriteIndex = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
+        bottomSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
         {
             x = X,
             y = GapY + GameConstants.PipeGap,
@@ -35,8 +35,8 @@ public class Pipe
         X -= GameConstants.PipeSpeed * deltaTime * GameConstants.TargetFPS;
 
         // Update top and bottom pipe positions
-        game.UpdateSprite(topSpriteIndex, new SpriteDto { x = X });
-        game.UpdateSprite(bottomSpriteIndex, new SpriteDto { x = X });
+        game.UpdateSprite(topSpriteId, new SpriteDto { x = X });
+        game.UpdateSprite(bottomSpriteId, new SpriteDto { x = X });
     }
 
     public bool IsOffScreen()
@@ -54,4 +54,13 @@ public class Pipe
     {
         return birdX > X + GameConstants.PipeWidth;
     }
+
+    public bool Remove()
+    {
+        game.RemoveSprite(topSpriteId);
+        game.RemoveSprite(bottomSpriteId);
+        return true;
+    }
+
+
 }

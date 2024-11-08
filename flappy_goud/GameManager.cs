@@ -36,7 +36,9 @@ public class GameManager
     public void Start()
     {
         bird.Reset();
-        // pipes.Clear();
+        pipes.ForEach(pipe => pipe.Remove());
+        pipes.Clear();
+
         // score = 0;
         // pipeSpawnTimer = 0;
     }
@@ -53,30 +55,38 @@ public class GameManager
         // Update Bird Movement with deltaTime
         bird.Update(deltaTime);
 
-        // // Update Pipes with deltaTime and check for collisions
-        // foreach (var pipe in pipes)
-        // {
-        //     pipe.Update(deltaTime);
-        //     if (bird.CollidesWith(pipe))
-        //     {
-        //         ResetGame();
-        //         return;
-        //     }
-        // }
+        // Update Pipes with deltaTime and check for collisions
+        foreach (var pipe in pipes)
+        {
+            pipe.Update(deltaTime);
+            // if (bird.CollidesWith(pipe))
+            // {
+            //     ResetGame();
+            //     return;
+            // }
+        }
 
-        // // Spawn new pipes
-        // pipeSpawnTimer += deltaTime;
-        // if (pipeSpawnTimer > GameConstants.PipeSpawnInterval)
-        // {
-        //     pipeSpawnTimer = 0;
-        //     pipes.Add(new Pipe(game));
-        // }
+        // Spawn new pipes
+        pipeSpawnTimer += deltaTime;
+        if (pipeSpawnTimer > GameConstants.PipeSpawnInterval)
+        {
+            pipeSpawnTimer = 0;
+            pipes.Add(new Pipe(game));
+        }
 
-        // // Remove off-screen pipes
-        // pipes.RemoveAll(pipe => pipe.IsOffScreen());
+        // Remove off-screen pipes
+        pipes.RemoveAll(pipe =>
+        {
+            if (pipe.IsOffScreen())
+            {
+                pipe.Remove();
+                return true;
+            }
+            return false;
+        });
 
-        // // Update Score
-        // score += bird.PassedPipes(pipes);
+        // Update Score
+        score += bird.PassedPipes(pipes);
     }
 
     private void ResetGame()

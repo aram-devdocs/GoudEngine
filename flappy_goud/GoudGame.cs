@@ -101,6 +101,14 @@ public class GoudGame
         }
     }
 
+    public void RemoveSprite(int id)
+    {
+        unsafe
+        {
+            NativeMethods.game_remove_sprite(gameInstance, (uint)id);
+        }
+    }
+
     public void Close()
     {
         unsafe

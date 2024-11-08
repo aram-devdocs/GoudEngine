@@ -36,4 +36,13 @@ impl ECS {
     pub fn get_sprite(&self, entity_id: EntityId) -> Option<&Sprite> {
         self.sprites.get(&entity_id)
     }
+
+    /// Removes a sprite by EntityId.
+    pub fn remove_sprite(&mut self, entity_id: EntityId) -> Result<Sprite, String> {
+        if let Some(sprite) = self.sprites.remove(&entity_id) {
+            Ok(sprite)
+        } else {
+            Err("EntityId not found".into())
+        }
+    }
 }

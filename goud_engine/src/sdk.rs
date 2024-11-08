@@ -123,6 +123,12 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: Spr
 }
 
 #[no_mangle]
+pub extern "C" fn game_remove_sprite(game: *mut GameSdk, id: EntityId) {
+    let game = unsafe { &mut *game };
+    game.ecs.remove_sprite(id).expect("Failed to remove sprite");
+}
+
+#[no_mangle]
 pub extern "C" fn game_is_key_pressed(game: *mut GameSdk, key_code: c_int) -> bool {
     let game = unsafe { &*game };
     let key = from_glfw_key_code(key_code);
