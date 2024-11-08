@@ -50,8 +50,9 @@ pub extern "C" fn game_update(game: *mut GameSdk) -> UpdateResponseData {
 
 #[no_mangle]
 pub extern "C" fn game_terminate(game: *mut GameSdk) {
-    game.terminate()
     if !game.is_null() {
+        let game = unsafe { &mut *game };
+        game.terminate();
         println!("Terminating game instance");
         unsafe {
             drop(Box::from_raw(game));

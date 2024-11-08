@@ -24,4 +24,9 @@ impl Renderer for Renderer3D {
     fn render(&mut self, _sprites: SpriteMap) {
         // Implement 3D rendering logic
     }
+
+    /// Terminates the 3D renderer.
+    fn terminate(&self) {
+        // Cleanup 3D rendering resources
+    }
 }

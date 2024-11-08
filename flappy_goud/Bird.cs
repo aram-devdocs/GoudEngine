@@ -7,7 +7,7 @@ public class Bird
 {
     private readonly GoudGame game;
     private readonly Movement movement;
-    private int spriteIndex;
+    private uint spriteIndex;
     public float X { get; private set; }
     public float Y { get; private set; }
 

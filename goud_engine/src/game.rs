@@ -59,14 +59,14 @@ impl GameSdk {
         self.elapsed_time += 0.01;
         clear();
 
+        update_callback(self);
+
         if let Some(renderer) = &mut self.renderer_2d {
             renderer.render(self.ecs.sprites.clone());
         }
 
-        update_callback(self);
         self.window.update();
     }
-
     pub extern "C" fn terminate(&mut self) {
         self.window.terminate();
         self.ecs.terminate();

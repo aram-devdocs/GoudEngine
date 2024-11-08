@@ -6,8 +6,8 @@ using CsBindgen;
 public class Pipe
 {
     private readonly GoudGame game;
-    private int topSpriteId;
-    private int bottomSpriteId;
+    private uint topSpriteId;
+    private uint bottomSpriteId;
     public float X { get; private set; }
     public float GapY { get; private set; }
 
@@ -25,14 +25,13 @@ public class Pipe
         topSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
         {
             x = X,
-            y = GapY - GameConstants.PipeGap - 320  // Position top pipe above the gap by its height
+            y = GapY - GameConstants.PipeGap - 320
         });
 
-        // Position the bottom pipe below the gap
         bottomSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
         {
             x = X,
-            y = GapY + GameConstants.PipeGap // Position bottom pipe just below the gap
+            y = GapY + GameConstants.PipeGap
         });
     }
 
@@ -67,6 +66,6 @@ public class Pipe
         game.RemoveSprite(bottomSpriteId);
         return true;
     }
-
-
 }
+
+
