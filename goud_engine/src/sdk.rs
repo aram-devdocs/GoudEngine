@@ -114,28 +114,27 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: Spr
     let sprite_ref = game.ecs.get_sprite(id).expect("Sprite not found");
     let texture = sprite_ref.texture.clone();
 
-    let texture_clone = texture.clone();
     let sprite = Sprite::new(
         texture,
         data.x,
         data.y,
         if data.scale_x == 0.0 {
-            1.0
+            sprite_ref.scale_x
         } else {
             data.scale_x
         },
         if data.scale_y == 0.0 {
-            1.0
+            sprite_ref.scale_y
         } else {
             data.scale_y
         },
         if data.dimension_x == 0.0 {
-            texture_clone.width() as f32
+            sprite_ref.dimension_x
         } else {
             data.dimension_x
         },
         if data.dimension_y == 0.0 {
-            texture_clone.height() as f32
+            sprite_ref.dimension_y
         } else {
             data.dimension_y
         },
