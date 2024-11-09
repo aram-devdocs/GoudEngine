@@ -116,15 +116,19 @@ impl Renderer2D {
             let scale_y = sprite.scale_y;
             let rotation = sprite.rotation;
 
-            // Build the model matrix
+            // Calculate the center offset
+            let center_offset = Vector3::new(dimensions.x * 0.5, dimensions.y * 0.5, 0.0);
+
+            // Build the model matrix with center rotation
             let model = Matrix4::from_translation(position)
+                * Matrix4::from_translation(center_offset)
                 * Matrix4::from_angle_z(cgmath::Deg(rotation))
+                * Matrix4::from_translation(-center_offset)
                 * Matrix4::from_nonuniform_scale(
                     dimensions.x * scale_x,
                     dimensions.y * scale_y,
                     dimensions.z,
                 );
-
             self.shader_program
                 .set_uniform_mat4(&self.model_uniform, &model)?;
 
