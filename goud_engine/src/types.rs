@@ -14,28 +14,28 @@ pub struct Texture {
 pub struct Sprite {
     pub x: f32,
     pub y: f32,
-    pub scale_x: Option<f32>,
-    pub scale_y: Option<f32>,
-    pub dimension_x: Option<f32>,
-    pub dimension_y: Option<f32>,
+    pub scale_x: f32,
+    pub scale_y: f32,
+    pub dimension_x: f32,
+    pub dimension_y: f32,
     pub rotation: f32,
-    pub source_rect: Option<Rectangle>,
+    pub source_rect: Rectangle,
     pub texture: Rc<Texture>,
 }
-
 
 pub type SpriteMap = Vec<Option<Sprite>>;
 // Data Transfer Objects
 #[repr(C)]
+#[derive(Debug, Clone)]
 pub struct SpriteDto {
     pub x: f32,
     pub y: f32,
-    pub scale_x: Option<f32>,
-    pub scale_y: Option<f32>,
-    pub dimension_x: Option<f32>,
-    pub dimension_y: Option<f32>,
+    pub scale_x: f32,
+    pub scale_y: f32,
+    pub dimension_x: f32,
+    pub dimension_y: f32,
     pub rotation: f32,
-    pub source_rect: Option<Rectangle>,
+    pub source_rect: Rectangle,
     pub texture_path: *const c_char,
 }
 
@@ -97,7 +97,6 @@ pub struct Vao {
 // pub struct Vec {
 //     _private: [u8; 0],
 // }
-
 #[repr(C)]
 pub struct Duration {
     secs: u64,

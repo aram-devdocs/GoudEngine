@@ -7,6 +7,7 @@ public class Bird
 {
     private readonly GoudGame game;
     private readonly Movement movement;
+
     private uint spriteIndex;
     public float X { get; private set; }
     public float Y { get; private set; }
@@ -48,7 +49,7 @@ public class Bird
         Y = yPosition;
 
         // Update the bird's position in the game
-        game.UpdateSprite(spriteIndex, new SpriteDto { x = X, y = Y });
+        game.UpdateSprite(spriteIndex, new SpriteDto { x = X, y = Y, rotation = movement.Rotation });
     }
 
     public bool CollidesWith(Pipe pipe)

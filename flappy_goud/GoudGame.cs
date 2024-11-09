@@ -96,6 +96,7 @@ public class GoudGame
     {
         unsafe
         {
+            Console.WriteLine("Updating sprite data: " + data.x + " " + data.y + " " + data.rotation + " " + data.scale_x + " " + data.scale_y + " " + data.dimension_x + " " + data.dimension_y);
             NativeMethods.game_update_sprite(gameInstance, id, data);
         }
     }
