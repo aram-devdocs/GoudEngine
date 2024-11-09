@@ -4,7 +4,7 @@ use std::ptr;
 
 use crate::{
     libs::platform::graphics::rendering::{BufferObject, ShaderProgram, Vao, VertexAttribute},
-    types::{Rectangle, Sprite, SpriteMap},
+    types::{Sprite, SpriteMap},
 };
 
 use super::Renderer;

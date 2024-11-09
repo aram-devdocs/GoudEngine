@@ -111,7 +111,6 @@ pub extern "C" fn game_add_sprite(
 #[no_mangle]
 pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: SpriteDto) {
     let game = unsafe { &mut *game };
-    println!("debut data {:?}", data);
     let sprite_ref = game.ecs.get_sprite(id).expect("Sprite not found");
     let texture = sprite_ref.texture.clone();
 
