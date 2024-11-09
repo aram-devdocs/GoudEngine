@@ -1,5 +1,4 @@
 use crate::game::{GameSdk, WindowBuilder};
-// use crate::libs::platform::graphics::rendering::{Rectangle, Sprite, Texture};
 use crate::types::{EntityId, Rectangle, Sprite, Texture};
 use crate::types::{SpriteDto, UpdateResponseData};
 use glfw::Key;
@@ -69,24 +68,39 @@ pub extern "C" fn game_add_sprite(
     let texture_path_str = unsafe { CStr::from_ptr(texture_path).to_str().unwrap() };
     let texture = Texture::new(texture_path_str).expect("Failed to load texture");
 
-    let source_rect = Rectangle {
-        x: 0.0,
-        y: 0.0,
-        width: 1.0,
-        height: 1.0,
-    };
-
     let texture_clone = texture.clone();
     let sprite = Sprite::new(
         texture,
         data.x,
         data.y,
-        data.scale_x.unwrap_or(1.0),
-        data.scale_y.unwrap_or(1.0),
-        data.dimension_x.unwrap_or(texture_clone.width() as f32),
-        data.dimension_y.unwrap_or(texture_clone.height() as f32),
+        if data.scale_x == 0.0 {
+            1.0
+        } else {
+            data.scale_x
+        },
+        if data.scale_y == 0.0 {
+            1.0
+        } else {
+            data.scale_y
+        },
+        if data.dimension_x == 0.0 {
+            texture_clone.width() as f32
+        } else {
+            data.dimension_x
+        },
+        if data.dimension_y == 0.0 {
+            texture_clone.height() as f32
+        } else {
+            data.dimension_y
+        },
         data.rotation,
-        Some(source_rect),
+        // TODO:Placeholder needs to be fixed for collision detection
+        Rectangle {
+            x: 0.0,
+            y: 0.0,
+            width: 1.0,
+            height: 1.0,
+        },
     );
 
     let id = game.ecs.add_sprite(sprite);
@@ -96,26 +110,41 @@ pub extern "C" fn game_add_sprite(
 #[no_mangle]
 pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: SpriteDto) {
     let game = unsafe { &mut *game };
-    // let renderer = game.renderer_2d.as_ref().unwrap();
     let sprite_ref = game.ecs.get_sprite(id).expect("Sprite not found");
     let texture = sprite_ref.texture.clone();
 
-    let texture_clone = texture.clone();
     let sprite = Sprite::new(
         texture,
         data.x,
         data.y,
-        data.scale_x.unwrap_or(1.0),
-        data.scale_y.unwrap_or(1.0),
-        data.dimension_x.unwrap_or(texture_clone.width() as f32),
-        data.dimension_y.unwrap_or(texture_clone.height() as f32),
+        if data.scale_x == 0.0 {
+            sprite_ref.scale_x
+        } else {
+            data.scale_x
+        },
+        if data.scale_y == 0.0 {
+            sprite_ref.scale_y
+        } else {
+            data.scale_y
+        },
+        if data.dimension_x == 0.0 {
+            sprite_ref.dimension_x
+        } else {
+            data.dimension_x
+        },
+        if data.dimension_y == 0.0 {
+            sprite_ref.dimension_y
+        } else {
+            data.dimension_y
+        },
         data.rotation,
-        Some(Rectangle {
+        // TODO:Placeholder needs to be fixed for collision detection
+        Rectangle {
             x: 0.0,
             y: 0.0,
             width: 1.0,
             height: 1.0,
-        }),
+        },
     );
 
     game.ecs

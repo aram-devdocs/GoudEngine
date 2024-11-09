@@ -40,7 +40,7 @@ public class Pipe
         X -= GameConstants.PipeSpeed * deltaTime * GameConstants.TargetFPS;
 
         // Update top and bottom pipe positions
-        game.UpdateSprite(topSpriteId, new SpriteDto { x = X, y = GapY - GameConstants.PipeGap - 320 });
+        game.UpdateSprite(topSpriteId, new SpriteDto { x = X, y = GapY - GameConstants.PipeGap - 320, rotation = 180 });
         game.UpdateSprite(bottomSpriteId, new SpriteDto { x = X, y = GapY + GameConstants.PipeGap });
     }
 

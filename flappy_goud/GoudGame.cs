@@ -7,7 +7,9 @@ public class GoudGame
 
 
 
+#pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
     private unsafe GameSdk* gameInstance;
+#pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
 
     public delegate void GameCallback();
 

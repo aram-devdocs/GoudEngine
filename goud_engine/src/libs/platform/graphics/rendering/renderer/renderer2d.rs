@@ -4,7 +4,7 @@ use std::ptr;
 
 use crate::{
     libs::platform::graphics::rendering::{BufferObject, ShaderProgram, Vao, VertexAttribute},
-    types::{Rectangle, Sprite, SpriteMap},
+    types::{Sprite, SpriteMap},
 };
 
 use super::Renderer;
@@ -99,16 +99,24 @@ impl Renderer2D {
         for sprite in sprites {
             // Use positions and scales directly
             let position = Vector3::new(sprite.x, sprite.y, 0.0);
-            let dimensions = Vector3::new(
-                sprite.dimension_x.unwrap_or(sprite.texture.width() as f32),
-                sprite.dimension_y.unwrap_or(sprite.texture.height() as f32),
-                1.0,
-            );
+            let dimensions = Vector3::new(sprite.dimension_x, sprite.dimension_y, 1.0);
+            let scale_x = sprite.scale_x;
+            let scale_y = sprite.scale_y;
+            let rotation = sprite.rotation;
 
-            // Build the model matrix
+            // Calculate the center offset
+            let center_offset = Vector3::new(dimensions.x * 0.5, dimensions.y * 0.5, 0.0);
+
+            // Build the model matrix with center rotation
             let model = Matrix4::from_translation(position)
-                * Matrix4::from_nonuniform_scale(dimensions.x, dimensions.y, dimensions.z);
-
+                * Matrix4::from_translation(center_offset)
+                * Matrix4::from_angle_z(cgmath::Deg(rotation))
+                * Matrix4::from_translation(-center_offset)
+                * Matrix4::from_nonuniform_scale(
+                    dimensions.x * scale_x,
+                    dimensions.y * scale_y,
+                    dimensions.z,
+                );
             self.shader_program
                 .set_uniform_mat4(&self.model_uniform, &model)?;
 
@@ -116,12 +124,7 @@ impl Renderer2D {
             sprite.texture.bind(gl::TEXTURE0);
 
             // Set source rectangle
-            let source_rect = sprite.source_rect.unwrap_or(Rectangle {
-                x: 0.0,
-                y: 0.0,
-                width: 1.0,
-                height: 1.0,
-            });
+            let source_rect = sprite.source_rect;
             self.shader_program.set_uniform_vec4(
                 &self.source_rect_uniform,
                 &Vector4::new(
@@ -148,11 +151,11 @@ impl Renderer2D {
 impl Renderer for Renderer2D {
     /// Renders the 2D scene.
     fn render(&mut self, sprites: SpriteMap) {
-            let sprites: Vec<Sprite> = sprites.into_iter().filter_map(|s| s).collect();
-            if let Err(e) = self.render_sprites(sprites) {
-                eprintln!("Error rendering sprites: {}", e);
-            }
+        let sprites: Vec<Sprite> = sprites.into_iter().filter_map(|s| s).collect();
+        if let Err(e) = self.render_sprites(sprites) {
+            eprintln!("Error rendering sprites: {}", e);
         }
+    }
 
     fn terminate(&self) {
         self.shader_program.terminate();

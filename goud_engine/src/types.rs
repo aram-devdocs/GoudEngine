@@ -14,28 +14,28 @@ pub struct Texture {
 pub struct Sprite {
     pub x: f32,
     pub y: f32,
-    pub scale_x: Option<f32>,
-    pub scale_y: Option<f32>,
-    pub dimension_x: Option<f32>,
-    pub dimension_y: Option<f32>,
+    pub scale_x: f32,
+    pub scale_y: f32,
+    pub dimension_x: f32,
+    pub dimension_y: f32,
     pub rotation: f32,
-    pub source_rect: Option<Rectangle>,
+    pub source_rect: Rectangle,
     pub texture: Rc<Texture>,
 }
-
 
 pub type SpriteMap = Vec<Option<Sprite>>;
 // Data Transfer Objects
 #[repr(C)]
+#[derive(Debug, Clone)]
 pub struct SpriteDto {
     pub x: f32,
     pub y: f32,
-    pub scale_x: Option<f32>,
-    pub scale_y: Option<f32>,
-    pub dimension_x: Option<f32>,
-    pub dimension_y: Option<f32>,
+    pub scale_x: f32,
+    pub scale_y: f32,
+    pub dimension_x: f32,
+    pub dimension_y: f32,
     pub rotation: f32,
-    pub source_rect: Option<Rectangle>,
+    pub source_rect: Rectangle,
     pub texture_path: *const c_char,
 }
 
@@ -44,6 +44,7 @@ pub struct SpriteDto {
 /// Rectangle
 ///
 /// Represents a rectangle, typically used for spritesheet source rectangles.
+#[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct Rectangle {
     pub x: f32,
@@ -67,21 +68,28 @@ pub struct UpdateResponseData {
 
 // Opaque pointers for additional structures
 #[repr(C)]
+#[allow(dead_code)]
 pub struct Glfw {
     _private: [u8; 0],
 }
 
 #[repr(C)]
+#[allow(dead_code)]
+
 pub struct Receiver {
     _private: [u8; 0],
 }
 
 #[repr(C)]
+#[allow(dead_code)]
+
 pub struct HashSet {
     _private: [u8; 0],
 }
 
 #[repr(C)]
+#[allow(dead_code)]
+
 pub struct ShaderProgram {
     _private: [u8; 0],
 }
@@ -89,26 +97,30 @@ pub struct ShaderProgram {
 // vao vec
 
 #[repr(C)]
+#[allow(dead_code)]
+
 pub struct Vao {
     _private: [u8; 0],
 }
 
 #[repr(C)]
-// pub struct Vec {
-//     _private: [u8; 0],
-// }
+#[allow(dead_code)]
 
-#[repr(C)]
 pub struct Duration {
     secs: u64,
     nanos: u32, // Duration is a struct with two fields: secs and nanos. Nanos is nanoseconds coming from std::time::Duration.
 }
 
 #[repr(C)]
+#[allow(dead_code)]
+
 pub struct Instant {
     secs: u64,
     nanos: u32, // Instant is a struct with two fields: secs and nanos. Nanos is nanoseconds coming from std::time::Instant.
 }
+
+#[repr(C)]
+#[allow(dead_code)]
 
 pub struct ECS {
     _private: [u8; 0],

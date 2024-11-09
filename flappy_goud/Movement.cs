@@ -3,6 +3,8 @@
 public class Movement
 {
     public float Velocity { get; set; }
+
+    public float Rotation { get; private set; }
     private readonly float gravity;
     private readonly float jumpStrength;
 
@@ -26,5 +28,7 @@ public class Movement
     public void UpdatePosition(ref float positionY, float deltaTime)
     {
         positionY += Velocity * deltaTime;
+        // update the rotation of the bird going up or down
+        Rotation = Math.Min(Math.Max(-45, Velocity * 3), 45);
     }
 }
