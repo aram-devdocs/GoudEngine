@@ -103,9 +103,6 @@ pub struct Vao {
     _private: [u8; 0],
 }
 
-// pub struct Vec {
-//     _private: [u8; 0],
-// }
 #[repr(C)]
 #[allow(dead_code)]
 
