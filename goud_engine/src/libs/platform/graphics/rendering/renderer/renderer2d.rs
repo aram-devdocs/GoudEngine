@@ -99,19 +99,7 @@ impl Renderer2D {
         for sprite in sprites {
             // Use positions and scales directly
             let position = Vector3::new(sprite.x, sprite.y, 0.0);
-            let dimensions = Vector3::new(
-                if sprite.dimension_x == 0.0 {
-                    sprite.texture.width() as f32
-                } else {
-                    sprite.dimension_x
-                },
-                if sprite.dimension_y == 0.0 {
-                    sprite.texture.height() as f32
-                } else {
-                    sprite.dimension_y
-                },
-                1.0,
-            );
+            let dimensions = Vector3::new(sprite.dimension_x, sprite.dimension_y, 1.0);
             let scale_x = sprite.scale_x;
             let scale_y = sprite.scale_y;
             let rotation = sprite.rotation;
