@@ -12,10 +12,10 @@ public class Bird
     public Bird(GoudGame game)
     {
         this.game = game;
-        this.movement = new Movement(GameConstants.Gravity, GameConstants.JumpStrength);
-        this.X = GameConstants.ScreenWidth / 4;
-        this.Y = GameConstants.ScreenHeight / 2;
-        this.animator = new BirdAnimator(game, X, Y);
+        movement = new Movement(GameConstants.Gravity, GameConstants.JumpStrength);
+        X = GameConstants.ScreenWidth / 4;
+        Y = GameConstants.ScreenHeight / 2;
+        animator = new BirdAnimator(game, X, Y);
     }
 
     public void Initialize()

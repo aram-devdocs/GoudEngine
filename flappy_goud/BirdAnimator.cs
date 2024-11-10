@@ -20,10 +20,10 @@ public class BirdAnimator
     {
         this.game = game;
         this.frameDuration = frameDuration;
-        this.animationTime = 0;
-        this.currentFrame = 0;
-        this.initialX = x;
-        this.initialY = y;
+        animationTime = 0;
+        currentFrame = 0;
+        initialX = x;
+        initialY = y;
 
         // Load the animation frames
         spritePaths = new List<string>

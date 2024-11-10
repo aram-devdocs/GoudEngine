@@ -11,8 +11,8 @@ public class Movement
     {
         this.gravity = gravity;
         this.jumpStrength = jumpStrength;
-        this.Velocity = 0;
-        this.Rotation = 0;
+        Velocity = 0;
+        Rotation = 0;
     }
 
     public void ApplyGravity(float deltaTime)

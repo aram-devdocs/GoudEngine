@@ -16,10 +16,10 @@ public class GameManager
     public GameManager(GoudGame game)
     {
         this.game = game;
-        this.bird = new Bird(game);
-        this.pipes = new List<Pipe>();
-        this.pipeSpawnTimer = 0;
-        this.scoreCounter = new ScoreCounter();
+        bird = new Bird(game);
+        pipes = new List<Pipe>();
+        pipeSpawnTimer = 0;
+        scoreCounter = new ScoreCounter();
     }
 
     public void Initialize()

@@ -15,10 +15,10 @@ public class Pipe
     public Pipe(GoudGame game)
     {
         this.game = game;
-        this.X = GameConstants.ScreenWidth;
+        X = GameConstants.ScreenWidth;
 
         // Set the gap to a random vertical position on the screen
-        this.GapY = new Random().Next(GameConstants.PipeGap, (int)GameConstants.ScreenHeight - GameConstants.PipeGap);
+        GapY = new Random().Next(GameConstants.PipeGap, (int)GameConstants.ScreenHeight - GameConstants.PipeGap);
 
         // Position the top pipe above the screen by its height
         topSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
