@@ -7,9 +7,10 @@ using CsBindgen;
 public class GameManager
 {
     private GoudGame game;
+
+    private ScoreCounter scoreCounter;
     private Bird bird;
     private List<Pipe> pipes;
-    private int score;
     private float pipeSpawnTimer;
 
     public GameManager(GoudGame game)
@@ -17,8 +18,8 @@ public class GameManager
         this.game = game;
         this.bird = new Bird(game);
         this.pipes = new List<Pipe>();
-        this.score = 0;
         this.pipeSpawnTimer = 0;
+        this.scoreCounter = new ScoreCounter();
     }
 
     public void Initialize()
@@ -39,7 +40,7 @@ public class GameManager
         pipes.ForEach(pipe => pipe.Remove());
         pipes.Clear();
 
-        score = 0;
+        scoreCounter.ResetScore();
         pipeSpawnTimer = 0;
     }
 
@@ -87,8 +88,7 @@ public class GameManager
             return false;
         });
 
-        // Update Score
-        score += bird.PassedPipes(pipes);
+
     }
 
     private void ResetGame()

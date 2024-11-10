@@ -57,16 +57,5 @@ public class Bird
         return pipe.Intersects(X, Y, GameConstants.BirdWidth, GameConstants.BirdHeight);
     }
 
-    public int PassedPipes(List<Pipe> pipes)
-    {
-        int count = 0;
-        foreach (var pipe in pipes)
-        {
-            if (pipe.IsPassed(X))
-            {
-                count++;
-            }
-        }
-        return count;
-    }
+
 }
