@@ -83,11 +83,15 @@ public class GameManager
             if (pipe.IsOffScreen())
             {
                 pipe.Remove();
+                scoreCounter.IncrementScore();
                 return true;
             }
             return false;
         });
 
+
+        // Update Score
+        scoreCounter.Update(game);
 
     }
 
