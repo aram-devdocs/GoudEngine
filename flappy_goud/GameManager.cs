@@ -40,7 +40,7 @@ public class GameManager
         pipes.ForEach(pipe => pipe.Remove());
         pipes.Clear();
 
-        scoreCounter.ResetScore();
+        scoreCounter.ResetScore(game);
         pipeSpawnTimer = 0;
     }
 
@@ -83,7 +83,7 @@ public class GameManager
             if (pipe.IsOffScreen())
             {
                 pipe.Remove();
-                scoreCounter.IncrementScore();
+                scoreCounter.IncrementScore(game);
                 return true;
             }
             return false;
