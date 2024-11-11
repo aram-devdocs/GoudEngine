@@ -35,7 +35,7 @@ public class Bird
     {
         if (game.IsKeyPressed(32)) // Space bar for jump
         {
-            movement.Jump(deltaTime);
+            movement.TryJump(deltaTime);
         }
 
         movement.ApplyGravity(deltaTime);
