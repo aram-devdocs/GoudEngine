@@ -67,7 +67,8 @@ public class BirdAnimator
             x = x,
             y = y,
             rotation = rotation,
-            texture_id = spritePaths[textureKey]
+            texture_id = spritePaths[textureKey],
+            debug = true
         });
 
 

@@ -95,6 +95,7 @@ pub extern "C" fn game_add_sprite(game: *mut GameSdk, data: SpriteCreateDto) -> 
             width: 1.0,
             height: 1.0,
         },
+        data.debug
     );
 
     let id = game.ecs.add_sprite(sprite);
@@ -151,6 +152,7 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: Spr
             width: 1.0,
             height: 1.0,
         },
+        data.debug,
     );
 
     game.ecs

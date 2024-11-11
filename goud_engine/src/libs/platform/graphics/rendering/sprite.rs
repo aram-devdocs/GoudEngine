@@ -16,6 +16,7 @@ impl Sprite {
         dimension_y: f32,
         rotation: f32,
         source_rect: Rectangle,
+        debug: bool,
     ) -> Sprite {
         Sprite {
             x,
@@ -27,6 +28,7 @@ impl Sprite {
             rotation,
             texture_id,
             source_rect,
+            debug,
         }
     }
 }

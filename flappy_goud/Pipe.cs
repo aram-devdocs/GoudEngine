@@ -49,8 +49,8 @@ public class Pipe
         X -= GameConstants.PipeSpeed * deltaTime * GameConstants.TargetFPS;
 
         // Update top and bottom pipe positions
-        game.UpdateSprite(topSpriteId, new SpriteUpdateDto { x = X, y = GapY - GameConstants.PipeGap - 320, rotation = 180, texture_id = TextureId });
-        game.UpdateSprite(bottomSpriteId, new SpriteUpdateDto { x = X, y = GapY + GameConstants.PipeGap, texture_id = TextureId });
+        game.UpdateSprite(topSpriteId, new SpriteUpdateDto { x = X, y = GapY - GameConstants.PipeGap - 320, rotation = 180, texture_id = TextureId, debug = true });
+        game.UpdateSprite(bottomSpriteId, new SpriteUpdateDto { x = X, y = GapY + GameConstants.PipeGap, texture_id = TextureId, debug = true });
     }
 
     public bool IsOffScreen()
