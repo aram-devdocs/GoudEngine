@@ -83,13 +83,21 @@ public class GoudGame
         }
     }
 
-    public uint AddSprite(string texturePath, SpriteCreateDto data)
+    public uint AddSprite(SpriteCreateDto data)
+    {
+        unsafe
+        {
+            return NativeMethods.game_add_sprite(gameInstance, data);
+        }
+    }
+
+    public uint CreateTexture(string texturePath)
     {
         unsafe
         {
             fixed (byte* texturePathBytes = System.Text.Encoding.ASCII.GetBytes(texturePath + "\0"))
             {
-                return NativeMethods.game_add_sprite(gameInstance, texturePathBytes, data);
+                return NativeMethods.game_create_texture(gameInstance, texturePathBytes);
             }
         }
     }

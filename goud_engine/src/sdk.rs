@@ -2,7 +2,7 @@ use crate::game::{GameSdk, WindowBuilder};
 use crate::types::{EntityId, Rectangle, Sprite};
 use crate::types::{SpriteCreateDto, SpriteUpdateDto, UpdateResponseData};
 use glfw::Key;
-use std::ffi::{CStr, CString};
+use std::ffi::{c_uint, CStr, CString};
 use std::os::raw::{c_char, c_int};
 
 #[no_mangle]
@@ -59,18 +59,12 @@ pub extern "C" fn game_terminate(game: *mut GameSdk) {
 }
 
 #[no_mangle]
-pub extern "C" fn game_add_sprite(
-    game: *mut GameSdk,
-    texture_path: *const c_char,
-    data: SpriteCreateDto,
-) -> u32 {
+pub extern "C" fn game_add_sprite(game: *mut GameSdk, data: SpriteCreateDto) -> u32 {
     let game = unsafe { &mut *game };
-    // let texture = Texture::new(texture_path_str).expect("Failed to load texture");
-    let texture_id = game.texture_manager.create_texture(texture_path);
-    let texture_clone = game.texture_manager.get_texture(texture_id).clone();
+    let texture_clone = game.texture_manager.get_texture(data.texture_id).clone();
 
     let sprite = Sprite::new(
-        texture_id,
+        data.texture_id,
         data.x,
         data.y,
         if data.scale_x == 0.0 {
@@ -108,12 +102,27 @@ pub extern "C" fn game_add_sprite(
 }
 
 #[no_mangle]
+pub extern "C" fn game_create_texture(game: *mut GameSdk, texture_path: *const c_char) -> c_uint {
+    let game = unsafe { &mut *game };
+    let texture_path_str = unsafe { CStr::from_ptr(texture_path).to_str().unwrap() };
+    let texture_path_cstring = CString::new(texture_path_str).unwrap();
+    game.texture_manager
+        .create_texture(texture_path_cstring.as_ptr())
+}
+
+#[no_mangle]
 pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: SpriteUpdateDto) {
     let game = unsafe { &mut *game };
     let sprite_ref = game.ecs.get_sprite(id).expect("Sprite not found");
-    let texture = game.texture_manager.get_texture(data.texture_id).clone();
+    // let texture = game.texture_manager.get_texture(data.texture_id).clone();
     let sprite = Sprite::new(
-        texture.id,
+        // data.texture_id,
+        if data.texture_id < 0 {
+            // TODO: we need to handle optionals in c ffi
+            sprite_ref.texture_id
+        } else {
+            data.texture_id
+        },
         data.x,
         data.y,
         if data.scale_x == 0.0 {

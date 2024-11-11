@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::os::raw::c_char;
 use std::{ffi::c_uint, rc::Rc};
 pub type EntityId = u32;
 
@@ -12,7 +11,6 @@ pub struct Texture {
 
 pub struct TextureManager {
     pub textures: HashMap<c_uint, Rc<Texture>>, // property 1 is the texture id, property 2 is the texture itself.
-    pub texture_path_to_id_dict: HashMap<String, c_uint>, // We will convert the c_char to a string and store it in a hashmap, and then we will store the texture id in a hashmap.
 }
 // Data Transfer Objects
 #[repr(C)]
@@ -42,6 +40,9 @@ pub struct SpriteCreateDto {
     pub dimension_y: f32,
     pub rotation: f32,
     pub source_rect: Rectangle,
+    // pub texture_id: c_uint,
+    // texture_id is optional, howeber it has to work as a ffi type
+    pub texture_id: c_uint,
 }
 
 #[repr(C)]

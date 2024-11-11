@@ -24,14 +24,17 @@ public class GameManager
 
     public void Initialize()
     {
+        uint TextureId = game.CreateTexture("assets/sprites/background-day.png");
         SpriteCreateDto backgroundData = new SpriteCreateDto
         {
             x = 0,
             y = 0,
+            texture_id = TextureId
         };
 
-        game.AddSprite("assets/sprites/background-day.png", backgroundData);
+        game.AddSprite(backgroundData);
         bird.Initialize();
+        scoreCounter.Initialize(game);
     }
 
     public void Start()
