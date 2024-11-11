@@ -156,6 +156,18 @@ impl ShaderProgram {
         }
     }
 
+    /// Sets a float uniform variable.
+    pub fn set_uniform_float(&self, name: &str, value: f32) -> Result<(), String> {
+        if let Some(&location) = self.uniform_locations.get(name) {
+            unsafe {
+                gl::Uniform1f(location, value);
+            }
+            Ok(())
+        } else {
+            Err(format!("Uniform '{}' not found", name))
+        }
+    }
+
     pub fn terminate(&self) {
         unsafe {
             gl::UseProgram(0);
