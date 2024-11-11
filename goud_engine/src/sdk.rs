@@ -114,9 +114,7 @@ pub extern "C" fn game_create_texture(game: *mut GameSdk, texture_path: *const c
 pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: SpriteUpdateDto) {
     let game = unsafe { &mut *game };
     let sprite_ref = game.ecs.get_sprite(id).expect("Sprite not found");
-    // let texture = game.texture_manager.get_texture(data.texture_id).clone();
     let sprite = Sprite::new(
-        // data.texture_id,
         if data.texture_id < 0 {
             // TODO: we need to handle optionals in c ffi
             sprite_ref.texture_id

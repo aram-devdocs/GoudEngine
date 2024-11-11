@@ -7,7 +7,6 @@ using CsBindgen;
 public class BirdAnimator
 {
     private readonly GoudGame game;
-    // private readonly should be a dict of paths of the textures and their respective ids
     private Dictionary<string, uint> spritePaths;
 
     private int currentFrame;
@@ -17,7 +16,6 @@ public class BirdAnimator
     private float initialY;
 
     public uint SpriteId { get; private set; }
-    // public uint TextureId { get; private set; }
 
     public BirdAnimator(GoudGame game, float x, float y, float frameDuration = 0.1f)
     {
