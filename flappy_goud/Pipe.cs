@@ -6,8 +6,8 @@ using CsBindgen;
 public class Pipe
 {
     private readonly GoudGame game;
-    private uint topSpriteId;
-    private uint bottomSpriteId;
+    public uint topSpriteId;
+    public uint bottomSpriteId;
     public float X { get; private set; }
     public float GapY { get; private set; }
 
@@ -32,7 +32,6 @@ public class Pipe
             texture_id = TextureId
         });
 
-        Console.WriteLine($"Debug top_sprite_id: {topSpriteId}");
 
         bottomSpriteId = game.AddSprite(new SpriteCreateDto
         {
@@ -41,7 +40,6 @@ public class Pipe
             texture_id = TextureId
         });
 
-        Console.WriteLine($"Debug bottom_sprite_id: {bottomSpriteId}");
     }
 
     public void Update(float deltaTime)
@@ -49,8 +47,8 @@ public class Pipe
         X -= GameConstants.PipeSpeed * deltaTime * GameConstants.TargetFPS;
 
         // Update top and bottom pipe positions
-        game.UpdateSprite(topSpriteId, new SpriteUpdateDto { x = X, y = GapY - GameConstants.PipeGap - 320, rotation = 180, texture_id = TextureId, debug = true });
-        game.UpdateSprite(bottomSpriteId, new SpriteUpdateDto { x = X, y = GapY + GameConstants.PipeGap, texture_id = TextureId, debug = true });
+        game.UpdateSprite(topSpriteId, new SpriteUpdateDto { x = X, y = GapY - GameConstants.PipeGap - 320, rotation = 180, texture_id = TextureId });
+        game.UpdateSprite(bottomSpriteId, new SpriteUpdateDto { x = X, y = GapY + GameConstants.PipeGap, texture_id = TextureId });
     }
 
     public bool IsOffScreen()
@@ -58,11 +56,7 @@ public class Pipe
         return X + GameConstants.PipeWidth < 0;
     }
 
-    public bool Intersects(float birdX, float birdY, int birdWidth, int birdHeight)
-    {
-        return (birdX < X + GameConstants.PipeWidth && birdX + birdWidth > X &&
-                (birdY < GapY || birdY + birdHeight > GapY + GameConstants.PipeGap));
-    }
+
 
     public bool IsPassed(float birdX)
     {

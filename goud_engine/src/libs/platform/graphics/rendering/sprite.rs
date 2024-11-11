@@ -31,4 +31,21 @@ impl Sprite {
             debug,
         }
     }
+
+    pub fn check_collision(&self, other: &Sprite) -> bool {
+        let self_left = self.x;
+        let self_right = self.x + self.dimension_x;
+        let self_top = self.y;
+        let self_bottom = self.y + self.dimension_y;
+
+        let other_left = other.x;
+        let other_right = other.x + other.dimension_x;
+        let other_top = other.y;
+        let other_bottom = other.y + other.dimension_y;
+
+        self_left < other_right
+            && self_right > other_left
+            && self_top < other_bottom
+            && self_bottom > other_top
+    }
 }
