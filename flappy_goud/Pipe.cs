@@ -21,18 +21,22 @@ public class Pipe
         GapY = new Random().Next(GameConstants.PipeGap, (int)GameConstants.ScreenHeight - GameConstants.PipeGap);
 
         // Position the top pipe above the screen by its height
-        topSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
+        topSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteCreateDto
         {
             x = X,
             y = GapY - GameConstants.PipeGap - 320, // Adjusted to position the top pipe correctly
             rotation = 180
         });
 
-        bottomSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteDto
+        Console.WriteLine($"Debug top_sprite_id: {topSpriteId}");
+
+        bottomSpriteId = game.AddSprite("assets/sprites/pipe-green.png", new SpriteCreateDto
         {
             x = X,
             y = GapY + GameConstants.PipeGap // Adjusted to position the bottom pipe correctly
         });
+
+        Console.WriteLine($"Debug bottom_sprite_id: {bottomSpriteId}");
     }
 
     public void Update(float deltaTime)
@@ -40,8 +44,8 @@ public class Pipe
         X -= GameConstants.PipeSpeed * deltaTime * GameConstants.TargetFPS;
 
         // Update top and bottom pipe positions
-        game.UpdateSprite(topSpriteId, new SpriteDto { x = X, y = GapY - GameConstants.PipeGap - 320, rotation = 180 });
-        game.UpdateSprite(bottomSpriteId, new SpriteDto { x = X, y = GapY + GameConstants.PipeGap });
+        game.UpdateSprite(topSpriteId, new SpriteUpdateDto { x = X, y = GapY - GameConstants.PipeGap - 320, rotation = 180 });
+        game.UpdateSprite(bottomSpriteId, new SpriteUpdateDto { x = X, y = GapY + GameConstants.PipeGap });
     }
 
     public bool IsOffScreen()

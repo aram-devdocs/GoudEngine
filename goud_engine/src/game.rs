@@ -3,6 +3,7 @@ use crate::libs::platform::ecs::ECS;
 use crate::libs::platform::graphics::rendering::clear;
 use crate::libs::platform::graphics::rendering::renderer2d::Renderer2D;
 use crate::libs::platform::graphics::rendering::Renderer;
+use crate::types::TextureManager;
 use platform::logger;
 
 pub use platform::graphics::window::Window;
@@ -15,6 +16,7 @@ pub struct GameSdk {
     pub renderer_2d: Option<Renderer2D>,
     pub elapsed_time: f32,
     pub ecs: ECS,
+    pub texture_manager: TextureManager,
 }
 
 impl GameSdk {
@@ -27,6 +29,7 @@ impl GameSdk {
             renderer_2d: None,
             elapsed_time: 0.0,
             ecs: ECS::new(),
+            texture_manager: TextureManager::new(),
         }
     }
 
@@ -60,7 +63,7 @@ impl GameSdk {
         update_callback(self);
 
         if let Some(renderer) = &mut self.renderer_2d {
-            renderer.render(self.ecs.sprites.clone());
+            renderer.render(self.ecs.sprites.clone(), &self.texture_manager);
         }
 
         self.window.update();

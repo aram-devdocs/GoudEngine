@@ -83,7 +83,7 @@ public class GoudGame
         }
     }
 
-    public uint AddSprite(string texturePath, SpriteDto data)
+    public uint AddSprite(string texturePath, SpriteCreateDto data)
     {
         unsafe
         {
@@ -94,7 +94,7 @@ public class GoudGame
         }
     }
 
-    public void UpdateSprite(uint id, SpriteDto data)
+    public void UpdateSprite(uint id, SpriteUpdateDto data)
     {
         unsafe
         {

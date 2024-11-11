@@ -24,7 +24,7 @@ public class GameManager
 
     public void Initialize()
     {
-        SpriteDto backgroundData = new SpriteDto
+        SpriteCreateDto backgroundData = new SpriteCreateDto
         {
             x = 0,
             y = 0,

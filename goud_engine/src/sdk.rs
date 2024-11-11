@@ -1,6 +1,6 @@
 use crate::game::{GameSdk, WindowBuilder};
-use crate::types::{EntityId, Rectangle, Sprite, Texture};
-use crate::types::{SpriteDto, UpdateResponseData};
+use crate::types::{EntityId, Rectangle, Sprite};
+use crate::types::{SpriteCreateDto, SpriteUpdateDto, UpdateResponseData};
 use glfw::Key;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
@@ -62,15 +62,15 @@ pub extern "C" fn game_terminate(game: *mut GameSdk) {
 pub extern "C" fn game_add_sprite(
     game: *mut GameSdk,
     texture_path: *const c_char,
-    data: SpriteDto,
+    data: SpriteCreateDto,
 ) -> u32 {
     let game = unsafe { &mut *game };
-    let texture_path_str = unsafe { CStr::from_ptr(texture_path).to_str().unwrap() };
-    let texture = Texture::new(texture_path_str).expect("Failed to load texture");
+    // let texture = Texture::new(texture_path_str).expect("Failed to load texture");
+    let texture_id = game.texture_manager.create_texture(texture_path);
+    let texture_clone = game.texture_manager.get_texture(texture_id).clone();
 
-    let texture_clone = texture.clone();
     let sprite = Sprite::new(
-        texture,
+        texture_id,
         data.x,
         data.y,
         if data.scale_x == 0.0 {
@@ -108,13 +108,12 @@ pub extern "C" fn game_add_sprite(
 }
 
 #[no_mangle]
-pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: SpriteDto) {
+pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: SpriteUpdateDto) {
     let game = unsafe { &mut *game };
     let sprite_ref = game.ecs.get_sprite(id).expect("Sprite not found");
-    let texture = sprite_ref.texture.clone();
-
+    let texture = game.texture_manager.get_texture(data.texture_id).clone();
     let sprite = Sprite::new(
-        texture,
+        texture.id,
         data.x,
         data.y,
         if data.scale_x == 0.0 {

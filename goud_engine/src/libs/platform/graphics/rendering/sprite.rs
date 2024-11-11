@@ -1,12 +1,13 @@
 // src/sprite.rs
 
-use crate::{types::Rectangle, types::Sprite, types::Texture};
-use std::rc::Rc;
+use crate::{types::Rectangle, types::Sprite};
+use std::ffi::c_uint;
 
 impl Sprite {
     /// Creates a new Sprite.
     pub fn new(
-        texture: Rc<Texture>,
+        // texture: Rc<Texture>,
+        texture_id: c_uint,
         x: f32,
         y: f32,
         scale_x: f32,
@@ -24,7 +25,7 @@ impl Sprite {
             dimension_x: dimension_x,
             dimension_y: dimension_y,
             rotation,
-            texture,
+            texture_id,
             source_rect,
         }
     }

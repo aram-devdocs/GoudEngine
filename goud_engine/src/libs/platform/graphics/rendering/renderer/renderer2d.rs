@@ -4,7 +4,7 @@ use std::ptr;
 
 use crate::{
     libs::platform::graphics::rendering::{BufferObject, ShaderProgram, Vao, VertexAttribute},
-    types::{Sprite, SpriteMap},
+    types::{Sprite, SpriteMap, TextureManager},
 };
 
 use super::Renderer;
@@ -92,7 +92,11 @@ impl Renderer2D {
     }
 
     /// Renders all added sprites.
-    fn render_sprites(&mut self, sprites: Vec<Sprite>) -> Result<(), String> {
+    fn render_sprites(
+        &mut self,
+        sprites: Vec<Sprite>,
+        texture_manager: &TextureManager,
+    ) -> Result<(), String> {
         self.shader_program.bind();
         self.vao.bind();
 
@@ -103,6 +107,7 @@ impl Renderer2D {
             let scale_x = sprite.scale_x;
             let scale_y = sprite.scale_y;
             let rotation = sprite.rotation;
+            let texture = texture_manager.get_texture(sprite.texture_id).clone();
 
             // Calculate the center offset
             let center_offset = Vector3::new(dimensions.x * 0.5, dimensions.y * 0.5, 0.0);
@@ -121,7 +126,7 @@ impl Renderer2D {
                 .set_uniform_mat4(&self.model_uniform, &model)?;
 
             // Bind texture
-            sprite.texture.bind(gl::TEXTURE0);
+            texture.bind(gl::TEXTURE0);
 
             // Set source rectangle
             let source_rect = sprite.source_rect;
@@ -150,9 +155,9 @@ impl Renderer2D {
 
 impl Renderer for Renderer2D {
     /// Renders the 2D scene.
-    fn render(&mut self, sprites: SpriteMap) {
+    fn render(&mut self, sprites: SpriteMap, texture_manager: &TextureManager) {
         let sprites: Vec<Sprite> = sprites.into_iter().filter_map(|s| s).collect();
-        if let Err(e) = self.render_sprites(sprites) {
+        if let Err(e) = self.render_sprites(sprites, texture_manager) {
             eprintln!("Error rendering sprites: {}", e);
         }
     }
