@@ -1,15 +1,19 @@
-use std::os::raw::c_char;
+use std::collections::HashMap;
 use std::{ffi::c_uint, rc::Rc};
 pub type EntityId = u32;
 
 #[derive(Debug, Clone)]
 pub struct Texture {
-    pub id: c_uint,
+    pub id: c_uint, // TODO: Right now this needs to be user generated. We should generate this in the future.
     pub width: u32,
     pub height: u32,
 }
 
+pub struct TextureManager {
+    pub textures: HashMap<c_uint, Rc<Texture>>, // property 1 is the texture id, property 2 is the texture itself.
+}
 // Data Transfer Objects
+#[repr(C)]
 #[derive(Debug, Clone)]
 pub struct Sprite {
     pub x: f32,
@@ -20,14 +24,14 @@ pub struct Sprite {
     pub dimension_y: f32,
     pub rotation: f32,
     pub source_rect: Rectangle,
-    pub texture: Rc<Texture>,
+    pub texture_id: c_uint,
 }
 
 pub type SpriteMap = Vec<Option<Sprite>>;
 // Data Transfer Objects
 #[repr(C)]
 #[derive(Debug, Clone)]
-pub struct SpriteDto {
+pub struct SpriteCreateDto {
     pub x: f32,
     pub y: f32,
     pub scale_x: f32,
@@ -36,7 +40,21 @@ pub struct SpriteDto {
     pub dimension_y: f32,
     pub rotation: f32,
     pub source_rect: Rectangle,
-    pub texture_path: *const c_char,
+    pub texture_id: c_uint,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone)]
+pub struct SpriteUpdateDto {
+    pub x: f32,
+    pub y: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
+    pub dimension_x: f32,
+    pub dimension_y: f32,
+    pub rotation: f32,
+    pub source_rect: Rectangle,
+    pub texture_id: c_uint,
 }
 
 // Build a struct for Rc

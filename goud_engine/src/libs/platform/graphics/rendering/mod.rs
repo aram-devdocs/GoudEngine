@@ -3,7 +3,7 @@ pub mod buffer;
 pub mod renderer;
 pub mod shader;
 pub mod sprite;
-pub mod texture;
+pub mod textures;
 pub mod vao;
 pub mod vertex_attribute;
 
