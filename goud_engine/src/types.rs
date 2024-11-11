@@ -40,8 +40,6 @@ pub struct SpriteCreateDto {
     pub dimension_y: f32,
     pub rotation: f32,
     pub source_rect: Rectangle,
-    // pub texture_id: c_uint,
-    // texture_id is optional, howeber it has to work as a ffi type
     pub texture_id: c_uint,
 }
 
