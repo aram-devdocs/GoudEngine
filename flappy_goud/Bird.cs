@@ -34,7 +34,6 @@ public class Bird
     public void Update(float deltaTime)
     {
 
-        game.GetMousePosition();
         if (game.IsKeyPressed(32) || game.IsMouseButtonPressed(0))
         {
             movement.TryJump(deltaTime);
