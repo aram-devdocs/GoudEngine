@@ -59,7 +59,7 @@ public class GameManager
             return;
         }
 
-        
+
         // If R is pressed, restart the game
         if (game.IsKeyPressed(82))
         {

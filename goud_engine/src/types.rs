@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::HashMap as _HashMap;
 use std::{ffi::c_uint, rc::Rc};
 pub type EntityId = u32;
 
@@ -10,7 +10,7 @@ pub struct Texture {
 }
 
 pub struct TextureManager {
-    pub textures: HashMap<c_uint, Rc<Texture>>, // property 1 is the texture id, property 2 is the texture itself.
+    pub textures: _HashMap<c_uint, Rc<Texture>>, // property 1 is the texture id, property 2 is the texture itself.
 }
 // Data Transfer Objects
 #[repr(C)]
@@ -83,6 +83,12 @@ pub struct UpdateResponseData {
     pub delta_time: f32,
 }
 
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct MousePosition {
+    pub x: f64,
+    pub y: f64,
+}
 // Shared types
 // Types
 // TODO: https://github.com/aram-devdocs/GoudEngine/issues/5
@@ -144,5 +150,11 @@ pub struct Instant {
 #[allow(dead_code)]
 
 pub struct ECS {
+    _private: [u8; 0],
+}
+
+#[repr(C)]
+#[allow(dead_code)]
+pub struct HashMap {
     _private: [u8; 0],
 }

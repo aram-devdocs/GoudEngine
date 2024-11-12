@@ -1,5 +1,5 @@
 use crate::game::{GameSdk, WindowBuilder};
-use crate::types::{EntityId, Rectangle, Sprite};
+use crate::types::{EntityId, MousePosition, Rectangle, Sprite};
 use crate::types::{SpriteCreateDto, SpriteUpdateDto, UpdateResponseData};
 use glfw::Key;
 use std::ffi::{c_uint, CStr, CString};
@@ -175,6 +175,58 @@ pub extern "C" fn game_is_key_pressed(game: *mut GameSdk, key_code: c_int) -> bo
 }
 
 #[no_mangle]
+pub extern "C" fn game_is_mouse_button_pressed(game: *mut GameSdk, button: c_int) -> bool {
+    let game = unsafe { &*game };
+
+    // convert c_int to glfw MouseButton
+    let button = match button {
+        0 => glfw::MouseButton::Button1,
+        1 => glfw::MouseButton::Button2,
+        2 => glfw::MouseButton::Button3,
+        3 => glfw::MouseButton::Button4,
+        4 => glfw::MouseButton::Button5,
+        5 => glfw::MouseButton::Button6,
+        6 => glfw::MouseButton::Button7,
+        7 => glfw::MouseButton::Button8,
+        _ => glfw::MouseButton::Button1,
+    };
+
+    game.window.is_mouse_button_pressed(button)
+}
+
+#[no_mangle]
+pub extern "C" fn game_get_mouse_position(game: *mut GameSdk) -> MousePosition {
+    let game = unsafe { &*game };
+    let position = game.window.get_mouse_position();
+    MousePosition {
+        x: position.x,
+        y: position.y,
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn game_handle_gamepad_button(
+    game: *mut GameSdk,
+    gamepad_id: u32,
+    button: u32,
+    pressed: bool,
+) {
+    let game = unsafe { &mut *game };
+    game.window
+        .handle_gamepad_button(gamepad_id, button, pressed);
+}
+
+#[no_mangle]
+pub extern "C" fn game_is_gamepad_button_pressed(
+    game: *mut GameSdk,
+    gamepad_id: u32,
+    button: u32,
+) -> bool {
+    let game = unsafe { &*game };
+    game.window.is_gamepad_button_pressed(gamepad_id, button)
+}
+
+#[no_mangle]
 pub extern "C" fn check_collision_between_sprites(
     game: *mut GameSdk,
     entity_id1: EntityId,
@@ -184,6 +236,14 @@ pub extern "C" fn check_collision_between_sprites(
     game.ecs
         .check_collision_between_sprites(entity_id1, entity_id2)
 }
+
+#[no_mangle]
+pub extern "C" fn game_should_close(game: *mut GameSdk) -> bool {
+    let game = unsafe { &mut *game };
+    game.window.should_close()
+}
+
+// Helper functions
 
 fn from_glfw_key_code(key_code: c_int) -> Key {
     match key_code {
@@ -198,13 +258,10 @@ fn from_glfw_key_code(key_code: c_int) -> Key {
         90 => Key::Z,      // Z
         88 => Key::X,      // X
         82 => Key::R,
+
+        // esc key
+        256 => Key::Escape,
         // TODO: https://github.com/aram-devdocs/GoudEngine/issues/9
         _ => Key::Unknown,
     }
-}
-
-#[no_mangle]
-pub extern "C" fn game_should_close(game: *mut GameSdk) -> bool {
-    let game = unsafe { &mut *game };
-    game.window.should_close()
 }

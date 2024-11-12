@@ -1,10 +1,12 @@
 use glfw::Key;
-use glfw::{Action, Context, WindowEvent};
+use glfw::{Context, WindowEvent};
 use std::sync::mpsc::Receiver;
 use std::time::{Duration, Instant};
 
 mod input_handler;
 use input_handler::InputHandler;
+
+use crate::types::MousePosition;
 
 /// # Window
 ///
@@ -144,6 +146,24 @@ impl Window {
         self.input_handler.is_key_pressed(key)
     }
 
+    pub fn is_mouse_button_pressed(&self, button: glfw::MouseButton) -> bool {
+        self.input_handler.is_mouse_button_pressed(button)
+    }
+
+    pub fn get_mouse_position(&self) -> MousePosition {
+        self.input_handler.get_mouse_position()
+    }
+
+    pub fn handle_gamepad_button(&mut self, gamepad_id: u32, button: u32, pressed: bool) {
+        self.input_handler
+            .handle_gamepad_button(gamepad_id, button, pressed);
+    }
+
+    pub fn is_gamepad_button_pressed(&self, gamepad_id: u32, button: u32) -> bool {
+        self.input_handler
+            .is_gamepad_button_pressed(gamepad_id, button)
+    }
+
     // TODO: Is this going to add a lot of overhead?
     fn maintain_aspect_ratio(&mut self) {
         let (current_width, current_height) = self.window_handle.get_size();
@@ -163,8 +183,11 @@ impl Window {
         for (_, event) in events {
             self.input_handler.handle_event(&event);
 
-            if let WindowEvent::Size(_width, _height) = event {
-                self.maintain_aspect_ratio(); // Maintain aspect ratio on resize
+            match event {
+                WindowEvent::Size(_width, _height) => {
+                    self.maintain_aspect_ratio(); // Maintain aspect ratio on resize
+                }
+                _ => {}
             }
         }
     }
