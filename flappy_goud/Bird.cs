@@ -35,7 +35,7 @@ public class Bird
     {
         if (game.IsKeyPressed(32)) // Space bar for jump
         {
-            movement.Jump(deltaTime);
+            movement.TryJump(deltaTime);
         }
 
         movement.ApplyGravity(deltaTime);
@@ -47,8 +47,9 @@ public class Bird
         animator.Update(deltaTime, X, Y, movement.Rotation);
     }
 
-    public bool CollidesWith(Pipe pipe)
+    public uint GetSpriteId()
     {
-        return pipe.Intersects(X, Y, GameConstants.BirdWidth, GameConstants.BirdHeight);
+        return animator.GetSpriteId();
     }
+
 }

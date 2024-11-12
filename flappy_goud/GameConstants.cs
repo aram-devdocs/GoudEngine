@@ -10,11 +10,12 @@ public static class GameConstants
     public const uint ScreenHeight = 512;
 
     public const float Gravity = 9.8f;
-    public const float JumpStrength = -2f;
-    public const float PipeSpeed = 1.3f;
+    public const float JumpStrength = -3.5f;
+    public const float JumpCooldown = 0.33f;
+
+    public const float PipeSpeed = 1.0f;
     public const float PipeSpawnInterval = 1.5f;
-    public const int BirdWidth = 34;
-    public const int BirdHeight = 24;
     public const int PipeWidth = 60;
     public const int PipeGap = 100;
+
 }

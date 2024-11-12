@@ -25,6 +25,7 @@ pub struct Sprite {
     pub rotation: f32,
     pub source_rect: Rectangle,
     pub texture_id: c_uint,
+    pub debug: bool,
 }
 
 pub type SpriteMap = Vec<Option<Sprite>>;
@@ -41,6 +42,7 @@ pub struct SpriteCreateDto {
     pub rotation: f32,
     pub source_rect: Rectangle,
     pub texture_id: c_uint,
+    pub debug: bool,
 }
 
 #[repr(C)]
@@ -55,6 +57,7 @@ pub struct SpriteUpdateDto {
     pub rotation: f32,
     pub source_rect: Rectangle,
     pub texture_id: c_uint,
+    pub debug: bool,
 }
 
 // Build a struct for Rc

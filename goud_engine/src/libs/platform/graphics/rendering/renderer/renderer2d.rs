@@ -67,6 +67,10 @@ impl Renderer2D {
         shader_program.create_uniform("sourceRect")?;
         shader_program.set_uniform_int("texture1", 0)?;
 
+        // Set up DEBUG outline uniforms
+        shader_program.create_uniform("outlineColor")?;
+        shader_program.create_uniform("outlineWidth")?;
+
         // Create projection matrix
         let projection = ortho(
             0.0,
@@ -128,6 +132,13 @@ impl Renderer2D {
             // Bind texture
             texture.bind(gl::TEXTURE0);
 
+            // Set the outline color to red and width to a small value for debugging
+            if sprite.debug {
+                self.shader_program
+                    .set_uniform_vec4("outlineColor", &Vector4::new(1.0, 0.0, 0.0, 1.0))?;
+                self.shader_program
+                    .set_uniform_float("outlineWidth", 0.02)?; // Adjust width as needed
+            }
             // Set source rectangle
             let source_rect = sprite.source_rect;
             self.shader_program.set_uniform_vec4(
@@ -147,6 +158,13 @@ impl Renderer2D {
                     gl::UNSIGNED_INT,
                     ptr::null(),
                 );
+            }
+
+            if sprite.debug {
+                // clean up debug outline to ensure other sprites are not affected
+                self.shader_program
+                    .set_uniform_vec4("outlineColor", &Vector4::new(0.0, 0.0, 0.0, 0.0))?;
+                self.shader_program.set_uniform_float("outlineWidth", 0.0)?;
             }
         }
         Ok(())

@@ -45,7 +45,9 @@ impl ECS {
 
     /// Retrieves a sprite by EntityId, if it exists.
     pub fn get_sprite(&self, entity_id: EntityId) -> Option<&Sprite> {
-        self.sprites.get(entity_id as usize).and_then(|slot| slot.as_ref())
+        self.sprites
+            .get(entity_id as usize)
+            .and_then(|slot| slot.as_ref())
     }
 
     /// Removes a sprite by EntityId.
@@ -57,6 +59,24 @@ impl ECS {
             }
         }
         Err("EntityId not found".into())
+    }
+
+    pub fn check_collision_between_sprites(
+        &self,
+        entity_id1: EntityId,
+        entity_id2: EntityId,
+    ) -> bool {
+        match (
+            self.sprites
+                .get(entity_id1 as usize)
+                .and_then(|s| s.as_ref()),
+            self.sprites
+                .get(entity_id2 as usize)
+                .and_then(|s| s.as_ref()),
+        ) {
+            (Some(sprite1), Some(sprite2)) => sprite1.check_collision(sprite2),
+            _ => false,
+        }
     }
 
     pub fn terminate(&mut self) {

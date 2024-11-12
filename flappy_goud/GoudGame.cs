@@ -117,6 +117,16 @@ public class GoudGame
             NativeMethods.game_remove_sprite(gameInstance, id);
         }
     }
+
+    public bool CheckCollision(uint id1, uint id2)
+    {
+        unsafe
+        {
+            return NativeMethods.check_collision_between_sprites(gameInstance, id1, id2);
+        }
+    }
+
+    
     public void Close()
     {
         unsafe

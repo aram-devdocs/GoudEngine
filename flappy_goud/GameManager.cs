@@ -59,17 +59,27 @@ public class GameManager
         // Update Bird Movement with deltaTime
         bird.Update(deltaTime);
 
+
+        // Check if bird is off-screen
+        if (bird.Y < 0 || bird.Y > GameConstants.ScreenHeight)
+        {
+            ResetGame();
+            return;
+        }
+
         // Update Pipes with deltaTime and check for collisions
         foreach (var pipe in pipes)
         {
 
-            // TODO: Fix collision detection
+
             pipe.Update(deltaTime);
-            if (bird.CollidesWith(pipe))
+
+            if (game.CheckCollision(bird.GetSpriteId(), pipe.topSpriteId) || game.CheckCollision(bird.GetSpriteId(), pipe.bottomSpriteId))
             {
-                // ResetGame();
-                // return;
+                ResetGame();
+                return;
             }
+
         }
 
         // Spawn new pipes
@@ -95,6 +105,7 @@ public class GameManager
 
         // Update Score
         scoreCounter.Update(game);
+
 
     }
 

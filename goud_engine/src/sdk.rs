@@ -95,6 +95,7 @@ pub extern "C" fn game_add_sprite(game: *mut GameSdk, data: SpriteCreateDto) -> 
             width: 1.0,
             height: 1.0,
         },
+        data.debug,
     );
 
     let id = game.ecs.add_sprite(sprite);
@@ -151,6 +152,7 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: Spr
             width: 1.0,
             height: 1.0,
         },
+        data.debug,
     );
 
     game.ecs
@@ -170,6 +172,17 @@ pub extern "C" fn game_is_key_pressed(game: *mut GameSdk, key_code: c_int) -> bo
     let game = unsafe { &*game };
     let key = from_glfw_key_code(key_code);
     game.window.is_key_pressed(key)
+}
+
+#[no_mangle]
+pub extern "C" fn check_collision_between_sprites(
+    game: *mut GameSdk,
+    entity_id1: EntityId,
+    entity_id2: EntityId,
+) -> bool {
+    let game = unsafe { &*game };
+    game.ecs
+        .check_collision_between_sprites(entity_id1, entity_id2)
 }
 
 fn from_glfw_key_code(key_code: c_int) -> Key {
