@@ -13,6 +13,8 @@ public class GameManager
     private List<Pipe> pipes;
     private float pipeSpawnTimer;
 
+    private uint BaseTextureId;
+
     public GameManager(GoudGame game)
     {
         this.game = game;
@@ -24,15 +26,27 @@ public class GameManager
 
     public void Initialize()
     {
-        uint TextureId = game.CreateTexture("assets/sprites/background-day.png");
+        uint BackgroundTextureId = game.CreateTexture("assets/sprites/background-day.png");
+        BaseTextureId = game.CreateTexture("assets/sprites/base.png");
+
         SpriteCreateDto backgroundData = new SpriteCreateDto
         {
             x = 0,
             y = 0,
-            texture_id = TextureId
+            texture_id = BackgroundTextureId
         };
 
+        SpriteCreateDto baseData = new SpriteCreateDto
+        {
+            x = 0,
+            y = GameConstants.ScreenHeight - GameConstants.BaseHeight,
+            texture_id = BaseTextureId
+        };
+
+
         game.AddSprite(backgroundData);
+        game.AddSprite(baseData);
+
         bird.Initialize();
         scoreCounter.Initialize(game);
     }
@@ -48,7 +62,18 @@ public class GameManager
     }
 
     public void Update(float deltaTime)
+
     {
+
+
+        // If Escape is pressed, close the game
+        if (game.IsKeyPressed(256))
+        {
+            game.Close();
+            return;
+        }
+
+
         // If R is pressed, restart the game
         if (game.IsKeyPressed(82))
         {
@@ -59,6 +84,12 @@ public class GameManager
         // Update Bird Movement with deltaTime
         bird.Update(deltaTime);
 
+        // Check if bird is colliding with the base
+        if (game.CheckCollision(bird.GetSpriteId(), BaseTextureId))
+        {
+            // ResetGame();
+            // return;
+        }
 
         // Check if bird is off-screen
         if (bird.Y < 0 || bird.Y > GameConstants.ScreenHeight)

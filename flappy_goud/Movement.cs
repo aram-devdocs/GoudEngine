@@ -20,29 +20,24 @@ public class Movement
     public void ApplyGravity(float deltaTime)
     {
         Velocity += gravity * deltaTime * GameConstants.TargetFPS;
-        jumpCooldownTimer -= deltaTime; // Decrease cooldown timer as time passes
+        jumpCooldownTimer -= Math.Max(0, deltaTime);
     }
 
     public void TryJump(float deltaTime)
     {
         if (jumpCooldownTimer <= 0)
         {
+
             Jump();
             jumpCooldownTimer = GameConstants.JumpCooldown; // Reset the cooldown timer after jumping
-        }
-        else
-        {
-            if (jumpCooldownTimer <= GameConstants.JumpCooldown / 2)
-            {
-                Velocity = jumpStrength * GameConstants.TargetFPS * (jumpCooldownTimer / GameConstants.JumpCooldown);
-                jumpCooldownTimer = GameConstants.JumpCooldown; // Reset the cooldown timer after jumping
-            }
         }
 
     }
 
     private void Jump()
     {
+        Velocity = 0; // Reset velocity to 0 before applying gravity
+
         Velocity = jumpStrength * GameConstants.TargetFPS;
     }
 
