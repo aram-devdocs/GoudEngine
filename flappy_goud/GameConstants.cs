@@ -18,4 +18,6 @@ public static class GameConstants
     public const int PipeWidth = 60;
     public const int PipeGap = 100;
 
+    public const int BaseHeight = 112;
+
 }
