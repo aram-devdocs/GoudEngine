@@ -75,14 +75,6 @@ public class GoudGame
         }
     }
 
-    public bool IsKeyPressed(int keyCode)
-    {
-        unsafe
-        {
-            return NativeMethods.game_is_key_pressed(gameInstance, keyCode);
-        }
-    }
-
     public uint AddSprite(SpriteCreateDto data)
     {
         unsafe
@@ -126,7 +118,7 @@ public class GoudGame
         }
     }
 
-    
+
     public void Close()
     {
         unsafe
@@ -134,6 +126,36 @@ public class GoudGame
             NativeMethods.game_terminate(gameInstance);
         }
     }
+
+
+
+    public bool IsKeyPressed(int keyCode)
+    {
+        unsafe
+        {
+            return NativeMethods.game_is_key_pressed(gameInstance, keyCode);
+        }
+    }
+
+    public bool IsMouseButtonPressed(int button)
+    {
+        unsafe
+        {
+            return NativeMethods.game_is_mouse_button_pressed(gameInstance, button);
+        }
+    }
+
+    public MousePosition GetMousePosition()
+    {
+        unsafe
+        {
+            return NativeMethods.game_get_mouse_position(gameInstance);
+        }
+    }
+
+
+
+
 
 
 

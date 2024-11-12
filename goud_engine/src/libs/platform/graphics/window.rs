@@ -77,6 +77,9 @@ impl Window {
         window.set_key_polling(true);
         window.set_size_polling(true);
 
+        window.set_cursor_pos_polling(true);
+        window.set_mouse_button_polling(true);
+
         Window {
             glfw,
             window_handle: Box::new(window),
@@ -116,8 +119,9 @@ impl Window {
         self.delta_time = frame_time.as_secs_f32();
 
         // Handle frame-based processing
-        self.process_events();
         self.glfw.poll_events();
+        self.process_events();
+
         self.window_handle.swap_buffers();
         self.maintain_aspect_ratio();
         self.glfw.set_swap_interval(glfw::SwapInterval::Sync(0)); // Disable VSync
