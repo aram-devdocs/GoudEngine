@@ -48,7 +48,18 @@ public class GameManager
     }
 
     public void Update(float deltaTime)
+
     {
+
+
+        // If Escape is pressed, close the game
+        if (game.IsKeyPressed(256))
+        {
+            game.Close();
+            return;
+        }
+
+        
         // If R is pressed, restart the game
         if (game.IsKeyPressed(82))
         {

@@ -162,9 +162,7 @@ impl Window {
         let events: Vec<_> = glfw::flush_messages(&self.events).collect();
         for (_, event) in events {
             self.input_handler.handle_event(&event);
-            if let WindowEvent::Key(Key::Escape, _, Action::Press, _) = event {
-                self.window_handle.set_should_close(true);
-            }
+
             if let WindowEvent::Size(_width, _height) = event {
                 self.maintain_aspect_ratio(); // Maintain aspect ratio on resize
             }
