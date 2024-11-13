@@ -25,7 +25,7 @@ impl Renderer2D {
     pub fn new(window_width: u32, window_height: u32) -> Result<Renderer2D, String> {
         // Initialize shader program
         let mut shader_program =
-            ShaderProgram::new("shaders/vertex_shader.glsl", "shaders/fragment_shader.glsl")?;
+            ShaderProgram::new()?;
 
         // Create VAO, VBO, and EBO
         let vao = Vao::new()?;
