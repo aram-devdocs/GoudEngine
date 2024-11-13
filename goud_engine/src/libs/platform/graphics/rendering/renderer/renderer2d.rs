@@ -174,7 +174,7 @@ impl Renderer2D {
 impl Renderer for Renderer2D {
     /// Renders the 2D scene.
     fn render(&mut self, sprites: SpriteMap, texture_manager: &TextureManager) {
-        let sprites: Vec<Sprite> = sprites.into_iter().filter_map(|s| s).collect();
+        let sprites: Vec<Sprite> = sprites.into_iter().flat_map(|(_, v)| v).collect();
         if let Err(e) = self.render_sprites(sprites, texture_manager) {
             eprintln!("Error rendering sprites: {}", e);
         }

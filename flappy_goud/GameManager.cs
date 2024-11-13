@@ -33,13 +33,15 @@ public class GameManager
         {
             x = 0,
             y = 0,
+            z_layer = 0,
             texture_id = BackgroundTextureId
         };
 
         SpriteCreateDto baseData = new SpriteCreateDto
         {
             x = 0,
-            y = GameConstants.ScreenHeight - GameConstants.BaseHeight,
+            y = GameConstants.ScreenHeight,
+            z_layer = 3,
             texture_id = BaseTextureId
         };
 
@@ -87,8 +89,8 @@ public class GameManager
         // Check if bird is colliding with the base
         if (game.CheckCollision(bird.GetSpriteId(), BaseTextureId))
         {
-            // ResetGame();
-            // return;
+            ResetGame();
+            return;
         }
 
         // Check if bird is off-screen
@@ -142,6 +144,7 @@ public class GameManager
 
     private void ResetGame()
     {
+        scoreCounter.ResetScore(game);
         Start(); // Restart the game
     }
 }

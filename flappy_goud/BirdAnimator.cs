@@ -43,7 +43,7 @@ public class BirdAnimator
 
 
         // Set up the initial sprite
-        SpriteId = game.AddSprite(new SpriteCreateDto { x = initialX, y = initialY, texture_id = spritePaths["assets/sprites/bluebird-downflap.png"] });
+        SpriteId = game.AddSprite(new SpriteCreateDto { z_layer = 1, x = initialX, y = initialY, texture_id = spritePaths["assets/sprites/bluebird-downflap.png"] });
 
 
 
@@ -61,8 +61,9 @@ public class BirdAnimator
         }
 
         var textureKey = new List<string>(spritePaths.Keys)[currentFrame];
-        game.UpdateSprite(SpriteId, new SpriteUpdateDto
+        game.UpdateSprite(new SpriteUpdateDto
         {
+            id = SpriteId,
             x = x,
             y = y,
             rotation = rotation,
@@ -78,7 +79,7 @@ public class BirdAnimator
     {
         currentFrame = 0;
         animationTime = 0;
-        game.UpdateSprite(SpriteId, new SpriteUpdateDto { x = initialX, y = initialY, texture_id = spritePaths["assets/sprites/bluebird-downflap.png"] });
+        game.UpdateSprite(new SpriteUpdateDto { id = SpriteId, x = initialX, y = initialY, texture_id = spritePaths["assets/sprites/bluebird-downflap.png"] });
     }
 
     public uint GetSpriteId()
