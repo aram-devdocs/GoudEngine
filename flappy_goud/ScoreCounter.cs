@@ -58,7 +58,7 @@ public class ScoreCounter
         {
             if (i == 0)
             {
-                game.UpdateSprite(digitIds[i], new SpriteUpdateDto { x = xOffset, y = yOffset, texture_id = spritePaths["assets/sprites/0.png"] });
+                game.UpdateSprite(new SpriteUpdateDto { id = digitIds[i], x = xOffset, y = yOffset, texture_id = spritePaths["assets/sprites/0.png"] });
             }
             else
             {
@@ -96,9 +96,10 @@ public class ScoreCounter
             uint textureId = spritePaths[digitPath];
 
             // Update the sprite's texture to the corresponding digit
-            game.UpdateSprite(digitIds[i], new SpriteUpdateDto
+            game.UpdateSprite(new SpriteUpdateDto
             {
                 texture_id = textureId,
+                id = digitIds[i],
                 x = xOffset + i * 30, // Adjust position for each digit
                 y = yOffset
             });

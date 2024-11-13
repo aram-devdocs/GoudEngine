@@ -40,6 +40,7 @@ public class GameManager
         {
             x = 0,
             y = GameConstants.ScreenHeight - GameConstants.BaseHeight,
+            z_layer = 1,
             texture_id = BaseTextureId
         };
 

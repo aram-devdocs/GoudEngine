@@ -1,5 +1,5 @@
 use crate::game::{GameSdk, WindowBuilder};
-use crate::types::{EntityId, MousePosition, Rectangle, Sprite};
+use crate::types::{MousePosition, Rectangle};
 use crate::types::{SpriteCreateDto, SpriteUpdateDto, UpdateResponseData};
 use glfw::Key;
 use std::ffi::{c_uint, CStr, CString};
@@ -84,15 +84,10 @@ pub extern "C" fn game_add_sprite(game: *mut GameSdk, data: SpriteCreateDto) -> 
     let game = unsafe { &mut *game };
     let texture_clone = game.texture_manager.get_texture(data.texture_id).clone();
 
-    let sprite = Sprite::new(
-        data.texture_id,
+    let sprite = SpriteCreateDto::new(
         data.x,
         data.y,
-        if data.z_layer == 0.0 {
-            0.0
-        } else {
-            data.z_layer
-        },
+        if data.z_layer == 0 { 0 } else { data.z_layer },
         if data.scale_x == 0.0 {
             1.0
         } else {
@@ -120,6 +115,7 @@ pub extern "C" fn game_add_sprite(game: *mut GameSdk, data: SpriteCreateDto) -> 
             width: 1.0,
             height: 1.0,
         },
+        data.texture_id,
         data.debug,
     );
 
@@ -142,19 +138,16 @@ pub extern "C" fn game_create_texture(game: *mut GameSdk, texture_path: *const c
 
 /// Updates an existing sprite with new properties.
 #[no_mangle]
-pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: SpriteUpdateDto) {
+pub extern "C" fn game_update_sprite(game: *mut GameSdk, data: SpriteUpdateDto) {
     let game = unsafe { &mut *game };
-    let sprite_ref = game.ecs.get_sprite(id).expect("Sprite not found");
-    let sprite = Sprite::new(
-        if data.texture_id < 0 {
-            sprite_ref.texture_id
-        } else {
-            data.texture_id
-        },
+    let sprite_ref = game.ecs.get_sprite(data.id).expect("Sprite not found");
+
+    let sprite = SpriteUpdateDto::new(
+        data.id,
         data.x,
         data.y,
         // TODO: We need to handle all of the == 0.0 cases as they can cause weird behavior. If I switch to 0, I will always be switched back to the initial value.
-        if data.z_layer == 0.0 {
+        if data.z_layer == 0 {
             sprite_ref.z_layer
         } else {
             data.z_layer
@@ -186,17 +179,22 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: Spr
             width: 1.0,
             height: 1.0,
         },
+        if data.texture_id < 0 {
+            sprite_ref.texture_id
+        } else {
+            data.texture_id
+        },
         data.debug,
     );
 
     game.ecs
-        .update_sprite(id, sprite)
+        .update_sprite(sprite)
         .expect("Failed to update sprite");
 }
 
 /// Removes a sprite from the game instance.
 #[no_mangle]
-pub extern "C" fn game_remove_sprite(game: *mut GameSdk, id: EntityId) {
+pub extern "C" fn game_remove_sprite(game: *mut GameSdk, id: c_uint) {
     let game = unsafe { &mut *game };
     println!("Removing sprite with id: {}", id);
     game.ecs.remove_sprite(id).expect("Failed to remove sprite");
@@ -257,8 +255,8 @@ pub extern "C" fn game_is_gamepad_button_pressed(
 #[no_mangle]
 pub extern "C" fn check_collision_between_sprites(
     game: *mut GameSdk,
-    entity_id1: EntityId,
-    entity_id2: EntityId,
+    entity_id1: c_uint,
+    entity_id2: c_uint,
 ) -> bool {
     let game = unsafe { &*game };
     game.ecs

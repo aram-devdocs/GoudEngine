@@ -1,6 +1,6 @@
-use std::collections::HashMap as _HashMap;
+use std::collections::{BTreeMap, HashMap as _HashMap};
 use std::{ffi::c_uint, rc::Rc};
-pub type EntityId = u32;
+// pub type EntityId = u32;
 
 #[derive(Debug, Clone)]
 pub struct Texture {
@@ -16,9 +16,10 @@ pub struct TextureManager {
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct Sprite {
+    pub id: c_uint,
     pub x: f32,
     pub y: f32,
-    pub z_layer: f32,
+    pub z_layer: i32,
     pub scale_x: f32,
     pub scale_y: f32,
     pub dimension_x: f32,
@@ -29,14 +30,14 @@ pub struct Sprite {
     pub debug: bool,
 }
 
-pub type SpriteMap = Vec<Option<Sprite>>;
+pub type SpriteMap = BTreeMap<i32, Vec<Sprite>>;
 // Data Transfer Objects
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct SpriteCreateDto {
     pub x: f32,
     pub y: f32,
-    pub z_layer: f32,
+    pub z_layer: i32,
     pub scale_x: f32,
     pub scale_y: f32,
     pub dimension_x: f32,
@@ -50,9 +51,10 @@ pub struct SpriteCreateDto {
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct SpriteUpdateDto {
+    pub id: c_uint,
     pub x: f32,
     pub y: f32,
-    pub z_layer: f32,
+    pub z_layer: i32,
     pub scale_x: f32,
     pub scale_y: f32,
     pub dimension_x: f32,
