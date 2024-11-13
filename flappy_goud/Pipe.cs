@@ -1,3 +1,4 @@
+
 // Pipe.cs
 
 using System;
@@ -29,7 +30,8 @@ public class Pipe
             x = X,
             y = GapY - GameConstants.PipeGap - 320, // Adjusted to position the top pipe correctly
             rotation = 180,
-            texture_id = TextureId
+            texture_id = TextureId,
+            z_layer = 2
         });
 
 
@@ -37,7 +39,9 @@ public class Pipe
         {
             x = X,
             y = GapY + GameConstants.PipeGap, // Adjusted to position the bottom pipe correctly
-            texture_id = TextureId
+            texture_id = TextureId,
+            z_layer = 2
+
         });
 
     }

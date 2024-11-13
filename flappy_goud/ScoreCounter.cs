@@ -43,7 +43,7 @@ public class ScoreCounter
         yOffset = 50; // Offset from the top of the screen
 
         // score will start with single digit, so we just need to create one digit in the sprite list
-        digitIds = new List<uint> { game.AddSprite(new SpriteCreateDto { x = xOffset, y = yOffset, texture_id = spritePaths["assets/sprites/0.png"] }) };
+        digitIds = new List<uint> { game.AddSprite(new SpriteCreateDto { z_layer = 1, x = xOffset, y = yOffset, texture_id = spritePaths["assets/sprites/0.png"] }), };
     }
     public void IncrementScore(GoudGame game)
     {
@@ -81,6 +81,7 @@ public class ScoreCounter
         {
             uint newDigitId = game.AddSprite(new SpriteCreateDto
             {
+                z_layer = 1,
                 x = xOffset + digitIds.Count * 30, // Offset each digit horizontally
                 y = yOffset,
                 texture_id = spritePaths["assets/sprites/0.png"] // Initial texture
@@ -106,4 +107,6 @@ public class ScoreCounter
         }
 
     }
+
+
 }

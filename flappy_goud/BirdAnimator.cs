@@ -43,7 +43,7 @@ public class BirdAnimator
 
 
         // Set up the initial sprite
-        SpriteId = game.AddSprite(new SpriteCreateDto { x = initialX, y = initialY, texture_id = spritePaths["assets/sprites/bluebird-downflap.png"] });
+        SpriteId = game.AddSprite(new SpriteCreateDto { z_layer = 1, x = initialX, y = initialY, texture_id = spritePaths["assets/sprites/bluebird-downflap.png"] });
 
 
 
