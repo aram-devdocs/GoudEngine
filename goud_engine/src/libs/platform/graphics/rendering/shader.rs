@@ -4,7 +4,6 @@ use cgmath::Matrix;
 use gl::types::*;
 use std::collections::HashMap;
 use std::ffi::CString;
-use std::fs;
 use std::ptr;
 
 use cgmath::Matrix4;
@@ -18,11 +17,9 @@ pub struct ShaderProgram {
 
 impl ShaderProgram {
     /// Creates a new Shader Program from vertex and fragment shader files.
-    pub fn new(vertex_path: &str, fragment_path: &str) -> Result<ShaderProgram, String> {
-        let vertex_code = fs::read_to_string(vertex_path)
-            .map_err(|_| format!("Failed to read vertex shader from {}", vertex_path))?;
-        let fragment_code = fs::read_to_string(fragment_path)
-            .map_err(|_| format!("Failed to read fragment shader from {}", fragment_path))?;
+    pub fn new() -> Result<ShaderProgram, String> {
+        let vertex_code = include_str!("shaders/vertex_shader.glsl");
+        let fragment_code = include_str!("shaders/fragment_shader.glsl");
 
         let vertex_shader = ShaderProgram::compile_shader(&vertex_code, gl::VERTEX_SHADER)?;
         let fragment_shader = ShaderProgram::compile_shader(&fragment_code, gl::FRAGMENT_SHADER)?;
