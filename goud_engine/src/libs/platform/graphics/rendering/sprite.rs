@@ -10,6 +10,7 @@ impl Sprite {
         texture_id: c_uint,
         x: f32,
         y: f32,
+        z_layer: f32,
         scale_x: f32,
         scale_y: f32,
         dimension_x: f32,
@@ -21,6 +22,7 @@ impl Sprite {
         Sprite {
             x,
             y,
+            z_layer: z_layer,
             scale_x: scale_x,
             scale_y: scale_y,
             dimension_x: dimension_x,

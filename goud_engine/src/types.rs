@@ -18,6 +18,7 @@ pub struct TextureManager {
 pub struct Sprite {
     pub x: f32,
     pub y: f32,
+    pub z_layer: f32,
     pub scale_x: f32,
     pub scale_y: f32,
     pub dimension_x: f32,
@@ -35,6 +36,7 @@ pub type SpriteMap = Vec<Option<Sprite>>;
 pub struct SpriteCreateDto {
     pub x: f32,
     pub y: f32,
+    pub z_layer: f32,
     pub scale_x: f32,
     pub scale_y: f32,
     pub dimension_x: f32,
@@ -50,6 +52,7 @@ pub struct SpriteCreateDto {
 pub struct SpriteUpdateDto {
     pub x: f32,
     pub y: f32,
+    pub z_layer: f32,
     pub scale_x: f32,
     pub scale_y: f32,
     pub dimension_x: f32,

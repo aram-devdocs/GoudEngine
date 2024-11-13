@@ -2,7 +2,7 @@ use crate::game::{GameSdk, WindowBuilder};
 use crate::types::{EntityId, MousePosition, Rectangle, Sprite};
 use crate::types::{SpriteCreateDto, SpriteUpdateDto, UpdateResponseData};
 use glfw::Key;
-use std::ffi::{c_uint, CStr, CString, };
+use std::ffi::{c_uint, CStr, CString};
 use std::os::raw::{c_char, c_int};
 
 /// Initializes a new game instance with the specified window settings and returns a raw pointer to the `GameSdk`.
@@ -88,6 +88,11 @@ pub extern "C" fn game_add_sprite(game: *mut GameSdk, data: SpriteCreateDto) -> 
         data.texture_id,
         data.x,
         data.y,
+        if data.z_layer == 0.0 {
+            0.0
+        } else {
+            data.z_layer
+        },
         if data.scale_x == 0.0 {
             1.0
         } else {
@@ -148,6 +153,12 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, id: EntityId, data: Spr
         },
         data.x,
         data.y,
+        // TODO: We need to handle all of the == 0.0 cases as they can cause weird behavior. If I switch to 0, I will always be switched back to the initial value.
+        if data.z_layer == 0.0 {
+            sprite_ref.z_layer
+        } else {
+            data.z_layer
+        },
         if data.scale_x == 0.0 {
             sprite_ref.scale_x
         } else {
