@@ -12,8 +12,6 @@ impl TextureManager {
         }
     }
 
- 
-
     pub fn create_texture(&mut self, texture_path: *const c_char) -> c_uint {
         let texture_path_str = unsafe { std::ffi::CStr::from_ptr(texture_path).to_str().unwrap() };
         let texture_path = texture_path_str.to_string();
@@ -26,6 +24,4 @@ impl TextureManager {
     pub fn get_texture(&self, texture_id: c_uint) -> Rc<Texture> {
         self.textures.get(&texture_id).unwrap().clone()
     }
-
-    // 4. We need to be able to bind a texture to a texture unit.
 }
