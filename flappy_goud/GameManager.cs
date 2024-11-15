@@ -15,6 +15,10 @@ public class GameManager
 
     private uint BaseTextureId;
 
+    private uint FontId;
+
+    private uint TitleTextId;
+
     public GameManager(GoudGame game)
     {
         this.game = game;
@@ -28,6 +32,7 @@ public class GameManager
     {
         uint BackgroundTextureId = game.CreateTexture("assets/sprites/background-day.png");
         BaseTextureId = game.CreateTexture("assets/sprites/base.png");
+        FontId = game.CreateFont("assets/FlappyFont.ttf", 50);
 
         SpriteCreateDto backgroundData = new SpriteCreateDto
         {
@@ -45,9 +50,9 @@ public class GameManager
             texture_id = BaseTextureId
         };
 
-
-        game.AddSprite(backgroundData);
-        game.AddSprite(baseData);
+        // game.AddSprite(backgroundData);
+        // game.AddSprite(baseData);
+        TitleTextId = game.AddText("Flappy Goud", 50, 50, 100.0f, (255, 255, 255), FontId, 10);
 
         bird.Initialize();
         scoreCounter.Initialize(game);
@@ -64,9 +69,7 @@ public class GameManager
     }
 
     public void Update(float deltaTime)
-
     {
-
 
         // If Escape is pressed, close the game
         if (game.IsKeyPressed(256))
@@ -74,7 +77,6 @@ public class GameManager
             game.Close();
             return;
         }
-
 
         // If R is pressed, restart the game
         if (game.IsKeyPressed(82))
@@ -103,16 +105,16 @@ public class GameManager
         // Update Pipes with deltaTime and check for collisions
         foreach (var pipe in pipes)
         {
-
-
             pipe.Update(deltaTime);
 
-            if (game.CheckCollision(bird.GetSpriteId(), pipe.topSpriteId) || game.CheckCollision(bird.GetSpriteId(), pipe.bottomSpriteId))
+            if (
+                game.CheckCollision(bird.GetSpriteId(), pipe.topSpriteId)
+                || game.CheckCollision(bird.GetSpriteId(), pipe.bottomSpriteId)
+            )
             {
                 ResetGame();
                 return;
             }
-
         }
 
         // Spawn new pipes
@@ -135,11 +137,8 @@ public class GameManager
             return false;
         });
 
-
         // Update Score
         scoreCounter.Update(game);
-
-
     }
 
     private void ResetGame()

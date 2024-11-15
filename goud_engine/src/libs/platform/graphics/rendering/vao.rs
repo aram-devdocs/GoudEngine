@@ -4,7 +4,7 @@ use gl::types::*;
 
 #[derive(Debug)]
 pub struct Vao {
-    id: GLuint,
+    pub id: GLuint,
 }
 
 impl Vao {

@@ -1,10 +1,12 @@
 use cgmath::{ortho, Matrix4, Vector3, Vector4};
 use gl::types::*;
-use std::ptr;
+use std::{ffi::c_void, ptr};
 
 use crate::{
-    libs::platform::graphics::rendering::{BufferObject, ShaderProgram, Vao, VertexAttribute},
-    types::{Sprite, SpriteMap, TextureManager},
+    libs::platform::graphics::rendering::{
+        font::font_manager::FontManager, BufferObject, ShaderProgram, Vao, VertexAttribute,
+    },
+    types::{Sprite, SpriteMap, Text, TextMap, TextureManager},
 };
 
 use super::Renderer;
@@ -18,14 +20,16 @@ pub struct Renderer2D {
     source_rect_uniform: String,
     window_width: u32,
     window_height: u32,
+    text_shader_program: Option<ShaderProgram>,
+    text_vao: Option<Vao>,
+    text_vbo: Option<GLuint>,
 }
 
 impl Renderer2D {
     /// Creates a new Renderer2D.
     pub fn new(window_width: u32, window_height: u32) -> Result<Renderer2D, String> {
         // Initialize shader program
-        let mut shader_program =
-            ShaderProgram::new()?;
+        let mut shader_program = ShaderProgram::new()?;
 
         // Create VAO, VBO, and EBO
         let vao = Vao::new()?;
@@ -92,6 +96,9 @@ impl Renderer2D {
             source_rect_uniform: "sourceRect".into(),
             window_width,
             window_height,
+            text_shader_program: None,
+            text_vao: None,
+            text_vbo: None,
         })
     }
 
@@ -169,20 +176,199 @@ impl Renderer2D {
         }
         Ok(())
     }
+
+    fn render_texts(&mut self, texts: Vec<Text>, font_manager: &FontManager) -> Result<(), String> {
+        // Initialize text shader if not done
+        if self.text_shader_program.is_none() {
+            self.init_text_shader()?;
+        }
+
+        let shader_program = self.text_shader_program.as_mut().unwrap();
+        shader_program.bind();
+
+        unsafe {
+            gl::Enable(gl::BLEND);
+            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+        }
+
+        self.text_vao.as_ref().unwrap().bind();
+
+        for text in texts {
+            let font = font_manager
+                .get_font(text.font_id)
+                .ok_or("Font not found")?;
+
+            // Set text color
+            shader_program.set_uniform_vec3(
+                "textColor",
+                &Vector3::new(text.color.0, text.color.1, text.color.2),
+            )?;
+
+            let mut x = text.x;
+            let y = text.y;
+
+            for c in text.content.chars() {
+                let ch = font
+                    .characters
+                    .get(&c)
+                    .ok_or(format!("Character '{}' not found in font", c))?;
+                let xpos = x + ch.bearing.0 as f32 * text.scale;
+                let ypos = y - (ch.size.1 as i32 - ch.bearing.1) as f32 * text.scale;
+
+                let w = ch.size.0 as f32 * text.scale;
+                let h = ch.size.1 as f32 * text.scale;
+
+                // Update VBO for each character
+                let vertices: [f32; 6 * 4] = [
+                    xpos,
+                    ypos + h,
+                    0.0,
+                    0.0,
+                    xpos,
+                    ypos,
+                    0.0,
+                    1.0,
+                    xpos + w,
+                    ypos,
+                    1.0,
+                    1.0,
+                    xpos,
+                    ypos + h,
+                    0.0,
+                    0.0,
+                    xpos + w,
+                    ypos,
+                    1.0,
+                    1.0,
+                    xpos + w,
+                    ypos + h,
+                    1.0,
+                    0.0,
+                ];
+
+                // Render quad
+                unsafe {
+                    // Update content of VBO memory
+                    gl::BindBuffer(gl::ARRAY_BUFFER, self.text_vbo.unwrap());
+                    gl::BufferSubData(
+                        gl::ARRAY_BUFFER,
+                        0,
+                        (vertices.len() * std::mem::size_of::<f32>()) as GLsizeiptr,
+                        vertices.as_ptr() as *const c_void,
+                    );
+                }
+
+                // Bind texture
+                unsafe {
+                    gl::ActiveTexture(gl::TEXTURE0);
+                    gl::BindTexture(gl::TEXTURE_2D, ch.texture_id);
+                }
+
+                // Draw quad
+                unsafe {
+                    gl::DrawArrays(gl::TRIANGLES, 0, 6);
+                }
+
+                // Advance cursors for next glyph
+                x += (ch.advance as f32) * text.scale;
+            }
+        }
+
+        // Unbind
+        Vao::unbind();
+        unsafe {
+            gl::BindTexture(gl::TEXTURE_2D, 0);
+            gl::Disable(gl::BLEND);
+        }
+
+        Ok(())
+    }
+
+    fn init_text_shader(&mut self) -> Result<(), String> {
+        let mut shader_program = ShaderProgram::new_text_shader()?;
+        shader_program.bind();
+        shader_program.create_uniform("projection")?;
+        shader_program.create_uniform("textColor")?;
+        shader_program.create_uniform("text")?;
+        shader_program.set_uniform_int("text", 0)?;
+
+        let projection = ortho(
+            0.0,
+            self.window_width as f32,
+            self.window_height as f32,
+            0.0,
+            -1.0,
+            1.0,
+        );
+        shader_program.set_uniform_mat4("projection", &projection)?;
+
+        let vao = Vao::new()?;
+        let vbo = BufferObject::new(gl::ARRAY_BUFFER)?;
+        unsafe {
+            gl::BindVertexArray(vao.id);
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo.id);
+            gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (6 * 4 * std::mem::size_of::<f32>()) as GLsizeiptr,
+                ptr::null(),
+                gl::DYNAMIC_DRAW,
+            );
+
+            let stride = 4 * std::mem::size_of::<f32>() as GLsizei;
+
+            VertexAttribute::enable(0);
+            VertexAttribute::pointer(0, 2, gl::FLOAT, gl::FALSE, stride, 0);
+
+            VertexAttribute::enable(1);
+            VertexAttribute::pointer(
+                1,
+                2,
+                gl::FLOAT,
+                gl::FALSE,
+                stride,
+                2 * std::mem::size_of::<f32>(),
+            );
+        }
+
+        self.text_shader_program = Some(shader_program);
+        self.text_vao = Some(vao);
+        self.text_vbo = Some(vbo.id);
+
+        Ok(())
+    }
 }
 
 impl Renderer for Renderer2D {
     /// Renders the 2D scene.
-    fn render(&mut self, sprites: SpriteMap, texture_manager: &TextureManager) {
+    fn render(
+        &mut self,
+        sprites: SpriteMap,
+        texts: TextMap,
+        texture_manager: &TextureManager,
+        font_manager: &FontManager,
+    ) {
         let sprites: Vec<Sprite> = sprites.into_iter().flat_map(|(_, v)| v).collect();
         if let Err(e) = self.render_sprites(sprites, texture_manager) {
             eprintln!("Error rendering sprites: {}", e);
+        }
+
+        let texts: Vec<Text> = texts.into_iter().flat_map(|(_, v)| v).collect();
+
+        // debug texts
+        if let Err(e) = self.render_texts(texts, font_manager) {
+            eprintln!("Error rendering texts: {}", e);
         }
     }
 
     fn terminate(&self) {
         self.shader_program.terminate();
         self.vao.terminate();
+        if let Some(shader_program) = &self.text_shader_program {
+            shader_program.terminate();
+        }
+        if let Some(vao) = &self.text_vao {
+            vao.terminate();
+        }
     }
 }
 

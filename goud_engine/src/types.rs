@@ -1,6 +1,69 @@
 use std::collections::{BTreeMap, HashMap as _HashMap};
+use std::ffi::c_char;
 use std::{ffi::c_uint, rc::Rc};
+
+use gl::types::GLuint as _GLuint;
 // pub type EntityId = u32;
+
+pub type FontId = u32;
+
+pub struct Character {
+    pub texture_id: _GLuint,
+    pub size: (u32, u32),
+    pub bearing: (i32, i32),
+    pub advance: u32,
+}
+
+pub struct Font {
+    pub characters: _HashMap<char, Character>,
+    pub size: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct Text {
+    pub id: c_uint,
+    pub content: String,
+    pub x: f32,
+    pub y: f32,
+    pub scale: f32,
+    pub color: (f32, f32, f32),
+    pub font_id: FontId,
+    pub z_layer: i32,
+}
+
+pub type TextMap = BTreeMap<i32, Vec<Text>>;
+
+#[repr(C)]
+#[derive(Debug, Clone)]
+pub struct ColorInput {
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone)]
+pub struct TextCreateDto {
+    pub content: *const c_char,
+    pub x: f32,
+    pub y: f32,
+    pub scale: f32,
+    pub color: ColorInput,
+    pub font_id: u32,
+    pub z_layer: i32,
+}
+#[repr(C)]
+#[derive(Debug, Clone)]
+pub struct TextUpdateDto {
+    pub id: c_uint,
+    pub content: *const c_char,
+    pub x: f32,
+    pub y: f32,
+    pub scale: f32,
+    pub color: ColorInput,
+    pub font_id: FontId,
+    pub z_layer: i32,
+}
 
 #[derive(Debug, Clone)]
 pub struct Texture {
@@ -161,5 +224,17 @@ pub struct ECS {
 #[repr(C)]
 #[allow(dead_code)]
 pub struct HashMap {
+    _private: [u8; 0],
+}
+
+#[repr(C)]
+#[allow(dead_code)]
+pub struct FontManager {
+    _private: [u8; 0],
+}
+
+#[repr(C)]
+#[allow(dead_code)]
+pub struct GLuint {
     _private: [u8; 0],
 }

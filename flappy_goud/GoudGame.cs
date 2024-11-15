@@ -3,16 +3,11 @@ using CsBindgen;
 
 public class GoudGame
 {
-
-
-
-
 #pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
     private unsafe GameSdk* gameInstance;
 #pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
 
     public delegate void GameCallback();
-
 
     public UpdateResponseData UpdateResponseData { get; private set; }
 
@@ -22,9 +17,12 @@ public class GoudGame
         {
             fixed (byte* titleBytes = System.Text.Encoding.ASCII.GetBytes(title + "\0"))
             {
-
-
-                gameInstance = NativeMethods.game_create(width, height, titleBytes, target_fps: TargetFPS);
+                gameInstance = NativeMethods.game_create(
+                    width,
+                    height,
+                    titleBytes,
+                    target_fps: TargetFPS
+                );
             }
         }
     }
@@ -118,7 +116,6 @@ public class GoudGame
         }
     }
 
-
     public void Close()
     {
         unsafe
@@ -126,8 +123,6 @@ public class GoudGame
             NativeMethods.game_terminate(gameInstance);
         }
     }
-
-
 
     public bool IsKeyPressed(int keyCode)
     {
@@ -153,12 +148,93 @@ public class GoudGame
         }
     }
 
+    public uint CreateFont(string fontPath, uint size)
+    {
+        unsafe
+        {
+            fixed (byte* fontPathBytes = System.Text.Encoding.ASCII.GetBytes(fontPath + "\0"))
+            {
+                return NativeMethods.game_create_font(gameInstance, fontPathBytes, size);
+            }
+        }
+    }
 
+    public uint AddText(
+        string content,
+        float x,
+        float y,
+        float scale,
+        (float r, float g, float b) color,
+        uint fontId,
+        int zLayer
+    )
+    {
+        unsafe
+        {
+            fixed (byte* contentBytes = System.Text.Encoding.ASCII.GetBytes(content + "\0"))
+            {
+                TextCreateDto data;
+                data.content = contentBytes;
+                data.x = x;
+                data.y = y;
+                data.scale = scale;
+                // data.color_r = color.r;
+                // data.color_g = color.g;
+                // data.color_b = color.b;
+                data.color = new ColorInput
+                {
+                    r = color.r,
+                    g = color.g,
+                    b = color.b
+                };
+                data.font_id = fontId;
+                data.z_layer = zLayer;
 
+                return NativeMethods.game_add_text(gameInstance, data);
+            }
+        }
+    }
 
+    public void UpdateText(
+        uint id,
+        string content,
+        float x,
+        float y,
+        float scale,
+        (float r, float g, float b) color,
+        uint fontId,
+        int zLayer
+    )
+    {
+        unsafe
+        {
+            fixed (byte* contentBytes = System.Text.Encoding.ASCII.GetBytes(content + "\0"))
+            {
+                TextUpdateDto data;
+                data.id = id;
+                data.content = contentBytes;
+                data.x = x;
+                data.y = y;
+                data.scale = scale;
+                data.color = new ColorInput
+                {
+                    r = color.r,
+                    g = color.g,
+                    b = color.b
+                };
+                data.font_id = fontId;
+                data.z_layer = zLayer;
 
+                NativeMethods.game_update_text(gameInstance, data);
+            }
+        }
+    }
 
-
-
-
+    public void RemoveText(uint id)
+    {
+        unsafe
+        {
+            NativeMethods.game_remove_text(gameInstance, id);
+        }
+    }
 }

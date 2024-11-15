@@ -1,5 +1,5 @@
 use crate::game::{GameSdk, WindowBuilder};
-use crate::types::{MousePosition, Rectangle};
+use crate::types::{MousePosition, Rectangle, TextCreateDto, TextUpdateDto};
 use crate::types::{SpriteCreateDto, SpriteUpdateDto, UpdateResponseData};
 use glfw::Key;
 use std::ffi::{c_uint, CStr, CString};
@@ -268,6 +268,77 @@ pub extern "C" fn check_collision_between_sprites(
 pub extern "C" fn game_should_close(game: *mut GameSdk) -> bool {
     let game = unsafe { &mut *game };
     game.window.should_close()
+}
+
+/// Creates a new font and returns its ID.
+///
+/// # Arguments
+/// * `font_path` - Path to the font file as a C string.
+/// * `size` - Size of the font.
+#[no_mangle]
+pub extern "C" fn game_create_font(
+    game: *mut GameSdk,
+    font_path: *const c_char,
+    size: u32,
+) -> c_uint {
+    let game = unsafe { &mut *game };
+    let font_path_str = unsafe { CStr::from_ptr(font_path).to_str().unwrap() };
+    match game.font_manager.load_font(font_path_str, size) {
+        Ok(font_id) => font_id,
+        Err(e) => {
+            eprintln!("Failed to load font: {}", e);
+            0 // Return 0 to indicate failure
+        }
+    }
+}
+
+/// Adds a text block to the game instance and returns its ID.
+///
+/// # Arguments
+/// * `data` - The data needed to create a text block.
+#[no_mangle]
+pub extern "C" fn game_add_text(game: *mut GameSdk, data: TextCreateDto) -> c_uint {
+    let game = unsafe { &mut *game };
+    let content = data.content;
+    let text_create_dto = TextCreateDto {
+        content,
+        x: data.x,
+        y: data.y,
+        scale: data.scale,
+        color: data.color,
+        font_id: data.font_id,
+        z_layer: data.z_layer,
+    };
+    game.ecs.add_text(text_create_dto)
+}
+
+/// Updates an existing text block with new properties.
+#[no_mangle]
+pub extern "C" fn game_update_text(game: *mut GameSdk, data: TextUpdateDto) {
+    let game = unsafe { &mut *game };
+    let content = data.content;
+    let text_update_dto = TextUpdateDto {
+        id: data.id,
+        content,
+        x: data.x,
+        y: data.y,
+        scale: data.scale,
+        color: data.color,
+        font_id: data.font_id,
+        z_layer: data.z_layer,
+    };
+    if let Err(e) = game.ecs.update_text(text_update_dto) {
+        eprintln!("Failed to update text: {}", e);
+    }
+}
+
+/// Removes a text block from the game instance.
+#[no_mangle]
+pub extern "C" fn game_remove_text(game: *mut GameSdk, id: c_uint) {
+    let game = unsafe { &mut *game };
+    if let Err(e) = game.ecs.remove_text(id) {
+        eprintln!("Failed to remove text: {}", e);
+    }
 }
 
 // Helper Functions

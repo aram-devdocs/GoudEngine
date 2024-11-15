@@ -1,6 +1,7 @@
 use crate::libs::platform;
 use crate::libs::platform::ecs::ECS;
 use crate::libs::platform::graphics::rendering::clear;
+use crate::libs::platform::graphics::rendering::font::font_manager::FontManager;
 use crate::libs::platform::graphics::rendering::renderer2d::Renderer2D;
 use crate::libs::platform::graphics::rendering::Renderer;
 use crate::types::TextureManager;
@@ -17,6 +18,7 @@ pub struct GameSdk {
     pub elapsed_time: f32,
     pub ecs: ECS,
     pub texture_manager: TextureManager,
+    pub font_manager: FontManager,
 }
 
 impl GameSdk {
@@ -30,6 +32,7 @@ impl GameSdk {
             elapsed_time: 0.0,
             ecs: ECS::new(),
             texture_manager: TextureManager::new(),
+            font_manager: FontManager::new().expect("Failed to initialize FontManager"),
         }
     }
 
@@ -63,7 +66,12 @@ impl GameSdk {
         update_callback(self);
 
         if let Some(renderer) = &mut self.renderer_2d {
-            renderer.render(self.ecs.sprites.clone(), &self.texture_manager);
+            renderer.render(
+                self.ecs.sprites.clone(),
+                self.ecs.texts.clone(),
+                &self.texture_manager,
+                &self.font_manager,
+            );
         }
 
         self.window.update();

@@ -4,7 +4,7 @@ use std::os::raw::c_void;
 
 #[derive(Debug)]
 pub struct BufferObject {
-    id: GLuint,
+    pub id: GLuint,
     buffer_type: GLenum,
 }
 

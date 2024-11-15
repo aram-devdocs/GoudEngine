@@ -1,4 +1,4 @@
-use crate::types::{SpriteMap, TextureManager};
+use crate::{libs::platform::graphics::rendering::font::font_manager::FontManager, types::{SpriteMap, TextMap, TextureManager}};
 
 use super::Renderer;
 
@@ -21,7 +21,7 @@ impl Renderer3D {
 
 impl Renderer for Renderer3D {
     /// Renders the 3D scene.
-    fn render(&mut self, _sprites: SpriteMap, _texture_manager: &TextureManager) {
+    fn render(&mut self, _sprites: SpriteMap, _texts: TextMap, _texture_manager: &TextureManager, _font_manager: &FontManager) {
         // Implement 3D rendering logic
     }
 

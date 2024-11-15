@@ -1,6 +1,7 @@
 // src/shader.rs
 
 use cgmath::Matrix;
+use cgmath::Vector3;
 use gl::types::*;
 use std::collections::HashMap;
 use std::ffi::CString;
@@ -125,7 +126,7 @@ impl ShaderProgram {
             }
             Ok(())
         } else {
-            Err(format!("Uniform '{}' not found", name))
+            Err(format!("Uniform are we here '{}' not found", name))
         }
     }
 
@@ -158,6 +159,37 @@ impl ShaderProgram {
         if let Some(&location) = self.uniform_locations.get(name) {
             unsafe {
                 gl::Uniform1f(location, value);
+            }
+            Ok(())
+        } else {
+            Err(format!("Uniform '{}' not found", name))
+        }
+    }
+
+    pub fn new_text_shader() -> Result<ShaderProgram, String> {
+        let vertex_code = include_str!("shaders/text_vertex_shader.glsl");
+        let fragment_code = include_str!("shaders/text_fragment_shader.glsl");
+
+        let vertex_shader = ShaderProgram::compile_shader(&vertex_code, gl::VERTEX_SHADER)?;
+        let fragment_shader = ShaderProgram::compile_shader(&fragment_code, gl::FRAGMENT_SHADER)?;
+
+        let id = ShaderProgram::link_program(vertex_shader, fragment_shader)?;
+
+        unsafe {
+            gl::DeleteShader(vertex_shader);
+            gl::DeleteShader(fragment_shader);
+        }
+
+        Ok(ShaderProgram {
+            id,
+            uniform_locations: HashMap::new(),
+        })
+    }
+
+    pub fn set_uniform_vec3(&self, name: &str, vector: &Vector3<f32>) -> Result<(), String> {
+        if let Some(&location) = self.uniform_locations.get(name) {
+            unsafe {
+                gl::Uniform3f(location, vector.x, vector.y, vector.z);
             }
             Ok(())
         } else {

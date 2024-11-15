@@ -17,6 +17,7 @@ log = "0.4.17"
 thiserror = "1.0.31"
 image = "0.24"
 cbindgen = "0.27.0"
+freetype-rs = "0.37.0"
 
 
 [lib]
