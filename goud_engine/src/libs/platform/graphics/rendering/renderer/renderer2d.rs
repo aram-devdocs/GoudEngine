@@ -270,7 +270,7 @@ impl Renderer2D {
                 }
 
                 // Advance cursors for next glyph
-                x += (ch.advance as f32) * text.scale;
+                x += ((ch.advance >> 6) as f32) * text.scale;
             }
         }
 
@@ -354,7 +354,6 @@ impl Renderer for Renderer2D {
 
         let texts: Vec<Text> = texts.into_iter().flat_map(|(_, v)| v).collect();
 
-        // debug texts
         if let Err(e) = self.render_texts(texts, font_manager) {
             eprintln!("Error rendering texts: {}", e);
         }

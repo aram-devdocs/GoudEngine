@@ -52,7 +52,7 @@ public class GameManager
 
         // game.AddSprite(backgroundData);
         // game.AddSprite(baseData);
-        TitleTextId = game.AddText("Flappy Goud", 50, 50, 100.0f, (255, 255, 255), FontId, 10);
+        TitleTextId = game.AddText("Flappy Goud", 50, 50, 1.0f, (255, 255, 255), 0, 10);
 
         bird.Initialize();
         scoreCounter.Initialize(game);
