@@ -8,4 +8,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="GoudEngine" Version="0.0.515" />
+  </ItemGroup>
+
 </Project>
