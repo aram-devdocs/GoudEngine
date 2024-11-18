@@ -11,24 +11,29 @@ GoudEngine is a game engine written in Rust, designed to be used with C# applica
 - Graphics rendering with OpenGL
 - Integration with C# using csbindgen
 
-## Installation
+## Building the Project
 
-To install the necessary dependencies and tools, run the following script:
-
-```sh
-./install.sh
-```
-
-This script will install Rust and the required Rust components if they are not already installed.
-
-Building the Project
 To build the project in release mode, run the following script:
 
 ```sh
 ./build.sh
 ```
 
-This script will build the project and copy the generated dynamic library to the flappy_goud directory.
+This script will build the Rust project and copy the generated dynamic library to the `GoudEngine` directory. It will also add the DLL files into `GoudEngine` and create a NuGet package in the `nuget_package_output` directory.
+
+## Packaging and Submitting to NuGet
+
+To build and submit the package to the local NuGet repository, run the following script:
+
+```sh
+./package.sh
+```
+
+This script will build the package and submit it to the local NuGet repository. From there, you can use the following command to add the package to your project:
+
+```sh
+dotnet add package GoudEngine --version <desired_version>
+```
 
 ## Sample
 
@@ -44,8 +49,9 @@ This script will build and run the sample game. The entry point to that game is 
 
 ## Usage
 
-Rust Library
-The Rust library provides the core functionality of the game engine. The main entry point is the goud_engine crate.
+### Rust Library
+
+The Rust library provides the core functionality of the game engine. The main entry point is the `goud_engine` crate.
 
 Example:
 
@@ -75,16 +81,18 @@ pub extern "C" fn game_create(width: u32, height: u32, title: *const c_char) -> 
 // ... other functions ...
 ```
 
-Functions and structs in this file along with a few others in the `goud_engine` model are exposed to C# using `csbindgen`, and generated as libgoud_engine*.dll*.dylib*.so*. The generated library is then used in the C# application with NativeMethods.g.cs.
+Functions and structs in this file along with a few others in the `goud_engine` module are exposed to C# using `csbindgen`, and generated as `libgoud_engine*.dll*.dylib*.so`. The generated library is then used in the C# application with `NativeMethods.g.cs`.
 
-C# Integration
-The C# integration allows you to use the Rust game engine in your C# applications. The main entry point is the GoudGame class.
+### C# Integration
 
-Example
+The C# integration allows you to use the Rust game engine in your C# applications. The main entry point is the `GoudGame` class.
+
+Example:
 
 ```csharp
 using System;
-using CsBindGen
+using CsBindGen;
+
 class Program
 {
     static void Main(string[] args)
@@ -118,10 +126,11 @@ class Program
 }
 ```
 
-The GoudGame class is a wrapper around the Rust game engine, providing a C# interface to the engine. There are examples in `flappy_goud` on expanding modules using the base GoudGame class, but the beauty of this project is that you can create your own game engine modules in Rust and use them in C# applications.
+The `GoudGame` class is a wrapper around the Rust game engine, providing a C# interface to the engine. There are examples in `flappy_goud` on expanding modules using the base `GoudGame` class, but the beauty of this project is that you can create your own game engine modules in Rust and use them in C# applications.
 
-Documentation
-official documentation of `csbindgen` [here](https://github.com/mozilla/cbindgen).
+## Documentation
+
+Official documentation of `csbindgen` [here](https://github.com/mozilla/cbindgen).
 
 ## License
 
