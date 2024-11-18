@@ -7,10 +7,8 @@ fn main() {
         .input_extern_file("src/libs/platform/graphics/window.rs")
         .input_extern_file("src/libs/platform/graphics/window/input_handler.rs")
         .input_extern_file("src/libs/platform/graphics/rendering/renderer/renderer2d.rs")
-        
         .csharp_dll_name("libgoud_engine")
         .csharp_class_accessibility("public")
-        .generate_csharp_file("../flappy_goud/NativeMethods.g.cs")
+        .generate_csharp_file("../GoudEngine/NativeMethods.g.cs")
         .unwrap();
-
 }

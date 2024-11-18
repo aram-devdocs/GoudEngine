@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>GoudEngine</PackageId>
+    <Version>0.0.515</Version>
+    <Authors>Aram Hammoudeh</Authors>
+    <Description>Rust-powered game engine for C# developers using FFI.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageOutputPath>../nuget_package_output</PackageOutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <None Include="runtimes/**" Pack="true" PackagePath="runtimes/" />
+  </ItemGroup>
+
+
+  <Target Name="CopyNativeLibraries" AfterTargets="Build">
+    <Copy SourceFiles="runtimes/osx-x64/native/libgoud_engine.dylib"
+      DestinationFolder="$(OutputPath)" Condition="'$(OS)' == 'OSX'" />
+    <Copy SourceFiles="runtimes/linux-x64/native/libgoud_engine.so"
+      DestinationFolder="$(OutputPath)" Condition="'$(OS)' == 'Linux'" />
+    <Copy SourceFiles="runtimes/win-x64/native/goud_engine.dll" DestinationFolder="$(OutputPath)"
+      Condition="'$(OS)' == 'Windows_NT'" />
+  </Target>
+
+</Project>
