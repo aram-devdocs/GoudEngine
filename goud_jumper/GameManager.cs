@@ -5,53 +5,53 @@ using CsBindgen;
 public class GameManager
 {
     private GoudGame game;
-    private uint PlayerTextureId;
     private uint PlayerSpriteId;
 
     private PlayerStateMachine playerStateMachine;
-    private AnimationController animationController;
+    private AnimationController? animationController;
 
     private bool IsGoingLeft = false;
+
+    // goud_jumper/assets/1 Pink_Monster/Pink_Monster_Attack1_4.png
+    // goud_jumper/assets/1 Pink_Monster/Pink_Monster_Attack1_4.png goud_jumper/assets/1 Pink_Monster/Pink_Monster_Attack2_6.png goud_jumper/assets/1 Pink_Monster/Pink_Monster_Climb_4.png goud_jumper/assets/1 Pink_Monster/Pink_Monster_Death_8.png goud_jumper/assets/1 Pink_Monster/Pink_Monster_Hurt_4.png goud_jumper/assets/1 Pink_Monster/Pink_Monster_Idle_4.png goud_jumper/assets/1 Pink_Monster/Pink_Monster_Jump_8.png goud_jumper/assets/1 Pink_Monster/Pink_Monster_Push_6.png goud_jumper/assets/1 Pink_Monster/Pink_Monster_Run_6.png goud_jumper/assets/1 Pink_Monster/Pink_Monster_Throw_4.png goud_jumper/assets/1 Pink_Monster/Pink_Monster_Walk_6.png goud_jumper/assets/1 Pink_Monster/Pink_Monster_Walk+Attack_6.png
 
     public GameManager(GoudGame game)
     {
         this.game = game;
         this.playerStateMachine = new PlayerStateMachine();
-
-        const int DefaultPlayerWidth = 0;
-        const int DefaultPlayerHeight = 0;
-
-        var stateToPositionMap = new Dictionary<
-            string,
-            List<(int x, int y, int? width, int? height)>
-        >
-        {
-            // tdoo: fill this in
-        };
-        this.animationController = new AnimationController(
-            DefaultPlayerWidth,
-            DefaultPlayerHeight,
-            stateToPositionMap
-        );
     }
 
     public void Initialize()
     {
-        PlayerTextureId = game.CreateTexture("assets/p1_spritesheet.png");
+        var stateToTextureMap = new Dictionary<string, (string texturePath, int frameCount, int frameWidth, int frameHeight)>
+        {
+            { PlayerState.Attack1.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Attack1_4.png", 4, 32, 32) },
+            { PlayerState.Attack2.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Attack2_6.png", 6, 32, 32) },
+            { PlayerState.Climb.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Climb_4.png", 4, 32, 32) },
+            { PlayerState.Death.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Death_8.png", 8, 32, 32) },
+            { PlayerState.Hurt.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Hurt_4.png", 4, 32, 32) },
+            { PlayerState.Idle.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Idle_4.png", 4, 32, 32) },
+            { PlayerState.Jumping.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Jump_8.png", 8, 32, 32) },
+            { PlayerState.Push.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Push_6.png", 6, 32, 32) },
+            { PlayerState.Run.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Run_6.png", 6, 32, 32) },
+            { PlayerState.Throw.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Throw_4.png", 4, 32, 32) },
+            { PlayerState.Walking.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Walk_6.png", 6, 32, 32) },
+            { PlayerState.WalkAttack.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Walk+Attack_6.png", 6, 32, 32) }
+        };
+
+        this.animationController = new AnimationController(game, stateToTextureMap);
+
+        // Initialize PlayerSpriteId with the first state's texture
+        var initialTextureId = animationController.GetInitialTextureId(PlayerState.Idle.ToString());
         PlayerSpriteId = game.AddSprite(
             new SpriteCreateDto
             {
                 x = 0,
                 y = 0,
                 z_layer = 0,
-                texture_id = PlayerTextureId,
-                frame = new Rectangle
-                {
-                    x = 67,
-                    y = 196,
-                    width = 66,
-                    height = 92
-                }
+                scale_x = 2,
+                scale_y = 2,
+                texture_id = initialTextureId,
             }
         );
     }
@@ -61,18 +61,21 @@ public class GameManager
     public void Update(float deltaTime)
     {
         HandleInput();
-        var frame = animationController.GetFrame(
-            playerStateMachine.CurrentState.ToString(),
-            deltaTime
-        );
-        game.UpdateSprite(
-            new SpriteUpdateDto
-            {
-                id = PlayerSpriteId,
-                frame = frame,
-                scale_x = IsGoingLeft ? -1 : 1
-            }
-        );
+        if (animationController != null)
+        {
+            var (frame, textureId) = animationController.GetFrame(
+                playerStateMachine.CurrentState.ToString(),
+                deltaTime
+            );
+            game.UpdateSprite(
+                new SpriteUpdateDto
+                {
+                    id = PlayerSpriteId,
+                    frame = frame,
+                    texture_id = textureId
+                }
+            );
+        }
     }
 
     private void HandleInput()
@@ -82,11 +85,6 @@ public class GameManager
         if (game.IsKeyPressed(32)) // Key.Space
         {
             playerStateMachine.SetState(PlayerState.Jumping);
-            isMoving = true;
-        }
-        else if (game.IsKeyPressed(83)) // Key.S
-        {
-            playerStateMachine.SetState(PlayerState.Ducking);
             isMoving = true;
         }
         else if (game.IsKeyPressed(65)) // Key.A
@@ -104,7 +102,7 @@ public class GameManager
 
         if (!isMoving)
         {
-            playerStateMachine.SetState(PlayerState.Standing);
+            playerStateMachine.SetState(PlayerState.Idle);
         }
     }
 
@@ -113,11 +111,19 @@ public class GameManager
 
 public enum PlayerState
 {
-    Standing,
     Walking,
     Jumping,
     Ducking,
-    Hurt
+    Hurt,
+    Attack1,
+    Attack2,
+    Climb,
+    Death,
+    Idle,
+    Push,
+    Run,
+    Throw,
+    WalkAttack
 }
 
 public class PlayerStateMachine
@@ -126,7 +132,7 @@ public class PlayerStateMachine
 
     public PlayerStateMachine()
     {
-        CurrentState = PlayerState.Standing;
+        CurrentState = PlayerState.Idle;
     }
 
     public void SetState(PlayerState newState)
