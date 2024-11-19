@@ -20,20 +20,203 @@ public class GameManager
 
     public void Initialize()
     {
-        var stateConfigurations = new Dictionary<string, (string texturePath, int frameCount, int frameWidth, int frameHeight, float frameTime, float speedScale, bool shouldLoop)>
+        var stateConfigurations = new Dictionary<string, AnimationStateConfig>
         {
-            { PlayerState.Attack1.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Attack1_4.png", 4, 32, 32, 0.1f, 1.5f, false) },
-            { PlayerState.Attack2.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Attack2_6.png", 6, 32, 32, 0.1f, 1.5f, false) },
-            { PlayerState.Climb.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Climb_4.png", 4, 32, 32, 0.15f, 1.0f, true) },
-            { PlayerState.Death.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Death_8.png", 8, 32, 32, 0.1f, 1.0f, false) },
-            { PlayerState.Hurt.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Hurt_4.png", 4, 32, 32, 0.1f, 1.0f, false) },
-            { PlayerState.Idle.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Idle_4.png", 4, 32, 32, 0.2f, 0.5f, true) },
-            { PlayerState.Jumping.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Jump_8.png", 8, 32, 32, 0.1f, 1.2f, false) },
-            { PlayerState.Push.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Push_6.png", 6, 32, 32, 0.1f, 1.0f, true) },
-            { PlayerState.Run.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Run_6.png", 6, 32, 32, 0.08f, 1.2f, true) },
-            { PlayerState.Throw.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Throw_4.png", 4, 32, 32, 0.1f, 1.5f, false) },
-            { PlayerState.Walking.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Walk_6.png", 6, 32, 32, 0.1f, 1.0f, true) },
-            { PlayerState.WalkAttack.ToString(), ("assets/1 Pink_Monster/Pink_Monster_Walk+Attack_6.png", 6, 32, 32, 0.1f, 1.3f, false) }
+            // Grid-based configurations
+            {
+                PlayerState.Attack1.ToString(),
+                new AnimationStateConfig(
+                    "assets/1 Pink_Monster/Pink_Monster_Attack1_4.png",
+                    4,
+                    32,
+                    32,
+                    0.1f,
+                    1.5f,
+                    false
+                )
+            },
+            {
+                PlayerState.Attack2.ToString(),
+                new AnimationStateConfig(
+                    "assets/1 Pink_Monster/Pink_Monster_Attack2_6.png",
+                    6,
+                    32,
+                    32,
+                    0.1f,
+                    1.5f,
+                    false
+                )
+            },
+            {
+                PlayerState.Climb.ToString(),
+                new AnimationStateConfig(
+                    "assets/1 Pink_Monster/Pink_Monster_Climb_4.png",
+                    4,
+                    32,
+                    32,
+                    0.15f,
+                    1.0f,
+                    true
+                )
+            },
+            {
+                PlayerState.Death.ToString(),
+                new AnimationStateConfig(
+                    "assets/1 Pink_Monster/Pink_Monster_Death_8.png",
+                    8,
+                    32,
+                    32,
+                    0.1f,
+                    1.0f,
+                    false
+                )
+            },
+            {
+                PlayerState.Hurt.ToString(),
+                new AnimationStateConfig(
+                    "assets/1 Pink_Monster/Pink_Monster_Hurt_4.png",
+                    4,
+                    32,
+                    32,
+                    0.1f,
+                    1.0f,
+                    false
+                )
+            },
+            {
+                PlayerState.Idle.ToString(),
+                new AnimationStateConfig(
+                    "assets/1 Pink_Monster/Pink_Monster_Idle_4.png",
+                    4,
+                    32,
+                    32,
+                    0.2f,
+                    0.5f,
+                    true
+                )
+            },
+            {
+                PlayerState.Jumping.ToString(),
+                new AnimationStateConfig(
+                    "assets/1 Pink_Monster/Pink_Monster_Jump_8.png",
+                    8,
+                    32,
+                    32,
+                    0.1f,
+                    1.2f,
+                    false
+                )
+            },
+            {
+                PlayerState.Push.ToString(),
+                new AnimationStateConfig(
+                    "assets/1 Pink_Monster/Pink_Monster_Push_6.png",
+                    6,
+                    32,
+                    32,
+                    0.1f,
+                    1.0f,
+                    true
+                )
+            },
+            {
+                PlayerState.Run.ToString(),
+                new AnimationStateConfig(
+                    "assets/1 Pink_Monster/Pink_Monster_Run_6.png",
+                    6,
+                    32,
+                    32,
+                    0.08f,
+                    1.2f,
+                    true
+                )
+            },
+            {
+                PlayerState.Throw.ToString(),
+                new AnimationStateConfig(
+                    "assets/1 Pink_Monster/Pink_Monster_Throw_4.png",
+                    4,
+                    32,
+                    32,
+                    0.1f,
+                    1.5f,
+                    false
+                )
+            },
+            {
+                PlayerState.Walking.ToString(),
+                new AnimationStateConfig(
+                    "assets/1 Pink_Monster/Pink_Monster_Walk_6.png",
+                    6,
+                    32,
+                    32,
+                    0.1f,
+                    1.0f,
+                    true
+                )
+            },
+            {
+                PlayerState.WalkAttack.ToString(),
+                new AnimationStateConfig(
+                    "assets/1 Pink_Monster/Pink_Monster_Walk+Attack_6.png",
+                    6,
+                    32,
+                    32,
+                    0.1f,
+                    1.3f,
+                    false
+                )
+            },
+            // Frame list-based configuration for a custom state
+            {
+                PlayerState.Custom.ToString(),
+                new AnimationStateConfig(
+                    "assets/samuri_animations.png",
+                    new List<Rectangle>
+                    {
+                        new Rectangle
+                        {
+                            x = 0,
+                            y = 0,
+                            width = 64,
+                            height = 48
+                        },
+                        new Rectangle
+                        {
+                            x = 64,
+                            y = 0,
+                            width = 64,
+                            height = 48
+                        },
+                        new Rectangle
+                        {
+                            x = 128,
+                            y = 0,
+                            width = 64,
+                            height = 48
+                        },
+                        new Rectangle
+                        {
+                            x = 192,
+                            y = 0,
+                            width = 64,
+                            height = 48
+                        },
+                        new Rectangle
+                        {
+                            x = 256,
+                            y = 0,
+                            width = 64,
+                            height = 48
+                        },
+
+                        // Additional frames
+                    },
+                    frameTime: 0.1f,
+                    speedScale: 1.0f,
+                    shouldLoop: false
+                )
+            }
         };
 
         this.animationController = new AnimationController(game, stateConfigurations);
@@ -97,6 +280,11 @@ public class GameManager
             isMoving = true;
             isGoingLeft = false;
         }
+        else if (game.IsKeyPressed(67)) // 'C' key for custom animation
+        {
+            playerStateMachine.SetState(PlayerState.Custom);
+            isMoving = true;
+        }
 
         if (!isMoving)
         {
@@ -121,7 +309,8 @@ public enum PlayerState
     Push,
     Run,
     Throw,
-    WalkAttack
+    WalkAttack,
+    Custom // New state for complex spritesheet
 }
 
 public class PlayerStateMachine
