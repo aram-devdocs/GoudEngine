@@ -4,7 +4,7 @@ use std::ptr;
 
 use crate::{
     libs::platform::graphics::rendering::{BufferObject, ShaderProgram, Vao, VertexAttribute},
-    types::{Sprite, SpriteMap, TextureManager},
+    types::{Rectangle, Sprite, SpriteMap, TextureManager},
 };
 
 use super::Renderer;
@@ -107,11 +107,39 @@ impl Renderer2D {
         for sprite in sprites {
             // Use positions and scales directly
             let position = Vector3::new(sprite.x, sprite.y, 0.0);
-            let dimensions = Vector3::new(sprite.dimension_x, sprite.dimension_y, 1.0);
             let scale_x = sprite.scale_x;
             let scale_y = sprite.scale_y;
             let rotation = sprite.rotation;
             let texture = texture_manager.get_texture(sprite.texture_id).clone();
+
+            // Normalize frame coordinates and dimensions based on texture size
+            let source_rect = if sprite.frame.width > 0.0 && sprite.frame.height > 0.0 {
+                Rectangle {
+                    x: sprite.frame.x / texture.width as f32,
+                    y: sprite.frame.y / texture.height as f32,
+                    width: sprite.frame.width / texture.width as f32,
+                    height: sprite.frame.height / texture.height as f32,
+                }
+            } else {
+                sprite.source_rect
+            };
+
+            self.shader_program.set_uniform_vec4(
+                &self.source_rect_uniform,
+                &Vector4::new(
+                    source_rect.x,
+                    source_rect.y,
+                    source_rect.width,
+                    source_rect.height,
+                ),
+            )?;
+
+            // Use frame dimensions if provided, otherwise use image dimensions
+            let dimensions = if sprite.frame.width > 0.0 && sprite.frame.height > 0.0 {
+                Vector3::new(sprite.frame.width, sprite.frame.height, 1.0)
+            } else {
+                Vector3::new(sprite.dimension_x, sprite.dimension_y, 1.0)
+            };
 
             // Calculate the center offset
             let center_offset = Vector3::new(dimensions.x * 0.5, dimensions.y * 0.5, 0.0);
@@ -139,17 +167,6 @@ impl Renderer2D {
                 self.shader_program
                     .set_uniform_float("outlineWidth", 0.02)?; // Adjust width as needed
             }
-            // Set source rectangle
-            let source_rect = sprite.source_rect;
-            self.shader_program.set_uniform_vec4(
-                &self.source_rect_uniform,
-                &Vector4::new(
-                    source_rect.x,
-                    source_rect.y,
-                    source_rect.width,
-                    source_rect.height,
-                ),
-            )?;
 
             unsafe {
                 gl::DrawElements(
