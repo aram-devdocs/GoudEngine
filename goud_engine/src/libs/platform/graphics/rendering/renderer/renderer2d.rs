@@ -24,8 +24,7 @@ impl Renderer2D {
     /// Creates a new Renderer2D.
     pub fn new(window_width: u32, window_height: u32) -> Result<Renderer2D, String> {
         // Initialize shader program
-        let mut shader_program =
-            ShaderProgram::new()?;
+        let mut shader_program = ShaderProgram::new()?;
 
         // Create VAO, VBO, and EBO
         let vao = Vao::new()?;
@@ -105,15 +104,14 @@ impl Renderer2D {
         self.vao.bind();
 
         for sprite in sprites {
-            // Use positions and scales directly
             let position = Vector3::new(sprite.x, sprite.y, 0.0);
-            let scale_x = sprite.scale_x;
-            let scale_y = sprite.scale_y;
+            let mut scale_x = sprite.scale_x;
+            let mut scale_y = sprite.scale_y;
             let rotation = sprite.rotation;
             let texture = texture_manager.get_texture(sprite.texture_id).clone();
 
             // Normalize frame coordinates and dimensions based on texture size
-            let source_rect = if sprite.frame.width > 0.0 && sprite.frame.height > 0.0 {
+            let mut source_rect = if sprite.frame.width > 0.0 && sprite.frame.height > 0.0 {
                 Rectangle {
                     x: sprite.frame.x / texture.width as f32,
                     y: sprite.frame.y / texture.height as f32,
@@ -123,6 +121,19 @@ impl Renderer2D {
             } else {
                 sprite.source_rect
             };
+
+            // Adjust the source rectangle if scale_x or scale_y is negative
+            if scale_x < 0.0 {
+                scale_x = -scale_x;
+                source_rect.x += source_rect.width;
+                source_rect.width = -source_rect.width;
+            }
+
+            if scale_y < 0.0 {
+                scale_y = -scale_y;
+                source_rect.y += source_rect.height;
+                source_rect.height = -source_rect.height;
+            }
 
             self.shader_program.set_uniform_vec4(
                 &self.source_rect_uniform,
@@ -134,17 +145,14 @@ impl Renderer2D {
                 ),
             )?;
 
-            // Use frame dimensions if provided, otherwise use image dimensions
             let dimensions = if sprite.frame.width > 0.0 && sprite.frame.height > 0.0 {
                 Vector3::new(sprite.frame.width, sprite.frame.height, 1.0)
             } else {
                 Vector3::new(sprite.dimension_x, sprite.dimension_y, 1.0)
             };
 
-            // Calculate the center offset
             let center_offset = Vector3::new(dimensions.x * 0.5, dimensions.y * 0.5, 0.0);
 
-            // Build the model matrix with center rotation
             let model = Matrix4::from_translation(position)
                 * Matrix4::from_translation(center_offset)
                 * Matrix4::from_angle_z(cgmath::Deg(rotation))
@@ -157,15 +165,13 @@ impl Renderer2D {
             self.shader_program
                 .set_uniform_mat4(&self.model_uniform, &model)?;
 
-            // Bind texture
             texture.bind(gl::TEXTURE0);
 
-            // Set the outline color to red and width to a small value for debugging
             if sprite.debug {
                 self.shader_program
                     .set_uniform_vec4("outlineColor", &Vector4::new(1.0, 0.0, 0.0, 1.0))?;
                 self.shader_program
-                    .set_uniform_float("outlineWidth", 0.02)?; // Adjust width as needed
+                    .set_uniform_float("outlineWidth", 0.02)?;
             }
 
             unsafe {
@@ -178,7 +184,6 @@ impl Renderer2D {
             }
 
             if sprite.debug {
-                // clean up debug outline to ensure other sprites are not affected
                 self.shader_program
                     .set_uniform_vec4("outlineColor", &Vector4::new(0.0, 0.0, 0.0, 0.0))?;
                 self.shader_program.set_uniform_float("outlineWidth", 0.0)?;

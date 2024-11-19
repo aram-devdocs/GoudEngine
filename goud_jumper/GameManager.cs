@@ -253,7 +253,7 @@ public class GameManager
                     texture_id = textureId,
                     x = 100,
                     y = 100,
-                    // flip_x = isGoingLeft
+                    scale_x = isGoingLeft ? -2 : 2,
                 }
             );
         }
