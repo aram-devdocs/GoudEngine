@@ -6,6 +6,7 @@ using CsBindgen;
 // - Right now when manually assining a sprite, X Y is on the bottom left rather than top left. this needs to be normalized as we render sprites from the top left
 
 
+
 /// <summary>
 /// A utility class for controlling sprite sheet animations across different states,
 /// supporting both grid-based and frame list-based spritesheets.
@@ -37,6 +38,7 @@ public class AnimationController
     }
 
     private readonly Dictionary<string, AnimationState> stateToAnimationMap;
+    private readonly Dictionary<string, uint> textureIdMap;
     private int currentFrameIndex;
     private float timeSinceLastFrame;
     private string currentState;
@@ -61,6 +63,7 @@ public class AnimationController
             throw new ArgumentNullException(nameof(stateConfigurations));
 
         stateToAnimationMap = new Dictionary<string, AnimationState>();
+        textureIdMap = new Dictionary<string, uint>();
 
         foreach (var kvp in stateConfigurations)
         {
@@ -98,7 +101,13 @@ public class AnimationController
                 );
             }
 
-            var textureId = game.CreateTexture(config.TexturePath);
+            // Load texture or reuse if already loaded
+            if (!textureIdMap.TryGetValue(config.TexturePath, out uint textureId))
+            {
+                textureId = game.CreateTexture(config.TexturePath);
+                textureIdMap[config.TexturePath] = textureId;
+            }
+
             List<Rectangle> frames;
 
             if (config.Frames != null && config.Frames.Count > 0)
@@ -107,23 +116,26 @@ public class AnimationController
                 frames = config.Frames;
             }
             else if (
-                config.FrameCount.HasValue
-                && config.FrameWidth.HasValue
+                config.FrameWidth.HasValue
                 && config.FrameHeight.HasValue
+                && config.StartFrameIndex.HasValue
+                && config.FrameCount.HasValue
+                && config.Columns.HasValue
             )
             {
-                // Grid-Based Mode
+                // Grid-Based Mode with specified frame indices
                 frames = GenerateGridFrames(
-                    config.FrameCount.Value,
                     config.FrameWidth.Value,
                     config.FrameHeight.Value,
-                    config.Columns ?? config.FrameCount.Value
+                    config.Columns.Value,
+                    config.StartFrameIndex.Value,
+                    config.FrameCount.Value
                 );
             }
             else
             {
                 throw new ArgumentException(
-                    $"State '{stateName}' must have either Frames or FrameCount, FrameWidth, and FrameHeight specified."
+                    $"State '{stateName}' must have either Frames or FrameWidth, FrameHeight, StartFrameIndex, FrameCount, and Columns specified."
                 );
             }
 
@@ -134,6 +146,7 @@ public class AnimationController
                 config.SpeedScale,
                 config.ShouldLoop
             );
+
             stateToAnimationMap[stateName] = animationState;
         }
 
@@ -143,17 +156,18 @@ public class AnimationController
     }
 
     /// <summary>
-    /// Generates frames for grid-based spritesheets.
+    /// Generates frames for grid-based spritesheets using start index and frame count.
     /// </summary>
     private List<Rectangle> GenerateGridFrames(
-        int frameCount,
         int frameWidth,
         int frameHeight,
-        int columns
+        int columns,
+        int startFrameIndex,
+        int frameCount
     )
     {
         var frames = new List<Rectangle>();
-        for (int i = 0; i < frameCount; i++)
+        for (int i = startFrameIndex; i < startFrameIndex + frameCount; i++)
         {
             int x = (i % columns) * frameWidth;
             int y = (i / columns) * frameHeight;
@@ -254,33 +268,36 @@ public class AnimationStateConfig
     public bool ShouldLoop { get; set; }
 
     // Grid-based frames
-    public int? FrameCount { get; set; }
     public int? FrameWidth { get; set; }
     public int? FrameHeight { get; set; }
-    public int? Columns { get; set; } // Optional: specify number of columns in the grid
+    public int? Columns { get; set; } // Number of columns in the grid
+    public int? StartFrameIndex { get; set; } // Starting frame index in the grid
+    public int? FrameCount { get; set; } // Number of frames to use
 
     // Frame list-based frames
     public List<Rectangle> Frames { get; set; }
 
-    // Constructor for grid-based frames
+    // Constructor for grid-based frames with start index and frame count
     public AnimationStateConfig(
         string texturePath,
-        int frameCount,
         int frameWidth,
         int frameHeight,
         float frameTime,
         float speedScale,
         bool shouldLoop,
-        int? columns = null
+        int startFrameIndex,
+        int frameCount,
+        int columns
     )
     {
         TexturePath = texturePath;
-        FrameCount = frameCount;
         FrameWidth = frameWidth;
         FrameHeight = frameHeight;
         FrameTime = frameTime;
         SpeedScale = speedScale;
         ShouldLoop = shouldLoop;
+        StartFrameIndex = startFrameIndex;
+        FrameCount = frameCount;
         Columns = columns;
     }
 
