@@ -34,7 +34,7 @@ public class GameManager
             x = 0,
             y = 0,
             z_layer = 0,
-            texture_id = BackgroundTextureId
+            texture_id = BackgroundTextureId,
         };
 
         SpriteCreateDto baseData = new SpriteCreateDto
@@ -44,7 +44,6 @@ public class GameManager
             z_layer = 3,
             texture_id = BaseTextureId
         };
-
 
         game.AddSprite(backgroundData);
         game.AddSprite(baseData);
@@ -64,17 +63,13 @@ public class GameManager
     }
 
     public void Update(float deltaTime)
-
     {
-
-
         // If Escape is pressed, close the game
         if (game.IsKeyPressed(256))
         {
             game.Close();
             return;
         }
-
 
         // If R is pressed, restart the game
         if (game.IsKeyPressed(82))
@@ -103,16 +98,16 @@ public class GameManager
         // Update Pipes with deltaTime and check for collisions
         foreach (var pipe in pipes)
         {
-
-
             pipe.Update(deltaTime);
 
-            if (game.CheckCollision(bird.GetSpriteId(), pipe.topSpriteId) || game.CheckCollision(bird.GetSpriteId(), pipe.bottomSpriteId))
+            if (
+                game.CheckCollision(bird.GetSpriteId(), pipe.topSpriteId)
+                || game.CheckCollision(bird.GetSpriteId(), pipe.bottomSpriteId)
+            )
             {
                 ResetGame();
                 return;
             }
-
         }
 
         // Spawn new pipes
@@ -135,11 +130,8 @@ public class GameManager
             return false;
         });
 
-
         // Update Score
         scoreCounter.Update(game);
-
-
     }
 
     private void ResetGame()

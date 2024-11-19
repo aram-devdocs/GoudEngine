@@ -21,6 +21,7 @@ impl Sprite {
         source_rect: Rectangle,
         texture_id: c_uint,
         debug: bool,
+        frame: Rectangle,
     ) -> Sprite {
         Sprite {
             id,
@@ -35,6 +36,7 @@ impl Sprite {
             texture_id,
             source_rect,
             debug,
+            frame,
         }
     }
 
@@ -70,6 +72,7 @@ impl SpriteCreateDto {
         source_rect: Rectangle,
         texture_id: c_uint,
         debug: bool,
+        frame: Rectangle,
     ) -> SpriteCreateDto {
         SpriteCreateDto {
             x,
@@ -83,6 +86,7 @@ impl SpriteCreateDto {
             source_rect,
             texture_id,
             debug,
+            frame,
         }
     }
 }
@@ -102,6 +106,7 @@ impl SpriteUpdateDto {
         source_rect: Rectangle,
         texture_id: c_uint,
         debug: bool,
+        frame: Rectangle,
     ) -> SpriteUpdateDto {
         SpriteUpdateDto {
             id,
@@ -116,6 +121,7 @@ impl SpriteUpdateDto {
             source_rect,
             texture_id,
             debug,
+            frame,
         }
     }
 }

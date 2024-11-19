@@ -11,7 +11,6 @@ pub struct ECS {
 impl ECS {
     pub fn new() -> Self {
         ECS {
-            // sprites: Vec::new(),
             sprites: BTreeMap::new(),
             next_id: 0,
             free_list: Vec::new(),
@@ -35,6 +34,7 @@ impl ECS {
                 sprite_input.source_rect,
                 sprite_input.texture_id,
                 sprite_input.debug,
+                sprite_input.frame,
             );
             self.sprites
                 .entry(sprite.z_layer)
@@ -43,8 +43,6 @@ impl ECS {
             id
         } else {
             // No reusable slots; push to the end
-            // self.sprites.push(Some(sprite));
-
             let sprite = Sprite::new(
                 self.next_id,
                 sprite_input.x,
@@ -58,6 +56,7 @@ impl ECS {
                 sprite_input.source_rect,
                 sprite_input.texture_id,
                 sprite_input.debug,
+                sprite_input.frame,
             );
             self.sprites
                 .entry(sprite.z_layer)
@@ -83,6 +82,7 @@ impl ECS {
             sprite_input.source_rect,
             sprite_input.texture_id,
             sprite_input.debug,
+            sprite_input.frame,
         );
         for sprites in self.sprites.values_mut() {
             if let Some(existing_sprite) = sprites.iter_mut().find(|s| s.id == sprite.id) {

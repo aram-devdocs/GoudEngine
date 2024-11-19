@@ -117,6 +117,7 @@ pub extern "C" fn game_add_sprite(game: *mut GameSdk, data: SpriteCreateDto) -> 
         },
         data.texture_id,
         data.debug,
+        data.frame,
     );
 
     let id = game.ecs.add_sprite(sprite);
@@ -185,6 +186,7 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, data: SpriteUpdateDto) 
             data.texture_id
         },
         data.debug,
+        data.frame,
     );
 
     game.ecs
@@ -196,7 +198,6 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, data: SpriteUpdateDto) 
 #[no_mangle]
 pub extern "C" fn game_remove_sprite(game: *mut GameSdk, id: c_uint) {
     let game = unsafe { &mut *game };
-    println!("Removing sprite with id: {}", id);
     game.ecs.remove_sprite(id).expect("Failed to remove sprite");
 }
 

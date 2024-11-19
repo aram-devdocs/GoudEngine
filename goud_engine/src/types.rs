@@ -28,6 +28,7 @@ pub struct Sprite {
     pub source_rect: Rectangle,
     pub texture_id: c_uint,
     pub debug: bool,
+    pub frame: Rectangle,
 }
 
 pub type SpriteMap = BTreeMap<i32, Vec<Sprite>>;
@@ -46,6 +47,7 @@ pub struct SpriteCreateDto {
     pub source_rect: Rectangle,
     pub texture_id: c_uint,
     pub debug: bool,
+    pub frame: Rectangle,
 }
 
 #[repr(C)]
@@ -63,6 +65,7 @@ pub struct SpriteUpdateDto {
     pub source_rect: Rectangle,
     pub texture_id: c_uint,
     pub debug: bool,
+    pub frame: Rectangle,
 }
 
 // Build a struct for Rc
