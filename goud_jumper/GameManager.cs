@@ -226,8 +226,6 @@ public class GameManager
         playerSpriteId = game.AddSprite(
             new SpriteCreateDto
             {
-                x = 0,
-                y = 0,
                 z_layer = 0,
                 scale_x = 2,
                 scale_y = 2,
@@ -253,6 +251,8 @@ public class GameManager
                     id = playerSpriteId,
                     frame = frame,
                     texture_id = textureId,
+                    x = 100,
+                    y = 100,
                     // flip_x = isGoingLeft
                 }
             );

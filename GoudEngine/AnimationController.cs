@@ -2,6 +2,10 @@ using System;
 using System.Collections.Generic;
 using CsBindgen;
 
+// TODO
+// - Right now when manually assining a sprite, X Y is on the bottom left rather than top left. this needs to be normalized as we render sprites from the top left
+
+
 /// <summary>
 /// A utility class for controlling sprite sheet animations across different states,
 /// supporting both grid-based and frame list-based spritesheets.
