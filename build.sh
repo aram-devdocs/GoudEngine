@@ -8,7 +8,7 @@ cargo build --release --workspace
 # echo "Build complete."
 echo "Copying and target/release/libgoud_engine.dylib to flappy_goud. TODO: This should be OS specific."
 # cp goud_enginebindings.h flappy_goud/
-cp target/release/libgoud_engine.dylib GoudEngine/runtimes/native/osx-x64/
+cp target/release/libgoud_engine.dylib GoudEngine/runtimes/osx-x64/native/
 # cp target/release/libgoud_engine.dylib GoudEngine/
 
 # echo "Copied files to flappy_goud."

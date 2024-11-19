@@ -22,10 +22,8 @@ deploy_local() {
     # Add local feed to NuGet sources
     dotnet nuget add source "$LOCAL_NUGET_FEED" --name LocalGoudFeed --configfile NuGet.config
 
-    # Push packages to local feed
-    for NUPKG_FILE in $NUPKG_FILES; do
-        dotnet nuget push "$NUPKG_FILE" --source "$LOCAL_NUGET_FEED"
-    done
+    # Push all packages to local feed at once
+    dotnet nuget push "$PACKAGE_OUTPUT_PATH/*.nupkg" --source "$LOCAL_NUGET_FEED"
 
     echo "Packages deployed to local NuGet feed at $LOCAL_NUGET_FEED."
 }

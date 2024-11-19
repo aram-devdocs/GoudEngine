@@ -34,6 +34,7 @@ impl ECS {
                 sprite_input.source_rect,
                 sprite_input.texture_id,
                 sprite_input.debug,
+                sprite_input.frame,
             );
             self.sprites
                 .entry(sprite.z_layer)
@@ -55,6 +56,7 @@ impl ECS {
                 sprite_input.source_rect,
                 sprite_input.texture_id,
                 sprite_input.debug,
+                sprite_input.frame,
             );
             self.sprites
                 .entry(sprite.z_layer)
@@ -80,6 +82,7 @@ impl ECS {
             sprite_input.source_rect,
             sprite_input.texture_id,
             sprite_input.debug,
+            sprite_input.frame,
         );
         for sprites in self.sprites.values_mut() {
             if let Some(existing_sprite) = sprites.iter_mut().find(|s| s.id == sprite.id) {
