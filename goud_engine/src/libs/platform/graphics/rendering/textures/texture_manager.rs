@@ -27,5 +27,4 @@ impl TextureManager {
         self.textures.get(&texture_id).unwrap().clone()
     }
 
-    // 4. We need to be able to bind a texture to a texture unit.
 }
