@@ -1,5 +1,3 @@
-// GameManager.cs
-
 using System;
 using System.Collections.Generic;
 using CsBindgen;
@@ -9,35 +7,36 @@ public class GameManager
     private GoudGame game;
     private uint PlayerTextureId;
     private uint PlayerSpriteId;
-    private AnimationService animationService;
+
     private PlayerStateMachine playerStateMachine;
+    private AnimationController animationController;
+
+    private bool IsGoingLeft = false;
 
     public GameManager(GoudGame game)
     {
         this.game = game;
-        this.animationService = new AnimationService();
         this.playerStateMachine = new PlayerStateMachine();
+
+        const int DefaultPlayerWidth = 0;
+        const int DefaultPlayerHeight = 0;
+
+        var stateToPositionMap = new Dictionary<
+            string,
+            List<(int x, int y, int? width, int? height)>
+        >
+        {
+            // tdoo: fill this in
+        };
+        this.animationController = new AnimationController(
+            DefaultPlayerWidth,
+            DefaultPlayerHeight,
+            stateToPositionMap
+        );
     }
 
     public void Initialize()
     {
-        // p1_duck = 365 98 69 71
-        // p1_front = 0 196 66 92
-        // p1_hurt = 438 0 69 92
-        // p1_jump = 438 93 67 94
-        // p1_stand = 67 196 66 92
-        // p1_walk01 = 0 0 72 97
-        // p1_walk02 = 73 0 72 97
-        // p1_walk03 = 146 0 72 97
-        // p1_walk04 = 0 98 72 97
-        // p1_walk05 = 73 98 72 97
-        // p1_walk06 = 146 98 72 97
-        // p1_walk07 = 219 0 72 97
-        // p1_walk08 = 292 0 72 97
-        // p1_walk09 = 219 98 72 97
-        // p1_walk10 = 365 0 72 97
-        // p1_walk11 = 292 98 72 97
-
         PlayerTextureId = game.CreateTexture("assets/p1_spritesheet.png");
         PlayerSpriteId = game.AddSprite(
             new SpriteCreateDto
@@ -62,7 +61,18 @@ public class GameManager
     public void Update(float deltaTime)
     {
         HandleInput();
-        animationService.UpdateAnimation(game, PlayerSpriteId, playerStateMachine.CurrentState);
+        var frame = animationController.GetFrame(
+            playerStateMachine.CurrentState.ToString(),
+            deltaTime
+        );
+        game.UpdateSprite(
+            new SpriteUpdateDto
+            {
+                id = PlayerSpriteId,
+                frame = frame,
+                scale_x = IsGoingLeft ? -1 : 1
+            }
+        );
     }
 
     private void HandleInput()
@@ -83,11 +93,13 @@ public class GameManager
         {
             playerStateMachine.SetState(PlayerState.Walking);
             isMoving = true;
+            IsGoingLeft = true;
         }
         else if (game.IsKeyPressed(68)) // Key.D
         {
             playerStateMachine.SetState(PlayerState.Walking);
             isMoving = true;
+            IsGoingLeft = false;
         }
 
         if (!isMoving)
@@ -120,80 +132,5 @@ public class PlayerStateMachine
     public void SetState(PlayerState newState)
     {
         CurrentState = newState;
-    }
-}
-
-public class AnimationService
-{
-    private Dictionary<PlayerState, Rectangle> stateToFrameMap;
-
-    public AnimationService()
-    {
-        stateToFrameMap = new Dictionary<PlayerState, Rectangle>
-        {
-            {
-                PlayerState.Standing,
-                new Rectangle
-                {
-                    x = 67,
-                    y = 196,
-                    width = 66,
-                    height = 92
-                }
-            },
-            {
-                PlayerState.Walking,
-                new Rectangle
-                {
-                    x = 0,
-                    y = 0,
-                    width = 72,
-                    height = 97
-                }
-            },
-            {
-                PlayerState.Jumping,
-                new Rectangle
-                {
-                    x = 438,
-                    y = 93,
-                    width = 67,
-                    height = 94
-                }
-            },
-            {
-                PlayerState.Ducking,
-                new Rectangle
-                {
-                    x = 365,
-                    y = 98,
-                    width = 69,
-                    height = 71
-                }
-            },
-            {
-                PlayerState.Hurt,
-                new Rectangle
-                {
-                    x = 438,
-                    y = 0,
-                    width = 69,
-                    height = 92
-                }
-            }
-        };
-    }
-
-    public void UpdateAnimation(GoudGame game, uint spriteId, PlayerState state)
-    {
-        var frame = stateToFrameMap[state];
-        game.UpdateSprite(
-            new SpriteUpdateDto
-            {
-                id = spriteId,
-                frame = frame,
-                // debug = true
-            }
-        );
     }
 }
