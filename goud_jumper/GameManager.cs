@@ -187,6 +187,13 @@ public class AnimationService
     public void UpdateAnimation(GoudGame game, uint spriteId, PlayerState state)
     {
         var frame = stateToFrameMap[state];
-        game.UpdateSprite(new SpriteUpdateDto { id = spriteId, frame = frame });
+        game.UpdateSprite(
+            new SpriteUpdateDto
+            {
+                id = spriteId,
+                frame = frame,
+                // debug = true
+            }
+        );
     }
 }
