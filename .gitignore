@@ -29,3 +29,7 @@ GoudEngine/NativeMethods.g.cs
 *.sln
 
 nuget_package_output
+
+# Tiled session and project files
+**.tiled-project
+**.tiled-session
