@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>GoudEngine</PackageId>
-    <Version>0.0.617</Version>
+    <Version>0.0.623</Version>
     <Authors>Aram Hammoudeh</Authors>
     <Description>Rust-powered game engine for C# developers using FFI.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

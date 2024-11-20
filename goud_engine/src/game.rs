@@ -67,9 +67,8 @@ impl GameSdk {
         update_callback(self);
 
         if let Some(renderer) = &mut self.renderer_2d {
-            let selected_map = self
-                .tiled_manager
-                .get_map_by_id(self.tiled_manager.selected_map_id.unwrap());
+            let selected_map_id = self.tiled_manager.selected_map_id;
+            let selected_map = selected_map_id.and_then(|id| self.tiled_manager.get_map_by_id(id));
 
             renderer.render(
                 self.ecs.sprites.clone(),
