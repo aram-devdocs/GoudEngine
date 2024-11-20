@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::ffi::c_uint;
 use std::path::Path;
 use std::rc::Rc;
-use tiled::{Loader, Map};
+use tiled::Loader;
 
 use crate::types::{Tiled, TiledManager};
 
@@ -52,10 +52,7 @@ impl TiledManager {
 
     pub fn get_map_by_id(&self, map_id: c_uint) -> Option<&Tiled> {
         // self.maps.get(map_name).map(|tiled| Rc::clone(&tiled.map))
-        self.maps
-            .values()
-            .find(|tiled| tiled.id == map_id)
-            // .map(|tiled| Rc::clone(&tiled.map))
+        self.maps.values().find(|tiled| tiled.id == map_id)
     }
 
     pub fn set_selected_map_by_id(&mut self, map_id: c_uint) -> Result<(), String> {

@@ -308,6 +308,7 @@ pub extern "C" fn game_load_tiled_map(
 #[no_mangle]
 pub extern "C" fn game_set_selected_map_by_id(game: *mut GameSdk, map_id: c_uint) {
     let game = unsafe { &mut *game };
+    game.new_tileset = true;
     game.tiled_manager
         .set_selected_map_by_id(map_id)
         .expect("Failed to set selected map");

@@ -4,7 +4,7 @@ use std::ptr;
 
 use crate::{
     libs::platform::graphics::rendering::{BufferObject, ShaderProgram, Vao, VertexAttribute},
-    types::{Rectangle, Sprite, SpriteMap, TextureManager, Tiled, TiledManager},
+    types::{Rectangle, Sprite, SpriteMap, TextureManager},
 };
 
 use super::Renderer;
@@ -99,7 +99,6 @@ impl Renderer2D {
         &mut self,
         sprites: Vec<Sprite>,
         texture_manager: &TextureManager,
-        selected_map: Option<&Tiled>,
     ) -> Result<(), String> {
         self.shader_program.bind();
         self.vao.bind();
@@ -196,9 +195,9 @@ impl Renderer2D {
 
 impl Renderer for Renderer2D {
     /// Renders the 2D scene.
-    fn render(&mut self, sprites: SpriteMap, texture_manager: &TextureManager, selected_map: Option<&Tiled>) {
+    fn render(&mut self, sprites: SpriteMap, texture_manager: &TextureManager) {
         let sprites: Vec<Sprite> = sprites.into_iter().flat_map(|(_, v)| v).collect();
-        if let Err(e) = self.render_sprites(sprites, texture_manager, selected_map) {
+        if let Err(e) = self.render_sprites(sprites, texture_manager) {
             eprintln!("Error rendering sprites: {}", e);
         }
     }

@@ -4,6 +4,7 @@ use crate::libs::platform::graphics::rendering::clear;
 use crate::libs::platform::graphics::rendering::renderer2d::Renderer2D;
 use crate::libs::platform::graphics::rendering::Renderer;
 
+use crate::types::SpriteCreateDto;
 use crate::types::TextureManager;
 use crate::types::TiledManager;
 use platform::logger;
@@ -20,6 +21,8 @@ pub struct GameSdk {
     pub ecs: ECS,
     pub texture_manager: TextureManager,
     pub tiled_manager: TiledManager,
+    pub tiled_map_sprite_ids: Option<Vec<u32>>,
+    pub new_tileset: bool,
 }
 
 impl GameSdk {
@@ -34,6 +37,8 @@ impl GameSdk {
             ecs: ECS::new(),
             texture_manager: TextureManager::new(),
             tiled_manager: TiledManager::new(),
+            tiled_map_sprite_ids: None,
+            new_tileset: false,
         }
     }
 
@@ -66,15 +71,100 @@ impl GameSdk {
 
         update_callback(self);
 
-        if let Some(renderer) = &mut self.renderer_2d {
-            let selected_map_id = self.tiled_manager.selected_map_id;
-            let selected_map = selected_map_id.and_then(|id| self.tiled_manager.get_map_by_id(id));
+        // Manage tiled maps
+        if self.new_tileset {
+            let texture_manager = &self.texture_manager;
+            self.new_tileset = false;
+            if let Some(selected_map_id) = self.tiled_manager.selected_map_id {
+                if let Some(tiled) = self.tiled_manager.get_map_by_id(selected_map_id) {
+                    //
 
-            renderer.render(
-                self.ecs.sprites.clone(),
-                &self.texture_manager,
-                selected_map,
-            );
+                    let tile_layers =
+                        tiled
+                            .map
+                            .layers()
+                            .filter_map(|layer| match layer.layer_type() {
+                                tiled::LayerType::Tiles(layer) => Some(layer),
+                                _ => None,
+                            });
+
+                    let tilesets = tiled.map.tilesets();
+
+                    // remove all entities associated with the current map befopre adding new ones
+                    if let Some(sprite_ids) = &self.tiled_map_sprite_ids {
+                        for sprite_id in sprite_ids {
+                            if let Err(e) = self.ecs.remove_sprite(*sprite_id) {
+                                eprintln!("Failed to remove sprite: {}", e);
+                            }
+                        }
+                    }
+
+                    for layer in tile_layers {
+                        let height = layer.height();
+                        let width = layer.width();
+
+                        // height and width are both option u32. If they are None, we return an error. if they are Some, we get the value.
+                        let height = match height {
+                            Some(h) => h,
+                            None => {
+                                eprintln!("Height not found");
+                                continue;
+                            }
+                        };
+                        let width = match width {
+                            Some(w) => w,
+                            None => {
+                                eprintln!("Width not found");
+                                continue;
+                            }
+                        };
+
+                        for y in 0..height {
+                            for x in 0..width {
+                                let tile = layer.get_tile(x as i32, y as i32);
+
+                                // TODO: Create from tile
+                                let data: SpriteCreateDto = SpriteCreateDto {
+                                    x: x as f32 * 32.0,
+                                    y: y as f32 * 32.0,
+                                    z_layer: 0,
+                                    scale_x: 1.0,
+                                    scale_y: 1.0,
+                                    dimension_x: 32.0,
+                                    dimension_y: 32.0,
+                                    rotation: 0.0,
+                                    source_rect: crate::types::Rectangle {
+                                        x: 0.0,
+                                        y: 0.0,
+                                        width: 32.0,
+                                        height: 32.0,
+                                    },
+                                    texture_id: 0,
+                                    debug: false,
+                                    frame: crate::types::Rectangle {
+                                        x: 0.0,
+                                        y: 0.0,
+                                        width: 32.0,
+                                        height: 32.0,
+                                    },
+                                };
+
+                                let sprite_id = self.ecs.add_sprite(data);
+
+                                // add sprite id to tiled_map_sprite_ids
+                                if let Some(sprite_ids) = &mut self.tiled_map_sprite_ids {
+                                    sprite_ids.push(sprite_id);
+                                } else {
+                                    self.tiled_map_sprite_ids = Some(vec![sprite_id]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if let Some(renderer) = &mut self.renderer_2d {
+            renderer.render(self.ecs.sprites.clone(), &self.texture_manager);
         }
 
         self.window.update();
