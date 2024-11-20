@@ -19,7 +19,7 @@ pub struct GameSdk {
     pub elapsed_time: f32,
     pub ecs: ECS,
     pub texture_manager: TextureManager,
-    pub tiled_manager:TiledManager,
+    pub tiled_manager: TiledManager,
 }
 
 impl GameSdk {
@@ -67,7 +67,15 @@ impl GameSdk {
         update_callback(self);
 
         if let Some(renderer) = &mut self.renderer_2d {
-            renderer.render(self.ecs.sprites.clone(), &self.texture_manager);
+            let selected_map = self
+                .tiled_manager
+                .get_map_by_id(self.tiled_manager.selected_map_id.unwrap());
+
+            renderer.render(
+                self.ecs.sprites.clone(),
+                &self.texture_manager,
+                selected_map,
+            );
         }
 
         self.window.update();

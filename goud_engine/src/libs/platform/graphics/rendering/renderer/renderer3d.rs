@@ -1,4 +1,4 @@
-use crate::types::{SpriteMap, TextureManager};
+use crate::types::{SpriteMap, TextureManager, Tiled};
 
 use super::Renderer;
 
@@ -21,7 +21,7 @@ impl Renderer3D {
 
 impl Renderer for Renderer3D {
     /// Renders the 3D scene.
-    fn render(&mut self, _sprites: SpriteMap, _texture_manager: &TextureManager) {
+    fn render(&mut self, _sprites: SpriteMap, _texture_manager: &TextureManager, _selected_map: Option<&Tiled>) {
         // Implement 3D rendering logic
     }
 

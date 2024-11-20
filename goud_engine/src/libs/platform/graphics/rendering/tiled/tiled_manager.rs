@@ -50,12 +50,12 @@ impl TiledManager {
         Ok(tiled_id)
     }
 
-    pub fn get_map_by_id(&self, map_id: c_uint) -> Option<Rc<Map>> {
+    pub fn get_map_by_id(&self, map_id: c_uint) -> Option<&Tiled> {
         // self.maps.get(map_name).map(|tiled| Rc::clone(&tiled.map))
         self.maps
             .values()
             .find(|tiled| tiled.id == map_id)
-            .map(|tiled| Rc::clone(&tiled.map))
+            // .map(|tiled| Rc::clone(&tiled.map))
     }
 
     pub fn set_selected_map_by_id(&mut self, map_id: c_uint) -> Result<(), String> {
