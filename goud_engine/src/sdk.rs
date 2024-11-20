@@ -2,6 +2,7 @@ use crate::game::{GameSdk, WindowBuilder};
 use crate::types::{MousePosition, Rectangle};
 use crate::types::{SpriteCreateDto, SpriteUpdateDto, UpdateResponseData};
 use glfw::Key;
+use std::collections::HashMap;
 use std::ffi::{c_uint, CStr, CString};
 use std::os::raw::{c_char, c_int};
 
@@ -262,6 +263,61 @@ pub extern "C" fn check_collision_between_sprites(
     let game = unsafe { &*game };
     game.ecs
         .check_collision_between_sprites(entity_id1, entity_id2)
+}
+
+// Handled adding tile map to the game
+#[no_mangle]
+pub extern "C" fn game_load_tiled_map(
+    game: *mut GameSdk,
+    map_name: *const c_char,
+    map_path: *const c_char,
+    texture_ids: *const *const c_char, // texture ids should be an array of strings, u32, where the string is the name of the tileset and the u32 is the texture id
+) -> c_uint {
+    let game = unsafe { &mut *game };
+    let map_path_str = unsafe { CStr::from_ptr(map_path).to_str().unwrap() };
+    let map_path_cstring = CString::new(map_path_str).unwrap();
+
+    let map_name_str = unsafe { CStr::from_ptr(map_name).to_str().unwrap() };
+    let map_name_cstring = CString::new(map_name_str).unwrap();
+
+    let texture_ids_hashmap = unsafe {
+        let mut texture_ids_hashmap = HashMap::new();
+        let mut i = 0;
+        while !(*texture_ids.add(i)).is_null() {
+            let texture_id_str = CStr::from_ptr(*texture_ids.add(i)).to_str().unwrap();
+            let texture_id_cstring = CString::new(texture_id_str).unwrap();
+            texture_ids_hashmap.insert(texture_id_cstring.to_str().unwrap().to_string(), i as u32);
+            i += 1;
+        }
+        texture_ids_hashmap
+    };
+
+    let tiled_id = game
+        .tiled_manager
+        .load_map(
+            map_name_cstring.to_str().unwrap(),
+            map_path_cstring.to_str().unwrap(),
+            texture_ids_hashmap,
+        )
+        .expect("Failed to load tiled map");
+
+    tiled_id
+}
+
+// Handled setting selected map
+#[no_mangle]
+pub extern "C" fn game_set_selected_map_by_id(game: *mut GameSdk, map_id: c_uint) {
+    let game = unsafe { &mut *game };
+    game.tiled_manager
+        .set_selected_map_by_id(map_id)
+        .expect("Failed to set selected map");
+}
+
+// Handled clearing selected map
+#[no_mangle]
+pub extern "C" fn game_clear_selected_map(game: *mut GameSdk) {
+    let game = unsafe { &mut *game };
+    game.tiled_manager.clear_selected_map();
 }
 
 /// Determines if the game window should close.

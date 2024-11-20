@@ -3,7 +3,9 @@ use crate::libs::platform::ecs::ECS;
 use crate::libs::platform::graphics::rendering::clear;
 use crate::libs::platform::graphics::rendering::renderer2d::Renderer2D;
 use crate::libs::platform::graphics::rendering::Renderer;
+
 use crate::types::TextureManager;
+use crate::types::TiledManager;
 use platform::logger;
 
 pub use platform::graphics::window::Window;
@@ -17,6 +19,7 @@ pub struct GameSdk {
     pub elapsed_time: f32,
     pub ecs: ECS,
     pub texture_manager: TextureManager,
+    pub tiled_manager:TiledManager,
 }
 
 impl GameSdk {
@@ -30,6 +33,7 @@ impl GameSdk {
             elapsed_time: 0.0,
             ecs: ECS::new(),
             texture_manager: TextureManager::new(),
+            tiled_manager: TiledManager::new(),
         }
     }
 

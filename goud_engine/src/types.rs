@@ -1,5 +1,7 @@
 use std::collections::{BTreeMap, HashMap as _HashMap};
 use std::{ffi::c_uint, rc::Rc};
+
+use tiled::{Loader, Map};
 // pub type EntityId = u32;
 
 #[derive(Debug, Clone)]
@@ -12,6 +14,20 @@ pub struct Texture {
 pub struct TextureManager {
     pub textures: _HashMap<c_uint, Rc<Texture>>, // property 1 is the texture id, property 2 is the texture itself.
 }
+
+pub struct Tiled {
+    pub id: c_uint,
+    pub map: Rc<Map>,
+    pub texture_ids: _HashMap<String, u32>,
+
+}
+
+pub struct TiledManager {
+    pub selected_map_id: Option<c_uint>,
+    pub loader: Loader,
+    pub maps: _HashMap<String, Tiled>,
+}
+
 // Data Transfer Objects
 #[repr(C)]
 #[derive(Debug, Clone)]
