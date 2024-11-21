@@ -4,6 +4,14 @@ pub struct Vec {
     _private: [u8; 0],
 }
 
+#[repr(C)]
+#[allow(dead_code)]
+pub struct Vector3 {
+    x: f32,
+    y: f32,
+    z: f32,
+}
+
 // Opaque pointers for additional structures
 #[repr(C)]
 #[allow(dead_code)]

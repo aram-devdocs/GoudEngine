@@ -18,6 +18,8 @@ pub struct Renderer2D {
     source_rect_uniform: String,
     window_width: u32,
     window_height: u32,
+    camera_position: Vector3<f32>,
+    camera_zoom: f32,
 }
 
 impl Renderer2D {
@@ -62,6 +64,7 @@ impl Renderer2D {
         shader_program.bind();
         shader_program.create_uniform("model")?;
         shader_program.create_uniform("projection")?;
+        shader_program.create_uniform("view")?;
         shader_program.create_uniform("texture1")?;
         shader_program.create_uniform("sourceRect")?;
         shader_program.set_uniform_int("texture1", 0)?;
@@ -90,7 +93,20 @@ impl Renderer2D {
             source_rect_uniform: "sourceRect".into(),
             window_width,
             window_height,
+            camera_position: Vector3::new(0.0, 0.0, 0.0),
+            camera_zoom: 1.0,
         })
+    }
+
+    /// Sets the camera position.
+    pub fn set_camera_position(&mut self, x: f32, y: f32) {
+        self.camera_position.x = x;
+        self.camera_position.y = y;
+    }
+
+    /// Sets the camera zoom level.
+    pub fn set_camera_zoom(&mut self, zoom: f32) {
+        self.camera_zoom = zoom;
     }
 
     /// Renders all added sprites.
@@ -101,6 +117,13 @@ impl Renderer2D {
     ) -> Result<(), String> {
         self.shader_program.bind();
         self.vao.bind();
+
+        // Create view matrix
+        let view = Matrix4::from_translation(-self.camera_position)
+            * Matrix4::from_scale(self.camera_zoom);
+
+        // Set the view matrix
+        self.shader_program.set_uniform_mat4("view", &view)?;
 
         for sprite in sprites {
             let position = Vector3::new(sprite.x, sprite.y, 0.0);

@@ -22,6 +22,10 @@ public class GameManager
     private const float jumpStrength = 5.0f;
     private const float moveSpeed = 2.0f;
 
+    private float cameraX = 0;
+    private float cameraY = 0;
+    private float cameraZoom = 1.0f;
+
     public GameManager(GoudGame game)
     {
         this.game = game ?? throw new ArgumentNullException(nameof(game));
@@ -449,6 +453,38 @@ public class GameManager
         {
             playerStateMachine.SetState(PlayerState.Idle);
         }
+
+        // handle camera
+
+
+        // Camera controls
+        if (game.IsKeyPressed(265)) // Up arrow key
+        {
+            cameraY -= 10.0f;
+        }
+        if (game.IsKeyPressed(264)) // Down arrow key
+        {
+            cameraY += 10.0f;
+        }
+        if (game.IsKeyPressed(263)) // Left arrow key
+        {
+            cameraX -= 10.0f;
+        }
+        if (game.IsKeyPressed(262)) // Right arrow key
+        {
+            cameraX += 10.0f;
+        }
+        if (game.IsKeyPressed(79)) // 'O' key
+        {
+            cameraZoom += 0.01f;
+        }
+        if (game.IsKeyPressed(80)) // 'P' key
+        {
+            cameraZoom -= 0.01f;
+        }
+
+        game.SetCameraPosition(cameraX, cameraY);
+        game.SetCameraZoom(cameraZoom);
     }
 
     private void ResetGame() { }

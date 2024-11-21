@@ -234,4 +234,20 @@ public class GoudGame
             NativeMethods.game_clear_selected_map(gameInstance);
         }
     }
+
+    public void SetCameraPosition(float x, float y)
+    {
+        unsafe
+        {
+            NativeMethods.game_set_camera_position(gameInstance, x, y);
+        }
+    }
+
+    public void SetCameraZoom(float zoom)
+    {
+        unsafe
+        {
+            NativeMethods.game_set_camera_zoom(gameInstance, zoom);
+        }
+    }
 }
