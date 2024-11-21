@@ -26,7 +26,7 @@ GoudEngine/NativeMethods.g.cs
 **/obj/
 **/*.csproj.user
 *.sln.docstates
-*.sln
+# *.sln
 
 nuget_package_output
 

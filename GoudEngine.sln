@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GoudEngine", "GoudEngine\GoudEngine.csproj", "{C3F52953-38BC-4911-9A36-6D468D777731}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flappy_goud", "flappy_goud\flappy_goud.csproj", "{A603B2CA-E9FE-43B8-8820-845256A9B58A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "goud_jumper", "goud_jumper\goud_jumper.csproj", "{2623582E-23E5-49B5-AA8D-EF8D21F4D618}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C3F52953-38BC-4911-9A36-6D468D777731}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3F52953-38BC-4911-9A36-6D468D777731}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3F52953-38BC-4911-9A36-6D468D777731}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3F52953-38BC-4911-9A36-6D468D777731}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A603B2CA-E9FE-43B8-8820-845256A9B58A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A603B2CA-E9FE-43B8-8820-845256A9B58A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A603B2CA-E9FE-43B8-8820-845256A9B58A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A603B2CA-E9FE-43B8-8820-845256A9B58A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2623582E-23E5-49B5-AA8D-EF8D21F4D618}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2623582E-23E5-49B5-AA8D-EF8D21F4D618}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2623582E-23E5-49B5-AA8D-EF8D21F4D618}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2623582E-23E5-49B5-AA8D-EF8D21F4D618}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
