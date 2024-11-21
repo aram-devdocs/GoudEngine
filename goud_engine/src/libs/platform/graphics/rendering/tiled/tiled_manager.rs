@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::ffi::c_uint;
-use std::path::Path;
 use std::rc::Rc;
 use tiled::Loader;
 
@@ -21,10 +20,17 @@ impl TiledManager {
         file_path: &str,
         texture_ids: Vec<c_uint>,
     ) -> Result<c_uint, String> {
+        // Resolve the file_path relative to the current working directory
+        let full_path = std::env::current_dir()
+            .map_err(|e| format!("Failed to get current directory: {}", e))?
+            .join(file_path);
+
+        println!("Loading map from: {}", full_path.display());
+
         let map = self
             .loader
-            .load_tmx_map(Path::new(file_path))
-            .map_err(|e| format!("Failed to load map: {}", e))?;
+            .load_tmx_map(&full_path)
+            .map_err(|e| format!("Failed to load map from '{}': {}", full_path.display(), e))?;
 
         // Load associated tilesets
         for tileset in map.tilesets() {
@@ -69,10 +75,14 @@ mod tests {
     fn setup_tiled_manager() -> TiledManager {
         let mut tiled_manager = TiledManager::new();
         let texture_ids: Vec<c_uint> = vec![0];
+
+        // Use a relative path for testing
+        let file_path = "src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map.tmx";
+
         tiled_manager
             .load_map(
                 "map",
-                "/Users/aramhammoudeh/dev/game/GoudEngine/goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map.tmx",
+                file_path,
                 texture_ids,
             )
             .unwrap();
