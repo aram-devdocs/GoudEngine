@@ -4,6 +4,7 @@ use crate::libs::platform::graphics::rendering::clear;
 use crate::libs::platform::graphics::rendering::renderer2d::Renderer2D;
 use crate::libs::platform::graphics::rendering::Renderer;
 
+use crate::types::Rectangle;
 use crate::types::SpriteCreateDto;
 use crate::types::TextureManager;
 use crate::types::TiledManager;
@@ -96,6 +97,7 @@ impl GameSdk {
                         }
                     }
 
+                    let mut layer_index = 0;
                     for layer in tile_layers {
                         let height = layer.height();
                         let width = layer.width();
@@ -126,28 +128,30 @@ impl GameSdk {
                                 let tile = tile_option.unwrap();
                                 let tileset = tile.get_tileset();
 
+                                let tile_height = tileset.tile_height;
+                                let tile_width = tileset.tile_width;
+
                                 // Get the layer tile’s local id within its parent tileset.
                                 let tile_id = layer.get_tile(x as i32, y as i32).unwrap().id();
 
-                                // TODO: Create from tile
                                 let data: SpriteCreateDto = SpriteCreateDto {
-                                    x: x as f32 * 32.0,
-                                    y: y as f32 * 32.0,
-                                    z_layer: 0,
-                                    scale_x: 1.0,
-                                    scale_y: 1.0,
-                                    dimension_x: 32.0,
-                                    dimension_y: 32.0,
+                                    x: x as f32 * tile_height as f32,
+                                    y: y as f32 * tile_width as f32,
+                                    z_layer: layer_index,
+                                    scale_x: if tile.flip_v { -1.0 } else { 1.0 },
+                                    scale_y: if tile.flip_h { -1.0 } else { 1.0 },
+                                    dimension_x: tile_height as f32,
+                                    dimension_y: tile_height as f32,
                                     rotation: 0.0,
-                                    source_rect: crate::types::Rectangle {
+                                    source_rect: Rectangle {
                                         x: 0.0,
                                         y: 0.0,
-                                        width: 32.0,
-                                        height: 32.0,
+                                        width: tile_height as f32,
+                                        height: tile_height as f32,
                                     },
                                     texture_id: tiled.texture_ids[tile.tileset_index()],
                                     debug: false,
-                                    frame: crate::types::Rectangle {
+                                    frame: Rectangle {
                                         // use tile data to get the frame from the tileset texture
                                         x: tileset.tile_width as f32
                                             * (tile_id % tileset.columns as u32) as f32,
@@ -166,6 +170,9 @@ impl GameSdk {
                                 } else {
                                     self.tiled_map_sprite_ids = Some(vec![sprite_id]);
                                 }
+
+                                // cleanup
+                                layer_index += 1;
                             }
                         }
                     }
