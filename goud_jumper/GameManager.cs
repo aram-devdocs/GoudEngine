@@ -15,6 +15,13 @@ public class GameManager
     private uint tilemapId;
     private uint tilemapId1;
 
+    private float playerX = 100;
+    private float playerY = 100;
+    private float playerVelocityY = 0;
+    private const float gravity = 9.8f;
+    private const float jumpStrength = 5.0f;
+    private const float moveSpeed = 2.0f;
+
     public GameManager(GoudGame game)
     {
         this.game = game ?? throw new ArgumentNullException(nameof(game));
@@ -347,6 +354,7 @@ public class GameManager
     public void Update(float deltaTime)
     {
         HandleInput();
+        UpdatePlayerPosition(deltaTime);
         if (animationController != null)
         {
             var (frame, textureId) = animationController.GetFrame(
@@ -359,32 +367,48 @@ public class GameManager
                     id = playerSpriteId,
                     frame = frame,
                     texture_id = textureId,
-                    x = 100,
-                    y = 100,
+                    x = playerX,
+                    y = playerY,
                     scale_x = isGoingLeft ? -2 : 2,
                 }
             );
         }
     }
 
-    private void HandleInput()
+    private void UpdatePlayerPosition(float deltaTime)
+    {
+        playerVelocityY += gravity * deltaTime;
+        playerY += playerVelocityY;
+
+        if (playerY > 100) // Assuming ground level is at y = 100
+        {
+            playerY = 100;
+            playerVelocityY = 0;
+            playerStateMachine.SetState(PlayerState.Idle);
+        }
+    }
+
+    public void HandleInput()
     {
         bool isMoving = false;
 
-        if (game.IsKeyPressed(32)) // Space key
+        if (game.IsKeyPressed(32) && playerY == 100) // Space key and on ground
         {
             playerStateMachine.SetState(PlayerState.Jumping);
+            playerVelocityY = -jumpStrength;
             isMoving = true;
         }
         else if (game.IsKeyPressed(65)) // 'A' key
         {
             playerStateMachine.SetState(PlayerState.Walking);
+            playerX -= moveSpeed;
             isMoving = true;
             isGoingLeft = true;
         }
         else if (game.IsKeyPressed(68)) // 'D' key
         {
             playerStateMachine.SetState(PlayerState.Walking);
+            playerX += moveSpeed;
             isMoving = true;
             isGoingLeft = false;
         }
@@ -421,7 +445,7 @@ public class GameManager
             game.SetSelectedTiledMapById(tilemapId1);
         }
 
-        if (!isMoving)
+        if (!isMoving && playerY == 100)
         {
             playerStateMachine.SetState(PlayerState.Idle);
         }

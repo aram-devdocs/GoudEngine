@@ -19,7 +19,11 @@ public class Program
 
         game.Initialize(() => gameManager.Initialize());
         game.Start(() => gameManager.Start());
-        game.Update(() => gameManager.Update(game.UpdateResponseData.delta_time));
+        game.Update(() => 
+        {
+            gameManager.Update(game.UpdateResponseData.delta_time);
+            gameManager.HandleInput();
+        });
 
         game.Terminate();
     }
