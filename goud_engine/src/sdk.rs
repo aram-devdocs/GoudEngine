@@ -2,7 +2,6 @@ use crate::game::{GameSdk, WindowBuilder};
 use crate::types::{MousePosition, Rectangle};
 use crate::types::{SpriteCreateDto, SpriteUpdateDto, UpdateResponseData};
 use glfw::Key;
-use std::collections::HashMap;
 use std::ffi::{c_uint, CStr, CString};
 use std::os::raw::{c_char, c_int};
 
@@ -271,7 +270,7 @@ pub extern "C" fn game_load_tiled_map(
     game: *mut GameSdk,
     map_name: *const c_char,
     map_path: *const c_char,
-    texture_id: c_uint, // single texture id
+    texture_ids: *const c_uint, // multiple texture ids
 ) -> c_uint {
     let game = unsafe { &mut *game };
     let map_path_str = unsafe { CStr::from_ptr(map_path).to_str().unwrap() };
@@ -285,7 +284,7 @@ pub extern "C" fn game_load_tiled_map(
         .load_map(
             map_name_cstring.to_str().unwrap(),
             map_path_cstring.to_str().unwrap(),
-            texture_id, // single texture id
+            unsafe { std::slice::from_raw_parts(texture_ids, 1).to_vec() },
         )
         .expect("Failed to load tiled map");
 

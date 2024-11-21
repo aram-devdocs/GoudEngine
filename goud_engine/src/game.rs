@@ -145,7 +145,7 @@ impl GameSdk {
                                         width: 32.0,
                                         height: 32.0,
                                     },
-                                    texture_id: tiled.texture_id,
+                                    texture_id: tiled.texture_ids[tile.tileset_index()],
                                     debug: false,
                                     frame: crate::types::Rectangle {
                                         // use tile data to get the frame from the tileset texture

@@ -28,7 +28,7 @@ public class GameManager
         var tiled_id = game.LoadTiledMap(
             "Map",
             "../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map.tmx",
-            tileset_texture_id
+            [tileset_texture_id]
         );
 
         game.SetSelectedTiledMapById(tiled_id);

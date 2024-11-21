@@ -199,19 +199,22 @@ public class GoudGame
         }
     }
 
-    public uint LoadTiledMap(string mapName, string mapPath, uint textureId)
+    public uint LoadTiledMap(string mapName, string mapPath, uint[] textureIds)
     {
         unsafe
         {
             fixed (byte* mapNameBytes = System.Text.Encoding.ASCII.GetBytes(mapName + "\0"))
             fixed (byte* mapPathBytes = System.Text.Encoding.ASCII.GetBytes(mapPath + "\0"))
             {
-                return NativeMethods.game_load_tiled_map(
-                    gameInstance,
-                    mapNameBytes,
-                    mapPathBytes,
-                    textureId
-                );
+                fixed (uint* textureIdsPtr = textureIds)
+                {
+                    return NativeMethods.game_load_tiled_map(
+                        gameInstance,
+                        mapNameBytes,
+                        mapPathBytes,
+                        textureIdsPtr
+                    );
+                }
             }
         }
     }

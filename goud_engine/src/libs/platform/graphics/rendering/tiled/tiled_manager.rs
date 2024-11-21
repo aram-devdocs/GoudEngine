@@ -19,7 +19,7 @@ impl TiledManager {
         &mut self,
         map_name: &str,
         file_path: &str,
-        texture_id: c_uint,
+        texture_ids: Vec<c_uint>,
     ) -> Result<c_uint, String> {
         let map = self
             .loader
@@ -29,7 +29,7 @@ impl TiledManager {
         // Load associated tilesets
         for tileset in map.tilesets() {
             println!("Loading tileset: {}", tileset.name);
-            println!("Using texture ID: {}", texture_id);
+            println!("Using texture IDs: {:?}", texture_ids);
         }
 
         let map_rc = Rc::new(map);
@@ -39,7 +39,7 @@ impl TiledManager {
             Tiled {
                 id: tiled_id,
                 map: Rc::clone(&map_rc),
-                texture_id,
+                texture_ids,
             },
         );
         Ok(tiled_id)
@@ -68,12 +68,12 @@ mod tests {
 
     fn setup_tiled_manager() -> TiledManager {
         let mut tiled_manager = TiledManager::new();
-        let texture_id = 1;
+        let texture_ids: Vec<c_uint> = vec![0];
         tiled_manager
             .load_map(
                 "map",
                 "/Users/aramhammoudeh/dev/game/GoudEngine/goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map.tmx",
-                texture_id,
+                texture_ids,
             )
             .unwrap();
         tiled_manager
