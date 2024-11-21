@@ -91,10 +91,10 @@ impl GameSdk {
                     // remove all entities associated with the current map befopre adding new ones
                     if let Some(sprite_ids) = &self.tiled_map_sprite_ids {
                         for sprite_id in sprite_ids {
-                            if let Err(e) = self.ecs.remove_sprite(*sprite_id) {
-                                eprintln!("Failed to remove sprite: {}", e);
-                            }
+                            let _ = self.ecs.remove_sprite(*sprite_id);
                         }
+
+                        self.tiled_map_sprite_ids = None;
                     }
 
                     let mut layer_index = 0;

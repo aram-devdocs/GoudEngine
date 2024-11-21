@@ -12,6 +12,9 @@ public class GameManager
 
     private bool isGoingLeft = false;
 
+    private uint tilemapId;
+    private uint tilemapId1;
+
     public GameManager(GoudGame game)
     {
         this.game = game ?? throw new ArgumentNullException(nameof(game));
@@ -25,13 +28,19 @@ public class GameManager
         var tileset_texture_id = game.CreateTexture(
             "../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Tilesets/Tileset.png"
         );
-        var tiled_id = game.LoadTiledMap(
+        tilemapId = game.LoadTiledMap(
             "Map",
             "../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map.tmx",
             [tileset_texture_id]
         );
 
-        game.SetSelectedTiledMapById(tiled_id);
+        tilemapId1 = game.LoadTiledMap(
+            "Map1",
+            "../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map1.tmx",
+            [tileset_texture_id]
+        );
+
+        game.SetSelectedTiledMapById(tilemapId);
         var stateConfigurations = new Dictionary<string, AnimationStateConfig>
         {
             // Grid-based configurations
@@ -396,6 +405,20 @@ public class GameManager
         {
             playerStateMachine.SetState(PlayerState.Custom3);
             isMoving = true;
+        }
+
+        // Change tile maps
+
+        // m + 0
+        if (game.IsKeyPressed(77) && game.IsKeyPressed(48))
+        {
+            game.SetSelectedTiledMapById(tilemapId);
+        }
+
+        // m + 1
+        if (game.IsKeyPressed(77) && game.IsKeyPressed(49))
+        {
+            game.SetSelectedTiledMapById(tilemapId1);
         }
 
         if (!isMoving)
