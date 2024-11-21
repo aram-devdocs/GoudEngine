@@ -19,7 +19,7 @@ impl TiledManager {
         &mut self,
         map_name: &str,
         file_path: &str,
-        texture_ids: HashMap<String, u32>,
+        texture_id: c_uint,
     ) -> Result<c_uint, String> {
         let map = self
             .loader
@@ -29,11 +29,7 @@ impl TiledManager {
         // Load associated tilesets
         for tileset in map.tilesets() {
             println!("Loading tileset: {}", tileset.name);
-            if let Some(texture_id) = texture_ids.get(&tileset.name) {
-                println!("Using texture ID: {}", texture_id);
-            } else {
-                println!("No texture ID found for tileset: {}", tileset.name);
-            }
+            println!("Using texture ID: {}", texture_id);
         }
 
         let map_rc = Rc::new(map);
@@ -43,15 +39,13 @@ impl TiledManager {
             Tiled {
                 id: tiled_id,
                 map: Rc::clone(&map_rc),
-                texture_ids,
+                texture_id,
             },
         );
-        // Ok(map_rc)
         Ok(tiled_id)
     }
 
     pub fn get_map_by_id(&self, map_id: c_uint) -> Option<&Tiled> {
-        // self.maps.get(map_name).map(|tiled| Rc::clone(&tiled.map))
         self.maps.values().find(|tiled| tiled.id == map_id)
     }
 
@@ -74,13 +68,12 @@ mod tests {
 
     fn setup_tiled_manager() -> TiledManager {
         let mut tiled_manager = TiledManager::new();
-        let mut texture_ids = HashMap::new();
-        texture_ids.insert("Tileset".to_string(), 1);
+        let texture_id = 1;
         tiled_manager
             .load_map(
                 "map",
                 "/Users/aramhammoudeh/dev/game/GoudEngine/goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map.tmx",
-                texture_ids,
+                texture_id,
             )
             .unwrap();
         tiled_manager

@@ -86,7 +86,6 @@ impl Renderer2D {
         Ok(Renderer2D {
             shader_program,
             vao,
-            // sprites: Vec::new(),
             model_uniform: "model".into(),
             source_rect_uniform: "sourceRect".into(),
             window_width,
@@ -114,14 +113,19 @@ impl Renderer2D {
             let mut source_rect = if sprite.frame.width > 0.0 && sprite.frame.height > 0.0 {
                 Rectangle {
                     x: sprite.frame.x / texture.width as f32,
-                    y: sprite.frame.y / texture.height as f32,
+                    y: (texture.height as f32 - sprite.frame.y - sprite.frame.height)
+                        / texture.height as f32,
                     width: sprite.frame.width / texture.width as f32,
                     height: sprite.frame.height / texture.height as f32,
                 }
             } else {
-                sprite.source_rect
+                Rectangle {
+                    x: sprite.source_rect.x,
+                    y: 1.0 - sprite.source_rect.y - sprite.source_rect.height,
+                    width: sprite.source_rect.width,
+                    height: sprite.source_rect.height,
+                }
             };
-
             // Adjust the source rectangle if scale_x or scale_y is negative
             if scale_x < 0.0 {
                 scale_x = -scale_x;

@@ -73,7 +73,6 @@ impl GameSdk {
 
         // Manage tiled maps
         if self.new_tileset {
-            let texture_manager = &self.texture_manager;
             self.new_tileset = false;
             if let Some(selected_map_id) = self.tiled_manager.selected_map_id {
                 if let Some(tiled) = self.tiled_manager.get_map_by_id(selected_map_id) {
@@ -87,8 +86,6 @@ impl GameSdk {
                                 tiled::LayerType::Tiles(layer) => Some(layer),
                                 _ => None,
                             });
-
-                    let tilesets = tiled.map.tilesets();
 
                     // remove all entities associated with the current map befopre adding new ones
                     if let Some(sprite_ids) = &self.tiled_map_sprite_ids {
@@ -121,7 +118,16 @@ impl GameSdk {
 
                         for y in 0..height {
                             for x in 0..width {
-                                let tile = layer.get_tile(x as i32, y as i32);
+                                let tile_option = layer.get_tile(x as i32, y as i32);
+                                if tile_option.is_none() {
+                                    continue;
+                                }
+
+                                let tile = tile_option.unwrap();
+                                let tileset = tile.get_tileset();
+
+                                // Get the layer tile’s local id within its parent tileset.
+                                let tile_id = layer.get_tile(x as i32, y as i32).unwrap().id();
 
                                 // TODO: Create from tile
                                 let data: SpriteCreateDto = SpriteCreateDto {
@@ -139,13 +145,16 @@ impl GameSdk {
                                         width: 32.0,
                                         height: 32.0,
                                     },
-                                    texture_id: 0,
+                                    texture_id: tiled.texture_id,
                                     debug: false,
                                     frame: crate::types::Rectangle {
-                                        x: 0.0,
-                                        y: 0.0,
-                                        width: 32.0,
-                                        height: 32.0,
+                                        // use tile data to get the frame from the tileset texture
+                                        x: tileset.tile_width as f32
+                                            * (tile_id % tileset.columns as u32) as f32,
+                                        y: tileset.tile_height as f32
+                                            * (tile_id / tileset.columns as u32) as f32,
+                                        width: tileset.tile_width as f32,
+                                        height: tileset.tile_height as f32,
                                     },
                                 };
 

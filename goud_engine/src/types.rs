@@ -18,8 +18,7 @@ pub struct TextureManager {
 pub struct Tiled {
     pub id: c_uint,
     pub map: Rc<Map>,
-    pub texture_ids: _HashMap<String, u32>,
-
+    pub texture_id: c_uint, // TODO: This should be a hashmap of texture ids, but for now we are limiting it to one texture per map.
 }
 
 pub struct TiledManager {

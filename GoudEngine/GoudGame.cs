@@ -1,7 +1,7 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using CsBindgen;
-using System.IO;
 
 public class GoudGame
 {
@@ -196,6 +196,39 @@ public class GoudGame
         unsafe
         {
             return NativeMethods.game_get_mouse_position(gameInstance);
+        }
+    }
+
+    public uint LoadTiledMap(string mapName, string mapPath, uint textureId)
+    {
+        unsafe
+        {
+            fixed (byte* mapNameBytes = System.Text.Encoding.ASCII.GetBytes(mapName + "\0"))
+            fixed (byte* mapPathBytes = System.Text.Encoding.ASCII.GetBytes(mapPath + "\0"))
+            {
+                return NativeMethods.game_load_tiled_map(
+                    gameInstance,
+                    mapNameBytes,
+                    mapPathBytes,
+                    textureId
+                );
+            }
+        }
+    }
+
+    public void SetSelectedTiledMapById(uint id)
+    {
+        unsafe
+        {
+            NativeMethods.game_set_selected_map_by_id(gameInstance, id);
+        }
+    }
+
+    public void ClearSelectedTiledMap()
+    {
+        unsafe
+        {
+            NativeMethods.game_clear_selected_map(gameInstance);
         }
     }
 }

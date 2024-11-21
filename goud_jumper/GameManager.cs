@@ -20,6 +20,18 @@ public class GameManager
 
     public void Initialize()
     {
+        Console.WriteLine("Tilemap");
+
+        var tileset_texture_id = game.CreateTexture(
+            "../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Tilesets/Tileset.png"
+        );
+        var tiled_id = game.LoadTiledMap(
+            "Map",
+            "../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map.tmx",
+            tileset_texture_id
+        );
+
+        game.SetSelectedTiledMapById(tiled_id);
         var stateConfigurations = new Dictionary<string, AnimationStateConfig>
         {
             // Grid-based configurations
@@ -211,33 +223,10 @@ public class GameManager
                             width = 64,
                             height = 48
                         },
-                        new Rectangle
-                        {
-                            x = 128,
-                            y = 0,
-                            width = 64,
-                            height = 48
-                        },
-                        new Rectangle
-                        {
-                            x = 192,
-                            y = 0,
-                            width = 64,
-                            height = 48
-                        },
-                        new Rectangle
-                        {
-                            x = 256,
-                            y = 0,
-                            width = 64,
-                            height = 48
-                        },
-
-                        // Additional frames
                     },
                     frameTime: 0.1f,
                     speedScale: 1.0f,
-                    shouldLoop: false
+                    shouldLoop: true
                 )
             },
             {
@@ -277,7 +266,7 @@ public class GameManager
                     },
                     frameTime: 0.1f,
                     speedScale: 1.0f,
-                    shouldLoop: false
+                    shouldLoop: true
                 )
             },
             {
@@ -300,10 +289,31 @@ public class GameManager
                             width = 64,
                             height = 48
                         },
+                        new Rectangle
+                        {
+                            x = 128,
+                            y = 96,
+                            width = 64,
+                            height = 48
+                        },
+                        new Rectangle
+                        {
+                            x = 192,
+                            y = 96,
+                            width = 64,
+                            height = 48
+                        },
+                        new Rectangle
+                        {
+                            x = 256,
+                            y = 96,
+                            width = 64,
+                            height = 48
+                        },
                     },
                     frameTime: 0.1f,
-                    speedScale: 1.0f,
-                    shouldLoop: false
+                    speedScale: 0.8f,
+                    shouldLoop: true
                 )
             },
         };
