@@ -41,12 +41,12 @@ deploy_prod() {
 # Parse command-line arguments
 if [ "$1" == "--local" ]; then
     # run ./build.sh first
-    ./build.sh
+    ./build.sh --local
 
     deploy_local
 elif [ "$1" == "--prod" ]; then
     # run ./build.sh first
-    ./build.sh
+    ./build.sh --prod
 
     deploy_prod
 else
