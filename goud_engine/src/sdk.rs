@@ -264,6 +264,50 @@ pub extern "C" fn check_collision_between_sprites(
         .check_collision_between_sprites(entity_id1, entity_id2)
 }
 
+// Handled adding tile map to the game
+#[no_mangle]
+pub extern "C" fn game_load_tiled_map(
+    game: *mut GameSdk,
+    map_name: *const c_char,
+    map_path: *const c_char,
+    texture_ids: *const c_uint, // multiple texture ids
+) -> c_uint {
+    let game = unsafe { &mut *game };
+    let map_path_str = unsafe { CStr::from_ptr(map_path).to_str().unwrap() };
+    let map_path_cstring = CString::new(map_path_str).unwrap();
+
+    let map_name_str = unsafe { CStr::from_ptr(map_name).to_str().unwrap() };
+    let map_name_cstring = CString::new(map_name_str).unwrap();
+
+    let tiled_id = game
+        .tiled_manager
+        .load_map(
+            map_name_cstring.to_str().unwrap(),
+            map_path_cstring.to_str().unwrap(),
+            unsafe { std::slice::from_raw_parts(texture_ids, 1).to_vec() },
+        )
+        .expect("Failed to load tiled map");
+
+    tiled_id
+}
+
+// Handled setting selected map
+#[no_mangle]
+pub extern "C" fn game_set_selected_map_by_id(game: *mut GameSdk, map_id: c_uint) {
+    let game = unsafe { &mut *game };
+    game.new_tileset = true;
+    game.tiled_manager
+        .set_selected_map_by_id(map_id)
+        .expect("Failed to set selected map");
+}
+
+// Handled clearing selected map
+#[no_mangle]
+pub extern "C" fn game_clear_selected_map(game: *mut GameSdk) {
+    let game = unsafe { &mut *game };
+    game.tiled_manager.clear_selected_map();
+}
+
 /// Determines if the game window should close.
 #[no_mangle]
 pub extern "C" fn game_should_close(game: *mut GameSdk) -> bool {

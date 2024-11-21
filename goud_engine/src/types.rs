@@ -1,5 +1,7 @@
 use std::collections::{BTreeMap, HashMap as _HashMap};
 use std::{ffi::c_uint, rc::Rc};
+
+use tiled::{Loader, Map};
 // pub type EntityId = u32;
 
 #[derive(Debug, Clone)]
@@ -12,6 +14,19 @@ pub struct Texture {
 pub struct TextureManager {
     pub textures: _HashMap<c_uint, Rc<Texture>>, // property 1 is the texture id, property 2 is the texture itself.
 }
+
+pub struct Tiled {
+    pub id: c_uint,
+    pub map: Rc<Map>,
+    pub texture_ids: Vec<c_uint>,
+}
+
+pub struct TiledManager {
+    pub selected_map_id: Option<c_uint>,
+    pub loader: Loader,
+    pub maps: _HashMap<String, Tiled>,
+}
+
 // Data Transfer Objects
 #[repr(C)]
 #[derive(Debug, Clone)]
@@ -100,69 +115,3 @@ pub struct MousePosition {
 // Shared types
 // Types
 // TODO: https://github.com/aram-devdocs/GoudEngine/issues/5
-
-// Opaque pointers for additional structures
-#[repr(C)]
-#[allow(dead_code)]
-pub struct Glfw {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-#[allow(dead_code)]
-
-pub struct Receiver {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-#[allow(dead_code)]
-
-pub struct HashSet {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-#[allow(dead_code)]
-
-pub struct ShaderProgram {
-    _private: [u8; 0],
-}
-
-// vao vec
-
-#[repr(C)]
-#[allow(dead_code)]
-
-pub struct Vao {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-#[allow(dead_code)]
-
-pub struct Duration {
-    secs: u64,
-    nanos: u32, // Duration is a struct with two fields: secs and nanos. Nanos is nanoseconds coming from std::time::Duration.
-}
-
-#[repr(C)]
-#[allow(dead_code)]
-
-pub struct Instant {
-    secs: u64,
-    nanos: u32, // Instant is a struct with two fields: secs and nanos. Nanos is nanoseconds coming from std::time::Instant.
-}
-
-#[repr(C)]
-#[allow(dead_code)]
-
-pub struct ECS {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-#[allow(dead_code)]
-pub struct HashMap {
-    _private: [u8; 0],
-}

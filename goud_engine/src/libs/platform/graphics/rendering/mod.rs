@@ -6,6 +6,7 @@ pub mod sprite;
 pub mod textures;
 pub mod vao;
 pub mod vertex_attribute;
+pub mod tiled;
 
 // Re-export commonly used structs and traits
 pub use buffer::BufferObject;

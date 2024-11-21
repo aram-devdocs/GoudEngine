@@ -12,6 +12,16 @@ public class GameManager
 
     private bool isGoingLeft = false;
 
+    private uint tilemapId;
+    private uint tilemapId1;
+
+    private float playerX = 100;
+    private float playerY = 100;
+    private float playerVelocityY = 0;
+    private const float gravity = 9.8f;
+    private const float jumpStrength = 5.0f;
+    private const float moveSpeed = 2.0f;
+
     public GameManager(GoudGame game)
     {
         this.game = game ?? throw new ArgumentNullException(nameof(game));
@@ -20,6 +30,24 @@ public class GameManager
 
     public void Initialize()
     {
+        Console.WriteLine("Tilemap");
+
+        var tileset_texture_id = game.CreateTexture(
+            "../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Tilesets/Tileset.png"
+        );
+        tilemapId = game.LoadTiledMap(
+            "Map",
+            "../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map.tmx",
+            [tileset_texture_id]
+        );
+
+        tilemapId1 = game.LoadTiledMap(
+            "Map1",
+            "../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map1.tmx",
+            [tileset_texture_id]
+        );
+
+        game.SetSelectedTiledMapById(tilemapId);
         var stateConfigurations = new Dictionary<string, AnimationStateConfig>
         {
             // Grid-based configurations
@@ -211,33 +239,10 @@ public class GameManager
                             width = 64,
                             height = 48
                         },
-                        new Rectangle
-                        {
-                            x = 128,
-                            y = 0,
-                            width = 64,
-                            height = 48
-                        },
-                        new Rectangle
-                        {
-                            x = 192,
-                            y = 0,
-                            width = 64,
-                            height = 48
-                        },
-                        new Rectangle
-                        {
-                            x = 256,
-                            y = 0,
-                            width = 64,
-                            height = 48
-                        },
-
-                        // Additional frames
                     },
                     frameTime: 0.1f,
                     speedScale: 1.0f,
-                    shouldLoop: false
+                    shouldLoop: true
                 )
             },
             {
@@ -277,7 +282,7 @@ public class GameManager
                     },
                     frameTime: 0.1f,
                     speedScale: 1.0f,
-                    shouldLoop: false
+                    shouldLoop: true
                 )
             },
             {
@@ -300,10 +305,31 @@ public class GameManager
                             width = 64,
                             height = 48
                         },
+                        new Rectangle
+                        {
+                            x = 128,
+                            y = 96,
+                            width = 64,
+                            height = 48
+                        },
+                        new Rectangle
+                        {
+                            x = 192,
+                            y = 96,
+                            width = 64,
+                            height = 48
+                        },
+                        new Rectangle
+                        {
+                            x = 256,
+                            y = 96,
+                            width = 64,
+                            height = 48
+                        },
                     },
                     frameTime: 0.1f,
-                    speedScale: 1.0f,
-                    shouldLoop: false
+                    speedScale: 0.8f,
+                    shouldLoop: true
                 )
             },
         };
@@ -328,6 +354,7 @@ public class GameManager
     public void Update(float deltaTime)
     {
         HandleInput();
+        UpdatePlayerPosition(deltaTime);
         if (animationController != null)
         {
             var (frame, textureId) = animationController.GetFrame(
@@ -340,32 +367,48 @@ public class GameManager
                     id = playerSpriteId,
                     frame = frame,
                     texture_id = textureId,
-                    x = 100,
-                    y = 100,
+                    x = playerX,
+                    y = playerY,
                     scale_x = isGoingLeft ? -2 : 2,
                 }
             );
         }
     }
 
-    private void HandleInput()
+    private void UpdatePlayerPosition(float deltaTime)
+    {
+        playerVelocityY += gravity * deltaTime;
+        playerY += playerVelocityY;
+
+        if (playerY > 100) // Assuming ground level is at y = 100
+        {
+            playerY = 100;
+            playerVelocityY = 0;
+            playerStateMachine.SetState(PlayerState.Idle);
+        }
+    }
+
+    public void HandleInput()
     {
         bool isMoving = false;
 
-        if (game.IsKeyPressed(32)) // Space key
+        if (game.IsKeyPressed(32) && playerY == 100) // Space key and on ground
         {
             playerStateMachine.SetState(PlayerState.Jumping);
+            playerVelocityY = -jumpStrength;
             isMoving = true;
         }
         else if (game.IsKeyPressed(65)) // 'A' key
         {
             playerStateMachine.SetState(PlayerState.Walking);
+            playerX -= moveSpeed;
             isMoving = true;
             isGoingLeft = true;
         }
         else if (game.IsKeyPressed(68)) // 'D' key
         {
             playerStateMachine.SetState(PlayerState.Walking);
+            playerX += moveSpeed;
             isMoving = true;
             isGoingLeft = false;
         }
@@ -388,7 +431,21 @@ public class GameManager
             isMoving = true;
         }
 
-        if (!isMoving)
+        // Change tile maps
+
+        // m + 0
+        if (game.IsKeyPressed(77) && game.IsKeyPressed(48))
+        {
+            game.SetSelectedTiledMapById(tilemapId);
+        }
+
+        // m + 1
+        if (game.IsKeyPressed(77) && game.IsKeyPressed(49))
+        {
+            game.SetSelectedTiledMapById(tilemapId1);
+        }
+
+        if (!isMoving && playerY == 100)
         {
             playerStateMachine.SetState(PlayerState.Idle);
         }
