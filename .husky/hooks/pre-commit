@@ -1,7 +1,7 @@
 #!/bin/sh
 echo "Running pre-commit hook"
 
-cargo clean && cargotest || {
+cargo clean && cargo test || {
     echo "Cargo test failed, aborting commit"
     exit 1
 }
