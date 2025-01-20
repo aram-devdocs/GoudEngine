@@ -1,5 +1,5 @@
 #!/bin/sh
-echo "Running pre-commit hook"
+echo "Rsunning pre-commit hook"
 
 echo "Running cargo fmt"
 cargo fmt --all -- --check
@@ -15,3 +15,6 @@ cargo build
 
 echo "Running cargo check"
 cargo check
+
+
+exit 1
