@@ -151,6 +151,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
+name = "cargo-husky"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b02b629252fe8ef6460461409564e2c21d0c8e77e0944f3d189ff06c4e932ad"
+
+[[package]]
 name = "cbindgen"
 version = "0.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -458,6 +464,7 @@ name = "goud_engine"
 version = "0.1.0"
 dependencies = [
  "bindgen",
+ "cargo-husky",
  "cbindgen",
  "cc",
  "cgmath",
@@ -465,7 +472,6 @@ dependencies = [
  "env_logger",
  "gl",
  "glfw",
- "husky-rs",
  "image",
  "log",
  "thiserror",
@@ -517,12 +523,6 @@ name = "humantime"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
-
-[[package]]
-name = "husky-rs"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9729fb312823e96d3520a40b5437feabe9f9781eeabbbf6b16f36419c3f22ccc"
 
 [[package]]
 name = "image"
