@@ -33,7 +33,6 @@ public class Bird
 
     public void Update(float deltaTime)
     {
-
         if (game.IsKeyPressed(32) || game.IsMouseButtonPressed(0))
         {
             movement.TryJump(deltaTime);
@@ -52,5 +51,4 @@ public class Bird
     {
         return animator.GetSpriteId();
     }
-
 }

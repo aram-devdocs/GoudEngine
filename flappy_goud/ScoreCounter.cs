@@ -1,5 +1,5 @@
-using CsBindgen;
 using System.Collections.Generic;
+using CsBindgen;
 
 public class ScoreCounter
 {
@@ -17,11 +17,7 @@ public class ScoreCounter
         Score = 0;
         spritePaths = new Dictionary<string, uint>();
         digitIds = new List<uint>();
-
     }
-
-
-
 
     public void Initialize(GoudGame game)
     {
@@ -43,8 +39,20 @@ public class ScoreCounter
         yOffset = 50; // Offset from the top of the screen
 
         // score will start with single digit, so we just need to create one digit in the sprite list
-        digitIds = new List<uint> { game.AddSprite(new SpriteCreateDto { z_layer = 1, x = xOffset, y = yOffset, texture_id = spritePaths["assets/sprites/0.png"] }), };
+        digitIds = new List<uint>
+        {
+            game.AddSprite(
+                new SpriteCreateDto
+                {
+                    z_layer = 1,
+                    x = xOffset,
+                    y = yOffset,
+                    texture_id = spritePaths["assets/sprites/0.png"]
+                }
+            ),
+        };
     }
+
     public void IncrementScore(GoudGame game)
     {
         Score++;
@@ -58,7 +66,15 @@ public class ScoreCounter
         {
             if (i == 0)
             {
-                game.UpdateSprite(new SpriteUpdateDto { id = digitIds[i], x = xOffset, y = yOffset, texture_id = spritePaths["assets/sprites/0.png"] });
+                game.UpdateSprite(
+                    new SpriteUpdateDto
+                    {
+                        id = digitIds[i],
+                        x = xOffset,
+                        y = yOffset,
+                        texture_id = spritePaths["assets/sprites/0.png"]
+                    }
+                );
             }
             else
             {
@@ -69,7 +85,6 @@ public class ScoreCounter
         }
     }
 
-
     public void Update(GoudGame game)
     {
         // Convert score to a string to separate each digit
@@ -79,13 +94,15 @@ public class ScoreCounter
         // Ensure there are enough sprites to represent each digit in the score
         while (digitIds.Count < length)
         {
-            uint newDigitId = game.AddSprite(new SpriteCreateDto
-            {
-                z_layer = 1,
-                x = xOffset + digitIds.Count * 30, // Offset each digit horizontally
-                y = yOffset,
-                texture_id = spritePaths["assets/sprites/0.png"] // Initial texture
-            });
+            uint newDigitId = game.AddSprite(
+                new SpriteCreateDto
+                {
+                    z_layer = 1,
+                    x = xOffset + digitIds.Count * 30, // Offset each digit horizontally
+                    y = yOffset,
+                    texture_id = spritePaths["assets/sprites/0.png"] // Initial texture
+                }
+            );
             digitIds.Add(newDigitId);
         }
 
@@ -97,16 +114,15 @@ public class ScoreCounter
             uint textureId = spritePaths[digitPath];
 
             // Update the sprite's texture to the corresponding digit
-            game.UpdateSprite(new SpriteUpdateDto
-            {
-                texture_id = textureId,
-                id = digitIds[i],
-                x = xOffset + i * 30, // Adjust position for each digit
-                y = yOffset
-            });
+            game.UpdateSprite(
+                new SpriteUpdateDto
+                {
+                    texture_id = textureId,
+                    id = digitIds[i],
+                    x = xOffset + i * 30, // Adjust position for each digit
+                    y = yOffset
+                }
+            );
         }
-
     }
-
-
 }

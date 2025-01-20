@@ -1,4 +1,3 @@
-
 // Pipe.cs
 
 using System;
@@ -21,29 +20,33 @@ public class Pipe
         X = GameConstants.ScreenWidth;
 
         // Set the gap to a random vertical position on the screen
-        GapY = new Random().Next(GameConstants.PipeGap, (int)GameConstants.ScreenHeight - GameConstants.PipeGap);
+        GapY = new Random().Next(
+            GameConstants.PipeGap,
+            (int)GameConstants.ScreenHeight - GameConstants.PipeGap
+        );
         TextureId = game.CreateTexture("assets/sprites/pipe-green.png");
 
         // Position the top pipe above the screen by its height
-        topSpriteId = game.AddSprite(new SpriteCreateDto
-        {
-            x = X,
-            y = GapY - GameConstants.PipeGap - 320, // Adjusted to position the top pipe correctly
-            rotation = 180,
-            texture_id = TextureId,
-            z_layer = 2
-        });
+        topSpriteId = game.AddSprite(
+            new SpriteCreateDto
+            {
+                x = X,
+                y = GapY - GameConstants.PipeGap - 320, // Adjusted to position the top pipe correctly
+                rotation = 180,
+                texture_id = TextureId,
+                z_layer = 2
+            }
+        );
 
-
-        bottomSpriteId = game.AddSprite(new SpriteCreateDto
-        {
-            x = X,
-            y = GapY + GameConstants.PipeGap, // Adjusted to position the bottom pipe correctly
-            texture_id = TextureId,
-            z_layer = 2
-
-        });
-
+        bottomSpriteId = game.AddSprite(
+            new SpriteCreateDto
+            {
+                x = X,
+                y = GapY + GameConstants.PipeGap, // Adjusted to position the bottom pipe correctly
+                texture_id = TextureId,
+                z_layer = 2
+            }
+        );
     }
 
     public void Update(float deltaTime)
@@ -51,16 +54,31 @@ public class Pipe
         X -= GameConstants.PipeSpeed * deltaTime * GameConstants.TargetFPS;
 
         // Update top and bottom pipe positions
-        game.UpdateSprite(new SpriteUpdateDto { id = topSpriteId, x = X, y = GapY - GameConstants.PipeGap - 320, rotation = 180, texture_id = TextureId });
-        game.UpdateSprite(new SpriteUpdateDto { id = bottomSpriteId, x = X, y = GapY + GameConstants.PipeGap, texture_id = TextureId });
+        game.UpdateSprite(
+            new SpriteUpdateDto
+            {
+                id = topSpriteId,
+                x = X,
+                y = GapY - GameConstants.PipeGap - 320,
+                rotation = 180,
+                texture_id = TextureId
+            }
+        );
+        game.UpdateSprite(
+            new SpriteUpdateDto
+            {
+                id = bottomSpriteId,
+                x = X,
+                y = GapY + GameConstants.PipeGap,
+                texture_id = TextureId
+            }
+        );
     }
 
     public bool IsOffScreen()
     {
         return X + GameConstants.PipeWidth < 0;
     }
-
-
 
     public bool IsPassed(float birdX)
     {

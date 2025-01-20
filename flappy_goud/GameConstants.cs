@@ -2,8 +2,6 @@
 
 public static class GameConstants
 {
-
-
     // TODO: Changing TargetFps will adjust the game speed. We need to see if that is a CS issue or Rust issue
     public const uint TargetFPS = 120;
     public const int BaseHeight = 112;
@@ -18,6 +16,4 @@ public static class GameConstants
     public const float PipeSpawnInterval = 1.5f;
     public const int PipeWidth = 60;
     public const int PipeGap = 100;
-
-
 }

@@ -27,11 +27,9 @@ public class Movement
     {
         if (jumpCooldownTimer <= 0)
         {
-
             Jump();
             jumpCooldownTimer = GameConstants.JumpCooldown; // Reset the cooldown timer after jumping
         }
-
     }
 
     private void Jump()

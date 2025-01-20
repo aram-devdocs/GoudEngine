@@ -2,8 +2,8 @@
 
 using System;
 using System.Collections.Generic;
-
 using CsBindgen;
+
 public class BirdAnimator
 {
     private readonly GoudGame game;
@@ -26,28 +26,36 @@ public class BirdAnimator
         initialX = x;
         initialY = y;
         spritePaths = new Dictionary<string, uint>();
-
-
-
     }
 
     public void Initialize()
     {
-
         spritePaths = new Dictionary<string, uint>
         {
-            { "assets/sprites/bluebird-downflap.png", game.CreateTexture("assets/sprites/bluebird-downflap.png") },
-            { "assets/sprites/bluebird-midflap.png", game.CreateTexture("assets/sprites/bluebird-midflap.png") },
-            { "assets/sprites/bluebird-upflap.png", game.CreateTexture("assets/sprites/bluebird-upflap.png") }
+            {
+                "assets/sprites/bluebird-downflap.png",
+                game.CreateTexture("assets/sprites/bluebird-downflap.png")
+            },
+            {
+                "assets/sprites/bluebird-midflap.png",
+                game.CreateTexture("assets/sprites/bluebird-midflap.png")
+            },
+            {
+                "assets/sprites/bluebird-upflap.png",
+                game.CreateTexture("assets/sprites/bluebird-upflap.png")
+            }
         };
 
-
         // Set up the initial sprite
-        SpriteId = game.AddSprite(new SpriteCreateDto { z_layer = 1, x = initialX, y = initialY, texture_id = spritePaths["assets/sprites/bluebird-downflap.png"] });
-
-
-
-
+        SpriteId = game.AddSprite(
+            new SpriteCreateDto
+            {
+                z_layer = 1,
+                x = initialX,
+                y = initialY,
+                texture_id = spritePaths["assets/sprites/bluebird-downflap.png"]
+            }
+        );
     }
 
     public void Update(float deltaTime, float x, float y, float rotation)
@@ -57,29 +65,34 @@ public class BirdAnimator
         {
             currentFrame = (currentFrame + 1) % spritePaths.Count;
             animationTime = 0;
-
         }
 
         var textureKey = new List<string>(spritePaths.Keys)[currentFrame];
-        game.UpdateSprite(new SpriteUpdateDto
-        {
-            id = SpriteId,
-            x = x,
-            y = y,
-            rotation = rotation,
-            texture_id = spritePaths[textureKey],
-        });
-
-
-
-
+        game.UpdateSprite(
+            new SpriteUpdateDto
+            {
+                id = SpriteId,
+                x = x,
+                y = y,
+                rotation = rotation,
+                texture_id = spritePaths[textureKey],
+            }
+        );
     }
 
     public void Reset()
     {
         currentFrame = 0;
         animationTime = 0;
-        game.UpdateSprite(new SpriteUpdateDto { id = SpriteId, x = initialX, y = initialY, texture_id = spritePaths["assets/sprites/bluebird-downflap.png"] });
+        game.UpdateSprite(
+            new SpriteUpdateDto
+            {
+                id = SpriteId,
+                x = initialX,
+                y = initialY,
+                texture_id = spritePaths["assets/sprites/bluebird-downflap.png"]
+            }
+        );
     }
 
     public uint GetSpriteId()
