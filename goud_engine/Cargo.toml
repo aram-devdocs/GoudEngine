@@ -19,9 +19,6 @@ image = "0.24"
 cbindgen = "0.27.0"
 tiled = "0.13.0"
 
-[dev-dependencies]
-cargo-husky = "1.5.0"
-
 
 [lib]
 crate-type = ["cdylib"]
