@@ -1,7 +1,17 @@
 #!/bin/sh
 echo "Running pre-commit hook"
 
-cargo clean && cargo test || {
-    echo "Cargo test failed, aborting commit"
-    exit 1
-}
+echo "Running cargo fmt"
+cargo fmt --all -- --check
+
+echo "Running cargo clippy"
+cargo clippy --all-targets --all-features -- -D warnings
+
+echo "Running cargo test"
+cargo test
+
+echo "Running cargo build"
+cargo build
+
+echo "Running cargo check"
+cargo check
