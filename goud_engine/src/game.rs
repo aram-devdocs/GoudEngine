@@ -185,3 +185,14 @@ impl GameSdk {
     //     self.window.should_close()
     // }
 }
+
+// Test that should always fail
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn failing_test() {
+        assert_eq!(1, 2);
+    }
+}
