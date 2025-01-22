@@ -37,17 +37,17 @@ public class GameManager
         Console.WriteLine("Tilemap");
 
         var tileset_texture_id = game.CreateTexture(
-            "../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Tilesets/Tileset.png"
+            "../../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Tilesets/Tileset.png"
         );
         tilemapId = game.LoadTiledMap(
             "Map",
-            "../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map.tmx",
+            "../../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map.tmx",
             [tileset_texture_id]
         );
 
         tilemapId1 = game.LoadTiledMap(
             "Map1",
-            "../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map1.tmx",
+            "../../goud_engine/src/libs/platform/graphics/rendering/tiled/_Tiled/Maps/Map1.tmx",
             [tileset_texture_id]
         );
 
