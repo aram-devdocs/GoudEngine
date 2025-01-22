@@ -15,7 +15,7 @@ Cargo.lock
 /release
 
 # Generated bindings
-GoudEngine/NativeMethods.g.cs
+sdks/GoudEngine/NativeMethods.g.cs
 # GoudEngine/libgoud_engine.dylib
 
 # MacOS system files
