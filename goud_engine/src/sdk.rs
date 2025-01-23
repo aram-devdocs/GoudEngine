@@ -1,4 +1,3 @@
-// use crate::game::{GameSdk, WindowBuilder};
 use crate::game::GameSdk;
 use crate::libs::platform::window::WindowBuilder;
 use crate::types::{MousePosition, Rectangle};

@@ -1,18 +1,13 @@
-// use crate::libs::platform;
 use crate::libs::ecs::ECS;
 use crate::libs::graphics::clear;
-// use crate::libs::graphics::rendering::renderer2d::Renderer2D;
 use crate::libs::graphics::{renderer::Renderer, renderer2d::Renderer2D};
 
+use crate::libs::logger;
 use crate::types::Rectangle;
 use crate::types::SpriteCreateDto;
 use crate::types::TextureManager;
 use crate::types::TiledManager;
-// use platform::logger;
-use crate::libs::logger;
 
-// pub use platform::graphics::window::Window;
-// pub use platform::graphics::window::WindowBuilder;
 use crate::libs::platform::window::{Window, WindowBuilder};
 
 /// Single entry point for the game
@@ -69,6 +64,7 @@ impl GameSdk {
     where
         F: Fn(&mut GameSdk),
     {
+        // TODO: this is elapsed updates, not elapsed time
         self.elapsed_time += 0.01;
         clear();
 
@@ -92,6 +88,8 @@ impl GameSdk {
         }
     }
 
+
+    // TODO: this should be moved to libs/graphics/tiled
     /// Helper function to manage the tileset
     fn manage_tileset(&mut self) {
         if !self.new_tileset {
