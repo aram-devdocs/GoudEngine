@@ -250,4 +250,17 @@ public class GoudGame
             NativeMethods.game_set_camera_zoom(gameInstance, zoom);
         }
     }
+
+    public void GameLog(string message)
+    {
+        unsafe
+        {
+            fixed (byte* messageBytes = System.Text.Encoding.ASCII.GetBytes(message + "\0"))
+            {
+                NativeMethods.game_log(gameInstance, messageBytes);
+            }
+        }
+    }
 }
+
+

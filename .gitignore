@@ -35,3 +35,4 @@ nuget_package_output
 **.tiled-session
 
 NuGet.local.config
+libgoud_engine.dylib

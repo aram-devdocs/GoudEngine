@@ -317,6 +317,11 @@ pub extern "C" fn game_should_close(game: *mut GameSdk) -> bool {
     game.window.should_close()
 }
 
+#[no_mangle]
+pub extern "C" fn game_log(_game: *mut GameSdk, message: *const c_char) {
+    let message_str = unsafe { CStr::from_ptr(message).to_str().unwrap() };
+    println!("{}", message_str);
+}
 // Helper Functions
 
 /// Converts an integer key code to a `glfw::Key`.

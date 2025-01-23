@@ -44,10 +44,7 @@ deploy_prod() {
 # Parse command-line arguments
 if [ "$1" == "--local" ]; then
     # run ./build.sh first
-    ./build.sh --local || {
-        echo "Failed to build the project inside the package"
-        exit 1
-    }
+    ./build.sh --release
 
     deploy_local
 elif [ "$1" == "--prod" ]; then

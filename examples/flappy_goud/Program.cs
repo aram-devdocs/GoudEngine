@@ -12,7 +12,10 @@ public class Program
             "Flappy Bird Clone",
             GameConstants.TargetFPS
         );
+
         GameManager gameManager = new GameManager(game);
+
+        game.GameLog("Game initialized successfully!");
 
         game.Initialize(() => gameManager.Initialize());
         game.Start(() => gameManager.Start());
