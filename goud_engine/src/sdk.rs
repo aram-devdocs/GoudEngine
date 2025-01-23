@@ -1,4 +1,5 @@
-use crate::game::{GameSdk, WindowBuilder};
+use crate::game::GameSdk;
+use crate::libs::platform::window::WindowBuilder;
 use crate::types::{MousePosition, Rectangle};
 use crate::types::{SpriteCreateDto, SpriteUpdateDto, UpdateResponseData};
 use glfw::Key;
@@ -180,6 +181,7 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, data: SpriteUpdateDto) 
             width: 1.0,
             height: 1.0,
         },
+        #[allow(unused_comparisons)]
         if data.texture_id < 0 {
             sprite_ref.texture_id
         } else {

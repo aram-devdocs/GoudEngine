@@ -40,6 +40,7 @@ impl Sprite {
         }
     }
 
+    // TODO: This should be moved
     pub fn check_collision(&self, other: &Sprite) -> bool {
         let self_left = self.x;
         let self_right = self.x + self.dimension_x;

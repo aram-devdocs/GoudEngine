@@ -2,7 +2,6 @@ use std::collections::{BTreeMap, HashMap as _HashMap};
 use std::{ffi::c_uint, rc::Rc};
 
 use tiled::{Loader, Map};
-// pub type EntityId = u32;
 
 #[derive(Debug, Clone)]
 pub struct Texture {

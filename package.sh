@@ -2,7 +2,7 @@
 
 # Define paths
 PROJECT_NAME="GoudEngine"
-PACKAGE_OUTPUT_PATH="./nuget_package_output"
+PACKAGE_OUTPUT_PATH="./sdks/nuget_package_output"
 LOCAL_NUGET_FEED="$HOME/nuget-local"
 NUPKG_FILES=$(find $PACKAGE_OUTPUT_PATH -name "*.nupkg")
 
@@ -16,14 +16,17 @@ deploy_local() {
         exit 1
     fi
 
+    # Show all packages that will be deployed
+    echo "Found the following packages to deploy:"
+    ls -l "$PACKAGE_OUTPUT_PATH"/*.nupkg
+
     # Create local NuGet feed if it doesn't exist
     mkdir -p "$LOCAL_NUGET_FEED"
 
-    # Add local feed to NuGet sources
-    dotnet nuget add source "$LOCAL_NUGET_FEED" --name LocalGoudFeed --configfile NuGet.config
-
-    # Push all packages to local feed at once
-    dotnet nuget push "$PACKAGE_OUTPUT_PATH/*.nupkg" --source "$LOCAL_NUGET_FEED"
+    # Push all packages to local feed individually
+    for package in "$PACKAGE_OUTPUT_PATH"/*.nupkg; do
+        dotnet nuget push "$package" --source "$LOCAL_NUGET_FEED"
+    done
 
     echo "Packages deployed to local NuGet feed at $LOCAL_NUGET_FEED."
 }
@@ -41,12 +44,15 @@ deploy_prod() {
 # Parse command-line arguments
 if [ "$1" == "--local" ]; then
     # run ./build.sh first
-    ./build.sh
+    ./build.sh --local || {
+        echo "Failed to build the project inside the package"
+        exit 1
+    }
 
     deploy_local
 elif [ "$1" == "--prod" ]; then
     # run ./build.sh first
-    ./build.sh
+    ./build.sh --prod
 
     deploy_prod
 else

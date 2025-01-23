@@ -40,12 +40,12 @@ dotnet add package GoudEngine --version <desired_version>
 To run the sample game, `flappy_goud`, run the following script:
 
 ```sh
-cd flappy_goud
+cd examples/flappy_goud
 dotnet build
 dotnet run
 ```
 
-This script will build and run the sample game. The entry point to that game is located in `flappy_goud/Program.cs`.
+This script will build and run the sample game. The entry point to that game is located in `examples/flappy_goud/Program.cs`.
 
 ## Usage
 

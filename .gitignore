@@ -15,7 +15,7 @@ Cargo.lock
 /release
 
 # Generated bindings
-GoudEngine/NativeMethods.g.cs
+sdks/GoudEngine/NativeMethods.g.cs
 # GoudEngine/libgoud_engine.dylib
 
 # MacOS system files
@@ -26,10 +26,12 @@ GoudEngine/NativeMethods.g.cs
 **/obj/
 **/*.csproj.user
 *.sln.docstates
-*.sln
+# *.sln
 
 nuget_package_output
 
 # Tiled session and project files
 **.tiled-project
 **.tiled-session
+
+NuGet.local.config

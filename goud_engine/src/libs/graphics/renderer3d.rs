@@ -1,6 +1,6 @@
 use crate::types::{SpriteMap, TextureManager};
 
-use super::Renderer;
+use super::renderer::Renderer;
 
 #[derive(Debug)]
 pub struct Renderer3D {
