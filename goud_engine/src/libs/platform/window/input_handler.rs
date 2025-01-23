@@ -50,6 +50,7 @@ impl InputHandler {
                 self.mouse_position = MousePosition { x: *x, y: *y };
             }
 
+            // TODO: Handle gamepad events
             // Gamepad button events (assuming an external gamepad event handler updates these)
             // Example: External handler pushes events into InputHandler, e.g., `input_handler.handle_gamepad_event(...)`
             _ => {}
@@ -89,5 +90,111 @@ impl InputHandler {
         self.gamepad_buttons_pressed
             .get(&gamepad_id)
             .map_or(false, |buttons| buttons.contains(&button))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use glfw::{Action, Key, MouseButton, WindowEvent};
+
+    #[test]
+    fn test_keyboard_input() {
+        let mut input_handler = InputHandler::new();
+
+        // Test single key press/release
+        let key_event = WindowEvent::Key(Key::A, 0, Action::Press, glfw::Modifiers::empty());
+        input_handler.handle_event(&key_event);
+        assert!(input_handler.is_key_pressed(Key::A));
+
+        let key_event = WindowEvent::Key(Key::A, 0, Action::Release, glfw::Modifiers::empty());
+        input_handler.handle_event(&key_event);
+        assert!(!input_handler.is_key_pressed(Key::A));
+
+        // Test multiple simultaneous key presses
+        let key_events = [
+            WindowEvent::Key(Key::W, 0, Action::Press, glfw::Modifiers::empty()),
+            WindowEvent::Key(Key::S, 0, Action::Press, glfw::Modifiers::empty()),
+            WindowEvent::Key(Key::Space, 0, Action::Press, glfw::Modifiers::empty()),
+        ];
+
+        for event in key_events.iter() {
+            input_handler.handle_event(event);
+        }
+
+        assert!(input_handler.is_key_pressed(Key::W));
+        assert!(input_handler.is_key_pressed(Key::S));
+        assert!(input_handler.is_key_pressed(Key::Space));
+        assert!(!input_handler.is_key_pressed(Key::A));
+    }
+
+    #[test]
+    fn test_mouse_input() {
+        let mut input_handler = InputHandler::new();
+
+        // Test mouse button press/release
+        let press = WindowEvent::MouseButton(
+            MouseButton::Button1,
+            Action::Press,
+            glfw::Modifiers::empty(),
+        );
+        let release = WindowEvent::MouseButton(
+            MouseButton::Button1,
+            Action::Release,
+            glfw::Modifiers::empty(),
+        );
+
+        input_handler.handle_event(&press);
+        assert!(input_handler.is_mouse_button_pressed(MouseButton::Button1));
+
+        input_handler.handle_event(&release);
+        assert!(!input_handler.is_mouse_button_pressed(MouseButton::Button1));
+
+        // Test mouse movement
+        let positions = [
+            WindowEvent::CursorPos(0.0, 0.0),
+            WindowEvent::CursorPos(100.5, 200.5),
+            WindowEvent::CursorPos(-50.0, -25.0),
+        ];
+
+        for pos in positions.iter() {
+            input_handler.handle_event(pos);
+            match pos {
+                WindowEvent::CursorPos(x, y) => {
+                    let pos = input_handler.get_mouse_position();
+                    assert_eq!(pos.x, *x);
+                    assert_eq!(pos.y, *y);
+                }
+                _ => unreachable!(),
+            }
+        }
+    }
+
+    #[test]
+    fn test_gamepad_input() {
+        let mut input_handler = InputHandler::new();
+
+        // Test multiple gamepads with multiple buttons
+        let gamepad_inputs = [
+            (1, 0, true),
+            (1, 1, true),
+            (2, 0, true),
+            (2, 5, true),
+            (3, 2, true),
+        ];
+
+        for (pad, btn, state) in gamepad_inputs.iter() {
+            input_handler.handle_gamepad_button(*pad, *btn, *state);
+            assert!(input_handler.is_gamepad_button_pressed(*pad, *btn));
+        }
+
+        // Test button release
+        input_handler.handle_gamepad_button(1, 0, false);
+        assert!(!input_handler.is_gamepad_button_pressed(1, 0));
+        assert!(input_handler.is_gamepad_button_pressed(1, 1));
+
+        // Test non-existent gamepad/button
+        assert!(!input_handler.is_gamepad_button_pressed(99, 0));
+        assert!(!input_handler.is_gamepad_button_pressed(1, 99));
     }
 }
