@@ -1,8 +1,7 @@
 mod input_handler;
 
-use glfw::Key;
 use glfw::{Context, WindowEvent};
-use std::sync::mpsc::Receiver;
+use glfw::{GlfwReceiver, Key};
 use std::time::{Duration, Instant};
 
 use input_handler::InputHandler;
@@ -27,8 +26,8 @@ use crate::types::MousePosition;
 #[repr(C)]
 pub struct Window {
     pub glfw: glfw::Glfw,
-    pub window_handle: Box<glfw::Window>,
-    pub events: Receiver<(f64, WindowEvent)>,
+    pub window_handle: glfw::PWindow,
+    pub events: GlfwReceiver<(f64, WindowEvent)>,
     pub input_handler: InputHandler,
     pub width: u32,
     pub height: u32,
@@ -63,7 +62,7 @@ impl Window {
                 .into_owned()
         };
 
-        let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
+        let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
         glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
         glfw.window_hint(glfw::WindowHint::OpenGlProfile(
             glfw::OpenGlProfileHint::Core,
@@ -83,7 +82,7 @@ impl Window {
 
         Window {
             glfw,
-            window_handle: Box::new(window),
+            window_handle: window,
             events,
             input_handler: InputHandler::new(),
             width,

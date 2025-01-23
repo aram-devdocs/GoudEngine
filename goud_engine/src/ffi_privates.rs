@@ -77,3 +77,15 @@ pub struct ECS {
 pub struct HashMap {
     _private: [u8; 0],
 }
+
+#[repr(C)]
+#[allow(dead_code)]
+pub struct GlfwReceiver {
+    _private: [u8; 0],
+}
+
+#[repr(C)]
+#[allow(dead_code)]
+pub struct PWindow {
+    _private: [u8; 0],
+}
