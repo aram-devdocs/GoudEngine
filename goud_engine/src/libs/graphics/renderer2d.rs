@@ -2,12 +2,14 @@ use cgmath::{ortho, Matrix4, Vector3, Vector4};
 use gl::types::*;
 use std::ptr;
 
-use crate::{
-    libs::platform::graphics::rendering::{BufferObject, ShaderProgram, Vao, VertexAttribute},
-    types::{Rectangle, Sprite, SpriteMap, TextureManager},
-};
+use super::components::buffer::BufferObject;
+use super::components::shader::ShaderProgram;
+use super::components::vao::Vao;
+use super::components::vertex_attribute::VertexAttribute;
 
-use super::Renderer;
+use crate::types::{Rectangle, Sprite, SpriteMap, TextureManager};
+
+use super::renderer::Renderer;
 
 #[repr(C)]
 #[derive(Debug)]

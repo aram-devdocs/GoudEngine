@@ -1,9 +1,10 @@
+mod input_handler;
+
 use glfw::Key;
 use glfw::{Context, WindowEvent};
 use std::sync::mpsc::Receiver;
 use std::time::{Duration, Instant};
 
-mod input_handler;
 use input_handler::InputHandler;
 
 use crate::types::MousePosition;
