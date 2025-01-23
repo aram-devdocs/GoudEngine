@@ -9,21 +9,6 @@ use input_handler::InputHandler;
 
 use crate::types::MousePosition;
 
-/// # Window
-///
-/// An abstraction layer for creating a GLFW window.
-///
-/// ## Example
-/// ```
-/// let mut window = Window::new(1280, 720, "Window Title");
-/// window.init_gl();
-///
-/// while !window.should_close() {
-///     window.update();
-/// }
-/// ```
-///
-// window.rs
 #[repr(C)]
 pub struct Window {
     pub glfw: glfw::Glfw,

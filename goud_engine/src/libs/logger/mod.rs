@@ -12,7 +12,7 @@ mod tests {
         init();
 
         // Log some test messages to verify logger is working
-        log::error!("Test error message");
+        // log::error!("Test error message"); // We dont want to see this in test output
         log::warn!("Test warning message");
         log::info!("Test info message");
         log::debug!("Test debug message");
