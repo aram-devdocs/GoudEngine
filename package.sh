@@ -23,15 +23,6 @@ deploy_local() {
     # Create local NuGet feed if it doesn't exist
     mkdir -p "$LOCAL_NUGET_FEED"
 
-    # Check if the local feed already exists in NuGet sources
-    if ! dotnet nuget list source | grep -q "LocalGoudFeed"; then
-        # Add local feed to NuGet sources if it doesn't exist
-        dotnet nuget add source "$LOCAL_NUGET_FEED" --name LocalGoudFeed --configfile sdks/GoudEngine/NuGet.local.config || {
-            echo "Failed to add local NuGet feed. Please check your NuGet.config."
-            # exit 1
-        }
-    fi
-
     # Push all packages to local feed individually
     for package in "$PACKAGE_OUTPUT_PATH"/*.nupkg; do
         dotnet nuget push "$package" --source "$LOCAL_NUGET_FEED"
