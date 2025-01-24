@@ -475,7 +475,7 @@ fn from_glfw_mouse_button(button: c_int) -> glfw::MouseButton {
 #[no_mangle]
 pub extern "C" fn game_set_camera_position(game: *mut GameSdk, x: f32, y: f32) {
     let game = unsafe { &mut *game };
-    if let Some(renderer) = &mut game.renderer_2d {
+    if let Some(renderer) = &mut game.renderer {
         renderer.set_camera_position(x, y);
     }
 }
@@ -487,7 +487,7 @@ pub extern "C" fn game_set_camera_position(game: *mut GameSdk, x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn game_set_camera_zoom(game: *mut GameSdk, zoom: f32) {
     let game = unsafe { &mut *game };
-    if let Some(renderer) = &mut game.renderer_2d {
+    if let Some(renderer) = &mut game.renderer {
         renderer.set_camera_zoom(zoom);
     }
 }

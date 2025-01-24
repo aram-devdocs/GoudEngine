@@ -1,6 +1,6 @@
 use crate::libs::ecs::ECS;
 use crate::libs::graphics::clear;
-use crate::libs::graphics::{renderer::Renderer, renderer2d::Renderer2D};
+use crate::libs::graphics::{renderer::RendererType, renderer2d::Renderer2D};
 
 use crate::libs::logger;
 use crate::types::Rectangle;
@@ -14,7 +14,7 @@ use crate::libs::platform::window::{Window, WindowBuilder};
 #[repr(C)]
 pub struct GameSdk {
     pub window: Window,
-    pub renderer_2d: Option<Renderer2D>,
+    pub renderer: Option<RendererType>,
     pub elapsed_time: f32,
     pub ecs: ECS,
     pub texture_manager: TextureManager,
@@ -30,7 +30,7 @@ impl GameSdk {
 
         GameSdk {
             window,
-            renderer_2d: None,
+            renderer: None,
             elapsed_time: 0.0,
             ecs: ECS::new(),
             texture_manager: TextureManager::new(),
@@ -47,9 +47,9 @@ impl GameSdk {
         self.window.init_gl();
         let window_width = self.window.width;
         let window_height = self.window.height;
-        self.renderer_2d = Some(
+        self.renderer = Some(RendererType::new_2d(
             Renderer2D::new(window_width, window_height).expect("Failed to create Renderer2D"),
-        );
+        ));
         init_callback(self);
     }
 
@@ -73,7 +73,7 @@ impl GameSdk {
         // Manage tiled maps
         self.manage_tileset();
 
-        if let Some(renderer) = &mut self.renderer_2d {
+        if let Some(renderer) = &mut self.renderer {
             renderer.render(self.ecs.sprites.clone(), &self.texture_manager);
         }
 
@@ -83,11 +83,10 @@ impl GameSdk {
     pub extern "C" fn terminate(&mut self) {
         self.window.terminate();
         self.ecs.terminate();
-        if let Some(renderer) = &mut self.renderer_2d {
+        if let Some(renderer) = &mut self.renderer {
             renderer.terminate();
         }
     }
-
 
     // TODO: this should be moved to libs/graphics/tiled
     /// Helper function to manage the tileset

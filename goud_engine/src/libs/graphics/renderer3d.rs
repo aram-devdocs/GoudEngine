@@ -25,6 +25,14 @@ impl Renderer for Renderer3D {
         // Implement 3D rendering logic
     }
 
+    fn set_camera_position(&mut self, _x: f32, _y: f32) {
+        // Implement camera position logic for 3D
+    }
+
+    fn set_camera_zoom(&mut self, _zoom: f32) {
+        // Implement camera zoom logic for 3D
+    }
+
     /// Terminates the 3D renderer.
     fn terminate(&self) {
         // Cleanup 3D rendering resources
