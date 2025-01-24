@@ -1,6 +1,7 @@
 ﻿// Program.cs
 
 using System;
+using CsBindgen;
 
 public class Program
 {
@@ -9,8 +10,9 @@ public class Program
         GoudGame game = new GoudGame(
             GameConstants.ScreenWidth,
             GameConstants.ScreenHeight + GameConstants.BaseHeight,
-            "Flappy Bird Clone",
-            GameConstants.TargetFPS
+            "Flappy Bird Clone"
+        // RendererType.Equal
+        // GameConstants.TargetFPS
         );
 
         GameManager gameManager = new GameManager(game);

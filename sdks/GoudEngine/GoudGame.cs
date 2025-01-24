@@ -3,6 +3,12 @@ using System.IO;
 using System.Runtime.InteropServices;
 using CsBindgen;
 
+public enum RendererType
+{
+    Renderer2D = 0,
+    Renderer3D = 1
+}
+
 public class GoudGame
 {
     private unsafe GameSdk* gameInstance;
@@ -62,7 +68,13 @@ public class GoudGame
         );
     }
 
-    public GoudGame(uint width, uint height, string title, uint targetFPS = 60)
+    public GoudGame(
+        uint width,
+        uint height,
+        string title,
+        RendererType rendererType = RendererType.Renderer2D,
+        uint targetFPS = 60
+    )
     {
         unsafe
         {
@@ -72,7 +84,8 @@ public class GoudGame
                     width,
                     height,
                     titleBytes,
-                    target_fps: targetFPS
+                    targetFPS,
+                    (int)rendererType
                 );
             }
         }
@@ -262,5 +275,3 @@ public class GoudGame
         }
     }
 }
-
-

@@ -13,6 +13,7 @@ use std::os::raw::{c_char, c_int};
 /// * `height` - The height of the game window.
 /// * `title` - A pointer to the C-style string for the game window title.
 /// * `target_fps` - Target frames per second for the game.
+/// * `renderer_type` - 0 for 2D, 1 for 3D
 ///
 /// # Returns
 /// * `*mut GameSdk` - A raw pointer to the newly created `GameSdk` instance.
@@ -22,6 +23,7 @@ pub extern "C" fn game_create(
     height: u32,
     title: *const c_char,
     target_fps: u32,
+    renderer_type: c_int,
 ) -> *mut GameSdk {
     println!("Creating game instance");
     let title_str = unsafe { CStr::from_ptr(title).to_str().unwrap() };
@@ -32,7 +34,7 @@ pub extern "C" fn game_create(
         title: title_cstring.as_ptr(),
         target_fps,
     };
-    let game = GameSdk::new(builder);
+    let game = GameSdk::new(builder, renderer_type);
     Box::into_raw(Box::new(game))
 }
 

@@ -1,6 +1,6 @@
 use crate::libs::ecs::ECS;
 use crate::libs::graphics::clear;
-use crate::libs::graphics::{renderer::RendererType, renderer2d::Renderer2D};
+use crate::libs::graphics::{renderer::RendererType, renderer2d::Renderer2D, renderer3d::Renderer3D};
 
 use crate::libs::logger;
 use crate::types::Rectangle;
@@ -21,10 +21,11 @@ pub struct GameSdk {
     pub tiled_manager: TiledManager,
     pub tiled_map_sprite_ids: Option<Vec<u32>>,
     pub new_tileset: bool,
+    renderer_type: i32,
 }
 
 impl GameSdk {
-    pub fn new(data: WindowBuilder) -> GameSdk {
+    pub fn new(data: WindowBuilder, renderer_type: i32) -> GameSdk {
         logger::init();
         let window = Window::new(data);
 
@@ -37,6 +38,7 @@ impl GameSdk {
             tiled_manager: TiledManager::new(),
             tiled_map_sprite_ids: None,
             new_tileset: false,
+            renderer_type,
         }
     }
 
@@ -47,9 +49,18 @@ impl GameSdk {
         self.window.init_gl();
         let window_width = self.window.width;
         let window_height = self.window.height;
-        self.renderer = Some(RendererType::new_2d(
-            Renderer2D::new(window_width, window_height).expect("Failed to create Renderer2D"),
-        ));
+        
+        // Initialize renderer based on type
+        self.renderer = match self.renderer_type {
+            0 => Some(RendererType::new_2d(
+                Renderer2D::new(window_width, window_height).expect("Failed to create Renderer2D"),
+            )),
+            1 => Some(RendererType::new_3d(
+                Renderer3D::new(window_width, window_height).expect("Failed to create Renderer3D"),
+            )),
+            _ => panic!("Invalid renderer type"),
+        };
+
         init_callback(self);
     }
 
