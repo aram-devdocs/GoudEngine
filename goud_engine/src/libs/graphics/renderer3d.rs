@@ -106,7 +106,7 @@ impl Renderer3D {
             Point3::new(
                 self.camera_position.x,
                 self.camera_position.y,
-                self.camera_position.z,
+                self.camera_zoom, // Use zoom as Z coordinate
             ),
             Point3::new(0.0, 0.0, 0.0),
             Vector3::new(0.0, 1.0, 0.0),
@@ -117,15 +117,17 @@ impl Renderer3D {
         self.shader_program.set_uniform_vec3("lightPos", &self.light_position)?;
         self.shader_program.set_uniform_vec3("viewPos", &self.camera_position)?;
         self.shader_program.set_uniform_vec3("lightColor", &self.light_color)?;
-        self.shader_program.set_uniform_float("ambientStrength", 0.1)?;
-        self.shader_program.set_uniform_float("specularStrength", 0.5)?;
+        self.shader_program.set_uniform_float("ambientStrength", 0.3)?; // Increased ambient light
+        self.shader_program.set_uniform_float("specularStrength", 0.7)?; // Increased specular
 
-        // Create model matrix
+        // Create model matrix with rotation
         let model = Matrix4::from_translation(Vector3::new(0.0, 0.0, 0.0))
-            * Matrix4::from_scale(self.camera_zoom);
+            * Matrix4::from_angle_x(cgmath::Deg(self.camera_position.x * 45.0))
+            * Matrix4::from_angle_y(cgmath::Deg(self.camera_position.y * 45.0));
+
         self.shader_program.set_uniform_mat4("model", &model)?;
 
-        // Bind texture (using first available texture for now)
+        // Bind texture
         if let Some(texture) = texture_manager.textures.values().next() {
             texture.bind(gl::TEXTURE0);
         }
