@@ -11,9 +11,9 @@ pub enum RendererKind {
 
 #[repr(C)]
 pub struct RendererType {
-    kind: RendererKind,
-    renderer_2d: *mut Renderer2D,
-    renderer_3d: *mut Renderer3D,
+    pub kind: RendererKind,
+    pub renderer_2d: *mut Renderer2D,
+    pub renderer_3d: *mut Renderer3D,
 }
 
 impl RendererType {

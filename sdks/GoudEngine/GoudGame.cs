@@ -274,4 +274,36 @@ public class GoudGame
             }
         }
     }
+
+    public uint CreateCube(uint textureId)
+    {
+        unsafe
+        {
+            return NativeMethods.game_create_cube(gameInstance, textureId);
+        }
+    }
+
+    public bool SetObjectPosition(uint objectId, float x, float y, float z)
+    {
+        unsafe
+        {
+            return NativeMethods.game_set_object_position(gameInstance, objectId, x, y, z);
+        }
+    }
+
+    public bool SetObjectRotation(uint objectId, float x, float y, float z)
+    {
+        unsafe
+        {
+            return NativeMethods.game_set_object_rotation(gameInstance, objectId, x, y, z);
+        }
+    }
+
+    public bool SetObjectScale(uint objectId, float x, float y, float z)
+    {
+        unsafe
+        {
+            return NativeMethods.game_set_object_scale(gameInstance, objectId, x, y, z);
+        }
+    }
 }

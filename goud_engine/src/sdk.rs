@@ -2,6 +2,7 @@ use crate::game::GameSdk;
 use crate::libs::platform::window::WindowBuilder;
 use crate::types::{MousePosition, Rectangle};
 use crate::types::{SpriteCreateDto, SpriteUpdateDto, UpdateResponseData};
+use crate::libs::graphics::renderer::{RendererType, RendererKind};
 use glfw::Key;
 use std::ffi::{c_uint, CStr, CString};
 use std::os::raw::{c_char, c_int};
@@ -491,5 +492,107 @@ pub extern "C" fn game_set_camera_zoom(game: *mut GameSdk, zoom: f32) {
     let game = unsafe { &mut *game };
     if let Some(renderer) = &mut game.renderer {
         renderer.set_camera_zoom(zoom);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn game_create_cube(game: *mut GameSdk, texture_id: c_uint) -> c_uint {
+    let game = unsafe { &mut *game };
+    if let Some(renderer) = &mut game.renderer {
+        match renderer.kind {
+            RendererKind::Renderer2D => {
+                eprintln!("Cannot create cube with 2D renderer");
+                0
+            }
+            RendererKind::Renderer3D => {
+                unsafe {
+                    if !renderer.renderer_3d.is_null() {
+                        match (*renderer.renderer_3d).create_cube(texture_id) {
+                            Ok(id) => id,
+                            Err(e) => {
+                                eprintln!("Error creating cube: {}", e);
+                                0
+                            }
+                        }
+                    } else {
+                        0
+                    }
+                }
+            }
+        }
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn game_set_object_position(game: *mut GameSdk, object_id: c_uint, x: f32, y: f32, z: f32) -> bool {
+    let game = unsafe { &mut *game };
+    if let Some(renderer) = &mut game.renderer {
+        match renderer.kind {
+            RendererKind::Renderer2D => {
+                eprintln!("Cannot set 3D object position with 2D renderer");
+                false
+            }
+            RendererKind::Renderer3D => {
+                unsafe {
+                    if !renderer.renderer_3d.is_null() {
+                        (*renderer.renderer_3d).set_object_position(object_id, x, y, z).is_ok()
+                    } else {
+                        false
+                    }
+                }
+            }
+        }
+    } else {
+        false
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn game_set_object_rotation(game: *mut GameSdk, object_id: c_uint, x: f32, y: f32, z: f32) -> bool {
+    let game = unsafe { &mut *game };
+    if let Some(renderer) = &mut game.renderer {
+        match renderer.kind {
+            RendererKind::Renderer2D => {
+                eprintln!("Cannot set 3D object rotation with 2D renderer");
+                false
+            }
+            RendererKind::Renderer3D => {
+                unsafe {
+                    if !renderer.renderer_3d.is_null() {
+                        (*renderer.renderer_3d).set_object_rotation(object_id, x, y, z).is_ok()
+                    } else {
+                        false
+                    }
+                }
+            }
+        }
+    } else {
+        false
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn game_set_object_scale(game: *mut GameSdk, object_id: c_uint, x: f32, y: f32, z: f32) -> bool {
+    let game = unsafe { &mut *game };
+    if let Some(renderer) = &mut game.renderer {
+        match renderer.kind {
+            RendererKind::Renderer2D => {
+                eprintln!("Cannot set 3D object scale with 2D renderer");
+                false
+            }
+            RendererKind::Renderer3D => {
+                unsafe {
+                    if !renderer.renderer_3d.is_null() {
+                        (*renderer.renderer_3d).set_object_scale(object_id, x, y, z).is_ok()
+                    } else {
+                        false
+                    }
+                }
+            }
+        }
+    } else {
+        false
     }
 }

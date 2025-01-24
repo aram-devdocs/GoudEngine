@@ -1,10 +1,12 @@
 using System;
 using System.IO;
 using GoudEngine;
+using CsBindgen;
 
 class Program
 {
     private static float rotationAngle = 0.0f;
+    private static uint cubeId;
     private static uint textureId;
 
     static void Main(string[] args)
@@ -19,9 +21,9 @@ class Program
         {
             Console.WriteLine("Game initialized");
 
-            // Set initial camera position
+            // Set initial camera position and zoom
             game.SetCameraPosition(0.0f, 0.0f);
-            game.SetCameraZoom(5.0f); // Set camera back to see the cube better
+            game.SetCameraZoom(5.0f);
 
             // Load texture
             string texturePath = Path.Combine(
@@ -39,6 +41,14 @@ class Program
 
             textureId = game.CreateTexture(texturePath);
             Console.WriteLine($"Texture loaded with ID: {textureId}");
+
+            // Create a cube
+            cubeId = game.CreateCube(textureId);
+            Console.WriteLine($"Cube created with ID: {cubeId}");
+
+            // Set initial cube position
+            game.SetObjectPosition(cubeId, 0.0f, 0.0f, 0.0f);
+            game.SetObjectScale(cubeId, 1.0f, 1.0f, 1.0f);
         });
 
         // Start the game
@@ -57,12 +67,17 @@ class Program
                 rotationAngle -= 360.0f;
             }
 
-            // Calculate camera position for a circular orbit
-            float radius = 2.0f;
-            float cameraX = (float)Math.Sin(rotationAngle * Math.PI / 180.0f) * radius;
-            float cameraY = (float)Math.Cos(rotationAngle * Math.PI / 180.0f) * radius;
+            // Rotate the cube
+            game.SetObjectRotation(cubeId, rotationAngle, rotationAngle, 0.0f);
 
-            // Update camera position
+            // Make the cube "breathe" by scaling it up and down
+            float scale = 1.0f + (float)Math.Sin(rotationAngle * Math.PI / 180.0f) * 0.2f;
+            game.SetObjectScale(cubeId, scale, scale, scale);
+
+            // Move camera in a circle around the cube
+            float cameraRadius = 3.0f;
+            float cameraX = (float)Math.Sin(rotationAngle * Math.PI / 180.0f) * cameraRadius;
+            float cameraY = (float)Math.Cos(rotationAngle * Math.PI / 180.0f) * cameraRadius;
             game.SetCameraPosition(cameraX, cameraY);
         });
 
