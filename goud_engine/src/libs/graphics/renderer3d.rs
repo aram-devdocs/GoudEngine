@@ -10,6 +10,25 @@ use super::renderer::Renderer;
 use crate::types::{SpriteMap, TextureManager};
 
 #[repr(C)]
+pub enum PrimitiveType {
+    Cube = 0,
+    Sphere = 1,
+    Plane = 2,
+    Cylinder = 3,
+    // Add more primitive types as needed
+}
+
+#[repr(C)]
+pub struct PrimitiveCreateInfo {
+    pub primitive_type: PrimitiveType,
+    pub width: f32,
+    pub height: f32,
+    pub depth: f32,
+    pub segments: u32,  // For curved surfaces like spheres and cylinders
+    pub texture_id: u32,
+}
+
+#[repr(C)]
 #[derive(Debug)]
 pub struct Object3D {
     vao: Vao,
@@ -70,13 +89,20 @@ impl Renderer3D {
         })
     }
 
-    pub fn create_cube(&mut self, texture_id: u32) -> Result<u32, String> {
+    pub fn create_primitive(&mut self, create_info: PrimitiveCreateInfo) -> Result<u32, String> {
+        let vertices = match create_info.primitive_type {
+            PrimitiveType::Cube => self.generate_cube_vertices(create_info.width, create_info.height, create_info.depth),
+            PrimitiveType::Plane => self.generate_plane_vertices(create_info.width, create_info.depth),
+            PrimitiveType::Sphere => self.generate_sphere_vertices(create_info.width, create_info.segments),
+            PrimitiveType::Cylinder => self.generate_cylinder_vertices(create_info.width, create_info.height, create_info.segments),
+        };
+
         let vao = Vao::new()?;
         vao.bind();
 
         let vbo = BufferObject::new(gl::ARRAY_BUFFER)?;
         vbo.bind();
-        vbo.store_data(&CUBE_VERTICES, gl::STATIC_DRAW);
+        vbo.store_data(&vertices, gl::STATIC_DRAW);
 
         // Define vertex attributes
         let stride = 8 * std::mem::size_of::<f32>() as GLsizei;
@@ -101,14 +127,180 @@ impl Renderer3D {
 
         self.objects.insert(object_id, Object3D {
             vao,
-            vertex_count: 36, // Cube has 36 vertices
+            vertex_count: (vertices.len() / 8) as i32, // 8 components per vertex
             position: Vector3::new(0.0, 0.0, 0.0),
             rotation: Vector3::new(0.0, 0.0, 0.0),
             scale: Vector3::new(1.0, 1.0, 1.0),
-            texture_id,
+            texture_id: create_info.texture_id,
         });
 
         Ok(object_id)
+    }
+
+    fn generate_cube_vertices(&self, width: f32, height: f32, depth: f32) -> Vec<f32> {
+        let w = width / 2.0;
+        let h = height / 2.0;
+        let d = depth / 2.0;
+
+        vec![
+            // Front face
+            -w, -h, d,    0.0,  0.0, -1.0,    0.0, 0.0,  // Bottom-left
+            w, -h, d,     0.0,  0.0, -1.0,    1.0, 0.0,  // Bottom-right
+            w, h, d,      0.0,  0.0, -1.0,    1.0, 1.0,  // Top-right
+            w, h, d,      0.0,  0.0, -1.0,    1.0, 1.0,  // Top-right
+            -w, h, d,     0.0,  0.0, -1.0,    0.0, 1.0,  // Top-left
+            -w, -h, d,    0.0,  0.0, -1.0,    0.0, 0.0,  // Bottom-left
+
+            // Back face
+            -w, -h, -d,   0.0,  0.0, -1.0,   0.0, 0.0,
+            w, -h, -d,    0.0,  0.0, -1.0,   1.0, 0.0,
+            w, h, -d,     0.0,  0.0, -1.0,   1.0, 1.0,
+            w, h, -d,     0.0,  0.0, -1.0,   1.0, 1.0,
+            -w, h, -d,    0.0,  0.0, -1.0,   0.0, 1.0,
+            -w, -h, -d,   0.0,  0.0, -1.0,   0.0, 0.0,
+
+            // Left face
+            -w, h, d,     -1.0,  0.0,  0.0,   1.0, 0.0,
+            -w, h, -d,    -1.0,  0.0,  0.0,   1.0, 1.0,
+            -w, -h, -d,   -1.0,  0.0,  0.0,   0.0, 1.0,
+            -w, -h, -d,   -1.0,  0.0,  0.0,   0.0, 1.0,
+            -w, -h, d,    -1.0,  0.0,  0.0,   0.0, 0.0,
+            -w, h, d,     -1.0,  0.0,  0.0,   1.0, 0.0,
+
+            // Right face
+            w, h, d,      1.0,  0.0,  0.0,    1.0, 0.0,
+            w, h, -d,     1.0,  0.0,  0.0,    1.0, 1.0,
+            w, -h, -d,    1.0,  0.0,  0.0,    0.0, 1.0,
+            w, -h, -d,    1.0,  0.0,  0.0,    0.0, 1.0,
+            w, -h, d,     1.0,  0.0,  0.0,    0.0, 0.0,
+            w, h, d,      1.0,  0.0,  0.0,    1.0, 0.0,
+
+            // Bottom face
+            -w, -h, -d,   0.0, -1.0,  0.0,   0.0, 1.0,
+            w, -h, -d,    0.0, -1.0,  0.0,   1.0, 1.0,
+            w, -h, d,     0.0, -1.0,  0.0,   1.0, 0.0,
+            w, -h, d,     0.0, -1.0,  0.0,   1.0, 0.0,
+            -w, -h, d,    0.0, -1.0,  0.0,   0.0, 0.0,
+            -w, -h, -d,   0.0, -1.0,  0.0,   0.0, 1.0,
+
+            // Top face
+            -w, h, -d,    0.0,  1.0,  0.0,    0.0, 1.0,
+            w, h, -d,     0.0,  1.0,  0.0,    1.0, 1.0,
+            w, h, d,      0.0,  1.0,  0.0,    1.0, 0.0,
+            w, h, d,      0.0,  1.0,  0.0,    1.0, 0.0,
+            -w, h, d,     0.0,  1.0,  0.0,    0.0, 0.0,
+            -w, h, -d,    0.0,  1.0,  0.0,    0.0, 1.0,
+        ]
+    }
+
+    fn generate_plane_vertices(&self, width: f32, depth: f32) -> Vec<f32> {
+        let w = width / 2.0;
+        let d = depth / 2.0;
+
+        vec![
+            // Single face plane (facing up)
+            -w, 0.0, -d,   0.0, 1.0, 0.0,   0.0, 0.0,
+            w, 0.0, -d,    0.0, 1.0, 0.0,   1.0, 0.0,
+            w, 0.0, d,     0.0, 1.0, 0.0,   1.0, 1.0,
+            w, 0.0, d,     0.0, 1.0, 0.0,   1.0, 1.0,
+            -w, 0.0, d,    0.0, 1.0, 0.0,   0.0, 1.0,
+            -w, 0.0, -d,   0.0, 1.0, 0.0,   0.0, 0.0,
+        ]
+    }
+
+    fn generate_sphere_vertices(&self, radius: f32, segments: u32) -> Vec<f32> {
+        let mut vertices = Vec::new();
+        let segment_count = segments.max(3);
+        
+        for i in 0..segment_count {
+            let lat0 = std::f32::consts::PI * (-0.5 + (i as f32) / segment_count as f32);
+            let lat1 = std::f32::consts::PI * (-0.5 + ((i + 1) as f32) / segment_count as f32);
+            
+            for j in 0..segment_count {
+                let lng0 = 2.0 * std::f32::consts::PI * (j as f32) / segment_count as f32;
+                let lng1 = 2.0 * std::f32::consts::PI * ((j + 1) as f32) / segment_count as f32;
+
+                // Calculate vertices
+                let x0 = radius * lat0.cos() * lng0.cos();
+                let y0 = radius * lat0.sin();
+                let z0 = radius * lat0.cos() * lng0.sin();
+                
+                let x1 = radius * lat0.cos() * lng1.cos();
+                let y1 = radius * lat0.sin();
+                let z1 = radius * lat0.cos() * lng1.sin();
+                
+                let x2 = radius * lat1.cos() * lng1.cos();
+                let y2 = radius * lat1.sin();
+                let z2 = radius * lat1.cos() * lng1.sin();
+                
+                let x3 = radius * lat1.cos() * lng0.cos();
+                let y3 = radius * lat1.sin();
+                let z3 = radius * lat1.cos() * lng0.sin();
+
+                // Add vertices with their normals and texture coordinates
+                let vertices_data = [
+                    // First triangle
+                    x0, y0, z0,    x0/radius, y0/radius, z0/radius,    j as f32/segment_count as f32, i as f32/segment_count as f32,
+                    x1, y1, z1,    x1/radius, y1/radius, z1/radius,    (j+1) as f32/segment_count as f32, i as f32/segment_count as f32,
+                    x2, y2, z2,    x2/radius, y2/radius, z2/radius,    (j+1) as f32/segment_count as f32, (i+1) as f32/segment_count as f32,
+                    
+                    // Second triangle
+                    x0, y0, z0,    x0/radius, y0/radius, z0/radius,    j as f32/segment_count as f32, i as f32/segment_count as f32,
+                    x2, y2, z2,    x2/radius, y2/radius, z2/radius,    (j+1) as f32/segment_count as f32, (i+1) as f32/segment_count as f32,
+                    x3, y3, z3,    x3/radius, y3/radius, z3/radius,    j as f32/segment_count as f32, (i+1) as f32/segment_count as f32,
+                ];
+                
+                vertices.extend_from_slice(&vertices_data);
+            }
+        }
+        
+        vertices
+    }
+
+    fn generate_cylinder_vertices(&self, radius: f32, height: f32, segments: u32) -> Vec<f32> {
+        let mut vertices = Vec::new();
+        let segment_count = segments.max(3);
+        let h = height / 2.0;
+
+        // Generate vertices for the sides
+        for i in 0..segment_count {
+            let angle0 = 2.0 * std::f32::consts::PI * (i as f32) / segment_count as f32;
+            let angle1 = 2.0 * std::f32::consts::PI * ((i + 1) as f32) / segment_count as f32;
+            
+            let x0 = radius * angle0.cos();
+            let z0 = radius * angle0.sin();
+            let x1 = radius * angle1.cos();
+            let z1 = radius * angle1.sin();
+
+            // Add vertices for the side faces
+            let vertices_data = [
+                // Bottom to top quad (two triangles)
+                x0, -h, z0,    x0/radius, 0.0, z0/radius,    i as f32/segment_count as f32, 0.0,
+                x1, -h, z1,    x1/radius, 0.0, z1/radius,    (i+1) as f32/segment_count as f32, 0.0,
+                x1, h, z1,     x1/radius, 0.0, z1/radius,    (i+1) as f32/segment_count as f32, 1.0,
+                
+                x0, -h, z0,    x0/radius, 0.0, z0/radius,    i as f32/segment_count as f32, 0.0,
+                x1, h, z1,     x1/radius, 0.0, z1/radius,    (i+1) as f32/segment_count as f32, 1.0,
+                x0, h, z0,     x0/radius, 0.0, z0/radius,    i as f32/segment_count as f32, 1.0,
+            ];
+            vertices.extend_from_slice(&vertices_data);
+
+            // Add vertices for top and bottom caps
+            let cap_vertices = [
+                // Top cap
+                0.0, h, 0.0,     0.0, 1.0, 0.0,    0.5, 0.5,
+                x0, h, z0,       0.0, 1.0, 0.0,    0.5 + 0.5 * angle0.cos(), 0.5 + 0.5 * angle0.sin(),
+                x1, h, z1,       0.0, 1.0, 0.0,    0.5 + 0.5 * angle1.cos(), 0.5 + 0.5 * angle1.sin(),
+
+                // Bottom cap
+                0.0, -h, 0.0,    0.0, -1.0, 0.0,   0.5, 0.5,
+                x1, -h, z1,      0.0, -1.0, 0.0,   0.5 + 0.5 * angle1.cos(), 0.5 + 0.5 * angle1.sin(),
+                x0, -h, z0,      0.0, -1.0, 0.0,   0.5 + 0.5 * angle0.cos(), 0.5 + 0.5 * angle0.sin(),
+            ];
+            vertices.extend_from_slice(&cap_vertices);
+        }
+
+        vertices
     }
 
     pub fn set_object_position(&mut self, object_id: u32, x: f32, y: f32, z: f32) -> Result<(), String> {
@@ -215,49 +407,3 @@ impl Renderer for Renderer3D {
         }
     }
 }
-
-// Cube vertices with positions, normals, and texture coordinates
-const CUBE_VERTICES: [f32; 288] = [
-    // positions          // normals           // texture coords
-    -0.5, -0.5, -0.5,    0.0,  0.0, -1.0,    0.0, 0.0,
-     0.5, -0.5, -0.5,    0.0,  0.0, -1.0,    1.0, 0.0,
-     0.5,  0.5, -0.5,    0.0,  0.0, -1.0,    1.0, 1.0,
-     0.5,  0.5, -0.5,    0.0,  0.0, -1.0,    1.0, 1.0,
-    -0.5,  0.5, -0.5,    0.0,  0.0, -1.0,    0.0, 1.0,
-    -0.5, -0.5, -0.5,    0.0,  0.0, -1.0,    0.0, 0.0,
-
-    -0.5, -0.5,  0.5,    0.0,  0.0,  1.0,    0.0, 0.0,
-     0.5, -0.5,  0.5,    0.0,  0.0,  1.0,    1.0, 0.0,
-     0.5,  0.5,  0.5,    0.0,  0.0,  1.0,    1.0, 1.0,
-     0.5,  0.5,  0.5,    0.0,  0.0,  1.0,    1.0, 1.0,
-    -0.5,  0.5,  0.5,    0.0,  0.0,  1.0,    0.0, 1.0,
-    -0.5, -0.5,  0.5,    0.0,  0.0,  1.0,    0.0, 0.0,
-
-    -0.5,  0.5,  0.5,   -1.0,  0.0,  0.0,    1.0, 0.0,
-    -0.5,  0.5, -0.5,   -1.0,  0.0,  0.0,    1.0, 1.0,
-    -0.5, -0.5, -0.5,   -1.0,  0.0,  0.0,    0.0, 1.0,
-    -0.5, -0.5, -0.5,   -1.0,  0.0,  0.0,    0.0, 1.0,
-    -0.5, -0.5,  0.5,   -1.0,  0.0,  0.0,    0.0, 0.0,
-    -0.5,  0.5,  0.5,   -1.0,  0.0,  0.0,    1.0, 0.0,
-
-     0.5,  0.5,  0.5,    1.0,  0.0,  0.0,    1.0, 0.0,
-     0.5,  0.5, -0.5,    1.0,  0.0,  0.0,    1.0, 1.0,
-     0.5, -0.5, -0.5,    1.0,  0.0,  0.0,    0.0, 1.0,
-     0.5, -0.5, -0.5,    1.0,  0.0,  0.0,    0.0, 1.0,
-     0.5, -0.5,  0.5,    1.0,  0.0,  0.0,    0.0, 0.0,
-     0.5,  0.5,  0.5,    1.0,  0.0,  0.0,    1.0, 0.0,
-
-    -0.5, -0.5, -0.5,    0.0, -1.0,  0.0,    0.0, 1.0,
-     0.5, -0.5, -0.5,    0.0, -1.0,  0.0,    1.0, 1.0,
-     0.5, -0.5,  0.5,    0.0, -1.0,  0.0,    1.0, 0.0,
-     0.5, -0.5,  0.5,    0.0, -1.0,  0.0,    1.0, 0.0,
-    -0.5, -0.5,  0.5,    0.0, -1.0,  0.0,    0.0, 0.0,
-    -0.5, -0.5, -0.5,    0.0, -1.0,  0.0,    0.0, 1.0,
-
-    -0.5,  0.5, -0.5,    0.0,  1.0,  0.0,    0.0, 1.0,
-     0.5,  0.5, -0.5,    0.0,  1.0,  0.0,    1.0, 1.0,
-     0.5,  0.5,  0.5,    0.0,  1.0,  0.0,    1.0, 0.0,
-     0.5,  0.5,  0.5,    0.0,  1.0,  0.0,    1.0, 0.0,
-    -0.5,  0.5,  0.5,    0.0,  1.0,  0.0,    0.0, 0.0,
-    -0.5,  0.5, -0.5,    0.0,  1.0,  0.0,    0.0, 1.0
-];

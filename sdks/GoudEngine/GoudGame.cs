@@ -9,9 +9,18 @@ public enum RendererType
     Renderer3D = 1
 }
 
-public class GoudGame
+public enum PrimitiveType
 {
-    private unsafe GameSdk* gameInstance;
+    Cube = 0,
+    Sphere = 1,
+    Plane = 2,
+    Cylinder = 3
+}
+
+public unsafe class GoudGame
+{
+    private GameSdk* gameInstance;
+    private bool _isDisposed;
 
     public delegate void GameCallback();
 
@@ -275,12 +284,9 @@ public class GoudGame
         }
     }
 
-    public uint CreateCube(uint textureId)
+    public uint CreatePrimitive(CsBindgen.PrimitiveCreateInfo createInfo)
     {
-        unsafe
-        {
-            return NativeMethods.game_create_cube(gameInstance, textureId);
-        }
+        return NativeMethods.game_create_primitive(gameInstance, createInfo);
     }
 
     public bool SetObjectPosition(uint objectId, float x, float y, float z)
@@ -305,5 +311,72 @@ public class GoudGame
         {
             return NativeMethods.game_set_object_scale(gameInstance, objectId, x, y, z);
         }
+    }
+
+    // Convenience methods for common primitives
+    public uint CreateCube(
+        uint textureId,
+        float width = 1.0f,
+        float height = 1.0f,
+        float depth = 1.0f
+    )
+    {
+        var createInfo = new CsBindgen.PrimitiveCreateInfo
+        {
+            primitive_type = (CsBindgen.PrimitiveType)PrimitiveType.Cube,
+            width = width,
+            height = height,
+            depth = depth,
+            segments = 1,
+            texture_id = textureId
+        };
+        return CreatePrimitive(createInfo);
+    }
+
+    public uint CreateSphere(uint textureId, float radius = 1.0f, uint segments = 32)
+    {
+        var createInfo = new CsBindgen.PrimitiveCreateInfo
+        {
+            primitive_type = (CsBindgen.PrimitiveType)PrimitiveType.Sphere,
+            width = radius * 2,
+            height = radius * 2,
+            depth = radius * 2,
+            segments = segments,
+            texture_id = textureId
+        };
+        return CreatePrimitive(createInfo);
+    }
+
+    public uint CreatePlane(uint textureId, float width = 1.0f, float depth = 1.0f)
+    {
+        var createInfo = new CsBindgen.PrimitiveCreateInfo
+        {
+            primitive_type = (CsBindgen.PrimitiveType)PrimitiveType.Plane,
+            width = width,
+            height = 0.0f,
+            depth = depth,
+            segments = 1,
+            texture_id = textureId
+        };
+        return CreatePrimitive(createInfo);
+    }
+
+    public uint CreateCylinder(
+        uint textureId,
+        float radius = 0.5f,
+        float height = 1.0f,
+        uint segments = 32
+    )
+    {
+        var createInfo = new CsBindgen.PrimitiveCreateInfo
+        {
+            primitive_type = (CsBindgen.PrimitiveType)PrimitiveType.Cylinder,
+            width = radius * 2,
+            height = height,
+            depth = radius * 2,
+            segments = segments,
+            texture_id = textureId
+        };
+        return CreatePrimitive(createInfo);
     }
 }
