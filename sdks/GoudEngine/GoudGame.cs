@@ -3,9 +3,31 @@ using System.IO;
 using System.Runtime.InteropServices;
 using CsBindgen;
 
-public class GoudGame
+public enum RendererType
 {
-    private unsafe GameSdk* gameInstance;
+    Renderer2D = 0,
+    Renderer3D = 1
+}
+
+public enum PrimitiveType
+{
+    Cube = 0,
+    Sphere = 1,
+    Plane = 2,
+    Cylinder = 3
+}
+
+public enum LightType
+{
+    Point = 0,
+    Directional = 1,
+    Spot = 2
+}
+
+public unsafe class GoudGame
+{
+    private GameSdk* gameInstance;
+    private bool _isDisposed;
 
     public delegate void GameCallback();
 
@@ -62,7 +84,13 @@ public class GoudGame
         );
     }
 
-    public GoudGame(uint width, uint height, string title, uint targetFPS = 60)
+    public GoudGame(
+        uint width,
+        uint height,
+        string title,
+        RendererType rendererType = RendererType.Renderer2D,
+        uint targetFPS = 60
+    )
     {
         unsafe
         {
@@ -72,7 +100,8 @@ public class GoudGame
                     width,
                     height,
                     titleBytes,
-                    target_fps: targetFPS
+                    targetFPS,
+                    (int)rendererType
                 );
             }
         }
@@ -249,5 +278,290 @@ public class GoudGame
         {
             NativeMethods.game_set_camera_zoom(gameInstance, zoom);
         }
+    }
+
+    public void GameLog(string message)
+    {
+        unsafe
+        {
+            fixed (byte* messageBytes = System.Text.Encoding.ASCII.GetBytes(message + "\0"))
+            {
+                NativeMethods.game_log(gameInstance, messageBytes);
+            }
+        }
+    }
+
+    public uint CreatePrimitive(CsBindgen.PrimitiveCreateInfo createInfo)
+    {
+        return NativeMethods.game_create_primitive(gameInstance, createInfo);
+    }
+
+    public bool SetObjectPosition(uint objectId, float x, float y, float z)
+    {
+        unsafe
+        {
+            return NativeMethods.game_set_object_position(gameInstance, objectId, x, y, z);
+        }
+    }
+
+    public bool SetObjectRotation(uint objectId, float x, float y, float z)
+    {
+        unsafe
+        {
+            return NativeMethods.game_set_object_rotation(gameInstance, objectId, x, y, z);
+        }
+    }
+
+    public bool SetObjectScale(uint objectId, float x, float y, float z)
+    {
+        unsafe
+        {
+            return NativeMethods.game_set_object_scale(gameInstance, objectId, x, y, z);
+        }
+    }
+
+    // Convenience methods for common primitives
+    public uint CreateCube(
+        uint textureId,
+        float width = 1.0f,
+        float height = 1.0f,
+        float depth = 1.0f
+    )
+    {
+        var createInfo = new CsBindgen.PrimitiveCreateInfo
+        {
+            primitive_type = (CsBindgen.PrimitiveType)PrimitiveType.Cube,
+            width = width,
+            height = height,
+            depth = depth,
+            segments = 1,
+            texture_id = textureId
+        };
+        return CreatePrimitive(createInfo);
+    }
+
+    public uint CreateSphere(uint textureId, float radius = 1.0f, uint segments = 32)
+    {
+        var createInfo = new CsBindgen.PrimitiveCreateInfo
+        {
+            primitive_type = (CsBindgen.PrimitiveType)PrimitiveType.Sphere,
+            width = radius * 2,
+            height = radius * 2,
+            depth = radius * 2,
+            segments = segments,
+            texture_id = textureId
+        };
+        return CreatePrimitive(createInfo);
+    }
+
+    public uint CreatePlane(uint textureId, float width = 1.0f, float depth = 1.0f)
+    {
+        var createInfo = new CsBindgen.PrimitiveCreateInfo
+        {
+            primitive_type = (CsBindgen.PrimitiveType)PrimitiveType.Plane,
+            width = width,
+            height = 0.0f,
+            depth = depth,
+            segments = 1,
+            texture_id = textureId
+        };
+        return CreatePrimitive(createInfo);
+    }
+
+    public uint CreateCylinder(
+        uint textureId,
+        float radius = 0.5f,
+        float height = 1.0f,
+        uint segments = 32
+    )
+    {
+        var createInfo = new CsBindgen.PrimitiveCreateInfo
+        {
+            primitive_type = (CsBindgen.PrimitiveType)PrimitiveType.Cylinder,
+            width = radius * 2,
+            height = height,
+            depth = radius * 2,
+            segments = segments,
+            texture_id = textureId
+        };
+        return CreatePrimitive(createInfo);
+    }
+
+    public uint AddLight(
+        LightType lightType,
+        float positionX,
+        float positionY,
+        float positionZ,
+        float directionX,
+        float directionY,
+        float directionZ,
+        float colorR,
+        float colorG,
+        float colorB,
+        float intensity = 1.0f,
+        float temperature = 6500.0f,
+        float range = 10.0f,
+        float spotAngle = 45.0f
+    )
+    {
+        unsafe
+        {
+            return NativeMethods.game_add_light(
+                gameInstance,
+                (int)lightType,
+                positionX,
+                positionY,
+                positionZ,
+                directionX,
+                directionY,
+                directionZ,
+                colorR,
+                colorG,
+                colorB,
+                intensity,
+                temperature,
+                range,
+                spotAngle
+            );
+        }
+    }
+
+    public bool RemoveLight(uint lightId)
+    {
+        unsafe
+        {
+            return NativeMethods.game_remove_light(gameInstance, lightId);
+        }
+    }
+
+    public bool UpdateLight(
+        uint lightId,
+        LightType lightType,
+        float positionX,
+        float positionY,
+        float positionZ,
+        float directionX,
+        float directionY,
+        float directionZ,
+        float colorR,
+        float colorG,
+        float colorB,
+        float intensity = 1.0f,
+        float temperature = 6500.0f,
+        float range = 10.0f,
+        float spotAngle = 45.0f
+    )
+    {
+        unsafe
+        {
+            return NativeMethods.game_update_light(
+                gameInstance,
+                lightId,
+                (int)lightType,
+                positionX,
+                positionY,
+                positionZ,
+                directionX,
+                directionY,
+                directionZ,
+                colorR,
+                colorG,
+                colorB,
+                intensity,
+                temperature,
+                range,
+                spotAngle
+            );
+        }
+    }
+
+    // Helper methods for common light setups
+    public uint AddPointLight(
+        float positionX,
+        float positionY,
+        float positionZ,
+        float colorR = 1.0f,
+        float colorG = 1.0f,
+        float colorB = 1.0f,
+        float intensity = 1.0f,
+        float temperature = 6500.0f,
+        float range = 10.0f
+    )
+    {
+        return AddLight(
+            LightType.Point,
+            positionX,
+            positionY,
+            positionZ,
+            0, 0, 0,  // Direction doesn't matter for point lights
+            colorR,
+            colorG,
+            colorB,
+            intensity,
+            temperature,
+            range,
+            0  // Spot angle doesn't matter for point lights
+        );
+    }
+
+    public uint AddDirectionalLight(
+        float directionX,
+        float directionY,
+        float directionZ,
+        float colorR = 1.0f,
+        float colorG = 1.0f,
+        float colorB = 1.0f,
+        float intensity = 1.0f,
+        float temperature = 6500.0f
+    )
+    {
+        return AddLight(
+            LightType.Directional,
+            0, 0, 0,  // Position doesn't matter for directional lights
+            directionX,
+            directionY,
+            directionZ,
+            colorR,
+            colorG,
+            colorB,
+            intensity,
+            temperature,
+            float.MaxValue,  // Range doesn't matter for directional lights
+            0  // Spot angle doesn't matter for directional lights
+        );
+    }
+
+    public uint AddSpotLight(
+        float positionX,
+        float positionY,
+        float positionZ,
+        float directionX,
+        float directionY,
+        float directionZ,
+        float spotAngle = 45.0f,
+        float colorR = 1.0f,
+        float colorG = 1.0f,
+        float colorB = 1.0f,
+        float intensity = 1.0f,
+        float temperature = 6500.0f,
+        float range = 10.0f
+    )
+    {
+        return AddLight(
+            LightType.Spot,
+            positionX,
+            positionY,
+            positionZ,
+            directionX,
+            directionY,
+            directionZ,
+            colorR,
+            colorG,
+            colorB,
+            intensity,
+            temperature,
+            range,
+            spotAngle
+        );
     }
 }

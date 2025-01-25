@@ -1,2 +1,3 @@
 [workspace]
 members = ["goud_engine"]
+resolver = "2"

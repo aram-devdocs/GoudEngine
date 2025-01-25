@@ -1,4 +1,4 @@
-mod components;
+pub mod components;
 pub mod renderer;
 pub mod renderer2d;
 pub mod renderer3d;

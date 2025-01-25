@@ -1,10 +1,14 @@
 use crate::game::GameSdk;
+use crate::libs::graphics::renderer::{RendererKind, RendererType};
+use crate::libs::graphics::renderer3d::{PrimitiveCreateInfo, PrimitiveType};
 use crate::libs::platform::window::WindowBuilder;
 use crate::types::{MousePosition, Rectangle};
 use crate::types::{SpriteCreateDto, SpriteUpdateDto, UpdateResponseData};
+use cgmath::Vector3;
 use glfw::Key;
 use std::ffi::{c_uint, CStr, CString};
 use std::os::raw::{c_char, c_int};
+use crate::libs::graphics::components::light::{Light, LightType};
 
 /// Initializes a new game instance with the specified window settings and returns a raw pointer to the `GameSdk`.
 ///
@@ -13,6 +17,7 @@ use std::os::raw::{c_char, c_int};
 /// * `height` - The height of the game window.
 /// * `title` - A pointer to the C-style string for the game window title.
 /// * `target_fps` - Target frames per second for the game.
+/// * `renderer_type` - 0 for 2D, 1 for 3D
 ///
 /// # Returns
 /// * `*mut GameSdk` - A raw pointer to the newly created `GameSdk` instance.
@@ -22,6 +27,7 @@ pub extern "C" fn game_create(
     height: u32,
     title: *const c_char,
     target_fps: u32,
+    renderer_type: c_int,
 ) -> *mut GameSdk {
     println!("Creating game instance");
     let title_str = unsafe { CStr::from_ptr(title).to_str().unwrap() };
@@ -32,7 +38,7 @@ pub extern "C" fn game_create(
         title: title_cstring.as_ptr(),
         target_fps,
     };
-    let game = GameSdk::new(builder);
+    let game = GameSdk::new(builder, renderer_type);
     Box::into_raw(Box::new(game))
 }
 
@@ -317,6 +323,11 @@ pub extern "C" fn game_should_close(game: *mut GameSdk) -> bool {
     game.window.should_close()
 }
 
+#[no_mangle]
+pub extern "C" fn game_log(_game: *mut GameSdk, message: *const c_char) {
+    let message_str = unsafe { CStr::from_ptr(message).to_str().unwrap() };
+    println!("{}", message_str);
+}
 // Helper Functions
 
 /// Converts an integer key code to a `glfw::Key`.
@@ -470,7 +481,7 @@ fn from_glfw_mouse_button(button: c_int) -> glfw::MouseButton {
 #[no_mangle]
 pub extern "C" fn game_set_camera_position(game: *mut GameSdk, x: f32, y: f32) {
     let game = unsafe { &mut *game };
-    if let Some(renderer) = &mut game.renderer_2d {
+    if let Some(renderer) = &mut game.renderer {
         renderer.set_camera_position(x, y);
     }
 }
@@ -482,7 +493,284 @@ pub extern "C" fn game_set_camera_position(game: *mut GameSdk, x: f32, y: f32) {
 #[no_mangle]
 pub extern "C" fn game_set_camera_zoom(game: *mut GameSdk, zoom: f32) {
     let game = unsafe { &mut *game };
-    if let Some(renderer) = &mut game.renderer_2d {
+    if let Some(renderer) = &mut game.renderer {
         renderer.set_camera_zoom(zoom);
+    }
+}
+
+// #[no_mangle]
+// pub extern "C" fn game_create_cube(game: *mut GameSdk, texture_id: c_uint) -> c_uint {
+//     let game = unsafe { &mut *game };
+//     if let Some(renderer) = &mut game.renderer {
+//         if let RendererKind::Renderer3D = renderer.kind {
+//             unsafe {
+//                 if !renderer.renderer_3d.is_null() {
+//                     let create_info = PrimitiveCreateInfo {
+//                         primitive_type: PrimitiveType::Cube,
+//                         width: 1.0,
+//                         height: 1.0,
+//                         depth: 1.0,
+//                         segments: 1,
+//                         texture_id,
+//                     };
+//                     match (*renderer.renderer_3d).create_primitive(create_info) {
+//                         Ok(id) => id,
+//                         Err(_) => 0,
+//                     }
+//                 } else {
+//                     0
+//                 }
+//             }
+//         } else {
+//             0
+//         }
+//     } else {
+//         0
+//     }
+// }
+
+#[no_mangle]
+pub extern "C" fn game_create_primitive(
+    game: *mut GameSdk,
+    create_info: PrimitiveCreateInfo,
+) -> c_uint {
+    let game = unsafe { &mut *game };
+
+    if let Some(renderer) = &mut game.renderer {
+        if let RendererKind::Renderer3D = renderer.kind {
+            unsafe {
+                if let Some(renderer_3d) = renderer.renderer_3d.as_mut() {
+                    renderer_3d.create_primitive(create_info).unwrap_or(0)
+                } else {
+                    0
+                }
+            }
+        } else {
+            0
+        }
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn game_set_object_position(
+    game: *mut GameSdk,
+    object_id: c_uint,
+    x: f32,
+    y: f32,
+    z: f32,
+) -> bool {
+    let game = unsafe { &mut *game };
+    if let Some(renderer) = &mut game.renderer {
+        match renderer.kind {
+            RendererKind::Renderer2D => {
+                eprintln!("Cannot set 3D object position with 2D renderer");
+                false
+            }
+            RendererKind::Renderer3D => unsafe {
+                if !renderer.renderer_3d.is_null() {
+                    (*renderer.renderer_3d)
+                        .set_object_position(object_id, x, y, z)
+                        .is_ok()
+                } else {
+                    false
+                }
+            },
+        }
+    } else {
+        false
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn game_set_object_rotation(
+    game: *mut GameSdk,
+    object_id: c_uint,
+    x: f32,
+    y: f32,
+    z: f32,
+) -> bool {
+    let game = unsafe { &mut *game };
+    if let Some(renderer) = &mut game.renderer {
+        match renderer.kind {
+            RendererKind::Renderer2D => {
+                eprintln!("Cannot set 3D object rotation with 2D renderer");
+                false
+            }
+            RendererKind::Renderer3D => unsafe {
+                if !renderer.renderer_3d.is_null() {
+                    (*renderer.renderer_3d)
+                        .set_object_rotation(object_id, x, y, z)
+                        .is_ok()
+                } else {
+                    false
+                }
+            },
+        }
+    } else {
+        false
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn game_set_object_scale(
+    game: *mut GameSdk,
+    object_id: c_uint,
+    x: f32,
+    y: f32,
+    z: f32,
+) -> bool {
+    let game = unsafe { &mut *game };
+    if let Some(renderer) = &mut game.renderer {
+        match renderer.kind {
+            RendererKind::Renderer2D => {
+                eprintln!("Cannot set 3D object scale with 2D renderer");
+                false
+            }
+            RendererKind::Renderer3D => unsafe {
+                if !renderer.renderer_3d.is_null() {
+                    (*renderer.renderer_3d)
+                        .set_object_scale(object_id, x, y, z)
+                        .is_ok()
+                } else {
+                    false
+                }
+            },
+        }
+    } else {
+        false
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn game_add_light(
+    game: *mut GameSdk,
+    light_type: c_int,
+    position_x: f32,
+    position_y: f32,
+    position_z: f32,
+    direction_x: f32,
+    direction_y: f32,
+    direction_z: f32,
+    color_r: f32,
+    color_g: f32,
+    color_b: f32,
+    intensity: f32,
+    temperature: f32,
+    range: f32,
+    spot_angle: f32,
+) -> c_uint {
+    let game = unsafe { &mut *game };
+    if let Some(renderer) = &mut game.renderer {
+        if let RendererKind::Renderer3D = renderer.kind {
+            unsafe {
+                if let Some(renderer_3d) = renderer.renderer_3d.as_mut() {
+                    let light_type = match light_type {
+                        0 => LightType::Point,
+                        1 => LightType::Directional,
+                        2 => LightType::Spot,
+                        _ => LightType::Point,
+                    };
+
+                    let light = Light::new(
+                        0, // Will be set by LightManager
+                        light_type,
+                        Vector3::new(position_x, position_y, position_z),
+                        Vector3::new(direction_x, direction_y, direction_z),
+                        Vector3::new(color_r, color_g, color_b),
+                        intensity,
+                        temperature,
+                        range,
+                        spot_angle,
+                    );
+
+                    renderer_3d.add_light(light)
+                } else {
+                    0
+                }
+            }
+        } else {
+            0
+        }
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn game_remove_light(game: *mut GameSdk, light_id: c_uint) -> bool {
+    let game = unsafe { &mut *game };
+    if let Some(renderer) = &mut game.renderer {
+        if let RendererKind::Renderer3D = renderer.kind {
+            unsafe {
+                if let Some(renderer_3d) = renderer.renderer_3d.as_mut() {
+                    renderer_3d.remove_light(light_id);
+                    true
+                } else {
+                    false
+                }
+            }
+        } else {
+            false
+        }
+    } else {
+        false
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn game_update_light(
+    game: *mut GameSdk,
+    light_id: c_uint,
+    light_type: c_int,
+    position_x: f32,
+    position_y: f32,
+    position_z: f32,
+    direction_x: f32,
+    direction_y: f32,
+    direction_z: f32,
+    color_r: f32,
+    color_g: f32,
+    color_b: f32,
+    intensity: f32,
+    temperature: f32,
+    range: f32,
+    spot_angle: f32,
+) -> bool {
+    let game = unsafe { &mut *game };
+    if let Some(renderer) = &mut game.renderer {
+        if let RendererKind::Renderer3D = renderer.kind {
+            unsafe {
+                if let Some(renderer_3d) = renderer.renderer_3d.as_mut() {
+                    let light_type = match light_type {
+                        0 => LightType::Point,
+                        1 => LightType::Directional,
+                        2 => LightType::Spot,
+                        _ => LightType::Point,
+                    };
+
+                    let new_light = Light::new(
+                        light_id,
+                        light_type,
+                        Vector3::new(position_x, position_y, position_z),
+                        Vector3::new(direction_x, direction_y, direction_z),
+                        Vector3::new(color_r, color_g, color_b),
+                        intensity,
+                        temperature,
+                        range,
+                        spot_angle,
+                    );
+
+                    renderer_3d.update_light(light_id, new_light).is_ok()
+                } else {
+                    false
+                }
+            }
+        } else {
+            false
+        }
+    } else {
+        false
     }
 }

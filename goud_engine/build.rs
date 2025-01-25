@@ -8,7 +8,12 @@ fn main() {
 
         .input_extern_file("src/libs/platform/window/mod.rs")
         .input_extern_file("src/libs/platform/window/input_handler.rs")
+        .input_extern_file("src/libs/graphics/components/light.rs")
         .input_extern_file("src/libs/graphics/renderer2d.rs")
+        .input_extern_file("src/libs/graphics/renderer3d.rs")
+        .input_extern_file("src/libs/graphics/renderer.rs")
+
+
         .csharp_dll_name("libgoud_engine")
         .csharp_class_accessibility("public")
         .generate_csharp_file("../sdks/GoudEngine/NativeMethods.g.cs")

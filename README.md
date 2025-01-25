@@ -1,15 +1,71 @@
 # GoudEngine
 
-GoudEngine is a game engine written in Rust, designed to be used with C# applications. It provides a set of tools and libraries for creating 2D and 3D\* games.
+GoudEngine is a game engine written in Rust, designed to be used with C# applications. It provides a set of tools and libraries for creating 2D and 3D games.
 
 ## Features
 
-- 2D and 3D\* rendering
-- Sprite management
+- Flexible renderer selection (2D or 3D)
+- 2D rendering with sprite management
+- 3D rendering with primitive support (cubes, spheres, planes, cylinders)
+- 3D Dynamic lighting system with multiple light types (point, directional, spot)
 - Input handling
 - Window management
 - Graphics rendering with OpenGL
 - Integration with C# using csbindgen
+
+## Architecture
+
+Below is the module dependency graph of GoudEngine, showing the relationship between different components:
+
+<img src="docs/diagrams/module_graph.png" alt="Module Dependency Graph" width="800"/>
+
+You can regenerate this module dependency graph by running:
+
+```sh
+./graph.sh
+```
+
+This will create both PNG and PDF versions of the module graph using `cargo modules` and GraphViz tools.
+
+## Development
+
+### Quick Start
+For rapid development and testing, use the `dev.sh` script:
+
+```sh
+# Run a specific game example
+./dev.sh --game flappy_goud  # 2D game example
+./dev.sh --game 3d_cube      # 3D game example
+./dev.sh --game goud_jumper  # Platform game example
+
+# Use --local flag for local NuGet packaging
+./dev.sh --game flappy_goud --local
+```
+
+### Git Hooks with husky-rs
+This project uses husky-rs for managing Git hooks. We have pre-commit hooks set up to ensure code quality before commits.
+
+**Important:** After modifying the pre-commit script in `.husky/hooks/pre-commit`, you must run:
+```sh
+cargo clean && cargo test
+```
+This is required for the changes to take effect due to how husky-rs works with `build.rs`.
+
+### Version Management
+**Important:** After making changes to the engine, you MUST increment the version numbers for your changes to propagate through the SDK and NuGet packages. Use the version increment script:
+
+```sh
+./increment_version.sh         # Increments patch version (0.0.X)
+./increment_version.sh --minor # Increments minor version (0.X.0)
+./increment_version.sh --major # Increments major version (X.0.0)
+```
+
+This script automatically updates versions in:
+- `goud_engine/Cargo.toml` (source of truth)
+- `sdks/GoudEngine/GoudEngine.csproj`
+- All `.csproj` files in the `/examples` directory
+
+Without incrementing the version, your changes will not be reflected in dependent projects using the NuGet package.
 
 ## Building the Project
 
@@ -35,9 +91,10 @@ This script will build the package and submit it to the local NuGet repository. 
 dotnet add package GoudEngine --version <desired_version>
 ```
 
-## Sample
+## Sample Games
 
-To run the sample game, `flappy_goud`, run the following script:
+### 2D Sample: Flappy Goud
+To run the 2D sample game, `flappy_goud`, run the following script:
 
 ```sh
 cd examples/flappy_goud
@@ -45,88 +102,77 @@ dotnet build
 dotnet run
 ```
 
-This script will build and run the sample game. The entry point to that game is located in `examples/flappy_goud/Program.cs`.
+### 3D Sample: Cube Demo
+To run the 3D sample with dynamic lighting, run:
 
-## Usage
-
-### Rust Library
-
-The Rust library provides the core functionality of the game engine. The main entry point is the `goud_engine` crate.
-
-Example:
-
-```rust
-mod game;
-
-use game::cgmath::Vector2;
-use game::{GameSdk, Rectangle, Sprite, Texture, WindowBuilder};
-use glfw::Key;
-use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_int};
-
-#[no_mangle]
-pub extern "C" fn game_create(width: u32, height: u32, title: *const c_char) -> *mut GameSdk {
-    println!("Creating game instance");
-    let title_str = unsafe { CStr::from_ptr(title).to_str().unwrap() };
-    let title_cstring = CString::new(title_str).unwrap();
-    let builder = WindowBuilder {
-        width,
-        height,
-        title: title_cstring.as_ptr(),
-    };
-    let game = GameSdk::new(builder);
-    Box::into_raw(Box::new(game))
-}
-
-// ... other functions ...
+```sh
+cd examples/3d_cube
+dotnet build
+dotnet run
 ```
 
-Functions and structs in this file along with a few others in the `goud_engine` module are exposed to C# using `csbindgen`, and generated as `libgoud_engine*.dll*.dylib*.so`. The generated library is then used in the C# application with `NativeMethods.g.cs`.
+## Usage
 
 ### C# Integration
 
 The C# integration allows you to use the Rust game engine in your C# applications. The main entry point is the `GoudGame` class.
 
-Example:
+Example with 2D renderer:
 
 ```csharp
 using System;
-using CsBindGen;
+using CsBindgen;
 
 class Program
 {
     static void Main(string[] args)
     {
-        GoudGame game = new GoudGame(800, 600, "Flappy Bird");
-
-        GameManager gameManager; // Created for sample project
+        // Initialize with 2D renderer (default)
+        GoudGame game = new GoudGame(800, 600, "2D Game");
 
         game.Initialize(() =>
         {
             Console.WriteLine("Game Initialized!");
-
             Sprite backgroundData = new Sprite { X = 0, Y = 0, ScaleX = 1, ScaleY = 1, Rotation = 0 };
-            game.AddSprite("assets/sprites/background-day.png", backgroundData);
+            game.AddSprite("assets/sprites/background.png", backgroundData);
         });
 
-        gameManager = new GameManager(game); // Created for sample project
-
-        game.Start(() =>
-        {
-            Console.WriteLine("Game Started!");
-        });
-
-        game.Update(() =>
-        {
-            gameManager.Update(); // Created for sample project
-        });
-
+        game.Start(() => Console.WriteLine("Game Started!"));
+        game.Update(() => { /* Update logic */ });
         game.Terminate();
     }
 }
 ```
 
-The `GoudGame` class is a wrapper around the Rust game engine, providing a C# interface to the engine. There are examples in `flappy_goud` on expanding modules using the base `GoudGame` class, but the beauty of this project is that you can create your own game engine modules in Rust and use them in C# applications.
+Example with 3D renderer:
+
+```csharp
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Initialize with 3D renderer
+        GoudGame game = new GoudGame(800, 600, "3D Game", RendererType.Renderer3D);
+
+        game.Initialize(() =>
+        {
+            // Create a textured cube
+            uint textureId = game.CreateTexture("assets/textures/cube.png");
+            uint cubeId = game.CreateCube(textureId);
+            
+            // Add dynamic lighting
+            game.AddPointLight(
+                positionX: 0, positionY: 2, positionZ: 3,
+                colorR: 1.0f, colorG: 0.5f, colorB: 0.5f
+            );
+        });
+
+        game.Start(() => Console.WriteLine("Game Started!"));
+        game.Update(() => { /* Update logic */ });
+        game.Terminate();
+    }
+}
+```
 
 ## Documentation
 
