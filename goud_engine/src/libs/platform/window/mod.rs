@@ -135,7 +135,7 @@ impl Window {
             self.frame_count = 0;
             self.elapsed_time = Duration::new(0, 0);
             self.window_handle.set_title(&format!(
-                "FPS: {} | Delta Time: {:.4}",
+                "FPS: {} | Delsadfsadta Time: {:.4}",
                 self.fps, self.delta_time
             ));
         }

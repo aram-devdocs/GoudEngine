@@ -29,6 +29,15 @@ class Program
         float currentRotation = 0.0f;
         uint playerId = 0;
 
+        // Light state
+        uint redLightId = 0;
+        float lightIntensity = 2.0f;
+        float lightRange = 20.0f;
+        float lightOrbitRadius = 8.0f; // Smaller radius for closer orbit
+        float lightHeight = 5.0f; // Lower height to match initial Y
+        float lightAngle = 0.0f;
+        float lightOrbitSpeed = 1.0f; // Faster speed to see movement
+
         game.Initialize(() =>
         {
             Console.WriteLine("Game initialized");
@@ -61,6 +70,24 @@ class Program
             playerId = game.CreateCube(textureId, 1.0f, 1.0f, 1.0f); // TODO:https://github.com/aram-devdocs/GoudEngine/issues/47 Bug: it should be x,y,z, however it appears it is x,z,y.
             game.SetObjectPosition(playerId, 0.0f, baseHeight, 0.0f); // TODO:https://github.com/aram-devdocs/GoudEngine/issues/47 Bug: it should be x,y,z, however it appears it is x,z,y.
             game.SetObjectRotation(playerId, 0.0f, 0.0f, 0.0f);
+
+            // Create a red point light
+            redLightId = game.AddLight(
+                LightType.Point,
+                5.0f, // Start closer on X
+                5.0f, // Start lower on Y
+                -5.0f, // Start closer on Z (in front)
+                0,
+                -1,
+                0, // Direction (down)
+                1.0f,
+                0.2f,
+                0.2f, // Warmer red color
+                2.0f, // Higher intensity
+                6500.0f, // Temperature
+                20.0f, // Range
+                45.0f // Spot angle (unused for point light)
+            );
         });
 
         game.Start(() =>
@@ -70,6 +97,29 @@ class Program
 
         game.Update(() =>
         {
+            // Update light position to orbit around the scene
+            lightAngle += lightOrbitSpeed * game.UpdateResponseData.delta_time;
+            float lightX = (float)Math.Cos(lightAngle) * lightOrbitRadius;
+            float lightZ = (float)Math.Sin(lightAngle) * lightOrbitRadius;
+
+            game.UpdateLight(
+                redLightId,
+                LightType.Point,
+                lightX,
+                lightHeight,
+                lightZ, // position
+                0,
+                0,
+                0, // direction
+                1.0f,
+                0.0f,
+                0.0f, // color (red)
+                lightIntensity,
+                6500.0f,
+                lightRange,
+                0.0f
+            );
+
             // Update bounce animation
             elapsedTime += game.UpdateResponseData.delta_time;
             float bounceOffset = (float)Math.Sin(elapsedTime * bounceSpeed) * bounceHeight;
