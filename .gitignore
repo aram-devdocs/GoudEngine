@@ -36,3 +36,6 @@ nuget_package_output
 
 NuGet.local.config
 libgoud_engine.dylib
+
+# Generated diagrams intermediate files
+docs/diagrams/mods.dot

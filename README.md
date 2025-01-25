@@ -13,6 +13,20 @@ GoudEngine is a game engine written in Rust, designed to be used with C# applica
 - Graphics rendering with OpenGL
 - Integration with C# using csbindgen
 
+## Architecture
+
+Below is the module dependency graph of GoudEngine, showing the relationship between different components:
+
+<img src="docs/diagrams/module_graph.png" alt="Module Dependency Graph" width="800"/>
+
+You can regenerate this module dependency graph by running:
+
+```sh
+./graph.sh
+```
+
+This will create both PNG and PDF versions of the module graph using `cargo modules` and GraphViz tools.
+
 ## Development
 
 ### Quick Start
