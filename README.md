@@ -42,6 +42,15 @@ For rapid development and testing, use the `dev.sh` script:
 ./dev.sh --game flappy_goud --local
 ```
 
+### Git Hooks with husky-rs
+This project uses husky-rs for managing Git hooks. We have pre-commit hooks set up to ensure code quality before commits.
+
+**Important:** After modifying the pre-commit script in `.husky/hooks/pre-commit`, you must run:
+```sh
+cargo clean && cargo test
+```
+This is required for the changes to take effect due to how husky-rs works with `build.rs`.
+
 ### Important Note
 When making changes to the engine, you need to increment the version number in `sdks/GoudEngine/GoudEngine.csproj` to ensure changes propagate through the SDK. Otherwise, the NuGet package may not reflect your latest changes.
 
