@@ -6,24 +6,12 @@ on:
   pull_request:
     branches: [ "main" ]
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   cargo-deny:
     name: Dependency Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      
-      - name: Wait for Rust Test workflow
-        uses: lewagon/wait-on-check-action@v1.3.1
-        with:
-          ref: ${{ github.ref }}
-          check-name: 'Build and Test'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
       
       - name: Install cargo-deny
         run: cargo install cargo-deny
