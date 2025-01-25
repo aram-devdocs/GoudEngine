@@ -561,17 +561,18 @@ impl Renderer3D {
         debug_vao.bind();
 
         unsafe {
-            // Enable line drawing and make sure lines are visible
+            gl::Disable(gl::DEPTH_TEST);  // Draw grid on top
+            gl::Enable(gl::BLEND);
+            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
             gl::LineWidth(2.0);
-            gl::Disable(gl::DEPTH_TEST);
         }
 
-        // Adjust view matrix for better grid visibility
+        // Use the same view matrix as the main scene for consistency
         let view = Matrix4::look_at_rh(
             Point3::new(
                 self.camera_position.x,
-                self.camera_position.y + 5.0, // Move camera up to see grid better
-                self.camera_zoom + 5.0        // Move back to see more of the grid
+                self.camera_position.y,
+                self.camera_zoom,
             ),
             Point3::new(0.0, 0.0, 0.0),
             Vector3::new(0.0, 1.0, 0.0),
@@ -582,16 +583,16 @@ impl Renderer3D {
 
         debug_shader.set_uniform_mat4("view", &view)?;
         debug_shader.set_uniform_mat4("projection", &projection)?;
-        debug_shader.set_uniform_mat4("model", &Matrix4::from_scale(1.0))?;
+        debug_shader.set_uniform_mat4("model", &Matrix4::one())?;
 
         unsafe {
             // Draw grid lines with higher contrast
-            debug_shader.set_uniform_vec4("color", &Vector4::new(0.5, 0.5, 0.5, 1.0))?; // Brighter gray
+            debug_shader.set_uniform_vec4("color", &Vector4::new(1.0, 1.0, 1.0, 0.3))?;  // White, semi-transparent
             let num_grid_lines = (10 * 2 + 1) * 2; // Number of lines in X and Z directions
-            gl::DrawArrays(gl::LINES, 0, num_grid_lines * 2); // 2 vertices per line
+            gl::DrawArrays(gl::LINES, 0, num_grid_lines * 2);
 
             // Draw coordinate axes with thicker lines
-            gl::LineWidth(4.0); // Make axes more visible
+            gl::LineWidth(4.0);
 
             // X-axis (red)
             debug_shader.set_uniform_vec4("color", &Vector4::new(1.0, 0.0, 0.0, 1.0))?;
@@ -604,10 +605,6 @@ impl Renderer3D {
             // Z-axis (blue)
             debug_shader.set_uniform_vec4("color", &Vector4::new(0.0, 0.0, 1.0, 1.0))?;
             gl::DrawArrays(gl::LINES, num_grid_lines * 2 + 4, 2);
-
-            // Reset OpenGL state
-            gl::LineWidth(1.0);
-            gl::Enable(gl::DEPTH_TEST);
         }
 
         Ok(())
@@ -616,6 +613,7 @@ impl Renderer3D {
     fn setup_debug_rendering(&mut self) -> Result<(), String> {
         // Create and set up debug shader
         let mut debug_shader = ShaderProgram::new_debug()?;
+        
         debug_shader.bind();
         debug_shader.create_uniform("model")?;
         debug_shader.create_uniform("view")?;
@@ -628,35 +626,27 @@ impl Renderer3D {
 
         // Generate grid vertices
         let mut vertices = Vec::new();
-        let grid_size = 2.0;  // Increased size between grid lines
-        let grid_count = 10;  // Reduced number of lines but made them bigger
+        let grid_size = 1.0;
+        let grid_count = 10;
         let grid_extent = grid_size * grid_count as f32;
 
         // Add grid lines
         for i in -grid_count..=grid_count {
             let pos = i as f32 * grid_size;
-            // X-axis lines
             vertices.extend_from_slice(&[
-                -grid_extent, 0.0, pos,        // Start point
-                grid_extent, 0.0, pos,         // End point
-            ]);
-            // Z-axis lines
-            vertices.extend_from_slice(&[
-                pos, 0.0, -grid_extent,        // Start point
-                pos, 0.0, grid_extent,         // End point
+                -grid_extent, 0.0, pos,
+                grid_extent, 0.0, pos,
+                pos, 0.0, -grid_extent,
+                pos, 0.0, grid_extent,
             ]);
         }
 
-        // Add coordinate axes (twice as long as grid size)
-        let axis_length = grid_extent;
+        let axis_length = grid_extent * 1.5;
         vertices.extend_from_slice(&[
-            // X-axis (red)
             0.0, 0.0, 0.0,
             axis_length, 0.0, 0.0,
-            // Y-axis (green)
             0.0, 0.0, 0.0,
             0.0, axis_length, 0.0,
-            // Z-axis (blue)
             0.0, 0.0, 0.0,
             0.0, 0.0, axis_length,
         ]);
@@ -665,7 +655,6 @@ impl Renderer3D {
         vbo.bind();
         vbo.store_data(&vertices, gl::STATIC_DRAW);
 
-        // Position attribute only for debug rendering
         VertexAttribute::enable(0);
         VertexAttribute::pointer(0, 3, gl::FLOAT, gl::FALSE, 3 * std::mem::size_of::<f32>() as GLsizei, 0);
 
@@ -677,21 +666,46 @@ impl Renderer3D {
 
     fn render_objects(&mut self, texture_manager: &TextureManager) -> Result<(), String> {
         unsafe {
+            gl::Enable(gl::DEPTH_TEST);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
+        // First render debug grid if enabled
+        if self.debug_mode {
+            unsafe {
+                // Save current OpenGL state
+                let mut line_width = 0.0f32;
+                gl::GetFloatv(gl::LINE_WIDTH, &mut line_width);
+
+                // Render debug grid
+                if let Err(e) = self.render_debug() {
+                    eprintln!("Failed to render debug grid: {}", e);
+                }
+
+                // Restore OpenGL state
+                gl::LineWidth(line_width);
+                gl::Enable(gl::DEPTH_TEST);
+            }
+        }
+
+        // Then render the regular objects
         self.shader_program.bind();
 
         // Create view matrix
         let view = Matrix4::look_at_rh(
-            Point3::new(self.camera_position.x, self.camera_position.y, self.camera_zoom),
+            Point3::new(
+                self.camera_position.x,
+                self.camera_position.y,
+                self.camera_zoom,
+            ),
             Point3::new(0.0, 0.0, 0.0),
             Vector3::new(0.0, 1.0, 0.0),
         );
 
         // Set common uniforms
         self.shader_program.set_uniform_mat4("view", &view)?;
-        self.shader_program.set_uniform_vec3("viewPos", &self.camera_position)?;
+        self.shader_program
+            .set_uniform_vec3("viewPos", &self.camera_position)?;
 
         // Update lights in shader
         self.update_shader_lights()?;
@@ -714,13 +728,6 @@ impl Renderer3D {
 
             unsafe {
                 gl::DrawArrays(gl::TRIANGLES, 0, object.vertex_count);
-            }
-        }
-
-        // Always try to render debug if enabled
-        if self.debug_mode {
-            if let Err(e) = self.render_debug() {
-                eprintln!("Failed to render debug grid: {}", e);
             }
         }
 
@@ -763,10 +770,15 @@ impl Renderer for Renderer3D {
     }
 
     fn set_debug_mode(&mut self, enabled: bool) {
-        if let Ok(_) = self.set_debug_mode(enabled) {
-            // Debug mode set successfully
-        } else {
-            eprintln!("Failed to set debug mode");
+        // Directly set the debug mode flag first
+        self.debug_mode = enabled;
+
+        // Then try to setup debug rendering if needed
+        if enabled && self.debug_shader.is_none() {
+            if let Err(e) = self.setup_debug_rendering() {
+                eprintln!("Failed to setup debug rendering: {}", e);
+                // Even if setup fails, keep debug_mode true as it may succeed next frame
+            }
         }
     }
 }
