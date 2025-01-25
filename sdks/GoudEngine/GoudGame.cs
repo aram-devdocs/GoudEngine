@@ -17,6 +17,13 @@ public enum PrimitiveType
     Cylinder = 3
 }
 
+public enum LightType
+{
+    Point = 0,
+    Directional = 1,
+    Spot = 2
+}
+
 public unsafe class GoudGame
 {
     private GameSdk* gameInstance;
@@ -378,5 +385,183 @@ public unsafe class GoudGame
             texture_id = textureId
         };
         return CreatePrimitive(createInfo);
+    }
+
+    public uint AddLight(
+        LightType lightType,
+        float positionX,
+        float positionY,
+        float positionZ,
+        float directionX,
+        float directionY,
+        float directionZ,
+        float colorR,
+        float colorG,
+        float colorB,
+        float intensity = 1.0f,
+        float temperature = 6500.0f,
+        float range = 10.0f,
+        float spotAngle = 45.0f
+    )
+    {
+        unsafe
+        {
+            return NativeMethods.game_add_light(
+                gameInstance,
+                (int)lightType,
+                positionX,
+                positionY,
+                positionZ,
+                directionX,
+                directionY,
+                directionZ,
+                colorR,
+                colorG,
+                colorB,
+                intensity,
+                temperature,
+                range,
+                spotAngle
+            );
+        }
+    }
+
+    public bool RemoveLight(uint lightId)
+    {
+        unsafe
+        {
+            return NativeMethods.game_remove_light(gameInstance, lightId);
+        }
+    }
+
+    public bool UpdateLight(
+        uint lightId,
+        LightType lightType,
+        float positionX,
+        float positionY,
+        float positionZ,
+        float directionX,
+        float directionY,
+        float directionZ,
+        float colorR,
+        float colorG,
+        float colorB,
+        float intensity = 1.0f,
+        float temperature = 6500.0f,
+        float range = 10.0f,
+        float spotAngle = 45.0f
+    )
+    {
+        unsafe
+        {
+            return NativeMethods.game_update_light(
+                gameInstance,
+                lightId,
+                (int)lightType,
+                positionX,
+                positionY,
+                positionZ,
+                directionX,
+                directionY,
+                directionZ,
+                colorR,
+                colorG,
+                colorB,
+                intensity,
+                temperature,
+                range,
+                spotAngle
+            );
+        }
+    }
+
+    // Helper methods for common light setups
+    public uint AddPointLight(
+        float positionX,
+        float positionY,
+        float positionZ,
+        float colorR = 1.0f,
+        float colorG = 1.0f,
+        float colorB = 1.0f,
+        float intensity = 1.0f,
+        float temperature = 6500.0f,
+        float range = 10.0f
+    )
+    {
+        return AddLight(
+            LightType.Point,
+            positionX,
+            positionY,
+            positionZ,
+            0, 0, 0,  // Direction doesn't matter for point lights
+            colorR,
+            colorG,
+            colorB,
+            intensity,
+            temperature,
+            range,
+            0  // Spot angle doesn't matter for point lights
+        );
+    }
+
+    public uint AddDirectionalLight(
+        float directionX,
+        float directionY,
+        float directionZ,
+        float colorR = 1.0f,
+        float colorG = 1.0f,
+        float colorB = 1.0f,
+        float intensity = 1.0f,
+        float temperature = 6500.0f
+    )
+    {
+        return AddLight(
+            LightType.Directional,
+            0, 0, 0,  // Position doesn't matter for directional lights
+            directionX,
+            directionY,
+            directionZ,
+            colorR,
+            colorG,
+            colorB,
+            intensity,
+            temperature,
+            float.MaxValue,  // Range doesn't matter for directional lights
+            0  // Spot angle doesn't matter for directional lights
+        );
+    }
+
+    public uint AddSpotLight(
+        float positionX,
+        float positionY,
+        float positionZ,
+        float directionX,
+        float directionY,
+        float directionZ,
+        float spotAngle = 45.0f,
+        float colorR = 1.0f,
+        float colorG = 1.0f,
+        float colorB = 1.0f,
+        float intensity = 1.0f,
+        float temperature = 6500.0f,
+        float range = 10.0f
+    )
+    {
+        return AddLight(
+            LightType.Spot,
+            positionX,
+            positionY,
+            positionZ,
+            directionX,
+            directionY,
+            directionZ,
+            colorR,
+            colorG,
+            colorB,
+            intensity,
+            temperature,
+            range,
+            spotAngle
+        );
     }
 }

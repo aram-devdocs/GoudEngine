@@ -5,25 +5,37 @@ using GoudEngine;
 
 class Program
 {
-    private static float rotationAngle = 0.0f;
-    private static uint[] objectIds = new uint[4]; // Store IDs for cube, sphere, cylinder, and plane
-    private static uint textureId;
-
     static void Main(string[] args)
     {
-        Console.WriteLine("Starting 3D Primitives Example");
+        Console.WriteLine("Starting Basic 3D Example");
 
-        // Create a game instance with 3D renderer
-        var game = new GoudGame(800, 600, "3D Primitives Example", RendererType.Renderer3D);
+        var game = new GoudGame(800, 600, "Basic 3D Example", RendererType.Renderer3D);
 
-        // Initialize the game
+        // Camera state
+        float cameraX = 0.0f;
+        float cameraY = 10.0f;
+        float cameraZ = -15.0f;
+        // float cameraRotationSpeed = 0.1f;
+        float cameraMoveSpeed = 0.5f;
+
+        // Bounce animation state
+        float bounceHeight = 0.5f;
+        float bounceSpeed = 3.0f;
+        float baseHeight = 1.5f;
+        float elapsedTime = 0.0f;
+
+        // Rotation animation state
+        float rotationSpeed = 15.0f;
+        float currentRotation = 0.0f;
+        uint playerId = 0;
+
         game.Initialize(() =>
         {
             Console.WriteLine("Game initialized");
 
-            // Set initial camera position and zoom
-            game.SetCameraPosition(0.0f, 0.0f);
-            game.SetCameraZoom(10.0f);
+            // Initial camera position
+            game.SetCameraPosition(cameraX, cameraY);
+            game.SetCameraZoom(cameraZ);
 
             // Load texture
             string texturePath = Path.Combine(
@@ -31,7 +43,6 @@ class Program
                 "assets",
                 "default_grey.png"
             );
-            Console.WriteLine($"Loading texture from: {texturePath}");
 
             if (!File.Exists(texturePath))
             {
@@ -39,77 +50,70 @@ class Program
                 return;
             }
 
-            textureId = game.CreateTexture(texturePath);
-            Console.WriteLine($"Texture loaded with ID: {textureId}");
+            uint textureId = game.CreateTexture(texturePath);
 
-            // Create primitives using convenience methods
-            objectIds[0] = game.CreateCube(textureId, 1.0f, 1.0f, 1.0f);
-            Console.WriteLine($"Cube created with ID: {objectIds[0]}");
+            // Create a simple plane
+            uint planeId = game.CreateCube(textureId, 10.0f, 1.0f, 10.0f); // TODO:https://github.com/aram-devdocs/GoudEngine/issues/47 Bug: it should be x,y,z, however it appears it is x,z,y.
+            game.SetObjectPosition(planeId, 0.0f, 0.0f, 0.0f);
+            game.SetObjectRotation(planeId, 0.0f, 0.0f, 0.0f);
 
-            objectIds[1] = game.CreateSphere(textureId, 0.5f, 32);
-            Console.WriteLine($"Sphere created with ID: {objectIds[1]}");
-
-            objectIds[2] = game.CreateCylinder(textureId, 0.5f, 2.0f, 32);
-            Console.WriteLine($"Cylinder created with ID: {objectIds[2]}");
-
-            objectIds[3] = game.CreatePlane(textureId, 5.0f, 5.0f);
-            Console.WriteLine($"Plane created with ID: {objectIds[3]}");
-
-            // Position objects
-            game.SetObjectPosition(objectIds[0], -2.0f, 0.0f, 0.0f); // Cube
-            game.SetObjectPosition(objectIds[1], 2.0f, 0.0f, 0.0f); // Sphere
-            game.SetObjectPosition(objectIds[2], 0.0f, 2.0f, 0.0f); // Cylinder
-            game.SetObjectPosition(objectIds[3], 0.0f, -2.0f, 0.0f); // Plane
-
-            // Initial scales
-            game.SetObjectScale(objectIds[0], 1.0f, 1.0f, 1.0f);
-            game.SetObjectScale(objectIds[1], 1.0f, 1.0f, 1.0f);
-            game.SetObjectScale(objectIds[2], 1.0f, 1.0f, 1.0f);
-            game.SetObjectScale(objectIds[3], 1.0f, 1.0f, 1.0f);
+            // Create player cube and position it at the center of the plane
+            playerId = game.CreateCube(textureId, 1.0f, 1.0f, 1.0f); // TODO:https://github.com/aram-devdocs/GoudEngine/issues/47 Bug: it should be x,y,z, however it appears it is x,z,y.
+            game.SetObjectPosition(playerId, 0.0f, baseHeight, 0.0f); // TODO:https://github.com/aram-devdocs/GoudEngine/issues/47 Bug: it should be x,y,z, however it appears it is x,z,y.
+            game.SetObjectRotation(playerId, 0.0f, 0.0f, 0.0f);
         });
 
-        // Start the game
         game.Start(() =>
         {
             Console.WriteLine("Game started");
         });
 
-        // Main game loop
         game.Update(() =>
         {
-            // Update rotation angle
-            rotationAngle += game.UpdateResponseData.delta_time * 45.0f; // 45 degrees per second
-            if (rotationAngle >= 360.0f)
+            // Update bounce animation
+            elapsedTime += game.UpdateResponseData.delta_time;
+            float bounceOffset = (float)Math.Sin(elapsedTime * bounceSpeed) * bounceHeight;
+            game.SetObjectPosition(playerId, 0.0f, baseHeight + bounceOffset, 0.0f);
+
+            // Update rotation animation
+            currentRotation += rotationSpeed * game.UpdateResponseData.delta_time;
+            game.SetObjectRotation(playerId, 0.0f, currentRotation, 0.0f);
+
+            // Camera Movement Controls
+            if (game.IsKeyPressed(87)) // W key
             {
-                rotationAngle -= 360.0f;
+                cameraY += cameraMoveSpeed;
+                game.SetCameraPosition(cameraX, cameraY);
+            }
+            if (game.IsKeyPressed(83)) // S key
+            {
+                cameraY -= cameraMoveSpeed;
+                game.SetCameraPosition(cameraX, cameraY);
+            }
+            if (game.IsKeyPressed(65)) // A key
+            {
+                cameraX -= cameraMoveSpeed;
+                game.SetCameraPosition(cameraX, cameraY);
+            }
+            if (game.IsKeyPressed(68)) // D key
+            {
+                cameraX += cameraMoveSpeed;
+                game.SetCameraPosition(cameraX, cameraY);
             }
 
-            // Rotate objects differently
-            game.SetObjectRotation(objectIds[0], rotationAngle, rotationAngle, 0.0f); // Cube rotates on X and Y
-            game.SetObjectRotation(objectIds[1], 0.0f, rotationAngle, rotationAngle); // Sphere rotates on Y and Z
-            game.SetObjectRotation(objectIds[2], rotationAngle, 0.0f, rotationAngle); // Cylinder rotates on X and Z
-            game.SetObjectRotation(objectIds[3], rotationAngle * 0.25f, 0.0f, 0.0f); // Plane slowly rotates on X
-
-            // Make objects "breathe" with different phases
-            float baseScale = 1.0f + (float)Math.Sin(rotationAngle * Math.PI / 180.0f) * 0.2f;
-            game.SetObjectScale(objectIds[0], baseScale, baseScale, baseScale);
-
-            float sphereScale = 1.0f + (float)Math.Cos(rotationAngle * Math.PI / 180.0f) * 0.2f;
-            game.SetObjectScale(objectIds[1], sphereScale, sphereScale, sphereScale);
-
-            float cylinderScale =
-                1.0f + (float)Math.Sin((rotationAngle + 90.0f) * Math.PI / 180.0f) * 0.2f;
-            game.SetObjectScale(objectIds[2], cylinderScale, cylinderScale, cylinderScale);
-
-            // Move camera in a circle around the scene
-            float cameraRadius = 8.0f;
-            float cameraX = (float)Math.Sin(rotationAngle * Math.PI / 180.0f) * cameraRadius;
-            float cameraY = (float)Math.Cos(rotationAngle * Math.PI / 180.0f) * cameraRadius;
-            game.SetCameraPosition(cameraX, cameraY);
+            // Camera Zoom Controls
+            if (game.IsKeyPressed(81)) // Q key - zoom in
+            {
+                cameraZ += cameraMoveSpeed;
+                game.SetCameraZoom(cameraZ);
+            }
+            if (game.IsKeyPressed(69)) // E key - zoom out
+            {
+                cameraZ -= cameraMoveSpeed;
+                game.SetCameraZoom(cameraZ);
+            }
         });
 
-        // Clean up
         game.Terminate();
-        Console.WriteLine("Game terminated");
     }
 }
