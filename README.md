@@ -51,15 +51,21 @@ cargo clean && cargo test
 ```
 This is required for the changes to take effect due to how husky-rs works with `build.rs`.
 
-### Important Note
-When making changes to the engine, you need to increment the version number in `sdks/GoudEngine/GoudEngine.csproj` to ensure changes propagate through the SDK. Otherwise, the NuGet package may not reflect your latest changes.
+### Version Management
+**Important:** After making changes to the engine, you MUST increment the version numbers for your changes to propagate through the SDK and NuGet packages. Use the version increment script:
 
-For example:
-```xml
-<PropertyGroup>
-    <Version>0.0.725</Version>  <!-- Increment this number -->
-</PropertyGroup>
+```sh
+./increment_version.sh         # Increments patch version (0.0.X)
+./increment_version.sh --minor # Increments minor version (0.X.0)
+./increment_version.sh --major # Increments major version (X.0.0)
 ```
+
+This script automatically updates versions in:
+- `goud_engine/Cargo.toml` (source of truth)
+- `sdks/GoudEngine/GoudEngine.csproj`
+- All `.csproj` files in the `/examples` directory
+
+Without incrementing the version, your changes will not be reflected in dependent projects using the NuGet package.
 
 ## Building the Project
 
