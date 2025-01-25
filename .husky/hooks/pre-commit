@@ -1,6 +1,6 @@
 #!/bin/sh
 echo "Running pre-commit hook"
-
+cargo clean && cargo test
 ./build.sh
 cargo deny check
 cargo test --verbose
