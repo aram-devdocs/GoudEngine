@@ -2,6 +2,7 @@
 name = "goud_engine"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 
 
 # TODO: https://github.com/aram-devdocs/GoudEngine/issues/8
@@ -10,7 +11,7 @@ cc = "1.0.79"
 bindgen = "0.64.0"
 csbindgen = "1.2.0"
 cgmath = "0.18.0"
-env_logger = "0.9.0"
+env_logger = "0.11.6"
 gl = "0.14.0"
 glfw = "0.59.0"
 log = "0.4.17"
