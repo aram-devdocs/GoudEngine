@@ -31,12 +31,15 @@ class Program
 
         // Light state
         uint redLightId = 0;
+        uint blueLightId = 0;
+        uint greenLightId = 0;
+        uint spotlightId = 0;
         float lightIntensity = 2.0f;
         float lightRange = 20.0f;
-        float lightOrbitRadius = 8.0f; // Smaller radius for closer orbit
-        float lightHeight = 5.0f; // Lower height to match initial Y
+        float lightOrbitRadius = 8.0f;
+        float lightHeight = 5.0f;
         float lightAngle = 0.0f;
-        float lightOrbitSpeed = 1.0f; // Faster speed to see movement
+        float lightOrbitSpeed = 1.0f;
 
         game.Initialize(() =>
         {
@@ -71,22 +74,74 @@ class Program
             game.SetObjectPosition(playerId, 0.0f, baseHeight, 0.0f); // TODO:https://github.com/aram-devdocs/GoudEngine/issues/47 Bug: it should be x,y,z, however it appears it is x,z,y.
             game.SetObjectRotation(playerId, 0.0f, 0.0f, 0.0f);
 
-            // Create a red point light
+            // Create three orbiting lights with different phase angles
             redLightId = game.AddLight(
                 LightType.Point,
-                5.0f, // Start closer on X
-                5.0f, // Start lower on Y
-                -5.0f, // Start closer on Z (in front)
+                5.0f,
+                5.0f,
+                -5.0f,
                 0,
                 -1,
-                0, // Direction (down)
+                0,
                 1.0f,
                 0.2f,
-                0.2f, // Warmer red color
-                2.0f, // Higher intensity
+                0.2f,
+                lightIntensity,
+                6500.0f,
+                lightRange,
+                45.0f
+            );
+
+            blueLightId = game.AddLight(
+                LightType.Point,
+                -5.0f,
+                5.0f,
+                5.0f,
+                0,
+                -1,
+                0,
+                0.2f,
+                0.2f,
+                1.0f,
+                lightIntensity,
+                6500.0f,
+                lightRange,
+                45.0f
+            );
+
+            greenLightId = game.AddLight(
+                LightType.Point,
+                5.0f,
+                5.0f,
+                5.0f,
+                0,
+                -1,
+                0,
+                0.2f,
+                1.0f,
+                0.2f,
+                lightIntensity,
+                6500.0f,
+                lightRange,
+                45.0f
+            );
+
+            // Add white spotlight from above
+            spotlightId = game.AddLight(
+                LightType.Spot,
+                0.0f,
+                10.0f,
+                0.0f, // Position directly above
+                0.0f,
+                -1.0f,
+                0.0f, // Direction pointing straight down
+                1.0f,
+                1.0f,
+                1.0f, // White color
+                3.0f, // Intensity increased from 1.5 to 3.0
                 6500.0f, // Temperature
-                20.0f, // Range
-                45.0f // Spot angle (unused for point light)
+                15.0f, // Range
+                60.0f // Spot angle increased from 45 to 60 degrees for wider spread
             );
         });
 
@@ -97,23 +152,72 @@ class Program
 
         game.Update(() =>
         {
-            // Update light position to orbit around the scene
+            // Update light positions and colors
             lightAngle += lightOrbitSpeed * game.UpdateResponseData.delta_time;
-            float lightX = (float)Math.Cos(lightAngle) * lightOrbitRadius;
-            float lightZ = (float)Math.Sin(lightAngle) * lightOrbitRadius;
+
+            // Calculate positions with phase offsets
+            float redX = (float)Math.Cos(lightAngle) * lightOrbitRadius;
+            float redZ = (float)Math.Sin(lightAngle) * lightOrbitRadius;
+
+            float blueX = (float)Math.Cos(lightAngle + 2.0f * Math.PI / 3.0f) * lightOrbitRadius;
+            float blueZ = (float)Math.Sin(lightAngle + 2.0f * Math.PI / 3.0f) * lightOrbitRadius;
+
+            float greenX = (float)Math.Cos(lightAngle + 4.0f * Math.PI / 3.0f) * lightOrbitRadius;
+            float greenZ = (float)Math.Sin(lightAngle + 4.0f * Math.PI / 3.0f) * lightOrbitRadius;
+
+            // Pulsing colors based on position
+            float redPulse = (float)(Math.Sin(lightAngle) * 0.5f + 0.5f);
+            float bluePulse = (float)(Math.Sin(lightAngle + 2.0f * Math.PI / 3.0f) * 0.5f + 0.5f);
+            float greenPulse = (float)(Math.Sin(lightAngle + 4.0f * Math.PI / 3.0f) * 0.5f + 0.5f);
 
             game.UpdateLight(
                 redLightId,
                 LightType.Point,
-                lightX,
+                redX,
                 lightHeight,
-                lightZ, // position
+                redZ,
                 0,
                 0,
-                0, // direction
+                0,
                 1.0f,
-                0.0f,
-                0.0f, // color (red)
+                redPulse * 0.2f,
+                redPulse * 0.2f,
+                lightIntensity,
+                6500.0f,
+                lightRange,
+                0.0f
+            );
+
+            game.UpdateLight(
+                blueLightId,
+                LightType.Point,
+                blueX,
+                lightHeight,
+                blueZ,
+                0,
+                0,
+                0,
+                bluePulse * 0.2f,
+                bluePulse * 0.2f,
+                1.0f,
+                lightIntensity,
+                6500.0f,
+                lightRange,
+                0.0f
+            );
+
+            game.UpdateLight(
+                greenLightId,
+                LightType.Point,
+                greenX,
+                lightHeight,
+                greenZ,
+                0,
+                0,
+                0,
+                greenPulse * 0.2f,
+                1.0f,
+                greenPulse * 0.2f,
                 lightIntensity,
                 6500.0f,
                 lightRange,
