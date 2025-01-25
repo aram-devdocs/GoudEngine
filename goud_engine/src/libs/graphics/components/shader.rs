@@ -38,6 +38,16 @@ impl ShaderProgram {
         ShaderProgram::create_program(vertex_shader, fragment_shader)
     }
 
+    pub fn new_debug() -> Result<ShaderProgram, String> {
+        let vertex_code = include_str!("shaders/debug/vertex_shader_debug.glsl");
+        let fragment_code = include_str!("shaders/debug/fragment_shader_debug.glsl");
+
+        let vertex_shader = ShaderProgram::compile_shader(vertex_code, gl::VERTEX_SHADER)?;
+        let fragment_shader = ShaderProgram::compile_shader(fragment_code, gl::FRAGMENT_SHADER)?;
+
+        ShaderProgram::create_program(vertex_shader, fragment_shader)
+    }
+
     fn compile_shader(code: &str, shader_type: GLenum) -> Result<GLuint, String> {
         unsafe {
             let shader = gl::CreateShader(shader_type);

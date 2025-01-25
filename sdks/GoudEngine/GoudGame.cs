@@ -564,4 +564,12 @@ public unsafe class GoudGame
             spotAngle
         );
     }
+
+    public void SetDebugMode(bool enabled)
+    {
+        unsafe
+        {
+            NativeMethods.game_set_debug_mode(gameInstance, enabled);
+        }
+    }
 }

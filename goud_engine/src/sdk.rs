@@ -774,3 +774,9 @@ pub extern "C" fn game_update_light(
         false
     }
 }
+
+#[no_mangle]
+pub extern "C" fn game_set_debug_mode(game: *mut GameSdk, enabled: bool) {
+    let game = unsafe { &mut *game };
+    game.set_debug_mode(enabled);
+}

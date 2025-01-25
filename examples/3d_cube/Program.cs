@@ -45,6 +45,8 @@ class Program
         {
             Console.WriteLine("Game initialized");
 
+            game.SetDebugMode(true);
+
             // Initial camera position
             game.SetCameraPosition(cameraX, cameraY);
             game.SetCameraZoom(cameraZ);

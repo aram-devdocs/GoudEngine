@@ -22,6 +22,7 @@ pub struct GameSdk {
     pub tiled_map_sprite_ids: Option<Vec<u32>>,
     pub new_tileset: bool,
     renderer_type: i32,
+    debug_mode: bool,
 }
 
 impl GameSdk {
@@ -39,6 +40,7 @@ impl GameSdk {
             tiled_map_sprite_ids: None,
             new_tileset: false,
             renderer_type,
+            debug_mode: false,
         }
     }
 
@@ -96,6 +98,13 @@ impl GameSdk {
         self.ecs.terminate();
         if let Some(renderer) = &mut self.renderer {
             renderer.terminate();
+        }
+    }
+
+    pub fn set_debug_mode(&mut self, enabled: bool) {
+        self.debug_mode = enabled;
+        if let Some(renderer) = &mut self.renderer {
+            renderer.set_debug_mode(enabled);
         }
     }
 
