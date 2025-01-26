@@ -17,12 +17,9 @@ fi
 
 # NOTE: This uses cbindgen to generate the bindings.h file. This is not needed for now as we switched to cs_bindgen.
 # echo "Build complete."
-echo "Copying and target/release/libgoud_engine.dylib to flappy_goud. TODO: This should be OS specific."
-# cp goud_enginebindings.h flappy_goud/
+echo "Build complete."
+echo "Copying libgoud_engine.dylib to sdks/GoudEngine..."
 cp target/release/libgoud_engine.dylib sdks/GoudEngine/runtimes/osx-x64/native/
-# cp target/release/libgoud_engine.dylib GoudEngine/
-
-# echo "Copied files to flappy_goud."
 
 cd sdks/GoudEngine
 

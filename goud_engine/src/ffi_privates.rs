@@ -68,7 +68,7 @@ pub struct Instant {
 #[repr(C)]
 #[allow(dead_code)]
 
-pub struct ECS {
+pub struct Ecs {
     _private: [u8; 0],
 }
 

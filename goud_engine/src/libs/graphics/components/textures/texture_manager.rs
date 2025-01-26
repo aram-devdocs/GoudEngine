@@ -14,7 +14,7 @@ impl TextureManager {
 
     pub fn create_texture(&mut self, texture_path: *const c_char) -> c_uint {
         let texture_path_str = unsafe { CStr::from_ptr(texture_path).to_str().unwrap() };
-        let texture = Texture::new(texture_path_str.to_string()).unwrap();
+        let texture = Texture::new(texture_path_str).unwrap();
         let id = self.next_id;
         self.textures.insert(id, Rc::new(texture));
         self.next_id += 1;

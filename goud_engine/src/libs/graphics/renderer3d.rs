@@ -11,6 +11,7 @@ use super::renderer::Renderer;
 use crate::types::{SpriteMap, TextureManager};
 
 #[repr(C)]
+#[allow(dead_code)]
 pub enum PrimitiveType {
     Cube = 0,
     Sphere = 1,
@@ -51,6 +52,7 @@ pub struct Renderer3D {
     window_width: u32,
     window_height: u32,
     light_manager: LightManager,
+    debug_mode: bool,
 }
 
 impl Renderer3D {
@@ -68,7 +70,6 @@ impl Renderer3D {
 
         // Create uniforms for multiple lights
         for i in 0..8 {
-            // Support up to 8 lights
             shader_program.create_uniform(&format!("lights[{}].type", i))?;
             shader_program.create_uniform(&format!("lights[{}].position", i))?;
             shader_program.create_uniform(&format!("lights[{}].direction", i))?;
@@ -95,6 +96,7 @@ impl Renderer3D {
             window_width,
             window_height,
             light_manager: LightManager::new(),
+            debug_mode: false,
         })
     }
 
@@ -534,7 +536,17 @@ impl Renderer3D {
         Ok(())
     }
 
+    pub fn set_debug_mode(&mut self, enabled: bool) -> Result<(), String> {
+        self.debug_mode = enabled;
+        Ok(())
+    }
+
     fn render_objects(&mut self, texture_manager: &TextureManager) -> Result<(), String> {
+        unsafe {
+            gl::Enable(gl::DEPTH_TEST);
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+        }
+
         self.shader_program.bind();
 
         // Create view matrix
@@ -579,6 +591,13 @@ impl Renderer3D {
 
         Ok(())
     }
+
+    pub fn terminate(&self) {
+        self.shader_program.terminate();
+        for object in self.objects.values() {
+            object.vao.terminate();
+        }
+    }
 }
 
 impl Renderer for Renderer3D {
@@ -607,5 +626,9 @@ impl Renderer for Renderer3D {
         for object in self.objects.values() {
             object.vao.terminate();
         }
+    }
+
+    fn set_debug_mode(&mut self, enabled: bool) {
+        self.debug_mode = enabled;
     }
 }

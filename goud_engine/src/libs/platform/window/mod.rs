@@ -129,14 +129,14 @@ impl Window {
         // FPS counter
         self.frame_count += 1;
         self.elapsed_time += frame_time;
-
         if self.elapsed_time >= Duration::from_secs(1) {
             self.fps = self.frame_count;
             self.frame_count = 0;
             self.elapsed_time = Duration::new(0, 0);
+            let version = env!("CARGO_PKG_VERSION");
             self.window_handle.set_title(&format!(
-                "FPS: {} | Delta Time: {:.4}",
-                self.fps, self.delta_time
+                "GoudEngine v{} | FPS: {} | Delta Time: {:.4}",
+                version, self.fps, self.delta_time
             ));
         }
 
@@ -187,11 +187,8 @@ impl Window {
         for (_, event) in events {
             self.input_handler.handle_event(&event);
 
-            match event {
-                WindowEvent::Size(_width, _height) => {
-                    self.maintain_aspect_ratio(); // Maintain aspect ratio on resize
-                }
-                _ => {}
+            if let WindowEvent::Size(_width, _height) = event {
+                self.maintain_aspect_ratio(); // Maintain aspect ratio on resize
             }
         }
     }

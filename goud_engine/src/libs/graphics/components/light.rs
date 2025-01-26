@@ -24,6 +24,7 @@ pub struct Light {
 }
 
 impl Light {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         id: u32,
         light_type: LightType,
@@ -55,19 +56,19 @@ impl Light {
         let temp = self.temperature.clamp(1000.0, 40000.0) / 100.0;
 
         let mut red = 1.0;
-        let mut green;
-        let mut blue;
+        let green;
+        let blue;
 
         if temp <= 66.0 {
-            green = 0.39008157876901960784 * temp.ln() - 0.631841443786;
+            green = 0.390_081_58 * temp.ln() - 0.631_841_4;
             if temp <= 19.0 {
                 blue = 0.0;
             } else {
-                blue = 0.543206789110196078 * (temp - 10.0).ln() - 1.19625408914;
+                blue = 0.543_206_8 * (temp - 10.0).ln() - 1.196_254_1;
             }
         } else {
-            red = 1.292936186062745098 * (temp - 60.0).powf(-0.1332047592);
-            green = 1.129890860895294118 * (temp - 60.0).powf(-0.0755148492);
+            red = 1.292_936_2 * (temp - 60.0).powf(-0.133_204_76);
+            green = 1.129_890_9 * (temp - 60.0).powf(-0.075_514_846);
             blue = 1.0;
         }
 
@@ -112,6 +113,7 @@ impl LightManager {
         self.lights.retain(|light| light.id != light_id);
     }
 
+    #[allow(dead_code)]
     pub fn get_light(&self, light_id: u32) -> Option<&Light> {
         self.lights.iter().find(|light| light.id == light_id)
     }
