@@ -44,6 +44,7 @@ fi
 
 # cd into selected game directory and restore packages from the local feed
 cd examples/$GAME
+dotnet clean
 dotnet restore --source $HOME/nuget-local
 dotnet build
 dotnet run
