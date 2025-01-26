@@ -33,13 +33,23 @@ class Program
         uint redLightId = 0;
         uint blueLightId = 0;
         uint greenLightId = 0;
-        uint spotlightId = 0;
         float lightIntensity = 2.0f;
+        float lightHeight = 5.0f;
         float lightRange = 20.0f;
         float lightOrbitRadius = 8.0f;
-        float lightHeight = 5.0f;
         float lightAngle = 0.0f;
         float lightOrbitSpeed = 1.0f;
+
+        // Sun light configuration
+        uint sunLightId = 0;
+        float sunLightOrbitSpeed = 0.3f; // Rotation speed of the sun
+        float sunLightOrbitRadius = 20.0f; // Radius of sun's orbital path
+        float sunLightHeight = 20.0f; // Vertical position of the sun
+        float sunLightIntensity = 50.0f; // Brightness of the sun
+        float sunLightRange = 50.0f; // Range of the sun's illumination
+        float sunLightAngle = 0.0f; // Current angle of sun's orbit
+        float sunLightSpotAngle = 180.0f; // Spread angle of the light
+        float sunLightTemperature = 5500.0f; // Color temperature
 
         game.Initialize(() =>
         {
@@ -132,22 +142,22 @@ class Program
                 45.0f
             );
 
-            // Add white spotlight from above
-            spotlightId = game.AddLight(
-                LightType.Spot,
+            // Add bright sun light from above
+            sunLightId = game.AddLight(
+                LightType.Point,
                 0.0f,
-                10.0f,
-                0.0f, // Position directly above
+                sunLightHeight,
+                0.0f, // Position high above
                 0.0f,
                 -1.0f,
                 0.0f, // Direction pointing straight down
                 1.0f,
                 1.0f,
                 1.0f, // White color
-                3.0f, // Intensity increased from 1.5 to 3.0
-                6500.0f, // Temperature
-                15.0f, // Range
-                60.0f // Spot angle increased from 45 to 60 degrees for wider spread
+                sunLightIntensity,
+                sunLightTemperature,
+                sunLightRange,
+                sunLightSpotAngle
             );
         });
 
@@ -272,6 +282,30 @@ class Program
                 cameraZ -= cameraMoveSpeed;
                 game.SetCameraZoom(cameraZ);
             }
+
+            // Update sun light position and rotation
+            sunLightAngle += sunLightOrbitSpeed * game.UpdateResponseData.delta_time;
+
+            float sunX = (float)Math.Cos(sunLightAngle) * sunLightOrbitRadius;
+            float sunZ = (float)Math.Sin(sunLightAngle) * sunLightOrbitRadius;
+
+            game.UpdateLight(
+                sunLightId,
+                LightType.Point,
+                sunX,
+                sunLightHeight,
+                sunZ,
+                0,
+                -1,
+                0,
+                1.0f,
+                1.0f,
+                1.0f,
+                sunLightIntensity,
+                sunLightTemperature,
+                sunLightRange,
+                sunLightSpotAngle
+            );
         });
 
         game.Terminate();
