@@ -44,8 +44,6 @@ pub struct Object3D {
 #[derive(Debug)]
 pub struct Renderer3D {
     shader_program: ShaderProgram,
-    debug_shader: Option<ShaderProgram>,
-    debug_vao: Option<Vao>,
     objects: HashMap<u32, Object3D>,
     next_object_id: u32,
     camera_position: Vector3<f32>,
@@ -88,11 +86,8 @@ impl Renderer3D {
         let projection = perspective(Deg(45.0), aspect_ratio, 0.1, 100.0);
         shader_program.set_uniform_mat4("projection", &projection)?;
 
-        // Create renderer instance
-        let mut renderer = Renderer3D {
+        Ok(Renderer3D {
             shader_program,
-            debug_shader: None,
-            debug_vao: None,
             objects: HashMap::new(),
             next_object_id: 1,
             camera_position: Vector3::new(0.0, 0.0, 3.0),
@@ -101,12 +96,7 @@ impl Renderer3D {
             window_height,
             light_manager: LightManager::new(),
             debug_mode: false,
-        };
-
-        // Initialize debug rendering
-        renderer.setup_debug_rendering()?;
-
-        Ok(renderer)
+        })
     }
 
     pub fn create_primitive(&mut self, create_info: PrimitiveCreateInfo) -> Result<u32, String> {
@@ -547,120 +537,6 @@ impl Renderer3D {
 
     pub fn set_debug_mode(&mut self, enabled: bool) -> Result<(), String> {
         self.debug_mode = enabled;
-        if enabled && self.debug_shader.is_none() {
-            self.setup_debug_rendering()?;
-        }
-        Ok(())
-    }
-
-    fn render_debug(&self) -> Result<(), String> {
-        let debug_shader = self.debug_shader.as_ref().unwrap();
-        let debug_vao = self.debug_vao.as_ref().unwrap();
-
-        debug_shader.bind();
-        debug_vao.bind();
-
-        unsafe {
-            gl::Disable(gl::DEPTH_TEST);  // Draw grid on top
-            gl::Enable(gl::BLEND);
-            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
-            gl::LineWidth(2.0);
-        }
-
-        // Use the same view matrix as the main scene for consistency
-        let view = Matrix4::look_at_rh(
-            Point3::new(
-                self.camera_position.x,
-                self.camera_position.y,
-                self.camera_zoom,
-            ),
-            Point3::new(0.0, 0.0, 0.0),
-            Vector3::new(0.0, 1.0, 0.0),
-        );
-
-        let aspect_ratio = self.window_width as f32 / self.window_height as f32;
-        let projection = perspective(Deg(60.0), aspect_ratio, 0.1, 1000.0);
-
-        debug_shader.set_uniform_mat4("view", &view)?;
-        debug_shader.set_uniform_mat4("projection", &projection)?;
-        debug_shader.set_uniform_mat4("model", &Matrix4::one())?;
-
-        unsafe {
-            // Draw grid lines with higher contrast
-            debug_shader.set_uniform_vec4("color", &Vector4::new(1.0, 1.0, 1.0, 0.3))?;  // White, semi-transparent
-            let num_grid_lines = (10 * 2 + 1) * 2; // Number of lines in X and Z directions
-            gl::DrawArrays(gl::LINES, 0, num_grid_lines * 2);
-
-            // Draw coordinate axes with thicker lines
-            gl::LineWidth(4.0);
-
-            // X-axis (red)
-            debug_shader.set_uniform_vec4("color", &Vector4::new(1.0, 0.0, 0.0, 1.0))?;
-            gl::DrawArrays(gl::LINES, num_grid_lines * 2, 2);
-
-            // Y-axis (green)
-            debug_shader.set_uniform_vec4("color", &Vector4::new(0.0, 1.0, 0.0, 1.0))?;
-            gl::DrawArrays(gl::LINES, num_grid_lines * 2 + 2, 2);
-
-            // Z-axis (blue)
-            debug_shader.set_uniform_vec4("color", &Vector4::new(0.0, 0.0, 1.0, 1.0))?;
-            gl::DrawArrays(gl::LINES, num_grid_lines * 2 + 4, 2);
-        }
-
-        Ok(())
-    }
-
-    fn setup_debug_rendering(&mut self) -> Result<(), String> {
-        // Create and set up debug shader
-        let mut debug_shader = ShaderProgram::new_debug()?;
-        
-        debug_shader.bind();
-        debug_shader.create_uniform("model")?;
-        debug_shader.create_uniform("view")?;
-        debug_shader.create_uniform("projection")?;
-        debug_shader.create_uniform("color")?;
-
-        // Create VAO for debug grid
-        let vao = Vao::new()?;
-        vao.bind();
-
-        // Generate grid vertices
-        let mut vertices = Vec::new();
-        let grid_size = 1.0;
-        let grid_count = 10;
-        let grid_extent = grid_size * grid_count as f32;
-
-        // Add grid lines
-        for i in -grid_count..=grid_count {
-            let pos = i as f32 * grid_size;
-            vertices.extend_from_slice(&[
-                -grid_extent, 0.0, pos,
-                grid_extent, 0.0, pos,
-                pos, 0.0, -grid_extent,
-                pos, 0.0, grid_extent,
-            ]);
-        }
-
-        let axis_length = grid_extent * 1.5;
-        vertices.extend_from_slice(&[
-            0.0, 0.0, 0.0,
-            axis_length, 0.0, 0.0,
-            0.0, 0.0, 0.0,
-            0.0, axis_length, 0.0,
-            0.0, 0.0, 0.0,
-            0.0, 0.0, axis_length,
-        ]);
-
-        let vbo = BufferObject::new(gl::ARRAY_BUFFER)?;
-        vbo.bind();
-        vbo.store_data(&vertices, gl::STATIC_DRAW);
-
-        VertexAttribute::enable(0);
-        VertexAttribute::pointer(0, 3, gl::FLOAT, gl::FALSE, 3 * std::mem::size_of::<f32>() as GLsizei, 0);
-
-        self.debug_shader = Some(debug_shader);
-        self.debug_vao = Some(vao);
-
         Ok(())
     }
 
@@ -670,25 +546,6 @@ impl Renderer3D {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
-        // First render debug grid if enabled
-        if self.debug_mode {
-            unsafe {
-                // Save current OpenGL state
-                let mut line_width = 0.0f32;
-                gl::GetFloatv(gl::LINE_WIDTH, &mut line_width);
-
-                // Render debug grid
-                if let Err(e) = self.render_debug() {
-                    eprintln!("Failed to render debug grid: {}", e);
-                }
-
-                // Restore OpenGL state
-                gl::LineWidth(line_width);
-                gl::Enable(gl::DEPTH_TEST);
-            }
-        }
-
-        // Then render the regular objects
         self.shader_program.bind();
 
         // Create view matrix
@@ -733,6 +590,13 @@ impl Renderer3D {
 
         Ok(())
     }
+
+    pub fn terminate(&self) {
+        self.shader_program.terminate();
+        for object in self.objects.values() {
+            object.vao.terminate();
+        }
+    }
 }
 
 impl Renderer for Renderer3D {
@@ -761,24 +625,9 @@ impl Renderer for Renderer3D {
         for object in self.objects.values() {
             object.vao.terminate();
         }
-        if let Some(debug_shader) = &self.debug_shader {
-            debug_shader.terminate();
-        }
-        if let Some(debug_vao) = &self.debug_vao {
-            debug_vao.terminate();
-        }
     }
 
     fn set_debug_mode(&mut self, enabled: bool) {
-        // Directly set the debug mode flag first
         self.debug_mode = enabled;
-
-        // Then try to setup debug rendering if needed
-        if enabled && self.debug_shader.is_none() {
-            if let Err(e) = self.setup_debug_rendering() {
-                eprintln!("Failed to setup debug rendering: {}", e);
-                // Even if setup fails, keep debug_mode true as it may succeed next frame
-            }
-        }
     }
 }
