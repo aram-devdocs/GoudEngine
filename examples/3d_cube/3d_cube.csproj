@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GoudEngine" Version="0.0.741" />
+    <PackageReference Include="GoudEngine" Version="0.0.746" />
   </ItemGroup>
 
   <ItemGroup>

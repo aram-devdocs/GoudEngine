@@ -45,9 +45,13 @@ class Program
         {
             Console.WriteLine("Game initialized");
 
+            // Enable debug mode first, before creating any objects
             game.SetDebugMode(true);
 
-            // Initial camera position
+            // Set initial camera position for better grid visibility
+            cameraX = 0.0f;
+            cameraY = 10.0f;
+            cameraZ = -15.0f;
             game.SetCameraPosition(cameraX, cameraY);
             game.SetCameraZoom(cameraZ);
 
@@ -246,12 +250,12 @@ class Program
                 cameraY -= cameraMoveSpeed;
                 game.SetCameraPosition(cameraX, cameraY);
             }
-            if (game.IsKeyPressed(65)) // A key
+            if (game.IsKeyPressed(68)) // D key
             {
                 cameraX -= cameraMoveSpeed;
                 game.SetCameraPosition(cameraX, cameraY);
             }
-            if (game.IsKeyPressed(68)) // D key
+            if (game.IsKeyPressed(65)) // A key
             {
                 cameraX += cameraMoveSpeed;
                 game.SetCameraPosition(cameraX, cameraY);
