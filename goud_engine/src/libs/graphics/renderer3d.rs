@@ -202,7 +202,7 @@ impl Renderer3D {
             // Back face
             -w, -h, -d, 0.0, 0.0, -1.0, 0.0, 0.0, w, -h, -d, 0.0, 0.0, -1.0, 1.0, 0.0, w, h, -d,
             0.0, 0.0, -1.0, 1.0, 1.0, w, h, -d, 0.0, 0.0, -1.0, 1.0, 1.0, -w, h, -d, 0.0, 0.0,
-            -1.0, 0.0, 0.0, -w, -h, -d, 0.0, 0.0, -1.0, 0.0, 0.0, // Left face
+            -1.0, 0.0, 1.0, -w, -h, -d, 0.0, 0.0, -1.0, 0.0, 0.0, // Left face
             -w, h, d, -1.0, 0.0, 0.0, 1.0, 0.0, -w, h, -d, -1.0, 0.0, 0.0, 1.0, 1.0, -w, -h, -d,
             -1.0, 0.0, 0.0, 0.0, 1.0, -w, -h, -d, -1.0, 0.0, 0.0, 0.0, 1.0, -w, -h, d, -1.0, 0.0,
             0.0, 0.0, 0.0, -w, h, d, -1.0, 0.0, 0.0, 1.0, 0.0, // Right face
@@ -561,31 +561,20 @@ impl Renderer3D {
         debug_vao.bind();
 
         unsafe {
-            // Save current state
-            let mut line_width = 0.0f32;
-            gl::GetFloatv(gl::LINE_WIDTH, &mut line_width);
-            
-            // Setup grid rendering state
+            gl::Disable(gl::DEPTH_TEST);  // Draw grid on top
             gl::Enable(gl::BLEND);
             gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
-            gl::Enable(gl::DEPTH_TEST);
-            gl::DepthFunc(gl::LEQUAL);
-            gl::LineWidth(1.0);  // Thinner lines for grid
+            gl::LineWidth(2.0);
         }
 
-        // Create view matrix with adjusted camera position
-        let camera_pos = Point3::new(
-            self.camera_position.x,
-            self.camera_position.y,
-            self.camera_position.z + self.camera_zoom,
-        );
+        // Use the same view matrix as the main scene for consistency
         let view = Matrix4::look_at_rh(
-            camera_pos,
             Point3::new(
                 self.camera_position.x,
-                0.0,
-                self.camera_position.z,
+                self.camera_position.y,
+                self.camera_zoom,
             ),
+            Point3::new(0.0, 0.0, 0.0),
             Vector3::new(0.0, 1.0, 0.0),
         );
 
@@ -597,30 +586,25 @@ impl Renderer3D {
         debug_shader.set_uniform_mat4("model", &Matrix4::one())?;
 
         unsafe {
-            // Draw main grid with subtle color
-            debug_shader.set_uniform_vec4("color", &Vector4::new(0.3, 0.3, 0.3, 0.5))?;
-            let num_grid_lines = (10 * 2 + 1) * 2;  // Main grid lines
+            // Draw grid lines with higher contrast
+            debug_shader.set_uniform_vec4("color", &Vector4::new(1.0, 1.0, 1.0, 0.3))?;  // White, semi-transparent
+            let num_grid_lines = (10 * 2 + 1) * 2; // Number of lines in X and Z directions
             gl::DrawArrays(gl::LINES, 0, num_grid_lines * 2);
 
             // Draw coordinate axes with thicker lines
-            gl::LineWidth(2.0);
+            gl::LineWidth(4.0);
 
             // X-axis (red)
-            debug_shader.set_uniform_vec4("color", &Vector4::new(0.8, 0.2, 0.2, 1.0))?;
+            debug_shader.set_uniform_vec4("color", &Vector4::new(1.0, 0.0, 0.0, 1.0))?;
             gl::DrawArrays(gl::LINES, num_grid_lines * 2, 2);
 
             // Y-axis (green)
-            debug_shader.set_uniform_vec4("color", &Vector4::new(0.2, 0.8, 0.2, 1.0))?;
+            debug_shader.set_uniform_vec4("color", &Vector4::new(0.0, 1.0, 0.0, 1.0))?;
             gl::DrawArrays(gl::LINES, num_grid_lines * 2 + 2, 2);
 
             // Z-axis (blue)
-            debug_shader.set_uniform_vec4("color", &Vector4::new(0.2, 0.2, 0.8, 1.0))?;
+            debug_shader.set_uniform_vec4("color", &Vector4::new(0.0, 0.0, 1.0, 1.0))?;
             gl::DrawArrays(gl::LINES, num_grid_lines * 2 + 4, 2);
-
-            // Restore state
-            gl::Enable(gl::DEPTH_TEST);
-            gl::DepthFunc(gl::LESS);
-            gl::LineWidth(1.0);
         }
 
         Ok(())
@@ -642,35 +626,27 @@ impl Renderer3D {
 
         // Generate grid vertices
         let mut vertices = Vec::new();
-        let grid_size = 1.0;  // Unity-like grid size
+        let grid_size = 1.0;
         let grid_count = 10;
         let grid_extent = grid_size * grid_count as f32;
 
-        // Add grid lines for XZ plane (floor)
+        // Add grid lines
         for i in -grid_count..=grid_count {
             let pos = i as f32 * grid_size;
-            // Lines along X axis
             vertices.extend_from_slice(&[
                 -grid_extent, 0.0, pos,
                 grid_extent, 0.0, pos,
-            ]);
-            // Lines along Z axis
-            vertices.extend_from_slice(&[
                 pos, 0.0, -grid_extent,
                 pos, 0.0, grid_extent,
             ]);
         }
 
-        // Add coordinate axes (slightly longer than grid)
-        let axis_length = grid_extent * 1.2;
+        let axis_length = grid_extent * 1.5;
         vertices.extend_from_slice(&[
-            // X axis (red)
             0.0, 0.0, 0.0,
             axis_length, 0.0, 0.0,
-            // Y axis (green)
             0.0, 0.0, 0.0,
             0.0, axis_length, 0.0,
-            // Z axis (blue)
             0.0, 0.0, 0.0,
             0.0, 0.0, axis_length,
         ]);
@@ -690,46 +666,46 @@ impl Renderer3D {
 
     fn render_objects(&mut self, texture_manager: &TextureManager) -> Result<(), String> {
         unsafe {
-            // Set clear color to a dark gray like Unity
-            gl::ClearColor(0.15, 0.15, 0.15, 1.0);
+            gl::Enable(gl::DEPTH_TEST);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
-        // First render the grid if debug mode is enabled
+        // First render debug grid if enabled
         if self.debug_mode {
-            if let Err(e) = self.render_debug() {
-                eprintln!("Failed to render debug grid: {}", e);
+            unsafe {
+                // Save current OpenGL state
+                let mut line_width = 0.0f32;
+                gl::GetFloatv(gl::LINE_WIDTH, &mut line_width);
+
+                // Render debug grid
+                if let Err(e) = self.render_debug() {
+                    eprintln!("Failed to render debug grid: {}", e);
+                }
+
+                // Restore OpenGL state
+                gl::LineWidth(line_width);
+                gl::Enable(gl::DEPTH_TEST);
             }
         }
 
-        // Then render the regular objects with proper depth testing
-        unsafe {
-            gl::Enable(gl::DEPTH_TEST);
-            gl::DepthFunc(gl::LEQUAL);
-        }
-
+        // Then render the regular objects
         self.shader_program.bind();
 
-        // Create view matrix with adjusted camera position
-        let camera_pos = Point3::new(
-            self.camera_position.x,
-            self.camera_position.y,
-            self.camera_position.z + self.camera_zoom, // Add zoom to Z position
-        );
+        // Create view matrix
         let view = Matrix4::look_at_rh(
-            camera_pos,
             Point3::new(
                 self.camera_position.x,
-                0.0, // Look at Y=0 plane
-                self.camera_position.z,
+                self.camera_position.y,
+                self.camera_zoom,
             ),
+            Point3::new(0.0, 0.0, 0.0),
             Vector3::new(0.0, 1.0, 0.0),
         );
 
         // Set common uniforms
         self.shader_program.set_uniform_mat4("view", &view)?;
         self.shader_program
-            .set_uniform_vec3("viewPos", &Vector3::new(camera_pos.x, camera_pos.y, camera_pos.z))?;
+            .set_uniform_vec3("viewPos", &self.camera_position)?;
 
         // Update lights in shader
         self.update_shader_lights()?;
