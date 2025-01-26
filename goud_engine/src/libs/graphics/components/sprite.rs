@@ -8,6 +8,7 @@ use std::ffi::c_uint;
 
 impl Sprite {
     /// Creates a new Sprite.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         id: c_uint,
         x: f32,
@@ -27,11 +28,11 @@ impl Sprite {
             id,
             x,
             y,
-            z_layer: z_layer,
-            scale_x: scale_x,
-            scale_y: scale_y,
-            dimension_x: dimension_x,
-            dimension_y: dimension_y,
+            z_layer,
+            scale_x,
+            scale_y,
+            dimension_x,
+            dimension_y,
             rotation,
             texture_id,
             source_rect,
@@ -61,6 +62,7 @@ impl Sprite {
 
 impl SpriteCreateDto {
     /// Creates a new SpriteCreateDto.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         x: f32,
         y: f32,
@@ -94,6 +96,8 @@ impl SpriteCreateDto {
 
 impl SpriteUpdateDto {
     /// Creates a new SpriteUpdateDto.
+    #[allow(clippy::too_many_arguments)]
+    #[allow(dead_code)]
     pub fn new(
         id: c_uint,
         x: f32,

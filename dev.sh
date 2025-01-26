@@ -35,6 +35,12 @@ esac
 
 # Build the project if not skipped
 if [ "$SKIP_BUILD" = false ]; then
+    # Run cargo check first to catch compilation errors early
+    if ! cargo check; then
+        echo "Cargo check failed. Fixing errors before proceeding with full build."
+        exit 1
+    fi
+
     if [ "$LOCAL" = false ]; then
         sh package.sh --prod
     else
@@ -44,7 +50,9 @@ fi
 
 # cd into selected game directory and restore packages from the local feed
 cd examples/$GAME
-dotnet clean
-dotnet restore --source $HOME/nuget-local
-dotnet build
-dotnet run
+
+# Optimize dotnet commands
+dotnet clean --nologo
+dotnet restore --source $HOME/nuget-local --nologo
+dotnet build --no-restore --nologo
+dotnet run --no-build --nologo

@@ -1,4 +1,4 @@
-use cgmath::{perspective, Deg, Matrix4, One, Point3, Vector3, Vector4};
+use cgmath::{perspective, Deg, Matrix4, Point3, Vector3};
 use gl::types::*;
 use std::collections::HashMap;
 
@@ -11,6 +11,7 @@ use super::renderer::Renderer;
 use crate::types::{SpriteMap, TextureManager};
 
 #[repr(C)]
+#[allow(dead_code)]
 pub enum PrimitiveType {
     Cube = 0,
     Sphere = 1,

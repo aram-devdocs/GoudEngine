@@ -187,11 +187,8 @@ impl Window {
         for (_, event) in events {
             self.input_handler.handle_event(&event);
 
-            match event {
-                WindowEvent::Size(_width, _height) => {
-                    self.maintain_aspect_ratio(); // Maintain aspect ratio on resize
-                }
-                _ => {}
+            if let WindowEvent::Size(_width, _height) = event {
+                self.maintain_aspect_ratio(); // Maintain aspect ratio on resize
             }
         }
     }

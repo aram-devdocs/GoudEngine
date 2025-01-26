@@ -2,15 +2,15 @@ use std::{collections::BTreeMap, ffi::c_uint};
 
 use crate::types::{Sprite, SpriteCreateDto, SpriteUpdateDto};
 
-pub struct ECS {
+pub struct Ecs {
     pub sprites: BTreeMap<i32, Vec<Sprite>>,
     next_id: c_uint,        // Tracks the next unused ID
     free_list: Vec<c_uint>, // List of reusable indices
 }
 
-impl ECS {
+impl Ecs {
     pub fn new() -> Self {
-        ECS {
+        Ecs {
             sprites: BTreeMap::new(),
             next_id: 0,
             free_list: Vec::new(),
@@ -36,10 +36,7 @@ impl ECS {
                 sprite_input.debug,
                 sprite_input.frame,
             );
-            self.sprites
-                .entry(sprite.z_layer)
-                .or_insert_with(Vec::new)
-                .push(sprite);
+            self.sprites.entry(sprite.z_layer).or_default().push(sprite);
             id
         } else {
             // No reusable slots; push to the end
@@ -58,10 +55,7 @@ impl ECS {
                 sprite_input.debug,
                 sprite_input.frame,
             );
-            self.sprites
-                .entry(sprite.z_layer)
-                .or_insert_with(Vec::new)
-                .push(sprite);
+            self.sprites.entry(sprite.z_layer).or_default().push(sprite);
             self.next_id += 1;
             self.next_id - 1
         }

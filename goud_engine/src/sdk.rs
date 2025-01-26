@@ -1,6 +1,7 @@
 use crate::game::GameSdk;
-use crate::libs::graphics::renderer::{RendererKind, RendererType};
-use crate::libs::graphics::renderer3d::{PrimitiveCreateInfo, PrimitiveType};
+use crate::libs::graphics::components::light::{Light, LightType};
+use crate::libs::graphics::renderer::RendererKind;
+use crate::libs::graphics::renderer3d::PrimitiveCreateInfo;
 use crate::libs::platform::window::WindowBuilder;
 use crate::types::{MousePosition, Rectangle};
 use crate::types::{SpriteCreateDto, SpriteUpdateDto, UpdateResponseData};
@@ -8,7 +9,6 @@ use cgmath::Vector3;
 use glfw::Key;
 use std::ffi::{c_uint, CStr, CString};
 use std::os::raw::{c_char, c_int};
-use crate::libs::graphics::components::light::{Light, LightType};
 
 /// Initializes a new game instance with the specified window settings and returns a raw pointer to the `GameSdk`.
 ///
@@ -127,8 +127,7 @@ pub extern "C" fn game_add_sprite(game: *mut GameSdk, data: SpriteCreateDto) -> 
         data.frame,
     );
 
-    let id = game.ecs.add_sprite(sprite);
-    id
+    game.ecs.add_sprite(sprite)
 }
 
 /// Loads a texture into the game and returns its ID.
@@ -188,11 +187,7 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, data: SpriteUpdateDto) 
             height: 1.0,
         },
         #[allow(unused_comparisons)]
-        if data.texture_id < 0 {
-            sprite_ref.texture_id
-        } else {
-            data.texture_id
-        },
+        data.texture_id,
         data.debug,
         data.frame,
     );

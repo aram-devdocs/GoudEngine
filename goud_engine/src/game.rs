@@ -1,6 +1,8 @@
-use crate::libs::ecs::ECS;
+use crate::libs::ecs::Ecs;
 use crate::libs::graphics::clear;
-use crate::libs::graphics::{renderer::RendererType, renderer2d::Renderer2D, renderer3d::Renderer3D};
+use crate::libs::graphics::{
+    renderer::RendererType, renderer2d::Renderer2D, renderer3d::Renderer3D,
+};
 
 use crate::libs::logger;
 use crate::types::Rectangle;
@@ -16,7 +18,7 @@ pub struct GameSdk {
     pub window: Window,
     pub renderer: Option<RendererType>,
     pub elapsed_time: f32,
-    pub ecs: ECS,
+    pub ecs: Ecs,
     pub texture_manager: TextureManager,
     pub tiled_manager: TiledManager,
     pub tiled_map_sprite_ids: Option<Vec<u32>>,
@@ -34,7 +36,7 @@ impl GameSdk {
             window,
             renderer: None,
             elapsed_time: 0.0,
-            ecs: ECS::new(),
+            ecs: Ecs::new(),
             texture_manager: TextureManager::new(),
             tiled_manager: TiledManager::new(),
             tiled_map_sprite_ids: None,
@@ -51,7 +53,7 @@ impl GameSdk {
         self.window.init_gl();
         let window_width = self.window.width;
         let window_height = self.window.height;
-        
+
         // Initialize renderer based on type
         self.renderer = match self.renderer_type {
             0 => Some(RendererType::new_2d(
@@ -176,9 +178,9 @@ impl GameSdk {
                                 debug: false,
                                 frame: Rectangle {
                                     x: tileset.tile_width as f32
-                                        * (tile_id % tileset.columns as u32) as f32,
+                                        * (tile_id % tileset.columns) as f32,
                                     y: tileset.tile_height as f32
-                                        * (tile_id / tileset.columns as u32) as f32,
+                                        * (tile_id / tileset.columns) as f32,
                                     width: tileset.tile_width as f32,
                                     height: tileset.tile_height as f32,
                                 },
