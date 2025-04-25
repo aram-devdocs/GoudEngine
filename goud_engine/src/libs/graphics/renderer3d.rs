@@ -439,6 +439,55 @@ impl Renderer3D {
         vertices
     }
 
+    fn generate_grid_vertices(&self, size: f32, divisions: u32) -> Vec<f32> {
+        let mut vertices = Vec::new();
+        let step = size / divisions as f32;
+        let half_size = size * 0.5;
+
+        // Grid lines along X axis
+        for i in 0..=divisions {
+            let pos = -half_size + i as f32 * step;
+
+            // Line along X axis (varying Z)
+            vertices.extend_from_slice(&[
+                -half_size, 0.0, pos, 0.0, 1.0, 0.0, 0.0, 0.0, // Start point
+                half_size, 0.0, pos, 0.0, 1.0, 0.0, 0.0, 0.0, // End point
+            ]);
+
+            // Line along Z axis (varying X)
+            vertices.extend_from_slice(&[
+                pos, 0.0, -half_size, 0.0, 1.0, 0.0, 0.0, 0.0, // Start point
+                pos, 0.0, half_size, 0.0, 1.0, 0.0, 0.0, 0.0, // End point
+            ]);
+        }
+
+        vertices
+    }
+
+    fn generate_axis_vertices(&self, size: f32) -> Vec<f32> {
+        let mut vertices = Vec::new();
+
+        // X axis (red)
+        vertices.extend_from_slice(&[
+            0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, // Origin
+            size, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, // X direction
+        ]);
+
+        // Y axis (green)
+        vertices.extend_from_slice(&[
+            0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, // Origin
+            0.0, size, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, // Y direction
+        ]);
+
+        // Z axis (blue)
+        vertices.extend_from_slice(&[
+            0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, // Origin
+            0.0, 0.0, size, 0.0, 0.0, 1.0, 0.0, 0.0, // Z direction
+        ]);
+
+        vertices
+    }
+
     pub fn set_object_position(
         &mut self,
         object_id: u32,
@@ -538,6 +587,7 @@ impl Renderer3D {
 
     pub fn set_debug_mode(&mut self, enabled: bool) -> Result<(), String> {
         self.debug_mode = enabled;
+        println!("Debug mode set to: {}", self.debug_mode);
         Ok(())
     }
 
@@ -587,6 +637,135 @@ impl Renderer3D {
             unsafe {
                 gl::DrawArrays(gl::TRIANGLES, 0, object.vertex_count);
             }
+        }
+
+        // Render debug visuals if debug mode is enabled
+        if self.debug_mode {
+            self.render_debug_visuals()?;
+        }
+
+        Ok(())
+    }
+
+    fn render_debug_visuals(&self) -> Result<(), String> {
+        // Save current GL state
+        unsafe {
+            // Enable line drawing
+            gl::LineWidth(1.0);
+
+            // Disable depth test for debug grid so it's always visible
+            gl::Disable(gl::DEPTH_TEST);
+
+            // Create and bind temporary VAO for debug grid
+            let grid_vao = Vao::new()?;
+            grid_vao.bind();
+
+            // Generate grid vertices
+            let grid_vertices = self.generate_grid_vertices(10.0, 10);
+            let grid_vbo = BufferObject::new(gl::ARRAY_BUFFER)?;
+            grid_vbo.bind();
+            grid_vbo.store_data(&grid_vertices, gl::STATIC_DRAW);
+
+            // Define vertex attributes for position and color
+            VertexAttribute::enable(0);
+            VertexAttribute::pointer(
+                0,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                8 * std::mem::size_of::<f32>() as GLsizei,
+                0,
+            );
+
+            VertexAttribute::enable(1);
+            VertexAttribute::pointer(
+                1,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                8 * std::mem::size_of::<f32>() as GLsizei,
+                3 * std::mem::size_of::<f32>(),
+            );
+
+            VertexAttribute::enable(2);
+            VertexAttribute::pointer(
+                2,
+                2,
+                gl::FLOAT,
+                gl::FALSE,
+                8 * std::mem::size_of::<f32>() as GLsizei,
+                6 * std::mem::size_of::<f32>(),
+            );
+
+            // Draw grid lines
+            let model = Matrix4::<f32>::from_scale(1.0);
+            self.shader_program.set_uniform_mat4("model", &model)?;
+
+            // Draw grid lines
+            gl::DrawArrays(gl::LINES, 0, grid_vertices.len() as GLint / 8);
+
+            // Clean up grid resources
+            BufferObject::unbind(gl::ARRAY_BUFFER);
+            Vao::unbind();
+
+            // Now draw the axes (with depth test enabled)
+            gl::Enable(gl::DEPTH_TEST);
+            gl::LineWidth(3.0); // Make axes thicker for better visibility
+
+            // Create and bind temporary VAO for axes
+            let axes_vao = Vao::new()?;
+            axes_vao.bind();
+
+            // Generate axis vertices
+            let axes_vertices = self.generate_axis_vertices(2.0);
+            let axes_vbo = BufferObject::new(gl::ARRAY_BUFFER)?;
+            axes_vbo.bind();
+            axes_vbo.store_data(&axes_vertices, gl::STATIC_DRAW);
+
+            // Define vertex attributes for position and color
+            VertexAttribute::enable(0);
+            VertexAttribute::pointer(
+                0,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                8 * std::mem::size_of::<f32>() as GLsizei,
+                0,
+            );
+
+            VertexAttribute::enable(1);
+            VertexAttribute::pointer(
+                1,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                8 * std::mem::size_of::<f32>() as GLsizei,
+                3 * std::mem::size_of::<f32>(),
+            );
+
+            VertexAttribute::enable(2);
+            VertexAttribute::pointer(
+                2,
+                2,
+                gl::FLOAT,
+                gl::FALSE,
+                8 * std::mem::size_of::<f32>() as GLsizei,
+                6 * std::mem::size_of::<f32>(),
+            );
+
+            // Draw axis lines
+            gl::DrawArrays(gl::LINES, 0, axes_vertices.len() as GLint / 8);
+
+            // Clean up axis resources
+            BufferObject::unbind(gl::ARRAY_BUFFER);
+            Vao::unbind();
+
+            // Reset line width to default
+            gl::LineWidth(1.0);
+
+            // Clean up VAOs to avoid resource leaks
+            grid_vao.terminate();
+            axes_vao.terminate();
         }
 
         Ok(())
