@@ -800,6 +800,7 @@ pub extern "C" fn game_configure_grid(
     show_xz_plane: bool,
     show_xy_plane: bool,
     show_yz_plane: bool,
+    render_mode: c_int,
 ) -> bool {
     use crate::types::GridRenderMode;
     let game = unsafe { &mut *game };
@@ -821,7 +822,10 @@ pub extern "C" fn game_configure_grid(
         show_xz_plane,
         show_xy_plane,
         show_yz_plane,
-        render_mode: GridRenderMode::Overlap, // Default to overlap mode
+        render_mode: match render_mode {
+            0 => GridRenderMode::Blend,
+            _ => GridRenderMode::Overlap,
+        },
     };
 
     if let Some(renderer) = &mut game.renderer {

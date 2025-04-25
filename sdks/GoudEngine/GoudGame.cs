@@ -24,6 +24,12 @@ public enum LightType
     Spot = 2
 }
 
+public enum GridRenderMode
+{
+    Blend = 0,
+    Overlap = 1
+}
+
 public unsafe class GoudGame
 {
     private GameSdk* gameInstance;
@@ -601,7 +607,8 @@ public unsafe class GoudGame
         bool showAxes = true,
         bool showXZPlane = true,
         bool showXYPlane = true,
-        bool showYZPlane = true
+        bool showYZPlane = true,
+        GridRenderMode renderMode = GridRenderMode.Overlap
     )
     {
         unsafe
@@ -634,7 +641,8 @@ public unsafe class GoudGame
                 showAxes,
                 showXZPlane,
                 showXYPlane,
-                showYZPlane
+                showYZPlane,
+                (int)renderMode
             );
         }
     }

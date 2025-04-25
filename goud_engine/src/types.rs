@@ -10,7 +10,7 @@ use tiled::{Loader, Map};
 pub enum GridRenderMode {
     /// Grid blends with scene objects (drawn with proper depth testing)
     Blend,
-    /// Grid is drawn on top of everything (default behavior)
+    /// Grid is drawn on top of scene objects (drawn without depth testing)
     Overlap,
 }
 
