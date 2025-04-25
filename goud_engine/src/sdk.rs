@@ -1053,7 +1053,7 @@ pub extern "C" fn game_set_skybox_colors(
                             Vector3::new(front_face_r, front_face_g, front_face_b),    // Front face
                             Vector3::new(back_face_r, back_face_g, back_face_b),       // Back face
                         ];
-                        return skybox.configure(config).is_ok(); // Call configure to regenerate texture
+                        return skybox.configure(config).is_ok();
                     }
                 }
             }

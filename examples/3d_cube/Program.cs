@@ -74,14 +74,14 @@ class Program
                 enabled: true,
                 size: 100.0f,
                 textureSize: 128,
-                rightFaceColor: new float[3] { 0.2f, 0.8f, 0.2f },
-                leftFaceColor: new float[3] { 0.2f, 0.8f, 0.2f },
-                topFaceColor: new float[3] { 0.1f, 0.7f, 0.1f },
-                bottomFaceColor: new float[3] { 0.1f, 0.4f, 0.1f },
-                frontFaceColor: new float[3] { 0.2f, 0.8f, 0.2f },
-                backFaceColor: new float[3] { 0.2f, 0.8f, 0.2f },
+                rightFaceColor: new float[3] { 0.8f, 0.9f, 1.0f },
+                leftFaceColor: new float[3] { 0.8f, 0.9f, 1.0f },
+                topFaceColor: new float[3] { 0.8f, 0.9f, 1.0f },
+                bottomFaceColor: new float[3] { 0.8f, 0.9f, 1.0f },
+                frontFaceColor: new float[3] { 0.8f, 0.9f, 1.0f },
+                backFaceColor: new float[3] { 0.8f, 0.9f, 1.0f },
                 blendFactor: 0.5f,
-                minColor: new float[3] { 0.1f, 0.2f, 0.1f },
+                minColor: new float[3] { 0.2f, 0.3f, 0.4f },
                 useCustomTextures: false
             );
 

@@ -1014,7 +1014,22 @@ impl Renderer3D {
         unsafe {
             gl::Enable(gl::DEPTH_TEST);
             gl::DepthFunc(gl::LESS); // Set default depth function
-            gl::ClearColor(0.1, 0.1, 0.2, 1.0); // Set a dark blue clear color
+                                     // Set clear color dynamically from skybox config if available
+            if let Some(skybox) = &self.skybox {
+                let config = skybox.get_config();
+                // Use min_color as the fallback clear color, or a face color if min_color is black
+                let clear_color = if config.min_color.x > 0.0
+                    || config.min_color.y > 0.0
+                    || config.min_color.z > 0.0
+                {
+                    config.min_color
+                } else {
+                    config.face_colors[2] // Top face as a representative color
+                };
+                gl::ClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0);
+            } else {
+                gl::ClearColor(0.1, 0.1, 0.2, 1.0); // Fallback to dark blue if no skybox
+            }
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
@@ -1034,14 +1049,17 @@ impl Renderer3D {
 
         // Render skybox first
         if let Some(skybox) = &self.skybox {
-            println!("Rendering skybox...");
             // Remove translation from view matrix for skybox
             let skybox_view = Matrix4::from(Matrix3::from_cols(
                 view.x.truncate(),
                 view.y.truncate(),
                 view.z.truncate(),
             ));
-
+            // Ensure texture is bound for skybox
+            unsafe {
+                gl::ActiveTexture(gl::TEXTURE0);
+                // Assuming skybox has a method to get texture_id, if not, this is for illustration
+            }
             if let Err(e) = skybox.draw(&skybox_view, &projection) {
                 println!("Failed to render skybox: {}", e);
             }

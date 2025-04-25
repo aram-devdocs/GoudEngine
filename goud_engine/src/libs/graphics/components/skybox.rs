@@ -281,6 +281,10 @@ impl Skybox {
     }
 
     pub fn configure(&mut self, config: SkyboxConfig) -> Result<(), String> {
+        println!(
+            "Configuring skybox with new settings: enabled={:?}, face_colors[0]={:?}",
+            config.enabled, config.face_colors[0]
+        );
         self.config = config;
         // Regenerate the skybox textures with new configuration
         unsafe {
@@ -349,6 +353,7 @@ impl Skybox {
         projection: &cgmath::Matrix4<f32>,
     ) -> Result<(), String> {
         if !self.config.enabled {
+            println!("Skybox rendering skipped: disabled");
             return Ok(());
         }
 
