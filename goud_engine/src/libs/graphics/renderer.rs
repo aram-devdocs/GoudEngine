@@ -133,6 +133,4 @@ pub trait Renderer {
 
     /// Terminates the renderer.
     fn terminate(&self);
-
-    fn set_debug_mode(&mut self, enabled: bool);
 }

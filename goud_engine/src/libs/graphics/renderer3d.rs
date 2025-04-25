@@ -8,7 +8,7 @@ use super::components::shader::ShaderProgram;
 use super::components::vao::Vao;
 use super::components::vertex_attribute::VertexAttribute;
 use super::renderer::Renderer;
-use crate::types::{GridConfig, SpriteMap, TextureManager};
+use crate::types::{GridConfig, GridRenderMode, SpriteMap, TextureManager};
 
 #[repr(C)]
 #[allow(dead_code)]
@@ -162,6 +162,15 @@ impl Renderer3D {
 
         if config.show_yz_plane != self.grid_config.show_yz_plane {
             self.grid_config.show_yz_plane = config.show_yz_plane;
+        }
+
+        // Update render mode if different
+        if config.render_mode != self.grid_config.render_mode {
+            println!(
+                "Changing grid render mode from {:?} to {:?}",
+                self.grid_config.render_mode, config.render_mode
+            );
+            self.grid_config.render_mode = config.render_mode;
         }
     }
 
@@ -985,7 +994,7 @@ impl Renderer3D {
         Ok(())
     }
 
-    fn render_objects(&mut self, texture_manager: &TextureManager) -> Result<(), String> {
+    pub fn render_objects(&mut self, texture_manager: &TextureManager) -> Result<(), String> {
         unsafe {
             gl::Enable(gl::DEPTH_TEST);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
@@ -1012,6 +1021,12 @@ impl Renderer3D {
         // Update lights in shader
         self.update_shader_lights()?;
 
+        // Render grid first if enabled and in Blend mode
+        if self.grid_config.enabled && self.grid_config.render_mode == GridRenderMode::Blend {
+            println!("Rendering grid in Blend mode (before objects)");
+            self.render_grid()?;
+        }
+
         // Render each object
         for object in self.objects.values() {
             object.vao.bind();
@@ -1033,8 +1048,9 @@ impl Renderer3D {
             }
         }
 
-        // Render grid if enabled in grid config
-        if self.grid_config.enabled {
+        // Render grid last if enabled and in Overlap mode (current behavior)
+        if self.grid_config.enabled && self.grid_config.render_mode == GridRenderMode::Overlap {
+            println!("Rendering grid in Overlap mode (after objects)");
             self.render_grid()?;
         }
 
@@ -1042,12 +1058,21 @@ impl Renderer3D {
     }
 
     fn render_grid(&self) -> Result<(), String> {
+        println!("Grid render mode: {:?}", self.grid_config.render_mode);
         unsafe {
-            // Enable line drawing with configured width
+            // Set line width for grid
             gl::LineWidth(self.grid_config.line_width);
 
-            // Disable depth test for grid so it's always visible
-            gl::Disable(gl::DEPTH_TEST);
+            // Handle depth testing based on render mode
+            if self.grid_config.render_mode == GridRenderMode::Overlap {
+                // Disable depth test for grid so it's always visible (original behavior)
+                println!("Disabling depth test for Overlap mode");
+                gl::Disable(gl::DEPTH_TEST);
+            } else {
+                // For Blend mode, ensure depth test is enabled
+                println!("Enabling depth test for Blend mode");
+                gl::Enable(gl::DEPTH_TEST);
+            }
 
             // Create and bind temporary VAO for grid
             let grid_vao = Vao::new()?;
@@ -1103,8 +1128,12 @@ impl Renderer3D {
 
             // Only render axes if they are enabled
             if self.grid_config.show_axes {
-                // Now draw the axes (with depth test enabled but drawn on top)
-                gl::Enable(gl::DEPTH_TEST);
+                // Set proper depth test handling for axes based on render mode
+                if self.grid_config.render_mode == GridRenderMode::Blend {
+                    // For Blend mode, ensure depth test is enabled
+                    gl::Enable(gl::DEPTH_TEST);
+                }
+
                 gl::LineWidth(self.grid_config.axis_line_width); // Make axes significantly thicker
 
                 // Create and bind temporary VAO for axes
@@ -1165,6 +1194,9 @@ impl Renderer3D {
             // Reset line width to default
             gl::LineWidth(1.0);
 
+            // Re-enable depth testing if it was disabled
+            gl::Enable(gl::DEPTH_TEST);
+
             // Clean up grid VAO to avoid resource leaks
             grid_vao.terminate();
         }
@@ -1206,9 +1238,5 @@ impl Renderer for Renderer3D {
         for object in self.objects.values() {
             object.vao.terminate();
         }
-    }
-
-    fn set_debug_mode(&mut self, _enabled: bool) {
-        // This method is now deprecated and does nothing
     }
 }

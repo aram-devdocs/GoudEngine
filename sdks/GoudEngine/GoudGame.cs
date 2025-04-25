@@ -651,7 +651,21 @@ public unsafe class GoudGame
     }
 
     /// <summary>
-    /// Simple helper to show/hide grid planes
+    /// Set the grid render mode (blend or overlap)
+    /// </summary>
+    /// <param name="blendMode">True for Blend mode (grid rendered with proper depth testing),
+    /// False for Overlap mode (grid always on top)</param>
+    /// <returns>True if successful</returns>
+    public bool SetGridRenderMode(bool blendMode)
+    {
+        unsafe
+        {
+            return NativeMethods.game_set_grid_render_mode(gameInstance, blendMode);
+        }
+    }
+
+    /// <summary>
+    /// Simple helper to show/hide specific grid planes
     /// </summary>
     public bool SetGridPlanes(bool showXZ, bool showXY, bool showYZ)
     {

@@ -22,7 +22,6 @@ pub struct Renderer2D {
     window_height: u32,
     camera_position: Vector3<f32>,
     camera_zoom: f32,
-    debug_mode: bool,
 }
 
 impl Renderer2D {
@@ -98,7 +97,6 @@ impl Renderer2D {
             window_height,
             camera_position: Vector3::new(0.0, 0.0, 0.0),
             camera_zoom: 1.0,
-            debug_mode: false,
         })
     }
 
@@ -239,10 +237,6 @@ impl Renderer for Renderer2D {
 
     fn set_camera_zoom(&mut self, zoom: f32) {
         self.set_camera_zoom(zoom);
-    }
-
-    fn set_debug_mode(&mut self, enabled: bool) {
-        self.debug_mode = enabled;
     }
 
     fn terminate(&self) {

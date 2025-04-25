@@ -1,6 +1,6 @@
 [package]
 name = "goud_engine"
-version = "0.0.769"
+version = "0.0.772"
 edition = "2021"
 license = "MIT"
 

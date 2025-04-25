@@ -771,12 +771,6 @@ pub extern "C" fn game_update_light(
 }
 
 #[no_mangle]
-pub extern "C" fn game_set_debug_mode(game: *mut GameSdk, enabled: bool) {
-    let game = unsafe { &mut *game };
-    game.set_debug_mode(enabled);
-}
-
-#[no_mangle]
 pub extern "C" fn game_configure_grid(
     game: *mut GameSdk,
     enabled: bool,
@@ -807,6 +801,7 @@ pub extern "C" fn game_configure_grid(
     show_xy_plane: bool,
     show_yz_plane: bool,
 ) -> bool {
+    use crate::types::GridRenderMode;
     let game = unsafe { &mut *game };
 
     // Create a grid configuration
@@ -826,6 +821,7 @@ pub extern "C" fn game_configure_grid(
         show_xz_plane,
         show_xy_plane,
         show_yz_plane,
+        render_mode: GridRenderMode::Overlap, // Default to overlap mode
     };
 
     if let Some(renderer) = &mut game.renderer {
@@ -883,6 +879,37 @@ pub extern "C" fn game_set_grid_planes(
                     config.show_xz_plane = show_xz;
                     config.show_xy_plane = show_xy;
                     config.show_yz_plane = show_yz;
+                    renderer_3d.configure_grid(config);
+                    return true;
+                }
+            }
+        }
+    }
+
+    false
+}
+
+// Create function to set the grid render mode
+#[no_mangle]
+pub extern "C" fn game_set_grid_render_mode(
+    game: *mut GameSdk,
+    blend_mode: bool, // true for Blend mode, false for Overlap mode
+) -> bool {
+    use crate::types::GridRenderMode;
+
+    let game = unsafe { &mut *game };
+
+    if let Some(renderer) = &mut game.renderer {
+        if let RendererKind::Renderer3D = renderer.kind {
+            unsafe {
+                if let Some(renderer_3d) = renderer.renderer_3d.as_mut() {
+                    // Get current config and update the render mode
+                    let mut config = renderer_3d.get_grid_config();
+                    config.render_mode = if blend_mode {
+                        GridRenderMode::Blend
+                    } else {
+                        GridRenderMode::Overlap
+                    };
                     renderer_3d.configure_grid(config);
                     return true;
                 }

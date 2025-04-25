@@ -59,6 +59,7 @@ class Program
             // Configure the grid with custom settings
             Console.WriteLine("Configuring 3D grid...");
             game.ConfigureGrid(enabled: true);
+            game.SetGridRenderMode(true);
 
             // Set initial camera position for better grid visibility
             cameraX = 0.0f;

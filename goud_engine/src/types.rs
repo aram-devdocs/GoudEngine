@@ -4,6 +4,16 @@ use std::{ffi::c_uint, rc::Rc};
 
 use tiled::{Loader, Map};
 
+/// Grid rendering modes
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum GridRenderMode {
+    /// Grid blends with scene objects (drawn with proper depth testing)
+    Blend,
+    /// Grid is drawn on top of everything (default behavior)
+    Overlap,
+}
+
 /// Configuration for the debug grid
 #[repr(C)]
 #[derive(Debug, Clone)]
@@ -11,18 +21,19 @@ pub struct GridConfig {
     pub enabled: bool,
     pub size: f32,
     pub divisions: u32,
-    pub xz_color: Vector3<f32>,     // Floor grid color (XZ plane)
-    pub xy_color: Vector3<f32>,     // Vertical grid color (XY plane)
-    pub yz_color: Vector3<f32>,     // Vertical grid color (YZ plane)
-    pub x_axis_color: Vector3<f32>, // X axis color
-    pub y_axis_color: Vector3<f32>, // Y axis color
-    pub z_axis_color: Vector3<f32>, // Z axis color
-    pub line_width: f32,            // Width of grid lines
-    pub axis_line_width: f32,       // Width of axis lines
-    pub show_axes: bool,            // Whether to show coordinate axes
-    pub show_xz_plane: bool,        // Show floor (XZ) plane
-    pub show_xy_plane: bool,        // Show vertical (XY) plane
-    pub show_yz_plane: bool,        // Show vertical (YZ) plane
+    pub xz_color: Vector3<f32>,      // Floor grid color (XZ plane)
+    pub xy_color: Vector3<f32>,      // Vertical grid color (XY plane)
+    pub yz_color: Vector3<f32>,      // Vertical grid color (YZ plane)
+    pub x_axis_color: Vector3<f32>,  // X axis color
+    pub y_axis_color: Vector3<f32>,  // Y axis color
+    pub z_axis_color: Vector3<f32>,  // Z axis color
+    pub line_width: f32,             // Width of grid lines
+    pub axis_line_width: f32,        // Width of axis lines
+    pub show_axes: bool,             // Whether to show coordinate axes
+    pub show_xz_plane: bool,         // Show floor (XZ) plane
+    pub show_xy_plane: bool,         // Show vertical (XY) plane
+    pub show_yz_plane: bool,         // Show vertical (YZ) plane
+    pub render_mode: GridRenderMode, // How to render the grid
 }
 
 impl Default for GridConfig {
@@ -43,6 +54,7 @@ impl Default for GridConfig {
             show_xz_plane: true,
             show_xy_plane: true,
             show_yz_plane: true,
+            render_mode: GridRenderMode::Overlap, // Default to original behavior
         }
     }
 }
