@@ -4,6 +4,7 @@
 GAME="flappy_goud"
 LOCAL=false
 SKIP_BUILD=false
+NEXT=false
 
 # Parse command line arguments
 while [[ "$#" -gt 0 ]]; do
@@ -14,6 +15,7 @@ while [[ "$#" -gt 0 ]]; do
         ;;
     --local) LOCAL=true ;;
     --skipBuild) SKIP_BUILD=true ;;
+    --next) NEXT=true ;;
     *)
         echo "Unknown parameter: $1"
         exit 1
@@ -46,6 +48,14 @@ if [ "$SKIP_BUILD" = false ]; then
     else
         sh package.sh --local
     fi
+fi
+
+# If --next flag is set, run additional scripts
+if [ "$NEXT" = true ]; then
+    echo "Running next script..."
+    ./increment_version.sh
+    ./build.sh
+    ./package.sh --local
 fi
 
 # cd into selected game directory and restore packages from the local feed

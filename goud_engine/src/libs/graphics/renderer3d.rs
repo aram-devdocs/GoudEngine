@@ -444,47 +444,151 @@ impl Renderer3D {
         let step = size / divisions as f32;
         let half_size = size * 0.5;
 
-        // Grid lines along X axis
+        // Grid lines along X axis (horizontal floor grid)
         for i in 0..=divisions {
             let pos = -half_size + i as f32 * step;
-
+            
+            // Use a brighter white color for the grid
             // Line along X axis (varying Z)
             vertices.extend_from_slice(&[
-                -half_size, 0.0, pos, 0.0, 1.0, 0.0, 0.0, 0.0, // Start point
-                half_size, 0.0, pos, 0.0, 1.0, 0.0, 0.0, 0.0, // End point
+                -half_size, 0.0, pos, 0.7, 0.7, 0.7, 0.0, 0.0, // Start point - light gray
+                half_size, 0.0, pos, 0.7, 0.7, 0.7, 0.0, 0.0,  // End point - light gray
             ]);
-
+            
             // Line along Z axis (varying X)
             vertices.extend_from_slice(&[
-                pos, 0.0, -half_size, 0.0, 1.0, 0.0, 0.0, 0.0, // Start point
-                pos, 0.0, half_size, 0.0, 1.0, 0.0, 0.0, 0.0, // End point
+                pos, 0.0, -half_size, 0.7, 0.7, 0.7, 0.0, 0.0, // Start point - light gray
+                pos, 0.0, half_size, 0.7, 0.7, 0.7, 0.0, 0.0,  // End point - light gray
             ]);
         }
+        
+        // Calculate the number of Y divisions to maintain square proportions
+        let y_divisions = divisions; // Use same number of divisions as X and Z
+        let y_step = step; // Use same step size as X and Z
+        
+        // Add vertical grid lines along Y axis at X=0 (YZ plane)
+        for i in 0..=divisions {
+            let pos = -half_size + i as f32 * step;
+            
+            // Vertical lines along Y axis (varying Z at X=0)
+            vertices.extend_from_slice(&[
+                0.0, -half_size, pos, 0.6, 0.6, 0.8, 0.0, 0.0, // Start point - bluish tint
+                0.0, half_size, pos, 0.6, 0.6, 0.8, 0.0, 0.0,  // End point - bluish tint
+            ]);
+        }
+        
+        // Add horizontal cross lines on YZ plane (at X=0)
+        for i in 0..=y_divisions {
+            let yPos = -half_size + i as f32 * y_step; // Use y_step for consistent spacing
+            vertices.extend_from_slice(&[
+                0.0, yPos, -half_size, 0.6, 0.6, 0.8, 0.0, 0.0, // Start point - bluish tint
+                0.0, yPos, half_size, 0.6, 0.6, 0.8, 0.0, 0.0,  // End point - bluish tint
+            ]);
+        }
+        
+        // Add vertical grid lines along Y axis at Z=0 (XY plane)
+        for i in 0..=divisions {
+            let pos = -half_size + i as f32 * step;
+            
+            // Vertical lines along Y axis (varying X at Z=0)
+            vertices.extend_from_slice(&[
+                pos, -half_size, 0.0, 0.8, 0.6, 0.6, 0.0, 0.0, // Start point - reddish tint
+                pos, half_size, 0.0, 0.8, 0.6, 0.6, 0.0, 0.0,  // End point - reddish tint
+            ]);
+        }
+        
+        // Add horizontal cross lines on XY plane (at Z=0)
+        for i in 0..=y_divisions {
+            let yPos = -half_size + i as f32 * y_step; // Use y_step for consistent spacing
+            vertices.extend_from_slice(&[
+                -half_size, yPos, 0.0, 0.8, 0.6, 0.6, 0.0, 0.0, // Start point - reddish tint
+                half_size, yPos, 0.0, 0.8, 0.6, 0.6, 0.0, 0.0,  // End point - reddish tint
+            ]);
+        }
+        
+        // Highlight the central X and Z axes with distinct colors
+        // X axis highlight (red)
+        vertices.extend_from_slice(&[
+            -half_size, 0.001, 0.0, 0.9, 0.2, 0.2, 0.0, 0.0, // Start point - red
+            half_size, 0.001, 0.0, 0.9, 0.2, 0.2, 0.0, 0.0,  // End point - red
+        ]);
+        
+        // Z axis highlight (blue)
+        vertices.extend_from_slice(&[
+            0.0, 0.001, -half_size, 0.2, 0.2, 0.9, 0.0, 0.0, // Start point - blue
+            0.0, 0.001, half_size, 0.2, 0.2, 0.9, 0.0, 0.0,  // End point - blue
+        ]);
+        
+        // Y axis highlight (green)
+        vertices.extend_from_slice(&[
+            0.0, -half_size, 0.0, 0.2, 0.9, 0.2, 0.0, 0.0, // Start point - green
+            0.0, half_size, 0.0, 0.2, 0.9, 0.2, 0.0, 0.0,  // End point - green
+        ]);
 
         vertices
     }
 
     fn generate_axis_vertices(&self, size: f32) -> Vec<f32> {
         let mut vertices = Vec::new();
-
-        // X axis (red)
+        
+        // X axis (bright red)
         vertices.extend_from_slice(&[
             0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, // Origin
             size, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, // X direction
         ]);
-
-        // Y axis (green)
+        
+        // Y axis (bright green)
         vertices.extend_from_slice(&[
             0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, // Origin
             0.0, size, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, // Y direction
         ]);
-
-        // Z axis (blue)
+        
+        // Z axis (bright blue)
         vertices.extend_from_slice(&[
             0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, // Origin
             0.0, 0.0, size, 0.0, 0.0, 1.0, 0.0, 0.0, // Z direction
         ]);
-
+        
+        // Add arrow heads (simple cones as triangles)
+        // X-axis arrow head
+        vertices.extend_from_slice(&[
+            size, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+            size - 0.2, 0.1, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+            size - 0.2, -0.1, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+        ]);
+        
+        vertices.extend_from_slice(&[
+            size, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+            size - 0.2, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0, 0.0,
+            size - 0.2, 0.0, -0.1, 1.0, 0.0, 0.0, 0.0, 0.0,
+        ]);
+        
+        // Y-axis arrow head
+        vertices.extend_from_slice(&[
+            0.0, size, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+            0.1, size - 0.2, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+            -0.1, size - 0.2, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+        ]);
+        
+        vertices.extend_from_slice(&[
+            0.0, size, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+            0.0, size - 0.2, 0.1, 0.0, 1.0, 0.0, 0.0, 0.0,
+            0.0, size - 0.2, -0.1, 0.0, 1.0, 0.0, 0.0, 0.0,
+        ]);
+        
+        // Z-axis arrow head
+        vertices.extend_from_slice(&[
+            0.0, 0.0, size, 0.0, 0.0, 1.0, 0.0, 0.0,
+            0.1, 0.0, size - 0.2, 0.0, 0.0, 1.0, 0.0, 0.0,
+            -0.1, 0.0, size - 0.2, 0.0, 0.0, 1.0, 0.0, 0.0,
+        ]);
+        
+        vertices.extend_from_slice(&[
+            0.0, 0.0, size, 0.0, 0.0, 1.0, 0.0, 0.0,
+            0.0, 0.1, size - 0.2, 0.0, 0.0, 1.0, 0.0, 0.0,
+            0.0, -0.1, size - 0.2, 0.0, 0.0, 1.0, 0.0, 0.0,
+        ]);
+        
         vertices
     }
 
@@ -651,21 +755,21 @@ impl Renderer3D {
         // Save current GL state
         unsafe {
             // Enable line drawing
-            gl::LineWidth(1.0);
-
+            gl::LineWidth(1.5); // Slightly thicker grid lines for better visibility
+            
             // Disable depth test for debug grid so it's always visible
             gl::Disable(gl::DEPTH_TEST);
-
+            
             // Create and bind temporary VAO for debug grid
             let grid_vao = Vao::new()?;
             grid_vao.bind();
-
-            // Generate grid vertices
-            let grid_vertices = self.generate_grid_vertices(10.0, 10);
+            
+            // Generate grid vertices with increased size
+            let grid_vertices = self.generate_grid_vertices(20.0, 20); // Larger grid with more divisions
             let grid_vbo = BufferObject::new(gl::ARRAY_BUFFER)?;
             grid_vbo.bind();
             grid_vbo.store_data(&grid_vertices, gl::STATIC_DRAW);
-
+            
             // Define vertex attributes for position and color
             VertexAttribute::enable(0);
             VertexAttribute::pointer(
@@ -676,7 +780,7 @@ impl Renderer3D {
                 8 * std::mem::size_of::<f32>() as GLsizei,
                 0,
             );
-
+            
             VertexAttribute::enable(1);
             VertexAttribute::pointer(
                 1,
@@ -686,7 +790,7 @@ impl Renderer3D {
                 8 * std::mem::size_of::<f32>() as GLsizei,
                 3 * std::mem::size_of::<f32>(),
             );
-
+            
             VertexAttribute::enable(2);
             VertexAttribute::pointer(
                 2,
@@ -696,32 +800,31 @@ impl Renderer3D {
                 8 * std::mem::size_of::<f32>() as GLsizei,
                 6 * std::mem::size_of::<f32>(),
             );
-
+            
             // Draw grid lines
             let model = Matrix4::<f32>::from_scale(1.0);
             self.shader_program.set_uniform_mat4("model", &model)?;
-
-            // Draw grid lines
+            
             gl::DrawArrays(gl::LINES, 0, grid_vertices.len() as GLint / 8);
-
+            
             // Clean up grid resources
             BufferObject::unbind(gl::ARRAY_BUFFER);
             Vao::unbind();
-
-            // Now draw the axes (with depth test enabled)
+            
+            // Now draw the axes (with depth test enabled but drawn on top)
             gl::Enable(gl::DEPTH_TEST);
-            gl::LineWidth(3.0); // Make axes thicker for better visibility
-
+            gl::LineWidth(5.0); // Make axes significantly thicker for better visibility
+            
             // Create and bind temporary VAO for axes
             let axes_vao = Vao::new()?;
             axes_vao.bind();
-
-            // Generate axis vertices
-            let axes_vertices = self.generate_axis_vertices(2.0);
+            
+            // Generate axis vertices with larger size
+            let axes_vertices = self.generate_axis_vertices(4.0); // Longer axes
             let axes_vbo = BufferObject::new(gl::ARRAY_BUFFER)?;
             axes_vbo.bind();
             axes_vbo.store_data(&axes_vertices, gl::STATIC_DRAW);
-
+            
             // Define vertex attributes for position and color
             VertexAttribute::enable(0);
             VertexAttribute::pointer(
@@ -732,7 +835,7 @@ impl Renderer3D {
                 8 * std::mem::size_of::<f32>() as GLsizei,
                 0,
             );
-
+            
             VertexAttribute::enable(1);
             VertexAttribute::pointer(
                 1,
@@ -742,7 +845,7 @@ impl Renderer3D {
                 8 * std::mem::size_of::<f32>() as GLsizei,
                 3 * std::mem::size_of::<f32>(),
             );
-
+            
             VertexAttribute::enable(2);
             VertexAttribute::pointer(
                 2,
@@ -752,22 +855,25 @@ impl Renderer3D {
                 8 * std::mem::size_of::<f32>() as GLsizei,
                 6 * std::mem::size_of::<f32>(),
             );
-
+            
             // Draw axis lines
-            gl::DrawArrays(gl::LINES, 0, axes_vertices.len() as GLint / 8);
-
+            gl::DrawArrays(gl::LINES, 0, 6); // Draw just the main axis lines first
+            
+            // Draw arrow heads as triangles
+            gl::DrawArrays(gl::TRIANGLES, 6, axes_vertices.len() as GLint / 8 - 6);
+            
             // Clean up axis resources
             BufferObject::unbind(gl::ARRAY_BUFFER);
             Vao::unbind();
-
+            
             // Reset line width to default
             gl::LineWidth(1.0);
-
+            
             // Clean up VAOs to avoid resource leaks
             grid_vao.terminate();
             axes_vao.terminate();
         }
-
+        
         Ok(())
     }
 
