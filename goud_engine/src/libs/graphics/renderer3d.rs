@@ -1023,7 +1023,6 @@ impl Renderer3D {
 
         // Render grid first if enabled and in Blend mode
         if self.grid_config.enabled && self.grid_config.render_mode == GridRenderMode::Blend {
-            println!("Rendering grid in Blend mode (before objects)");
             self.render_grid()?;
         }
 
@@ -1058,7 +1057,6 @@ impl Renderer3D {
     }
 
     fn render_grid(&self) -> Result<(), String> {
-        println!("Grid render mode: {:?}", self.grid_config.render_mode);
         unsafe {
             // Set line width for grid
             gl::LineWidth(self.grid_config.line_width);
@@ -1066,11 +1064,9 @@ impl Renderer3D {
             // Handle depth testing based on render mode
             if self.grid_config.render_mode == GridRenderMode::Overlap {
                 // Disable depth test for grid so it's always visible (original behavior)
-                println!("Disabling depth test for Overlap mode");
                 gl::Disable(gl::DEPTH_TEST);
             } else {
                 // For Blend mode, ensure depth test is enabled
-                println!("Enabling depth test for Blend mode");
                 gl::Enable(gl::DEPTH_TEST);
             }
 
