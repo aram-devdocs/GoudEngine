@@ -57,6 +57,7 @@ impl ShaderProgram {
         program.set_uniform_int("skybox", 0)?;
         program.create_uniform("view")?;
         program.create_uniform("projection")?;
+        program.create_uniform("minColor")?;
         println!("Skybox shader setup complete");
 
         Ok(program)

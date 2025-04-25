@@ -53,8 +53,8 @@ pub struct Renderer3D {
     window_width: u32,
     window_height: u32,
     light_manager: LightManager,
-    grid_config: GridConfig, // Using the GridConfig from types.rs
-    skybox: Option<Skybox>,  // Add skybox field
+    grid_config: GridConfig,    // Using the GridConfig from types.rs
+    pub skybox: Option<Skybox>, // Make skybox field public
 }
 
 impl Renderer3D {
