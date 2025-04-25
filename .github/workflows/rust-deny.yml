@@ -10,11 +10,26 @@ jobs:
   cargo-deny:
     name: Dependency Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
-      
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Cache cargo-deny
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/bin/cargo-deny
+          key: ${{ runner.os }}-cargo-deny
+
       - name: Install cargo-deny
-        run: cargo install cargo-deny
+        uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          command: check
 
       - name: Run cargo deny checks
         run: cargo deny check 
