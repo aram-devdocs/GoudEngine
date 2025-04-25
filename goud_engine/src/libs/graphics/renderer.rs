@@ -102,23 +102,6 @@ impl RendererType {
             }
         }
     }
-
-    pub fn set_debug_mode(&mut self, enabled: bool) {
-        unsafe {
-            match self.kind {
-                RendererKind::Renderer2D => {
-                    if !self.renderer_2d.is_null() {
-                        (*self.renderer_2d).set_debug_mode(enabled);
-                    }
-                }
-                RendererKind::Renderer3D => {
-                    if !self.renderer_3d.is_null() {
-                        let _ = (*self.renderer_3d).set_debug_mode(enabled);
-                    }
-                }
-            }
-        }
-    }
 }
 
 impl Drop for RendererType {

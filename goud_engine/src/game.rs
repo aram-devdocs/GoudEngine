@@ -103,13 +103,6 @@ impl GameSdk {
         }
     }
 
-    pub fn set_debug_mode(&mut self, enabled: bool) {
-        self.debug_mode = enabled;
-        if let Some(renderer) = &mut self.renderer {
-            renderer.set_debug_mode(enabled);
-        }
-    }
-
     // TODO: this should be moved to libs/graphics/tiled
     /// Helper function to manage the tileset
     fn manage_tileset(&mut self) {

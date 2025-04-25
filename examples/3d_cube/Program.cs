@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using CsBindgen;
 using GoudEngine;
 
@@ -55,8 +56,9 @@ class Program
         {
             Console.WriteLine("Game initialized");
 
-            // Enable debug mode first, before creating any objects
-            game.SetDebugMode(true);
+            // Configure the grid with custom settings
+            Console.WriteLine("Configuring 3D grid...");
+            game.ConfigureGrid(enabled: true);
 
             // Set initial camera position for better grid visibility
             cameraX = 0.0f;
@@ -168,6 +170,27 @@ class Program
 
         game.Update(() =>
         {
+            // Toggle grid with G key
+            if (game.IsKeyPressed(71)) // G key
+            {
+                bool currentState = game.SetGridEnabled(true); // Get current state
+                game.SetGridEnabled(!currentState); // Toggle it
+                Console.WriteLine($"Grid {(!currentState ? "enabled" : "disabled")}");
+                Thread.Sleep(200); // Small delay to prevent multiple toggles
+            }
+
+            // Toggle different grid planes with number keys
+            if (game.IsKeyPressed(49)) // 1 key - Toggle XZ (floor) plane
+            {
+                game.SetGridPlanes(
+                    showXZ: true,
+                    showXY: game.IsKeyPressed(50), // 2 key
+                    showYZ: game.IsKeyPressed(51) // 3 key
+                );
+                Console.WriteLine("Grid planes updated");
+                Thread.Sleep(200);
+            }
+
             // Update light positions and colors
             lightAngle += lightOrbitSpeed * game.UpdateResponseData.delta_time;
 
