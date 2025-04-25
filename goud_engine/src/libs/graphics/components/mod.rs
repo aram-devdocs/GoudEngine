@@ -1,6 +1,7 @@
 pub mod buffer;
 pub mod light;
 pub mod shader;
+pub mod skybox;
 pub mod sprite;
 pub mod textures;
 pub mod tiled;
