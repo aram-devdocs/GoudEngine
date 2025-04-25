@@ -1,0 +1,20 @@
+name: Rust Deny Checks
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  cargo-deny:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install cargo-deny
+        run: cargo install cargo-deny
+
+      - name: Run cargo deny checks
+        run: cargo deny check 
