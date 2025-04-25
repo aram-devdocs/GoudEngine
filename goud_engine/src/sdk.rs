@@ -468,31 +468,6 @@ fn from_glfw_mouse_button(button: c_int) -> glfw::MouseButton {
     }
 }
 
-/// Sets the camera position.
-///
-/// # Arguments
-/// * `x` - The x-coordinate of the camera position.
-/// * `y` - The y-coordinate of the camera position.
-#[no_mangle]
-pub extern "C" fn game_set_camera_position(game: *mut GameSdk, x: f32, y: f32) {
-    let game = unsafe { &mut *game };
-    if let Some(renderer) = &mut game.renderer {
-        renderer.set_camera_position(x, y);
-    }
-}
-
-/// Sets the camera zoom level.
-///
-/// # Arguments
-/// * `zoom` - The zoom level of the camera.
-#[no_mangle]
-pub extern "C" fn game_set_camera_zoom(game: *mut GameSdk, zoom: f32) {
-    let game = unsafe { &mut *game };
-    if let Some(renderer) = &mut game.renderer {
-        renderer.set_camera_zoom(zoom);
-    }
-}
-
 // #[no_mangle]
 // pub extern "C" fn game_create_cube(game: *mut GameSdk, texture_id: c_uint) -> c_uint {
 //     let game = unsafe { &mut *game };

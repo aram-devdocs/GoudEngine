@@ -48,8 +48,6 @@ pub struct Renderer3D {
     shader_program: ShaderProgram,
     objects: HashMap<u32, Object3D>,
     next_object_id: u32,
-    camera_position: Vector3<f32>,
-    camera_zoom: f32,
     window_width: u32,
     window_height: u32,
     light_manager: LightManager,
@@ -106,8 +104,6 @@ impl Renderer3D {
             shader_program,
             objects: HashMap::new(),
             next_object_id: 1,
-            camera_position: Vector3::new(0.0, 0.0, 3.0),
-            camera_zoom: 1.0,
             window_width,
             window_height,
             light_manager: LightManager::new(),
@@ -1034,12 +1030,9 @@ impl Renderer3D {
         }
 
         // Create view and projection matrices
+        // TODO: Make camera position and zoom configurable
         let view = Matrix4::look_at_rh(
-            Point3::new(
-                self.camera_position.x,
-                self.camera_position.y,
-                self.camera_zoom,
-            ),
+            Point3::new(0.0, 0.0, 5.0),
             Point3::new(0.0, 0.0, 0.0),
             Vector3::new(0.0, 1.0, 0.0),
         );
@@ -1075,7 +1068,7 @@ impl Renderer3D {
         self.shader_program
             .set_uniform_mat4("projection", &projection)?;
         self.shader_program
-            .set_uniform_vec3("viewPos", &self.camera_position)?;
+            .set_uniform_vec3("viewPos", &Vector3::new(0.0, 0.0, 0.0))?; // TODO: Make camera position configurable
 
         // Update lights in shader
         self.update_shader_lights()?;
@@ -1283,15 +1276,6 @@ impl Renderer for Renderer3D {
         if let Err(e) = self.render_objects(texture_manager) {
             eprintln!("Error rendering objects: {}", e);
         }
-    }
-
-    fn set_camera_position(&mut self, x: f32, y: f32) {
-        self.camera_position.x = x;
-        self.camera_position.y = y;
-    }
-
-    fn set_camera_zoom(&mut self, zoom: f32) {
-        self.camera_zoom = zoom;
     }
 
     fn terminate(&self) {

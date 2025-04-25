@@ -473,8 +473,8 @@ public class GameManager
             cameraZoom -= 0.01f;
         }
 
-        game.SetCameraPosition(cameraX, cameraY);
-        game.SetCameraZoom(cameraZoom);
+        // game.SetCameraPosition(cameraX, cameraY);
+        // game.SetCameraZoom(cameraZoom);
     }
 
     private void ResetGame() { }

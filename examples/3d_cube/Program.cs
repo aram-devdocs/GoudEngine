@@ -12,13 +12,6 @@ class Program
 
         var game = new GoudGame(800, 600, "Basic 3D Example", RendererType.Renderer3D);
 
-        // Camera state
-        float cameraX = 0.0f;
-        float cameraY = 10.0f;
-        float cameraZ = -15.0f;
-        // float cameraRotationSpeed = 0.1f;
-        float cameraMoveSpeed = 0.5f;
-
         // Bounce animation state
         float bounceHeight = 0.5f;
         float bounceSpeed = 3.0f;
@@ -61,12 +54,6 @@ class Program
             game.ConfigureGrid(enabled: true, renderMode: GridRenderMode.Blend);
             // game.SetGridRenderMode(true);
 
-            // Set initial camera position for better grid visibility
-            cameraX = 0.0f;
-            cameraY = 10.0f;
-            cameraZ = -15.0f;
-            game.SetCameraPosition(cameraX, cameraY);
-            game.SetCameraZoom(cameraZ);
 
             // Configure the skybox with custom settings
             Console.WriteLine("Configuring skybox...");
@@ -289,40 +276,6 @@ class Program
             // Update rotation animation
             currentRotation += rotationSpeed * game.UpdateResponseData.delta_time;
             game.SetObjectRotation(playerId, 0.0f, currentRotation, 0.0f);
-
-            // Camera Movement Controls
-            if (game.IsKeyPressed(87)) // W key
-            {
-                cameraY += cameraMoveSpeed;
-                game.SetCameraPosition(cameraX, cameraY);
-            }
-            if (game.IsKeyPressed(83)) // S key
-            {
-                cameraY -= cameraMoveSpeed;
-                game.SetCameraPosition(cameraX, cameraY);
-            }
-            if (game.IsKeyPressed(68)) // D key
-            {
-                cameraX -= cameraMoveSpeed;
-                game.SetCameraPosition(cameraX, cameraY);
-            }
-            if (game.IsKeyPressed(65)) // A key
-            {
-                cameraX += cameraMoveSpeed;
-                game.SetCameraPosition(cameraX, cameraY);
-            }
-
-            // Camera Zoom Controls
-            if (game.IsKeyPressed(81)) // Q key - zoom in
-            {
-                cameraZ += cameraMoveSpeed;
-                game.SetCameraZoom(cameraZ);
-            }
-            if (game.IsKeyPressed(69)) // E key - zoom out
-            {
-                cameraZ -= cameraMoveSpeed;
-                game.SetCameraZoom(cameraZ);
-            }
 
             // Update sun light position and rotation
             sunLightAngle += sunLightOrbitSpeed * game.UpdateResponseData.delta_time;

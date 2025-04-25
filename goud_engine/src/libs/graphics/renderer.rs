@@ -52,40 +52,6 @@ impl RendererType {
         }
     }
 
-    pub fn set_camera_position(&mut self, x: f32, y: f32) {
-        unsafe {
-            match self.kind {
-                RendererKind::Renderer2D => {
-                    if !self.renderer_2d.is_null() {
-                        (*self.renderer_2d).set_camera_position(x, y);
-                    }
-                }
-                RendererKind::Renderer3D => {
-                    if !self.renderer_3d.is_null() {
-                        (*self.renderer_3d).set_camera_position(x, y);
-                    }
-                }
-            }
-        }
-    }
-
-    pub fn set_camera_zoom(&mut self, zoom: f32) {
-        unsafe {
-            match self.kind {
-                RendererKind::Renderer2D => {
-                    if !self.renderer_2d.is_null() {
-                        (*self.renderer_2d).set_camera_zoom(zoom);
-                    }
-                }
-                RendererKind::Renderer3D => {
-                    if !self.renderer_3d.is_null() {
-                        (*self.renderer_3d).set_camera_zoom(zoom);
-                    }
-                }
-            }
-        }
-    }
-
     pub fn terminate(&self) {
         unsafe {
             match self.kind {
@@ -127,9 +93,6 @@ pub trait Renderer {
     /// Renders the scene.
     // TODO: We need to abstract this so it works better for 3d
     fn render(&mut self, sprites: SpriteMap, texture_manager: &TextureManager);
-
-    fn set_camera_position(&mut self, x: f32, y: f32);
-    fn set_camera_zoom(&mut self, zoom: f32);
 
     /// Terminates the renderer.
     fn terminate(&self);
