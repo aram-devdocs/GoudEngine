@@ -1,14 +1,14 @@
 use crate::game::GameSdk;
-use crate::libs::graphics::renderer::{RendererKind, RendererType};
-use crate::libs::graphics::renderer3d::{PrimitiveCreateInfo, PrimitiveType};
+use crate::libs::graphics::components::light::{Light, LightType};
+use crate::libs::graphics::renderer::RendererKind;
+use crate::libs::graphics::renderer3d::PrimitiveCreateInfo;
 use crate::libs::platform::window::WindowBuilder;
-use crate::types::{MousePosition, Rectangle};
+use crate::types::{GridConfig, MousePosition, Rectangle};
 use crate::types::{SpriteCreateDto, SpriteUpdateDto, UpdateResponseData};
 use cgmath::Vector3;
 use glfw::Key;
 use std::ffi::{c_uint, CStr, CString};
 use std::os::raw::{c_char, c_int};
-use crate::libs::graphics::components::light::{Light, LightType};
 
 /// Initializes a new game instance with the specified window settings and returns a raw pointer to the `GameSdk`.
 ///
@@ -127,8 +127,7 @@ pub extern "C" fn game_add_sprite(game: *mut GameSdk, data: SpriteCreateDto) -> 
         data.frame,
     );
 
-    let id = game.ecs.add_sprite(sprite);
-    id
+    game.ecs.add_sprite(sprite)
 }
 
 /// Loads a texture into the game and returns its ID.
@@ -188,11 +187,7 @@ pub extern "C" fn game_update_sprite(game: *mut GameSdk, data: SpriteUpdateDto) 
             height: 1.0,
         },
         #[allow(unused_comparisons)]
-        if data.texture_id < 0 {
-            sprite_ref.texture_id
-        } else {
-            data.texture_id
-        },
+        data.texture_id,
         data.debug,
         data.frame,
     );
@@ -773,4 +768,158 @@ pub extern "C" fn game_update_light(
     } else {
         false
     }
+}
+
+#[no_mangle]
+pub extern "C" fn game_configure_grid(
+    game: *mut GameSdk,
+    enabled: bool,
+    size: f32,
+    divisions: u32,
+    xz_color_r: f32,
+    xz_color_g: f32,
+    xz_color_b: f32,
+    xy_color_r: f32,
+    xy_color_g: f32,
+    xy_color_b: f32,
+    yz_color_r: f32,
+    yz_color_g: f32,
+    yz_color_b: f32,
+    x_axis_color_r: f32,
+    x_axis_color_g: f32,
+    x_axis_color_b: f32,
+    y_axis_color_r: f32,
+    y_axis_color_g: f32,
+    y_axis_color_b: f32,
+    z_axis_color_r: f32,
+    z_axis_color_g: f32,
+    z_axis_color_b: f32,
+    line_width: f32,
+    axis_line_width: f32,
+    show_axes: bool,
+    show_xz_plane: bool,
+    show_xy_plane: bool,
+    show_yz_plane: bool,
+    render_mode: c_int,
+) -> bool {
+    use crate::types::GridRenderMode;
+    let game = unsafe { &mut *game };
+
+    // Create a grid configuration
+    let grid_config = GridConfig {
+        enabled,
+        size,
+        divisions,
+        xz_color: Vector3::new(xz_color_r, xz_color_g, xz_color_b),
+        xy_color: Vector3::new(xy_color_r, xy_color_g, xy_color_b),
+        yz_color: Vector3::new(yz_color_r, yz_color_g, yz_color_b),
+        x_axis_color: Vector3::new(x_axis_color_r, x_axis_color_g, x_axis_color_b),
+        y_axis_color: Vector3::new(y_axis_color_r, y_axis_color_g, y_axis_color_b),
+        z_axis_color: Vector3::new(z_axis_color_r, z_axis_color_g, z_axis_color_b),
+        line_width,
+        axis_line_width,
+        show_axes,
+        show_xz_plane,
+        show_xy_plane,
+        show_yz_plane,
+        render_mode: match render_mode {
+            0 => GridRenderMode::Blend,
+            _ => GridRenderMode::Overlap,
+        },
+    };
+
+    if let Some(renderer) = &mut game.renderer {
+        if let RendererKind::Renderer3D = renderer.kind {
+            unsafe {
+                if let Some(renderer_3d) = renderer.renderer_3d.as_mut() {
+                    renderer_3d.configure_grid(grid_config);
+                    return true;
+                }
+            }
+        }
+    }
+
+    false
+}
+
+// Create simplified function to toggle grid on/off (common use case)
+#[no_mangle]
+pub extern "C" fn game_set_grid_enabled(game: *mut GameSdk, enabled: bool) -> bool {
+    let game = unsafe { &mut *game };
+
+    if let Some(renderer) = &mut game.renderer {
+        if let RendererKind::Renderer3D = renderer.kind {
+            unsafe {
+                if let Some(renderer_3d) = renderer.renderer_3d.as_mut() {
+                    // Get current config and only update the enabled flag
+                    let mut config = renderer_3d.get_grid_config();
+                    config.enabled = enabled;
+                    renderer_3d.configure_grid(config);
+                    return true;
+                }
+            }
+        }
+    }
+
+    false
+}
+
+// Create simplified function to toggle grid planes (common use case)
+#[no_mangle]
+pub extern "C" fn game_set_grid_planes(
+    game: *mut GameSdk,
+    show_xz: bool,
+    show_xy: bool,
+    show_yz: bool,
+) -> bool {
+    let game = unsafe { &mut *game };
+
+    if let Some(renderer) = &mut game.renderer {
+        if let RendererKind::Renderer3D = renderer.kind {
+            unsafe {
+                if let Some(renderer_3d) = renderer.renderer_3d.as_mut() {
+                    // Get current config and only update plane visibility
+                    let mut config = renderer_3d.get_grid_config();
+                    config.show_xz_plane = show_xz;
+                    config.show_xy_plane = show_xy;
+                    config.show_yz_plane = show_yz;
+                    renderer_3d.configure_grid(config);
+                    return true;
+                }
+            }
+        }
+    }
+
+    false
+}
+
+// Create function to set the grid render mode
+#[no_mangle]
+pub extern "C" fn game_set_grid_render_mode(
+    game: *mut GameSdk,
+    blend_mode: bool, // true for Blend mode, false for Overlap mode
+) -> bool {
+    use crate::types::GridRenderMode;
+
+    let game = unsafe { &mut *game };
+
+    if let Some(renderer) = &mut game.renderer {
+        if let RendererKind::Renderer3D = renderer.kind {
+            unsafe {
+                if let Some(renderer_3d) = renderer.renderer_3d.as_mut() {
+                    // Get current config and update the render mode
+                    let mut config = renderer_3d.get_grid_config();
+                    config.render_mode = if blend_mode {
+                        GridRenderMode::Blend
+                    } else {
+                        GridRenderMode::Overlap
+                    };
+                    renderer_3d.configure_grid(config);
+                    return true;
+                }
+            }
+        }
+    }
+
+    false
 }

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using CsBindgen;
 using GoudEngine;
 
@@ -33,19 +34,37 @@ class Program
         uint redLightId = 0;
         uint blueLightId = 0;
         uint greenLightId = 0;
-        uint spotlightId = 0;
         float lightIntensity = 2.0f;
+        float lightHeight = 5.0f;
         float lightRange = 20.0f;
         float lightOrbitRadius = 8.0f;
-        float lightHeight = 5.0f;
         float lightAngle = 0.0f;
         float lightOrbitSpeed = 1.0f;
+
+        // Sun light configuration
+        uint sunLightId = 0;
+        float sunLightOrbitSpeed = 0.3f; // Rotation speed of the sun
+        float sunLightOrbitRadius = 20.0f; // Radius of sun's orbital path
+        float sunLightHeight = 20.0f; // Vertical position of the sun
+        float sunLightIntensity = 50.0f; // Brightness of the sun
+        float sunLightRange = 50.0f; // Range of the sun's illumination
+        float sunLightAngle = 0.0f; // Current angle of sun's orbit
+        float sunLightSpotAngle = 180.0f; // Spread angle of the light
+        float sunLightTemperature = 5500.0f; // Color temperature
 
         game.Initialize(() =>
         {
             Console.WriteLine("Game initialized");
 
-            // Initial camera position
+            // Configure the grid with custom settings
+            Console.WriteLine("Configuring 3D grid...");
+            game.ConfigureGrid(enabled: true, renderMode: GridRenderMode.Blend);
+            // game.SetGridRenderMode(true);
+
+            // Set initial camera position for better grid visibility
+            cameraX = 0.0f;
+            cameraY = 10.0f;
+            cameraZ = -15.0f;
             game.SetCameraPosition(cameraX, cameraY);
             game.SetCameraZoom(cameraZ);
 
@@ -126,22 +145,22 @@ class Program
                 45.0f
             );
 
-            // Add white spotlight from above
-            spotlightId = game.AddLight(
-                LightType.Spot,
+            // Add bright sun light from above
+            sunLightId = game.AddLight(
+                LightType.Point,
                 0.0f,
-                10.0f,
-                0.0f, // Position directly above
+                sunLightHeight,
+                0.0f, // Position high above
                 0.0f,
                 -1.0f,
                 0.0f, // Direction pointing straight down
                 1.0f,
                 1.0f,
                 1.0f, // White color
-                3.0f, // Intensity increased from 1.5 to 3.0
-                6500.0f, // Temperature
-                15.0f, // Range
-                60.0f // Spot angle increased from 45 to 60 degrees for wider spread
+                sunLightIntensity,
+                sunLightTemperature,
+                sunLightRange,
+                sunLightSpotAngle
             );
         });
 
@@ -152,6 +171,27 @@ class Program
 
         game.Update(() =>
         {
+            // Toggle grid with G key
+            if (game.IsKeyPressed(71)) // G key
+            {
+                bool currentState = game.SetGridEnabled(true); // Get current state
+                game.SetGridEnabled(!currentState); // Toggle it
+                Console.WriteLine($"Grid {(!currentState ? "enabled" : "disabled")}");
+                Thread.Sleep(200); // Small delay to prevent multiple toggles
+            }
+
+            // Toggle different grid planes with number keys
+            if (game.IsKeyPressed(49)) // 1 key - Toggle XZ (floor) plane
+            {
+                game.SetGridPlanes(
+                    showXZ: true,
+                    showXY: game.IsKeyPressed(50), // 2 key
+                    showYZ: game.IsKeyPressed(51) // 3 key
+                );
+                Console.WriteLine("Grid planes updated");
+                Thread.Sleep(200);
+            }
+
             // Update light positions and colors
             lightAngle += lightOrbitSpeed * game.UpdateResponseData.delta_time;
 
@@ -244,12 +284,12 @@ class Program
                 cameraY -= cameraMoveSpeed;
                 game.SetCameraPosition(cameraX, cameraY);
             }
-            if (game.IsKeyPressed(65)) // A key
+            if (game.IsKeyPressed(68)) // D key
             {
                 cameraX -= cameraMoveSpeed;
                 game.SetCameraPosition(cameraX, cameraY);
             }
-            if (game.IsKeyPressed(68)) // D key
+            if (game.IsKeyPressed(65)) // A key
             {
                 cameraX += cameraMoveSpeed;
                 game.SetCameraPosition(cameraX, cameraY);
@@ -266,6 +306,30 @@ class Program
                 cameraZ -= cameraMoveSpeed;
                 game.SetCameraZoom(cameraZ);
             }
+
+            // Update sun light position and rotation
+            sunLightAngle += sunLightOrbitSpeed * game.UpdateResponseData.delta_time;
+
+            float sunX = (float)Math.Cos(sunLightAngle) * sunLightOrbitRadius;
+            float sunZ = (float)Math.Sin(sunLightAngle) * sunLightOrbitRadius;
+
+            game.UpdateLight(
+                sunLightId,
+                LightType.Point,
+                sunX,
+                sunLightHeight,
+                sunZ,
+                0,
+                -1,
+                0,
+                1.0f,
+                1.0f,
+                1.0f,
+                sunLightIntensity,
+                sunLightTemperature,
+                sunLightRange,
+                sunLightSpotAngle
+            );
         });
 
         game.Terminate();

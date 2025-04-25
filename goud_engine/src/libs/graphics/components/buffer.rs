@@ -1,6 +1,5 @@
+use gl;
 use gl::types::*;
-use std::mem;
-use std::os::raw::c_void;
 
 #[derive(Debug)]
 pub struct BufferObject {
@@ -40,8 +39,8 @@ impl BufferObject {
         unsafe {
             gl::BufferData(
                 self.buffer_type,
-                (data.len() * mem::size_of::<T>()) as GLsizeiptr,
-                data.as_ptr() as *const c_void,
+                std::mem::size_of_val(data) as GLsizeiptr,
+                data.as_ptr() as *const _,
                 usage,
             );
         }

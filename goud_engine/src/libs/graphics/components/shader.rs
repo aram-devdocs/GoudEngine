@@ -7,8 +7,8 @@ use std::ffi::CString;
 use std::ptr;
 
 use cgmath::Matrix4;
-use cgmath::Vector4;
 use cgmath::Vector3;
+use cgmath::Vector4;
 
 #[derive(Debug)]
 pub struct ShaderProgram {
@@ -50,8 +50,7 @@ impl ShaderProgram {
             if success != gl::TRUE as GLint {
                 let mut len = 0;
                 gl::GetShaderiv(shader, gl::INFO_LOG_LENGTH, &mut len);
-                let mut buffer = Vec::with_capacity(len as usize);
-                buffer.set_len((len as usize) - 1);
+                let mut buffer = vec![0u8; (len as usize) - 1];
                 gl::GetShaderInfoLog(
                     shader,
                     len,
@@ -65,7 +64,10 @@ impl ShaderProgram {
         }
     }
 
-    fn create_program(vertex_shader: GLuint, fragment_shader: GLuint) -> Result<ShaderProgram, String> {
+    fn create_program(
+        vertex_shader: GLuint,
+        fragment_shader: GLuint,
+    ) -> Result<ShaderProgram, String> {
         unsafe {
             let program = gl::CreateProgram();
             gl::AttachShader(program, vertex_shader);
@@ -78,8 +80,7 @@ impl ShaderProgram {
             if success != gl::TRUE as GLint {
                 let mut len = 0;
                 gl::GetProgramiv(program, gl::INFO_LOG_LENGTH, &mut len);
-                let mut buffer = Vec::with_capacity(len as usize);
-                buffer.set_len((len as usize) - 1);
+                let mut buffer = vec![0u8; (len as usize) - 1];
                 gl::GetProgramInfoLog(
                     program,
                     len,
@@ -159,12 +160,7 @@ impl ShaderProgram {
     pub fn set_uniform_mat4(&self, uniform_name: &str, value: &Matrix4<f32>) -> Result<(), String> {
         let location = self.get_uniform_location(uniform_name)?;
         unsafe {
-            gl::UniformMatrix4fv(
-                location,
-                1,
-                gl::FALSE,
-                value.as_ptr(),
-            );
+            gl::UniformMatrix4fv(location, 1, gl::FALSE, value.as_ptr());
         }
         Ok(())
     }

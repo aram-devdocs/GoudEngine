@@ -1,9 +1,31 @@
 [package]
 name = "goud_engine"
-version = "0.0.728"
+version = "0.0.775"
 edition = "2021"
 license = "MIT"
 
+# Enable parallel compilation
+[profile.dev]
+opt-level = 0
+debug = true
+debug-assertions = true
+overflow-checks = true
+lto = false
+panic = 'unwind'
+incremental = true
+codegen-units = 256
+rpath = false
+
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+lto = true
+panic = 'unwind'
+incremental = false
+codegen-units = 16
+rpath = false
 
 # TODO: https://github.com/aram-devdocs/GoudEngine/issues/8
 [dependencies]

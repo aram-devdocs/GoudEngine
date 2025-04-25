@@ -73,10 +73,7 @@ impl InputHandler {
 
     // Handle gamepad button press (example function for external handling)
     pub fn handle_gamepad_button(&mut self, gamepad_id: u32, button: u32, pressed: bool) {
-        let buttons = self
-            .gamepad_buttons_pressed
-            .entry(gamepad_id)
-            .or_insert_with(HashSet::new);
+        let buttons = self.gamepad_buttons_pressed.entry(gamepad_id).or_default();
         if pressed {
             buttons.insert(button);
         } else {

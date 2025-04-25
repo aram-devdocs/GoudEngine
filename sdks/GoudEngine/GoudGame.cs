@@ -24,6 +24,12 @@ public enum LightType
     Spot = 2
 }
 
+public enum GridRenderMode
+{
+    Blend = 0,
+    Overlap = 1
+}
+
 public unsafe class GoudGame
 {
     private GameSdk* gameInstance;
@@ -493,14 +499,16 @@ public unsafe class GoudGame
             positionX,
             positionY,
             positionZ,
-            0, 0, 0,  // Direction doesn't matter for point lights
+            0,
+            0,
+            0, // Direction doesn't matter for point lights
             colorR,
             colorG,
             colorB,
             intensity,
             temperature,
             range,
-            0  // Spot angle doesn't matter for point lights
+            0 // Spot angle doesn't matter for point lights
         );
     }
 
@@ -517,7 +525,9 @@ public unsafe class GoudGame
     {
         return AddLight(
             LightType.Directional,
-            0, 0, 0,  // Position doesn't matter for directional lights
+            0,
+            0,
+            0, // Position doesn't matter for directional lights
             directionX,
             directionY,
             directionZ,
@@ -526,8 +536,8 @@ public unsafe class GoudGame
             colorB,
             intensity,
             temperature,
-            float.MaxValue,  // Range doesn't matter for directional lights
-            0  // Spot angle doesn't matter for directional lights
+            float.MaxValue, // Range doesn't matter for directional lights
+            0 // Spot angle doesn't matter for directional lights
         );
     }
 
@@ -563,5 +573,113 @@ public unsafe class GoudGame
             range,
             spotAngle
         );
+    }
+
+    // Grid Configuration Methods
+
+    /// <summary>
+    /// Configures the 3D grid with all available options
+    /// </summary>
+    public bool ConfigureGrid(
+        bool enabled = true,
+        float size = 20.0f,
+        uint divisions = 20,
+        float xzColorR = 0.7f,
+        float xzColorG = 0.7f,
+        float xzColorB = 0.7f,
+        float xyColorR = 0.8f,
+        float xyColorG = 0.6f,
+        float xyColorB = 0.6f,
+        float yzColorR = 0.6f,
+        float yzColorG = 0.6f,
+        float yzColorB = 0.8f,
+        float xAxisColorR = 0.9f,
+        float xAxisColorG = 0.2f,
+        float xAxisColorB = 0.2f,
+        float yAxisColorR = 0.2f,
+        float yAxisColorG = 0.9f,
+        float yAxisColorB = 0.2f,
+        float zAxisColorR = 0.2f,
+        float zAxisColorG = 0.2f,
+        float zAxisColorB = 0.9f,
+        float lineWidth = 1.5f,
+        float axisLineWidth = 2.5f,
+        bool showAxes = true,
+        bool showXZPlane = true,
+        bool showXYPlane = true,
+        bool showYZPlane = true,
+        GridRenderMode renderMode = GridRenderMode.Overlap
+    )
+    {
+        unsafe
+        {
+            return NativeMethods.game_configure_grid(
+                gameInstance,
+                enabled,
+                size,
+                divisions,
+                xzColorR,
+                xzColorG,
+                xzColorB,
+                xyColorR,
+                xyColorG,
+                xyColorB,
+                yzColorR,
+                yzColorG,
+                yzColorB,
+                xAxisColorR,
+                xAxisColorG,
+                xAxisColorB,
+                yAxisColorR,
+                yAxisColorG,
+                yAxisColorB,
+                zAxisColorR,
+                zAxisColorG,
+                zAxisColorB,
+                lineWidth,
+                axisLineWidth,
+                showAxes,
+                showXZPlane,
+                showXYPlane,
+                showYZPlane,
+                (int)renderMode
+            );
+        }
+    }
+
+    /// <summary>
+    /// Simple helper to enable/disable the grid
+    /// </summary>
+    public bool SetGridEnabled(bool enabled)
+    {
+        unsafe
+        {
+            return NativeMethods.game_set_grid_enabled(gameInstance, enabled);
+        }
+    }
+
+    /// <summary>
+    /// Set the grid render mode (blend or overlap)
+    /// </summary>
+    /// <param name="blendMode">True for Blend mode (grid rendered with proper depth testing),
+    /// False for Overlap mode (grid always on top)</param>
+    /// <returns>True if successful</returns>
+    public bool SetGridRenderMode(bool blendMode)
+    {
+        unsafe
+        {
+            return NativeMethods.game_set_grid_render_mode(gameInstance, blendMode);
+        }
+    }
+
+    /// <summary>
+    /// Simple helper to show/hide specific grid planes
+    /// </summary>
+    public bool SetGridPlanes(bool showXZ, bool showXY, bool showYZ)
+    {
+        unsafe
+        {
+            return NativeMethods.game_set_grid_planes(gameInstance, showXZ, showXY, showYZ);
+        }
     }
 }

@@ -8,9 +8,10 @@ use super::components::shader::ShaderProgram;
 use super::components::vao::Vao;
 use super::components::vertex_attribute::VertexAttribute;
 use super::renderer::Renderer;
-use crate::types::{SpriteMap, TextureManager};
+use crate::types::{GridConfig, GridRenderMode, SpriteMap, TextureManager};
 
 #[repr(C)]
+#[allow(dead_code)]
 pub enum PrimitiveType {
     Cube = 0,
     Sphere = 1,
@@ -51,6 +52,7 @@ pub struct Renderer3D {
     window_width: u32,
     window_height: u32,
     light_manager: LightManager,
+    grid_config: GridConfig, // Using the GridConfig from types.rs
 }
 
 impl Renderer3D {
@@ -68,7 +70,6 @@ impl Renderer3D {
 
         // Create uniforms for multiple lights
         for i in 0..8 {
-            // Support up to 8 lights
             shader_program.create_uniform(&format!("lights[{}].type", i))?;
             shader_program.create_uniform(&format!("lights[{}].position", i))?;
             shader_program.create_uniform(&format!("lights[{}].direction", i))?;
@@ -95,7 +96,87 @@ impl Renderer3D {
             window_width,
             window_height,
             light_manager: LightManager::new(),
+            grid_config: GridConfig::default(),
         })
+    }
+
+    // Combined grid configuration method that takes a GridConfig with partial values
+    pub fn configure_grid(&mut self, config: GridConfig) {
+        // Only update fields that differ from defaults, preserving existing values
+        if config.enabled != self.grid_config.enabled {
+            self.grid_config.enabled = config.enabled;
+        }
+
+        if config.size != self.grid_config.size {
+            self.grid_config.size = config.size;
+        }
+
+        if config.divisions != self.grid_config.divisions {
+            self.grid_config.divisions = config.divisions;
+        }
+
+        // Update colors if they're different from the current values
+        if config.xz_color != self.grid_config.xz_color {
+            self.grid_config.xz_color = config.xz_color;
+        }
+
+        if config.xy_color != self.grid_config.xy_color {
+            self.grid_config.xy_color = config.xy_color;
+        }
+
+        if config.yz_color != self.grid_config.yz_color {
+            self.grid_config.yz_color = config.yz_color;
+        }
+
+        if config.x_axis_color != self.grid_config.x_axis_color {
+            self.grid_config.x_axis_color = config.x_axis_color;
+        }
+
+        if config.y_axis_color != self.grid_config.y_axis_color {
+            self.grid_config.y_axis_color = config.y_axis_color;
+        }
+
+        if config.z_axis_color != self.grid_config.z_axis_color {
+            self.grid_config.z_axis_color = config.z_axis_color;
+        }
+
+        if config.line_width != self.grid_config.line_width {
+            self.grid_config.line_width = config.line_width;
+        }
+
+        if config.axis_line_width != self.grid_config.axis_line_width {
+            self.grid_config.axis_line_width = config.axis_line_width;
+        }
+
+        if config.show_axes != self.grid_config.show_axes {
+            self.grid_config.show_axes = config.show_axes;
+        }
+
+        if config.show_xz_plane != self.grid_config.show_xz_plane {
+            self.grid_config.show_xz_plane = config.show_xz_plane;
+        }
+
+        if config.show_xy_plane != self.grid_config.show_xy_plane {
+            self.grid_config.show_xy_plane = config.show_xy_plane;
+        }
+
+        if config.show_yz_plane != self.grid_config.show_yz_plane {
+            self.grid_config.show_yz_plane = config.show_yz_plane;
+        }
+
+        // Update render mode if different
+        if config.render_mode != self.grid_config.render_mode {
+            println!(
+                "Changing grid render mode from {:?} to {:?}",
+                self.grid_config.render_mode, config.render_mode
+            );
+            self.grid_config.render_mode = config.render_mode;
+        }
+    }
+
+    // Helper method to get the current grid configuration
+    pub fn get_grid_config(&self) -> GridConfig {
+        self.grid_config.clone()
     }
 
     pub fn create_primitive(&mut self, create_info: PrimitiveCreateInfo) -> Result<u32, String> {
@@ -437,6 +518,385 @@ impl Renderer3D {
         vertices
     }
 
+    fn generate_grid_vertices(&self, size: f32, divisions: u32) -> Vec<f32> {
+        let mut vertices = Vec::new();
+        let step = size / divisions as f32;
+        let half_size = size * 0.5;
+
+        // Grid lines along X axis (horizontal floor grid)
+        if self.grid_config.show_xz_plane {
+            for i in 0..=divisions {
+                let pos = -half_size + i as f32 * step;
+                let color = &self.grid_config.xz_color;
+
+                // Line along X axis (varying Z)
+                vertices.extend_from_slice(&[
+                    -half_size, 0.0, pos, color.x, color.y, color.z, 0.0, 0.0, // Start point
+                    half_size, 0.0, pos, color.x, color.y, color.z, 0.0, 0.0, // End point
+                ]);
+
+                // Line along Z axis (varying X)
+                vertices.extend_from_slice(&[
+                    pos, 0.0, -half_size, color.x, color.y, color.z, 0.0, 0.0, // Start point
+                    pos, 0.0, half_size, color.x, color.y, color.z, 0.0, 0.0, // End point
+                ]);
+            }
+        }
+
+        // Calculate the number of Y divisions to maintain square proportions
+        let y_divisions = divisions; // Use same number of divisions as X and Z
+        let y_step = step; // Use same step size as X and Z
+
+        // Add vertical grid lines along Y axis at X=0 (YZ plane)
+        if self.grid_config.show_yz_plane {
+            for i in 0..=divisions {
+                let pos = -half_size + i as f32 * step;
+                let color = &self.grid_config.yz_color;
+
+                // Vertical lines along Y axis (varying Z at X=0)
+                vertices.extend_from_slice(&[
+                    0.0, -half_size, pos, color.x, color.y, color.z, 0.0, 0.0, // Start point
+                    0.0, half_size, pos, color.x, color.y, color.z, 0.0, 0.0, // End point
+                ]);
+            }
+
+            // Add horizontal cross lines on YZ plane (at X=0)
+            for i in 0..=y_divisions {
+                let y_pos = -half_size + i as f32 * y_step;
+                let color = &self.grid_config.yz_color;
+
+                vertices.extend_from_slice(&[
+                    0.0, y_pos, -half_size, color.x, color.y, color.z, 0.0,
+                    0.0, // Start point
+                    0.0, y_pos, half_size, color.x, color.y, color.z, 0.0, 0.0, // End point
+                ]);
+            }
+        }
+
+        // Add vertical grid lines along Y axis at Z=0 (XY plane)
+        if self.grid_config.show_xy_plane {
+            for i in 0..=divisions {
+                let pos = -half_size + i as f32 * step;
+                let color = &self.grid_config.xy_color;
+
+                // Vertical lines along Y axis (varying X at Z=0)
+                vertices.extend_from_slice(&[
+                    pos, -half_size, 0.0, color.x, color.y, color.z, 0.0, 0.0, // Start point
+                    pos, half_size, 0.0, color.x, color.y, color.z, 0.0, 0.0, // End point
+                ]);
+            }
+
+            // Add horizontal cross lines on XY plane (at Z=0)
+            for i in 0..=y_divisions {
+                let y_pos = -half_size + i as f32 * y_step;
+                let color = &self.grid_config.xy_color;
+
+                vertices.extend_from_slice(&[
+                    -half_size, y_pos, 0.0, color.x, color.y, color.z, 0.0,
+                    0.0, // Start point
+                    half_size, y_pos, 0.0, color.x, color.y, color.z, 0.0, 0.0, // End point
+                ]);
+            }
+        }
+
+        // Highlight the central X, Y, and Z axes if show_axes is true
+        if self.grid_config.show_axes {
+            // X axis highlight
+            vertices.extend_from_slice(&[
+                -half_size,
+                0.001,
+                0.0,
+                self.grid_config.x_axis_color.x,
+                self.grid_config.x_axis_color.y,
+                self.grid_config.x_axis_color.z,
+                0.0,
+                0.0, // Start point
+                half_size,
+                0.001,
+                0.0,
+                self.grid_config.x_axis_color.x,
+                self.grid_config.x_axis_color.y,
+                self.grid_config.x_axis_color.z,
+                0.0,
+                0.0, // End point
+            ]);
+
+            // Z axis highlight
+            vertices.extend_from_slice(&[
+                0.0,
+                0.001,
+                -half_size,
+                self.grid_config.z_axis_color.x,
+                self.grid_config.z_axis_color.y,
+                self.grid_config.z_axis_color.z,
+                0.0,
+                0.0, // Start point
+                0.0,
+                0.001,
+                half_size,
+                self.grid_config.z_axis_color.x,
+                self.grid_config.z_axis_color.y,
+                self.grid_config.z_axis_color.z,
+                0.0,
+                0.0, // End point
+            ]);
+
+            // Y axis highlight
+            vertices.extend_from_slice(&[
+                0.0,
+                -half_size,
+                0.0,
+                self.grid_config.y_axis_color.x,
+                self.grid_config.y_axis_color.y,
+                self.grid_config.y_axis_color.z,
+                0.0,
+                0.0, // Start point
+                0.0,
+                half_size,
+                0.0,
+                self.grid_config.y_axis_color.x,
+                self.grid_config.y_axis_color.y,
+                self.grid_config.y_axis_color.z,
+                0.0,
+                0.0, // End point
+            ]);
+        }
+
+        vertices
+    }
+
+    fn generate_axis_vertices(&self, size: f32) -> Vec<f32> {
+        let mut vertices = Vec::new();
+
+        // X axis
+        vertices.extend_from_slice(&[
+            0.0,
+            0.0,
+            0.0,
+            self.grid_config.x_axis_color.x,
+            self.grid_config.x_axis_color.y,
+            self.grid_config.x_axis_color.z,
+            0.0,
+            0.0, // Origin
+            size,
+            0.0,
+            0.0,
+            self.grid_config.x_axis_color.x,
+            self.grid_config.x_axis_color.y,
+            self.grid_config.x_axis_color.z,
+            0.0,
+            0.0, // X direction
+        ]);
+
+        // Y axis
+        vertices.extend_from_slice(&[
+            0.0,
+            0.0,
+            0.0,
+            self.grid_config.y_axis_color.x,
+            self.grid_config.y_axis_color.y,
+            self.grid_config.y_axis_color.z,
+            0.0,
+            0.0, // Origin
+            0.0,
+            size,
+            0.0,
+            self.grid_config.y_axis_color.x,
+            self.grid_config.y_axis_color.y,
+            self.grid_config.y_axis_color.z,
+            0.0,
+            0.0, // Y direction
+        ]);
+
+        // Z axis
+        vertices.extend_from_slice(&[
+            0.0,
+            0.0,
+            0.0,
+            self.grid_config.z_axis_color.x,
+            self.grid_config.z_axis_color.y,
+            self.grid_config.z_axis_color.z,
+            0.0,
+            0.0, // Origin
+            0.0,
+            0.0,
+            size,
+            self.grid_config.z_axis_color.x,
+            self.grid_config.z_axis_color.y,
+            self.grid_config.z_axis_color.z,
+            0.0,
+            0.0, // Z direction
+        ]);
+
+        // Add arrow heads (simple cones as triangles)
+        // X-axis arrow head
+        vertices.extend_from_slice(&[
+            size,
+            0.0,
+            0.0,
+            self.grid_config.x_axis_color.x,
+            self.grid_config.x_axis_color.y,
+            self.grid_config.x_axis_color.z,
+            0.0,
+            0.0,
+            size - 0.2,
+            0.1,
+            0.0,
+            self.grid_config.x_axis_color.x,
+            self.grid_config.x_axis_color.y,
+            self.grid_config.x_axis_color.z,
+            0.0,
+            0.0,
+            size - 0.2,
+            -0.1,
+            0.0,
+            self.grid_config.x_axis_color.x,
+            self.grid_config.x_axis_color.y,
+            self.grid_config.x_axis_color.z,
+            0.0,
+            0.0,
+        ]);
+
+        vertices.extend_from_slice(&[
+            size,
+            0.0,
+            0.0,
+            self.grid_config.x_axis_color.x,
+            self.grid_config.x_axis_color.y,
+            self.grid_config.x_axis_color.z,
+            0.0,
+            0.0,
+            size - 0.2,
+            0.0,
+            0.1,
+            self.grid_config.x_axis_color.x,
+            self.grid_config.x_axis_color.y,
+            self.grid_config.x_axis_color.z,
+            0.0,
+            0.0,
+            size - 0.2,
+            0.0,
+            -0.1,
+            self.grid_config.x_axis_color.x,
+            self.grid_config.x_axis_color.y,
+            self.grid_config.x_axis_color.z,
+            0.0,
+            0.0,
+        ]);
+
+        // Y-axis arrow head
+        vertices.extend_from_slice(&[
+            0.0,
+            size,
+            0.0,
+            self.grid_config.y_axis_color.x,
+            self.grid_config.y_axis_color.y,
+            self.grid_config.y_axis_color.z,
+            0.0,
+            0.0,
+            0.1,
+            size - 0.2,
+            0.0,
+            self.grid_config.y_axis_color.x,
+            self.grid_config.y_axis_color.y,
+            self.grid_config.y_axis_color.z,
+            0.0,
+            0.0,
+            -0.1,
+            size - 0.2,
+            0.0,
+            self.grid_config.y_axis_color.x,
+            self.grid_config.y_axis_color.y,
+            self.grid_config.y_axis_color.z,
+            0.0,
+            0.0,
+        ]);
+
+        vertices.extend_from_slice(&[
+            0.0,
+            size,
+            0.0,
+            self.grid_config.y_axis_color.x,
+            self.grid_config.y_axis_color.y,
+            self.grid_config.y_axis_color.z,
+            0.0,
+            0.0,
+            0.0,
+            size - 0.2,
+            0.1,
+            self.grid_config.y_axis_color.x,
+            self.grid_config.y_axis_color.y,
+            self.grid_config.y_axis_color.z,
+            0.0,
+            0.0,
+            0.0,
+            size - 0.2,
+            -0.1,
+            self.grid_config.y_axis_color.x,
+            self.grid_config.y_axis_color.y,
+            self.grid_config.y_axis_color.z,
+            0.0,
+            0.0,
+        ]);
+
+        // Z-axis arrow head
+        vertices.extend_from_slice(&[
+            0.0,
+            0.0,
+            size,
+            self.grid_config.z_axis_color.x,
+            self.grid_config.z_axis_color.y,
+            self.grid_config.z_axis_color.z,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            size - 0.2,
+            self.grid_config.z_axis_color.x,
+            self.grid_config.z_axis_color.y,
+            self.grid_config.z_axis_color.z,
+            0.0,
+            0.0,
+            -0.1,
+            0.0,
+            size - 0.2,
+            self.grid_config.z_axis_color.x,
+            self.grid_config.z_axis_color.y,
+            self.grid_config.z_axis_color.z,
+            0.0,
+            0.0,
+        ]);
+
+        vertices.extend_from_slice(&[
+            0.0,
+            0.0,
+            size,
+            self.grid_config.z_axis_color.x,
+            self.grid_config.z_axis_color.y,
+            self.grid_config.z_axis_color.z,
+            0.0,
+            0.0,
+            0.0,
+            0.1,
+            size - 0.2,
+            self.grid_config.z_axis_color.x,
+            self.grid_config.z_axis_color.y,
+            self.grid_config.z_axis_color.z,
+            0.0,
+            0.0,
+            0.0,
+            -0.1,
+            size - 0.2,
+            self.grid_config.z_axis_color.x,
+            self.grid_config.z_axis_color.y,
+            self.grid_config.z_axis_color.z,
+            0.0,
+            0.0,
+        ]);
+
+        vertices
+    }
+
     pub fn set_object_position(
         &mut self,
         object_id: u32,
@@ -534,7 +994,12 @@ impl Renderer3D {
         Ok(())
     }
 
-    fn render_objects(&mut self, texture_manager: &TextureManager) -> Result<(), String> {
+    pub fn render_objects(&mut self, texture_manager: &TextureManager) -> Result<(), String> {
+        unsafe {
+            gl::Enable(gl::DEPTH_TEST);
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+        }
+
         self.shader_program.bind();
 
         // Create view matrix
@@ -555,6 +1020,11 @@ impl Renderer3D {
 
         // Update lights in shader
         self.update_shader_lights()?;
+
+        // Render grid first if enabled and in Blend mode
+        if self.grid_config.enabled && self.grid_config.render_mode == GridRenderMode::Blend {
+            self.render_grid()?;
+        }
 
         // Render each object
         for object in self.objects.values() {
@@ -577,7 +1047,164 @@ impl Renderer3D {
             }
         }
 
+        // Render grid last if enabled and in Overlap mode (current behavior)
+        if self.grid_config.enabled && self.grid_config.render_mode == GridRenderMode::Overlap {
+            println!("Rendering grid in Overlap mode (after objects)");
+            self.render_grid()?;
+        }
+
         Ok(())
+    }
+
+    fn render_grid(&self) -> Result<(), String> {
+        unsafe {
+            // Set line width for grid
+            gl::LineWidth(self.grid_config.line_width);
+
+            // Handle depth testing based on render mode
+            if self.grid_config.render_mode == GridRenderMode::Overlap {
+                // Disable depth test for grid so it's always visible (original behavior)
+                gl::Disable(gl::DEPTH_TEST);
+            } else {
+                // For Blend mode, ensure depth test is enabled
+                gl::Enable(gl::DEPTH_TEST);
+            }
+
+            // Create and bind temporary VAO for grid
+            let grid_vao = Vao::new()?;
+            grid_vao.bind();
+
+            // Generate grid vertices with configured settings
+            let grid_vertices =
+                self.generate_grid_vertices(self.grid_config.size, self.grid_config.divisions);
+            let grid_vbo = BufferObject::new(gl::ARRAY_BUFFER)?;
+            grid_vbo.bind();
+            grid_vbo.store_data(&grid_vertices, gl::STATIC_DRAW);
+
+            // Define vertex attributes for position and color
+            VertexAttribute::enable(0);
+            VertexAttribute::pointer(
+                0,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                8 * std::mem::size_of::<f32>() as GLsizei,
+                0,
+            );
+
+            VertexAttribute::enable(1);
+            VertexAttribute::pointer(
+                1,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                8 * std::mem::size_of::<f32>() as GLsizei,
+                3 * std::mem::size_of::<f32>(),
+            );
+
+            VertexAttribute::enable(2);
+            VertexAttribute::pointer(
+                2,
+                2,
+                gl::FLOAT,
+                gl::FALSE,
+                8 * std::mem::size_of::<f32>() as GLsizei,
+                6 * std::mem::size_of::<f32>(),
+            );
+
+            // Draw grid lines
+            let model = Matrix4::<f32>::from_scale(1.0);
+            self.shader_program.set_uniform_mat4("model", &model)?;
+
+            gl::DrawArrays(gl::LINES, 0, grid_vertices.len() as GLint / 8);
+
+            // Clean up grid resources
+            BufferObject::unbind(gl::ARRAY_BUFFER);
+            Vao::unbind();
+
+            // Only render axes if they are enabled
+            if self.grid_config.show_axes {
+                // Set proper depth test handling for axes based on render mode
+                if self.grid_config.render_mode == GridRenderMode::Blend {
+                    // For Blend mode, ensure depth test is enabled
+                    gl::Enable(gl::DEPTH_TEST);
+                }
+
+                gl::LineWidth(self.grid_config.axis_line_width); // Make axes significantly thicker
+
+                // Create and bind temporary VAO for axes
+                let axes_vao = Vao::new()?;
+                axes_vao.bind();
+
+                // Generate axis vertices with larger size
+                let axes_vertices = self.generate_axis_vertices(self.grid_config.size * 0.2); // Axes are 20% of grid size
+                let axes_vbo = BufferObject::new(gl::ARRAY_BUFFER)?;
+                axes_vbo.bind();
+                axes_vbo.store_data(&axes_vertices, gl::STATIC_DRAW);
+
+                // Define vertex attributes for position and color
+                VertexAttribute::enable(0);
+                VertexAttribute::pointer(
+                    0,
+                    3,
+                    gl::FLOAT,
+                    gl::FALSE,
+                    8 * std::mem::size_of::<f32>() as GLsizei,
+                    0,
+                );
+
+                VertexAttribute::enable(1);
+                VertexAttribute::pointer(
+                    1,
+                    3,
+                    gl::FLOAT,
+                    gl::FALSE,
+                    8 * std::mem::size_of::<f32>() as GLsizei,
+                    3 * std::mem::size_of::<f32>(),
+                );
+
+                VertexAttribute::enable(2);
+                VertexAttribute::pointer(
+                    2,
+                    2,
+                    gl::FLOAT,
+                    gl::FALSE,
+                    8 * std::mem::size_of::<f32>() as GLsizei,
+                    6 * std::mem::size_of::<f32>(),
+                );
+
+                // Draw axis lines
+                gl::DrawArrays(gl::LINES, 0, 6); // Draw just the main axis lines first
+
+                // Draw arrow heads as triangles
+                gl::DrawArrays(gl::TRIANGLES, 6, axes_vertices.len() as GLint / 8 - 6);
+
+                // Clean up axis resources
+                BufferObject::unbind(gl::ARRAY_BUFFER);
+                Vao::unbind();
+
+                // Clean up VAO to avoid resource leaks
+                axes_vao.terminate();
+            }
+
+            // Reset line width to default
+            gl::LineWidth(1.0);
+
+            // Re-enable depth testing if it was disabled
+            gl::Enable(gl::DEPTH_TEST);
+
+            // Clean up grid VAO to avoid resource leaks
+            grid_vao.terminate();
+        }
+
+        Ok(())
+    }
+
+    pub fn terminate(&self) {
+        self.shader_program.terminate();
+        for object in self.objects.values() {
+            object.vao.terminate();
+        }
     }
 }
 

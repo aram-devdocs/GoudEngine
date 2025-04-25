@@ -1,6 +1,6 @@
-use crate::types::{SpriteMap, TextureManager};
 use super::renderer2d::Renderer2D;
 use super::renderer3d::Renderer3D;
+use crate::types::{SpriteMap, TextureManager};
 use std::ptr;
 
 #[repr(C)]

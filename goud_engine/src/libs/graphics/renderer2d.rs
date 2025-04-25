@@ -239,7 +239,6 @@ impl Renderer for Renderer2D {
         self.set_camera_zoom(zoom);
     }
 
-
     fn terminate(&self) {
         self.shader_program.terminate();
         self.vao.terminate();
