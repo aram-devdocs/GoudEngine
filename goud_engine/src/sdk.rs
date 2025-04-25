@@ -923,3 +923,142 @@ pub extern "C" fn game_set_grid_render_mode(
 
     false
 }
+
+// Skybox configuration functions
+
+#[no_mangle]
+pub extern "C" fn game_configure_skybox(
+    game: *mut GameSdk,
+    enabled: bool,
+    size: f32,
+    texture_size: u32,
+    right_face_r: f32,
+    right_face_g: f32,
+    right_face_b: f32,
+    left_face_r: f32,
+    left_face_g: f32,
+    left_face_b: f32,
+    top_face_r: f32,
+    top_face_g: f32,
+    top_face_b: f32,
+    bottom_face_r: f32,
+    bottom_face_g: f32,
+    bottom_face_b: f32,
+    front_face_r: f32,
+    front_face_g: f32,
+    front_face_b: f32,
+    back_face_r: f32,
+    back_face_g: f32,
+    back_face_b: f32,
+    blend_factor: f32,
+    min_color_r: f32,
+    min_color_g: f32,
+    min_color_b: f32,
+    use_custom_textures: bool,
+) -> bool {
+    use crate::types::SkyboxConfig;
+    let game = unsafe { &mut *game };
+
+    // Create a skybox configuration
+    let skybox_config = SkyboxConfig {
+        enabled,
+        size,
+        texture_size,
+        face_colors: [
+            Vector3::new(right_face_r, right_face_g, right_face_b), // Right face
+            Vector3::new(left_face_r, left_face_g, left_face_b),    // Left face
+            Vector3::new(top_face_r, top_face_g, top_face_b),       // Top face
+            Vector3::new(bottom_face_r, bottom_face_g, bottom_face_b), // Bottom face
+            Vector3::new(front_face_r, front_face_g, front_face_b), // Front face
+            Vector3::new(back_face_r, back_face_g, back_face_b),    // Back face
+        ],
+        blend_factor,
+        min_color: Vector3::new(min_color_r, min_color_g, min_color_b),
+        use_custom_textures,
+    };
+
+    if let Some(renderer) = &mut game.renderer {
+        if let RendererKind::Renderer3D = renderer.kind {
+            unsafe {
+                if let Some(renderer_3d) = renderer.renderer_3d.as_mut() {
+                    if let Some(skybox) = &mut renderer_3d.skybox {
+                        return skybox.configure(skybox_config).is_ok();
+                    }
+                }
+            }
+        }
+    }
+
+    false
+}
+
+#[no_mangle]
+pub extern "C" fn game_set_skybox_enabled(game: *mut GameSdk, enabled: bool) -> bool {
+    let game = unsafe { &mut *game };
+
+    if let Some(renderer) = &mut game.renderer {
+        if let RendererKind::Renderer3D = renderer.kind {
+            unsafe {
+                if let Some(renderer_3d) = renderer.renderer_3d.as_mut() {
+                    if let Some(skybox) = &mut renderer_3d.skybox {
+                        // Get current config and only update the enabled flag
+                        let mut config = skybox.get_config();
+                        config.enabled = enabled;
+                        return skybox.configure(config).is_ok();
+                    }
+                }
+            }
+        }
+    }
+
+    false
+}
+
+#[no_mangle]
+pub extern "C" fn game_set_skybox_colors(
+    game: *mut GameSdk,
+    right_face_r: f32,
+    right_face_g: f32,
+    right_face_b: f32,
+    left_face_r: f32,
+    left_face_g: f32,
+    left_face_b: f32,
+    top_face_r: f32,
+    top_face_g: f32,
+    top_face_b: f32,
+    bottom_face_r: f32,
+    bottom_face_g: f32,
+    bottom_face_b: f32,
+    front_face_r: f32,
+    front_face_g: f32,
+    front_face_b: f32,
+    back_face_r: f32,
+    back_face_g: f32,
+    back_face_b: f32,
+) -> bool {
+    let game = unsafe { &mut *game };
+
+    if let Some(renderer) = &mut game.renderer {
+        if let RendererKind::Renderer3D = renderer.kind {
+            unsafe {
+                if let Some(renderer_3d) = renderer.renderer_3d.as_mut() {
+                    if let Some(skybox) = &mut renderer_3d.skybox {
+                        // Get current config and update face colors
+                        let mut config = skybox.get_config();
+                        config.face_colors = [
+                            Vector3::new(right_face_r, right_face_g, right_face_b), // Right face
+                            Vector3::new(left_face_r, left_face_g, left_face_b),    // Left face
+                            Vector3::new(top_face_r, top_face_g, top_face_b),       // Top face
+                            Vector3::new(bottom_face_r, bottom_face_g, bottom_face_b), // Bottom face
+                            Vector3::new(front_face_r, front_face_g, front_face_b),    // Front face
+                            Vector3::new(back_face_r, back_face_g, back_face_b),       // Back face
+                        ];
+                        return skybox.configure(config).is_ok();
+                    }
+                }
+            }
+        }
+    }
+
+    false
+}

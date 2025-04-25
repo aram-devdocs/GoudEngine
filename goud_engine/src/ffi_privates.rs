@@ -89,3 +89,9 @@ pub struct GlfwReceiver {
 pub struct PWindow {
     _private: [u8; 0],
 }
+
+#[repr(C)]
+#[allow(dead_code)]
+pub struct Skybox {
+    _private: [u8; 0],
+}

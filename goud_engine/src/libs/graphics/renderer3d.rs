@@ -1,10 +1,11 @@
-use cgmath::{perspective, Deg, Matrix4, Point3, Vector3};
+use cgmath::{perspective, Deg, Matrix3, Matrix4, Point3, Vector3};
 use gl::types::*;
 use std::collections::HashMap;
 
 use super::components::buffer::BufferObject;
 use super::components::light::{Light, LightManager};
 use super::components::shader::ShaderProgram;
+use super::components::skybox::Skybox;
 use super::components::vao::Vao;
 use super::components::vertex_attribute::VertexAttribute;
 use super::renderer::Renderer;
@@ -52,7 +53,8 @@ pub struct Renderer3D {
     window_width: u32,
     window_height: u32,
     light_manager: LightManager,
-    grid_config: GridConfig, // Using the GridConfig from types.rs
+    grid_config: GridConfig,    // Using the GridConfig from types.rs
+    pub skybox: Option<Skybox>, // Make skybox field public
 }
 
 impl Renderer3D {
@@ -87,6 +89,19 @@ impl Renderer3D {
         let projection = perspective(Deg(45.0), aspect_ratio, 0.1, 100.0);
         shader_program.set_uniform_mat4("projection", &projection)?;
 
+        // Create skybox
+        println!("Creating skybox...");
+        let skybox = match Skybox::new() {
+            Ok(sb) => {
+                println!("Skybox created successfully");
+                Some(sb)
+            }
+            Err(e) => {
+                println!("Failed to create skybox: {}", e);
+                None
+            }
+        };
+
         Ok(Renderer3D {
             shader_program,
             objects: HashMap::new(),
@@ -97,6 +112,7 @@ impl Renderer3D {
             window_height,
             light_manager: LightManager::new(),
             grid_config: GridConfig::default(),
+            skybox,
         })
     }
 
@@ -997,12 +1013,27 @@ impl Renderer3D {
     pub fn render_objects(&mut self, texture_manager: &TextureManager) -> Result<(), String> {
         unsafe {
             gl::Enable(gl::DEPTH_TEST);
+            gl::DepthFunc(gl::LESS); // Set default depth function
+                                     // Set clear color dynamically from skybox config if available
+            if let Some(skybox) = &self.skybox {
+                let config = skybox.get_config();
+                // Use min_color as the fallback clear color, or a face color if min_color is black
+                let clear_color = if config.min_color.x > 0.0
+                    || config.min_color.y > 0.0
+                    || config.min_color.z > 0.0
+                {
+                    config.min_color
+                } else {
+                    config.face_colors[2] // Top face as a representative color
+                };
+                gl::ClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0);
+            } else {
+                gl::ClearColor(0.1, 0.1, 0.2, 1.0); // Fallback to dark blue if no skybox
+            }
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
-        self.shader_program.bind();
-
-        // Create view matrix
+        // Create view and projection matrices
         let view = Matrix4::look_at_rh(
             Point3::new(
                 self.camera_position.x,
@@ -1013,8 +1044,36 @@ impl Renderer3D {
             Vector3::new(0.0, 1.0, 0.0),
         );
 
+        let aspect_ratio = self.window_width as f32 / self.window_height as f32;
+        let projection = perspective(Deg(45.0), aspect_ratio, 0.1, 1000.0); // Increased far plane for skybox
+
+        // Render skybox first
+        if let Some(skybox) = &self.skybox {
+            // Remove translation from view matrix for skybox
+            let skybox_view = Matrix4::from(Matrix3::from_cols(
+                view.x.truncate(),
+                view.y.truncate(),
+                view.z.truncate(),
+            ));
+            // Ensure texture is bound for skybox
+            unsafe {
+                gl::ActiveTexture(gl::TEXTURE0);
+                // Assuming skybox has a method to get texture_id, if not, this is for illustration
+            }
+            if let Err(e) = skybox.draw(&skybox_view, &projection) {
+                println!("Failed to render skybox: {}", e);
+            }
+        } else {
+            println!("No skybox available to render");
+        }
+
+        // Now render the rest of the scene
+        self.shader_program.bind();
+
         // Set common uniforms
         self.shader_program.set_uniform_mat4("view", &view)?;
+        self.shader_program
+            .set_uniform_mat4("projection", &projection)?;
         self.shader_program
             .set_uniform_vec3("viewPos", &self.camera_position)?;
 
@@ -1024,6 +1083,10 @@ impl Renderer3D {
         // Render grid first if enabled and in Blend mode
         if self.grid_config.enabled && self.grid_config.render_mode == GridRenderMode::Blend {
             self.render_grid()?;
+        }
+
+        unsafe {
+            gl::DepthFunc(gl::LESS); // Ensure proper depth testing for objects
         }
 
         // Render each object
@@ -1047,9 +1110,8 @@ impl Renderer3D {
             }
         }
 
-        // Render grid last if enabled and in Overlap mode (current behavior)
+        // Render grid last if enabled and in Overlap mode
         if self.grid_config.enabled && self.grid_config.render_mode == GridRenderMode::Overlap {
-            println!("Rendering grid in Overlap mode (after objects)");
             self.render_grid()?;
         }
 
@@ -1205,6 +1267,9 @@ impl Renderer3D {
         for object in self.objects.values() {
             object.vao.terminate();
         }
+        if let Some(skybox) = &self.skybox {
+            skybox.terminate();
+        }
     }
 }
 
@@ -1233,6 +1298,9 @@ impl Renderer for Renderer3D {
         self.shader_program.terminate();
         for object in self.objects.values() {
             object.vao.terminate();
+        }
+        if let Some(skybox) = &self.skybox {
+            skybox.terminate();
         }
     }
 }

@@ -38,6 +38,31 @@ impl ShaderProgram {
         ShaderProgram::create_program(vertex_shader, fragment_shader)
     }
 
+    pub fn new_skybox() -> Result<ShaderProgram, String> {
+        println!("Loading skybox shaders...");
+        let vertex_code = include_str!("shaders/3d/skybox_vertex.glsl");
+        let fragment_code = include_str!("shaders/3d/skybox_fragment.glsl");
+
+        println!("Compiling skybox vertex shader...");
+        let vertex_shader = ShaderProgram::compile_shader(vertex_code, gl::VERTEX_SHADER)?;
+        println!("Compiling skybox fragment shader...");
+        let fragment_shader = ShaderProgram::compile_shader(fragment_code, gl::FRAGMENT_SHADER)?;
+
+        println!("Creating skybox shader program...");
+        let mut program = ShaderProgram::create_program(vertex_shader, fragment_shader)?;
+
+        println!("Setting up skybox uniforms...");
+        program.bind();
+        program.create_uniform("skybox")?;
+        program.set_uniform_int("skybox", 0)?;
+        program.create_uniform("view")?;
+        program.create_uniform("projection")?;
+        program.create_uniform("minColor")?;
+        println!("Skybox shader setup complete");
+
+        Ok(program)
+    }
+
     fn compile_shader(code: &str, shader_type: GLenum) -> Result<GLuint, String> {
         unsafe {
             let shader = gl::CreateShader(shader_type);

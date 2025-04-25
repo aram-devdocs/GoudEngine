@@ -682,4 +682,116 @@ public unsafe class GoudGame
             return NativeMethods.game_set_grid_planes(gameInstance, showXZ, showXY, showYZ);
         }
     }
+
+    /// <summary>
+    /// Configures the skybox with all available options
+    /// </summary>
+    public bool ConfigureSkybox(
+        bool enabled = true,
+        float size = 100.0f,
+        uint textureSize = 128,
+        float[] rightFaceColor = null,
+        float[] leftFaceColor = null,
+        float[] topFaceColor = null,
+        float[] bottomFaceColor = null,
+        float[] frontFaceColor = null,
+        float[] backFaceColor = null,
+        float blendFactor = 0.5f,
+        float[] minColor = null,
+        bool useCustomTextures = false
+    )
+    {
+        unsafe
+        {
+            // Use default colors if not provided
+            rightFaceColor = rightFaceColor ?? new float[] { 0.7f, 0.8f, 0.9f };
+            leftFaceColor = leftFaceColor ?? new float[] { 0.7f, 0.8f, 0.9f };
+            topFaceColor = topFaceColor ?? new float[] { 0.6f, 0.7f, 0.9f };
+            bottomFaceColor = bottomFaceColor ?? new float[] { 0.3f, 0.3f, 0.4f };
+            frontFaceColor = frontFaceColor ?? new float[] { 0.7f, 0.8f, 0.9f };
+            backFaceColor = backFaceColor ?? new float[] { 0.7f, 0.8f, 0.9f };
+            minColor = minColor ?? new float[] { 0.1f, 0.1f, 0.2f };
+
+            // The method is already defined in NativeMethods.g.cs so we remove the duplicate implementation
+            // and just use the correct call
+            return NativeMethods.game_configure_skybox(
+                gameInstance,
+                enabled,
+                size,
+                textureSize,
+                rightFaceColor[0],
+                rightFaceColor[1],
+                rightFaceColor[2],
+                leftFaceColor[0],
+                leftFaceColor[1],
+                leftFaceColor[2],
+                topFaceColor[0],
+                topFaceColor[1],
+                topFaceColor[2],
+                bottomFaceColor[0],
+                bottomFaceColor[1],
+                bottomFaceColor[2],
+                frontFaceColor[0],
+                frontFaceColor[1],
+                frontFaceColor[2],
+                backFaceColor[0],
+                backFaceColor[1],
+                backFaceColor[2],
+                blendFactor,
+                minColor[0],
+                minColor[1],
+                minColor[2],
+                useCustomTextures
+            );
+        }
+    }
+
+    /// <summary>
+    /// Simple helper to enable/disable the skybox
+    /// </summary>
+    public bool SetSkyboxEnabled(bool enabled)
+    {
+        unsafe
+        {
+            return NativeMethods.game_set_skybox_enabled(gameInstance, enabled);
+        }
+    }
+
+    /// <summary>
+    /// Set the skybox colors for all faces at once
+    /// </summary>
+    public bool SetSkyboxColors(
+        float[] rightFaceColor,
+        float[] leftFaceColor,
+        float[] topFaceColor,
+        float[] bottomFaceColor,
+        float[] frontFaceColor,
+        float[] backFaceColor
+    )
+    {
+        unsafe
+        {
+            return NativeMethods.game_set_skybox_colors(
+                gameInstance,
+                rightFaceColor[0],
+                rightFaceColor[1],
+                rightFaceColor[2],
+                leftFaceColor[0],
+                leftFaceColor[1],
+                leftFaceColor[2],
+                topFaceColor[0],
+                topFaceColor[1],
+                topFaceColor[2],
+                bottomFaceColor[0],
+                bottomFaceColor[1],
+                bottomFaceColor[2],
+                frontFaceColor[0],
+                frontFaceColor[1],
+                frontFaceColor[2],
+                backFaceColor[0],
+                backFaceColor[1],
+                backFaceColor[2]
+            );
+        }
+    }
 }

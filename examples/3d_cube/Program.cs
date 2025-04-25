@@ -68,6 +68,23 @@ class Program
             game.SetCameraPosition(cameraX, cameraY);
             game.SetCameraZoom(cameraZ);
 
+            // Configure the skybox with custom settings
+            Console.WriteLine("Configuring skybox...");
+            game.ConfigureSkybox(
+                enabled: true,
+                size: 100.0f,
+                textureSize: 128,
+                rightFaceColor: new float[3] { 0.8f, 0.9f, 1.0f },
+                leftFaceColor: new float[3] { 0.8f, 0.9f, 1.0f },
+                topFaceColor: new float[3] { 0.8f, 0.9f, 1.0f },
+                bottomFaceColor: new float[3] { 0.8f, 0.9f, 1.0f },
+                frontFaceColor: new float[3] { 0.8f, 0.9f, 1.0f },
+                backFaceColor: new float[3] { 0.8f, 0.9f, 1.0f },
+                blendFactor: 0.5f,
+                minColor: new float[3] { 0.2f, 0.3f, 0.4f },
+                useCustomTextures: false
+            );
+
             // Load texture
             string texturePath = Path.Combine(
                 AppDomain.CurrentDomain.BaseDirectory,

@@ -59,6 +59,40 @@ impl Default for GridConfig {
     }
 }
 
+/// Configuration for the skybox
+#[repr(C)]
+#[derive(Debug, Clone)]
+pub struct SkyboxConfig {
+    pub enabled: bool,
+    pub size: f32,                      // Scale of the skybox
+    pub texture_size: u32,              // Size of each face texture
+    pub face_colors: [Vector3<f32>; 6], // Colors for each face [right, left, top, bottom, front, back]
+    pub blend_factor: f32,              // How much to blend between faces (0.0 - 1.0)
+    pub min_color: Vector3<f32>,        // Minimum color values to prevent pure black
+    pub use_custom_textures: bool,      // Whether to use custom textures or generated gradients
+}
+
+impl Default for SkyboxConfig {
+    fn default() -> Self {
+        SkyboxConfig {
+            enabled: true,
+            size: 100.0,
+            texture_size: 128,
+            face_colors: [
+                Vector3::new(0.7, 0.8, 0.9), // Right face
+                Vector3::new(0.7, 0.8, 0.9), // Left face
+                Vector3::new(0.6, 0.7, 0.9), // Top face
+                Vector3::new(0.3, 0.3, 0.4), // Bottom face
+                Vector3::new(0.7, 0.8, 0.9), // Front face
+                Vector3::new(0.7, 0.8, 0.9), // Back face
+            ],
+            blend_factor: 0.5,
+            min_color: Vector3::new(0.1, 0.1, 0.2),
+            use_custom_textures: false,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Texture {
     pub id: c_uint,
