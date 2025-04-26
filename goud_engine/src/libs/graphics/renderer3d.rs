@@ -1,7 +1,8 @@
-use cgmath::{perspective, Deg, Matrix3, Matrix4, Point3, Vector3};
+use cgmath::{perspective, Deg, Matrix3, Matrix4, Vector3};
 use gl::types::*;
 use std::collections::HashMap;
 
+use super::camera::Camera;
 use super::components::buffer::BufferObject;
 use super::components::light::{Light, LightManager};
 use super::components::shader::ShaderProgram;
@@ -9,7 +10,7 @@ use super::components::skybox::Skybox;
 use super::components::vao::Vao;
 use super::components::vertex_attribute::VertexAttribute;
 use super::renderer::Renderer;
-use crate::types::{GridConfig, GridRenderMode, SpriteMap, TextureManager};
+use crate::types::{Camera3D, GridConfig, GridRenderMode, SpriteMap, TextureManager};
 
 #[repr(C)]
 #[allow(dead_code)]
@@ -48,8 +49,7 @@ pub struct Renderer3D {
     shader_program: ShaderProgram,
     objects: HashMap<u32, Object3D>,
     next_object_id: u32,
-    camera_position: Vector3<f32>,
-    camera_zoom: f32,
+    camera: Camera3D,
     window_width: u32,
     window_height: u32,
     light_manager: LightManager,
@@ -106,8 +106,14 @@ impl Renderer3D {
             shader_program,
             objects: HashMap::new(),
             next_object_id: 1,
-            camera_position: Vector3::new(0.0, 0.0, 3.0),
-            camera_zoom: 1.0,
+            camera: {
+                let mut camera = Camera3D::new();
+                // Set the initial camera position to match the old behavior
+                camera.set_position_xy(0.0, 0.0);
+                // Set initial zoom (which is actually the z-coordinate)
+                camera.set_zoom(3.0);
+                camera
+            },
             window_width,
             window_height,
             light_manager: LightManager::new(),
@@ -198,19 +204,22 @@ impl Renderer3D {
     pub fn create_primitive(&mut self, create_info: PrimitiveCreateInfo) -> Result<u32, String> {
         let vertices = match create_info.primitive_type {
             PrimitiveType::Cube => self.generate_cube_vertices(
-                create_info.width,
-                create_info.height,
-                create_info.depth,
+                create_info.width,  // X dimension
+                create_info.height, // Y dimension
+                create_info.depth,  // Z dimension
             ),
             PrimitiveType::Plane => {
+                // Note: Based on the comment in 3d_cube example, there might be confusion
+                // about which parameter affects which dimension
+                // We're using width for X and depth for Z, which is the expected behavior
                 self.generate_plane_vertices(create_info.width, create_info.depth)
             }
             PrimitiveType::Sphere => {
                 self.generate_sphere_vertices(create_info.width, create_info.segments)
             }
             PrimitiveType::Cylinder => self.generate_cylinder_vertices(
-                create_info.width,
-                create_info.height,
+                create_info.width,  // Radius
+                create_info.height, // Height
                 create_info.segments,
             ),
         };
@@ -308,11 +317,16 @@ impl Renderer3D {
         let w = width / 2.0;
         let d = depth / 2.0;
 
+        // Note: The comment in 3d_cube example suggests the coordinates might be swapped
+        // We should ensure that width affects X and depth affects Z coordinates
         vec![
-            // Single face plane (facing up)
-            -w, 0.0, -d, 0.0, 1.0, 0.0, 0.0, 0.0, w, 0.0, -d, 0.0, 1.0, 0.0, 1.0, 0.0, w, 0.0, d,
-            0.0, 1.0, 0.0, 1.0, 1.0, w, 0.0, d, 0.0, 1.0, 0.0, 1.0, 1.0, -w, 0.0, d, 0.0, 1.0, 0.0,
-            0.0, 1.0, -w, 0.0, -d, 0.0, 1.0, 0.0, 0.0, 0.0,
+            // Single face plane (facing up in Y direction)
+            -w, 0.0, -d, 0.0, 1.0, 0.0, 0.0, 0.0, // Bottom-left
+            w, 0.0, -d, 0.0, 1.0, 0.0, 1.0, 0.0, // Bottom-right
+            w, 0.0, d, 0.0, 1.0, 0.0, 1.0, 1.0, // Top-right
+            w, 0.0, d, 0.0, 1.0, 0.0, 1.0, 1.0, // Top-right
+            -w, 0.0, d, 0.0, 1.0, 0.0, 0.0, 1.0, // Top-left
+            -w, 0.0, -d, 0.0, 1.0, 0.0, 0.0, 0.0, // Bottom-left
         ]
     }
 
@@ -1033,16 +1047,8 @@ impl Renderer3D {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
-        // Create view and projection matrices
-        let view = Matrix4::look_at_rh(
-            Point3::new(
-                self.camera_position.x,
-                self.camera_position.y,
-                self.camera_zoom,
-            ),
-            Point3::new(0.0, 0.0, 0.0),
-            Vector3::new(0.0, 1.0, 0.0),
-        );
+        // Get the view matrix from the camera
+        let view = self.camera.get_view_matrix();
 
         let aspect_ratio = self.window_width as f32 / self.window_height as f32;
         let projection = perspective(Deg(45.0), aspect_ratio, 0.1, 1000.0); // Increased far plane for skybox
@@ -1075,7 +1081,7 @@ impl Renderer3D {
         self.shader_program
             .set_uniform_mat4("projection", &projection)?;
         self.shader_program
-            .set_uniform_vec3("viewPos", &self.camera_position)?;
+            .set_uniform_vec3("viewPos", &self.camera.get_position())?;
 
         // Update lights in shader
         self.update_shader_lights()?;
@@ -1271,6 +1277,16 @@ impl Renderer3D {
             skybox.terminate();
         }
     }
+
+    /// Sets the camera position.
+    pub fn set_camera_position(&mut self, x: f32, y: f32) {
+        self.camera.set_position_xy(x, y);
+    }
+
+    /// Sets the camera zoom level.
+    pub fn set_camera_zoom(&mut self, zoom: f32) {
+        self.camera.set_zoom(zoom);
+    }
 }
 
 impl Renderer for Renderer3D {
@@ -1285,14 +1301,13 @@ impl Renderer for Renderer3D {
         }
     }
 
-    fn set_camera_position(&mut self, x: f32, y: f32) {
-        self.camera_position.x = x;
-        self.camera_position.y = y;
-    }
+    // fn set_camera_position(&mut self, x: f32, y: f32) {
+    //     self.set_camera_position(x, y);
+    // }
 
-    fn set_camera_zoom(&mut self, zoom: f32) {
-        self.camera_zoom = zoom;
-    }
+    // fn set_camera_zoom(&mut self, zoom: f32) {
+    //     self.set_camera_zoom(zoom);
+    // }
 
     fn terminate(&self) {
         self.shader_program.terminate();

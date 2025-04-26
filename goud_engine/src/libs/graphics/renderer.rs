@@ -128,8 +128,8 @@ pub trait Renderer {
     // TODO: We need to abstract this so it works better for 3d
     fn render(&mut self, sprites: SpriteMap, texture_manager: &TextureManager);
 
-    fn set_camera_position(&mut self, x: f32, y: f32);
-    fn set_camera_zoom(&mut self, zoom: f32);
+    // fn set_camera_position(&mut self, x: f32, y: f32);
+    // fn set_camera_zoom(&mut self, zoom: f32);
 
     /// Terminates the renderer.
     fn terminate(&self);

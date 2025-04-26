@@ -196,3 +196,21 @@ pub struct MousePosition {
 // Shared types
 // Types
 // TODO: https://github.com/aram-devdocs/GoudEngine/issues/5
+
+/// Base 2D camera struct
+#[repr(C)]
+#[derive(Debug, Clone)]
+pub struct Camera2D {
+    pub position: Vector3<f32>,
+    pub zoom: f32,
+}
+
+/// 3D camera struct with additional properties for 3D rendering
+#[repr(C)]
+#[derive(Debug, Clone)]
+pub struct Camera3D {
+    pub position: Vector3<f32>,
+    pub target: Vector3<f32>,
+    pub up: Vector3<f32>,
+    pub zoom: f32,
+}
