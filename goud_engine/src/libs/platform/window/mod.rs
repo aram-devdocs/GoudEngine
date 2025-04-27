@@ -23,7 +23,6 @@ use crate::types::MousePosition;
 /// ```
 ///
 // window.rs
-
 #[repr(C)]
 pub struct Window {
     pub glfw: glfw::Glfw,
