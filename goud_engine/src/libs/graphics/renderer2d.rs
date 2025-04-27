@@ -108,6 +108,16 @@ impl Renderer2D {
         self.camera.set_zoom(zoom);
     }
 
+    /// Gets the camera position.
+    pub fn get_camera_position(&self) -> cgmath::Vector3<f32> {
+        self.camera.get_position()
+    }
+
+    /// Gets the camera zoom level.
+    pub fn get_camera_zoom(&self) -> f32 {
+        self.camera.get_zoom()
+    }
+
     /// Renders all added sprites.
     fn render_sprites(
         &mut self,

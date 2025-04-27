@@ -17,9 +17,9 @@ impl Camera for Camera2D {
         Matrix4::from_translation(-self.position) * Matrix4::from_scale(self.zoom)
     }
 
-    // fn set_position(&mut self, x: f32, y: f32, z: f32) {
-    //     self.position = Vector3::new(x, y, z);
-    // }
+    fn set_position(&mut self, x: f32, y: f32, z: f32) {
+        self.position = Vector3::new(x, y, z);
+    }
 
     fn set_position_xy(&mut self, x: f32, y: f32) {
         self.position.x = x;
@@ -30,11 +30,20 @@ impl Camera for Camera2D {
         self.position
     }
 
+    fn set_rotation(&mut self, _pitch: f32, _yaw: f32, _roll: f32) {
+        // 2D cameras don't use rotation
+    }
+
+    fn get_rotation(&self) -> Vector3<f32> {
+        // 2D cameras don't use rotation
+        Vector3::new(0.0, 0.0, 0.0)
+    }
+
     fn set_zoom(&mut self, zoom: f32) {
         self.zoom = zoom;
     }
 
-    // fn get_zoom(&self) -> f32 {
-    //     self.zoom
-    // }
+    fn get_zoom(&self) -> f32 {
+        self.zoom
+    }
 }

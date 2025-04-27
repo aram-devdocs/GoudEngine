@@ -493,6 +493,100 @@ pub extern "C" fn game_set_camera_zoom(game: *mut GameSdk, zoom: f32) {
     }
 }
 
+/// Sets the full camera position in 3D space.
+///
+/// # Arguments
+/// * `x` - The x-coordinate of the camera position.
+/// * `y` - The y-coordinate of the camera position.
+/// * `z` - The z-coordinate of the camera position.
+#[no_mangle]
+pub extern "C" fn game_set_camera_position_3d(game: *mut GameSdk, x: f32, y: f32, z: f32) {
+    let game = unsafe { &mut *game };
+    if let Some(renderer) = &mut game.renderer {
+        renderer.set_camera_position_3d(x, y, z);
+    }
+}
+
+/// Gets the camera position and stores it in the provided out parameter.
+///
+/// # Arguments
+/// * `out_position` - Pointer to an array of 3 floats that will hold the position [x, y, z].
+#[no_mangle]
+pub extern "C" fn game_get_camera_position(game: *mut GameSdk, out_position: *mut f32) {
+    let game = unsafe { &mut *game };
+    
+    if !out_position.is_null() {
+        if let Some(renderer) = &mut game.renderer {
+            let pos = renderer.get_camera_position();
+            unsafe {
+                *out_position = pos.x;
+                *out_position.add(1) = pos.y;
+                *out_position.add(2) = pos.z;
+            }
+        } else {
+            unsafe {
+                *out_position = 0.0;
+                *out_position.add(1) = 0.0;
+                *out_position.add(2) = 0.0;
+            }
+        }
+    }
+}
+
+/// Sets the camera rotation using Euler angles in degrees.
+///
+/// # Arguments
+/// * `pitch` - The pitch (x-axis rotation) in degrees.
+/// * `yaw` - The yaw (y-axis rotation) in degrees.
+/// * `roll` - The roll (z-axis rotation) in degrees.
+#[no_mangle]
+pub extern "C" fn game_set_camera_rotation(game: *mut GameSdk, pitch: f32, yaw: f32, roll: f32) {
+    let game = unsafe { &mut *game };
+    if let Some(renderer) = &mut game.renderer {
+        renderer.set_camera_rotation(pitch, yaw, roll);
+    }
+}
+
+/// Gets the camera rotation as Euler angles in degrees and stores it in the provided out parameter.
+///
+/// # Arguments
+/// * `out_rotation` - Pointer to an array of 3 floats that will hold the rotation [pitch, yaw, roll].
+#[no_mangle]
+pub extern "C" fn game_get_camera_rotation(game: *mut GameSdk, out_rotation: *mut f32) {
+    let game = unsafe { &mut *game };
+    
+    if !out_rotation.is_null() {
+        if let Some(renderer) = &mut game.renderer {
+            let rot = renderer.get_camera_rotation();
+            unsafe {
+                *out_rotation = rot.x;
+                *out_rotation.add(1) = rot.y;
+                *out_rotation.add(2) = rot.z;
+            }
+        } else {
+            unsafe {
+                *out_rotation = 0.0;
+                *out_rotation.add(1) = 0.0;
+                *out_rotation.add(2) = 0.0;
+            }
+        }
+    }
+}
+
+/// Gets the camera zoom level.
+///
+/// # Returns
+/// * `f32` - The current camera zoom level.
+#[no_mangle]
+pub extern "C" fn game_get_camera_zoom(game: *mut GameSdk) -> f32 {
+    let game = unsafe { &mut *game };
+    if let Some(renderer) = &mut game.renderer {
+        renderer.get_camera_zoom()
+    } else {
+        1.0
+    }
+}
+
 // #[no_mangle]
 // pub extern "C" fn game_create_cube(game: *mut GameSdk, texture_id: c_uint) -> c_uint {
 //     let game = unsafe { &mut *game };

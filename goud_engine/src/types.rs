@@ -213,4 +213,5 @@ pub struct Camera3D {
     pub target: Vector3<f32>,
     pub up: Vector3<f32>,
     pub zoom: f32,
+    pub rotation: Vector3<f32>, // Euler angles (pitch, yaw, roll) in degrees
 }

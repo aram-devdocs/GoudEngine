@@ -278,11 +278,61 @@ public unsafe class GoudGame
         }
     }
 
+    public void SetCameraPosition3D(float x, float y, float z)
+    {
+        unsafe
+        {
+            NativeMethods.game_set_camera_position_3d(gameInstance, x, y, z);
+        }
+    }
+
+    public float[] GetCameraPosition()
+    {
+        unsafe
+        {
+            float[] position = new float[3];
+            fixed (float* positionPtr = position)
+            {
+                NativeMethods.game_get_camera_position(gameInstance, positionPtr);
+            }
+            return position;
+        }
+    }
+
+    public void SetCameraRotation(float pitch, float yaw, float roll)
+    {
+        unsafe
+        {
+            NativeMethods.game_set_camera_rotation(gameInstance, pitch, yaw, roll);
+        }
+    }
+
+    public float[] GetCameraRotation()
+    {
+        unsafe
+        {
+            float[] rotation = new float[3];
+            fixed (float* rotationPtr = rotation)
+            {
+                NativeMethods.game_get_camera_rotation(gameInstance, rotationPtr);
+            }
+            return rotation;
+        }
+    }
+
     public void SetCameraZoom(float zoom)
     {
         unsafe
         {
             NativeMethods.game_set_camera_zoom(gameInstance, zoom);
+        }
+    }
+
+    public float GetCameraZoom()
+    {
+        unsafe
+        {
+            return NativeMethods.game_get_camera_zoom(gameInstance);
         }
     }
 

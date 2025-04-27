@@ -1283,9 +1283,34 @@ impl Renderer3D {
         self.camera.set_position_xy(x, y);
     }
 
+    /// Sets the full camera position in 3D space.
+    pub fn set_camera_position_3d(&mut self, x: f32, y: f32, z: f32) {
+        self.camera.set_position(x, y, z);
+    }
+
+    /// Gets the camera position.
+    pub fn get_camera_position(&self) -> Vector3<f32> {
+        self.camera.get_position()
+    }
+
+    /// Sets the camera rotation using Euler angles in degrees.
+    pub fn set_camera_rotation(&mut self, pitch: f32, yaw: f32, roll: f32) {
+        self.camera.set_rotation(pitch, yaw, roll);
+    }
+
+    /// Gets the camera rotation as Euler angles in degrees.
+    pub fn get_camera_rotation(&self) -> Vector3<f32> {
+        self.camera.get_rotation()
+    }
+
     /// Sets the camera zoom level.
     pub fn set_camera_zoom(&mut self, zoom: f32) {
         self.camera.set_zoom(zoom);
+    }
+
+    /// Gets the camera zoom level.
+    pub fn get_camera_zoom(&self) -> f32 {
+        self.camera.get_zoom()
     }
 }
 
