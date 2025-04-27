@@ -514,7 +514,7 @@ pub extern "C" fn game_set_camera_position_3d(game: *mut GameSdk, x: f32, y: f32
 #[no_mangle]
 pub extern "C" fn game_get_camera_position(game: *mut GameSdk, out_position: *mut f32) {
     let game = unsafe { &mut *game };
-    
+
     if !out_position.is_null() {
         if let Some(renderer) = &mut game.renderer {
             let pos = renderer.get_camera_position();
@@ -554,7 +554,7 @@ pub extern "C" fn game_set_camera_rotation(game: *mut GameSdk, pitch: f32, yaw: 
 #[no_mangle]
 pub extern "C" fn game_get_camera_rotation(game: *mut GameSdk, out_rotation: *mut f32) {
     let game = unsafe { &mut *game };
-    
+
     if !out_rotation.is_null() {
         if let Some(renderer) = &mut game.renderer {
             let rot = renderer.get_camera_rotation();
