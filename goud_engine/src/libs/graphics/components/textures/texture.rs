@@ -1,15 +1,13 @@
 // src/texture.rs
 
+use crate::types::Texture;
 use gl::types::*;
 use std::ffi::c_void;
 use std::path::Path;
-use std::rc::Rc;
-
-use crate::types::Texture;
 
 impl Texture {
     /// Loads a texture from a file.
-    pub fn new<P: AsRef<Path>>(file_path: P) -> Result<Rc<Texture>, String> {
+    pub fn new<P: AsRef<Path>>(file_path: P) -> Result<Texture, String> {
         let img = image::open(file_path.as_ref())
             .map_err(|_| format!("Failed to load texture from {:?}", file_path.as_ref()))?;
         let data = img.flipv().to_rgba8();
@@ -48,7 +46,7 @@ impl Texture {
             gl::GenerateMipmap(gl::TEXTURE_2D);
         }
 
-        Ok(Rc::new(Texture { id, width, height }))
+        Ok(Texture { id, width, height })
     }
 
     /// Binds the texture to a texture unit.

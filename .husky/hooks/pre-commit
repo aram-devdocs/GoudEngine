@@ -1,0 +1,19 @@
+#!/bin/sh
+echo "Running pre-commit hook"
+
+
+# Run fast checks first
+cargo check || exit 1
+cargo fmt --all -- --check || exit 1
+cargo clippy -- -D warnings || exit 1
+cargo deny check || exit 1
+
+# Run tests without rebuilding if checks pass
+cargo test --no-run || exit 1
+cargo test -- --nocapture
+
+# Only build if all checks pass
+./build.sh --local
+
+# Create graph
+./graph.sh

@@ -1,6 +1,8 @@
-use crate::libs::ecs::ECS;
+use crate::libs::ecs::Ecs;
 use crate::libs::graphics::clear;
-use crate::libs::graphics::{renderer::Renderer, renderer2d::Renderer2D};
+use crate::libs::graphics::{
+    renderer::RendererType, renderer2d::Renderer2D, renderer3d::Renderer3D,
+};
 
 use crate::libs::logger;
 use crate::types::Rectangle;
@@ -14,29 +16,31 @@ use crate::libs::platform::window::{Window, WindowBuilder};
 #[repr(C)]
 pub struct GameSdk {
     pub window: Window,
-    pub renderer_2d: Option<Renderer2D>,
+    pub renderer: Option<RendererType>,
     pub elapsed_time: f32,
-    pub ecs: ECS,
+    pub ecs: Ecs,
     pub texture_manager: TextureManager,
     pub tiled_manager: TiledManager,
     pub tiled_map_sprite_ids: Option<Vec<u32>>,
     pub new_tileset: bool,
+    renderer_type: i32,
 }
 
 impl GameSdk {
-    pub fn new(data: WindowBuilder) -> GameSdk {
+    pub fn new(data: WindowBuilder, renderer_type: i32) -> GameSdk {
         logger::init();
         let window = Window::new(data);
 
         GameSdk {
             window,
-            renderer_2d: None,
+            renderer: None,
             elapsed_time: 0.0,
-            ecs: ECS::new(),
+            ecs: Ecs::new(),
             texture_manager: TextureManager::new(),
             tiled_manager: TiledManager::new(),
             tiled_map_sprite_ids: None,
             new_tileset: false,
+            renderer_type,
         }
     }
 
@@ -47,9 +51,18 @@ impl GameSdk {
         self.window.init_gl();
         let window_width = self.window.width;
         let window_height = self.window.height;
-        self.renderer_2d = Some(
-            Renderer2D::new(window_width, window_height).expect("Failed to create Renderer2D"),
-        );
+
+        // Initialize renderer based on type
+        self.renderer = match self.renderer_type {
+            0 => Some(RendererType::new_2d(
+                Renderer2D::new(window_width, window_height).expect("Failed to create Renderer2D"),
+            )),
+            1 => Some(RendererType::new_3d(
+                Renderer3D::new(window_width, window_height).expect("Failed to create Renderer3D"),
+            )),
+            _ => panic!("Invalid renderer type"),
+        };
+
         init_callback(self);
     }
 
@@ -73,7 +86,7 @@ impl GameSdk {
         // Manage tiled maps
         self.manage_tileset();
 
-        if let Some(renderer) = &mut self.renderer_2d {
+        if let Some(renderer) = &mut self.renderer {
             renderer.render(self.ecs.sprites.clone(), &self.texture_manager);
         }
 
@@ -83,11 +96,10 @@ impl GameSdk {
     pub extern "C" fn terminate(&mut self) {
         self.window.terminate();
         self.ecs.terminate();
-        if let Some(renderer) = &mut self.renderer_2d {
+        if let Some(renderer) = &mut self.renderer {
             renderer.terminate();
         }
     }
-
 
     // TODO: this should be moved to libs/graphics/tiled
     /// Helper function to manage the tileset
@@ -157,9 +169,9 @@ impl GameSdk {
                                 debug: false,
                                 frame: Rectangle {
                                     x: tileset.tile_width as f32
-                                        * (tile_id % tileset.columns as u32) as f32,
+                                        * (tile_id % tileset.columns) as f32,
                                     y: tileset.tile_height as f32
-                                        * (tile_id / tileset.columns as u32) as f32,
+                                        * (tile_id / tileset.columns) as f32,
                                     width: tileset.tile_width as f32,
                                     height: tileset.tile_height as f32,
                                 },

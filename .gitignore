@@ -35,3 +35,8 @@ nuget_package_output
 **.tiled-session
 
 NuGet.local.config
+libgoud_engine.dylib
+
+# Generated diagrams intermediate files
+docs/diagrams/mods.dot
+docs/diagrams/module_graph.pdf

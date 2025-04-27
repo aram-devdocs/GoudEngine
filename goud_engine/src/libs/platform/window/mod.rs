@@ -1,8 +1,7 @@
 mod input_handler;
 
-use glfw::Key;
 use glfw::{Context, WindowEvent};
-use std::sync::mpsc::Receiver;
+use glfw::{GlfwReceiver, Key};
 use std::time::{Duration, Instant};
 
 use input_handler::InputHandler;
@@ -12,8 +11,8 @@ use crate::types::MousePosition;
 #[repr(C)]
 pub struct Window {
     pub glfw: glfw::Glfw,
-    pub window_handle: Box<glfw::Window>,
-    pub events: Receiver<(f64, WindowEvent)>,
+    pub window_handle: glfw::PWindow,
+    pub events: GlfwReceiver<(f64, WindowEvent)>,
     pub input_handler: InputHandler,
     pub width: u32,
     pub height: u32,
@@ -48,7 +47,7 @@ impl Window {
                 .into_owned()
         };
 
-        let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
+        let mut glfw = glfw::init(glfw::fail_on_errors).unwrap();
         glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
         glfw.window_hint(glfw::WindowHint::OpenGlProfile(
             glfw::OpenGlProfileHint::Core,
@@ -68,7 +67,7 @@ impl Window {
 
         Window {
             glfw,
-            window_handle: Box::new(window),
+            window_handle: window,
             events,
             input_handler: InputHandler::new(),
             width,
@@ -115,14 +114,14 @@ impl Window {
         // FPS counter
         self.frame_count += 1;
         self.elapsed_time += frame_time;
-
         if self.elapsed_time >= Duration::from_secs(1) {
             self.fps = self.frame_count;
             self.frame_count = 0;
             self.elapsed_time = Duration::new(0, 0);
+            let version = env!("CARGO_PKG_VERSION");
             self.window_handle.set_title(&format!(
-                "FPS: {} | Delta Time: {:.4}",
-                self.fps, self.delta_time
+                "GoudEngine v{} | FPS: {} | Delta Time: {:.4}",
+                version, self.fps, self.delta_time
             ));
         }
 
@@ -173,11 +172,8 @@ impl Window {
         for (_, event) in events {
             self.input_handler.handle_event(&event);
 
-            match event {
-                WindowEvent::Size(_width, _height) => {
-                    self.maintain_aspect_ratio(); // Maintain aspect ratio on resize
-                }
-                _ => {}
+            if let WindowEvent::Size(_width, _height) = event {
+                self.maintain_aspect_ratio(); // Maintain aspect ratio on resize
             }
         }
     }

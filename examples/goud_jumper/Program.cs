@@ -12,14 +12,13 @@ public class Program
         GoudGame game = new GoudGame(
             (uint)(width * TileSize),
             (uint)(height * TileSize),
-            "Game Title",
-            60
+            "Game Title"
         );
         GameManager gameManager = new GameManager(game);
 
         game.Initialize(() => gameManager.Initialize());
         game.Start(() => gameManager.Start());
-        game.Update(() => 
+        game.Update(() =>
         {
             gameManager.Update(game.UpdateResponseData.delta_time);
             gameManager.HandleInput();
