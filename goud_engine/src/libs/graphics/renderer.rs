@@ -86,6 +86,98 @@ impl RendererType {
         }
     }
 
+    pub fn set_camera_position_3d(&mut self, x: f32, y: f32, z: f32) {
+        unsafe {
+            match self.kind {
+                RendererKind::Renderer2D => {
+                    if !self.renderer_2d.is_null() {
+                        (*self.renderer_2d).set_camera_position(x, y);
+                    }
+                }
+                RendererKind::Renderer3D => {
+                    if !self.renderer_3d.is_null() {
+                        (*self.renderer_3d).set_camera_position_3d(x, y, z);
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn get_camera_position(&self) -> cgmath::Vector3<f32> {
+        unsafe {
+            match self.kind {
+                RendererKind::Renderer2D => {
+                    if !self.renderer_2d.is_null() {
+                        (*self.renderer_2d).get_camera_position()
+                    } else {
+                        cgmath::Vector3::new(0.0, 0.0, 0.0)
+                    }
+                }
+                RendererKind::Renderer3D => {
+                    if !self.renderer_3d.is_null() {
+                        (*self.renderer_3d).get_camera_position()
+                    } else {
+                        cgmath::Vector3::new(0.0, 0.0, 0.0)
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn set_camera_rotation(&mut self, pitch: f32, yaw: f32, roll: f32) {
+        unsafe {
+            match self.kind {
+                RendererKind::Renderer2D => {
+                    // 2D renderer ignores rotation
+                }
+                RendererKind::Renderer3D => {
+                    if !self.renderer_3d.is_null() {
+                        (*self.renderer_3d).set_camera_rotation(pitch, yaw, roll);
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn get_camera_rotation(&self) -> cgmath::Vector3<f32> {
+        unsafe {
+            match self.kind {
+                RendererKind::Renderer2D => {
+                    // 2D renderer doesn't have rotation
+                    cgmath::Vector3::new(0.0, 0.0, 0.0)
+                }
+                RendererKind::Renderer3D => {
+                    if !self.renderer_3d.is_null() {
+                        (*self.renderer_3d).get_camera_rotation()
+                    } else {
+                        cgmath::Vector3::new(0.0, 0.0, 0.0)
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn get_camera_zoom(&self) -> f32 {
+        unsafe {
+            match self.kind {
+                RendererKind::Renderer2D => {
+                    if !self.renderer_2d.is_null() {
+                        (*self.renderer_2d).get_camera_zoom()
+                    } else {
+                        1.0
+                    }
+                }
+                RendererKind::Renderer3D => {
+                    if !self.renderer_3d.is_null() {
+                        (*self.renderer_3d).get_camera_zoom()
+                    } else {
+                        1.0
+                    }
+                }
+            }
+        }
+    }
+
     pub fn terminate(&self) {
         unsafe {
             match self.kind {
@@ -128,8 +220,8 @@ pub trait Renderer {
     // TODO: We need to abstract this so it works better for 3d
     fn render(&mut self, sprites: SpriteMap, texture_manager: &TextureManager);
 
-    fn set_camera_position(&mut self, x: f32, y: f32);
-    fn set_camera_zoom(&mut self, zoom: f32);
+    // fn set_camera_position(&mut self, x: f32, y: f32);
+    // fn set_camera_zoom(&mut self, zoom: f32);
 
     /// Terminates the renderer.
     fn terminate(&self);

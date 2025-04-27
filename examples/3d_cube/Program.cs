@@ -12,12 +12,8 @@ class Program
 
         var game = new GoudGame(800, 600, "Basic 3D Example", RendererType.Renderer3D);
 
-        // Camera state
-        float cameraX = 0.0f;
-        float cameraY = 10.0f;
-        float cameraZ = -15.0f;
-        // float cameraRotationSpeed = 0.1f;
-        float cameraMoveSpeed = 0.5f;
+        // Initialize camera controller
+        var cameraController = new CameraController(game, 0, 10, -20);
 
         // Bounce animation state
         float bounceHeight = 0.5f;
@@ -43,14 +39,14 @@ class Program
 
         // Sun light configuration
         uint sunLightId = 0;
-        float sunLightOrbitSpeed = 0.3f; // Rotation speed of the sun
-        float sunLightOrbitRadius = 20.0f; // Radius of sun's orbital path
-        float sunLightHeight = 20.0f; // Vertical position of the sun
-        float sunLightIntensity = 50.0f; // Brightness of the sun
-        float sunLightRange = 50.0f; // Range of the sun's illumination
-        float sunLightAngle = 0.0f; // Current angle of sun's orbit
-        float sunLightSpotAngle = 180.0f; // Spread angle of the light
-        float sunLightTemperature = 5500.0f; // Color temperature
+        float sunLightOrbitSpeed = 0.3f;
+        float sunLightOrbitRadius = 20.0f;
+        float sunLightHeight = 20.0f;
+        float sunLightIntensity = 50.0f;
+        float sunLightRange = 50.0f;
+        float sunLightAngle = 0.0f;
+        float sunLightSpotAngle = 180.0f;
+        float sunLightTemperature = 5500.0f;
 
         game.Initialize(() =>
         {
@@ -59,14 +55,6 @@ class Program
             // Configure the grid with custom settings
             Console.WriteLine("Configuring 3D grid...");
             game.ConfigureGrid(enabled: true, renderMode: GridRenderMode.Blend);
-            // game.SetGridRenderMode(true);
-
-            // Set initial camera position for better grid visibility
-            cameraX = 0.0f;
-            cameraY = 10.0f;
-            cameraZ = -15.0f;
-            game.SetCameraPosition(cameraX, cameraY);
-            game.SetCameraZoom(cameraZ);
 
             // Configure the skybox with custom settings
             Console.WriteLine("Configuring skybox...");
@@ -101,13 +89,13 @@ class Program
             uint textureId = game.CreateTexture(texturePath);
 
             // Create a simple plane
-            uint planeId = game.CreateCube(textureId, 10.0f, 1.0f, 10.0f); // TODO:https://github.com/aram-devdocs/GoudEngine/issues/47 Bug: it should be x,y,z, however it appears it is x,z,y.
+            uint planeId = game.CreateCube(textureId, 10.0f, 1.0f, 10.0f);
             game.SetObjectPosition(planeId, 0.0f, 0.0f, 0.0f);
             game.SetObjectRotation(planeId, 0.0f, 0.0f, 0.0f);
 
             // Create player cube and position it at the center of the plane
-            playerId = game.CreateCube(textureId, 1.0f, 1.0f, 1.0f); // TODO:https://github.com/aram-devdocs/GoudEngine/issues/47 Bug: it should be x,y,z, however it appears it is x,z,y.
-            game.SetObjectPosition(playerId, 0.0f, baseHeight, 0.0f); // TODO:https://github.com/aram-devdocs/GoudEngine/issues/47 Bug: it should be x,y,z, however it appears it is x,z,y.
+            playerId = game.CreateCube(textureId, 1.0f, 1.0f, 1.0f);
+            game.SetObjectPosition(playerId, 0.0f, baseHeight, 0.0f);
             game.SetObjectRotation(playerId, 0.0f, 0.0f, 0.0f);
 
             // Create three orbiting lights with different phase angles
@@ -167,13 +155,13 @@ class Program
                 LightType.Point,
                 0.0f,
                 sunLightHeight,
-                0.0f, // Position high above
+                0.0f,
                 0.0f,
                 -1.0f,
-                0.0f, // Direction pointing straight down
+                0.0f,
                 1.0f,
                 1.0f,
-                1.0f, // White color
+                1.0f,
                 sunLightIntensity,
                 sunLightTemperature,
                 sunLightRange,
@@ -188,13 +176,16 @@ class Program
 
         game.Update(() =>
         {
+            // Update camera
+            cameraController.Update(game.UpdateResponseData.delta_time);
+
             // Toggle grid with G key
             if (game.IsKeyPressed(71)) // G key
             {
-                bool currentState = game.SetGridEnabled(true); // Get current state
-                game.SetGridEnabled(!currentState); // Toggle it
+                bool currentState = game.SetGridEnabled(true);
+                game.SetGridEnabled(!currentState);
                 Console.WriteLine($"Grid {(!currentState ? "enabled" : "disabled")}");
-                Thread.Sleep(200); // Small delay to prevent multiple toggles
+                Thread.Sleep(200);
             }
 
             // Toggle different grid planes with number keys
@@ -202,8 +193,8 @@ class Program
             {
                 game.SetGridPlanes(
                     showXZ: true,
-                    showXY: game.IsKeyPressed(50), // 2 key
-                    showYZ: game.IsKeyPressed(51) // 3 key
+                    showXY: game.IsKeyPressed(50),
+                    showYZ: game.IsKeyPressed(51)
                 );
                 Console.WriteLine("Grid planes updated");
                 Thread.Sleep(200);
@@ -289,40 +280,6 @@ class Program
             // Update rotation animation
             currentRotation += rotationSpeed * game.UpdateResponseData.delta_time;
             game.SetObjectRotation(playerId, 0.0f, currentRotation, 0.0f);
-
-            // Camera Movement Controls
-            if (game.IsKeyPressed(87)) // W key
-            {
-                cameraY += cameraMoveSpeed;
-                game.SetCameraPosition(cameraX, cameraY);
-            }
-            if (game.IsKeyPressed(83)) // S key
-            {
-                cameraY -= cameraMoveSpeed;
-                game.SetCameraPosition(cameraX, cameraY);
-            }
-            if (game.IsKeyPressed(68)) // D key
-            {
-                cameraX -= cameraMoveSpeed;
-                game.SetCameraPosition(cameraX, cameraY);
-            }
-            if (game.IsKeyPressed(65)) // A key
-            {
-                cameraX += cameraMoveSpeed;
-                game.SetCameraPosition(cameraX, cameraY);
-            }
-
-            // Camera Zoom Controls
-            if (game.IsKeyPressed(81)) // Q key - zoom in
-            {
-                cameraZ += cameraMoveSpeed;
-                game.SetCameraZoom(cameraZ);
-            }
-            if (game.IsKeyPressed(69)) // E key - zoom out
-            {
-                cameraZ -= cameraMoveSpeed;
-                game.SetCameraZoom(cameraZ);
-            }
 
             // Update sun light position and rotation
             sunLightAngle += sunLightOrbitSpeed * game.UpdateResponseData.delta_time;

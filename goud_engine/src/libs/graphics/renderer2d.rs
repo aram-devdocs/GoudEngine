@@ -2,12 +2,12 @@ use cgmath::{ortho, Matrix4, Vector3, Vector4};
 use gl::types::*;
 use std::ptr;
 
+use super::camera::Camera;
 use super::components::buffer::BufferObject;
 use super::components::shader::ShaderProgram;
 use super::components::vao::Vao;
 use super::components::vertex_attribute::VertexAttribute;
-
-use crate::types::{Rectangle, Sprite, SpriteMap, TextureManager};
+use crate::types::{Camera2D, Rectangle, Sprite, SpriteMap, TextureManager};
 
 use super::renderer::Renderer;
 
@@ -20,8 +20,7 @@ pub struct Renderer2D {
     source_rect_uniform: String,
     window_width: u32,
     window_height: u32,
-    camera_position: Vector3<f32>,
-    camera_zoom: f32,
+    camera: Camera2D,
 }
 
 impl Renderer2D {
@@ -95,20 +94,28 @@ impl Renderer2D {
             source_rect_uniform: "sourceRect".into(),
             window_width,
             window_height,
-            camera_position: Vector3::new(0.0, 0.0, 0.0),
-            camera_zoom: 1.0,
+            camera: Camera2D::new(),
         })
     }
 
     /// Sets the camera position.
     pub fn set_camera_position(&mut self, x: f32, y: f32) {
-        self.camera_position.x = x;
-        self.camera_position.y = y;
+        self.camera.set_position_xy(x, y);
     }
 
     /// Sets the camera zoom level.
     pub fn set_camera_zoom(&mut self, zoom: f32) {
-        self.camera_zoom = zoom;
+        self.camera.set_zoom(zoom);
+    }
+
+    /// Gets the camera position.
+    pub fn get_camera_position(&self) -> cgmath::Vector3<f32> {
+        self.camera.get_position()
+    }
+
+    /// Gets the camera zoom level.
+    pub fn get_camera_zoom(&self) -> f32 {
+        self.camera.get_zoom()
     }
 
     /// Renders all added sprites.
@@ -120,9 +127,8 @@ impl Renderer2D {
         self.shader_program.bind();
         self.vao.bind();
 
-        // Create view matrix
-        let view = Matrix4::from_translation(-self.camera_position)
-            * Matrix4::from_scale(self.camera_zoom);
+        // Get the view matrix from the camera
+        let view = self.camera.get_view_matrix();
 
         // Set the view matrix
         self.shader_program.set_uniform_mat4("view", &view)?;
@@ -231,13 +237,13 @@ impl Renderer for Renderer2D {
         }
     }
 
-    fn set_camera_position(&mut self, x: f32, y: f32) {
-        self.set_camera_position(x, y);
-    }
+    // fn set_camera_position(&mut self, x: f32, y: f32) {
+    //     self.set_camera_position(x, y);
+    // }
 
-    fn set_camera_zoom(&mut self, zoom: f32) {
-        self.set_camera_zoom(zoom);
-    }
+    // fn set_camera_zoom(&mut self, zoom: f32) {
+    //     self.set_camera_zoom(zoom);
+    // }
 
     fn terminate(&self) {
         self.shader_program.terminate();
