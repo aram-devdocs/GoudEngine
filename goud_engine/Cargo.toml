@@ -44,7 +44,7 @@ tiled = "0.13.0"
 
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 path = "src/lib.rs"
 
 [build-dependencies]
