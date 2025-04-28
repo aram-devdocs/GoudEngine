@@ -2,8 +2,8 @@ use cgmath::{ortho, Matrix4, Vector3, Vector4};
 use gl::types::*;
 use std::ptr;
 
-use super::camera::Camera;
 use super::components::buffer::BufferObject;
+use super::components::camera::Camera;
 use super::components::shader::ShaderProgram;
 use super::components::vao::Vao;
 use super::components::vertex_attribute::VertexAttribute;

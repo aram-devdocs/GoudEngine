@@ -1,4 +1,3 @@
-pub mod camera;
 pub mod components;
 pub mod renderer;
 pub mod renderer2d;
