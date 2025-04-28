@@ -108,12 +108,12 @@ mod tests {
     #[test]
     fn test_key_press_and_release() {
         let mut input_handler = InputHandler::new();
-        
+
         // Test key press
         let key_press_event = WindowEvent::Key(Key::A, 0, Action::Press, Modifiers::empty());
         input_handler.handle_event(&key_press_event);
         assert!(input_handler.is_key_pressed(Key::A));
-        
+
         // Test key release
         let key_release_event = WindowEvent::Key(Key::A, 0, Action::Release, Modifiers::empty());
         input_handler.handle_event(&key_release_event);
@@ -123,14 +123,16 @@ mod tests {
     #[test]
     fn test_mouse_button_press_and_release() {
         let mut input_handler = InputHandler::new();
-        
+
         // Test mouse button press
-        let mouse_press_event = WindowEvent::MouseButton(MouseButton::Button1, Action::Press, Modifiers::empty());
+        let mouse_press_event =
+            WindowEvent::MouseButton(MouseButton::Button1, Action::Press, Modifiers::empty());
         input_handler.handle_event(&mouse_press_event);
         assert!(input_handler.is_mouse_button_pressed(MouseButton::Button1));
-        
+
         // Test mouse button release
-        let mouse_release_event = WindowEvent::MouseButton(MouseButton::Button1, Action::Release, Modifiers::empty());
+        let mouse_release_event =
+            WindowEvent::MouseButton(MouseButton::Button1, Action::Release, Modifiers::empty());
         input_handler.handle_event(&mouse_release_event);
         assert!(!input_handler.is_mouse_button_pressed(MouseButton::Button1));
     }
@@ -138,11 +140,11 @@ mod tests {
     #[test]
     fn test_mouse_position_update() {
         let mut input_handler = InputHandler::new();
-        
+
         // Test mouse position update
         let mouse_pos_event = WindowEvent::CursorPos(15.5, 20.0);
         input_handler.handle_event(&mouse_pos_event);
-        
+
         let position = input_handler.get_mouse_position();
         assert_eq!(position.x, 15.5);
         assert_eq!(position.y, 20.0);
@@ -151,20 +153,20 @@ mod tests {
     #[test]
     fn test_gamepad_button_handling() {
         let mut input_handler = InputHandler::new();
-        
+
         // Test gamepad button press
         input_handler.handle_gamepad_button(0, 1, true);
         assert!(input_handler.is_gamepad_button_pressed(0, 1));
-        
+
         // Test another gamepad button press
         input_handler.handle_gamepad_button(0, 2, true);
         assert!(input_handler.is_gamepad_button_pressed(0, 2));
-        
+
         // Test gamepad button release
         input_handler.handle_gamepad_button(0, 1, false);
         assert!(!input_handler.is_gamepad_button_pressed(0, 1));
         assert!(input_handler.is_gamepad_button_pressed(0, 2));
-        
+
         // Test different gamepad
         input_handler.handle_gamepad_button(1, 1, true);
         assert!(input_handler.is_gamepad_button_pressed(1, 1));
