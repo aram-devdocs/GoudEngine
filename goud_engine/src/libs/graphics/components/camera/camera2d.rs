@@ -47,3 +47,65 @@ impl Camera for Camera2D {
         self.zoom
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_camera2d_new() {
+        let camera = Camera2D::new();
+        assert_eq!(camera.position, Vector3::new(0.0, 0.0, 0.0));
+        assert_eq!(camera.zoom, 1.0);
+    }
+
+    #[test]
+    fn test_camera2d_set_position() {
+        let mut camera = Camera2D::new();
+        camera.set_position(1.0, 2.0, 3.0);
+        assert_eq!(camera.position, Vector3::new(1.0, 2.0, 3.0));
+    }
+    #[test]
+    fn test_camera2d_set_position_xy() {
+        let mut camera = Camera2D::new();
+        camera.set_position_xy(1.0, 2.0);
+        assert_eq!(camera.position.x, 1.0);
+        assert_eq!(camera.position.y, 2.0);
+        assert_eq!(camera.position.z, 0.0);
+    }
+
+    #[test]
+    fn test_camera2d_get_position() {
+        let mut camera = Camera2D::new();
+        camera.set_position(1.0, 2.0, 3.0);
+        assert_eq!(camera.get_position(), Vector3::new(1.0, 2.0, 3.0));
+    }
+
+    #[test]
+    fn test_camera2d_set_rotation() {
+        let mut camera = Camera2D::new();
+        camera.set_rotation(1.0, 2.0, 3.0);
+        // Rotation should remain unchanged as 2D cameras don't use rotation
+        assert_eq!(camera.get_rotation(), Vector3::new(0.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_camera2d_get_rotation() {
+        let camera = Camera2D::new();
+        assert_eq!(camera.get_rotation(), Vector3::new(0.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn test_camera2d_set_zoom() {
+        let mut camera = Camera2D::new();
+        camera.set_zoom(2.0);
+        assert_eq!(camera.zoom, 2.0);
+    }
+
+    #[test]
+    fn test_camera2d_get_zoom() {
+        let mut camera = Camera2D::new();
+        camera.set_zoom(2.0);
+        assert_eq!(camera.get_zoom(), 2.0);
+    }
+}
