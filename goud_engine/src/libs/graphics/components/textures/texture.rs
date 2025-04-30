@@ -4,6 +4,9 @@ use crate::types::Texture;
 use gl::types::*;
 use std::ffi::c_void;
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+static MOCK_MODE: AtomicBool = AtomicBool::new(false);
 
 impl Texture {
     /// Loads a texture from a file.
@@ -13,6 +16,14 @@ impl Texture {
         let data = img.flipv().to_rgba8();
         let width = img.width();
         let height = img.height();
+
+        if MOCK_MODE.load(Ordering::Relaxed) {
+            return Ok(Texture {
+                id: 1,
+                width,
+                height,
+            });
+        }
 
         let mut id = 0;
         unsafe {
@@ -51,9 +62,11 @@ impl Texture {
 
     /// Binds the texture to a texture unit.
     pub fn bind(&self, unit: GLenum) {
-        unsafe {
-            gl::ActiveTexture(unit);
-            gl::BindTexture(gl::TEXTURE_2D, self.id);
+        if !MOCK_MODE.load(Ordering::Relaxed) {
+            unsafe {
+                gl::ActiveTexture(unit);
+                gl::BindTexture(gl::TEXTURE_2D, self.id);
+            }
         }
     }
 
@@ -76,8 +89,84 @@ impl Texture {
 
 impl Drop for Texture {
     fn drop(&mut self) {
-        unsafe {
-            gl::DeleteTextures(1, &self.id);
+        if !MOCK_MODE.load(Ordering::Relaxed) {
+            unsafe {
+                gl::DeleteTextures(1, &self.id);
+            }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::libs::graphics::components::utils::test_helper::init_test_context;
+
+    #[test]
+    fn test_texture_creation() {
+        // Initialize test context
+        let has_context = init_test_context();
+        MOCK_MODE.store(!has_context, Ordering::Relaxed);
+
+        // Test creating a texture with a valid image
+        let texture =
+            Texture::new("src/libs/graphics/components/tiled/_Tiled/Tilesets/Tileset.png");
+        assert!(texture.is_ok());
+        let texture = texture.unwrap();
+        assert_eq!(texture.width(), 384);
+        assert_eq!(texture.height(), 256);
+    }
+
+    #[test]
+    fn test_texture_creation_invalid_path() {
+        // Initialize test context
+        let has_context = init_test_context();
+        MOCK_MODE.store(!has_context, Ordering::Relaxed);
+
+        // Test creating a texture with an invalid path
+        let texture = Texture::new("nonexistent.png");
+        assert!(texture.is_err());
+    }
+
+    #[test]
+    fn test_texture_bind() {
+        // Initialize test context
+        let has_context = init_test_context();
+        MOCK_MODE.store(!has_context, Ordering::Relaxed);
+
+        // Test texture binding
+        let texture =
+            Texture::new("src/libs/graphics/components/tiled/_Tiled/Tilesets/Tileset.png").unwrap();
+        texture.bind(gl::TEXTURE0);
+        // Note: We can't easily verify the binding state without OpenGL context
+        // This test mainly ensures the function doesn't panic
+    }
+
+    #[test]
+    fn test_texture_dimensions() {
+        // Initialize test context
+        let has_context = init_test_context();
+        MOCK_MODE.store(!has_context, Ordering::Relaxed);
+
+        // Test texture dimension getters
+        let texture =
+            Texture::new("src/libs/graphics/components/tiled/_Tiled/Tilesets/Tileset.png").unwrap();
+        assert_eq!(texture.width(), 384);
+        assert_eq!(texture.height(), 256);
+    }
+
+    #[test]
+    fn test_texture_drop() {
+        // Initialize test context
+        let has_context = init_test_context();
+        MOCK_MODE.store(!has_context, Ordering::Relaxed);
+
+        // Test texture cleanup on drop
+        let texture =
+            Texture::new("src/libs/graphics/components/tiled/_Tiled/Tilesets/Tileset.png").unwrap();
+        let _texture_id = texture.id;
+        drop(texture);
+        // Note: We can't easily verify the texture was deleted without OpenGL context
+        // This test mainly ensures the drop implementation doesn't panic
     }
 }

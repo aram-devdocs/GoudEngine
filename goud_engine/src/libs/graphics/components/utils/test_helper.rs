@@ -1,3 +1,4 @@
+use cgmath::{Matrix4, Vector3, Vector4};
 use std::sync::atomic::AtomicBool;
 
 // Flag to indicate if we've tried initialization and failed
@@ -59,10 +60,19 @@ impl MockShaderProgram {
     }
 
     #[allow(dead_code)]
+    pub fn set_uniform_float(&self, uniform_name: &str, value: f32) -> Result<(), String> {
+        println!(
+            "Mock set_uniform_float called: {} = {}",
+            uniform_name, value
+        );
+        Ok(())
+    }
+
+    #[allow(dead_code)]
     pub fn set_uniform_vec3(
         &self,
         uniform_name: &str,
-        _value: &cgmath::Vector3<f32>,
+        _value: &Vector3<f32>,
     ) -> Result<(), String> {
         println!("Mock set_uniform_vec3 called: {}", uniform_name);
         Ok(())
@@ -72,7 +82,7 @@ impl MockShaderProgram {
     pub fn set_uniform_vec4(
         &self,
         uniform_name: &str,
-        _value: &cgmath::Vector4<f32>,
+        _value: &Vector4<f32>,
     ) -> Result<(), String> {
         println!("Mock set_uniform_vec4 called: {}", uniform_name);
         Ok(())
@@ -82,7 +92,7 @@ impl MockShaderProgram {
     pub fn set_uniform_mat4(
         &self,
         uniform_name: &str,
-        _value: &cgmath::Matrix4<f32>,
+        _value: &Matrix4<f32>,
     ) -> Result<(), String> {
         println!("Mock set_uniform_mat4 called: {}", uniform_name);
         if uniform_name == "test_vec3" || uniform_name == "test_vec4" || uniform_name == "test_mat4"
@@ -91,5 +101,85 @@ impl MockShaderProgram {
         } else {
             Ok(())
         }
+    }
+
+    #[allow(dead_code)]
+    pub fn use_program(&self) {
+        println!("Mock use_program called");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // write unit tests for mock shader program
+    #[test]
+    fn test_mock_shader_program() {
+        let shader = MockShaderProgram::new().unwrap();
+        assert_eq!(shader.program_id, 1);
+    }
+
+    #[test]
+    fn test_mock_shader_program_new_3d() {
+        let shader = MockShaderProgram::new_3d().unwrap();
+        assert_eq!(shader.program_id, 2);
+    }
+
+    #[test]
+    fn test_mock_shader_program_set_uniform_float() {
+        let shader = MockShaderProgram::new().unwrap();
+        let result = shader.set_uniform_float("test_float", 1.0);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_mock_shader_program_set_uniform_int() {
+        let shader = MockShaderProgram::new().unwrap();
+        let result = shader.set_uniform_int("test_int", 1);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_mock_shader_program_set_uniform_vec3() {
+        let shader = MockShaderProgram::new().unwrap();
+        let vec = Vector3::new(1.0, 2.0, 3.0);
+        let result = shader.set_uniform_vec3("test_vec3", &vec);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_mock_shader_program_set_uniform_vec4() {
+        let shader = MockShaderProgram::new().unwrap();
+        let vec = Vector4::new(1.0, 2.0, 3.0, 4.0);
+        let result = shader.set_uniform_vec4("test_vec4", &vec);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_mock_shader_program_set_uniform_mat4() {
+        let shader = MockShaderProgram::new().unwrap();
+        let mat = Matrix4::new(
+            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        );
+        let result = shader.set_uniform_mat4("test_mat4", &mat);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_mock_shader_program_set_uniform_mat4_success() {
+        let shader = MockShaderProgram::new().unwrap();
+        let mat = Matrix4::<f32>::new(
+            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        );
+        let result = shader.set_uniform_mat4("valid_mat4", &mat);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_mock_shader_program_use() {
+        let shader = MockShaderProgram::new().unwrap();
+        shader.use_program();
+        // No assertions needed as this is just a mock implementation
     }
 }
