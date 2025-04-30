@@ -8,3 +8,5 @@ pub mod textures;
 pub mod tiled;
 pub mod vao;
 pub mod vertex_attribute;
+
+pub mod utils;
