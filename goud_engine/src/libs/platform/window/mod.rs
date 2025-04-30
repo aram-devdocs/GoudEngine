@@ -197,3 +197,210 @@ impl Window {
         self.window_handle.set_should_close(true);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ffi::CString;
+
+    // Create a test WindowBuilder
+    fn create_test_window_builder() -> WindowBuilder {
+        let title = CString::new("Test Window").unwrap();
+        WindowBuilder {
+            width: 800,
+            height: 600,
+            title: title.into_raw(),
+            target_fps: 60,
+        }
+    }
+
+    #[test]
+    #[ignore] // This test requires a window context, which may not be available in CI
+    fn test_window_creation() {
+        let builder = create_test_window_builder();
+        let window = Window::new(builder);
+
+        assert_eq!(window.width, 800);
+        assert_eq!(window.height, 600);
+        assert_eq!(window.target_fps, 60);
+        assert_eq!(window.frame_count, 0);
+        assert_eq!(window.fps, 0);
+        assert_eq!(window.delta_time, 0.0);
+    }
+
+    #[test]
+    #[ignore] // This test requires a window context
+    fn test_window_should_close() {
+        let builder = create_test_window_builder();
+        let mut window = Window::new(builder);
+
+        assert_eq!(window.should_close(), false);
+        window.terminate();
+        assert_eq!(window.should_close(), true);
+    }
+
+    #[test]
+    #[ignore] // This test requires a window context
+    fn test_window_input_delegation() {
+        let builder = create_test_window_builder();
+        let window = Window::new(builder);
+
+        // Test input handler delegation
+        assert_eq!(window.is_key_pressed(Key::A), false);
+        assert_eq!(
+            window.is_mouse_button_pressed(glfw::MouseButton::Button1),
+            false
+        );
+
+        let mouse_pos = window.get_mouse_position();
+        assert_eq!(mouse_pos.x, 0.0);
+        assert_eq!(mouse_pos.y, 0.0);
+    }
+
+    #[test]
+    #[ignore] // This test requires a window context
+    fn test_window_gamepad_delegation() {
+        let builder = create_test_window_builder();
+        let mut window = Window::new(builder);
+
+        assert_eq!(window.is_gamepad_button_pressed(0, 1), false);
+
+        window.handle_gamepad_button(0, 1, true);
+        assert_eq!(window.is_gamepad_button_pressed(0, 1), true);
+
+        window.handle_gamepad_button(0, 1, false);
+        assert_eq!(window.is_gamepad_button_pressed(0, 1), false);
+    }
+
+    #[test]
+    #[ignore] // This test requires a window context
+    fn test_aspect_ratio_maintenance() {
+        let builder = create_test_window_builder();
+        let mut window = Window::new(builder);
+
+        // Initial aspect ratio is 800 / 600 = 4 / 3
+        let initial_aspect_ratio = window.width as f32 / window.height as f32;
+
+        // Call maintain_aspect_ratio (note: this is difficult to test properly
+        // without actually resizing the window, which we can't reliably do in a test)
+        window.maintain_aspect_ratio();
+
+        // After maintenance, the aspect ratio should still be the same
+        let (width, height) = window.window_handle.get_size();
+        let new_aspect_ratio = width as f32 / height as f32;
+
+        // Allow for floating point imprecision
+        assert!((initial_aspect_ratio - new_aspect_ratio).abs() < 0.001);
+    }
+}
+
+// Integration-style test module
+#[cfg(test)]
+mod integration_tests {
+    use super::*;
+    use std::ffi::CString;
+    use std::time::Duration;
+
+    #[test]
+    #[ignore] // Requires a window context
+    fn test_window_lifecycle() {
+        // Create a test window
+        let title = CString::new("Integration Test Window").unwrap();
+        let builder = WindowBuilder {
+            width: 800,
+            height: 600,
+            title: title.as_ptr(),
+            target_fps: 60,
+        };
+
+        let mut window = Window::new(builder);
+        window.init_gl();
+
+        // Verify initial state
+        assert_eq!(window.width, 800);
+        assert_eq!(window.height, 600);
+        assert!(!window.should_close());
+
+        // Test input handling
+        assert!(!window.is_key_pressed(Key::A));
+        assert!(!window.is_mouse_button_pressed(glfw::MouseButton::Button1));
+
+        // Run a few update cycles
+        for _ in 0..3 {
+            window.update();
+            std::thread::sleep(Duration::from_millis(16));
+        }
+
+        // Verify delta time is updated
+        assert!(window.delta_time > 0.0);
+
+        // Clean up
+        window.terminate();
+        assert!(window.should_close());
+    }
+
+    #[test]
+    #[ignore] // Requires a window context
+    fn test_input_handling() {
+        // Create a test window
+        let title = CString::new("Input Test Window").unwrap();
+        let builder = WindowBuilder {
+            width: 640,
+            height: 480,
+            title: title.as_ptr(),
+            target_fps: 60,
+        };
+
+        let mut window = Window::new(builder);
+
+        // Test gamepad input delegation
+        window.handle_gamepad_button(0, 1, true);
+        assert!(window.is_gamepad_button_pressed(0, 1));
+
+        window.handle_gamepad_button(0, 1, false);
+        assert!(!window.is_gamepad_button_pressed(0, 1));
+
+        // Clean up
+        window.terminate();
+    }
+
+    #[test]
+    #[ignore] // Requires a window context
+    fn test_fps_management() {
+        // Create a window with specific target FPS
+        let title = CString::new("FPS Test Window").unwrap();
+        let builder = WindowBuilder {
+            width: 640,
+            height: 480,
+            title: title.as_ptr(),
+            target_fps: 30, // Lower FPS for testing
+        };
+
+        let mut window = Window::new(builder);
+        window.init_gl();
+
+        // Run several update cycles
+        let start = std::time::Instant::now();
+
+        for _ in 0..10 {
+            window.update();
+        }
+
+        let elapsed = start.elapsed();
+
+        // With target_fps of 30, 10 frames should take at least 10/30 seconds
+        // We're checking that FPS limiting is working
+        let min_expected_duration = Duration::from_secs_f32(10.0 / 30.0);
+
+        // Allow some margin for measurement error
+        let min_threshold = min_expected_duration.as_secs_f32() * 0.8;
+
+        assert!(
+            elapsed.as_secs_f32() >= min_threshold,
+            "FPS limiting not working, elapsed time was {:?}",
+            elapsed
+        );
+
+        window.terminate();
+    }
+}
