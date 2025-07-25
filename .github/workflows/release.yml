@@ -1,0 +1,172 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'release-*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Get version from tag
+      id: get_version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ steps.get_version.outputs.version }}
+        draft: false
+        prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+
+  build-rust:
+    name: Build Rust ${{ matrix.target }}
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            lib_name: libgoud_engine.so
+            artifact_name: libgoud_engine-linux-x64.so
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            lib_name: libgoud_engine.dylib
+            artifact_name: libgoud_engine-macos-x64.dylib
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            lib_name: libgoud_engine.dylib
+            artifact_name: libgoud_engine-macos-arm64.dylib
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            lib_name: goud_engine.dll
+            artifact_name: goud_engine-windows-x64.dll
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
+    
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev
+    
+    - name: Build release binary
+      run: |
+        cd goud_engine
+        cargo build --release --target ${{ matrix.target }}
+    
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./goud_engine/target/${{ matrix.target }}/release/${{ matrix.lib_name }}
+        asset_name: ${{ matrix.artifact_name }}
+        asset_content_type: application/octet-stream
+
+  publish-nuget:
+    name: Publish NuGet Package
+    needs: [create-release, build-rust]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '7.0.x'
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev
+    
+    - name: Update version in files
+      run: |
+        VERSION=${{ needs.create-release.outputs.version }}
+        VERSION=${VERSION#v}  # Remove 'v' prefix if present
+        
+        # Update Rust version
+        sed -i "s/^version = \".*\"/version = \"$VERSION\"/" goud_engine/Cargo.toml
+        
+        # Update C# version
+        sed -i "s/<Version>.*<\/Version>/<Version>$VERSION<\/Version>/" sdks/GoudEngine/GoudEngine.csproj
+    
+    - name: Build all platforms
+      run: |
+        # Build for Linux
+        cd goud_engine
+        cargo build --release --target x86_64-unknown-linux-gnu
+        cd ..
+        
+        # Copy Linux library
+        mkdir -p sdks/GoudEngine/runtimes/linux-x64/native
+        cp goud_engine/target/x86_64-unknown-linux-gnu/release/libgoud_engine.so sdks/GoudEngine/runtimes/linux-x64/native/
+        
+        # Note: For a complete release, you'd need to download the other platform binaries
+        # from the previous job's artifacts or use cross-compilation
+    
+    - name: Pack NuGet package
+      run: |
+        cd sdks/GoudEngine
+        dotnet pack -c Release
+    
+    - name: Push to NuGet.org
+      run: |
+        cd sdks/GoudEngine
+        dotnet nuget push ../nuget_package_output/GoudEngine.*.nupkg \
+          --api-key ${{ secrets.NUGET_API_KEY }} \
+          --source https://api.nuget.org/v3/index.json \
+          --skip-duplicate
+
+  release-summary:
+    name: Release Summary
+    needs: [create-release, build-rust, publish-nuget]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Summary
+      run: |
+        echo "## Release Summary for ${{ needs.create-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Build Status" >> $GITHUB_STEP_SUMMARY
+        echo "- Rust builds: ${{ needs.build-rust.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- NuGet publish: ${{ needs.publish-nuget.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- Linux x64: libgoud_engine-linux-x64.so" >> $GITHUB_STEP_SUMMARY
+        echo "- macOS x64: libgoud_engine-macos-x64.dylib" >> $GITHUB_STEP_SUMMARY
+        echo "- macOS ARM64: libgoud_engine-macos-arm64.dylib" >> $GITHUB_STEP_SUMMARY
+        echo "- Windows x64: goud_engine-windows-x64.dll" >> $GITHUB_STEP_SUMMARY
+        echo "- NuGet Package: GoudEngine.${{ needs.create-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,69 @@
+version: 2
+updates:
+  # Rust dependencies
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "rust"
+    assignees:
+      - "aramhammoudeh"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      rust-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+      rust-minor:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+    ignore:
+      # Ignore major version updates for critical dependencies
+      - dependency-name: "gl"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "glfw"
+        update-types: ["version-update:semver-major"]
+
+  # .NET dependencies
+  - package-ecosystem: "nuget"
+    directory: "/sdks/GoudEngine"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "dotnet"
+    assignees:
+      - "aramhammoudeh"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    assignees:
+      - "aramhammoudeh"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
