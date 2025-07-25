@@ -1,0 +1,208 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop, "*" ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Rust checks and tests
+  rust-check:
+    name: Rust ${{ matrix.rust }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        rust: [stable, nightly]
+        exclude:
+          # Skip nightly on Windows to save CI time
+          - os: windows-latest
+            rust: nightly
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+        components: rustfmt, clippy
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-${{ matrix.rust }}-
+          ${{ runner.os }}-cargo-
+    
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev
+    
+    - name: Check formatting
+      if: matrix.rust == 'stable'
+      run: cargo fmt --all -- --check
+    
+    - name: Run clippy
+      if: matrix.rust == 'stable'
+      run: cargo clippy --all-targets --all-features -- -D warnings
+    
+    - name: Build
+      run: cargo build --verbose
+    
+    - name: Run tests
+      run: cargo test --verbose -- --nocapture
+    
+    # Only run on stable for coverage
+    - name: Install cargo-tarpaulin
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
+      run: |
+        cargo install cargo-tarpaulin || true
+    
+    - name: Generate coverage
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
+      run: |
+        cargo tarpaulin --out xml --all-features --workspace --timeout 300 --exclude-files "*/build.rs" --exclude-files "*/tests/*" --exclude-files "*/examples/*"
+    
+    - name: Upload coverage to Codecov
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./cobertura.xml
+        flags: rust
+        name: rust-coverage
+        fail_ci_if_error: false
+
+  # Cargo deny check (license/security)
+  cargo-deny:
+    name: Cargo Deny Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: EmbarkStudios/cargo-deny-action@v1
+      with:
+        log-level: warn
+        command: check
+        arguments: --all-features
+
+  # .NET SDK checks and tests
+  dotnet-check:
+    name: .NET SDK on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    
+    defaults:
+      run:
+        working-directory: sdks/GoudEngine
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '7.0.x'
+    
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    
+    # TODO: Add when C# tests are implemented
+    # - name: Test
+    #   run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+    
+    # - name: Upload test results
+    #   uses: actions/upload-artifact@v4
+    #   if: always()
+    #   with:
+    #     name: dotnet-test-results-${{ matrix.os }}
+    #     path: '**/test-results.trx'
+
+  # Build check to ensure everything compiles together
+  integration-build:
+    name: Integration Build Check
+    runs-on: ${{ matrix.os }}
+    needs: [rust-check, dotnet-check]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '7.0.x'
+    
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev
+    
+    - name: Run full build script
+      run: |
+        chmod +x build.sh
+        ./build.sh --local
+    
+    - name: Verify build artifacts
+      run: |
+        # Check Rust library exists
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          test -f sdks/GoudEngine/runtimes/osx-x64/native/libgoud_engine.dylib
+        elif [[ "$RUNNER_OS" == "Linux" ]]; then
+          test -f sdks/GoudEngine/runtimes/linux-x64/native/libgoud_engine.so
+        fi
+        
+        # Check .NET package exists
+        test -f sdks/nuget_package_output/GoudEngine.*.nupkg
+
+  # Final status check
+  ci-success:
+    name: CI Success
+    if: always()
+    needs: [rust-check, cargo-deny, dotnet-check, integration-build]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check all jobs
+      run: |
+        if [[ "${{ needs.rust-check.result }}" != "success" ]] || \
+           [[ "${{ needs.cargo-deny.result }}" != "success" ]] || \
+           [[ "${{ needs.dotnet-check.result }}" != "success" ]] || \
+           [[ "${{ needs.integration-build.result }}" != "success" ]]; then
+          echo "One or more jobs failed"
+          exit 1
+        fi
+        echo "All checks passed!"

@@ -1,0 +1,88 @@
+codecov:
+  require_ci_to_pass: yes
+  notify:
+    wait_for_ci: true
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+  
+  status:
+    project:
+      default:
+        # Fail the status if coverage drops by more than 1%
+        threshold: 1%
+        target: 80%
+        if_not_found: success
+        if_ci_failed: error
+      
+      rust:
+        target: 80%
+        paths:
+          - "goud_engine/src/**"
+        flags:
+          - rust
+      
+      # TODO: Enable when C# tests are added
+      # dotnet:
+      #   target: 80%
+      #   paths:
+      #     - "sdks/GoudEngine/**/*.cs"
+      #   flags:
+      #     - dotnet
+    
+    patch:
+      default:
+        # Require at least 80% coverage on new code
+        target: 80%
+        if_not_found: success
+        if_ci_failed: error
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: yes
+  
+flags:
+  rust:
+    paths:
+      - goud_engine/src/**
+    carryforward: false
+  
+  # TODO: Enable when C# tests are added
+  # dotnet:
+  #   paths:
+  #     - sdks/GoudEngine/**/*.cs
+  #   carryforward: false
+
+ignore:
+  # Ignore generated files
+  - "**/NativeMethods.g.cs"
+  - "**/build.rs"
+  - "goud_engine/src/sdk.rs"  # FFI bindings
+  
+  # Ignore test files
+  - "**/tests/**"
+  - "**/*_test.rs"
+  - "**/*Test.cs"
+  
+  # Ignore examples
+  - "examples/**"
+  
+  # Ignore docs and config
+  - "docs/**"
+  - "*.md"
+  - "*.toml"
+  - "*.yml"
+  - "*.yaml"

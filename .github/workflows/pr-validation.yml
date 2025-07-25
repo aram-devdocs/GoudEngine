@@ -1,0 +1,265 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  validate-pr-title:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check PR title format
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const title = context.payload.pull_request.title;
+          const validPrefixes = [
+            'feat:', 'fix:', 'docs:', 'style:', 'refactor:', 
+            'perf:', 'test:', 'chore:', 'ci:', 'build:'
+          ];
+          
+          const hasValidPrefix = validPrefixes.some(prefix => 
+            title.toLowerCase().startsWith(prefix)
+          );
+          
+          if (!hasValidPrefix) {
+            core.setFailed(`PR title must start with one of: ${validPrefixes.join(', ')}`);
+            
+            // Add comment to PR
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ❌ Invalid PR Title
+              
+              Your PR title must start with one of the following prefixes:
+              - \`feat:\` - A new feature
+              - \`fix:\` - A bug fix
+              - \`docs:\` - Documentation changes
+              - \`style:\` - Code style changes (formatting, missing semi-colons, etc)
+              - \`refactor:\` - Code refactoring
+              - \`perf:\` - Performance improvements
+              - \`test:\` - Adding or updating tests
+              - \`chore:\` - Maintenance tasks
+              - \`ci:\` - CI/CD changes
+              - \`build:\` - Build system changes
+              
+              Example: \`feat: add new sprite collision detection\`
+              
+              Please update your PR title and try again.`
+            });
+          }
+
+  check-version-bump:
+    name: Check Version Bump
+    runs-on: ubuntu-latest
+    if: |
+      !contains(github.event.pull_request.labels.*.name, 'no-version-bump') &&
+      !contains(github.event.pull_request.title, 'chore:') &&
+      !contains(github.event.pull_request.title, 'docs:') &&
+      !contains(github.event.pull_request.title, 'ci:')
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Check if version was bumped
+      id: version_check
+      run: |
+        # Get base branch
+        BASE_BRANCH=${{ github.event.pull_request.base.ref }}
+        
+        # Fetch base branch
+        git fetch origin $BASE_BRANCH
+        
+        # Get versions
+        BASE_VERSION=$(git show origin/$BASE_BRANCH:goud_engine/Cargo.toml | grep '^version = ' | head -1 | cut -d'"' -f2)
+        PR_VERSION=$(grep '^version = ' goud_engine/Cargo.toml | head -1 | cut -d'"' -f2)
+        
+        echo "Base version: $BASE_VERSION"
+        echo "PR version: $PR_VERSION"
+        
+        if [ "$BASE_VERSION" = "$PR_VERSION" ]; then
+          echo "needs_bump=true" >> $GITHUB_OUTPUT
+        else
+          echo "needs_bump=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Comment on PR if version bump needed
+      if: steps.version_check.outputs.needs_bump == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const comment = `## ⚠️ Version Bump Required
+          
+          This PR appears to contain functional changes but the version hasn't been bumped.
+          
+          Please run one of the following commands:
+          - \`./increment_version.sh\` - For patch version (bug fixes)
+          - \`./increment_version.sh --minor\` - For minor version (new features)
+          - \`./increment_version.sh --major\` - For major version (breaking changes)
+          
+          If this PR doesn't require a version bump (e.g., internal refactoring), you can add the \`no-version-bump\` label.`;
+          
+          // Check if we already commented
+          const comments = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number
+          });
+          
+          const botComment = comments.data.find(comment => 
+            comment.user.type === 'Bot' && 
+            comment.body.includes('Version Bump Required')
+          );
+          
+          if (!botComment) {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });
+          }
+          
+          core.setFailed('Version bump required for this PR');
+
+  check-file-size:
+    name: Check File Sizes
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Check for large files
+      run: |
+        # Find files larger than 1MB
+        LARGE_FILES=$(find . -type f -size +1M ! -path "./.git/*" ! -path "./target/*" ! -path "*/bin/*" ! -path "*/obj/*" ! -name "*.png" ! -name "*.jpg" ! -name "*.jpeg" ! -name "*.gif")
+        
+        if [ -n "$LARGE_FILES" ]; then
+          echo "## ⚠️ Large files detected (>1MB):" >> $GITHUB_STEP_SUMMARY
+          echo "$LARGE_FILES" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Consider using Git LFS for large binary files." >> $GITHUB_STEP_SUMMARY
+          exit 1
+        fi
+
+  check-todos:
+    name: Check TODOs
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Check for new TODOs
+      run: |
+        # Get the base branch
+        BASE_BRANCH=${{ github.event.pull_request.base.ref }}
+        git fetch origin $BASE_BRANCH
+        
+        # Find new TODOs in the PR
+        NEW_TODOS=$(git diff origin/$BASE_BRANCH...HEAD | grep -E "^\+.*TODO" | grep -v "^+++" || true)
+        
+        if [ -n "$NEW_TODOS" ]; then
+          echo "## 📝 New TODOs found in this PR:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "$NEW_TODOS" | sed 's/^+//' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Consider creating GitHub issues for these TODOs." >> $GITHUB_STEP_SUMMARY
+        fi
+
+  lint-markdown:
+    name: Lint Markdown Files
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Lint Markdown
+      uses: DavidAnson/markdownlint-cli2-action@v15
+      with:
+        globs: |
+          **/*.md
+          !**/target/**
+          !**/node_modules/**
+
+  pr-size-labeler:
+    name: PR Size Labeler
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Add size labels
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: pr } = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number
+          });
+          
+          const additions = pr.additions;
+          const deletions = pr.deletions;
+          const total = additions + deletions;
+          
+          // Remove existing size labels
+          const sizeLabels = ['size/XS', 'size/S', 'size/M', 'size/L', 'size/XL'];
+          for (const label of sizeLabels) {
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: label
+              });
+            } catch (e) {
+              // Label might not exist, ignore
+            }
+          }
+          
+          // Add appropriate size label
+          let sizeLabel;
+          if (total < 10) sizeLabel = 'size/XS';
+          else if (total < 100) sizeLabel = 'size/S';
+          else if (total < 500) sizeLabel = 'size/M';
+          else if (total < 1000) sizeLabel = 'size/L';
+          else sizeLabel = 'size/XL';
+          
+          await github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            labels: [sizeLabel]
+          });
+          
+          // Add summary
+          console.log(`PR size: +${additions} -${deletions} (total: ${total}) - Label: ${sizeLabel}`);
+
+  validate-success:
+    name: PR Validation Success
+    needs: [validate-pr-title, check-version-bump, check-file-size, check-todos, lint-markdown, pr-size-labeler]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Check validation status
+      run: |
+        if [[ "${{ needs.validate-pr-title.result }}" == "failure" ]] || \
+           [[ "${{ needs.check-version-bump.result }}" == "failure" ]] || \
+           [[ "${{ needs.check-file-size.result }}" == "failure" ]]; then
+          echo "PR validation failed!"
+          exit 1
+        fi
+        echo "All PR validations passed!"

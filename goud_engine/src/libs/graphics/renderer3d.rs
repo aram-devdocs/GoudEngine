@@ -2,8 +2,8 @@ use cgmath::{perspective, Deg, Matrix3, Matrix4, Vector3};
 use gl::types::*;
 use std::collections::HashMap;
 
-use super::camera::Camera;
 use super::components::buffer::BufferObject;
+use super::components::camera::Camera;
 use super::components::light::{Light, LightManager};
 use super::components::shader::ShaderProgram;
 use super::components::skybox::Skybox;

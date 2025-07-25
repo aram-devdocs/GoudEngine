@@ -67,3 +67,83 @@ impl TiledManager {
         self.selected_map_id = None;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tiled_manager() {
+        let mut tiled_manager = TiledManager::new();
+        let map_id = tiled_manager.load_map(
+            "test_map",
+            "src/libs/graphics/components/tiled/_Tiled/Maps/Map.tmx",
+            vec![1, 2, 3],
+        );
+        if let Err(e) = &map_id {
+            println!("Error loading map: {}", e);
+        }
+        assert!(map_id.is_ok());
+    }
+
+    #[test]
+    fn test_get_map_by_id() {
+        let mut tiled_manager = TiledManager::new();
+        let map_id = tiled_manager
+            .load_map(
+                "test_map",
+                "src/libs/graphics/components/tiled/_Tiled/Maps/Map.tmx",
+                vec![1, 2, 3],
+            )
+            .unwrap();
+
+        // Test getting existing map
+        let map = tiled_manager.get_map_by_id(map_id);
+        assert!(map.is_some());
+        assert_eq!(map.unwrap().id, map_id);
+
+        // Test getting non-existent map
+        let non_existent_map = tiled_manager.get_map_by_id(999);
+        assert!(non_existent_map.is_none());
+    }
+
+    #[test]
+    fn test_set_selected_map() {
+        let mut tiled_manager = TiledManager::new();
+        let map_id = tiled_manager
+            .load_map(
+                "test_map",
+                "src/libs/graphics/components/tiled/_Tiled/Maps/Map.tmx",
+                vec![1, 2, 3],
+            )
+            .unwrap();
+
+        // Test setting valid map
+        let result = tiled_manager.set_selected_map_by_id(map_id);
+        assert!(result.is_ok());
+        assert_eq!(tiled_manager.selected_map_id, Some(map_id));
+
+        // Test setting invalid map
+        let result = tiled_manager.set_selected_map_by_id(999);
+        assert!(result.is_err());
+        assert_eq!(tiled_manager.selected_map_id, Some(map_id)); // Should remain unchanged
+    }
+
+    #[test]
+    fn test_clear_selected_map() {
+        let mut tiled_manager = TiledManager::new();
+        let map_id = tiled_manager
+            .load_map(
+                "test_map",
+                "src/libs/graphics/components/tiled/_Tiled/Maps/Map.tmx",
+                vec![1, 2, 3],
+            )
+            .unwrap();
+
+        tiled_manager.set_selected_map_by_id(map_id).unwrap();
+        assert_eq!(tiled_manager.selected_map_id, Some(map_id));
+
+        tiled_manager.clear_selected_map();
+        assert_eq!(tiled_manager.selected_map_id, None);
+    }
+}

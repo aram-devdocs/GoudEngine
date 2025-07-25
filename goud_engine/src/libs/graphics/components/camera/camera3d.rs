@@ -115,3 +115,84 @@ impl Camera for Camera3D {
         self.zoom
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_camera3d_new() {
+        let camera = Camera3D::new();
+        assert_eq!(camera.position, Vector3::new(0.0, 0.0, 3.0));
+        assert_eq!(camera.target, Vector3::new(0.0, 0.0, 0.0));
+        assert_eq!(camera.up, Vector3::new(0.0, 1.0, 0.0));
+        assert_eq!(camera.rotation, Vector3::new(0.0, 0.0, 0.0));
+        assert_eq!(camera.zoom, 1.0);
+    }
+
+    #[test]
+    fn test_camera3d_set_position() {
+        let mut camera = Camera3D::new();
+        camera.set_position(1.0, 2.0, 3.0);
+        assert_eq!(camera.position, Vector3::new(1.0, 2.0, 3.0));
+    }
+
+    #[test]
+    fn test_camera3d_set_position_xy() {
+        let mut camera = Camera3D::new();
+        camera.set_position_xy(1.0, 2.0);
+        assert_eq!(camera.position.x, 1.0);
+        assert_eq!(camera.position.y, 2.0);
+        assert_eq!(camera.position.z, 3.0);
+    }
+
+    #[test]
+    fn test_camera3d_get_position() {
+        let mut camera = Camera3D::new();
+        camera.set_position(1.0, 2.0, 3.0);
+        assert_eq!(camera.get_position(), Vector3::new(1.0, 2.0, 3.0));
+    }
+
+    #[test]
+    fn test_camera3d_set_rotation() {
+        let mut camera = Camera3D::new();
+        camera.set_rotation(1.0, 2.0, 3.0);
+        assert_eq!(camera.rotation, Vector3::new(1.0, 2.0, 3.0));
+    }
+
+    #[test]
+    fn test_camera3d_get_rotation() {
+        let mut camera = Camera3D::new();
+        camera.set_rotation(1.0, 2.0, 3.0);
+        assert_eq!(camera.get_rotation(), Vector3::new(1.0, 2.0, 3.0));
+    }
+
+    #[test]
+    fn test_camera3d_set_zoom() {
+        let mut camera = Camera3D::new();
+        camera.set_zoom(2.0);
+        assert_eq!(camera.zoom, 2.0);
+    }
+
+    #[test]
+    fn test_camera3d_get_zoom() {
+        let mut camera = Camera3D::new();
+        camera.set_zoom(2.0);
+        assert_eq!(camera.get_zoom(), 2.0);
+    }
+
+    #[test]
+    fn test_camera3d_get_view_matrix() {
+        let camera = Camera3D::new();
+        let view_matrix = camera.get_view_matrix();
+        // The view matrix should be an identity matrix for the default camera position
+        assert_eq!(
+            view_matrix,
+            Matrix4::look_at_rh(
+                Point3::new(0.0, 0.0, 3.0),
+                Point3::new(0.0, 0.0, -1.0),
+                Vector3::new(0.0, 1.0, 0.0)
+            )
+        );
+    }
+}
