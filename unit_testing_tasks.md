@@ -1,20 +1,14 @@
 # Goud Engine Unit Testing Implementation Plan
 
 ## Overview
+
 This document contains a comprehensive plan for achieving 100% unit test coverage for the Goud Engine and SDK. The tasks are organized into phases that can be executed in parallel, followed by QA phases.
 
 ## Current Testing Status
 
-### Goud Engine
-- **Files with tests**: 10 out of 34 (29% coverage)
-- **Files needing tests**: 24
-- **Test framework**: Rust's built-in testing with custom mock helpers
-
-### SDK (C#)
-- **Files with tests**: 0 out of 5 (0% coverage)
-- **Files needing tests**: All 5 C# files
 
 ## Testing Conventions Established
+
 - Test modules use `#[cfg(test)]` and `mod tests`
 - Test functions follow pattern: `test_<struct>_<method>()`
 - Mock implementations for OpenGL-dependent code
@@ -22,95 +16,10 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 
 ---
 
-## Phase 1: Core Components and Simple Units (Can be parallelized)
-
-### Ticket 1.1: Unit Tests for Simple Graphics Components
-**Files**: sprite.rs, vertex_attribute.rs
-**Priority**: High
-**Estimated Effort**: 4 hours
-
-**Context**: These components have minimal external dependencies and straightforward logic. They are ideal starting points for testing.
-
-**Requirements**:
-1. Add unit tests to `/goud_engine/src/libs/graphics/components/sprite.rs`:
-   - Test `Sprite::new()` with various parameter combinations
-   - Test `check_collision()` with overlapping and non-overlapping sprites
-   - Test edge cases (same position, touching edges, negative dimensions)
-   - Test DTO creation methods (`get_square_sprite_dto`, `get_sprite_dto`)
-   - Test sprite transformations and property setters
-
-2. Add unit tests to `/goud_engine/src/libs/graphics/components/vertex_attribute.rs`:
-   - Test `VertexAttribute::new()` with different sizes and offsets
-   - Test GL type conversions
-   - Test edge cases for invalid inputs
-
-**Testing Pattern**: Follow the established pattern from camera2d.rs tests. Use `#[cfg(test)]` module at the bottom of each file.
-
----
-
-### Ticket 1.2: Unit Tests for Type Definitions and Core Structures
-**Files**: types.rs, ffi_privates.rs
-**Priority**: High
-**Estimated Effort**: 3 hours
-
-**Context**: These files contain type definitions, enums, and FFI structures that need validation.
-
-**Requirements**:
-1. Add unit tests to `/goud_engine/src/types.rs`:
-   - Test enum conversions and serialization
-   - Test any trait implementations
-   - Validate type sizes and alignments for FFI compatibility
-
-2. Add unit tests to `/goud_engine/src/ffi_privates.rs`:
-   - Test FFI structure creation and field access
-   - Validate memory layout assumptions
-   - Test any conversion functions between Rust and C types
-
-**Testing Pattern**: Focus on property testing and validation rather than behavior.
-
----
-
-### Ticket 1.3: Unit Tests for Light Component
-**Files**: light.rs
-**Priority**: Medium
-**Estimated Effort**: 4 hours
-
-**Context**: The Light struct manages 3D lighting properties with relatively simple state management.
-
-**Requirements**:
-1. Add unit tests to `/goud_engine/src/libs/graphics/components/light.rs`:
-   - Test `Light::new()` with various positions and colors
-   - Test property setters (set_position, set_color)
-   - Test uniform setter methods
-   - Test edge cases for color values (clamping, negative values)
-   - Test interaction with shader programs (using MockShaderProgram)
-
-**Testing Pattern**: Use MockShaderProgram from test_helper.rs for shader interactions.
-
----
-
-### Ticket 1.4: Unit Tests for ECS Module
-**Files**: ecs/mod.rs
-**Priority**: High
-**Estimated Effort**: 6 hours
-
-**Context**: The ECS (Entity Component System) is a core part of the engine that needs comprehensive testing.
-
-**Requirements**:
-1. Add unit tests to `/goud_engine/src/libs/ecs/mod.rs`:
-   - Test entity creation and deletion
-   - Test component addition and removal
-   - Test system registration and execution
-   - Test query functionality
-   - Test edge cases (removing non-existent components, double registration)
-
-**Testing Pattern**: Create mock components and systems for testing the ECS functionality in isolation.
-
----
-
 ## Phase 2: OpenGL-Dependent Components (Can be parallelized)
 
 ### Ticket 2.1: Unit Tests for Buffer and VAO Components
+
 **Files**: buffer.rs, vao.rs
 **Priority**: High
 **Estimated Effort**: 8 hours
@@ -118,7 +27,9 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 **Context**: These components heavily depend on OpenGL. Testing strategy should use dependency injection or trait-based mocking.
 
 **Requirements**:
+
 1. Add unit tests to `/goud_engine/src/libs/graphics/components/buffer.rs`:
+
    - Create a trait for OpenGL functions to enable mocking
    - Test successful buffer creation scenarios
    - Test error handling when OpenGL operations fail
@@ -137,6 +48,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 ---
 
 ### Ticket 2.2: Unit Tests for Skybox Component
+
 **Files**: skybox.rs
 **Priority**: Medium
 **Estimated Effort**: 6 hours
@@ -144,6 +56,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 **Context**: Skybox manages cube map textures and rendering state for 3D environments.
 
 **Requirements**:
+
 1. Add unit tests to `/goud_engine/src/libs/graphics/components/skybox.rs`:
    - Test skybox initialization with texture paths
    - Test rendering state management
@@ -156,6 +69,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 ---
 
 ### Ticket 2.3: Unit Tests for Texture Manager
+
 **Files**: texture_manager.rs
 **Priority**: High
 **Estimated Effort**: 6 hours
@@ -163,6 +77,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 **Context**: TextureManager handles texture caching and lifecycle management.
 
 **Requirements**:
+
 1. Add unit tests to `/goud_engine/src/libs/graphics/components/textures/texture_manager.rs`:
    - Test texture loading and caching
    - Test duplicate texture handling
@@ -177,6 +92,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 ## Phase 3: Renderer Components (Sequential - Start after Phase 2)
 
 ### Ticket 3.1: Unit Tests for Base Renderer
+
 **Files**: renderer.rs
 **Priority**: High
 **Estimated Effort**: 5 hours
@@ -184,6 +100,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 **Context**: The base renderer provides abstraction over renderer2d and renderer3d without direct OpenGL calls.
 
 **Requirements**:
+
 1. Add unit tests to `/goud_engine/src/libs/graphics/renderer.rs`:
    - Test renderer initialization
    - Test unsafe pointer operations with proper mocking
@@ -196,6 +113,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 ---
 
 ### Ticket 3.2: Integration Test Framework for Renderer2D/3D
+
 **Files**: renderer2d.rs, renderer3d.rs
 **Priority**: Medium
 **Estimated Effort**: 10 hours
@@ -203,6 +121,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 **Context**: These renderers are heavily OpenGL-dependent and require integration testing approach.
 
 **Requirements**:
+
 1. Create integration test framework for renderers:
    - Set up test harness with OpenGL context
    - Extract testable pure functions where possible
@@ -218,6 +137,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 ## Phase 4: Game Logic and SDK (Can be parallelized)
 
 ### Ticket 4.1: Unit Tests for Game Module
+
 **Files**: game.rs
 **Priority**: High
 **Estimated Effort**: 8 hours
@@ -225,6 +145,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 **Context**: The game module manages sprites, tilesets, and integrates multiple systems.
 
 **Requirements**:
+
 1. Add unit tests to `/goud_engine/src/game.rs`:
    - Extract tileset management logic into testable functions
    - Test sprite ID generation and tracking
@@ -238,6 +159,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 ---
 
 ### Ticket 4.2: C# SDK Unit Tests - Core Classes
+
 **Files**: GoudGame.cs, Animation.cs, AnimationController.cs
 **Priority**: High
 **Estimated Effort**: 8 hours
@@ -245,14 +167,17 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 **Context**: The C# SDK has zero test coverage. Need to establish testing framework and patterns.
 
 **Requirements**:
+
 1. Set up C# testing framework (MSTest or NUnit)
 2. Add unit tests for `GoudGame.cs`:
+
    - Test initialization and configuration
    - Test game loop methods
    - Mock P/Invoke calls to native library
    - Test error handling
 
 3. Add unit tests for `Animation.cs`:
+
    - Test animation frame management
    - Test timing and interpolation
    - Test state transitions
@@ -267,6 +192,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 ---
 
 ### Ticket 4.3: Unit Tests for SDK Entry Point
+
 **Files**: sdk.rs, lib.rs
 **Priority**: Medium
 **Estimated Effort**: 4 hours
@@ -274,7 +200,9 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 **Context**: These files provide FFI boundaries and library initialization.
 
 **Requirements**:
+
 1. Add unit tests to `/goud_engine/src/sdk.rs`:
+
    - Test FFI function signatures
    - Test parameter validation
    - Test error code returns
@@ -291,6 +219,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 ## Phase 5: Module Organization Files (Low Priority)
 
 ### Ticket 5.1: Unit Tests for Module Files
+
 **Files**: All mod.rs files (8 files)
 **Priority**: Low
 **Estimated Effort**: 2 hours
@@ -298,6 +227,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 **Context**: Module files typically only contain re-exports but may have initialization logic.
 
 **Requirements**:
+
 1. Add tests where module files contain logic beyond re-exports
 2. Test any lazy_static or initialization code
 3. Verify module visibility and exports
@@ -309,10 +239,12 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 ## Phase 6: Quality Assurance (Sequential - After all phases)
 
 ### Ticket 6.1: Test Coverage Analysis and Gap Filling
+
 **Priority**: High
 **Estimated Effort**: 8 hours
 
 **Requirements**:
+
 1. Run coverage tools (cargo-tarpaulin for Rust, dotCover for C#)
 2. Identify uncovered code paths
 3. Add tests for edge cases and error conditions
@@ -322,10 +254,12 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 ---
 
 ### Ticket 6.2: Test Quality Review
+
 **Priority**: High
 **Estimated Effort**: 6 hours
 
 **Requirements**:
+
 1. Review all tests for:
    - Proper assertions
    - Good test names
@@ -338,10 +272,12 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 ---
 
 ### Ticket 6.3: CI/CD Integration
+
 **Priority**: High
 **Estimated Effort**: 4 hours
 
 **Requirements**:
+
 1. Set up automated test running in CI
 2. Configure coverage reporting
 3. Set minimum coverage thresholds (aim for 80%+)
@@ -358,6 +294,7 @@ This document contains a comprehensive plan for achieving 100% unit test coverag
 - **Priority Order**: Core components → OpenGL components → Renderers → Game/SDK → Modules → QA
 
 ## Success Criteria
+
 1. Minimum 80% code coverage across the project
 2. All public APIs have comprehensive tests
 3. Tests run successfully in CI without GPU

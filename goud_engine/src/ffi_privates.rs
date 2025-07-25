@@ -105,7 +105,7 @@ mod tests {
     fn test_vec_opaque_type() {
         // Test that Vec is a zero-sized type (ZST)
         assert_eq!(mem::size_of::<Vec>(), 0);
-        
+
         // Test that we can create an instance (though it's not useful)
         let _vec = Vec { _private: [] };
     }
@@ -117,11 +117,11 @@ mod tests {
             y: 2.0,
             z: 3.0,
         };
-        
+
         assert_eq!(vec3.x, 1.0);
         assert_eq!(vec3.y, 2.0);
         assert_eq!(vec3.z, 3.0);
-        
+
         // Test size is 3 floats
         assert_eq!(mem::size_of::<Vector3>(), 3 * mem::size_of::<f32>());
     }
@@ -162,14 +162,14 @@ mod tests {
             secs: 42,
             nanos: 500_000_000, // 0.5 seconds
         };
-        
+
         assert_eq!(duration.secs, 42);
         assert_eq!(duration.nanos, 500_000_000);
-        
+
         // Test size - Duration may have padding for alignment
         // It should be at least the size of its fields
         assert!(mem::size_of::<Duration>() >= mem::size_of::<u64>() + mem::size_of::<u32>());
-        
+
         // Due to repr(C), the struct is likely padded to 16 bytes for u64 alignment
         assert_eq!(mem::size_of::<Duration>(), 16);
     }
@@ -180,14 +180,14 @@ mod tests {
             secs: 1_234_567_890,
             nanos: 123_456_789,
         };
-        
+
         assert_eq!(instant.secs, 1_234_567_890);
         assert_eq!(instant.nanos, 123_456_789);
-        
+
         // Test size - Instant may have padding for alignment
         // It should be at least the size of its fields
         assert!(mem::size_of::<Instant>() >= mem::size_of::<u64>() + mem::size_of::<u32>());
-        
+
         // Due to repr(C), the struct is likely padded to 16 bytes for u64 alignment
         assert_eq!(mem::size_of::<Instant>(), 16);
     }
@@ -238,7 +238,7 @@ mod tests {
             ("PWindow", mem::size_of::<PWindow>()),
             ("Skybox", mem::size_of::<Skybox>()),
         ];
-        
+
         for (name, size) in opaque_sizes {
             assert_eq!(size, 0, "{} should be zero-sized", name);
         }
@@ -250,7 +250,7 @@ mod tests {
         // These should match the alignment of their largest field (u64)
         assert_eq!(mem::align_of::<Duration>(), mem::align_of::<u64>());
         assert_eq!(mem::align_of::<Instant>(), mem::align_of::<u64>());
-        
+
         // Vector3 should have f32 alignment
         assert_eq!(mem::align_of::<Vector3>(), mem::align_of::<f32>());
     }
@@ -262,7 +262,7 @@ mod tests {
             secs: 10,
             nanos: 999_999_999,
         };
-        
+
         assert!(valid_duration.nanos < 1_000_000_000);
     }
 
@@ -273,7 +273,7 @@ mod tests {
             secs: 10,
             nanos: 999_999_999,
         };
-        
+
         assert!(valid_instant.nanos < 1_000_000_000);
     }
 }

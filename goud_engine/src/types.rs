@@ -219,22 +219,22 @@ pub struct Camera3D {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::mem;
     use std::fmt::Debug;
+    use std::mem;
 
     #[test]
     fn test_grid_render_mode_enum() {
         let blend = GridRenderMode::Blend;
         let overlap = GridRenderMode::Overlap;
-        
+
         assert_eq!(blend, GridRenderMode::Blend);
         assert_eq!(overlap, GridRenderMode::Overlap);
         assert_ne!(blend, overlap);
-        
+
         // Test Debug trait
         assert_eq!(format!("{:?}", blend), "Blend");
         assert_eq!(format!("{:?}", overlap), "Overlap");
-        
+
         // Test Copy trait
         let blend_copy = blend;
         assert_eq!(blend, blend_copy);
@@ -243,7 +243,7 @@ mod tests {
     #[test]
     fn test_grid_config_default() {
         let config = GridConfig::default();
-        
+
         assert_eq!(config.enabled, true);
         assert_eq!(config.size, 20.0);
         assert_eq!(config.divisions, 20);
@@ -265,12 +265,12 @@ mod tests {
     #[test]
     fn test_grid_config_modification() {
         let mut config = GridConfig::default();
-        
+
         config.enabled = false;
         config.size = 50.0;
         config.divisions = 40;
         config.render_mode = GridRenderMode::Blend;
-        
+
         assert_eq!(config.enabled, false);
         assert_eq!(config.size, 50.0);
         assert_eq!(config.divisions, 40);
@@ -281,7 +281,7 @@ mod tests {
     fn test_grid_config_clone() {
         let config = GridConfig::default();
         let cloned = config.clone();
-        
+
         assert_eq!(config.enabled, cloned.enabled);
         assert_eq!(config.size, cloned.size);
         assert_eq!(config.render_mode, cloned.render_mode);
@@ -290,14 +290,14 @@ mod tests {
     #[test]
     fn test_skybox_config_default() {
         let config = SkyboxConfig::default();
-        
+
         assert_eq!(config.enabled, true);
         assert_eq!(config.size, 100.0);
         assert_eq!(config.texture_size, 128);
         assert_eq!(config.blend_factor, 0.5);
         assert_eq!(config.min_color, Vector3::new(0.1, 0.1, 0.2));
         assert_eq!(config.use_custom_textures, false);
-        
+
         // Test face colors array
         assert_eq!(config.face_colors.len(), 6);
         assert_eq!(config.face_colors[0], Vector3::new(0.7, 0.8, 0.9)); // Right
@@ -310,18 +310,18 @@ mod tests {
         // the Drop implementation requires OpenGL context.
         // Instead, we test that the struct has the expected fields and traits.
         use std::ffi::c_uint;
-        
+
         // Test that fields are accessible (compile-time test)
         let _ = |texture: &Texture| {
             let _id: c_uint = texture.id;
             let _width: u32 = texture.width;
             let _height: u32 = texture.height;
         };
-        
+
         // Test that Texture implements expected traits
         fn assert_traits<T: Clone + Debug>() {}
         assert_traits::<Texture>();
-        
+
         // Test memory layout
         assert_eq!(
             mem::size_of::<Texture>(),
@@ -337,12 +337,12 @@ mod tests {
             width: 100.0,
             height: 200.0,
         };
-        
+
         assert_eq!(rect.x, 10.0);
         assert_eq!(rect.y, 20.0);
         assert_eq!(rect.width, 100.0);
         assert_eq!(rect.height, 200.0);
-        
+
         // Test Copy trait
         let rect_copy = rect;
         assert_eq!(rect.x, rect_copy.x);
@@ -361,19 +361,29 @@ mod tests {
             dimension_x: 64.0,
             dimension_y: 64.0,
             rotation: 45.0,
-            source_rect: Rectangle { x: 0.0, y: 0.0, width: 32.0, height: 32.0 },
+            source_rect: Rectangle {
+                x: 0.0,
+                y: 0.0,
+                width: 32.0,
+                height: 32.0,
+            },
             texture_id: 10,
             debug: false,
-            frame: Rectangle { x: 0.0, y: 0.0, width: 64.0, height: 64.0 },
+            frame: Rectangle {
+                x: 0.0,
+                y: 0.0,
+                width: 64.0,
+                height: 64.0,
+            },
         };
-        
+
         assert_eq!(sprite.id, 1);
         assert_eq!(sprite.x, 100.0);
         assert_eq!(sprite.z_layer, 5);
         assert_eq!(sprite.rotation, 45.0);
         assert_eq!(sprite.texture_id, 10);
         assert_eq!(sprite.debug, false);
-        
+
         // Test Clone
         let cloned = sprite.clone();
         assert_eq!(sprite.id, cloned.id);
@@ -392,12 +402,22 @@ mod tests {
             dimension_x: 32.0,
             dimension_y: 32.0,
             rotation: 0.0,
-            source_rect: Rectangle { x: 0.0, y: 0.0, width: 16.0, height: 16.0 },
+            source_rect: Rectangle {
+                x: 0.0,
+                y: 0.0,
+                width: 16.0,
+                height: 16.0,
+            },
             texture_id: 5,
             debug: true,
-            frame: Rectangle { x: 0.0, y: 0.0, width: 32.0, height: 32.0 },
+            frame: Rectangle {
+                x: 0.0,
+                y: 0.0,
+                width: 32.0,
+                height: 32.0,
+            },
         };
-        
+
         assert_eq!(dto.x, 50.0);
         assert_eq!(dto.y, 75.0);
         assert_eq!(dto.z_layer, 2);
@@ -416,12 +436,22 @@ mod tests {
             dimension_x: 128.0,
             dimension_y: 128.0,
             rotation: 90.0,
-            source_rect: Rectangle { x: 0.0, y: 0.0, width: 64.0, height: 64.0 },
+            source_rect: Rectangle {
+                x: 0.0,
+                y: 0.0,
+                width: 64.0,
+                height: 64.0,
+            },
             texture_id: 20,
             debug: false,
-            frame: Rectangle { x: 0.0, y: 0.0, width: 128.0, height: 128.0 },
+            frame: Rectangle {
+                x: 0.0,
+                y: 0.0,
+                width: 128.0,
+                height: 128.0,
+            },
         };
-        
+
         assert_eq!(dto.id, 99);
         assert_eq!(dto.x, 150.0);
         assert_eq!(dto.rotation, 90.0);
@@ -432,7 +462,7 @@ mod tests {
         let data = UpdateResponseData {
             delta_time: 0.016666,
         };
-        
+
         assert_eq!(data.delta_time, 0.016666);
     }
 
@@ -442,10 +472,10 @@ mod tests {
             x: 400.5,
             y: 300.25,
         };
-        
+
         assert_eq!(pos.x, 400.5);
         assert_eq!(pos.y, 300.25);
-        
+
         // Test Copy trait
         let pos_copy = pos;
         assert_eq!(pos.x, pos_copy.x);
@@ -458,12 +488,12 @@ mod tests {
             position: Vector3::new(100.0, 200.0, 0.0),
             zoom: 2.0,
         };
-        
+
         assert_eq!(camera.position.x, 100.0);
         assert_eq!(camera.position.y, 200.0);
         assert_eq!(camera.position.z, 0.0);
         assert_eq!(camera.zoom, 2.0);
-        
+
         // Test Clone
         let cloned = camera.clone();
         assert_eq!(camera.position.x, cloned.position.x);
@@ -479,13 +509,13 @@ mod tests {
             zoom: 1.5,
             rotation: Vector3::new(45.0, 90.0, 0.0),
         };
-        
+
         assert_eq!(camera.position.x, 10.0);
         assert_eq!(camera.target.x, 0.0);
         assert_eq!(camera.up.y, 1.0);
         assert_eq!(camera.zoom, 1.5);
         assert_eq!(camera.rotation.x, 45.0);
-        
+
         // Test Clone
         let cloned = camera.clone();
         assert_eq!(camera.position.x, cloned.position.x);
@@ -496,16 +526,16 @@ mod tests {
     fn test_ffi_repr_c_sizes() {
         // Ensure FFI types have expected memory layouts
         // These assertions help validate FFI compatibility
-        
+
         // GridRenderMode should be size of C enum (usually 4 bytes)
         assert!(mem::size_of::<GridRenderMode>() <= mem::size_of::<c_uint>());
-        
+
         // Rectangle should be tightly packed (4 floats)
         assert_eq!(mem::size_of::<Rectangle>(), 4 * mem::size_of::<f32>());
-        
+
         // MousePosition should be 2 doubles
         assert_eq!(mem::size_of::<MousePosition>(), 2 * mem::size_of::<f64>());
-        
+
         // UpdateResponseData should be 1 float
         assert_eq!(mem::size_of::<UpdateResponseData>(), mem::size_of::<f32>());
     }
@@ -516,7 +546,7 @@ mod tests {
             textures: _HashMap::new(),
             next_id: 1,
         };
-        
+
         assert_eq!(manager.next_id, 1);
         assert_eq!(manager.textures.len(), 0);
     }
@@ -526,7 +556,7 @@ mod tests {
         // We can only test the fields we control directly
         // Map requires loading from a file, so we skip testing with actual Map
         use std::ffi::c_uint;
-        
+
         // Test that we can access the fields (compile-time test)
         let _ = |tiled: &Tiled| {
             let _id: c_uint = tiled.id;
@@ -542,7 +572,7 @@ mod tests {
             loader: Loader::new(),
             maps: _HashMap::new(),
         };
-        
+
         assert_eq!(manager.selected_map_id, Some(5));
         assert_eq!(manager.maps.len(), 0);
     }
@@ -550,7 +580,7 @@ mod tests {
     #[test]
     fn test_sprite_map_type() {
         let mut sprite_map: SpriteMap = BTreeMap::new();
-        
+
         let sprite = Sprite {
             id: 1,
             x: 0.0,
@@ -561,14 +591,24 @@ mod tests {
             dimension_x: 32.0,
             dimension_y: 32.0,
             rotation: 0.0,
-            source_rect: Rectangle { x: 0.0, y: 0.0, width: 32.0, height: 32.0 },
+            source_rect: Rectangle {
+                x: 0.0,
+                y: 0.0,
+                width: 32.0,
+                height: 32.0,
+            },
             texture_id: 1,
             debug: false,
-            frame: Rectangle { x: 0.0, y: 0.0, width: 32.0, height: 32.0 },
+            frame: Rectangle {
+                x: 0.0,
+                y: 0.0,
+                width: 32.0,
+                height: 32.0,
+            },
         };
-        
+
         sprite_map.entry(0).or_insert_with(Vec::new).push(sprite);
-        
+
         assert_eq!(sprite_map.len(), 1);
         assert_eq!(sprite_map.get(&0).unwrap().len(), 1);
     }

@@ -150,7 +150,7 @@ mod tests {
             width: 100.0,
             height: 100.0,
         };
-        
+
         let sprite = Sprite::new(
             1,
             50.0,
@@ -194,7 +194,7 @@ mod tests {
             width: 16.0,
             height: 16.0,
         };
-        
+
         let sprite = Sprite::new(
             0,
             0.0,
@@ -231,10 +231,34 @@ mod tests {
         };
 
         let sprite1 = Sprite::new(
-            1, 0.0, 0.0, 0, 1.0, 1.0, 50.0, 50.0, 0.0, rect.clone(), 0, false, rect.clone(),
+            1,
+            0.0,
+            0.0,
+            0,
+            1.0,
+            1.0,
+            50.0,
+            50.0,
+            0.0,
+            rect.clone(),
+            0,
+            false,
+            rect.clone(),
         );
         let sprite2 = Sprite::new(
-            2, 25.0, 25.0, 0, 1.0, 1.0, 50.0, 50.0, 0.0, rect.clone(), 0, false, rect.clone(),
+            2,
+            25.0,
+            25.0,
+            0,
+            1.0,
+            1.0,
+            50.0,
+            50.0,
+            0.0,
+            rect.clone(),
+            0,
+            false,
+            rect.clone(),
         );
 
         assert!(sprite1.check_collision(&sprite2));
@@ -251,10 +275,34 @@ mod tests {
         };
 
         let sprite1 = Sprite::new(
-            1, 0.0, 0.0, 0, 1.0, 1.0, 50.0, 50.0, 0.0, rect.clone(), 0, false, rect.clone(),
+            1,
+            0.0,
+            0.0,
+            0,
+            1.0,
+            1.0,
+            50.0,
+            50.0,
+            0.0,
+            rect.clone(),
+            0,
+            false,
+            rect.clone(),
         );
         let sprite2 = Sprite::new(
-            2, 100.0, 100.0, 0, 1.0, 1.0, 50.0, 50.0, 0.0, rect.clone(), 0, false, rect.clone(),
+            2,
+            100.0,
+            100.0,
+            0,
+            1.0,
+            1.0,
+            50.0,
+            50.0,
+            0.0,
+            rect.clone(),
+            0,
+            false,
+            rect.clone(),
         );
 
         assert!(!sprite1.check_collision(&sprite2));
@@ -271,10 +319,34 @@ mod tests {
         };
 
         let sprite1 = Sprite::new(
-            1, 0.0, 0.0, 0, 1.0, 1.0, 50.0, 50.0, 0.0, rect.clone(), 0, false, rect.clone(),
+            1,
+            0.0,
+            0.0,
+            0,
+            1.0,
+            1.0,
+            50.0,
+            50.0,
+            0.0,
+            rect.clone(),
+            0,
+            false,
+            rect.clone(),
         );
         let sprite2 = Sprite::new(
-            2, 50.0, 0.0, 0, 1.0, 1.0, 50.0, 50.0, 0.0, rect.clone(), 0, false, rect.clone(),
+            2,
+            50.0,
+            0.0,
+            0,
+            1.0,
+            1.0,
+            50.0,
+            50.0,
+            0.0,
+            rect.clone(),
+            0,
+            false,
+            rect.clone(),
         );
 
         assert!(!sprite1.check_collision(&sprite2));
@@ -291,10 +363,34 @@ mod tests {
         };
 
         let sprite1 = Sprite::new(
-            1, 10.0, 10.0, 0, 1.0, 1.0, 30.0, 30.0, 0.0, rect.clone(), 0, false, rect.clone(),
+            1,
+            10.0,
+            10.0,
+            0,
+            1.0,
+            1.0,
+            30.0,
+            30.0,
+            0.0,
+            rect.clone(),
+            0,
+            false,
+            rect.clone(),
         );
         let sprite2 = Sprite::new(
-            2, 10.0, 10.0, 0, 1.0, 1.0, 30.0, 30.0, 0.0, rect.clone(), 0, false, rect.clone(),
+            2,
+            10.0,
+            10.0,
+            0,
+            1.0,
+            1.0,
+            30.0,
+            30.0,
+            0.0,
+            rect.clone(),
+            0,
+            false,
+            rect.clone(),
         );
 
         assert!(sprite1.check_collision(&sprite2));
@@ -311,10 +407,34 @@ mod tests {
         };
 
         let sprite1 = Sprite::new(
-            1, 0.0, 0.0, 0, 1.0, 1.0, 40.0, 40.0, 0.0, rect.clone(), 0, false, rect.clone(),
+            1,
+            0.0,
+            0.0,
+            0,
+            1.0,
+            1.0,
+            40.0,
+            40.0,
+            0.0,
+            rect.clone(),
+            0,
+            false,
+            rect.clone(),
         );
         let sprite2 = Sprite::new(
-            2, 30.0, 30.0, 0, 1.0, 1.0, 40.0, 40.0, 0.0, rect.clone(), 0, false, rect.clone(),
+            2,
+            30.0,
+            30.0,
+            0,
+            1.0,
+            1.0,
+            40.0,
+            40.0,
+            0.0,
+            rect.clone(),
+            0,
+            false,
+            rect.clone(),
         );
 
         assert!(sprite1.check_collision(&sprite2));
@@ -419,10 +539,34 @@ mod tests {
         };
 
         let sprite1 = Sprite::new(
-            1, 10.0, 10.0, 0, 1.0, 1.0, -30.0, -30.0, 0.0, rect.clone(), 0, false, rect.clone(),
+            1,
+            10.0,
+            10.0,
+            0,
+            1.0,
+            1.0,
+            -30.0,
+            -30.0,
+            0.0,
+            rect.clone(),
+            0,
+            false,
+            rect.clone(),
         );
         let sprite2 = Sprite::new(
-            2, 5.0, 5.0, 0, 1.0, 1.0, 20.0, 20.0, 0.0, rect.clone(), 0, false, rect.clone(),
+            2,
+            5.0,
+            5.0,
+            0,
+            1.0,
+            1.0,
+            20.0,
+            20.0,
+            0.0,
+            rect.clone(),
+            0,
+            false,
+            rect.clone(),
         );
 
         assert!(!sprite1.check_collision(&sprite2));
