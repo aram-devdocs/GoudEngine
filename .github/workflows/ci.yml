@@ -64,7 +64,15 @@ jobs:
     
     - name: Build
       run: cargo build --verbose
-    
+
+    - name: Upload generated C# bindings
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: csharp-bindings
+        path: sdks/GoudEngine/NativeMethods.g.cs
+        retention-days: 1
+
     - name: Run tests
       run: cargo test --verbose -- --nocapture
     
@@ -104,18 +112,25 @@ jobs:
   dotnet-check:
     name: .NET SDK on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    needs: [rust-check]
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-    
+
     defaults:
       run:
         working-directory: sdks/GoudEngine
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
+    - name: Download generated C# bindings
+      uses: actions/download-artifact@v4
+      with:
+        name: csharp-bindings
+        path: sdks/GoudEngine
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
