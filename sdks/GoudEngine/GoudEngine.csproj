@@ -22,11 +22,11 @@
 
   <Target Name="CopyNativeLibraries" AfterTargets="Build">
     <Copy SourceFiles="runtimes/osx-x64/native/libgoud_engine.dylib"
-      DestinationFolder="$(OutputPath)" Condition="'$(OS)' == 'OSX'" />
+      DestinationFolder="$(OutputPath)" Condition="'$(OS)' == 'OSX' And Exists('runtimes/osx-x64/native/libgoud_engine.dylib')" />
     <Copy SourceFiles="runtimes/linux-x64/native/libgoud_engine.so"
-      DestinationFolder="$(OutputPath)" Condition="'$(OS)' == 'Linux'" />
+      DestinationFolder="$(OutputPath)" Condition="'$(OS)' == 'Linux' And Exists('runtimes/linux-x64/native/libgoud_engine.so')" />
     <Copy SourceFiles="runtimes/win-x64/native/goud_engine.dll" DestinationFolder="$(OutputPath)"
-      Condition="'$(OS)' == 'Windows_NT'" />
+      Condition="'$(OS)' == 'Windows_NT' And Exists('runtimes/win-x64/native/goud_engine.dll')" />
   </Target>
 
 </Project>
