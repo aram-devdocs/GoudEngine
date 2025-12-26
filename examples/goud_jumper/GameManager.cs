@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using CsBindgen;
+using GoudEngine.Input;
 
 public class GameManager
 {
@@ -386,20 +387,20 @@ public class GameManager
     {
         bool isMoving = false;
 
-        if (game.IsKeyPressed(32) && playerY == 100) // Space key and on ground
+        if (game.IsKeyPressed(Keys.Space) && playerY == 100) // Space key and on ground
         {
             playerStateMachine.SetState(PlayerState.Jumping);
             playerVelocityY = -jumpStrength;
             isMoving = true;
         }
-        else if (game.IsKeyPressed(65)) // 'A' key
+        else if (game.IsKeyPressed(Keys.A)) // 'A' key
         {
             playerStateMachine.SetState(PlayerState.Walking);
             playerX -= moveSpeed;
             isMoving = true;
             isGoingLeft = true;
         }
-        else if (game.IsKeyPressed(68)) // 'D' key
+        else if (game.IsKeyPressed(Keys.D)) // 'D' key
         {
             playerStateMachine.SetState(PlayerState.Walking);
             playerX += moveSpeed;
@@ -407,19 +408,19 @@ public class GameManager
             isGoingLeft = false;
         }
         // c + 1
-        else if (game.IsKeyPressed(67) && game.IsKeyPressed(49))
+        else if (game.IsKeyPressed(Keys.C) && game.IsKeyPressed(Keys.D1))
         {
             playerStateMachine.SetState(PlayerState.Custom1);
             isMoving = true;
         }
         // c + 2
-        else if (game.IsKeyPressed(67) && game.IsKeyPressed(50))
+        else if (game.IsKeyPressed(Keys.C) && game.IsKeyPressed(Keys.D2))
         {
             playerStateMachine.SetState(PlayerState.Custom2);
             isMoving = true;
         }
         // c + 3
-        else if (game.IsKeyPressed(67) && game.IsKeyPressed(51))
+        else if (game.IsKeyPressed(Keys.C) && game.IsKeyPressed(Keys.D3))
         {
             playerStateMachine.SetState(PlayerState.Custom3);
             isMoving = true;
@@ -428,13 +429,13 @@ public class GameManager
         // Change tile maps
 
         // m + 0
-        if (game.IsKeyPressed(77) && game.IsKeyPressed(48))
+        if (game.IsKeyPressed(Keys.M) && game.IsKeyPressed(Keys.D0))
         {
             game.SetSelectedTiledMapById(tilemapId);
         }
 
         // m + 1
-        if (game.IsKeyPressed(77) && game.IsKeyPressed(49))
+        if (game.IsKeyPressed(Keys.M) && game.IsKeyPressed(Keys.D1))
         {
             game.SetSelectedTiledMapById(tilemapId1);
         }
@@ -448,27 +449,27 @@ public class GameManager
 
 
         // Camera controls
-        if (game.IsKeyPressed(265)) // Up arrow key
+        if (game.IsKeyPressed(Keys.Up)) // Up arrow key
         {
             cameraY -= 10.0f;
         }
-        if (game.IsKeyPressed(264)) // Down arrow key
+        if (game.IsKeyPressed(Keys.Down)) // Down arrow key
         {
             cameraY += 10.0f;
         }
-        if (game.IsKeyPressed(263)) // Left arrow key
+        if (game.IsKeyPressed(Keys.Left)) // Left arrow key
         {
             cameraX -= 10.0f;
         }
-        if (game.IsKeyPressed(262)) // Right arrow key
+        if (game.IsKeyPressed(Keys.Right)) // Right arrow key
         {
             cameraX += 10.0f;
         }
-        if (game.IsKeyPressed(79)) // 'O' key
+        if (game.IsKeyPressed(Keys.O)) // 'O' key
         {
             cameraZoom += 0.01f;
         }
-        if (game.IsKeyPressed(80)) // 'P' key
+        if (game.IsKeyPressed(Keys.P)) // 'P' key
         {
             cameraZoom -= 0.01f;
         }

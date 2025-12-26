@@ -2,6 +2,12 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using CsBindgen;
+using GoudEngine.Assets;
+using GoudEngine.Config;
+using GoudEngine.Core;
+using GoudEngine.Entities;
+using GoudEngine.Input;
+using GoudEngine.Math;
 
 public enum RendererType
 {
@@ -30,7 +36,7 @@ public enum GridRenderMode
     Overlap = 1
 }
 
-public unsafe class GoudGame
+public unsafe class GoudGame : IDisposable
 {
     private GameSdk* gameInstance;
     private bool _isDisposed;
@@ -100,7 +106,7 @@ public unsafe class GoudGame
     {
         unsafe
         {
-            fixed (byte* titleBytes = System.Text.Encoding.ASCII.GetBytes(title + "\0"))
+            fixed (byte* titleBytes = System.Text.Encoding.UTF8.GetBytes(title + "\0"))
             {
                 gameInstance = NativeMethods.game_create(
                     width,
@@ -151,12 +157,13 @@ public unsafe class GoudGame
         }
     }
 
+    /// <summary>
+    /// Terminates the game and releases native resources.
+    /// </summary>
+    [Obsolete("Use Dispose() instead. Terminate() is kept for backward compatibility.")]
     public void Terminate()
     {
-        unsafe
-        {
-            NativeMethods.game_terminate(gameInstance);
-        }
+        Dispose();
     }
 
     public uint AddSprite(SpriteCreateDto data)
@@ -171,7 +178,7 @@ public unsafe class GoudGame
     {
         unsafe
         {
-            fixed (byte* texturePathBytes = System.Text.Encoding.ASCII.GetBytes(texturePath + "\0"))
+            fixed (byte* texturePathBytes = System.Text.Encoding.UTF8.GetBytes(texturePath + "\0"))
             {
                 return NativeMethods.game_create_texture(gameInstance, texturePathBytes);
             }
@@ -202,12 +209,13 @@ public unsafe class GoudGame
         }
     }
 
+    /// <summary>
+    /// Closes the game window and releases native resources.
+    /// </summary>
+    [Obsolete("Use Dispose() instead. Close() is kept for backward compatibility.")]
     public void Close()
     {
-        unsafe
-        {
-            NativeMethods.game_terminate(gameInstance);
-        }
+        Dispose();
     }
 
     public bool IsKeyPressed(int keyCode)
@@ -238,8 +246,8 @@ public unsafe class GoudGame
     {
         unsafe
         {
-            fixed (byte* mapNameBytes = System.Text.Encoding.ASCII.GetBytes(mapName + "\0"))
-            fixed (byte* mapPathBytes = System.Text.Encoding.ASCII.GetBytes(mapPath + "\0"))
+            fixed (byte* mapNameBytes = System.Text.Encoding.UTF8.GetBytes(mapName + "\0"))
+            fixed (byte* mapPathBytes = System.Text.Encoding.UTF8.GetBytes(mapPath + "\0"))
             {
                 fixed (uint* textureIdsPtr = textureIds)
                 {
@@ -247,7 +255,8 @@ public unsafe class GoudGame
                         gameInstance,
                         mapNameBytes,
                         mapPathBytes,
-                        textureIdsPtr
+                        textureIdsPtr,
+                        (nuint)textureIds.Length
                     );
                 }
             }
@@ -340,7 +349,7 @@ public unsafe class GoudGame
     {
         unsafe
         {
-            fixed (byte* messageBytes = System.Text.Encoding.ASCII.GetBytes(message + "\0"))
+            fixed (byte* messageBytes = System.Text.Encoding.UTF8.GetBytes(message + "\0"))
             {
                 NativeMethods.game_log(gameInstance, messageBytes);
             }
@@ -844,4 +853,378 @@ public unsafe class GoudGame
             );
         }
     }
+
+    // IDisposable Implementation
+
+    /// <summary>
+    /// Finalizer to ensure native resources are freed if Dispose is not called.
+    /// </summary>
+    ~GoudGame()
+    {
+        Dispose(disposing: false);
+    }
+
+    /// <summary>
+    /// Releases all resources used by the GoudGame.
+    /// </summary>
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Releases the unmanaged resources used by GoudGame and optionally releases managed resources.
+    /// </summary>
+    /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_isDisposed)
+            return;
+
+        // Free unmanaged resources (native game instance)
+        if (gameInstance != null)
+        {
+            NativeMethods.game_terminate(gameInstance);
+            gameInstance = null;
+        }
+
+        _isDisposed = true;
+    }
+
+    /// <summary>
+    /// Throws an ObjectDisposedException if this instance has been disposed.
+    /// </summary>
+    private void ThrowIfDisposed()
+    {
+        if (_isDisposed)
+            throw new ObjectDisposedException(nameof(GoudGame));
+    }
+
+    // ========================================
+    // New Type-Safe API Methods
+    // ========================================
+
+    #region Input with Enums
+
+    /// <summary>
+    /// Checks if the specified key is currently pressed.
+    /// </summary>
+    public bool IsKeyPressed(Keys key)
+    {
+        return IsKeyPressed((int)key);
+    }
+
+    /// <summary>
+    /// Checks if the specified mouse button is currently pressed.
+    /// </summary>
+    public bool IsMouseButtonPressed(MouseButtons button)
+    {
+        return IsMouseButtonPressed((int)button);
+    }
+
+    #endregion
+
+    #region Sprite Methods with New Types
+
+    /// <summary>
+    /// Creates a sprite using the configuration builder.
+    /// </summary>
+    public SpriteId AddSprite(SpriteConfig config)
+    {
+        var id = AddSprite(config.ToNative());
+        return new SpriteId(id);
+    }
+
+    /// <summary>
+    /// Creates a sprite and returns a high-level wrapper.
+    /// </summary>
+    public Sprite CreateSprite(SpriteConfig config)
+    {
+        var id = AddSprite(config);
+        return new Sprite(
+            this,
+            id,
+            config.TextureId,
+            config.Position,
+            config.Dimensions,
+            config.Scale,
+            config.Rotation,
+            config.ZLayer,
+            config.SourceRect,
+            config.Frame,
+            config.Debug
+        );
+    }
+
+    /// <summary>
+    /// Removes a sprite by its type-safe ID.
+    /// </summary>
+    public void RemoveSprite(SpriteId id)
+    {
+        RemoveSprite(id.Value);
+    }
+
+    /// <summary>
+    /// Checks collision between two sprites using type-safe IDs.
+    /// </summary>
+    public bool CheckCollision(SpriteId id1, SpriteId id2)
+    {
+        return CheckCollision(id1.Value, id2.Value);
+    }
+
+    #endregion
+
+    #region Texture Methods with New Types
+
+    /// <summary>
+    /// Creates a texture and returns a type-safe ID.
+    /// </summary>
+    public TextureId LoadTexture(string texturePath)
+    {
+        return new TextureId(CreateTexture(texturePath));
+    }
+
+    #endregion
+
+    #region Camera Methods with Vectors
+
+    /// <summary>
+    /// Sets the 2D camera position using a Vector2.
+    /// </summary>
+    public void SetCameraPosition(Vector2 position)
+    {
+        SetCameraPosition(position.X, position.Y);
+    }
+
+    /// <summary>
+    /// Sets the 3D camera position using a Vector3.
+    /// </summary>
+    public void SetCameraPosition(Vector3 position)
+    {
+        SetCameraPosition3D(position.X, position.Y, position.Z);
+    }
+
+    /// <summary>
+    /// Gets the camera position as a Vector3.
+    /// </summary>
+    public Vector3 GetCameraPositionVector()
+    {
+        var pos = GetCameraPosition();
+        return new Vector3(pos[0], pos[1], pos[2]);
+    }
+
+    /// <summary>
+    /// Sets the camera rotation using a Vector3 (pitch, yaw, roll).
+    /// </summary>
+    public void SetCameraRotation(Vector3 rotation)
+    {
+        SetCameraRotation(rotation.X, rotation.Y, rotation.Z);
+    }
+
+    /// <summary>
+    /// Gets the camera rotation as a Vector3.
+    /// </summary>
+    public Vector3 GetCameraRotationVector()
+    {
+        var rot = GetCameraRotation();
+        return new Vector3(rot[0], rot[1], rot[2]);
+    }
+
+    #endregion
+
+    #region 3D Object Methods with New Types
+
+    /// <summary>
+    /// Creates a 3D object and returns a high-level wrapper.
+    /// </summary>
+    public Object3D CreateObject(PrimitiveType type, TextureId textureId, Vector3 position = default)
+    {
+        var createInfo = new CsBindgen.PrimitiveCreateInfo
+        {
+            primitive_type = (CsBindgen.PrimitiveType)type,
+            width = 1.0f,
+            height = 1.0f,
+            depth = 1.0f,
+            segments = type == PrimitiveType.Sphere ? 32u : 1u,
+            texture_id = textureId
+        };
+        var id = new ObjectId(CreatePrimitive(createInfo));
+
+        if (position != default)
+        {
+            SetObjectPosition(id, position.X, position.Y, position.Z);
+        }
+
+        return new Object3D(this, id, type, textureId, position, Vector3.Zero, Vector3.One);
+    }
+
+    /// <summary>
+    /// Sets the position of a 3D object using Vector3.
+    /// </summary>
+    public bool SetObjectPosition(ObjectId objectId, Vector3 position)
+    {
+        return SetObjectPosition(objectId, position.X, position.Y, position.Z);
+    }
+
+    /// <summary>
+    /// Sets the rotation of a 3D object using Vector3.
+    /// </summary>
+    public bool SetObjectRotation(ObjectId objectId, Vector3 rotation)
+    {
+        return SetObjectRotation(objectId, rotation.X, rotation.Y, rotation.Z);
+    }
+
+    /// <summary>
+    /// Sets the scale of a 3D object using Vector3.
+    /// </summary>
+    public bool SetObjectScale(ObjectId objectId, Vector3 scale)
+    {
+        return SetObjectScale(objectId, scale.X, scale.Y, scale.Z);
+    }
+
+    #endregion
+
+    #region Light Methods with New Types
+
+    /// <summary>
+    /// Creates a light and returns a high-level wrapper.
+    /// </summary>
+    public Light CreateLight(
+        LightType type,
+        Vector3 position,
+        Vector3 direction = default,
+        Color? color = null,
+        float intensity = 1.0f,
+        float temperature = 6500.0f,
+        float range = 10.0f,
+        float spotAngle = 45.0f)
+    {
+        var lightColor = color ?? Color.White;
+        var id = new LightId(AddLight(
+            type,
+            position.X, position.Y, position.Z,
+            direction.X, direction.Y, direction.Z,
+            lightColor.R, lightColor.G, lightColor.B,
+            intensity,
+            temperature,
+            range,
+            spotAngle
+        ));
+
+        return new Light(this, id, type, position, direction, lightColor, intensity, temperature, range, spotAngle);
+    }
+
+    /// <summary>
+    /// Creates a point light.
+    /// </summary>
+    public Light CreatePointLight(Vector3 position, Color? color = null, float intensity = 1.0f, float range = 10.0f)
+    {
+        return CreateLight(LightType.Point, position, Vector3.Zero, color, intensity, range: range);
+    }
+
+    /// <summary>
+    /// Creates a directional light.
+    /// </summary>
+    public Light CreateDirectionalLight(Vector3 direction, Color? color = null, float intensity = 1.0f)
+    {
+        return CreateLight(LightType.Directional, Vector3.Zero, direction, color, intensity);
+    }
+
+    /// <summary>
+    /// Creates a spot light.
+    /// </summary>
+    public Light CreateSpotLight(Vector3 position, Vector3 direction, float spotAngle = 45.0f, Color? color = null, float intensity = 1.0f, float range = 10.0f)
+    {
+        return CreateLight(LightType.Spot, position, direction, color, intensity, range: range, spotAngle: spotAngle);
+    }
+
+    /// <summary>
+    /// Removes a light by its type-safe ID.
+    /// </summary>
+    public bool RemoveLight(LightId id)
+    {
+        return RemoveLight(id.Value);
+    }
+
+    #endregion
+
+    #region Grid Configuration with Builder
+
+    /// <summary>
+    /// Configures the grid using a GridConfig builder.
+    /// </summary>
+    public bool ConfigureGrid(GridConfig config)
+    {
+        return ConfigureGrid(
+            config.Enabled,
+            config.Size,
+            config.Divisions,
+            config.XZPlaneColor.R, config.XZPlaneColor.G, config.XZPlaneColor.B,
+            config.XYPlaneColor.R, config.XYPlaneColor.G, config.XYPlaneColor.B,
+            config.YZPlaneColor.R, config.YZPlaneColor.G, config.YZPlaneColor.B,
+            config.XAxisColor.R, config.XAxisColor.G, config.XAxisColor.B,
+            config.YAxisColor.R, config.YAxisColor.G, config.YAxisColor.B,
+            config.ZAxisColor.R, config.ZAxisColor.G, config.ZAxisColor.B,
+            config.LineWidth,
+            config.AxisLineWidth,
+            config.ShowAxes,
+            config.ShowXZPlane,
+            config.ShowXYPlane,
+            config.ShowYZPlane,
+            config.RenderMode
+        );
+    }
+
+    #endregion
+
+    #region Skybox Configuration with Builder
+
+    /// <summary>
+    /// Configures the skybox using a SkyboxConfig builder.
+    /// </summary>
+    public bool ConfigureSkybox(SkyboxConfig config)
+    {
+        return ConfigureSkybox(
+            config.Enabled,
+            config.Size,
+            config.TextureSize,
+            config.RightFaceColor.ToArray(),
+            config.LeftFaceColor.ToArray(),
+            config.TopFaceColor.ToArray(),
+            config.BottomFaceColor.ToArray(),
+            config.FrontFaceColor.ToArray(),
+            config.BackFaceColor.ToArray(),
+            config.BlendFactor,
+            config.MinColor.ToArray(),
+            config.UseCustomTextures
+        );
+    }
+
+    #endregion
+
+    #region Tiled Map Methods with New Types
+
+    /// <summary>
+    /// Loads a tiled map and returns a type-safe ID.
+    /// </summary>
+    public TiledMapId LoadMap(string mapName, string mapPath, TextureId[] textureIds)
+    {
+        var ids = new uint[textureIds.Length];
+        for (int i = 0; i < textureIds.Length; i++)
+        {
+            ids[i] = textureIds[i].Value;
+        }
+        return new TiledMapId(LoadTiledMap(mapName, mapPath, ids));
+    }
+
+    /// <summary>
+    /// Sets the selected tiled map by type-safe ID.
+    /// </summary>
+    public void SetSelectedMap(TiledMapId id)
+    {
+        SetSelectedTiledMapById(id.Value);
+    }
+
+    #endregion
 }

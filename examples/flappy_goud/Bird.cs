@@ -1,5 +1,7 @@
 // Bird.cs
 
+using GoudEngine.Input;
+
 public class Bird
 {
     private readonly GoudGame game;
@@ -33,7 +35,7 @@ public class Bird
 
     public void Update(float deltaTime)
     {
-        if (game.IsKeyPressed(32) || game.IsMouseButtonPressed(0))
+        if (game.IsKeyPressed(Keys.Space) || game.IsMouseButtonPressed(MouseButtons.Left))
         {
             movement.TryJump(deltaTime);
         }

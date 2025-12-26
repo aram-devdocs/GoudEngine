@@ -21,21 +21,18 @@ pub struct Glfw {
 
 #[repr(C)]
 #[allow(dead_code)]
-
 pub struct Receiver {
     _private: [u8; 0],
 }
 
 #[repr(C)]
 #[allow(dead_code)]
-
 pub struct HashSet {
     _private: [u8; 0],
 }
 
 #[repr(C)]
 #[allow(dead_code)]
-
 pub struct ShaderProgram {
     _private: [u8; 0],
 }
@@ -44,14 +41,12 @@ pub struct ShaderProgram {
 
 #[repr(C)]
 #[allow(dead_code)]
-
 pub struct Vao {
     _private: [u8; 0],
 }
 
 #[repr(C)]
 #[allow(dead_code)]
-
 pub struct Duration {
     secs: u64,
     nanos: u32, // Duration is a struct with two fields: secs and nanos. Nanos is nanoseconds coming from std::time::Duration.
@@ -59,7 +54,6 @@ pub struct Duration {
 
 #[repr(C)]
 #[allow(dead_code)]
-
 pub struct Instant {
     secs: u64,
     nanos: u32, // Instant is a struct with two fields: secs and nanos. Nanos is nanoseconds coming from std::time::Instant.
@@ -67,7 +61,6 @@ pub struct Instant {
 
 #[repr(C)]
 #[allow(dead_code)]
-
 pub struct Ecs {
     _private: [u8; 0],
 }

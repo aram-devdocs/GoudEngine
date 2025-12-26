@@ -1315,7 +1315,7 @@ impl Renderer3D {
 }
 
 impl Renderer for Renderer3D {
-    fn render(&mut self, _sprites: SpriteMap, texture_manager: &TextureManager) {
+    fn render(&mut self, _sprites: &SpriteMap, texture_manager: &TextureManager) {
         unsafe {
             gl::Enable(gl::DEPTH_TEST);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);

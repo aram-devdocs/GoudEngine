@@ -1,9 +1,14 @@
-use std::{collections::BTreeMap, ffi::c_uint};
+use std::{
+    collections::{BTreeMap, HashMap},
+    ffi::c_uint,
+};
 
 use crate::types::{Sprite, SpriteCreateDto, SpriteUpdateDto};
 
 pub struct Ecs {
     pub sprites: BTreeMap<i32, Vec<Sprite>>,
+    /// Maps sprite ID to its z_layer for O(1) layer lookup
+    sprite_layer_index: HashMap<c_uint, i32>,
     next_id: c_uint,        // Tracks the next unused ID
     free_list: Vec<c_uint>, // List of reusable indices
 }
@@ -12,6 +17,7 @@ impl Ecs {
     pub fn new() -> Self {
         Ecs {
             sprites: BTreeMap::new(),
+            sprite_layer_index: HashMap::new(),
             next_id: 0,
             free_list: Vec::new(),
         }
@@ -19,55 +25,18 @@ impl Ecs {
 
     /// Adds a sprite to the ECS and returns its unique EntityId.
     pub fn add_sprite(&mut self, sprite_input: SpriteCreateDto) -> c_uint {
-        if let Some(id) = self.free_list.pop() {
-            // Reuse an index from the free list
-            let sprite = Sprite::new(
-                id,
-                sprite_input.x,
-                sprite_input.y,
-                sprite_input.z_layer,
-                sprite_input.scale_x,
-                sprite_input.scale_y,
-                sprite_input.dimension_x,
-                sprite_input.dimension_y,
-                sprite_input.rotation,
-                sprite_input.source_rect,
-                sprite_input.texture_id,
-                sprite_input.debug,
-                sprite_input.frame,
-            );
-            self.sprites.entry(sprite.z_layer).or_default().push(sprite);
-            id
-        } else {
-            // No reusable slots; push to the end
-            let sprite = Sprite::new(
-                self.next_id,
-                sprite_input.x,
-                sprite_input.y,
-                sprite_input.z_layer,
-                sprite_input.scale_x,
-                sprite_input.scale_y,
-                sprite_input.dimension_x,
-                sprite_input.dimension_y,
-                sprite_input.rotation,
-                sprite_input.source_rect,
-                sprite_input.texture_id,
-                sprite_input.debug,
-                sprite_input.frame,
-            );
-            self.sprites.entry(sprite.z_layer).or_default().push(sprite);
+        let id = self.free_list.pop().unwrap_or_else(|| {
+            let id = self.next_id;
             self.next_id += 1;
-            self.next_id - 1
-        }
-    }
+            id
+        });
 
-    // refactor using BTreeMap
-    pub fn update_sprite(&mut self, sprite_input: SpriteUpdateDto) -> Result<(), String> {
+        let z_layer = sprite_input.z_layer;
         let sprite = Sprite::new(
-            sprite_input.id,
+            id,
             sprite_input.x,
             sprite_input.y,
-            sprite_input.z_layer,
+            z_layer,
             sprite_input.scale_x,
             sprite_input.scale_y,
             sprite_input.dimension_x,
@@ -78,38 +47,117 @@ impl Ecs {
             sprite_input.debug,
             sprite_input.frame,
         );
-        for sprites in self.sprites.values_mut() {
-            if let Some(existing_sprite) = sprites.iter_mut().find(|s| s.id == sprite.id) {
-                *existing_sprite = sprite;
-                return Ok(());
-            }
-        }
-        Err("EntityId not found".into())
+
+        // Add to z-layer storage
+        self.sprites.entry(z_layer).or_default().push(sprite);
+        // Add to index for O(1) layer lookup
+        self.sprite_layer_index.insert(id, z_layer);
+
+        id
     }
 
-    // refactor using BTreeMap
+    /// Updates a sprite in the ECS. Uses O(1) layer lookup.
+    pub fn update_sprite(&mut self, sprite_input: SpriteUpdateDto) -> Result<(), String> {
+        let id = sprite_input.id;
+        let new_z_layer = sprite_input.z_layer;
+
+        // O(1) lookup of current z_layer
+        let current_z_layer = self
+            .sprite_layer_index
+            .get(&id)
+            .copied()
+            .ok_or_else(|| "EntityId not found".to_string())?;
+
+        let new_sprite = Sprite::new(
+            id,
+            sprite_input.x,
+            sprite_input.y,
+            new_z_layer,
+            sprite_input.scale_x,
+            sprite_input.scale_y,
+            sprite_input.dimension_x,
+            sprite_input.dimension_y,
+            sprite_input.rotation,
+            sprite_input.source_rect,
+            sprite_input.texture_id,
+            sprite_input.debug,
+            sprite_input.frame,
+        );
+
+        // If z_layer changed, move sprite between layers
+        if current_z_layer != new_z_layer {
+            // Remove from old layer
+            if let Some(sprites) = self.sprites.get_mut(&current_z_layer) {
+                if let Some(index) = sprites.iter().position(|s| s.id == id) {
+                    sprites.remove(index);
+                    // Clean up empty layers
+                    if sprites.is_empty() {
+                        self.sprites.remove(&current_z_layer);
+                    }
+                }
+            }
+            // Add to new layer
+            self.sprites
+                .entry(new_z_layer)
+                .or_default()
+                .push(new_sprite);
+            // Update index
+            self.sprite_layer_index.insert(id, new_z_layer);
+        } else {
+            // Same layer, just update in place
+            if let Some(sprites) = self.sprites.get_mut(&current_z_layer) {
+                if let Some(existing_sprite) = sprites.iter_mut().find(|s| s.id == id) {
+                    *existing_sprite = new_sprite;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Gets a sprite by ID. Uses O(1) layer lookup, then searches within the layer.
     pub fn get_sprite(&self, sprite_id: c_uint) -> Option<&Sprite> {
-        for sprites in self.sprites.values() {
-            if let Some(sprite) = sprites.iter().find(|s| s.id == sprite_id) {
-                return Some(sprite);
-            }
-        }
-        None
+        // O(1) lookup of z_layer
+        let z_layer = self.sprite_layer_index.get(&sprite_id)?;
+        // Search within the specific layer only (much smaller than all sprites)
+        self.sprites
+            .get(z_layer)?
+            .iter()
+            .find(|s| s.id == sprite_id)
     }
 
-    // refactor using BTreeMap
+    /// Removes a sprite by ID. Uses O(1) layer lookup.
     pub fn remove_sprite(&mut self, sprite_id: c_uint) -> Result<Sprite, String> {
-        for sprites in self.sprites.values_mut() {
-            if let Some(index) = sprites.iter().position(|s| s.id == sprite_id) {
-                let sprite = sprites.remove(index);
-                self.free_list.push(sprite_id);
-                return Ok(sprite);
-            }
+        // O(1) lookup of z_layer
+        let z_layer = self
+            .sprite_layer_index
+            .remove(&sprite_id)
+            .ok_or_else(|| "EntityId not found".to_string())?;
+
+        // Find and remove from the layer
+        let sprites = self
+            .sprites
+            .get_mut(&z_layer)
+            .ok_or_else(|| "EntityId not found".to_string())?;
+
+        let index = sprites
+            .iter()
+            .position(|s| s.id == sprite_id)
+            .ok_or_else(|| "EntityId not found".to_string())?;
+
+        let sprite = sprites.remove(index);
+
+        // Clean up empty layers
+        if sprites.is_empty() {
+            self.sprites.remove(&z_layer);
         }
-        Err("EntityId not found".into())
+
+        // Add ID to free list for reuse
+        self.free_list.push(sprite_id);
+        Ok(sprite)
     }
 
-    // refactor using BTreeMap
+    /// Checks collision between two sprites. Uses O(1) layer lookup via get_sprite.
     pub fn check_collision_between_sprites(&self, sprite_id1: c_uint, sprite_id2: c_uint) -> bool {
         match (self.get_sprite(sprite_id1), self.get_sprite(sprite_id2)) {
             (Some(sprite1), Some(sprite2)) => sprite1.check_collision(sprite2),
@@ -117,8 +165,10 @@ impl Ecs {
         }
     }
 
+    /// Clears all sprites and resets the ECS state.
     pub fn terminate(&mut self) {
         self.sprites.clear();
+        self.sprite_layer_index.clear();
         self.free_list.clear();
         self.next_id = 0;
     }
@@ -316,11 +366,14 @@ mod tests {
         let id = ecs.add_sprite(create_test_sprite_dto(10.0, 20.0, 0));
 
         assert_eq!(ecs.sprites[&0].len(), 1);
+        assert!(!ecs.sprites.contains_key(&5));
 
         let update_dto = create_test_sprite_update_dto(id, 10.0, 20.0, 5);
         ecs.update_sprite(update_dto).unwrap();
 
-        assert_eq!(ecs.sprites[&0].len(), 1);
+        // Sprite should have moved from layer 0 to layer 5
+        assert!(!ecs.sprites.contains_key(&0)); // Layer 0 should be removed (was empty)
+        assert_eq!(ecs.sprites[&5].len(), 1); // Sprite should now be in layer 5
 
         let sprite = ecs.get_sprite(id).unwrap();
         assert_eq!(sprite.z_layer, 5);

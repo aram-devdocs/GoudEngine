@@ -87,7 +87,7 @@ impl GameSdk {
         self.manage_tileset();
 
         if let Some(renderer) = &mut self.renderer {
-            renderer.render(self.ecs.sprites.clone(), &self.texture_manager);
+            renderer.render(&self.ecs.sprites, &self.texture_manager);
         }
 
         self.window.update();

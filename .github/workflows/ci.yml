@@ -119,8 +119,8 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '7.0.x'
-    
+        dotnet-version: '8.0.x'
+
     - name: Cache NuGet packages
       uses: actions/cache@v4
       with:
@@ -128,23 +128,22 @@ jobs:
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
         restore-keys: |
           ${{ runner.os }}-nuget-
-    
+
     - name: Restore dependencies
-      run: dotnet restore
-    
+      run: dotnet restore ../GoudEngine.Tests/GoudEngine.Tests.csproj
+
     - name: Build
-      run: dotnet build --no-restore --configuration Release
-    
-    # TODO: Add when C# tests are implemented
-    # - name: Test
-    #   run: dotnet test --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
-    
-    # - name: Upload test results
-    #   uses: actions/upload-artifact@v4
-    #   if: always()
-    #   with:
-    #     name: dotnet-test-results-${{ matrix.os }}
-    #     path: '**/test-results.trx'
+      run: dotnet build ../GoudEngine.Tests/GoudEngine.Tests.csproj --no-restore --configuration Release
+
+    - name: Test
+      run: dotnet test ../GoudEngine.Tests/GoudEngine.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: dotnet-test-results-${{ matrix.os }}
+        path: '**/test-results.trx'
 
   # Build check to ensure everything compiles together
   integration-build:
@@ -164,14 +163,14 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '7.0.x'
-    
+        dotnet-version: '8.0.x'
+
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev
-    
+
     - name: Run full build script
       run: |
         chmod +x build.sh

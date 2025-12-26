@@ -140,10 +140,12 @@ impl Window {
             ));
         }
 
+        // Frame rate limiting with proper sleep instead of busy-wait
         let frame_duration = Duration::from_millis(1000 / self.target_fps as u64);
-
-        let frame_end = Instant::now();
-        while Instant::now().duration_since(frame_end) < frame_duration {}
+        let elapsed = current_time.elapsed();
+        if let Some(remaining) = frame_duration.checked_sub(elapsed) {
+            std::thread::sleep(remaining);
+        }
     }
 
     pub fn is_key_pressed(&self, key: Key) -> bool {

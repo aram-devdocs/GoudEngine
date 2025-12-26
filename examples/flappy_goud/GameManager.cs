@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using CsBindgen;
+using GoudEngine.Input;
 
 public class GameManager
 {
@@ -65,14 +66,14 @@ public class GameManager
     public void Update(float deltaTime)
     {
         // If Escape is pressed, close the game
-        if (game.IsKeyPressed(256))
+        if (game.IsKeyPressed(Keys.Escape))
         {
             game.Close();
             return;
         }
 
         // If R is pressed, restart the game
-        if (game.IsKeyPressed(82))
+        if (game.IsKeyPressed(Keys.R))
         {
             ResetGame();
             return;

@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using CsBindgen;
 using GoudEngine;
+using GoudEngine.Input;
 
 class Program
 {
@@ -180,7 +181,7 @@ class Program
             cameraController.Update(game.UpdateResponseData.delta_time);
 
             // Toggle grid with G key
-            if (game.IsKeyPressed(71)) // G key
+            if (game.IsKeyPressed(Keys.G))
             {
                 bool currentState = game.SetGridEnabled(true);
                 game.SetGridEnabled(!currentState);
@@ -189,12 +190,12 @@ class Program
             }
 
             // Toggle different grid planes with number keys
-            if (game.IsKeyPressed(49)) // 1 key - Toggle XZ (floor) plane
+            if (game.IsKeyPressed(Keys.D1)) // 1 key - Toggle XZ (floor) plane
             {
                 game.SetGridPlanes(
                     showXZ: true,
-                    showXY: game.IsKeyPressed(50),
-                    showYZ: game.IsKeyPressed(51)
+                    showXY: game.IsKeyPressed(Keys.D2),
+                    showYZ: game.IsKeyPressed(Keys.D3)
                 );
                 Console.WriteLine("Grid planes updated");
                 Thread.Sleep(200);

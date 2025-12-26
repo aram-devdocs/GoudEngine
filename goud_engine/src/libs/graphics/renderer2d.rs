@@ -7,7 +7,7 @@ use super::components::camera::Camera;
 use super::components::shader::ShaderProgram;
 use super::components::vao::Vao;
 use super::components::vertex_attribute::VertexAttribute;
-use crate::types::{Camera2D, Rectangle, Sprite, SpriteMap, TextureManager};
+use crate::types::{Camera2D, Rectangle, SpriteMap, TextureManager};
 
 use super::renderer::Renderer;
 
@@ -121,7 +121,7 @@ impl Renderer2D {
     /// Renders all added sprites.
     fn render_sprites(
         &mut self,
-        sprites: Vec<Sprite>,
+        sprites: &SpriteMap,
         texture_manager: &TextureManager,
     ) -> Result<(), String> {
         self.shader_program.bind();
@@ -133,95 +133,98 @@ impl Renderer2D {
         // Set the view matrix
         self.shader_program.set_uniform_mat4("view", &view)?;
 
-        for sprite in sprites {
-            let position = Vector3::new(sprite.x, sprite.y, 0.0);
-            let mut scale_x = sprite.scale_x;
-            let mut scale_y = sprite.scale_y;
-            let rotation = sprite.rotation;
-            let texture = texture_manager.get_texture(sprite.texture_id).clone();
+        // Iterate over sprites by reference (no clone needed)
+        for (_, layer_sprites) in sprites.iter() {
+            for sprite in layer_sprites.iter() {
+                let position = Vector3::new(sprite.x, sprite.y, 0.0);
+                let mut scale_x = sprite.scale_x;
+                let mut scale_y = sprite.scale_y;
+                let rotation = sprite.rotation;
+                let texture = texture_manager.get_texture(sprite.texture_id).clone();
 
-            // Normalize frame coordinates and dimensions based on texture size
-            let mut source_rect = if sprite.frame.width > 0.0 && sprite.frame.height > 0.0 {
-                Rectangle {
-                    x: sprite.frame.x / texture.width as f32,
-                    y: (texture.height as f32 - sprite.frame.y - sprite.frame.height)
-                        / texture.height as f32,
-                    width: sprite.frame.width / texture.width as f32,
-                    height: sprite.frame.height / texture.height as f32,
+                // Normalize frame coordinates and dimensions based on texture size
+                let mut source_rect = if sprite.frame.width > 0.0 && sprite.frame.height > 0.0 {
+                    Rectangle {
+                        x: sprite.frame.x / texture.width as f32,
+                        y: (texture.height as f32 - sprite.frame.y - sprite.frame.height)
+                            / texture.height as f32,
+                        width: sprite.frame.width / texture.width as f32,
+                        height: sprite.frame.height / texture.height as f32,
+                    }
+                } else {
+                    Rectangle {
+                        x: sprite.source_rect.x,
+                        y: 1.0 - sprite.source_rect.y - sprite.source_rect.height,
+                        width: sprite.source_rect.width,
+                        height: sprite.source_rect.height,
+                    }
+                };
+                // Adjust the source rectangle if scale_x or scale_y is negative
+                if scale_x < 0.0 {
+                    scale_x = -scale_x;
+                    source_rect.x += source_rect.width;
+                    source_rect.width = -source_rect.width;
                 }
-            } else {
-                Rectangle {
-                    x: sprite.source_rect.x,
-                    y: 1.0 - sprite.source_rect.y - sprite.source_rect.height,
-                    width: sprite.source_rect.width,
-                    height: sprite.source_rect.height,
+
+                if scale_y < 0.0 {
+                    scale_y = -scale_y;
+                    source_rect.y += source_rect.height;
+                    source_rect.height = -source_rect.height;
                 }
-            };
-            // Adjust the source rectangle if scale_x or scale_y is negative
-            if scale_x < 0.0 {
-                scale_x = -scale_x;
-                source_rect.x += source_rect.width;
-                source_rect.width = -source_rect.width;
-            }
 
-            if scale_y < 0.0 {
-                scale_y = -scale_y;
-                source_rect.y += source_rect.height;
-                source_rect.height = -source_rect.height;
-            }
+                self.shader_program.set_uniform_vec4(
+                    &self.source_rect_uniform,
+                    &Vector4::new(
+                        source_rect.x,
+                        source_rect.y,
+                        source_rect.width,
+                        source_rect.height,
+                    ),
+                )?;
 
-            self.shader_program.set_uniform_vec4(
-                &self.source_rect_uniform,
-                &Vector4::new(
-                    source_rect.x,
-                    source_rect.y,
-                    source_rect.width,
-                    source_rect.height,
-                ),
-            )?;
+                let dimensions = if sprite.frame.width > 0.0 && sprite.frame.height > 0.0 {
+                    Vector3::new(sprite.frame.width, sprite.frame.height, 1.0)
+                } else {
+                    Vector3::new(sprite.dimension_x, sprite.dimension_y, 1.0)
+                };
 
-            let dimensions = if sprite.frame.width > 0.0 && sprite.frame.height > 0.0 {
-                Vector3::new(sprite.frame.width, sprite.frame.height, 1.0)
-            } else {
-                Vector3::new(sprite.dimension_x, sprite.dimension_y, 1.0)
-            };
+                let center_offset = Vector3::new(dimensions.x * 0.5, dimensions.y * 0.5, 0.0);
 
-            let center_offset = Vector3::new(dimensions.x * 0.5, dimensions.y * 0.5, 0.0);
-
-            let model = Matrix4::from_translation(position)
-                * Matrix4::from_translation(center_offset)
-                * Matrix4::from_angle_z(cgmath::Deg(rotation))
-                * Matrix4::from_translation(-center_offset)
-                * Matrix4::from_nonuniform_scale(
-                    dimensions.x * scale_x,
-                    dimensions.y * scale_y,
-                    dimensions.z,
-                );
-            self.shader_program
-                .set_uniform_mat4(&self.model_uniform, &model)?;
-
-            texture.bind(gl::TEXTURE0);
-
-            if sprite.debug {
+                let model = Matrix4::from_translation(position)
+                    * Matrix4::from_translation(center_offset)
+                    * Matrix4::from_angle_z(cgmath::Deg(rotation))
+                    * Matrix4::from_translation(-center_offset)
+                    * Matrix4::from_nonuniform_scale(
+                        dimensions.x * scale_x,
+                        dimensions.y * scale_y,
+                        dimensions.z,
+                    );
                 self.shader_program
-                    .set_uniform_vec4("outlineColor", &Vector4::new(1.0, 0.0, 0.0, 1.0))?;
-                self.shader_program
-                    .set_uniform_float("outlineWidth", 0.02)?;
-            }
+                    .set_uniform_mat4(&self.model_uniform, &model)?;
 
-            unsafe {
-                gl::DrawElements(
-                    gl::TRIANGLES,
-                    QUAD_INDICES.len() as GLsizei,
-                    gl::UNSIGNED_INT,
-                    ptr::null(),
-                );
-            }
+                texture.bind(gl::TEXTURE0);
 
-            if sprite.debug {
-                self.shader_program
-                    .set_uniform_vec4("outlineColor", &Vector4::new(0.0, 0.0, 0.0, 0.0))?;
-                self.shader_program.set_uniform_float("outlineWidth", 0.0)?;
+                if sprite.debug {
+                    self.shader_program
+                        .set_uniform_vec4("outlineColor", &Vector4::new(1.0, 0.0, 0.0, 1.0))?;
+                    self.shader_program
+                        .set_uniform_float("outlineWidth", 0.02)?;
+                }
+
+                unsafe {
+                    gl::DrawElements(
+                        gl::TRIANGLES,
+                        QUAD_INDICES.len() as GLsizei,
+                        gl::UNSIGNED_INT,
+                        ptr::null(),
+                    );
+                }
+
+                if sprite.debug {
+                    self.shader_program
+                        .set_uniform_vec4("outlineColor", &Vector4::new(0.0, 0.0, 0.0, 0.0))?;
+                    self.shader_program.set_uniform_float("outlineWidth", 0.0)?;
+                }
             }
         }
         Ok(())
@@ -230,8 +233,7 @@ impl Renderer2D {
 
 impl Renderer for Renderer2D {
     /// Renders the 2D scene.
-    fn render(&mut self, sprites: SpriteMap, texture_manager: &TextureManager) {
-        let sprites: Vec<Sprite> = sprites.into_iter().flat_map(|(_, v)| v).collect();
+    fn render(&mut self, sprites: &SpriteMap, texture_manager: &TextureManager) {
         if let Err(e) = self.render_sprites(sprites, texture_manager) {
             eprintln!("Error rendering sprites: {}", e);
         }

@@ -1,5 +1,6 @@
 using System;
 using GoudEngine;
+using GoudEngine.Input;
 
 public class CameraController
 {
@@ -116,14 +117,14 @@ public class CameraController
         float moveDelta = moveSpeed * deltaTime * 10.0f; // Scale by 10 for smoother movement
 
         // Forward/Backward movement using Q/E
-        if (game.IsKeyPressed(81)) // Q key - move forward
+        if (game.IsKeyPressed(Keys.Q)) // Q key - move forward
         {
             positionX -= forward[0] * moveDelta;
             positionY -= forward[1] * moveDelta;
             positionZ -= forward[2] * moveDelta;
             moved = true;
         }
-        if (game.IsKeyPressed(69)) // E key - move backward
+        if (game.IsKeyPressed(Keys.E)) // E key - move backward
         {
             positionX += forward[0] * moveDelta;
             positionY += forward[1] * moveDelta;
@@ -132,14 +133,14 @@ public class CameraController
         }
 
         // Strafe movement using A/D
-        if (game.IsKeyPressed(68)) // D key - strafe right
+        if (game.IsKeyPressed(Keys.D)) // D key - strafe right
         {
             positionX -= right[0] * moveDelta;
             positionY -= right[1] * moveDelta;
             positionZ -= right[2] * moveDelta;
             moved = true;
         }
-        if (game.IsKeyPressed(65)) // A key - strafe left
+        if (game.IsKeyPressed(Keys.A)) // A key - strafe left
         {
             positionX += right[0] * moveDelta;
             positionY += right[1] * moveDelta;
@@ -148,14 +149,14 @@ public class CameraController
         }
 
         // Up/Down movement using W/S
-        if (game.IsKeyPressed(87)) // W key - move up
+        if (game.IsKeyPressed(Keys.W)) // W key - move up
         {
             positionX -= up[0] * moveDelta;
             positionY -= up[1] * moveDelta;
             positionZ -= up[2] * moveDelta;
             moved = true;
         }
-        if (game.IsKeyPressed(83)) // S key - move down
+        if (game.IsKeyPressed(Keys.S)) // S key - move down
         {
             positionX += up[0] * moveDelta;
             positionY += up[1] * moveDelta;
@@ -164,23 +165,23 @@ public class CameraController
         }
 
         // Handle rotation using arrow keys
-        if (game.IsKeyPressed(262)) // Right arrow
+        if (game.IsKeyPressed(Keys.Right)) // Right arrow
         {
             yaw -= rotationSpeed * deltaTime * 100.0f;
             moved = true;
         }
-        if (game.IsKeyPressed(263)) // Left arrow
+        if (game.IsKeyPressed(Keys.Left)) // Left arrow
         {
             yaw += rotationSpeed * deltaTime * 100.0f;
             moved = true;
         }
-        if (game.IsKeyPressed(264)) // Down arrow
+        if (game.IsKeyPressed(Keys.Down)) // Down arrow
         {
             pitch -= rotationSpeed * deltaTime * 100.0f;
             pitch = Math.Clamp(pitch, -89.0f, 89.0f); // Prevent flipping
             moved = true;
         }
-        if (game.IsKeyPressed(265)) // Up arrow
+        if (game.IsKeyPressed(Keys.Up)) // Up arrow
         {
             pitch += rotationSpeed * deltaTime * 100.0f;
             pitch = Math.Clamp(pitch, -89.0f, 89.0f); // Prevent flipping
@@ -188,12 +189,12 @@ public class CameraController
         }
 
         // Roll control using [ and ]
-        if (game.IsKeyPressed(91)) // [ key - roll left
+        if (game.IsKeyPressed(Keys.LeftBracket)) // [ key - roll left
         {
             roll += rotationSpeed * deltaTime * 100.0f;
             moved = true;
         }
-        if (game.IsKeyPressed(93)) // ] key - roll right
+        if (game.IsKeyPressed(Keys.RightBracket)) // ] key - roll right
         {
             roll -= rotationSpeed * deltaTime * 100.0f;
             moved = true;

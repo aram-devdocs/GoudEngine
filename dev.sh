@@ -26,7 +26,7 @@ done
 
 # Validate game selection
 case $GAME in
-"flappy_goud" | "3d_cube" | "goud_jumper")
+"flappy_goud" | "3d_cube" | "goud_jumper" | "isometric_rpg")
     echo "Building and running $GAME..."
     ;;
 *)

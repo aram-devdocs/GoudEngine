@@ -86,7 +86,7 @@ impl InputHandler {
     pub fn is_gamepad_button_pressed(&self, gamepad_id: u32, button: u32) -> bool {
         self.gamepad_buttons_pressed
             .get(&gamepad_id)
-            .map_or(false, |buttons| buttons.contains(&button))
+            .is_some_and(|buttons| buttons.contains(&button))
     }
 }
 
