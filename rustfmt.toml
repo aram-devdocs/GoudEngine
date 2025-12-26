@@ -1,0 +1,14 @@
+# Rustfmt configuration for GoudEngine
+# See: https://rust-lang.github.io/rustfmt/
+
+edition = "2021"
+max_width = 100
+tab_spaces = 4
+use_small_heuristics = "Default"
+
+# Consistent formatting
+newline_style = "Unix"
+
+# Note: The following options are available on nightly only:
+# imports_granularity = "Module"
+# group_imports = "StdExternalCrate"

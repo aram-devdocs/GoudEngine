@@ -1,0 +1,8 @@
+# Clippy configuration for GoudEngine
+# See: https://doc.rust-lang.org/clippy/lint_configuration.html
+
+# Avoid too many arguments warning for FFI functions
+too-many-arguments-threshold = 20
+
+# Allow complex types in FFI boundary (they're necessary)
+type-complexity-threshold = 500
