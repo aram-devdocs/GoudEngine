@@ -1,0 +1,29 @@
+# Force LF line endings for all text files to ensure consistent formatting across platforms
+* text=auto eol=lf
+
+# Rust source files
+*.rs text eol=lf
+*.toml text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+
+# Config files
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+# C# files
+*.cs text eol=lf
+*.csproj text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.nupkg binary
