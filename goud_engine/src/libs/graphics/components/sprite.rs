@@ -161,10 +161,10 @@ mod tests {
             64.0,
             64.0,
             45.0,
-            source_rect.clone(),
+            source_rect,
             10,
             true,
-            frame.clone(),
+            frame,
         );
 
         assert_eq!(sprite.id, 1);
@@ -181,7 +181,7 @@ mod tests {
         assert_eq!(sprite.source_rect.width, source_rect.width);
         assert_eq!(sprite.source_rect.height, source_rect.height);
         assert_eq!(sprite.texture_id, 10);
-        assert_eq!(sprite.debug, true);
+        assert!(sprite.debug);
         assert_eq!(sprite.frame.x, frame.x);
         assert_eq!(sprite.frame.y, frame.y);
     }
@@ -196,19 +196,7 @@ mod tests {
         };
 
         let sprite = Sprite::new(
-            0,
-            0.0,
-            0.0,
-            0,
-            1.0,
-            1.0,
-            16.0,
-            16.0,
-            0.0,
-            rect.clone(),
-            0,
-            false,
-            rect.clone(),
+            0, 0.0, 0.0, 0, 1.0, 1.0, 16.0, 16.0, 0.0, rect, 0, false, rect,
         );
 
         assert_eq!(sprite.id, 0);
@@ -218,7 +206,7 @@ mod tests {
         assert_eq!(sprite.scale_x, 1.0);
         assert_eq!(sprite.scale_y, 1.0);
         assert_eq!(sprite.rotation, 0.0);
-        assert_eq!(sprite.debug, false);
+        assert!(!sprite.debug);
     }
 
     #[test]
@@ -231,34 +219,10 @@ mod tests {
         };
 
         let sprite1 = Sprite::new(
-            1,
-            0.0,
-            0.0,
-            0,
-            1.0,
-            1.0,
-            50.0,
-            50.0,
-            0.0,
-            rect.clone(),
-            0,
-            false,
-            rect.clone(),
+            1, 0.0, 0.0, 0, 1.0, 1.0, 50.0, 50.0, 0.0, rect, 0, false, rect,
         );
         let sprite2 = Sprite::new(
-            2,
-            25.0,
-            25.0,
-            0,
-            1.0,
-            1.0,
-            50.0,
-            50.0,
-            0.0,
-            rect.clone(),
-            0,
-            false,
-            rect.clone(),
+            2, 25.0, 25.0, 0, 1.0, 1.0, 50.0, 50.0, 0.0, rect, 0, false, rect,
         );
 
         assert!(sprite1.check_collision(&sprite2));
@@ -275,34 +239,10 @@ mod tests {
         };
 
         let sprite1 = Sprite::new(
-            1,
-            0.0,
-            0.0,
-            0,
-            1.0,
-            1.0,
-            50.0,
-            50.0,
-            0.0,
-            rect.clone(),
-            0,
-            false,
-            rect.clone(),
+            1, 0.0, 0.0, 0, 1.0, 1.0, 50.0, 50.0, 0.0, rect, 0, false, rect,
         );
         let sprite2 = Sprite::new(
-            2,
-            100.0,
-            100.0,
-            0,
-            1.0,
-            1.0,
-            50.0,
-            50.0,
-            0.0,
-            rect.clone(),
-            0,
-            false,
-            rect.clone(),
+            2, 100.0, 100.0, 0, 1.0, 1.0, 50.0, 50.0, 0.0, rect, 0, false, rect,
         );
 
         assert!(!sprite1.check_collision(&sprite2));
@@ -319,34 +259,10 @@ mod tests {
         };
 
         let sprite1 = Sprite::new(
-            1,
-            0.0,
-            0.0,
-            0,
-            1.0,
-            1.0,
-            50.0,
-            50.0,
-            0.0,
-            rect.clone(),
-            0,
-            false,
-            rect.clone(),
+            1, 0.0, 0.0, 0, 1.0, 1.0, 50.0, 50.0, 0.0, rect, 0, false, rect,
         );
         let sprite2 = Sprite::new(
-            2,
-            50.0,
-            0.0,
-            0,
-            1.0,
-            1.0,
-            50.0,
-            50.0,
-            0.0,
-            rect.clone(),
-            0,
-            false,
-            rect.clone(),
+            2, 50.0, 0.0, 0, 1.0, 1.0, 50.0, 50.0, 0.0, rect, 0, false, rect,
         );
 
         assert!(!sprite1.check_collision(&sprite2));
@@ -363,34 +279,10 @@ mod tests {
         };
 
         let sprite1 = Sprite::new(
-            1,
-            10.0,
-            10.0,
-            0,
-            1.0,
-            1.0,
-            30.0,
-            30.0,
-            0.0,
-            rect.clone(),
-            0,
-            false,
-            rect.clone(),
+            1, 10.0, 10.0, 0, 1.0, 1.0, 30.0, 30.0, 0.0, rect, 0, false, rect,
         );
         let sprite2 = Sprite::new(
-            2,
-            10.0,
-            10.0,
-            0,
-            1.0,
-            1.0,
-            30.0,
-            30.0,
-            0.0,
-            rect.clone(),
-            0,
-            false,
-            rect.clone(),
+            2, 10.0, 10.0, 0, 1.0, 1.0, 30.0, 30.0, 0.0, rect, 0, false, rect,
         );
 
         assert!(sprite1.check_collision(&sprite2));
@@ -407,34 +299,10 @@ mod tests {
         };
 
         let sprite1 = Sprite::new(
-            1,
-            0.0,
-            0.0,
-            0,
-            1.0,
-            1.0,
-            40.0,
-            40.0,
-            0.0,
-            rect.clone(),
-            0,
-            false,
-            rect.clone(),
+            1, 0.0, 0.0, 0, 1.0, 1.0, 40.0, 40.0, 0.0, rect, 0, false, rect,
         );
         let sprite2 = Sprite::new(
-            2,
-            30.0,
-            30.0,
-            0,
-            1.0,
-            1.0,
-            40.0,
-            40.0,
-            0.0,
-            rect.clone(),
-            0,
-            false,
-            rect.clone(),
+            2, 30.0, 30.0, 0, 1.0, 1.0, 40.0, 40.0, 0.0, rect, 0, false, rect,
         );
 
         assert!(sprite1.check_collision(&sprite2));
@@ -465,10 +333,10 @@ mod tests {
             128.0,
             128.0,
             90.0,
-            source_rect.clone(),
+            source_rect,
             42,
             true,
-            frame.clone(),
+            frame,
         );
 
         assert_eq!(dto.x, 100.0);
@@ -482,7 +350,7 @@ mod tests {
         assert_eq!(dto.source_rect.x, source_rect.x);
         assert_eq!(dto.source_rect.width, source_rect.width);
         assert_eq!(dto.texture_id, 42);
-        assert_eq!(dto.debug, true);
+        assert!(dto.debug);
     }
 
     #[test]
@@ -510,10 +378,10 @@ mod tests {
             16.0,
             16.0,
             180.0,
-            source_rect.clone(),
+            source_rect,
             7,
             false,
-            frame.clone(),
+            frame,
         );
 
         assert_eq!(dto.id, 99);
@@ -526,7 +394,7 @@ mod tests {
         assert_eq!(dto.dimension_y, 16.0);
         assert_eq!(dto.rotation, 180.0);
         assert_eq!(dto.texture_id, 7);
-        assert_eq!(dto.debug, false);
+        assert!(!dto.debug);
     }
 
     #[test]
@@ -539,34 +407,10 @@ mod tests {
         };
 
         let sprite1 = Sprite::new(
-            1,
-            10.0,
-            10.0,
-            0,
-            1.0,
-            1.0,
-            -30.0,
-            -30.0,
-            0.0,
-            rect.clone(),
-            0,
-            false,
-            rect.clone(),
+            1, 10.0, 10.0, 0, 1.0, 1.0, -30.0, -30.0, 0.0, rect, 0, false, rect,
         );
         let sprite2 = Sprite::new(
-            2,
-            5.0,
-            5.0,
-            0,
-            1.0,
-            1.0,
-            20.0,
-            20.0,
-            0.0,
-            rect.clone(),
-            0,
-            false,
-            rect.clone(),
+            2, 5.0, 5.0, 0, 1.0, 1.0, 20.0, 20.0, 0.0, rect, 0, false, rect,
         );
 
         assert!(!sprite1.check_collision(&sprite2));

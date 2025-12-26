@@ -244,7 +244,7 @@ mod tests {
     fn test_grid_config_default() {
         let config = GridConfig::default();
 
-        assert_eq!(config.enabled, true);
+        assert!(config.enabled);
         assert_eq!(config.size, 20.0);
         assert_eq!(config.divisions, 20);
         assert_eq!(config.xz_color, Vector3::new(0.7, 0.7, 0.7));
@@ -255,23 +255,24 @@ mod tests {
         assert_eq!(config.z_axis_color, Vector3::new(0.2, 0.2, 0.9));
         assert_eq!(config.line_width, 1.5);
         assert_eq!(config.axis_line_width, 2.5);
-        assert_eq!(config.show_axes, true);
-        assert_eq!(config.show_xz_plane, true);
-        assert_eq!(config.show_xy_plane, true);
-        assert_eq!(config.show_yz_plane, true);
+        assert!(config.show_axes);
+        assert!(config.show_xz_plane);
+        assert!(config.show_xy_plane);
+        assert!(config.show_yz_plane);
         assert_eq!(config.render_mode, GridRenderMode::Overlap);
     }
 
     #[test]
     fn test_grid_config_modification() {
-        let mut config = GridConfig::default();
+        let config = GridConfig {
+            enabled: false,
+            size: 50.0,
+            divisions: 40,
+            render_mode: GridRenderMode::Blend,
+            ..Default::default()
+        };
 
-        config.enabled = false;
-        config.size = 50.0;
-        config.divisions = 40;
-        config.render_mode = GridRenderMode::Blend;
-
-        assert_eq!(config.enabled, false);
+        assert!(!config.enabled);
         assert_eq!(config.size, 50.0);
         assert_eq!(config.divisions, 40);
         assert_eq!(config.render_mode, GridRenderMode::Blend);
@@ -291,12 +292,12 @@ mod tests {
     fn test_skybox_config_default() {
         let config = SkyboxConfig::default();
 
-        assert_eq!(config.enabled, true);
+        assert!(config.enabled);
         assert_eq!(config.size, 100.0);
         assert_eq!(config.texture_size, 128);
         assert_eq!(config.blend_factor, 0.5);
         assert_eq!(config.min_color, Vector3::new(0.1, 0.1, 0.2));
-        assert_eq!(config.use_custom_textures, false);
+        assert!(!config.use_custom_textures);
 
         // Test face colors array
         assert_eq!(config.face_colors.len(), 6);
@@ -382,7 +383,7 @@ mod tests {
         assert_eq!(sprite.z_layer, 5);
         assert_eq!(sprite.rotation, 45.0);
         assert_eq!(sprite.texture_id, 10);
-        assert_eq!(sprite.debug, false);
+        assert!(!sprite.debug);
 
         // Test Clone
         let cloned = sprite.clone();
@@ -421,7 +422,7 @@ mod tests {
         assert_eq!(dto.x, 50.0);
         assert_eq!(dto.y, 75.0);
         assert_eq!(dto.z_layer, 2);
-        assert_eq!(dto.debug, true);
+        assert!(dto.debug);
     }
 
     #[test]
@@ -607,7 +608,7 @@ mod tests {
             },
         };
 
-        sprite_map.entry(0).or_insert_with(Vec::new).push(sprite);
+        sprite_map.entry(0).or_default().push(sprite);
 
         assert_eq!(sprite_map.len(), 1);
         assert_eq!(sprite_map.get(&0).unwrap().len(), 1);

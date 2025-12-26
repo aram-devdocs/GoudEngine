@@ -70,7 +70,7 @@ mod tests {
             // In real usage, this would set up vertex attribute pointers
             // For testing without GL context, we verify parameters are valid
             assert!(index < 16); // Most implementations support at least 16 attributes
-            assert!(size >= 1 && size <= 4); // Valid sizes
+            assert!((1..=4).contains(&size)); // Valid sizes
             assert!(stride >= 0); // Valid stride
             assert!(offset < 1024); // Reasonable offset
 
@@ -82,9 +82,7 @@ mod tests {
                 | gl::UNSIGNED_INT
                 | gl::SHORT
                 | gl::UNSIGNED_SHORT
-                | gl::BYTE => {
-                    assert!(true); // Valid type
-                }
+                | gl::BYTE => {}
                 _ => panic!("Invalid GL type"),
             }
         }
@@ -99,7 +97,7 @@ mod tests {
 
         // Size boundaries (1-4 are valid)
         for size in 1..=4 {
-            assert!(size >= 1 && size <= 4);
+            assert!((1..=4).contains(&size));
         }
 
         // Zero stride (valid - means tightly packed)
@@ -111,8 +109,8 @@ mod tests {
         assert!(large_offset > 0);
 
         // Normalized flag values
-        assert_eq!(gl::TRUE as u8, 1);
-        assert_eq!(gl::FALSE as u8, 0);
+        assert_eq!(gl::TRUE, 1);
+        assert_eq!(gl::FALSE, 0);
     }
 
     #[test]

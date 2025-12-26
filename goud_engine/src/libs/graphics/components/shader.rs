@@ -324,8 +324,6 @@ mod tests {
             println!("Using mock shader for testing (no OpenGL context)");
             let shader = MockShaderProgram::new().unwrap();
             shader.terminate();
-            // Just make the test pass
-            assert!(true);
         }
     }
 }

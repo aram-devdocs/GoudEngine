@@ -236,9 +236,9 @@ mod tests {
         let builder = create_test_window_builder();
         let mut window = Window::new(builder);
 
-        assert_eq!(window.should_close(), false);
+        assert!(!window.should_close());
         window.terminate();
-        assert_eq!(window.should_close(), true);
+        assert!(window.should_close());
     }
 
     #[test]
@@ -248,11 +248,8 @@ mod tests {
         let window = Window::new(builder);
 
         // Test input handler delegation
-        assert_eq!(window.is_key_pressed(Key::A), false);
-        assert_eq!(
-            window.is_mouse_button_pressed(glfw::MouseButton::Button1),
-            false
-        );
+        assert!(!window.is_key_pressed(Key::A));
+        assert!(!window.is_mouse_button_pressed(glfw::MouseButton::Button1));
 
         let mouse_pos = window.get_mouse_position();
         assert_eq!(mouse_pos.x, 0.0);
@@ -265,13 +262,13 @@ mod tests {
         let builder = create_test_window_builder();
         let mut window = Window::new(builder);
 
-        assert_eq!(window.is_gamepad_button_pressed(0, 1), false);
+        assert!(!window.is_gamepad_button_pressed(0, 1));
 
         window.handle_gamepad_button(0, 1, true);
-        assert_eq!(window.is_gamepad_button_pressed(0, 1), true);
+        assert!(window.is_gamepad_button_pressed(0, 1));
 
         window.handle_gamepad_button(0, 1, false);
-        assert_eq!(window.is_gamepad_button_pressed(0, 1), false);
+        assert!(!window.is_gamepad_button_pressed(0, 1));
     }
 
     #[test]

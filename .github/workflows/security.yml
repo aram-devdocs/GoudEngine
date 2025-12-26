@@ -35,10 +35,11 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-audit-
     
+    - name: Install cargo-audit
+      run: cargo install cargo-audit --locked
+
     - name: Run security audit
-      uses: rustsec/audit-check@v2
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+      run: cargo audit
     
     - name: Create issue for vulnerabilities
       if: failure()
