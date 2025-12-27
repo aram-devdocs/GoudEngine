@@ -164,7 +164,7 @@ jobs:
     
     steps:
     - name: Download outdated report
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v6
       with:
         name: rust-outdated-report
         path: .
