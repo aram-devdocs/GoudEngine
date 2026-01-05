@@ -186,6 +186,117 @@ pub const ERR_NOT_IMPLEMENTED: GoudErrorCode = 901;
 pub const ERR_INVALID_STATE: GoudErrorCode = 902;
 
 // =============================================================================
+// GoudError Enum
+// =============================================================================
+
+/// The main error type for GoudEngine.
+///
+/// This enum represents all possible errors that can occur within the engine.
+/// Each variant maps to a specific FFI-compatible error code, enabling consistent
+/// error handling across Rust and all language bindings.
+///
+/// # Error Categories
+///
+/// Errors are organized into categories:
+/// - **Context**: Engine initialization and context management (codes 1-99)
+/// - More categories will be added in subsequent steps
+///
+/// # FFI Compatibility
+///
+/// Use [`GoudError::error_code()`] to get the FFI-compatible error code for any error.
+/// This code can be safely passed across the FFI boundary.
+///
+/// # Example
+///
+/// ```
+/// use goud_engine::core::error::{GoudError, ERR_NOT_INITIALIZED};
+///
+/// let error = GoudError::NotInitialized;
+/// assert_eq!(error.error_code(), ERR_NOT_INITIALIZED);
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GoudError {
+    // -------------------------------------------------------------------------
+    // Context Errors (codes 1-99)
+    // -------------------------------------------------------------------------
+    /// Engine has not been initialized.
+    ///
+    /// This error occurs when attempting to use engine functionality before
+    /// calling the initialization function.
+    NotInitialized,
+
+    /// Engine has already been initialized.
+    ///
+    /// This error occurs when attempting to initialize the engine more than once.
+    /// The engine must be shut down before re-initialization.
+    AlreadyInitialized,
+
+    /// Invalid engine context.
+    ///
+    /// The provided engine context handle is invalid or corrupted.
+    InvalidContext,
+
+    /// Engine context has been destroyed.
+    ///
+    /// The engine context was previously valid but has since been destroyed.
+    /// Operations cannot be performed on a destroyed context.
+    ContextDestroyed,
+
+    /// Engine initialization failed with a specific reason.
+    ///
+    /// Contains a message describing why initialization failed.
+    /// Common causes include missing dependencies, invalid configuration,
+    /// or platform-specific issues.
+    InitializationFailed(String),
+}
+
+impl GoudError {
+    /// Returns the FFI-compatible error code for this error.
+    ///
+    /// This method maps each error variant to its corresponding error code constant,
+    /// which can be safely passed across the FFI boundary to C#, Python, or other
+    /// language bindings.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::error::{GoudError, ERR_NOT_INITIALIZED, ERR_INITIALIZATION_FAILED};
+    ///
+    /// assert_eq!(GoudError::NotInitialized.error_code(), ERR_NOT_INITIALIZED);
+    /// assert_eq!(
+    ///     GoudError::InitializationFailed("GPU not found".to_string()).error_code(),
+    ///     ERR_INITIALIZATION_FAILED
+    /// );
+    /// ```
+    #[inline]
+    pub const fn error_code(&self) -> GoudErrorCode {
+        match self {
+            GoudError::NotInitialized => ERR_NOT_INITIALIZED,
+            GoudError::AlreadyInitialized => ERR_ALREADY_INITIALIZED,
+            GoudError::InvalidContext => ERR_INVALID_CONTEXT,
+            GoudError::ContextDestroyed => ERR_CONTEXT_DESTROYED,
+            GoudError::InitializationFailed(_) => ERR_INITIALIZATION_FAILED,
+        }
+    }
+
+    /// Returns the error category as a static string.
+    ///
+    /// This is a convenience method that returns the category name for this error.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::error::GoudError;
+    ///
+    /// assert_eq!(GoudError::NotInitialized.category(), "Context");
+    /// ```
+    #[inline]
+    pub const fn category(&self) -> &'static str {
+        error_category(self.error_code())
+    }
+}
+
+// =============================================================================
 // Helper Functions
 // =============================================================================
 
@@ -309,5 +420,129 @@ mod tests {
         assert_eq!(error_category(-1), "Unknown");
         assert_eq!(error_category(1000), "Unknown");
         assert_eq!(error_category(600), "Unknown");
+    }
+
+    // =========================================================================
+    // GoudError Context Variant Tests
+    // =========================================================================
+
+    mod context_errors {
+        use super::*;
+
+        #[test]
+        fn test_not_initialized_error_code() {
+            let error = GoudError::NotInitialized;
+            assert_eq!(error.error_code(), ERR_NOT_INITIALIZED);
+            assert_eq!(error.error_code(), 1);
+        }
+
+        #[test]
+        fn test_already_initialized_error_code() {
+            let error = GoudError::AlreadyInitialized;
+            assert_eq!(error.error_code(), ERR_ALREADY_INITIALIZED);
+            assert_eq!(error.error_code(), 2);
+        }
+
+        #[test]
+        fn test_invalid_context_error_code() {
+            let error = GoudError::InvalidContext;
+            assert_eq!(error.error_code(), ERR_INVALID_CONTEXT);
+            assert_eq!(error.error_code(), 3);
+        }
+
+        #[test]
+        fn test_context_destroyed_error_code() {
+            let error = GoudError::ContextDestroyed;
+            assert_eq!(error.error_code(), ERR_CONTEXT_DESTROYED);
+            assert_eq!(error.error_code(), 4);
+        }
+
+        #[test]
+        fn test_initialization_failed_error_code() {
+            let error = GoudError::InitializationFailed("GPU not found".to_string());
+            assert_eq!(error.error_code(), ERR_INITIALIZATION_FAILED);
+            assert_eq!(error.error_code(), 10);
+
+            // Different messages should have same error code
+            let error2 = GoudError::InitializationFailed("Missing dependency".to_string());
+            assert_eq!(error2.error_code(), ERR_INITIALIZATION_FAILED);
+        }
+
+        #[test]
+        fn test_all_context_errors_in_context_category() {
+            let errors = [
+                GoudError::NotInitialized,
+                GoudError::AlreadyInitialized,
+                GoudError::InvalidContext,
+                GoudError::ContextDestroyed,
+                GoudError::InitializationFailed("test".to_string()),
+            ];
+
+            for error in errors {
+                assert_eq!(
+                    error.category(),
+                    "Context",
+                    "Error {:?} should be in Context category",
+                    error
+                );
+            }
+        }
+
+        #[test]
+        fn test_context_error_codes_in_valid_range() {
+            let errors = [
+                GoudError::NotInitialized,
+                GoudError::AlreadyInitialized,
+                GoudError::InvalidContext,
+                GoudError::ContextDestroyed,
+                GoudError::InitializationFailed("test".to_string()),
+            ];
+
+            for error in errors {
+                let code = error.error_code();
+                assert!(
+                    code >= 1 && code < 100,
+                    "Context error {:?} has code {} which is outside range 1-99",
+                    error,
+                    code
+                );
+            }
+        }
+
+        #[test]
+        fn test_goud_error_derives() {
+            // Test Debug
+            let error = GoudError::NotInitialized;
+            let debug_str = format!("{:?}", error);
+            assert!(debug_str.contains("NotInitialized"));
+
+            // Test Clone
+            let cloned = error.clone();
+            assert_eq!(error, cloned);
+
+            // Test PartialEq and Eq
+            assert_eq!(GoudError::NotInitialized, GoudError::NotInitialized);
+            assert_ne!(GoudError::NotInitialized, GoudError::AlreadyInitialized);
+
+            // Test equality with message content
+            let err1 = GoudError::InitializationFailed("msg1".to_string());
+            let err2 = GoudError::InitializationFailed("msg1".to_string());
+            let err3 = GoudError::InitializationFailed("msg2".to_string());
+            assert_eq!(err1, err2);
+            assert_ne!(err1, err3);
+        }
+
+        #[test]
+        fn test_initialization_failed_preserves_message() {
+            let message = "Failed to initialize OpenGL context: version 4.5 required";
+            let error = GoudError::InitializationFailed(message.to_string());
+
+            // Verify we can pattern match and extract the message
+            if let GoudError::InitializationFailed(msg) = error {
+                assert_eq!(msg, message);
+            } else {
+                panic!("Expected InitializationFailed variant");
+            }
+        }
     }
 }
