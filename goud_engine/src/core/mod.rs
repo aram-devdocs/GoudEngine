@@ -10,8 +10,9 @@
 //! These utilities form the foundation for all other engine subsystems and
 //! provide consistent patterns for cross-language interoperability.
 
+pub mod error;
+
 // Future submodules will be added as they are implemented:
-// pub mod error;    // Step 1.1.2-1.1.8
 // pub mod handle;   // Step 1.2.1-1.2.6
 // pub mod event;    // Step 1.3.1-1.3.4
 // pub mod events;   // Step 1.3.5

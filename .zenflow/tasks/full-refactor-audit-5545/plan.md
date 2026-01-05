@@ -75,7 +75,8 @@ cargo build 2>&1 | grep -E "(error|warning)" | head -20
 
 ---
 
-### [ ] Step 1.1.2: Define Error Category Constants
+### [x] Step 1.1.2: Define Error Category Constants
+<!-- chat-id: accf2d9d-c680-41a8-9a3b-802440f9a8e3 -->
 **File:** `goud_engine/src/core/error.rs` (new)
 **Context:** Define FFI-compatible error code ranges. These constants will be used across Rust and all language bindings (C#, Python, etc.) for consistent error handling.
 
