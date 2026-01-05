@@ -248,6 +248,56 @@ pub enum GoudError {
     /// Common causes include missing dependencies, invalid configuration,
     /// or platform-specific issues.
     InitializationFailed(String),
+
+    // -------------------------------------------------------------------------
+    // Resource Errors (codes 100-199)
+    // -------------------------------------------------------------------------
+    /// Requested resource was not found.
+    ///
+    /// This error occurs when attempting to access a resource (texture, shader,
+    /// audio file, etc.) that does not exist at the specified path or identifier.
+    /// The string contains the resource path or identifier that was not found.
+    ResourceNotFound(String),
+
+    /// Failed to load resource from source.
+    ///
+    /// This error occurs when a resource exists but could not be loaded due to
+    /// I/O errors, permission issues, or other loading failures.
+    /// The string contains details about the loading failure.
+    ResourceLoadFailed(String),
+
+    /// Resource format is invalid or unsupported.
+    ///
+    /// This error occurs when a resource file exists and was read successfully,
+    /// but the format is invalid, corrupted, or not supported by the engine.
+    /// The string contains details about the format issue.
+    ResourceInvalidFormat(String),
+
+    /// Resource with this identifier already exists.
+    ///
+    /// This error occurs when attempting to create or register a resource
+    /// with an identifier that is already in use.
+    /// The string contains the conflicting resource identifier.
+    ResourceAlreadyExists(String),
+
+    /// Handle is invalid (null or malformed).
+    ///
+    /// This error occurs when an operation is performed with a handle that
+    /// was never valid (null, zero, or otherwise malformed).
+    InvalidHandle,
+
+    /// Handle refers to a resource that has been deallocated.
+    ///
+    /// This error occurs when using a handle that was previously valid but
+    /// the underlying resource has been freed. This is a use-after-free attempt
+    /// that was safely caught by the generational handle system.
+    HandleExpired,
+
+    /// Handle type does not match expected resource type.
+    ///
+    /// This error occurs when a handle is passed to a function expecting a
+    /// different resource type (e.g., passing a texture handle to a shader function).
+    HandleTypeMismatch,
 }
 
 impl GoudError {
@@ -271,11 +321,21 @@ impl GoudError {
     #[inline]
     pub const fn error_code(&self) -> GoudErrorCode {
         match self {
+            // Context errors (1-99)
             GoudError::NotInitialized => ERR_NOT_INITIALIZED,
             GoudError::AlreadyInitialized => ERR_ALREADY_INITIALIZED,
             GoudError::InvalidContext => ERR_INVALID_CONTEXT,
             GoudError::ContextDestroyed => ERR_CONTEXT_DESTROYED,
             GoudError::InitializationFailed(_) => ERR_INITIALIZATION_FAILED,
+
+            // Resource errors (100-199)
+            GoudError::ResourceNotFound(_) => ERR_RESOURCE_NOT_FOUND,
+            GoudError::ResourceLoadFailed(_) => ERR_RESOURCE_LOAD_FAILED,
+            GoudError::ResourceInvalidFormat(_) => ERR_RESOURCE_INVALID_FORMAT,
+            GoudError::ResourceAlreadyExists(_) => ERR_RESOURCE_ALREADY_EXISTS,
+            GoudError::InvalidHandle => ERR_INVALID_HANDLE,
+            GoudError::HandleExpired => ERR_HANDLE_EXPIRED,
+            GoudError::HandleTypeMismatch => ERR_HANDLE_TYPE_MISMATCH,
         }
     }
 
@@ -543,6 +603,196 @@ mod tests {
             } else {
                 panic!("Expected InitializationFailed variant");
             }
+        }
+    }
+
+    // =========================================================================
+    // GoudError Resource Variant Tests
+    // =========================================================================
+
+    mod resource_errors {
+        use super::*;
+
+        #[test]
+        fn test_resource_not_found_error_code() {
+            let error = GoudError::ResourceNotFound("textures/player.png".to_string());
+            assert_eq!(error.error_code(), ERR_RESOURCE_NOT_FOUND);
+            assert_eq!(error.error_code(), 100);
+        }
+
+        #[test]
+        fn test_resource_load_failed_error_code() {
+            let error = GoudError::ResourceLoadFailed("I/O error reading file".to_string());
+            assert_eq!(error.error_code(), ERR_RESOURCE_LOAD_FAILED);
+            assert_eq!(error.error_code(), 101);
+        }
+
+        #[test]
+        fn test_resource_invalid_format_error_code() {
+            let error = GoudError::ResourceInvalidFormat("Invalid PNG header".to_string());
+            assert_eq!(error.error_code(), ERR_RESOURCE_INVALID_FORMAT);
+            assert_eq!(error.error_code(), 102);
+        }
+
+        #[test]
+        fn test_resource_already_exists_error_code() {
+            let error = GoudError::ResourceAlreadyExists("player_texture".to_string());
+            assert_eq!(error.error_code(), ERR_RESOURCE_ALREADY_EXISTS);
+            assert_eq!(error.error_code(), 103);
+        }
+
+        #[test]
+        fn test_invalid_handle_error_code() {
+            let error = GoudError::InvalidHandle;
+            assert_eq!(error.error_code(), ERR_INVALID_HANDLE);
+            assert_eq!(error.error_code(), 110);
+        }
+
+        #[test]
+        fn test_handle_expired_error_code() {
+            let error = GoudError::HandleExpired;
+            assert_eq!(error.error_code(), ERR_HANDLE_EXPIRED);
+            assert_eq!(error.error_code(), 111);
+        }
+
+        #[test]
+        fn test_handle_type_mismatch_error_code() {
+            let error = GoudError::HandleTypeMismatch;
+            assert_eq!(error.error_code(), ERR_HANDLE_TYPE_MISMATCH);
+            assert_eq!(error.error_code(), 112);
+        }
+
+        #[test]
+        fn test_all_resource_errors_in_resource_category() {
+            let errors: Vec<GoudError> = vec![
+                GoudError::ResourceNotFound("test".to_string()),
+                GoudError::ResourceLoadFailed("test".to_string()),
+                GoudError::ResourceInvalidFormat("test".to_string()),
+                GoudError::ResourceAlreadyExists("test".to_string()),
+                GoudError::InvalidHandle,
+                GoudError::HandleExpired,
+                GoudError::HandleTypeMismatch,
+            ];
+
+            for error in errors {
+                assert_eq!(
+                    error.category(),
+                    "Resource",
+                    "Error {:?} should be in Resource category",
+                    error
+                );
+            }
+        }
+
+        #[test]
+        fn test_resource_error_codes_in_valid_range() {
+            let errors: Vec<GoudError> = vec![
+                GoudError::ResourceNotFound("test".to_string()),
+                GoudError::ResourceLoadFailed("test".to_string()),
+                GoudError::ResourceInvalidFormat("test".to_string()),
+                GoudError::ResourceAlreadyExists("test".to_string()),
+                GoudError::InvalidHandle,
+                GoudError::HandleExpired,
+                GoudError::HandleTypeMismatch,
+            ];
+
+            for error in errors {
+                let code = error.error_code();
+                assert!(
+                    code >= 100 && code < 200,
+                    "Resource error {:?} has code {} which is outside range 100-199",
+                    error,
+                    code
+                );
+            }
+        }
+
+        #[test]
+        fn test_resource_errors_preserve_message() {
+            // Test ResourceNotFound
+            let path = "assets/textures/missing.png";
+            if let GoudError::ResourceNotFound(msg) = GoudError::ResourceNotFound(path.to_string())
+            {
+                assert_eq!(msg, path);
+            } else {
+                panic!("Expected ResourceNotFound variant");
+            }
+
+            // Test ResourceLoadFailed
+            let reason = "Permission denied";
+            if let GoudError::ResourceLoadFailed(msg) =
+                GoudError::ResourceLoadFailed(reason.to_string())
+            {
+                assert_eq!(msg, reason);
+            } else {
+                panic!("Expected ResourceLoadFailed variant");
+            }
+
+            // Test ResourceInvalidFormat
+            let format_err = "Unsupported texture format: PVRTC";
+            if let GoudError::ResourceInvalidFormat(msg) =
+                GoudError::ResourceInvalidFormat(format_err.to_string())
+            {
+                assert_eq!(msg, format_err);
+            } else {
+                panic!("Expected ResourceInvalidFormat variant");
+            }
+
+            // Test ResourceAlreadyExists
+            let resource_id = "main_shader";
+            if let GoudError::ResourceAlreadyExists(msg) =
+                GoudError::ResourceAlreadyExists(resource_id.to_string())
+            {
+                assert_eq!(msg, resource_id);
+            } else {
+                panic!("Expected ResourceAlreadyExists variant");
+            }
+        }
+
+        #[test]
+        fn test_resource_error_equality() {
+            // Same variant, same message
+            let err1 = GoudError::ResourceNotFound("file.txt".to_string());
+            let err2 = GoudError::ResourceNotFound("file.txt".to_string());
+            assert_eq!(err1, err2);
+
+            // Same variant, different message
+            let err3 = GoudError::ResourceNotFound("other.txt".to_string());
+            assert_ne!(err1, err3);
+
+            // Different variants
+            let err4 = GoudError::ResourceLoadFailed("file.txt".to_string());
+            assert_ne!(err1, err4);
+
+            // Handle errors (no message)
+            assert_eq!(GoudError::InvalidHandle, GoudError::InvalidHandle);
+            assert_ne!(GoudError::InvalidHandle, GoudError::HandleExpired);
+            assert_ne!(GoudError::HandleExpired, GoudError::HandleTypeMismatch);
+        }
+
+        #[test]
+        fn test_resource_error_debug_format() {
+            let error = GoudError::ResourceNotFound("test.png".to_string());
+            let debug_str = format!("{:?}", error);
+            assert!(debug_str.contains("ResourceNotFound"));
+            assert!(debug_str.contains("test.png"));
+
+            let handle_error = GoudError::InvalidHandle;
+            let debug_str = format!("{:?}", handle_error);
+            assert!(debug_str.contains("InvalidHandle"));
+        }
+
+        #[test]
+        fn test_handle_error_codes_are_distinct() {
+            // Verify handle-related error codes are properly separated
+            assert_ne!(ERR_INVALID_HANDLE, ERR_HANDLE_EXPIRED);
+            assert_ne!(ERR_HANDLE_EXPIRED, ERR_HANDLE_TYPE_MISMATCH);
+            assert_ne!(ERR_INVALID_HANDLE, ERR_HANDLE_TYPE_MISMATCH);
+
+            // All should be in the 110+ range (gap from 103)
+            assert!(ERR_INVALID_HANDLE >= 110);
+            assert!(ERR_HANDLE_EXPIRED >= 110);
+            assert!(ERR_HANDLE_TYPE_MISMATCH >= 110);
         }
     }
 }

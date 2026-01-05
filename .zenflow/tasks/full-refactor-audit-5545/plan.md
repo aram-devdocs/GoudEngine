@@ -136,7 +136,8 @@ cargo test core::error::context
 
 ---
 
-### [ ] Step 1.1.4: Implement GoudError Enum - Resource Errors
+### [x] Step 1.1.4: Implement GoudError Enum - Resource Errors
+<!-- chat-id: 71737b61-dbd3-4607-aba5-95f3c8e47735 -->
 **File:** `goud_engine/src/core/error.rs` (update)
 **Context:** Errors related to asset loading, resource management, and file operations.
 
