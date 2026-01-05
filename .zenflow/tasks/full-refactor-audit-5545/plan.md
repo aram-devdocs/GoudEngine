@@ -36,6 +36,26 @@ Save to `{@artifacts_path}/spec.md` with:
 - Delivery phases (incremental, testable milestones)
 - Verification approach using project lint/test commands
 
+### [x] Step: Audit Technical Specification
+<!-- chat-id: a37c0601-90d0-4e53-b4b8-b19eecd4d6f1 -->
+
+we want to use bevy, we want to build our own ecs. you can reverse engineer from bevy but it jhas to be our code and part of our codebase. update the spec codument to account for that. also be verbose, we want this to be like monogame but with the tools youd fine ind a modenr engin. make the scripting easy because the open source code of the game engin e is strong.
+ `{@artifacts_path}/spec.md` is the file to audit and update. ensure high level system architere, leave actual code examples and scripts for actual docs.
+
+**Completed Changes (v2.0):**
+- Replaced bevy_ecs dependency with custom Bevy-inspired ECS architecture (fully owned code)
+- Added comprehensive ECS documentation: entities, components, systems, archetypes, queries, scheduling
+- Added high-level system architecture diagrams (6 layers from Platform to Language Bindings)
+- Added data flow architecture showing game loop, events, world state
+- Documented MonoGame-inspired developer experience features (SpriteBatch, Content Pipeline, Game class)
+- Defined multi-language binding strategy (C#, Python, Lua, TypeScript, Go, Rust)
+- Removed low-level code examples, focused on architectural concepts and design decisions
+- Added custom physics engine (Rapier-inspired, no external dependency)
+- Added detailed component categories and built-in systems tables
+- Expanded FFI architecture with handle system and batch operations
+- Added success metrics and risk mitigation sections
+- Added glossary and target file structure
+
 ### [ ] Step: Planning
 
 Create a detailed implementation plan based on `{@artifacts_path}/spec.md`.

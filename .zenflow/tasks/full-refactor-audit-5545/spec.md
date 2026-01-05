@@ -1,1902 +1,1244 @@
 # GoudEngine Full Refactor - Technical Specification
 
 ## Document Information
-- **Version:** 1.0
+- **Version:** 2.0
 - **Date:** 2026-01-04
 - **Based on:** requirements.md PRD v1.0
-- **Status:** Draft
+- **Status:** Approved for Implementation
 
 ---
 
-## 1. Technical Context
+## 1. Executive Summary
 
-### 1.1 Current Technology Stack
+This specification defines the complete architectural overhaul of GoudEngine, transforming it from a prototype-level engine into a professional, hardened game engine with industry-standard patterns. The engine will feature:
 
-| Layer | Technology | Version | Purpose |
-|-------|------------|---------|---------|
-| **Core Engine** | Rust | 2021 Edition | Performance-critical game logic |
-| **Output Format** | cdylib | - | C-compatible dynamic library |
-| **FFI Generation** | csbindgen | 1.2.0 | C# binding auto-generation |
-| **C Header Gen** | cbindgen | 0.27 | C header for multi-language support |
-| **Graphics** | OpenGL | 3.3 Core | Hardware-accelerated rendering |
-| **Window/Input** | GLFW | 0.59 | Cross-platform window management |
-| **Math** | cgmath | 0.18 | Linear algebra |
-| **Image Loading** | image | 0.24 | Texture file parsing |
-| **Map Format** | tiled | 0.13 | Tiled map support |
-| **C# SDK** | .NET | 8.0 | Managed game development |
-
-### 1.2 Supported Platforms
-
-| Platform | Architecture | Binary Format | Status |
-|----------|--------------|---------------|--------|
-| macOS | x86_64 | .dylib | ✓ Tested |
-| macOS | arm64 | .dylib | Planned |
-| Linux | x86_64 | .so | ✓ Tested |
-| Windows | x86_64 | .dll | ✓ Basic |
-
-### 1.3 Build & Quality Infrastructure
-
-| Tool | Purpose | Configuration |
-|------|---------|---------------|
-| cargo fmt | Code formatting | rustfmt.toml |
-| cargo clippy | Linting | clippy.toml (threshold=20) |
-| cargo deny | License/security audit | deny.toml |
-| cargo test | Unit testing | - |
-| cargo tarpaulin | Coverage | CI only |
-| GitHub Actions | CI/CD | .github/workflows/ |
+- **Custom Bevy-Inspired ECS**: Our own Entity-Component-System implementation, reverse-engineered from Bevy's architecture but fully owned and integrated into our codebase
+- **MonoGame-Like Developer Experience**: Easy scripting APIs with the depth of a modern engine
+- **Universal Language Support**: Clean abstractions enabling bindings for C#, Python, TypeScript, Lua, Go, and Rust itself
+- **Test-Driven Development**: Comprehensive TDD approach ensuring hardened, production-ready code
 
 ---
 
-## 2. Architectural Analysis
+## 2. Design Philosophy
 
-### 2.1 Current Architecture (AS-IS)
+### 2.1 Core Principles
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      C# SDK Layer                            │
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │ GoudGame.cs       │ Entities/     │ Math/              ││
-│  │ AnimationController│ Sprite.cs    │ Vector2/3.cs       ││
-│  │ AssetManager      │ Object3D.cs   │ Color.cs           ││
-│  │                   │ Light.cs      │ Rectangle.cs       ││
-│  └─────────────────────────────────────────────────────────┘│
-│                           ↓ P/Invoke                         │
-├─────────────────────────────────────────────────────────────┤
-│                      FFI Boundary                            │
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │ sdk.rs (1956 LOC) - 40+ #[no_mangle] extern "C" funcs   ││
-│  │ NativeMethods.g.cs - Auto-generated bindings            ││
-│  └─────────────────────────────────────────────────────────┘│
-│                           ↓                                  │
-├─────────────────────────────────────────────────────────────┤
-│                    Rust Engine Core                          │
-│  ┌───────────────┐  ┌───────────────┐  ┌─────────────────┐ │
-│  │ game.rs       │  │ libs/ecs/     │  │ libs/platform/  │ │
-│  │ GameSdk       │→ │ SpriteManager │  │ Window          │ │
-│  │ Lifecycle     │  │ (not ECS)     │  │ InputHandler    │ │
-│  └───────────────┘  └───────────────┘  └─────────────────┘ │
-│           ↓                                                  │
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │                 libs/graphics/                           ││
-│  │  ┌───────────┐  ┌───────────────┐  ┌─────────────────┐ ││
-│  │  │ renderer  │  │ renderer2d    │  │ renderer3d      │ ││
-│  │  │ (enum)    │→ │ Camera2D      │  │ Camera3D        │ ││
-│  │  │           │  │ Sprites       │  │ Objects         │ ││
-│  │  │           │  │               │  │ Lights (8 max)  │ ││
-│  │  └───────────┘  └───────────────┘  └─────────────────┘ ││
-│  │                        ↓                                 ││
-│  │  ┌─────────────────────────────────────────────────────┐││
-│  │  │              components/                             │││
-│  │  │  shader.rs │ textures/ │ buffer.rs │ vao.rs        │││
-│  │  │  light.rs  │ camera/   │ sprite.rs │ skybox.rs     │││
-│  │  └─────────────────────────────────────────────────────┘││
-│  └─────────────────────────────────────────────────────────┘│
-│                           ↓                                  │
-├─────────────────────────────────────────────────────────────┤
-│                  External Dependencies                       │
-│      gl (OpenGL)  │  glfw  │  image  │  tiled  │  cgmath   │
-└─────────────────────────────────────────────────────────────┘
-```
+| Principle | Description |
+|-----------|-------------|
+| **Data-Oriented Design** | Components are pure data; systems transform data; cache-friendly memory layouts |
+| **Composition Over Inheritance** | Entities are bags of components; behavior emerges from system combinations |
+| **Zero-Cost Abstractions** | High-level APIs compile to optimal low-level code |
+| **Language Agnostic Core** | Engine logic independent of scripting language; clean FFI boundaries |
+| **Explicit Over Implicit** | No hidden behavior; developers control everything explicitly |
+| **Fail Fast, Fail Loud** | Comprehensive error handling with clear, actionable messages |
 
-### 2.2 Target Architecture (TO-BE)
+### 2.2 Inspirations
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    Language Binding Layer                            │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌───────┐│
-│  │ C# SDK   │  │ Python   │  │ Lua      │  │ TypeScript│ │ Rust  ││
-│  │ (rich)   │  │ (thin)   │  │ (thin)   │  │ (thin)   │  │ native││
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘  └───────┘│
-│        ↓            ↓            ↓             ↓             ↓      │
-├─────────────────────────────────────────────────────────────────────┤
-│                    C ABI Layer (Stable API)                          │
-│  ┌─────────────────────────────────────────────────────────────────┐│
-│  │ goud_api.h - Versioned C header (generated by cbindgen)         ││
-│  │ goud_ffi/ module - Organized FFI exports                         ││
-│  │ ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐        ││
-│  │ │ lifecycle │ │ entities  │ │ resources │ │ rendering │        ││
-│  │ │ context   │ │ sprites   │ │ textures  │ │ cameras   │        ││
-│  │ │ errors    │ │ objects   │ │ audio     │ │ lights    │        ││
-│  │ └───────────┘ └───────────┘ └───────────┘ └───────────┘        ││
-│  └─────────────────────────────────────────────────────────────────┘│
-│        ↓                                                             │
-├─────────────────────────────────────────────────────────────────────┤
-│                    Core Engine Layer                                 │
-│  ┌─────────────────────────────────────────────────────────────────┐│
-│  │                     Engine Context                               ││
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐ ││
-│  │  │ ResourceMgr │  │ SystemSched │  │ EventBus                │ ││
-│  │  │ (handles)   │  │ (parallel)  │  │ (pub/sub)               │ ││
-│  │  └─────────────┘  └─────────────┘  └─────────────────────────┘ ││
-│  └─────────────────────────────────────────────────────────────────┘│
-│        ↓                                                             │
-├─────────────────────────────────────────────────────────────────────┤
-│                    Subsystem Layer (Modular)                         │
-│  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────┐│
-│  │ ECS       │ │ Graphics  │ │ Audio     │ │ Physics   │ │ Input ││
-│  │ (bevy_ecs)│ │ (abstract)│ │ (rodio)   │ │ (rapier)  │ │(mapped)││
-│  └───────────┘ └───────────┘ └───────────┘ └───────────┘ └───────┘│
-│        ↓             ↓             ↓             ↓            ↓     │
-├─────────────────────────────────────────────────────────────────────┤
-│                    Backend Implementation Layer                      │
-│  ┌─────────────────────────────────────────────────────────────────┐│
-│  │ Graphics Backends       │ Audio Backends  │ Physics Backends    ││
-│  │ ┌────────┐ ┌──────────┐│ ┌─────────────┐│ ┌─────────────────┐ ││
-│  │ │OpenGL  │ │Vulkan    ││ │rodio        ││ │rapier2d/3d      │ ││
-│  │ │(3.3)   │ │(future)  ││ │             ││ │                 │ ││
-│  │ └────────┘ └──────────┘│ └─────────────┘│ └─────────────────┘ ││
-│  └─────────────────────────────────────────────────────────────────┘│
-│        ↓                                                             │
-├─────────────────────────────────────────────────────────────────────┤
-│                    Platform Layer                                    │
-│  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐           │
-│  │ Window    │ │ Input     │ │ Filesystem│ │ Threading │           │
-│  │ (GLFW)    │ │ (Raw)     │ │ (async)   │ │ (rayon)   │           │
-│  └───────────┘ └───────────┘ └───────────┘ └───────────┘           │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### 2.3 Key Architectural Changes
-
-| Area | Current | Target | Rationale |
-|------|---------|--------|-----------|
-| **ECS** | Sprite-only container | bevy_ecs integration | Industry standard, parallel systems |
-| **FFI** | Monolithic sdk.rs | Modular goud_ffi/ | Maintainability, organization |
-| **Error Handling** | Panic/bool/String | GoudResult enum | Type-safe error propagation |
-| **Memory Safety** | Raw pointers | Handle-based API | Prevent use-after-free |
-| **Threading** | Rc everywhere | Arc + Send/Sync | Enable parallelism |
-| **Graphics** | Direct OpenGL | Backend abstraction | Future Vulkan/Metal support |
-| **Audio** | None | rodio integration | Critical missing feature |
-| **Physics** | Basic AABB | rapier integration | Full physics simulation |
-| **Resource Mgmt** | HashMap per type | Unified ResourceManager | Centralized lifecycle |
-| **Game Loop** | Callback-based | Event-driven | Flexibility, modern pattern |
+| Engine | What We Take |
+|--------|--------------|
+| **Bevy** | ECS architecture, system scheduling, resource management, plugin patterns |
+| **MonoGame/XNA** | Developer experience, content pipeline, SpriteBatch API, familiar abstractions |
+| **Godot** | Node hierarchy concepts, signal/event patterns, scripting accessibility |
+| **Unity** | Component model familiarity, inspector-style configuration, prefab concepts |
 
 ---
 
-## 3. Implementation Approach
+## 3. High-Level System Architecture
 
-### 3.1 Phase 1: Foundation Hardening
-
-**Objective:** Fix critical architectural issues while maintaining backward compatibility.
-
-#### 3.1.1 Error Handling System
-
-**New Error Types:**
-
-```rust
-// goud_engine/src/error.rs
-use thiserror::Error;
-
-#[derive(Error, Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(C)]
-pub enum GoudError {
-    #[error("Success")]
-    Ok = 0,
-
-    // Context errors (1-99)
-    #[error("Invalid context handle")]
-    InvalidContext = 1,
-    #[error("Context not initialized")]
-    ContextNotInitialized = 2,
-    #[error("Context already initialized")]
-    ContextAlreadyInitialized = 3,
-
-    // Resource errors (100-199)
-    #[error("Resource not found")]
-    ResourceNotFound = 100,
-    #[error("Resource loading failed")]
-    ResourceLoadFailed = 101,
-    #[error("Invalid resource handle")]
-    InvalidResourceHandle = 102,
-    #[error("Resource already exists")]
-    ResourceAlreadyExists = 103,
-
-    // Graphics errors (200-299)
-    #[error("Shader compilation failed")]
-    ShaderCompileFailed = 200,
-    #[error("Shader linking failed")]
-    ShaderLinkFailed = 201,
-    #[error("Texture creation failed")]
-    TextureCreationFailed = 202,
-    #[error("Invalid renderer state")]
-    InvalidRendererState = 203,
-
-    // Entity errors (300-399)
-    #[error("Entity not found")]
-    EntityNotFound = 300,
-    #[error("Invalid entity handle")]
-    InvalidEntityHandle = 301,
-    #[error("Component not found")]
-    ComponentNotFound = 302,
-
-    // Input errors (400-499)
-    #[error("Invalid input parameter")]
-    InvalidParameter = 400,
-    #[error("Null pointer")]
-    NullPointer = 401,
-    #[error("Buffer too small")]
-    BufferTooSmall = 402,
-
-    // System errors (500-599)
-    #[error("Window creation failed")]
-    WindowCreationFailed = 500,
-    #[error("OpenGL initialization failed")]
-    OpenGLInitFailed = 501,
-    #[error("Audio initialization failed")]
-    AudioInitFailed = 502,
-    #[error("Physics initialization failed")]
-    PhysicsInitFailed = 503,
-
-    // Internal errors (900-999)
-    #[error("Internal error")]
-    InternalError = 900,
-    #[error("Not implemented")]
-    NotImplemented = 901,
-    #[error("Unknown error")]
-    Unknown = 999,
-}
-
-pub type GoudResult<T> = Result<T, GoudError>;
-
-// FFI-safe result wrapper
-#[repr(C)]
-pub struct GoudResultCode {
-    pub code: GoudError,
-    pub message_ptr: *const c_char,  // Optional error message
-}
-```
-
-#### 3.1.2 Handle-Based Resource System
-
-**Handle Types:**
-
-```rust
-// goud_engine/src/handles.rs
-use std::marker::PhantomData;
-
-/// Type-safe handle with generation counter for use-after-free detection
-#[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Handle<T> {
-    index: u32,
-    generation: u32,
-    _marker: PhantomData<T>,
-}
-
-impl<T> Handle<T> {
-    pub const INVALID: Self = Handle {
-        index: u32::MAX,
-        generation: u32::MAX,
-        _marker: PhantomData,
-    };
-
-    pub fn is_valid(&self) -> bool {
-        self.index != u32::MAX
-    }
-}
-
-// Concrete handle types for FFI
-#[repr(C)]
-pub struct ContextHandle(pub Handle<Context>);
-
-#[repr(C)]
-pub struct SpriteHandle(pub Handle<Sprite>);
-
-#[repr(C)]
-pub struct TextureHandle(pub Handle<Texture>);
-
-#[repr(C)]
-pub struct ObjectHandle(pub Handle<Object3D>);
-
-#[repr(C)]
-pub struct LightHandle(pub Handle<Light>);
-
-#[repr(C)]
-pub struct AudioHandle(pub Handle<AudioSource>);
-
-// Handle storage with generation tracking
-pub struct HandleAllocator<T> {
-    items: Vec<Option<T>>,
-    generations: Vec<u32>,
-    free_list: Vec<u32>,
-}
-
-impl<T> HandleAllocator<T> {
-    pub fn allocate(&mut self, item: T) -> Handle<T> {
-        if let Some(index) = self.free_list.pop() {
-            let gen = self.generations[index as usize] + 1;
-            self.generations[index as usize] = gen;
-            self.items[index as usize] = Some(item);
-            Handle { index, generation: gen, _marker: PhantomData }
-        } else {
-            let index = self.items.len() as u32;
-            self.items.push(Some(item));
-            self.generations.push(0);
-            Handle { index, generation: 0, _marker: PhantomData }
-        }
-    }
-
-    pub fn get(&self, handle: Handle<T>) -> Option<&T> {
-        if handle.index as usize >= self.items.len() {
-            return None;
-        }
-        if self.generations[handle.index as usize] != handle.generation {
-            return None;  // Stale handle
-        }
-        self.items[handle.index as usize].as_ref()
-    }
-
-    pub fn get_mut(&mut self, handle: Handle<T>) -> Option<&mut T> {
-        if handle.index as usize >= self.items.len() {
-            return None;
-        }
-        if self.generations[handle.index as usize] != handle.generation {
-            return None;
-        }
-        self.items[handle.index as usize].as_mut()
-    }
-
-    pub fn free(&mut self, handle: Handle<T>) -> Option<T> {
-        if handle.index as usize >= self.items.len() {
-            return None;
-        }
-        if self.generations[handle.index as usize] != handle.generation {
-            return None;
-        }
-        self.free_list.push(handle.index);
-        self.items[handle.index as usize].take()
-    }
-}
-```
-
-#### 3.1.3 Thread-Safe Context
-
-```rust
-// goud_engine/src/context.rs
-use std::sync::{Arc, RwLock, Mutex};
-use parking_lot::RwLock as FastRwLock;
-
-/// Thread-safe engine context
-pub struct Context {
-    // Core state (read-heavy)
-    pub resources: FastRwLock<ResourceManager>,
-    pub ecs: FastRwLock<World>,  // bevy_ecs World
-
-    // Rendering state (single-thread access)
-    pub renderer: Mutex<Option<Box<dyn Renderer>>>,
-
-    // Window state (main thread only)
-    pub window: Window,
-
-    // Audio state (thread-safe)
-    pub audio: FastRwLock<Option<AudioManager>>,
-
-    // Physics state (can be stepped from any thread)
-    pub physics: FastRwLock<Option<PhysicsWorld>>,
-
-    // Event queue (lock-free)
-    pub events: crossbeam::queue::SegQueue<EngineEvent>,
-
-    // State flags
-    initialized: AtomicBool,
-    running: AtomicBool,
-}
-
-impl Context {
-    pub fn new(config: ContextConfig) -> GoudResult<Arc<Self>> {
-        // Validation and initialization
-    }
-}
-
-/// Global context registry for FFI
-static CONTEXTS: OnceLock<Mutex<HandleAllocator<Arc<Context>>>> = OnceLock::new();
-
-fn contexts() -> &'static Mutex<HandleAllocator<Arc<Context>>> {
-    CONTEXTS.get_or_init(|| Mutex::new(HandleAllocator::new()))
-}
-
-/// FFI-safe context creation
-#[no_mangle]
-pub extern "C" fn goud_context_create(
-    config: *const GoudContextConfig,
-    out_handle: *mut ContextHandle,
-) -> GoudError {
-    // Null checks
-    if config.is_null() || out_handle.is_null() {
-        return GoudError::NullPointer;
-    }
-
-    let config = unsafe { &*config };
-
-    match Context::new(config.into()) {
-        Ok(ctx) => {
-            let handle = contexts().lock().unwrap().allocate(ctx);
-            unsafe { *out_handle = ContextHandle(handle) };
-            GoudError::Ok
-        }
-        Err(e) => e,
-    }
-}
-```
-
-#### 3.1.4 FFI Module Organization
-
-**New Directory Structure:**
+### 3.1 Architectural Layers
 
 ```
-goud_engine/src/
-├── lib.rs                    # Crate root, re-exports
-├── error.rs                  # Error types
-├── handles.rs                # Handle system
-├── context.rs                # Engine context
-├── ffi/                      # FFI layer (NEW - replaces sdk.rs)
-│   ├── mod.rs               # FFI root
-│   ├── context.rs           # Context creation/destruction
-│   ├── entities.rs          # Entity/sprite operations
-│   ├── resources.rs         # Texture/audio loading
-│   ├── rendering.rs         # Camera/light control
-│   ├── input.rs             # Input queries
-│   ├── physics.rs           # Physics operations
-│   ├── batch.rs             # Batch operations
-│   └── utils.rs             # String conversion, helpers
-├── subsystems/              # Core subsystems (NEW)
-│   ├── mod.rs
-│   ├── ecs/                 # bevy_ecs integration
-│   │   ├── mod.rs
-│   │   ├── components.rs    # Transform, Sprite, etc.
-│   │   └── systems.rs       # Built-in systems
-│   ├── graphics/            # Rendering subsystem
-│   │   ├── mod.rs
-│   │   ├── backend.rs       # Backend trait
-│   │   ├── opengl/          # OpenGL implementation
-│   │   │   ├── mod.rs
-│   │   │   ├── renderer2d.rs
-│   │   │   ├── renderer3d.rs
-│   │   │   ├── shader.rs
-│   │   │   ├── texture.rs
-│   │   │   └── buffer.rs
-│   │   ├── camera.rs        # Unified camera
-│   │   ├── light.rs         # Light types
-│   │   └── material.rs      # Material system
-│   ├── audio/               # Audio subsystem
-│   │   ├── mod.rs
-│   │   ├── source.rs
-│   │   └── listener.rs
-│   ├── physics/             # Physics subsystem
-│   │   ├── mod.rs
-│   │   ├── bodies.rs
-│   │   ├── colliders.rs
-│   │   └── queries.rs
-│   └── input/               # Input subsystem
-│       ├── mod.rs
-│       ├── action_map.rs
-│       └── devices.rs
-├── resources/               # Resource management (NEW)
-│   ├── mod.rs
-│   ├── manager.rs           # Unified resource manager
-│   ├── loader.rs            # Async loading
-│   └── cache.rs             # Caching layer
-└── platform/                # Platform abstraction (existing)
-    ├── window/
-    └── custom_errors.rs     # (deprecated, use error.rs)
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                         LANGUAGE BINDING LAYER                                  ║
+║  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌──────────┐ ║
+║  │   C# SDK    │ │ Python SDK  │ │  Lua SDK    │ │    Go SDK   │ │ Rust API │ ║
+║  │  (Primary)  │ │  (Planned)  │ │  (Planned)  │ │  (Planned)  │ │ (Native) │ ║
+║  └──────┬──────┘ └──────┬──────┘ └──────┬──────┘ └──────┬──────┘ └────┬─────┘ ║
+║         │               │               │               │              │       ║
+╠═════════╧═══════════════╧═══════════════╧═══════════════╧══════════════╧═══════╣
+║                          FOREIGN FUNCTION INTERFACE                             ║
+║  ┌─────────────────────────────────────────────────────────────────────────┐   ║
+║  │                        C ABI Stable API Layer                            │   ║
+║  │  • Versioned API with semantic versioning                                │   ║
+║  │  • Handle-based resource management (no raw pointers)                    │   ║
+║  │  • Comprehensive error codes with messages                               │   ║
+║  │  • Batch operations for performance                                      │   ║
+║  │  • Thread-safety annotations on all functions                            │   ║
+║  └─────────────────────────────────────────────────────────────────────────┘   ║
+║         │                                                                       ║
+╠═════════╧═══════════════════════════════════════════════════════════════════════╣
+║                           ENGINE CORE LAYER                                     ║
+║  ┌─────────────────────────────────────────────────────────────────────────┐   ║
+║  │                         Application Context                              │   ║
+║  │  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐                  │   ║
+║  │  │ World        │  │ Resources    │  │ Event Bus     │                  │   ║
+║  │  │ (ECS State)  │  │ (Singletons) │  │ (Pub/Sub)     │                  │   ║
+║  │  └──────────────┘  └──────────────┘  └───────────────┘                  │   ║
+║  │  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐                  │   ║
+║  │  │ System       │  │ Plugin       │  │ Asset         │                  │   ║
+║  │  │ Scheduler    │  │ Registry     │  │ Server        │                  │   ║
+║  │  └──────────────┘  └──────────────┘  └───────────────┘                  │   ║
+║  └─────────────────────────────────────────────────────────────────────────┘   ║
+║         │                                                                       ║
+╠═════════╧═══════════════════════════════════════════════════════════════════════╣
+║                          SUBSYSTEM LAYER                                        ║
+║  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐   ║
+║  │    ECS     │ │  Graphics  │ │   Audio    │ │  Physics   │ │   Input    │   ║
+║  │            │ │            │ │            │ │            │ │            │   ║
+║  │ • World    │ │ • Renderer │ │ • Mixer    │ │ • World    │ │ • Actions  │   ║
+║  │ • Entities │ │ • Materials│ │ • Sources  │ │ • Bodies   │ │ • Bindings │   ║
+║  │ • Comps    │ │ • Cameras  │ │ • Spatial  │ │ • Colliders│ │ • Devices  │   ║
+║  │ • Systems  │ │ • Lights   │ │ • Effects  │ │ • Joints   │ │ • Events   │   ║
+║  │ • Queries  │ │ • Batching │ │            │ │ • Queries  │ │            │   ║
+║  └────────────┘ └────────────┘ └────────────┘ └────────────┘ └────────────┘   ║
+║         │             │             │             │             │             ║
+╠═════════╧═════════════╧═════════════╧═════════════╧═════════════╧═════════════╣
+║                         BACKEND IMPLEMENTATION LAYER                           ║
+║  ┌─────────────────────────────────────────────────────────────────────────┐  ║
+║  │ Graphics Backends      │ Audio Backends      │ Physics Backends        │  ║
+║  │ ┌────────┐ ┌────────┐ │ ┌────────────────┐  │ ┌────────────────────┐  │  ║
+║  │ │OpenGL  │ │ Vulkan │ │ │ rodio          │  │ │ Custom 2D/3D       │  │  ║
+║  │ │ 3.3    │ │(future)│ │ │                │  │ │ (rapier-inspired)  │  │  ║
+║  │ └────────┘ └────────┘ │ └────────────────┘  │ └────────────────────┘  │  ║
+║  └─────────────────────────────────────────────────────────────────────────┘  ║
+║         │                                                                      ║
+╠═════════╧══════════════════════════════════════════════════════════════════════╣
+║                            PLATFORM LAYER                                       ║
+║  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐   ║
+║  │  Window    │ │   Input    │ │ Filesystem │ │ Threading  │ │   Time     │   ║
+║  │  (GLFW)    │ │   (Raw)    │ │  (Async)   │ │  (Rayon)   │ │  (Instant) │   ║
+║  └────────────┘ └────────────┘ └────────────┘ └────────────┘ └────────────┘   ║
+╚════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-### 3.2 Phase 2: Core Systems Integration
+### 3.2 Data Flow Architecture
 
-#### 3.2.1 bevy_ecs Integration
-
-```rust
-// goud_engine/src/subsystems/ecs/mod.rs
-use bevy_ecs::prelude::*;
-
-// Core components
-#[derive(Component, Default, Clone, Copy)]
-pub struct Transform {
-    pub position: Vec3,
-    pub rotation: Quat,
-    pub scale: Vec3,
-}
-
-#[derive(Component, Default, Clone, Copy)]
-pub struct Transform2D {
-    pub position: Vec2,
-    pub rotation: f32,
-    pub scale: Vec2,
-    pub z_layer: i32,
-}
-
-#[derive(Component)]
-pub struct Sprite {
-    pub texture: TextureHandle,
-    pub source_rect: Option<Rect>,
-    pub color: Color,
-    pub flip_x: bool,
-    pub flip_y: bool,
-}
-
-#[derive(Component)]
-pub struct Mesh {
-    pub mesh_handle: MeshHandle,
-    pub material: MaterialHandle,
-}
-
-#[derive(Component)]
-pub struct RigidBody {
-    pub body_handle: rapier::RigidBodyHandle,
-}
-
-#[derive(Component)]
-pub struct Collider {
-    pub collider_handle: rapier::ColliderHandle,
-}
-
-#[derive(Component)]
-pub struct AudioSource {
-    pub source_handle: AudioHandle,
-    pub spatial: bool,
-}
-
-// Parent-child relationships (built into bevy_ecs)
-// Use Parent and Children components
-
-// Systems
-pub fn transform_propagation_system(
-    mut root_query: Query<(&Transform, &Children), Without<Parent>>,
-    mut child_query: Query<(&mut Transform, Option<&Children>), With<Parent>>,
-) {
-    // Propagate transforms down hierarchy
-}
-
-pub fn sprite_render_system(
-    sprites: Query<(&Transform2D, &Sprite)>,
-    mut renderer: ResMut<Renderer2D>,
-) {
-    // Batch and render sprites
-}
 ```
-
-#### 3.2.2 Render Backend Abstraction
-
-```rust
-// goud_engine/src/subsystems/graphics/backend.rs
-
-/// Abstract render backend trait
-pub trait RenderBackend: Send + Sync {
-    // Resource creation
-    fn create_texture(&self, desc: &TextureDesc) -> GoudResult<TextureHandle>;
-    fn create_shader(&self, desc: &ShaderDesc) -> GoudResult<ShaderHandle>;
-    fn create_buffer(&self, desc: &BufferDesc) -> GoudResult<BufferHandle>;
-    fn create_render_target(&self, desc: &RenderTargetDesc) -> GoudResult<RenderTargetHandle>;
-
-    // Resource destruction
-    fn destroy_texture(&self, handle: TextureHandle);
-    fn destroy_shader(&self, handle: ShaderHandle);
-    fn destroy_buffer(&self, handle: BufferHandle);
-    fn destroy_render_target(&self, handle: RenderTargetHandle);
-
-    // Rendering commands
-    fn begin_frame(&mut self);
-    fn end_frame(&mut self);
-    fn set_render_target(&mut self, target: Option<RenderTargetHandle>);
-    fn set_viewport(&mut self, viewport: Viewport);
-    fn set_scissor(&mut self, scissor: Option<Rect>);
-    fn clear(&mut self, color: Color, depth: Option<f32>, stencil: Option<u32>);
-
-    // Draw calls
-    fn draw(&mut self, cmd: &DrawCommand);
-    fn draw_indexed(&mut self, cmd: &DrawIndexedCommand);
-    fn draw_instanced(&mut self, cmd: &DrawInstancedCommand);
-
-    // State management
-    fn set_blend_state(&mut self, state: &BlendState);
-    fn set_depth_state(&mut self, state: &DepthState);
-    fn set_rasterizer_state(&mut self, state: &RasterizerState);
-
-    // Queries
-    fn get_capabilities(&self) -> &BackendCapabilities;
-}
-
-/// OpenGL 3.3 implementation
-pub struct OpenGLBackend {
-    // OpenGL state
-}
-
-impl RenderBackend for OpenGLBackend {
-    // Implementation
-}
-
-/// Draw call batching system
-pub struct DrawBatcher {
-    batches: Vec<SpriteBatch>,
-    current_batch: Option<SpriteBatch>,
-}
-
-pub struct SpriteBatch {
-    texture: TextureHandle,
-    vertices: Vec<SpriteVertex>,
-    indices: Vec<u32>,
-}
-
-impl DrawBatcher {
-    pub fn add_sprite(&mut self, sprite: &SpriteRenderData) {
-        // Check if can batch with current
-        // If not, flush and start new batch
-    }
-
-    pub fn flush(&mut self, backend: &mut dyn RenderBackend) {
-        for batch in self.batches.drain(..) {
-            // Single draw call per batch
-            backend.draw_indexed(&DrawIndexedCommand {
-                vertex_buffer: batch.vertex_buffer,
-                index_buffer: batch.index_buffer,
-                index_count: batch.indices.len() as u32,
-                texture: batch.texture,
-                // ...
-            });
-        }
-    }
-}
-```
-
-#### 3.2.3 Audio System (rodio)
-
-```rust
-// goud_engine/src/subsystems/audio/mod.rs
-use rodio::{OutputStream, Sink, Decoder, Source};
-
-pub struct AudioManager {
-    _stream: OutputStream,
-    stream_handle: OutputStreamHandle,
-    sources: HandleAllocator<AudioSourceData>,
-    listener_position: Vec3,
-}
-
-pub struct AudioSourceData {
-    sink: Sink,
-    position: Option<Vec3>,  // None = non-spatial
-    volume: f32,
-    looping: bool,
-}
-
-impl AudioManager {
-    pub fn new() -> GoudResult<Self> {
-        let (stream, handle) = OutputStream::try_default()
-            .map_err(|_| GoudError::AudioInitFailed)?;
-
-        Ok(Self {
-            _stream: stream,
-            stream_handle: handle,
-            sources: HandleAllocator::new(),
-            listener_position: Vec3::ZERO,
-        })
-    }
-
-    pub fn play(&mut self, path: &str, config: AudioPlayConfig) -> GoudResult<AudioHandle> {
-        let file = std::fs::File::open(path)
-            .map_err(|_| GoudError::ResourceNotFound)?;
-        let source = Decoder::new(BufReader::new(file))
-            .map_err(|_| GoudError::ResourceLoadFailed)?;
-
-        let sink = Sink::try_new(&self.stream_handle)
-            .map_err(|_| GoudError::AudioInitFailed)?;
-
-        if config.looping {
-            sink.append(source.repeat_infinite());
-        } else {
-            sink.append(source);
-        }
-
-        sink.set_volume(config.volume);
-
-        let data = AudioSourceData {
-            sink,
-            position: config.position,
-            volume: config.volume,
-            looping: config.looping,
-        };
-
-        Ok(self.sources.allocate(data))
-    }
-
-    pub fn stop(&mut self, handle: AudioHandle) -> GoudResult<()> {
-        let source = self.sources.get_mut(handle.0)
-            .ok_or(GoudError::InvalidResourceHandle)?;
-        source.sink.stop();
-        self.sources.free(handle.0);
-        Ok(())
-    }
-
-    pub fn set_volume(&mut self, handle: AudioHandle, volume: f32) -> GoudResult<()> {
-        let source = self.sources.get_mut(handle.0)
-            .ok_or(GoudError::InvalidResourceHandle)?;
-        source.volume = volume;
-        source.sink.set_volume(volume);
-        Ok(())
-    }
-
-    pub fn update_spatial(&mut self) {
-        // Update volume based on distance for spatial sources
-        for (_, source) in self.sources.iter_mut() {
-            if let Some(pos) = source.position {
-                let distance = (pos - self.listener_position).length();
-                let falloff = 1.0 / (1.0 + distance * 0.1);
-                source.sink.set_volume(source.volume * falloff);
-            }
-        }
-    }
-}
-```
-
-#### 3.2.4 Physics System (rapier)
-
-```rust
-// goud_engine/src/subsystems/physics/mod.rs
-use rapier2d::prelude::*;  // or rapier3d for 3D
-
-pub struct PhysicsWorld2D {
-    gravity: Vector<Real>,
-    integration_params: IntegrationParameters,
-    physics_pipeline: PhysicsPipeline,
-    island_manager: IslandManager,
-    broad_phase: BroadPhase,
-    narrow_phase: NarrowPhase,
-    rigid_body_set: RigidBodySet,
-    collider_set: ColliderSet,
-    impulse_joint_set: ImpulseJointSet,
-    multibody_joint_set: MultibodyJointSet,
-    ccd_solver: CCDSolver,
-    query_pipeline: QueryPipeline,
-    event_handler: ChannelEventCollector,
-    collision_recv: Receiver<CollisionEvent>,
-    contact_recv: Receiver<ContactForceEvent>,
-}
-
-impl PhysicsWorld2D {
-    pub fn new(config: PhysicsConfig) -> Self {
-        let (collision_send, collision_recv) = crossbeam::channel::unbounded();
-        let (contact_send, contact_recv) = crossbeam::channel::unbounded();
-
-        Self {
-            gravity: vector![config.gravity.x, config.gravity.y],
-            integration_params: IntegrationParameters::default(),
-            physics_pipeline: PhysicsPipeline::new(),
-            island_manager: IslandManager::new(),
-            broad_phase: BroadPhase::new(),
-            narrow_phase: NarrowPhase::new(),
-            rigid_body_set: RigidBodySet::new(),
-            collider_set: ColliderSet::new(),
-            impulse_joint_set: ImpulseJointSet::new(),
-            multibody_joint_set: MultibodyJointSet::new(),
-            ccd_solver: CCDSolver::new(),
-            query_pipeline: QueryPipeline::new(),
-            event_handler: ChannelEventCollector::new(collision_send, contact_send),
-            collision_recv,
-            contact_recv,
-        }
-    }
-
-    pub fn create_rigid_body(&mut self, desc: RigidBodyDesc) -> RigidBodyHandle {
-        let body = match desc.body_type {
-            BodyType::Dynamic => RigidBodyBuilder::dynamic(),
-            BodyType::Static => RigidBodyBuilder::fixed(),
-            BodyType::Kinematic => RigidBodyBuilder::kinematic_position_based(),
-        }
-        .translation(vector![desc.position.x, desc.position.y])
-        .rotation(desc.rotation)
-        .build();
-
-        self.rigid_body_set.insert(body)
-    }
-
-    pub fn create_collider(
-        &mut self,
-        body: RigidBodyHandle,
-        desc: ColliderDesc,
-    ) -> ColliderHandle {
-        let shape = match desc.shape {
-            ColliderShape::Box { width, height } =>
-                SharedShape::cuboid(width / 2.0, height / 2.0),
-            ColliderShape::Circle { radius } =>
-                SharedShape::ball(radius),
-            ColliderShape::Capsule { half_height, radius } =>
-                SharedShape::capsule_y(half_height, radius),
-        };
-
-        let collider = ColliderBuilder::new(shape)
-            .friction(desc.friction)
-            .restitution(desc.restitution)
-            .sensor(desc.is_trigger)
-            .build();
-
-        self.collider_set.insert_with_parent(collider, body, &mut self.rigid_body_set)
-    }
-
-    pub fn step(&mut self, dt: f32) {
-        self.integration_params.dt = dt;
-
-        self.physics_pipeline.step(
-            &self.gravity,
-            &self.integration_params,
-            &mut self.island_manager,
-            &mut self.broad_phase,
-            &mut self.narrow_phase,
-            &mut self.rigid_body_set,
-            &mut self.collider_set,
-            &mut self.impulse_joint_set,
-            &mut self.multibody_joint_set,
-            &mut self.ccd_solver,
-            Some(&mut self.query_pipeline),
-            &(),
-            &self.event_handler,
-        );
-    }
-
-    pub fn poll_collision_events(&self) -> Vec<CollisionEvent> {
-        self.collision_recv.try_iter().collect()
-    }
-
-    pub fn raycast(&self, origin: Vec2, direction: Vec2, max_dist: f32) -> Option<RaycastHit> {
-        let ray = Ray::new(point![origin.x, origin.y], vector![direction.x, direction.y]);
-
-        self.query_pipeline.cast_ray(
-            &self.rigid_body_set,
-            &self.collider_set,
-            &ray,
-            max_dist,
-            true,
-            QueryFilter::default(),
-        ).map(|(handle, toi)| RaycastHit {
-            collider: handle,
-            distance: toi,
-            point: origin + direction * toi,
-        })
-    }
-}
-```
-
-### 3.3 Phase 3: Graphics Enhancement
-
-#### 3.3.1 Texture Atlas System
-
-```rust
-// goud_engine/src/subsystems/graphics/atlas.rs
-
-pub struct TextureAtlas {
-    texture: TextureHandle,
-    regions: HashMap<String, AtlasRegion>,
-    width: u32,
-    height: u32,
-}
-
-pub struct AtlasRegion {
-    pub rect: Rect,
-    pub uv: UVRect,
-    pub name: String,
-}
-
-pub struct AtlasPacker {
-    bins: Vec<AtlasBin>,
-    max_size: u32,
-}
-
-impl AtlasPacker {
-    pub fn new(max_size: u32) -> Self {
-        Self {
-            bins: vec![AtlasBin::new(max_size)],
-            max_size,
-        }
-    }
-
-    pub fn pack(&mut self, images: &[(&str, &DynamicImage)]) -> GoudResult<Vec<TextureAtlas>> {
-        // Rectangle bin packing algorithm (MaxRects)
-        let mut rects: Vec<_> = images.iter()
-            .map(|(name, img)| PackRect {
-                name: name.to_string(),
-                width: img.width(),
-                height: img.height(),
-                image: img,
-            })
-            .collect();
-
-        // Sort by height (descending) for better packing
-        rects.sort_by(|a, b| b.height.cmp(&a.height));
-
-        let mut atlases = Vec::new();
-        let mut current_bin = AtlasBin::new(self.max_size);
-
-        for rect in rects {
-            if let Some(placement) = current_bin.insert(&rect) {
-                // Placed successfully
-            } else {
-                // Bin full, start new one
-                atlases.push(current_bin.finalize()?);
-                current_bin = AtlasBin::new(self.max_size);
-                current_bin.insert(&rect).ok_or(GoudError::TextureCreationFailed)?;
-            }
-        }
-
-        if !current_bin.is_empty() {
-            atlases.push(current_bin.finalize()?);
-        }
-
-        Ok(atlases)
-    }
-}
-
-// Automatic sprite sheet slicing
-impl TextureAtlas {
-    pub fn from_grid(
-        texture: TextureHandle,
-        cell_width: u32,
-        cell_height: u32,
-        columns: u32,
-        rows: u32,
-    ) -> Self {
-        let mut regions = HashMap::new();
-
-        for row in 0..rows {
-            for col in 0..columns {
-                let name = format!("{}_{}", row, col);
-                let x = col * cell_width;
-                let y = row * cell_height;
-
-                regions.insert(name.clone(), AtlasRegion {
-                    rect: Rect { x: x as f32, y: y as f32, width: cell_width as f32, height: cell_height as f32 },
-                    uv: UVRect::from_pixel_coords(x, y, cell_width, cell_height, texture.width, texture.height),
-                    name,
-                });
-            }
-        }
-
-        Self { texture, regions, width: columns * cell_width, height: rows * cell_height }
-    }
-}
-```
-
-#### 3.3.2 Material System
-
-```rust
-// goud_engine/src/subsystems/graphics/material.rs
-
-pub struct Material {
-    pub shader: ShaderHandle,
-    pub properties: MaterialProperties,
-    pub textures: HashMap<String, TextureHandle>,
-}
-
-pub struct MaterialProperties {
-    pub albedo: Color,
-    pub metallic: f32,
-    pub roughness: f32,
-    pub emission: Color,
-    pub emission_strength: f32,
-}
-
-impl Default for MaterialProperties {
-    fn default() -> Self {
-        Self {
-            albedo: Color::WHITE,
-            metallic: 0.0,
-            roughness: 0.5,
-            emission: Color::BLACK,
-            emission_strength: 0.0,
-        }
-    }
-}
-
-pub struct MaterialBuilder {
-    shader: ShaderHandle,
-    properties: MaterialProperties,
-    textures: HashMap<String, TextureHandle>,
-}
-
-impl MaterialBuilder {
-    pub fn new(shader: ShaderHandle) -> Self {
-        Self {
-            shader,
-            properties: MaterialProperties::default(),
-            textures: HashMap::new(),
-        }
-    }
-
-    pub fn albedo(mut self, color: Color) -> Self {
-        self.properties.albedo = color;
-        self
-    }
-
-    pub fn texture(mut self, slot: &str, texture: TextureHandle) -> Self {
-        self.textures.insert(slot.to_string(), texture);
-        self
-    }
-
-    pub fn metallic(mut self, value: f32) -> Self {
-        self.properties.metallic = value.clamp(0.0, 1.0);
-        self
-    }
-
-    pub fn roughness(mut self, value: f32) -> Self {
-        self.properties.roughness = value.clamp(0.0, 1.0);
-        self
-    }
-
-    pub fn build(self) -> Material {
-        Material {
-            shader: self.shader,
-            properties: self.properties,
-            textures: self.textures,
-        }
-    }
-}
-```
-
-### 3.4 Phase 4: Developer Experience
-
-#### 3.4.1 Builder Pattern for FFI Types
-
-```rust
-// goud_engine/src/ffi/builders.rs
-
-#[repr(C)]
-pub struct GoudSpriteDesc {
-    pub texture: TextureHandle,
-    pub x: f32,
-    pub y: f32,
-    pub z_layer: i32,
-    pub width: f32,
-    pub height: f32,
-    pub scale_x: f32,
-    pub scale_y: f32,
-    pub rotation: f32,
-    pub color_r: f32,
-    pub color_g: f32,
-    pub color_b: f32,
-    pub color_a: f32,
-    pub source_rect: *const GoudRect,  // Optional
-}
-
-impl Default for GoudSpriteDesc {
-    fn default() -> Self {
-        Self {
-            texture: TextureHandle::INVALID,
-            x: 0.0,
-            y: 0.0,
-            z_layer: 0,
-            width: 0.0,  // 0 = use texture size
-            height: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            rotation: 0.0,
-            color_r: 1.0,
-            color_g: 1.0,
-            color_b: 1.0,
-            color_a: 1.0,
-            source_rect: std::ptr::null(),
-        }
-    }
-}
-
-// C# Builder (in SDK)
-// public class SpriteBuilder
-// {
-//     private GoudSpriteDesc _desc = new();
-//
-//     public SpriteBuilder Texture(TextureHandle tex) { _desc.texture = tex; return this; }
-//     public SpriteBuilder Position(float x, float y) { _desc.x = x; _desc.y = y; return this; }
-//     public SpriteBuilder Layer(int z) { _desc.z_layer = z; return this; }
-//     public SpriteBuilder Scale(float x, float y) { _desc.scale_x = x; _desc.scale_y = y; return this; }
-//     public SpriteBuilder Rotation(float rad) { _desc.rotation = rad; return this; }
-//     public SpriteBuilder Color(Color c) { /* set color fields */ return this; }
-//
-//     public SpriteHandle Build(ContextHandle ctx) => NativeMethods.goud_sprite_create(ctx, ref _desc);
-// }
-```
-
-#### 3.4.2 Batch Operations
-
-```rust
-// goud_engine/src/ffi/batch.rs
-
-#[no_mangle]
-pub extern "C" fn goud_sprites_create_batch(
-    ctx: ContextHandle,
-    descs: *const GoudSpriteDesc,
-    count: u32,
-    out_handles: *mut SpriteHandle,
-) -> GoudError {
-    if descs.is_null() || out_handles.is_null() {
-        return GoudError::NullPointer;
-    }
-
-    let context = match get_context(ctx) {
-        Some(c) => c,
-        None => return GoudError::InvalidContext,
-    };
-
-    let descs = unsafe { std::slice::from_raw_parts(descs, count as usize) };
-    let out = unsafe { std::slice::from_raw_parts_mut(out_handles, count as usize) };
-
-    let mut world = context.ecs.write();
-
-    for (i, desc) in descs.iter().enumerate() {
-        let entity = world.spawn((
-            Transform2D {
-                position: Vec2::new(desc.x, desc.y),
-                rotation: desc.rotation,
-                scale: Vec2::new(desc.scale_x, desc.scale_y),
-                z_layer: desc.z_layer,
-            },
-            Sprite {
-                texture: desc.texture,
-                color: Color::new(desc.color_r, desc.color_g, desc.color_b, desc.color_a),
-                // ...
-            },
-        )).id();
-
-        out[i] = SpriteHandle(/* entity to handle conversion */);
-    }
-
-    GoudError::Ok
-}
-
-#[no_mangle]
-pub extern "C" fn goud_sprites_update_batch(
-    ctx: ContextHandle,
-    updates: *const GoudSpriteUpdate,
-    count: u32,
-) -> GoudError {
-    // Similar batch update logic
-}
-
-#[no_mangle]
-pub extern "C" fn goud_sprites_destroy_batch(
-    ctx: ContextHandle,
-    handles: *const SpriteHandle,
-    count: u32,
-) -> GoudError {
-    // Batch destruction
-}
+                              GAME LOOP
+                                  │
+    ┌─────────────────────────────┴─────────────────────────────┐
+    │                                                           │
+    ▼                                                           ▼
+┌───────────┐    ┌───────────┐    ┌───────────┐    ┌───────────────┐
+│   Input   │───▶│  Update   │───▶│  Render   │───▶│ Present Frame │
+│  Polling  │    │  Systems  │    │  Systems  │    │   to Screen   │
+└───────────┘    └───────────┘    └───────────┘    └───────────────┘
+    │                  │                │
+    ▼                  ▼                ▼
+┌───────────┐    ┌───────────┐    ┌───────────┐
+│  Events   │    │   World   │    │  Commands │
+│   Queue   │    │   State   │    │   Queue   │
+└───────────┘    └───────────┘    └───────────┘
+                       │
+           ┌───────────┴───────────┐
+           ▼                       ▼
+    ┌─────────────┐         ┌─────────────┐
+    │  Entities   │         │  Resources  │
+    │ Components  │         │ (Singletons)│
+    └─────────────┘         └─────────────┘
 ```
 
 ---
 
-## 4. Source Code Structure Changes
+## 4. Custom ECS Architecture (Bevy-Inspired)
 
-### 4.1 Files to Add
+### 4.1 Design Goals
 
-| Path | Purpose |
-|------|---------|
-| `src/error.rs` | Comprehensive error types |
-| `src/handles.rs` | Type-safe handle system |
-| `src/context.rs` | Thread-safe engine context |
-| `src/ffi/mod.rs` | FFI module root |
-| `src/ffi/context.rs` | Context FFI functions |
-| `src/ffi/entities.rs` | Entity FFI functions |
-| `src/ffi/resources.rs` | Resource FFI functions |
-| `src/ffi/rendering.rs` | Rendering FFI functions |
-| `src/ffi/input.rs` | Input FFI functions |
-| `src/ffi/physics.rs` | Physics FFI functions |
-| `src/ffi/batch.rs` | Batch operations |
-| `src/ffi/utils.rs` | FFI utilities |
-| `src/subsystems/mod.rs` | Subsystem root |
-| `src/subsystems/ecs/mod.rs` | ECS module |
-| `src/subsystems/ecs/components.rs` | Built-in components |
-| `src/subsystems/ecs/systems.rs` | Built-in systems |
-| `src/subsystems/graphics/mod.rs` | Graphics module |
-| `src/subsystems/graphics/backend.rs` | Render backend trait |
-| `src/subsystems/graphics/opengl/mod.rs` | OpenGL backend |
-| `src/subsystems/graphics/camera.rs` | Unified camera |
-| `src/subsystems/graphics/material.rs` | Material system |
-| `src/subsystems/graphics/atlas.rs` | Texture atlasing |
-| `src/subsystems/graphics/batch.rs` | Draw batching |
-| `src/subsystems/audio/mod.rs` | Audio module |
-| `src/subsystems/audio/source.rs` | Audio sources |
-| `src/subsystems/physics/mod.rs` | Physics module |
-| `src/subsystems/physics/world.rs` | Physics world |
-| `src/subsystems/input/mod.rs` | Input module |
-| `src/subsystems/input/action_map.rs` | Input mapping |
-| `src/resources/mod.rs` | Resource management |
-| `src/resources/manager.rs` | Resource manager |
-| `src/resources/loader.rs` | Async loading |
+Our ECS implementation is inspired by Bevy's architecture but will be fully owned code within the GoudEngine codebase. This gives us:
 
-### 4.2 Files to Modify
+- **Full Control**: No external dependency constraints
+- **Tailored Features**: Optimized for game engine needs
+- **Learning Opportunity**: Deep understanding of ECS internals
+- **Customization**: Can diverge from Bevy patterns where beneficial
 
-| Path | Changes |
-|------|---------|
-| `src/lib.rs` | Re-export new modules, deprecate old |
-| `src/game.rs` | Refactor to use Context, deprecate callbacks |
-| `src/types.rs` | Move to appropriate modules, deprecate |
-| `src/sdk.rs` | Split into ffi/ modules, deprecate |
-| `Cargo.toml` | Add bevy_ecs, rapier, rodio dependencies |
+### 4.2 Core ECS Concepts
 
-### 4.3 Files to Deprecate/Remove
+#### 4.2.1 Entities
 
-| Path | Reason |
-|------|--------|
-| `src/sdk.rs` | Replaced by `src/ffi/` modules |
-| `src/ffi_privates.rs` | Replaced by `src/handles.rs` |
-| `src/libs/ecs/mod.rs` | Replaced by bevy_ecs integration |
-| `src/platform/custom_errors.rs` | Replaced by `src/error.rs` |
+Entities are lightweight identifiers (IDs) that serve as keys into component storage.
+
+**Design Decisions:**
+- Entity = 64-bit identifier (32-bit index + 32-bit generation)
+- Generation counter prevents use-after-free bugs
+- Entity allocation uses a free-list for ID reuse
+- No Entity struct methods beyond ID access
+
+**Entity Lifecycle:**
+```
+Create → Spawn Components → Active → Despawn → Recycle ID
+           │                   │          │
+           ▼                   ▼          ▼
+     Entity ID           Component    Free List
+       Issued             Queries      Returns
+```
+
+#### 4.2.2 Components
+
+Components are plain data containers with no behavior. They define what an entity "is" or "has".
+
+**Design Decisions:**
+- Components implement a `Component` trait marker
+- Components are stored in archetype-based storage (SoA layout)
+- Components can be added/removed dynamically (archetype migration)
+- Built-in components for common patterns (Transform, Name, Parent, Children)
+
+**Component Categories:**
+
+| Category | Purpose | Examples |
+|----------|---------|----------|
+| **Spatial** | Position, rotation, scale | Transform, Transform2D, GlobalTransform |
+| **Rendering** | Visual representation | Sprite, Mesh, Material, Camera |
+| **Physics** | Physical simulation | RigidBody, Collider, Velocity |
+| **Audio** | Sound emission | AudioSource, AudioListener |
+| **Hierarchy** | Parent-child relationships | Parent, Children, Name |
+| **Lifecycle** | Entity state | Enabled, Persistent, Prefab |
+
+#### 4.2.3 Systems
+
+Systems are functions that operate on component data. They define behavior.
+
+**Design Decisions:**
+- Systems are pure functions with explicit dependencies
+- System parameters declare what data they read/write
+- Scheduler automatically parallelizes non-conflicting systems
+- Systems can be grouped into stages for ordering
+
+**System Stages:**
+
+```
+┌─────────────┐
+│  PreUpdate  │  Input processing, event handling
+├─────────────┤
+│   Update    │  Game logic, AI, physics step
+├─────────────┤
+│ PostUpdate  │  Cleanup, state synchronization
+├─────────────┤
+│  PreRender  │  Culling, LOD, batching
+├─────────────┤
+│   Render    │  Draw calls, GPU submission
+├─────────────┤
+│ PostRender  │  Frame cleanup, stats collection
+└─────────────┘
+```
+
+#### 4.2.4 Resources
+
+Resources are singleton data that exists outside the entity-component model.
+
+**Examples:**
+- Time (delta time, total time)
+- Input state (keyboard, mouse, gamepads)
+- Asset manager (loaded assets)
+- Render context (current renderer)
+- Configuration (engine settings)
+
+#### 4.2.5 Events
+
+Events enable decoupled communication between systems.
+
+**Event Patterns:**
+- Event producers write to event queues
+- Event consumers read from event queues
+- Events are cleared each frame (unless persistent)
+- Supports both immediate and deferred event handling
+
+### 4.3 Archetype-Based Storage
+
+#### 4.3.1 What is an Archetype?
+
+An archetype represents a unique combination of component types. All entities with the same set of components share an archetype.
+
+**Example:**
+- Archetype A: [Transform, Sprite] → All 2D sprites
+- Archetype B: [Transform, Sprite, RigidBody] → Physics-enabled sprites
+- Archetype C: [Transform, Mesh, Material] → 3D renderable objects
+
+#### 4.3.2 Why Archetypes?
+
+| Benefit | Description |
+|---------|-------------|
+| **Cache Efficiency** | Components stored contiguously per archetype |
+| **Fast Iteration** | Systems iterate archetypes, not individual entities |
+| **Parallel Safety** | Different archetypes can be processed in parallel |
+| **Query Optimization** | Archetype matching is done once, not per-entity |
+
+#### 4.3.3 Archetype Operations
+
+**Adding Component:**
+```
+Entity in Archetype A [Transform, Sprite]
+                ↓
+        Add RigidBody
+                ↓
+Entity moves to Archetype B [Transform, Sprite, RigidBody]
+```
+
+**Removing Component:**
+```
+Entity in Archetype B [Transform, Sprite, RigidBody]
+                ↓
+       Remove RigidBody
+                ↓
+Entity moves to Archetype A [Transform, Sprite]
+```
+
+### 4.4 Query System
+
+Queries are the primary way systems access component data.
+
+**Query Capabilities:**
+- **Read Access**: `Query<&Transform>` - read-only borrow
+- **Write Access**: `Query<&mut Transform>` - mutable borrow
+- **Multiple Components**: `Query<(&Transform, &Sprite)>` - tuples
+- **Optional Components**: `Query<(&Transform, Option<&Sprite>)>` - may not exist
+- **Filters**: `Query<&Transform, With<Sprite>>` - only matching entities
+- **Exclusion**: `Query<&Transform, Without<RigidBody>>` - exclude matching
+
+**Query Execution:**
+1. Query identifies matching archetypes at registration
+2. Each frame, iterates matching archetypes
+3. Returns component references for each entity
+4. Iteration can be parallelized across archetypes
+
+### 4.5 System Scheduling
+
+#### 4.5.1 Dependency Analysis
+
+The scheduler analyzes system parameters to determine:
+- Which components a system reads
+- Which components a system writes
+- Which resources a system accesses
+- Whether systems can run in parallel
+
+#### 4.5.2 Scheduling Algorithm
+
+```
+1. Group systems by stage
+2. Within each stage:
+   a. Build dependency graph from read/write conflicts
+   b. Topologically sort respecting explicit orderings
+   c. Identify parallel groups (non-conflicting systems)
+3. Execute stages sequentially
+4. Within stages, execute parallel groups concurrently
+```
+
+#### 4.5.3 Explicit Ordering
+
+When automatic scheduling isn't sufficient:
+- `system_a.before(system_b)` - A runs before B
+- `system_a.after(system_b)` - A runs after B
+- `system_a.chain(system_b)` - A then B, strictly ordered
+
+### 4.6 Built-In Components
+
+#### 4.6.1 Transform Components
+
+**Transform (3D):**
+- `position: Vec3` - World position
+- `rotation: Quat` - Orientation as quaternion
+- `scale: Vec3` - Non-uniform scale
+
+**Transform2D:**
+- `position: Vec2` - World position
+- `rotation: f32` - Rotation in radians
+- `scale: Vec2` - Non-uniform scale
+- `z_layer: i32` - Depth ordering
+
+**GlobalTransform:**
+- Computed from local Transform + parent hierarchy
+- Read-only (written by transform propagation system)
+- Used by rendering and physics
+
+#### 4.6.2 Hierarchy Components
+
+**Parent:**
+- `entity: Entity` - Parent entity ID
+
+**Children:**
+- `entities: Vec<Entity>` - Child entity IDs
+
+**Name:**
+- `name: String` - Human-readable identifier
+
+#### 4.6.3 Rendering Components
+
+**Sprite:**
+- `texture: Handle<Texture>` - Texture asset handle
+- `source_rect: Option<Rect>` - Source rectangle for atlases
+- `color: Color` - Tint color
+- `flip_x: bool` - Horizontal flip
+- `flip_y: bool` - Vertical flip
+
+**Mesh:**
+- `mesh: Handle<Mesh>` - Mesh asset handle
+- `material: Handle<Material>` - Material asset handle
+
+**Camera:**
+- `projection: Projection` - Orthographic or Perspective
+- `viewport: Option<Viewport>` - Render target region
+- `order: i32` - Render order for multiple cameras
+
+**Light:**
+- `kind: LightKind` - Point, Directional, Spot
+- `color: Color` - Light color
+- `intensity: f32` - Light strength
+- `shadows: bool` - Cast shadows
+
+#### 4.6.4 Physics Components
+
+**RigidBody:**
+- `body_type: BodyType` - Dynamic, Static, Kinematic
+- `mass: f32` - Mass (dynamic only)
+- `linear_damping: f32` - Velocity damping
+- `angular_damping: f32` - Rotation damping
+
+**Collider:**
+- `shape: ColliderShape` - Box, Circle, Capsule, etc.
+- `is_sensor: bool` - Trigger-only (no physics response)
+- `friction: f32` - Surface friction
+- `restitution: f32` - Bounciness
+
+**Velocity:**
+- `linear: Vec3` - Linear velocity
+- `angular: Vec3` - Angular velocity
+
+#### 4.6.5 Audio Components
+
+**AudioSource:**
+- `audio: Handle<AudioClip>` - Audio asset handle
+- `volume: f32` - Playback volume
+- `pitch: f32` - Playback speed/pitch
+- `looping: bool` - Loop playback
+- `spatial: bool` - 3D spatial audio
+
+**AudioListener:**
+- Marker component for the entity that "hears" audio
+- Only one listener should exist at a time
+
+### 4.7 Built-In Systems
+
+#### 4.7.1 Core Systems
+
+| System | Stage | Purpose |
+|--------|-------|---------|
+| `transform_propagation` | PostUpdate | Compute GlobalTransform from hierarchy |
+| `hierarchy_maintenance` | PostUpdate | Sync Parent/Children relationships |
+| `visibility_propagation` | PostUpdate | Inherit visibility from parents |
+
+#### 4.7.2 Rendering Systems
+
+| System | Stage | Purpose |
+|--------|-------|---------|
+| `sprite_extraction` | PreRender | Gather visible sprites for batching |
+| `mesh_extraction` | PreRender | Gather visible meshes for rendering |
+| `camera_update` | PreRender | Compute view/projection matrices |
+| `light_update` | PreRender | Gather lights for rendering |
+| `sprite_render` | Render | Draw 2D sprites |
+| `mesh_render` | Render | Draw 3D meshes |
+
+#### 4.7.3 Physics Systems
+
+| System | Stage | Purpose |
+|--------|-------|---------|
+| `physics_sync_to_world` | PreUpdate | Sync transforms to physics world |
+| `physics_step` | Update | Run physics simulation |
+| `physics_sync_from_world` | PostUpdate | Sync physics results to transforms |
+| `collision_events` | PostUpdate | Generate collision events |
+
+#### 4.7.4 Audio Systems
+
+| System | Stage | Purpose |
+|--------|-------|---------|
+| `audio_playback` | Update | Handle audio source playback |
+| `spatial_audio_update` | Update | Update spatial audio positions |
+| `audio_cleanup` | PostUpdate | Clean up finished audio sources |
 
 ---
 
-## 5. Data Model / API / Interface Changes
+## 5. Resource Management Architecture
 
-### 5.1 New FFI API Contract
+### 5.1 Handle-Based Resources
 
-```c
-// goud_api.h (generated by cbindgen)
+All resources (textures, meshes, audio, etc.) are accessed through handles, never raw pointers.
 
-#ifndef GOUD_API_H
-#define GOUD_API_H
+**Handle Design:**
+- 64-bit handle: 32-bit index + 32-bit generation
+- Handles are type-safe: `Handle<Texture>` vs `Handle<Mesh>`
+- Handles can be validated before use
+- Stale handles (pointing to freed resources) are detected
 
-#include <stdint.h>
-#include <stdbool.h>
+### 5.2 Asset Loading Pipeline
 
-#define GOUD_API_VERSION 2
-
-// Error codes
-typedef enum {
-    GOUD_OK = 0,
-    GOUD_ERROR_INVALID_CONTEXT = 1,
-    GOUD_ERROR_CONTEXT_NOT_INITIALIZED = 2,
-    // ... (full enum from error.rs)
-} GoudError;
-
-// Handle types (opaque)
-typedef struct { uint32_t index; uint32_t generation; } GoudContextHandle;
-typedef struct { uint32_t index; uint32_t generation; } GoudSpriteHandle;
-typedef struct { uint32_t index; uint32_t generation; } GoudTextureHandle;
-typedef struct { uint32_t index; uint32_t generation; } GoudObjectHandle;
-typedef struct { uint32_t index; uint32_t generation; } GoudLightHandle;
-typedef struct { uint32_t index; uint32_t generation; } GoudAudioHandle;
-typedef struct { uint32_t index; uint32_t generation; } GoudBodyHandle;
-typedef struct { uint32_t index; uint32_t generation; } GoudColliderHandle;
-
-// Configuration structures
-typedef struct {
-    uint32_t width;
-    uint32_t height;
-    const char* title;
-    uint32_t target_fps;
-    int32_t renderer_type;  // 0=2D, 1=3D
-    bool enable_audio;
-    bool enable_physics;
-} GoudContextConfig;
-
-typedef struct {
-    GoudTextureHandle texture;
-    float x, y;
-    int32_t z_layer;
-    float width, height;
-    float scale_x, scale_y;
-    float rotation;
-    float color_r, color_g, color_b, color_a;
-    const GoudRect* source_rect;  // Optional
-} GoudSpriteDesc;
-
-// Lifecycle functions
-GoudError goud_context_create(const GoudContextConfig* config, GoudContextHandle* out_handle);
-GoudError goud_context_destroy(GoudContextHandle handle);
-GoudError goud_context_initialize(GoudContextHandle handle);
-bool goud_context_should_close(GoudContextHandle handle);
-GoudError goud_context_begin_frame(GoudContextHandle handle);
-GoudError goud_context_end_frame(GoudContextHandle handle, float* out_delta_time);
-
-// Resource functions
-GoudError goud_texture_load(GoudContextHandle ctx, const char* path, GoudTextureHandle* out_handle);
-GoudError goud_texture_unload(GoudContextHandle ctx, GoudTextureHandle handle);
-
-// Entity functions (single)
-GoudError goud_sprite_create(GoudContextHandle ctx, const GoudSpriteDesc* desc, GoudSpriteHandle* out_handle);
-GoudError goud_sprite_destroy(GoudContextHandle ctx, GoudSpriteHandle handle);
-GoudError goud_sprite_set_position(GoudContextHandle ctx, GoudSpriteHandle handle, float x, float y);
-GoudError goud_sprite_get_position(GoudContextHandle ctx, GoudSpriteHandle handle, float* out_x, float* out_y);
-
-// Entity functions (batch)
-GoudError goud_sprites_create_batch(GoudContextHandle ctx, const GoudSpriteDesc* descs, uint32_t count, GoudSpriteHandle* out_handles);
-GoudError goud_sprites_destroy_batch(GoudContextHandle ctx, const GoudSpriteHandle* handles, uint32_t count);
-
-// 3D object functions
-GoudError goud_object_create_cube(GoudContextHandle ctx, GoudTextureHandle tex, float w, float h, float d, GoudObjectHandle* out_handle);
-GoudError goud_object_create_sphere(GoudContextHandle ctx, GoudTextureHandle tex, float radius, uint32_t segments, GoudObjectHandle* out_handle);
-
-// Light functions
-GoudError goud_light_create_point(GoudContextHandle ctx, const GoudPointLightDesc* desc, GoudLightHandle* out_handle);
-GoudError goud_light_create_directional(GoudContextHandle ctx, const GoudDirLightDesc* desc, GoudLightHandle* out_handle);
-GoudError goud_light_destroy(GoudContextHandle ctx, GoudLightHandle handle);
-
-// Camera functions
-GoudError goud_camera_set_position(GoudContextHandle ctx, float x, float y, float z);
-GoudError goud_camera_set_rotation(GoudContextHandle ctx, float pitch, float yaw, float roll);
-GoudError goud_camera_set_zoom(GoudContextHandle ctx, float zoom);
-
-// Input functions
-bool goud_input_is_key_pressed(GoudContextHandle ctx, int32_t key);
-bool goud_input_is_key_just_pressed(GoudContextHandle ctx, int32_t key);
-bool goud_input_is_mouse_button_pressed(GoudContextHandle ctx, int32_t button);
-GoudError goud_input_get_mouse_position(GoudContextHandle ctx, float* out_x, float* out_y);
-
-// Audio functions
-GoudError goud_audio_play(GoudContextHandle ctx, const char* path, const GoudAudioConfig* config, GoudAudioHandle* out_handle);
-GoudError goud_audio_stop(GoudContextHandle ctx, GoudAudioHandle handle);
-GoudError goud_audio_set_volume(GoudContextHandle ctx, GoudAudioHandle handle, float volume);
-
-// Physics functions
-GoudError goud_physics_create_body(GoudContextHandle ctx, const GoudBodyDesc* desc, GoudBodyHandle* out_handle);
-GoudError goud_physics_create_collider(GoudContextHandle ctx, GoudBodyHandle body, const GoudColliderDesc* desc, GoudColliderHandle* out_handle);
-GoudError goud_physics_step(GoudContextHandle ctx, float dt);
-GoudError goud_physics_raycast(GoudContextHandle ctx, const GoudRay* ray, GoudRaycastHit* out_hit);
-
-// Utility functions
-const char* goud_error_message(GoudError error);
-uint32_t goud_api_version(void);
-
-#endif // GOUD_API_H
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  Raw Asset  │───▶│   Loader    │───▶│   Cache     │───▶│   Handle    │
+│   (File)    │    │  (Async)    │    │  (Memory)   │    │  (Returned) │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+                         │
+                         ▼
+                   ┌─────────────┐
+                   │   GPU       │
+                   │  Upload     │
+                   │ (Textures)  │
+                   └─────────────┘
 ```
 
-### 5.2 C# SDK Changes
+### 5.3 Asset Manager Features
 
-**New Structure:**
+| Feature | Description |
+|---------|-------------|
+| **Async Loading** | Load assets without blocking game loop |
+| **Reference Counting** | Automatic cleanup when no references remain |
+| **Hot Reloading** | Detect file changes and reload (dev mode) |
+| **Dependency Tracking** | Load dependent assets automatically |
+| **Caching** | Avoid reloading already-loaded assets |
+| **Progress Reporting** | Track loading progress for UI |
 
-```csharp
-// sdks/GoudEngine/
-├── GoudEngine.csproj
-├── GoudContext.cs          // Main entry point (replaces GoudGame.cs)
-├── GoudError.cs            // Error enum + helpers
-├── Handles/
-│   ├── SpriteHandle.cs
-│   ├── TextureHandle.cs
-│   ├── ObjectHandle.cs
-│   ├── LightHandle.cs
-│   ├── AudioHandle.cs
-│   └── PhysicsHandles.cs
-├── Builders/
-│   ├── SpriteBuilder.cs
-│   ├── LightBuilder.cs
-│   ├── BodyBuilder.cs
-│   └── MaterialBuilder.cs
+### 5.4 Supported Asset Types
+
+| Type | File Formats | GPU Resource |
+|------|--------------|--------------|
+| **Texture** | PNG, JPG, BMP, TGA | Texture2D |
+| **Mesh** | OBJ, glTF | VertexBuffer + IndexBuffer |
+| **Audio** | WAV, OGG, MP3 | Audio Buffer |
+| **Shader** | GLSL | Shader Program |
+| **Font** | TTF, OTF | Texture Atlas |
+| **TiledMap** | TMX, JSON | TileMap Data |
+| **Animation** | Custom JSON | Animation Clips |
+
+---
+
+## 6. Rendering Architecture
+
+### 6.1 Render Backend Abstraction
+
+The rendering system is abstracted behind a `RenderBackend` trait, enabling multiple graphics API implementations.
+
+**Supported Backends:**
+- OpenGL 3.3 Core (current, primary)
+- Vulkan (future)
+- Metal (future, macOS)
+- WebGPU (future, web)
+
+### 6.2 Rendering Pipeline
+
+#### 6.2.1 2D Rendering Pipeline
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Sprites   │───▶│   Sort by   │───▶│   Batch by  │───▶│   Draw      │
+│   Query     │    │   Z-Layer   │    │   Texture   │    │   Calls     │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
+
+**Batching Strategy:**
+- Sprites with same texture batched into single draw call
+- Z-layer ordering preserved
+- Instancing for identical sprites
+- Target: <100 draw calls for 10,000 sprites
+
+#### 6.2.2 3D Rendering Pipeline
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Meshes    │───▶│   Frustum   │───▶│   Sort by   │───▶│   Draw      │
+│   Query     │    │   Culling   │    │   Material  │    │   Calls     │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+                                            │
+                                            ▼
+                                     ┌─────────────┐
+                                     │   Lighting  │
+                                     │   Pass      │
+                                     └─────────────┘
+```
+
+### 6.3 Material System
+
+Materials define how surfaces appear when rendered.
+
+**Material Properties:**
+- Base color (texture or solid)
+- Normal map
+- Metallic/Roughness (PBR)
+- Emission
+- Custom shader parameters
+
+**Shader System:**
+- External shader files (not embedded strings)
+- Hot-reloading in development
+- Shader preprocessor with #include
+- Automatic uniform binding via reflection
+
+### 6.4 Camera System
+
+**Unified Camera Model:**
+- Single Camera component works for 2D and 3D
+- Projection mode: Orthographic or Perspective
+- Viewport support for split-screen
+- Multiple cameras with render ordering
+- Built-in effects: shake, smooth follow
+
+### 6.5 Lighting System
+
+**Light Types:**
+- Point Light: Position + range
+- Directional Light: Direction (sun-like)
+- Spot Light: Position + direction + cone angle
+
+**Lighting Features:**
+- Maximum 16 lights per scene (configurable)
+- Light attenuation curves
+- Shadow mapping (future)
+- Global ambient light
+
+---
+
+## 7. Physics Architecture
+
+### 7.1 Physics Engine Integration
+
+We will implement our own physics engine inspired by Rapier's architecture, giving us full control and no external dependencies.
+
+**Features:**
+- 2D and 3D physics support
+- Rigid body dynamics
+- Collision detection (broad + narrow phase)
+- Multiple collider shapes
+- Constraint/joint system
+- Ray casting and shape queries
+
+### 7.2 Collision Shapes
+
+| Shape | 2D | 3D | Use Case |
+|-------|----|----|----------|
+| Box/Cuboid | ✓ | ✓ | Rectangular objects |
+| Circle/Sphere | ✓ | ✓ | Round objects |
+| Capsule | ✓ | ✓ | Characters |
+| Polygon/Convex Hull | ✓ | ✓ | Complex shapes |
+| Heightfield | - | ✓ | Terrain |
+
+### 7.3 Physics Configuration
+
+**World Settings:**
+- Gravity vector
+- Simulation substeps
+- Sleep thresholds
+- Collision layers/masks
+
+**Body Types:**
+- Dynamic: Fully simulated
+- Static: Never moves
+- Kinematic: Moved by code, affects others
+
+### 7.4 Collision Events
+
+**Event Types:**
+- `CollisionStarted(entity_a, entity_b)` - Bodies began touching
+- `CollisionEnded(entity_a, entity_b)` - Bodies stopped touching
+- `SensorEntered(sensor, entity)` - Entity entered sensor
+- `SensorExited(sensor, entity)` - Entity exited sensor
+
+---
+
+## 8. Audio Architecture
+
+### 8.1 Audio System Design
+
+Built on `rodio` for cross-platform audio playback.
+
+**Core Features:**
+- Sound effects (one-shot)
+- Background music (streaming, looping)
+- 3D spatial audio
+- Audio mixing and volume control
+- Multiple audio channels/groups
+
+### 8.2 Audio Concepts
+
+**AudioClip:** Raw audio data loaded from file
+**AudioSource:** Component that plays audio
+**AudioListener:** Component that "hears" audio (camera usually)
+**AudioChannel:** Grouping for volume control (music, sfx, voice)
+
+### 8.3 Spatial Audio
+
+When `AudioSource.spatial = true`:
+- Volume attenuates with distance
+- Stereo panning based on listener orientation
+- Doppler effect (optional)
+
+---
+
+## 9. Input Architecture
+
+### 9.1 Action-Based Input
+
+Abstract input into game actions, not raw keys.
+
+**Example Mappings:**
+- "Jump" → Spacebar, Gamepad A
+- "Fire" → Left Mouse, Gamepad Right Trigger
+- "Move" → WASD, Left Stick
+
+### 9.2 Input Features
+
+| Feature | Description |
+|---------|-------------|
+| **Key State** | Pressed, JustPressed, JustReleased |
+| **Mouse** | Position, delta, buttons, scroll |
+| **Gamepad** | Buttons, axes, rumble |
+| **Touch** | Touch points (future) |
+| **Action Mapping** | Configurable bindings |
+| **Input Buffering** | Frame-perfect input capture |
+
+### 9.3 Input Events
+
+Events generated for action-oriented systems:
+- `ActionPressed(action_name)`
+- `ActionReleased(action_name)`
+- `AxisChanged(axis_name, value)`
+
+---
+
+## 10. FFI Architecture
+
+### 10.1 C ABI Design Principles
+
+| Principle | Implementation |
+|-----------|----------------|
+| **Stability** | Versioned API, semantic versioning |
+| **Safety** | Handle-based, no raw pointers in API |
+| **Performance** | Batch operations, minimal copying |
+| **Clarity** | Comprehensive error codes |
+| **Portability** | C ABI compatible with all languages |
+
+### 10.2 Handle System
+
+All engine objects accessed through typed handles:
+
+| Handle Type | C Type | Purpose |
+|-------------|--------|---------|
+| `ContextHandle` | `GoudContext` | Engine instance |
+| `EntityHandle` | `GoudEntity` | ECS entity |
+| `SpriteHandle` | `GoudSprite` | Sprite component wrapper |
+| `TextureHandle` | `GoudTexture` | Texture asset |
+| `MeshHandle` | `GoudMesh` | Mesh asset |
+| `AudioHandle` | `GoudAudio` | Audio source |
+| `BodyHandle` | `GoudBody` | Physics body |
+| `ColliderHandle` | `GoudCollider` | Physics collider |
+
+### 10.3 Error Handling
+
+Comprehensive error codes returned from all FFI functions:
+
+| Range | Category | Examples |
+|-------|----------|----------|
+| 0 | Success | Ok |
+| 1-99 | Context | InvalidContext, NotInitialized |
+| 100-199 | Resource | NotFound, LoadFailed, InvalidHandle |
+| 200-299 | Graphics | ShaderFailed, TextureFailed |
+| 300-399 | Entity | EntityNotFound, ComponentNotFound |
+| 400-499 | Input | InvalidParameter, NullPointer |
+| 500-599 | System | WindowFailed, AudioFailed, PhysicsFailed |
+| 900-999 | Internal | InternalError, NotImplemented |
+
+### 10.4 FFI Module Organization
+
+```
+src/ffi/
+├── mod.rs              # FFI module root, exports
+├── context.rs          # Context lifecycle
+├── entities.rs         # Entity operations
+├── components.rs       # Component access
+├── resources.rs        # Asset loading/unloading
+├── rendering.rs        # Camera, lights
+├── physics.rs          # Physics operations
+├── audio.rs            # Audio operations
+├── input.rs            # Input queries
+├── batch.rs            # Batch operations
+└── utils.rs            # String conversion, helpers
+```
+
+### 10.5 Batch Operations
+
+For performance-critical operations, batch APIs reduce FFI overhead:
+
+**Batch Create:**
+- Create multiple entities in single call
+- Attach multiple components in single call
+
+**Batch Update:**
+- Update multiple transforms in single call
+- Update multiple sprite properties in single call
+
+**Batch Query:**
+- Query multiple entity positions in single call
+- Query multiple collision states in single call
+
+**Performance Target:** 10x speedup vs individual calls
+
+---
+
+## 11. C# SDK Architecture
+
+### 11.1 SDK Design Goals
+
+Make C# feel like first-class citizen, similar to MonoGame/XNA experience.
+
+**Design Principles:**
+- Familiar C# idioms (properties, events, LINQ)
+- Builder patterns for complex objects
+- Automatic resource management (IDisposable)
+- Strong typing (no raw uints)
+- Exception-based error handling
+- Comprehensive XML documentation
+
+### 11.2 SDK Structure
+
+```
+GoudEngine/
+├── Core/
+│   ├── GoudContext.cs      # Main entry point
+│   ├── World.cs            # ECS world access
+│   ├── Entity.cs           # Entity operations
+│   └── Handle.cs           # Type-safe handles
 ├── Components/
-│   ├── Transform.cs
-│   ├── Sprite.cs
-│   └── RigidBody.cs
+│   ├── Transform.cs        # Transform component
+│   ├── Sprite.cs           # Sprite component
+│   ├── Camera.cs           # Camera component
+│   ├── Light.cs            # Light component
+│   ├── RigidBody.cs        # Physics body
+│   ├── Collider.cs         # Physics collider
+│   └── AudioSource.cs      # Audio component
+├── Assets/
+│   ├── AssetManager.cs     # Asset loading
+│   ├── Texture.cs          # Texture wrapper
+│   ├── Mesh.cs             # Mesh wrapper
+│   └── AudioClip.cs        # Audio wrapper
+├── Input/
+│   ├── InputManager.cs     # Input access
+│   ├── ActionMap.cs        # Action bindings
+│   └── Keys.cs             # Key enum
 ├── Math/
-│   └── (existing)
-├── Config/
-│   ├── ContextConfig.cs
-│   ├── AudioConfig.cs
-│   └── PhysicsConfig.cs
-├── Native/
-│   ├── NativeMethods.g.cs  // Auto-generated
-│   └── NativeUtils.cs      // String marshaling, etc.
-└── runtimes/
-    └── (existing)
+│   ├── Vector2.cs          # 2D vector
+│   ├── Vector3.cs          # 3D vector
+│   ├── Quaternion.cs       # Rotation
+│   ├── Matrix4.cs          # 4x4 matrix
+│   ├── Color.cs            # RGBA color
+│   └── Rectangle.cs        # Rectangle
+├── Builders/
+│   ├── SpriteBuilder.cs    # Sprite creation
+│   ├── LightBuilder.cs     # Light creation
+│   ├── BodyBuilder.cs      # Physics body
+│   └── MaterialBuilder.cs  # Material creation
+├── Events/
+│   ├── EventBus.cs         # Event subscription
+│   └── CollisionEvents.cs  # Physics events
+└── Native/
+    ├── NativeMethods.g.cs  # Auto-generated bindings
+    └── NativeUtils.cs      # Marshaling helpers
 ```
 
-**Example New API:**
+### 11.3 API Examples (Conceptual)
 
-```csharp
-// High-level C# API
-public class GoudContext : IDisposable
-{
-    private ContextHandle _handle;
-
-    public GoudContext(ContextConfig config)
-    {
-        var nativeConfig = config.ToNative();
-        var result = NativeMethods.goud_context_create(ref nativeConfig, out _handle);
-        GoudError.ThrowIfFailed(result);
-    }
-
-    public void Initialize()
-    {
-        GoudError.ThrowIfFailed(NativeMethods.goud_context_initialize(_handle));
-    }
-
-    public bool ShouldClose => NativeMethods.goud_context_should_close(_handle);
-
-    public float BeginFrame()
-    {
-        GoudError.ThrowIfFailed(NativeMethods.goud_context_begin_frame(_handle));
-    }
-
-    public float EndFrame()
-    {
-        float deltaTime;
-        GoudError.ThrowIfFailed(NativeMethods.goud_context_end_frame(_handle, out deltaTime));
-        return deltaTime;
-    }
-
-    // Resource loading
-    public TextureHandle LoadTexture(string path)
-    {
-        TextureHandle handle;
-        GoudError.ThrowIfFailed(NativeMethods.goud_texture_load(_handle, path, out handle));
-        return handle;
-    }
-
-    // Sprite creation via builder
-    public SpriteBuilder CreateSprite() => new SpriteBuilder(this);
-
-    // Batch operations
-    public SpriteHandle[] CreateSprites(SpriteDesc[] descs)
-    {
-        var handles = new SpriteHandle[descs.Length];
-        var nativeDescs = descs.Select(d => d.ToNative()).ToArray();
-        GoudError.ThrowIfFailed(NativeMethods.goud_sprites_create_batch(
-            _handle, nativeDescs, (uint)descs.Length, handles));
-        return handles;
-    }
-
-    // Audio
-    public AudioHandle PlaySound(string path, AudioConfig config = null)
-    {
-        config ??= AudioConfig.Default;
-        AudioHandle handle;
-        GoudError.ThrowIfFailed(NativeMethods.goud_audio_play(
-            _handle, path, config.ToNative(), out handle));
-        return handle;
-    }
-
-    // Physics
-    public BodyHandle CreateBody(BodyDesc desc)
-    {
-        BodyHandle handle;
-        GoudError.ThrowIfFailed(NativeMethods.goud_physics_create_body(
-            _handle, ref desc.ToNative(), out handle));
-        return handle;
-    }
-
-    public void Dispose()
-    {
-        if (_handle.IsValid)
-        {
-            NativeMethods.goud_context_destroy(_handle);
-            _handle = default;
-        }
-    }
-}
-
-// Builder pattern
-public class SpriteBuilder
-{
-    private readonly GoudContext _ctx;
-    private SpriteDesc _desc = new();
-
-    internal SpriteBuilder(GoudContext ctx) => _ctx = ctx;
-
-    public SpriteBuilder Texture(TextureHandle tex) { _desc.Texture = tex; return this; }
-    public SpriteBuilder Position(float x, float y) { _desc.X = x; _desc.Y = y; return this; }
-    public SpriteBuilder Position(Vector2 pos) { _desc.X = pos.X; _desc.Y = pos.Y; return this; }
-    public SpriteBuilder Layer(int z) { _desc.ZLayer = z; return this; }
-    public SpriteBuilder Scale(float x, float y) { _desc.ScaleX = x; _desc.ScaleY = y; return this; }
-    public SpriteBuilder Scale(float s) { _desc.ScaleX = s; _desc.ScaleY = s; return this; }
-    public SpriteBuilder Scale(Vector2 s) { _desc.ScaleX = s.X; _desc.ScaleY = s.Y; return this; }
-    public SpriteBuilder Rotation(float radians) { _desc.Rotation = radians; return this; }
-    public SpriteBuilder Color(Color c) { _desc.Color = c; return this; }
-
-    public SpriteHandle Build()
-    {
-        SpriteHandle handle;
-        var native = _desc.ToNative();
-        GoudError.ThrowIfFailed(NativeMethods.goud_sprite_create(
-            _ctx._handle, ref native, out handle));
-        return handle;
-    }
-}
-
-// Error handling
-public static class GoudError
-{
-    public static void ThrowIfFailed(GoudErrorCode code)
-    {
-        if (code != GoudErrorCode.Ok)
-            throw new GoudException(code);
-    }
-}
-
-public class GoudException : Exception
-{
-    public GoudErrorCode ErrorCode { get; }
-
-    public GoudException(GoudErrorCode code)
-        : base(NativeMethods.goud_error_message(code))
-    {
-        ErrorCode = code;
-    }
-}
+**Basic Game Loop:**
 ```
+// Initialization
+context.Initialize()
+context.Run()  // Internally: while !ShouldClose { BeginFrame; Update; EndFrame }
+
+// Entity creation with builder
+entity = world.Spawn()
+    .With(Transform.At(100, 200))
+    .With(Sprite.From(texture).Color(Color.White))
+    .Build()
+
+// System registration
+world.AddSystem<MovementSystem>()
+world.AddSystem<RenderingSystem>()
+```
+
+**Resource Loading:**
+```
+// Async loading with progress
+task = assets.LoadAsync<Texture>("player.png")
+await task
+
+// Immediate loading
+texture = assets.Load<Texture>("player.png")
+```
+
+### 11.4 MonoGame-Inspired Features
+
+| Feature | Implementation |
+|---------|----------------|
+| **SpriteBatch-style API** | Batch drawing with Begin/End |
+| **Content Pipeline** | Asset preprocessing and packaging |
+| **Game Class Pattern** | Familiar Initialize/Update/Draw lifecycle |
+| **Vector/Matrix Types** | Matching API to XNA math types |
+| **Rectangle Helpers** | Intersects, Contains, etc. |
 
 ---
 
-## 6. Delivery Phases
+## 12. Multi-Language Binding Strategy
 
-### Phase 1: Foundation Hardening (Weeks 1-4)
+### 12.1 Binding Generation
 
-| Week | Milestone | Deliverables |
-|------|-----------|--------------|
-| 1 | Error System | `error.rs`, `handles.rs`, unit tests |
-| 2 | Context System | `context.rs`, thread-safe resource storage |
-| 3 | FFI Reorganization | `ffi/` modules, deprecation of `sdk.rs` |
-| 4 | Integration | C# SDK updates, backward compat shim |
+**C Header (cbindgen):**
+- Automatically generate goud_api.h from Rust FFI
+- Version number in header
+- All types and functions documented
 
-**Verification:**
-- `cargo test` - All existing tests pass
-- `cargo clippy -- -D warnings` - No warnings
-- New tests for error propagation
-- C# SDK compiles and runs example games
+**C# (csbindgen):**
+- Current approach, already working
+- Enhanced with more type safety
 
-### Phase 2: Core Systems (Weeks 5-10)
+**Python (future):**
+- Use ctypes or cffi
+- Pythonic wrappers over C API
 
-| Week | Milestone | Deliverables |
-|------|-----------|--------------|
-| 5-6 | bevy_ecs Integration | ECS module, component definitions |
-| 7 | Scene Graph | Parent-child, transform propagation |
-| 8 | Physics (rapier) | Physics world, bodies, colliders |
-| 9 | Audio (rodio) | Audio manager, spatial audio |
-| 10 | Integration | FFI for new systems, C# wrappers |
+**Lua (future):**
+- Use LuaJIT FFI or C bindings
+- Game scripting focus
 
-**Verification:**
-- ECS unit tests (spawning, querying, systems)
-- Physics simulation tests
-- Audio playback tests
-- Integration tests with example games
+**TypeScript/Node (future):**
+- Use node-ffi or N-API
+- Editor tooling focus
 
-### Phase 3: Graphics Enhancement (Weeks 11-14)
+**Go (future):**
+- Use cgo
+- Server-side game logic
 
-| Week | Milestone | Deliverables |
-|------|-----------|--------------|
-| 11 | Backend Abstraction | `RenderBackend` trait, OpenGL impl |
-| 12 | Draw Batching | SpriteBatcher, instancing |
-| 13 | Texture Atlas | Atlas packing, sprite sheets |
-| 14 | Material System | Materials, shader hot-reload |
+### 12.2 Language Binding Levels
 
-**Verification:**
-- Benchmark: 10,000 sprites < 100 draw calls
-- Visual regression tests
-- Shader compilation tests
-
-### Phase 4: Developer Experience (Weeks 15-18)
-
-| Week | Milestone | Deliverables |
-|------|-----------|--------------|
-| 15 | Builder APIs | All builder patterns in Rust & C# |
-| 16 | Batch Operations | Batch create/update/destroy FFI |
-| 17 | Documentation | API docs, architecture guide |
-| 18 | Examples | Updated examples, new showcases |
-
-**Verification:**
-- API documentation 100% coverage
-- All examples compile and run
-- Benchmark batch vs single operations (10x improvement)
-
-### Phase 5: Polish & Optimization (Weeks 19-22)
-
-| Week | Milestone | Deliverables |
-|------|-----------|--------------|
-| 19 | Performance | Profiling, optimization pass |
-| 20 | Memory | Leak detection, memory optimization |
-| 21 | API Stability | Deprecation cleanup, API freeze |
-| 22 | Release | RC build, migration guide |
-
-**Verification:**
-- All performance targets met
-- Zero memory leaks (Valgrind/ASAN)
-- CI passes on all platforms
-- Migration guide tested
+| Level | Description | Languages |
+|-------|-------------|-----------|
+| **L0: C ABI** | Raw FFI functions | All |
+| **L1: Safe Wrapper** | Handle validation, error conversion | C#, Python |
+| **L2: Idiomatic API** | Language-native patterns | C#, Rust |
+| **L3: High-Level DSL** | Game-specific abstractions | Lua |
 
 ---
 
-## 7. Verification Approach
+## 13. Testing Strategy
 
-### 7.1 Testing Strategy
+### 13.1 Test Categories
 
-| Level | Scope | Tools | Target Coverage |
-|-------|-------|-------|-----------------|
-| **Unit** | Individual modules | `cargo test` | >80% |
-| **Integration** | Cross-module | `cargo test --test integration` | Key paths |
-| **FFI** | Rust↔C# boundary | C# test project | All FFI functions |
-| **Rendering** | Visual output | Snapshot testing | Core rendering |
-| **Performance** | Benchmarks | `criterion` | Regression tracking |
-| **Fuzz** | FFI inputs | `cargo-fuzz` | Error handling |
+| Category | Coverage Target | Tools |
+|----------|-----------------|-------|
+| **Unit Tests** | >80% | cargo test |
+| **Integration Tests** | Key paths | cargo test --test integration |
+| **FFI Tests** | All functions | C# test project |
+| **Rendering Tests** | Visual regression | Snapshot comparison |
+| **Performance Tests** | Benchmark tracking | criterion |
+| **Fuzz Tests** | FFI inputs | cargo-fuzz |
 
-### 7.2 Test Commands
+### 13.2 TDD Workflow
 
-```bash
-# Run all Rust tests
-cargo test
+For each new feature:
+1. Write failing test that specifies behavior
+2. Implement minimum code to pass
+3. Refactor while tests stay green
+4. Document with examples
 
-# Run with output
-cargo test -- --nocapture
+### 13.3 Test Infrastructure
 
-# Run specific module tests
-cargo test error::
-cargo test handles::
-cargo test ffi::
+**Headless Testing:**
+- Mock OpenGL context for CI
+- Offscreen rendering for visual tests
 
-# Run integration tests
-cargo test --test integration
+**Benchmark Tracking:**
+- Store benchmark results in CI
+- Alert on performance regressions
 
-# Run benchmarks
-cargo bench
-
-# Run fuzzing (requires nightly)
-cargo +nightly fuzz run ffi_sprite_create
-
-# Run C# SDK tests
-cd sdks/GoudEngine.Tests && dotnet test
-
-# Coverage report
-cargo tarpaulin --out Html
-```
-
-### 7.3 CI Pipeline Updates
-
-```yaml
-# .github/workflows/ci.yml additions
-jobs:
-  test:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        rust: [stable, nightly]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Rust
-        uses: dtolnay/rust-action@stable
-      - name: Run tests
-        run: cargo test --all-features
-      - name: Run clippy
-        run: cargo clippy -- -D warnings
-      - name: Check formatting
-        run: cargo fmt -- --check
-
-  benchmarks:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run benchmarks
-        run: cargo bench --no-run  # Compile only in CI
-
-  fuzz:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install nightly
-        run: rustup install nightly
-      - name: Run fuzz tests
-        run: cargo +nightly fuzz run ffi_inputs -- -max_total_time=60
-
-  integration:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build Rust
-        run: cargo build --release
-      - name: Build C# SDK
-        run: cd sdks/GoudEngine && dotnet build
-      - name: Run C# tests
-        run: cd sdks/GoudEngine.Tests && dotnet test
-      - name: Run example games (headless)
-        run: |
-          for example in examples/*/; do
-            cd $example && dotnet run --headless || true
-            cd ../..
-          done
-```
-
-### 7.4 Performance Targets Verification
-
-```rust
-// benches/sprite_benchmark.rs
-use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId};
-
-fn benchmark_sprite_creation(c: &mut Criterion) {
-    let mut group = c.benchmark_group("sprite_creation");
-
-    for count in [100, 1000, 10000].iter() {
-        group.bench_with_input(
-            BenchmarkId::from_parameter(count),
-            count,
-            |b, &count| {
-                b.iter(|| {
-                    // Create sprites
-                });
-            },
-        );
-    }
-    group.finish();
-}
-
-fn benchmark_batch_vs_single(c: &mut Criterion) {
-    let mut group = c.benchmark_group("batch_vs_single");
-
-    group.bench_function("single_1000", |b| {
-        b.iter(|| {
-            for _ in 0..1000 {
-                // Single sprite creation
-            }
-        });
-    });
-
-    group.bench_function("batch_1000", |b| {
-        b.iter(|| {
-            // Batch creation of 1000 sprites
-        });
-    });
-
-    group.finish();
-}
-
-criterion_group!(benches, benchmark_sprite_creation, benchmark_batch_vs_single);
-criterion_main!(benches);
-```
+**Coverage Reporting:**
+- cargo tarpaulin for Rust
+- Report uploaded to coverage service
 
 ---
 
-## 8. Dependencies
+## 14. Development Phases
 
-### 8.1 New Cargo Dependencies
+### Phase 1: Foundation (Estimated Effort: Large)
 
-```toml
-[dependencies]
-# Existing
-gl = "0.14"
-glfw = "0.59"
-cgmath = "0.18"
-image = "0.24"
-tiled = "0.13"
-log = "0.4"
-env_logger = "0.11"
-thiserror = "1.0"
+**Objectives:**
+- Implement custom ECS core
+- Refactor FFI layer with handle system
+- Implement comprehensive error handling
+- Establish TDD infrastructure
 
-# New - Core
-bevy_ecs = "0.15"              # ECS framework
-parking_lot = "0.12"           # Fast RwLock
-crossbeam = "0.8"              # Lock-free queues
-rayon = "1.10"                 # Parallel iteration
+**Deliverables:**
+- Entity/Component/System core
+- Archetype storage
+- Query system
+- New FFI module structure
+- Error types and propagation
+- 80%+ test coverage on new code
 
-# New - Audio
-rodio = "0.19"                 # Audio playback
+### Phase 2: Core Systems (Estimated Effort: Large)
 
-# New - Physics
-rapier2d = "0.22"              # 2D physics
-rapier3d = "0.22"              # 3D physics
+**Objectives:**
+- Integrate built-in components
+- Implement system scheduler
+- Add resource management
+- Implement transform hierarchy
 
-# New - Utilities
-bitflags = "2.6"               # Bit flags
-smallvec = "1.13"              # Small vector optimization
-ahash = "0.8"                  # Fast hashing
+**Deliverables:**
+- All built-in components
+- Parallel system execution
+- Asset loading pipeline
+- Parent/child transforms
 
-[build-dependencies]
-csbindgen = "1.2"
-cbindgen = "0.27"
+### Phase 3: Graphics Enhancement (Estimated Effort: Medium)
 
-[dev-dependencies]
-criterion = "0.5"              # Benchmarking
-proptest = "1.5"               # Property testing
-```
+**Objectives:**
+- Implement render backend abstraction
+- Add sprite batching
+- Implement material system
+- Enhance camera system
 
-### 8.2 Version Compatibility Matrix
+**Deliverables:**
+- RenderBackend trait + OpenGL impl
+- <100 draw calls for 10K sprites
+- Material/shader system
+- Camera effects
 
-| Dependency | Min Version | Tested Version | Notes |
-|------------|-------------|----------------|-------|
-| Rust | 1.75.0 | 1.83.0 | MSRV for bevy_ecs |
-| bevy_ecs | 0.15.0 | 0.15.0 | Latest stable |
-| rapier2d/3d | 0.22.0 | 0.22.0 | Latest stable |
-| rodio | 0.19.0 | 0.19.0 | Latest stable |
-| .NET | 8.0 | 8.0 | LTS |
+### Phase 4: Physics & Audio (Estimated Effort: Medium)
+
+**Objectives:**
+- Implement physics engine
+- Integrate audio system
+- Add collision events
+- Implement spatial audio
+
+**Deliverables:**
+- 2D/3D physics
+- Audio playback
+- Collision detection events
+- 3D audio positioning
+
+### Phase 5: Developer Experience (Estimated Effort: Medium)
+
+**Objectives:**
+- Implement builder patterns
+- Create comprehensive docs
+- Update C# SDK
+- Create example games
+
+**Deliverables:**
+- Fluent APIs everywhere
+- Full API documentation
+- Updated SDK with new features
+- 3+ polished examples
+
+### Phase 6: Polish & Optimization (Estimated Effort: Small)
+
+**Objectives:**
+- Performance optimization
+- Memory optimization
+- API stability
+- Release preparation
+
+**Deliverables:**
+- Meet all performance targets
+- Zero memory leaks
+- Frozen API
+- Migration guide
 
 ---
 
-## 9. Risk Mitigation
+## 15. Success Metrics
 
-| Risk | Mitigation |
+### 15.1 Performance Targets
+
+| Metric | Target |
+|--------|--------|
+| Sprites rendered | 100,000 @ 60fps |
+| Draw calls for 10K sprites (same texture) | <100 |
+| Entity creation/destruction | >100,000/second |
+| Component queries | >1M entities/frame |
+| Physics bodies simulated | 10,000 @ 60fps |
+| Audio latency | <50ms |
+| Asset load time (100MB) | <2 seconds |
+| FFI batch vs single | 10x speedup |
+
+### 15.2 Quality Targets
+
+| Metric | Target |
+|--------|--------|
+| Rust test coverage | >80% |
+| C# test coverage | >70% |
+| Documentation coverage | 100% public API |
+| CI build time | <10 minutes |
+| Memory leaks | Zero known |
+| Thread safety issues | Zero known |
+
+### 15.3 Developer Experience Targets
+
+| Metric | Target |
+|--------|--------|
+| Time to hello world | <5 minutes |
+| Breaking changes per minor version | 0 |
+| Examples compile and run | 100% |
+| Binding generation success | 100% |
+
+---
+
+## 16. Risk Mitigation
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Custom ECS complexity | High | Thorough testing, Bevy as reference |
+| OpenGL deprecation (macOS) | High | Backend abstraction enables alternatives |
+| FFI complexity | Medium | Comprehensive testing, automation |
+| Scope creep | High | Strict phase boundaries |
+| Performance regression | Medium | Automated benchmarks in CI |
+| Memory safety across FFI | High | Handle-based design, fuzzing |
+
+---
+
+## 17. Appendices
+
+### Appendix A: Glossary
+
+| Term | Definition |
 |------|------------|
-| bevy_ecs breaking changes | Pin to specific version, wrap in abstraction layer |
-| rapier API changes | Use rapier's stable API only, version lock |
-| OpenGL deprecation (macOS) | Backend abstraction enables Metal port |
-| FFI complexity | Comprehensive testing, binding generation automation |
-| Performance regression | Automated benchmarks in CI with alerts |
-| Memory leaks | ASAN/Valgrind testing, handle tracking |
+| **Archetype** | Unique combination of component types |
+| **Component** | Pure data attached to an entity |
+| **Entity** | Lightweight ID representing a game object |
+| **Handle** | Type-safe, validated reference to a resource |
+| **Query** | Request for entities matching component criteria |
+| **Resource** | Singleton data outside entity-component model |
+| **System** | Function that processes component data |
+| **World** | Container for all entities, components, and resources |
 
----
+### Appendix B: File Structure (Target)
 
-## 10. Backward Compatibility
-
-### 10.1 Deprecation Strategy
-
-```rust
-// Old API (deprecated but functional)
-#[deprecated(since = "2.0.0", note = "Use goud_context_create instead")]
-#[no_mangle]
-pub extern "C" fn game_create(
-    width: u32,
-    height: u32,
-    title: *const c_char,
-    target_fps: u32,
-    renderer_type: c_int,
-) -> *mut GameSdk {
-    // Internally delegates to new API
-    let config = GoudContextConfig {
-        width, height,
-        title: unsafe { CStr::from_ptr(title).to_str().unwrap_or("") }.to_string(),
-        target_fps,
-        renderer_type,
-        enable_audio: false,
-        enable_physics: false,
-    };
-
-    let mut handle = ContextHandle::default();
-    if goud_context_create(&config, &mut handle) == GoudError::Ok {
-        // Return raw pointer for compatibility
-        Box::into_raw(Box::new(LegacyWrapper { handle }))
-    } else {
-        std::ptr::null_mut()
-    }
-}
+```
+goud_engine/
+├── src/
+│   ├── lib.rs                      # Crate root
+│   ├── prelude.rs                  # Common re-exports
+│   │
+│   ├── core/                       # Core engine types
+│   │   ├── mod.rs
+│   │   ├── context.rs              # Application context
+│   │   ├── error.rs                # Error types
+│   │   ├── handle.rs               # Handle system
+│   │   └── event.rs                # Event bus
+│   │
+│   ├── ecs/                        # Custom ECS implementation
+│   │   ├── mod.rs
+│   │   ├── world.rs                # World container
+│   │   ├── entity.rs               # Entity management
+│   │   ├── component.rs            # Component traits
+│   │   ├── archetype.rs            # Archetype storage
+│   │   ├── query.rs                # Query system
+│   │   ├── system.rs               # System traits
+│   │   ├── schedule.rs             # System scheduling
+│   │   ├── resource.rs             # Resource storage
+│   │   └── commands.rs             # Deferred operations
+│   │
+│   ├── components/                 # Built-in components
+│   │   ├── mod.rs
+│   │   ├── transform.rs            # Transform components
+│   │   ├── hierarchy.rs            # Parent/Children
+│   │   ├── rendering.rs            # Sprite, Mesh, Camera, Light
+│   │   ├── physics.rs              # RigidBody, Collider
+│   │   └── audio.rs                # AudioSource, AudioListener
+│   │
+│   ├── systems/                    # Built-in systems
+│   │   ├── mod.rs
+│   │   ├── transform.rs            # Transform propagation
+│   │   ├── rendering.rs            # Render systems
+│   │   ├── physics.rs              # Physics systems
+│   │   └── audio.rs                # Audio systems
+│   │
+│   ├── graphics/                   # Rendering subsystem
+│   │   ├── mod.rs
+│   │   ├── backend/
+│   │   │   ├── mod.rs              # Backend trait
+│   │   │   └── opengl/             # OpenGL implementation
+│   │   ├── renderer.rs             # High-level renderer
+│   │   ├── batch.rs                # Draw batching
+│   │   ├── material.rs             # Material system
+│   │   ├── shader.rs               # Shader management
+│   │   ├── texture.rs              # Texture handling
+│   │   ├── camera.rs               # Camera utilities
+│   │   └── light.rs                # Lighting utilities
+│   │
+│   ├── physics/                    # Physics subsystem
+│   │   ├── mod.rs
+│   │   ├── world.rs                # Physics world
+│   │   ├── body.rs                 # Rigid bodies
+│   │   ├── collider.rs             # Collision shapes
+│   │   ├── broad_phase.rs          # Broad phase detection
+│   │   ├── narrow_phase.rs         # Narrow phase detection
+│   │   └── queries.rs              # Raycasting, etc.
+│   │
+│   ├── audio/                      # Audio subsystem
+│   │   ├── mod.rs
+│   │   ├── manager.rs              # Audio manager
+│   │   ├── source.rs               # Audio sources
+│   │   └── spatial.rs              # Spatial audio
+│   │
+│   ├── input/                      # Input subsystem
+│   │   ├── mod.rs
+│   │   ├── manager.rs              # Input manager
+│   │   ├── action_map.rs           # Action mapping
+│   │   └── devices.rs              # Input devices
+│   │
+│   ├── assets/                     # Asset management
+│   │   ├── mod.rs
+│   │   ├── manager.rs              # Asset manager
+│   │   ├── loader.rs               # Async loading
+│   │   └── cache.rs                # Asset caching
+│   │
+│   ├── platform/                   # Platform abstraction
+│   │   ├── mod.rs
+│   │   ├── window.rs               # Window management
+│   │   └── time.rs                 # Time utilities
+│   │
+│   └── ffi/                        # FFI layer
+│       ├── mod.rs
+│       ├── context.rs
+│       ├── entities.rs
+│       ├── components.rs
+│       ├── resources.rs
+│       ├── rendering.rs
+│       ├── physics.rs
+│       ├── audio.rs
+│       ├── input.rs
+│       ├── batch.rs
+│       └── utils.rs
+│
+├── tests/                          # Integration tests
+│   ├── ecs_tests.rs
+│   ├── rendering_tests.rs
+│   ├── physics_tests.rs
+│   └── ffi_tests.rs
+│
+├── benches/                        # Benchmarks
+│   ├── ecs_bench.rs
+│   ├── rendering_bench.rs
+│   └── ffi_bench.rs
+│
+└── examples/                       # Rust examples
+    ├── hello_world.rs
+    ├── sprites.rs
+    └── physics.rs
 ```
 
-### 10.2 Migration Path
+### Appendix C: References
 
-1. **Phase 1:** New API available alongside old
-2. **Phase 2:** Old API marked deprecated, emits warnings
-3. **Phase 3:** Old API removed in next major version
-
----
-
-## Appendix A: File-by-File Implementation Notes
-
-### A.1 Priority 1 Files (Week 1-2)
-
-| File | LOC Est. | Dependencies | Notes |
-|------|----------|--------------|-------|
-| `src/error.rs` | ~150 | thiserror | Error enum, GoudResult |
-| `src/handles.rs` | ~200 | - | Generic handle system |
-| `src/context.rs` | ~400 | parking_lot, crossbeam | Thread-safe context |
-| `src/ffi/mod.rs` | ~50 | - | Module organization |
-| `src/ffi/utils.rs` | ~100 | - | String conversion |
-
-### A.2 Priority 2 Files (Week 3-4)
-
-| File | LOC Est. | Dependencies | Notes |
-|------|----------|--------------|-------|
-| `src/ffi/context.rs` | ~200 | context.rs | Context FFI |
-| `src/ffi/entities.rs` | ~400 | ecs | Entity FFI |
-| `src/ffi/resources.rs` | ~200 | resources | Resource FFI |
-| `src/ffi/rendering.rs` | ~300 | graphics | Camera/light FFI |
-| `src/ffi/input.rs` | ~100 | platform | Input FFI |
-
-### A.3 Priority 3 Files (Week 5-10)
-
-| File | LOC Est. | Dependencies | Notes |
-|------|----------|--------------|-------|
-| `src/subsystems/ecs/mod.rs` | ~300 | bevy_ecs | ECS integration |
-| `src/subsystems/audio/mod.rs` | ~400 | rodio | Audio system |
-| `src/subsystems/physics/mod.rs` | ~500 | rapier | Physics system |
-| `src/subsystems/graphics/backend.rs` | ~300 | - | Backend trait |
+- Bevy ECS Architecture: https://bevyengine.org/learn/book/ecs/
+- Data-Oriented Design: https://www.dataorienteddesign.com/dodbook/
+- MonoGame Documentation: https://docs.monogame.net/
+- Rapier Physics: https://rapier.rs/
+- Rodio Audio: https://docs.rs/rodio/
 
 ---
 
-*Document Version: 1.0*
+*Document Version: 2.0*
 *Last Updated: 2026-01-04*
+*Status: Approved for Implementation*
