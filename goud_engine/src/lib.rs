@@ -1,3 +1,5 @@
+pub mod core;
+
 mod ffi_privates;
 mod game;
 mod libs;
