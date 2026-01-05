@@ -11,9 +11,9 @@
 //! provide consistent patterns for cross-language interoperability.
 
 pub mod error;
+pub mod handle;
 
 // Future submodules will be added as they are implemented:
-// pub mod handle;   // Step 1.2.1-1.2.6
 // pub mod event;    // Step 1.3.1-1.3.4
 // pub mod events;   // Step 1.3.5
 // pub mod math;     // Step 1.4.1-1.4.4

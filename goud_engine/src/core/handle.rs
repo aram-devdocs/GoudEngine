@@ -1,0 +1,1405 @@
+//! Type-safe, generation-counted handles for engine objects.
+//!
+//! Handles are the primary mechanism for referencing engine objects across the FFI
+//! boundary. They provide:
+//!
+//! - **Type safety**: Handles are generic over the resource type, preventing
+//!   accidental use of a texture handle where a shader handle is expected.
+//! - **Generation counting**: Each handle includes a generation counter that
+//!   increments when a slot is reused, preventing use-after-free bugs.
+//! - **FFI compatibility**: The `#[repr(C)]` layout ensures consistent memory
+//!   representation across language boundaries.
+//!
+//! # Design Pattern: Generational Indices
+//!
+//! Generational indices solve the ABA problem in resource management:
+//!
+//! 1. Allocate slot 5, generation 1 -> Handle(5, 1)
+//! 2. Deallocate slot 5, generation becomes 2
+//! 3. Allocate slot 5 again, generation 2 -> Handle(5, 2)
+//! 4. Old Handle(5, 1) is now invalid (generation mismatch)
+//!
+//! # Example
+//!
+//! ```
+//! use goud_engine::core::handle::Handle;
+//!
+//! // Marker type for textures
+//! struct Texture;
+//!
+//! // Create a handle (normally done by HandleAllocator)
+//! let handle: Handle<Texture> = Handle::new(0, 1);
+//!
+//! assert_eq!(handle.index(), 0);
+//! assert_eq!(handle.generation(), 1);
+//! assert!(handle.is_valid());
+//!
+//! // Invalid handle for representing "no resource"
+//! let invalid: Handle<Texture> = Handle::INVALID;
+//! assert!(!invalid.is_valid());
+//! ```
+
+use std::hash::{Hash, Hasher};
+use std::marker::PhantomData;
+
+// =============================================================================
+// HandleAllocator
+// =============================================================================
+
+/// Manages handle allocation with generation counting and free-list recycling.
+///
+/// The `HandleAllocator` is responsible for creating and invalidating handles
+/// in a memory-efficient manner. It uses a generational index scheme where:
+///
+/// - Each slot has a generation counter that increments on deallocation
+/// - Deallocated slots are recycled via a free list
+/// - Handles carry their generation, allowing stale handle detection
+///
+/// # Design Pattern: Generational Arena Allocator
+///
+/// This pattern provides:
+/// - O(1) allocation (pop from free list or push new entry)
+/// - O(1) deallocation (push to free list, increment generation)
+/// - O(1) liveness check (compare generations)
+/// - Memory reuse without use-after-free bugs
+///
+/// # Example
+///
+/// ```
+/// use goud_engine::core::handle::HandleAllocator;
+///
+/// struct Texture;
+///
+/// let mut allocator: HandleAllocator<Texture> = HandleAllocator::new();
+///
+/// // Allocate some handles
+/// let h1 = allocator.allocate();
+/// let h2 = allocator.allocate();
+///
+/// assert!(allocator.is_alive(h1));
+/// assert!(allocator.is_alive(h2));
+///
+/// // Deallocate h1
+/// assert!(allocator.deallocate(h1));
+/// assert!(!allocator.is_alive(h1));  // h1 is now stale
+///
+/// // Allocate again - may reuse h1's slot with new generation
+/// let h3 = allocator.allocate();
+/// assert!(allocator.is_alive(h3));
+///
+/// // h1 still references old generation, so it's still not alive
+/// assert!(!allocator.is_alive(h1));
+/// ```
+///
+/// # Thread Safety
+///
+/// `HandleAllocator` is NOT thread-safe. For concurrent access, wrap in
+/// appropriate synchronization primitives (Mutex, RwLock, etc.).
+pub struct HandleAllocator<T> {
+    /// Generation counter for each slot.
+    ///
+    /// Index `i` stores the current generation for slot `i`.
+    /// Generation starts at 1 for new slots (0 is reserved for never-allocated).
+    generations: Vec<u32>,
+
+    /// Stack of free slot indices available for reuse.
+    ///
+    /// When a handle is deallocated, its index is pushed here.
+    /// On allocation, we prefer to pop from this list before growing.
+    free_list: Vec<u32>,
+
+    /// Phantom marker for type parameter.
+    _marker: PhantomData<T>,
+}
+
+impl<T> HandleAllocator<T> {
+    /// Creates a new, empty handle allocator.
+    ///
+    /// The allocator starts with no pre-allocated capacity.
+    /// Use [`with_capacity`](Self::with_capacity) for bulk allocation scenarios.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleAllocator;
+    ///
+    /// struct Mesh;
+    ///
+    /// let allocator: HandleAllocator<Mesh> = HandleAllocator::new();
+    /// assert_eq!(allocator.len(), 0);
+    /// assert!(allocator.is_empty());
+    /// ```
+    #[inline]
+    pub fn new() -> Self {
+        Self {
+            generations: Vec::new(),
+            free_list: Vec::new(),
+            _marker: PhantomData,
+        }
+    }
+
+    /// Allocates a new handle.
+    ///
+    /// If there are slots in the free list, one is reused with an incremented
+    /// generation. Otherwise, a new slot is created with generation 1.
+    ///
+    /// # Returns
+    ///
+    /// A new, valid handle that can be used to reference a resource.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of slots exceeds `u32::MAX - 1` (unlikely in practice).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleAllocator;
+    ///
+    /// struct Shader;
+    ///
+    /// let mut allocator: HandleAllocator<Shader> = HandleAllocator::new();
+    ///
+    /// let h1 = allocator.allocate();
+    /// let h2 = allocator.allocate();
+    ///
+    /// assert_ne!(h1, h2);
+    /// assert!(h1.is_valid());
+    /// assert!(h2.is_valid());
+    /// ```
+    pub fn allocate(&mut self) -> Handle<T> {
+        if let Some(index) = self.free_list.pop() {
+            // Reuse a slot from the free list
+            // Generation was already incremented during deallocation
+            let generation = self.generations[index as usize];
+            Handle::new(index, generation)
+        } else {
+            // Allocate a new slot
+            let index = self.generations.len();
+
+            // Ensure we don't exceed u32::MAX - 1 (reserve MAX for INVALID)
+            assert!(
+                index < u32::MAX as usize,
+                "HandleAllocator exceeded maximum capacity"
+            );
+
+            // New slots start at generation 1 (0 is reserved for never-allocated/INVALID)
+            self.generations.push(1);
+
+            Handle::new(index as u32, 1)
+        }
+    }
+
+    /// Deallocates a handle, making it invalid.
+    ///
+    /// The slot's generation is incremented, invalidating any handles that
+    /// reference the old generation. The slot is added to the free list for
+    /// future reuse.
+    ///
+    /// # Arguments
+    ///
+    /// * `handle` - The handle to deallocate
+    ///
+    /// # Returns
+    ///
+    /// - `true` if the handle was valid and successfully deallocated
+    /// - `false` if the handle was invalid (wrong generation, out of bounds, or INVALID)
+    ///
+    /// # Double Deallocation
+    ///
+    /// Attempting to deallocate the same handle twice returns `false` on the
+    /// second attempt, as the generation will have already been incremented.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleAllocator;
+    ///
+    /// struct Audio;
+    ///
+    /// let mut allocator: HandleAllocator<Audio> = HandleAllocator::new();
+    /// let handle = allocator.allocate();
+    ///
+    /// assert!(allocator.is_alive(handle));
+    /// assert!(allocator.deallocate(handle));  // First deallocation succeeds
+    /// assert!(!allocator.is_alive(handle));
+    /// assert!(!allocator.deallocate(handle)); // Second deallocation fails
+    /// ```
+    pub fn deallocate(&mut self, handle: Handle<T>) -> bool {
+        // Check if handle is valid
+        if !handle.is_valid() {
+            return false;
+        }
+
+        let index = handle.index() as usize;
+
+        // Check bounds
+        if index >= self.generations.len() {
+            return false;
+        }
+
+        // Check generation matches (handle is still alive)
+        if self.generations[index] != handle.generation() {
+            return false;
+        }
+
+        // Increment generation to invalidate existing handles
+        // Wrap at u32::MAX to 1 (skip 0, which is reserved)
+        let new_gen = self.generations[index].wrapping_add(1);
+        self.generations[index] = if new_gen == 0 { 1 } else { new_gen };
+
+        // Add to free list for reuse
+        self.free_list.push(handle.index());
+
+        true
+    }
+
+    /// Checks if a handle refers to a currently allocated resource.
+    ///
+    /// A handle is "alive" if:
+    /// - It is not the INVALID sentinel
+    /// - Its index is within bounds
+    /// - Its generation matches the current slot generation
+    ///
+    /// # Arguments
+    ///
+    /// * `handle` - The handle to check
+    ///
+    /// # Returns
+    ///
+    /// `true` if the handle is alive, `false` otherwise.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleAllocator;
+    ///
+    /// struct Sprite;
+    ///
+    /// let mut allocator: HandleAllocator<Sprite> = HandleAllocator::new();
+    /// let handle = allocator.allocate();
+    ///
+    /// assert!(allocator.is_alive(handle));
+    ///
+    /// allocator.deallocate(handle);
+    /// assert!(!allocator.is_alive(handle));
+    /// ```
+    #[inline]
+    pub fn is_alive(&self, handle: Handle<T>) -> bool {
+        // INVALID handles are never alive
+        if !handle.is_valid() {
+            return false;
+        }
+
+        let index = handle.index() as usize;
+
+        // Check bounds and generation
+        index < self.generations.len() && self.generations[index] == handle.generation()
+    }
+
+    /// Returns the number of currently allocated (alive) handles.
+    ///
+    /// This is the total capacity minus the number of free slots.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleAllocator;
+    ///
+    /// struct Entity;
+    ///
+    /// let mut allocator: HandleAllocator<Entity> = HandleAllocator::new();
+    /// assert_eq!(allocator.len(), 0);
+    ///
+    /// let h1 = allocator.allocate();
+    /// let h2 = allocator.allocate();
+    /// assert_eq!(allocator.len(), 2);
+    ///
+    /// allocator.deallocate(h1);
+    /// assert_eq!(allocator.len(), 1);
+    /// ```
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.generations.len() - self.free_list.len()
+    }
+
+    /// Returns the total number of slots (both allocated and free).
+    ///
+    /// This represents the high-water mark of allocations.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleAllocator;
+    ///
+    /// struct Component;
+    ///
+    /// let mut allocator: HandleAllocator<Component> = HandleAllocator::new();
+    /// let h1 = allocator.allocate();
+    /// let h2 = allocator.allocate();
+    ///
+    /// assert_eq!(allocator.capacity(), 2);
+    ///
+    /// allocator.deallocate(h1);
+    /// // Capacity remains 2, even though one slot is free
+    /// assert_eq!(allocator.capacity(), 2);
+    /// ```
+    #[inline]
+    pub fn capacity(&self) -> usize {
+        self.generations.len()
+    }
+
+    /// Returns `true` if no handles are currently allocated.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleAllocator;
+    ///
+    /// struct Resource;
+    ///
+    /// let mut allocator: HandleAllocator<Resource> = HandleAllocator::new();
+    /// assert!(allocator.is_empty());
+    ///
+    /// let handle = allocator.allocate();
+    /// assert!(!allocator.is_empty());
+    ///
+    /// allocator.deallocate(handle);
+    /// assert!(allocator.is_empty());
+    /// ```
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
+impl<T> Default for HandleAllocator<T> {
+    /// Creates a new, empty handle allocator (same as `new()`).
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T> std::fmt::Debug for HandleAllocator<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let type_name = std::any::type_name::<T>();
+        let short_name = type_name.rsplit("::").next().unwrap_or(type_name);
+
+        f.debug_struct(&format!("HandleAllocator<{}>", short_name))
+            .field("len", &self.len())
+            .field("capacity", &self.capacity())
+            .field("free_slots", &self.free_list.len())
+            .finish()
+    }
+}
+
+/// A type-safe, generation-counted handle to an engine resource.
+///
+/// Handles are lightweight (8 bytes) identifiers that can be safely passed
+/// across FFI boundaries. The generic type parameter `T` provides compile-time
+/// type safety, ensuring handles for different resource types cannot be mixed.
+///
+/// # FFI Safety
+///
+/// The `#[repr(C)]` attribute ensures this struct has a predictable memory
+/// layout for interoperability with C#, Python, and other languages:
+/// - Offset 0: `index` (4 bytes, u32)
+/// - Offset 4: `generation` (4 bytes, u32)
+/// - Total size: 8 bytes, alignment: 4 bytes
+///
+/// The `PhantomData<T>` is a zero-sized type that doesn't affect the layout.
+#[repr(C)]
+pub struct Handle<T> {
+    /// Index into the storage array.
+    ///
+    /// This is the slot number in the allocator/storage. When a handle is
+    /// deallocated, its index may be reused for a new allocation.
+    index: u32,
+
+    /// Generation counter for this slot.
+    ///
+    /// Incremented each time the slot is deallocated. A handle is only valid
+    /// if its generation matches the current generation of the slot.
+    generation: u32,
+
+    /// Marker to make Handle<T> generic over T without storing T.
+    ///
+    /// This provides compile-time type safety: `Handle<Texture>` and
+    /// `Handle<Shader>` are distinct types that cannot be accidentally mixed.
+    _marker: PhantomData<T>,
+}
+
+impl<T> Handle<T> {
+    /// The invalid handle constant.
+    ///
+    /// Used to represent "no resource" or "null handle". This is distinguishable
+    /// from any valid handle because:
+    /// - `index` is `u32::MAX`, which exceeds any reasonable allocation count
+    /// - `generation` is 0, which is never used for valid allocations
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::Handle;
+    ///
+    /// struct Texture;
+    ///
+    /// let handle: Handle<Texture> = Handle::INVALID;
+    /// assert!(!handle.is_valid());
+    /// assert_eq!(handle.index(), u32::MAX);
+    /// assert_eq!(handle.generation(), 0);
+    /// ```
+    pub const INVALID: Self = Self {
+        index: u32::MAX,
+        generation: 0,
+        _marker: PhantomData,
+    };
+
+    /// Creates a new handle with the given index and generation.
+    ///
+    /// This is typically called by `HandleAllocator`, not by user code.
+    /// Users should obtain handles through the allocator or storage APIs.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The slot index in the storage array
+    /// * `generation` - The generation counter for this slot
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::Handle;
+    ///
+    /// struct Shader;
+    ///
+    /// let handle: Handle<Shader> = Handle::new(42, 3);
+    /// assert_eq!(handle.index(), 42);
+    /// assert_eq!(handle.generation(), 3);
+    /// ```
+    #[inline]
+    pub const fn new(index: u32, generation: u32) -> Self {
+        Self {
+            index,
+            generation,
+            _marker: PhantomData,
+        }
+    }
+
+    /// Returns the index component of this handle.
+    ///
+    /// The index is the slot number in the allocator/storage. It identifies
+    /// which entry the handle refers to.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::Handle;
+    ///
+    /// struct Mesh;
+    ///
+    /// let handle: Handle<Mesh> = Handle::new(10, 1);
+    /// assert_eq!(handle.index(), 10);
+    /// ```
+    #[inline]
+    pub const fn index(&self) -> u32 {
+        self.index
+    }
+
+    /// Returns the generation component of this handle.
+    ///
+    /// The generation is incremented each time a slot is deallocated and
+    /// reused. It prevents use-after-free by invalidating old handles.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::Handle;
+    ///
+    /// struct Audio;
+    ///
+    /// let handle: Handle<Audio> = Handle::new(5, 7);
+    /// assert_eq!(handle.generation(), 7);
+    /// ```
+    #[inline]
+    pub const fn generation(&self) -> u32 {
+        self.generation
+    }
+
+    /// Checks if this handle is valid (not the INVALID sentinel).
+    ///
+    /// A handle is considered valid if it is not equal to `Handle::INVALID`.
+    /// Note that a "valid" handle here only means it's not the null sentinel;
+    /// it may still refer to a deallocated resource (stale handle).
+    ///
+    /// To check if a handle refers to a live resource, use the allocator's
+    /// `is_alive()` method.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::Handle;
+    ///
+    /// struct Sprite;
+    ///
+    /// let valid: Handle<Sprite> = Handle::new(0, 1);
+    /// assert!(valid.is_valid());
+    ///
+    /// let invalid: Handle<Sprite> = Handle::INVALID;
+    /// assert!(!invalid.is_valid());
+    /// ```
+    #[inline]
+    pub const fn is_valid(&self) -> bool {
+        // INVALID has index=u32::MAX and generation=0
+        // A handle is invalid if it matches INVALID exactly
+        !(self.index == u32::MAX && self.generation == 0)
+    }
+
+    /// Packs this handle into a single u64 value.
+    ///
+    /// The packed format is:
+    /// - Upper 32 bits: generation
+    /// - Lower 32 bits: index
+    ///
+    /// This is useful for FFI with languages that prefer a single integer
+    /// over a struct, and for use as hash map keys.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::Handle;
+    ///
+    /// struct Resource;
+    ///
+    /// let handle: Handle<Resource> = Handle::new(42, 7);
+    /// let packed = handle.to_u64();
+    /// let unpacked: Handle<Resource> = Handle::from_u64(packed);
+    ///
+    /// assert_eq!(handle, unpacked);
+    /// ```
+    #[inline]
+    pub const fn to_u64(&self) -> u64 {
+        ((self.generation as u64) << 32) | (self.index as u64)
+    }
+
+    /// Creates a handle from a packed u64 value.
+    ///
+    /// This is the inverse of `to_u64()`. The packed format is:
+    /// - Upper 32 bits: generation
+    /// - Lower 32 bits: index
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::Handle;
+    ///
+    /// struct Resource;
+    ///
+    /// let packed: u64 = (7u64 << 32) | 42u64;  // gen=7, index=42
+    /// let handle: Handle<Resource> = Handle::from_u64(packed);
+    ///
+    /// assert_eq!(handle.index(), 42);
+    /// assert_eq!(handle.generation(), 7);
+    /// ```
+    #[inline]
+    pub const fn from_u64(packed: u64) -> Self {
+        let index = packed as u32;
+        let generation = (packed >> 32) as u32;
+        Self::new(index, generation)
+    }
+}
+
+// =============================================================================
+// Trait Implementations
+// =============================================================================
+
+impl<T> Clone for Handle<T> {
+    #[inline]
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T> Copy for Handle<T> {}
+
+impl<T> std::fmt::Debug for Handle<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Get the type name, stripping the module path for readability
+        let type_name = std::any::type_name::<T>();
+        let short_name = type_name.rsplit("::").next().unwrap_or(type_name);
+
+        write!(
+            f,
+            "Handle<{}>({}:{})",
+            short_name, self.index, self.generation
+        )
+    }
+}
+
+impl<T> PartialEq for Handle<T> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        // Both index AND generation must match for handles to be equal
+        self.index == other.index && self.generation == other.generation
+    }
+}
+
+impl<T> Eq for Handle<T> {}
+
+impl<T> Hash for Handle<T> {
+    #[inline]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Hash the packed u64 representation for consistent hashing
+        // This ensures hash is consistent with PartialEq
+        self.to_u64().hash(state);
+    }
+}
+
+impl<T> Default for Handle<T> {
+    /// Returns `Handle::INVALID`.
+    ///
+    /// The default handle is the invalid sentinel, representing "no resource".
+    /// This is useful for struct initialization where a handle field may not
+    /// yet have a valid value.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::Handle;
+    ///
+    /// struct Texture;
+    ///
+    /// let handle: Handle<Texture> = Default::default();
+    /// assert!(!handle.is_valid());
+    /// assert_eq!(handle, Handle::INVALID);
+    /// ```
+    #[inline]
+    fn default() -> Self {
+        Self::INVALID
+    }
+}
+
+impl<T> From<Handle<T>> for u64 {
+    /// Converts a handle to its packed u64 representation.
+    ///
+    /// Format: upper 32 bits = generation, lower 32 bits = index.
+    #[inline]
+    fn from(handle: Handle<T>) -> u64 {
+        handle.to_u64()
+    }
+}
+
+impl<T> From<u64> for Handle<T> {
+    /// Creates a handle from a packed u64 representation.
+    ///
+    /// Format: upper 32 bits = generation, lower 32 bits = index.
+    #[inline]
+    fn from(packed: u64) -> Self {
+        Handle::from_u64(packed)
+    }
+}
+
+// =============================================================================
+// Unit Tests
+// =============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Marker type for testing handles.
+    struct TestResource;
+
+    /// Another marker type to verify type safety.
+    struct OtherResource;
+
+    #[test]
+    fn test_handle_new_and_accessors() {
+        // Test that new() creates a handle with correct index and generation
+        let handle: Handle<TestResource> = Handle::new(42, 7);
+
+        assert_eq!(handle.index(), 42, "index should be 42");
+        assert_eq!(handle.generation(), 7, "generation should be 7");
+    }
+
+    #[test]
+    fn test_handle_invalid_constant() {
+        // Test that INVALID has the expected values
+        let invalid: Handle<TestResource> = Handle::INVALID;
+
+        assert_eq!(
+            invalid.index(),
+            u32::MAX,
+            "INVALID index should be u32::MAX"
+        );
+        assert_eq!(invalid.generation(), 0, "INVALID generation should be 0");
+    }
+
+    #[test]
+    fn test_handle_is_valid() {
+        // Test is_valid() for various handles
+        let valid1: Handle<TestResource> = Handle::new(0, 1);
+        let valid2: Handle<TestResource> = Handle::new(100, 50);
+        let valid3: Handle<TestResource> = Handle::new(u32::MAX - 1, 1);
+        let invalid: Handle<TestResource> = Handle::INVALID;
+
+        assert!(valid1.is_valid(), "Handle(0, 1) should be valid");
+        assert!(valid2.is_valid(), "Handle(100, 50) should be valid");
+        assert!(valid3.is_valid(), "Handle(MAX-1, 1) should be valid");
+        assert!(!invalid.is_valid(), "INVALID should not be valid");
+    }
+
+    #[test]
+    fn test_handle_edge_cases() {
+        // Test edge cases near INVALID values
+        // Handle with MAX index but non-zero generation is valid
+        let edge1: Handle<TestResource> = Handle::new(u32::MAX, 1);
+        assert!(edge1.is_valid(), "Handle(MAX, 1) should be valid");
+
+        // Handle with zero generation but non-MAX index is valid
+        let edge2: Handle<TestResource> = Handle::new(0, 0);
+        assert!(edge2.is_valid(), "Handle(0, 0) should be valid");
+
+        // Handle with index MAX-1 and generation 0 is valid
+        let edge3: Handle<TestResource> = Handle::new(u32::MAX - 1, 0);
+        assert!(edge3.is_valid(), "Handle(MAX-1, 0) should be valid");
+    }
+
+    #[test]
+    fn test_handle_size_and_alignment() {
+        // Verify FFI-compatible size and alignment
+        use std::mem::{align_of, size_of};
+
+        assert_eq!(
+            size_of::<Handle<TestResource>>(),
+            8,
+            "Handle should be 8 bytes"
+        );
+        assert_eq!(
+            align_of::<Handle<TestResource>>(),
+            4,
+            "Handle should have 4-byte alignment"
+        );
+
+        // Different type parameters shouldn't affect size
+        assert_eq!(
+            size_of::<Handle<TestResource>>(),
+            size_of::<Handle<OtherResource>>(),
+            "Handle size should not depend on type parameter"
+        );
+    }
+
+    // =========================================================================
+    // Trait Tests (Step 1.2.2)
+    // =========================================================================
+
+    #[test]
+    fn test_handle_clone() {
+        // Test Clone implementation
+        let original: Handle<TestResource> = Handle::new(42, 7);
+        let cloned = original.clone();
+
+        assert_eq!(original.index(), cloned.index());
+        assert_eq!(original.generation(), cloned.generation());
+        assert_eq!(original, cloned);
+    }
+
+    #[test]
+    fn test_handle_copy() {
+        // Test Copy implementation (handles should be trivially copyable)
+        let original: Handle<TestResource> = Handle::new(42, 7);
+
+        // Copy by assignment
+        let copied = original;
+
+        // Original is still usable (proves Copy, not just Move)
+        assert_eq!(original.index(), 42);
+        assert_eq!(copied.index(), 42);
+        assert_eq!(original, copied);
+    }
+
+    #[test]
+    fn test_handle_debug_format() {
+        // Test Debug formatting: Handle<TypeName>(index:gen)
+        let handle: Handle<TestResource> = Handle::new(42, 7);
+        let debug_str = format!("{:?}", handle);
+
+        // Should contain type name, index, and generation
+        assert!(
+            debug_str.contains("TestResource"),
+            "Debug should contain type name, got: {}",
+            debug_str
+        );
+        assert!(
+            debug_str.contains("42"),
+            "Debug should contain index, got: {}",
+            debug_str
+        );
+        assert!(
+            debug_str.contains("7"),
+            "Debug should contain generation, got: {}",
+            debug_str
+        );
+        // Check format: Handle<TypeName>(index:gen)
+        assert!(
+            debug_str.starts_with("Handle<"),
+            "Debug should start with 'Handle<', got: {}",
+            debug_str
+        );
+    }
+
+    #[test]
+    fn test_handle_debug_invalid() {
+        // Test Debug formatting for INVALID handle
+        let invalid: Handle<TestResource> = Handle::INVALID;
+        let debug_str = format!("{:?}", invalid);
+
+        assert!(
+            debug_str.contains(&u32::MAX.to_string()),
+            "Debug of INVALID should show MAX index, got: {}",
+            debug_str
+        );
+        assert!(
+            debug_str.contains(":0)"),
+            "Debug of INVALID should show generation 0, got: {}",
+            debug_str
+        );
+    }
+
+    #[test]
+    fn test_handle_partial_eq() {
+        // Test PartialEq: must compare both index AND generation
+        let h1: Handle<TestResource> = Handle::new(1, 1);
+        let h2: Handle<TestResource> = Handle::new(1, 1);
+        let h3: Handle<TestResource> = Handle::new(1, 2); // same index, different gen
+        let h4: Handle<TestResource> = Handle::new(2, 1); // different index, same gen
+
+        assert_eq!(h1, h2, "Same index and gen should be equal");
+        assert_ne!(h1, h3, "Same index, different gen should not be equal");
+        assert_ne!(h1, h4, "Different index, same gen should not be equal");
+    }
+
+    #[test]
+    fn test_handle_eq_reflexive_symmetric_transitive() {
+        // Test Eq properties
+        let a: Handle<TestResource> = Handle::new(5, 3);
+        let b: Handle<TestResource> = Handle::new(5, 3);
+        let c: Handle<TestResource> = Handle::new(5, 3);
+
+        // Reflexive: a == a
+        assert_eq!(a, a);
+
+        // Symmetric: a == b implies b == a
+        assert_eq!(a, b);
+        assert_eq!(b, a);
+
+        // Transitive: a == b && b == c implies a == c
+        assert_eq!(a, b);
+        assert_eq!(b, c);
+        assert_eq!(a, c);
+    }
+
+    #[test]
+    fn test_handle_hash_consistency() {
+        use std::collections::hash_map::DefaultHasher;
+
+        // Test that Hash is consistent with PartialEq
+        let h1: Handle<TestResource> = Handle::new(42, 7);
+        let h2: Handle<TestResource> = Handle::new(42, 7);
+
+        let mut hasher1 = DefaultHasher::new();
+        let mut hasher2 = DefaultHasher::new();
+
+        h1.hash(&mut hasher1);
+        h2.hash(&mut hasher2);
+
+        let hash1 = hasher1.finish();
+        let hash2 = hasher2.finish();
+
+        // Equal handles must have equal hashes
+        assert_eq!(hash1, hash2, "Equal handles must have equal hashes");
+    }
+
+    #[test]
+    fn test_handle_hash_in_hashmap() {
+        use std::collections::HashMap;
+
+        // Test that handles work correctly as HashMap keys
+        let mut map: HashMap<Handle<TestResource>, &str> = HashMap::new();
+
+        let h1: Handle<TestResource> = Handle::new(1, 1);
+        let h2: Handle<TestResource> = Handle::new(2, 1);
+        let h3: Handle<TestResource> = Handle::new(1, 2); // same index as h1, different gen
+
+        map.insert(h1, "first");
+        map.insert(h2, "second");
+        map.insert(h3, "third");
+
+        assert_eq!(map.get(&h1), Some(&"first"));
+        assert_eq!(map.get(&h2), Some(&"second"));
+        assert_eq!(map.get(&h3), Some(&"third"));
+        assert_eq!(map.len(), 3, "All three handles should be distinct keys");
+
+        // Lookup with equivalent handle
+        let h1_copy: Handle<TestResource> = Handle::new(1, 1);
+        assert_eq!(map.get(&h1_copy), Some(&"first"));
+    }
+
+    #[test]
+    fn test_handle_default() {
+        // Test Default returns INVALID
+        let default_handle: Handle<TestResource> = Handle::default();
+
+        assert!(!default_handle.is_valid());
+        assert_eq!(default_handle, Handle::INVALID);
+        assert_eq!(default_handle.index(), u32::MAX);
+        assert_eq!(default_handle.generation(), 0);
+    }
+
+    #[test]
+    fn test_handle_to_u64_and_from_u64() {
+        // Test pack/unpack round-trip
+        let original: Handle<TestResource> = Handle::new(42, 7);
+        let packed = original.to_u64();
+        let unpacked: Handle<TestResource> = Handle::from_u64(packed);
+
+        assert_eq!(original, unpacked);
+        assert_eq!(original.index(), unpacked.index());
+        assert_eq!(original.generation(), unpacked.generation());
+    }
+
+    #[test]
+    fn test_handle_u64_pack_format() {
+        // Verify the packing format: upper 32 bits = generation, lower 32 = index
+        let handle: Handle<TestResource> = Handle::new(0x12345678, 0xABCDEF01);
+        let packed = handle.to_u64();
+
+        // Expected: 0xABCDEF01_12345678
+        let expected: u64 = 0xABCDEF01_12345678;
+        assert_eq!(packed, expected, "Pack format should be gen:index");
+
+        // Verify we can extract the parts
+        let lower = packed as u32;
+        let upper = (packed >> 32) as u32;
+        assert_eq!(lower, 0x12345678, "Lower 32 bits should be index");
+        assert_eq!(upper, 0xABCDEF01, "Upper 32 bits should be generation");
+    }
+
+    #[test]
+    fn test_handle_from_trait_u64() {
+        // Test From<Handle<T>> for u64
+        let handle: Handle<TestResource> = Handle::new(100, 50);
+        let packed: u64 = handle.into();
+
+        assert_eq!(packed, handle.to_u64());
+    }
+
+    #[test]
+    fn test_handle_into_trait_from_u64() {
+        // Test From<u64> for Handle<T>
+        let packed: u64 = (7u64 << 32) | 42u64;
+        let handle: Handle<TestResource> = packed.into();
+
+        assert_eq!(handle.index(), 42);
+        assert_eq!(handle.generation(), 7);
+    }
+
+    #[test]
+    fn test_handle_u64_edge_cases() {
+        // Test edge cases for pack/unpack
+
+        // Zero handle
+        let zero: Handle<TestResource> = Handle::new(0, 0);
+        assert_eq!(zero.to_u64(), 0u64);
+        assert_eq!(Handle::<TestResource>::from_u64(0), zero);
+
+        // Max values
+        let max: Handle<TestResource> = Handle::new(u32::MAX, u32::MAX);
+        let packed = max.to_u64();
+        assert_eq!(packed, u64::MAX);
+        assert_eq!(Handle::<TestResource>::from_u64(u64::MAX), max);
+
+        // INVALID handle
+        let invalid: Handle<TestResource> = Handle::INVALID;
+        let invalid_packed = invalid.to_u64();
+        let invalid_unpacked: Handle<TestResource> = Handle::from_u64(invalid_packed);
+        assert_eq!(invalid, invalid_unpacked);
+        assert!(!invalid_unpacked.is_valid());
+    }
+
+    #[test]
+    fn test_handle_different_types_not_comparable() {
+        // Verify that Handle<A> and Handle<B> are different types
+        // This is a compile-time check - if this compiles, the types are distinct
+        let _h1: Handle<TestResource> = Handle::new(1, 1);
+        let _h2: Handle<OtherResource> = Handle::new(1, 1);
+
+        // These have the same index/generation but are different types
+        // We can't directly compare them (which is correct behavior)
+        // This test just verifies the type system works
+        fn assert_types_differ<A, B>() {}
+        assert_types_differ::<Handle<TestResource>, Handle<OtherResource>>();
+    }
+
+    // =========================================================================
+    // HandleAllocator Tests (Step 1.2.3)
+    // =========================================================================
+
+    #[test]
+    fn test_allocator_new() {
+        // Test that new() creates an empty allocator
+        let allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        assert_eq!(allocator.len(), 0, "New allocator should have len 0");
+        assert_eq!(
+            allocator.capacity(),
+            0,
+            "New allocator should have capacity 0"
+        );
+        assert!(allocator.is_empty(), "New allocator should be empty");
+    }
+
+    #[test]
+    fn test_allocator_default() {
+        // Test that Default creates an empty allocator (same as new)
+        let allocator: HandleAllocator<TestResource> = HandleAllocator::default();
+
+        assert_eq!(allocator.len(), 0);
+        assert!(allocator.is_empty());
+    }
+
+    #[test]
+    fn test_allocator_allocate_single() {
+        // Test allocating a single handle
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        let handle = allocator.allocate();
+
+        assert!(handle.is_valid(), "Allocated handle should be valid");
+        assert_eq!(handle.index(), 0, "First allocation should have index 0");
+        assert_eq!(
+            handle.generation(),
+            1,
+            "First allocation should have generation 1"
+        );
+        assert_eq!(allocator.len(), 1, "Allocator should have 1 handle");
+        assert_eq!(allocator.capacity(), 1, "Capacity should be 1");
+        assert!(!allocator.is_empty(), "Allocator should not be empty");
+    }
+
+    #[test]
+    fn test_allocator_allocate_multiple() {
+        // Test allocating multiple handles
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        let h1 = allocator.allocate();
+        let h2 = allocator.allocate();
+        let h3 = allocator.allocate();
+
+        // All should be valid and unique
+        assert!(h1.is_valid());
+        assert!(h2.is_valid());
+        assert!(h3.is_valid());
+
+        assert_ne!(h1, h2, "Handles should be unique");
+        assert_ne!(h2, h3, "Handles should be unique");
+        assert_ne!(h1, h3, "Handles should be unique");
+
+        // Indices should be sequential
+        assert_eq!(h1.index(), 0);
+        assert_eq!(h2.index(), 1);
+        assert_eq!(h3.index(), 2);
+
+        // All should have generation 1
+        assert_eq!(h1.generation(), 1);
+        assert_eq!(h2.generation(), 1);
+        assert_eq!(h3.generation(), 1);
+
+        assert_eq!(allocator.len(), 3);
+        assert_eq!(allocator.capacity(), 3);
+    }
+
+    #[test]
+    fn test_allocator_is_alive() {
+        // Test is_alive for various scenarios
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        // INVALID handle should never be alive
+        assert!(
+            !allocator.is_alive(Handle::INVALID),
+            "INVALID should not be alive"
+        );
+
+        // Allocated handle should be alive
+        let handle = allocator.allocate();
+        assert!(
+            allocator.is_alive(handle),
+            "Allocated handle should be alive"
+        );
+
+        // Fabricated handle with wrong index should not be alive
+        let fake = Handle::<TestResource>::new(100, 1);
+        assert!(
+            !allocator.is_alive(fake),
+            "Handle with out-of-bounds index should not be alive"
+        );
+
+        // Fabricated handle with wrong generation should not be alive
+        let wrong_gen = Handle::<TestResource>::new(0, 99);
+        assert!(
+            !allocator.is_alive(wrong_gen),
+            "Handle with wrong generation should not be alive"
+        );
+    }
+
+    #[test]
+    fn test_allocator_deallocate() {
+        // Test basic deallocation
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        let handle = allocator.allocate();
+        assert!(allocator.is_alive(handle));
+
+        // Deallocate should succeed and return true
+        assert!(allocator.deallocate(handle), "Deallocation should succeed");
+
+        // Handle should no longer be alive
+        assert!(
+            !allocator.is_alive(handle),
+            "Deallocated handle should not be alive"
+        );
+
+        // Allocator should be empty
+        assert_eq!(allocator.len(), 0, "Allocator should have 0 handles");
+        assert_eq!(allocator.capacity(), 1, "Capacity should still be 1");
+    }
+
+    #[test]
+    fn test_allocator_deallocate_invalid() {
+        // Test deallocating invalid handles
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        // Deallocating INVALID should fail
+        assert!(
+            !allocator.deallocate(Handle::INVALID),
+            "Deallocating INVALID should fail"
+        );
+
+        // Deallocating out-of-bounds handle should fail
+        let fake = Handle::<TestResource>::new(100, 1);
+        assert!(
+            !allocator.deallocate(fake),
+            "Deallocating out-of-bounds handle should fail"
+        );
+
+        // Allocate then try to deallocate with wrong generation
+        let handle = allocator.allocate();
+        let wrong_gen = Handle::<TestResource>::new(handle.index(), handle.generation() + 1);
+        assert!(
+            !allocator.deallocate(wrong_gen),
+            "Deallocating with wrong generation should fail"
+        );
+
+        // Original handle should still be alive
+        assert!(allocator.is_alive(handle));
+    }
+
+    #[test]
+    fn test_allocator_double_deallocate() {
+        // Test that double deallocation fails gracefully
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        let handle = allocator.allocate();
+
+        // First deallocation succeeds
+        assert!(allocator.deallocate(handle));
+
+        // Second deallocation fails (generation mismatch)
+        assert!(
+            !allocator.deallocate(handle),
+            "Double deallocation should fail"
+        );
+    }
+
+    #[test]
+    fn test_allocator_slot_reuse() {
+        // Test that deallocated slots are reused
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        // Allocate and deallocate
+        let h1 = allocator.allocate();
+        assert_eq!(h1.index(), 0);
+        assert_eq!(h1.generation(), 1);
+
+        allocator.deallocate(h1);
+
+        // Allocate again - should reuse slot 0 with incremented generation
+        let h2 = allocator.allocate();
+        assert_eq!(h2.index(), 0, "Should reuse slot 0");
+        assert_eq!(h2.generation(), 2, "Generation should be incremented");
+
+        // Capacity should still be 1 (slot was reused)
+        assert_eq!(allocator.capacity(), 1);
+
+        // h1 should be dead, h2 should be alive
+        assert!(!allocator.is_alive(h1), "Old handle should be dead");
+        assert!(allocator.is_alive(h2), "New handle should be alive");
+    }
+
+    #[test]
+    fn test_allocator_generation_prevents_aba() {
+        // Test that generational indices prevent ABA problem
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        // Allocate slot 0
+        let h1 = allocator.allocate();
+        assert!(allocator.is_alive(h1));
+
+        // Deallocate slot 0
+        allocator.deallocate(h1);
+
+        // Allocate slot 0 again (different generation)
+        let h2 = allocator.allocate();
+        assert_eq!(h1.index(), h2.index(), "Same slot should be reused");
+        assert_ne!(
+            h1.generation(),
+            h2.generation(),
+            "Generations should differ"
+        );
+
+        // h1 is stale (references old generation)
+        assert!(!allocator.is_alive(h1), "Old handle should be stale");
+        assert!(allocator.is_alive(h2), "New handle should be alive");
+
+        // Attempting to use h1 for operations should fail
+        assert!(
+            !allocator.deallocate(h1),
+            "Deallocation with stale handle should fail"
+        );
+    }
+
+    #[test]
+    fn test_allocator_generation_wrapping() {
+        // Test that generation increments correctly on reuse
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        // Allocate slot 0 with generation 1
+        let h1 = allocator.allocate();
+        assert_eq!(h1.index(), 0);
+        assert_eq!(h1.generation(), 1);
+
+        // Deallocate and re-allocate multiple times to increment generation
+        allocator.deallocate(h1);
+        let h2 = allocator.allocate();
+        assert_eq!(h2.index(), 0, "Should reuse slot 0");
+        assert_eq!(h2.generation(), 2, "Generation should be 2");
+
+        allocator.deallocate(h2);
+        let h3 = allocator.allocate();
+        assert_eq!(h3.index(), 0, "Should reuse slot 0");
+        assert_eq!(h3.generation(), 3, "Generation should be 3");
+
+        allocator.deallocate(h3);
+        let h4 = allocator.allocate();
+        assert_eq!(h4.index(), 0, "Should reuse slot 0");
+        assert_eq!(h4.generation(), 4, "Generation should be 4");
+
+        // Proper test: deallocate then allocate sequentially
+        allocator.deallocate(h4);
+        for expected_gen in 5..=10 {
+            let h = allocator.allocate();
+            assert_eq!(h.index(), 0, "Should reuse slot 0");
+            assert_eq!(h.generation(), expected_gen, "Generation should increment");
+            allocator.deallocate(h);
+        }
+    }
+
+    #[test]
+    fn test_allocator_len_and_capacity() {
+        // Test len() and capacity() behavior
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        // Empty state
+        assert_eq!(allocator.len(), 0);
+        assert_eq!(allocator.capacity(), 0);
+
+        // Allocate some handles
+        let h1 = allocator.allocate();
+        let h2 = allocator.allocate();
+        let h3 = allocator.allocate();
+
+        assert_eq!(allocator.len(), 3);
+        assert_eq!(allocator.capacity(), 3);
+
+        // Deallocate one
+        allocator.deallocate(h2);
+
+        assert_eq!(allocator.len(), 2, "len should decrease on deallocation");
+        assert_eq!(
+            allocator.capacity(),
+            3,
+            "capacity should not change on deallocation"
+        );
+
+        // Allocate one more (should reuse h2's slot)
+        let h4 = allocator.allocate();
+
+        assert_eq!(allocator.len(), 3);
+        assert_eq!(
+            allocator.capacity(),
+            3,
+            "capacity should not increase when reusing"
+        );
+
+        // Allocate another (new slot)
+        let _h5 = allocator.allocate();
+
+        assert_eq!(allocator.len(), 4);
+        assert_eq!(allocator.capacity(), 4);
+
+        // Deallocate all
+        allocator.deallocate(h1);
+        allocator.deallocate(h4);
+        allocator.deallocate(h3);
+        let h5_deallocate = allocator.allocate(); // h5 was moved, allocate fresh for test
+        allocator.deallocate(h5_deallocate);
+
+        // Actually, let's restart to make this clearer
+        let mut allocator2: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        let handles: Vec<_> = (0..5).map(|_| allocator2.allocate()).collect();
+        assert_eq!(allocator2.len(), 5);
+        assert_eq!(allocator2.capacity(), 5);
+
+        for h in &handles {
+            allocator2.deallocate(*h);
+        }
+
+        assert_eq!(allocator2.len(), 0, "All handles deallocated");
+        assert_eq!(
+            allocator2.capacity(),
+            5,
+            "Capacity unchanged after deallocation"
+        );
+        assert!(allocator2.is_empty());
+    }
+
+    #[test]
+    fn test_allocator_debug_format() {
+        // Test Debug formatting
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+        allocator.allocate();
+        allocator.allocate();
+        let h = allocator.allocate();
+        allocator.deallocate(h);
+
+        let debug_str = format!("{:?}", allocator);
+
+        assert!(
+            debug_str.contains("HandleAllocator"),
+            "Debug should contain type name"
+        );
+        assert!(debug_str.contains("len"), "Debug should show len");
+        assert!(debug_str.contains("capacity"), "Debug should show capacity");
+    }
+}

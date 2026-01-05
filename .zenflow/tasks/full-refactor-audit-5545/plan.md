@@ -163,7 +163,8 @@ cargo test core::error::resource
 
 ---
 
-### [ ] Step 1.1.5: Implement GoudError Enum - Graphics Errors
+### [x] Step 1.1.5: Implement GoudError Enum - Graphics Errors
+<!-- chat-id: 4c8f2f6b-a3a1-49a9-a5e7-440d1da7aa1a -->
 **File:** `goud_engine/src/core/error.rs` (update)
 **Context:** Errors from the rendering subsystem, shaders, and GPU operations.
 
@@ -189,7 +190,8 @@ cargo test core::error::graphics
 
 ---
 
-### [ ] Step 1.1.6: Implement GoudError Enum - Entity & System Errors
+### [x] Step 1.1.6: Implement GoudError Enum - Entity & System Errors
+<!-- chat-id: 9f19b675-f1da-448b-9b27-d4a513ffb4e9 -->
 **File:** `goud_engine/src/core/error.rs` (update)
 **Context:** ECS-related errors and general system/platform errors.
 
@@ -219,7 +221,8 @@ cargo test core::error::system
 
 ---
 
-### [ ] Step 1.1.7: Implement Error Traits and Conversions
+### [x] Step 1.1.7: Implement Error Traits and Conversions
+<!-- chat-id: 8d330366-d0ec-4777-ac6c-e99b31779077 -->
 **File:** `goud_engine/src/core/error.rs` (update)
 **Context:** Make `GoudError` a proper Rust error type with standard trait implementations.
 
@@ -247,7 +250,8 @@ cargo test core::error::traits
 
 ---
 
-### [ ] Step 1.1.8: Implement FFI Error Bridge
+### [x] Step 1.1.8: Implement FFI Error Bridge
+<!-- chat-id: 35db3f63-9b16-4278-a187-685d910efe96 -->
 **File:** `goud_engine/src/core/error.rs` (update)
 **Context:** Bridge between Rust errors and FFI-safe error codes. Critical for C# SDK integration.
 
@@ -288,7 +292,8 @@ cargo test core::error::ffi
 
 ## 1.2 Handle System
 
-### [ ] Step 1.2.1: Define Handle Structure
+### [x] Step 1.2.1: Define Handle Structure
+<!-- chat-id: ed55f631-f733-4726-840b-3d2090588810 -->
 **File:** `goud_engine/src/core/handle.rs` (new)
 **Context:** Handles are type-safe, generation-counted references to engine objects. Critical for FFI safety - prevents use-after-free and type confusion.
 
@@ -324,7 +329,8 @@ cargo test core::handle::structure
 
 ---
 
-### [ ] Step 1.2.2: Implement Handle Traits
+### [x] Step 1.2.2: Implement Handle Traits
+<!-- chat-id: 0364de9f-f3f6-421a-9ccb-83f864bd3b91 -->
 **File:** `goud_engine/src/core/handle.rs` (update)
 **Context:** Handles need standard trait implementations for use in collections and comparisons.
 
@@ -353,7 +359,8 @@ cargo test core::handle::traits
 
 ---
 
-### [ ] Step 1.2.3: Implement HandleAllocator
+### [x] Step 1.2.3: Implement HandleAllocator
+<!-- chat-id: 31dc830d-bb24-45e5-8bdd-d1ce67476eaa -->
 **File:** `goud_engine/src/core/handle.rs` (update)
 **Context:** Manages handle allocation with generation counting and free-list recycling.
 
