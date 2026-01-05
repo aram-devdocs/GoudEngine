@@ -138,6 +138,48 @@ impl<T> HandleAllocator<T> {
         }
     }
 
+    /// Creates a new handle allocator with pre-allocated capacity.
+    ///
+    /// This is useful when you know approximately how many handles you'll need,
+    /// as it avoids repeated reallocations during bulk allocation.
+    ///
+    /// Note that this only pre-allocates memory for the internal vectors;
+    /// it does not create any handles. Use [`allocate`](Self::allocate) to
+    /// actually create handles.
+    ///
+    /// # Arguments
+    ///
+    /// * `capacity` - The number of slots to pre-allocate
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleAllocator;
+    ///
+    /// struct Entity;
+    ///
+    /// // Pre-allocate space for 1000 entities
+    /// let mut allocator: HandleAllocator<Entity> = HandleAllocator::with_capacity(1000);
+    ///
+    /// // No handles allocated yet, but memory is reserved
+    /// assert_eq!(allocator.len(), 0);
+    /// assert!(allocator.is_empty());
+    ///
+    /// // Allocations up to 1000 won't cause reallocation
+    /// for _ in 0..1000 {
+    ///     allocator.allocate();
+    /// }
+    /// assert_eq!(allocator.len(), 1000);
+    /// ```
+    #[inline]
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            generations: Vec::with_capacity(capacity),
+            free_list: Vec::new(), // Free list starts empty, no freed slots yet
+            _marker: PhantomData,
+        }
+    }
+
     /// Allocates a new handle.
     ///
     /// If there are slots in the free list, one is reused with an incremented
@@ -370,6 +412,105 @@ impl<T> HandleAllocator<T> {
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    /// Clears all allocations, invalidating all existing handles.
+    ///
+    /// This increments the generation of every slot, making all previously
+    /// allocated handles stale. The capacity is retained, but `len()` becomes 0.
+    ///
+    /// Use this for "reset to initial state" scenarios, like level transitions
+    /// in a game where all entities should be destroyed.
+    ///
+    /// # Performance
+    ///
+    /// This operation is O(n) where n is the capacity (number of slots).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleAllocator;
+    ///
+    /// struct Entity;
+    ///
+    /// let mut allocator: HandleAllocator<Entity> = HandleAllocator::new();
+    ///
+    /// let h1 = allocator.allocate();
+    /// let h2 = allocator.allocate();
+    /// let h3 = allocator.allocate();
+    ///
+    /// assert_eq!(allocator.len(), 3);
+    /// assert!(allocator.is_alive(h1));
+    ///
+    /// allocator.clear();
+    ///
+    /// // All handles are now invalid
+    /// assert_eq!(allocator.len(), 0);
+    /// assert!(allocator.is_empty());
+    /// assert!(!allocator.is_alive(h1));
+    /// assert!(!allocator.is_alive(h2));
+    /// assert!(!allocator.is_alive(h3));
+    ///
+    /// // Capacity is retained
+    /// assert_eq!(allocator.capacity(), 3);
+    ///
+    /// // New allocations get incremented generations
+    /// let h4 = allocator.allocate();
+    /// assert_eq!(h4.generation(), 2);  // Was 1, now 2
+    /// ```
+    pub fn clear(&mut self) {
+        // Increment all generations to invalidate existing handles
+        for gen in &mut self.generations {
+            let new_gen = gen.wrapping_add(1);
+            *gen = if new_gen == 0 { 1 } else { new_gen };
+        }
+
+        // Rebuild free list with all slots
+        self.free_list.clear();
+        self.free_list.reserve(self.generations.len());
+        for i in (0..self.generations.len()).rev() {
+            self.free_list.push(i as u32);
+        }
+    }
+
+    /// Shrinks the free list to fit its current contents.
+    ///
+    /// This reduces memory usage by releasing excess capacity in the free list.
+    /// Note that this does NOT shrink the generations vector, as that would
+    /// invalidate the capacity guarantee and require more complex bookkeeping.
+    ///
+    /// Call this after a batch of deallocations if you want to reduce memory
+    /// pressure and don't expect to allocate more handles soon.
+    ///
+    /// # Performance
+    ///
+    /// This operation may reallocate the free list, which is O(n) where n is
+    /// the number of free slots.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleAllocator;
+    ///
+    /// struct Resource;
+    ///
+    /// let mut allocator: HandleAllocator<Resource> = HandleAllocator::new();
+    ///
+    /// // Allocate many handles
+    /// let handles: Vec<_> = (0..100).map(|_| allocator.allocate()).collect();
+    ///
+    /// // Deallocate most of them
+    /// for h in handles.iter().skip(10) {
+    ///     allocator.deallocate(*h);
+    /// }
+    ///
+    /// // Free list now has 90 entries with possibly more capacity
+    /// // Shrink to reduce memory
+    /// allocator.shrink_to_fit();
+    /// ```
+    #[inline]
+    pub fn shrink_to_fit(&mut self) {
+        self.free_list.shrink_to_fit();
     }
 }
 
@@ -1401,5 +1542,285 @@ mod tests {
         );
         assert!(debug_str.contains("len"), "Debug should show len");
         assert!(debug_str.contains("capacity"), "Debug should show capacity");
+    }
+
+    // =========================================================================
+    // Capacity Management Tests (Step 1.2.4)
+    // =========================================================================
+
+    #[test]
+    fn test_allocator_with_capacity() {
+        // Test with_capacity creates allocator with reserved space
+        let allocator: HandleAllocator<TestResource> = HandleAllocator::with_capacity(100);
+
+        assert_eq!(
+            allocator.len(),
+            0,
+            "with_capacity should not allocate handles"
+        );
+        assert!(
+            allocator.is_empty(),
+            "with_capacity should leave allocator empty"
+        );
+        assert_eq!(
+            allocator.capacity(),
+            0,
+            "capacity() reports active slots, not reserved"
+        );
+
+        // Verify we can allocate up to capacity without reallocation
+        // (Can't directly test Vec capacity, but we can verify behavior)
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::with_capacity(100);
+        for _ in 0..100 {
+            allocator.allocate();
+        }
+        assert_eq!(allocator.len(), 100);
+        assert_eq!(allocator.capacity(), 100);
+    }
+
+    #[test]
+    fn test_allocator_with_capacity_zero() {
+        // Test with_capacity(0) is equivalent to new()
+        let allocator: HandleAllocator<TestResource> = HandleAllocator::with_capacity(0);
+
+        assert_eq!(allocator.len(), 0);
+        assert!(allocator.is_empty());
+    }
+
+    #[test]
+    fn test_allocator_clear_basic() {
+        // Test basic clear functionality
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        let h1 = allocator.allocate();
+        let h2 = allocator.allocate();
+        let h3 = allocator.allocate();
+
+        assert_eq!(allocator.len(), 3);
+        assert!(allocator.is_alive(h1));
+        assert!(allocator.is_alive(h2));
+        assert!(allocator.is_alive(h3));
+
+        allocator.clear();
+
+        // All handles should be invalid
+        assert_eq!(allocator.len(), 0);
+        assert!(allocator.is_empty());
+        assert!(!allocator.is_alive(h1));
+        assert!(!allocator.is_alive(h2));
+        assert!(!allocator.is_alive(h3));
+
+        // Capacity should be retained
+        assert_eq!(allocator.capacity(), 3);
+    }
+
+    #[test]
+    fn test_allocator_clear_and_reallocate() {
+        // Test that clear increments generations properly
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        let h1 = allocator.allocate();
+        assert_eq!(h1.generation(), 1);
+
+        allocator.clear();
+
+        // New allocation should have incremented generation
+        let h2 = allocator.allocate();
+        assert_eq!(h2.index(), h1.index(), "Should reuse same slot");
+        assert_eq!(
+            h2.generation(),
+            2,
+            "Generation should be incremented after clear"
+        );
+
+        // Old handle still not alive
+        assert!(!allocator.is_alive(h1));
+        assert!(allocator.is_alive(h2));
+    }
+
+    #[test]
+    fn test_allocator_clear_empty() {
+        // Test clearing an empty allocator
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        allocator.clear();
+
+        assert_eq!(allocator.len(), 0);
+        assert!(allocator.is_empty());
+        assert_eq!(allocator.capacity(), 0);
+    }
+
+    #[test]
+    fn test_allocator_clear_with_some_deallocated() {
+        // Test clear when some handles are already deallocated
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        let h1 = allocator.allocate();
+        let h2 = allocator.allocate();
+        let h3 = allocator.allocate();
+
+        // Deallocate middle one
+        allocator.deallocate(h2);
+
+        assert_eq!(allocator.len(), 2);
+
+        allocator.clear();
+
+        // All should be invalid
+        assert_eq!(allocator.len(), 0);
+        assert!(!allocator.is_alive(h1));
+        assert!(!allocator.is_alive(h2)); // Already was invalid
+        assert!(!allocator.is_alive(h3));
+
+        // All slots should be in free list
+        assert_eq!(allocator.capacity(), 3);
+    }
+
+    #[test]
+    fn test_allocator_shrink_to_fit() {
+        // Test shrink_to_fit reduces free list memory
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        // Allocate many handles
+        let handles: Vec<_> = (0..100).map(|_| allocator.allocate()).collect();
+
+        // Deallocate most of them
+        for h in handles.iter().skip(10) {
+            allocator.deallocate(*h);
+        }
+
+        assert_eq!(allocator.len(), 10);
+
+        // Shrink should work without panic
+        allocator.shrink_to_fit();
+
+        // Functionality should be preserved
+        assert_eq!(allocator.len(), 10);
+        assert_eq!(allocator.capacity(), 100);
+
+        // Can still allocate (from free list)
+        let new_handle = allocator.allocate();
+        assert!(allocator.is_alive(new_handle));
+    }
+
+    #[test]
+    fn test_allocator_shrink_to_fit_empty() {
+        // Test shrink_to_fit on empty allocator
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        allocator.shrink_to_fit(); // Should not panic
+
+        assert_eq!(allocator.len(), 0);
+        assert!(allocator.is_empty());
+    }
+
+    #[test]
+    fn test_allocator_stress_100k_allocations() {
+        // Stress test: 100K allocations to verify performance and correctness
+        const COUNT: usize = 100_000;
+
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::with_capacity(COUNT);
+
+        // Phase 1: Allocate all
+        let handles: Vec<_> = (0..COUNT).map(|_| allocator.allocate()).collect();
+
+        assert_eq!(allocator.len(), COUNT);
+        assert_eq!(allocator.capacity(), COUNT);
+
+        // Verify all are alive and unique
+        for (i, h) in handles.iter().enumerate() {
+            assert!(allocator.is_alive(*h), "Handle {} should be alive", i);
+            assert_eq!(h.index(), i as u32, "Handle {} should have index {}", i, i);
+        }
+
+        // Phase 2: Deallocate every other handle
+        for (i, h) in handles.iter().enumerate() {
+            if i % 2 == 0 {
+                assert!(allocator.deallocate(*h));
+            }
+        }
+
+        assert_eq!(allocator.len(), COUNT / 2);
+
+        // Phase 3: Verify deallocated handles are not alive
+        for (i, h) in handles.iter().enumerate() {
+            if i % 2 == 0 {
+                assert!(
+                    !allocator.is_alive(*h),
+                    "Deallocated handle {} should not be alive",
+                    i
+                );
+            } else {
+                assert!(allocator.is_alive(*h), "Handle {} should still be alive", i);
+            }
+        }
+
+        // Phase 4: Reallocate - should reuse free slots
+        let new_handles: Vec<_> = (0..COUNT / 2).map(|_| allocator.allocate()).collect();
+
+        assert_eq!(allocator.len(), COUNT);
+        assert_eq!(
+            allocator.capacity(),
+            COUNT,
+            "Capacity should not grow when reusing slots"
+        );
+
+        // Verify new handles are alive
+        for (i, h) in new_handles.iter().enumerate() {
+            assert!(allocator.is_alive(*h), "New handle {} should be alive", i);
+        }
+
+        // Phase 5: Clear and verify
+        allocator.clear();
+
+        assert_eq!(allocator.len(), 0);
+        assert!(allocator.is_empty());
+        assert_eq!(allocator.capacity(), COUNT);
+
+        // All handles should be invalid
+        for h in handles.iter().take(10) {
+            assert!(!allocator.is_alive(*h));
+        }
+        for h in new_handles.iter().take(10) {
+            assert!(!allocator.is_alive(*h));
+        }
+
+        // Can still allocate after clear
+        let after_clear = allocator.allocate();
+        assert!(allocator.is_alive(after_clear));
+        // Generation will be at least 2 (was 1 for fresh slots, or 2 for reallocated slots)
+        // After clear, all generations are incremented by 1
+        assert!(
+            after_clear.generation() >= 2,
+            "Generation should be at least 2 after clear, got {}",
+            after_clear.generation()
+        );
+    }
+
+    #[test]
+    fn test_allocator_clear_multiple_times() {
+        // Test clearing multiple times increments generations correctly
+        let mut allocator: HandleAllocator<TestResource> = HandleAllocator::new();
+
+        let h1 = allocator.allocate();
+        assert_eq!(h1.generation(), 1);
+
+        allocator.clear();
+        let h2 = allocator.allocate();
+        assert_eq!(h2.generation(), 2);
+
+        allocator.clear();
+        let h3 = allocator.allocate();
+        assert_eq!(h3.generation(), 3);
+
+        allocator.clear();
+        let h4 = allocator.allocate();
+        assert_eq!(h4.generation(), 4);
+
+        // Only the last one is alive
+        assert!(!allocator.is_alive(h1));
+        assert!(!allocator.is_alive(h2));
+        assert!(!allocator.is_alive(h3));
+        assert!(allocator.is_alive(h4));
     }
 }
