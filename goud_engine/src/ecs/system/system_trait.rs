@@ -41,7 +41,6 @@ static NEXT_SYSTEM_ID: AtomicU64 = AtomicU64::new(1);
 pub struct SystemId(u64);
 
 impl SystemId {
-
     /// An invalid/placeholder system ID.
     ///
     /// Used as a default value before a system is registered.
@@ -185,7 +184,8 @@ impl SystemMeta {
     /// reads or writes.
     #[inline]
     pub fn conflicts_with(&self, other: &SystemMeta) -> bool {
-        self.component_access.conflicts_with(&other.component_access)
+        self.component_access
+            .conflicts_with(&other.component_access)
     }
 
     /// Returns true if this system only reads data (no writes).
@@ -490,7 +490,8 @@ impl BoxedSystem {
     /// Checks if this system conflicts with another.
     #[inline]
     pub fn conflicts_with(&self, other: &BoxedSystem) -> bool {
-        self.component_access().conflicts_with(&other.component_access())
+        self.component_access()
+            .conflicts_with(&other.component_access())
     }
 }
 
@@ -746,7 +747,8 @@ mod tests {
             let mut meta = SystemMeta::new("Test");
             assert!(meta.component_access().is_read_only());
 
-            meta.component_access_mut().add_write(ComponentId::of::<Position>());
+            meta.component_access_mut()
+                .add_write(ComponentId::of::<Position>());
             assert!(!meta.is_read_only());
         }
 
@@ -766,8 +768,12 @@ mod tests {
             let mut meta1 = SystemMeta::new("System1");
             let mut meta2 = SystemMeta::new("System2");
 
-            meta1.component_access_mut().add_read(ComponentId::of::<Position>());
-            meta2.component_access_mut().add_read(ComponentId::of::<Velocity>());
+            meta1
+                .component_access_mut()
+                .add_read(ComponentId::of::<Position>());
+            meta2
+                .component_access_mut()
+                .add_read(ComponentId::of::<Velocity>());
 
             assert!(!meta1.conflicts_with(&meta2));
         }
@@ -777,8 +783,12 @@ mod tests {
             let mut meta1 = SystemMeta::new("System1");
             let mut meta2 = SystemMeta::new("System2");
 
-            meta1.component_access_mut().add_read(ComponentId::of::<Position>());
-            meta2.component_access_mut().add_read(ComponentId::of::<Position>());
+            meta1
+                .component_access_mut()
+                .add_read(ComponentId::of::<Position>());
+            meta2
+                .component_access_mut()
+                .add_read(ComponentId::of::<Position>());
 
             // Two reads don't conflict
             assert!(!meta1.conflicts_with(&meta2));
@@ -789,8 +799,12 @@ mod tests {
             let mut meta1 = SystemMeta::new("System1");
             let mut meta2 = SystemMeta::new("System2");
 
-            meta1.component_access_mut().add_write(ComponentId::of::<Position>());
-            meta2.component_access_mut().add_read(ComponentId::of::<Position>());
+            meta1
+                .component_access_mut()
+                .add_write(ComponentId::of::<Position>());
+            meta2
+                .component_access_mut()
+                .add_read(ComponentId::of::<Position>());
 
             assert!(meta1.conflicts_with(&meta2));
             assert!(meta2.conflicts_with(&meta1));
@@ -801,8 +815,12 @@ mod tests {
             let mut meta1 = SystemMeta::new("System1");
             let mut meta2 = SystemMeta::new("System2");
 
-            meta1.component_access_mut().add_write(ComponentId::of::<Position>());
-            meta2.component_access_mut().add_write(ComponentId::of::<Position>());
+            meta1
+                .component_access_mut()
+                .add_write(ComponentId::of::<Position>());
+            meta2
+                .component_access_mut()
+                .add_write(ComponentId::of::<Position>());
 
             assert!(meta1.conflicts_with(&meta2));
         }
@@ -812,17 +830,20 @@ mod tests {
             let mut meta = SystemMeta::new("Test");
             assert!(meta.is_read_only());
 
-            meta.component_access_mut().add_read(ComponentId::of::<Position>());
+            meta.component_access_mut()
+                .add_read(ComponentId::of::<Position>());
             assert!(meta.is_read_only());
 
-            meta.component_access_mut().add_write(ComponentId::of::<Velocity>());
+            meta.component_access_mut()
+                .add_write(ComponentId::of::<Velocity>());
             assert!(!meta.is_read_only());
         }
 
         #[test]
         fn test_clone() {
             let mut meta = SystemMeta::new("Test");
-            meta.component_access_mut().add_write(ComponentId::of::<Position>());
+            meta.component_access_mut()
+                .add_write(ComponentId::of::<Position>());
 
             let cloned = meta.clone();
             assert_eq!(cloned.name(), "Test");
@@ -1097,7 +1118,9 @@ mod tests {
         fn test_no_conflict_different_components() {
             struct VelocityWriter;
             impl System for VelocityWriter {
-                fn name(&self) -> &'static str { "VelocityWriter" }
+                fn name(&self) -> &'static str {
+                    "VelocityWriter"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_write(ComponentId::of::<Velocity>());
@@ -1116,8 +1139,12 @@ mod tests {
         fn test_should_run() {
             struct AlwaysSkip;
             impl System for AlwaysSkip {
-                fn name(&self) -> &'static str { "AlwaysSkip" }
-                fn should_run(&self, _: &World) -> bool { false }
+                fn name(&self) -> &'static str {
+                    "AlwaysSkip"
+                }
+                fn should_run(&self, _: &World) -> bool {
+                    false
+                }
                 fn run(&mut self, _: &mut World) {}
             }
 
@@ -1131,9 +1158,13 @@ mod tests {
 
         #[test]
         fn test_initialize() {
-            struct InitSystem { initialized: bool }
+            struct InitSystem {
+                initialized: bool,
+            }
             impl System for InitSystem {
-                fn name(&self) -> &'static str { "InitSystem" }
+                fn name(&self) -> &'static str {
+                    "InitSystem"
+                }
                 fn initialize(&mut self, _: &mut World) {
                     self.initialized = true;
                 }
@@ -1210,10 +1241,16 @@ mod tests {
 
         #[test]
         fn test_into_system_preserves_behavior() {
-            struct CounterSystem { count: u32 }
+            struct CounterSystem {
+                count: u32,
+            }
             impl System for CounterSystem {
-                fn name(&self) -> &'static str { "CounterSystem" }
-                fn run(&mut self, _: &mut World) { self.count += 1; }
+                fn name(&self) -> &'static str {
+                    "CounterSystem"
+                }
+                fn run(&mut self, _: &mut World) {
+                    self.count += 1;
+                }
             }
 
             let mut boxed = CounterSystem { count: 0 }.into_system();
@@ -1228,7 +1265,9 @@ mod tests {
         fn test_into_system_preserves_access() {
             struct AccessSystem;
             impl System for AccessSystem {
-                fn name(&self) -> &'static str { "AccessSystem" }
+                fn name(&self) -> &'static str {
+                    "AccessSystem"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_write(ComponentId::of::<Position>());
@@ -1239,27 +1278,31 @@ mod tests {
 
             let boxed: BoxedSystem = AccessSystem.into_system();
             assert!(!boxed.is_read_only());
-            assert!(boxed.component_access().writes().contains(&ComponentId::of::<Position>()));
+            assert!(boxed
+                .component_access()
+                .writes()
+                .contains(&ComponentId::of::<Position>()));
         }
 
         #[test]
         fn test_multiple_into_system() {
             struct SystemA;
             impl System for SystemA {
-                fn name(&self) -> &'static str { "A" }
+                fn name(&self) -> &'static str {
+                    "A"
+                }
                 fn run(&mut self, _: &mut World) {}
             }
 
             struct SystemB;
             impl System for SystemB {
-                fn name(&self) -> &'static str { "B" }
+                fn name(&self) -> &'static str {
+                    "B"
+                }
                 fn run(&mut self, _: &mut World) {}
             }
 
-            let systems: Vec<BoxedSystem> = vec![
-                SystemA.into_system(),
-                SystemB.into_system(),
-            ];
+            let systems: Vec<BoxedSystem> = vec![SystemA.into_system(), SystemB.into_system()];
 
             assert_eq!(systems[0].name(), "A");
             assert_eq!(systems[1].name(), "B");
@@ -1278,7 +1321,9 @@ mod tests {
             struct SpawnSystem;
 
             impl System for SpawnSystem {
-                fn name(&self) -> &'static str { "SpawnSystem" }
+                fn name(&self) -> &'static str {
+                    "SpawnSystem"
+                }
 
                 fn run(&mut self, world: &mut World) {
                     world.spawn_empty();
@@ -1302,7 +1347,9 @@ mod tests {
             }
 
             impl System for AddPositionSystem {
-                fn name(&self) -> &'static str { "AddPositionSystem" }
+                fn name(&self) -> &'static str {
+                    "AddPositionSystem"
+                }
 
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
@@ -1321,7 +1368,9 @@ mod tests {
             let e1 = world.spawn_empty();
             let e2 = world.spawn_empty();
 
-            let mut system = AddPositionSystem { entities: vec![e1, e2] };
+            let mut system = AddPositionSystem {
+                entities: vec![e1, e2],
+            };
             system.run(&mut world);
 
             assert!(world.has::<Position>(e1));
@@ -1336,7 +1385,9 @@ mod tests {
             }
 
             impl System for CountingSystem {
-                fn name(&self) -> &'static str { "CountingSystem" }
+                fn name(&self) -> &'static str {
+                    "CountingSystem"
+                }
 
                 fn should_run(&self, _world: &World) -> bool {
                     self.count < self.max_runs
@@ -1348,7 +1399,10 @@ mod tests {
             }
 
             let mut world = World::new();
-            let mut system = CountingSystem { count: 0, max_runs: 3 };
+            let mut system = CountingSystem {
+                count: 0,
+                max_runs: 3,
+            };
 
             // Run only if should_run returns true
             for _ in 0..5 {
@@ -1362,13 +1416,19 @@ mod tests {
 
         #[test]
         fn test_boxed_system_pipeline() {
-            struct IncrementCounter { counter: *mut u32 }
+            struct IncrementCounter {
+                counter: *mut u32,
+            }
             unsafe impl Send for IncrementCounter {}
 
             impl System for IncrementCounter {
-                fn name(&self) -> &'static str { "IncrementCounter" }
+                fn name(&self) -> &'static str {
+                    "IncrementCounter"
+                }
                 fn run(&mut self, _: &mut World) {
-                    unsafe { *self.counter += 1; }
+                    unsafe {
+                        *self.counter += 1;
+                    }
                 }
             }
 
@@ -1376,9 +1436,15 @@ mod tests {
             let counter_ptr = &mut counter as *mut u32;
 
             let mut systems: Vec<BoxedSystem> = vec![
-                BoxedSystem::new(IncrementCounter { counter: counter_ptr }),
-                BoxedSystem::new(IncrementCounter { counter: counter_ptr }),
-                BoxedSystem::new(IncrementCounter { counter: counter_ptr }),
+                BoxedSystem::new(IncrementCounter {
+                    counter: counter_ptr,
+                }),
+                BoxedSystem::new(IncrementCounter {
+                    counter: counter_ptr,
+                }),
+                BoxedSystem::new(IncrementCounter {
+                    counter: counter_ptr,
+                }),
             ];
 
             let mut world = World::new();
@@ -1394,7 +1460,9 @@ mod tests {
         fn test_system_access_conflict_detection() {
             struct PositionWriter;
             impl System for PositionWriter {
-                fn name(&self) -> &'static str { "PositionWriter" }
+                fn name(&self) -> &'static str {
+                    "PositionWriter"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_write(ComponentId::of::<Position>());
@@ -1405,7 +1473,9 @@ mod tests {
 
             struct PositionReader;
             impl System for PositionReader {
-                fn name(&self) -> &'static str { "PositionReader" }
+                fn name(&self) -> &'static str {
+                    "PositionReader"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_read(ComponentId::of::<Position>());
@@ -1416,7 +1486,9 @@ mod tests {
 
             struct VelocityReader;
             impl System for VelocityReader {
-                fn name(&self) -> &'static str { "VelocityReader" }
+                fn name(&self) -> &'static str {
+                    "VelocityReader"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_read(ComponentId::of::<Velocity>());

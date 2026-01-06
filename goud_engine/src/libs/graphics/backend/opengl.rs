@@ -4,7 +4,10 @@
 //! It manages OpenGL state, resources (buffers, textures, shaders), and rendering operations.
 
 use super::{
-    types::{BufferHandle, BufferType, BufferUsage, ShaderHandle, TextureFilter, TextureFormat, TextureHandle, TextureWrap},
+    types::{
+        BufferHandle, BufferType, BufferUsage, ShaderHandle, TextureFilter, TextureFormat,
+        TextureHandle, TextureWrap,
+    },
     BackendCapabilities, BackendInfo, BlendFactor, CullFace, RenderBackend,
 };
 use crate::core::{
@@ -117,7 +120,7 @@ impl OpenGLBackend {
             let ptr = gl::GetString(gl::VERSION);
             if ptr.is_null() {
                 return Err(GoudError::BackendNotSupported(
-                    "No OpenGL context active".to_string()
+                    "No OpenGL context active".to_string(),
                 ));
             }
             std::ffi::CStr::from_ptr(ptr as *const i8)
@@ -165,12 +168,12 @@ impl OpenGLBackend {
             max_texture_size: max_texture_size.max(2048) as u32,
             max_vertex_attributes: max_vertex_attribs.max(8) as u32,
             max_uniform_buffer_size: max_uniform_buffer_size.max(16384) as u32,
-            supports_instancing: true,  // GL 3.3 supports instancing
-            supports_compute_shaders: false,  // Requires GL 4.3+
-            supports_geometry_shaders: true,  // GL 3.2+
-            supports_tessellation: false,  // Requires GL 4.0+
+            supports_instancing: true,       // GL 3.3 supports instancing
+            supports_compute_shaders: false, // Requires GL 4.3+
+            supports_geometry_shaders: true, // GL 3.2+
+            supports_tessellation: false,    // Requires GL 4.0+
             supports_multisampling: true,
-            supports_anisotropic_filtering: true,  // Common extension
+            supports_anisotropic_filtering: true, // Common extension
         };
 
         let info = BackendInfo {
@@ -347,7 +350,7 @@ impl RenderBackend for OpenGLBackend {
             gl::GenBuffers(1, &mut gl_id);
             if gl_id == 0 {
                 return Err(GoudError::BufferCreationFailed(
-                    "Failed to generate OpenGL buffer".to_string()
+                    "Failed to generate OpenGL buffer".to_string(),
                 ));
             }
         }
@@ -369,9 +372,10 @@ impl RenderBackend for OpenGLBackend {
             let error = gl::GetError();
             if error != gl::NO_ERROR {
                 gl::DeleteBuffers(1, &gl_id);
-                return Err(GoudError::BufferCreationFailed(
-                    format!("OpenGL error during buffer creation: 0x{:X}", error)
-                ));
+                return Err(GoudError::BufferCreationFailed(format!(
+                    "OpenGL error during buffer creation: 0x{:X}",
+                    error
+                )));
             }
 
             // Unbind
@@ -403,12 +407,12 @@ impl RenderBackend for OpenGLBackend {
         let metadata = self.buffers.get(&handle).ok_or(GoudError::InvalidHandle)?;
 
         if offset + data.len() > metadata.size {
-            return Err(GoudError::InvalidState(
-                format!(
-                    "Buffer update out of bounds: offset {} + size {} > buffer size {}",
-                    offset, data.len(), metadata.size
-                )
-            ));
+            return Err(GoudError::InvalidState(format!(
+                "Buffer update out of bounds: offset {} + size {} > buffer size {}",
+                offset,
+                data.len(),
+                metadata.size
+            )));
         }
 
         let target = Self::buffer_type_to_gl_target(metadata.buffer_type);
@@ -424,9 +428,10 @@ impl RenderBackend for OpenGLBackend {
 
             let error = gl::GetError();
             if error != gl::NO_ERROR {
-                return Err(GoudError::InternalError(
-                    format!("OpenGL error during buffer update: 0x{:X}", error)
-                ));
+                return Err(GoudError::InternalError(format!(
+                    "OpenGL error during buffer update: 0x{:X}",
+                    error
+                )));
             }
 
             gl::BindBuffer(target, 0);
@@ -502,7 +507,7 @@ impl RenderBackend for OpenGLBackend {
     ) -> GoudResult<TextureHandle> {
         if width == 0 || height == 0 {
             return Err(GoudError::TextureCreationFailed(
-                "Texture dimensions must be greater than 0".to_string()
+                "Texture dimensions must be greater than 0".to_string(),
             ));
         }
 
@@ -511,7 +516,7 @@ impl RenderBackend for OpenGLBackend {
             gl::GenTextures(1, &mut gl_id);
             if gl_id == 0 {
                 return Err(GoudError::TextureCreationFailed(
-                    "Failed to generate OpenGL texture".to_string()
+                    "Failed to generate OpenGL texture".to_string(),
                 ));
             }
         }
@@ -553,9 +558,10 @@ impl RenderBackend for OpenGLBackend {
             let error = gl::GetError();
             if error != gl::NO_ERROR {
                 gl::DeleteTextures(1, &gl_id);
-                return Err(GoudError::TextureCreationFailed(
-                    format!("OpenGL error during texture creation: 0x{:X}", error)
-                ));
+                return Err(GoudError::TextureCreationFailed(format!(
+                    "OpenGL error during texture creation: 0x{:X}",
+                    error
+                )));
             }
 
             // Unbind
@@ -597,24 +603,20 @@ impl RenderBackend for OpenGLBackend {
 
         // Validate region bounds
         if x + width > metadata.width || y + height > metadata.height {
-            return Err(GoudError::TextureCreationFailed(
-                format!(
-                    "Update region ({}x{} at {},{}) exceeds texture bounds ({}x{})",
-                    width, height, x, y, metadata.width, metadata.height
-                )
-            ));
+            return Err(GoudError::TextureCreationFailed(format!(
+                "Update region ({}x{} at {},{}) exceeds texture bounds ({}x{})",
+                width, height, x, y, metadata.width, metadata.height
+            )));
         }
 
         // Validate data size
         let expected_size = (width * height) as usize * Self::bytes_per_pixel(metadata.format);
         if data.len() != expected_size {
-            return Err(GoudError::TextureCreationFailed(
-                format!(
-                    "Data size mismatch: expected {} bytes, got {}",
-                    expected_size,
-                    data.len()
-                )
-            ));
+            return Err(GoudError::TextureCreationFailed(format!(
+                "Data size mismatch: expected {} bytes, got {}",
+                expected_size,
+                data.len()
+            )));
         }
 
         let (_, pixel_format, pixel_type) = Self::texture_format_to_gl(metadata.format);
@@ -639,9 +641,10 @@ impl RenderBackend for OpenGLBackend {
             // Check for errors
             let error = gl::GetError();
             if error != gl::NO_ERROR {
-                return Err(GoudError::TextureCreationFailed(
-                    format!("OpenGL error during texture update: 0x{:X}", error)
-                ));
+                return Err(GoudError::TextureCreationFailed(format!(
+                    "OpenGL error during texture update: 0x{:X}",
+                    error
+                )));
             }
 
             // Unbind
@@ -676,7 +679,9 @@ impl RenderBackend for OpenGLBackend {
     }
 
     fn texture_size(&self, handle: TextureHandle) -> Option<(u32, u32)> {
-        self.textures.get(&handle).map(|meta| (meta.width, meta.height))
+        self.textures
+            .get(&handle)
+            .map(|meta| (meta.width, meta.height))
     }
 
     fn bind_texture(&mut self, handle: TextureHandle, unit: u32) -> GoudResult<()> {
@@ -684,13 +689,11 @@ impl RenderBackend for OpenGLBackend {
 
         // Validate texture unit
         if unit >= self.bound_textures.len() as u32 {
-            return Err(GoudError::TextureCreationFailed(
-                format!(
-                    "Texture unit {} exceeds maximum supported units ({})",
-                    unit,
-                    self.bound_textures.len()
-                )
-            ));
+            return Err(GoudError::TextureCreationFailed(format!(
+                "Texture unit {} exceeds maximum supported units ({})",
+                unit,
+                self.bound_textures.len()
+            )));
         }
 
         unsafe {
@@ -718,19 +721,15 @@ impl RenderBackend for OpenGLBackend {
     // Shader Operations
     // ============================================================================
 
-    fn create_shader(
-        &mut self,
-        vertex_src: &str,
-        fragment_src: &str,
-    ) -> GoudResult<ShaderHandle> {
+    fn create_shader(&mut self, vertex_src: &str, fragment_src: &str) -> GoudResult<ShaderHandle> {
         if vertex_src.is_empty() {
             return Err(GoudError::ShaderCompilationFailed(
-                "Vertex shader source is empty".to_string()
+                "Vertex shader source is empty".to_string(),
             ));
         }
         if fragment_src.is_empty() {
             return Err(GoudError::ShaderCompilationFailed(
-                "Fragment shader source is empty".to_string()
+                "Fragment shader source is empty".to_string(),
             ));
         }
 
@@ -757,7 +756,7 @@ impl RenderBackend for OpenGLBackend {
                 gl::DeleteShader(fragment_shader);
             }
             return Err(GoudError::ShaderLinkFailed(
-                "Failed to create shader program".to_string()
+                "Failed to create shader program".to_string(),
             ));
         }
 
@@ -861,9 +860,7 @@ impl RenderBackend for OpenGLBackend {
 
         // Query OpenGL for the location
         let c_name = std::ffi::CString::new(name).ok()?;
-        let location = unsafe {
-            gl::GetUniformLocation(metadata.gl_id, c_name.as_ptr())
-        };
+        let location = unsafe { gl::GetUniformLocation(metadata.gl_id, c_name.as_ptr()) };
 
         // Cache the result (even if negative, to avoid repeated queries)
         // Note: We need mutable access to cache, but this method takes &self
@@ -1138,15 +1135,14 @@ impl OpenGLBackend {
         let shader_id = unsafe { gl::CreateShader(shader_type) };
         if shader_id == 0 {
             return Err(GoudError::ShaderCompilationFailed(
-                "Failed to create shader object".to_string()
+                "Failed to create shader object".to_string(),
             ));
         }
 
         // Compile the shader
-        let c_source = std::ffi::CString::new(source)
-            .map_err(|_| GoudError::ShaderCompilationFailed(
-                "Shader source contains null byte".to_string()
-            ))?;
+        let c_source = std::ffi::CString::new(source).map_err(|_| {
+            GoudError::ShaderCompilationFailed("Shader source contains null byte".to_string())
+        })?;
 
         unsafe {
             gl::ShaderSource(shader_id, 1, &c_source.as_ptr(), std::ptr::null());
@@ -1181,9 +1177,10 @@ impl OpenGLBackend {
                     _ => "Unknown",
                 };
 
-                return Err(GoudError::ShaderCompilationFailed(
-                    format!("{} shader compilation failed: {}", stage_name, error_msg)
-                ));
+                return Err(GoudError::ShaderCompilationFailed(format!(
+                    "{} shader compilation failed: {}",
+                    stage_name, error_msg
+                )));
             }
         }
 
@@ -1222,7 +1219,11 @@ impl OpenGLBackend {
             TextureFormat::RGBA16F => (gl::RGBA16F, gl::RGBA, gl::HALF_FLOAT),
             TextureFormat::RGBA32F => (gl::RGBA32F, gl::RGBA, gl::FLOAT),
             TextureFormat::Depth => (gl::DEPTH_COMPONENT24, gl::DEPTH_COMPONENT, gl::UNSIGNED_INT),
-            TextureFormat::DepthStencil => (gl::DEPTH24_STENCIL8, gl::DEPTH_STENCIL, gl::UNSIGNED_INT_24_8),
+            TextureFormat::DepthStencil => (
+                gl::DEPTH24_STENCIL8,
+                gl::DEPTH_STENCIL,
+                gl::UNSIGNED_INT_24_8,
+            ),
         }
     }
 
@@ -1251,9 +1252,9 @@ impl OpenGLBackend {
             TextureFormat::RG8 => 2,
             TextureFormat::RGB8 => 3,
             TextureFormat::RGBA8 => 4,
-            TextureFormat::RGBA16F => 8,  // 4 channels × 2 bytes
-            TextureFormat::RGBA32F => 16, // 4 channels × 4 bytes
-            TextureFormat::Depth => 4,    // 24-bit or 32-bit typically
+            TextureFormat::RGBA16F => 8,      // 4 channels × 2 bytes
+            TextureFormat::RGBA32F => 16,     // 4 channels × 4 bytes
+            TextureFormat::Depth => 4,        // 24-bit or 32-bit typically
             TextureFormat::DepthStencil => 4, // 24 + 8 bits = 32 bits
         }
     }
@@ -1328,11 +1329,9 @@ mod tests {
 
         // Create a buffer
         let data: Vec<u8> = vec![1, 2, 3, 4, 5, 6, 7, 8];
-        let handle = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Static,
-            &data,
-        ).unwrap();
+        let handle = backend
+            .create_buffer(BufferType::Vertex, BufferUsage::Static, &data)
+            .unwrap();
 
         // Verify it's valid
         assert!(backend.is_buffer_valid(handle));
@@ -1350,11 +1349,9 @@ mod tests {
         let mut backend = OpenGLBackend::new().unwrap();
 
         let data: Vec<u8> = vec![0; 16];
-        let handle = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Dynamic,
-            &data,
-        ).unwrap();
+        let handle = backend
+            .create_buffer(BufferType::Vertex, BufferUsage::Dynamic, &data)
+            .unwrap();
 
         let new_data: Vec<u8> = vec![1, 2, 3, 4];
         backend.update_buffer(handle, 0, &new_data).unwrap();
@@ -1368,11 +1365,9 @@ mod tests {
         let mut backend = OpenGLBackend::new().unwrap();
 
         let data: Vec<u8> = vec![1, 2, 3, 4];
-        let handle = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Static,
-            &data,
-        ).unwrap();
+        let handle = backend
+            .create_buffer(BufferType::Vertex, BufferUsage::Static, &data)
+            .unwrap();
 
         backend.bind_buffer(handle).unwrap();
         backend.unbind_buffer(BufferType::Vertex);
@@ -1388,17 +1383,13 @@ mod tests {
         let data1: Vec<u8> = vec![1, 2, 3, 4];
         let data2: Vec<u8> = vec![5, 6, 7, 8];
 
-        let handle1 = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Static,
-            &data1,
-        ).unwrap();
+        let handle1 = backend
+            .create_buffer(BufferType::Vertex, BufferUsage::Static, &data1)
+            .unwrap();
 
-        let handle2 = backend.create_buffer(
-            BufferType::Index,
-            BufferUsage::Static,
-            &data2,
-        ).unwrap();
+        let handle2 = backend
+            .create_buffer(BufferType::Index, BufferUsage::Static, &data2)
+            .unwrap();
 
         assert!(backend.is_buffer_valid(handle1));
         assert!(backend.is_buffer_valid(handle2));
@@ -1414,11 +1405,9 @@ mod tests {
         let mut backend = OpenGLBackend::new().unwrap();
 
         let data: Vec<u8> = vec![0; 8];
-        let handle = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Dynamic,
-            &data,
-        ).unwrap();
+        let handle = backend
+            .create_buffer(BufferType::Vertex, BufferUsage::Dynamic, &data)
+            .unwrap();
 
         let new_data: Vec<u8> = vec![1; 16]; // Too large
         let result = backend.update_buffer(handle, 0, &new_data);
@@ -1446,19 +1435,15 @@ mod tests {
 
         // Create and destroy a buffer
         let data: Vec<u8> = vec![1, 2, 3, 4];
-        let handle1 = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Static,
-            &data,
-        ).unwrap();
+        let handle1 = backend
+            .create_buffer(BufferType::Vertex, BufferUsage::Static, &data)
+            .unwrap();
         backend.destroy_buffer(handle1);
 
         // Create another buffer - should reuse the slot
-        let handle2 = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Static,
-            &data,
-        ).unwrap();
+        let handle2 = backend
+            .create_buffer(BufferType::Vertex, BufferUsage::Static, &data)
+            .unwrap();
 
         // Handles should have same index but different generation
         assert_eq!(handle1.index(), handle2.index());
@@ -1479,24 +1464,51 @@ mod tests {
 
     #[test]
     fn test_buffer_type_to_gl_target() {
-        assert_eq!(OpenGLBackend::buffer_type_to_gl_target(BufferType::Vertex), gl::ARRAY_BUFFER);
-        assert_eq!(OpenGLBackend::buffer_type_to_gl_target(BufferType::Index), gl::ELEMENT_ARRAY_BUFFER);
-        assert_eq!(OpenGLBackend::buffer_type_to_gl_target(BufferType::Uniform), gl::UNIFORM_BUFFER);
+        assert_eq!(
+            OpenGLBackend::buffer_type_to_gl_target(BufferType::Vertex),
+            gl::ARRAY_BUFFER
+        );
+        assert_eq!(
+            OpenGLBackend::buffer_type_to_gl_target(BufferType::Index),
+            gl::ELEMENT_ARRAY_BUFFER
+        );
+        assert_eq!(
+            OpenGLBackend::buffer_type_to_gl_target(BufferType::Uniform),
+            gl::UNIFORM_BUFFER
+        );
     }
 
     #[test]
     fn test_buffer_usage_to_gl_usage() {
-        assert_eq!(OpenGLBackend::buffer_usage_to_gl_usage(BufferUsage::Static), gl::STATIC_DRAW);
-        assert_eq!(OpenGLBackend::buffer_usage_to_gl_usage(BufferUsage::Dynamic), gl::DYNAMIC_DRAW);
-        assert_eq!(OpenGLBackend::buffer_usage_to_gl_usage(BufferUsage::Stream), gl::STREAM_DRAW);
+        assert_eq!(
+            OpenGLBackend::buffer_usage_to_gl_usage(BufferUsage::Static),
+            gl::STATIC_DRAW
+        );
+        assert_eq!(
+            OpenGLBackend::buffer_usage_to_gl_usage(BufferUsage::Dynamic),
+            gl::DYNAMIC_DRAW
+        );
+        assert_eq!(
+            OpenGLBackend::buffer_usage_to_gl_usage(BufferUsage::Stream),
+            gl::STREAM_DRAW
+        );
     }
 
     #[test]
     fn test_blend_factor_to_gl() {
-        assert_eq!(OpenGLBackend::blend_factor_to_gl(BlendFactor::Zero), gl::ZERO);
+        assert_eq!(
+            OpenGLBackend::blend_factor_to_gl(BlendFactor::Zero),
+            gl::ZERO
+        );
         assert_eq!(OpenGLBackend::blend_factor_to_gl(BlendFactor::One), gl::ONE);
-        assert_eq!(OpenGLBackend::blend_factor_to_gl(BlendFactor::SrcAlpha), gl::SRC_ALPHA);
-        assert_eq!(OpenGLBackend::blend_factor_to_gl(BlendFactor::OneMinusSrcAlpha), gl::ONE_MINUS_SRC_ALPHA);
+        assert_eq!(
+            OpenGLBackend::blend_factor_to_gl(BlendFactor::SrcAlpha),
+            gl::SRC_ALPHA
+        );
+        assert_eq!(
+            OpenGLBackend::blend_factor_to_gl(BlendFactor::OneMinusSrcAlpha),
+            gl::ONE_MINUS_SRC_ALPHA
+        );
     }
 
     // ============================================================================
@@ -1510,13 +1522,16 @@ mod tests {
 
         // Create a texture
         let pixels: Vec<u8> = vec![255; 256 * 256 * 4]; // 256x256 RGBA white texture
-        let handle = backend.create_texture(
-            256, 256,
-            TextureFormat::RGBA8,
-            TextureFilter::Linear,
-            TextureWrap::Repeat,
-            &pixels,
-        ).unwrap();
+        let handle = backend
+            .create_texture(
+                256,
+                256,
+                TextureFormat::RGBA8,
+                TextureFilter::Linear,
+                TextureWrap::Repeat,
+                &pixels,
+            )
+            .unwrap();
 
         // Verify it's valid
         assert!(backend.is_texture_valid(handle));
@@ -1534,13 +1549,16 @@ mod tests {
         let mut backend = OpenGLBackend::new().unwrap();
 
         // Create a texture with no initial data (render target use case)
-        let handle = backend.create_texture(
-            512, 512,
-            TextureFormat::RGBA8,
-            TextureFilter::Nearest,
-            TextureWrap::ClampToEdge,
-            &[],
-        ).unwrap();
+        let handle = backend
+            .create_texture(
+                512,
+                512,
+                TextureFormat::RGBA8,
+                TextureFilter::Nearest,
+                TextureWrap::ClampToEdge,
+                &[],
+            )
+            .unwrap();
 
         assert!(backend.is_texture_valid(handle));
         assert_eq!(backend.texture_size(handle), Some((512, 512)));
@@ -1555,17 +1573,22 @@ mod tests {
 
         // Create a texture
         let pixels: Vec<u8> = vec![0; 256 * 256 * 4];
-        let handle = backend.create_texture(
-            256, 256,
-            TextureFormat::RGBA8,
-            TextureFilter::Linear,
-            TextureWrap::Repeat,
-            &pixels,
-        ).unwrap();
+        let handle = backend
+            .create_texture(
+                256,
+                256,
+                TextureFormat::RGBA8,
+                TextureFilter::Linear,
+                TextureWrap::Repeat,
+                &pixels,
+            )
+            .unwrap();
 
         // Update a region
         let new_pixels: Vec<u8> = vec![255; 64 * 64 * 4]; // 64x64 white region
-        backend.update_texture(handle, 0, 0, 64, 64, &new_pixels).unwrap();
+        backend
+            .update_texture(handle, 0, 0, 64, 64, &new_pixels)
+            .unwrap();
 
         backend.destroy_texture(handle);
     }
@@ -1576,13 +1599,16 @@ mod tests {
         let mut backend = OpenGLBackend::new().unwrap();
 
         let pixels: Vec<u8> = vec![0; 128 * 128 * 4];
-        let handle = backend.create_texture(
-            128, 128,
-            TextureFormat::RGBA8,
-            TextureFilter::Linear,
-            TextureWrap::Repeat,
-            &pixels,
-        ).unwrap();
+        let handle = backend
+            .create_texture(
+                128,
+                128,
+                TextureFormat::RGBA8,
+                TextureFilter::Linear,
+                TextureWrap::Repeat,
+                &pixels,
+            )
+            .unwrap();
 
         // Try to update a region that exceeds bounds
         let new_pixels: Vec<u8> = vec![255; 64 * 64 * 4];
@@ -1598,13 +1624,16 @@ mod tests {
         let mut backend = OpenGLBackend::new().unwrap();
 
         let pixels: Vec<u8> = vec![255; 64 * 64 * 4];
-        let handle = backend.create_texture(
-            64, 64,
-            TextureFormat::RGBA8,
-            TextureFilter::Linear,
-            TextureWrap::Repeat,
-            &pixels,
-        ).unwrap();
+        let handle = backend
+            .create_texture(
+                64,
+                64,
+                TextureFormat::RGBA8,
+                TextureFilter::Linear,
+                TextureWrap::Repeat,
+                &pixels,
+            )
+            .unwrap();
 
         // Bind to texture unit 0
         backend.bind_texture(handle, 0).unwrap();
@@ -1621,21 +1650,27 @@ mod tests {
         let pixels1: Vec<u8> = vec![255; 64 * 64 * 4];
         let pixels2: Vec<u8> = vec![128; 64 * 64 * 4];
 
-        let handle1 = backend.create_texture(
-            64, 64,
-            TextureFormat::RGBA8,
-            TextureFilter::Linear,
-            TextureWrap::Repeat,
-            &pixels1,
-        ).unwrap();
+        let handle1 = backend
+            .create_texture(
+                64,
+                64,
+                TextureFormat::RGBA8,
+                TextureFilter::Linear,
+                TextureWrap::Repeat,
+                &pixels1,
+            )
+            .unwrap();
 
-        let handle2 = backend.create_texture(
-            64, 64,
-            TextureFormat::RGBA8,
-            TextureFilter::Nearest,
-            TextureWrap::ClampToEdge,
-            &pixels2,
-        ).unwrap();
+        let handle2 = backend
+            .create_texture(
+                64,
+                64,
+                TextureFormat::RGBA8,
+                TextureFilter::Nearest,
+                TextureWrap::ClampToEdge,
+                &pixels2,
+            )
+            .unwrap();
 
         // Bind to different units
         backend.bind_texture(handle1, 0).unwrap();
@@ -1655,7 +1690,8 @@ mod tests {
 
         // Zero width
         let result = backend.create_texture(
-            0, 256,
+            0,
+            256,
             TextureFormat::RGBA8,
             TextureFilter::Linear,
             TextureWrap::Repeat,
@@ -1665,7 +1701,8 @@ mod tests {
 
         // Zero height
         let result = backend.create_texture(
-            256, 0,
+            256,
+            0,
             TextureFormat::RGBA8,
             TextureFilter::Linear,
             TextureWrap::Repeat,
@@ -1681,23 +1718,29 @@ mod tests {
 
         // Create and destroy a texture
         let pixels: Vec<u8> = vec![255; 64 * 64 * 4];
-        let handle1 = backend.create_texture(
-            64, 64,
-            TextureFormat::RGBA8,
-            TextureFilter::Linear,
-            TextureWrap::Repeat,
-            &pixels,
-        ).unwrap();
+        let handle1 = backend
+            .create_texture(
+                64,
+                64,
+                TextureFormat::RGBA8,
+                TextureFilter::Linear,
+                TextureWrap::Repeat,
+                &pixels,
+            )
+            .unwrap();
         backend.destroy_texture(handle1);
 
         // Create another texture - should reuse the slot
-        let handle2 = backend.create_texture(
-            64, 64,
-            TextureFormat::RGBA8,
-            TextureFilter::Linear,
-            TextureWrap::Repeat,
-            &pixels,
-        ).unwrap();
+        let handle2 = backend
+            .create_texture(
+                64,
+                64,
+                TextureFormat::RGBA8,
+                TextureFilter::Linear,
+                TextureWrap::Repeat,
+                &pixels,
+            )
+            .unwrap();
 
         // Handles should have same index but different generation
         assert_eq!(handle1.index(), handle2.index());
@@ -1725,16 +1768,34 @@ mod tests {
 
     #[test]
     fn test_texture_filter_to_gl() {
-        assert_eq!(OpenGLBackend::texture_filter_to_gl(TextureFilter::Nearest), gl::NEAREST);
-        assert_eq!(OpenGLBackend::texture_filter_to_gl(TextureFilter::Linear), gl::LINEAR);
+        assert_eq!(
+            OpenGLBackend::texture_filter_to_gl(TextureFilter::Nearest),
+            gl::NEAREST
+        );
+        assert_eq!(
+            OpenGLBackend::texture_filter_to_gl(TextureFilter::Linear),
+            gl::LINEAR
+        );
     }
 
     #[test]
     fn test_texture_wrap_to_gl() {
-        assert_eq!(OpenGLBackend::texture_wrap_to_gl(TextureWrap::Repeat), gl::REPEAT);
-        assert_eq!(OpenGLBackend::texture_wrap_to_gl(TextureWrap::MirroredRepeat), gl::MIRRORED_REPEAT);
-        assert_eq!(OpenGLBackend::texture_wrap_to_gl(TextureWrap::ClampToEdge), gl::CLAMP_TO_EDGE);
-        assert_eq!(OpenGLBackend::texture_wrap_to_gl(TextureWrap::ClampToBorder), gl::CLAMP_TO_BORDER);
+        assert_eq!(
+            OpenGLBackend::texture_wrap_to_gl(TextureWrap::Repeat),
+            gl::REPEAT
+        );
+        assert_eq!(
+            OpenGLBackend::texture_wrap_to_gl(TextureWrap::MirroredRepeat),
+            gl::MIRRORED_REPEAT
+        );
+        assert_eq!(
+            OpenGLBackend::texture_wrap_to_gl(TextureWrap::ClampToEdge),
+            gl::CLAMP_TO_EDGE
+        );
+        assert_eq!(
+            OpenGLBackend::texture_wrap_to_gl(TextureWrap::ClampToBorder),
+            gl::CLAMP_TO_BORDER
+        );
     }
 
     #[test]
@@ -1816,7 +1877,10 @@ mod tests {
 
         let result = backend.create_shader(vertex_src, fragment_src);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), GoudError::ShaderCompilationFailed(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            GoudError::ShaderCompilationFailed(_)
+        ));
     }
 
     #[test]
@@ -1839,7 +1903,10 @@ mod tests {
 
         // Bind shader
         backend.bind_shader(handle).unwrap();
-        assert_eq!(backend.bound_shader, backend.shaders.get(&handle).map(|m| m.gl_id));
+        assert_eq!(
+            backend.bound_shader,
+            backend.shaders.get(&handle).map(|m| m.gl_id)
+        );
 
         // Unbind shader
         backend.unbind_shader();
@@ -1933,10 +2000,7 @@ mod tests {
         }
         if let Some(loc) = backend.get_uniform_location(handle, "matVal") {
             let identity: [f32; 16] = [
-                1.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0,
-                0.0, 0.0, 0.0, 1.0,
+                1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
             ];
             backend.set_uniform_mat4(loc, &identity);
         }
@@ -2048,12 +2112,30 @@ mod tests {
     #[test]
     fn test_topology_to_gl_conversion() {
         use crate::libs::graphics::backend::types::PrimitiveTopology;
-        assert_eq!(OpenGLBackend::topology_to_gl(PrimitiveTopology::Points), gl::POINTS);
-        assert_eq!(OpenGLBackend::topology_to_gl(PrimitiveTopology::Lines), gl::LINES);
-        assert_eq!(OpenGLBackend::topology_to_gl(PrimitiveTopology::LineStrip), gl::LINE_STRIP);
-        assert_eq!(OpenGLBackend::topology_to_gl(PrimitiveTopology::Triangles), gl::TRIANGLES);
-        assert_eq!(OpenGLBackend::topology_to_gl(PrimitiveTopology::TriangleStrip), gl::TRIANGLE_STRIP);
-        assert_eq!(OpenGLBackend::topology_to_gl(PrimitiveTopology::TriangleFan), gl::TRIANGLE_FAN);
+        assert_eq!(
+            OpenGLBackend::topology_to_gl(PrimitiveTopology::Points),
+            gl::POINTS
+        );
+        assert_eq!(
+            OpenGLBackend::topology_to_gl(PrimitiveTopology::Lines),
+            gl::LINES
+        );
+        assert_eq!(
+            OpenGLBackend::topology_to_gl(PrimitiveTopology::LineStrip),
+            gl::LINE_STRIP
+        );
+        assert_eq!(
+            OpenGLBackend::topology_to_gl(PrimitiveTopology::Triangles),
+            gl::TRIANGLES
+        );
+        assert_eq!(
+            OpenGLBackend::topology_to_gl(PrimitiveTopology::TriangleStrip),
+            gl::TRIANGLE_STRIP
+        );
+        assert_eq!(
+            OpenGLBackend::topology_to_gl(PrimitiveTopology::TriangleFan),
+            gl::TRIANGLE_FAN
+        );
     }
 
     #[test]
@@ -2061,22 +2143,58 @@ mod tests {
         use crate::libs::graphics::backend::types::VertexAttributeType;
 
         // Float types
-        assert_eq!(OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Float), gl::FLOAT);
-        assert_eq!(OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Float2), gl::FLOAT);
-        assert_eq!(OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Float3), gl::FLOAT);
-        assert_eq!(OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Float4), gl::FLOAT);
+        assert_eq!(
+            OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Float),
+            gl::FLOAT
+        );
+        assert_eq!(
+            OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Float2),
+            gl::FLOAT
+        );
+        assert_eq!(
+            OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Float3),
+            gl::FLOAT
+        );
+        assert_eq!(
+            OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Float4),
+            gl::FLOAT
+        );
 
         // Int types
-        assert_eq!(OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Int), gl::INT);
-        assert_eq!(OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Int2), gl::INT);
-        assert_eq!(OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Int3), gl::INT);
-        assert_eq!(OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Int4), gl::INT);
+        assert_eq!(
+            OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Int),
+            gl::INT
+        );
+        assert_eq!(
+            OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Int2),
+            gl::INT
+        );
+        assert_eq!(
+            OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Int3),
+            gl::INT
+        );
+        assert_eq!(
+            OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::Int4),
+            gl::INT
+        );
 
         // UInt types
-        assert_eq!(OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::UInt), gl::UNSIGNED_INT);
-        assert_eq!(OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::UInt2), gl::UNSIGNED_INT);
-        assert_eq!(OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::UInt3), gl::UNSIGNED_INT);
-        assert_eq!(OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::UInt4), gl::UNSIGNED_INT);
+        assert_eq!(
+            OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::UInt),
+            gl::UNSIGNED_INT
+        );
+        assert_eq!(
+            OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::UInt2),
+            gl::UNSIGNED_INT
+        );
+        assert_eq!(
+            OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::UInt3),
+            gl::UNSIGNED_INT
+        );
+        assert_eq!(
+            OpenGLBackend::attribute_type_to_gl_type(VertexAttributeType::UInt4),
+            gl::UNSIGNED_INT
+        );
     }
 
     #[test]
@@ -2086,16 +2204,14 @@ mod tests {
         let mut backend = OpenGLBackend::new().unwrap();
 
         // Create and bind a vertex buffer
-        let vertices: [f32; 9] = [
-            0.0, 0.5, 0.0,
-            -0.5, -0.5, 0.0,
-            0.5, -0.5, 0.0,
-        ];
-        let buffer = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Static,
-            bytemuck::cast_slice(&vertices)
-        ).unwrap();
+        let vertices: [f32; 9] = [0.0, 0.5, 0.0, -0.5, -0.5, 0.0, 0.5, -0.5, 0.0];
+        let buffer = backend
+            .create_buffer(
+                BufferType::Vertex,
+                BufferUsage::Static,
+                bytemuck::cast_slice(&vertices),
+            )
+            .unwrap();
         backend.bind_buffer(buffer).unwrap();
 
         // Try to draw without binding shader
@@ -2133,20 +2249,21 @@ mod tests {
     #[test]
     #[ignore] // Requires OpenGL context
     fn test_draw_arrays_basic() {
-        use crate::libs::graphics::backend::types::{BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType, VertexLayout};
+        use crate::libs::graphics::backend::types::{
+            BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType,
+            VertexLayout,
+        };
         let mut backend = OpenGLBackend::new().unwrap();
 
         // Create vertex buffer
-        let vertices: [f32; 9] = [
-            0.0, 0.5, 0.0,
-            -0.5, -0.5, 0.0,
-            0.5, -0.5, 0.0,
-        ];
-        let buffer = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Static,
-            bytemuck::cast_slice(&vertices)
-        ).unwrap();
+        let vertices: [f32; 9] = [0.0, 0.5, 0.0, -0.5, -0.5, 0.0, 0.5, -0.5, 0.0];
+        let buffer = backend
+            .create_buffer(
+                BufferType::Vertex,
+                BufferUsage::Static,
+                bytemuck::cast_slice(&vertices),
+            )
+            .unwrap();
 
         // Create shader
         let vertex_src = r#"
@@ -2166,8 +2283,12 @@ mod tests {
         backend.bind_buffer(buffer).unwrap();
 
         // Set up vertex attributes
-        let layout = VertexLayout::new(12)
-            .with_attribute(VertexAttribute::new(0, VertexAttributeType::Float3, 0, false));
+        let layout = VertexLayout::new(12).with_attribute(VertexAttribute::new(
+            0,
+            VertexAttributeType::Float3,
+            0,
+            false,
+        ));
         backend.set_vertex_attributes(&layout);
 
         // Draw should succeed
@@ -2178,21 +2299,23 @@ mod tests {
     #[test]
     #[ignore] // Requires OpenGL context
     fn test_draw_indexed_without_index_buffer_fails() {
-        use crate::libs::graphics::backend::types::{BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType, VertexLayout};
+        use crate::libs::graphics::backend::types::{
+            BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType,
+            VertexLayout,
+        };
         let mut backend = OpenGLBackend::new().unwrap();
 
         // Create vertex buffer and shader
         let vertices: [f32; 12] = [
-            -0.5, -0.5, 0.0,
-            0.5, -0.5, 0.0,
-            0.5, 0.5, 0.0,
-            -0.5, 0.5, 0.0,
+            -0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0,
         ];
-        let buffer = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Static,
-            bytemuck::cast_slice(&vertices)
-        ).unwrap();
+        let buffer = backend
+            .create_buffer(
+                BufferType::Vertex,
+                BufferUsage::Static,
+                bytemuck::cast_slice(&vertices),
+            )
+            .unwrap();
 
         let vertex_src = r#"
             #version 330 core
@@ -2210,8 +2333,12 @@ mod tests {
         backend.bind_shader(shader).unwrap();
         backend.bind_buffer(buffer).unwrap();
 
-        let layout = VertexLayout::new(12)
-            .with_attribute(VertexAttribute::new(0, VertexAttributeType::Float3, 0, false));
+        let layout = VertexLayout::new(12).with_attribute(VertexAttribute::new(
+            0,
+            VertexAttributeType::Float3,
+            0,
+            false,
+        ));
         backend.set_vertex_attributes(&layout);
 
         // Try to draw indexed without index buffer
@@ -2223,29 +2350,33 @@ mod tests {
     #[test]
     #[ignore] // Requires OpenGL context
     fn test_draw_indexed_basic() {
-        use crate::libs::graphics::backend::types::{BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType, VertexLayout};
+        use crate::libs::graphics::backend::types::{
+            BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType,
+            VertexLayout,
+        };
         let mut backend = OpenGLBackend::new().unwrap();
 
         // Create vertex buffer (quad)
         let vertices: [f32; 12] = [
-            -0.5, -0.5, 0.0,
-            0.5, -0.5, 0.0,
-            0.5, 0.5, 0.0,
-            -0.5, 0.5, 0.0,
+            -0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0,
         ];
-        let vertex_buffer = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Static,
-            bytemuck::cast_slice(&vertices)
-        ).unwrap();
+        let vertex_buffer = backend
+            .create_buffer(
+                BufferType::Vertex,
+                BufferUsage::Static,
+                bytemuck::cast_slice(&vertices),
+            )
+            .unwrap();
 
         // Create index buffer (two triangles)
         let indices: [u32; 6] = [0, 1, 2, 0, 2, 3];
-        let index_buffer = backend.create_buffer(
-            BufferType::Index,
-            BufferUsage::Static,
-            bytemuck::cast_slice(&indices)
-        ).unwrap();
+        let index_buffer = backend
+            .create_buffer(
+                BufferType::Index,
+                BufferUsage::Static,
+                bytemuck::cast_slice(&indices),
+            )
+            .unwrap();
 
         // Create shader
         let vertex_src = r#"
@@ -2264,8 +2395,12 @@ mod tests {
         backend.bind_shader(shader).unwrap();
         backend.bind_buffer(vertex_buffer).unwrap();
 
-        let layout = VertexLayout::new(12)
-            .with_attribute(VertexAttribute::new(0, VertexAttributeType::Float3, 0, false));
+        let layout = VertexLayout::new(12).with_attribute(VertexAttribute::new(
+            0,
+            VertexAttributeType::Float3,
+            0,
+            false,
+        ));
         backend.set_vertex_attributes(&layout);
 
         backend.bind_buffer(index_buffer).unwrap();
@@ -2278,29 +2413,33 @@ mod tests {
     #[test]
     #[ignore] // Requires OpenGL context
     fn test_draw_indexed_u16() {
-        use crate::libs::graphics::backend::types::{BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType, VertexLayout};
+        use crate::libs::graphics::backend::types::{
+            BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType,
+            VertexLayout,
+        };
         let mut backend = OpenGLBackend::new().unwrap();
 
         // Create vertex buffer
         let vertices: [f32; 12] = [
-            -0.5, -0.5, 0.0,
-            0.5, -0.5, 0.0,
-            0.5, 0.5, 0.0,
-            -0.5, 0.5, 0.0,
+            -0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0,
         ];
-        let vertex_buffer = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Static,
-            bytemuck::cast_slice(&vertices)
-        ).unwrap();
+        let vertex_buffer = backend
+            .create_buffer(
+                BufferType::Vertex,
+                BufferUsage::Static,
+                bytemuck::cast_slice(&vertices),
+            )
+            .unwrap();
 
         // Create u16 index buffer
         let indices: [u16; 6] = [0, 1, 2, 0, 2, 3];
-        let index_buffer = backend.create_buffer(
-            BufferType::Index,
-            BufferUsage::Static,
-            bytemuck::cast_slice(&indices)
-        ).unwrap();
+        let index_buffer = backend
+            .create_buffer(
+                BufferType::Index,
+                BufferUsage::Static,
+                bytemuck::cast_slice(&indices),
+            )
+            .unwrap();
 
         // Create shader
         let vertex_src = r#"
@@ -2319,8 +2458,12 @@ mod tests {
         backend.bind_shader(shader).unwrap();
         backend.bind_buffer(vertex_buffer).unwrap();
 
-        let layout = VertexLayout::new(12)
-            .with_attribute(VertexAttribute::new(0, VertexAttributeType::Float3, 0, false));
+        let layout = VertexLayout::new(12).with_attribute(VertexAttribute::new(
+            0,
+            VertexAttributeType::Float3,
+            0,
+            false,
+        ));
         backend.set_vertex_attributes(&layout);
 
         backend.bind_buffer(index_buffer).unwrap();
@@ -2333,7 +2476,10 @@ mod tests {
     #[test]
     #[ignore] // Requires OpenGL context
     fn test_draw_arrays_instanced() {
-        use crate::libs::graphics::backend::types::{BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType, VertexLayout};
+        use crate::libs::graphics::backend::types::{
+            BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType,
+            VertexLayout,
+        };
         let mut backend = OpenGLBackend::new().unwrap();
 
         // Skip if instancing not supported
@@ -2342,16 +2488,14 @@ mod tests {
         }
 
         // Create vertex buffer
-        let vertices: [f32; 9] = [
-            0.0, 0.5, 0.0,
-            -0.5, -0.5, 0.0,
-            0.5, -0.5, 0.0,
-        ];
-        let buffer = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Static,
-            bytemuck::cast_slice(&vertices)
-        ).unwrap();
+        let vertices: [f32; 9] = [0.0, 0.5, 0.0, -0.5, -0.5, 0.0, 0.5, -0.5, 0.0];
+        let buffer = backend
+            .create_buffer(
+                BufferType::Vertex,
+                BufferUsage::Static,
+                bytemuck::cast_slice(&vertices),
+            )
+            .unwrap();
 
         // Create shader
         let vertex_src = r#"
@@ -2373,8 +2517,12 @@ mod tests {
         backend.bind_shader(shader).unwrap();
         backend.bind_buffer(buffer).unwrap();
 
-        let layout = VertexLayout::new(12)
-            .with_attribute(VertexAttribute::new(0, VertexAttributeType::Float3, 0, false));
+        let layout = VertexLayout::new(12).with_attribute(VertexAttribute::new(
+            0,
+            VertexAttributeType::Float3,
+            0,
+            false,
+        ));
         backend.set_vertex_attributes(&layout);
 
         // Draw 10 instances should succeed
@@ -2385,7 +2533,10 @@ mod tests {
     #[test]
     #[ignore] // Requires OpenGL context
     fn test_draw_indexed_instanced() {
-        use crate::libs::graphics::backend::types::{BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType, VertexLayout};
+        use crate::libs::graphics::backend::types::{
+            BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType,
+            VertexLayout,
+        };
         let mut backend = OpenGLBackend::new().unwrap();
 
         // Skip if instancing not supported
@@ -2395,24 +2546,25 @@ mod tests {
 
         // Create vertex buffer
         let vertices: [f32; 12] = [
-            -0.5, -0.5, 0.0,
-            0.5, -0.5, 0.0,
-            0.5, 0.5, 0.0,
-            -0.5, 0.5, 0.0,
+            -0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 0.0,
         ];
-        let vertex_buffer = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Static,
-            bytemuck::cast_slice(&vertices)
-        ).unwrap();
+        let vertex_buffer = backend
+            .create_buffer(
+                BufferType::Vertex,
+                BufferUsage::Static,
+                bytemuck::cast_slice(&vertices),
+            )
+            .unwrap();
 
         // Create index buffer
         let indices: [u32; 6] = [0, 1, 2, 0, 2, 3];
-        let index_buffer = backend.create_buffer(
-            BufferType::Index,
-            BufferUsage::Static,
-            bytemuck::cast_slice(&indices)
-        ).unwrap();
+        let index_buffer = backend
+            .create_buffer(
+                BufferType::Index,
+                BufferUsage::Static,
+                bytemuck::cast_slice(&indices),
+            )
+            .unwrap();
 
         // Create shader
         let vertex_src = r#"
@@ -2434,8 +2586,12 @@ mod tests {
         backend.bind_shader(shader).unwrap();
         backend.bind_buffer(vertex_buffer).unwrap();
 
-        let layout = VertexLayout::new(12)
-            .with_attribute(VertexAttribute::new(0, VertexAttributeType::Float3, 0, false));
+        let layout = VertexLayout::new(12).with_attribute(VertexAttribute::new(
+            0,
+            VertexAttributeType::Float3,
+            0,
+            false,
+        ));
         backend.set_vertex_attributes(&layout);
 
         backend.bind_buffer(index_buffer).unwrap();
@@ -2448,7 +2604,9 @@ mod tests {
     #[test]
     #[ignore] // Requires OpenGL context
     fn test_set_vertex_attributes_multiple() {
-        use crate::libs::graphics::backend::types::{BufferType, BufferUsage, VertexAttribute, VertexAttributeType, VertexLayout};
+        use crate::libs::graphics::backend::types::{
+            BufferType, BufferUsage, VertexAttribute, VertexAttributeType, VertexLayout,
+        };
         let mut backend = OpenGLBackend::new().unwrap();
 
         // Create vertex buffer with position and color
@@ -2463,23 +2621,44 @@ mod tests {
         unsafe impl bytemuck::Zeroable for Vertex {}
 
         let vertices = [
-            Vertex { position: [0.0, 0.5, 0.0], color: [1.0, 0.0, 0.0, 1.0] },
-            Vertex { position: [-0.5, -0.5, 0.0], color: [0.0, 1.0, 0.0, 1.0] },
-            Vertex { position: [0.5, -0.5, 0.0], color: [0.0, 0.0, 1.0, 1.0] },
+            Vertex {
+                position: [0.0, 0.5, 0.0],
+                color: [1.0, 0.0, 0.0, 1.0],
+            },
+            Vertex {
+                position: [-0.5, -0.5, 0.0],
+                color: [0.0, 1.0, 0.0, 1.0],
+            },
+            Vertex {
+                position: [0.5, -0.5, 0.0],
+                color: [0.0, 0.0, 1.0, 1.0],
+            },
         ];
 
-        let buffer = backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Static,
-            bytemuck::cast_slice(&vertices)
-        ).unwrap();
+        let buffer = backend
+            .create_buffer(
+                BufferType::Vertex,
+                BufferUsage::Static,
+                bytemuck::cast_slice(&vertices),
+            )
+            .unwrap();
 
         backend.bind_buffer(buffer).unwrap();
 
         // Set up layout with two attributes
         let layout = VertexLayout::new(28) // 3 floats + 4 floats = 7 * 4 bytes = 28 bytes
-            .with_attribute(VertexAttribute::new(0, VertexAttributeType::Float3, 0, false))
-            .with_attribute(VertexAttribute::new(1, VertexAttributeType::Float4, 12, false));
+            .with_attribute(VertexAttribute::new(
+                0,
+                VertexAttributeType::Float3,
+                0,
+                false,
+            ))
+            .with_attribute(VertexAttribute::new(
+                1,
+                VertexAttributeType::Float4,
+                12,
+                false,
+            ));
 
         // Should not panic
         backend.set_vertex_attributes(&layout);

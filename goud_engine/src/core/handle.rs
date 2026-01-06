@@ -2880,7 +2880,10 @@ mod tests {
 
         let handle = map.insert(42);
 
-        assert!(map.contains(handle), "contains should return true for valid handle");
+        assert!(
+            map.contains(handle),
+            "contains should return true for valid handle"
+        );
         assert!(
             !map.contains(Handle::INVALID),
             "contains should return false for INVALID"
@@ -2959,7 +2962,11 @@ mod tests {
         assert_eq!(*drop_counter.borrow(), 0, "Still held by removed");
 
         drop(removed);
-        assert_eq!(*drop_counter.borrow(), 1, "Dropped after remove result dropped");
+        assert_eq!(
+            *drop_counter.borrow(),
+            1,
+            "Dropped after remove result dropped"
+        );
     }
 
     #[test]
@@ -3104,7 +3111,10 @@ mod tests {
 
         let debug_str = format!("{:?}", map);
 
-        assert!(debug_str.contains("HandleMap"), "Debug should contain type name");
+        assert!(
+            debug_str.contains("HandleMap"),
+            "Debug should contain type name"
+        );
         assert!(debug_str.contains("len"), "Debug should show len");
         assert!(debug_str.contains("capacity"), "Debug should show capacity");
     }
@@ -3551,7 +3561,11 @@ mod tests {
         let remaining: std::collections::HashSet<_> = map.values().cloned().collect();
         for i in 0..COUNT {
             if i % 2 == 0 {
-                assert!(!remaining.contains(&i), "Removed value {} should not be present", i);
+                assert!(
+                    !remaining.contains(&i),
+                    "Removed value {} should not be present",
+                    i
+                );
             } else {
                 assert!(remaining.contains(&i), "Kept value {} should be present", i);
             }

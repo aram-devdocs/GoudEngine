@@ -206,7 +206,7 @@ impl Default for AudioSettings {
     fn default() -> Self {
         Self {
             preload: true,
-            target_sample_rate: 0, // Use original
+            target_sample_rate: 0,   // Use original
             target_channel_count: 0, // Use original
         }
     }
@@ -283,12 +283,7 @@ impl AssetLoader for AudioLoader {
 
         // TODO Phase 6: Implement actual audio decoding with rodio
         // For now, return a stub with the raw bytes and default settings
-        Ok(AudioAsset::new(
-            bytes.to_vec(),
-            44100,
-            2,
-            format,
-        ))
+        Ok(AudioAsset::new(bytes.to_vec(), 44100, 2, format))
     }
 }
 

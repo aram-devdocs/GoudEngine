@@ -306,15 +306,19 @@ impl RigidBody {
             body_type,
             linear_velocity: Vec2::zero(),
             angular_velocity: 0.0,
-            linear_damping: 0.01,    // Slight air resistance
+            linear_damping: 0.01, // Slight air resistance
             angular_damping: 0.01,
             mass,
             inverse_mass,
             inertia: 1.0,
-            inverse_inertia: if body_type == RigidBodyType::Dynamic { 1.0 } else { 0.0 },
-            restitution: 0.0,        // No bounce by default
-            friction: 0.5,           // Moderate friction
-            gravity_scale: 1.0,      // Full gravity
+            inverse_inertia: if body_type == RigidBodyType::Dynamic {
+                1.0
+            } else {
+                0.0
+            },
+            restitution: 0.0,                 // No bounce by default
+            friction: 0.5,                    // Moderate friction
+            gravity_scale: 1.0,               // Full gravity
             flags: RigidBodyFlags::CAN_SLEEP, // Can sleep by default
             sleep_time: 0.0,
         }
@@ -387,7 +391,10 @@ impl RigidBody {
     ///
     /// Panics if mass is not positive and finite.
     pub fn with_mass(mut self, mass: f32) -> Self {
-        assert!(mass > 0.0 && mass.is_finite(), "Mass must be positive and finite");
+        assert!(
+            mass > 0.0 && mass.is_finite(),
+            "Mass must be positive and finite"
+        );
         self.mass = mass;
         self.inverse_mass = 1.0 / mass;
         self
@@ -555,7 +562,10 @@ impl RigidBody {
     /// Panics if mass is not positive and finite, or if called on non-dynamic body.
     pub fn set_mass(&mut self, mass: f32) {
         assert!(self.is_dynamic(), "Cannot set mass on non-dynamic body");
-        assert!(mass > 0.0 && mass.is_finite(), "Mass must be positive and finite");
+        assert!(
+            mass > 0.0 && mass.is_finite(),
+            "Mass must be positive and finite"
+        );
         self.mass = mass;
         self.inverse_mass = 1.0 / mass;
     }
@@ -688,7 +698,12 @@ impl RigidBody {
     /// # Returns
     ///
     /// True if the body should sleep.
-    pub fn update_sleep_time(&mut self, dt: f32, linear_threshold: f32, angular_threshold: f32) -> bool {
+    pub fn update_sleep_time(
+        &mut self,
+        dt: f32,
+        linear_threshold: f32,
+        angular_threshold: f32,
+    ) -> bool {
         if !self.can_sleep() || !self.is_dynamic() {
             self.sleep_time = 0.0;
             return false;
@@ -854,22 +869,19 @@ mod tests {
 
     #[test]
     fn test_rigidbody_with_velocity() {
-        let body = RigidBody::dynamic()
-            .with_velocity(Vec2::new(100.0, 50.0));
+        let body = RigidBody::dynamic().with_velocity(Vec2::new(100.0, 50.0));
         assert_eq!(body.linear_velocity, Vec2::new(100.0, 50.0));
     }
 
     #[test]
     fn test_rigidbody_with_angular_velocity() {
-        let body = RigidBody::dynamic()
-            .with_angular_velocity(3.14);
+        let body = RigidBody::dynamic().with_angular_velocity(3.14);
         assert_eq!(body.angular_velocity, 3.14);
     }
 
     #[test]
     fn test_rigidbody_with_mass() {
-        let body = RigidBody::dynamic()
-            .with_mass(2.0);
+        let body = RigidBody::dynamic().with_mass(2.0);
         assert_eq!(body.mass, 2.0);
         assert_eq!(body.inverse_mass, 0.5);
     }
@@ -897,22 +909,19 @@ mod tests {
 
     #[test]
     fn test_rigidbody_with_restitution() {
-        let body = RigidBody::dynamic()
-            .with_restitution(0.8);
+        let body = RigidBody::dynamic().with_restitution(0.8);
         assert_eq!(body.restitution, 0.8);
     }
 
     #[test]
     fn test_rigidbody_with_friction() {
-        let body = RigidBody::dynamic()
-            .with_friction(0.7);
+        let body = RigidBody::dynamic().with_friction(0.7);
         assert_eq!(body.friction, 0.7);
     }
 
     #[test]
     fn test_rigidbody_with_gravity_scale() {
-        let body = RigidBody::dynamic()
-            .with_gravity_scale(2.0);
+        let body = RigidBody::dynamic().with_gravity_scale(2.0);
         assert_eq!(body.gravity_scale, 2.0);
     }
 
@@ -968,15 +977,13 @@ mod tests {
 
     #[test]
     fn test_rigidbody_linear_speed() {
-        let body = RigidBody::dynamic()
-            .with_velocity(Vec2::new(3.0, 4.0));
+        let body = RigidBody::dynamic().with_velocity(Vec2::new(3.0, 4.0));
         assert_eq!(body.linear_speed(), 5.0);
     }
 
     #[test]
     fn test_rigidbody_linear_speed_squared() {
-        let body = RigidBody::dynamic()
-            .with_velocity(Vec2::new(3.0, 4.0));
+        let body = RigidBody::dynamic().with_velocity(Vec2::new(3.0, 4.0));
         assert_eq!(body.linear_speed_squared(), 25.0);
     }
 
@@ -1040,8 +1047,7 @@ mod tests {
 
     #[test]
     fn test_rigidbody_apply_impulse() {
-        let mut body = RigidBody::dynamic()
-            .with_mass(2.0);
+        let mut body = RigidBody::dynamic().with_mass(2.0);
 
         body.apply_impulse(Vec2::new(10.0, 0.0));
         // Δv = impulse / mass = 10.0 / 2.0 = 5.0
@@ -1068,8 +1074,7 @@ mod tests {
 
     #[test]
     fn test_rigidbody_apply_angular_impulse_fixed_rotation() {
-        let mut body = RigidBody::dynamic()
-            .with_fixed_rotation(true);
+        let mut body = RigidBody::dynamic().with_fixed_rotation(true);
 
         body.apply_angular_impulse(5.0);
         // Should not affect body with fixed rotation
@@ -1122,8 +1127,7 @@ mod tests {
 
     #[test]
     fn test_rigidbody_update_sleep_time_below_threshold() {
-        let mut body = RigidBody::dynamic()
-            .with_velocity(Vec2::new(1.0, 1.0));
+        let mut body = RigidBody::dynamic().with_velocity(Vec2::new(1.0, 1.0));
 
         let should_sleep = body.update_sleep_time(0.1, 5.0, 0.1);
         assert!(should_sleep);
@@ -1132,8 +1136,7 @@ mod tests {
 
     #[test]
     fn test_rigidbody_update_sleep_time_above_threshold() {
-        let mut body = RigidBody::dynamic()
-            .with_velocity(Vec2::new(100.0, 0.0));
+        let mut body = RigidBody::dynamic().with_velocity(Vec2::new(100.0, 0.0));
 
         let should_sleep = body.update_sleep_time(0.1, 5.0, 0.1);
         assert!(!should_sleep);
@@ -1163,8 +1166,7 @@ mod tests {
 
     #[test]
     fn test_rigidbody_display() {
-        let body = RigidBody::dynamic()
-            .with_velocity(Vec2::new(100.0, 50.0));
+        let body = RigidBody::dynamic().with_velocity(Vec2::new(100.0, 50.0));
 
         let display = format!("{}", body);
         assert!(display.contains("RigidBody"));

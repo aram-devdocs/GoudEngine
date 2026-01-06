@@ -581,7 +581,8 @@ mod tests {
 
             // Parent rotated 90 degrees around Y
             let parent = world.spawn_empty();
-            let parent_transform = Transform::from_rotation(Quat::from_axis_angle(Vec3::unit_y(), FRAC_PI_2));
+            let parent_transform =
+                Transform::from_rotation(Quat::from_axis_angle(Vec3::unit_y(), FRAC_PI_2));
             world.insert(parent, parent_transform);
             world.insert(parent, GlobalTransform::IDENTITY);
 
@@ -638,7 +639,10 @@ mod tests {
 
             // Grandparent at (10, 0, 0)
             let grandparent = world.spawn_empty();
-            world.insert(grandparent, Transform::from_position(Vec3::new(10.0, 0.0, 0.0)));
+            world.insert(
+                grandparent,
+                Transform::from_position(Vec3::new(10.0, 0.0, 0.0)),
+            );
             world.insert(grandparent, GlobalTransform::IDENTITY);
 
             // Parent at local (5, 0, 0)

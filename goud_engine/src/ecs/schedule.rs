@@ -1679,10 +1679,7 @@ impl TopologicalSorter {
     /// Finds a cycle in the graph for error reporting.
     fn find_cycle(&self, adj: &[Vec<usize>], in_degree: &[usize]) -> OrderingCycleError {
         // Find a node still in the cycle (has remaining in-degree)
-        let start = in_degree
-            .iter()
-            .position(|&d| d > 0)
-            .unwrap_or(0);
+        let start = in_degree.iter().position(|&d| d > 0).unwrap_or(0);
 
         // DFS to find cycle
         let n = self.systems.len();
@@ -1719,18 +1716,12 @@ impl TopologicalSorter {
             None
         }
 
-        let cycle_indices = dfs(start, adj, &mut visited, &mut rec_stack, &mut path)
-            .unwrap_or_else(|| vec![start]);
+        let cycle_indices =
+            dfs(start, adj, &mut visited, &mut rec_stack, &mut path).unwrap_or_else(|| vec![start]);
 
-        let cycle: Vec<SystemId> = cycle_indices
-            .iter()
-            .map(|&i| self.systems[i].0)
-            .collect();
+        let cycle: Vec<SystemId> = cycle_indices.iter().map(|&i| self.systems[i].0).collect();
 
-        let names: Vec<&'static str> = cycle_indices
-            .iter()
-            .map(|&i| self.systems[i].1)
-            .collect();
+        let names: Vec<&'static str> = cycle_indices.iter().map(|&i| self.systems[i].1).collect();
 
         OrderingCycleError::new(cycle, names)
     }
@@ -2409,10 +2400,7 @@ impl SystemStage {
         }
 
         // Build topological sorter
-        let mut sorter = TopologicalSorter::with_capacity(
-            self.systems.len(),
-            self.orderings.len(),
-        );
+        let mut sorter = TopologicalSorter::with_capacity(self.systems.len(), self.orderings.len());
 
         // Add all systems
         for system in &self.systems {
@@ -2432,10 +2420,8 @@ impl SystemStage {
         let mut new_indices = HashMap::with_capacity(self.systems.len());
 
         // Build a map of id -> system for quick lookup
-        let mut system_map: HashMap<SystemId, BoxedSystem> = self.systems
-            .drain(..)
-            .map(|s| (s.id(), s))
-            .collect();
+        let mut system_map: HashMap<SystemId, BoxedSystem> =
+            self.systems.drain(..).map(|s| (s.id(), s)).collect();
 
         for id in sorted_ids {
             if let Some(system) = system_map.remove(&id) {
@@ -2461,10 +2447,8 @@ impl SystemStage {
     ///
     /// This does not modify the stage; it only checks.
     pub fn would_ordering_cycle(&self, first: SystemId, second: SystemId) -> bool {
-        let mut sorter = TopologicalSorter::with_capacity(
-            self.systems.len(),
-            self.orderings.len() + 1,
-        );
+        let mut sorter =
+            TopologicalSorter::with_capacity(self.systems.len(), self.orderings.len() + 1);
 
         // Add all systems
         for system in &self.systems {
@@ -3837,10 +3821,7 @@ mod tests {
             assert_eq!(CoreStage::PreUpdate.previous(), None);
             assert_eq!(CoreStage::Update.previous(), Some(CoreStage::PreUpdate));
             assert_eq!(CoreStage::PostUpdate.previous(), Some(CoreStage::Update));
-            assert_eq!(
-                CoreStage::PreRender.previous(),
-                Some(CoreStage::PostUpdate)
-            );
+            assert_eq!(CoreStage::PreRender.previous(), Some(CoreStage::PostUpdate));
             assert_eq!(CoreStage::Render.previous(), Some(CoreStage::PreRender));
             assert_eq!(CoreStage::PostRender.previous(), Some(CoreStage::Render));
         }
@@ -4300,10 +4281,7 @@ mod tests {
                 StageOrder::from_ordering(Ordering::Less),
                 StageOrder::Before
             );
-            assert_eq!(
-                StageOrder::from_ordering(Ordering::Equal),
-                StageOrder::Same
-            );
+            assert_eq!(StageOrder::from_ordering(Ordering::Equal), StageOrder::Same);
             assert_eq!(
                 StageOrder::from_ordering(Ordering::Greater),
                 StageOrder::After
@@ -4467,8 +4445,10 @@ mod tests {
         #[test]
         fn test_stage_filtering() {
             // Filter stages by category
-            let logic_stages: Vec<_> =
-                CoreStage::all().into_iter().filter(|s| s.is_logic()).collect();
+            let logic_stages: Vec<_> = CoreStage::all()
+                .into_iter()
+                .filter(|s| s.is_logic())
+                .collect();
             assert_eq!(logic_stages.len(), 3);
             assert!(logic_stages.contains(&CoreStage::PreUpdate));
             assert!(logic_stages.contains(&CoreStage::Update));
@@ -5657,7 +5637,9 @@ mod tests {
             assert!(access.writes().contains(&ComponentId::of::<Position>()));
             assert!(access.writes().contains(&ComponentId::of::<Health>()));
             // Velocity is read by MovementSystem
-            assert!(access.reads().any(|&id| id == ComponentId::of::<Velocity>()));
+            assert!(access
+                .reads()
+                .any(|&id| id == ComponentId::of::<Velocity>()));
         }
 
         // =====================================================================
@@ -5861,10 +5843,7 @@ mod tests {
 
         #[test]
         fn test_cycle_error_describe() {
-            let ids = vec![
-                SystemId::from_raw(1),
-                SystemId::from_raw(2),
-            ];
+            let ids = vec![SystemId::from_raw(1), SystemId::from_raw(2)];
             let names = vec!["A", "B"];
 
             let err = OrderingCycleError::new(ids, names);
@@ -6499,10 +6478,7 @@ mod tests {
                 }
 
                 for i in 0..99 {
-                    sorter.add_ordering(
-                        SystemId::from_raw(i),
-                        SystemId::from_raw(i + 1),
-                    );
+                    sorter.add_ordering(SystemId::from_raw(i), SystemId::from_raw(i + 1));
                 }
 
                 let result = sorter.sort().unwrap();
@@ -6525,17 +6501,21 @@ mod tests {
 
                 // Create edges that form a valid DAG
                 let edges = [
-                    (0, 1), (0, 2), (0, 3),
-                    (1, 4), (2, 4), (3, 5),
-                    (4, 6), (5, 6),
-                    (6, 7), (6, 8), (6, 9),
+                    (0, 1),
+                    (0, 2),
+                    (0, 3),
+                    (1, 4),
+                    (2, 4),
+                    (3, 5),
+                    (4, 6),
+                    (5, 6),
+                    (6, 7),
+                    (6, 8),
+                    (6, 9),
                 ];
 
                 for (from, to) in edges {
-                    sorter.add_ordering(
-                        SystemId::from_raw(from),
-                        SystemId::from_raw(to),
-                    );
+                    sorter.add_ordering(SystemId::from_raw(from), SystemId::from_raw(to));
                 }
 
                 let result = sorter.sort().unwrap();
@@ -6543,10 +6523,12 @@ mod tests {
 
                 // Verify all edges are respected
                 for (from, to) in edges {
-                    let from_pos = result.iter()
+                    let from_pos = result
+                        .iter()
                         .position(|id| *id == SystemId::from_raw(from))
                         .unwrap();
-                    let to_pos = result.iter()
+                    let to_pos = result
+                        .iter()
                         .position(|id| *id == SystemId::from_raw(to))
                         .unwrap();
                     assert!(from_pos < to_pos, "Edge {}->{} violated", from, to);
@@ -6570,11 +6552,17 @@ mod tests {
 
         // Test components
         #[derive(Debug, Clone, Copy)]
-        struct Position { x: f32, y: f32 }
+        struct Position {
+            x: f32,
+            y: f32,
+        }
         impl Component for Position {}
 
         #[derive(Debug, Clone, Copy)]
-        struct Velocity { x: f32, y: f32 }
+        struct Velocity {
+            x: f32,
+            y: f32,
+        }
         impl Component for Velocity {}
 
         #[derive(Debug, Clone, Copy)]
@@ -6728,7 +6716,9 @@ mod tests {
         fn test_parallel_stage_add_system() {
             struct SimpleSystem;
             impl System for SimpleSystem {
-                fn name(&self) -> &'static str { "SimpleSystem" }
+                fn name(&self) -> &'static str {
+                    "SimpleSystem"
+                }
                 fn run(&mut self, _: &mut World) {}
             }
 
@@ -6745,7 +6735,9 @@ mod tests {
         fn test_parallel_stage_remove_system() {
             struct SimpleSystem;
             impl System for SimpleSystem {
-                fn name(&self) -> &'static str { "SimpleSystem" }
+                fn name(&self) -> &'static str {
+                    "SimpleSystem"
+                }
                 fn run(&mut self, _: &mut World) {}
             }
 
@@ -6761,7 +6753,9 @@ mod tests {
         fn test_parallel_stage_clear() {
             struct SimpleSystem;
             impl System for SimpleSystem {
-                fn name(&self) -> &'static str { "SimpleSystem" }
+                fn name(&self) -> &'static str {
+                    "SimpleSystem"
+                }
                 fn run(&mut self, _: &mut World) {}
             }
 
@@ -6798,7 +6792,9 @@ mod tests {
         fn test_rebuild_batches_single_system() {
             struct SimpleSystem;
             impl System for SimpleSystem {
-                fn name(&self) -> &'static str { "SimpleSystem" }
+                fn name(&self) -> &'static str {
+                    "SimpleSystem"
+                }
                 fn run(&mut self, _: &mut World) {}
             }
 
@@ -6815,7 +6811,9 @@ mod tests {
             // Two systems with different access - should be in same batch
             struct PositionSystem;
             impl System for PositionSystem {
-                fn name(&self) -> &'static str { "PositionSystem" }
+                fn name(&self) -> &'static str {
+                    "PositionSystem"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_write(ComponentId::of::<Position>());
@@ -6826,7 +6824,9 @@ mod tests {
 
             struct VelocitySystem;
             impl System for VelocitySystem {
-                fn name(&self) -> &'static str { "VelocitySystem" }
+                fn name(&self) -> &'static str {
+                    "VelocitySystem"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_write(ComponentId::of::<Velocity>());
@@ -6850,7 +6850,9 @@ mod tests {
             // Two systems with conflicting access - should be in different batches
             struct WriterA;
             impl System for WriterA {
-                fn name(&self) -> &'static str { "WriterA" }
+                fn name(&self) -> &'static str {
+                    "WriterA"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_write(ComponentId::of::<Position>());
@@ -6861,7 +6863,9 @@ mod tests {
 
             struct WriterB;
             impl System for WriterB {
-                fn name(&self) -> &'static str { "WriterB" }
+                fn name(&self) -> &'static str {
+                    "WriterB"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_write(ComponentId::of::<Position>());
@@ -6883,13 +6887,17 @@ mod tests {
         fn test_rebuild_batches_with_ordering() {
             struct SystemA;
             impl System for SystemA {
-                fn name(&self) -> &'static str { "SystemA" }
+                fn name(&self) -> &'static str {
+                    "SystemA"
+                }
                 fn run(&mut self, _: &mut World) {}
             }
 
             struct SystemB;
             impl System for SystemB {
-                fn name(&self) -> &'static str { "SystemB" }
+                fn name(&self) -> &'static str {
+                    "SystemB"
+                }
                 fn run(&mut self, _: &mut World) {}
             }
 
@@ -6909,13 +6917,17 @@ mod tests {
         fn test_rebuild_batches_cycle_error() {
             struct SystemA;
             impl System for SystemA {
-                fn name(&self) -> &'static str { "SystemA" }
+                fn name(&self) -> &'static str {
+                    "SystemA"
+                }
                 fn run(&mut self, _: &mut World) {}
             }
 
             struct SystemB;
             impl System for SystemB {
-                fn name(&self) -> &'static str { "SystemB" }
+                fn name(&self) -> &'static str {
+                    "SystemB"
+                }
                 fn run(&mut self, _: &mut World) {}
             }
 
@@ -6946,9 +6958,13 @@ mod tests {
 
         #[test]
         fn test_run_single_system() {
-            struct CounterSystem { count: Arc<AtomicU32> }
+            struct CounterSystem {
+                count: Arc<AtomicU32>,
+            }
             impl System for CounterSystem {
-                fn name(&self) -> &'static str { "CounterSystem" }
+                fn name(&self) -> &'static str {
+                    "CounterSystem"
+                }
                 fn run(&mut self, _: &mut World) {
                     self.count.fetch_add(1, AtomicOrdering::SeqCst);
                 }
@@ -6956,7 +6972,9 @@ mod tests {
 
             let counter = Arc::new(AtomicU32::new(0));
             let mut stage = ParallelSystemStage::new("Test");
-            stage.add_system(CounterSystem { count: counter.clone() });
+            stage.add_system(CounterSystem {
+                count: counter.clone(),
+            });
 
             let mut world = World::new();
             stage.run(&mut world);
@@ -6967,9 +6985,13 @@ mod tests {
         #[test]
         fn test_run_parallel_systems() {
             // Two systems that can run in parallel
-            struct SystemA { counter: Arc<AtomicU32> }
+            struct SystemA {
+                counter: Arc<AtomicU32>,
+            }
             impl System for SystemA {
-                fn name(&self) -> &'static str { "SystemA" }
+                fn name(&self) -> &'static str {
+                    "SystemA"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_write(ComponentId::of::<Position>());
@@ -6980,9 +7002,13 @@ mod tests {
                 }
             }
 
-            struct SystemB { counter: Arc<AtomicU32> }
+            struct SystemB {
+                counter: Arc<AtomicU32>,
+            }
             impl System for SystemB {
-                fn name(&self) -> &'static str { "SystemB" }
+                fn name(&self) -> &'static str {
+                    "SystemB"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_write(ComponentId::of::<Velocity>());
@@ -6995,8 +7021,12 @@ mod tests {
 
             let counter = Arc::new(AtomicU32::new(0));
             let mut stage = ParallelSystemStage::new("Test");
-            stage.add_system(SystemA { counter: counter.clone() });
-            stage.add_system(SystemB { counter: counter.clone() });
+            stage.add_system(SystemA {
+                counter: counter.clone(),
+            });
+            stage.add_system(SystemB {
+                counter: counter.clone(),
+            });
 
             let mut world = World::new();
             stage.run(&mut world);
@@ -7013,9 +7043,13 @@ mod tests {
         #[test]
         fn test_run_sequential_batches() {
             // Two systems with conflicting access - run in different batches
-            struct WriteSystemA { order: Arc<AtomicU32> }
+            struct WriteSystemA {
+                order: Arc<AtomicU32>,
+            }
             impl System for WriteSystemA {
-                fn name(&self) -> &'static str { "WriteSystemA" }
+                fn name(&self) -> &'static str {
+                    "WriteSystemA"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_write(ComponentId::of::<Position>());
@@ -7026,9 +7060,13 @@ mod tests {
                 }
             }
 
-            struct WriteSystemB { order: Arc<AtomicU32> }
+            struct WriteSystemB {
+                order: Arc<AtomicU32>,
+            }
             impl System for WriteSystemB {
-                fn name(&self) -> &'static str { "WriteSystemB" }
+                fn name(&self) -> &'static str {
+                    "WriteSystemB"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_write(ComponentId::of::<Position>());
@@ -7041,8 +7079,12 @@ mod tests {
 
             let order = Arc::new(AtomicU32::new(0));
             let mut stage = ParallelSystemStage::new("Test");
-            stage.add_system(WriteSystemA { order: order.clone() });
-            stage.add_system(WriteSystemB { order: order.clone() });
+            stage.add_system(WriteSystemA {
+                order: order.clone(),
+            });
+            stage.add_system(WriteSystemB {
+                order: order.clone(),
+            });
 
             let mut world = World::new();
             stage.run(&mut world);
@@ -7053,10 +7095,16 @@ mod tests {
 
         #[test]
         fn test_run_respects_should_run() {
-            struct SkipSystem { ran: Arc<AtomicU32> }
+            struct SkipSystem {
+                ran: Arc<AtomicU32>,
+            }
             impl System for SkipSystem {
-                fn name(&self) -> &'static str { "SkipSystem" }
-                fn should_run(&self, _: &World) -> bool { false }
+                fn name(&self) -> &'static str {
+                    "SkipSystem"
+                }
+                fn should_run(&self, _: &World) -> bool {
+                    false
+                }
                 fn run(&mut self, _: &mut World) {
                     self.ran.fetch_add(1, AtomicOrdering::SeqCst);
                 }
@@ -7074,9 +7122,13 @@ mod tests {
 
         #[test]
         fn test_run_initializes_systems() {
-            struct InitSystem { initialized: Arc<AtomicU32> }
+            struct InitSystem {
+                initialized: Arc<AtomicU32>,
+            }
             impl System for InitSystem {
-                fn name(&self) -> &'static str { "InitSystem" }
+                fn name(&self) -> &'static str {
+                    "InitSystem"
+                }
                 fn initialize(&mut self, _: &mut World) {
                     self.initialized.fetch_add(1, AtomicOrdering::SeqCst);
                 }
@@ -7085,7 +7137,9 @@ mod tests {
 
             let init = Arc::new(AtomicU32::new(0));
             let mut stage = ParallelSystemStage::new("Test");
-            stage.add_system(InitSystem { initialized: init.clone() });
+            stage.add_system(InitSystem {
+                initialized: init.clone(),
+            });
 
             let mut world = World::new();
             stage.run(&mut world);
@@ -7103,7 +7157,9 @@ mod tests {
                 execution_order: Arc<std::sync::Mutex<Vec<u32>>>,
             }
             impl System for OrderedSystem {
-                fn name(&self) -> &'static str { "OrderedSystem" }
+                fn name(&self) -> &'static str {
+                    "OrderedSystem"
+                }
                 fn run(&mut self, _: &mut World) {
                     self.execution_order.lock().unwrap().push(self.id);
                 }
@@ -7112,9 +7168,18 @@ mod tests {
             let order = Arc::new(std::sync::Mutex::new(Vec::new()));
             let mut stage = ParallelSystemStage::new("Test");
 
-            let id_a = stage.add_system(OrderedSystem { id: 1, execution_order: order.clone() });
-            let id_b = stage.add_system(OrderedSystem { id: 2, execution_order: order.clone() });
-            let id_c = stage.add_system(OrderedSystem { id: 3, execution_order: order.clone() });
+            let id_a = stage.add_system(OrderedSystem {
+                id: 1,
+                execution_order: order.clone(),
+            });
+            let id_b = stage.add_system(OrderedSystem {
+                id: 2,
+                execution_order: order.clone(),
+            });
+            let id_c = stage.add_system(OrderedSystem {
+                id: 3,
+                execution_order: order.clone(),
+            });
 
             // Enforce order: A -> B -> C
             stage.add_ordering(id_a, id_b);
@@ -7131,7 +7196,9 @@ mod tests {
         fn test_stage_trait_implementation() {
             struct SimpleSystem;
             impl System for SimpleSystem {
-                fn name(&self) -> &'static str { "SimpleSystem" }
+                fn name(&self) -> &'static str {
+                    "SimpleSystem"
+                }
                 fn run(&mut self, _: &mut World) {}
             }
 
@@ -7176,9 +7243,14 @@ mod tests {
         #[test]
         fn test_many_parallel_systems() {
             // Test with many systems to verify parallel execution works at scale
-            struct CounterSystem { counter: Arc<AtomicU32>, id: usize }
+            struct CounterSystem {
+                counter: Arc<AtomicU32>,
+                id: usize,
+            }
             impl System for CounterSystem {
-                fn name(&self) -> &'static str { "CounterSystem" }
+                fn name(&self) -> &'static str {
+                    "CounterSystem"
+                }
                 fn run(&mut self, _: &mut World) {
                     self.counter.fetch_add(1, AtomicOrdering::SeqCst);
                 }
@@ -7189,7 +7261,10 @@ mod tests {
 
             // Add 100 systems with no access (all can run in parallel)
             for i in 0..100 {
-                stage.add_system(CounterSystem { counter: counter.clone(), id: i });
+                stage.add_system(CounterSystem {
+                    counter: counter.clone(),
+                    id: i,
+                });
             }
 
             let mut world = World::new();
@@ -7206,7 +7281,9 @@ mod tests {
         fn test_conflict_detection() {
             struct WriterA;
             impl System for WriterA {
-                fn name(&self) -> &'static str { "WriterA" }
+                fn name(&self) -> &'static str {
+                    "WriterA"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_write(ComponentId::of::<Position>());
@@ -7217,7 +7294,9 @@ mod tests {
 
             struct ReaderA;
             impl System for ReaderA {
-                fn name(&self) -> &'static str { "ReaderA" }
+                fn name(&self) -> &'static str {
+                    "ReaderA"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_read(ComponentId::of::<Position>());
@@ -7239,7 +7318,9 @@ mod tests {
         fn test_read_only_and_writing_systems() {
             struct Reader;
             impl System for Reader {
-                fn name(&self) -> &'static str { "Reader" }
+                fn name(&self) -> &'static str {
+                    "Reader"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_read(ComponentId::of::<Position>());
@@ -7250,7 +7331,9 @@ mod tests {
 
             struct Writer;
             impl System for Writer {
-                fn name(&self) -> &'static str { "Writer" }
+                fn name(&self) -> &'static str {
+                    "Writer"
+                }
                 fn component_access(&self) -> Access {
                     let mut access = Access::new();
                     access.add_write(ComponentId::of::<Position>());

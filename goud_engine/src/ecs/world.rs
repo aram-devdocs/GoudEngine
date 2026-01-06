@@ -930,7 +930,9 @@ impl World {
     /// 2. We downcast using the same `TypeId`
     pub(crate) fn get_storage<T: Component>(&self) -> Option<&SparseSet<T>> {
         let id = ComponentId::of::<T>();
-        self.storages.get(&id).and_then(|entry| entry.downcast_ref::<T>())
+        self.storages
+            .get(&id)
+            .and_then(|entry| entry.downcast_ref::<T>())
     }
 
     /// Gets a mutable reference to the storage for a component type.
@@ -946,7 +948,9 @@ impl World {
     /// 2. We downcast using the same `TypeId`
     pub(crate) fn get_storage_option_mut<T: Component>(&mut self) -> Option<&mut SparseSet<T>> {
         let id = ComponentId::of::<T>();
-        self.storages.get_mut(&id).and_then(|entry| entry.downcast_mut::<T>())
+        self.storages
+            .get_mut(&id)
+            .and_then(|entry| entry.downcast_mut::<T>())
     }
 
     /// Gets a mutable reference to the storage for a component type,
@@ -1067,7 +1071,9 @@ impl World {
         } else {
             // Entity doesn't have this component - need archetype transition
             // 1. Get the target archetype (with the new component)
-            let target_archetype_id = self.archetypes.get_add_edge(current_archetype_id, component_id);
+            let target_archetype_id = self
+                .archetypes
+                .get_add_edge(current_archetype_id, component_id);
 
             // 2. Remove entity from old archetype
             if let Some(old_arch) = self.archetypes.get_mut(current_archetype_id) {
@@ -3028,9 +3034,18 @@ mod tests {
             insert_component(&mut world, e2, Position { x: 2.0, y: 2.0 });
             insert_component(&mut world, e3, Position { x: 3.0, y: 3.0 });
 
-            assert_eq!(world.get::<Position>(e1), Some(&Position { x: 1.0, y: 1.0 }));
-            assert_eq!(world.get::<Position>(e2), Some(&Position { x: 2.0, y: 2.0 }));
-            assert_eq!(world.get::<Position>(e3), Some(&Position { x: 3.0, y: 3.0 }));
+            assert_eq!(
+                world.get::<Position>(e1),
+                Some(&Position { x: 1.0, y: 1.0 })
+            );
+            assert_eq!(
+                world.get::<Position>(e2),
+                Some(&Position { x: 2.0, y: 2.0 })
+            );
+            assert_eq!(
+                world.get::<Position>(e3),
+                Some(&Position { x: 3.0, y: 3.0 })
+            );
         }
 
         #[test]
@@ -3041,8 +3056,14 @@ mod tests {
             insert_component(&mut world, entity, Position { x: 1.0, y: 2.0 });
             insert_component(&mut world, entity, Velocity { x: 3.0, y: 4.0 });
 
-            assert_eq!(world.get::<Position>(entity), Some(&Position { x: 1.0, y: 2.0 }));
-            assert_eq!(world.get::<Velocity>(entity), Some(&Velocity { x: 3.0, y: 4.0 }));
+            assert_eq!(
+                world.get::<Position>(entity),
+                Some(&Position { x: 1.0, y: 2.0 })
+            );
+            assert_eq!(
+                world.get::<Velocity>(entity),
+                Some(&Velocity { x: 3.0, y: 4.0 })
+            );
         }
 
         #[test]
@@ -3102,7 +3123,10 @@ mod tests {
             }
 
             // Verify modification persisted
-            assert_eq!(world.get::<Position>(entity), Some(&Position { x: 100.0, y: 200.0 }));
+            assert_eq!(
+                world.get::<Position>(entity),
+                Some(&Position { x: 100.0, y: 200.0 })
+            );
         }
 
         #[test]
@@ -3213,8 +3237,14 @@ mod tests {
             assert!(world.has::<Name>(entity));
             assert!(world.has::<Player>(entity));
 
-            assert_eq!(world.get::<Position>(entity), Some(&Position { x: 1.0, y: 2.0 }));
-            assert_eq!(world.get::<Velocity>(entity), Some(&Velocity { x: 3.0, y: 4.0 }));
+            assert_eq!(
+                world.get::<Position>(entity),
+                Some(&Position { x: 1.0, y: 2.0 })
+            );
+            assert_eq!(
+                world.get::<Velocity>(entity),
+                Some(&Velocity { x: 3.0, y: 4.0 })
+            );
             assert_eq!(world.get::<Name>(entity), Some(&Name("Test".to_string())));
             assert_eq!(world.get::<Player>(entity), Some(&Player));
         }
@@ -3268,7 +3298,10 @@ mod tests {
                 // Stale reference should not access new entity's component
                 assert!(world.get::<Position>(stale).is_none());
                 // New entity should have its own component
-                assert_eq!(world.get::<Position>(new_entity), Some(&Position { x: 99.0, y: 99.0 }));
+                assert_eq!(
+                    world.get::<Position>(new_entity),
+                    Some(&Position { x: 99.0, y: 99.0 })
+                );
             }
         }
 
@@ -3319,7 +3352,10 @@ mod tests {
             world.insert(entity, Position { x: 1.0, y: 2.0 });
 
             assert!(world.has::<Position>(entity));
-            assert_eq!(world.get::<Position>(entity), Some(&Position { x: 1.0, y: 2.0 }));
+            assert_eq!(
+                world.get::<Position>(entity),
+                Some(&Position { x: 1.0, y: 2.0 })
+            );
         }
 
         #[test]
@@ -3331,7 +3367,10 @@ mod tests {
             let old = world.insert(entity, Position { x: 10.0, y: 20.0 });
 
             assert_eq!(old, Some(Position { x: 1.0, y: 2.0 }));
-            assert_eq!(world.get::<Position>(entity), Some(&Position { x: 10.0, y: 20.0 }));
+            assert_eq!(
+                world.get::<Position>(entity),
+                Some(&Position { x: 10.0, y: 20.0 })
+            );
         }
 
         #[test]
@@ -3396,8 +3435,14 @@ mod tests {
             assert_ne!(arch_with_pos, arch_with_both);
 
             // Both components should be accessible
-            assert_eq!(world.get::<Position>(entity), Some(&Position { x: 1.0, y: 2.0 }));
-            assert_eq!(world.get::<Velocity>(entity), Some(&Velocity { x: 3.0, y: 4.0 }));
+            assert_eq!(
+                world.get::<Position>(entity),
+                Some(&Position { x: 1.0, y: 2.0 })
+            );
+            assert_eq!(
+                world.get::<Velocity>(entity),
+                Some(&Velocity { x: 3.0, y: 4.0 })
+            );
         }
 
         #[test]
@@ -3485,9 +3530,18 @@ mod tests {
             world.insert(e3, Position { x: 3.0, y: 3.0 });
 
             // All should have Position
-            assert_eq!(world.get::<Position>(e1), Some(&Position { x: 1.0, y: 1.0 }));
-            assert_eq!(world.get::<Position>(e2), Some(&Position { x: 2.0, y: 2.0 }));
-            assert_eq!(world.get::<Position>(e3), Some(&Position { x: 3.0, y: 3.0 }));
+            assert_eq!(
+                world.get::<Position>(e1),
+                Some(&Position { x: 1.0, y: 1.0 })
+            );
+            assert_eq!(
+                world.get::<Position>(e2),
+                Some(&Position { x: 2.0, y: 2.0 })
+            );
+            assert_eq!(
+                world.get::<Position>(e3),
+                Some(&Position { x: 3.0, y: 3.0 })
+            );
 
             // All should be in same archetype
             assert_eq!(world.entity_archetype(e1), world.entity_archetype(e2));
@@ -3541,7 +3595,10 @@ mod tests {
             let count = world.insert_batch(vec![(entity, Position { x: 1.0, y: 2.0 })]);
 
             assert_eq!(count, 1);
-            assert_eq!(world.get::<Position>(entity), Some(&Position { x: 1.0, y: 2.0 }));
+            assert_eq!(
+                world.get::<Position>(entity),
+                Some(&Position { x: 1.0, y: 2.0 })
+            );
         }
 
         #[test]
@@ -3552,7 +3609,15 @@ mod tests {
             let batch: Vec<_> = entities
                 .iter()
                 .enumerate()
-                .map(|(i, &e)| (e, Position { x: i as f32, y: (i * 2) as f32 }))
+                .map(|(i, &e)| {
+                    (
+                        e,
+                        Position {
+                            x: i as f32,
+                            y: (i * 2) as f32,
+                        },
+                    )
+                })
                 .collect();
 
             let count = world.insert_batch(batch);
@@ -3561,7 +3626,10 @@ mod tests {
             for (i, entity) in entities.iter().enumerate() {
                 assert_eq!(
                     world.get::<Position>(*entity),
-                    Some(&Position { x: i as f32, y: (i * 2) as f32 })
+                    Some(&Position {
+                        x: i as f32,
+                        y: (i * 2) as f32
+                    })
                 );
             }
         }
@@ -3618,7 +3686,10 @@ mod tests {
             let entity = world.spawn().insert(Position { x: 1.0, y: 2.0 }).id();
 
             assert!(world.has::<Position>(entity));
-            assert_eq!(world.get::<Position>(entity), Some(&Position { x: 1.0, y: 2.0 }));
+            assert_eq!(
+                world.get::<Position>(entity),
+                Some(&Position { x: 1.0, y: 2.0 })
+            );
         }
 
         #[test]
@@ -3636,8 +3707,14 @@ mod tests {
             assert!(world.has::<Velocity>(entity));
             assert!(world.has::<Player>(entity));
 
-            assert_eq!(world.get::<Position>(entity), Some(&Position { x: 1.0, y: 2.0 }));
-            assert_eq!(world.get::<Velocity>(entity), Some(&Velocity { x: 3.0, y: 4.0 }));
+            assert_eq!(
+                world.get::<Position>(entity),
+                Some(&Position { x: 1.0, y: 2.0 })
+            );
+            assert_eq!(
+                world.get::<Velocity>(entity),
+                Some(&Velocity { x: 3.0, y: 4.0 })
+            );
             assert_eq!(world.get::<Player>(entity), Some(&Player));
         }
 
@@ -3652,7 +3729,10 @@ mod tests {
                 .id();
 
             // Should have the second value
-            assert_eq!(world.get::<Position>(entity), Some(&Position { x: 10.0, y: 20.0 }));
+            assert_eq!(
+                world.get::<Position>(entity),
+                Some(&Position { x: 10.0, y: 20.0 })
+            );
         }
 
         #[test]
@@ -3664,8 +3744,9 @@ mod tests {
             let entity_id = builder.id();
 
             // Chain returns &mut Self for fluent API
-            builder.insert(Position { x: 0.0, y: 0.0 })
-                   .insert(Velocity { x: 1.0, y: 1.0 });
+            builder
+                .insert(Position { x: 0.0, y: 0.0 })
+                .insert(Velocity { x: 1.0, y: 1.0 });
 
             // Need to drop builder to access world again
             drop(builder);
@@ -3722,7 +3803,10 @@ mod tests {
             world.insert(new_entity, Position { x: 10.0, y: 20.0 });
 
             // New entity should have its component
-            assert_eq!(world.get::<Position>(new_entity), Some(&Position { x: 10.0, y: 20.0 }));
+            assert_eq!(
+                world.get::<Position>(new_entity),
+                Some(&Position { x: 10.0, y: 20.0 })
+            );
 
             // Old entity (stale) should not
             if entity.index() == new_entity.index() {
@@ -3754,7 +3838,10 @@ mod tests {
 
             world.insert(entity, Name("Hello, World!".to_string()));
 
-            assert_eq!(world.get::<Name>(entity), Some(&Name("Hello, World!".to_string())));
+            assert_eq!(
+                world.get::<Name>(entity),
+                Some(&Name("Hello, World!".to_string()))
+            );
         }
 
         #[test]
@@ -3764,13 +3851,34 @@ mod tests {
             let entities = world.spawn_batch(10_000);
 
             for (i, &entity) in entities.iter().enumerate() {
-                world.insert(entity, Position { x: i as f32, y: (i * 2) as f32 });
+                world.insert(
+                    entity,
+                    Position {
+                        x: i as f32,
+                        y: (i * 2) as f32,
+                    },
+                );
             }
 
             // Spot check
-            assert_eq!(world.get::<Position>(entities[0]), Some(&Position { x: 0.0, y: 0.0 }));
-            assert_eq!(world.get::<Position>(entities[5000]), Some(&Position { x: 5000.0, y: 10000.0 }));
-            assert_eq!(world.get::<Position>(entities[9999]), Some(&Position { x: 9999.0, y: 19998.0 }));
+            assert_eq!(
+                world.get::<Position>(entities[0]),
+                Some(&Position { x: 0.0, y: 0.0 })
+            );
+            assert_eq!(
+                world.get::<Position>(entities[5000]),
+                Some(&Position {
+                    x: 5000.0,
+                    y: 10000.0
+                })
+            );
+            assert_eq!(
+                world.get::<Position>(entities[9999]),
+                Some(&Position {
+                    x: 9999.0,
+                    y: 19998.0
+                })
+            );
         }
 
         #[test]
@@ -3958,7 +4066,10 @@ mod tests {
             // Should still have Velocity
             assert!(!world.has::<Position>(entity));
             assert!(world.has::<Velocity>(entity));
-            assert_eq!(world.get::<Velocity>(entity), Some(&Velocity { x: 3.0, y: 4.0 }));
+            assert_eq!(
+                world.get::<Velocity>(entity),
+                Some(&Velocity { x: 3.0, y: 4.0 })
+            );
         }
 
         #[test]
@@ -4132,14 +4243,26 @@ mod tests {
             // Spawn entities with Position
             let entities: Vec<Entity> = (0..1000)
                 .map(|i| {
-                    world.spawn().insert(Position { x: i as f32, y: (i * 2) as f32 }).id()
+                    world
+                        .spawn()
+                        .insert(Position {
+                            x: i as f32,
+                            y: (i * 2) as f32,
+                        })
+                        .id()
                 })
                 .collect();
 
             // Remove Position from all entities
             for (i, &entity) in entities.iter().enumerate() {
                 let removed = world.remove::<Position>(entity);
-                assert_eq!(removed, Some(Position { x: i as f32, y: (i * 2) as f32 }));
+                assert_eq!(
+                    removed,
+                    Some(Position {
+                        x: i as f32,
+                        y: (i * 2) as f32
+                    })
+                );
             }
 
             // All entities should be alive but without Position
@@ -4157,11 +4280,23 @@ mod tests {
 
             // Add and remove the same component multiple times
             for i in 0..100 {
-                world.insert(entity, Position { x: i as f32, y: 0.0 });
+                world.insert(
+                    entity,
+                    Position {
+                        x: i as f32,
+                        y: 0.0,
+                    },
+                );
                 assert!(world.has::<Position>(entity));
 
                 let removed = world.remove::<Position>(entity);
-                assert_eq!(removed, Some(Position { x: i as f32, y: 0.0 }));
+                assert_eq!(
+                    removed,
+                    Some(Position {
+                        x: i as f32,
+                        y: 0.0
+                    })
+                );
                 assert!(!world.has::<Position>(entity));
             }
 
@@ -4197,8 +4332,14 @@ mod tests {
             // Entity2 should still have both components unchanged
             assert!(world.has::<Position>(entity2));
             assert!(world.has::<Velocity>(entity2));
-            assert_eq!(world.get::<Position>(entity2), Some(&Position { x: 2.0, y: 2.0 }));
-            assert_eq!(world.get::<Velocity>(entity2), Some(&Velocity { x: 2.0, y: 2.0 }));
+            assert_eq!(
+                world.get::<Position>(entity2),
+                Some(&Position { x: 2.0, y: 2.0 })
+            );
+            assert_eq!(
+                world.get::<Velocity>(entity2),
+                Some(&Velocity { x: 2.0, y: 2.0 })
+            );
         }
 
         #[test]

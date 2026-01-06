@@ -179,9 +179,7 @@ macro_rules! with_context_bool {
 #[no_mangle]
 pub extern "C" fn goud_entity_spawn_empty(context_id: GoudContextId) -> u64 {
     use crate::ecs::World;
-    with_context_mut_entity!(context_id, |world: &mut World| {
-        world.spawn_empty()
-    })
+    with_context_mut_entity!(context_id, |world: &mut World| { world.spawn_empty() })
 }
 
 /// Spawns multiple empty entities in a single batch.
@@ -230,7 +228,9 @@ pub unsafe extern "C" fn goud_entity_spawn_batch(
     }
 
     if out_entities.is_null() {
-        set_last_error(GoudError::InvalidState("out_entities pointer is null".to_string()));
+        set_last_error(GoudError::InvalidState(
+            "out_entities pointer is null".to_string(),
+        ));
         return 0;
     }
 
@@ -289,10 +289,7 @@ pub unsafe extern "C" fn goud_entity_spawn_batch(
 /// }
 /// ```
 #[no_mangle]
-pub extern "C" fn goud_entity_despawn(
-    context_id: GoudContextId,
-    entity_id: u64,
-) -> GoudResult {
+pub extern "C" fn goud_entity_despawn(context_id: GoudContextId, entity_id: u64) -> GoudResult {
     use crate::ffi::context::get_context_registry;
 
     // Validate context ID
@@ -370,7 +367,9 @@ pub unsafe extern "C" fn goud_entity_despawn_batch(
     }
 
     if entity_ids.is_null() {
-        set_last_error(GoudError::InvalidState("entity_ids pointer is null".to_string()));
+        set_last_error(GoudError::InvalidState(
+            "entity_ids pointer is null".to_string(),
+        ));
         return 0;
     }
 
@@ -430,10 +429,7 @@ pub unsafe extern "C" fn goud_entity_despawn_batch(
 /// }
 /// ```
 #[no_mangle]
-pub extern "C" fn goud_entity_is_alive(
-    context_id: GoudContextId,
-    entity_id: u64,
-) -> bool {
+pub extern "C" fn goud_entity_is_alive(context_id: GoudContextId, entity_id: u64) -> bool {
     use crate::ecs::{Entity, World};
     with_context_bool!(context_id, entity_id, |world: &World, entity: Entity| {
         world.is_alive(entity)
@@ -535,12 +531,16 @@ pub unsafe extern "C" fn goud_entity_is_alive_batch(
     }
 
     if entity_ids.is_null() {
-        set_last_error(GoudError::InvalidState("entity_ids pointer is null".to_string()));
+        set_last_error(GoudError::InvalidState(
+            "entity_ids pointer is null".to_string(),
+        ));
         return 0;
     }
 
     if out_results.is_null() {
-        set_last_error(GoudError::InvalidState("out_results pointer is null".to_string()));
+        set_last_error(GoudError::InvalidState(
+            "out_results pointer is null".to_string(),
+        ));
         return 0;
     }
 
@@ -627,9 +627,7 @@ mod tests {
         let ctx = goud_context_create();
         let mut entities = vec![0u64; 10];
 
-        let count = unsafe {
-            goud_entity_spawn_batch(ctx, 10, entities.as_mut_ptr())
-        };
+        let count = unsafe { goud_entity_spawn_batch(ctx, 10, entities.as_mut_ptr()) };
 
         assert_eq!(count, 10);
         for entity in &entities {
@@ -645,9 +643,7 @@ mod tests {
         let ctx = goud_context_create();
         let mut entities = vec![0u64; 1];
 
-        let count = unsafe {
-            goud_entity_spawn_batch(ctx, 0, entities.as_mut_ptr())
-        };
+        let count = unsafe { goud_entity_spawn_batch(ctx, 0, entities.as_mut_ptr()) };
 
         assert_eq!(count, 0);
         goud_context_destroy(ctx);
@@ -657,9 +653,8 @@ mod tests {
     fn test_spawn_batch_invalid_context() {
         let mut entities = vec![0u64; 10];
 
-        let count = unsafe {
-            goud_entity_spawn_batch(GOUD_INVALID_CONTEXT_ID, 10, entities.as_mut_ptr())
-        };
+        let count =
+            unsafe { goud_entity_spawn_batch(GOUD_INVALID_CONTEXT_ID, 10, entities.as_mut_ptr()) };
 
         assert_eq!(count, 0);
     }
@@ -668,9 +663,7 @@ mod tests {
     fn test_spawn_batch_null_pointer() {
         let ctx = goud_context_create();
 
-        let count = unsafe {
-            goud_entity_spawn_batch(ctx, 10, std::ptr::null_mut())
-        };
+        let count = unsafe { goud_entity_spawn_batch(ctx, 10, std::ptr::null_mut()) };
 
         assert_eq!(count, 0);
         goud_context_destroy(ctx);
@@ -681,9 +674,7 @@ mod tests {
         let ctx = goud_context_create();
         let mut entities = vec![0u64; 1000];
 
-        let count = unsafe {
-            goud_entity_spawn_batch(ctx, 1000, entities.as_mut_ptr())
-        };
+        let count = unsafe { goud_entity_spawn_batch(ctx, 1000, entities.as_mut_ptr()) };
 
         assert_eq!(count, 1000);
 
@@ -751,9 +742,7 @@ mod tests {
             goud_entity_spawn_batch(ctx, 5, entities.as_mut_ptr());
         }
 
-        let count = unsafe {
-            goud_entity_despawn_batch(ctx, entities.as_ptr(), 5)
-        };
+        let count = unsafe { goud_entity_despawn_batch(ctx, entities.as_ptr(), 5) };
 
         assert_eq!(count, 5);
         for entity in &entities {
@@ -772,9 +761,7 @@ mod tests {
             goud_entity_spawn_empty(ctx),
         ];
 
-        let count = unsafe {
-            goud_entity_despawn_batch(ctx, entities.as_ptr(), 3)
-        };
+        let count = unsafe { goud_entity_despawn_batch(ctx, entities.as_ptr(), 3) };
 
         // Should despawn 2 valid entities, skip 1 invalid
         assert_eq!(count, 2);
@@ -787,9 +774,7 @@ mod tests {
         let ctx = goud_context_create();
         let entities = vec![0u64; 1];
 
-        let count = unsafe {
-            goud_entity_despawn_batch(ctx, entities.as_ptr(), 0)
-        };
+        let count = unsafe { goud_entity_despawn_batch(ctx, entities.as_ptr(), 0) };
 
         assert_eq!(count, 0);
         goud_context_destroy(ctx);

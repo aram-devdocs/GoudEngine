@@ -72,10 +72,10 @@ pub struct SpriteBatchConfig {
 impl Default for SpriteBatchConfig {
     fn default() -> Self {
         Self {
-            initial_capacity: 1024,        // Start with space for 1024 sprites
-            max_batch_size: 10000,         // Flush after 10K sprites
-            enable_z_sorting: true,        // Sort by Z-layer by default
-            enable_batching: true,         // Batch by texture by default
+            initial_capacity: 1024, // Start with space for 1024 sprites
+            max_batch_size: 10000,  // Flush after 10K sprites
+            enable_z_sorting: true, // Sort by Z-layer by default
+            enable_batching: true,  // Batch by texture by default
         }
     }
 }
@@ -343,7 +343,9 @@ impl<B: RenderBackend> SpriteBatch<B> {
         if !self.config.enable_batching {
             // Simple Z-layer sort only
             self.sprites.sort_by(|a, b| {
-                a.z_layer.partial_cmp(&b.z_layer).unwrap_or(std::cmp::Ordering::Equal)
+                a.z_layer
+                    .partial_cmp(&b.z_layer)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             });
         } else {
             // Sort by Z-layer first, then by texture for batching
@@ -471,10 +473,26 @@ impl<B: RenderBackend> SpriteBatch<B> {
         };
 
         // Calculate UV corners with flipping
-        let u_min = if sprite.flip_x { uv_rect.x + uv_rect.width } else { uv_rect.x };
-        let u_max = if sprite.flip_x { uv_rect.x } else { uv_rect.x + uv_rect.width };
-        let v_min = if sprite.flip_y { uv_rect.y + uv_rect.height } else { uv_rect.y };
-        let v_max = if sprite.flip_y { uv_rect.y } else { uv_rect.y + uv_rect.height };
+        let u_min = if sprite.flip_x {
+            uv_rect.x + uv_rect.width
+        } else {
+            uv_rect.x
+        };
+        let u_max = if sprite.flip_x {
+            uv_rect.x
+        } else {
+            uv_rect.x + uv_rect.width
+        };
+        let v_min = if sprite.flip_y {
+            uv_rect.y + uv_rect.height
+        } else {
+            uv_rect.y
+        };
+        let v_max = if sprite.flip_y {
+            uv_rect.y
+        } else {
+            uv_rect.y + uv_rect.height
+        };
 
         let uv_corners = [
             Vec2::new(u_min, v_min), // Top-left
@@ -595,11 +613,9 @@ impl<B: RenderBackend> SpriteBatch<B> {
 
         // Create new buffer with empty data (will be updated later)
         let empty_data = vec![0u8; buffer_size];
-        let buffer = self.backend.create_buffer(
-            BufferType::Vertex,
-            BufferUsage::Dynamic,
-            &empty_data,
-        )?;
+        let buffer =
+            self.backend
+                .create_buffer(BufferType::Vertex, BufferUsage::Dynamic, &empty_data)?;
 
         self.vertex_buffer = Some(buffer);
         self.vertex_capacity = new_capacity;
@@ -616,26 +632,16 @@ impl<B: RenderBackend> SpriteBatch<B> {
         for i in 0..quad_count {
             let base = (i * 4) as u32;
             // Two triangles per quad (CCW winding)
-            indices.extend_from_slice(&[
-                base,
-                base + 1,
-                base + 2,
-                base + 2,
-                base + 3,
-                base,
-            ]);
+            indices.extend_from_slice(&[base, base + 1, base + 2, base + 2, base + 3, base]);
         }
 
         let buffer_size = indices.len() * std::mem::size_of::<u32>();
-        let buffer_data = unsafe {
-            std::slice::from_raw_parts(indices.as_ptr() as *const u8, buffer_size)
-        };
+        let buffer_data =
+            unsafe { std::slice::from_raw_parts(indices.as_ptr() as *const u8, buffer_size) };
 
-        let buffer = self.backend.create_buffer(
-            BufferType::Index,
-            BufferUsage::Static,
-            buffer_data,
-        )?;
+        let buffer =
+            self.backend
+                .create_buffer(BufferType::Index, BufferUsage::Static, buffer_data)?;
 
         self.index_buffer = Some(buffer);
 
@@ -646,7 +652,9 @@ impl<B: RenderBackend> SpriteBatch<B> {
     fn create_shader(&mut self) -> GoudResult<()> {
         // TODO: Load shader from assets or use built-in shader
         // For now, return error as shader loading isn't implemented yet
-        Err(GoudError::NotImplemented("Sprite shader creation".to_string()))
+        Err(GoudError::NotImplemented(
+            "Sprite shader creation".to_string(),
+        ))
     }
 
     /// Uploads vertex data to the GPU.
@@ -655,9 +663,9 @@ impl<B: RenderBackend> SpriteBatch<B> {
             return Ok(());
         }
 
-        let buffer = self.vertex_buffer.ok_or_else(|| {
-            GoudError::InvalidState("Vertex buffer not created".to_string())
-        })?;
+        let buffer = self
+            .vertex_buffer
+            .ok_or_else(|| GoudError::InvalidState("Vertex buffer not created".to_string()))?;
 
         let data_size = self.vertices.len() * std::mem::size_of::<SpriteVertex>();
         let data_ptr = self.vertices.as_ptr() as *const u8;
@@ -1218,11 +1226,9 @@ mod tests {
 
             for j in start..end {
                 assert_eq!(
-                    batch.sprites[j].texture,
-                    texture,
+                    batch.sprites[j].texture, texture,
                     "Sprite {} should have texture {:?}",
-                    j,
-                    texture
+                    j, texture
                 );
             }
         }
@@ -1359,7 +1365,9 @@ mod tests {
             .expect("Failed to create sprite batch");
 
         // Gather sprites
-        batch.gather_sprites(&world).expect("Failed to gather sprites");
+        batch
+            .gather_sprites(&world)
+            .expect("Failed to gather sprites");
 
         // Should have gathered 3 sprites (e1, e2, e3), not e4
         assert_eq!(batch.sprite_count(), 3);
@@ -1406,7 +1414,9 @@ mod tests {
             .expect("Failed to create sprite batch");
 
         // Should handle empty world gracefully
-        batch.gather_sprites(&world).expect("Failed to gather sprites");
+        batch
+            .gather_sprites(&world)
+            .expect("Failed to gather sprites");
         assert_eq!(batch.sprite_count(), 0);
     }
 
@@ -1434,13 +1444,17 @@ mod tests {
         world.insert(e2, Transform2D::from_position(Vec2::new(30.0, 40.0)));
         world.insert(e2, Sprite::new(texture));
 
-        batch.gather_sprites(&world).expect("Failed to gather sprites");
+        batch
+            .gather_sprites(&world)
+            .expect("Failed to gather sprites");
         assert_eq!(batch.sprite_count(), 2);
 
         // Second frame: despawn one sprite
         world.despawn(e2);
 
-        batch.gather_sprites(&world).expect("Failed to gather sprites");
+        batch
+            .gather_sprites(&world)
+            .expect("Failed to gather sprites");
         // Should only have 1 sprite now, not 3 (shouldn't accumulate)
         assert_eq!(batch.sprite_count(), 1);
     }

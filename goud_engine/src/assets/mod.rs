@@ -90,9 +90,7 @@ pub use handle::{
 };
 
 // Re-export asset loader types
-pub use loader::{
-    AssetLoadError, AssetLoader, ErasedAssetLoader, LoadContext, TypedAssetLoader,
-};
+pub use loader::{AssetLoadError, AssetLoader, ErasedAssetLoader, LoadContext, TypedAssetLoader};
 
 // Re-export asset server
 pub use server::AssetServer;

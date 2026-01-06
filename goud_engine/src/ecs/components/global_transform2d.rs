@@ -715,8 +715,11 @@ mod tests {
         #[test]
         fn test_rotation_extraction() {
             let original = FRAC_PI_4;
-            let global =
-                GlobalTransform2D::from_translation_rotation_scale(Vec2::zero(), original, Vec2::one());
+            let global = GlobalTransform2D::from_translation_rotation_scale(
+                Vec2::zero(),
+                original,
+                Vec2::one(),
+            );
             let extracted = global.rotation();
 
             assert!((extracted - original).abs() < 0.001);
@@ -740,9 +743,7 @@ mod tests {
             let original_s = Vec2::new(2.0, 3.0);
 
             let global = GlobalTransform2D::from_translation_rotation_scale(
-                original_t,
-                original_r,
-                original_s,
+                original_t, original_r, original_s,
             );
             let (t, r, s) = global.decompose();
 
@@ -1041,8 +1042,11 @@ mod tests {
         #[test]
         fn test_parent_child_scale() {
             // Parent scaled 2x
-            let parent_global =
-                GlobalTransform2D::from_translation_rotation_scale(Vec2::zero(), 0.0, Vec2::new(2.0, 2.0));
+            let parent_global = GlobalTransform2D::from_translation_rotation_scale(
+                Vec2::zero(),
+                0.0,
+                Vec2::new(2.0, 2.0),
+            );
 
             // Child at local (50, 0)
             let child_local = Transform2D::from_position(Vec2::new(50.0, 0.0));

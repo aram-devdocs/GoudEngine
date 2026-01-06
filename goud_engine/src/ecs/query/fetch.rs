@@ -360,7 +360,11 @@ impl WorldQuery for () {
     }
 
     #[inline]
-    fn fetch<'w>(_state: &Self::State, _world: &'w World, _entity: Entity) -> Option<Self::Item<'w>> {
+    fn fetch<'w>(
+        _state: &Self::State,
+        _world: &'w World,
+        _entity: Entity,
+    ) -> Option<Self::Item<'w>> {
         Some(())
     }
 }
@@ -759,7 +763,11 @@ impl<T: crate::ecs::Component> WorldQuery for &mut T {
     /// This is intentional - the immutable world reference cannot provide
     /// mutable component access without violating Rust's aliasing rules.
     #[inline]
-    fn fetch<'w>(_state: &Self::State, _world: &'w World, _entity: Entity) -> Option<Self::Item<'w>> {
+    fn fetch<'w>(
+        _state: &Self::State,
+        _world: &'w World,
+        _entity: Entity,
+    ) -> Option<Self::Item<'w>> {
         // Cannot provide mutable access from immutable world reference
         // Callers must use fetch_mut for mutable queries
         None
@@ -901,10 +909,14 @@ impl Access {
     pub fn extend(&mut self, other: &Access) {
         self.reads.extend(other.reads.iter().copied());
         self.writes.extend(other.writes.iter().copied());
-        self.resource_reads.extend(other.resource_reads.iter().copied());
-        self.resource_writes.extend(other.resource_writes.iter().copied());
-        self.non_send_reads.extend(other.non_send_reads.iter().copied());
-        self.non_send_writes.extend(other.non_send_writes.iter().copied());
+        self.resource_reads
+            .extend(other.resource_reads.iter().copied());
+        self.resource_writes
+            .extend(other.resource_writes.iter().copied());
+        self.non_send_reads
+            .extend(other.non_send_reads.iter().copied());
+        self.non_send_writes
+            .extend(other.non_send_writes.iter().copied());
     }
 
     // =========================================================================
@@ -928,7 +940,9 @@ impl Access {
     /// Returns all resources that are read (including those also written).
     #[inline]
     pub fn resource_reads(&self) -> impl Iterator<Item = &ResourceId> {
-        self.resource_reads.iter().chain(self.resource_writes.iter())
+        self.resource_reads
+            .iter()
+            .chain(self.resource_writes.iter())
     }
 
     /// Returns all resources that are written.
@@ -940,7 +954,9 @@ impl Access {
     /// Returns the set of read-only resources (read but not written).
     #[inline]
     pub fn resource_reads_only(&self) -> impl Iterator<Item = &ResourceId> {
-        self.resource_reads.iter().filter(|id| !self.resource_writes.contains(id))
+        self.resource_reads
+            .iter()
+            .filter(|id| !self.resource_writes.contains(id))
     }
 
     /// Checks if resource access conflicts with another.
@@ -999,7 +1015,9 @@ impl Access {
     /// Returns all non-send resources that are read (including those also written).
     #[inline]
     pub fn non_send_reads(&self) -> impl Iterator<Item = &NonSendResourceId> {
-        self.non_send_reads.iter().chain(self.non_send_writes.iter())
+        self.non_send_reads
+            .iter()
+            .chain(self.non_send_writes.iter())
     }
 
     /// Returns all non-send resources that are written.
@@ -1011,7 +1029,9 @@ impl Access {
     /// Returns the set of read-only non-send resources (read but not written).
     #[inline]
     pub fn non_send_reads_only(&self) -> impl Iterator<Item = &NonSendResourceId> {
-        self.non_send_reads.iter().filter(|id| !self.non_send_writes.contains(id))
+        self.non_send_reads
+            .iter()
+            .filter(|id| !self.non_send_writes.contains(id))
     }
 
     /// Checks if non-send resource access conflicts with another.
@@ -2330,7 +2350,8 @@ mod tests {
             world.insert(entity, Position { x: 42.0, y: 99.0 });
 
             let state = <&mut Position>::init_state(&world);
-            let result: Option<&mut Position> = <&mut Position>::fetch_mut(&state, &mut world, entity);
+            let result: Option<&mut Position> =
+                <&mut Position>::fetch_mut(&state, &mut world, entity);
 
             // Verify it's actually a mutable reference (compile-time check via type annotation)
             assert!(result.is_some());
@@ -3129,7 +3150,9 @@ mod tests {
             let archetype = world.archetypes().get(archetype_id).unwrap();
 
             let state = <(&Position, &Velocity)>::init_state(&world);
-            assert!(<(&Position, &Velocity)>::matches_archetype(&state, archetype));
+            assert!(<(&Position, &Velocity)>::matches_archetype(
+                &state, archetype
+            ));
 
             // Create entity with only Position
             let entity2 = world.spawn_empty();
@@ -3139,7 +3162,9 @@ mod tests {
             let archetype2 = world.archetypes().get(archetype_id2).unwrap();
 
             // Should not match because Velocity is missing
-            assert!(!<(&Position, &Velocity)>::matches_archetype(&state, archetype2));
+            assert!(!<(&Position, &Velocity)>::matches_archetype(
+                &state, archetype2
+            ));
         }
 
         #[test]

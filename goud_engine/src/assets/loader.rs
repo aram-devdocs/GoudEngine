@@ -555,11 +555,8 @@ mod tests {
 
         #[test]
         fn test_dependency_failed() {
-            let error = AssetLoadError::dependency_failed(
-                "main.asset",
-                "dependency.asset",
-                "not found",
-            );
+            let error =
+                AssetLoadError::dependency_failed("main.asset", "dependency.asset", "not found");
             assert!(error.is_dependency_failed());
             let msg = error.to_string();
             assert!(msg.contains("main.asset"));

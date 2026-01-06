@@ -1701,10 +1701,8 @@ mod tests {
 
     #[test]
     fn test_archetype_new_with_components() {
-        let components = make_components(&[
-            ComponentId::of::<Position>(),
-            ComponentId::of::<Velocity>(),
-        ]);
+        let components =
+            make_components(&[ComponentId::of::<Position>(), ComponentId::of::<Velocity>()]);
 
         let archetype = Archetype::new(ArchetypeId::new(1), components.clone());
 
@@ -1868,10 +1866,8 @@ mod tests {
 
     #[test]
     fn test_archetype_clone() {
-        let components = make_components(&[
-            ComponentId::of::<Position>(),
-            ComponentId::of::<Velocity>(),
-        ]);
+        let components =
+            make_components(&[ComponentId::of::<Position>(), ComponentId::of::<Velocity>()]);
         let archetype = Archetype::new(ArchetypeId::new(5), components.clone());
 
         let cloned = archetype.clone();
@@ -2006,10 +2002,7 @@ mod tests {
 
         // has_none with any component is true (empty has nothing)
         assert!(archetype.has_none(&[ComponentId::of::<Position>()]));
-        assert!(archetype.has_none(&[
-            ComponentId::of::<Position>(),
-            ComponentId::of::<Velocity>()
-        ]));
+        assert!(archetype.has_none(&[ComponentId::of::<Position>(), ComponentId::of::<Velocity>()]));
     }
 
     // ==================== Entity Management Tests ====================
@@ -2256,10 +2249,8 @@ mod tests {
     #[test]
     fn test_entity_management_with_components() {
         // Verify entity management works with component-bearing archetypes
-        let components = make_components(&[
-            ComponentId::of::<Position>(),
-            ComponentId::of::<Velocity>(),
-        ]);
+        let components =
+            make_components(&[ComponentId::of::<Position>(), ComponentId::of::<Velocity>()]);
         let mut archetype = Archetype::new(ArchetypeId::new(1), components);
 
         let e1 = Entity::new(0, 1);
@@ -2454,7 +2445,10 @@ mod tests {
         empty.add_entity(entity);
 
         // Verify change persisted
-        assert!(graph.get(ArchetypeId::EMPTY).unwrap().contains_entity(entity));
+        assert!(graph
+            .get(ArchetypeId::EMPTY)
+            .unwrap()
+            .contains_entity(entity));
     }
 
     #[test]

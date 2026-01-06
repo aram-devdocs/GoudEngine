@@ -71,6 +71,7 @@ pub mod component;
 pub mod components;
 pub mod entity;
 pub mod input_manager;
+pub mod physics_world;
 pub mod query;
 pub mod resource;
 pub mod schedule;
@@ -79,7 +80,6 @@ pub mod storage;
 pub mod system;
 pub mod systems;
 pub mod world;
-pub mod physics_world;
 
 // Re-export commonly used types
 pub use archetype::{Archetype, ArchetypeGraph, ArchetypeId};
@@ -92,11 +92,13 @@ pub use collision::{
 pub use component::{Component, ComponentId, ComponentInfo};
 pub use entity::{Entity, EntityAllocator};
 pub use input_manager::{InputBinding, InputManager};
+pub use physics_world::PhysicsWorld;
 pub use query::{Query, QueryIter, QueryIterMut, QuerySystemParamState};
-pub use sparse_set::{SparseSet, SparseSetIter, SparseSetIterMut};
 pub use resource::{Res, ResMut, Resource, ResourceId, Resources};
-pub use schedule::{CoreStage, Stage, StageLabel, StageLabelId, StageOrder, StagePosition, SystemStage};
+pub use schedule::{
+    CoreStage, Stage, StageLabel, StageLabelId, StageOrder, StagePosition, SystemStage,
+};
+pub use sparse_set::{SparseSet, SparseSetIter, SparseSetIterMut};
 pub use storage::{AnyComponentStorage, ComponentStorage};
 pub use systems::{SpriteRenderSystem, TransformPropagationSystem};
 pub use world::{EntityWorldMut, World};
-pub use physics_world::PhysicsWorld;

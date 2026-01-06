@@ -234,18 +234,8 @@ fn bench_asset_server(c: &mut Criterion) {
 // Criterion Configuration
 // ================================================================================================
 
-criterion_group!(
-    storage_benches,
-    bench_asset_storage_operations,
-);
+criterion_group!(storage_benches, bench_asset_storage_operations,);
 
-criterion_group!(
-    loader_benches,
-    bench_asset_loader,
-    bench_asset_server,
-);
+criterion_group!(loader_benches, bench_asset_loader, bench_asset_server,);
 
-criterion_main!(
-    storage_benches,
-    loader_benches,
-);
+criterion_main!(storage_benches, loader_benches,);

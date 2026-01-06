@@ -436,10 +436,7 @@ mod tests {
                 pos.y = 200.0;
             }
 
-            assert_eq!(
-                storage.get(entity),
-                Some(&Position { x: 100.0, y: 200.0 })
-            );
+            assert_eq!(storage.get(entity), Some(&Position { x: 100.0, y: 200.0 }));
         }
 
         #[test]
@@ -697,8 +694,7 @@ mod tests {
             );
 
             // Replace
-            let old =
-                ComponentStorage::insert(&mut storage, entity, Name("Enemy".to_string()));
+            let old = ComponentStorage::insert(&mut storage, entity, Name("Enemy".to_string()));
             assert_eq!(old, Some(Name("Player".to_string())));
         }
     }

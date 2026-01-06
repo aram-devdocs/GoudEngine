@@ -44,9 +44,8 @@
 //! ```
 
 use crate::assets::{
-    Asset, AssetHandle, AssetId, AssetLoadError, AssetLoader, AssetPath, AssetState,
-    AssetStorage, ErasedAssetLoader, HotReloadConfig, HotReloadWatcher, LoadContext,
-    TypedAssetLoader,
+    Asset, AssetHandle, AssetId, AssetLoadError, AssetLoader, AssetPath, AssetState, AssetStorage,
+    ErasedAssetLoader, HotReloadConfig, HotReloadWatcher, LoadContext, TypedAssetLoader,
 };
 use std::collections::HashMap;
 use std::fmt;
@@ -335,8 +334,8 @@ impl AssetServer {
         let full_path = self.asset_root.join(path.as_str());
 
         // Read file
-        let bytes = std::fs::read(&full_path)
-            .map_err(|e| AssetLoadError::io_error(&full_path, e))?;
+        let bytes =
+            std::fs::read(&full_path).map_err(|e| AssetLoadError::io_error(&full_path, e))?;
 
         // Create load context
         let mut context = LoadContext::new(path.clone().into_owned());

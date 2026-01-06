@@ -553,10 +553,7 @@ impl<T: Resource> SystemParam for Res<'_, T> {
         access.add_resource_read(ResourceId::of::<T>());
     }
 
-    fn get_param<'w, 's>(
-        _state: &'s mut Self::State,
-        world: &'w World,
-    ) -> Self::Item<'w, 's> {
+    fn get_param<'w, 's>(_state: &'s mut Self::State, world: &'w World) -> Self::Item<'w, 's> {
         world
             .resource::<T>()
             .expect("Resource does not exist. Use Option<Res<T>> for optional access.")
@@ -617,10 +614,7 @@ impl<T: Resource> SystemParam for ResMut<'_, T> {
         access.add_resource_write(ResourceId::of::<T>());
     }
 
-    fn get_param<'w, 's>(
-        _state: &'s mut Self::State,
-        _world: &'w World,
-    ) -> Self::Item<'w, 's> {
+    fn get_param<'w, 's>(_state: &'s mut Self::State, _world: &'w World) -> Self::Item<'w, 's> {
         // ResMut requires mutable world access, so this panics
         panic!("ResMut<T> requires mutable world access. Use get_param_mut instead.")
     }
@@ -693,9 +687,9 @@ impl<T: NonSendResource> SystemParam for NonSend<'_, T> {
     }
 
     fn get_param<'w, 's>(_state: &'s mut Self::State, world: &'w World) -> Self::Item<'w, 's> {
-        world.non_send_resource::<T>().expect(
-            "Non-send resource does not exist. Use Option<NonSend<T>> for optional access.",
-        )
+        world
+            .non_send_resource::<T>()
+            .expect("Non-send resource does not exist. Use Option<NonSend<T>> for optional access.")
     }
 
     fn get_param_mut<'w, 's>(
@@ -763,10 +757,7 @@ impl<T: NonSendResource> SystemParam for NonSendMut<'_, T> {
         access.add_non_send_write(NonSendResourceId::of::<T>());
     }
 
-    fn get_param<'w, 's>(
-        _state: &'s mut Self::State,
-        _world: &'w World,
-    ) -> Self::Item<'w, 's> {
+    fn get_param<'w, 's>(_state: &'s mut Self::State, _world: &'w World) -> Self::Item<'w, 's> {
         // NonSendMut requires mutable world access, so this panics
         panic!("NonSendMut<T> requires mutable world access. Use get_param_mut instead.")
     }
@@ -1362,7 +1353,9 @@ mod tests {
             // Combined access should have Position read, Velocity write
             assert!(!access.is_read_only()); // Has a write
             assert!(access.writes().contains(&ComponentId::of::<Velocity>()));
-            assert!(access.reads().any(|&id| id == ComponentId::of::<Position>()));
+            assert!(access
+                .reads()
+                .any(|&id| id == ComponentId::of::<Position>()));
         }
     }
 
@@ -1441,7 +1434,9 @@ mod tests {
             Res::<Time>::update_access(&state, &mut access);
 
             // Should have read access to the resource
-            assert!(access.resource_reads().any(|&id| id == ResourceId::of::<Time>()));
+            assert!(access
+                .resource_reads()
+                .any(|&id| id == ResourceId::of::<Time>()));
             assert!(access.is_read_only());
         }
 
@@ -1746,8 +1741,12 @@ mod tests {
             ResMut::<Score>::update_access(&score_state, &mut access);
 
             // Should have read on Time, write on Score
-            assert!(access.resource_reads().any(|&id| id == ResourceId::of::<Time>()));
-            assert!(access.resource_writes().contains(&ResourceId::of::<Score>()));
+            assert!(access
+                .resource_reads()
+                .any(|&id| id == ResourceId::of::<Time>()));
+            assert!(access
+                .resource_writes()
+                .contains(&ResourceId::of::<Score>()));
             assert!(!access.is_read_only()); // Has a write
         }
     }

@@ -287,10 +287,7 @@ impl SpatialHash {
 
         // Insert entity into each cell
         for cell in &cells {
-            self.grid
-                .entry(*cell)
-                .or_default()
-                .insert(entity);
+            self.grid.entry(*cell).or_default().insert(entity);
         }
 
         // Store mappings
@@ -390,9 +387,7 @@ impl SpatialHash {
         let old_cells = self.entity_cells.get(&entity).unwrap();
 
         // Optimization: if cells haven't changed, just update the AABB
-        if new_cells.len() == old_cells.len()
-            && new_cells.iter().all(|c| old_cells.contains(c))
-        {
+        if new_cells.len() == old_cells.len() && new_cells.iter().all(|c| old_cells.contains(c)) {
             self.entity_bounds.insert(entity, new_aabb);
             return true;
         }
@@ -934,7 +929,7 @@ mod tests {
         hash.insert(entity(0), Rect::new(0.0, 0.0, 32.0, 32.0));
 
         let pairs = hash.query_pairs();
-        assert_eq!(pairs.len(), 0);  // No pairs with single entity
+        assert_eq!(pairs.len(), 0); // No pairs with single entity
     }
 
     #[test]
@@ -959,7 +954,7 @@ mod tests {
         hash.insert(entity(1), Rect::new(200.0, 0.0, 32.0, 32.0));
 
         let pairs = hash.query_pairs();
-        assert_eq!(pairs.len(), 0);  // Too far apart
+        assert_eq!(pairs.len(), 0); // Too far apart
     }
 
     #[test]
@@ -972,7 +967,7 @@ mod tests {
         hash.insert(entity(2), Rect::new(40.0, 0.0, 32.0, 32.0));
 
         let pairs = hash.query_pairs();
-        assert_eq!(pairs.len(), 3);  // (0,1), (0,2), (1,2)
+        assert_eq!(pairs.len(), 3); // (0,1), (0,2), (1,2)
     }
 
     #[test]
@@ -980,11 +975,11 @@ mod tests {
         let mut hash = SpatialHash::new(64.0);
 
         // Entity spanning multiple cells
-        hash.insert(entity(0), Rect::new(0.0, 0.0, 128.0, 32.0));  // Spans 2 cells
+        hash.insert(entity(0), Rect::new(0.0, 0.0, 128.0, 32.0)); // Spans 2 cells
         hash.insert(entity(1), Rect::new(20.0, 0.0, 32.0, 32.0));
 
         let pairs = hash.query_pairs();
-        assert_eq!(pairs.len(), 1);  // Only one pair despite multiple cells
+        assert_eq!(pairs.len(), 1); // Only one pair despite multiple cells
     }
 
     #[test]
@@ -1080,7 +1075,7 @@ mod tests {
         hash.insert(entity, Rect::new(0.0, 0.0, 128.0, 128.0));
 
         assert_eq!(hash.entity_count(), 1);
-        assert!(hash.cell_count() >= 4);  // Should occupy at least 4 cells
+        assert!(hash.cell_count() >= 4); // Should occupy at least 4 cells
     }
 
     #[test]
@@ -1092,7 +1087,7 @@ mod tests {
         hash.insert(entity, Rect::new(10.0, 10.0, 1.0, 1.0));
 
         assert_eq!(hash.entity_count(), 1);
-        assert_eq!(hash.cell_count(), 1);  // Should occupy exactly 1 cell
+        assert_eq!(hash.cell_count(), 1); // Should occupy exactly 1 cell
     }
 
     // =========================================================================

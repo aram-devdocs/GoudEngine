@@ -170,7 +170,11 @@ impl std::fmt::Display for InputBinding {
             InputBinding::Key(key) => write!(f, "Key({:?})", key),
             InputBinding::MouseButton(button) => write!(f, "MouseButton({:?})", button),
             InputBinding::GamepadButton { gamepad_id, button } => {
-                write!(f, "GamepadButton(gamepad={}, button={})", gamepad_id, button)
+                write!(
+                    f,
+                    "GamepadButton(gamepad={}, button={})",
+                    gamepad_id, button
+                )
             }
         }
     }
@@ -636,7 +640,8 @@ impl InputManager {
     /// Adds an input to the buffer for sequence detection.
     fn buffer_input(&mut self, binding: InputBinding) {
         let now = Instant::now();
-        self.input_buffer.push_back(BufferedInput::new(binding, now));
+        self.input_buffer
+            .push_back(BufferedInput::new(binding, now));
 
         // Keep buffer size reasonable (prevent memory growth from rapid inputs)
         while self.input_buffer.len() > 32 {
@@ -1316,10 +1321,13 @@ mod tests {
 
         input.map_action("Jump", InputBinding::Key(Key::Space));
         input.map_action("Jump", InputBinding::Key(Key::W));
-        input.map_action("Jump", InputBinding::GamepadButton {
-            gamepad_id: 0,
-            button: 0,
-        });
+        input.map_action(
+            "Jump",
+            InputBinding::GamepadButton {
+                gamepad_id: 0,
+                button: 0,
+            },
+        );
 
         let bindings = input.get_action_bindings("Jump");
         assert_eq!(bindings.len(), 3);
@@ -1510,10 +1518,13 @@ mod tests {
         // Map action to key, mouse button, and gamepad button
         input.map_action("Fire", InputBinding::Key(Key::Space));
         input.map_action("Fire", InputBinding::MouseButton(MouseButton::Button1));
-        input.map_action("Fire", InputBinding::GamepadButton {
-            gamepad_id: 0,
-            button: 0,
-        });
+        input.map_action(
+            "Fire",
+            InputBinding::GamepadButton {
+                gamepad_id: 0,
+                button: 0,
+            },
+        );
 
         // Test keyboard
         input.press_key(Key::Space);
@@ -1839,7 +1850,7 @@ mod tests {
         // Classic "hadouken" combo: Down -> Down (double tap) -> Forward -> Punch
         input.press_key(Key::Down);
         input.release_key(Key::Down); // Release for double tap
-        input.press_key(Key::Down);   // Second Down press
+        input.press_key(Key::Down); // Second Down press
         input.press_key(Key::Right);
         input.press_key(Key::Space);
 

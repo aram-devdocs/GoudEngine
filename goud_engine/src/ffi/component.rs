@@ -119,8 +119,7 @@ struct ComponentTypeInfo {
 ///
 /// This is used to validate component operations at the FFI boundary.
 /// Types must be registered before they can be used.
-static COMPONENT_TYPE_REGISTRY: Mutex<Option<HashMap<u64, ComponentTypeInfo>>> =
-    Mutex::new(None);
+static COMPONENT_TYPE_REGISTRY: Mutex<Option<HashMap<u64, ComponentTypeInfo>>> = Mutex::new(None);
 
 /// Gets or initializes the component type registry.
 fn get_type_registry() -> std::sync::MutexGuard<'static, Option<HashMap<u64, ComponentTypeInfo>>> {
@@ -363,7 +362,9 @@ pub unsafe extern "C" fn goud_component_add(
 ) -> GoudResult {
     // Validate inputs
     if data_ptr.is_null() {
-        set_last_error(GoudError::InvalidState("Component data pointer is null".to_string()));
+        set_last_error(GoudError::InvalidState(
+            "Component data pointer is null".to_string(),
+        ));
         return GoudResult::err(902); // InternalError
     }
 
@@ -689,12 +690,16 @@ pub unsafe extern "C" fn goud_component_add_batch(
     }
 
     if entity_ids.is_null() {
-        set_last_error(GoudError::InvalidState("entity_ids pointer is null".to_string()));
+        set_last_error(GoudError::InvalidState(
+            "entity_ids pointer is null".to_string(),
+        ));
         return 0;
     }
 
     if data_ptr.is_null() {
-        set_last_error(GoudError::InvalidState("data_ptr pointer is null".to_string()));
+        set_last_error(GoudError::InvalidState(
+            "data_ptr pointer is null".to_string(),
+        ));
         return 0;
     }
 
@@ -797,7 +802,9 @@ pub unsafe extern "C" fn goud_component_remove_batch(
     }
 
     if entity_ids.is_null() {
-        set_last_error(GoudError::InvalidState("entity_ids pointer is null".to_string()));
+        set_last_error(GoudError::InvalidState(
+            "entity_ids pointer is null".to_string(),
+        ));
         return 0;
     }
 
@@ -896,12 +903,16 @@ pub unsafe extern "C" fn goud_component_has_batch(
     }
 
     if entity_ids.is_null() {
-        set_last_error(GoudError::InvalidState("entity_ids pointer is null".to_string()));
+        set_last_error(GoudError::InvalidState(
+            "entity_ids pointer is null".to_string(),
+        ));
         return 0;
     }
 
     if out_results.is_null() {
-        set_last_error(GoudError::InvalidState("out_results pointer is null".to_string()));
+        set_last_error(GoudError::InvalidState(
+            "out_results pointer is null".to_string(),
+        ));
         return 0;
     }
 
@@ -1182,11 +1193,8 @@ mod tests {
 
         let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
 
-        let result = goud_component_remove(
-            context_id,
-            GoudEntityId::new(entity_id),
-            TEST_TYPE_ID + 6,
-        );
+        let result =
+            goud_component_remove(context_id, GoudEntityId::new(entity_id), TEST_TYPE_ID + 6);
 
         // Should succeed even if component doesn't exist (placeholder implementation)
         assert!(result.is_ok());
@@ -1209,11 +1217,8 @@ mod tests {
 
         let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
 
-        let has_component = goud_component_has(
-            context_id,
-            GoudEntityId::new(entity_id),
-            TEST_TYPE_ID + 7,
-        );
+        let has_component =
+            goud_component_has(context_id, GoudEntityId::new(entity_id), TEST_TYPE_ID + 7);
 
         // Should return false (placeholder implementation)
         assert!(!has_component);
@@ -1236,11 +1241,7 @@ mod tests {
 
         let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
 
-        let ptr = goud_component_get(
-            context_id,
-            GoudEntityId::new(entity_id),
-            TEST_TYPE_ID + 8,
-        );
+        let ptr = goud_component_get(context_id, GoudEntityId::new(entity_id), TEST_TYPE_ID + 8);
 
         // Should return null (placeholder implementation)
         assert!(ptr.is_null());
@@ -1263,11 +1264,8 @@ mod tests {
 
         let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
 
-        let ptr = goud_component_get_mut(
-            context_id,
-            GoudEntityId::new(entity_id),
-            TEST_TYPE_ID + 9,
-        );
+        let ptr =
+            goud_component_get_mut(context_id, GoudEntityId::new(entity_id), TEST_TYPE_ID + 9);
 
         // Should return null (placeholder implementation)
         assert!(ptr.is_null());
@@ -1449,9 +1447,8 @@ mod tests {
 
         let entities = [1u64, 2, 3, 4, 5];
 
-        let removed = unsafe {
-            goud_component_remove_batch(context_id, entities.as_ptr(), 5, TEST_TYPE_ID)
-        };
+        let removed =
+            unsafe { goud_component_remove_batch(context_id, entities.as_ptr(), 5, TEST_TYPE_ID) };
 
         // Placeholder returns count
         assert_eq!(removed, 5);

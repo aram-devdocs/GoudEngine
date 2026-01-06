@@ -157,7 +157,13 @@ fn bench_component_add(c: &mut Criterion) {
             |(mut world, entity)| {
                 world.insert(entity, Position { x: 0.0, y: 0.0 });
                 world.insert(entity, Velocity { x: 1.0, y: 1.0 });
-                world.insert(entity, Health { current: 100.0, max: 100.0 });
+                world.insert(
+                    entity,
+                    Health {
+                        current: 100.0,
+                        max: 100.0,
+                    },
+                );
             },
             criterion::BatchSize::SmallInput,
         );
@@ -241,7 +247,13 @@ fn bench_query_iteration(c: &mut Criterion) {
                 let mut world = World::new();
                 for i in 0..count {
                     let entity = world.spawn_empty();
-                    world.insert(entity, Position { x: i as f32, y: i as f32 });
+                    world.insert(
+                        entity,
+                        Position {
+                            x: i as f32,
+                            y: i as f32,
+                        },
+                    );
                 }
 
                 b.iter(|| {
@@ -263,7 +275,13 @@ fn bench_query_iteration(c: &mut Criterion) {
                 let mut world = World::new();
                 for i in 0..count {
                     let entity = world.spawn_empty();
-                    world.insert(entity, Position { x: i as f32, y: i as f32 });
+                    world.insert(
+                        entity,
+                        Position {
+                            x: i as f32,
+                            y: i as f32,
+                        },
+                    );
                     world.insert(entity, Velocity { x: 1.0, y: 1.0 });
                 }
 
@@ -286,7 +304,13 @@ fn bench_query_iteration(c: &mut Criterion) {
                 let mut world = World::new();
                 for i in 0..count {
                     let entity = world.spawn_empty();
-                    world.insert(entity, Position { x: i as f32, y: i as f32 });
+                    world.insert(
+                        entity,
+                        Position {
+                            x: i as f32,
+                            y: i as f32,
+                        },
+                    );
                     // Only half have Velocity (sparse distribution)
                     if i % 2 == 0 {
                         world.insert(entity, Velocity { x: 1.0, y: 1.0 });
@@ -397,7 +421,13 @@ fn bench_system_execution(c: &mut Criterion) {
                 let mut world = World::new();
                 for i in 0..count {
                     let entity = world.spawn_empty();
-                    world.insert(entity, Position { x: i as f32, y: i as f32 });
+                    world.insert(
+                        entity,
+                        Position {
+                            x: i as f32,
+                            y: i as f32,
+                        },
+                    );
                     world.insert(entity, Velocity { x: 1.0, y: 1.0 });
                 }
 
@@ -415,11 +445,7 @@ fn bench_system_execution(c: &mut Criterion) {
 // Criterion Configuration
 // ================================================================================================
 
-criterion_group!(
-    entity_benches,
-    bench_entity_spawn,
-    bench_entity_despawn,
-);
+criterion_group!(entity_benches, bench_entity_spawn, bench_entity_despawn,);
 
 criterion_group!(
     component_benches,
@@ -427,20 +453,11 @@ criterion_group!(
     bench_component_remove,
 );
 
-criterion_group!(
-    query_benches,
-    bench_query_iteration,
-);
+criterion_group!(query_benches, bench_query_iteration,);
 
-criterion_group!(
-    archetype_benches,
-    bench_archetype_transitions,
-);
+criterion_group!(archetype_benches, bench_archetype_transitions,);
 
-criterion_group!(
-    system_benches,
-    bench_system_execution,
-);
+criterion_group!(system_benches, bench_system_execution,);
 
 criterion_main!(
     entity_benches,

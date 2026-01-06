@@ -37,7 +37,11 @@ mod tests {
         // This allows for audio manipulation (volume, speed, filters, etc.)
 
         // We use a function pointer to verify the trait exists and is accessible
-        fn _verify_source_trait<S: Source>(_source: S) where S::Item: rodio::Sample {}
+        fn _verify_source_trait<S: Source>(_source: S)
+        where
+            S::Item: rodio::Sample,
+        {
+        }
 
         // If this compiles, the Source trait is properly available
     }

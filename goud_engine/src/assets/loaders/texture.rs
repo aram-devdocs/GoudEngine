@@ -174,7 +174,9 @@ impl Asset for TextureAsset {
     }
 
     fn extensions() -> &'static [&'static str] {
-        &["png", "jpg", "jpeg", "bmp", "tga", "gif", "webp", "ico", "tiff"]
+        &[
+            "png", "jpg", "jpeg", "bmp", "tga", "gif", "webp", "ico", "tiff",
+        ]
     }
 }
 
@@ -517,14 +519,13 @@ mod tests {
     // Helper function to create a small test PNG image
     fn create_test_png(width: u32, height: u32) -> Vec<u8> {
         use image::{ImageBuffer, Rgba};
-        let img: ImageBuffer<Rgba<u8>, Vec<u8>> =
-            ImageBuffer::from_fn(width, height, |x, y| {
-                if (x + y) % 2 == 0 {
-                    Rgba([255, 0, 0, 255]) // Red
-                } else {
-                    Rgba([0, 255, 0, 255]) // Green
-                }
-            });
+        let img: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_fn(width, height, |x, y| {
+            if (x + y) % 2 == 0 {
+                Rgba([255, 0, 0, 255]) // Red
+            } else {
+                Rgba([0, 255, 0, 255]) // Green
+            }
+        });
         let mut bytes = Vec::new();
         image::DynamicImage::ImageRgba8(img)
             .write_to(&mut std::io::Cursor::new(&mut bytes), ImageFormat::Png)
@@ -887,7 +888,8 @@ mod tests {
             let bytes = create_test_png(8, 8);
             let settings = TextureSettings::default();
 
-            let result = TextureLoader::load_from_bytes(&bytes, &settings, Some(TextureFormat::Png));
+            let result =
+                TextureLoader::load_from_bytes(&bytes, &settings, Some(TextureFormat::Png));
             assert!(result.is_ok());
 
             let texture = result.unwrap();

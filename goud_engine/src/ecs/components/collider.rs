@@ -650,7 +650,8 @@ pub mod aabb {
 
         // For circles and AABBs without rotation, we can optimize
         if matches!(shape, ColliderShape::Circle { .. })
-            || (matches!(shape, ColliderShape::Aabb { .. }) && transform.rotation.abs() < f32::EPSILON)
+            || (matches!(shape, ColliderShape::Aabb { .. })
+                && transform.rotation.abs() < f32::EPSILON)
         {
             // Simple translation + scale
             let half_size = local_aabb.size() * 0.5;
@@ -659,17 +660,17 @@ pub mod aabb {
                 half_size.y * transform.scale.y.abs(),
             );
             let center = transform.position;
-            return Rect::from_min_max(
-                center - scaled_half_size,
-                center + scaled_half_size,
-            );
+            return Rect::from_min_max(center - scaled_half_size, center + scaled_half_size);
         }
 
         // For rotated shapes, transform all corners and compute bounding box
         let corners = [
             Vec2::new(local_aabb.x, local_aabb.y),
             Vec2::new(local_aabb.x + local_aabb.width, local_aabb.y),
-            Vec2::new(local_aabb.x + local_aabb.width, local_aabb.y + local_aabb.height),
+            Vec2::new(
+                local_aabb.x + local_aabb.width,
+                local_aabb.y + local_aabb.height,
+            ),
             Vec2::new(local_aabb.x, local_aabb.y + local_aabb.height),
         ];
 
@@ -1062,11 +1063,7 @@ mod tests {
 
     #[test]
     fn test_collider_polygon() {
-        let collider = Collider::polygon(vec![
-            Vec2::zero(),
-            Vec2::unit_x(),
-            Vec2::new(0.5, 1.0),
-        ]);
+        let collider = Collider::polygon(vec![Vec2::zero(), Vec2::unit_x(), Vec2::new(0.5, 1.0)]);
         assert!(collider.shape().is_polygon());
     }
 
@@ -1271,13 +1268,15 @@ mod tests {
 
         let world_aabb = aabb::compute_world_aabb(&shape, &transform);
         assert_eq!(world_aabb.center(), Vec2::new(5.0, 5.0));
-        assert_eq!(world_aabb.width, 4.0);  // 2 * radius * scale
+        assert_eq!(world_aabb.width, 4.0); // 2 * radius * scale
         assert_eq!(world_aabb.height, 4.0);
     }
 
     #[test]
     fn test_aabb_compute_world_aabb_box_no_rotation() {
-        let shape = ColliderShape::Aabb { half_extents: Vec2::new(3.0, 2.0) };
+        let shape = ColliderShape::Aabb {
+            half_extents: Vec2::new(3.0, 2.0),
+        };
         let transform = Transform2D::from_position(Vec2::new(10.0, 20.0));
 
         let world_aabb = aabb::compute_world_aabb(&shape, &transform);
@@ -1288,9 +1287,11 @@ mod tests {
 
     #[test]
     fn test_aabb_compute_world_aabb_box_with_rotation() {
-        let shape = ColliderShape::Obb { half_extents: Vec2::new(2.0, 1.0) };
+        let shape = ColliderShape::Obb {
+            half_extents: Vec2::new(2.0, 1.0),
+        };
         let mut transform = Transform2D::from_position(Vec2::new(0.0, 0.0));
-        transform.set_rotation(std::f32::consts::PI / 4.0);  // 45 degrees
+        transform.set_rotation(std::f32::consts::PI / 4.0); // 45 degrees
 
         let world_aabb = aabb::compute_world_aabb(&shape, &transform);
 
@@ -1303,13 +1304,16 @@ mod tests {
 
     #[test]
     fn test_aabb_compute_world_aabb_capsule() {
-        let shape = ColliderShape::Capsule { half_height: 1.0, radius: 0.5 };
+        let shape = ColliderShape::Capsule {
+            half_height: 1.0,
+            radius: 0.5,
+        };
         let transform = Transform2D::from_position(Vec2::new(5.0, 10.0));
 
         let world_aabb = aabb::compute_world_aabb(&shape, &transform);
         assert_eq!(world_aabb.center(), Vec2::new(5.0, 10.0));
-        assert_eq!(world_aabb.width, 1.0);   // 2 * radius
-        assert_eq!(world_aabb.height, 3.0);  // 2 * (half_height + radius)
+        assert_eq!(world_aabb.width, 1.0); // 2 * radius
+        assert_eq!(world_aabb.height, 3.0); // 2 * (half_height + radius)
     }
 
     #[test]
@@ -1410,7 +1414,7 @@ mod tests {
         let hit = aabb::raycast(&aabb, ray_origin, ray_direction, 100.0);
         assert!(hit.is_some());
         let t = hit.unwrap();
-        assert!((t - 5.0).abs() < 0.001);  // Should hit at t=5
+        assert!((t - 5.0).abs() < 0.001); // Should hit at t=5
     }
 
     #[test]
@@ -1431,7 +1435,7 @@ mod tests {
 
         let hit = aabb::raycast(&aabb, ray_origin, ray_direction, 100.0);
         assert!(hit.is_some());
-        assert_eq!(hit.unwrap(), 0.0);  // Ray starts inside
+        assert_eq!(hit.unwrap(), 0.0); // Ray starts inside
     }
 
     #[test]
@@ -1464,7 +1468,7 @@ mod tests {
         let point = Vec2::new(5.0, 5.0);
 
         let closest = aabb::closest_point(&aabb, point);
-        assert_eq!(closest, point);  // Point is inside, returns itself
+        assert_eq!(closest, point); // Point is inside, returns itself
     }
 
     #[test]
@@ -1482,7 +1486,7 @@ mod tests {
         let point = Vec2::new(-3.0, 0.0);
 
         let dist_sq = aabb::distance_squared_to_point(&aabb, point);
-        assert_eq!(dist_sq, 9.0);  // Distance is 3.0, squared is 9.0
+        assert_eq!(dist_sq, 9.0); // Distance is 3.0, squared is 9.0
     }
 
     #[test]
@@ -1503,7 +1507,7 @@ mod tests {
     #[test]
     fn test_aabb_perimeter() {
         let aabb = Rect::new(0.0, 0.0, 10.0, 5.0);
-        assert_eq!(aabb::perimeter(&aabb), 30.0);  // 2 * (10 + 5)
+        assert_eq!(aabb::perimeter(&aabb), 30.0); // 2 * (10 + 5)
     }
 
     #[test]

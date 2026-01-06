@@ -1155,7 +1155,10 @@ mod tests {
             assert!(AssetState::Loaded.is_ready());
             assert!(!AssetState::NotLoaded.is_ready());
             assert!(!AssetState::Loading { progress: 0.5 }.is_ready());
-            assert!(!AssetState::Failed { error: "test".to_string() }.is_ready());
+            assert!(!AssetState::Failed {
+                error: "test".to_string()
+            }
+            .is_ready());
             assert!(!AssetState::Unloaded.is_ready());
         }
 
@@ -1170,7 +1173,10 @@ mod tests {
 
         #[test]
         fn test_is_failed() {
-            assert!(AssetState::Failed { error: "error".to_string() }.is_failed());
+            assert!(AssetState::Failed {
+                error: "error".to_string()
+            }
+            .is_failed());
             assert!(!AssetState::Loaded.is_failed());
             assert!(!AssetState::Loading { progress: 0.5 }.is_failed());
         }

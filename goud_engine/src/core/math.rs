@@ -1032,12 +1032,54 @@ mod tests {
 
     #[test]
     fn test_vec3_constructors() {
-        assert_eq!(Vec3::new(1.0, 2.0, 3.0), Vec3 { x: 1.0, y: 2.0, z: 3.0 });
-        assert_eq!(Vec3::zero(), Vec3 { x: 0.0, y: 0.0, z: 0.0 });
-        assert_eq!(Vec3::one(), Vec3 { x: 1.0, y: 1.0, z: 1.0 });
-        assert_eq!(Vec3::unit_x(), Vec3 { x: 1.0, y: 0.0, z: 0.0 });
-        assert_eq!(Vec3::unit_y(), Vec3 { x: 0.0, y: 1.0, z: 0.0 });
-        assert_eq!(Vec3::unit_z(), Vec3 { x: 0.0, y: 0.0, z: 1.0 });
+        assert_eq!(
+            Vec3::new(1.0, 2.0, 3.0),
+            Vec3 {
+                x: 1.0,
+                y: 2.0,
+                z: 3.0
+            }
+        );
+        assert_eq!(
+            Vec3::zero(),
+            Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0
+            }
+        );
+        assert_eq!(
+            Vec3::one(),
+            Vec3 {
+                x: 1.0,
+                y: 1.0,
+                z: 1.0
+            }
+        );
+        assert_eq!(
+            Vec3::unit_x(),
+            Vec3 {
+                x: 1.0,
+                y: 0.0,
+                z: 0.0
+            }
+        );
+        assert_eq!(
+            Vec3::unit_y(),
+            Vec3 {
+                x: 0.0,
+                y: 1.0,
+                z: 0.0
+            }
+        );
+        assert_eq!(
+            Vec3::unit_z(),
+            Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: 1.0
+            }
+        );
     }
 
     #[test]
@@ -1176,9 +1218,9 @@ mod tests {
         let v = Vec3::new(1.0, 2.0, 3.0);
         let ptr = &v as *const Vec3 as *const f32;
         unsafe {
-            assert_eq!(*ptr, 1.0);         // x at offset 0
-            assert_eq!(*ptr.add(1), 2.0);  // y at offset 4
-            assert_eq!(*ptr.add(2), 3.0);  // z at offset 8
+            assert_eq!(*ptr, 1.0); // x at offset 0
+            assert_eq!(*ptr.add(1), 2.0); // y at offset 4
+            assert_eq!(*ptr.add(2), 3.0); // z at offset 8
         }
 
         // Verify Default trait
@@ -1191,9 +1233,33 @@ mod tests {
 
     #[test]
     fn test_vec4_constructors() {
-        assert_eq!(Vec4::new(1.0, 2.0, 3.0, 4.0), Vec4 { x: 1.0, y: 2.0, z: 3.0, w: 4.0 });
-        assert_eq!(Vec4::zero(), Vec4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 });
-        assert_eq!(Vec4::one(), Vec4 { x: 1.0, y: 1.0, z: 1.0, w: 1.0 });
+        assert_eq!(
+            Vec4::new(1.0, 2.0, 3.0, 4.0),
+            Vec4 {
+                x: 1.0,
+                y: 2.0,
+                z: 3.0,
+                w: 4.0
+            }
+        );
+        assert_eq!(
+            Vec4::zero(),
+            Vec4 {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+                w: 0.0
+            }
+        );
+        assert_eq!(
+            Vec4::one(),
+            Vec4 {
+                x: 1.0,
+                y: 1.0,
+                z: 1.0,
+                w: 1.0
+            }
+        );
     }
 
     #[test]
@@ -1358,7 +1424,7 @@ mod tests {
         use std::mem::size_of;
 
         // Verify types have expected sizes for FFI
-        assert_eq!(size_of::<Vec2>(), 8);  // 2 * f32
+        assert_eq!(size_of::<Vec2>(), 8); // 2 * f32
         assert_eq!(size_of::<Vec3>(), 12); // 3 * f32
         assert_eq!(size_of::<Vec4>(), 16); // 4 * f32
         assert_eq!(size_of::<Rect>(), 16); // 4 * f32

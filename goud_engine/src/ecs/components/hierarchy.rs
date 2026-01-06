@@ -1374,11 +1374,8 @@ mod tests {
 
         #[test]
         fn test_children_sort_by_index() {
-            let mut children = Children::from_slice(&[
-                Entity::new(3, 1),
-                Entity::new(1, 1),
-                Entity::new(2, 1),
-            ]);
+            let mut children =
+                Children::from_slice(&[Entity::new(3, 1), Entity::new(1, 1), Entity::new(2, 1)]);
 
             children.sort_by_index();
 
@@ -1389,11 +1386,8 @@ mod tests {
 
         #[test]
         fn test_children_sort_by() {
-            let mut children = Children::from_slice(&[
-                Entity::new(1, 1),
-                Entity::new(2, 1),
-                Entity::new(3, 1),
-            ]);
+            let mut children =
+                Children::from_slice(&[Entity::new(1, 1), Entity::new(2, 1), Entity::new(3, 1)]);
 
             // Reverse sort
             children.sort_by(|a, b| b.index().cmp(&a.index()));

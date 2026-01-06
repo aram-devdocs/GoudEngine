@@ -282,10 +282,7 @@ impl GoudContextRegistry {
                 }
 
                 // Increment generation for next allocation
-                let next_generation = context
-                    .generation()
-                    .checked_add(1)
-                    .unwrap_or(1); // Wrap to 1 on overflow
+                let next_generation = context.generation().checked_add(1).unwrap_or(1); // Wrap to 1 on overflow
 
                 self.slots[index] = ContextSlot::Free { next_generation };
                 self.free_list.push(id.index());
@@ -529,7 +526,9 @@ pub extern "C" fn goud_context_create() -> GoudContextId {
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
         Err(_) => {
-            set_last_error(GoudError::InternalError("Failed to lock context registry".to_string()));
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
             return GOUD_INVALID_CONTEXT_ID;
         }
     };
@@ -585,7 +584,9 @@ pub extern "C" fn goud_context_destroy(context_id: GoudContextId) -> bool {
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
         Err(_) => {
-            set_last_error(GoudError::InternalError("Failed to lock context registry".to_string()));
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
             return false;
         }
     };

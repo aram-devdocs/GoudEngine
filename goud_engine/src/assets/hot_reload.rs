@@ -483,9 +483,8 @@ impl HotReloadWatcher {
 
         // Clean up old debounce entries (keep last 1000)
         if self.debounce_map.len() > 1000 {
-            self.debounce_map.retain(|_, time| {
-                now.duration_since(*time) < Duration::from_secs(10)
-            });
+            self.debounce_map
+                .retain(|_, time| now.duration_since(*time) < Duration::from_secs(10));
         }
 
         reload_count

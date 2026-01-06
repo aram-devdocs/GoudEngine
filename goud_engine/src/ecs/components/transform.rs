@@ -1004,8 +1004,12 @@ mod tests {
             // Midpoint should be 45 degrees
             let expected = Quat::from_axis_angle(Vec3::unit_y(), FRAC_PI_4);
             // Compare quaternion components (accounting for sign flip equivalence)
-            let dot = mid.x * expected.x + mid.y * expected.y + mid.z * expected.z + mid.w * expected.w;
-            assert!(dot.abs() > 0.999, "slerp midpoint should represent same rotation");
+            let dot =
+                mid.x * expected.x + mid.y * expected.y + mid.z * expected.z + mid.w * expected.w;
+            assert!(
+                dot.abs() > 0.999,
+                "slerp midpoint should represent same rotation"
+            );
         }
 
         #[test]
@@ -1466,9 +1470,14 @@ mod tests {
             // Midpoint should be 45 degrees
             let expected = Quat::from_axis_angle(Vec3::unit_y(), FRAC_PI_4);
             // Compare using dot product (handles sign flip)
-            let dot = mid.rotation.x * expected.x + mid.rotation.y * expected.y
-                + mid.rotation.z * expected.z + mid.rotation.w * expected.w;
-            assert!(dot.abs() > 0.999, "lerp midpoint rotation should match expected");
+            let dot = mid.rotation.x * expected.x
+                + mid.rotation.y * expected.y
+                + mid.rotation.z * expected.z
+                + mid.rotation.w * expected.w;
+            assert!(
+                dot.abs() > 0.999,
+                "lerp midpoint rotation should match expected"
+            );
         }
 
         #[test]

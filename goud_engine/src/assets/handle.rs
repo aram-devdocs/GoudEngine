@@ -1802,10 +1802,7 @@ mod tests {
 
         #[test]
         fn test_asset_type() {
-            assert_eq!(
-                AssetHandle::<TestTexture>::asset_type(),
-                AssetType::Texture
-            );
+            assert_eq!(AssetHandle::<TestTexture>::asset_type(), AssetType::Texture);
             assert_eq!(AssetHandle::<TestAudio>::asset_type(), AssetType::Audio);
         }
 
@@ -2122,10 +2119,7 @@ mod tests {
                 AssetPath::new("textures/player.png").extension(),
                 Some("png")
             );
-            assert_eq!(
-                AssetPath::new("archive.tar.gz").extension(),
-                Some("gz")
-            );
+            assert_eq!(AssetPath::new("archive.tar.gz").extension(), Some("gz"));
             assert_eq!(AssetPath::new("Makefile").extension(), None);
             assert_eq!(AssetPath::new(".gitignore").extension(), None);
             assert_eq!(AssetPath::new("").extension(), None);
@@ -2137,10 +2131,7 @@ mod tests {
                 AssetPath::new("textures/player.png").directory(),
                 Some("textures")
             );
-            assert_eq!(
-                AssetPath::new("a/b/c/file.txt").directory(),
-                Some("a/b/c")
-            );
+            assert_eq!(AssetPath::new("a/b/c/file.txt").directory(), Some("a/b/c"));
             assert_eq!(AssetPath::new("file.txt").directory(), None);
             assert_eq!(AssetPath::new("").directory(), None);
         }
@@ -2148,14 +2139,8 @@ mod tests {
         #[test]
         fn test_stem() {
             assert_eq!(AssetPath::new("player.png").stem(), Some("player"));
-            assert_eq!(
-                AssetPath::new("textures/player.png").stem(),
-                Some("player")
-            );
-            assert_eq!(
-                AssetPath::new("archive.tar.gz").stem(),
-                Some("archive.tar")
-            );
+            assert_eq!(AssetPath::new("textures/player.png").stem(), Some("player"));
+            assert_eq!(AssetPath::new("archive.tar.gz").stem(), Some("archive.tar"));
             assert_eq!(AssetPath::new(".gitignore").stem(), Some(".gitignore"));
             assert_eq!(AssetPath::new("Makefile").stem(), Some("Makefile"));
         }

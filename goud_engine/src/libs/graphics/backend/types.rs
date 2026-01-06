@@ -187,15 +187,15 @@ impl VertexAttributeType {
     pub const fn component_count(&self) -> u32 {
         match self {
             VertexAttributeType::Float | VertexAttributeType::Int | VertexAttributeType::UInt => 1,
-            VertexAttributeType::Float2 | VertexAttributeType::Int2 | VertexAttributeType::UInt2 => {
-                2
-            }
-            VertexAttributeType::Float3 | VertexAttributeType::Int3 | VertexAttributeType::UInt3 => {
-                3
-            }
-            VertexAttributeType::Float4 | VertexAttributeType::Int4 | VertexAttributeType::UInt4 => {
-                4
-            }
+            VertexAttributeType::Float2
+            | VertexAttributeType::Int2
+            | VertexAttributeType::UInt2 => 2,
+            VertexAttributeType::Float3
+            | VertexAttributeType::Int3
+            | VertexAttributeType::UInt3 => 3,
+            VertexAttributeType::Float4
+            | VertexAttributeType::Int4
+            | VertexAttributeType::UInt4 => 4,
         }
     }
 }
@@ -386,8 +386,18 @@ mod tests {
     #[test]
     fn test_vertex_layout_with_attributes() {
         let layout = VertexLayout::new(24)
-            .with_attribute(VertexAttribute::new(0, VertexAttributeType::Float3, 0, false))
-            .with_attribute(VertexAttribute::new(1, VertexAttributeType::Float2, 12, false));
+            .with_attribute(VertexAttribute::new(
+                0,
+                VertexAttributeType::Float3,
+                0,
+                false,
+            ))
+            .with_attribute(VertexAttribute::new(
+                1,
+                VertexAttributeType::Float2,
+                12,
+                false,
+            ));
 
         assert_eq!(layout.attributes.len(), 2);
         assert_eq!(layout.attributes[0].location, 0);
@@ -397,8 +407,18 @@ mod tests {
     #[test]
     fn test_vertex_layout_total_size() {
         let layout = VertexLayout::new(20)
-            .with_attribute(VertexAttribute::new(0, VertexAttributeType::Float3, 0, false))
-            .with_attribute(VertexAttribute::new(1, VertexAttributeType::Float2, 12, false));
+            .with_attribute(VertexAttribute::new(
+                0,
+                VertexAttributeType::Float3,
+                0,
+                false,
+            ))
+            .with_attribute(VertexAttribute::new(
+                1,
+                VertexAttributeType::Float2,
+                12,
+                false,
+            ));
 
         // Float3 (12 bytes) + Float2 (8 bytes) = 20 bytes
         assert_eq!(layout.total_attribute_size(), 20);

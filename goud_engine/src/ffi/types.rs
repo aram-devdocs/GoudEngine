@@ -334,7 +334,8 @@ mod tests {
         unsafe {
             // code field (first 4 bytes)
             let code_bytes = std::slice::from_raw_parts(ptr, 4);
-            let code = i32::from_ne_bytes([code_bytes[0], code_bytes[1], code_bytes[2], code_bytes[3]]);
+            let code =
+                i32::from_ne_bytes([code_bytes[0], code_bytes[1], code_bytes[2], code_bytes[3]]);
             assert_eq!(code, 42);
 
             // success field (next byte)

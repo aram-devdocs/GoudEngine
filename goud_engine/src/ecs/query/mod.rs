@@ -725,7 +725,9 @@ mod tests {
             let world = World::new();
             let query: Query<&Position> = Query::new(&world);
             let access = query.component_access();
-            assert!(access.reads().any(|&id| id == ComponentId::of::<Position>()));
+            assert!(access
+                .reads()
+                .any(|&id| id == ComponentId::of::<Position>()));
         }
     }
 
@@ -1111,7 +1113,9 @@ mod tests {
             let mut access = Access::new();
             Query::<&Position>::update_access(&state, &mut access);
 
-            assert!(access.reads().any(|&id| id == ComponentId::of::<Position>()));
+            assert!(access
+                .reads()
+                .any(|&id| id == ComponentId::of::<Position>()));
             assert!(access.is_read_only());
         }
 
@@ -1237,7 +1241,9 @@ mod tests {
             Query::<&Position, With<Player>>::update_access(&state, &mut access);
 
             // Only Position should be in the access, not Player (filters don't access data)
-            assert!(access.reads().any(|&id| id == ComponentId::of::<Position>()));
+            assert!(access
+                .reads()
+                .any(|&id| id == ComponentId::of::<Position>()));
             // Player filter doesn't add to reads because filters only check archetype membership
         }
     }
@@ -1327,7 +1333,13 @@ mod tests {
             // Create 1000 entities
             for i in 0..1000 {
                 let e = world.spawn_empty();
-                world.insert(e, Position { x: i as f32, y: 0.0 });
+                world.insert(
+                    e,
+                    Position {
+                        x: i as f32,
+                        y: 0.0,
+                    },
+                );
                 if i % 2 == 0 {
                     world.insert(e, Player);
                 }

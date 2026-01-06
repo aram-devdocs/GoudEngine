@@ -1089,11 +1089,7 @@ mod tests {
 
         #[test]
         fn test_matrix_inverse() {
-            let t = Transform2D::new(
-                Vec2::new(10.0, 20.0),
-                FRAC_PI_4,
-                Vec2::new(2.0, 3.0),
-            );
+            let t = Transform2D::new(Vec2::new(10.0, 20.0), FRAC_PI_4, Vec2::new(2.0, 3.0));
 
             let m = t.matrix();
             let m_inv = t.matrix_inverse();
@@ -1174,11 +1170,7 @@ mod tests {
 
         #[test]
         fn test_inverse_transform_point() {
-            let t = Transform2D::new(
-                Vec2::new(10.0, 20.0),
-                FRAC_PI_4,
-                Vec2::new(2.0, 2.0),
-            );
+            let t = Transform2D::new(Vec2::new(10.0, 20.0), FRAC_PI_4, Vec2::new(2.0, 2.0));
 
             let world_point = Vec2::new(5.0, 5.0);
             let local = t.inverse_transform_point(world_point);
@@ -1288,11 +1280,7 @@ mod tests {
 
         #[test]
         fn test_transform2d_clone() {
-            let t = Transform2D::new(
-                Vec2::new(1.0, 2.0),
-                FRAC_PI_4,
-                Vec2::new(2.0, 3.0),
-            );
+            let t = Transform2D::new(Vec2::new(1.0, 2.0), FRAC_PI_4, Vec2::new(2.0, 3.0));
             let cloned = t.clone();
             assert_eq!(t, cloned);
         }
@@ -1340,11 +1328,11 @@ mod tests {
             let t = Transform2D::new(Vec2::new(1.0, 2.0), 3.0, Vec2::new(4.0, 5.0));
             let ptr = &t as *const Transform2D as *const f32;
             unsafe {
-                assert_eq!(*ptr, 1.0);           // position.x
-                assert_eq!(*ptr.add(1), 2.0);   // position.y
-                assert_eq!(*ptr.add(2), 3.0);   // rotation
-                assert_eq!(*ptr.add(3), 4.0);   // scale.x
-                assert_eq!(*ptr.add(4), 5.0);   // scale.y
+                assert_eq!(*ptr, 1.0); // position.x
+                assert_eq!(*ptr.add(1), 2.0); // position.y
+                assert_eq!(*ptr.add(2), 3.0); // rotation
+                assert_eq!(*ptr.add(3), 4.0); // scale.x
+                assert_eq!(*ptr.add(4), 5.0); // scale.y
             }
         }
     }

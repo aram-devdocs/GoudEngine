@@ -652,13 +652,15 @@ impl<A: Asset> TypedAssetStorage<A> {
     ///
     /// Returns `None` if no asset is associated with the path.
     pub fn get_handle_by_path(&self, path: &str) -> Option<AssetHandle<A>> {
-        self.path_index.get(path).copied().filter(|h| self.allocator.is_alive(*h))
+        self.path_index
+            .get(path)
+            .copied()
+            .filter(|h| self.allocator.is_alive(*h))
     }
 
     /// Gets an asset by path.
     pub fn get_by_path(&self, path: &str) -> Option<&A> {
-        self.get_handle_by_path(path)
-            .and_then(|h| self.get(&h))
+        self.get_handle_by_path(path).and_then(|h| self.get(&h))
     }
 
     /// Checks if a path is registered.
@@ -863,8 +865,7 @@ impl<A: Asset> AnyAssetStorage for TypedAssetStorage<A> {
         }
 
         let typed = AssetHandle::<A>::new(handle.index(), handle.generation());
-        self.get_entry(&typed)
-            .and_then(|e| e.path().cloned())
+        self.get_entry(&typed).and_then(|e| e.path().cloned())
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -943,11 +944,7 @@ impl AssetStorage {
     /// Inserts an asset with an associated path.
     ///
     /// If an asset with the same path exists and is alive, returns the existing handle.
-    pub fn insert_with_path<A: Asset>(
-        &mut self,
-        asset: A,
-        path: AssetPath<'_>,
-    ) -> AssetHandle<A> {
+    pub fn insert_with_path<A: Asset>(&mut self, asset: A, path: AssetPath<'_>) -> AssetHandle<A> {
         self.get_or_create_storage::<A>()
             .insert_with_path(asset, path)
     }
@@ -1134,9 +1131,7 @@ impl AssetStorage {
 
     /// Iterates over all assets of a specific type.
     pub fn iter<A: Asset>(&self) -> impl Iterator<Item = (AssetHandle<A>, &A)> {
-        self.get_storage::<A>()
-            .into_iter()
-            .flat_map(|s| s.iter())
+        self.get_storage::<A>().into_iter().flat_map(|s| s.iter())
     }
 
     /// Returns handles for all assets of a specific type.
@@ -1292,7 +1287,10 @@ mod tests {
             let asset = entry.take_asset();
             assert!(asset.is_some());
             assert!(entry.asset().is_none());
-            assert_eq!(entry.state().discriminant(), AssetState::Unloaded.discriminant());
+            assert_eq!(
+                entry.state().discriminant(),
+                AssetState::Unloaded.discriminant()
+            );
         }
 
         #[test]
@@ -1355,7 +1353,10 @@ mod tests {
             });
             entry.set_unloaded();
             assert!(entry.asset().is_none());
-            assert_eq!(entry.state().discriminant(), AssetState::Unloaded.discriminant());
+            assert_eq!(
+                entry.state().discriminant(),
+                AssetState::Unloaded.discriminant()
+            );
         }
 
         #[test]
@@ -1423,9 +1424,18 @@ mod tests {
         fn test_insert_multiple() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
-            let h1 = storage.insert(TestTexture { width: 256, height: 256 });
-            let h2 = storage.insert(TestTexture { width: 512, height: 512 });
-            let h3 = storage.insert(TestTexture { width: 1024, height: 1024 });
+            let h1 = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
+            let h2 = storage.insert(TestTexture {
+                width: 512,
+                height: 512,
+            });
+            let h3 = storage.insert(TestTexture {
+                width: 1024,
+                height: 1024,
+            });
 
             assert_ne!(h1, h2);
             assert_ne!(h2, h3);
@@ -1437,7 +1447,10 @@ mod tests {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
             let h1 = storage.insert_with_path(
-                TestTexture { width: 256, height: 256 },
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
                 AssetPath::new("textures/player.png"),
             );
 
@@ -1450,13 +1463,19 @@ mod tests {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
             let h1 = storage.insert_with_path(
-                TestTexture { width: 256, height: 256 },
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
                 AssetPath::new("textures/player.png"),
             );
 
             let h2 = storage.insert_with_path(
-                TestTexture { width: 512, height: 512 }, // Different asset
-                AssetPath::new("textures/player.png"),   // Same path
+                TestTexture {
+                    width: 512,
+                    height: 512,
+                }, // Different asset
+                AssetPath::new("textures/player.png"), // Same path
             );
 
             // Should return existing handle
@@ -1493,7 +1512,13 @@ mod tests {
             let handle = storage.reserve();
             assert!(storage.get(&handle).is_none());
 
-            let result = storage.set_loaded(&handle, TestTexture { width: 256, height: 256 });
+            let result = storage.set_loaded(
+                &handle,
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
+            );
             assert!(result);
             assert_eq!(storage.get(&handle).unwrap().width, 256);
         }
@@ -1504,7 +1529,10 @@ mod tests {
 
             let result = storage.set_loaded(
                 &AssetHandle::INVALID,
-                TestTexture { width: 256, height: 256 },
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
             );
             assert!(!result);
         }
@@ -1513,7 +1541,10 @@ mod tests {
         fn test_remove() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let removed = storage.remove(&handle);
 
             assert!(removed.is_some());
@@ -1527,7 +1558,10 @@ mod tests {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
             let handle = storage.insert_with_path(
-                TestTexture { width: 256, height: 256 },
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
                 AssetPath::new("textures/player.png"),
             );
 
@@ -1547,7 +1581,10 @@ mod tests {
         fn test_get() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let asset = storage.get(&handle);
 
             assert!(asset.is_some());
@@ -1564,7 +1601,10 @@ mod tests {
         fn test_get_stale() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             storage.remove(&handle);
 
             assert!(storage.get(&handle).is_none());
@@ -1574,7 +1614,10 @@ mod tests {
         fn test_get_mut() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             if let Some(asset) = storage.get_mut(&handle) {
                 asset.width = 512;
             }
@@ -1586,7 +1629,10 @@ mod tests {
         fn test_get_entry() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let entry = storage.get_entry(&handle);
 
             assert!(entry.is_some());
@@ -1597,7 +1643,10 @@ mod tests {
         fn test_get_state() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let state = storage.get_state(&handle);
 
             assert!(state.is_some());
@@ -1609,7 +1658,10 @@ mod tests {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
             let handle = storage.insert_with_path(
-                TestTexture { width: 256, height: 256 },
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
                 AssetPath::new("textures/player.png"),
             );
 
@@ -1624,7 +1676,10 @@ mod tests {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
             storage.insert_with_path(
-                TestTexture { width: 256, height: 256 },
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
                 AssetPath::new("textures/player.png"),
             );
 
@@ -1637,12 +1692,18 @@ mod tests {
         fn test_set_path() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let result = storage.set_path(&handle, AssetPath::new("textures/player.png"));
 
             assert!(result);
             assert!(storage.has_path("textures/player.png"));
-            assert_eq!(storage.get_handle_by_path("textures/player.png"), Some(handle));
+            assert_eq!(
+                storage.get_handle_by_path("textures/player.png"),
+                Some(handle)
+            );
         }
 
         #[test]
@@ -1650,7 +1711,10 @@ mod tests {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
             let handle = storage.insert_with_path(
-                TestTexture { width: 256, height: 256 },
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
                 AssetPath::new("old/path.png"),
             );
 
@@ -1665,7 +1729,10 @@ mod tests {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
             let handle = storage.insert_with_path(
-                TestTexture { width: 256, height: 256 },
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
                 AssetPath::new("textures/player.png"),
             );
 
@@ -1677,8 +1744,14 @@ mod tests {
         fn test_clear() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
-            let h1 = storage.insert(TestTexture { width: 256, height: 256 });
-            let h2 = storage.insert(TestTexture { width: 512, height: 512 });
+            let h1 = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
+            let h2 = storage.insert(TestTexture {
+                width: 512,
+                height: 512,
+            });
 
             storage.clear();
 
@@ -1691,8 +1764,14 @@ mod tests {
         fn test_iter() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
-            storage.insert(TestTexture { width: 256, height: 256 });
-            storage.insert(TestTexture { width: 512, height: 512 });
+            storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
+            storage.insert(TestTexture {
+                width: 512,
+                height: 512,
+            });
 
             let pairs: Vec<_> = storage.iter().collect();
             assert_eq!(pairs.len(), 2);
@@ -1702,8 +1781,14 @@ mod tests {
         fn test_handles() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
-            let h1 = storage.insert(TestTexture { width: 256, height: 256 });
-            let h2 = storage.insert(TestTexture { width: 512, height: 512 });
+            let h1 = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
+            let h2 = storage.insert(TestTexture {
+                width: 512,
+                height: 512,
+            });
 
             let handles: Vec<_> = storage.handles().collect();
             assert!(handles.contains(&h1));
@@ -1715,11 +1800,17 @@ mod tests {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
             storage.insert_with_path(
-                TestTexture { width: 256, height: 256 },
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
                 AssetPath::new("textures/a.png"),
             );
             storage.insert_with_path(
-                TestTexture { width: 512, height: 512 },
+                TestTexture {
+                    width: 512,
+                    height: 512,
+                },
                 AssetPath::new("textures/b.png"),
             );
 
@@ -1748,11 +1839,17 @@ mod tests {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
             // Insert and remove to create free slot
-            let h1 = storage.insert(TestTexture { width: 256, height: 256 });
+            let h1 = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             storage.remove(&h1);
 
             // New handle should have same index but different generation
-            let h2 = storage.insert(TestTexture { width: 512, height: 512 });
+            let h2 = storage.insert(TestTexture {
+                width: 512,
+                height: 512,
+            });
             assert_eq!(h1.index(), h2.index());
             assert_ne!(h1.generation(), h2.generation());
         }
@@ -1762,7 +1859,10 @@ mod tests {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
 
             let h1 = storage.insert_with_path(
-                TestTexture { width: 256, height: 256 },
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
                 AssetPath::new("textures/player.png"),
             );
 
@@ -1773,7 +1873,10 @@ mod tests {
 
             // Can insert with same path again
             let h2 = storage.insert_with_path(
-                TestTexture { width: 512, height: 512 },
+                TestTexture {
+                    width: 512,
+                    height: 512,
+                },
                 AssetPath::new("textures/player.png"),
             );
 
@@ -1799,7 +1902,10 @@ mod tests {
         #[test]
         fn test_insert() {
             let mut storage = AssetStorage::new();
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
 
             assert!(handle.is_valid());
             assert!(storage.is_alive(&handle));
@@ -1810,7 +1916,10 @@ mod tests {
         fn test_insert_multiple_types() {
             let mut storage = AssetStorage::new();
 
-            let tex_handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let tex_handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let audio_handle = storage.insert(TestAudio { duration: 2.5 });
 
             assert!(storage.is_alive(&tex_handle));
@@ -1824,7 +1933,10 @@ mod tests {
             let mut storage = AssetStorage::new();
 
             let handle = storage.insert_with_path(
-                TestTexture { width: 256, height: 256 },
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
                 AssetPath::new("textures/player.png"),
             );
 
@@ -1849,7 +1961,13 @@ mod tests {
             let mut storage = AssetStorage::new();
 
             let handle = storage.reserve::<TestTexture>();
-            storage.set_loaded(&handle, TestTexture { width: 256, height: 256 });
+            storage.set_loaded(
+                &handle,
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
+            );
 
             assert_eq!(storage.get::<TestTexture>(&handle).unwrap().width, 256);
         }
@@ -1858,7 +1976,10 @@ mod tests {
         fn test_remove() {
             let mut storage = AssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let removed = storage.remove::<TestTexture>(&handle);
 
             assert!(removed.is_some());
@@ -1869,7 +1990,10 @@ mod tests {
         fn test_remove_untyped() {
             let mut storage = AssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let untyped = handle.untyped();
 
             let result = storage.remove_untyped(&untyped);
@@ -1881,7 +2005,10 @@ mod tests {
         fn test_get() {
             let mut storage = AssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let asset = storage.get::<TestTexture>(&handle);
 
             assert!(asset.is_some());
@@ -1892,7 +2019,10 @@ mod tests {
         fn test_get_mut() {
             let mut storage = AssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             if let Some(asset) = storage.get_mut::<TestTexture>(&handle) {
                 asset.width = 512;
             }
@@ -1904,7 +2034,10 @@ mod tests {
         fn test_get_entry() {
             let mut storage = AssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let entry = storage.get_entry::<TestTexture>(&handle);
 
             assert!(entry.is_some());
@@ -1915,7 +2048,10 @@ mod tests {
         fn test_is_alive_untyped() {
             let mut storage = AssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let untyped = handle.untyped();
 
             assert!(storage.is_alive_untyped(&untyped));
@@ -1928,7 +2064,10 @@ mod tests {
         fn test_get_state() {
             let mut storage = AssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let state = storage.get_state::<TestTexture>(&handle);
 
             assert!(state.is_some());
@@ -1939,7 +2078,10 @@ mod tests {
         fn test_get_state_untyped() {
             let mut storage = AssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let untyped = handle.untyped();
 
             let state = storage.get_state_untyped(&untyped);
@@ -1952,7 +2094,10 @@ mod tests {
             let mut storage = AssetStorage::new();
 
             storage.insert_with_path(
-                TestTexture { width: 256, height: 256 },
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
                 AssetPath::new("textures/player.png"),
             );
 
@@ -1965,7 +2110,10 @@ mod tests {
         fn test_set_path() {
             let mut storage = AssetStorage::new();
 
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             storage.set_path(&handle, AssetPath::new("textures/player.png"));
 
             assert!(storage.has_path::<TestTexture>("textures/player.png"));
@@ -1975,8 +2123,14 @@ mod tests {
         fn test_len() {
             let mut storage = AssetStorage::new();
 
-            storage.insert(TestTexture { width: 256, height: 256 });
-            storage.insert(TestTexture { width: 512, height: 512 });
+            storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
+            storage.insert(TestTexture {
+                width: 512,
+                height: 512,
+            });
             storage.insert(TestAudio { duration: 2.5 });
 
             assert_eq!(storage.len::<TestTexture>(), 2);
@@ -1990,7 +2144,10 @@ mod tests {
 
             assert!(storage.is_empty_type::<TestTexture>());
 
-            storage.insert(TestTexture { width: 256, height: 256 });
+            storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             assert!(!storage.is_empty_type::<TestTexture>());
             assert!(storage.is_empty_type::<TestAudio>());
         }
@@ -1999,7 +2156,10 @@ mod tests {
         fn test_clear_type() {
             let mut storage = AssetStorage::new();
 
-            let tex_handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let tex_handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             storage.insert(TestAudio { duration: 2.5 });
 
             storage.clear_type::<TestTexture>();
@@ -2013,7 +2173,10 @@ mod tests {
         fn test_clear() {
             let mut storage = AssetStorage::new();
 
-            storage.insert(TestTexture { width: 256, height: 256 });
+            storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             storage.insert(TestAudio { duration: 2.5 });
 
             storage.clear();
@@ -2027,7 +2190,10 @@ mod tests {
 
             assert!(!storage.has_type::<TestTexture>());
 
-            storage.insert(TestTexture { width: 256, height: 256 });
+            storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             assert!(storage.has_type::<TestTexture>());
         }
 
@@ -2035,7 +2201,10 @@ mod tests {
         fn test_registered_types() {
             let mut storage = AssetStorage::new();
 
-            storage.insert(TestTexture { width: 256, height: 256 });
+            storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             storage.insert(TestAudio { duration: 2.5 });
 
             let types = storage.registered_types();
@@ -2046,7 +2215,10 @@ mod tests {
         fn test_get_storage() {
             let mut storage = AssetStorage::new();
 
-            storage.insert(TestTexture { width: 256, height: 256 });
+            storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
 
             let typed_storage = storage.get_storage::<TestTexture>();
             assert!(typed_storage.is_some());
@@ -2059,7 +2231,10 @@ mod tests {
 
             // Should create storage on first access
             let typed = storage.get_or_create_storage::<TestTexture>();
-            typed.insert(TestTexture { width: 256, height: 256 });
+            typed.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
 
             assert_eq!(storage.len::<TestTexture>(), 1);
         }
@@ -2068,8 +2243,14 @@ mod tests {
         fn test_iter() {
             let mut storage = AssetStorage::new();
 
-            storage.insert(TestTexture { width: 256, height: 256 });
-            storage.insert(TestTexture { width: 512, height: 512 });
+            storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
+            storage.insert(TestTexture {
+                width: 512,
+                height: 512,
+            });
 
             let pairs: Vec<_> = storage.iter::<TestTexture>().collect();
             assert_eq!(pairs.len(), 2);
@@ -2079,8 +2260,14 @@ mod tests {
         fn test_handles() {
             let mut storage = AssetStorage::new();
 
-            let h1 = storage.insert(TestTexture { width: 256, height: 256 });
-            let h2 = storage.insert(TestTexture { width: 512, height: 512 });
+            let h1 = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
+            let h2 = storage.insert(TestTexture {
+                width: 512,
+                height: 512,
+            });
 
             let handles: Vec<_> = storage.handles::<TestTexture>().collect();
             assert!(handles.contains(&h1));
@@ -2105,7 +2292,10 @@ mod tests {
             let mut storage = AssetStorage::new();
 
             // Insert same index for different types
-            let tex_handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let tex_handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let audio_handle = storage.insert(TestAudio { duration: 2.5 });
 
             // Should not interfere with each other
@@ -2211,7 +2401,10 @@ mod tests {
             assert!(any_storage.is_empty());
             assert_eq!(any_storage.len(), 0);
 
-            storage.insert(TestTexture { width: 256, height: 256 });
+            storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let any_storage: &dyn AnyAssetStorage = &storage;
 
             assert!(!any_storage.is_empty());
@@ -2221,7 +2414,10 @@ mod tests {
         #[test]
         fn test_is_alive_raw() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
 
             let any_storage: &dyn AnyAssetStorage = &storage;
             assert!(any_storage.is_alive_raw(handle.index(), handle.generation()));
@@ -2231,7 +2427,10 @@ mod tests {
         #[test]
         fn test_remove_untyped() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let untyped = handle.untyped();
 
             let any_storage: &mut dyn AnyAssetStorage = &mut storage;
@@ -2242,7 +2441,10 @@ mod tests {
         #[test]
         fn test_remove_untyped_wrong_type() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
-            storage.insert(TestTexture { width: 256, height: 256 });
+            storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
 
             // Create untyped handle with wrong type
             let wrong_untyped = UntypedAssetHandle::new(0, 1, AssetId::of::<TestAudio>());
@@ -2254,7 +2456,10 @@ mod tests {
         #[test]
         fn test_get_state_untyped() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
-            let handle = storage.insert(TestTexture { width: 256, height: 256 });
+            let handle = storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
             let untyped = handle.untyped();
 
             let any_storage: &dyn AnyAssetStorage = &storage;
@@ -2267,7 +2472,10 @@ mod tests {
         fn test_get_path_untyped() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
             let handle = storage.insert_with_path(
-                TestTexture { width: 256, height: 256 },
+                TestTexture {
+                    width: 256,
+                    height: 256,
+                },
                 AssetPath::new("textures/player.png"),
             );
             let untyped = handle.untyped();
@@ -2281,7 +2489,10 @@ mod tests {
         #[test]
         fn test_as_any_downcast() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
-            storage.insert(TestTexture { width: 256, height: 256 });
+            storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
 
             let any_storage: &dyn AnyAssetStorage = &storage;
             let downcasted = any_storage
@@ -2295,7 +2506,10 @@ mod tests {
         #[test]
         fn test_clear() {
             let mut storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
-            storage.insert(TestTexture { width: 256, height: 256 });
+            storage.insert(TestTexture {
+                width: 256,
+                height: 256,
+            });
 
             let any_storage: &mut dyn AnyAssetStorage = &mut storage;
             any_storage.clear();

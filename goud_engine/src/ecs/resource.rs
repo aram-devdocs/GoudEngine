@@ -1361,8 +1361,8 @@ mod tests {
 
     mod non_send_resources {
         use super::*;
-        use std::rc::Rc;
         use std::cell::RefCell;
+        use std::rc::Rc;
 
         // Non-send test resources
         struct WindowHandle {
@@ -1501,7 +1501,9 @@ mod tests {
         #[test]
         fn test_non_send_resources_get_mut() {
             let mut resources = NonSendResources::new();
-            resources.insert(OpenGLContext { ctx: Rc::new(RefCell::new(1)) });
+            resources.insert(OpenGLContext {
+                ctx: Rc::new(RefCell::new(1)),
+            });
 
             let ctx = resources.get_mut::<OpenGLContext>().unwrap();
             *ctx.ctx.borrow_mut() = 42;
@@ -1525,7 +1527,9 @@ mod tests {
         fn test_non_send_resources_multiple_types() {
             let mut resources = NonSendResources::new();
             resources.insert(WindowHandle { id: Rc::new(1) });
-            resources.insert(OpenGLContext { ctx: Rc::new(RefCell::new(2)) });
+            resources.insert(OpenGLContext {
+                ctx: Rc::new(RefCell::new(2)),
+            });
 
             assert_eq!(resources.len(), 2);
             assert_eq!(*resources.get::<WindowHandle>().unwrap().id, 1);
@@ -1536,7 +1540,9 @@ mod tests {
         fn test_non_send_resources_clear() {
             let mut resources = NonSendResources::new();
             resources.insert(WindowHandle { id: Rc::new(1) });
-            resources.insert(OpenGLContext { ctx: Rc::new(RefCell::new(2)) });
+            resources.insert(OpenGLContext {
+                ctx: Rc::new(RefCell::new(2)),
+            });
 
             resources.clear();
             assert!(resources.is_empty());
@@ -1557,7 +1563,9 @@ mod tests {
         fn test_non_send_resources_with_raw_pointer() {
             let mut value = 42u32;
             let mut resources = NonSendResources::new();
-            resources.insert(RawPointerResource { ptr: &mut value as *mut u32 });
+            resources.insert(RawPointerResource {
+                ptr: &mut value as *mut u32,
+            });
 
             let res = resources.get::<RawPointerResource>().unwrap();
             assert!(!res.ptr.is_null());
@@ -1637,21 +1645,27 @@ mod tests {
 
         #[test]
         fn test_non_send_mut_new() {
-            let mut ctx = OpenGLContext { ctx: Rc::new(RefCell::new(1)) };
+            let mut ctx = OpenGLContext {
+                ctx: Rc::new(RefCell::new(1)),
+            };
             let non_send_mut = NonSendMut::new(&mut ctx);
             assert_eq!(*non_send_mut.ctx.borrow(), 1);
         }
 
         #[test]
         fn test_non_send_mut_deref() {
-            let mut ctx = OpenGLContext { ctx: Rc::new(RefCell::new(1)) };
+            let mut ctx = OpenGLContext {
+                ctx: Rc::new(RefCell::new(1)),
+            };
             let non_send_mut = NonSendMut::new(&mut ctx);
             assert_eq!(*non_send_mut.ctx.borrow(), 1);
         }
 
         #[test]
         fn test_non_send_mut_deref_mut() {
-            let mut ctx = OpenGLContext { ctx: Rc::new(RefCell::new(1)) };
+            let mut ctx = OpenGLContext {
+                ctx: Rc::new(RefCell::new(1)),
+            };
             {
                 let mut non_send_mut = NonSendMut::new(&mut ctx);
                 *non_send_mut.ctx.borrow_mut() = 42;
@@ -1661,7 +1675,9 @@ mod tests {
 
         #[test]
         fn test_non_send_mut_into_inner() {
-            let mut ctx = OpenGLContext { ctx: Rc::new(RefCell::new(1)) };
+            let mut ctx = OpenGLContext {
+                ctx: Rc::new(RefCell::new(1)),
+            };
             let non_send_mut = NonSendMut::new(&mut ctx);
             let inner = non_send_mut.into_inner();
             *inner.ctx.borrow_mut() = 42;

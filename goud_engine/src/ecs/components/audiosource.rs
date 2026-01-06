@@ -261,9 +261,7 @@ impl AttenuationModel {
                     (1.0 - distance / max_distance).max(0.0)
                 }
             }
-            AttenuationModel::InverseDistance => {
-                1.0 / (1.0 + distance)
-            }
+            AttenuationModel::InverseDistance => 1.0 / (1.0 + distance),
             AttenuationModel::Exponential { rolloff } => {
                 if distance >= max_distance {
                     0.0
@@ -582,7 +580,10 @@ mod tests {
     fn test_attenuation_model_name() {
         assert_eq!(AttenuationModel::Linear.name(), "Linear");
         assert_eq!(AttenuationModel::InverseDistance.name(), "InverseDistance");
-        assert_eq!(AttenuationModel::Exponential { rolloff: 2.0 }.name(), "Exponential");
+        assert_eq!(
+            AttenuationModel::Exponential { rolloff: 2.0 }.name(),
+            "Exponential"
+        );
         assert_eq!(AttenuationModel::None.name(), "None");
     }
 
@@ -628,7 +629,10 @@ mod tests {
     #[test]
     fn test_attenuation_display() {
         assert_eq!(format!("{}", AttenuationModel::Linear), "Linear");
-        assert_eq!(format!("{}", AttenuationModel::Exponential { rolloff: 3.0 }), "Exponential(rolloff=3)");
+        assert_eq!(
+            format!("{}", AttenuationModel::Exponential { rolloff: 3.0 }),
+            "Exponential(rolloff=3)"
+        );
     }
 
     // AudioSource tests

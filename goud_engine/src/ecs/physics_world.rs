@@ -256,7 +256,10 @@ impl PhysicsWorld {
     ///     .with_timestep(1.0 / 120.0);  // 120 Hz for fast-paced games
     /// ```
     pub fn with_timestep(mut self, timestep: f32) -> Self {
-        assert!(timestep > 0.0 && timestep.is_finite(), "Timestep must be positive and finite");
+        assert!(
+            timestep > 0.0 && timestep.is_finite(),
+            "Timestep must be positive and finite"
+        );
         self.timestep = timestep;
         self
     }
@@ -311,7 +314,10 @@ impl PhysicsWorld {
     ///     .with_time_scale(0.5);  // Slow motion
     /// ```
     pub fn with_time_scale(mut self, time_scale: f32) -> Self {
-        assert!((0.0..=10.0).contains(&time_scale), "Time scale must be in range [0.0, 10.0]");
+        assert!(
+            (0.0..=10.0).contains(&time_scale),
+            "Time scale must be in range [0.0, 10.0]"
+        );
         self.time_scale = time_scale;
         self
     }
@@ -444,7 +450,10 @@ impl PhysicsWorld {
     ///
     /// Panics if `timestep` is not positive and finite.
     pub fn set_timestep(&mut self, timestep: f32) {
-        assert!(timestep > 0.0 && timestep.is_finite(), "Timestep must be positive and finite");
+        assert!(
+            timestep > 0.0 && timestep.is_finite(),
+            "Timestep must be positive and finite"
+        );
         self.timestep = timestep;
     }
 
@@ -470,7 +479,10 @@ impl PhysicsWorld {
     ///
     /// Panics if `time_scale` is negative or greater than 10.0.
     pub fn set_time_scale(&mut self, time_scale: f32) {
-        assert!((0.0..=10.0).contains(&time_scale), "Time scale must be in range [0.0, 10.0]");
+        assert!(
+            (0.0..=10.0).contains(&time_scale),
+            "Time scale must be in range [0.0, 10.0]"
+        );
         self.time_scale = time_scale;
     }
 
@@ -710,7 +722,11 @@ impl PhysicsWorld {
             self.gravity,
             self.velocity_iterations,
             self.position_iterations,
-            if self.sleep_enabled { "enabled" } else { "disabled" }
+            if self.sleep_enabled {
+                "enabled"
+            } else {
+                "disabled"
+            }
         )
     }
 }
@@ -760,15 +776,13 @@ mod tests {
 
     #[test]
     fn test_with_gravity() {
-        let physics = PhysicsWorld::new()
-            .with_gravity(Vec2::new(0.0, -490.0));
+        let physics = PhysicsWorld::new().with_gravity(Vec2::new(0.0, -490.0));
         assert_eq!(physics.gravity(), Vec2::new(0.0, -490.0));
     }
 
     #[test]
     fn test_with_timestep() {
-        let physics = PhysicsWorld::new()
-            .with_timestep(1.0 / 120.0);
+        let physics = PhysicsWorld::new().with_timestep(1.0 / 120.0);
         assert_eq!(physics.timestep(), 1.0 / 120.0);
     }
 
@@ -780,16 +794,14 @@ mod tests {
 
     #[test]
     fn test_with_iterations() {
-        let physics = PhysicsWorld::new()
-            .with_iterations(10, 4);
+        let physics = PhysicsWorld::new().with_iterations(10, 4);
         assert_eq!(physics.velocity_iterations(), 10);
         assert_eq!(physics.position_iterations(), 4);
     }
 
     #[test]
     fn test_with_time_scale() {
-        let physics = PhysicsWorld::new()
-            .with_time_scale(0.5);
+        let physics = PhysicsWorld::new().with_time_scale(0.5);
         assert_eq!(physics.time_scale(), 0.5);
     }
 
@@ -801,8 +813,7 @@ mod tests {
 
     #[test]
     fn test_with_sleep_config() {
-        let physics = PhysicsWorld::new()
-            .with_sleep_config(false, 2.0, 0.05, 1.0);
+        let physics = PhysicsWorld::new().with_sleep_config(false, 2.0, 0.05, 1.0);
         assert!(!physics.is_sleep_enabled());
         assert_eq!(physics.sleep_linear_threshold(), 2.0);
         assert_eq!(physics.sleep_angular_threshold(), 0.05);
@@ -868,24 +879,23 @@ mod tests {
     #[test]
     fn test_advance_multiple_steps() {
         let mut physics = PhysicsWorld::new();
-        let steps = physics.advance(0.1);  // 100ms = ~6 steps at 60 Hz
+        let steps = physics.advance(0.1); // 100ms = ~6 steps at 60 Hz
         assert!(steps >= 6);
     }
 
     #[test]
     fn test_advance_no_steps() {
         let mut physics = PhysicsWorld::new();
-        let steps = physics.advance(0.001);  // 1ms < timestep
+        let steps = physics.advance(0.001); // 1ms < timestep
         assert_eq!(steps, 0);
         assert!(!physics.should_step());
     }
 
     #[test]
     fn test_advance_with_time_scale() {
-        let mut physics = PhysicsWorld::new()
-            .with_time_scale(2.0);
+        let mut physics = PhysicsWorld::new().with_time_scale(2.0);
 
-        let steps = physics.advance(1.0 / 120.0);  // 8.33ms * 2 = 16.67ms
+        let steps = physics.advance(1.0 / 120.0); // 8.33ms * 2 = 16.67ms
         assert_eq!(steps, 1);
     }
 
@@ -913,7 +923,7 @@ mod tests {
     #[test]
     fn test_step_loop() {
         let mut physics = PhysicsWorld::new();
-        physics.advance(0.1);  // 100ms
+        physics.advance(0.1); // 100ms
 
         let mut step_count = 0;
         while physics.should_step() {
@@ -926,7 +936,7 @@ mod tests {
             }
         }
 
-        assert!(step_count >= 6);  // ~6 steps at 60 Hz
+        assert!(step_count >= 6); // ~6 steps at 60 Hz
         assert!(!physics.should_step());
     }
 
@@ -981,7 +991,7 @@ mod tests {
     fn test_timestep_duration() {
         let physics = PhysicsWorld::new();
         let duration = physics.timestep_duration();
-        assert_eq!(duration.as_millis(), 16);  // ~16.67ms
+        assert_eq!(duration.as_millis(), 16); // ~16.67ms
     }
 
     #[test]
@@ -1063,8 +1073,7 @@ mod tests {
 
     #[test]
     fn test_slow_motion() {
-        let mut physics = PhysicsWorld::new()
-            .with_time_scale(0.5);
+        let mut physics = PhysicsWorld::new().with_time_scale(0.5);
 
         // 100ms real time = 50ms simulated time at 0.5x
         physics.advance(0.1);

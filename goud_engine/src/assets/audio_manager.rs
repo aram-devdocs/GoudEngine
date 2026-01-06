@@ -103,8 +103,9 @@ impl AudioManager {
     /// let audio_manager = AudioManager::new().expect("Failed to initialize audio");
     /// ```
     pub fn new() -> GoudResult<Self> {
-        let (stream, stream_handle) = OutputStream::try_default()
-            .map_err(|e| GoudError::AudioInitFailed(format!("Failed to create audio output stream: {}", e)))?;
+        let (stream, stream_handle) = OutputStream::try_default().map_err(|e| {
+            GoudError::AudioInitFailed(format!("Failed to create audio output stream: {}", e))
+        })?;
 
         Ok(Self {
             stream,
@@ -196,9 +197,8 @@ impl AudioManager {
         let cursor = std::io::Cursor::new(asset.data().to_vec());
 
         // Decode audio data
-        let source = rodio::Decoder::new(cursor).map_err(|e| {
-            GoudError::ResourceLoadFailed(format!("Failed to decode audio: {}", e))
-        })?;
+        let source = rodio::Decoder::new(cursor)
+            .map_err(|e| GoudError::ResourceLoadFailed(format!("Failed to decode audio: {}", e)))?;
 
         // Create sink for this audio
         let sink = Sink::try_new(&self.stream_handle).map_err(|e| {
@@ -242,9 +242,8 @@ impl AudioManager {
         let cursor = std::io::Cursor::new(asset.data().to_vec());
 
         // Decode audio data
-        let source = rodio::Decoder::new(cursor).map_err(|e| {
-            GoudError::ResourceLoadFailed(format!("Failed to decode audio: {}", e))
-        })?;
+        let source = rodio::Decoder::new(cursor)
+            .map_err(|e| GoudError::ResourceLoadFailed(format!("Failed to decode audio: {}", e)))?;
 
         // Create repeating source
         let looped_source = source.repeat_infinite();
@@ -298,9 +297,8 @@ impl AudioManager {
         let cursor = std::io::Cursor::new(asset.data().to_vec());
 
         // Decode audio data
-        let source = rodio::Decoder::new(cursor).map_err(|e| {
-            GoudError::ResourceLoadFailed(format!("Failed to decode audio: {}", e))
-        })?;
+        let source = rodio::Decoder::new(cursor)
+            .map_err(|e| GoudError::ResourceLoadFailed(format!("Failed to decode audio: {}", e)))?;
 
         // Apply speed (pitch) adjustment - clamp to reasonable range
         let clamped_speed = speed.clamp(0.1, 10.0);
@@ -663,7 +661,8 @@ fn compute_attenuation_inverse(distance: f32, max_distance: f32, rolloff: f32) -
 
     // Inverse distance attenuation (reference distance = 1.0)
     let reference_distance = 1.0;
-    let attenuation = reference_distance / (reference_distance + rolloff * (distance - reference_distance).max(0.0));
+    let attenuation = reference_distance
+        / (reference_distance + rolloff * (distance - reference_distance).max(0.0));
     attenuation.clamp(0.0, 1.0)
 }
 
@@ -770,7 +769,7 @@ mod tests {
             assert!(result.is_err());
 
             match result {
-                Err(GoudError::ResourceLoadFailed(_)) => {},
+                Err(GoudError::ResourceLoadFailed(_)) => {}
                 _ => panic!("Expected ResourceLoadFailed error"),
             }
         }
@@ -1027,7 +1026,11 @@ mod tests {
         let attenuation = compute_attenuation_inverse(10.0, 100.0, 1.0);
         // Formula: 1 / (1 + rolloff * (distance - ref_distance))
         // = 1 / (1 + 1 * (10 - 1)) = 1 / (1 + 9) = 1/10 = 0.1
-        assert!((attenuation - 0.1).abs() < 0.01, "Expected ~0.1, got {}", attenuation);
+        assert!(
+            (attenuation - 0.1).abs() < 0.01,
+            "Expected ~0.1, got {}",
+            attenuation
+        );
     }
 
     #[test]
@@ -1097,7 +1100,10 @@ mod tests {
         let distance = (source_pos - listener_pos).length();
 
         let attenuation = compute_attenuation_linear(distance, 200.0, 1.0);
-        assert!((attenuation - 1.0).abs() < 0.001, "Attenuation at source should be 1.0");
+        assert!(
+            (attenuation - 1.0).abs() < 0.001,
+            "Attenuation at source should be 1.0"
+        );
     }
 
     #[test]
@@ -1108,7 +1114,10 @@ mod tests {
         let distance = (source_pos - listener_pos).length();
 
         let attenuation = compute_attenuation_linear(distance, 200.0, 1.0);
-        assert!((attenuation - 0.0).abs() < 0.001, "Attenuation at max distance should be 0.0");
+        assert!(
+            (attenuation - 0.0).abs() < 0.001,
+            "Attenuation at max distance should be 0.0"
+        );
     }
 
     #[test]
@@ -1120,6 +1129,9 @@ mod tests {
 
         let attenuation = compute_attenuation_linear(distance, 200.0, 1.0);
         // Expected: 1 - 141.42/200 = 1 - 0.707 = 0.293
-        assert!((attenuation - 0.293).abs() < 0.01, "Attenuation for diagonal distance");
+        assert!(
+            (attenuation - 0.293).abs() < 0.01,
+            "Attenuation for diagonal distance"
+        );
     }
 }

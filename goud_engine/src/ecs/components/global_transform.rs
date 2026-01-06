@@ -313,12 +313,12 @@ impl GlobalTransform {
     /// ```
     #[inline]
     pub fn scale(&self) -> Vec3 {
-        let scale_x = cgmath::Vector3::new(self.matrix.x.x, self.matrix.x.y, self.matrix.x.z)
-            .magnitude();
-        let scale_y = cgmath::Vector3::new(self.matrix.y.x, self.matrix.y.y, self.matrix.y.z)
-            .magnitude();
-        let scale_z = cgmath::Vector3::new(self.matrix.z.x, self.matrix.z.y, self.matrix.z.z)
-            .magnitude();
+        let scale_x =
+            cgmath::Vector3::new(self.matrix.x.x, self.matrix.x.y, self.matrix.x.z).magnitude();
+        let scale_y =
+            cgmath::Vector3::new(self.matrix.y.x, self.matrix.y.y, self.matrix.y.z).magnitude();
+        let scale_z =
+            cgmath::Vector3::new(self.matrix.z.x, self.matrix.z.y, self.matrix.z.z).magnitude();
         Vec3::new(scale_x, scale_y, scale_z)
     }
 
@@ -545,9 +545,7 @@ impl GlobalTransform {
     /// Returns `None` if the matrix is not invertible (e.g., has zero scale).
     #[inline]
     pub fn inverse(&self) -> Option<GlobalTransform> {
-        self.matrix
-            .invert()
-            .map(|m| GlobalTransform { matrix: m })
+        self.matrix.invert().map(|m| GlobalTransform { matrix: m })
     }
 
     // =========================================================================
@@ -557,37 +555,43 @@ impl GlobalTransform {
     /// Returns the forward direction vector (negative Z in local space).
     #[inline]
     pub fn forward(&self) -> Vec3 {
-        self.transform_direction(Vec3::new(0.0, 0.0, -1.0)).normalize()
+        self.transform_direction(Vec3::new(0.0, 0.0, -1.0))
+            .normalize()
     }
 
     /// Returns the right direction vector (positive X in local space).
     #[inline]
     pub fn right(&self) -> Vec3 {
-        self.transform_direction(Vec3::new(1.0, 0.0, 0.0)).normalize()
+        self.transform_direction(Vec3::new(1.0, 0.0, 0.0))
+            .normalize()
     }
 
     /// Returns the up direction vector (positive Y in local space).
     #[inline]
     pub fn up(&self) -> Vec3 {
-        self.transform_direction(Vec3::new(0.0, 1.0, 0.0)).normalize()
+        self.transform_direction(Vec3::new(0.0, 1.0, 0.0))
+            .normalize()
     }
 
     /// Returns the back direction vector (positive Z in local space).
     #[inline]
     pub fn back(&self) -> Vec3 {
-        self.transform_direction(Vec3::new(0.0, 0.0, 1.0)).normalize()
+        self.transform_direction(Vec3::new(0.0, 0.0, 1.0))
+            .normalize()
     }
 
     /// Returns the left direction vector (negative X in local space).
     #[inline]
     pub fn left(&self) -> Vec3 {
-        self.transform_direction(Vec3::new(-1.0, 0.0, 0.0)).normalize()
+        self.transform_direction(Vec3::new(-1.0, 0.0, 0.0))
+            .normalize()
     }
 
     /// Returns the down direction vector (negative Y in local space).
     #[inline]
     pub fn down(&self) -> Vec3 {
-        self.transform_direction(Vec3::new(0.0, -1.0, 0.0)).normalize()
+        self.transform_direction(Vec3::new(0.0, -1.0, 0.0))
+            .normalize()
     }
 
     // =========================================================================
@@ -850,8 +854,9 @@ mod tests {
             let original_r = Quat::from_axis_angle(Vec3::unit_x(), FRAC_PI_4);
             let original_s = Vec3::new(2.0, 3.0, 4.0);
 
-            let global =
-                GlobalTransform::from_translation_rotation_scale(original_t, original_r, original_s);
+            let global = GlobalTransform::from_translation_rotation_scale(
+                original_t, original_r, original_s,
+            );
             let (t, r, s) = global.decompose();
 
             assert!((t - original_t).length() < 0.001);

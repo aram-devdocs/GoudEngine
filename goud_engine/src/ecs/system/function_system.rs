@@ -277,9 +277,7 @@ pub struct FnMarker4<P1, P2, P3, P4>(PhantomData<(P1, P2, P3, P4)>);
 pub struct FnMarker5<P1, P2, P3, P4, P5>(PhantomData<(P1, P2, P3, P4, P5)>);
 pub struct FnMarker6<P1, P2, P3, P4, P5, P6>(PhantomData<(P1, P2, P3, P4, P5, P6)>);
 pub struct FnMarker7<P1, P2, P3, P4, P5, P6, P7>(PhantomData<(P1, P2, P3, P4, P5, P6, P7)>);
-pub struct FnMarker8<P1, P2, P3, P4, P5, P6, P7, P8>(
-    PhantomData<(P1, P2, P3, P4, P5, P6, P7, P8)>,
-);
+pub struct FnMarker8<P1, P2, P3, P4, P5, P6, P7, P8>(PhantomData<(P1, P2, P3, P4, P5, P6, P7, P8)>);
 
 // Implementation for zero-parameter functions: fn()
 impl<F> SystemParamFunction<FnMarker> for F
@@ -548,7 +546,9 @@ mod tests {
             boxed.initialize(&mut world);
 
             let access = boxed.component_access();
-            assert!(access.reads().any(|&id| id == ComponentId::of::<Position>()));
+            assert!(access
+                .reads()
+                .any(|&id| id == ComponentId::of::<Position>()));
             assert!(access.is_read_only());
         }
 
@@ -742,8 +742,7 @@ mod tests {
                 c2.fetch_add(10, Ordering::SeqCst);
             };
 
-            let mut systems: Vec<BoxedSystem> =
-                vec![system1.into_system(), system2.into_system()];
+            let mut systems: Vec<BoxedSystem> = vec![system1.into_system(), system2.into_system()];
 
             let mut world = World::new();
 
@@ -792,11 +791,7 @@ mod tests {
 
         #[test]
         fn test_multi_query_system() {
-            fn multi_query(
-                _positions: Query<&Position>,
-                _velocities: Query<&Velocity>,
-            ) {
-            }
+            fn multi_query(_positions: Query<&Position>, _velocities: Query<&Velocity>) {}
 
             let mut world = World::new();
 

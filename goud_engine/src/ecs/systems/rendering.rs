@@ -148,10 +148,7 @@ mod tests {
         // Spawn sprite entity
         let entity = world.spawn_empty();
         world
-            .insert(
-                entity,
-                Sprite::new(texture_handle).with_color(Color::WHITE),
-            )
+            .insert(entity, Sprite::new(texture_handle).with_color(Color::WHITE))
             .expect("Failed to add Sprite");
         world
             .insert(entity, Transform2D::from_position(Vec2::new(100.0, 100.0)))

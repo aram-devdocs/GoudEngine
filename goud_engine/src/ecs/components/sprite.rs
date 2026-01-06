@@ -757,10 +757,7 @@ mod tests {
             .with_custom_size(Vec2::new(64.0, 64.0));
 
         assert_eq!(sprite.color, Color::RED);
-        assert_eq!(
-            sprite.source_rect,
-            Some(Rect::new(0.0, 0.0, 32.0, 32.0))
-        );
+        assert_eq!(sprite.source_rect, Some(Rect::new(0.0, 0.0, 32.0, 32.0)));
         assert_eq!(sprite.flip_x, true);
         assert_eq!(sprite.flip_y, false);
         assert_eq!(sprite.anchor, Vec2::new(0.5, 1.0));

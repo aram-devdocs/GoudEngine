@@ -308,7 +308,8 @@ pub fn resolve_collision(
     let tangent = Vec2::new(-contact.normal.y, contact.normal.x);
 
     // Relative velocity along tangent
-    let relative_velocity_tangent = (relative_velocity + delta_vel_b_normal - delta_vel_a_normal).dot(tangent);
+    let relative_velocity_tangent =
+        (relative_velocity + delta_vel_b_normal - delta_vel_a_normal).dot(tangent);
 
     // Don't apply friction if already stationary in tangent direction
     if relative_velocity_tangent.abs() < 1e-6 {
@@ -320,7 +321,8 @@ pub fn resolve_collision(
     let mu = response.friction;
 
     // Clamp friction to not exceed normal impulse (Coulomb's law)
-    let friction_impulse_scalar = friction_impulse_scalar.clamp(-impulse_scalar * mu, impulse_scalar * mu);
+    let friction_impulse_scalar =
+        friction_impulse_scalar.clamp(-impulse_scalar * mu, impulse_scalar * mu);
 
     let friction_impulse = tangent * friction_impulse_scalar;
     let delta_vel_a_friction = friction_impulse * -inv_mass_a;
@@ -992,8 +994,10 @@ pub fn circle_aabb_collision(
     // Handle edge case: circle center inside box
     if distance_squared < 1e-6 {
         // Circle center is inside the box, find the axis of minimum penetration
-        let penetration_x = (box_half_extents.x - (circle_center.x - box_center.x).abs()) + circle_radius;
-        let penetration_y = (box_half_extents.y - (circle_center.y - box_center.y).abs()) + circle_radius;
+        let penetration_x =
+            (box_half_extents.x - (circle_center.x - box_center.x).abs()) + circle_radius;
+        let penetration_y =
+            (box_half_extents.y - (circle_center.y - box_center.y).abs()) + circle_radius;
 
         if penetration_x < penetration_y {
             // Push out along X axis
@@ -1004,7 +1008,11 @@ pub fn circle_aabb_collision(
             };
             return Some(Contact {
                 point: Vec2::new(
-                    if circle_center.x > box_center.x { box_max.x } else { box_min.x },
+                    if circle_center.x > box_center.x {
+                        box_max.x
+                    } else {
+                        box_min.x
+                    },
                     circle_center.y,
                 ),
                 normal,
@@ -1020,7 +1028,11 @@ pub fn circle_aabb_collision(
             return Some(Contact {
                 point: Vec2::new(
                     circle_center.x,
-                    if circle_center.y > box_center.y { box_max.y } else { box_min.y },
+                    if circle_center.y > box_center.y {
+                        box_max.y
+                    } else {
+                        box_min.y
+                    },
                 ),
                 normal,
                 penetration: penetration_y,
@@ -1155,11 +1167,7 @@ mod tests {
 
     #[test]
     fn test_contact_new() {
-        let contact = Contact::new(
-            Vec2::new(1.0, 2.0),
-            Vec2::new(1.0, 0.0),
-            0.5,
-        );
+        let contact = Contact::new(Vec2::new(1.0, 2.0), Vec2::new(1.0, 0.0), 0.5);
         assert_eq!(contact.point, Vec2::new(1.0, 2.0));
         assert_eq!(contact.normal, Vec2::new(1.0, 0.0));
         assert_eq!(contact.penetration, 0.5);
@@ -1195,11 +1203,7 @@ mod tests {
 
     #[test]
     fn test_contact_separation_vector() {
-        let contact = Contact::new(
-            Vec2::zero(),
-            Vec2::new(1.0, 0.0),
-            0.5,
-        );
+        let contact = Contact::new(Vec2::zero(), Vec2::new(1.0, 0.0), 0.5);
         assert_eq!(contact.separation_vector(), Vec2::new(0.5, 0.0));
 
         let diagonal = Contact::new(
@@ -1214,11 +1218,7 @@ mod tests {
 
     #[test]
     fn test_contact_reversed() {
-        let contact = Contact::new(
-            Vec2::new(1.0, 2.0),
-            Vec2::new(1.0, 0.0),
-            0.5,
-        );
+        let contact = Contact::new(Vec2::new(1.0, 2.0), Vec2::new(1.0, 0.0), 0.5);
         let reversed = contact.reversed();
 
         assert_eq!(reversed.point, contact.point);
@@ -1250,10 +1250,7 @@ mod tests {
     #[test]
     fn test_circle_circle_collision_overlapping() {
         // Two circles overlapping
-        let contact = circle_circle_collision(
-            Vec2::new(0.0, 0.0), 1.0,
-            Vec2::new(1.5, 0.0), 1.0,
-        );
+        let contact = circle_circle_collision(Vec2::new(0.0, 0.0), 1.0, Vec2::new(1.5, 0.0), 1.0);
         assert!(contact.is_some());
 
         let contact = contact.unwrap();
@@ -1264,20 +1261,14 @@ mod tests {
     #[test]
     fn test_circle_circle_collision_separated() {
         // Two circles separated
-        let contact = circle_circle_collision(
-            Vec2::new(0.0, 0.0), 1.0,
-            Vec2::new(5.0, 0.0), 1.0,
-        );
+        let contact = circle_circle_collision(Vec2::new(0.0, 0.0), 1.0, Vec2::new(5.0, 0.0), 1.0);
         assert!(contact.is_none());
     }
 
     #[test]
     fn test_circle_circle_collision_touching() {
         // Two circles exactly touching (edge case)
-        let contact = circle_circle_collision(
-            Vec2::new(0.0, 0.0), 1.0,
-            Vec2::new(2.0, 0.0), 1.0,
-        );
+        let contact = circle_circle_collision(Vec2::new(0.0, 0.0), 1.0, Vec2::new(2.0, 0.0), 1.0);
         assert!(contact.is_some());
 
         let contact = contact.unwrap();
@@ -1287,10 +1278,7 @@ mod tests {
     #[test]
     fn test_circle_circle_collision_same_position() {
         // Circles at the same position (edge case)
-        let contact = circle_circle_collision(
-            Vec2::new(0.0, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), 1.0,
-        );
+        let contact = circle_circle_collision(Vec2::new(0.0, 0.0), 1.0, Vec2::new(0.0, 0.0), 1.0);
         assert!(contact.is_some());
 
         let contact = contact.unwrap();
@@ -1301,10 +1289,7 @@ mod tests {
     #[test]
     fn test_circle_circle_collision_diagonal() {
         // Circles offset diagonally
-        let contact = circle_circle_collision(
-            Vec2::new(0.0, 0.0), 1.0,
-            Vec2::new(1.0, 1.0), 1.0,
-        );
+        let contact = circle_circle_collision(Vec2::new(0.0, 0.0), 1.0, Vec2::new(1.0, 1.0), 1.0);
         assert!(contact.is_some());
 
         let contact = contact.unwrap();
@@ -1319,10 +1304,7 @@ mod tests {
     #[test]
     fn test_circle_circle_collision_different_radii() {
         // Circles with different radii
-        let contact = circle_circle_collision(
-            Vec2::new(0.0, 0.0), 2.0,
-            Vec2::new(3.0, 0.0), 1.5,
-        );
+        let contact = circle_circle_collision(Vec2::new(0.0, 0.0), 2.0, Vec2::new(3.0, 0.0), 1.5);
         assert!(contact.is_some());
 
         let contact = contact.unwrap();
@@ -1337,10 +1319,8 @@ mod tests {
     #[test]
     fn test_circle_circle_collision_negative_coordinates() {
         // Circles in negative coordinate space
-        let contact = circle_circle_collision(
-            Vec2::new(-10.0, -10.0), 1.0,
-            Vec2::new(-9.0, -10.0), 1.0,
-        );
+        let contact =
+            circle_circle_collision(Vec2::new(-10.0, -10.0), 1.0, Vec2::new(-9.0, -10.0), 1.0);
         assert!(contact.is_some());
 
         let contact = contact.unwrap();
@@ -1351,10 +1331,8 @@ mod tests {
     #[test]
     fn test_circle_circle_collision_contact_point() {
         // Verify contact point is computed correctly
-        let contact = circle_circle_collision(
-            Vec2::new(0.0, 0.0), 1.0,
-            Vec2::new(1.5, 0.0), 1.0,
-        ).unwrap();
+        let contact =
+            circle_circle_collision(Vec2::new(0.0, 0.0), 1.0, Vec2::new(1.5, 0.0), 1.0).unwrap();
 
         // Contact point should be between the two circles
         assert!(contact.point.x > 0.0 && contact.point.x < 1.5);
@@ -1364,14 +1342,10 @@ mod tests {
     #[test]
     fn test_circle_circle_collision_symmetry() {
         // Collision should be symmetric (order shouldn't matter for detection)
-        let contact_ab = circle_circle_collision(
-            Vec2::new(0.0, 0.0), 1.0,
-            Vec2::new(1.5, 0.0), 1.0,
-        );
-        let contact_ba = circle_circle_collision(
-            Vec2::new(1.5, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), 1.0,
-        );
+        let contact_ab =
+            circle_circle_collision(Vec2::new(0.0, 0.0), 1.0, Vec2::new(1.5, 0.0), 1.0);
+        let contact_ba =
+            circle_circle_collision(Vec2::new(1.5, 0.0), 1.0, Vec2::new(0.0, 0.0), 1.0);
 
         assert!(contact_ab.is_some());
         assert!(contact_ba.is_some());
@@ -1389,10 +1363,8 @@ mod tests {
     #[test]
     fn test_circle_circle_collision_large_circles() {
         // Test with large circles
-        let contact = circle_circle_collision(
-            Vec2::new(0.0, 0.0), 100.0,
-            Vec2::new(150.0, 0.0), 100.0,
-        );
+        let contact =
+            circle_circle_collision(Vec2::new(0.0, 0.0), 100.0, Vec2::new(150.0, 0.0), 100.0);
         assert!(contact.is_some());
 
         let contact = contact.unwrap();
@@ -1402,10 +1374,8 @@ mod tests {
     #[test]
     fn test_circle_circle_collision_tiny_circles() {
         // Test with tiny circles
-        let contact = circle_circle_collision(
-            Vec2::new(0.0, 0.0), 0.01,
-            Vec2::new(0.015, 0.0), 0.01,
-        );
+        let contact =
+            circle_circle_collision(Vec2::new(0.0, 0.0), 0.01, Vec2::new(0.015, 0.0), 0.01);
         assert!(contact.is_some());
 
         let contact = contact.unwrap();
@@ -1420,8 +1390,12 @@ mod tests {
     fn test_box_box_collision_axis_aligned_overlapping() {
         // Two axis-aligned boxes overlapping
         let contact = box_box_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), 0.0,
-            Vec2::new(1.5, 0.0), Vec2::new(1.0, 1.0), 0.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
+            Vec2::new(1.5, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
         );
         assert!(contact.is_some());
 
@@ -1438,8 +1412,12 @@ mod tests {
     fn test_box_box_collision_axis_aligned_separated() {
         // Two axis-aligned boxes separated
         let contact = box_box_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), 0.0,
-            Vec2::new(5.0, 0.0), Vec2::new(1.0, 1.0), 0.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
+            Vec2::new(5.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
         );
         assert!(contact.is_none());
     }
@@ -1450,8 +1428,12 @@ mod tests {
 
         // Box B rotated 45 degrees, overlapping with axis-aligned box A
         let contact = box_box_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), 0.0,
-            Vec2::new(1.0, 0.0), Vec2::new(1.0, 1.0), PI / 4.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
+            Vec2::new(1.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            PI / 4.0,
         );
         assert!(contact.is_some());
 
@@ -1465,8 +1447,12 @@ mod tests {
 
         // Two rotated boxes, separated
         let contact = box_box_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), PI / 6.0,
-            Vec2::new(5.0, 0.0), Vec2::new(1.0, 1.0), PI / 4.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            PI / 6.0,
+            Vec2::new(5.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            PI / 4.0,
         );
         assert!(contact.is_none());
     }
@@ -1477,8 +1463,12 @@ mod tests {
 
         // Both boxes rotated, overlapping
         let contact = box_box_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), PI / 6.0,
-            Vec2::new(1.2, 0.0), Vec2::new(1.0, 1.0), PI / 3.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            PI / 6.0,
+            Vec2::new(1.2, 0.0),
+            Vec2::new(1.0, 1.0),
+            PI / 3.0,
         );
         assert!(contact.is_some());
 
@@ -1490,8 +1480,12 @@ mod tests {
     fn test_box_box_collision_same_position() {
         // Boxes at the same position (full overlap)
         let contact = box_box_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), 0.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), 0.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
         );
         assert!(contact.is_some());
 
@@ -1504,8 +1498,12 @@ mod tests {
     fn test_box_box_collision_touching() {
         // Boxes exactly touching (edge case)
         let contact = box_box_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), 0.0,
-            Vec2::new(2.0, 0.0), Vec2::new(1.0, 1.0), 0.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
+            Vec2::new(2.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
         );
 
         // Should detect as collision (touching counts as collision)
@@ -1520,8 +1518,12 @@ mod tests {
     fn test_box_box_collision_different_sizes() {
         // Boxes with different sizes
         let contact = box_box_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(2.0, 1.0), 0.0,
-            Vec2::new(2.5, 0.0), Vec2::new(1.0, 2.0), 0.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(2.0, 1.0),
+            0.0,
+            Vec2::new(2.5, 0.0),
+            Vec2::new(1.0, 2.0),
+            0.0,
         );
         assert!(contact.is_some());
 
@@ -1533,9 +1535,14 @@ mod tests {
     fn test_box_box_collision_normal_direction() {
         // Verify normal points from A to B
         let contact = box_box_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), 0.0,
-            Vec2::new(1.5, 0.0), Vec2::new(1.0, 1.0), 0.0,
-        ).unwrap();
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
+            Vec2::new(1.5, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
+        )
+        .unwrap();
 
         // Normal should point right (from A to B)
         assert!(contact.normal.x > 0.0);
@@ -1548,12 +1555,20 @@ mod tests {
 
         // Collision should detect the same penetration regardless of order
         let contact_ab = box_box_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), 0.0,
-            Vec2::new(1.5, 0.0), Vec2::new(1.0, 1.0), PI / 6.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
+            Vec2::new(1.5, 0.0),
+            Vec2::new(1.0, 1.0),
+            PI / 6.0,
         );
         let contact_ba = box_box_collision(
-            Vec2::new(1.5, 0.0), Vec2::new(1.0, 1.0), PI / 6.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), 0.0,
+            Vec2::new(1.5, 0.0),
+            Vec2::new(1.0, 1.0),
+            PI / 6.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
         );
 
         assert!(contact_ab.is_some());
@@ -1576,8 +1591,12 @@ mod tests {
 
         // Box rotated 90 degrees
         let contact = box_box_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(2.0, 1.0), 0.0,
-            Vec2::new(1.5, 0.0), Vec2::new(2.0, 1.0), PI / 2.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(2.0, 1.0),
+            0.0,
+            Vec2::new(1.5, 0.0),
+            Vec2::new(2.0, 1.0),
+            PI / 2.0,
         );
         assert!(contact.is_some());
 
@@ -1593,8 +1612,10 @@ mod tests {
     fn test_aabb_aabb_collision_overlapping() {
         // Two AABBs overlapping
         let contact = aabb_aabb_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
-            Vec2::new(1.5, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            Vec2::new(1.5, 0.0),
+            Vec2::new(1.0, 1.0),
         );
         assert!(contact.is_some());
 
@@ -1610,8 +1631,10 @@ mod tests {
     fn test_aabb_aabb_collision_separated() {
         // Two AABBs separated
         let contact = aabb_aabb_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
-            Vec2::new(5.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            Vec2::new(5.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
         assert!(contact.is_none());
     }
@@ -1620,8 +1643,10 @@ mod tests {
     fn test_aabb_aabb_collision_touching() {
         // Two AABBs exactly touching
         let contact = aabb_aabb_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
-            Vec2::new(2.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            Vec2::new(2.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
 
         // Should detect as collision (touching edges)
@@ -1636,8 +1661,10 @@ mod tests {
     fn test_aabb_aabb_collision_vertical_overlap() {
         // AABBs overlapping vertically
         let contact = aabb_aabb_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
-            Vec2::new(0.0, 1.5), Vec2::new(1.0, 1.0),
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            Vec2::new(0.0, 1.5),
+            Vec2::new(1.0, 1.0),
         );
         assert!(contact.is_some());
 
@@ -1653,8 +1680,10 @@ mod tests {
     fn test_aabb_aabb_collision_different_sizes() {
         // AABBs with different sizes
         let contact = aabb_aabb_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(2.0, 1.0),
-            Vec2::new(2.5, 0.0), Vec2::new(1.0, 2.0),
+            Vec2::new(0.0, 0.0),
+            Vec2::new(2.0, 1.0),
+            Vec2::new(2.5, 0.0),
+            Vec2::new(1.0, 2.0),
         );
         assert!(contact.is_some());
 
@@ -1666,8 +1695,10 @@ mod tests {
     fn test_aabb_aabb_collision_same_position() {
         // AABBs at the same position
         let contact = aabb_aabb_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
         assert!(contact.is_some());
 
@@ -1681,9 +1712,12 @@ mod tests {
     fn test_aabb_aabb_collision_contact_point() {
         // Verify contact point is in the overlap region
         let contact = aabb_aabb_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
-            Vec2::new(1.5, 0.0), Vec2::new(1.0, 1.0),
-        ).unwrap();
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            Vec2::new(1.5, 0.0),
+            Vec2::new(1.0, 1.0),
+        )
+        .unwrap();
 
         // Contact point should be in the overlap region
         assert!(contact.point.x > 0.0 && contact.point.x < 2.0);
@@ -1694,18 +1728,24 @@ mod tests {
     fn test_aabb_aabb_collision_normal_direction() {
         // Verify normal points from A to B
         let contact = aabb_aabb_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
-            Vec2::new(1.5, 0.0), Vec2::new(1.0, 1.0),
-        ).unwrap();
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            Vec2::new(1.5, 0.0),
+            Vec2::new(1.0, 1.0),
+        )
+        .unwrap();
 
         // Normal should point right (from A to B)
         assert_eq!(contact.normal, Vec2::unit_x());
 
         // Test vertical case
         let contact_vertical = aabb_aabb_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
-            Vec2::new(0.0, 1.5), Vec2::new(1.0, 1.0),
-        ).unwrap();
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            Vec2::new(0.0, 1.5),
+            Vec2::new(1.0, 1.0),
+        )
+        .unwrap();
 
         // Normal should point up
         assert_eq!(contact_vertical.normal, Vec2::unit_y());
@@ -1715,12 +1755,16 @@ mod tests {
     fn test_aabb_aabb_collision_symmetry() {
         // Collision should be symmetric (same penetration regardless of order)
         let contact_ab = aabb_aabb_collision(
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
-            Vec2::new(1.5, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            Vec2::new(1.5, 0.0),
+            Vec2::new(1.0, 1.0),
         );
         let contact_ba = aabb_aabb_collision(
-            Vec2::new(1.5, 0.0), Vec2::new(1.0, 1.0),
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(1.5, 0.0),
+            Vec2::new(1.0, 1.0),
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
 
         assert!(contact_ab.is_some());
@@ -1740,8 +1784,10 @@ mod tests {
     fn test_aabb_aabb_collision_negative_coordinates() {
         // AABBs in negative coordinate space
         let contact = aabb_aabb_collision(
-            Vec2::new(-10.0, -10.0), Vec2::new(1.0, 1.0),
-            Vec2::new(-9.0, -10.0), Vec2::new(1.0, 1.0),
+            Vec2::new(-10.0, -10.0),
+            Vec2::new(1.0, 1.0),
+            Vec2::new(-9.0, -10.0),
+            Vec2::new(1.0, 1.0),
         );
         assert!(contact.is_some());
 
@@ -1758,8 +1804,10 @@ mod tests {
     fn test_circle_aabb_collision_overlapping() {
         // Circle overlapping with AABB from the side
         let contact = circle_aabb_collision(
-            Vec2::new(1.5, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(1.5, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
         assert!(contact.is_some());
 
@@ -1773,8 +1821,10 @@ mod tests {
     fn test_circle_aabb_collision_separated() {
         // Circle separated from AABB
         let contact = circle_aabb_collision(
-            Vec2::new(5.0, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(5.0, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
         assert!(contact.is_none());
     }
@@ -1783,8 +1833,10 @@ mod tests {
     fn test_circle_aabb_collision_corner() {
         // Circle colliding with corner of AABB
         let contact = circle_aabb_collision(
-            Vec2::new(1.5, 1.5), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(1.5, 1.5),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
         assert!(contact.is_some());
 
@@ -1801,8 +1853,10 @@ mod tests {
     fn test_circle_aabb_collision_edge() {
         // Circle colliding with edge of AABB
         let contact = circle_aabb_collision(
-            Vec2::new(1.8, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(1.8, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
         assert!(contact.is_some());
 
@@ -1817,8 +1871,10 @@ mod tests {
     fn test_circle_aabb_collision_inside() {
         // Circle center inside AABB (penetrating deeply)
         let contact = circle_aabb_collision(
-            Vec2::new(0.5, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(0.5, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
         assert!(contact.is_some());
 
@@ -1833,8 +1889,10 @@ mod tests {
     fn test_circle_aabb_collision_center_coincident() {
         // Circle center exactly at AABB center
         let contact = circle_aabb_collision(
-            Vec2::new(0.0, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(0.0, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
         assert!(contact.is_some());
 
@@ -1846,8 +1904,10 @@ mod tests {
     fn test_circle_aabb_collision_touching() {
         // Circle exactly touching AABB edge
         let contact = circle_aabb_collision(
-            Vec2::new(2.0, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(2.0, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
         assert!(contact.is_some());
 
@@ -1859,8 +1919,10 @@ mod tests {
     fn test_circle_aabb_collision_different_sizes() {
         // Large circle with small AABB
         let contact = circle_aabb_collision(
-            Vec2::new(2.0, 0.0), 2.5,
-            Vec2::new(0.0, 0.0), Vec2::new(0.5, 0.5),
+            Vec2::new(2.0, 0.0),
+            2.5,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(0.5, 0.5),
         );
         assert!(contact.is_some());
 
@@ -1873,8 +1935,10 @@ mod tests {
     fn test_circle_aabb_collision_vertical() {
         // Circle colliding from above
         let contact = circle_aabb_collision(
-            Vec2::new(0.0, 1.8), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(0.0, 1.8),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
         assert!(contact.is_some());
 
@@ -1887,9 +1951,12 @@ mod tests {
     fn test_circle_aabb_collision_contact_point() {
         // Verify contact point is on AABB surface
         let contact = circle_aabb_collision(
-            Vec2::new(1.8, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
-        ).unwrap();
+            Vec2::new(1.8, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+        )
+        .unwrap();
 
         // Contact point should be on the right edge of the AABB
         assert!((contact.point.x - 1.0).abs() < 1e-5);
@@ -1900,12 +1967,16 @@ mod tests {
     fn test_circle_aabb_collision_symmetry() {
         // Similar collision from opposite direction
         let contact1 = circle_aabb_collision(
-            Vec2::new(1.8, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(1.8, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
         let contact2 = circle_aabb_collision(
-            Vec2::new(-1.8, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(-1.8, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
 
         assert!(contact1.is_some());
@@ -1929,12 +2000,17 @@ mod tests {
     fn test_circle_obb_collision_no_rotation() {
         // Zero rotation should behave like AABB
         let contact_obb = circle_obb_collision(
-            Vec2::new(1.8, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), 0.0,
+            Vec2::new(1.8, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            0.0,
         );
         let contact_aabb = circle_aabb_collision(
-            Vec2::new(1.8, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0),
+            Vec2::new(1.8, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
         );
 
         assert!(contact_obb.is_some());
@@ -1952,8 +2028,11 @@ mod tests {
 
         // Box rotated 45 degrees
         let contact = circle_obb_collision(
-            Vec2::new(1.8, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), PI / 4.0,
+            Vec2::new(1.8, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            PI / 4.0,
         );
         assert!(contact.is_some());
 
@@ -1967,8 +2046,11 @@ mod tests {
 
         // Box rotated 90 degrees (swaps width/height for square, no visual change)
         let contact = circle_obb_collision(
-            Vec2::new(1.8, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), PI / 2.0,
+            Vec2::new(1.8, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            PI / 2.0,
         );
         assert!(contact.is_some());
 
@@ -1982,8 +2064,11 @@ mod tests {
 
         // Non-square box rotated 30 degrees
         let contact = circle_obb_collision(
-            Vec2::new(2.5, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(2.0, 0.5), PI / 6.0,
+            Vec2::new(2.5, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(2.0, 0.5),
+            PI / 6.0,
         );
         assert!(contact.is_some());
 
@@ -1997,8 +2082,11 @@ mod tests {
 
         // Circle and rotated box separated
         let contact = circle_obb_collision(
-            Vec2::new(5.0, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), PI / 4.0,
+            Vec2::new(5.0, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            PI / 4.0,
         );
         assert!(contact.is_none());
     }
@@ -2009,8 +2097,11 @@ mod tests {
 
         // Circle center inside rotated box
         let contact = circle_obb_collision(
-            Vec2::new(0.5, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(2.0, 2.0), PI / 4.0,
+            Vec2::new(0.5, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(2.0, 2.0),
+            PI / 4.0,
         );
         assert!(contact.is_some());
 
@@ -2025,8 +2116,11 @@ mod tests {
         // Circle colliding with corner of rotated box
         // With 45-degree rotation, corners move farther out
         let contact = circle_obb_collision(
-            Vec2::new(1.2, 1.2), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), PI / 4.0,
+            Vec2::new(1.2, 1.2),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            PI / 4.0,
         );
         assert!(contact.is_some());
 
@@ -2040,8 +2134,11 @@ mod tests {
 
         // Circle close to rotated box
         let contact = circle_obb_collision(
-            Vec2::new(1.8, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), PI / 4.0,
+            Vec2::new(1.8, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            PI / 4.0,
         );
 
         // Should collide since rotated box extends farther
@@ -2056,8 +2153,11 @@ mod tests {
 
         // Box rotated by large angle (3π/4)
         let contact = circle_obb_collision(
-            Vec2::new(1.5, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), 3.0 * PI / 4.0,
+            Vec2::new(1.5, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            3.0 * PI / 4.0,
         );
         assert!(contact.is_some());
 
@@ -2071,8 +2171,11 @@ mod tests {
 
         // Negative rotation
         let contact = circle_obb_collision(
-            Vec2::new(1.8, 0.0), 1.0,
-            Vec2::new(0.0, 0.0), Vec2::new(1.0, 1.0), -PI / 4.0,
+            Vec2::new(1.8, 0.0),
+            1.0,
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            -PI / 4.0,
         );
         assert!(contact.is_some());
 
@@ -2098,9 +2201,9 @@ mod tests {
         // Test clamping of invalid values
         let response = CollisionResponse::new(1.5, -0.2, 2.0, -0.01);
         assert_eq!(response.restitution, 1.0); // Clamped to max
-        assert_eq!(response.friction, 0.0);    // Clamped to min
+        assert_eq!(response.friction, 0.0); // Clamped to min
         assert_eq!(response.position_correction, 1.0); // Clamped to max
-        assert_eq!(response.slop, 0.0);        // Clamped to min
+        assert_eq!(response.slop, 0.0); // Clamped to min
     }
 
     #[test]
@@ -2166,20 +2269,14 @@ mod tests {
             0.1,
         );
 
-        let vel_a = Vec2::new(10.0, 0.0);  // A moving right
+        let vel_a = Vec2::new(10.0, 0.0); // A moving right
         let vel_b = Vec2::new(-10.0, 0.0); // B moving left
-        let inv_mass_a = 1.0;               // Equal mass
+        let inv_mass_a = 1.0; // Equal mass
         let inv_mass_b = 1.0;
 
         let response = CollisionResponse::elastic();
-        let (delta_a, delta_b) = resolve_collision(
-            &contact,
-            vel_a,
-            vel_b,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (delta_a, delta_b) =
+            resolve_collision(&contact, vel_a, vel_b, inv_mass_a, inv_mass_b, &response);
 
         // With elastic collision and equal masses, velocities should swap
         let new_vel_a = vel_a + delta_a;
@@ -2200,20 +2297,14 @@ mod tests {
             0.1,
         );
 
-        let vel_a = Vec2::new(10.0, 0.0);  // A moving right into wall
-        let vel_b = Vec2::zero();          // Wall is static
+        let vel_a = Vec2::new(10.0, 0.0); // A moving right into wall
+        let vel_b = Vec2::zero(); // Wall is static
         let inv_mass_a = 1.0;
-        let inv_mass_b = 0.0;              // Infinite mass (static)
+        let inv_mass_b = 0.0; // Infinite mass (static)
 
         let response = CollisionResponse::bouncy();
-        let (delta_a, delta_b) = resolve_collision(
-            &contact,
-            vel_a,
-            vel_b,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (delta_a, delta_b) =
+            resolve_collision(&contact, vel_a, vel_b, inv_mass_a, inv_mass_b, &response);
 
         // Wall doesn't move
         assert_eq!(delta_b, Vec2::zero());
@@ -2226,11 +2317,7 @@ mod tests {
     #[test]
     fn test_resolve_collision_no_bounce() {
         // Collision with zero restitution (inelastic)
-        let contact = Contact::new(
-            Vec2::new(0.0, 0.0),
-            Vec2::new(1.0, 0.0),
-            0.1,
-        );
+        let contact = Contact::new(Vec2::new(0.0, 0.0), Vec2::new(1.0, 0.0), 0.1);
 
         let vel_a = Vec2::new(10.0, 0.0);
         let vel_b = Vec2::zero();
@@ -2238,14 +2325,8 @@ mod tests {
         let inv_mass_b = 1.0;
 
         let response = CollisionResponse::character(); // Zero restitution
-        let (delta_a, delta_b) = resolve_collision(
-            &contact,
-            vel_a,
-            vel_b,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (delta_a, delta_b) =
+            resolve_collision(&contact, vel_a, vel_b, inv_mass_a, inv_mass_b, &response);
 
         let new_vel_a = vel_a + delta_a;
         let new_vel_b = vel_b + delta_b;
@@ -2257,26 +2338,16 @@ mod tests {
     #[test]
     fn test_resolve_collision_separating() {
         // Objects already separating (no impulse needed)
-        let contact = Contact::new(
-            Vec2::new(0.0, 0.0),
-            Vec2::new(1.0, 0.0),
-            0.1,
-        );
+        let contact = Contact::new(Vec2::new(0.0, 0.0), Vec2::new(1.0, 0.0), 0.1);
 
-        let vel_a = Vec2::new(-5.0, 0.0);  // A moving away (left)
-        let vel_b = Vec2::new(5.0, 0.0);   // B moving away (right)
+        let vel_a = Vec2::new(-5.0, 0.0); // A moving away (left)
+        let vel_b = Vec2::new(5.0, 0.0); // B moving away (right)
         let inv_mass_a = 1.0;
         let inv_mass_b = 1.0;
 
         let response = CollisionResponse::default();
-        let (delta_a, delta_b) = resolve_collision(
-            &contact,
-            vel_a,
-            vel_b,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (delta_a, delta_b) =
+            resolve_collision(&contact, vel_a, vel_b, inv_mass_a, inv_mass_b, &response);
 
         // No impulse should be applied (already separating)
         assert_eq!(delta_a, Vec2::zero());
@@ -2286,11 +2357,7 @@ mod tests {
     #[test]
     fn test_resolve_collision_two_static() {
         // Two static objects (no impulse possible)
-        let contact = Contact::new(
-            Vec2::new(0.0, 0.0),
-            Vec2::new(1.0, 0.0),
-            0.1,
-        );
+        let contact = Contact::new(Vec2::new(0.0, 0.0), Vec2::new(1.0, 0.0), 0.1);
 
         let vel_a = Vec2::zero();
         let vel_b = Vec2::zero();
@@ -2298,14 +2365,8 @@ mod tests {
         let inv_mass_b = 0.0; // Static
 
         let response = CollisionResponse::default();
-        let (delta_a, delta_b) = resolve_collision(
-            &contact,
-            vel_a,
-            vel_b,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (delta_a, delta_b) =
+            resolve_collision(&contact, vel_a, vel_b, inv_mass_a, inv_mass_b, &response);
 
         // No movement possible
         assert_eq!(delta_a, Vec2::zero());
@@ -2322,20 +2383,14 @@ mod tests {
             0.1,
         );
 
-        let vel_a = Vec2::new(10.0, -5.0);  // A moving right and down
-        let vel_b = Vec2::zero();           // B is static surface
+        let vel_a = Vec2::new(10.0, -5.0); // A moving right and down
+        let vel_b = Vec2::zero(); // B is static surface
         let inv_mass_a = 1.0;
         let inv_mass_b = 0.0;
 
         let response = CollisionResponse::character(); // High friction, zero restitution
-        let (delta_a, _) = resolve_collision(
-            &contact,
-            vel_a,
-            vel_b,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (delta_a, _) =
+            resolve_collision(&contact, vel_a, vel_b, inv_mass_a, inv_mass_b, &response);
 
         // Impulse should be applied (not zero)
         assert!(delta_a.length() > 0.0);
@@ -2360,14 +2415,8 @@ mod tests {
         let inv_mass_b = 0.0;
 
         let response = CollisionResponse::default();
-        let (delta_a, _) = resolve_collision(
-            &contact,
-            vel_a,
-            vel_b,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (delta_a, _) =
+            resolve_collision(&contact, vel_a, vel_b, inv_mass_a, inv_mass_b, &response);
 
         let new_vel_a = vel_a + delta_a;
 
@@ -2378,26 +2427,16 @@ mod tests {
     #[test]
     fn test_resolve_collision_mass_ratio() {
         // Heavy object hitting light object
-        let contact = Contact::new(
-            Vec2::new(0.0, 0.0),
-            Vec2::new(1.0, 0.0),
-            0.1,
-        );
+        let contact = Contact::new(Vec2::new(0.0, 0.0), Vec2::new(1.0, 0.0), 0.1);
 
         let vel_a = Vec2::new(10.0, 0.0);
         let vel_b = Vec2::zero();
-        let inv_mass_a = 0.1;  // Heavy (10 kg)
-        let inv_mass_b = 1.0;  // Light (1 kg)
+        let inv_mass_a = 0.1; // Heavy (10 kg)
+        let inv_mass_b = 1.0; // Light (1 kg)
 
         let response = CollisionResponse::default();
-        let (delta_a, delta_b) = resolve_collision(
-            &contact,
-            vel_a,
-            vel_b,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (delta_a, delta_b) =
+            resolve_collision(&contact, vel_a, vel_b, inv_mass_a, inv_mass_b, &response);
 
         // Light object should move more than heavy object
         assert!(delta_b.length() > delta_a.length());
@@ -2419,12 +2458,8 @@ mod tests {
         let inv_mass_b = 1.0;
         let response = CollisionResponse::default();
 
-        let (corr_a, corr_b) = compute_position_correction(
-            &contact,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (corr_a, corr_b) =
+            compute_position_correction(&contact, inv_mass_a, inv_mass_b, &response);
 
         // Both should move (equal mass)
         assert!(corr_a.length() > 0.0);
@@ -2447,12 +2482,8 @@ mod tests {
         let inv_mass_b = 1.0;
         let response = CollisionResponse::default();
 
-        let (corr_a, corr_b) = compute_position_correction(
-            &contact,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (corr_a, corr_b) =
+            compute_position_correction(&contact, inv_mass_a, inv_mass_b, &response);
 
         // No correction for small penetration
         assert_eq!(corr_a, Vec2::zero());
@@ -2461,22 +2492,14 @@ mod tests {
 
     #[test]
     fn test_position_correction_static_wall() {
-        let contact = Contact::new(
-            Vec2::new(0.0, 0.0),
-            Vec2::new(1.0, 0.0),
-            0.1,
-        );
+        let contact = Contact::new(Vec2::new(0.0, 0.0), Vec2::new(1.0, 0.0), 0.1);
 
         let inv_mass_a = 1.0;
         let inv_mass_b = 0.0; // Static
         let response = CollisionResponse::default();
 
-        let (corr_a, corr_b) = compute_position_correction(
-            &contact,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (corr_a, corr_b) =
+            compute_position_correction(&contact, inv_mass_a, inv_mass_b, &response);
 
         // Only dynamic object moves
         assert!(corr_a.length() > 0.0);
@@ -2485,22 +2508,14 @@ mod tests {
 
     #[test]
     fn test_position_correction_two_static() {
-        let contact = Contact::new(
-            Vec2::new(0.0, 0.0),
-            Vec2::new(1.0, 0.0),
-            0.1,
-        );
+        let contact = Contact::new(Vec2::new(0.0, 0.0), Vec2::new(1.0, 0.0), 0.1);
 
         let inv_mass_a = 0.0;
         let inv_mass_b = 0.0;
         let response = CollisionResponse::default();
 
-        let (corr_a, corr_b) = compute_position_correction(
-            &contact,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (corr_a, corr_b) =
+            compute_position_correction(&contact, inv_mass_a, inv_mass_b, &response);
 
         // No correction possible
         assert_eq!(corr_a, Vec2::zero());
@@ -2509,22 +2524,14 @@ mod tests {
 
     #[test]
     fn test_position_correction_zero_percent() {
-        let contact = Contact::new(
-            Vec2::new(0.0, 0.0),
-            Vec2::new(1.0, 0.0),
-            0.1,
-        );
+        let contact = Contact::new(Vec2::new(0.0, 0.0), Vec2::new(1.0, 0.0), 0.1);
 
         let inv_mass_a = 1.0;
         let inv_mass_b = 1.0;
         let response = CollisionResponse::new(0.5, 0.5, 0.0, 0.01); // Zero correction
 
-        let (corr_a, corr_b) = compute_position_correction(
-            &contact,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (corr_a, corr_b) =
+            compute_position_correction(&contact, inv_mass_a, inv_mass_b, &response);
 
         // No correction applied
         assert_eq!(corr_a, Vec2::zero());
@@ -2533,22 +2540,14 @@ mod tests {
 
     #[test]
     fn test_position_correction_full_percent() {
-        let contact = Contact::new(
-            Vec2::new(0.0, 0.0),
-            Vec2::new(1.0, 0.0),
-            0.1,
-        );
+        let contact = Contact::new(Vec2::new(0.0, 0.0), Vec2::new(1.0, 0.0), 0.1);
 
         let inv_mass_a = 1.0;
         let inv_mass_b = 1.0;
         let response = CollisionResponse::new(0.5, 0.5, 1.0, 0.01); // Full correction
 
-        let (corr_a, corr_b) = compute_position_correction(
-            &contact,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (corr_a, corr_b) =
+            compute_position_correction(&contact, inv_mass_a, inv_mass_b, &response);
 
         // Maximum correction applied
         assert!(corr_a.length() > 0.0);
@@ -2557,22 +2556,14 @@ mod tests {
 
     #[test]
     fn test_position_correction_mass_ratio() {
-        let contact = Contact::new(
-            Vec2::new(0.0, 0.0),
-            Vec2::new(1.0, 0.0),
-            0.1,
-        );
+        let contact = Contact::new(Vec2::new(0.0, 0.0), Vec2::new(1.0, 0.0), 0.1);
 
         let inv_mass_a = 0.1; // Heavy
         let inv_mass_b = 1.0; // Light
         let response = CollisionResponse::default();
 
-        let (corr_a, corr_b) = compute_position_correction(
-            &contact,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (corr_a, corr_b) =
+            compute_position_correction(&contact, inv_mass_a, inv_mass_b, &response);
 
         // Light object should move more
         assert!(corr_b.length() > corr_a.length());
@@ -2590,12 +2581,8 @@ mod tests {
         let inv_mass_b = 1.0;
         let response = CollisionResponse::default();
 
-        let (corr_a, corr_b) = compute_position_correction(
-            &contact,
-            inv_mass_a,
-            inv_mass_b,
-            &response,
-        );
+        let (corr_a, corr_b) =
+            compute_position_correction(&contact, inv_mass_a, inv_mass_b, &response);
 
         // Correction should be along normal
         assert!(corr_a.y < 0.0); // A moves down

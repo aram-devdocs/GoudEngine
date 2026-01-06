@@ -31,8 +31,6 @@ pub mod types;
 #[allow(unused_imports)]
 pub use self::types::*;
 
-
-
 /// Capabilities supported by a render backend.
 ///
 /// Different graphics APIs support different feature sets. This struct
@@ -274,12 +272,8 @@ pub trait RenderBackend: Send + Sync {
     /// ```rust,ignore
     /// backend.update_buffer(handle, 0, bytemuck::cast_slice(&new_data))?;
     /// ```
-    fn update_buffer(
-        &mut self,
-        handle: BufferHandle,
-        offset: usize,
-        data: &[u8],
-    ) -> GoudResult<()>;
+    fn update_buffer(&mut self, handle: BufferHandle, offset: usize, data: &[u8])
+        -> GoudResult<()>;
 
     /// Destroys a buffer and frees GPU memory.
     ///
@@ -506,11 +500,7 @@ pub trait RenderBackend: Send + Sync {
     /// "#;
     /// let handle = backend.create_shader(vertex, fragment)?;
     /// ```
-    fn create_shader(
-        &mut self,
-        vertex_src: &str,
-        fragment_src: &str,
-    ) -> GoudResult<ShaderHandle>;
+    fn create_shader(&mut self, vertex_src: &str, fragment_src: &str) -> GoudResult<ShaderHandle>;
 
     /// Destroys a shader program and frees GPU memory.
     ///

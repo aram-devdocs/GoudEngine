@@ -126,7 +126,6 @@ impl ShaderStage {
     }
 }
 
-
 impl fmt::Display for ShaderStage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name())
@@ -453,7 +452,6 @@ impl ShaderFormat {
     }
 }
 
-
 impl fmt::Display for ShaderFormat {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name())
@@ -671,9 +669,7 @@ impl AssetLoader for ShaderLoader {
         // Validate complete shader only for combined shaders
         // Single-stage shaders are validated individually in parse_single_stage
         if self.settings.validate && format == ShaderFormat::Combined {
-            shader
-                .validate()
-                .map_err(AssetLoadError::decode_failed)?;
+            shader.validate().map_err(AssetLoadError::decode_failed)?;
         }
 
         Ok(shader)
@@ -1000,14 +996,8 @@ mod tests {
     #[test]
     fn test_shader_asset_total_size_bytes() {
         let mut shader = ShaderAsset::new();
-        shader.add_stage(ShaderSource::new(
-            ShaderStage::Vertex,
-            "12345".to_string(),
-        ));
-        shader.add_stage(ShaderSource::new(
-            ShaderStage::Fragment,
-            "6789".to_string(),
-        ));
+        shader.add_stage(ShaderSource::new(ShaderStage::Vertex, "12345".to_string()));
+        shader.add_stage(ShaderSource::new(ShaderStage::Fragment, "6789".to_string()));
 
         assert_eq!(shader.total_size_bytes(), 9);
     }
@@ -1056,10 +1046,7 @@ mod tests {
     #[test]
     fn test_shader_asset_display() {
         let mut shader = ShaderAsset::with_name("test".to_string());
-        shader.add_stage(ShaderSource::new(
-            ShaderStage::Vertex,
-            "12345".to_string(),
-        ));
+        shader.add_stage(ShaderSource::new(ShaderStage::Vertex, "12345".to_string()));
 
         let display = format!("{}", shader);
         assert!(display.contains("1 stages"));
@@ -1292,7 +1279,11 @@ mod tests {
         assert_eq!(shader.name(), Some("shader"));
         // Single-stage shaders don't pass full validation (missing fragment)
         // But the individual stage source is validated during loading
-        assert!(shader.get_stage(ShaderStage::Vertex).unwrap().validate().is_ok());
+        assert!(shader
+            .get_stage(ShaderStage::Vertex)
+            .unwrap()
+            .validate()
+            .is_ok());
     }
 
     #[test]
@@ -1310,7 +1301,9 @@ mod tests {
     #[test]
     fn test_shader_with_defines() {
         let mut settings = ShaderSettings::default();
-        settings.defines.insert("MAX_LIGHTS".to_string(), "8".to_string());
+        settings
+            .defines
+            .insert("MAX_LIGHTS".to_string(), "8".to_string());
         let loader = ShaderLoader::with_settings(settings.clone());
 
         let source = b"#version 330 core\nvoid main() {}";
