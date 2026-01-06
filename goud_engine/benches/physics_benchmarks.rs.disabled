@@ -1,0 +1,495 @@
+//! Physics System Performance Benchmarks
+//!
+//! Comprehensive benchmarks for physics simulation including:
+//! - Collision detection performance
+//! - Broad phase (spatial hash) performance
+//! - Narrow phase (SAT, circle-circle) performance
+//! - Physics world stepping performance
+//! - AABB computation and queries
+//!
+//! Run with: `cargo bench --bench physics_benchmarks`
+//!
+//! ## Performance Targets
+//!
+//! - Circle-circle collision: <50ns per pair
+//! - Box-box SAT: <200ns per pair
+//! - Spatial hash query: <1μs for 1000 entities
+//! - AABB computation: <20ns per shape
+//! - Broad phase: <100μs for 10K entities
+
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use goud_engine::core::math::*;
+use goud_engine::ecs::*;
+
+// ================================================================================================
+// Collision Detection Benchmarks
+// ================================================================================================
+
+fn bench_circle_circle_collision(c: &mut Criterion) {
+    let mut group = c.benchmark_group("collision_circle_circle");
+
+    // Overlapping circles
+    group.bench_function("overlapping", |b| {
+        let pos_a = Vec2::new(0.0, 0.0);
+        let radius_a = 1.0;
+        let pos_b = Vec2::new(1.0, 0.0);
+        let radius_b = 1.0;
+
+        b.iter(|| {
+            let contact = circle_circle_collision(pos_a, radius_a, pos_b, radius_b);
+            black_box(contact);
+        });
+    });
+
+    // Separated circles
+    group.bench_function("separated", |b| {
+        let pos_a = Vec2::new(0.0, 0.0);
+        let radius_a = 1.0;
+        let pos_b = Vec2::new(10.0, 0.0);
+        let radius_b = 1.0;
+
+        b.iter(|| {
+            let contact = circle_circle_collision(pos_a, radius_a, pos_b, radius_b);
+            black_box(contact);
+        });
+    });
+
+    // Batch collision checks
+    for pair_count in [100, 1_000, 10_000] {
+        group.throughput(Throughput::Elements(pair_count as u64));
+        group.bench_with_input(
+            BenchmarkId::new("batch", pair_count),
+            &pair_count,
+            |b, &count| {
+                // Generate circle positions
+                let circles_a: Vec<_> = (0..count)
+                    .map(|i| (Vec2::new(i as f32 * 2.0, 0.0), 1.0))
+                    .collect();
+                let circles_b: Vec<_> = (0..count)
+                    .map(|i| (Vec2::new(i as f32 * 2.0 + 0.5, 0.0), 1.0))
+                    .collect();
+
+                b.iter(|| {
+                    let mut collision_count = 0;
+                    for ((pos_a, r_a), (pos_b, r_b)) in circles_a.iter().zip(circles_b.iter()) {
+                        if circle_circle_collision(*pos_a, *r_a, *pos_b, *r_b).is_some() {
+                            collision_count += 1;
+                        }
+                    }
+                    black_box(collision_count);
+                });
+            },
+        );
+    }
+
+    group.finish();
+}
+
+fn bench_box_box_collision(c: &mut Criterion) {
+    let mut group = c.benchmark_group("collision_box_box");
+
+    // AABB overlapping
+    group.bench_function("aabb_overlapping", |b| {
+        let center_a = Vec2::new(0.0, 0.0);
+        let half_extents_a = Vec2::new(1.0, 1.0);
+        let rotation_a = 0.0;
+
+        let center_b = Vec2::new(1.0, 0.0);
+        let half_extents_b = Vec2::new(1.0, 1.0);
+        let rotation_b = 0.0;
+
+        b.iter(|| {
+            let contact = box_box_collision(
+                center_a,
+                half_extents_a,
+                rotation_a,
+                center_b,
+                half_extents_b,
+                rotation_b,
+            );
+            black_box(contact);
+        });
+    });
+
+    // OBB rotated 45 degrees
+    group.bench_function("obb_rotated", |b| {
+        let center_a = Vec2::new(0.0, 0.0);
+        let half_extents_a = Vec2::new(1.0, 1.0);
+        let rotation_a = std::f32::consts::PI / 4.0;
+
+        let center_b = Vec2::new(1.5, 0.0);
+        let half_extents_b = Vec2::new(1.0, 1.0);
+        let rotation_b = -std::f32::consts::PI / 4.0;
+
+        b.iter(|| {
+            let contact = box_box_collision(
+                center_a,
+                half_extents_a,
+                rotation_a,
+                center_b,
+                half_extents_b,
+                rotation_b,
+            );
+            black_box(contact);
+        });
+    });
+
+    // Batch collision checks
+    for pair_count in [100, 1_000, 10_000] {
+        group.throughput(Throughput::Elements(pair_count as u64));
+        group.bench_with_input(
+            BenchmarkId::new("batch_aabb", pair_count),
+            &pair_count,
+            |b, &count| {
+                let boxes_a: Vec<_> = (0..count)
+                    .map(|i| (Vec2::new(i as f32 * 2.0, 0.0), Vec2::new(0.5, 0.5), 0.0))
+                    .collect();
+                let boxes_b: Vec<_> = (0..count)
+                    .map(|i| (Vec2::new(i as f32 * 2.0 + 0.5, 0.0), Vec2::new(0.5, 0.5), 0.0))
+                    .collect();
+
+                b.iter(|| {
+                    let mut collision_count = 0;
+                    for ((pos_a, he_a, rot_a), (pos_b, he_b, rot_b)) in
+                        boxes_a.iter().zip(boxes_b.iter())
+                    {
+                        if box_box_collision(*pos_a, *he_a, *rot_a, *pos_b, *he_b, *rot_b)
+                            .is_some()
+                        {
+                            collision_count += 1;
+                        }
+                    }
+                    black_box(collision_count);
+                });
+            },
+        );
+    }
+
+    group.finish();
+}
+
+fn bench_circle_box_collision(c: &mut Criterion) {
+    let mut group = c.benchmark_group("collision_circle_box");
+
+    // Circle vs AABB
+    group.bench_function("circle_aabb", |b| {
+        let circle_pos = Vec2::new(0.0, 0.0);
+        let circle_radius = 1.0;
+        let box_center = Vec2::new(2.0, 0.0);
+        let box_half_extents = Vec2::new(1.0, 1.0);
+
+        b.iter(|| {
+            let contact = circle_aabb_collision(circle_pos, circle_radius, box_center, box_half_extents);
+            black_box(contact);
+        });
+    });
+
+    // Circle vs OBB (rotated)
+    group.bench_function("circle_obb", |b| {
+        let circle_pos = Vec2::new(0.0, 0.0);
+        let circle_radius = 1.0;
+        let box_center = Vec2::new(2.0, 0.0);
+        let box_half_extents = Vec2::new(1.0, 1.0);
+        let box_rotation = std::f32::consts::PI / 4.0;
+
+        b.iter(|| {
+            let contact = circle_obb_collision(
+                circle_pos,
+                circle_radius,
+                box_center,
+                box_half_extents,
+                box_rotation,
+            );
+            black_box(contact);
+        });
+    });
+
+    group.finish();
+}
+
+// ================================================================================================
+// AABB Computation Benchmarks
+// ================================================================================================
+
+fn bench_aabb_computation(c: &mut Criterion) {
+    let mut group = c.benchmark_group("aabb_computation");
+
+    // Circle AABB
+    group.bench_function("circle", |b| {
+        let shape = ColliderShape::Circle { radius: 1.0 };
+
+        b.iter(|| {
+            let aabb = shape.compute_aabb();
+            black_box(aabb);
+        });
+    });
+
+    // AABB shape
+    group.bench_function("aabb", |b| {
+        let shape = ColliderShape::Aabb {
+            half_extents: Vec2::new(1.0, 1.0),
+        };
+
+        b.iter(|| {
+            let aabb = shape.compute_aabb();
+            black_box(aabb);
+        });
+    });
+
+    // OBB shape
+    group.bench_function("obb", |b| {
+        let shape = ColliderShape::Obb {
+            half_extents: Vec2::new(1.0, 1.0),
+        };
+
+        b.iter(|| {
+            let aabb = shape.compute_aabb();
+            black_box(aabb);
+        });
+    });
+
+    // Polygon shape
+    group.bench_function("polygon", |b| {
+        let shape = ColliderShape::Polygon {
+            vertices: vec![
+                Vec2::new(-1.0, -1.0),
+                Vec2::new(1.0, -1.0),
+                Vec2::new(1.0, 1.0),
+                Vec2::new(-1.0, 1.0),
+            ],
+        };
+
+        b.iter(|| {
+            let aabb = shape.compute_aabb();
+            black_box(aabb);
+        });
+    });
+
+    group.finish();
+}
+
+fn bench_aabb_operations(c: &mut Criterion) {
+    let mut group = c.benchmark_group("aabb_operations");
+
+    let aabb_a = Rect::new(0.0, 0.0, 2.0, 2.0);
+    let aabb_b = Rect::new(1.0, 1.0, 2.0, 2.0);
+
+    // Overlap test
+    group.bench_function("overlaps", |b| {
+        b.iter(|| {
+            let result = aabb::overlaps(&aabb_a, &aabb_b);
+            black_box(result);
+        });
+    });
+
+    // Intersection
+    group.bench_function("intersection", |b| {
+        b.iter(|| {
+            let result = aabb::intersection(&aabb_a, &aabb_b);
+            black_box(result);
+        });
+    });
+
+    // Merge
+    group.bench_function("merge", |b| {
+        b.iter(|| {
+            let result = aabb::merge(&aabb_a, &aabb_b);
+            black_box(result);
+        });
+    });
+
+    // Point containment
+    group.bench_function("contains_point", |b| {
+        let point = Vec2::new(1.0, 1.0);
+
+        b.iter(|| {
+            let result = aabb::contains_point(&aabb_a, point);
+            black_box(result);
+        });
+    });
+
+    // Raycast
+    group.bench_function("raycast", |b| {
+        let origin = Vec2::new(-5.0, 0.0);
+        let direction = Vec2::new(1.0, 0.0);
+        let max_distance = 10.0;
+
+        b.iter(|| {
+            let result = aabb::raycast(&aabb_a, origin, direction, max_distance);
+            black_box(result);
+        });
+    });
+
+    group.finish();
+}
+
+// ================================================================================================
+// Broad Phase (Spatial Hash) Benchmarks
+// ================================================================================================
+
+fn bench_spatial_hash(c: &mut Criterion) {
+    let mut group = c.benchmark_group("spatial_hash");
+
+    // Insert entities
+    for entity_count in [100, 1_000, 10_000] {
+        group.throughput(Throughput::Elements(entity_count as u64));
+
+        group.bench_with_input(
+            BenchmarkId::new("insert", entity_count),
+            &entity_count,
+            |b, &count| {
+                b.iter_batched(
+                    || {
+                        let mut world = World::new();
+                        let entities: Vec<_> = (0..count)
+                            .map(|_| world.spawn_empty())
+                            .collect();
+                        (entities, SpatialHash::new(10.0))
+                    },
+                    |(entities, mut spatial_hash)| {
+                        for (i, &entity) in entities.iter().enumerate() {
+                            let x = (i % 100) as f32 * 2.0;
+                            let y = (i / 100) as f32 * 2.0;
+                            let aabb = Rect::new(x, y, 1.0, 1.0);
+                            spatial_hash.insert(entity, aabb);
+                        }
+                        black_box(spatial_hash);
+                    },
+                    criterion::BatchSize::SmallInput,
+                );
+            },
+        );
+    }
+
+    // Query pairs
+    for entity_count in [100, 1_000, 10_000] {
+        group.throughput(Throughput::Elements(entity_count as u64));
+
+        group.bench_with_input(
+            BenchmarkId::new("query_pairs", entity_count),
+            &entity_count,
+            |b, &count| {
+                let mut world = World::new();
+                let mut spatial_hash = SpatialHash::new(10.0);
+
+                for i in 0..count {
+                    let entity = world.spawn_empty();
+                    let x = (i % 100) as f32 * 2.0;
+                    let y = (i / 100) as f32 * 2.0;
+                    let aabb = Rect::new(x, y, 1.0, 1.0);
+                    spatial_hash.insert(entity, aabb);
+                }
+
+                b.iter(|| {
+                    let pairs = spatial_hash.query_pairs();
+                    black_box(pairs.len());
+                });
+            },
+        );
+    }
+
+    // Query AABB
+    group.bench_function("query_aabb", |b| {
+        let mut world = World::new();
+        let mut spatial_hash = SpatialHash::new(10.0);
+
+        for i in 0..1000 {
+            let entity = world.spawn_empty();
+            let x = (i % 100) as f32 * 2.0;
+            let y = (i / 100) as f32 * 2.0;
+            let aabb = Rect::new(x, y, 1.0, 1.0);
+            spatial_hash.insert(entity, aabb);
+        }
+
+        let query_aabb = Rect::new(50.0, 50.0, 20.0, 20.0);
+
+        b.iter(|| {
+            let entities = spatial_hash.query_aabb(&query_aabb);
+            black_box(entities.len());
+        });
+    });
+
+    group.finish();
+}
+
+// ================================================================================================
+// Collision Response Benchmarks
+// ================================================================================================
+
+fn bench_collision_response(c: &mut Criterion) {
+    let mut group = c.benchmark_group("collision_response");
+
+    // Resolve impulse
+    group.bench_function("resolve_impulse", |b| {
+        let contact = Contact {
+            point: Vec2::new(1.0, 0.0),
+            normal: Vec2::new(1.0, 0.0),
+            penetration: 0.1,
+        };
+        let vel_a = Vec2::new(-1.0, 0.0);
+        let vel_b = Vec2::new(1.0, 0.0);
+        let inv_mass_a = 1.0;
+        let inv_mass_b = 1.0;
+        let response = CollisionResponse::default();
+
+        b.iter(|| {
+            let (delta_a, delta_b) =
+                resolve_collision(&contact, vel_a, vel_b, inv_mass_a, inv_mass_b, &response);
+            black_box((delta_a, delta_b));
+        });
+    });
+
+    // Compute position correction
+    group.bench_function("position_correction", |b| {
+        let contact = Contact {
+            point: Vec2::new(1.0, 0.0),
+            normal: Vec2::new(1.0, 0.0),
+            penetration: 0.1,
+        };
+        let inv_mass_a = 1.0;
+        let inv_mass_b = 1.0;
+        let response = CollisionResponse::default();
+
+        b.iter(|| {
+            let (corr_a, corr_b) =
+                compute_position_correction(&contact, inv_mass_a, inv_mass_b, &response);
+            black_box((corr_a, corr_b));
+        });
+    });
+
+    group.finish();
+}
+
+// ================================================================================================
+// Criterion Configuration
+// ================================================================================================
+
+criterion_group!(
+    collision_benches,
+    bench_circle_circle_collision,
+    bench_box_box_collision,
+    bench_circle_box_collision,
+);
+
+criterion_group!(
+    aabb_benches,
+    bench_aabb_computation,
+    bench_aabb_operations,
+);
+
+criterion_group!(
+    broad_phase_benches,
+    bench_spatial_hash,
+);
+
+criterion_group!(
+    response_benches,
+    bench_collision_response,
+);
+
+criterion_main!(
+    collision_benches,
+    aabb_benches,
+    broad_phase_benches,
+    response_benches,
+);

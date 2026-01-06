@@ -564,7 +564,7 @@ pub struct Handle<T> {
     /// if its generation matches the current generation of the slot.
     generation: u32,
 
-    /// Marker to make Handle<T> generic over T without storing T.
+    /// Marker to make `Handle<T>` generic over T without storing T.
     ///
     /// This provides compile-time type safety: `Handle<Texture>` and
     /// `Handle<Shader>` are distinct types that cannot be accidentally mixed.
@@ -837,6 +837,919 @@ impl<T> From<u64> for Handle<T> {
     #[inline]
     fn from(packed: u64) -> Self {
         Handle::from_u64(packed)
+    }
+}
+
+// =============================================================================
+// HandleMap
+// =============================================================================
+
+/// A map that associates handles with values using generational indices.
+///
+/// `HandleMap` is a slot-map data structure that combines a `HandleAllocator`
+/// with value storage. It provides:
+///
+/// - O(1) insertion, returning a new handle
+/// - O(1) lookup by handle
+/// - O(1) removal by handle
+/// - Generational safety: stale handles return None, never wrong values
+///
+/// This is the primary storage mechanism for engine resources. Each resource
+/// type (textures, shaders, entities, etc.) typically has its own `HandleMap`.
+///
+/// # Type Parameters
+///
+/// - `T`: Marker type for the handle (provides type safety)
+/// - `V`: The value type stored in the map
+///
+/// # Example
+///
+/// ```
+/// use goud_engine::core::handle::HandleMap;
+///
+/// // Marker type for textures
+/// struct Texture;
+///
+/// // Value stored for each texture
+/// struct TextureData {
+///     width: u32,
+///     height: u32,
+///     path: String,
+/// }
+///
+/// let mut textures: HandleMap<Texture, TextureData> = HandleMap::new();
+///
+/// // Insert a texture and get a handle
+/// let handle = textures.insert(TextureData {
+///     width: 1024,
+///     height: 768,
+///     path: "player.png".to_string(),
+/// });
+///
+/// // Lookup by handle
+/// if let Some(tex) = textures.get(handle) {
+///     assert_eq!(tex.width, 1024);
+/// }
+///
+/// // Remove by handle
+/// let removed = textures.remove(handle);
+/// assert!(removed.is_some());
+///
+/// // Handle is now stale
+/// assert!(textures.get(handle).is_none());
+/// ```
+///
+/// # Thread Safety
+///
+/// `HandleMap` is NOT thread-safe. For concurrent access, wrap in
+/// appropriate synchronization primitives (Mutex, RwLock, etc.).
+///
+/// # Design Pattern: Slot Map
+///
+/// This is a slot map (or handle-based storage) pattern commonly used in
+/// game engines for:
+/// - Stable references that survive reallocation
+/// - Safe deletion detection without dangling pointers
+/// - FFI-safe handles that can be passed across language boundaries
+pub struct HandleMap<T, V> {
+    /// The handle allocator managing index and generation tracking.
+    allocator: HandleAllocator<T>,
+
+    /// Storage for values, indexed by handle index.
+    ///
+    /// Entries are `Some(value)` for live handles, `None` for deallocated slots.
+    /// The index in this vector corresponds to `handle.index()`.
+    values: Vec<Option<V>>,
+}
+
+impl<T, V> HandleMap<T, V> {
+    /// Creates a new, empty handle map.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Mesh;
+    /// struct MeshData { vertex_count: usize }
+    ///
+    /// let map: HandleMap<Mesh, MeshData> = HandleMap::new();
+    /// assert!(map.is_empty());
+    /// assert_eq!(map.len(), 0);
+    /// ```
+    #[inline]
+    pub fn new() -> Self {
+        Self {
+            allocator: HandleAllocator::new(),
+            values: Vec::new(),
+        }
+    }
+
+    /// Creates a new handle map with pre-allocated capacity.
+    ///
+    /// This is useful when you know approximately how many entries you'll need,
+    /// as it avoids repeated reallocations during bulk insertion.
+    ///
+    /// # Arguments
+    ///
+    /// * `capacity` - The number of entries to pre-allocate space for
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Entity;
+    /// struct EntityData { name: String }
+    ///
+    /// let map: HandleMap<Entity, EntityData> = HandleMap::with_capacity(1000);
+    /// assert!(map.is_empty());
+    /// ```
+    #[inline]
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            allocator: HandleAllocator::with_capacity(capacity),
+            values: Vec::with_capacity(capacity),
+        }
+    }
+
+    /// Inserts a value into the map and returns a handle to it.
+    ///
+    /// The returned handle can be used to retrieve, modify, or remove the value.
+    /// The handle remains valid until the value is removed.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - The value to insert
+    ///
+    /// # Returns
+    ///
+    /// A handle that can be used to access the inserted value.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Shader;
+    /// struct ShaderData { name: String }
+    ///
+    /// let mut map: HandleMap<Shader, ShaderData> = HandleMap::new();
+    ///
+    /// let h1 = map.insert(ShaderData { name: "basic".to_string() });
+    /// let h2 = map.insert(ShaderData { name: "pbr".to_string() });
+    ///
+    /// assert_ne!(h1, h2);
+    /// assert!(h1.is_valid());
+    /// assert!(h2.is_valid());
+    /// assert_eq!(map.len(), 2);
+    /// ```
+    pub fn insert(&mut self, value: V) -> Handle<T> {
+        let handle = self.allocator.allocate();
+        let index = handle.index() as usize;
+
+        // Ensure values vec is large enough
+        if index >= self.values.len() {
+            self.values.resize_with(index + 1, || None);
+        }
+
+        self.values[index] = Some(value);
+        handle
+    }
+
+    /// Removes a value from the map by its handle.
+    ///
+    /// If the handle is valid and points to an existing value, the value is
+    /// removed and returned. The handle becomes stale after this operation.
+    ///
+    /// # Arguments
+    ///
+    /// * `handle` - The handle of the value to remove
+    ///
+    /// # Returns
+    ///
+    /// - `Some(value)` if the handle was valid and the value was removed
+    /// - `None` if the handle was invalid, stale, or already removed
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Audio;
+    /// struct AudioClip { duration: f32 }
+    ///
+    /// let mut map: HandleMap<Audio, AudioClip> = HandleMap::new();
+    ///
+    /// let handle = map.insert(AudioClip { duration: 5.5 });
+    /// assert_eq!(map.len(), 1);
+    ///
+    /// let removed = map.remove(handle);
+    /// assert!(removed.is_some());
+    /// assert_eq!(removed.unwrap().duration, 5.5);
+    /// assert_eq!(map.len(), 0);
+    ///
+    /// // Handle is now stale
+    /// assert!(map.remove(handle).is_none());
+    /// ```
+    pub fn remove(&mut self, handle: Handle<T>) -> Option<V> {
+        // Check if handle is alive
+        if !self.allocator.is_alive(handle) {
+            return None;
+        }
+
+        let index = handle.index() as usize;
+
+        // Deallocate the handle
+        if !self.allocator.deallocate(handle) {
+            return None;
+        }
+
+        // Take the value from storage
+        self.values.get_mut(index).and_then(|slot| slot.take())
+    }
+
+    /// Returns a reference to the value associated with a handle.
+    ///
+    /// # Arguments
+    ///
+    /// * `handle` - The handle to look up
+    ///
+    /// # Returns
+    ///
+    /// - `Some(&V)` if the handle is valid and points to a value
+    /// - `None` if the handle is invalid, stale, or the value was removed
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Sprite;
+    /// struct SpriteData { x: f32, y: f32 }
+    ///
+    /// let mut map: HandleMap<Sprite, SpriteData> = HandleMap::new();
+    ///
+    /// let handle = map.insert(SpriteData { x: 100.0, y: 200.0 });
+    ///
+    /// if let Some(sprite) = map.get(handle) {
+    ///     assert_eq!(sprite.x, 100.0);
+    ///     assert_eq!(sprite.y, 200.0);
+    /// }
+    /// ```
+    #[inline]
+    pub fn get(&self, handle: Handle<T>) -> Option<&V> {
+        if !self.allocator.is_alive(handle) {
+            return None;
+        }
+
+        let index = handle.index() as usize;
+        self.values.get(index).and_then(|slot| slot.as_ref())
+    }
+
+    /// Returns a mutable reference to the value associated with a handle.
+    ///
+    /// # Arguments
+    ///
+    /// * `handle` - The handle to look up
+    ///
+    /// # Returns
+    ///
+    /// - `Some(&mut V)` if the handle is valid and points to a value
+    /// - `None` if the handle is invalid, stale, or the value was removed
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Transform;
+    /// struct TransformData { x: f32, y: f32 }
+    ///
+    /// let mut map: HandleMap<Transform, TransformData> = HandleMap::new();
+    ///
+    /// let handle = map.insert(TransformData { x: 0.0, y: 0.0 });
+    ///
+    /// if let Some(transform) = map.get_mut(handle) {
+    ///     transform.x = 50.0;
+    ///     transform.y = 100.0;
+    /// }
+    ///
+    /// assert_eq!(map.get(handle).unwrap().x, 50.0);
+    /// ```
+    #[inline]
+    pub fn get_mut(&mut self, handle: Handle<T>) -> Option<&mut V> {
+        if !self.allocator.is_alive(handle) {
+            return None;
+        }
+
+        let index = handle.index() as usize;
+        self.values.get_mut(index).and_then(|slot| slot.as_mut())
+    }
+
+    /// Checks if a handle is valid and points to a value in this map.
+    ///
+    /// This is equivalent to `self.get(handle).is_some()` but more efficient.
+    ///
+    /// # Arguments
+    ///
+    /// * `handle` - The handle to check
+    ///
+    /// # Returns
+    ///
+    /// `true` if the handle is valid and the value exists, `false` otherwise.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Entity;
+    /// struct EntityData { id: u32 }
+    ///
+    /// let mut map: HandleMap<Entity, EntityData> = HandleMap::new();
+    ///
+    /// let handle = map.insert(EntityData { id: 1 });
+    /// assert!(map.contains(handle));
+    ///
+    /// map.remove(handle);
+    /// assert!(!map.contains(handle));
+    /// ```
+    #[inline]
+    pub fn contains(&self, handle: Handle<T>) -> bool {
+        self.allocator.is_alive(handle)
+    }
+
+    /// Returns the number of values currently stored in the map.
+    ///
+    /// This counts only live entries, not removed slots.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Resource;
+    ///
+    /// let mut map: HandleMap<Resource, i32> = HandleMap::new();
+    /// assert_eq!(map.len(), 0);
+    ///
+    /// let h1 = map.insert(10);
+    /// let h2 = map.insert(20);
+    /// assert_eq!(map.len(), 2);
+    ///
+    /// map.remove(h1);
+    /// assert_eq!(map.len(), 1);
+    /// ```
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.allocator.len()
+    }
+
+    /// Returns `true` if the map contains no values.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Item;
+    ///
+    /// let mut map: HandleMap<Item, String> = HandleMap::new();
+    /// assert!(map.is_empty());
+    ///
+    /// let handle = map.insert("item".to_string());
+    /// assert!(!map.is_empty());
+    ///
+    /// map.remove(handle);
+    /// assert!(map.is_empty());
+    /// ```
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.allocator.is_empty()
+    }
+
+    /// Returns the total capacity of the map.
+    ///
+    /// This is the number of slots allocated, including both live and removed entries.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Data;
+    ///
+    /// let mut map: HandleMap<Data, i32> = HandleMap::new();
+    /// let h1 = map.insert(1);
+    /// let h2 = map.insert(2);
+    ///
+    /// assert_eq!(map.capacity(), 2);
+    ///
+    /// map.remove(h1);
+    /// // Capacity unchanged after removal
+    /// assert_eq!(map.capacity(), 2);
+    /// ```
+    #[inline]
+    pub fn capacity(&self) -> usize {
+        self.allocator.capacity()
+    }
+
+    /// Clears all values from the map, invalidating all handles.
+    ///
+    /// After this operation, all previously returned handles become stale.
+    /// The capacity is retained but `len()` becomes 0.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Object;
+    ///
+    /// let mut map: HandleMap<Object, i32> = HandleMap::new();
+    ///
+    /// let h1 = map.insert(100);
+    /// let h2 = map.insert(200);
+    /// let h3 = map.insert(300);
+    ///
+    /// map.clear();
+    ///
+    /// assert!(map.is_empty());
+    /// assert!(!map.contains(h1));
+    /// assert!(!map.contains(h2));
+    /// assert!(!map.contains(h3));
+    ///
+    /// // Capacity retained
+    /// assert_eq!(map.capacity(), 3);
+    /// ```
+    pub fn clear(&mut self) {
+        self.allocator.clear();
+
+        // Clear all values but retain the vec capacity
+        for slot in &mut self.values {
+            *slot = None;
+        }
+    }
+
+    /// Reserves capacity for at least `additional` more elements.
+    ///
+    /// # Arguments
+    ///
+    /// * `additional` - The number of additional entries to reserve space for
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Component;
+    ///
+    /// let mut map: HandleMap<Component, i32> = HandleMap::new();
+    /// map.reserve(100);
+    /// ```
+    #[inline]
+    pub fn reserve(&mut self, additional: usize) {
+        self.values.reserve(additional);
+    }
+
+    /// Shrinks the capacity of the map as much as possible.
+    ///
+    /// This reduces memory usage by releasing excess capacity in internal
+    /// data structures.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Item;
+    ///
+    /// let mut map: HandleMap<Item, i32> = HandleMap::with_capacity(100);
+    ///
+    /// for i in 0..10 {
+    ///     map.insert(i);
+    /// }
+    ///
+    /// map.shrink_to_fit();
+    /// ```
+    #[inline]
+    pub fn shrink_to_fit(&mut self) {
+        self.allocator.shrink_to_fit();
+        self.values.shrink_to_fit();
+    }
+}
+
+impl<T, V> Default for HandleMap<T, V> {
+    /// Creates an empty `HandleMap` (same as `new()`).
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T, V: std::fmt::Debug> std::fmt::Debug for HandleMap<T, V> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let type_name = std::any::type_name::<T>();
+        let short_name = type_name.rsplit("::").next().unwrap_or(type_name);
+
+        f.debug_struct(&format!("HandleMap<{}, ...>", short_name))
+            .field("len", &self.len())
+            .field("capacity", &self.capacity())
+            .finish()
+    }
+}
+
+// =============================================================================
+// HandleMap Iterators
+// =============================================================================
+
+/// An iterator over handle-value pairs in a [`HandleMap`].
+///
+/// This struct is created by the [`iter`](HandleMap::iter) method on `HandleMap`.
+/// It yields `(Handle<T>, &V)` pairs for all live entries.
+///
+/// # Iteration Order
+///
+/// Iteration order is based on the internal storage order (by slot index),
+/// which corresponds to allocation order for slots that haven't been recycled.
+/// Do not rely on any specific ordering as it may change with insertions and removals.
+///
+/// # Example
+///
+/// ```
+/// use goud_engine::core::handle::HandleMap;
+///
+/// struct Texture;
+///
+/// let mut map: HandleMap<Texture, &str> = HandleMap::new();
+/// map.insert("first");
+/// map.insert("second");
+/// map.insert("third");
+///
+/// for (handle, value) in map.iter() {
+///     println!("Handle {:?} => {}", handle, value);
+/// }
+/// ```
+pub struct HandleMapIter<'a, T, V> {
+    /// Reference to the allocator for generation checking.
+    allocator: &'a HandleAllocator<T>,
+
+    /// Iterator over the values vector with indices.
+    values_iter: std::iter::Enumerate<std::slice::Iter<'a, Option<V>>>,
+}
+
+impl<'a, T, V> Iterator for HandleMapIter<'a, T, V> {
+    type Item = (Handle<T>, &'a V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // Iterate through values, skipping None entries
+        loop {
+            match self.values_iter.next() {
+                Some((index, Some(value))) => {
+                    // Reconstruct the handle from index and current generation
+                    let index = index as u32;
+                    // Get the current generation for this slot
+                    if let Some(&generation) = self.allocator.generations.get(index as usize) {
+                        let handle = Handle::new(index, generation);
+                        // Only yield if the handle is alive (matches current generation)
+                        if self.allocator.is_alive(handle) {
+                            return Some((handle, value));
+                        }
+                    }
+                    // Generation mismatch or out of bounds - skip this entry
+                    // This shouldn't happen if the map is consistent, but handle gracefully
+                }
+                Some((_, None)) => {
+                    // Empty slot, continue to next
+                    continue;
+                }
+                None => {
+                    // End of iteration
+                    return None;
+                }
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        // Lower bound is 0 (all remaining could be None)
+        // Upper bound is remaining elements in the iterator
+        let (_, upper) = self.values_iter.size_hint();
+        (0, upper)
+    }
+}
+
+/// A mutable iterator over handle-value pairs in a [`HandleMap`].
+///
+/// This struct is created by the [`iter_mut`](HandleMap::iter_mut) method on `HandleMap`.
+/// It yields `(Handle<T>, &mut V)` pairs for all live entries.
+///
+/// # Example
+///
+/// ```
+/// use goud_engine::core::handle::HandleMap;
+///
+/// struct Counter;
+///
+/// let mut map: HandleMap<Counter, i32> = HandleMap::new();
+/// map.insert(1);
+/// map.insert(2);
+/// map.insert(3);
+///
+/// for (handle, value) in map.iter_mut() {
+///     *value *= 2;
+/// }
+///
+/// // All values are now doubled
+/// ```
+pub struct HandleMapIterMut<'a, T, V> {
+    /// Pointer to the allocator for generation checking.
+    /// We use a raw pointer because we can't hold a reference while iterating mutably.
+    allocator_ptr: *const HandleAllocator<T>,
+
+    /// Iterator over the values vector with indices.
+    values_iter: std::iter::Enumerate<std::slice::IterMut<'a, Option<V>>>,
+
+    /// Phantom marker for lifetime.
+    _marker: PhantomData<&'a HandleAllocator<T>>,
+}
+
+impl<'a, T, V> Iterator for HandleMapIterMut<'a, T, V> {
+    type Item = (Handle<T>, &'a mut V);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // Iterate through values, skipping None entries
+        loop {
+            match self.values_iter.next() {
+                Some((index, Some(value))) => {
+                    // Reconstruct the handle from index and current generation
+                    let index = index as u32;
+                    // Safety: allocator_ptr is valid for the lifetime 'a
+                    let allocator = unsafe { &*self.allocator_ptr };
+                    if let Some(&generation) = allocator.generations.get(index as usize) {
+                        let handle = Handle::new(index, generation);
+                        if allocator.is_alive(handle) {
+                            return Some((handle, value));
+                        }
+                    }
+                }
+                Some((_, None)) => {
+                    continue;
+                }
+                None => {
+                    return None;
+                }
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let (_, upper) = self.values_iter.size_hint();
+        (0, upper)
+    }
+}
+
+/// An iterator over handles in a [`HandleMap`].
+///
+/// This struct is created by the [`handles`](HandleMap::handles) method on `HandleMap`.
+/// It yields `Handle<T>` for all live entries.
+///
+/// # Example
+///
+/// ```
+/// use goud_engine::core::handle::HandleMap;
+///
+/// struct Entity;
+///
+/// let mut map: HandleMap<Entity, String> = HandleMap::new();
+/// let h1 = map.insert("entity1".to_string());
+/// let h2 = map.insert("entity2".to_string());
+///
+/// let handles: Vec<_> = map.handles().collect();
+/// assert!(handles.contains(&h1));
+/// assert!(handles.contains(&h2));
+/// ```
+pub struct HandleMapHandles<'a, T, V> {
+    /// The underlying iterator.
+    inner: HandleMapIter<'a, T, V>,
+}
+
+impl<'a, T, V> Iterator for HandleMapHandles<'a, T, V> {
+    type Item = Handle<T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|(handle, _)| handle)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+/// An iterator over values in a [`HandleMap`].
+///
+/// This struct is created by the [`values`](HandleMap::values) method on `HandleMap`.
+/// It yields `&V` for all live entries.
+///
+/// # Example
+///
+/// ```
+/// use goud_engine::core::handle::HandleMap;
+///
+/// struct Score;
+///
+/// let mut map: HandleMap<Score, i32> = HandleMap::new();
+/// map.insert(100);
+/// map.insert(200);
+/// map.insert(300);
+///
+/// let sum: i32 = map.values().sum();
+/// assert_eq!(sum, 600);
+/// ```
+pub struct HandleMapValues<'a, T, V> {
+    /// The underlying iterator.
+    inner: HandleMapIter<'a, T, V>,
+}
+
+impl<'a, T, V> Iterator for HandleMapValues<'a, T, V> {
+    type Item = &'a V;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|(_, value)| value)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+/// A mutable iterator over values in a [`HandleMap`].
+///
+/// This struct is created by the [`values_mut`](HandleMap::values_mut) method on `HandleMap`.
+/// It yields `&mut V` for all live entries.
+pub struct HandleMapValuesMut<'a, T, V> {
+    /// The underlying iterator.
+    inner: HandleMapIterMut<'a, T, V>,
+}
+
+impl<'a, T, V> Iterator for HandleMapValuesMut<'a, T, V> {
+    type Item = &'a mut V;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|(_, value)| value)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+impl<T, V> HandleMap<T, V> {
+    /// Returns an iterator over handle-value pairs.
+    ///
+    /// The iterator yields `(Handle<T>, &V)` for each live entry in the map.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Item;
+    ///
+    /// let mut map: HandleMap<Item, &str> = HandleMap::new();
+    /// map.insert("a");
+    /// map.insert("b");
+    /// map.insert("c");
+    ///
+    /// let count = map.iter().count();
+    /// assert_eq!(count, 3);
+    /// ```
+    #[inline]
+    pub fn iter(&self) -> HandleMapIter<'_, T, V> {
+        HandleMapIter {
+            allocator: &self.allocator,
+            values_iter: self.values.iter().enumerate(),
+        }
+    }
+
+    /// Returns a mutable iterator over handle-value pairs.
+    ///
+    /// The iterator yields `(Handle<T>, &mut V)` for each live entry in the map.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Counter;
+    ///
+    /// let mut map: HandleMap<Counter, i32> = HandleMap::new();
+    /// map.insert(1);
+    /// map.insert(2);
+    ///
+    /// for (_, value) in map.iter_mut() {
+    ///     *value *= 10;
+    /// }
+    /// ```
+    #[inline]
+    pub fn iter_mut(&mut self) -> HandleMapIterMut<'_, T, V> {
+        HandleMapIterMut {
+            allocator_ptr: &self.allocator as *const HandleAllocator<T>,
+            values_iter: self.values.iter_mut().enumerate(),
+            _marker: PhantomData,
+        }
+    }
+
+    /// Returns an iterator over handles only.
+    ///
+    /// This is more efficient than `iter().map(|(h, _)| h)` if you only need handles.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Entity;
+    ///
+    /// let mut map: HandleMap<Entity, ()> = HandleMap::new();
+    /// map.insert(());
+    /// map.insert(());
+    ///
+    /// let handles: Vec<_> = map.handles().collect();
+    /// assert_eq!(handles.len(), 2);
+    /// ```
+    #[inline]
+    pub fn handles(&self) -> HandleMapHandles<'_, T, V> {
+        HandleMapHandles { inner: self.iter() }
+    }
+
+    /// Returns an iterator over values only.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Score;
+    ///
+    /// let mut map: HandleMap<Score, i32> = HandleMap::new();
+    /// map.insert(10);
+    /// map.insert(20);
+    /// map.insert(30);
+    ///
+    /// let total: i32 = map.values().sum();
+    /// assert_eq!(total, 60);
+    /// ```
+    #[inline]
+    pub fn values(&self) -> HandleMapValues<'_, T, V> {
+        HandleMapValues { inner: self.iter() }
+    }
+
+    /// Returns a mutable iterator over values only.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::core::handle::HandleMap;
+    ///
+    /// struct Data;
+    ///
+    /// let mut map: HandleMap<Data, i32> = HandleMap::new();
+    /// map.insert(1);
+    /// map.insert(2);
+    ///
+    /// for value in map.values_mut() {
+    ///     *value += 100;
+    /// }
+    /// ```
+    #[inline]
+    pub fn values_mut(&mut self) -> HandleMapValuesMut<'_, T, V> {
+        HandleMapValuesMut {
+            inner: self.iter_mut(),
+        }
+    }
+}
+
+/// Allows iterating over a `HandleMap` with a for loop.
+impl<'a, T, V> IntoIterator for &'a HandleMap<T, V> {
+    type Item = (Handle<T>, &'a V);
+    type IntoIter = HandleMapIter<'a, T, V>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+/// Allows mutably iterating over a `HandleMap` with a for loop.
+impl<'a, T, V> IntoIterator for &'a mut HandleMap<T, V> {
+    type Item = (Handle<T>, &'a mut V);
+    type IntoIter = HandleMapIterMut<'a, T, V>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
     }
 }
 
@@ -1822,5 +2735,826 @@ mod tests {
         assert!(!allocator.is_alive(h2));
         assert!(!allocator.is_alive(h3));
         assert!(allocator.is_alive(h4));
+    }
+
+    // =========================================================================
+    // HandleMap Tests (Step 1.2.5)
+    // =========================================================================
+
+    #[test]
+    fn test_handle_map_new() {
+        // Test that new() creates an empty map
+        let map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        assert_eq!(map.len(), 0, "New map should have len 0");
+        assert!(map.is_empty(), "New map should be empty");
+        assert_eq!(map.capacity(), 0, "New map should have capacity 0");
+    }
+
+    #[test]
+    fn test_handle_map_default() {
+        // Test that Default is same as new()
+        let map: HandleMap<TestResource, String> = HandleMap::default();
+
+        assert_eq!(map.len(), 0);
+        assert!(map.is_empty());
+    }
+
+    #[test]
+    fn test_handle_map_with_capacity() {
+        // Test with_capacity pre-allocates
+        let map: HandleMap<TestResource, i32> = HandleMap::with_capacity(100);
+
+        assert_eq!(map.len(), 0, "with_capacity should not insert values");
+        assert!(map.is_empty());
+    }
+
+    #[test]
+    fn test_handle_map_insert_single() {
+        // Test inserting a single value
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        let handle = map.insert(42);
+
+        assert!(handle.is_valid(), "Returned handle should be valid");
+        assert_eq!(map.len(), 1, "Map should have 1 entry");
+        assert!(!map.is_empty(), "Map should not be empty");
+        assert_eq!(map.capacity(), 1);
+    }
+
+    #[test]
+    fn test_handle_map_insert_multiple() {
+        // Test inserting multiple values
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        let h1 = map.insert(10);
+        let h2 = map.insert(20);
+        let h3 = map.insert(30);
+
+        // All should be valid and unique
+        assert!(h1.is_valid());
+        assert!(h2.is_valid());
+        assert!(h3.is_valid());
+
+        assert_ne!(h1, h2, "Handles should be unique");
+        assert_ne!(h2, h3, "Handles should be unique");
+        assert_ne!(h1, h3, "Handles should be unique");
+
+        assert_eq!(map.len(), 3);
+    }
+
+    #[test]
+    fn test_handle_map_get() {
+        // Test retrieving values by handle
+        let mut map: HandleMap<TestResource, String> = HandleMap::new();
+
+        let handle = map.insert("hello".to_string());
+
+        let value = map.get(handle);
+        assert!(value.is_some(), "get should return Some for valid handle");
+        assert_eq!(value.unwrap(), "hello");
+    }
+
+    #[test]
+    fn test_handle_map_get_invalid_handle() {
+        // Test get with invalid/stale handles
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        // Get with INVALID handle
+        assert!(
+            map.get(Handle::INVALID).is_none(),
+            "get with INVALID should return None"
+        );
+
+        // Get with fabricated handle
+        let fake = Handle::<TestResource>::new(100, 1);
+        assert!(
+            map.get(fake).is_none(),
+            "get with out-of-bounds handle should return None"
+        );
+
+        // Insert and then get with wrong generation
+        let handle = map.insert(42);
+        let wrong_gen = Handle::<TestResource>::new(handle.index(), handle.generation() + 1);
+        assert!(
+            map.get(wrong_gen).is_none(),
+            "get with wrong generation should return None"
+        );
+    }
+
+    #[test]
+    fn test_handle_map_get_mut() {
+        // Test mutable access
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        let handle = map.insert(100);
+
+        // Modify the value
+        if let Some(value) = map.get_mut(handle) {
+            *value = 200;
+        }
+
+        // Verify modification
+        assert_eq!(map.get(handle), Some(&200));
+    }
+
+    #[test]
+    fn test_handle_map_get_mut_invalid() {
+        // Test get_mut with invalid handles
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        assert!(map.get_mut(Handle::INVALID).is_none());
+
+        let handle = map.insert(42);
+        map.remove(handle);
+        assert!(
+            map.get_mut(handle).is_none(),
+            "get_mut on removed handle should return None"
+        );
+    }
+
+    #[test]
+    fn test_handle_map_contains() {
+        // Test contains method
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        let handle = map.insert(42);
+
+        assert!(map.contains(handle), "contains should return true for valid handle");
+        assert!(
+            !map.contains(Handle::INVALID),
+            "contains should return false for INVALID"
+        );
+
+        map.remove(handle);
+        assert!(
+            !map.contains(handle),
+            "contains should return false after removal"
+        );
+    }
+
+    #[test]
+    fn test_handle_map_remove() {
+        // Test removing values
+        let mut map: HandleMap<TestResource, String> = HandleMap::new();
+
+        let handle = map.insert("to_remove".to_string());
+        assert_eq!(map.len(), 1);
+
+        let removed = map.remove(handle);
+        assert!(removed.is_some(), "remove should return Some");
+        assert_eq!(removed.unwrap(), "to_remove");
+        assert_eq!(map.len(), 0);
+        assert!(map.is_empty());
+    }
+
+    #[test]
+    fn test_handle_map_remove_returns_none_for_invalid() {
+        // Test remove with invalid handles
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        // Remove INVALID
+        assert!(map.remove(Handle::INVALID).is_none());
+
+        // Remove fabricated handle
+        let fake = Handle::<TestResource>::new(100, 1);
+        assert!(map.remove(fake).is_none());
+
+        // Double remove
+        let handle = map.insert(42);
+        assert!(map.remove(handle).is_some());
+        assert!(
+            map.remove(handle).is_none(),
+            "Second remove should return None"
+        );
+    }
+
+    #[test]
+    fn test_handle_map_remove_drops_value() {
+        // Test that removed values are actually dropped
+        use std::cell::RefCell;
+        use std::rc::Rc;
+
+        let drop_counter = Rc::new(RefCell::new(0));
+
+        struct DropTracker {
+            counter: Rc<RefCell<i32>>,
+        }
+
+        impl Drop for DropTracker {
+            fn drop(&mut self) {
+                *self.counter.borrow_mut() += 1;
+            }
+        }
+
+        let mut map: HandleMap<TestResource, DropTracker> = HandleMap::new();
+
+        let handle = map.insert(DropTracker {
+            counter: drop_counter.clone(),
+        });
+
+        assert_eq!(*drop_counter.borrow(), 0, "Not dropped yet");
+
+        let removed = map.remove(handle);
+        assert_eq!(*drop_counter.borrow(), 0, "Still held by removed");
+
+        drop(removed);
+        assert_eq!(*drop_counter.borrow(), 1, "Dropped after remove result dropped");
+    }
+
+    #[test]
+    fn test_handle_map_slot_reuse() {
+        // Test that removed slots are reused
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        let h1 = map.insert(100);
+        assert_eq!(h1.index(), 0);
+        assert_eq!(h1.generation(), 1);
+
+        map.remove(h1);
+
+        // Next insert should reuse slot 0 with incremented generation
+        let h2 = map.insert(200);
+        assert_eq!(h2.index(), 0, "Should reuse slot 0");
+        assert_eq!(h2.generation(), 2, "Generation should be incremented");
+
+        // Verify values
+        assert!(map.get(h1).is_none(), "Old handle should be stale");
+        assert_eq!(map.get(h2), Some(&200), "New handle should work");
+
+        // Capacity should not have grown
+        assert_eq!(map.capacity(), 1);
+    }
+
+    #[test]
+    fn test_handle_map_generation_safety() {
+        // Test that generational indices prevent ABA problem
+        let mut map: HandleMap<TestResource, &str> = HandleMap::new();
+
+        // Insert value A at slot 0
+        let h_a = map.insert("A");
+        assert_eq!(map.get(h_a), Some(&"A"));
+
+        // Remove A
+        map.remove(h_a);
+
+        // Insert value B (reuses slot 0)
+        let h_b = map.insert("B");
+        assert_eq!(h_a.index(), h_b.index(), "Same slot reused");
+
+        // Old handle h_a should NOT access B (generation mismatch)
+        assert!(map.get(h_a).is_none(), "Stale handle should return None");
+        assert_eq!(map.get(h_b), Some(&"B"), "New handle should work");
+    }
+
+    #[test]
+    fn test_handle_map_clear() {
+        // Test clearing the map
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        let h1 = map.insert(10);
+        let h2 = map.insert(20);
+        let h3 = map.insert(30);
+
+        assert_eq!(map.len(), 3);
+
+        map.clear();
+
+        assert_eq!(map.len(), 0);
+        assert!(map.is_empty());
+
+        // All handles should be invalid
+        assert!(!map.contains(h1));
+        assert!(!map.contains(h2));
+        assert!(!map.contains(h3));
+
+        assert!(map.get(h1).is_none());
+        assert!(map.get(h2).is_none());
+        assert!(map.get(h3).is_none());
+
+        // Capacity retained
+        assert_eq!(map.capacity(), 3);
+    }
+
+    #[test]
+    fn test_handle_map_clear_and_reinsert() {
+        // Test reinserting after clear
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        let h1 = map.insert(100);
+        assert_eq!(h1.generation(), 1);
+
+        map.clear();
+
+        let h2 = map.insert(200);
+        assert_eq!(h2.index(), h1.index(), "Should reuse slot");
+        assert_eq!(h2.generation(), 2, "Generation should be incremented");
+
+        assert!(map.get(h1).is_none());
+        assert_eq!(map.get(h2), Some(&200));
+    }
+
+    #[test]
+    fn test_handle_map_len_and_capacity() {
+        // Test len() and capacity() behavior
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        assert_eq!(map.len(), 0);
+        assert_eq!(map.capacity(), 0);
+
+        let h1 = map.insert(1);
+        let h2 = map.insert(2);
+        let h3 = map.insert(3);
+
+        assert_eq!(map.len(), 3);
+        assert_eq!(map.capacity(), 3);
+
+        // Remove one
+        map.remove(h2);
+
+        assert_eq!(map.len(), 2, "len should decrease");
+        assert_eq!(map.capacity(), 3, "capacity should not decrease");
+
+        // Insert one (reuses slot)
+        let _h4 = map.insert(4);
+
+        assert_eq!(map.len(), 3);
+        assert_eq!(map.capacity(), 3, "capacity unchanged when reusing");
+
+        // Insert another (new slot)
+        let _h5 = map.insert(5);
+
+        assert_eq!(map.len(), 4);
+        assert_eq!(map.capacity(), 4);
+
+        // Clean up to verify
+        map.remove(h1);
+        map.remove(h3);
+
+        assert_eq!(map.len(), 2);
+        assert_eq!(map.capacity(), 4);
+    }
+
+    #[test]
+    fn test_handle_map_debug() {
+        // Test Debug formatting
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+        map.insert(1);
+        map.insert(2);
+
+        let debug_str = format!("{:?}", map);
+
+        assert!(debug_str.contains("HandleMap"), "Debug should contain type name");
+        assert!(debug_str.contains("len"), "Debug should show len");
+        assert!(debug_str.contains("capacity"), "Debug should show capacity");
+    }
+
+    #[test]
+    fn test_handle_map_reserve() {
+        // Test reserve functionality
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        map.reserve(100);
+
+        // Can insert without reallocation
+        for i in 0..100 {
+            map.insert(i);
+        }
+
+        assert_eq!(map.len(), 100);
+    }
+
+    #[test]
+    fn test_handle_map_shrink_to_fit() {
+        // Test shrink_to_fit
+        let mut map: HandleMap<TestResource, i32> = HandleMap::with_capacity(100);
+
+        for i in 0..10 {
+            map.insert(i);
+        }
+
+        map.shrink_to_fit();
+
+        // Functionality preserved
+        assert_eq!(map.len(), 10);
+    }
+
+    #[test]
+    fn test_handle_map_stress() {
+        // Stress test with many operations
+        const COUNT: usize = 10_000;
+
+        let mut map: HandleMap<TestResource, usize> = HandleMap::with_capacity(COUNT);
+
+        // Phase 1: Insert many
+        let handles: Vec<_> = (0..COUNT).map(|i| map.insert(i)).collect();
+
+        assert_eq!(map.len(), COUNT);
+
+        // Verify all values
+        for (i, h) in handles.iter().enumerate() {
+            assert_eq!(map.get(*h), Some(&i), "Value {} should match", i);
+        }
+
+        // Phase 2: Remove half
+        for h in handles.iter().step_by(2) {
+            map.remove(*h);
+        }
+
+        assert_eq!(map.len(), COUNT / 2);
+
+        // Phase 3: Verify removals
+        for (i, h) in handles.iter().enumerate() {
+            if i % 2 == 0 {
+                assert!(map.get(*h).is_none(), "Removed value {} should be None", i);
+            } else {
+                assert_eq!(map.get(*h), Some(&i), "Kept value {} should exist", i);
+            }
+        }
+
+        // Phase 4: Insert again (reuses slots)
+        let new_handles: Vec<_> = (0..COUNT / 2).map(|i| map.insert(i + COUNT)).collect();
+
+        assert_eq!(map.len(), COUNT);
+        assert_eq!(
+            map.capacity(),
+            COUNT,
+            "Should reuse slots, not grow capacity"
+        );
+
+        // Verify new values
+        for (i, h) in new_handles.iter().enumerate() {
+            assert_eq!(map.get(*h), Some(&(i + COUNT)));
+        }
+
+        // Phase 5: Clear
+        map.clear();
+
+        assert!(map.is_empty());
+        assert_eq!(map.capacity(), COUNT);
+
+        // All handles should be stale
+        for h in handles.iter().take(10) {
+            assert!(map.get(*h).is_none());
+        }
+    }
+
+    #[test]
+    fn test_handle_map_values_with_complex_types() {
+        // Test with complex value types
+        #[derive(Debug, Clone, PartialEq)]
+        struct ComplexData {
+            id: u64,
+            name: String,
+            values: Vec<f32>,
+        }
+
+        let mut map: HandleMap<TestResource, ComplexData> = HandleMap::new();
+
+        let h1 = map.insert(ComplexData {
+            id: 1,
+            name: "first".to_string(),
+            values: vec![1.0, 2.0, 3.0],
+        });
+
+        let h2 = map.insert(ComplexData {
+            id: 2,
+            name: "second".to_string(),
+            values: vec![4.0, 5.0],
+        });
+
+        // Access and verify
+        assert_eq!(map.get(h1).unwrap().id, 1);
+        assert_eq!(map.get(h1).unwrap().name, "first");
+        assert_eq!(map.get(h2).unwrap().values.len(), 2);
+
+        // Modify
+        if let Some(data) = map.get_mut(h1) {
+            data.values.push(4.0);
+        }
+
+        assert_eq!(map.get(h1).unwrap().values.len(), 4);
+
+        // Remove and verify
+        let removed = map.remove(h1);
+        assert!(removed.is_some());
+        assert_eq!(removed.unwrap().name, "first");
+
+        assert!(map.get(h1).is_none());
+        assert!(map.get(h2).is_some());
+    }
+
+    // =========================================================================
+    // HandleMap Iterator Tests (Step 1.2.6)
+    // =========================================================================
+
+    #[test]
+    fn test_handle_map_iter_basic() {
+        // Test basic iteration over handle-value pairs
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        let h1 = map.insert(10);
+        let h2 = map.insert(20);
+        let h3 = map.insert(30);
+
+        // Collect all pairs
+        let pairs: Vec<_> = map.iter().collect();
+
+        assert_eq!(pairs.len(), 3, "Should iterate over 3 entries");
+
+        // Verify all handles are present
+        let handles: Vec<_> = pairs.iter().map(|(h, _)| *h).collect();
+        assert!(handles.contains(&h1));
+        assert!(handles.contains(&h2));
+        assert!(handles.contains(&h3));
+
+        // Verify all values are present
+        let values: Vec<_> = pairs.iter().map(|(_, v)| **v).collect();
+        assert!(values.contains(&10));
+        assert!(values.contains(&20));
+        assert!(values.contains(&30));
+    }
+
+    #[test]
+    fn test_handle_map_iter_empty() {
+        // Test iteration over empty map
+        let map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        let pairs: Vec<_> = map.iter().collect();
+
+        assert!(pairs.is_empty(), "Empty map should yield no items");
+    }
+
+    #[test]
+    fn test_handle_map_iter_skips_removed() {
+        // Test that iteration skips removed entries
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        let h1 = map.insert(10);
+        let h2 = map.insert(20);
+        let h3 = map.insert(30);
+
+        // Remove the middle entry
+        map.remove(h2);
+
+        // Iterate and collect
+        let pairs: Vec<_> = map.iter().collect();
+
+        assert_eq!(pairs.len(), 2, "Should only iterate over 2 entries");
+
+        let handles: Vec<_> = pairs.iter().map(|(h, _)| *h).collect();
+        assert!(handles.contains(&h1), "Should contain h1");
+        assert!(!handles.contains(&h2), "Should NOT contain removed h2");
+        assert!(handles.contains(&h3), "Should contain h3");
+    }
+
+    #[test]
+    fn test_handle_map_iter_mut_basic() {
+        // Test mutable iteration
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        map.insert(1);
+        map.insert(2);
+        map.insert(3);
+
+        // Double all values
+        for (_, value) in map.iter_mut() {
+            *value *= 2;
+        }
+
+        // Verify values are doubled
+        let values: Vec<_> = map.values().cloned().collect();
+        assert!(values.contains(&2), "1*2 should be 2");
+        assert!(values.contains(&4), "2*2 should be 4");
+        assert!(values.contains(&6), "3*2 should be 6");
+    }
+
+    #[test]
+    fn test_handle_map_iter_mut_modifies_in_place() {
+        // Test that modifications are visible via handles
+        let mut map: HandleMap<TestResource, String> = HandleMap::new();
+
+        let h1 = map.insert("hello".to_string());
+        let h2 = map.insert("world".to_string());
+
+        // Append to all values
+        for (_, value) in map.iter_mut() {
+            value.push_str("!");
+        }
+
+        assert_eq!(map.get(h1).unwrap(), "hello!");
+        assert_eq!(map.get(h2).unwrap(), "world!");
+    }
+
+    #[test]
+    fn test_handle_map_handles_iterator() {
+        // Test handles() iterator
+        let mut map: HandleMap<TestResource, &str> = HandleMap::new();
+
+        let h1 = map.insert("a");
+        let h2 = map.insert("b");
+        let h3 = map.insert("c");
+
+        let handles: Vec<_> = map.handles().collect();
+
+        assert_eq!(handles.len(), 3);
+        assert!(handles.contains(&h1));
+        assert!(handles.contains(&h2));
+        assert!(handles.contains(&h3));
+    }
+
+    #[test]
+    fn test_handle_map_values_iterator() {
+        // Test values() iterator
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        map.insert(100);
+        map.insert(200);
+        map.insert(300);
+
+        // Use values iterator to sum
+        let sum: i32 = map.values().sum();
+        assert_eq!(sum, 600);
+
+        // Collect values
+        let mut values: Vec<_> = map.values().cloned().collect();
+        values.sort();
+        assert_eq!(values, vec![100, 200, 300]);
+    }
+
+    #[test]
+    fn test_handle_map_values_mut_iterator() {
+        // Test values_mut() iterator
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        map.insert(1);
+        map.insert(2);
+        map.insert(3);
+
+        // Add 100 to all values
+        for value in map.values_mut() {
+            *value += 100;
+        }
+
+        let mut values: Vec<_> = map.values().cloned().collect();
+        values.sort();
+        assert_eq!(values, vec![101, 102, 103]);
+    }
+
+    #[test]
+    fn test_handle_map_into_iterator_ref() {
+        // Test IntoIterator for &HandleMap (for loop support)
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        map.insert(10);
+        map.insert(20);
+
+        let mut count = 0;
+        for (handle, value) in &map {
+            assert!(handle.is_valid());
+            assert!(*value == 10 || *value == 20);
+            count += 1;
+        }
+
+        assert_eq!(count, 2);
+    }
+
+    #[test]
+    fn test_handle_map_into_iterator_mut_ref() {
+        // Test IntoIterator for &mut HandleMap (mutable for loop support)
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        map.insert(1);
+        map.insert(2);
+        map.insert(3);
+
+        // Triple all values using for loop
+        for (_, value) in &mut map {
+            *value *= 3;
+        }
+
+        let mut values: Vec<_> = map.values().cloned().collect();
+        values.sort();
+        assert_eq!(values, vec![3, 6, 9]);
+    }
+
+    #[test]
+    fn test_handle_map_iter_with_gaps() {
+        // Test iteration with multiple gaps from removals
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        // Insert 10 values
+        let handles: Vec<_> = (0..10).map(|i| map.insert(i)).collect();
+
+        // Remove every other one (0, 2, 4, 6, 8)
+        for i in (0..10).step_by(2) {
+            map.remove(handles[i]);
+        }
+
+        // Should have 5 values remaining (1, 3, 5, 7, 9)
+        let remaining: Vec<_> = map.values().cloned().collect();
+        assert_eq!(remaining.len(), 5);
+
+        let mut sorted = remaining.clone();
+        sorted.sort();
+        assert_eq!(sorted, vec![1, 3, 5, 7, 9]);
+    }
+
+    #[test]
+    fn test_handle_map_iter_count() {
+        // Test that iter().count() matches len()
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        for i in 0..100 {
+            map.insert(i);
+        }
+
+        assert_eq!(map.iter().count(), 100);
+        assert_eq!(map.iter().count(), map.len());
+
+        // Remove some
+        let handles: Vec<_> = map.handles().take(30).collect();
+        for h in handles {
+            map.remove(h);
+        }
+
+        assert_eq!(map.iter().count(), 70);
+        assert_eq!(map.iter().count(), map.len());
+    }
+
+    #[test]
+    fn test_handle_map_iter_size_hint() {
+        // Test size_hint is reasonable
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        for i in 0..10 {
+            map.insert(i);
+        }
+
+        let iter = map.iter();
+        let (lower, upper) = iter.size_hint();
+
+        // Lower bound is 0 (conservative)
+        assert_eq!(lower, 0);
+
+        // Upper bound should be at most the capacity
+        assert!(upper.is_some());
+        assert!(upper.unwrap() <= 10);
+    }
+
+    #[test]
+    fn test_handle_map_iter_after_clear() {
+        // Test iteration after clear
+        let mut map: HandleMap<TestResource, i32> = HandleMap::new();
+
+        map.insert(1);
+        map.insert(2);
+        map.insert(3);
+
+        map.clear();
+
+        let count = map.iter().count();
+        assert_eq!(count, 0, "Iteration after clear should yield nothing");
+
+        // Insert new values
+        map.insert(100);
+        map.insert(200);
+
+        let count = map.iter().count();
+        assert_eq!(count, 2, "Should iterate over new values");
+    }
+
+    #[test]
+    fn test_handle_map_iter_stress() {
+        // Stress test iteration with many operations
+        const COUNT: usize = 1000;
+
+        let mut map: HandleMap<TestResource, usize> = HandleMap::new();
+
+        // Insert values
+        let handles: Vec<_> = (0..COUNT).map(|i| map.insert(i)).collect();
+
+        // Verify iteration count
+        assert_eq!(map.iter().count(), COUNT);
+
+        // Remove half
+        for (i, h) in handles.iter().enumerate() {
+            if i % 2 == 0 {
+                map.remove(*h);
+            }
+        }
+
+        // Verify iteration count
+        assert_eq!(map.iter().count(), COUNT / 2);
+
+        // Verify remaining values
+        let remaining: std::collections::HashSet<_> = map.values().cloned().collect();
+        for i in 0..COUNT {
+            if i % 2 == 0 {
+                assert!(!remaining.contains(&i), "Removed value {} should not be present", i);
+            } else {
+                assert!(remaining.contains(&i), "Kept value {} should be present", i);
+            }
+        }
     }
 }

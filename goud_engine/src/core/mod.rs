@@ -5,15 +5,14 @@
 //! - **Error handling**: Unified error types with FFI-compatible error codes
 //! - **Handles**: Type-safe, generation-counted references to engine objects
 //! - **Events**: Decoupled communication between engine systems
+//! - **Common Events**: Pre-defined engine events (app lifecycle, window, frame)
 //! - **Math**: FFI-safe mathematical types (vectors, matrices, colors)
 //!
 //! These utilities form the foundation for all other engine subsystems and
 //! provide consistent patterns for cross-language interoperability.
 
 pub mod error;
+pub mod event;
+pub mod events;
 pub mod handle;
-
-// Future submodules will be added as they are implemented:
-// pub mod event;    // Step 1.3.1-1.3.4
-// pub mod events;   // Step 1.3.5
-// pub mod math;     // Step 1.4.1-1.4.4
+pub mod math;
