@@ -225,7 +225,7 @@ impl Default for AudioSettings {
 ///
 /// # Example
 /// ```no_run
-/// use goud_engine::assets::{AssetServer, loaders::audio::AudioLoader};
+/// use goud_engine::assets::{AssetServer, loaders::audio::{AudioLoader, AudioAsset}};
 ///
 /// let mut server = AssetServer::new();
 /// server.register_loader(AudioLoader::default());

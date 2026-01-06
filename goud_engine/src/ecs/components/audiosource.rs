@@ -1,30 +1,10 @@
-//! AudioSource component for spatial audio playback.
-//!
-//! This component enables audio playback for entities with spatial audio support.
-//! It can be used for 2D or 3D positional audio, ambient sounds, or UI audio.
-//!
-//! # Features
-//!
-//! - **Asset-based audio**: References audio assets via `AssetHandle<AudioAsset>`
-//! - **Playback control**: Play, pause, stop, loop control
-//! - **Volume and pitch**: Per-source volume (0.0-1.0) and pitch (0.5-2.0)
-//! - **Spatial audio**: Attenuation and rolloff for distance-based volume
-//! - **Audio channels**: Background music, SFX, voice, ambience, UI (up to 32 custom channels)
-//! - **Auto-play**: Automatically start playing when spawned
-//!
-//! # Spatial Audio
-//!
-//! When an entity has both `AudioSource` and `Transform2D`/`Transform`, the audio system
-//! will apply distance-based attenuation using the configured rolloff model.
-//!
-//! # Examples
-//!
 //! ## Play a Sound Effect
 //!
 //! ```
 //! use goud_engine::ecs::{World, Component};
-//! use goud_engine::ecs::components::AudioSource;
-//! use goud_engine::assets::{AssetHandle, AudioAsset};
+//! use goud_engine::ecs::components::{AudioSource, AudioChannel};
+//! use goud_engine::assets::AssetHandle;
+//! use goud_engine::assets::loaders::audio::AudioAsset;
 //!
 //! let mut world = World::new();
 //!
@@ -44,7 +24,8 @@
 //!
 //! ```
 //! use goud_engine::ecs::components::{AudioSource, AudioChannel};
-//! use goud_engine::assets::{AssetHandle, AudioAsset};
+//! use goud_engine::assets::AssetHandle;
+//! use goud_engine::assets::loaders::audio::AudioAsset;
 //!
 //! let audio_handle: AssetHandle<AudioAsset> = AssetHandle::default();
 //!
@@ -59,7 +40,8 @@
 //!
 //! ```
 //! use goud_engine::ecs::components::{AudioSource, AudioChannel, AttenuationModel};
-//! use goud_engine::assets::{AssetHandle, AudioAsset};
+//! use goud_engine::assets::AssetHandle;
+//! use goud_engine::assets::loaders::audio::AudioAsset;
 //!
 //! let audio_handle: AssetHandle<AudioAsset> = AssetHandle::default();
 //!
@@ -71,7 +53,7 @@
 //!     .with_channel(AudioChannel::Ambience);
 //! ```
 
-use crate::assets::loaders::AudioAsset;
+use crate::assets::loaders::audio::AudioAsset;
 use crate::assets::AssetHandle;
 use crate::ecs::Component;
 
@@ -365,7 +347,8 @@ impl AudioSource {
     ///
     /// ```
     /// use goud_engine::ecs::components::AudioSource;
-    /// use goud_engine::assets::{AssetHandle, AudioAsset};
+    /// use goud_engine::assets::AssetHandle;
+    /// use goud_engine::assets::loaders::audio::AudioAsset;
     ///
     /// let audio_handle: AssetHandle<AudioAsset> = AssetHandle::default();
     /// let source = AudioSource::new(audio_handle);
@@ -396,7 +379,8 @@ impl AudioSource {
     ///
     /// ```
     /// use goud_engine::ecs::components::AudioSource;
-    /// use goud_engine::assets::{AssetHandle, AudioAsset};
+    /// use goud_engine::assets::AssetHandle;
+    /// use goud_engine::assets::loaders::audio::AudioAsset;
     ///
     /// let audio_handle: AssetHandle<AudioAsset> = AssetHandle::default();
     /// let source = AudioSource::new(audio_handle).with_volume(0.5);
@@ -413,7 +397,8 @@ impl AudioSource {
     ///
     /// ```
     /// use goud_engine::ecs::components::AudioSource;
-    /// use goud_engine::assets::{AssetHandle, AudioAsset};
+    /// use goud_engine::assets::AssetHandle;
+    /// use goud_engine::assets::loaders::audio::AudioAsset;
     ///
     /// let audio_handle: AssetHandle<AudioAsset> = AssetHandle::default();
     /// let source = AudioSource::new(audio_handle).with_pitch(1.5);

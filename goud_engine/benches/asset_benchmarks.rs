@@ -24,6 +24,7 @@ use goud_engine::assets::*;
 // Test Asset Types
 // ================================================================================================
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 struct DummyAsset {
     data: Vec<u8>,
@@ -35,6 +36,7 @@ impl Asset for DummyAsset {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 struct SmallAsset {
     value: u32,
@@ -42,6 +44,7 @@ struct SmallAsset {
 
 impl Asset for SmallAsset {}
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 struct LargeAsset {
     data: Vec<u8>, // 1MB
@@ -177,7 +180,7 @@ fn bench_asset_loader(c: &mut Criterion) {
         b.iter(|| {
             let mut context = LoadContext::new("test.bench".into());
             let result = loader.load(&data, &(), &mut context);
-            black_box(result);
+            let _ = black_box(result);
         });
     });
 
@@ -189,7 +192,7 @@ fn bench_asset_loader(c: &mut Criterion) {
         b.iter(|| {
             let mut context = LoadContext::new("test.bench".into());
             let result = loader.load(&data, &(), &mut context);
-            black_box(result);
+            let _ = black_box(result);
         });
     });
 
@@ -201,7 +204,7 @@ fn bench_asset_loader(c: &mut Criterion) {
         b.iter(|| {
             let mut context = LoadContext::new("test.bench".into());
             let result = loader.load(&data, &(), &mut context);
-            black_box(result);
+            let _ = black_box(result);
         });
     });
 

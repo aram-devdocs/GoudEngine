@@ -1,6 +1,27 @@
 #![warn(missing_docs)]
 #![warn(rustdoc::all)]
 #![allow(rustdoc::private_intra_doc_links)]
+// Allow common lint warnings in test code
+#![cfg_attr(test, allow(dead_code))]
+#![cfg_attr(test, allow(unused_variables))]
+#![cfg_attr(test, allow(unused_mut))]
+#![cfg_attr(test, allow(unused_unsafe))]
+#![cfg_attr(test, allow(unused_assignments))]
+#![cfg_attr(test, allow(clippy::useless_vec))]
+#![cfg_attr(test, allow(clippy::unnecessary_unwrap))]
+#![cfg_attr(test, allow(clippy::approx_constant))]
+#![cfg_attr(test, allow(clippy::clone_on_copy))]
+#![cfg_attr(test, allow(clippy::unnecessary_cast))]
+#![cfg_attr(test, allow(clippy::unit_cmp))]
+#![cfg_attr(test, allow(clippy::drop_non_drop))]
+#![cfg_attr(test, allow(clippy::bool_assert_comparison))]
+#![cfg_attr(test, allow(clippy::manual_range_contains))]
+#![cfg_attr(test, allow(clippy::single_char_add_str))]
+#![cfg_attr(test, allow(clippy::len_zero))]
+#![cfg_attr(test, allow(clippy::cmp_owned))]
+#![cfg_attr(test, allow(clippy::assertions_on_constants))]
+#![cfg_attr(test, allow(clippy::default_constructed_unit_structs))]
+#![cfg_attr(test, allow(clippy::field_reassign_with_default))]
 
 //! # Goud Engine Core
 //!

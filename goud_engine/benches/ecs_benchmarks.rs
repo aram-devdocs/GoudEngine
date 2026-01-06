@@ -39,6 +39,7 @@ struct Velocity {
 }
 impl Component for Velocity {}
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 struct Health {
     current: f32,
@@ -46,6 +47,7 @@ struct Health {
 }
 impl Component for Health {}
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 struct Damage {
     amount: f32,

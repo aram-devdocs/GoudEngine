@@ -477,12 +477,10 @@ mod tests {
         #[test]
         fn test_generic_function_with_component_storage() {
             // Test that we can write generic code over ComponentStorage
-            fn count_matching<S: ComponentStorage<Item = Position>>(
-                storage: &S,
-                predicate: impl Fn(&Position) -> bool,
-            ) -> usize
+            #[allow(dead_code)]
+            fn count_matching<S>(storage: &S, predicate: impl Fn(&Position) -> bool) -> usize
             where
-                S: AsRef<SparseSet<Position>>,
+                S: ComponentStorage<Item = Position> + AsRef<SparseSet<Position>>,
             {
                 storage
                     .as_ref()

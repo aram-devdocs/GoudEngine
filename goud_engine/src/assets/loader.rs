@@ -268,35 +268,17 @@ impl<'a> fmt::Debug for LoadContext<'a> {
 /// # Example
 ///
 /// ```
-/// use goud_engine::assets::{Asset, AssetLoader, LoadContext, AssetLoadError};
+/// use goud_engine::assets::{Asset, AssetLoader, LoadContext, AssetLoadError, TextAsset, TextAssetLoader};
 ///
-/// struct TextAsset {
-///     content: String,
-/// }
+/// let loader = TextAssetLoader;
+/// let bytes = b"Hello, World!";
+/// let path = goud_engine::assets::AssetPath::from_string("test.txt".to_string());
+/// let mut context = LoadContext::new(path);
 ///
-/// impl Asset for TextAsset {}
-///
-/// #[derive(Clone)]
-/// struct TextAssetLoader;
-///
-/// impl AssetLoader for TextAssetLoader {///     type Asset = TextAsset;
-///     type Settings = ();
-///
-///     fn extensions(&self) -> &[&str] {
-///         &["txt", "text"]
-///     }
-///
-///     fn load<'a>(
-///         &'a self,
-///         bytes: &'a [u8],
-///         _settings: &'a Self::Settings,
-///         _context: &'a mut LoadContext,
-///     ) -> Result<Self::Asset, AssetLoadError> {
-///         let content = String::from_utf8(bytes.to_vec())
-///             .map_err(|e| AssetLoadError::decode_failed(e.to_string()))?;
-///         Ok(TextAsset { content })
-///     }
-/// }
+/// let result = loader.load(bytes, &(), &mut context);
+/// assert!(result.is_ok());
+/// let asset = result.unwrap();
+/// assert_eq!(asset.content, "Hello, World!");
 /// ```
 pub trait AssetLoader: Send + Sync + Clone + 'static {
     /// The type of asset this loader produces.
@@ -416,106 +398,112 @@ impl<L: AssetLoader> ErasedAssetLoader for TypedAssetLoader<L> {
     }
 }
 
+// Test asset types - used in doctests and unit tests
+#[allow(dead_code)]
+#[derive(Debug, Clone, PartialEq)]
+pub struct TextAsset {
+    pub content: String,
+}
+
+impl Asset for TextAsset {}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, PartialEq)]
+pub struct BinaryAsset {
+    pub data: Vec<u8>,
+}
+
+impl Asset for BinaryAsset {}
+
+// Test loaders - used in doctests and unit tests
+#[allow(dead_code)]
+#[derive(Clone)]
+pub struct TextAssetLoader;
+
+impl AssetLoader for TextAssetLoader {
+    type Asset = TextAsset;
+    type Settings = ();
+
+    fn extensions(&self) -> &[&str] {
+        &["txt", "text"]
+    }
+
+    fn load<'a>(
+        &'a self,
+        bytes: &'a [u8],
+        _settings: &'a Self::Settings,
+        _context: &'a mut LoadContext,
+    ) -> Result<Self::Asset, AssetLoadError> {
+        let content = String::from_utf8(bytes.to_vec())
+            .map_err(|e| AssetLoadError::decode_failed(e.to_string()))?;
+        Ok(TextAsset { content })
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Clone)]
+pub struct BinaryAssetLoader;
+
+impl AssetLoader for BinaryAssetLoader {
+    type Asset = BinaryAsset;
+    type Settings = ();
+
+    fn extensions(&self) -> &[&str] {
+        &["bin", "dat"]
+    }
+
+    fn load<'a>(
+        &'a self,
+        bytes: &'a [u8],
+        _settings: &'a Self::Settings,
+        _context: &'a mut LoadContext,
+    ) -> Result<Self::Asset, AssetLoadError> {
+        Ok(BinaryAsset {
+            data: bytes.to_vec(),
+        })
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, Default)]
+pub struct LoaderSettings {
+    pub max_size: usize,
+}
+
+#[allow(dead_code)]
+#[derive(Clone)]
+pub struct SettingsLoader;
+
+impl AssetLoader for SettingsLoader {
+    type Asset = BinaryAsset;
+    type Settings = LoaderSettings;
+
+    fn extensions(&self) -> &[&str] {
+        &["custom"]
+    }
+
+    fn load<'a>(
+        &'a self,
+        bytes: &'a [u8],
+        settings: &'a Self::Settings,
+        _context: &'a mut LoadContext,
+    ) -> Result<Self::Asset, AssetLoadError> {
+        if bytes.len() > settings.max_size {
+            return Err(AssetLoadError::custom(format!(
+                "Asset too large: {} > {}",
+                bytes.len(),
+                settings.max_size
+            )));
+        }
+        Ok(BinaryAsset {
+            data: bytes.to_vec(),
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // Test asset types
-    #[derive(Debug, Clone, PartialEq)]
-    struct TextAsset {
-        content: String,
-    }
-
-    impl Asset for TextAsset {}
-
-    #[derive(Debug, Clone, PartialEq)]
-    struct BinaryAsset {
-        data: Vec<u8>,
-    }
-
-    impl Asset for BinaryAsset {}
-
-    // Test loaders
-    #[derive(Clone)]
-    struct TextAssetLoader;
-
-    impl AssetLoader for TextAssetLoader {
-        type Asset = TextAsset;
-        type Settings = ();
-
-        fn extensions(&self) -> &[&str] {
-            &["txt", "text"]
-        }
-
-        fn load<'a>(
-            &'a self,
-            bytes: &'a [u8],
-            _settings: &'a Self::Settings,
-            _context: &'a mut LoadContext,
-        ) -> Result<Self::Asset, AssetLoadError> {
-            let content = String::from_utf8(bytes.to_vec())
-                .map_err(|e| AssetLoadError::decode_failed(e.to_string()))?;
-            Ok(TextAsset { content })
-        }
-    }
-
-    #[derive(Clone)]
-    struct BinaryAssetLoader;
-
-    impl AssetLoader for BinaryAssetLoader {
-        type Asset = BinaryAsset;
-        type Settings = ();
-
-        fn extensions(&self) -> &[&str] {
-            &["bin", "dat"]
-        }
-
-        fn load<'a>(
-            &'a self,
-            bytes: &'a [u8],
-            _settings: &'a Self::Settings,
-            _context: &'a mut LoadContext,
-        ) -> Result<Self::Asset, AssetLoadError> {
-            Ok(BinaryAsset {
-                data: bytes.to_vec(),
-            })
-        }
-    }
-
-    #[derive(Debug, Clone, Default)]
-    struct LoaderSettings {
-        max_size: usize,
-    }
-
-    #[derive(Clone)]
-    struct SettingsLoader;
-
-    impl AssetLoader for SettingsLoader {
-        type Asset = BinaryAsset;
-        type Settings = LoaderSettings;
-
-        fn extensions(&self) -> &[&str] {
-            &["custom"]
-        }
-
-        fn load<'a>(
-            &'a self,
-            bytes: &'a [u8],
-            settings: &'a Self::Settings,
-            _context: &'a mut LoadContext,
-        ) -> Result<Self::Asset, AssetLoadError> {
-            if bytes.len() > settings.max_size {
-                return Err(AssetLoadError::custom(format!(
-                    "Asset too large: {} > {}",
-                    bytes.len(),
-                    settings.max_size
-                )));
-            }
-            Ok(BinaryAsset {
-                data: bytes.to_vec(),
-            })
-        }
-    }
 
     // AssetLoadError tests
     mod asset_load_error {
