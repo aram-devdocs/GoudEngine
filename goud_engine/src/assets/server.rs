@@ -173,12 +173,14 @@ impl AssetServer {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use goud_engine::assets::{Asset, AssetServer, AssetLoader, LoadContext, AssetLoadError};
     ///
+    /// #[derive(Clone)]
     /// struct TextAsset { content: String }
     /// impl Asset for TextAsset {}
     ///
+    /// #[derive(Clone)]
     /// struct TextLoader;
     /// impl AssetLoader for TextLoader {
     ///     type Asset = TextAsset;

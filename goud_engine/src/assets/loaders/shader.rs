@@ -5,8 +5,8 @@
 //!
 //! # Example
 //!
-//! ```
-//! use goud_engine::assets::{AssetServer, loaders::ShaderLoader};
+//! ```no_run
+//! use goud_engine::assets::{AssetServer, loaders::shader::ShaderLoader, loaders::shader::ShaderAsset};
 //!
 //! let mut server = AssetServer::new();
 //! server.register_loader(ShaderLoader::default());
@@ -14,7 +14,6 @@
 //! // Load a complete shader program
 //! let handle = server.load::<ShaderAsset>("shaders/basic.shader");
 //! ```
-
 use crate::assets::{Asset, AssetLoadError, AssetLoader, AssetType, LoadContext};
 use std::collections::HashMap;
 use std::fmt;

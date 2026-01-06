@@ -225,13 +225,13 @@ impl Default for AudioSettings {
 ///
 /// # Example
 /// ```no_run
-/// use goud_engine::assets::{AssetServer, loaders::AudioLoader};
+/// use goud_engine::assets::{AssetServer, loaders::audio::AudioLoader};
 ///
 /// let mut server = AssetServer::new();
 /// server.register_loader(AudioLoader::default());
 ///
 /// // This will return an empty stub until Phase 6
-/// let audio_handle = server.load("sounds/jump.wav");
+/// let audio_handle = server.load::<AudioAsset>("sounds/jump.wav");
 /// ```
 #[derive(Clone, Debug)]
 pub struct AudioLoader {

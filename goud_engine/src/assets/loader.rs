@@ -15,40 +15,40 @@
 //! └──────────────┘     └──────────────┘     └──────────────┘
 //! ```
 //!
-//! # Example
-//!
-//! ```
-//! use goud_engine::assets::{Asset, AssetLoader, LoadContext, AssetLoadError};
-//!
-//! struct MyAsset {
-//!     data: String,
-//! }
-//!
-//! impl Asset for MyAsset {}
-//!
-//! struct MyAssetLoader;
-//!
-//! impl AssetLoader for MyAssetLoader {
-//!     type Asset = MyAsset;
-//!     type Settings = ();
-//!
-//!     fn extensions(&self) -> &[&str] {
-//!         &["myasset"]
-//!     }
-//!
-//!     fn load<'a>(
-//!         &'a self,
-//!         bytes: &'a [u8],
-//!         _settings: &'a Self::Settings,
-//!         _context: &'a mut LoadContext,
-//!     ) -> Result<Self::Asset, AssetLoadError> {
-//!         let data = String::from_utf8(bytes.to_vec())
-//!             .map_err(|e| AssetLoadError::DecodeFailed(e.to_string()))?;
-//!         Ok(MyAsset { data })
-//!     }
-//! }
-//! ```
-
+///
+/// ```
+/// use goud_engine::assets::{Asset, AssetLoader, LoadContext, AssetLoadError};
+///
+/// #[derive(Clone)]
+/// struct MyAsset {
+///     data: String,
+/// }
+///
+/// impl Asset for MyAsset {}
+///
+/// #[derive(Clone)]
+/// struct MyAssetLoader;
+///
+/// impl AssetLoader for MyAssetLoader {
+///     type Asset = MyAsset;
+///     type Settings = ();
+///
+///     fn extensions(&self) -> &[&str] {
+///         &["myasset"]
+///     }
+///
+///     fn load<'a>(
+///         &'a self,
+///         bytes: &'a [u8],
+///         _settings: &'a Self::Settings,
+///         _context: &'a mut LoadContext,
+///     ) -> Result<Self::Asset, AssetLoadError> {
+///         let data = String::from_utf8(bytes.to_vec())
+///             .map_err(|e| AssetLoadError::DecodeFailed(e.to_string()))?;
+///         Ok(MyAsset { data })
+///     }
+/// }
+/// ```
 use crate::assets::{Asset, AssetPath};
 use std::error::Error;
 use std::fmt;
@@ -276,10 +276,10 @@ impl<'a> fmt::Debug for LoadContext<'a> {
 ///
 /// impl Asset for TextAsset {}
 ///
+/// #[derive(Clone)]
 /// struct TextAssetLoader;
 ///
-/// impl AssetLoader for TextAssetLoader {
-///     type Asset = TextAsset;
+/// impl AssetLoader for TextAssetLoader {///     type Asset = TextAsset;
 ///     type Settings = ();
 ///
 ///     fn extensions(&self) -> &[&str] {

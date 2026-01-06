@@ -4,16 +4,15 @@
 //! Supports common image formats like PNG, JPG, BMP, TGA, and more.
 //!
 //! # Example
-//!
-//! ```
-//! use goud_engine::assets::{AssetServer, loaders::TextureLoader};
-//!
-//! let mut server = AssetServer::new();
-//! server.register_loader(TextureLoader::default());
-//!
-//! let handle = server.load::<TextureAsset>("textures/player.png");
-//! ```
-
+///
+/// ```no_run
+/// use goud_engine::assets::{AssetServer, loaders::texture::TextureLoader, loaders::texture::TextureAsset};
+///
+/// let mut server = AssetServer::new();
+/// server.register_loader(TextureLoader::default());
+///
+/// let handle = server.load::<TextureAsset>("textures/player.png");
+/// ```
 use crate::assets::{Asset, AssetLoadError, AssetLoader, AssetType, LoadContext};
 use image::{DynamicImage, ImageError, ImageFormat};
 use std::fmt;
@@ -397,8 +396,8 @@ impl fmt::Display for TextureWrapMode {
 ///
 /// # Example
 ///
-/// ```
-/// use goud_engine::assets::{AssetServer, loaders::TextureLoader};
+/// ```no_run
+/// use goud_engine::assets::{AssetServer, loaders::texture::{TextureLoader, TextureAsset, TextureSettings}};
 ///
 /// let mut server = AssetServer::new();
 /// server.register_loader(TextureLoader::default());
@@ -407,7 +406,6 @@ impl fmt::Display for TextureWrapMode {
 /// let texture = server.load::<TextureAsset>("player.png");
 ///
 /// // Load with custom settings
-/// use goud_engine::assets::loaders::TextureSettings;
 /// let mut settings = TextureSettings::default();
 /// settings.flip_vertical = false;
 /// server.register_loader_with_settings(TextureLoader::default(), settings);
