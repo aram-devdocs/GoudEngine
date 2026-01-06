@@ -41,3 +41,6 @@ libgoud_engine.dylib
 docs/diagrams/mods.dot
 docs/diagrams/module_graph.pdfsdks/GoudEngine/runtimes/osx-x64/native/libgoud_engine.dylib
 docs/diagrams/module_graph.pdf
+
+# Zenflow task files
+.zenflow/tasks/
