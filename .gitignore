@@ -39,4 +39,4 @@ libgoud_engine.dylib
 
 # Generated diagrams intermediate files
 docs/diagrams/mods.dot
-docs/diagrams/module_graph.pdf
+docs/diagrams/module_graph.pdfsdks/GoudEngine/runtimes/osx-x64/native/libgoud_engine.dylib
