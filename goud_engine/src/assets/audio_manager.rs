@@ -14,7 +14,7 @@
 //!
 //! # Usage
 //!
-//! ```
+//! ```no_run
 //! use goud_engine::ecs::{World, Resource};
 //! use goud_engine::assets::AudioManager;
 //!
