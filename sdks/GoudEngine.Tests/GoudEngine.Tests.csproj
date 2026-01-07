@@ -25,4 +25,11 @@
     <ProjectReference Include="../GoudEngine/GoudEngine.csproj" />
   </ItemGroup>
 
+  <!-- Exclude tests for SDK types that were excluded from build -->
+  <ItemGroup>
+    <Compile Remove="Core/**/*.cs" />
+    <Compile Remove="Math/**/*.cs" />
+    <Compile Remove="Components/**/*.cs" />
+  </ItemGroup>
+
 </Project>
