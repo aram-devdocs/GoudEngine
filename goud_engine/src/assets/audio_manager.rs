@@ -718,9 +718,12 @@ mod tests {
 
     // ============================================================================
     // AudioManager Tests
+    // NOTE: Tests calling AudioManager::new() are #[ignore]d because they require
+    // audio hardware (rodio crashes with STATUS_ACCESS_VIOLATION on Windows CI)
     // ============================================================================
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_new() {
         // Audio output may not be available in CI environments
         match AudioManager::new() {
@@ -736,6 +739,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_global_volume() {
         if let Ok(mut manager) = AudioManager::new() {
             assert_eq!(manager.global_volume(), 1.0);
@@ -749,6 +753,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_volume_clamping() {
         if let Ok(mut manager) = AudioManager::new() {
             manager.set_global_volume(1.5);
@@ -760,6 +765,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_play_empty_asset() {
         if let Ok(mut manager) = AudioManager::new() {
             let empty_asset = AudioAsset::empty();
@@ -776,6 +782,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_pause_resume() {
         if let Ok(manager) = AudioManager::new() {
             let nonexistent_id = 999;
@@ -787,6 +794,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_stop() {
         if let Ok(mut manager) = AudioManager::new() {
             let nonexistent_id = 999;
@@ -797,6 +805,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_is_playing() {
         if let Ok(manager) = AudioManager::new() {
             let nonexistent_id = 999;
@@ -807,6 +816,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_active_count() {
         if let Ok(manager) = AudioManager::new() {
             assert_eq!(manager.active_count(), 0);
@@ -814,6 +824,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_stop_all() {
         if let Ok(mut manager) = AudioManager::new() {
             // Stop all on empty manager should not panic
@@ -823,6 +834,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_cleanup_finished() {
         if let Ok(mut manager) = AudioManager::new() {
             // Cleanup on empty manager should not panic
@@ -832,6 +844,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_debug() {
         if let Ok(manager) = AudioManager::new() {
             let debug_str = format!("{:?}", manager);
@@ -842,6 +855,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_allocate_sink_id() {
         if let Ok(manager) = AudioManager::new() {
             let id1 = manager.allocate_sink_id();
@@ -875,6 +889,7 @@ mod tests {
     // ============================================================================
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_play_looped() {
         if let Ok(mut manager) = AudioManager::new() {
             let empty_asset = AudioAsset::empty();
@@ -886,6 +901,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_play_with_settings() {
         if let Ok(mut manager) = AudioManager::new() {
             let empty_asset = AudioAsset::empty();
@@ -897,6 +913,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_set_sink_volume() {
         if let Ok(manager) = AudioManager::new() {
             let nonexistent_id = 999;
@@ -907,6 +924,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_set_sink_speed() {
         if let Ok(manager) = AudioManager::new() {
             let nonexistent_id = 999;
@@ -917,6 +935,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_audio_manager_is_finished() {
         if let Ok(manager) = AudioManager::new() {
             let nonexistent_id = 999;
@@ -931,6 +950,7 @@ mod tests {
     // ============================================================================
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_spatial_audio_play_empty_asset() {
         if let Ok(mut manager) = AudioManager::new() {
             let empty_asset = AudioAsset::empty();
@@ -948,6 +968,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // requires audio hardware
     fn test_spatial_audio_update_volume_nonexistent() {
         if let Ok(manager) = AudioManager::new() {
             let nonexistent_id = 999;
