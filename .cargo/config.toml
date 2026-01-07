@@ -4,11 +4,6 @@
 # Use all available CPU cores for compilation
 jobs = -1
 
-[target.x86_64-unknown-linux-gnu]
-rustflags = ["-C", "target-cpu=native"]
-
-[target.x86_64-apple-darwin]
-rustflags = ["-C", "target-cpu=native"]
-
-[target.aarch64-apple-darwin]
-rustflags = ["-C", "target-cpu=native"]
+# NOTE: target-cpu=native was removed because it causes SIGILL errors on CI
+# when cached build artifacts are reused on runners with different CPUs.
+# For local performance optimization, you can set CARGO_RUSTFLAGS="-C target-cpu=native"
