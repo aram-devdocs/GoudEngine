@@ -83,7 +83,7 @@ impl std::fmt::Display for GoudEntityId {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GoudResult {
     /// Error code (0 = success, non-zero = error).
-    pub code: GoudErrorCode,
+    pub code: i32,
 
     /// True if operation succeeded (code == 0).
     pub success: bool,
