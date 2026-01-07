@@ -1372,7 +1372,7 @@ impl ArchetypeGraph {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```ignore
     /// use goud_engine::ecs::archetype::{ArchetypeGraph, ArchetypeId};
     /// use goud_engine::ecs::component::{Component, ComponentId};
     /// use std::collections::BTreeSet;

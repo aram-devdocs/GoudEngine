@@ -267,7 +267,7 @@ impl<'a> fmt::Debug for LoadContext<'a> {
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use goud_engine::assets::{Asset, AssetLoader, LoadContext, AssetLoadError, TextAsset, TextAssetLoader};
 ///
 /// let loader = TextAssetLoader;

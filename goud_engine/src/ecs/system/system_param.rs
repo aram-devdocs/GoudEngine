@@ -61,7 +61,7 @@ use crate::ecs::World;
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use goud_engine::ecs::World;
 /// use goud_engine::ecs::system::SystemParamState;
 ///

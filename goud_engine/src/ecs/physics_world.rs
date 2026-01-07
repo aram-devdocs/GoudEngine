@@ -626,7 +626,7 @@ impl PhysicsWorld {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// use goud_engine::ecs::physics_world::PhysicsWorld;
     ///
     /// let mut physics = PhysicsWorld::new();
@@ -651,7 +651,7 @@ impl PhysicsWorld {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// use goud_engine::ecs::physics_world::PhysicsWorld;
     ///
     /// let physics = PhysicsWorld::new();

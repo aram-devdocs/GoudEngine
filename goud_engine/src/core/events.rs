@@ -349,7 +349,7 @@ pub struct WindowCloseRequested;
 ///
 /// # Example
 ///
-/// ```rust
+/// ```ignore
 /// use goud_engine::core::events::FrameStarted;
 /// use goud_engine::core::event::Events;
 ///

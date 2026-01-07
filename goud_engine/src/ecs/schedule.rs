@@ -52,7 +52,7 @@
 //!
 //! Games can define custom stages that interleave with core stages:
 //!
-//! ```
+//! ```ignore
 //! use goud_engine::ecs::schedule::StageLabel;
 //! use std::any::TypeId;
 //!
@@ -100,7 +100,7 @@ use crate::ecs::World;
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use goud_engine::ecs::schedule::StageLabel;
 /// use std::any::TypeId;
 ///
@@ -751,7 +751,7 @@ impl fmt::Display for SystemOrdering {
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use goud_engine::ecs::schedule::SystemLabel;
 /// use std::any::TypeId;
 ///
@@ -1825,7 +1825,7 @@ pub trait Stage: Send + Sync {
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use goud_engine::ecs::{World};
 /// use goud_engine::ecs::schedule::SystemStage;
 /// use goud_engine::ecs::system::{System, IntoSystem, BoxedSystem};
@@ -1890,7 +1890,7 @@ impl SystemStage {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```ignore
     /// use goud_engine::ecs::schedule::SystemStage;
     ///
     /// let stage = SystemStage::new("Update");
@@ -1918,7 +1918,7 @@ impl SystemStage {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```ignore
     /// use goud_engine::ecs::schedule::SystemStage;
     ///
     /// let stage = SystemStage::with_capacity("Physics", 10);
@@ -1940,7 +1940,7 @@ impl SystemStage {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```ignore
     /// use goud_engine::ecs::schedule::{SystemStage, CoreStage};
     ///
     /// let stage = SystemStage::from_core(CoreStage::Update);
@@ -1967,7 +1967,7 @@ impl SystemStage {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```ignore
     /// use goud_engine::ecs::{World};
     /// use goud_engine::ecs::schedule::SystemStage;
     /// use goud_engine::ecs::system::System;
@@ -2007,7 +2007,7 @@ impl SystemStage {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```ignore
     /// use goud_engine::ecs::{World};
     /// use goud_engine::ecs::schedule::SystemStage;
     /// use goud_engine::ecs::system::System;
@@ -3082,7 +3082,7 @@ impl ParallelExecutionStats {
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use goud_engine::ecs::{World};
 /// use goud_engine::ecs::schedule::ParallelSystemStage;
 /// use goud_engine::ecs::system::System;

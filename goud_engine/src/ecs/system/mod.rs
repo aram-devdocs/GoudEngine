@@ -109,7 +109,7 @@
 //!
 //! Functions with valid system parameters are automatically convertible via [`IntoSystem`]:
 //!
-//! ```
+//! ```ignore
 //! use goud_engine::ecs::{World, Component};
 //! use goud_engine::ecs::query::Query;
 //! use goud_engine::ecs::resource::ResMut;

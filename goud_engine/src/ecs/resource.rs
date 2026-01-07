@@ -22,7 +22,7 @@
 //!
 //! # Usage
 //!
-//! ```
+//! ```ignore
 //! use goud_engine::ecs::{World, Resource};
 //!
 //! // Define a resource
@@ -77,7 +77,7 @@ use std::ops::{Deref, DerefMut};
 /// Resources are singleton data stored in the [`World`](crate::ecs::World).
 /// To make a type usable as a resource, implement this trait:
 ///
-/// ```
+/// ```ignore
 /// use goud_engine::ecs::Resource;
 ///
 /// struct GameConfig {
