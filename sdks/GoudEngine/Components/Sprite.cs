@@ -8,19 +8,13 @@ namespace GoudEngine.Components
     /// 2D sprite component for rendering textured quads.
     /// </summary>
     /// <remarks>
+    /// This is a pure data struct. All sprite manipulation logic is implemented in
+    /// the Rust engine and accessible via FFI functions (goud_sprite_*).
+    /// 
     /// Sprites are textured rectangles that can be tinted, flipped, and have custom
     /// UV coordinates for sprite sheets.
-    ///
-    /// Memory layout: 48 bytes total
-    /// - texture: AssetHandle (8 bytes)
-    /// - color: Color (16 bytes)
-    /// - source_rect: Option&lt;Rect&gt; (20 bytes: 4 bool + 16 data)
-    /// - flip_x: bool (1 byte)
-    /// - flip_y: bool (1 byte)
-    /// - anchor: Vec2 (8 bytes)
-    /// - custom_size: Option&lt;Vec2&gt; (12 bytes: 4 bool + 8 data)
-    ///
-    /// Note: Actual size may vary due to alignment/padding.
+    /// 
+    /// Note: Memory layout must match Rust FfiSprite.
     /// </remarks>
     [StructLayout(LayoutKind.Sequential)]
     [Component(0xFEDCBA0987654321, 48)] // TODO: Compute actual TypeId hash
@@ -32,16 +26,50 @@ namespace GoudEngine.Components
         public ulong TextureHandle;
 
         /// <summary>
-        /// RGBA color tint applied to the sprite (multiplied with texture colors).
-        /// Default is Color.White (no tinting).
+        /// Color tint red component (0.0 - 1.0).
         /// </summary>
-        public Color Color;
+        public float ColorR;
 
         /// <summary>
-        /// Source rectangle in texture UV coordinates for sprite sheets.
-        /// If null, uses the entire texture.
+        /// Color tint green component (0.0 - 1.0).
         /// </summary>
-        public Rect? SourceRect;
+        public float ColorG;
+
+        /// <summary>
+        /// Color tint blue component (0.0 - 1.0).
+        /// </summary>
+        public float ColorB;
+
+        /// <summary>
+        /// Color tint alpha component (0.0 - 1.0).
+        /// </summary>
+        public float ColorA;
+
+        /// <summary>
+        /// Source rectangle X position (if HasSourceRect is true).
+        /// </summary>
+        public float SourceRectX;
+
+        /// <summary>
+        /// Source rectangle Y position.
+        /// </summary>
+        public float SourceRectY;
+
+        /// <summary>
+        /// Source rectangle width.
+        /// </summary>
+        public float SourceRectWidth;
+
+        /// <summary>
+        /// Source rectangle height.
+        /// </summary>
+        public float SourceRectHeight;
+
+        /// <summary>
+        /// Whether source_rect is set.
+        /// </summary>
+        [MarshalAs(UnmanagedType.U1)]
+        public bool HasSourceRect;
 
         /// <summary>
         /// If true, flip the sprite horizontally.
@@ -56,17 +84,30 @@ namespace GoudEngine.Components
         public bool FlipY;
 
         /// <summary>
-        /// Anchor point in normalized coordinates (0.0-1.0).
-        /// Default is (0.5, 0.5) for center.
-        /// (0, 0) = top-left, (1, 1) = bottom-right.
+        /// Anchor point X in normalized coordinates (0.0-1.0).
         /// </summary>
-        public Vector2 Anchor;
+        public float AnchorX;
 
         /// <summary>
-        /// Custom size override in world units.
-        /// If null, uses texture size.
+        /// Anchor point Y in normalized coordinates (0.0-1.0).
         /// </summary>
-        public Vector2? CustomSize;
+        public float AnchorY;
+
+        /// <summary>
+        /// Custom size width (if HasCustomSize is true).
+        /// </summary>
+        public float CustomSizeX;
+
+        /// <summary>
+        /// Custom size height.
+        /// </summary>
+        public float CustomSizeY;
+
+        /// <summary>
+        /// Whether custom_size is set.
+        /// </summary>
+        [MarshalAs(UnmanagedType.U1)]
+        public bool HasCustomSize;
 
         /// <inheritdoc/>
         public ulong TypeId => 0xFEDCBA0987654321; // TODO: Compute actual hash
@@ -75,185 +116,88 @@ namespace GoudEngine.Components
         public int SizeInBytes => 48;
 
         /// <summary>
-        /// Creates a new Sprite with the specified texture handle.
+        /// Creates a new Sprite with the specified texture handle and default settings.
         /// </summary>
         /// <param name="textureHandle">Handle to the texture asset (0 for none).</param>
         public Sprite(ulong textureHandle)
         {
             TextureHandle = textureHandle;
-            Color = Color.White;
-            SourceRect = null;
+            ColorR = 1.0f;
+            ColorG = 1.0f;
+            ColorB = 1.0f;
+            ColorA = 1.0f;
+            SourceRectX = 0.0f;
+            SourceRectY = 0.0f;
+            SourceRectWidth = 0.0f;
+            SourceRectHeight = 0.0f;
+            HasSourceRect = false;
             FlipX = false;
             FlipY = false;
-            Anchor = new Vector2(0.5f, 0.5f); // Center anchor
-            CustomSize = null;
+            AnchorX = 0.5f;
+            AnchorY = 0.5f;
+            CustomSizeX = 0.0f;
+            CustomSizeY = 0.0f;
+            HasCustomSize = false;
         }
 
         /// <summary>
         /// Creates a new white sprite (no texture).
         /// </summary>
-        /// <returns>A white colored sprite.</returns>
-        public static Sprite Default()
+        public static Sprite Default() => new(0);
+
+        /// <summary>
+        /// Gets or sets the color tint.
+        /// </summary>
+        public Color Color
         {
-            return new Sprite(0)
+            readonly get => new(ColorR, ColorG, ColorB, ColorA);
+            set
             {
-                Color = Color.White
-            };
+                ColorR = value.R;
+                ColorG = value.G;
+                ColorB = value.B;
+                ColorA = value.A;
+            }
         }
 
         /// <summary>
-        /// Builder: Sets the color tint.
+        /// Gets or sets the anchor point as a Vector2 (normalized 0.0-1.0).
         /// </summary>
-        /// <param name="color">The RGBA color.</param>
-        /// <returns>This sprite for method chaining.</returns>
-        public Sprite WithColor(Color color)
+        public Vector2 Anchor
         {
-            Color = color;
-            return this;
+            readonly get => new(AnchorX, AnchorY);
+            set
+            {
+                AnchorX = value.X;
+                AnchorY = value.Y;
+            }
         }
-
-        /// <summary>
-        /// Builder: Sets the source rectangle for sprite sheets.
-        /// </summary>
-        /// <param name="rect">The UV rectangle in texture coordinates.</param>
-        /// <returns>This sprite for method chaining.</returns>
-        public Sprite WithSourceRect(Rect rect)
-        {
-            SourceRect = rect;
-            return this;
-        }
-
-        /// <summary>
-        /// Builder: Clears the source rectangle (uses full texture).
-        /// </summary>
-        /// <returns>This sprite for method chaining.</returns>
-        public Sprite WithoutSourceRect()
-        {
-            SourceRect = null;
-            return this;
-        }
-
-        /// <summary>
-        /// Builder: Sets horizontal flip.
-        /// </summary>
-        /// <param name="flip">True to flip horizontally.</param>
-        /// <returns>This sprite for method chaining.</returns>
-        public Sprite WithFlipX(bool flip = true)
-        {
-            FlipX = flip;
-            return this;
-        }
-
-        /// <summary>
-        /// Builder: Sets vertical flip.
-        /// </summary>
-        /// <param name="flip">True to flip vertically.</param>
-        /// <returns>This sprite for method chaining.</returns>
-        public Sprite WithFlipY(bool flip = true)
-        {
-            FlipY = flip;
-            return this;
-        }
-
-        /// <summary>
-        /// Builder: Sets both horizontal and vertical flip.
-        /// </summary>
-        /// <param name="flipX">True to flip horizontally.</param>
-        /// <param name="flipY">True to flip vertically.</param>
-        /// <returns>This sprite for method chaining.</returns>
-        public Sprite WithFlip(bool flipX, bool flipY)
-        {
-            FlipX = flipX;
-            FlipY = flipY;
-            return this;
-        }
-
-        /// <summary>
-        /// Builder: Sets the anchor point.
-        /// </summary>
-        /// <param name="x">Horizontal anchor (0.0-1.0).</param>
-        /// <param name="y">Vertical anchor (0.0-1.0).</param>
-        /// <returns>This sprite for method chaining.</returns>
-        public Sprite WithAnchor(float x, float y)
-        {
-            Anchor = new Vector2(x, y);
-            return this;
-        }
-
-        /// <summary>
-        /// Builder: Sets the anchor point.
-        /// </summary>
-        /// <param name="anchor">The anchor vector.</param>
-        /// <returns>This sprite for method chaining.</returns>
-        public Sprite WithAnchorVec(Vector2 anchor)
-        {
-            Anchor = anchor;
-            return this;
-        }
-
-        /// <summary>
-        /// Builder: Sets a custom size override.
-        /// </summary>
-        /// <param name="size">The custom size in world units.</param>
-        /// <returns>This sprite for method chaining.</returns>
-        public Sprite WithCustomSize(Vector2 size)
-        {
-            CustomSize = size;
-            return this;
-        }
-
-        /// <summary>
-        /// Builder: Clears the custom size (uses texture size).
-        /// </summary>
-        /// <returns>This sprite for method chaining.</returns>
-        public Sprite WithoutCustomSize()
-        {
-            CustomSize = null;
-            return this;
-        }
-
-        /// <summary>
-        /// Checks if the sprite has a source rectangle set.
-        /// </summary>
-        public bool HasSourceRect => SourceRect.HasValue;
-
-        /// <summary>
-        /// Checks if the sprite has a custom size set.
-        /// </summary>
-        public bool HasCustomSize => CustomSize.HasValue;
 
         /// <summary>
         /// Checks if the sprite is flipped on either axis.
         /// </summary>
-        public bool IsFlipped => FlipX || FlipY;
+        public readonly bool IsFlipped => FlipX || FlipY;
 
         /// <inheritdoc/>
-        public override string ToString()
+        public override readonly string ToString()
         {
             var parts = new System.Collections.Generic.List<string>
             {
                 $"tex: {TextureHandle}",
-                $"color: {Color}"
+                $"color: RGBA({ColorR:F2}, {ColorG:F2}, {ColorB:F2}, {ColorA:F2})"
             };
 
             if (HasSourceRect)
             {
-                parts.Add($"src: {SourceRect}");
+                parts.Add($"src: ({SourceRectX}, {SourceRectY}, {SourceRectWidth}x{SourceRectHeight})");
             }
 
-            if (FlipX)
-            {
-                parts.Add("flipX");
-            }
-
-            if (FlipY)
-            {
-                parts.Add("flipY");
-            }
+            if (FlipX) parts.Add("flipX");
+            if (FlipY) parts.Add("flipY");
 
             if (HasCustomSize)
             {
-                parts.Add($"size: {CustomSize}");
+                parts.Add($"size: ({CustomSizeX}, {CustomSizeY})");
             }
 
             return $"Sprite({string.Join(", ", parts)})";
@@ -279,14 +223,15 @@ namespace GoudEngine.Components
             A = a;
         }
 
-        public static readonly Color White = new Color(1, 1, 1, 1);
-        public static readonly Color Black = new Color(0, 0, 0, 1);
-        public static readonly Color Red = new Color(1, 0, 0, 1);
-        public static readonly Color Green = new Color(0, 1, 0, 1);
-        public static readonly Color Blue = new Color(0, 0, 1, 1);
-        public static readonly Color Transparent = new Color(0, 0, 0, 0);
+        public static readonly Color White = new(1, 1, 1, 1);
+        public static readonly Color Black = new(0, 0, 0, 1);
+        public static readonly Color Red = new(1, 0, 0, 1);
+        public static readonly Color Green = new(0, 1, 0, 1);
+        public static readonly Color Blue = new(0, 0, 1, 1);
+        public static readonly Color Yellow = new(1, 1, 0, 1);
+        public static readonly Color Transparent = new(0, 0, 0, 0);
 
-        public override string ToString() => $"RGBA({R:F2}, {G:F2}, {B:F2}, {A:F2})";
+        public override readonly string ToString() => $"RGBA({R:F2}, {G:F2}, {B:F2}, {A:F2})";
     }
 
     /// <summary>
@@ -308,6 +253,6 @@ namespace GoudEngine.Components
             Height = height;
         }
 
-        public override string ToString() => $"Rect({X}, {Y}, {Width}x{Height})";
+        public override readonly string ToString() => $"Rect({X}, {Y}, {Width}x{Height})";
     }
 }

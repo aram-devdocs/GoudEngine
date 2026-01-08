@@ -295,6 +295,8 @@ impl RenderBackend for OpenGLBackend {
     fn enable_blending(&mut self) {
         unsafe {
             gl::Enable(gl::BLEND);
+            // Set standard alpha blending function
+            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
         }
     }
 

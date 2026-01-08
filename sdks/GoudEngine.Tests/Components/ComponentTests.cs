@@ -55,22 +55,32 @@ namespace GoudEngine.Tests.Components
         }
 
         [Fact]
-        public void Transform2D_Translate()
+        public void Transform2D_SetPosition()
         {
             var transform = Transform2D.Identity;
-            transform.Translate(new Math.Vector2(10f, 20f));
+            transform.Position = new Math.Vector2(10f, 20f);
 
             Assert.Equal(10f, transform.Position.X);
             Assert.Equal(20f, transform.Position.Y);
         }
 
         [Fact]
-        public void Transform2D_Rotate()
+        public void Transform2D_SetRotation()
         {
             var transform = Transform2D.Identity;
-            transform.RotateDegrees(45f);
+            transform.Rotation = MathF.PI / 4f; // 45 degrees
 
             Assert.InRange(transform.RotationDegrees, 44f, 46f);
+        }
+
+        [Fact]
+        public void Transform2D_SetScale()
+        {
+            var transform = Transform2D.Identity;
+            transform.Scale = new Math.Vector2(2f, 3f);
+
+            Assert.Equal(2f, transform.ScaleX);
+            Assert.Equal(3f, transform.ScaleY);
         }
 
         [Fact]
@@ -91,10 +101,10 @@ namespace GoudEngine.Tests.Components
         }
 
         [Fact]
-        public void Sprite_WithColor()
+        public void Sprite_SetColor()
         {
-            var sprite = new Sprite(123)
-                .WithColor(Color.Red);
+            var sprite = new Sprite(123);
+            sprite.Color = Color.Red;
 
             Assert.Equal(123ul, sprite.TextureHandle);
             Assert.Equal(Color.Red.R, sprite.Color.R);
@@ -103,11 +113,11 @@ namespace GoudEngine.Tests.Components
         }
 
         [Fact]
-        public void Sprite_WithFlip()
+        public void Sprite_SetFlip()
         {
-            var sprite = new Sprite(0)
-                .WithFlipX()
-                .WithFlipY();
+            var sprite = new Sprite(0);
+            sprite.FlipX = true;
+            sprite.FlipY = true;
 
             Assert.True(sprite.FlipX);
             Assert.True(sprite.FlipY);
@@ -115,59 +125,51 @@ namespace GoudEngine.Tests.Components
         }
 
         [Fact]
-        public void Sprite_WithSourceRect()
+        public void Sprite_SetSourceRect()
         {
-            var sprite = new Sprite(0)
-                .WithSourceRect(new Rect(0, 0, 32, 32));
+            var sprite = new Sprite(0);
+            sprite.SourceRectX = 0;
+            sprite.SourceRectY = 0;
+            sprite.SourceRectWidth = 32;
+            sprite.SourceRectHeight = 32;
+            sprite.HasSourceRect = true;
 
             Assert.True(sprite.HasSourceRect);
-            Assert.Equal(32f, sprite.SourceRect!.Value.Width);
-            Assert.Equal(32f, sprite.SourceRect!.Value.Height);
+            Assert.Equal(32f, sprite.SourceRectWidth);
+            Assert.Equal(32f, sprite.SourceRectHeight);
         }
 
         [Fact]
-        public void Sprite_WithCustomSize()
+        public void Sprite_SetCustomSize()
         {
-            var sprite = new Sprite(0)
-                .WithCustomSize(new Math.Vector2(100, 50));
+            var sprite = new Sprite(0);
+            sprite.CustomSizeX = 100;
+            sprite.CustomSizeY = 50;
+            sprite.HasCustomSize = true;
 
             Assert.True(sprite.HasCustomSize);
-            Assert.Equal(100f, sprite.CustomSize!.Value.X);
-            Assert.Equal(50f, sprite.CustomSize!.Value.Y);
+            Assert.Equal(100f, sprite.CustomSizeX);
+            Assert.Equal(50f, sprite.CustomSizeY);
         }
 
         [Fact]
-        public void Sprite_WithoutSourceRect()
+        public void Sprite_ClearSourceRect()
         {
-            var sprite = new Sprite(0)
-                .WithSourceRect(new Rect(0, 0, 32, 32))
-                .WithoutSourceRect();
+            var sprite = new Sprite(0);
+            sprite.HasSourceRect = true;
+            sprite.HasSourceRect = false;
 
             Assert.False(sprite.HasSourceRect);
         }
 
         [Fact]
-        public void ComponentRegistry_Register()
+        public void Sprite_SetAnchor()
         {
-            // Clear any previous registrations
-            ComponentRegistry.ClearRegistrations();
+            var sprite = new Sprite(0);
+            sprite.Anchor = new Math.Vector2(0.0f, 1.0f);
 
-            Assert.False(ComponentRegistry.IsRegistered<Transform2D>());
-
-            ComponentRegistry.Register<Transform2D>();
-
-            Assert.True(ComponentRegistry.IsRegistered<Transform2D>());
-        }
-
-        [Fact]
-        public void ComponentRegistry_RegisterTwice_DoesNotThrow()
-        {
-            ComponentRegistry.ClearRegistrations();
-
-            ComponentRegistry.Register<Transform2D>();
-            ComponentRegistry.Register<Transform2D>(); // Should not throw
-
-            Assert.True(ComponentRegistry.IsRegistered<Transform2D>());
+            Assert.Equal(0.0f, sprite.AnchorX);
+            Assert.Equal(1.0f, sprite.AnchorY);
         }
 
         [Fact]
@@ -195,9 +197,9 @@ namespace GoudEngine.Tests.Components
         public void Entity_AddComponent_Sprite()
         {
             var entity = _context.Spawn();
-            var sprite = new Sprite(456)
-                .WithColor(Color.Blue)
-                .WithFlipX();
+            var sprite = new Sprite(456);
+            sprite.Color = Color.Blue;
+            sprite.FlipX = true;
 
             try
             {

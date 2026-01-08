@@ -1,6 +1,6 @@
 [package]
 name = "goud_engine"
-version = "0.0.809"
+version = "0.0.812"
 edition = "2021"
 license = "MIT"
 
@@ -44,6 +44,7 @@ tiled = "0.13.0"
 rayon = "1.10"
 notify = "6.1"
 rodio = "0.17"
+bytemuck = "1.14"
 
 
 [lib]

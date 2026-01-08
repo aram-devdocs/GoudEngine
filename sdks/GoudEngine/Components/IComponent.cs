@@ -31,7 +31,7 @@ namespace GoudEngine.Components
         /// <summary>
         /// Gets the type ID hash for this component.
         /// </summary>
-        public ulong TypeId { get; }
+        public new ulong TypeId { get; }
 
         /// <summary>
         /// Gets the expected size in bytes for this component.

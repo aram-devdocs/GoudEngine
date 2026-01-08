@@ -697,7 +697,7 @@ checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 
 [[package]]
 name = "goud_engine"
-version = "0.0.809"
+version = "0.0.812"
 dependencies = [
  "bindgen 0.64.0",
  "bytemuck",

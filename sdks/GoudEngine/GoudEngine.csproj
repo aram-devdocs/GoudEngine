@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -6,7 +6,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>GoudEngine</PackageId>
-    <Version>0.0.809</Version>
+    <Version>0.0.812</Version>
     <Authors>Aram Hammoudeh</Authors>
     <Description>Rust-powered game engine for C# developers using FFI.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -19,34 +19,10 @@
     <None Include="runtimes/**" Pack="true" PackagePath="runtimes/" />
   </ItemGroup>
 
-  <!-- Exclude legacy files that depend on deprecated FFI (removed during engine refactor) -->
+  <!-- Exclude examples from compilation -->
   <ItemGroup>
-    <Compile Remove="GoudGame.cs" />
-    <Compile Remove="AnimationController.cs" />
-    <Compile Remove="Config/SpriteConfig.cs" />
-    <Compile Remove="Config/GridConfig.cs" />
-    <Compile Remove="Config/SkyboxConfig.cs" />
-    <Compile Remove="Entities/**/*.cs" />
-    <Compile Remove="Assets/**/*.cs" />
-    <Compile Remove="Core/LightId.cs" />
-    <Compile Remove="Core/ObjectId.cs" />
-    <Compile Remove="Core/SpriteId.cs" />
-    <Compile Remove="Core/TextureId.cs" />
-    <Compile Remove="Core/TiledMapId.cs" />
-    <Compile Remove="Math/Rectangle.cs" />
     <Compile Remove="sdks/**/*.cs" />
-    <!-- Exclude new wrapper files that define duplicate types conflicting with CsBindgen -->
-    <Compile Remove="Core/Entity.cs" />
-    <Compile Remove="Core/GoudContext.cs" />
-    <Compile Remove="Core/Exceptions.cs" />
-    <Compile Remove="Components/ComponentRegistry.cs" />
-    <Compile Remove="Components/IComponent.cs" />
-    <Compile Remove="Components/Sprite.cs" />
-    <Compile Remove="Components/Transform2D.cs" />
     <Compile Remove="Examples/**/*.cs" />
-    <Compile Remove="Input/**/*.cs" />
-    <Compile Remove="Math/**/*.cs" />
-    <Compile Remove="Config/**/*.cs" />
   </ItemGroup>
 
 

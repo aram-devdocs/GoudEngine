@@ -1,4 +1,5 @@
 using System;
+using CsBindgen;
 
 namespace GoudEngine.Core
 {
@@ -133,12 +134,12 @@ namespace GoudEngine.Core
         /// <summary>
         /// The entity ID involved in the failed operation, if applicable.
         /// </summary>
-        public GoudEntityId? EntityId { get; set; }
+        public ulong? EntityId { get; set; }
 
         public EntityException(int errorCode, string message)
             : base(errorCode, message) { }
 
-        public EntityException(int errorCode, string message, GoudEntityId? entityId)
+        public EntityException(int errorCode, string message, ulong? entityId)
             : base(errorCode, message)
         {
             EntityId = entityId;
@@ -275,7 +276,7 @@ namespace GoudEngine.Core
         /// <exception cref="ArgumentException">Thrown if entity ID is invalid.</exception>
         public static void ValidateEntityId(GoudEntityId entityId, string paramName)
         {
-            if (entityId.IsInvalid)
+            if (entityId.Item1 == ulong.MaxValue)
             {
                 throw new ArgumentException("Entity ID is invalid", paramName);
             }
@@ -289,7 +290,7 @@ namespace GoudEngine.Core
         /// <exception cref="ArgumentException">Thrown if context ID is invalid.</exception>
         public static void ValidateContextId(GoudContextId contextId, string paramName)
         {
-            if (contextId.IsInvalid)
+            if (contextId.Item1 == ulong.MaxValue)
             {
                 throw new ArgumentException("Context ID is invalid", paramName);
             }

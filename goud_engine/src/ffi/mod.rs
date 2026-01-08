@@ -97,10 +97,13 @@
 
 pub mod collision;
 pub mod component;
+pub mod component_sprite;
+pub mod component_transform2d;
 pub mod context;
 pub mod entity;
 pub mod input;
 pub mod renderer;
+pub mod renderer3d;
 pub mod types;
 pub mod window;
 
@@ -109,7 +112,11 @@ pub use context::{
     GoudContext, GoudContextHandle, GoudContextId, GoudContextRegistry, GOUD_INVALID_CONTEXT_ID,
 };
 pub use entity::GOUD_INVALID_ENTITY_ID;
-pub use types::{GoudEntityId, GoudResult};
+pub use types::{FfiVec2, GoudEntityId, GoudResult};
 
 // Re-export error types from core module
 pub use crate::core::error::{GoudError, GoudErrorCode, GoudResult as CoreResult};
+
+// Re-export component FFI types
+pub use component_sprite::{FfiColor, FfiRect, FfiSprite, FfiSpriteBuilder};
+pub use component_transform2d::{FfiMat3x3, FfiTransform2D, FfiTransform2DBuilder};

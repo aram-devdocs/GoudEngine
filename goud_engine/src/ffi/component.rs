@@ -86,7 +86,7 @@
 //! }
 //! ```
 
-use std::any::TypeId;
+use std::alloc::{alloc, dealloc, Layout};
 use std::collections::HashMap;
 use std::sync::Mutex;
 
@@ -96,23 +96,280 @@ use crate::ffi::context::get_context_registry;
 use crate::ffi::{GoudContextId, GoudEntityId, GoudResult, GOUD_INVALID_CONTEXT_ID};
 
 // ============================================================================
+// Raw Component Storage
+// ============================================================================
+
+/// Type-erased component storage using raw bytes.
+///
+/// This storage is used for FFI component operations where we don't know
+/// the concrete Rust type at compile time. Components are stored as raw bytes
+/// in a sparse set-like structure.
+///
+/// # Safety
+///
+/// The caller must ensure:
+/// - Component size and alignment match during add/get operations
+/// - Data pointers passed to add() point to valid memory
+/// - The storage is not accessed after being dropped
+#[derive(Debug)]
+struct RawComponentStorage {
+    /// Maps entity index to position in dense array.
+    sparse: Vec<Option<usize>>,
+
+    /// Packed array of entities that have components.
+    dense: Vec<u64>, // Store entity bits for FFI compatibility
+
+    /// Packed array of raw component data.
+    /// Each entry is a pointer to heap-allocated bytes.
+    data: Vec<*mut u8>,
+
+    /// Size of each component in bytes.
+    component_size: usize,
+
+    /// Alignment of each component.
+    component_align: usize,
+}
+
+// SAFETY: RawComponentStorage is Send because:
+// 1. All pointers in `data` point to owned, heap-allocated memory
+// 2. We don't share these pointers with other threads
+// 3. Access is synchronized at a higher level (context registry mutex)
+unsafe impl Send for RawComponentStorage {}
+
+// SAFETY: RawComponentStorage is Sync because:
+// 1. All mutable access is synchronized via context registry mutex
+// 2. The raw pointers point to owned data
+unsafe impl Sync for RawComponentStorage {}
+
+impl RawComponentStorage {
+    /// Creates a new empty raw component storage.
+    fn new(component_size: usize, component_align: usize) -> Self {
+        Self {
+            sparse: Vec::new(),
+            dense: Vec::new(),
+            data: Vec::new(),
+            component_size,
+            component_align,
+        }
+    }
+
+    /// Creates the memory layout for a single component.
+    fn layout(&self) -> Layout {
+        // Handle zero-sized types
+        if self.component_size == 0 {
+            Layout::from_size_align(1, 1).unwrap()
+        } else {
+            Layout::from_size_align(self.component_size, self.component_align)
+                .expect("Invalid component layout")
+        }
+    }
+
+    /// Inserts a component for the given entity.
+    ///
+    /// # Safety
+    ///
+    /// - `data_ptr` must point to valid memory of at least `component_size` bytes
+    /// - The data must be properly initialized
+    unsafe fn insert(&mut self, entity_bits: u64, data_ptr: *const u8) -> bool {
+        let entity = Entity::from_bits(entity_bits);
+        let index = entity.index() as usize;
+
+        // Grow sparse vec if needed
+        if index >= self.sparse.len() {
+            self.sparse.resize(index + 1, None);
+        }
+
+        if let Some(dense_index) = self.sparse[index] {
+            // Entity already has a component - replace it
+            let existing_ptr = self.data[dense_index];
+            if self.component_size > 0 {
+                std::ptr::copy_nonoverlapping(data_ptr, existing_ptr, self.component_size);
+            }
+            true
+        } else {
+            // New entity - allocate and copy data
+            let layout = self.layout();
+            let new_ptr = alloc(layout);
+            if new_ptr.is_null() {
+                return false;
+            }
+
+            if self.component_size > 0 {
+                std::ptr::copy_nonoverlapping(data_ptr, new_ptr, self.component_size);
+            }
+
+            let dense_index = self.dense.len();
+            self.sparse[index] = Some(dense_index);
+            self.dense.push(entity_bits);
+            self.data.push(new_ptr);
+            true
+        }
+    }
+
+    /// Removes a component from the given entity.
+    ///
+    /// Returns true if the component was removed, false if the entity didn't have one.
+    fn remove(&mut self, entity_bits: u64) -> bool {
+        let entity = Entity::from_bits(entity_bits);
+        let index = entity.index() as usize;
+
+        if index >= self.sparse.len() {
+            return false;
+        }
+
+        if let Some(dense_index) = self.sparse[index].take() {
+            // Free the component data
+            let ptr = self.data[dense_index];
+            if !ptr.is_null() {
+                unsafe {
+                    dealloc(ptr, self.layout());
+                }
+            }
+
+            // Swap-remove from dense arrays
+            let last_index = self.dense.len() - 1;
+            if dense_index != last_index {
+                // Swap with last element
+                self.dense.swap(dense_index, last_index);
+                self.data.swap(dense_index, last_index);
+
+                // Update sparse for the swapped entity
+                let swapped_entity = Entity::from_bits(self.dense[dense_index]);
+                self.sparse[swapped_entity.index() as usize] = Some(dense_index);
+            }
+
+            self.dense.pop();
+            self.data.pop();
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Gets a pointer to the component data for the given entity.
+    ///
+    /// Returns null if the entity doesn't have this component.
+    fn get(&self, entity_bits: u64) -> *const u8 {
+        let entity = Entity::from_bits(entity_bits);
+        let index = entity.index() as usize;
+
+        if index >= self.sparse.len() {
+            return std::ptr::null();
+        }
+
+        if let Some(dense_index) = self.sparse[index] {
+            self.data[dense_index]
+        } else {
+            std::ptr::null()
+        }
+    }
+
+    /// Gets a mutable pointer to the component data for the given entity.
+    ///
+    /// Returns null if the entity doesn't have this component.
+    fn get_mut(&mut self, entity_bits: u64) -> *mut u8 {
+        let entity = Entity::from_bits(entity_bits);
+        let index = entity.index() as usize;
+
+        if index >= self.sparse.len() {
+            return std::ptr::null_mut();
+        }
+
+        if let Some(dense_index) = self.sparse[index] {
+            self.data[dense_index]
+        } else {
+            std::ptr::null_mut()
+        }
+    }
+
+    /// Checks if the entity has this component.
+    fn contains(&self, entity_bits: u64) -> bool {
+        let entity = Entity::from_bits(entity_bits);
+        let index = entity.index() as usize;
+
+        if index >= self.sparse.len() {
+            return false;
+        }
+
+        self.sparse[index].is_some()
+    }
+}
+
+impl Drop for RawComponentStorage {
+    fn drop(&mut self) {
+        // Free all allocated component data
+        let layout = self.layout();
+        for &ptr in &self.data {
+            if !ptr.is_null() {
+                unsafe {
+                    dealloc(ptr, layout);
+                }
+            }
+        }
+    }
+}
+
+// ============================================================================
+// Per-Context Component Storage
+// ============================================================================
+
+/// Component storage manager for a single context.
+///
+/// Each context has its own set of component storages, one per registered type.
+/// This is stored in a global map keyed by context ID.
+#[derive(Debug, Default)]
+struct ContextComponentStorage {
+    /// Maps type_id_hash to raw component storage
+    storages: HashMap<u64, RawComponentStorage>,
+}
+
+impl ContextComponentStorage {
+    /// Gets or creates storage for a component type.
+    fn get_or_create_storage(
+        &mut self,
+        type_id_hash: u64,
+        component_size: usize,
+        component_align: usize,
+    ) -> &mut RawComponentStorage {
+        self.storages
+            .entry(type_id_hash)
+            .or_insert_with(|| RawComponentStorage::new(component_size, component_align))
+    }
+
+    /// Gets storage for a component type if it exists.
+    fn get_storage(&self, type_id_hash: u64) -> Option<&RawComponentStorage> {
+        self.storages.get(&type_id_hash)
+    }
+
+    /// Gets mutable storage for a component type if it exists.
+    fn get_storage_mut(&mut self, type_id_hash: u64) -> Option<&mut RawComponentStorage> {
+        self.storages.get_mut(&type_id_hash)
+    }
+}
+
+/// Global storage for per-context component data.
+///
+/// Maps context ID (as u64) to component storage for that context.
+static CONTEXT_COMPONENT_STORAGE: Mutex<Option<HashMap<u64, ContextComponentStorage>>> =
+    Mutex::new(None);
+
+/// Gets or initializes the context component storage map.
+fn get_context_storage_map(
+) -> std::sync::MutexGuard<'static, Option<HashMap<u64, ContextComponentStorage>>> {
+    CONTEXT_COMPONENT_STORAGE.lock().unwrap()
+}
+
+// ============================================================================
 // Type Registry
 // ============================================================================
 
 /// Information about a registered component type.
 #[derive(Debug, Clone)]
 struct ComponentTypeInfo {
-    /// Human-readable type name (for debugging).
-    #[allow(dead_code)]
-    name: String,
     /// Size of the component in bytes.
     size: usize,
-    /// Alignment of the component in bytes (for future validation).
-    #[allow(dead_code)]
+    /// Alignment of the component in bytes.
     align: usize,
-    /// Rust TypeId for validation (placeholder for future use).
-    #[allow(dead_code)]
-    type_id: TypeId,
 }
 
 /// Global registry mapping type IDs to component information.
@@ -129,14 +386,7 @@ fn get_type_registry() -> std::sync::MutexGuard<'static, Option<HashMap<u64, Com
 /// Registers a component type with the given information.
 ///
 /// Returns true if the type was newly registered, false if it already existed.
-#[allow(clippy::needless_pass_by_value)] // name needs to be owned
-fn register_component_type_internal(
-    type_id_hash: u64,
-    name: String,
-    size: usize,
-    align: usize,
-    type_id: TypeId,
-) -> bool {
+fn register_component_type_internal(type_id_hash: u64, size: usize, align: usize) -> bool {
     let mut registry = get_type_registry();
     let map = registry.get_or_insert_with(HashMap::new);
 
@@ -144,12 +394,7 @@ fn register_component_type_internal(
     match map.entry(type_id_hash) {
         Entry::Occupied(_) => false,
         Entry::Vacant(e) => {
-            e.insert(ComponentTypeInfo {
-                name,
-                size,
-                align,
-                type_id,
-            });
+            e.insert(ComponentTypeInfo { size, align });
             true
         }
     }
@@ -171,102 +416,6 @@ fn entity_from_ffi(entity_id: GoudEntityId) -> Entity {
     Entity::from_bits(entity_id.bits())
 }
 
-/// Macro for component operations that return GoudResult.
-macro_rules! with_context_mut_result {
-    ($context_id:expr, $f:expr) => {{
-        // Validate context ID
-        if $context_id == GOUD_INVALID_CONTEXT_ID {
-            set_last_error(GoudError::InvalidContext);
-            return GoudResult::err(3); // CONTEXT_ERROR_BASE + 3 = InvalidContext
-        }
-
-        // Lock registry and get context
-        let mut registry = get_context_registry().lock().unwrap();
-        let context = match registry.get_mut($context_id) {
-            Some(ctx) => ctx,
-            None => {
-                set_last_error(GoudError::InvalidContext);
-                return GoudResult::err(3);
-            }
-        };
-
-        // Execute the closure with mutable World reference
-        $f(context.world_mut())
-    }};
-}
-
-/// Macro for component operations that return a pointer.
-macro_rules! with_context_ptr {
-    ($context_id:expr, $f:expr) => {{
-        // Validate context ID
-        if $context_id == GOUD_INVALID_CONTEXT_ID {
-            set_last_error(GoudError::InvalidContext);
-            return std::ptr::null();
-        }
-
-        // Lock registry and get context
-        let mut registry = get_context_registry().lock().unwrap();
-        let context = match registry.get_mut($context_id) {
-            Some(ctx) => ctx,
-            None => {
-                set_last_error(GoudError::InvalidContext);
-                return std::ptr::null();
-            }
-        };
-
-        // Execute the closure with World reference
-        $f(context.world_mut())
-    }};
-}
-
-/// Macro for component operations that return a mutable pointer.
-macro_rules! with_context_ptr_mut {
-    ($context_id:expr, $f:expr) => {{
-        // Validate context ID
-        if $context_id == GOUD_INVALID_CONTEXT_ID {
-            set_last_error(GoudError::InvalidContext);
-            return std::ptr::null_mut();
-        }
-
-        // Lock registry and get context
-        let mut registry = get_context_registry().lock().unwrap();
-        let context = match registry.get_mut($context_id) {
-            Some(ctx) => ctx,
-            None => {
-                set_last_error(GoudError::InvalidContext);
-                return std::ptr::null_mut();
-            }
-        };
-
-        // Execute the closure with mutable World reference
-        $f(context.world_mut())
-    }};
-}
-
-/// Macro for component operations that return bool.
-macro_rules! with_context_bool {
-    ($context_id:expr, $f:expr) => {{
-        // Validate context ID
-        if $context_id == GOUD_INVALID_CONTEXT_ID {
-            set_last_error(GoudError::InvalidContext);
-            return false;
-        }
-
-        // Lock registry and get context
-        let registry = get_context_registry().lock().unwrap();
-        let context = match registry.get($context_id) {
-            Some(ctx) => ctx,
-            None => {
-                set_last_error(GoudError::InvalidContext);
-                return false;
-            }
-        };
-
-        // Execute the closure with World reference
-        $f(context.world())
-    }};
-}
-
 // ============================================================================
 // FFI Functions - Type Registration
 // ============================================================================
@@ -279,7 +428,7 @@ macro_rules! with_context_bool {
 /// # Parameters
 ///
 /// - `type_id_hash`: Unique 64-bit identifier for the component type
-/// - `name_ptr`: Null-terminated C string with the type name (for debugging)
+/// - `name_ptr`: Null-terminated C string with the type name (for debugging, currently unused)
 /// - `name_len`: Length of the name string (excluding null terminator)
 /// - `size`: Size of the component in bytes
 /// - `align`: Alignment of the component in bytes
@@ -290,7 +439,7 @@ macro_rules! with_context_bool {
 ///
 /// # Safety
 ///
-/// - `name_ptr` must be a valid pointer to a C string
+/// - `name_ptr` must be a valid pointer to a C string (or null)
 /// - `name_len` must match the actual string length
 /// - `size` and `align` must match the actual type layout
 #[no_mangle]
@@ -301,7 +450,7 @@ pub unsafe extern "C" fn goud_component_register_type(
     size: usize,
     align: usize,
 ) -> bool {
-    // Validate name pointer
+    // Validate name pointer (kept for API compatibility, name is not stored)
     if name_ptr.is_null() {
         set_last_error(GoudError::InvalidState(
             "Component type name pointer is null".to_string(),
@@ -309,22 +458,16 @@ pub unsafe extern "C" fn goud_component_register_type(
         return false;
     }
 
-    // Convert name to Rust string
+    // Validate name is valid UTF-8 (kept for API compatibility)
     let name_slice = std::slice::from_raw_parts(name_ptr, name_len);
-    let name = match std::str::from_utf8(name_slice) {
-        Ok(s) => s.to_string(),
-        Err(_) => {
-            set_last_error(GoudError::InvalidState(
-                "Component type name is not valid UTF-8".to_string(),
-            ));
-            return false;
-        }
-    };
+    if std::str::from_utf8(name_slice).is_err() {
+        set_last_error(GoudError::InvalidState(
+            "Component type name is not valid UTF-8".to_string(),
+        ));
+        return false;
+    }
 
-    // Register the type (we don't have the actual TypeId from FFI, so we use a placeholder)
-    // In a real implementation, the C# side would need to provide a stable hash
-    let type_id = TypeId::of::<()>(); // Placeholder - actual type checking happens via hash
-    register_component_type_internal(type_id_hash, name, size, align, type_id)
+    register_component_type_internal(type_id_hash, size, align)
 }
 
 // ============================================================================
@@ -389,25 +532,53 @@ pub unsafe extern "C" fn goud_component_add(
         return GoudResult::err(902); // InternalError
     }
 
-    with_context_mut_result!(context_id, |world: &mut crate::ecs::World| {
-        let entity = entity_from_ffi(entity_id);
+    // Validate context and entity
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return GoudResult::err(3); // InvalidContext
+    }
 
-        // Check if entity is alive
-        if !world.is_alive(entity) {
+    // Check entity is alive using context registry
+    {
+        let registry = get_context_registry().lock().unwrap();
+        let context = match registry.get(context_id) {
+            Some(ctx) => ctx,
+            None => {
+                set_last_error(GoudError::InvalidContext);
+                return GoudResult::err(3);
+            }
+        };
+
+        let entity = entity_from_ffi(entity_id);
+        if !context.world().is_alive(entity) {
             set_last_error(GoudError::EntityNotFound);
             return GoudResult::err(300); // EntityNotFound
         }
+    }
 
-        // TODO: Actual component insertion would require generic type support
-        // For now, we validate the operation and return success
-        // In a full implementation, this would:
-        // 1. Deserialize component data from raw bytes
-        // 2. Call world.insert::<T>(entity, component)
-        // 3. Handle archetype transitions
+    // Get or create component storage for this context
+    let mut storage_map = get_context_storage_map();
+    let map = storage_map.get_or_insert_with(HashMap::new);
 
-        // Placeholder: assume success
+    // Pack context ID into u64 for use as key
+    let key = (context_id.generation() as u64) << 32 | (context_id.index() as u64);
+
+    // Get or create context storage
+    let context_storage = map.entry(key).or_default();
+
+    // Get or create storage for this component type
+    let storage =
+        context_storage.get_or_create_storage(type_id_hash, type_info.size, type_info.align);
+
+    // Insert the component data
+    if storage.insert(entity_id.bits(), data_ptr) {
         GoudResult::ok()
-    })
+    } else {
+        set_last_error(GoudError::InternalError(
+            "Failed to allocate component storage".to_string(),
+        ));
+        GoudResult::err(900) // InternalError
+    }
 }
 
 /// Removes a component from an entity.
@@ -427,38 +598,73 @@ pub extern "C" fn goud_component_remove(
     entity_id: GoudEntityId,
     type_id_hash: u64,
 ) -> GoudResult {
-    // Look up type info
-    let type_info = match get_component_type_info(type_id_hash) {
-        Some(info) => info,
-        None => {
-            set_last_error(GoudError::ResourceLoadFailed(format!(
-                "Component type {} not registered",
-                type_id_hash
-            )));
-            return GoudResult::err(101); // ResourceLoadFailed
-        }
-    };
+    // Look up type info to verify the type is registered
+    if get_component_type_info(type_id_hash).is_none() {
+        set_last_error(GoudError::ResourceLoadFailed(format!(
+            "Component type {} not registered",
+            type_id_hash
+        )));
+        return GoudResult::err(101); // ResourceLoadFailed
+    }
 
-    with_context_mut_result!(context_id, |world: &mut crate::ecs::World| {
+    // Validate context
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return GoudResult::err(3); // InvalidContext
+    }
+
+    // Check entity is alive using context registry
+    {
+        let registry = get_context_registry().lock().unwrap();
+        let context = match registry.get(context_id) {
+            Some(ctx) => ctx,
+            None => {
+                set_last_error(GoudError::InvalidContext);
+                return GoudResult::err(3);
+            }
+        };
+
         let entity = entity_from_ffi(entity_id);
-
-        // Check if entity is alive
-        if !world.is_alive(entity) {
+        if !context.world().is_alive(entity) {
             set_last_error(GoudError::EntityNotFound);
             return GoudResult::err(300); // EntityNotFound
         }
+    }
 
-        // TODO: Actual component removal would require generic type support
-        // For now, we validate the operation and return success
-        // In a full implementation, this would:
-        // 1. Call world.remove::<T>(entity)
-        // 2. Handle archetype transitions
-        // 3. Return the removed component data if needed
+    // Get component storage for this context
+    let mut storage_map = get_context_storage_map();
+    let map = match storage_map.as_mut() {
+        Some(m) => m,
+        None => {
+            // No component storage exists, so entity can't have the component
+            return GoudResult::ok();
+        }
+    };
 
-        // Placeholder: assume success
-        let _ = type_info; // Use type_info to silence warning
-        GoudResult::ok()
-    })
+    // Pack context ID into u64 for use as key
+    let key = (context_id.generation() as u64) << 32 | (context_id.index() as u64);
+
+    // Get context storage
+    let context_storage = match map.get_mut(&key) {
+        Some(s) => s,
+        None => {
+            // No storage for this context, so entity can't have the component
+            return GoudResult::ok();
+        }
+    };
+
+    // Get storage for this component type
+    let storage = match context_storage.get_storage_mut(type_id_hash) {
+        Some(s) => s,
+        None => {
+            // No storage for this type, so entity can't have the component
+            return GoudResult::ok();
+        }
+    };
+
+    // Remove the component
+    storage.remove(entity_id.bits());
+    GoudResult::ok()
 }
 
 /// Checks if an entity has a specific component.
@@ -478,33 +684,62 @@ pub extern "C" fn goud_component_has(
     entity_id: GoudEntityId,
     type_id_hash: u64,
 ) -> bool {
-    // Look up type info
-    let _type_info = match get_component_type_info(type_id_hash) {
-        Some(info) => info,
-        None => {
-            set_last_error(GoudError::ResourceLoadFailed(format!(
-                "Component type {} not registered",
-                type_id_hash
-            )));
+    // Look up type info to verify the type is registered
+    if get_component_type_info(type_id_hash).is_none() {
+        set_last_error(GoudError::ResourceLoadFailed(format!(
+            "Component type {} not registered",
+            type_id_hash
+        )));
+        return false;
+    }
+
+    // Validate context
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+
+    // Check entity is alive using context registry
+    {
+        let registry = get_context_registry().lock().unwrap();
+        let context = match registry.get(context_id) {
+            Some(ctx) => ctx,
+            None => {
+                set_last_error(GoudError::InvalidContext);
+                return false;
+            }
+        };
+
+        let entity = entity_from_ffi(entity_id);
+        if !context.world().is_alive(entity) {
             return false;
         }
+    }
+
+    // Get component storage for this context
+    let storage_map = get_context_storage_map();
+    let map = match storage_map.as_ref() {
+        Some(m) => m,
+        None => return false, // No storage exists
     };
 
-    with_context_bool!(context_id, |world: &crate::ecs::World| {
-        let entity = entity_from_ffi(entity_id);
+    // Pack context ID into u64 for use as key
+    let key = (context_id.generation() as u64) << 32 | (context_id.index() as u64);
 
-        // Check if entity is alive
-        if !world.is_alive(entity) {
-            return false;
-        }
+    // Get context storage
+    let context_storage = match map.get(&key) {
+        Some(s) => s,
+        None => return false, // No storage for this context
+    };
 
-        // TODO: Actual component check would require generic type support
-        // For now, we return false as a placeholder
-        // In a full implementation, this would:
-        // 1. Call world.has::<T>(entity)
+    // Get storage for this component type
+    let storage = match context_storage.get_storage(type_id_hash) {
+        Some(s) => s,
+        None => return false, // No storage for this type
+    };
 
-        false // Placeholder
-    })
+    // Check if entity has the component
+    storage.contains(entity_id.bits())
 }
 
 /// Gets a read-only pointer to a component on an entity.
@@ -532,35 +767,63 @@ pub extern "C" fn goud_component_get(
     entity_id: GoudEntityId,
     type_id_hash: u64,
 ) -> *const u8 {
-    // Look up type info
-    let _type_info = match get_component_type_info(type_id_hash) {
-        Some(info) => info,
-        None => {
-            set_last_error(GoudError::ResourceLoadFailed(format!(
-                "Component type {} not registered",
-                type_id_hash
-            )));
-            return std::ptr::null();
-        }
-    };
+    // Look up type info to verify the type is registered
+    if get_component_type_info(type_id_hash).is_none() {
+        set_last_error(GoudError::ResourceLoadFailed(format!(
+            "Component type {} not registered",
+            type_id_hash
+        )));
+        return std::ptr::null();
+    }
 
-    with_context_ptr!(context_id, |world: &mut crate::ecs::World| {
+    // Validate context
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return std::ptr::null();
+    }
+
+    // Check entity is alive using context registry
+    {
+        let registry = get_context_registry().lock().unwrap();
+        let context = match registry.get(context_id) {
+            Some(ctx) => ctx,
+            None => {
+                set_last_error(GoudError::InvalidContext);
+                return std::ptr::null();
+            }
+        };
+
         let entity = entity_from_ffi(entity_id);
-
-        // Check if entity is alive
-        if !world.is_alive(entity) {
+        if !context.world().is_alive(entity) {
             set_last_error(GoudError::EntityNotFound);
             return std::ptr::null();
         }
+    }
 
-        // TODO: Actual component access would require generic type support
-        // For now, we return null as a placeholder
-        // In a full implementation, this would:
-        // 1. Call world.get::<T>(entity)
-        // 2. Return pointer to component data
+    // Get component storage for this context
+    let storage_map = get_context_storage_map();
+    let map = match storage_map.as_ref() {
+        Some(m) => m,
+        None => return std::ptr::null(), // No storage exists
+    };
 
-        std::ptr::null() // Placeholder
-    })
+    // Pack context ID into u64 for use as key
+    let key = (context_id.generation() as u64) << 32 | (context_id.index() as u64);
+
+    // Get context storage
+    let context_storage = match map.get(&key) {
+        Some(s) => s,
+        None => return std::ptr::null(), // No storage for this context
+    };
+
+    // Get storage for this component type
+    let storage = match context_storage.get_storage(type_id_hash) {
+        Some(s) => s,
+        None => return std::ptr::null(), // No storage for this type
+    };
+
+    // Get component data pointer
+    storage.get(entity_id.bits())
 }
 
 /// Gets a mutable pointer to a component on an entity.
@@ -588,35 +851,63 @@ pub extern "C" fn goud_component_get_mut(
     entity_id: GoudEntityId,
     type_id_hash: u64,
 ) -> *mut u8 {
-    // Look up type info
-    let _type_info = match get_component_type_info(type_id_hash) {
-        Some(info) => info,
-        None => {
-            set_last_error(GoudError::ResourceLoadFailed(format!(
-                "Component type {} not registered",
-                type_id_hash
-            )));
-            return std::ptr::null_mut();
-        }
-    };
+    // Look up type info to verify the type is registered
+    if get_component_type_info(type_id_hash).is_none() {
+        set_last_error(GoudError::ResourceLoadFailed(format!(
+            "Component type {} not registered",
+            type_id_hash
+        )));
+        return std::ptr::null_mut();
+    }
 
-    with_context_ptr_mut!(context_id, |world: &mut crate::ecs::World| {
+    // Validate context
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return std::ptr::null_mut();
+    }
+
+    // Check entity is alive using context registry
+    {
+        let registry = get_context_registry().lock().unwrap();
+        let context = match registry.get(context_id) {
+            Some(ctx) => ctx,
+            None => {
+                set_last_error(GoudError::InvalidContext);
+                return std::ptr::null_mut();
+            }
+        };
+
         let entity = entity_from_ffi(entity_id);
-
-        // Check if entity is alive
-        if !world.is_alive(entity) {
+        if !context.world().is_alive(entity) {
             set_last_error(GoudError::EntityNotFound);
             return std::ptr::null_mut();
         }
+    }
 
-        // TODO: Actual component access would require generic type support
-        // For now, we return null as a placeholder
-        // In a full implementation, this would:
-        // 1. Call world.get_mut::<T>(entity)
-        // 2. Return mutable pointer to component data
+    // Get component storage for this context
+    let mut storage_map = get_context_storage_map();
+    let map = match storage_map.as_mut() {
+        Some(m) => m,
+        None => return std::ptr::null_mut(), // No storage exists
+    };
 
-        std::ptr::null_mut() // Placeholder
-    })
+    // Pack context ID into u64 for use as key
+    let key = (context_id.generation() as u64) << 32 | (context_id.index() as u64);
+
+    // Get context storage
+    let context_storage = match map.get_mut(&key) {
+        Some(s) => s,
+        None => return std::ptr::null_mut(), // No storage for this context
+    };
+
+    // Get storage for this component type
+    let storage = match context_storage.get_storage_mut(type_id_hash) {
+        Some(s) => s,
+        None => return std::ptr::null_mut(), // No storage for this type
+    };
+
+    // Get mutable component data pointer
+    storage.get_mut(entity_id.bits())
 }
 
 // ============================================================================
@@ -707,26 +998,28 @@ pub unsafe extern "C" fn goud_component_add_batch(
         return 0;
     }
 
-    // Verify component type is registered
-    let type_registry = get_type_registry();
-    let registry_map = match type_registry.as_ref() {
-        Some(map) => map,
-        None => {
-            set_last_error(GoudError::ResourceNotFound(format!(
-                "Component type {} not registered",
-                type_id_hash
-            )));
-            return 0;
-        }
-    };
-    let type_info = match registry_map.get(&type_id_hash) {
-        Some(info) => info,
-        None => {
-            set_last_error(GoudError::ResourceNotFound(format!(
-                "Component type {} not registered",
-                type_id_hash
-            )));
-            return 0;
+    // Verify component type is registered and get info
+    let type_info = {
+        let type_registry = get_type_registry();
+        let registry_map = match type_registry.as_ref() {
+            Some(map) => map,
+            None => {
+                set_last_error(GoudError::ResourceNotFound(format!(
+                    "Component type {} not registered",
+                    type_id_hash
+                )));
+                return 0;
+            }
+        };
+        match registry_map.get(&type_id_hash) {
+            Some(info) => info.clone(),
+            None => {
+                set_last_error(GoudError::ResourceNotFound(format!(
+                    "Component type {} not registered",
+                    type_id_hash
+                )));
+                return 0;
+            }
         }
     };
 
@@ -738,18 +1031,33 @@ pub unsafe extern "C" fn goud_component_add_batch(
         )));
         return 0;
     }
-    drop(type_registry); // Release lock before world operations
 
-    // TODO: Actual batch component add would require:
-    // 1. Get context and world
-    // 2. For each entity in entity_ids:
-    //    - Read component data from data_ptr[i * component_size]
-    //    - Call world.insert() with the component data
-    // 3. Track success count
-    //
-    // For now, this is a placeholder that validates inputs and type registration
+    // Get component storage for this context
+    let mut storage_map = get_context_storage_map();
+    let map = storage_map.get_or_insert_with(HashMap::new);
 
-    count // Placeholder: assume all succeeded
+    // Pack context ID into u64 for use as key
+    let key = (context_id.generation() as u64) << 32 | (context_id.index() as u64);
+
+    // Get or create context storage
+    let context_storage = map.entry(key).or_default();
+
+    // Get or create storage for this component type
+    let storage =
+        context_storage.get_or_create_storage(type_id_hash, type_info.size, type_info.align);
+
+    // Add components for each entity
+    let entity_slice = std::slice::from_raw_parts(entity_ids, count as usize);
+    let mut success_count = 0u32;
+
+    for (i, &entity_bits) in entity_slice.iter().enumerate() {
+        let component_data = data_ptr.add(i * component_size);
+        if storage.insert(entity_bits, component_data) {
+            success_count += 1;
+        }
+    }
+
+    success_count
 }
 
 /// Removes the same component type from multiple entities in a single batch.
@@ -813,35 +1121,60 @@ pub unsafe extern "C" fn goud_component_remove_batch(
     }
 
     // Verify component type is registered
-    let type_registry = get_type_registry();
-    let registry_map = match type_registry.as_ref() {
-        Some(map) => map,
-        None => {
+    {
+        let type_registry = get_type_registry();
+        let registry_map = match type_registry.as_ref() {
+            Some(map) => map,
+            None => {
+                set_last_error(GoudError::ResourceNotFound(format!(
+                    "Component type {} not registered",
+                    type_id_hash
+                )));
+                return 0;
+            }
+        };
+        if !registry_map.contains_key(&type_id_hash) {
             set_last_error(GoudError::ResourceNotFound(format!(
                 "Component type {} not registered",
                 type_id_hash
             )));
             return 0;
         }
-    };
-    if !registry_map.contains_key(&type_id_hash) {
-        set_last_error(GoudError::ResourceNotFound(format!(
-            "Component type {} not registered",
-            type_id_hash
-        )));
-        return 0;
     }
-    drop(type_registry); // Release lock before world operations
 
-    // TODO: Actual batch component remove would require:
-    // 1. Get context and world
-    // 2. For each entity in entity_ids:
-    //    - Call world.remove::<T>(entity)
-    //    - Track success count
-    //
-    // For now, this is a placeholder that validates inputs
+    // Get component storage for this context
+    let mut storage_map = get_context_storage_map();
+    let map = match storage_map.as_mut() {
+        Some(m) => m,
+        None => return 0, // No storage exists
+    };
 
-    count // Placeholder: assume all succeeded
+    // Pack context ID into u64 for use as key
+    let key = (context_id.generation() as u64) << 32 | (context_id.index() as u64);
+
+    // Get context storage
+    let context_storage = match map.get_mut(&key) {
+        Some(s) => s,
+        None => return 0, // No storage for this context
+    };
+
+    // Get storage for this component type
+    let storage = match context_storage.get_storage_mut(type_id_hash) {
+        Some(s) => s,
+        None => return 0, // No storage for this type
+    };
+
+    // Remove components from each entity
+    let entity_slice = std::slice::from_raw_parts(entity_ids, count as usize);
+    let mut success_count = 0u32;
+
+    for &entity_bits in entity_slice {
+        if storage.remove(entity_bits) {
+            success_count += 1;
+        }
+    }
+
+    success_count
 }
 
 /// Checks if multiple entities have a specific component type.
@@ -921,36 +1254,58 @@ pub unsafe extern "C" fn goud_component_has_batch(
     }
 
     // Verify component type is registered
-    let type_registry = get_type_registry();
-    let registry_map = match type_registry.as_ref() {
-        Some(map) => map,
-        None => {
+    {
+        let type_registry = get_type_registry();
+        let registry_map = match type_registry.as_ref() {
+            Some(map) => map,
+            None => {
+                set_last_error(GoudError::ResourceNotFound(format!(
+                    "Component type {} not registered",
+                    type_id_hash
+                )));
+                return 0;
+            }
+        };
+        if !registry_map.contains_key(&type_id_hash) {
             set_last_error(GoudError::ResourceNotFound(format!(
                 "Component type {} not registered",
                 type_id_hash
             )));
             return 0;
         }
-    };
-    if !registry_map.contains_key(&type_id_hash) {
-        set_last_error(GoudError::ResourceNotFound(format!(
-            "Component type {} not registered",
-            type_id_hash
-        )));
-        return 0;
     }
-    drop(type_registry); // Release lock before world operations
 
-    // TODO: Actual batch component has check would require:
-    // 1. Get context and world
-    // 2. For each entity in entity_ids:
-    //    - Call world.has::<T>(entity)
-    //    - Write 1 or 0 to out_results[i]
-    //
-    // For now, write placeholder results (all false)
+    // Get component storage for this context
+    let storage_map = get_context_storage_map();
+
+    // Check for storage existence
+    let storage_exists = storage_map.as_ref().is_some_and(|map| {
+        let key = (context_id.generation() as u64) << 32 | (context_id.index() as u64);
+        map.get(&key)
+            .and_then(|cs| cs.get_storage(type_id_hash))
+            .is_some()
+    });
+
+    let entity_slice = std::slice::from_raw_parts(entity_ids, count as usize);
     let results_slice = std::slice::from_raw_parts_mut(out_results, count as usize);
-    for result in results_slice.iter_mut() {
-        *result = 0; // Placeholder: all false
+
+    if !storage_exists {
+        // No storage exists, all results are false
+        for result in results_slice.iter_mut() {
+            *result = 0;
+        }
+        return count;
+    }
+
+    // Need to get storage again to use it
+    let map = storage_map.as_ref().unwrap();
+    let key = (context_id.generation() as u64) << 32 | (context_id.index() as u64);
+    let context_storage = map.get(&key).unwrap();
+    let storage = context_storage.get_storage(type_id_hash).unwrap();
+
+    // Check each entity
+    for (i, &entity_bits) in entity_slice.iter().enumerate() {
+        results_slice[i] = if storage.contains(entity_bits) { 1 } else { 0 };
     }
 
     count
@@ -1217,11 +1572,27 @@ mod tests {
 
         let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
 
+        // Before adding component - should return false
         let has_component =
             goud_component_has(context_id, GoudEntityId::new(entity_id), TEST_TYPE_ID + 7);
-
-        // Should return false (placeholder implementation)
         assert!(!has_component);
+
+        // Add component
+        let component = TestComponent { x: 1.0, y: 2.0 };
+        unsafe {
+            goud_component_add(
+                context_id,
+                GoudEntityId::new(entity_id),
+                TEST_TYPE_ID + 7,
+                &component as *const _ as *const u8,
+                std::mem::size_of::<TestComponent>(),
+            );
+        }
+
+        // After adding - should return true
+        let has_component =
+            goud_component_has(context_id, GoudEntityId::new(entity_id), TEST_TYPE_ID + 7);
+        assert!(has_component);
     }
 
     #[test]
@@ -1241,10 +1612,30 @@ mod tests {
 
         let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
 
+        // Before adding - should return null
         let ptr = goud_component_get(context_id, GoudEntityId::new(entity_id), TEST_TYPE_ID + 8);
-
-        // Should return null (placeholder implementation)
         assert!(ptr.is_null());
+
+        // Add component
+        let component = TestComponent { x: 42.0, y: 99.0 };
+        unsafe {
+            goud_component_add(
+                context_id,
+                GoudEntityId::new(entity_id),
+                TEST_TYPE_ID + 8,
+                &component as *const _ as *const u8,
+                std::mem::size_of::<TestComponent>(),
+            );
+        }
+
+        // After adding - should return valid pointer with correct data
+        let ptr = goud_component_get(context_id, GoudEntityId::new(entity_id), TEST_TYPE_ID + 8);
+        assert!(!ptr.is_null());
+
+        // Read back the component data and verify
+        let read_component = unsafe { *(ptr as *const TestComponent) };
+        assert_eq!(read_component.x, 42.0);
+        assert_eq!(read_component.y, 99.0);
     }
 
     #[test]
@@ -1264,11 +1655,40 @@ mod tests {
 
         let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
 
+        // Before adding - should return null
         let ptr =
             goud_component_get_mut(context_id, GoudEntityId::new(entity_id), TEST_TYPE_ID + 9);
-
-        // Should return null (placeholder implementation)
         assert!(ptr.is_null());
+
+        // Add component
+        let component = TestComponent { x: 10.0, y: 20.0 };
+        unsafe {
+            goud_component_add(
+                context_id,
+                GoudEntityId::new(entity_id),
+                TEST_TYPE_ID + 9,
+                &component as *const _ as *const u8,
+                std::mem::size_of::<TestComponent>(),
+            );
+        }
+
+        // Get mutable pointer
+        let ptr =
+            goud_component_get_mut(context_id, GoudEntityId::new(entity_id), TEST_TYPE_ID + 9);
+        assert!(!ptr.is_null());
+
+        // Modify the component through the mutable pointer
+        unsafe {
+            let comp = &mut *(ptr as *mut TestComponent);
+            comp.x = 100.0;
+            comp.y = 200.0;
+        }
+
+        // Read back and verify changes
+        let ptr = goud_component_get(context_id, GoudEntityId::new(entity_id), TEST_TYPE_ID + 9);
+        let read_component = unsafe { *(ptr as *const TestComponent) };
+        assert_eq!(read_component.x, 100.0);
+        assert_eq!(read_component.y, 200.0);
     }
 
     // ========================================================================
@@ -1445,13 +1865,55 @@ mod tests {
             )
         };
 
-        let entities = [1u64, 2, 3, 4, 5];
+        // Spawn 5 entities
+        let mut entities = [0u64; 5];
+        unsafe {
+            crate::ffi::entity::goud_entity_spawn_batch(context_id, 5, entities.as_mut_ptr());
+        }
 
+        // Add components to all entities first
+        let components = [
+            TestComponent { x: 1.0, y: 2.0 },
+            TestComponent { x: 3.0, y: 4.0 },
+            TestComponent { x: 5.0, y: 6.0 },
+            TestComponent { x: 7.0, y: 8.0 },
+            TestComponent { x: 9.0, y: 10.0 },
+        ];
+
+        unsafe {
+            goud_component_add_batch(
+                context_id,
+                entities.as_ptr(),
+                5,
+                TEST_TYPE_ID,
+                components.as_ptr() as *const u8,
+                std::mem::size_of::<TestComponent>(),
+            );
+        }
+
+        // Verify components were added
+        for &entity_bits in &entities {
+            assert!(goud_component_has(
+                context_id,
+                GoudEntityId::new(entity_bits),
+                TEST_TYPE_ID
+            ));
+        }
+
+        // Now remove them
         let removed =
             unsafe { goud_component_remove_batch(context_id, entities.as_ptr(), 5, TEST_TYPE_ID) };
 
-        // Placeholder returns count
         assert_eq!(removed, 5);
+
+        // Verify components are gone
+        for &entity_bits in &entities {
+            assert!(!goud_component_has(
+                context_id,
+                GoudEntityId::new(entity_bits),
+                TEST_TYPE_ID
+            ));
+        }
     }
 
     #[test]
@@ -1491,7 +1953,30 @@ mod tests {
             )
         };
 
-        let entities = [1u64, 2, 3, 4, 5];
+        // Spawn 5 entities
+        let mut entities = [0u64; 5];
+        unsafe {
+            crate::ffi::entity::goud_entity_spawn_batch(context_id, 5, entities.as_mut_ptr());
+        }
+
+        // Add components to first 3 entities only
+        let components = [
+            TestComponent { x: 1.0, y: 2.0 },
+            TestComponent { x: 3.0, y: 4.0 },
+            TestComponent { x: 5.0, y: 6.0 },
+        ];
+
+        unsafe {
+            goud_component_add_batch(
+                context_id,
+                entities.as_ptr(),
+                3, // Only first 3
+                TEST_TYPE_ID,
+                components.as_ptr() as *const u8,
+                std::mem::size_of::<TestComponent>(),
+            );
+        }
+
         let mut results = [0u8; 5];
 
         let count = unsafe {
@@ -1505,10 +1990,12 @@ mod tests {
         };
 
         assert_eq!(count, 5);
-        // Placeholder returns all false
-        for result in &results {
-            assert_eq!(*result, 0);
-        }
+        // First 3 should have the component, last 2 should not
+        assert_eq!(results[0], 1);
+        assert_eq!(results[1], 1);
+        assert_eq!(results[2], 1);
+        assert_eq!(results[3], 0);
+        assert_eq!(results[4], 0);
     }
 
     #[test]

@@ -3,6 +3,11 @@
 **/*.rs.bk
 Cargo.lock
 
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
 # IDE/Editor files
 *.swp
 *.swo
@@ -16,6 +21,8 @@ Cargo.lock
 
 # Generated bindings
 sdks/GoudEngine/NativeMethods.g.cs
+sdks/include/goud_engine.h
+sdks/python/goud_engine/ffi_metadata.json
 # GoudEngine/libgoud_engine.dylib
 
 # MacOS system files

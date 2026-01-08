@@ -81,6 +81,11 @@ jobs:
     - name: Run tests
       run: cargo test --verbose -- --nocapture
     
+    # Run Rust SDK tests specifically
+    - name: Run Rust SDK tests
+      if: matrix.rust == 'stable'
+      run: cargo test --lib sdk --verbose -- --nocapture
+
     # Only run on stable for coverage
     - name: Install cargo-tarpaulin
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
@@ -112,6 +117,116 @@ jobs:
         log-level: warn
         command: check
         arguments: --all-features
+
+  # Python SDK checks and tests
+  python-sdk-check:
+    name: Python SDK on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    needs: [rust-check]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.10', '3.11', '3.12']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-python-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-python-
+    
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Build native library
+      run: cargo build --release
+    
+    - name: Set up library path (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: echo "LD_LIBRARY_PATH=${{ github.workspace }}/target/release:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+    
+    - name: Set up library path (macOS)
+      if: matrix.os == 'macos-latest'
+      run: echo "DYLD_LIBRARY_PATH=${{ github.workspace }}/target/release:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
+    
+    - name: Run Python SDK tests
+      env:
+        PYTHONPATH: ${{ github.workspace }}/sdks/python
+      run: |
+        python --version
+        # Run Python tests that don't require a window/display
+        # The test_game test requires windowed context which won't work in CI
+        python << 'EOF'
+        import sys
+        sys.path.insert(0, 'sdks/python')
+        from test_bindings import (
+            test_imports, test_vec2, test_color, test_rect,
+            test_transform2d, test_sprite, test_context, test_context_manager
+        )
+        tests = [
+            test_imports, test_vec2, test_color, test_rect,
+            test_transform2d, test_sprite, test_context, test_context_manager
+        ]
+        passed = 0
+        failed = 0
+        for test in tests:
+            try:
+                if test():
+                    passed += 1
+                else:
+                    failed += 1
+            except Exception as e:
+                print(f'  x {test.__name__} failed: {e}')
+                failed += 1
+        print(f'Python SDK tests: {passed} passed, {failed} failed')
+        sys.exit(1 if failed > 0 else 0)
+        EOF
+    
+    - name: Test Python demo imports
+      env:
+        PYTHONPATH: ${{ github.workspace }}/sdks/python
+      run: |
+        cd examples/python_demo
+        python << 'EOF'
+        import sys
+        sys.path.insert(0, '../../sdks/python')
+        from goud_engine import (
+            GoudContext, Transform2D, Sprite, Vec2, Color
+        )
+        print('Python SDK imports successful')
+        # Basic component tests
+        t = Transform2D.from_position(100, 200)
+        print(f'Transform2D: {t}')
+        s = Sprite(texture_handle=42).with_color(1.0, 0.0, 0.0, 1.0)
+        print(f'Sprite: {s}')
+        ctx = GoudContext.create()
+        print(f'Context created')
+        e = ctx.spawn_entity()
+        print(f'Entity spawned: {e}')
+        ctx.destroy()
+        print('All Python SDK basic tests passed!')
+        EOF
 
   # .NET SDK checks and tests
   dotnet-check:
@@ -169,7 +284,7 @@ jobs:
   integration-build:
     name: Integration Build Check
     runs-on: ${{ matrix.os }}
-    needs: [rust-check, dotnet-check]
+    needs: [rust-check, dotnet-check, python-sdk-check]
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -184,6 +299,11 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
 
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
@@ -207,12 +327,20 @@ jobs:
         
         # Check .NET package exists
         test -f sdks/nuget_package_output/GoudEngine.*.nupkg
+    
+    - name: Verify Python SDK can import
+      env:
+        PYTHONPATH: ${{ github.workspace }}/sdks/python
+        LD_LIBRARY_PATH: ${{ github.workspace }}/target/debug:${{ env.LD_LIBRARY_PATH }}
+        DYLD_LIBRARY_PATH: ${{ github.workspace }}/target/debug:${{ env.DYLD_LIBRARY_PATH }}
+      run: |
+        python -c "from goud_engine import GoudContext, Transform2D, Sprite; print('✓ Python SDK integration check passed')"
 
   # Final status check
   ci-success:
     name: CI Success
     if: always()
-    needs: [rust-check, cargo-deny, dotnet-check, integration-build]
+    needs: [rust-check, cargo-deny, dotnet-check, python-sdk-check, integration-build]
     runs-on: ubuntu-latest
     steps:
     - name: Check all jobs
@@ -220,6 +348,7 @@ jobs:
         if [[ "${{ needs.rust-check.result }}" != "success" ]] || \
            [[ "${{ needs.cargo-deny.result }}" != "success" ]] || \
            [[ "${{ needs.dotnet-check.result }}" != "success" ]] || \
+           [[ "${{ needs.python-sdk-check.result }}" != "success" ]] || \
            [[ "${{ needs.integration-build.result }}" != "success" ]]; then
           echo "One or more jobs failed"
           exit 1

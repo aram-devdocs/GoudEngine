@@ -5,118 +5,6 @@ using CsBindgen;
 namespace GoudEngine.Core
 {
     /// <summary>
-    /// Represents a GoudEngine context ID returned from native code.
-    /// This is an opaque 64-bit identifier with generational indexing.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GoudContextId : IEquatable<GoudContextId>
-    {
-        private readonly ulong value;
-
-        internal GoudContextId(ulong value)
-        {
-            this.value = value;
-        }
-
-        /// <summary>
-        /// The invalid context ID sentinel value (all bits set).
-        /// </summary>
-        public static readonly GoudContextId Invalid = new GoudContextId(ulong.MaxValue);
-
-        /// <summary>
-        /// Returns true if this is an invalid context ID.
-        /// </summary>
-        public bool IsInvalid => value == ulong.MaxValue;
-
-        /// <summary>
-        /// Returns true if this is a valid context ID.
-        /// </summary>
-        public bool IsValid => !IsInvalid;
-
-        /// <summary>
-        /// Returns the index component (lower 32 bits).
-        /// </summary>
-        public uint Index => (uint)(value & 0xFFFFFFFF);
-
-        /// <summary>
-        /// Returns the generation component (upper 32 bits).
-        /// </summary>
-        public uint Generation => (uint)(value >> 32);
-
-        /// <summary>
-        /// Implicit conversion to ulong for FFI calls.
-        /// </summary>
-        public static implicit operator ulong(GoudContextId id) => id.value;
-
-        /// <summary>
-        /// Implicit conversion from ulong for FFI returns.
-        /// </summary>
-        public static implicit operator GoudContextId(ulong value) => new GoudContextId(value);
-
-        public bool Equals(GoudContextId other) => value == other.value;
-        public override bool Equals(object? obj) => obj is GoudContextId other && Equals(other);
-        public override int GetHashCode() => value.GetHashCode();
-        public static bool operator ==(GoudContextId left, GoudContextId right) => left.Equals(right);
-        public static bool operator !=(GoudContextId left, GoudContextId right) => !left.Equals(right);
-
-        public override string ToString()
-        {
-            return IsInvalid ? "GoudContextId(INVALID)" : $"GoudContextId({Index}:{Generation})";
-        }
-    }
-
-    /// <summary>
-    /// Represents a GoudEngine entity ID.
-    /// This is an opaque 64-bit identifier with generational indexing.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GoudEntityId : IEquatable<GoudEntityId>
-    {
-        private readonly ulong value;
-
-        internal GoudEntityId(ulong value)
-        {
-            this.value = value;
-        }
-
-        /// <summary>
-        /// The invalid entity ID sentinel value (all bits set).
-        /// </summary>
-        public static readonly GoudEntityId Invalid = new GoudEntityId(ulong.MaxValue);
-
-        /// <summary>
-        /// Returns true if this is an invalid entity ID.
-        /// </summary>
-        public bool IsInvalid => value == ulong.MaxValue;
-
-        /// <summary>
-        /// Returns true if this is a valid entity ID.
-        /// </summary>
-        public bool IsValid => !IsInvalid;
-
-        /// <summary>
-        /// Implicit conversion to ulong for FFI calls.
-        /// </summary>
-        public static implicit operator ulong(GoudEntityId id) => id.value;
-
-        /// <summary>
-        /// Implicit conversion from ulong for FFI returns.
-        /// </summary>
-        public static implicit operator GoudEntityId(ulong value) => new GoudEntityId(value);
-
-        public bool Equals(GoudEntityId other) => value == other.value;
-        public override bool Equals(object? obj) => obj is GoudEntityId other && Equals(other);
-        public override int GetHashCode() => value.GetHashCode();
-        public static bool operator ==(GoudEntityId left, GoudEntityId right) => left.Equals(right);
-        public static bool operator !=(GoudEntityId left, GoudEntityId right) => !left.Equals(right);
-
-        public override string ToString()
-        {
-            return IsInvalid ? "GoudEntityId(INVALID)" : $"GoudEntityId({value})";
-        }
-    }
-
-    /// <summary>
     /// Represents a GoudEngine context - a single engine instance with its own World,
     /// entities, components, resources, and assets. Multiple contexts can exist
     /// simultaneously for multiple game instances or editor viewports.
@@ -139,7 +27,7 @@ namespace GoudEngine.Core
         /// <summary>
         /// Returns true if this context is valid (created and not destroyed).
         /// </summary>
-        public bool IsValid => !_disposed && _contextId.IsValid && NativeMethods.goud_context_is_valid(_contextId);
+        public bool IsValid => !_disposed && IsContextIdValid(_contextId) && NativeMethods.goud_context_is_valid(_contextId);
 
         /// <summary>
         /// Creates a new GoudEngine context.
@@ -149,7 +37,7 @@ namespace GoudEngine.Core
         {
             _contextId = NativeMethods.goud_context_create();
 
-            if (_contextId.IsInvalid)
+            if (!IsContextIdValid(_contextId))
             {
                 throw new GoudEngineException(
                     -1,
@@ -165,10 +53,18 @@ namespace GoudEngine.Core
         {
             _contextId = contextId;
 
-            if (_contextId.IsInvalid)
+            if (!IsContextIdValid(_contextId))
             {
                 throw new ArgumentException("Cannot wrap invalid context ID", nameof(contextId));
             }
+        }
+
+        /// <summary>
+        /// Checks if a context ID is valid (not the invalid sentinel).
+        /// </summary>
+        private static bool IsContextIdValid(GoudContextId id)
+        {
+            return id.Item1 != ulong.MaxValue;
         }
 
         /// <summary>
@@ -183,7 +79,7 @@ namespace GoudEngine.Core
                 throw new ObjectDisposedException(nameof(GoudContext));
             }
 
-            if (!_contextId.IsValid)
+            if (!IsContextIdValid(_contextId))
             {
                 throw new InvalidOperationException("Context ID is invalid");
             }
@@ -240,7 +136,7 @@ namespace GoudEngine.Core
 
             var entityId = NativeMethods.goud_entity_spawn_empty(_contextId);
 
-            if (entityId == GoudEntityId.Invalid)
+            if (entityId == ulong.MaxValue)
             {
                 throw new GoudEngineException(
                     -1,
@@ -248,7 +144,7 @@ namespace GoudEngine.Core
                 );
             }
 
-            return entityId;
+            return new GoudEntityId { Item1 = entityId };
         }
 
         /// <summary>
@@ -285,7 +181,7 @@ namespace GoudEngine.Core
             var result = new GoudEntityId[count];
             for (int i = 0; i < count; i++)
             {
-                result[i] = new GoudEntityId(entities[i]);
+                result[i] = new GoudEntityId { Item1 = entities[i] };
             }
             return result;
         }
@@ -299,7 +195,7 @@ namespace GoudEngine.Core
         {
             ThrowIfInvalid();
 
-            var result = NativeMethods.goud_entity_despawn(_contextId, entityId);
+            var result = NativeMethods.goud_entity_despawn(_contextId, entityId.Item1);
             return result.Success;
         }
 
@@ -321,7 +217,7 @@ namespace GoudEngine.Core
             var entities = new ulong[entityIds.Length];
             for (int i = 0; i < entityIds.Length; i++)
             {
-                entities[i] = entityIds[i];
+                entities[i] = entityIds[i].Item1;
             }
 
             fixed (ulong* entitiesPtr = entities)
@@ -339,7 +235,7 @@ namespace GoudEngine.Core
         {
             ThrowIfInvalid();
 
-            return NativeMethods.goud_entity_is_alive(_contextId, entityId);
+            return NativeMethods.goud_entity_is_alive(_contextId, entityId.Item1);
         }
 
         /// <summary>
@@ -360,7 +256,7 @@ namespace GoudEngine.Core
             var entities = new ulong[entityIds.Length];
             for (int i = 0; i < entityIds.Length; i++)
             {
-                entities[i] = entityIds[i];
+                entities[i] = entityIds[i].Item1;
             }
 
             // Native expects byte* for boolean results
@@ -426,7 +322,7 @@ namespace GoudEngine.Core
             }
 
             // Free native resources
-            if (_contextId.IsValid)
+            if (IsContextIdValid(_contextId))
             {
                 bool success = NativeMethods.goud_context_destroy(_contextId);
 
@@ -434,11 +330,11 @@ namespace GoudEngine.Core
                 if (!success && disposing)
                 {
                     System.Diagnostics.Debug.WriteLine(
-                        $"Warning: Failed to destroy context {_contextId}"
+                        $"Warning: Failed to destroy context {_contextId.Item1}"
                     );
                 }
 
-                _contextId = GoudContextId.Invalid;
+                _contextId = new GoudContextId { Item1 = ulong.MaxValue };
             }
 
             _disposed = true;
@@ -446,7 +342,7 @@ namespace GoudEngine.Core
 
         public override string ToString()
         {
-            return _disposed ? "GoudContext(Disposed)" : $"GoudContext({_contextId})";
+            return _disposed ? "GoudContext(Disposed)" : $"GoudContext({_contextId.Item1})";
         }
     }
 }

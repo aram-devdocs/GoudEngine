@@ -157,9 +157,15 @@ impl WindowState {
         self.window.swap_buffers();
     }
 
-    /// Gets window size.
+    /// Gets window size (logical).
     pub fn get_size(&self) -> (u32, u32) {
         (self.width, self.height)
+    }
+
+    /// Gets framebuffer size (physical - may differ on HiDPI/Retina displays).
+    pub fn get_framebuffer_size(&self) -> (u32, u32) {
+        let (w, h) = self.window.get_framebuffer_size();
+        (w as u32, h as u32)
     }
 
     /// Gets a mutable reference to the backend.

@@ -1,5 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
+using CsBindgen;
+using GoudEngine.Components;
 
 namespace GoudEngine.Core
 {
@@ -44,7 +47,7 @@ namespace GoudEngine.Core
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _entityId = entityId;
 
-            if (_entityId.IsInvalid)
+            if (entityId.Item1 == ulong.MaxValue)
             {
                 throw new ArgumentException("Cannot create Entity with invalid ID", nameof(entityId));
             }
@@ -64,7 +67,7 @@ namespace GoudEngine.Core
 
             if (!IsAlive)
             {
-                throw new InvalidOperationException($"Entity {_entityId} is no longer alive");
+                throw new InvalidOperationException($"Entity {_entityId.Item1} is no longer alive");
             }
         }
 
@@ -79,7 +82,7 @@ namespace GoudEngine.Core
         /// <returns>True if the entity was despawned, false if it was already dead.</returns>
         public bool Despawn()
         {
-            if (_context.IsDisposed || !_entityId.IsValid)
+            if (_context.IsDisposed || _entityId.Item1 == ulong.MaxValue)
             {
                 return false;
             }
@@ -88,7 +91,7 @@ namespace GoudEngine.Core
         }
 
         // ====================================================================
-        // Component Operations (Placeholder - implemented in Step 6.2.4)
+        // Component Operations
         // ====================================================================
 
         /// <summary>
@@ -97,31 +100,31 @@ namespace GoudEngine.Core
         /// <typeparam name="T">The component type to add.</typeparam>
         /// <param name="component">The component data.</param>
         /// <returns>This entity for method chaining.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if entity is dead.</exception>
-        public Entity AddComponent<T>(T component) where T : struct, Components.IComponent
+        /// <exception cref="InvalidOperationException">Thrown if entity is dead or component lacks attribute.</exception>
+        public Entity AddComponent<T>(T component) where T : struct, IComponent
         {
             ThrowIfDead();
 
-            // Ensure component type is registered
-            Components.ComponentRegistry.Register<T>();
-
             // Get component metadata
-            var attribute = Components.ComponentRegistry.GetComponentAttribute<T>();
+            var attribute = GetComponentAttribute<T>();
             if (attribute == null)
             {
                 throw new InvalidOperationException($"Component type {typeof(T).Name} lacks [Component] attribute");
             }
 
+            // Register type with Rust if not already done
+            EnsureTypeRegistered<T>(attribute);
+
             unsafe
             {
                 // Marshal component to unmanaged memory
-                var size = System.Runtime.InteropServices.Marshal.SizeOf<T>();
-                var ptr = System.Runtime.InteropServices.Marshal.AllocHGlobal(size);
+                var size = Marshal.SizeOf<T>();
+                var ptr = Marshal.AllocHGlobal(size);
                 try
                 {
-                    System.Runtime.InteropServices.Marshal.StructureToPtr(component, ptr, false);
+                    Marshal.StructureToPtr(component, ptr, false);
 
-                    var result = CsBindgen.NativeMethods.goud_component_add(
+                    var result = NativeMethods.goud_component_add(
                         _context.ContextId,
                         _entityId,
                         attribute.TypeId,
@@ -129,15 +132,15 @@ namespace GoudEngine.Core
                         (nuint)size
                     );
 
-                    if (!result.success)
+                    if (!result.Success)
                     {
                         throw new InvalidOperationException(
-                            $"Failed to add component {typeof(T).Name} to entity {_entityId}. Error code: {result.code}");
+                            $"Failed to add component {typeof(T).Name} to entity {_entityId.Item1}. Error code: {result.code}");
                     }
                 }
                 finally
                 {
-                    System.Runtime.InteropServices.Marshal.FreeHGlobal(ptr);
+                    Marshal.FreeHGlobal(ptr);
                 }
             }
 
@@ -149,25 +152,25 @@ namespace GoudEngine.Core
         /// </summary>
         /// <typeparam name="T">The component type to remove.</typeparam>
         /// <returns>True if the component was removed, false if entity didn't have it.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if entity is dead.</exception>
-        public bool RemoveComponent<T>() where T : struct, Components.IComponent
+        /// <exception cref="InvalidOperationException">Thrown if entity is dead or component lacks attribute.</exception>
+        public bool RemoveComponent<T>() where T : struct, IComponent
         {
             ThrowIfDead();
 
             // Get component metadata
-            var attribute = Components.ComponentRegistry.GetComponentAttribute<T>();
+            var attribute = GetComponentAttribute<T>();
             if (attribute == null)
             {
                 throw new InvalidOperationException($"Component type {typeof(T).Name} lacks [Component] attribute");
             }
 
-            var result = CsBindgen.NativeMethods.goud_component_remove(
+            var result = NativeMethods.goud_component_remove(
                 _context.ContextId,
                 _entityId,
                 attribute.TypeId
             );
 
-            return result.success;
+            return result.Success;
         }
 
         /// <summary>
@@ -175,19 +178,19 @@ namespace GoudEngine.Core
         /// </summary>
         /// <typeparam name="T">The component type to check.</typeparam>
         /// <returns>True if the entity has the component, false otherwise.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if entity is dead.</exception>
-        public bool HasComponent<T>() where T : struct, Components.IComponent
+        /// <exception cref="InvalidOperationException">Thrown if entity is dead or component lacks attribute.</exception>
+        public bool HasComponent<T>() where T : struct, IComponent
         {
             ThrowIfDead();
 
             // Get component metadata
-            var attribute = Components.ComponentRegistry.GetComponentAttribute<T>();
+            var attribute = GetComponentAttribute<T>();
             if (attribute == null)
             {
                 throw new InvalidOperationException($"Component type {typeof(T).Name} lacks [Component] attribute");
             }
 
-            return CsBindgen.NativeMethods.goud_component_has(
+            return NativeMethods.goud_component_has(
                 _context.ContextId,
                 _entityId,
                 attribute.TypeId
@@ -196,17 +199,17 @@ namespace GoudEngine.Core
 
         /// <summary>
         /// Gets a copy of a component on this entity.
-        /// Note: Returns a copy, not a reference. Use GetComponentMut for modification.
+        /// Note: Returns a copy, not a reference.
         /// </summary>
         /// <typeparam name="T">The component type to get.</typeparam>
         /// <returns>A copy of the component data.</returns>
         /// <exception cref="InvalidOperationException">Thrown if entity is dead or doesn't have component.</exception>
-        public T GetComponent<T>() where T : struct, Components.IComponent
+        public T GetComponent<T>() where T : struct, IComponent
         {
             ThrowIfDead();
 
             // Get component metadata
-            var attribute = Components.ComponentRegistry.GetComponentAttribute<T>();
+            var attribute = GetComponentAttribute<T>();
             if (attribute == null)
             {
                 throw new InvalidOperationException($"Component type {typeof(T).Name} lacks [Component] attribute");
@@ -214,7 +217,7 @@ namespace GoudEngine.Core
 
             unsafe
             {
-                var ptr = CsBindgen.NativeMethods.goud_component_get(
+                var ptr = NativeMethods.goud_component_get(
                     _context.ContextId,
                     _entityId,
                     attribute.TypeId
@@ -223,11 +226,11 @@ namespace GoudEngine.Core
                 if (ptr == null)
                 {
                     throw new InvalidOperationException(
-                        $"Entity {_entityId} does not have component {typeof(T).Name}");
+                        $"Entity {_entityId.Item1} does not have component {typeof(T).Name}");
                 }
 
                 // Marshal from unmanaged to managed
-                return System.Runtime.InteropServices.Marshal.PtrToStructure<T>(new IntPtr(ptr));
+                return Marshal.PtrToStructure<T>(new IntPtr(ptr));
             }
         }
 
@@ -237,7 +240,7 @@ namespace GoudEngine.Core
         /// <typeparam name="T">The component type to get.</typeparam>
         /// <param name="component">Output parameter for the component data.</param>
         /// <returns>True if the component exists, false otherwise.</returns>
-        public bool TryGetComponent<T>(out T component) where T : struct, Components.IComponent
+        public bool TryGetComponent<T>(out T component) where T : struct, IComponent
         {
             component = default;
 
@@ -247,7 +250,7 @@ namespace GoudEngine.Core
             }
 
             // Get component metadata
-            var attribute = Components.ComponentRegistry.GetComponentAttribute<T>();
+            var attribute = GetComponentAttribute<T>();
             if (attribute == null)
             {
                 return false;
@@ -255,7 +258,7 @@ namespace GoudEngine.Core
 
             unsafe
             {
-                var ptr = CsBindgen.NativeMethods.goud_component_get(
+                var ptr = NativeMethods.goud_component_get(
                     _context.ContextId,
                     _entityId,
                     attribute.TypeId
@@ -267,20 +270,20 @@ namespace GoudEngine.Core
                 }
 
                 // Marshal from unmanaged to managed
-                component = System.Runtime.InteropServices.Marshal.PtrToStructure<T>(new IntPtr(ptr));
+                component = Marshal.PtrToStructure<T>(new IntPtr(ptr));
                 return true;
             }
         }
 
         /// <summary>
         /// Updates a component on this entity.
-        /// This is a convenience method that removes the old component and adds the new one.
+        /// This removes the old component and adds the new one.
         /// </summary>
         /// <typeparam name="T">The component type to update.</typeparam>
         /// <param name="component">The new component data.</param>
         /// <returns>This entity for method chaining.</returns>
         /// <exception cref="InvalidOperationException">Thrown if entity is dead.</exception>
-        public Entity UpdateComponent<T>(T component) where T : struct, Components.IComponent
+        public Entity UpdateComponent<T>(T component) where T : struct, IComponent
         {
             ThrowIfDead();
 
@@ -290,6 +293,70 @@ namespace GoudEngine.Core
             AddComponent(component);
 
             return this;
+        }
+
+        // ====================================================================
+        // Helper Methods
+        // ====================================================================
+
+        /// <summary>
+        /// Gets the ComponentAttribute for a type, or null if not present.
+        /// </summary>
+        private static ComponentAttribute? GetComponentAttribute<T>() where T : struct, IComponent
+        {
+            var componentType = typeof(T);
+            var attributes = componentType.GetCustomAttributes(typeof(ComponentAttribute), false);
+
+            if (attributes.Length == 0)
+            {
+                return null;
+            }
+
+            return (ComponentAttribute)attributes[0];
+        }
+
+        /// <summary>
+        /// Ensures the component type is registered with the Rust engine.
+        /// </summary>
+        private static void EnsureTypeRegistered<T>(ComponentAttribute attribute) where T : struct, IComponent
+        {
+            var name = typeof(T).Name;
+            var size = Marshal.SizeOf<T>();
+            // Alignment must be a power of 2. For structs with floats, use 4-byte alignment.
+            // Calculate the natural alignment (largest power of 2 that divides evenly into size, capped at 8)
+            var align = CalculateAlignment(size);
+
+            unsafe
+            {
+                var nameBytes = Encoding.UTF8.GetBytes(name);
+                fixed (byte* namePtr = nameBytes)
+                {
+                    // This is idempotent - safe to call multiple times
+                    NativeMethods.goud_component_register_type(
+                        attribute.TypeId,
+                        namePtr,
+                        (nuint)nameBytes.Length,
+                        (nuint)size,
+                        (nuint)align
+                    );
+                }
+            }
+        }
+
+        /// <summary>
+        /// Calculates the appropriate memory alignment for a struct.
+        /// Alignment must be a power of 2. For typical game components containing floats,
+        /// 4-byte alignment is usually correct.
+        /// </summary>
+        private static int CalculateAlignment(int size)
+        {
+            // For most component structs with float fields, 4-byte alignment is correct
+            // Larger types might need 8-byte alignment for double/long fields
+            if (size == 0) return 1;
+            if (size >= 8 && size % 8 == 0) return 8;
+            if (size >= 4 && size % 4 == 0) return 4;
+            if (size >= 2 && size % 2 == 0) return 2;
+            return 1;
         }
 
         // ====================================================================
@@ -304,7 +371,7 @@ namespace GoudEngine.Core
         {
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
-            return _entityId.Equals(other._entityId) && ReferenceEquals(_context, other._context);
+            return _entityId.Item1 == other._entityId.Item1 && ReferenceEquals(_context, other._context);
         }
 
         public override bool Equals(object? obj)
@@ -314,7 +381,7 @@ namespace GoudEngine.Core
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(_entityId, _context);
+            return HashCode.Combine(_entityId.Item1, _context);
         }
 
         public static bool operator ==(Entity? left, Entity? right)
@@ -334,13 +401,13 @@ namespace GoudEngine.Core
 
         public override string ToString()
         {
-            if (_entityId.IsInvalid)
+            if (_entityId.Item1 == ulong.MaxValue)
             {
                 return "Entity(INVALID)";
             }
 
             string status = IsAlive ? "Alive" : "Dead";
-            return $"Entity({_entityId}, {status})";
+            return $"Entity({_entityId.Item1}, {status})";
         }
     }
 

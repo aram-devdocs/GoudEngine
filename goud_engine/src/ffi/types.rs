@@ -5,6 +5,55 @@
 //! types for ABI stability.
 
 use crate::core::error::GoudErrorCode;
+use crate::core::math::Vec2;
+
+// =============================================================================
+// Common Math Types
+// =============================================================================
+
+/// FFI-safe 2D vector representation.
+///
+/// This is the canonical FFI Vec2 type - all FFI modules should use this
+/// instead of defining their own to avoid duplicate definitions in generated bindings.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct FfiVec2 {
+    /// X component.
+    pub x: f32,
+    /// Y component.
+    pub y: f32,
+}
+
+impl FfiVec2 {
+    /// Creates a new FfiVec2.
+    pub const fn new(x: f32, y: f32) -> Self {
+        Self { x, y }
+    }
+
+    /// Zero vector.
+    pub const ZERO: Self = Self { x: 0.0, y: 0.0 };
+
+    /// One vector.
+    pub const ONE: Self = Self { x: 1.0, y: 1.0 };
+}
+
+impl From<Vec2> for FfiVec2 {
+    fn from(v: Vec2) -> Self {
+        Self { x: v.x, y: v.y }
+    }
+}
+
+impl From<FfiVec2> for Vec2 {
+    fn from(v: FfiVec2) -> Self {
+        Vec2::new(v.x, v.y)
+    }
+}
+
+impl Default for FfiVec2 {
+    fn default() -> Self {
+        Self::ZERO
+    }
+}
 
 /// FFI-safe entity identifier.
 ///

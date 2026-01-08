@@ -6,24 +6,60 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=flat&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![.NET](https://img.shields.io/badge/.NET-7.0-512BD4)](https://dotnet.microsoft.com/)
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
 [![NuGet](https://img.shields.io/nuget/v/GoudEngine.svg)](https://www.nuget.org/packages/GoudEngine/)
 
-GoudEngine is a game engine written in Rust, designed to be used with C# applications. It provides a set of tools and libraries for creating 2D and 3D games.
+GoudEngine is a game engine written in Rust with multi-language SDK support. It provides a set of tools and libraries for creating 2D and 3D games, accessible from Rust, C#, and Python.
+
+## Design Philosophy
+
+**All logic lives in Rust.** The engine follows a Rust-first architecture where all game logic, components, and systems are implemented in Rust. Language SDKs (C#, Python) are thin wrappers that marshal data and call FFI functions, ensuring consistent behavior across all bindings.
 
 ## Features
 
-- Flexible renderer selection (2D or 3D)
-- 2D rendering with sprite management
-- 3D rendering with primitive support (cubes, spheres, planes, cylinders)
-- 3D Dynamic lighting system with multiple light types (point, directional, spot)
-- Input handling
-- Window management
-- Graphics rendering with OpenGL
-- Integration with C# using csbindgen
+- **Multi-language SDK support**: Rust (native), C# (.NET), and Python
+- **Rust-first architecture**: All logic in Rust, SDKs are thin FFI wrappers
+- **Flexible renderer selection**: 2D or 3D at runtime
+- **2D rendering**: Sprites, 2D camera, Tiled map support
+- **3D rendering**: Primitives (cubes, spheres, planes, cylinders)
+- **Dynamic lighting**: Point, directional, and spot lights
+- **Entity Component System (ECS)**: High-performance game object management
+- **Input handling**: Keyboard, mouse with frame-based state tracking
+- **Window management**: Cross-platform via GLFW
+- **Graphics rendering**: OpenGL backend
 
 ## Architecture
 
-Below is the module dependency graph of GoudEngine, showing the relationship between different components:
+GoudEngine follows a layered architecture with all game logic in Rust:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Your Game Code                            │
+│            (Rust / C# / Python)                              │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Language SDKs                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │  Rust SDK   │  │   C# SDK    │  │ Python SDK  │         │
+│  │ (zero FFI)  │  │ (csbindgen) │  │  (ctypes)   │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Rust Engine Core                          │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐          │
+│  │Graphics │ │   ECS   │ │Platform │ │  Audio  │          │
+│  │(OpenGL) │ │ (World) │ │ (GLFW)  │ │         │          │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Module Dependency Graph
+
+Below is the module dependency graph showing the relationship between different components:
 
 <img src="docs/diagrams/module_graph.png" alt="Module Dependency Graph" width="800"/>
 
@@ -41,13 +77,18 @@ This will create both PNG and PDF versions of the module graph using `cargo modu
 For rapid development and testing, use the `dev.sh` script:
 
 ```sh
-# Run a specific game example
+# C# SDK (default)
 ./dev.sh --game flappy_goud  # 2D game example
 ./dev.sh --game 3d_cube      # 3D game example
 ./dev.sh --game goud_jumper  # Platform game example
+./dev.sh --game flappy_goud --local  # Use local NuGet
 
-# Use --local flag for local NuGet packaging
-./dev.sh --game flappy_goud --local
+# Python SDK
+./dev.sh --sdk python --game python_demo  # Run Python demo
+./dev.sh --sdk python --game flappy_bird  # Run Python Flappy Bird
+
+# Rust SDK
+./dev.sh --sdk rust  # Run Rust SDK tests
 ```
 
 ### Git Hooks with husky-rs
@@ -101,35 +142,87 @@ dotnet add package GoudEngine --version <desired_version>
 
 ## Sample Games
 
-### 2D Sample: Flappy Goud
-To run the 2D sample game, `flappy_goud`, run the following script:
+### C# Examples
 
+#### 2D Sample: Flappy Goud
 ```sh
 cd examples/flappy_goud
 dotnet build
 dotnet run
 ```
 
-### 3D Sample: Cube Demo
-To run the 3D sample with dynamic lighting, run:
-
+#### 3D Sample: Cube Demo
 ```sh
 cd examples/3d_cube
 dotnet build
 dotnet run
 ```
 
+### Python Examples
+
+#### SDK Demo
+Demonstrates Transform2D, Sprite components, and entity management:
+```sh
+cd examples/python_demo
+python main.py
+```
+
+#### Flappy Bird (Python)
+A complete Flappy Bird clone demonstrating the Python SDK:
+```sh
+cd examples/python_demo
+python flappy_bird.py
+```
+
+**Controls:**
+- `SPACE` or `Left Click` - Flap / Jump
+- `R` - Restart
+- `ESC` - Quit
+
 ## Usage
 
-### C# Integration
+### Rust SDK (Native)
 
-The C# integration allows you to use the Rust game engine in your C# applications. The main entry point is the `GoudGame` class.
+The Rust SDK provides zero-overhead access to the engine with full type safety:
 
-Example with 2D renderer:
+```rust
+use goud_engine::sdk::{GoudGame, GameConfig};
+use goud_engine::sdk::components::{Transform2D, Sprite};
+use goud_engine::core::math::Vec2;
+
+fn main() {
+    // Create game with fluent config
+    let mut game = GoudGame::new(GameConfig::new("My Game", 800, 600))
+        .expect("Failed to create game");
+
+    // Spawn entities using builder pattern
+    let player = game.spawn()
+        .with(Transform2D::from_position(Vec2::new(100.0, 100.0)))
+        .with(Sprite::default())
+        .build();
+
+    // Run game loop
+    game.run(|ctx, world| {
+        // Update logic using delta time
+        if let Some(transform) = world.get_mut::<Transform2D>(player) {
+            transform.position.x += 100.0 * ctx.delta_time();
+        }
+        
+        // Quit after 5 seconds
+        if ctx.total_time() > 5.0 {
+            ctx.quit();
+        }
+    });
+}
+```
+
+### C# SDK
+
+The C# SDK provides a .NET interface via FFI bindings:
 
 ```csharp
 using System;
-using CsBindgen;
+using GoudEngine;
 
 class Program
 {
@@ -155,36 +248,67 @@ class Program
 Example with 3D renderer:
 
 ```csharp
-class Program
+// Initialize with 3D renderer
+GoudGame game = new GoudGame(800, 600, "3D Game", RendererType.Renderer3D);
+
+game.Initialize(() =>
 {
-    static void Main(string[] args)
-    {
-        // Initialize with 3D renderer
-        GoudGame game = new GoudGame(800, 600, "3D Game", RendererType.Renderer3D);
+    // Create a textured cube
+    uint textureId = game.CreateTexture("assets/textures/cube.png");
+    uint cubeId = game.CreateCube(textureId);
+    
+    // Add dynamic lighting
+    game.AddPointLight(
+        positionX: 0, positionY: 2, positionZ: 3,
+        colorR: 1.0f, colorG: 0.5f, colorB: 0.5f
+    );
+});
+```
 
-        game.Initialize(() =>
-        {
-            // Create a textured cube
-            uint textureId = game.CreateTexture("assets/textures/cube.png");
-            uint cubeId = game.CreateCube(textureId);
-            
-            // Add dynamic lighting
-            game.AddPointLight(
-                positionX: 0, positionY: 2, positionZ: 3,
-                colorR: 1.0f, colorG: 0.5f, colorB: 0.5f
-            );
-        });
+### Python SDK
 
-        game.Start(() => Console.WriteLine("Game Started!"));
-        game.Update(() => { /* Update logic */ });
-        game.Terminate();
-    }
-}
+The Python SDK uses ctypes for FFI bindings (no external dependencies):
+
+```python
+from goud_engine import GoudGame, Transform2D, Sprite, Keys
+
+# Create game window
+game = GoudGame(800, 600, "My Python Game")
+
+# Load textures
+player_tex = game.load_texture("assets/player.png")
+
+# Create components (all logic delegates to Rust)
+transform = Transform2D.from_position(100, 100)
+sprite = Sprite(texture_handle=player_tex).with_color(1.0, 0.5, 0.5, 1.0)
+
+# Game loop
+while game.is_running():
+    dt = game.begin_frame()
+    
+    # Input handling
+    if game.key_just_pressed(Keys.ESCAPE):
+        game.close()
+    
+    # Movement
+    if game.key_pressed(Keys.RIGHT):
+        transform.translate(200 * dt, 0)
+    
+    game.end_frame()
+
+game.destroy()
 ```
 
 ## Documentation
 
-Official documentation of `csbindgen` [here](https://github.com/mozilla/cbindgen).
+### SDK Documentation
+- **Rust SDK**: See [`goud_engine/src/sdk/mod.rs`](goud_engine/src/sdk/mod.rs) for API documentation
+- **C# SDK**: See [`sdks/GoudEngine/`](sdks/GoudEngine/) for .NET integration
+- **Python SDK**: See [`sdks/python/README.md`](sdks/python/README.md) for Python bindings
+
+### External References
+- [csbindgen](https://github.com/Cysharp/csbindgen) - C# bindings generator
+- [cbindgen](https://github.com/mozilla/cbindgen) - C header generator
 
 ## License
 

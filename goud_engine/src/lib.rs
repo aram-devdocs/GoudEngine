@@ -46,3 +46,22 @@ pub mod ecs;
 pub mod ffi;
 /// Low-level libraries for graphics, platform, and other systems.
 pub mod libs;
+/// High-level Rust-native SDK for game development.
+///
+/// This module provides an ergonomic, zero-overhead API for building games
+/// in pure Rust. Unlike the FFI layer, the SDK is designed for Rust developers
+/// with full type safety and idiomatic APIs.
+///
+/// # Example
+///
+/// ```rust
+/// use goud_engine::sdk::{GoudGame, GameConfig};
+/// use goud_engine::sdk::components::Transform2D;
+/// use goud_engine::core::math::Vec2;
+///
+/// let mut game = GoudGame::new(GameConfig::default()).unwrap();
+/// let player = game.spawn()
+///     .with(Transform2D::from_position(Vec2::new(100.0, 100.0)))
+///     .build();
+/// ```
+pub mod sdk;
