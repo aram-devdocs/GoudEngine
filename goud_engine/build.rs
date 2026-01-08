@@ -8,6 +8,10 @@ fn main() {
         .input_extern_file("src/ffi/context.rs")
         .input_extern_file("src/ffi/entity.rs")
         .input_extern_file("src/ffi/component.rs")
+        .input_extern_file("src/ffi/window.rs")
+        .input_extern_file("src/ffi/renderer.rs")
+        .input_extern_file("src/ffi/input.rs")
+        .input_extern_file("src/ffi/collision.rs")
         // Configuration
         .csharp_dll_name("libgoud_engine")
         .csharp_class_accessibility("public")

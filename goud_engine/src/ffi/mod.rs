@@ -95,10 +95,14 @@
 //! - No type confusion (handles are strongly typed)
 //! - No data races (contexts are Send+Sync, errors are thread-local)
 
+pub mod collision;
 pub mod component;
 pub mod context;
 pub mod entity;
+pub mod input;
+pub mod renderer;
 pub mod types;
+pub mod window;
 
 // Re-export core types for convenience
 pub use context::{
