@@ -78,8 +78,7 @@ fn ensure_renderer3d_state(context_id: GoudContextId) -> Result<(), GoudError> {
         .ok_or(GoudError::InvalidContext)?;
 
     // Create renderer
-    let renderer = Renderer3D::new(width as u32, height as u32)
-        .map_err(|e| GoudError::InitializationFailed(e))?;
+    let renderer = Renderer3D::new(width, height).map_err(GoudError::InitializationFailed)?;
 
     RENDERER3D_STATE.with(|cell| {
         cell.borrow_mut().insert(context_key, renderer);
@@ -446,7 +445,7 @@ pub extern "C" fn goud_renderer3d_set_camera_position(
         return false;
     }
 
-    if let Err(_) = ensure_renderer3d_state(context_id) {
+    if ensure_renderer3d_state(context_id).is_err() {
         return false;
     }
 
@@ -469,7 +468,7 @@ pub extern "C" fn goud_renderer3d_set_camera_rotation(
         return false;
     }
 
-    if let Err(_) = ensure_renderer3d_state(context_id) {
+    if ensure_renderer3d_state(context_id).is_err() {
         return false;
     }
 
@@ -496,15 +495,17 @@ pub extern "C" fn goud_renderer3d_configure_grid(
         return false;
     }
 
-    if let Err(_) = ensure_renderer3d_state(context_id) {
+    if ensure_renderer3d_state(context_id).is_err() {
         return false;
     }
 
     with_renderer(context_id, |renderer| {
-        let mut config = GridConfig::default();
-        config.enabled = enabled;
-        config.size = size;
-        config.divisions = divisions;
+        let config = GridConfig {
+            enabled,
+            size,
+            divisions,
+            ..Default::default()
+        };
         renderer.configure_grid(config);
         true
     })
@@ -542,7 +543,7 @@ pub extern "C" fn goud_renderer3d_configure_skybox(
         return false;
     }
 
-    if let Err(_) = ensure_renderer3d_state(context_id) {
+    if ensure_renderer3d_state(context_id).is_err() {
         return false;
     }
 
@@ -570,7 +571,7 @@ pub extern "C" fn goud_renderer3d_configure_fog(
         return false;
     }
 
-    if let Err(_) = ensure_renderer3d_state(context_id) {
+    if ensure_renderer3d_state(context_id).is_err() {
         return false;
     }
 

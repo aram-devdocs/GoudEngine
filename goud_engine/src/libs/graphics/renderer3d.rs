@@ -25,45 +25,64 @@ pub const MAX_LIGHTS: usize = 8;
 /// Type of 3D primitive
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(missing_docs)]
 pub enum PrimitiveType {
+    /// A cube primitive
     Cube = 0,
+    /// A sphere primitive
     Sphere = 1,
+    /// A plane primitive
     Plane = 2,
+    /// A cylinder primitive
     Cylinder = 3,
 }
 
 /// Type of light source
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(missing_docs)]
 pub enum LightType {
+    /// Point light (emits in all directions)
     Point = 0,
+    /// Directional light (parallel rays)
     Directional = 1,
+    /// Spot light (cone of light)
     Spot = 2,
 }
 
 /// Grid render mode
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(missing_docs)]
 pub enum GridRenderMode {
+    /// Blend grid with scene
     Blend = 0,
+    /// Overlap grid on scene
     Overlap = 1,
 }
 
 /// Primitive creation info
 #[repr(C)]
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub struct PrimitiveCreateInfo {
+    /// Type of primitive to create
     pub primitive_type: PrimitiveType,
+    /// Width of the primitive
     pub width: f32,
+    /// Height of the primitive
     pub height: f32,
+    /// Depth of the primitive
     pub depth: f32,
+    /// Number of segments (for spheres/cylinders)
     pub segments: u32,
+    /// Texture ID to apply
     pub texture_id: u32,
 }
 
 /// A 3D object in the scene
 #[derive(Debug)]
-pub struct Object3D {
+struct Object3D {
     vao: u32,
     vbo: u32,
     vertex_count: i32,
@@ -84,14 +103,23 @@ impl Drop for Object3D {
 
 /// A light in the scene
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub struct Light {
+    /// Type of light
     pub light_type: LightType,
+    /// Position in world space
     pub position: Vector3<f32>,
+    /// Direction (for directional/spot lights)
     pub direction: Vector3<f32>,
+    /// Light color (RGB)
     pub color: Vector3<f32>,
+    /// Light intensity
     pub intensity: f32,
+    /// Light range (for point/spot lights)
     pub range: f32,
+    /// Spot light angle in degrees
     pub spot_angle: f32,
+    /// Whether the light is enabled
     pub enabled: bool,
 }
 
@@ -112,14 +140,23 @@ impl Default for Light {
 
 /// Grid configuration
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub struct GridConfig {
+    /// Whether grid is enabled
     pub enabled: bool,
+    /// Size of the grid
     pub size: f32,
+    /// Number of divisions
     pub divisions: u32,
+    /// Show XZ plane
     pub show_xz_plane: bool,
+    /// Show XY plane
     pub show_xy_plane: bool,
+    /// Show YZ plane
     pub show_yz_plane: bool,
+    /// Render mode
     pub render_mode: GridRenderMode,
+    /// Line color
     pub line_color: Vector3<f32>,
 }
 
@@ -140,8 +177,11 @@ impl Default for GridConfig {
 
 /// Skybox configuration
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub struct SkyboxConfig {
+    /// Whether skybox is enabled
     pub enabled: bool,
+    /// Skybox color (RGBA)
     pub color: Vector4<f32>,
 }
 
@@ -156,9 +196,13 @@ impl Default for SkyboxConfig {
 
 /// Fog configuration
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub struct FogConfig {
+    /// Whether fog is enabled
     pub enabled: bool,
+    /// Fog color (RGB)
     pub color: Vector3<f32>,
+    /// Fog density
     pub density: f32,
 }
 
@@ -174,9 +218,12 @@ impl Default for FogConfig {
 
 /// 3D Camera
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub struct Camera3D {
+    /// Camera position in world space
     pub position: Vector3<f32>,
-    pub rotation: Vector3<f32>, // pitch, yaw, roll in degrees
+    /// Camera rotation (pitch, yaw, roll) in degrees
+    pub rotation: Vector3<f32>,
 }
 
 impl Default for Camera3D {
@@ -425,7 +472,8 @@ void main()
 }
 "#;
 
-// Simple 2D HUD shader for on-screen overlays
+// Simple 2D HUD shader for on-screen overlays (reserved for future use)
+#[allow(dead_code)]
 const HUD_VERTEX_SHADER: &str = r#"
 #version 330 core
 
@@ -445,6 +493,7 @@ void main()
 }
 "#;
 
+#[allow(dead_code)]
 const HUD_FRAGMENT_SHADER: &str = r#"
 #version 330 core
 
@@ -470,6 +519,7 @@ pub struct Renderer3D {
     grid_vbo: u32,
     grid_vertex_count: i32,
     axis_vao: u32,
+    #[allow(dead_code)]
     axis_vbo: u32,
     axis_vertex_count: i32,
     objects: HashMap<u32, Object3D>,
@@ -930,9 +980,9 @@ impl Renderer3D {
             -w, -h, -d, 0.0, -1.0, 0.0, 0.0, 0.0, w, -h, -d, 0.0, -1.0, 0.0, 1.0, 0.0, w, -h, d,
             0.0, -1.0, 0.0, 1.0, 1.0, w, -h, d, 0.0, -1.0, 0.0, 1.0, 1.0, -w, -h, d, 0.0, -1.0,
             0.0, 0.0, 1.0, -w, -h, -d, 0.0, -1.0, 0.0, 0.0, 0.0, // Top face (y+)
-            -w, h, d, 0.0, 1.0, 0.0, 0.0, 0.0, w, h, d, 0.0, 1.0, 0.0, 1.0, 0.0, w, h, -d, 0.0, 1.0,
-            0.0, 1.0, 1.0, w, h, -d, 0.0, 1.0, 0.0, 1.0, 1.0, -w, h, -d, 0.0, 1.0, 0.0, 0.0, 1.0,
-            -w, h, d, 0.0, 1.0, 0.0, 0.0, 0.0,
+            -w, h, d, 0.0, 1.0, 0.0, 0.0, 0.0, w, h, d, 0.0, 1.0, 0.0, 1.0, 0.0, w, h, -d, 0.0,
+            1.0, 0.0, 1.0, 1.0, w, h, -d, 0.0, 1.0, 0.0, 1.0, 1.0, -w, h, -d, 0.0, 1.0, 0.0, 0.0,
+            1.0, -w, h, d, 0.0, 1.0, 0.0, 0.0, 0.0,
         ]
     }
 
@@ -1221,8 +1271,9 @@ impl Renderer3D {
 
     /// Update a light
     pub fn update_light(&mut self, id: u32, light: Light) -> bool {
-        if self.lights.contains_key(&id) {
-            self.lights.insert(id, light);
+        use std::collections::hash_map::Entry;
+        if let Entry::Occupied(mut e) = self.lights.entry(id) {
+            e.insert(light);
             true
         } else {
             false
@@ -1396,7 +1447,7 @@ impl Renderer3D {
             gl::Uniform1i(self.u_texture1, 0);
 
             // Render objects
-            for (_, obj) in &self.objects {
+            for obj in self.objects.values() {
                 // Create model matrix
                 let model = Self::create_model_matrix(obj.position, obj.rotation, obj.scale);
                 gl::UniformMatrix4fv(self.u_model, 1, gl::FALSE, model.as_ptr());
@@ -1506,5 +1557,6 @@ impl Drop for Renderer3D {
 
 /// Trait for texture manager integration
 pub trait TextureManagerTrait {
+    /// Bind a texture to a slot
     fn bind_texture(&self, texture_id: u32, slot: u32);
 }
