@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -6,7 +6,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>GoudEngine</PackageId>
-    <Version>0.0.808</Version>
+    <Version>0.0.812</Version>
     <Authors>Aram Hammoudeh</Authors>
     <Description>Rust-powered game engine for C# developers using FFI.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -17,6 +17,12 @@
 
   <ItemGroup>
     <None Include="runtimes/**" Pack="true" PackagePath="runtimes/" />
+  </ItemGroup>
+
+  <!-- Exclude examples from compilation -->
+  <ItemGroup>
+    <Compile Remove="sdks/**/*.cs" />
+    <Compile Remove="Examples/**/*.cs" />
   </ItemGroup>
 
 

@@ -1,0 +1,64 @@
+// Bird.cs
+
+using GoudEngine.Input;
+
+public class Bird
+{
+    private readonly GoudGame game;
+    private readonly Movement movement;
+    private readonly BirdAnimator animator;
+
+    public float X { get; private set; }
+    public float Y { get; private set; }
+
+    // Bird collision box dimensions
+    public const float Width = 34f;
+    public const float Height = 24f;
+
+    public Bird(GoudGame game)
+    {
+        this.game = game;
+        movement = new Movement(GameConstants.Gravity, GameConstants.JumpStrength);
+        X = GameConstants.ScreenWidth / 4;
+        Y = GameConstants.ScreenHeight / 2;
+        animator = new BirdAnimator(game, X, Y);
+    }
+
+    public void Initialize()
+    {
+        animator.Initialize();
+    }
+
+    public void Reset()
+    {
+        X = GameConstants.ScreenWidth / 4;
+        Y = GameConstants.ScreenHeight / 2;
+        movement.Velocity = 0;
+        animator.Reset();
+    }
+
+    public void Update(float deltaTime)
+    {
+        if (game.IsKeyPressed(Keys.Space) || game.IsMouseButtonPressed(MouseButtons.Left))
+        {
+            movement.TryJump(deltaTime);
+        }
+
+        movement.ApplyGravity(deltaTime);
+        float yPosition = Y;
+        movement.UpdatePosition(ref yPosition, deltaTime);
+        Y = yPosition;
+
+        // Update the animator with the new position and rotation
+        animator.Update(deltaTime, X, Y, movement.Rotation);
+    }
+
+    /// <summary>
+    /// Draws the bird using immediate-mode rendering.
+    /// Call this each frame in the render pass.
+    /// </summary>
+    public void Draw()
+    {
+        animator.Draw();
+    }
+}

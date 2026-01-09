@@ -25,4 +25,10 @@
     <ProjectReference Include="../GoudEngine/GoudEngine.csproj" />
   </ItemGroup>
 
+  <!-- Note: Core and Math tests removed as those types were consolidated -->
+  <ItemGroup>
+    <Compile Remove="Core/**/*.cs" />
+    <Compile Remove="Math/**/*.cs" />
+  </ItemGroup>
+
 </Project>

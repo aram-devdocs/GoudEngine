@@ -1,6 +1,6 @@
 [package]
 name = "goud_engine"
-version = "0.0.808"
+version = "0.0.812"
 edition = "2021"
 license = "MIT"
 
@@ -41,10 +41,14 @@ thiserror = "1.0.31"
 image = "0.24"
 cbindgen = "0.27.0"
 tiled = "0.13.0"
+rayon = "1.10"
+notify = "6.1"
+rodio = "0.17"
+bytemuck = "1.14"
 
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"
 
 [build-dependencies]
@@ -53,3 +57,19 @@ cbindgen = "0.27.0"
 
 [dev-dependencies]
 husky-rs = "0.1.3"
+tempfile = "3.8"
+bytemuck = "1.14"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "ecs_benchmarks"
+harness = false
+
+[[bench]]
+name = "asset_benchmarks"
+harness = false
+
+# [[bench]]
+# name = "physics_benchmarks"
+# harness = false
+# Note: Disabled until ColliderShape and aabb module are exported publicly

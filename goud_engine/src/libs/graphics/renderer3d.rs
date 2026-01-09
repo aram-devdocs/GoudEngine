@@ -1,41 +1,90 @@
-use cgmath::{perspective, Deg, Matrix3, Matrix4, Vector3};
-use gl::types::*;
+//! 3D Renderer Module
+//!
+//! Provides a complete 3D rendering system with:
+//! - Primitive creation (cubes, spheres, planes, cylinders)
+//! - Multiple light types (point, directional, spot)
+//! - Camera control with position and rotation
+//! - Grid rendering
+//! - Skybox support
+
+use cgmath::{perspective, Deg, Matrix, Matrix4, Rad, Vector3, Vector4};
 use std::collections::HashMap;
+use std::ffi::CString;
 
-use super::components::buffer::BufferObject;
-use super::components::camera::Camera;
-use super::components::light::{Light, LightManager};
-use super::components::shader::ShaderProgram;
-use super::components::skybox::Skybox;
-use super::components::vao::Vao;
-use super::components::vertex_attribute::VertexAttribute;
-use super::renderer::Renderer;
-use crate::types::{Camera3D, GridConfig, GridRenderMode, SpriteMap, TextureManager};
+// ============================================================================
+// Constants
+// ============================================================================
 
+/// Maximum number of lights supported
+pub const MAX_LIGHTS: usize = 8;
+
+// ============================================================================
+// Types
+// ============================================================================
+
+/// Type of 3D primitive
 #[repr(C)]
-#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(missing_docs)]
 pub enum PrimitiveType {
+    /// A cube primitive
     Cube = 0,
+    /// A sphere primitive
     Sphere = 1,
+    /// A plane primitive
     Plane = 2,
+    /// A cylinder primitive
     Cylinder = 3,
-    // Add more primitive types as needed
 }
 
+/// Type of light source
 #[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(missing_docs)]
+pub enum LightType {
+    /// Point light (emits in all directions)
+    Point = 0,
+    /// Directional light (parallel rays)
+    Directional = 1,
+    /// Spot light (cone of light)
+    Spot = 2,
+}
+
+/// Grid render mode
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(missing_docs)]
+pub enum GridRenderMode {
+    /// Blend grid with scene
+    Blend = 0,
+    /// Overlap grid on scene
+    Overlap = 1,
+}
+
+/// Primitive creation info
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub struct PrimitiveCreateInfo {
+    /// Type of primitive to create
     pub primitive_type: PrimitiveType,
+    /// Width of the primitive
     pub width: f32,
+    /// Height of the primitive
     pub height: f32,
+    /// Depth of the primitive
     pub depth: f32,
-    pub segments: u32, // For curved surfaces like spheres and cylinders
+    /// Number of segments (for spheres/cylinders)
+    pub segments: u32,
+    /// Texture ID to apply
     pub texture_id: u32,
 }
 
-#[repr(C)]
+/// A 3D object in the scene
 #[derive(Debug)]
-pub struct Object3D {
-    vao: Vao,
+struct Object3D {
+    vao: u32,
+    vbo: u32,
     vertex_count: i32,
     position: Vector3<f32>,
     rotation: Vector3<f32>,
@@ -43,296 +92,919 @@ pub struct Object3D {
     texture_id: u32,
 }
 
-#[repr(C)]
-#[derive(Debug)]
+impl Drop for Object3D {
+    fn drop(&mut self) {
+        unsafe {
+            gl::DeleteVertexArrays(1, &self.vao);
+            gl::DeleteBuffers(1, &self.vbo);
+        }
+    }
+}
+
+/// A light in the scene
+#[derive(Debug, Clone)]
+#[allow(missing_docs)]
+pub struct Light {
+    /// Type of light
+    pub light_type: LightType,
+    /// Position in world space
+    pub position: Vector3<f32>,
+    /// Direction (for directional/spot lights)
+    pub direction: Vector3<f32>,
+    /// Light color (RGB)
+    pub color: Vector3<f32>,
+    /// Light intensity
+    pub intensity: f32,
+    /// Light range (for point/spot lights)
+    pub range: f32,
+    /// Spot light angle in degrees
+    pub spot_angle: f32,
+    /// Whether the light is enabled
+    pub enabled: bool,
+}
+
+impl Default for Light {
+    fn default() -> Self {
+        Self {
+            light_type: LightType::Point,
+            position: Vector3::new(0.0, 5.0, 0.0),
+            direction: Vector3::new(0.0, -1.0, 0.0),
+            color: Vector3::new(1.0, 1.0, 1.0),
+            intensity: 1.0,
+            range: 10.0,
+            spot_angle: 45.0,
+            enabled: true,
+        }
+    }
+}
+
+/// Grid configuration
+#[derive(Debug, Clone)]
+#[allow(missing_docs)]
+pub struct GridConfig {
+    /// Whether grid is enabled
+    pub enabled: bool,
+    /// Size of the grid
+    pub size: f32,
+    /// Number of divisions
+    pub divisions: u32,
+    /// Show XZ plane
+    pub show_xz_plane: bool,
+    /// Show XY plane
+    pub show_xy_plane: bool,
+    /// Show YZ plane
+    pub show_yz_plane: bool,
+    /// Render mode
+    pub render_mode: GridRenderMode,
+    /// Line color
+    pub line_color: Vector3<f32>,
+}
+
+impl Default for GridConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            size: 20.0,
+            divisions: 20,
+            show_xz_plane: true,
+            show_xy_plane: false,
+            show_yz_plane: false,
+            render_mode: GridRenderMode::Blend,
+            line_color: Vector3::new(0.5, 0.5, 0.5),
+        }
+    }
+}
+
+/// Skybox configuration
+#[derive(Debug, Clone)]
+#[allow(missing_docs)]
+pub struct SkyboxConfig {
+    /// Whether skybox is enabled
+    pub enabled: bool,
+    /// Skybox color (RGBA)
+    pub color: Vector4<f32>,
+}
+
+impl Default for SkyboxConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            color: Vector4::new(0.1, 0.1, 0.2, 1.0),
+        }
+    }
+}
+
+/// Fog configuration
+#[derive(Debug, Clone)]
+#[allow(missing_docs)]
+pub struct FogConfig {
+    /// Whether fog is enabled
+    pub enabled: bool,
+    /// Fog color (RGB)
+    pub color: Vector3<f32>,
+    /// Fog density
+    pub density: f32,
+}
+
+impl Default for FogConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            color: Vector3::new(0.05, 0.05, 0.1), // Match moody skybox
+            density: 0.02,
+        }
+    }
+}
+
+/// 3D Camera
+#[derive(Debug, Clone)]
+#[allow(missing_docs)]
+pub struct Camera3D {
+    /// Camera position in world space
+    pub position: Vector3<f32>,
+    /// Camera rotation (pitch, yaw, roll) in degrees
+    pub rotation: Vector3<f32>,
+}
+
+impl Default for Camera3D {
+    fn default() -> Self {
+        Self {
+            position: Vector3::new(0.0, 10.0, -20.0),
+            rotation: Vector3::new(-30.0, 0.0, 0.0), // Looking slightly down
+        }
+    }
+}
+
+impl Camera3D {
+    /// Get the view matrix
+    pub fn view_matrix(&self) -> Matrix4<f32> {
+        let pitch = Rad::from(Deg(self.rotation.x));
+        let yaw = Rad::from(Deg(self.rotation.y));
+
+        // Calculate forward direction
+        let cos_pitch = pitch.0.cos();
+        let sin_pitch = pitch.0.sin();
+        let cos_yaw = yaw.0.cos();
+        let sin_yaw = yaw.0.sin();
+
+        let forward = Vector3::new(sin_yaw * cos_pitch, sin_pitch, cos_yaw * cos_pitch);
+
+        let target = self.position + forward;
+        let up = Vector3::new(0.0, 1.0, 0.0);
+
+        Matrix4::look_at_rh(
+            cgmath::Point3::new(self.position.x, self.position.y, self.position.z),
+            cgmath::Point3::new(target.x, target.y, target.z),
+            up,
+        )
+    }
+}
+
+// ============================================================================
+// Shaders
+// ============================================================================
+
+const VERTEX_SHADER_3D: &str = r#"
+#version 330 core
+
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec2 aTexCoord;
+
+out vec3 FragPos;
+out vec3 Normal;
+out vec2 TexCoord;
+
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
+void main()
+{
+    FragPos = vec3(model * vec4(aPos, 1.0));
+    Normal = mat3(transpose(inverse(model))) * aNormal;
+    TexCoord = aTexCoord;
+    
+    gl_Position = projection * view * vec4(FragPos, 1.0);
+}
+"#;
+
+const FRAGMENT_SHADER_3D: &str = r#"
+#version 330 core
+
+in vec3 FragPos;
+in vec3 Normal;
+in vec2 TexCoord;
+
+out vec4 FragColor;
+
+struct Light {
+    int type;           // 0 = point, 1 = directional, 2 = spot
+    vec3 position;
+    vec3 direction;
+    vec3 color;
+    float intensity;
+    float range;
+    float spotAngle;
+    bool enabled;
+};
+
+uniform sampler2D texture1;
+uniform vec3 viewPos;
+uniform int numLights;
+uniform Light lights[8];
+uniform bool useTexture;
+uniform vec4 objectColor;
+
+vec3 calculatePointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
+    vec3 lightDir = normalize(light.position - fragPos);
+    float distance = length(light.position - fragPos);
+    float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * distance * distance);
+    
+    // Diffuse
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = diff * light.color;
+    
+    // Specular
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    vec3 specular = spec * light.color * 0.5;
+    
+    // Range falloff
+    float rangeAttenuation = 1.0 - smoothstep(0.0, light.range, distance);
+    
+    return (diffuse + specular) * attenuation * rangeAttenuation * light.intensity;
+}
+
+vec3 calculateDirectionalLight(Light light, vec3 normal, vec3 viewDir) {
+    vec3 lightDir = normalize(-light.direction);
+    
+    // Diffuse
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = diff * light.color;
+    
+    // Specular
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    vec3 specular = spec * light.color * 0.5;
+    
+    return (diffuse + specular) * light.intensity;
+}
+
+vec3 calculateSpotLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
+    vec3 lightDir = normalize(light.position - fragPos);
+    float theta = dot(lightDir, normalize(-light.direction));
+    float epsilon = cos(radians(light.spotAngle)) - cos(radians(light.spotAngle + 5.0));
+    float intensity = clamp((theta - cos(radians(light.spotAngle + 5.0))) / epsilon, 0.0, 1.0);
+    
+    if (intensity > 0.0) {
+        return calculatePointLight(light, normal, fragPos, viewDir) * intensity;
+    }
+    return vec3(0.0);
+}
+
+// Fog parameters
+uniform bool fogEnabled;
+uniform vec3 fogColor;
+uniform float fogDensity;
+
+float calculateFog(float distance) {
+    // Exponential squared fog (more dramatic falloff)
+    float fog = exp(-pow(fogDensity * distance, 2.0));
+    return clamp(fog, 0.0, 1.0);
+}
+
+void main() {
+    vec3 norm = normalize(Normal);
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 result = vec3(0.0);
+    
+    // Ambient light base
+    vec3 ambient = vec3(0.1);
+    result += ambient;
+    
+    // Calculate contribution from each light
+    for(int i = 0; i < numLights && i < 8; i++) {
+        if (!lights[i].enabled) continue;
+        
+        vec3 lightContribution;
+        if (lights[i].type == 0) {
+            lightContribution = calculatePointLight(lights[i], norm, FragPos, viewDir);
+        }
+        else if (lights[i].type == 1) {
+            lightContribution = calculateDirectionalLight(lights[i], norm, viewDir);
+        }
+        else if (lights[i].type == 2) {
+            lightContribution = calculateSpotLight(lights[i], norm, FragPos, viewDir);
+        }
+        
+        result += lightContribution;
+    }
+    
+    vec4 baseColor;
+    if (useTexture) {
+        baseColor = texture(texture1, TexCoord);
+    } else {
+        baseColor = objectColor;
+    }
+    
+    vec3 finalColor = result * baseColor.rgb;
+    
+    // Apply fog - fade to dark fog color at distance
+    if (fogEnabled) {
+        float distance = length(FragPos - viewPos);
+        float visibility = calculateFog(distance);
+        // Mix: low visibility = more fog color, high visibility = more scene color
+        finalColor = mix(fogColor, finalColor, visibility);
+    }
+    
+    FragColor = vec4(finalColor, baseColor.a);
+}
+"#;
+
+const GRID_VERTEX_SHADER: &str = r#"
+#version 330 core
+
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aColor;
+
+out vec3 vertexColor;
+out vec3 fragPos;
+
+uniform mat4 view;
+uniform mat4 projection;
+
+void main()
+{
+    fragPos = aPos;
+    vertexColor = aColor;
+    gl_Position = projection * view * vec4(aPos, 1.0);
+}
+"#;
+
+const GRID_FRAGMENT_SHADER: &str = r#"
+#version 330 core
+
+in vec3 vertexColor;
+in vec3 fragPos;
+
+out vec4 FragColor;
+
+uniform vec3 viewPos;
+uniform bool fogEnabled;
+uniform vec3 fogColor;
+uniform float fogDensity;
+uniform float alpha;
+
+void main()
+{
+    vec3 color = vertexColor;
+    
+    // Apply fog
+    if (fogEnabled) {
+        float distance = length(viewPos - fragPos);
+        float fogFactor = exp(-fogDensity * distance);
+        fogFactor = clamp(fogFactor, 0.0, 1.0);
+        color = mix(fogColor, color, fogFactor);
+    }
+    
+    FragColor = vec4(color, alpha);
+}
+"#;
+
+// Simple 2D HUD shader for on-screen overlays (reserved for future use)
+#[allow(dead_code)]
+const HUD_VERTEX_SHADER: &str = r#"
+#version 330 core
+
+layout (location = 0) in vec2 aPos;
+
+uniform vec2 position;
+uniform vec2 size;
+uniform vec2 screenSize;
+
+void main()
+{
+    // Convert from pixel coordinates to NDC (-1 to 1)
+    vec2 pixelPos = position + aPos * size;
+    vec2 ndc = (pixelPos / screenSize) * 2.0 - 1.0;
+    ndc.y = -ndc.y; // Flip Y for screen coordinates (top-left origin)
+    gl_Position = vec4(ndc, 0.0, 1.0);
+}
+"#;
+
+#[allow(dead_code)]
+const HUD_FRAGMENT_SHADER: &str = r#"
+#version 330 core
+
+out vec4 FragColor;
+
+uniform vec4 color;
+
+void main()
+{
+    FragColor = color;
+}
+"#;
+
+// ============================================================================
+// Renderer3D
+// ============================================================================
+
+/// The main 3D renderer
 pub struct Renderer3D {
-    shader_program: ShaderProgram,
+    shader_program: u32,
+    grid_shader: u32,
+    grid_vao: u32,
+    grid_vbo: u32,
+    grid_vertex_count: i32,
+    axis_vao: u32,
+    #[allow(dead_code)]
+    axis_vbo: u32,
+    axis_vertex_count: i32,
     objects: HashMap<u32, Object3D>,
+    lights: HashMap<u32, Light>,
     next_object_id: u32,
+    next_light_id: u32,
     camera: Camera3D,
     window_width: u32,
     window_height: u32,
-    light_manager: LightManager,
-    grid_config: GridConfig,    // Using the GridConfig from types.rs
-    pub skybox: Option<Skybox>, // Make skybox field public
+    grid_config: GridConfig,
+    skybox_config: SkyboxConfig,
+    fog_config: FogConfig,
+    // Uniform locations
+    u_model: i32,
+    u_view: i32,
+    u_projection: i32,
+    u_view_pos: i32,
+    u_num_lights: i32,
+    u_use_texture: i32,
+    u_object_color: i32,
+    u_texture1: i32,
+    u_fog_enabled: i32,
+    u_fog_color: i32,
+    u_fog_density: i32,
+    // Grid uniform locations
+    ug_view: i32,
+    ug_projection: i32,
+    ug_view_pos: i32,
+    ug_fog_enabled: i32,
+    ug_fog_color: i32,
+    ug_fog_density: i32,
+    ug_alpha: i32,
 }
 
 impl Renderer3D {
-    pub fn new(window_width: u32, window_height: u32) -> Result<Renderer3D, String> {
-        let mut shader_program = ShaderProgram::new_3d()?;
+    /// Create a new 3D renderer
+    pub fn new(window_width: u32, window_height: u32) -> Result<Self, String> {
+        // Create main 3D shader
+        let shader_program = Self::create_shader_program(VERTEX_SHADER_3D, FRAGMENT_SHADER_3D)?;
 
-        // Set up uniforms
-        shader_program.bind();
-        shader_program.create_uniform("model")?;
-        shader_program.create_uniform("view")?;
-        shader_program.create_uniform("projection")?;
-        shader_program.create_uniform("texture1")?;
-        shader_program.create_uniform("viewPos")?;
-        shader_program.create_uniform("numLights")?;
+        // Get uniform locations
+        let u_model = Self::get_uniform_location(shader_program, "model");
+        let u_view = Self::get_uniform_location(shader_program, "view");
+        let u_projection = Self::get_uniform_location(shader_program, "projection");
+        let u_view_pos = Self::get_uniform_location(shader_program, "viewPos");
+        let u_num_lights = Self::get_uniform_location(shader_program, "numLights");
+        let u_use_texture = Self::get_uniform_location(shader_program, "useTexture");
+        let u_object_color = Self::get_uniform_location(shader_program, "objectColor");
+        let u_texture1 = Self::get_uniform_location(shader_program, "texture1");
+        let u_fog_enabled = Self::get_uniform_location(shader_program, "fogEnabled");
+        let u_fog_color = Self::get_uniform_location(shader_program, "fogColor");
+        let u_fog_density = Self::get_uniform_location(shader_program, "fogDensity");
 
-        // Create uniforms for multiple lights
-        for i in 0..8 {
-            shader_program.create_uniform(&format!("lights[{}].type", i))?;
-            shader_program.create_uniform(&format!("lights[{}].position", i))?;
-            shader_program.create_uniform(&format!("lights[{}].direction", i))?;
-            shader_program.create_uniform(&format!("lights[{}].color", i))?;
-            shader_program.create_uniform(&format!("lights[{}].intensity", i))?;
-            shader_program.create_uniform(&format!("lights[{}].range", i))?;
-            shader_program.create_uniform(&format!("lights[{}].spotAngle", i))?;
-            shader_program.create_uniform(&format!("lights[{}].enabled", i))?;
-        }
+        // Create grid shader
+        let grid_shader = Self::create_shader_program(GRID_VERTEX_SHADER, GRID_FRAGMENT_SHADER)?;
+        let ug_view = Self::get_uniform_location(grid_shader, "view");
+        let ug_projection = Self::get_uniform_location(grid_shader, "projection");
+        let ug_view_pos = Self::get_uniform_location(grid_shader, "viewPos");
+        let ug_fog_enabled = Self::get_uniform_location(grid_shader, "fogEnabled");
+        let ug_fog_color = Self::get_uniform_location(grid_shader, "fogColor");
+        let ug_fog_density = Self::get_uniform_location(grid_shader, "fogDensity");
+        let ug_alpha = Self::get_uniform_location(grid_shader, "alpha");
 
-        shader_program.set_uniform_int("texture1", 0)?;
+        // Create grid VAO/VBO with all 3 planes
+        let (grid_vao, grid_vbo, grid_vertex_count) = Self::create_grid_mesh_with_planes(20.0, 20)?;
 
-        // Create perspective projection matrix
-        let aspect_ratio = window_width as f32 / window_height as f32;
-        let projection = perspective(Deg(45.0), aspect_ratio, 0.1, 100.0);
-        shader_program.set_uniform_mat4("projection", &projection)?;
+        // Create axis markers VAO/VBO
+        let (axis_vao, axis_vbo, axis_vertex_count) = Self::create_axis_markers(5.0)?;
 
-        // Create skybox
-        println!("Creating skybox...");
-        let skybox = match Skybox::new() {
-            Ok(sb) => {
-                println!("Skybox created successfully");
-                Some(sb)
-            }
-            Err(e) => {
-                println!("Failed to create skybox: {}", e);
-                None
-            }
-        };
-
-        Ok(Renderer3D {
+        Ok(Self {
             shader_program,
+            grid_shader,
+            grid_vao,
+            grid_vbo,
+            grid_vertex_count,
+            axis_vao,
+            axis_vbo,
+            axis_vertex_count,
             objects: HashMap::new(),
+            lights: HashMap::new(),
             next_object_id: 1,
-            camera: {
-                let mut camera = Camera3D::new();
-                // Set the initial camera position to match the old behavior
-                camera.set_position_xy(0.0, 0.0);
-                // Set initial zoom (which is actually the z-coordinate)
-                camera.set_zoom(3.0);
-                camera
-            },
+            next_light_id: 1,
+            camera: Camera3D::default(),
             window_width,
             window_height,
-            light_manager: LightManager::new(),
             grid_config: GridConfig::default(),
-            skybox,
+            skybox_config: SkyboxConfig::default(),
+            fog_config: FogConfig::default(),
+            u_model,
+            u_view,
+            u_projection,
+            u_view_pos,
+            u_num_lights,
+            u_use_texture,
+            u_object_color,
+            u_texture1,
+            u_fog_enabled,
+            u_fog_color,
+            u_fog_density,
+            ug_view,
+            ug_projection,
+            ug_view_pos,
+            ug_fog_enabled,
+            ug_fog_color,
+            ug_fog_density,
+            ug_alpha,
         })
     }
 
-    // Combined grid configuration method that takes a GridConfig with partial values
-    pub fn configure_grid(&mut self, config: GridConfig) {
-        // Only update fields that differ from defaults, preserving existing values
-        if config.enabled != self.grid_config.enabled {
-            self.grid_config.enabled = config.enabled;
+    fn create_shader_program(vertex_src: &str, fragment_src: &str) -> Result<u32, String> {
+        unsafe {
+            // Vertex shader
+            let vertex_shader = gl::CreateShader(gl::VERTEX_SHADER);
+            let c_str = CString::new(vertex_src).unwrap();
+            gl::ShaderSource(vertex_shader, 1, &c_str.as_ptr(), std::ptr::null());
+            gl::CompileShader(vertex_shader);
+
+            let mut success = 0;
+            gl::GetShaderiv(vertex_shader, gl::COMPILE_STATUS, &mut success);
+            if success == 0 {
+                let mut len = 0;
+                gl::GetShaderiv(vertex_shader, gl::INFO_LOG_LENGTH, &mut len);
+                let mut buffer = vec![0u8; len as usize];
+                gl::GetShaderInfoLog(
+                    vertex_shader,
+                    len,
+                    std::ptr::null_mut(),
+                    buffer.as_mut_ptr() as *mut _,
+                );
+                return Err(format!(
+                    "Vertex shader error: {}",
+                    String::from_utf8_lossy(&buffer)
+                ));
+            }
+
+            // Fragment shader
+            let fragment_shader = gl::CreateShader(gl::FRAGMENT_SHADER);
+            let c_str = CString::new(fragment_src).unwrap();
+            gl::ShaderSource(fragment_shader, 1, &c_str.as_ptr(), std::ptr::null());
+            gl::CompileShader(fragment_shader);
+
+            gl::GetShaderiv(fragment_shader, gl::COMPILE_STATUS, &mut success);
+            if success == 0 {
+                let mut len = 0;
+                gl::GetShaderiv(fragment_shader, gl::INFO_LOG_LENGTH, &mut len);
+                let mut buffer = vec![0u8; len as usize];
+                gl::GetShaderInfoLog(
+                    fragment_shader,
+                    len,
+                    std::ptr::null_mut(),
+                    buffer.as_mut_ptr() as *mut _,
+                );
+                return Err(format!(
+                    "Fragment shader error: {}",
+                    String::from_utf8_lossy(&buffer)
+                ));
+            }
+
+            // Link program
+            let program = gl::CreateProgram();
+            gl::AttachShader(program, vertex_shader);
+            gl::AttachShader(program, fragment_shader);
+            gl::LinkProgram(program);
+
+            gl::GetProgramiv(program, gl::LINK_STATUS, &mut success);
+            if success == 0 {
+                let mut len = 0;
+                gl::GetProgramiv(program, gl::INFO_LOG_LENGTH, &mut len);
+                let mut buffer = vec![0u8; len as usize];
+                gl::GetProgramInfoLog(
+                    program,
+                    len,
+                    std::ptr::null_mut(),
+                    buffer.as_mut_ptr() as *mut _,
+                );
+                return Err(format!(
+                    "Shader link error: {}",
+                    String::from_utf8_lossy(&buffer)
+                ));
+            }
+
+            gl::DeleteShader(vertex_shader);
+            gl::DeleteShader(fragment_shader);
+
+            Ok(program)
+        }
+    }
+
+    fn get_uniform_location(program: u32, name: &str) -> i32 {
+        unsafe {
+            let c_str = CString::new(name).unwrap();
+            gl::GetUniformLocation(program, c_str.as_ptr())
+        }
+    }
+
+    fn create_grid_mesh_with_planes(size: f32, divisions: u32) -> Result<(u32, u32, i32), String> {
+        // Each vertex: position (3) + color (3) = 6 floats
+        let mut vertices = Vec::new();
+        let step = size / divisions as f32;
+        let half = size / 2.0;
+
+        // Grid colors
+        let xz_color = [0.3, 0.3, 0.3]; // Floor grid - dark gray
+        let xy_color = [0.2, 0.25, 0.3]; // XY plane - blue tint
+        let yz_color = [0.3, 0.2, 0.25]; // YZ plane - red tint
+
+        // XZ plane (floor) - Y = 0
+        for i in 0..=divisions {
+            let pos = -half + step * i as f32;
+
+            // Line along Z axis
+            vertices.extend_from_slice(&[pos, 0.0, -half]);
+            vertices.extend_from_slice(&xz_color);
+            vertices.extend_from_slice(&[pos, 0.0, half]);
+            vertices.extend_from_slice(&xz_color);
+
+            // Line along X axis
+            vertices.extend_from_slice(&[-half, 0.0, pos]);
+            vertices.extend_from_slice(&xz_color);
+            vertices.extend_from_slice(&[half, 0.0, pos]);
+            vertices.extend_from_slice(&xz_color);
         }
 
-        if config.size != self.grid_config.size {
-            self.grid_config.size = config.size;
+        // XY plane (back wall) - Z = 0
+        for i in 0..=divisions {
+            let pos = -half + step * i as f32;
+
+            // Line along Y axis
+            vertices.extend_from_slice(&[pos, -half, 0.0]);
+            vertices.extend_from_slice(&xy_color);
+            vertices.extend_from_slice(&[pos, half, 0.0]);
+            vertices.extend_from_slice(&xy_color);
+
+            // Line along X axis
+            vertices.extend_from_slice(&[-half, pos, 0.0]);
+            vertices.extend_from_slice(&xy_color);
+            vertices.extend_from_slice(&[half, pos, 0.0]);
+            vertices.extend_from_slice(&xy_color);
         }
 
-        if config.divisions != self.grid_config.divisions {
-            self.grid_config.divisions = config.divisions;
+        // YZ plane (side wall) - X = 0
+        for i in 0..=divisions {
+            let pos = -half + step * i as f32;
+
+            // Line along Z axis
+            vertices.extend_from_slice(&[0.0, pos, -half]);
+            vertices.extend_from_slice(&yz_color);
+            vertices.extend_from_slice(&[0.0, pos, half]);
+            vertices.extend_from_slice(&yz_color);
+
+            // Line along Y axis
+            vertices.extend_from_slice(&[0.0, -half, pos]);
+            vertices.extend_from_slice(&yz_color);
+            vertices.extend_from_slice(&[0.0, half, pos]);
+            vertices.extend_from_slice(&yz_color);
         }
 
-        // Update colors if they're different from the current values
-        if config.xz_color != self.grid_config.xz_color {
-            self.grid_config.xz_color = config.xz_color;
-        }
+        let mut vao = 0u32;
+        let mut vbo = 0u32;
 
-        if config.xy_color != self.grid_config.xy_color {
-            self.grid_config.xy_color = config.xy_color;
-        }
+        unsafe {
+            gl::GenVertexArrays(1, &mut vao);
+            gl::GenBuffers(1, &mut vbo);
 
-        if config.yz_color != self.grid_config.yz_color {
-            self.grid_config.yz_color = config.yz_color;
-        }
+            gl::BindVertexArray(vao);
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
 
-        if config.x_axis_color != self.grid_config.x_axis_color {
-            self.grid_config.x_axis_color = config.x_axis_color;
-        }
-
-        if config.y_axis_color != self.grid_config.y_axis_color {
-            self.grid_config.y_axis_color = config.y_axis_color;
-        }
-
-        if config.z_axis_color != self.grid_config.z_axis_color {
-            self.grid_config.z_axis_color = config.z_axis_color;
-        }
-
-        if config.line_width != self.grid_config.line_width {
-            self.grid_config.line_width = config.line_width;
-        }
-
-        if config.axis_line_width != self.grid_config.axis_line_width {
-            self.grid_config.axis_line_width = config.axis_line_width;
-        }
-
-        if config.show_axes != self.grid_config.show_axes {
-            self.grid_config.show_axes = config.show_axes;
-        }
-
-        if config.show_xz_plane != self.grid_config.show_xz_plane {
-            self.grid_config.show_xz_plane = config.show_xz_plane;
-        }
-
-        if config.show_xy_plane != self.grid_config.show_xy_plane {
-            self.grid_config.show_xy_plane = config.show_xy_plane;
-        }
-
-        if config.show_yz_plane != self.grid_config.show_yz_plane {
-            self.grid_config.show_yz_plane = config.show_yz_plane;
-        }
-
-        // Update render mode if different
-        if config.render_mode != self.grid_config.render_mode {
-            println!(
-                "Changing grid render mode from {:?} to {:?}",
-                self.grid_config.render_mode, config.render_mode
+            gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (vertices.len() * std::mem::size_of::<f32>()) as isize,
+                vertices.as_ptr() as *const _,
+                gl::STATIC_DRAW,
             );
-            self.grid_config.render_mode = config.render_mode;
+
+            let stride = 6 * std::mem::size_of::<f32>() as i32;
+
+            // Position attribute (location 0)
+            gl::EnableVertexAttribArray(0);
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null());
+
+            // Color attribute (location 1)
+            gl::EnableVertexAttribArray(1);
+            gl::VertexAttribPointer(
+                1,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                stride,
+                (3 * std::mem::size_of::<f32>()) as *const _,
+            );
+
+            gl::BindVertexArray(0);
         }
+
+        // 6 floats per vertex, 2 vertices per line
+        Ok((vao, vbo, (vertices.len() / 6) as i32))
     }
 
-    // Helper method to get the current grid configuration
-    pub fn get_grid_config(&self) -> GridConfig {
-        self.grid_config.clone()
+    fn create_axis_markers(size: f32) -> Result<(u32, u32, i32), String> {
+        // Each vertex: position (3) + color (3) = 6 floats
+        // Create colored axis lines: X=red, Y=green, Z=blue
+        let vertices: Vec<f32> = vec![
+            // X axis (red)
+            0.0, 0.0, 0.0, 1.0, 0.2, 0.2, size, 0.0, 0.0, 1.0, 0.2, 0.2, // Negative X
+            0.0, 0.0, 0.0, 0.5, 0.1, 0.1, -size, 0.0, 0.0, 0.5, 0.1, 0.1,
+            // Y axis (green)
+            0.0, 0.0, 0.0, 0.2, 1.0, 0.2, 0.0, size, 0.0, 0.2, 1.0, 0.2, // Negative Y
+            0.0, 0.0, 0.0, 0.1, 0.5, 0.1, 0.0, -size, 0.0, 0.1, 0.5, 0.1, // Z axis (blue)
+            0.0, 0.0, 0.0, 0.2, 0.2, 1.0, 0.0, 0.0, size, 0.2, 0.2, 1.0, // Negative Z
+            0.0, 0.0, 0.0, 0.1, 0.1, 0.5, 0.0, 0.0, -size, 0.1, 0.1, 0.5,
+            // Origin marker (small cross)
+            -0.2, 0.0, 0.0, 1.0, 1.0, 1.0, 0.2, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, -0.2, 0.0, 1.0, 1.0,
+            1.0, 0.0, 0.2, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, -0.2, 1.0, 1.0, 1.0, 0.0, 0.0, 0.2, 1.0,
+            1.0, 1.0,
+        ];
+
+        let mut vao = 0u32;
+        let mut vbo = 0u32;
+
+        unsafe {
+            gl::GenVertexArrays(1, &mut vao);
+            gl::GenBuffers(1, &mut vbo);
+
+            gl::BindVertexArray(vao);
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+
+            gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (vertices.len() * std::mem::size_of::<f32>()) as isize,
+                vertices.as_ptr() as *const _,
+                gl::STATIC_DRAW,
+            );
+
+            let stride = 6 * std::mem::size_of::<f32>() as i32;
+
+            // Position attribute (location 0)
+            gl::EnableVertexAttribArray(0);
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null());
+
+            // Color attribute (location 1)
+            gl::EnableVertexAttribArray(1);
+            gl::VertexAttribPointer(
+                1,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                stride,
+                (3 * std::mem::size_of::<f32>()) as *const _,
+            );
+
+            gl::BindVertexArray(0);
+        }
+
+        Ok((vao, vbo, (vertices.len() / 6) as i32))
     }
 
-    pub fn create_primitive(&mut self, create_info: PrimitiveCreateInfo) -> Result<u32, String> {
-        let vertices = match create_info.primitive_type {
-            PrimitiveType::Cube => self.generate_cube_vertices(
-                create_info.width,  // X dimension
-                create_info.height, // Y dimension
-                create_info.depth,  // Z dimension
-            ),
-            PrimitiveType::Plane => {
-                // Note: Based on the comment in 3d_cube example, there might be confusion
-                // about which parameter affects which dimension
-                // We're using width for X and depth for Z, which is the expected behavior
-                self.generate_plane_vertices(create_info.width, create_info.depth)
+    /// Create a primitive object
+    pub fn create_primitive(&mut self, info: PrimitiveCreateInfo) -> u32 {
+        let vertices = match info.primitive_type {
+            PrimitiveType::Cube => {
+                Self::generate_cube_vertices(info.width, info.height, info.depth)
             }
+            PrimitiveType::Plane => Self::generate_plane_vertices(info.width, info.depth),
             PrimitiveType::Sphere => {
-                self.generate_sphere_vertices(create_info.width, create_info.segments)
+                Self::generate_sphere_vertices(info.width / 2.0, info.segments)
             }
-            PrimitiveType::Cylinder => self.generate_cylinder_vertices(
-                create_info.width,  // Radius
-                create_info.height, // Height
-                create_info.segments,
-            ),
+            PrimitiveType::Cylinder => {
+                Self::generate_cylinder_vertices(info.width / 2.0, info.height, info.segments)
+            }
         };
 
-        let vao = Vao::new()?;
-        vao.bind();
+        let mut vao = 0u32;
+        let mut vbo = 0u32;
 
-        let vbo = BufferObject::new(gl::ARRAY_BUFFER)?;
-        vbo.bind();
-        vbo.store_data(&vertices, gl::STATIC_DRAW);
+        unsafe {
+            gl::GenVertexArrays(1, &mut vao);
+            gl::GenBuffers(1, &mut vbo);
 
-        // Define vertex attributes
-        let stride = 8 * std::mem::size_of::<f32>() as GLsizei;
+            gl::BindVertexArray(vao);
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
 
-        // Position attribute
-        VertexAttribute::enable(0);
-        VertexAttribute::pointer(0, 3, gl::FLOAT, gl::FALSE, stride, 0);
+            gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (vertices.len() * std::mem::size_of::<f32>()) as isize,
+                vertices.as_ptr() as *const _,
+                gl::STATIC_DRAW,
+            );
 
-        // Normal attribute
-        VertexAttribute::enable(1);
-        VertexAttribute::pointer(
-            1,
-            3,
-            gl::FLOAT,
-            gl::FALSE,
-            stride,
-            3 * std::mem::size_of::<f32>(),
-        );
+            let stride = 8 * std::mem::size_of::<f32>() as i32;
 
-        // Texture coordinate attribute
-        VertexAttribute::enable(2);
-        VertexAttribute::pointer(
-            2,
-            2,
-            gl::FLOAT,
-            gl::FALSE,
-            stride,
-            6 * std::mem::size_of::<f32>(),
-        );
+            // Position
+            gl::EnableVertexAttribArray(0);
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null());
 
-        Vao::unbind();
-        BufferObject::unbind(gl::ARRAY_BUFFER);
+            // Normal
+            gl::EnableVertexAttribArray(1);
+            gl::VertexAttribPointer(
+                1,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                stride,
+                (3 * std::mem::size_of::<f32>()) as *const _,
+            );
 
-        let object_id = self.next_object_id;
+            // Texcoord
+            gl::EnableVertexAttribArray(2);
+            gl::VertexAttribPointer(
+                2,
+                2,
+                gl::FLOAT,
+                gl::FALSE,
+                stride,
+                (6 * std::mem::size_of::<f32>()) as *const _,
+            );
+
+            gl::BindVertexArray(0);
+        }
+
+        let id = self.next_object_id;
         self.next_object_id += 1;
 
         self.objects.insert(
-            object_id,
+            id,
             Object3D {
                 vao,
-                vertex_count: (vertices.len() / 8) as i32, // 8 components per vertex
+                vbo,
+                vertex_count: (vertices.len() / 8) as i32,
                 position: Vector3::new(0.0, 0.0, 0.0),
                 rotation: Vector3::new(0.0, 0.0, 0.0),
                 scale: Vector3::new(1.0, 1.0, 1.0),
-                texture_id: create_info.texture_id,
+                texture_id: info.texture_id,
             },
         );
 
-        Ok(object_id)
+        id
     }
 
-    fn generate_cube_vertices(&self, width: f32, height: f32, depth: f32) -> Vec<f32> {
+    fn generate_cube_vertices(width: f32, height: f32, depth: f32) -> Vec<f32> {
         let w = width / 2.0;
         let h = height / 2.0;
         let d = depth / 2.0;
 
         vec![
-            // Front face
-            -w, -h, d, 0.0, 0.0, -1.0, 0.0, 0.0, // Bottom-left
-            w, -h, d, 0.0, 0.0, -1.0, 1.0, 0.0, // Bottom-right
-            w, h, d, 0.0, 0.0, -1.0, 1.0, 1.0, // Top-right
-            w, h, d, 0.0, 0.0, -1.0, 1.0, 1.0, // Top-right
-            -w, h, d, 0.0, 0.0, -1.0, 0.0, 1.0, // Top-left
-            -w, -h, d, 0.0, 0.0, -1.0, 0.0, 0.0, // Bottom-left
-            // Back face
-            -w, -h, -d, 0.0, 0.0, -1.0, 0.0, 0.0, w, -h, -d, 0.0, 0.0, -1.0, 1.0, 0.0, w, h, -d,
-            0.0, 0.0, -1.0, 1.0, 1.0, w, h, -d, 0.0, 0.0, -1.0, 1.0, 1.0, -w, h, -d, 0.0, 0.0,
-            -1.0, 0.0, 1.0, -w, -h, -d, 0.0, 0.0, -1.0, 0.0, 0.0, // Left face
-            -w, h, d, -1.0, 0.0, 0.0, 1.0, 0.0, -w, h, -d, -1.0, 0.0, 0.0, 1.0, 1.0, -w, -h, -d,
-            -1.0, 0.0, 0.0, 0.0, 1.0, -w, -h, -d, -1.0, 0.0, 0.0, 0.0, 1.0, -w, -h, d, -1.0, 0.0,
-            0.0, 0.0, 0.0, -w, h, d, -1.0, 0.0, 0.0, 1.0, 0.0, // Right face
-            w, h, d, 1.0, 0.0, 0.0, 1.0, 0.0, w, h, -d, 1.0, 0.0, 0.0, 1.0, 1.0, w, -h, -d, 1.0,
-            0.0, 0.0, 0.0, 1.0, w, -h, -d, 1.0, 0.0, 0.0, 0.0, 1.0, w, -h, d, 1.0, 0.0, 0.0, 0.0,
-            0.0, w, h, d, 1.0, 0.0, 0.0, 1.0, 0.0, // Bottom face
-            -w, -h, -d, 0.0, -1.0, 0.0, 0.0, 1.0, w, -h, -d, 0.0, -1.0, 0.0, 1.0, 1.0, w, -h, d,
-            0.0, -1.0, 0.0, 1.0, 0.0, w, -h, d, 0.0, -1.0, 0.0, 1.0, 0.0, -w, -h, d, 0.0, -1.0,
-            0.0, 0.0, 0.0, -w, -h, -d, 0.0, -1.0, 0.0, 0.0, 1.0, // Top face
-            -w, h, -d, 0.0, 1.0, 0.0, 0.0, 1.0, w, h, -d, 0.0, 1.0, 0.0, 1.0, 1.0, w, h, d, 0.0,
-            1.0, 0.0, 1.0, 0.0, w, h, d, 0.0, 1.0, 0.0, 1.0, 0.0, -w, h, d, 0.0, 1.0, 0.0, 0.0,
-            0.0, -w, h, -d, 0.0, 1.0, 0.0, 0.0, 1.0,
+            // Front face (z+)
+            -w, -h, d, 0.0, 0.0, 1.0, 0.0, 0.0, w, -h, d, 0.0, 0.0, 1.0, 1.0, 0.0, w, h, d, 0.0,
+            0.0, 1.0, 1.0, 1.0, w, h, d, 0.0, 0.0, 1.0, 1.0, 1.0, -w, h, d, 0.0, 0.0, 1.0, 0.0,
+            1.0, -w, -h, d, 0.0, 0.0, 1.0, 0.0, 0.0, // Back face (z-)
+            w, -h, -d, 0.0, 0.0, -1.0, 0.0, 0.0, -w, -h, -d, 0.0, 0.0, -1.0, 1.0, 0.0, -w, h, -d,
+            0.0, 0.0, -1.0, 1.0, 1.0, -w, h, -d, 0.0, 0.0, -1.0, 1.0, 1.0, w, h, -d, 0.0, 0.0,
+            -1.0, 0.0, 1.0, w, -h, -d, 0.0, 0.0, -1.0, 0.0, 0.0, // Left face (x-)
+            -w, -h, -d, -1.0, 0.0, 0.0, 0.0, 0.0, -w, -h, d, -1.0, 0.0, 0.0, 1.0, 0.0, -w, h, d,
+            -1.0, 0.0, 0.0, 1.0, 1.0, -w, h, d, -1.0, 0.0, 0.0, 1.0, 1.0, -w, h, -d, -1.0, 0.0,
+            0.0, 0.0, 1.0, -w, -h, -d, -1.0, 0.0, 0.0, 0.0, 0.0, // Right face (x+)
+            w, -h, d, 1.0, 0.0, 0.0, 0.0, 0.0, w, -h, -d, 1.0, 0.0, 0.0, 1.0, 0.0, w, h, -d, 1.0,
+            0.0, 0.0, 1.0, 1.0, w, h, -d, 1.0, 0.0, 0.0, 1.0, 1.0, w, h, d, 1.0, 0.0, 0.0, 0.0,
+            1.0, w, -h, d, 1.0, 0.0, 0.0, 0.0, 0.0, // Bottom face (y-)
+            -w, -h, -d, 0.0, -1.0, 0.0, 0.0, 0.0, w, -h, -d, 0.0, -1.0, 0.0, 1.0, 0.0, w, -h, d,
+            0.0, -1.0, 0.0, 1.0, 1.0, w, -h, d, 0.0, -1.0, 0.0, 1.0, 1.0, -w, -h, d, 0.0, -1.0,
+            0.0, 0.0, 1.0, -w, -h, -d, 0.0, -1.0, 0.0, 0.0, 0.0, // Top face (y+)
+            -w, h, d, 0.0, 1.0, 0.0, 0.0, 0.0, w, h, d, 0.0, 1.0, 0.0, 1.0, 0.0, w, h, -d, 0.0,
+            1.0, 0.0, 1.0, 1.0, w, h, -d, 0.0, 1.0, 0.0, 1.0, 1.0, -w, h, -d, 0.0, 1.0, 0.0, 0.0,
+            1.0, -w, h, d, 0.0, 1.0, 0.0, 0.0, 0.0,
         ]
     }
 
-    fn generate_plane_vertices(&self, width: f32, depth: f32) -> Vec<f32> {
+    fn generate_plane_vertices(width: f32, depth: f32) -> Vec<f32> {
         let w = width / 2.0;
         let d = depth / 2.0;
 
-        // Note: The comment in 3d_cube example suggests the coordinates might be swapped
-        // We should ensure that width affects X and depth affects Z coordinates
         vec![
-            // Single face plane (facing up in Y direction)
-            -w, 0.0, -d, 0.0, 1.0, 0.0, 0.0, 0.0, // Bottom-left
-            w, 0.0, -d, 0.0, 1.0, 0.0, 1.0, 0.0, // Bottom-right
-            w, 0.0, d, 0.0, 1.0, 0.0, 1.0, 1.0, // Top-right
-            w, 0.0, d, 0.0, 1.0, 0.0, 1.0, 1.0, // Top-right
-            -w, 0.0, d, 0.0, 1.0, 0.0, 0.0, 1.0, // Top-left
-            -w, 0.0, -d, 0.0, 1.0, 0.0, 0.0, 0.0, // Bottom-left
+            // Top face (facing up in Y direction) - CCW when viewed from above
+            -w, 0.0, d, 0.0, 1.0, 0.0, 0.0, 1.0, w, 0.0, d, 0.0, 1.0, 0.0, 1.0, 1.0, w, 0.0, -d,
+            0.0, 1.0, 0.0, 1.0, 0.0, w, 0.0, -d, 0.0, 1.0, 0.0, 1.0, 0.0, -w, 0.0, -d, 0.0, 1.0,
+            0.0, 0.0, 0.0, -w, 0.0, d, 0.0, 1.0, 0.0, 0.0, 1.0,
+            // Bottom face (facing down) - for double-sided rendering
+            -w, 0.0, -d, 0.0, -1.0, 0.0, 0.0, 0.0, w, 0.0, -d, 0.0, -1.0, 0.0, 1.0, 0.0, w, 0.0, d,
+            0.0, -1.0, 0.0, 1.0, 1.0, w, 0.0, d, 0.0, -1.0, 0.0, 1.0, 1.0, -w, 0.0, d, 0.0, -1.0,
+            0.0, 0.0, 1.0, -w, 0.0, -d, 0.0, -1.0, 0.0, 0.0, 0.0,
         ]
     }
 
-    fn generate_sphere_vertices(&self, radius: f32, segments: u32) -> Vec<f32> {
+    fn generate_sphere_vertices(radius: f32, segments: u32) -> Vec<f32> {
         let mut vertices = Vec::new();
-        let segment_count = segments.max(3);
+        let segment_count = segments.max(8);
 
         for i in 0..segment_count {
             let lat0 = std::f32::consts::PI * (-0.5 + (i as f32) / segment_count as f32);
@@ -342,7 +1014,6 @@ impl Renderer3D {
                 let lng0 = 2.0 * std::f32::consts::PI * (j as f32) / segment_count as f32;
                 let lng1 = 2.0 * std::f32::consts::PI * ((j + 1) as f32) / segment_count as f32;
 
-                // Calculate vertices
                 let x0 = radius * lat0.cos() * lng0.cos();
                 let y0 = radius * lat0.sin();
                 let z0 = radius * lat0.cos() * lng0.sin();
@@ -359,9 +1030,8 @@ impl Renderer3D {
                 let y3 = radius * lat1.sin();
                 let z3 = radius * lat1.cos() * lng0.sin();
 
-                // Add vertices with their normals and texture coordinates
-                let vertices_data = [
-                    // First triangle
+                // First triangle
+                vertices.extend_from_slice(&[
                     x0,
                     y0,
                     z0,
@@ -370,6 +1040,8 @@ impl Renderer3D {
                     z0 / radius,
                     j as f32 / segment_count as f32,
                     i as f32 / segment_count as f32,
+                ]);
+                vertices.extend_from_slice(&[
                     x1,
                     y1,
                     z1,
@@ -378,6 +1050,8 @@ impl Renderer3D {
                     z1 / radius,
                     (j + 1) as f32 / segment_count as f32,
                     i as f32 / segment_count as f32,
+                ]);
+                vertices.extend_from_slice(&[
                     x2,
                     y2,
                     z2,
@@ -386,7 +1060,10 @@ impl Renderer3D {
                     z2 / radius,
                     (j + 1) as f32 / segment_count as f32,
                     (i + 1) as f32 / segment_count as f32,
-                    // Second triangle
+                ]);
+
+                // Second triangle
+                vertices.extend_from_slice(&[
                     x0,
                     y0,
                     z0,
@@ -395,6 +1072,8 @@ impl Renderer3D {
                     z0 / radius,
                     j as f32 / segment_count as f32,
                     i as f32 / segment_count as f32,
+                ]);
+                vertices.extend_from_slice(&[
                     x2,
                     y2,
                     z2,
@@ -403,6 +1082,8 @@ impl Renderer3D {
                     z2 / radius,
                     (j + 1) as f32 / segment_count as f32,
                     (i + 1) as f32 / segment_count as f32,
+                ]);
+                vertices.extend_from_slice(&[
                     x3,
                     y3,
                     z3,
@@ -411,21 +1092,18 @@ impl Renderer3D {
                     z3 / radius,
                     j as f32 / segment_count as f32,
                     (i + 1) as f32 / segment_count as f32,
-                ];
-
-                vertices.extend_from_slice(&vertices_data);
+                ]);
             }
         }
 
         vertices
     }
 
-    fn generate_cylinder_vertices(&self, radius: f32, height: f32, segments: u32) -> Vec<f32> {
+    fn generate_cylinder_vertices(radius: f32, height: f32, segments: u32) -> Vec<f32> {
         let mut vertices = Vec::new();
-        let segment_count = segments.max(3);
+        let segment_count = segments.max(8);
         let h = height / 2.0;
 
-        // Generate vertices for the sides
         for i in 0..segment_count {
             let angle0 = 2.0 * std::f32::consts::PI * (i as f32) / segment_count as f32;
             let angle1 = 2.0 * std::f32::consts::PI * ((i + 1) as f32) / segment_count as f32;
@@ -435,9 +1113,8 @@ impl Renderer3D {
             let x1 = radius * angle1.cos();
             let z1 = radius * angle1.sin();
 
-            // Add vertices for the side faces
-            let vertices_data = [
-                // Bottom to top quad (two triangles)
+            // Side faces
+            vertices.extend_from_slice(&[
                 x0,
                 -h,
                 z0,
@@ -446,6 +1123,8 @@ impl Renderer3D {
                 z0 / radius,
                 i as f32 / segment_count as f32,
                 0.0,
+            ]);
+            vertices.extend_from_slice(&[
                 x1,
                 -h,
                 z1,
@@ -454,6 +1133,8 @@ impl Renderer3D {
                 z1 / radius,
                 (i + 1) as f32 / segment_count as f32,
                 0.0,
+            ]);
+            vertices.extend_from_slice(&[
                 x1,
                 h,
                 z1,
@@ -462,52 +1143,42 @@ impl Renderer3D {
                 z1 / radius,
                 (i + 1) as f32 / segment_count as f32,
                 1.0,
-                x0,
-                -h,
-                z0,
-                x0 / radius,
-                0.0,
-                z0 / radius,
-                i as f32 / segment_count as f32,
-                0.0,
-                x1,
-                h,
-                z1,
-                x1 / radius,
-                0.0,
-                z1 / radius,
-                (i + 1) as f32 / segment_count as f32,
-                1.0,
-                x0,
-                h,
-                z0,
-                x0 / radius,
-                0.0,
-                z0 / radius,
-                i as f32 / segment_count as f32,
-                1.0,
-            ];
-            vertices.extend_from_slice(&vertices_data);
+            ]);
 
-            // Add vertices for top and bottom caps
-            let cap_vertices = [
-                // Top cap
+            vertices.extend_from_slice(&[
+                x0,
+                -h,
+                z0,
+                x0 / radius,
                 0.0,
+                z0 / radius,
+                i as f32 / segment_count as f32,
+                0.0,
+            ]);
+            vertices.extend_from_slice(&[
+                x1,
                 h,
+                z1,
+                x1 / radius,
                 0.0,
-                0.0,
+                z1 / radius,
+                (i + 1) as f32 / segment_count as f32,
                 1.0,
-                0.0,
-                0.5,
-                0.5,
+            ]);
+            vertices.extend_from_slice(&[
                 x0,
                 h,
                 z0,
+                x0 / radius,
                 0.0,
+                z0 / radius,
+                i as f32 / segment_count as f32,
                 1.0,
-                0.0,
-                0.5 + 0.5 * angle0.cos(),
-                0.5 + 0.5 * angle0.sin(),
+            ]);
+
+            // Top cap
+            vertices.extend_from_slice(&[0.0, h, 0.0, 0.0, 1.0, 0.0, 0.5, 0.5]);
+            vertices.extend_from_slice(&[
                 x1,
                 h,
                 z1,
@@ -516,23 +1187,21 @@ impl Renderer3D {
                 0.0,
                 0.5 + 0.5 * angle1.cos(),
                 0.5 + 0.5 * angle1.sin(),
-                // Bottom cap
+            ]);
+            vertices.extend_from_slice(&[
+                x0,
+                h,
+                z0,
                 0.0,
-                -h,
+                1.0,
                 0.0,
-                0.0,
-                -1.0,
-                0.0,
-                0.5,
-                0.5,
-                x1,
-                -h,
-                z1,
-                0.0,
-                -1.0,
-                0.0,
-                0.5 + 0.5 * angle1.cos(),
-                0.5 + 0.5 * angle1.sin(),
+                0.5 + 0.5 * angle0.cos(),
+                0.5 + 0.5 * angle0.sin(),
+            ]);
+
+            // Bottom cap
+            vertices.extend_from_slice(&[0.0, -h, 0.0, 0.0, -1.0, 0.0, 0.5, 0.5]);
+            vertices.extend_from_slice(&[
                 x0,
                 -h,
                 z0,
@@ -541,806 +1210,353 @@ impl Renderer3D {
                 0.0,
                 0.5 + 0.5 * angle0.cos(),
                 0.5 + 0.5 * angle0.sin(),
-            ];
-            vertices.extend_from_slice(&cap_vertices);
-        }
-
-        vertices
-    }
-
-    fn generate_grid_vertices(&self, size: f32, divisions: u32) -> Vec<f32> {
-        let mut vertices = Vec::new();
-        let step = size / divisions as f32;
-        let half_size = size * 0.5;
-
-        // Grid lines along X axis (horizontal floor grid)
-        if self.grid_config.show_xz_plane {
-            for i in 0..=divisions {
-                let pos = -half_size + i as f32 * step;
-                let color = &self.grid_config.xz_color;
-
-                // Line along X axis (varying Z)
-                vertices.extend_from_slice(&[
-                    -half_size, 0.0, pos, color.x, color.y, color.z, 0.0, 0.0, // Start point
-                    half_size, 0.0, pos, color.x, color.y, color.z, 0.0, 0.0, // End point
-                ]);
-
-                // Line along Z axis (varying X)
-                vertices.extend_from_slice(&[
-                    pos, 0.0, -half_size, color.x, color.y, color.z, 0.0, 0.0, // Start point
-                    pos, 0.0, half_size, color.x, color.y, color.z, 0.0, 0.0, // End point
-                ]);
-            }
-        }
-
-        // Calculate the number of Y divisions to maintain square proportions
-        let y_divisions = divisions; // Use same number of divisions as X and Z
-        let y_step = step; // Use same step size as X and Z
-
-        // Add vertical grid lines along Y axis at X=0 (YZ plane)
-        if self.grid_config.show_yz_plane {
-            for i in 0..=divisions {
-                let pos = -half_size + i as f32 * step;
-                let color = &self.grid_config.yz_color;
-
-                // Vertical lines along Y axis (varying Z at X=0)
-                vertices.extend_from_slice(&[
-                    0.0, -half_size, pos, color.x, color.y, color.z, 0.0, 0.0, // Start point
-                    0.0, half_size, pos, color.x, color.y, color.z, 0.0, 0.0, // End point
-                ]);
-            }
-
-            // Add horizontal cross lines on YZ plane (at X=0)
-            for i in 0..=y_divisions {
-                let y_pos = -half_size + i as f32 * y_step;
-                let color = &self.grid_config.yz_color;
-
-                vertices.extend_from_slice(&[
-                    0.0, y_pos, -half_size, color.x, color.y, color.z, 0.0,
-                    0.0, // Start point
-                    0.0, y_pos, half_size, color.x, color.y, color.z, 0.0, 0.0, // End point
-                ]);
-            }
-        }
-
-        // Add vertical grid lines along Y axis at Z=0 (XY plane)
-        if self.grid_config.show_xy_plane {
-            for i in 0..=divisions {
-                let pos = -half_size + i as f32 * step;
-                let color = &self.grid_config.xy_color;
-
-                // Vertical lines along Y axis (varying X at Z=0)
-                vertices.extend_from_slice(&[
-                    pos, -half_size, 0.0, color.x, color.y, color.z, 0.0, 0.0, // Start point
-                    pos, half_size, 0.0, color.x, color.y, color.z, 0.0, 0.0, // End point
-                ]);
-            }
-
-            // Add horizontal cross lines on XY plane (at Z=0)
-            for i in 0..=y_divisions {
-                let y_pos = -half_size + i as f32 * y_step;
-                let color = &self.grid_config.xy_color;
-
-                vertices.extend_from_slice(&[
-                    -half_size, y_pos, 0.0, color.x, color.y, color.z, 0.0,
-                    0.0, // Start point
-                    half_size, y_pos, 0.0, color.x, color.y, color.z, 0.0, 0.0, // End point
-                ]);
-            }
-        }
-
-        // Highlight the central X, Y, and Z axes if show_axes is true
-        if self.grid_config.show_axes {
-            // X axis highlight
-            vertices.extend_from_slice(&[
-                -half_size,
-                0.001,
-                0.0,
-                self.grid_config.x_axis_color.x,
-                self.grid_config.x_axis_color.y,
-                self.grid_config.x_axis_color.z,
-                0.0,
-                0.0, // Start point
-                half_size,
-                0.001,
-                0.0,
-                self.grid_config.x_axis_color.x,
-                self.grid_config.x_axis_color.y,
-                self.grid_config.x_axis_color.z,
-                0.0,
-                0.0, // End point
             ]);
-
-            // Z axis highlight
             vertices.extend_from_slice(&[
+                x1,
+                -h,
+                z1,
                 0.0,
-                0.001,
-                -half_size,
-                self.grid_config.z_axis_color.x,
-                self.grid_config.z_axis_color.y,
-                self.grid_config.z_axis_color.z,
+                -1.0,
                 0.0,
-                0.0, // Start point
-                0.0,
-                0.001,
-                half_size,
-                self.grid_config.z_axis_color.x,
-                self.grid_config.z_axis_color.y,
-                self.grid_config.z_axis_color.z,
-                0.0,
-                0.0, // End point
-            ]);
-
-            // Y axis highlight
-            vertices.extend_from_slice(&[
-                0.0,
-                -half_size,
-                0.0,
-                self.grid_config.y_axis_color.x,
-                self.grid_config.y_axis_color.y,
-                self.grid_config.y_axis_color.z,
-                0.0,
-                0.0, // Start point
-                0.0,
-                half_size,
-                0.0,
-                self.grid_config.y_axis_color.x,
-                self.grid_config.y_axis_color.y,
-                self.grid_config.y_axis_color.z,
-                0.0,
-                0.0, // End point
+                0.5 + 0.5 * angle1.cos(),
+                0.5 + 0.5 * angle1.sin(),
             ]);
         }
 
         vertices
     }
 
-    fn generate_axis_vertices(&self, size: f32) -> Vec<f32> {
-        let mut vertices = Vec::new();
-
-        // X axis
-        vertices.extend_from_slice(&[
-            0.0,
-            0.0,
-            0.0,
-            self.grid_config.x_axis_color.x,
-            self.grid_config.x_axis_color.y,
-            self.grid_config.x_axis_color.z,
-            0.0,
-            0.0, // Origin
-            size,
-            0.0,
-            0.0,
-            self.grid_config.x_axis_color.x,
-            self.grid_config.x_axis_color.y,
-            self.grid_config.x_axis_color.z,
-            0.0,
-            0.0, // X direction
-        ]);
-
-        // Y axis
-        vertices.extend_from_slice(&[
-            0.0,
-            0.0,
-            0.0,
-            self.grid_config.y_axis_color.x,
-            self.grid_config.y_axis_color.y,
-            self.grid_config.y_axis_color.z,
-            0.0,
-            0.0, // Origin
-            0.0,
-            size,
-            0.0,
-            self.grid_config.y_axis_color.x,
-            self.grid_config.y_axis_color.y,
-            self.grid_config.y_axis_color.z,
-            0.0,
-            0.0, // Y direction
-        ]);
-
-        // Z axis
-        vertices.extend_from_slice(&[
-            0.0,
-            0.0,
-            0.0,
-            self.grid_config.z_axis_color.x,
-            self.grid_config.z_axis_color.y,
-            self.grid_config.z_axis_color.z,
-            0.0,
-            0.0, // Origin
-            0.0,
-            0.0,
-            size,
-            self.grid_config.z_axis_color.x,
-            self.grid_config.z_axis_color.y,
-            self.grid_config.z_axis_color.z,
-            0.0,
-            0.0, // Z direction
-        ]);
-
-        // Add arrow heads (simple cones as triangles)
-        // X-axis arrow head
-        vertices.extend_from_slice(&[
-            size,
-            0.0,
-            0.0,
-            self.grid_config.x_axis_color.x,
-            self.grid_config.x_axis_color.y,
-            self.grid_config.x_axis_color.z,
-            0.0,
-            0.0,
-            size - 0.2,
-            0.1,
-            0.0,
-            self.grid_config.x_axis_color.x,
-            self.grid_config.x_axis_color.y,
-            self.grid_config.x_axis_color.z,
-            0.0,
-            0.0,
-            size - 0.2,
-            -0.1,
-            0.0,
-            self.grid_config.x_axis_color.x,
-            self.grid_config.x_axis_color.y,
-            self.grid_config.x_axis_color.z,
-            0.0,
-            0.0,
-        ]);
-
-        vertices.extend_from_slice(&[
-            size,
-            0.0,
-            0.0,
-            self.grid_config.x_axis_color.x,
-            self.grid_config.x_axis_color.y,
-            self.grid_config.x_axis_color.z,
-            0.0,
-            0.0,
-            size - 0.2,
-            0.0,
-            0.1,
-            self.grid_config.x_axis_color.x,
-            self.grid_config.x_axis_color.y,
-            self.grid_config.x_axis_color.z,
-            0.0,
-            0.0,
-            size - 0.2,
-            0.0,
-            -0.1,
-            self.grid_config.x_axis_color.x,
-            self.grid_config.x_axis_color.y,
-            self.grid_config.x_axis_color.z,
-            0.0,
-            0.0,
-        ]);
-
-        // Y-axis arrow head
-        vertices.extend_from_slice(&[
-            0.0,
-            size,
-            0.0,
-            self.grid_config.y_axis_color.x,
-            self.grid_config.y_axis_color.y,
-            self.grid_config.y_axis_color.z,
-            0.0,
-            0.0,
-            0.1,
-            size - 0.2,
-            0.0,
-            self.grid_config.y_axis_color.x,
-            self.grid_config.y_axis_color.y,
-            self.grid_config.y_axis_color.z,
-            0.0,
-            0.0,
-            -0.1,
-            size - 0.2,
-            0.0,
-            self.grid_config.y_axis_color.x,
-            self.grid_config.y_axis_color.y,
-            self.grid_config.y_axis_color.z,
-            0.0,
-            0.0,
-        ]);
-
-        vertices.extend_from_slice(&[
-            0.0,
-            size,
-            0.0,
-            self.grid_config.y_axis_color.x,
-            self.grid_config.y_axis_color.y,
-            self.grid_config.y_axis_color.z,
-            0.0,
-            0.0,
-            0.0,
-            size - 0.2,
-            0.1,
-            self.grid_config.y_axis_color.x,
-            self.grid_config.y_axis_color.y,
-            self.grid_config.y_axis_color.z,
-            0.0,
-            0.0,
-            0.0,
-            size - 0.2,
-            -0.1,
-            self.grid_config.y_axis_color.x,
-            self.grid_config.y_axis_color.y,
-            self.grid_config.y_axis_color.z,
-            0.0,
-            0.0,
-        ]);
-
-        // Z-axis arrow head
-        vertices.extend_from_slice(&[
-            0.0,
-            0.0,
-            size,
-            self.grid_config.z_axis_color.x,
-            self.grid_config.z_axis_color.y,
-            self.grid_config.z_axis_color.z,
-            0.0,
-            0.0,
-            0.1,
-            0.0,
-            size - 0.2,
-            self.grid_config.z_axis_color.x,
-            self.grid_config.z_axis_color.y,
-            self.grid_config.z_axis_color.z,
-            0.0,
-            0.0,
-            -0.1,
-            0.0,
-            size - 0.2,
-            self.grid_config.z_axis_color.x,
-            self.grid_config.z_axis_color.y,
-            self.grid_config.z_axis_color.z,
-            0.0,
-            0.0,
-        ]);
-
-        vertices.extend_from_slice(&[
-            0.0,
-            0.0,
-            size,
-            self.grid_config.z_axis_color.x,
-            self.grid_config.z_axis_color.y,
-            self.grid_config.z_axis_color.z,
-            0.0,
-            0.0,
-            0.0,
-            0.1,
-            size - 0.2,
-            self.grid_config.z_axis_color.x,
-            self.grid_config.z_axis_color.y,
-            self.grid_config.z_axis_color.z,
-            0.0,
-            0.0,
-            0.0,
-            -0.1,
-            size - 0.2,
-            self.grid_config.z_axis_color.x,
-            self.grid_config.z_axis_color.y,
-            self.grid_config.z_axis_color.z,
-            0.0,
-            0.0,
-        ]);
-
-        vertices
-    }
-
-    pub fn set_object_position(
-        &mut self,
-        object_id: u32,
-        x: f32,
-        y: f32,
-        z: f32,
-    ) -> Result<(), String> {
-        if let Some(object) = self.objects.get_mut(&object_id) {
-            object.position = Vector3::new(x, y, z);
-            Ok(())
+    /// Set object position
+    pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
+        if let Some(obj) = self.objects.get_mut(&id) {
+            obj.position = Vector3::new(x, y, z);
+            true
         } else {
-            Err("Object not found".to_string())
+            false
         }
     }
 
-    pub fn set_object_rotation(
-        &mut self,
-        object_id: u32,
-        x: f32,
-        y: f32,
-        z: f32,
-    ) -> Result<(), String> {
-        if let Some(object) = self.objects.get_mut(&object_id) {
-            object.rotation = Vector3::new(x, y, z);
-            Ok(())
+    /// Set object rotation (in degrees)
+    pub fn set_object_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
+        if let Some(obj) = self.objects.get_mut(&id) {
+            obj.rotation = Vector3::new(x, y, z);
+            true
         } else {
-            Err("Object not found".to_string())
+            false
         }
     }
 
-    pub fn set_object_scale(
-        &mut self,
-        object_id: u32,
-        x: f32,
-        y: f32,
-        z: f32,
-    ) -> Result<(), String> {
-        if let Some(object) = self.objects.get_mut(&object_id) {
-            object.scale = Vector3::new(x, y, z);
-            Ok(())
+    /// Set object scale
+    pub fn set_object_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
+        if let Some(obj) = self.objects.get_mut(&id) {
+            obj.scale = Vector3::new(x, y, z);
+            true
         } else {
-            Err("Object not found".to_string())
+            false
         }
     }
 
+    /// Remove an object
+    pub fn remove_object(&mut self, id: u32) -> bool {
+        self.objects.remove(&id).is_some()
+    }
+
+    /// Add a light
     pub fn add_light(&mut self, light: Light) -> u32 {
-        self.light_manager.add_light(light)
+        let id = self.next_light_id;
+        self.next_light_id += 1;
+        self.lights.insert(id, light);
+        id
     }
 
-    pub fn remove_light(&mut self, light_id: u32) {
-        self.light_manager.remove_light(light_id);
-    }
-
-    pub fn update_light(&mut self, light_id: u32, new_light: Light) -> Result<(), String> {
-        if let Some(light) = self.light_manager.get_light_mut(light_id) {
-            *light = new_light;
-            Ok(())
+    /// Update a light
+    pub fn update_light(&mut self, id: u32, light: Light) -> bool {
+        use std::collections::hash_map::Entry;
+        if let Entry::Occupied(mut e) = self.lights.entry(id) {
+            e.insert(light);
+            true
         } else {
-            Err("Light not found".to_string())
+            false
         }
     }
 
-    fn update_shader_lights(&self) -> Result<(), String> {
-        let lights = self.light_manager.get_all_lights();
-        self.shader_program
-            .set_uniform_int("numLights", lights.len() as i32)?;
-
-        for (i, light) in lights.iter().enumerate() {
-            if i >= 8 {
-                break;
-            } // Maximum 8 lights supported
-
-            let base = format!("lights[{}]", i);
-
-            self.shader_program
-                .set_uniform_int(&format!("{}.type", base), light.light_type as i32)?;
-            self.shader_program
-                .set_uniform_vec3(&format!("{}.position", base), &light.position)?;
-            self.shader_program
-                .set_uniform_vec3(&format!("{}.direction", base), &light.direction)?;
-            self.shader_program.set_uniform_vec3(
-                &format!("{}.color", base),
-                &light.get_color_with_temperature(),
-            )?;
-            self.shader_program
-                .set_uniform_float(&format!("{}.intensity", base), light.intensity)?;
-            self.shader_program
-                .set_uniform_float(&format!("{}.range", base), light.range)?;
-            self.shader_program
-                .set_uniform_float(&format!("{}.spotAngle", base), light.spot_angle)?;
-            self.shader_program
-                .set_uniform_int(&format!("{}.enabled", base), light.enabled as i32)?;
-        }
-
-        Ok(())
+    /// Remove a light
+    pub fn remove_light(&mut self, id: u32) -> bool {
+        self.lights.remove(&id).is_some()
     }
 
-    pub fn render_objects(&mut self, texture_manager: &TextureManager) -> Result<(), String> {
+    /// Set camera position
+    pub fn set_camera_position(&mut self, x: f32, y: f32, z: f32) {
+        self.camera.position = Vector3::new(x, y, z);
+    }
+
+    /// Set camera rotation (pitch, yaw, roll in degrees)
+    pub fn set_camera_rotation(&mut self, pitch: f32, yaw: f32, roll: f32) {
+        self.camera.rotation = Vector3::new(pitch, yaw, roll);
+    }
+
+    /// Configure grid
+    pub fn configure_grid(&mut self, config: GridConfig) {
+        // Regenerate grid mesh if size or divisions changed
+        if config.size != self.grid_config.size || config.divisions != self.grid_config.divisions {
+            unsafe {
+                gl::DeleteVertexArrays(1, &self.grid_vao);
+                gl::DeleteBuffers(1, &self.grid_vbo);
+            }
+            if let Ok((vao, vbo, count)) =
+                Self::create_grid_mesh_with_planes(config.size, config.divisions)
+            {
+                self.grid_vao = vao;
+                self.grid_vbo = vbo;
+                self.grid_vertex_count = count;
+            }
+        }
+        self.grid_config = config;
+    }
+
+    /// Set grid enabled state
+    pub fn set_grid_enabled(&mut self, enabled: bool) {
+        self.grid_config.enabled = enabled;
+    }
+
+    /// Configure skybox
+    pub fn configure_skybox(&mut self, config: SkyboxConfig) {
+        self.skybox_config = config;
+    }
+
+    /// Configure fog
+    pub fn configure_fog(&mut self, config: FogConfig) {
+        self.fog_config = config;
+    }
+
+    /// Set fog enabled state
+    pub fn set_fog_enabled(&mut self, enabled: bool) {
+        self.fog_config.enabled = enabled;
+    }
+
+    /// Render the scene
+    pub fn render(&self, texture_manager: Option<&dyn TextureManagerTrait>) {
         unsafe {
+            // Enable depth testing
             gl::Enable(gl::DEPTH_TEST);
-            gl::DepthFunc(gl::LESS); // Set default depth function
-                                     // Set clear color dynamically from skybox config if available
-            if let Some(skybox) = &self.skybox {
-                let config = skybox.get_config();
-                // Use min_color as the fallback clear color, or a face color if min_color is black
-                let clear_color = if config.min_color.x > 0.0
-                    || config.min_color.y > 0.0
-                    || config.min_color.z > 0.0
-                {
-                    config.min_color
+            gl::DepthFunc(gl::LESS);
+
+            // Enable back-face culling
+            gl::Enable(gl::CULL_FACE);
+            gl::CullFace(gl::BACK);
+            gl::FrontFace(gl::CCW);
+
+            // Clear with skybox color if enabled
+            if self.skybox_config.enabled {
+                gl::ClearColor(
+                    self.skybox_config.color.x,
+                    self.skybox_config.color.y,
+                    self.skybox_config.color.z,
+                    self.skybox_config.color.w,
+                );
+            }
+            gl::Clear(gl::DEPTH_BUFFER_BIT);
+
+            // Create projection matrix
+            let aspect = self.window_width as f32 / self.window_height as f32;
+            let projection: Matrix4<f32> = perspective(Deg(45.0), aspect, 0.1, 1000.0);
+
+            // Get view matrix from camera
+            let view = self.camera.view_matrix();
+
+            // Render grid first
+            if self.grid_config.enabled {
+                self.render_grid(&view, &projection);
+            }
+
+            // Use main shader
+            gl::UseProgram(self.shader_program);
+
+            // Set common uniforms
+            gl::UniformMatrix4fv(self.u_view, 1, gl::FALSE, view.as_ptr());
+            gl::UniformMatrix4fv(self.u_projection, 1, gl::FALSE, projection.as_ptr());
+            gl::Uniform3f(
+                self.u_view_pos,
+                self.camera.position.x,
+                self.camera.position.y,
+                self.camera.position.z,
+            );
+
+            // Set fog uniforms
+            gl::Uniform1i(
+                self.u_fog_enabled,
+                if self.fog_config.enabled { 1 } else { 0 },
+            );
+            gl::Uniform3f(
+                self.u_fog_color,
+                self.fog_config.color.x,
+                self.fog_config.color.y,
+                self.fog_config.color.z,
+            );
+            gl::Uniform1f(self.u_fog_density, self.fog_config.density);
+
+            // Set light uniforms
+            let light_count = self.lights.len().min(MAX_LIGHTS) as i32;
+            gl::Uniform1i(self.u_num_lights, light_count);
+
+            for (i, (_, light)) in self.lights.iter().enumerate().take(MAX_LIGHTS) {
+                let prefix = format!("lights[{}]", i);
+
+                let loc =
+                    Self::get_uniform_location(self.shader_program, &format!("{}.type", prefix));
+                gl::Uniform1i(loc, light.light_type as i32);
+
+                let loc = Self::get_uniform_location(
+                    self.shader_program,
+                    &format!("{}.position", prefix),
+                );
+                gl::Uniform3f(loc, light.position.x, light.position.y, light.position.z);
+
+                let loc = Self::get_uniform_location(
+                    self.shader_program,
+                    &format!("{}.direction", prefix),
+                );
+                gl::Uniform3f(loc, light.direction.x, light.direction.y, light.direction.z);
+
+                let loc =
+                    Self::get_uniform_location(self.shader_program, &format!("{}.color", prefix));
+                gl::Uniform3f(loc, light.color.x, light.color.y, light.color.z);
+
+                let loc = Self::get_uniform_location(
+                    self.shader_program,
+                    &format!("{}.intensity", prefix),
+                );
+                gl::Uniform1f(loc, light.intensity);
+
+                let loc =
+                    Self::get_uniform_location(self.shader_program, &format!("{}.range", prefix));
+                gl::Uniform1f(loc, light.range);
+
+                let loc = Self::get_uniform_location(
+                    self.shader_program,
+                    &format!("{}.spotAngle", prefix),
+                );
+                gl::Uniform1f(loc, light.spot_angle);
+
+                let loc =
+                    Self::get_uniform_location(self.shader_program, &format!("{}.enabled", prefix));
+                gl::Uniform1i(loc, if light.enabled { 1 } else { 0 });
+            }
+
+            // Set texture sampler
+            gl::Uniform1i(self.u_texture1, 0);
+
+            // Render objects
+            for obj in self.objects.values() {
+                // Create model matrix
+                let model = Self::create_model_matrix(obj.position, obj.rotation, obj.scale);
+                gl::UniformMatrix4fv(self.u_model, 1, gl::FALSE, model.as_ptr());
+
+                // Handle texture
+                if obj.texture_id > 0 {
+                    if let Some(tm) = texture_manager {
+                        tm.bind_texture(obj.texture_id, 0);
+                    }
+                    gl::Uniform1i(self.u_use_texture, 1);
+                    gl::Uniform4f(self.u_object_color, 1.0, 1.0, 1.0, 1.0);
                 } else {
-                    config.face_colors[2] // Top face as a representative color
-                };
-                gl::ClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0);
-            } else {
-                gl::ClearColor(0.1, 0.1, 0.2, 1.0); // Fallback to dark blue if no skybox
-            }
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-        }
-
-        // Get the view matrix from the camera
-        let view = self.camera.get_view_matrix();
-
-        let aspect_ratio = self.window_width as f32 / self.window_height as f32;
-        let projection = perspective(Deg(45.0), aspect_ratio, 0.1, 1000.0); // Increased far plane for skybox
-
-        // Render skybox first
-        if let Some(skybox) = &self.skybox {
-            // Remove translation from view matrix for skybox
-            let skybox_view = Matrix4::from(Matrix3::from_cols(
-                view.x.truncate(),
-                view.y.truncate(),
-                view.z.truncate(),
-            ));
-            // Ensure texture is bound for skybox
-            unsafe {
-                gl::ActiveTexture(gl::TEXTURE0);
-                // Assuming skybox has a method to get texture_id, if not, this is for illustration
-            }
-            if let Err(e) = skybox.draw(&skybox_view, &projection) {
-                println!("Failed to render skybox: {}", e);
-            }
-        } else {
-            println!("No skybox available to render");
-        }
-
-        // Now render the rest of the scene
-        self.shader_program.bind();
-
-        // Set common uniforms
-        self.shader_program.set_uniform_mat4("view", &view)?;
-        self.shader_program
-            .set_uniform_mat4("projection", &projection)?;
-        self.shader_program
-            .set_uniform_vec3("viewPos", &self.camera.get_position())?;
-
-        // Update lights in shader
-        self.update_shader_lights()?;
-
-        // Render grid first if enabled and in Blend mode
-        if self.grid_config.enabled && self.grid_config.render_mode == GridRenderMode::Blend {
-            self.render_grid()?;
-        }
-
-        unsafe {
-            gl::DepthFunc(gl::LESS); // Ensure proper depth testing for objects
-        }
-
-        // Render each object
-        for object in self.objects.values() {
-            object.vao.bind();
-
-            let model = Matrix4::from_translation(object.position)
-                * Matrix4::from_angle_x(Deg(object.rotation.x))
-                * Matrix4::from_angle_y(Deg(object.rotation.y))
-                * Matrix4::from_angle_z(Deg(object.rotation.z))
-                * Matrix4::from_nonuniform_scale(object.scale.x, object.scale.y, object.scale.z);
-
-            self.shader_program.set_uniform_mat4("model", &model)?;
-
-            if let Some(texture) = texture_manager.textures.get(&object.texture_id) {
-                texture.bind(gl::TEXTURE0);
-            }
-
-            unsafe {
-                gl::DrawArrays(gl::TRIANGLES, 0, object.vertex_count);
-            }
-        }
-
-        // Render grid last if enabled and in Overlap mode
-        if self.grid_config.enabled && self.grid_config.render_mode == GridRenderMode::Overlap {
-            self.render_grid()?;
-        }
-
-        Ok(())
-    }
-
-    fn render_grid(&self) -> Result<(), String> {
-        unsafe {
-            // Set line width for grid
-            gl::LineWidth(self.grid_config.line_width);
-
-            // Handle depth testing based on render mode
-            if self.grid_config.render_mode == GridRenderMode::Overlap {
-                // Disable depth test for grid so it's always visible (original behavior)
-                gl::Disable(gl::DEPTH_TEST);
-            } else {
-                // For Blend mode, ensure depth test is enabled
-                gl::Enable(gl::DEPTH_TEST);
-            }
-
-            // Create and bind temporary VAO for grid
-            let grid_vao = Vao::new()?;
-            grid_vao.bind();
-
-            // Generate grid vertices with configured settings
-            let grid_vertices =
-                self.generate_grid_vertices(self.grid_config.size, self.grid_config.divisions);
-            let grid_vbo = BufferObject::new(gl::ARRAY_BUFFER)?;
-            grid_vbo.bind();
-            grid_vbo.store_data(&grid_vertices, gl::STATIC_DRAW);
-
-            // Define vertex attributes for position and color
-            VertexAttribute::enable(0);
-            VertexAttribute::pointer(
-                0,
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                8 * std::mem::size_of::<f32>() as GLsizei,
-                0,
-            );
-
-            VertexAttribute::enable(1);
-            VertexAttribute::pointer(
-                1,
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                8 * std::mem::size_of::<f32>() as GLsizei,
-                3 * std::mem::size_of::<f32>(),
-            );
-
-            VertexAttribute::enable(2);
-            VertexAttribute::pointer(
-                2,
-                2,
-                gl::FLOAT,
-                gl::FALSE,
-                8 * std::mem::size_of::<f32>() as GLsizei,
-                6 * std::mem::size_of::<f32>(),
-            );
-
-            // Draw grid lines
-            let model = Matrix4::<f32>::from_scale(1.0);
-            self.shader_program.set_uniform_mat4("model", &model)?;
-
-            gl::DrawArrays(gl::LINES, 0, grid_vertices.len() as GLint / 8);
-
-            // Clean up grid resources
-            BufferObject::unbind(gl::ARRAY_BUFFER);
-            Vao::unbind();
-
-            // Only render axes if they are enabled
-            if self.grid_config.show_axes {
-                // Set proper depth test handling for axes based on render mode
-                if self.grid_config.render_mode == GridRenderMode::Blend {
-                    // For Blend mode, ensure depth test is enabled
-                    gl::Enable(gl::DEPTH_TEST);
+                    gl::Uniform1i(self.u_use_texture, 0);
+                    gl::Uniform4f(self.u_object_color, 0.8, 0.8, 0.8, 1.0);
                 }
 
-                gl::LineWidth(self.grid_config.axis_line_width); // Make axes significantly thicker
-
-                // Create and bind temporary VAO for axes
-                let axes_vao = Vao::new()?;
-                axes_vao.bind();
-
-                // Generate axis vertices with larger size
-                let axes_vertices = self.generate_axis_vertices(self.grid_config.size * 0.2); // Axes are 20% of grid size
-                let axes_vbo = BufferObject::new(gl::ARRAY_BUFFER)?;
-                axes_vbo.bind();
-                axes_vbo.store_data(&axes_vertices, gl::STATIC_DRAW);
-
-                // Define vertex attributes for position and color
-                VertexAttribute::enable(0);
-                VertexAttribute::pointer(
-                    0,
-                    3,
-                    gl::FLOAT,
-                    gl::FALSE,
-                    8 * std::mem::size_of::<f32>() as GLsizei,
-                    0,
-                );
-
-                VertexAttribute::enable(1);
-                VertexAttribute::pointer(
-                    1,
-                    3,
-                    gl::FLOAT,
-                    gl::FALSE,
-                    8 * std::mem::size_of::<f32>() as GLsizei,
-                    3 * std::mem::size_of::<f32>(),
-                );
-
-                VertexAttribute::enable(2);
-                VertexAttribute::pointer(
-                    2,
-                    2,
-                    gl::FLOAT,
-                    gl::FALSE,
-                    8 * std::mem::size_of::<f32>() as GLsizei,
-                    6 * std::mem::size_of::<f32>(),
-                );
-
-                // Draw axis lines
-                gl::DrawArrays(gl::LINES, 0, 6); // Draw just the main axis lines first
-
-                // Draw arrow heads as triangles
-                gl::DrawArrays(gl::TRIANGLES, 6, axes_vertices.len() as GLint / 8 - 6);
-
-                // Clean up axis resources
-                BufferObject::unbind(gl::ARRAY_BUFFER);
-                Vao::unbind();
-
-                // Clean up VAO to avoid resource leaks
-                axes_vao.terminate();
+                gl::BindVertexArray(obj.vao);
+                gl::DrawArrays(gl::TRIANGLES, 0, obj.vertex_count);
             }
 
-            // Reset line width to default
+            gl::BindVertexArray(0);
+            gl::UseProgram(0);
+        }
+    }
+
+    fn render_grid(&self, view: &Matrix4<f32>, projection: &Matrix4<f32>) {
+        unsafe {
+            gl::UseProgram(self.grid_shader);
+
+            gl::UniformMatrix4fv(self.ug_view, 1, gl::FALSE, view.as_ptr());
+            gl::UniformMatrix4fv(self.ug_projection, 1, gl::FALSE, projection.as_ptr());
+            gl::Uniform3f(
+                self.ug_view_pos,
+                self.camera.position.x,
+                self.camera.position.y,
+                self.camera.position.z,
+            );
+            gl::Uniform1f(self.ug_alpha, 0.4);
+
+            // Fog uniforms
+            gl::Uniform1i(
+                self.ug_fog_enabled,
+                if self.fog_config.enabled { 1 } else { 0 },
+            );
+            gl::Uniform3f(
+                self.ug_fog_color,
+                self.fog_config.color.x,
+                self.fog_config.color.y,
+                self.fog_config.color.z,
+            );
+            gl::Uniform1f(self.ug_fog_density, self.fog_config.density);
+
+            // Enable blending for grid
+            gl::Enable(gl::BLEND);
+            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+
+            // Disable depth writing but keep depth test for grid
+            gl::DepthMask(gl::FALSE);
+
+            // Draw grid planes
+            gl::BindVertexArray(self.grid_vao);
+            gl::DrawArrays(gl::LINES, 0, self.grid_vertex_count);
+
+            // Draw axis markers (thicker lines)
+            gl::LineWidth(3.0);
+            gl::BindVertexArray(self.axis_vao);
+            gl::Uniform1f(self.ug_alpha, 1.0); // Axis markers are fully opaque
+            gl::DrawArrays(gl::LINES, 0, self.axis_vertex_count);
             gl::LineWidth(1.0);
 
-            // Re-enable depth testing if it was disabled
-            gl::Enable(gl::DEPTH_TEST);
+            gl::BindVertexArray(0);
 
-            // Clean up grid VAO to avoid resource leaks
-            grid_vao.terminate();
-        }
-
-        Ok(())
-    }
-
-    pub fn terminate(&self) {
-        self.shader_program.terminate();
-        for object in self.objects.values() {
-            object.vao.terminate();
-        }
-        if let Some(skybox) = &self.skybox {
-            skybox.terminate();
+            gl::DepthMask(gl::TRUE);
+            gl::Disable(gl::BLEND);
+            gl::UseProgram(0);
         }
     }
 
-    /// Sets the camera position.
-    pub fn set_camera_position(&mut self, x: f32, y: f32) {
-        self.camera.set_position_xy(x, y);
-    }
+    fn create_model_matrix(
+        position: Vector3<f32>,
+        rotation: Vector3<f32>,
+        scale: Vector3<f32>,
+    ) -> Matrix4<f32> {
+        let translation = Matrix4::from_translation(position);
 
-    /// Sets the full camera position in 3D space.
-    pub fn set_camera_position_3d(&mut self, x: f32, y: f32, z: f32) {
-        self.camera.set_position(x, y, z);
-    }
+        let rot_x = Matrix4::from_angle_x(Deg(rotation.x));
+        let rot_y = Matrix4::from_angle_y(Deg(rotation.y));
+        let rot_z = Matrix4::from_angle_z(Deg(rotation.z));
+        let rotation_matrix = rot_z * rot_y * rot_x;
 
-    /// Gets the camera position.
-    pub fn get_camera_position(&self) -> Vector3<f32> {
-        self.camera.get_position()
-    }
+        let scale_matrix = Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z);
 
-    /// Sets the camera rotation using Euler angles in degrees.
-    pub fn set_camera_rotation(&mut self, pitch: f32, yaw: f32, roll: f32) {
-        self.camera.set_rotation(pitch, yaw, roll);
-    }
-
-    /// Gets the camera rotation as Euler angles in degrees.
-    pub fn get_camera_rotation(&self) -> Vector3<f32> {
-        self.camera.get_rotation()
-    }
-
-    /// Sets the camera zoom level.
-    pub fn set_camera_zoom(&mut self, zoom: f32) {
-        self.camera.set_zoom(zoom);
-    }
-
-    /// Gets the camera zoom level.
-    pub fn get_camera_zoom(&self) -> f32 {
-        self.camera.get_zoom()
+        translation * rotation_matrix * scale_matrix
     }
 }
 
-impl Renderer for Renderer3D {
-    fn render(&mut self, _sprites: &SpriteMap, texture_manager: &TextureManager) {
+impl Drop for Renderer3D {
+    fn drop(&mut self) {
         unsafe {
-            gl::Enable(gl::DEPTH_TEST);
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-        }
-
-        if let Err(e) = self.render_objects(texture_manager) {
-            eprintln!("Error rendering objects: {}", e);
+            gl::DeleteProgram(self.shader_program);
+            gl::DeleteProgram(self.grid_shader);
+            gl::DeleteVertexArrays(1, &self.grid_vao);
+            gl::DeleteBuffers(1, &self.grid_vbo);
         }
     }
+}
 
-    // fn set_camera_position(&mut self, x: f32, y: f32) {
-    //     self.set_camera_position(x, y);
-    // }
-
-    // fn set_camera_zoom(&mut self, zoom: f32) {
-    //     self.set_camera_zoom(zoom);
-    // }
-
-    fn terminate(&self) {
-        self.shader_program.terminate();
-        for object in self.objects.values() {
-            object.vao.terminate();
-        }
-        if let Some(skybox) = &self.skybox {
-            skybox.terminate();
-        }
-    }
+/// Trait for texture manager integration
+pub trait TextureManagerTrait {
+    /// Bind a texture to a slot
+    fn bind_texture(&self, texture_id: u32, slot: u32);
 }
