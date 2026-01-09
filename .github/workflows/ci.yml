@@ -312,7 +312,7 @@ jobs:
 
     - name: Copy native library to test directory (Windows)
       if: matrix.os == 'windows-latest'
-      run: copy target\release\goud_engine.dll sdks\GoudEngine.Tests\bin\Release\net8.0\
+      run: copy target\release\goud_engine.dll sdks\GoudEngine.Tests\bin\Release\net8.0\libgoud_engine.dll
 
     - name: Test
       working-directory: sdks/GoudEngine
