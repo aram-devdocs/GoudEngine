@@ -207,7 +207,7 @@ jobs:
       env:
         PYTHONPATH: ${{ github.workspace }}/sdks/python
       run: |
-        cd examples/python_demo
+        cd examples/python
         python << 'EOF'
         import sys
         sys.path.insert(0, '../../sdks/python')
@@ -238,10 +238,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
 
-    defaults:
-      run:
-        working-directory: sdks/GoudEngine
-
     steps:
     - uses: actions/checkout@v4
 
@@ -251,10 +247,44 @@ jobs:
         name: csharp-bindings
         path: sdks/GoudEngine
 
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-dotnet-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-dotnet-
+          ${{ runner.os }}-cargo-
+
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+
+    - name: Build native library
+      run: cargo build --release
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
+
+    - name: Set up library path (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: echo "LD_LIBRARY_PATH=${{ github.workspace }}/target/release:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+    - name: Set up library path (macOS)
+      if: matrix.os == 'macos-latest'
+      run: echo "DYLD_LIBRARY_PATH=${{ github.workspace }}/target/release:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
 
     - name: Cache NuGet packages
       uses: actions/cache@v4
@@ -265,12 +295,27 @@ jobs:
           ${{ runner.os }}-nuget-
 
     - name: Restore dependencies
+      working-directory: sdks/GoudEngine
       run: dotnet restore ../GoudEngine.Tests/GoudEngine.Tests.csproj
 
     - name: Build
+      working-directory: sdks/GoudEngine
       run: dotnet build ../GoudEngine.Tests/GoudEngine.Tests.csproj --no-restore --configuration Release
 
+    - name: Copy native library to test directory (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: cp target/release/libgoud_engine.so sdks/GoudEngine.Tests/bin/Release/net8.0/
+
+    - name: Copy native library to test directory (macOS)
+      if: matrix.os == 'macos-latest'
+      run: cp target/release/libgoud_engine.dylib sdks/GoudEngine.Tests/bin/Release/net8.0/
+
+    - name: Copy native library to test directory (Windows)
+      if: matrix.os == 'windows-latest'
+      run: copy target\release\goud_engine.dll sdks\GoudEngine.Tests\bin\Release\net8.0\
+
     - name: Test
+      working-directory: sdks/GoudEngine
       run: dotnet test ../GoudEngine.Tests/GoudEngine.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
     - name: Upload test results
