@@ -167,14 +167,10 @@ impl InputBinding {
 impl std::fmt::Display for InputBinding {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            InputBinding::Key(key) => write!(f, "Key({:?})", key),
-            InputBinding::MouseButton(button) => write!(f, "MouseButton({:?})", button),
+            InputBinding::Key(key) => write!(f, "Key({key:?})"),
+            InputBinding::MouseButton(button) => write!(f, "MouseButton({button:?})"),
             InputBinding::GamepadButton { gamepad_id, button } => {
-                write!(
-                    f,
-                    "GamepadButton(gamepad={}, button={})",
-                    gamepad_id, button
-                )
+                write!(f, "GamepadButton(gamepad={gamepad_id}, button={button})")
             }
         }
     }
@@ -1208,7 +1204,7 @@ mod tests {
     #[test]
     fn test_debug() {
         let input = InputManager::new();
-        let debug_str = format!("{:?}", input);
+        let debug_str = format!("{input:?}");
         assert!(debug_str.contains("InputManager"));
     }
 
@@ -1271,9 +1267,9 @@ mod tests {
             button: 10,
         };
 
-        let key_str = format!("{}", key_binding);
-        let mouse_str = format!("{}", mouse_binding);
-        let gamepad_str = format!("{}", gamepad_binding);
+        let key_str = format!("{key_binding}");
+        let mouse_str = format!("{mouse_binding}");
+        let gamepad_str = format!("{gamepad_binding}");
 
         assert!(key_str.contains("Key"));
         assert!(mouse_str.contains("MouseButton"));

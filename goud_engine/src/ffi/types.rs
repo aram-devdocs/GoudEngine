@@ -249,10 +249,10 @@ mod tests {
     #[test]
     fn test_entity_id_display() {
         let id = GoudEntityId::new(100);
-        assert_eq!(format!("{}", id), "GoudEntityId(100)");
+        assert_eq!(format!("{id}"), "GoudEntityId(100)");
 
         let invalid = GoudEntityId::INVALID;
-        assert_eq!(format!("{}", invalid), "GoudEntityId(INVALID)");
+        assert_eq!(format!("{invalid}"), "GoudEntityId(INVALID)");
     }
 
     #[test]
@@ -337,10 +337,10 @@ mod tests {
     #[test]
     fn test_result_display() {
         let ok = GoudResult::ok();
-        assert_eq!(format!("{}", ok), "GoudResult::Success");
+        assert_eq!(format!("{ok}"), "GoudResult::Success");
 
         let err = GoudResult::err(404);
-        assert_eq!(format!("{}", err), "GoudResult::Error(code=404)");
+        assert_eq!(format!("{err}"), "GoudResult::Error(code=404)");
     }
 
     #[test]
@@ -371,7 +371,7 @@ mod tests {
     fn test_result_size() {
         // Should be 8 bytes (i32 + bool + padding)
         let size = std::mem::size_of::<GoudResult>();
-        assert!(size <= 8, "GoudResult is {} bytes, expected <= 8", size);
+        assert!(size <= 8, "GoudResult is {size} bytes, expected <= 8");
     }
 
     #[test]

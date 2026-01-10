@@ -1168,7 +1168,7 @@ mod tests {
     fn test_rigidbody_display() {
         let body = RigidBody::dynamic().with_velocity(Vec2::new(100.0, 50.0));
 
-        let display = format!("{}", body);
+        let display = format!("{body}");
         assert!(display.contains("RigidBody"));
         assert!(display.contains("Dynamic"));
         assert!(display.contains("vel"));
@@ -1178,7 +1178,7 @@ mod tests {
     #[test]
     fn test_rigidbody_debug() {
         let body = RigidBody::dynamic();
-        let debug = format!("{:?}", body);
+        let debug = format!("{body:?}");
         assert!(debug.contains("RigidBody"));
     }
 

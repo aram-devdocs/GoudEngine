@@ -1027,7 +1027,7 @@ mod tests {
     #[test]
     fn test_debug() {
         let physics = PhysicsWorld::new();
-        let debug_str = format!("{:?}", physics);
+        let debug_str = format!("{physics:?}");
         assert!(debug_str.contains("PhysicsWorld"));
     }
 

@@ -1145,7 +1145,7 @@ mod tests {
     #[test]
     fn test_goud_game_debug() {
         let game = GoudGame::default();
-        let debug = format!("{:?}", game);
+        let debug = format!("{game:?}");
 
         assert!(debug.contains("GoudGame"));
         assert!(debug.contains("config"));

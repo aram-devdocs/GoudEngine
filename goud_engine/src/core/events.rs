@@ -536,7 +536,7 @@ mod tests {
     #[test]
     fn test_app_started_debug() {
         let event = AppStarted;
-        let debug_str = format!("{:?}", event);
+        let debug_str = format!("{event:?}");
         assert!(debug_str.contains("AppStarted"));
     }
 

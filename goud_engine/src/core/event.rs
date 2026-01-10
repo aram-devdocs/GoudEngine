@@ -1495,7 +1495,7 @@ mod tests {
         assert_eq!(events.len(), 100);
 
         for (i, event) in events.iter().enumerate() {
-            assert_eq!(event.sequence, i, "Event order mismatch at index {}", i);
+            assert_eq!(event.sequence, i, "Event order mismatch at index {i}");
         }
     }
 
@@ -1906,7 +1906,7 @@ mod tests {
 
         assert_eq!(events.len(), 50);
         for (i, event) in events.iter().enumerate() {
-            assert_eq!(event.sequence, i, "Order mismatch at index {}", i);
+            assert_eq!(event.sequence, i, "Order mismatch at index {i}");
         }
     }
 

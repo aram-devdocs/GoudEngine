@@ -375,8 +375,7 @@ impl RenderBackend for OpenGLBackend {
             if error != gl::NO_ERROR {
                 gl::DeleteBuffers(1, &gl_id);
                 return Err(GoudError::BufferCreationFailed(format!(
-                    "OpenGL error during buffer creation: 0x{:X}",
-                    error
+                    "OpenGL error during buffer creation: 0x{error:X}"
                 )));
             }
 
@@ -431,8 +430,7 @@ impl RenderBackend for OpenGLBackend {
             let error = gl::GetError();
             if error != gl::NO_ERROR {
                 return Err(GoudError::InternalError(format!(
-                    "OpenGL error during buffer update: 0x{:X}",
-                    error
+                    "OpenGL error during buffer update: 0x{error:X}"
                 )));
             }
 
@@ -561,8 +559,7 @@ impl RenderBackend for OpenGLBackend {
             if error != gl::NO_ERROR {
                 gl::DeleteTextures(1, &gl_id);
                 return Err(GoudError::TextureCreationFailed(format!(
-                    "OpenGL error during texture creation: 0x{:X}",
-                    error
+                    "OpenGL error during texture creation: 0x{error:X}"
                 )));
             }
 
@@ -644,8 +641,7 @@ impl RenderBackend for OpenGLBackend {
             let error = gl::GetError();
             if error != gl::NO_ERROR {
                 return Err(GoudError::TextureCreationFailed(format!(
-                    "OpenGL error during texture update: 0x{:X}",
-                    error
+                    "OpenGL error during texture update: 0x{error:X}"
                 )));
             }
 
@@ -1180,8 +1176,7 @@ impl OpenGLBackend {
                 };
 
                 return Err(GoudError::ShaderCompilationFailed(format!(
-                    "{} shader compilation failed: {}",
-                    stage_name, error_msg
+                    "{stage_name} shader compilation failed: {error_msg}"
                 )));
             }
         }

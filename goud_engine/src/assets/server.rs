@@ -725,7 +725,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let server = AssetServer::new();
-            let debug_str = format!("{:?}", server);
+            let debug_str = format!("{server:?}");
             assert!(debug_str.contains("AssetServer"));
             assert!(debug_str.contains("assets"));
         }

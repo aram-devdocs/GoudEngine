@@ -180,13 +180,13 @@ impl AssetLoadError {
 impl fmt::Display for AssetLoadError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::NotFound { path } => write!(f, "Asset not found: {}", path),
+            Self::NotFound { path } => write!(f, "Asset not found: {path}"),
             Self::IoError { path, message } => {
-                write!(f, "I/O error loading asset '{}': {}", path, message)
+                write!(f, "I/O error loading asset '{path}': {message}")
             }
-            Self::DecodeFailed(msg) => write!(f, "Failed to decode asset: {}", msg),
+            Self::DecodeFailed(msg) => write!(f, "Failed to decode asset: {msg}"),
             Self::UnsupportedFormat { extension } => {
-                write!(f, "Unsupported asset format: '.{}'", extension)
+                write!(f, "Unsupported asset format: '.{extension}'")
             }
             Self::DependencyFailed {
                 asset_path,
@@ -194,10 +194,9 @@ impl fmt::Display for AssetLoadError {
                 message,
             } => write!(
                 f,
-                "Dependency '{}' of asset '{}' failed to load: {}",
-                dependency_path, asset_path, message
+                "Dependency '{dependency_path}' of asset '{asset_path}' failed to load: {message}"
             ),
-            Self::Custom(msg) => write!(f, "Asset loading error: {}", msg),
+            Self::Custom(msg) => write!(f, "Asset loading error: {msg}"),
         }
     }
 }
@@ -603,7 +602,7 @@ mod tests {
         fn test_debug() {
             let path = AssetPath::from_string("assets/test.txt".to_string());
             let context = LoadContext::new(path);
-            let debug_str = format!("{:?}", context);
+            let debug_str = format!("{context:?}");
             assert!(debug_str.contains("LoadContext"));
             assert!(debug_str.contains("assets/test.txt"));
         }

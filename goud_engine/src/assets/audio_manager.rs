@@ -104,7 +104,7 @@ impl AudioManager {
     /// ```
     pub fn new() -> GoudResult<Self> {
         let (stream, stream_handle) = OutputStream::try_default().map_err(|e| {
-            GoudError::AudioInitFailed(format!("Failed to create audio output stream: {}", e))
+            GoudError::AudioInitFailed(format!("Failed to create audio output stream: {e}"))
         })?;
 
         Ok(Self {
@@ -198,11 +198,11 @@ impl AudioManager {
 
         // Decode audio data
         let source = rodio::Decoder::new(cursor)
-            .map_err(|e| GoudError::ResourceLoadFailed(format!("Failed to decode audio: {}", e)))?;
+            .map_err(|e| GoudError::ResourceLoadFailed(format!("Failed to decode audio: {e}")))?;
 
         // Create sink for this audio
         let sink = Sink::try_new(&self.stream_handle).map_err(|e| {
-            GoudError::ResourceLoadFailed(format!("Failed to create audio sink: {}", e))
+            GoudError::ResourceLoadFailed(format!("Failed to create audio sink: {e}"))
         })?;
 
         // Apply global volume
@@ -243,14 +243,14 @@ impl AudioManager {
 
         // Decode audio data
         let source = rodio::Decoder::new(cursor)
-            .map_err(|e| GoudError::ResourceLoadFailed(format!("Failed to decode audio: {}", e)))?;
+            .map_err(|e| GoudError::ResourceLoadFailed(format!("Failed to decode audio: {e}")))?;
 
         // Create repeating source
         let looped_source = source.repeat_infinite();
 
         // Create sink for this audio
         let sink = Sink::try_new(&self.stream_handle).map_err(|e| {
-            GoudError::ResourceLoadFailed(format!("Failed to create audio sink: {}", e))
+            GoudError::ResourceLoadFailed(format!("Failed to create audio sink: {e}"))
         })?;
 
         // Apply global volume
@@ -298,7 +298,7 @@ impl AudioManager {
 
         // Decode audio data
         let source = rodio::Decoder::new(cursor)
-            .map_err(|e| GoudError::ResourceLoadFailed(format!("Failed to decode audio: {}", e)))?;
+            .map_err(|e| GoudError::ResourceLoadFailed(format!("Failed to decode audio: {e}")))?;
 
         // Apply speed (pitch) adjustment - clamp to reasonable range
         let clamped_speed = speed.clamp(0.1, 10.0);
@@ -313,7 +313,7 @@ impl AudioManager {
 
         // Create sink for this audio
         let sink = Sink::try_new(&self.stream_handle).map_err(|e| {
-            GoudError::ResourceLoadFailed(format!("Failed to create audio sink: {}", e))
+            GoudError::ResourceLoadFailed(format!("Failed to create audio sink: {e}"))
         })?;
 
         // Apply volume (global volume * local volume)
@@ -847,7 +847,7 @@ mod tests {
     #[ignore] // requires audio hardware
     fn test_audio_manager_debug() {
         if let Ok(manager) = AudioManager::new() {
-            let debug_str = format!("{:?}", manager);
+            let debug_str = format!("{manager:?}");
             assert!(debug_str.contains("AudioManager"));
             assert!(debug_str.contains("global_volume"));
             assert!(debug_str.contains("active_sinks"));
@@ -1049,8 +1049,7 @@ mod tests {
         // = 1 / (1 + 1 * (10 - 1)) = 1 / (1 + 9) = 1/10 = 0.1
         assert!(
             (attenuation - 0.1).abs() < 0.01,
-            "Expected ~0.1, got {}",
-            attenuation
+            "Expected ~0.1, got {attenuation}"
         );
     }
 

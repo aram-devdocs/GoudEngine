@@ -612,6 +612,7 @@ pub extern "C" fn goud_renderer3d_set_fog_enabled(
 /// Call this between goud_renderer_begin and goud_renderer_end (or in game loop).
 #[no_mangle]
 pub extern "C" fn goud_renderer3d_render(context_id: GoudContextId) -> bool {
+    eprintln!("[TRACE] goud_renderer3d_render called");
     if context_id == GOUD_INVALID_CONTEXT_ID {
         set_last_error(GoudError::InvalidContext);
         return false;

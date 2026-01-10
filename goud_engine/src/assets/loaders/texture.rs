@@ -635,7 +635,7 @@ mod tests {
         fn test_debug() {
             let data = vec![255; 4 * 4 * 4];
             let texture = TextureAsset::new(data, 4, 4, TextureFormat::Png);
-            let debug_str = format!("{:?}", texture);
+            let debug_str = format!("{texture:?}");
             assert!(debug_str.contains("TextureAsset"));
             assert!(debug_str.contains("4"));
         }
@@ -722,7 +722,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let settings = TextureSettings::default();
-            let debug_str = format!("{:?}", settings);
+            let debug_str = format!("{settings:?}");
             assert!(debug_str.contains("TextureSettings"));
         }
     }
@@ -905,7 +905,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let loader = TextureLoader::new();
-            let debug_str = format!("{:?}", loader);
+            let debug_str = format!("{loader:?}");
             assert!(debug_str.contains("TextureLoader"));
         }
     }
@@ -964,7 +964,7 @@ mod tests {
                 let settings = TextureSettings::default();
 
                 let result = loader.load(&bytes, &settings, &mut context);
-                assert!(result.is_ok(), "Failed to load {}", filename);
+                assert!(result.is_ok(), "Failed to load {filename}");
 
                 let texture = result.unwrap();
                 assert_eq!(texture.width, 4);

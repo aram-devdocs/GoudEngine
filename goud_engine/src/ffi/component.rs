@@ -516,8 +516,7 @@ pub unsafe extern "C" fn goud_component_add(
         Some(info) => info,
         None => {
             set_last_error(GoudError::ResourceLoadFailed(format!(
-                "Component type {} not registered",
-                type_id_hash
+                "Component type {type_id_hash} not registered"
             )));
             return GoudResult::err(101); // ResourceLoadFailed
         }
@@ -601,8 +600,7 @@ pub extern "C" fn goud_component_remove(
     // Look up type info to verify the type is registered
     if get_component_type_info(type_id_hash).is_none() {
         set_last_error(GoudError::ResourceLoadFailed(format!(
-            "Component type {} not registered",
-            type_id_hash
+            "Component type {type_id_hash} not registered"
         )));
         return GoudResult::err(101); // ResourceLoadFailed
     }
@@ -687,8 +685,7 @@ pub extern "C" fn goud_component_has(
     // Look up type info to verify the type is registered
     if get_component_type_info(type_id_hash).is_none() {
         set_last_error(GoudError::ResourceLoadFailed(format!(
-            "Component type {} not registered",
-            type_id_hash
+            "Component type {type_id_hash} not registered"
         )));
         return false;
     }
@@ -770,8 +767,7 @@ pub extern "C" fn goud_component_get(
     // Look up type info to verify the type is registered
     if get_component_type_info(type_id_hash).is_none() {
         set_last_error(GoudError::ResourceLoadFailed(format!(
-            "Component type {} not registered",
-            type_id_hash
+            "Component type {type_id_hash} not registered"
         )));
         return std::ptr::null();
     }
@@ -854,8 +850,7 @@ pub extern "C" fn goud_component_get_mut(
     // Look up type info to verify the type is registered
     if get_component_type_info(type_id_hash).is_none() {
         set_last_error(GoudError::ResourceLoadFailed(format!(
-            "Component type {} not registered",
-            type_id_hash
+            "Component type {type_id_hash} not registered"
         )));
         return std::ptr::null_mut();
     }
@@ -1005,8 +1000,7 @@ pub unsafe extern "C" fn goud_component_add_batch(
             Some(map) => map,
             None => {
                 set_last_error(GoudError::ResourceNotFound(format!(
-                    "Component type {} not registered",
-                    type_id_hash
+                    "Component type {type_id_hash} not registered"
                 )));
                 return 0;
             }
@@ -1015,8 +1009,7 @@ pub unsafe extern "C" fn goud_component_add_batch(
             Some(info) => info.clone(),
             None => {
                 set_last_error(GoudError::ResourceNotFound(format!(
-                    "Component type {} not registered",
-                    type_id_hash
+                    "Component type {type_id_hash} not registered"
                 )));
                 return 0;
             }
@@ -1127,16 +1120,14 @@ pub unsafe extern "C" fn goud_component_remove_batch(
             Some(map) => map,
             None => {
                 set_last_error(GoudError::ResourceNotFound(format!(
-                    "Component type {} not registered",
-                    type_id_hash
+                    "Component type {type_id_hash} not registered"
                 )));
                 return 0;
             }
         };
         if !registry_map.contains_key(&type_id_hash) {
             set_last_error(GoudError::ResourceNotFound(format!(
-                "Component type {} not registered",
-                type_id_hash
+                "Component type {type_id_hash} not registered"
             )));
             return 0;
         }
@@ -1260,16 +1251,14 @@ pub unsafe extern "C" fn goud_component_has_batch(
             Some(map) => map,
             None => {
                 set_last_error(GoudError::ResourceNotFound(format!(
-                    "Component type {} not registered",
-                    type_id_hash
+                    "Component type {type_id_hash} not registered"
                 )));
                 return 0;
             }
         };
         if !registry_map.contains_key(&type_id_hash) {
             set_last_error(GoudError::ResourceNotFound(format!(
-                "Component type {} not registered",
-                type_id_hash
+                "Component type {type_id_hash} not registered"
             )));
             return 0;
         }

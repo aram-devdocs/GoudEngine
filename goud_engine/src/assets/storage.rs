@@ -1382,7 +1382,7 @@ mod tests {
                 width: 256,
                 height: 256,
             });
-            let debug_str = format!("{:?}", entry);
+            let debug_str = format!("{entry:?}");
             assert!(debug_str.contains("AssetEntry"));
         }
     }
@@ -1829,7 +1829,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let storage: TypedAssetStorage<TestTexture> = TypedAssetStorage::new();
-            let debug_str = format!("{:?}", storage);
+            let debug_str = format!("{storage:?}");
             assert!(debug_str.contains("TypedAssetStorage"));
             assert!(debug_str.contains("TestTexture"));
         }
@@ -2283,7 +2283,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let storage = AssetStorage::new();
-            let debug_str = format!("{:?}", storage);
+            let debug_str = format!("{storage:?}");
             assert!(debug_str.contains("AssetStorage"));
         }
 

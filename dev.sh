@@ -35,7 +35,7 @@ while [[ "$#" -gt 0 ]]; do
         echo "  --next           Run version increment and rebuild"
         echo "  -h, --help       Show this help message"
         echo ""
-        echo "C# Games:     flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs"
+        echo "C# Games:     flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, throne_"
         echo "Python Demos: python_demo, flappy_bird (use --sdk python)"
         echo "Rust SDK:     rust_demo (use --sdk rust)"
         echo ""
@@ -69,12 +69,12 @@ esac
 case $SDK_TYPE in
 "csharp")
     case $GAME in
-    "flappy_goud" | "3d_cube" | "goud_jumper" | "isometric_rpg" | "hello_ecs")
+    "flappy_goud" | "3d_cube" | "goud_jumper" | "isometric_rpg" | "hello_ecs" | "throne_")
         echo "Building and running C# game: $GAME..."
         ;;
     *)
         echo "Error: Invalid C# game selection."
-        echo "Choose from: flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs"
+        echo "Choose from: flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, throne_"
         exit 1
         ;;
     esac

@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./dev.sh:*)"
+      "Bash(./dev.sh:*)",
+      "Bash(cargo build:*)",
+      "Bash(cargo test:*)",
+      "Bash(dotnet clean:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet build:*)",
+      "Bash(timeout 5 dotnet run:*)",
+      "Bash(timeout 3 dotnet run:*)",
+      "Bash(timeout 2 dotnet run:*)",
+      "Bash(unzip:*)",
+      "Bash(nm:*)",
+      "Bash(ldd:*)"
     ]
   }
 }

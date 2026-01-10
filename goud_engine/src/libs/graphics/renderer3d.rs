@@ -1400,46 +1400,38 @@ impl Renderer3D {
             gl::Uniform1i(self.u_num_lights, light_count);
 
             for (i, (_, light)) in self.lights.iter().enumerate().take(MAX_LIGHTS) {
-                let prefix = format!("lights[{}]", i);
+                let prefix = format!("lights[{i}]");
 
                 let loc =
-                    Self::get_uniform_location(self.shader_program, &format!("{}.type", prefix));
+                    Self::get_uniform_location(self.shader_program, &format!("{prefix}.type"));
                 gl::Uniform1i(loc, light.light_type as i32);
 
-                let loc = Self::get_uniform_location(
-                    self.shader_program,
-                    &format!("{}.position", prefix),
-                );
+                let loc =
+                    Self::get_uniform_location(self.shader_program, &format!("{prefix}.position"));
                 gl::Uniform3f(loc, light.position.x, light.position.y, light.position.z);
 
-                let loc = Self::get_uniform_location(
-                    self.shader_program,
-                    &format!("{}.direction", prefix),
-                );
+                let loc =
+                    Self::get_uniform_location(self.shader_program, &format!("{prefix}.direction"));
                 gl::Uniform3f(loc, light.direction.x, light.direction.y, light.direction.z);
 
                 let loc =
-                    Self::get_uniform_location(self.shader_program, &format!("{}.color", prefix));
+                    Self::get_uniform_location(self.shader_program, &format!("{prefix}.color"));
                 gl::Uniform3f(loc, light.color.x, light.color.y, light.color.z);
 
-                let loc = Self::get_uniform_location(
-                    self.shader_program,
-                    &format!("{}.intensity", prefix),
-                );
+                let loc =
+                    Self::get_uniform_location(self.shader_program, &format!("{prefix}.intensity"));
                 gl::Uniform1f(loc, light.intensity);
 
                 let loc =
-                    Self::get_uniform_location(self.shader_program, &format!("{}.range", prefix));
+                    Self::get_uniform_location(self.shader_program, &format!("{prefix}.range"));
                 gl::Uniform1f(loc, light.range);
 
-                let loc = Self::get_uniform_location(
-                    self.shader_program,
-                    &format!("{}.spotAngle", prefix),
-                );
+                let loc =
+                    Self::get_uniform_location(self.shader_program, &format!("{prefix}.spotAngle"));
                 gl::Uniform1f(loc, light.spot_angle);
 
                 let loc =
-                    Self::get_uniform_location(self.shader_program, &format!("{}.enabled", prefix));
+                    Self::get_uniform_location(self.shader_program, &format!("{prefix}.enabled"));
                 gl::Uniform1i(loc, if light.enabled { 1 } else { 0 });
             }
 
@@ -1470,6 +1462,14 @@ impl Renderer3D {
 
             gl::BindVertexArray(0);
             gl::UseProgram(0);
+
+            // Restore OpenGL state for subsequent 2D rendering
+            // Disable depth testing so 2D elements can render on top
+            gl::Disable(gl::DEPTH_TEST);
+            // Disable face culling for 2D quads
+            gl::Disable(gl::CULL_FACE);
+            // Clear depth buffer so 2D elements aren't occluded by 3D scene
+            gl::Clear(gl::DEPTH_BUFFER_BIT);
         }
     }
 

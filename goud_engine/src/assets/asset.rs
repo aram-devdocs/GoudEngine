@@ -692,7 +692,7 @@ impl fmt::Display for AssetState {
             AssetState::NotLoaded => write!(f, "NotLoaded"),
             AssetState::Loading { progress } => write!(f, "Loading({:.0}%)", progress * 100.0),
             AssetState::Loaded => write!(f, "Loaded"),
-            AssetState::Failed { error } => write!(f, "Failed({})", error),
+            AssetState::Failed { error } => write!(f, "Failed({error})"),
             AssetState::Unloaded => write!(f, "Unloaded"),
         }
     }
@@ -964,14 +964,14 @@ mod tests {
         #[test]
         fn test_debug() {
             let id = AssetId::of::<TestTexture>();
-            let debug_str = format!("{:?}", id);
+            let debug_str = format!("{id:?}");
             assert!(debug_str.contains("AssetId"));
         }
 
         #[test]
         fn test_display() {
             let id = AssetId::of::<TestTexture>();
-            let display_str = format!("{}", id);
+            let display_str = format!("{id}");
             assert!(display_str.contains("AssetId"));
         }
 
@@ -1312,7 +1312,7 @@ mod tests {
         #[test]
         fn test_display() {
             let info = AssetInfo::of::<TestTexture>();
-            let display_str = format!("{}", info);
+            let display_str = format!("{info}");
             assert!(display_str.contains("TestTexture"));
             assert!(display_str.contains("Texture"));
         }
@@ -1320,7 +1320,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let info = AssetInfo::of::<TestTexture>();
-            let debug_str = format!("{:?}", info);
+            let debug_str = format!("{info:?}");
             assert!(debug_str.contains("AssetInfo"));
             assert!(debug_str.contains("TestTexture"));
         }

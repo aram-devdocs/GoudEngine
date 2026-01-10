@@ -1057,7 +1057,7 @@ mod tests {
     fn test_stats_display() {
         let hash = SpatialHash::new(64.0);
         let stats = hash.stats();
-        let display = format!("{}", stats);
+        let display = format!("{stats}");
         assert!(display.contains("SpatialHash Stats"));
         assert!(display.contains("Entities: 0"));
     }
@@ -1136,7 +1136,7 @@ mod tests {
     #[test]
     fn test_display() {
         let hash = SpatialHash::new(64.0);
-        let display = format!("{}", hash);
+        let display = format!("{hash}");
         assert!(display.contains("SpatialHash"));
         assert!(display.contains("64.0"));
     }
@@ -1158,7 +1158,7 @@ mod tests {
     #[test]
     fn test_debug() {
         let hash = SpatialHash::new(64.0);
-        let debug_str = format!("{:?}", hash);
+        let debug_str = format!("{hash:?}");
         assert!(debug_str.contains("SpatialHash"));
     }
 }

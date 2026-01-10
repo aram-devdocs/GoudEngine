@@ -142,7 +142,7 @@ impl AudioChannel {
             AudioChannel::Voice => "Voice".to_string(),
             AudioChannel::Ambience => "Ambience".to_string(),
             AudioChannel::UI => "UI".to_string(),
-            AudioChannel::Custom(id) => format!("Custom({})", id),
+            AudioChannel::Custom(id) => format!("Custom({id})"),
         }
     }
 }
@@ -267,7 +267,7 @@ impl std::fmt::Display for AttenuationModel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AttenuationModel::Exponential { rolloff } => {
-                write!(f, "Exponential(rolloff={})", rolloff)
+                write!(f, "Exponential(rolloff={rolloff})")
             }
             other => write!(f, "{}", other.name()),
         }
@@ -751,7 +751,7 @@ mod tests {
             .with_pitch(1.5)
             .with_channel(AudioChannel::Music);
 
-        let display = format!("{}", source);
+        let display = format!("{source}");
         assert!(display.contains("playing=false"));
         assert!(display.contains("volume=0.75"));
         assert!(display.contains("pitch=1.50"));
@@ -776,7 +776,7 @@ mod tests {
     fn test_audio_source_debug() {
         let handle = AssetHandle::default();
         let source = AudioSource::new(handle);
-        let debug = format!("{:?}", source);
+        let debug = format!("{source:?}");
         assert!(debug.contains("AudioSource"));
     }
 }

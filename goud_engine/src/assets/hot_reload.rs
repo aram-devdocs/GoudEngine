@@ -619,7 +619,7 @@ mod tests {
             let event = AssetChangeEvent::Modified {
                 path: PathBuf::from("test.png"),
             };
-            let display = format!("{}", event);
+            let display = format!("{event}");
             assert!(display.contains("Modified"));
             assert!(display.contains("test.png"));
         }
@@ -737,7 +737,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let config = HotReloadConfig::new();
-            let debug = format!("{:?}", config);
+            let debug = format!("{config:?}");
             assert!(debug.contains("HotReloadConfig"));
         }
     }
@@ -841,7 +841,7 @@ mod tests {
             let (server, _temp_dir) = create_test_server();
             let watcher = HotReloadWatcher::new(&server).unwrap();
 
-            let debug = format!("{:?}", watcher);
+            let debug = format!("{watcher:?}");
             assert!(debug.contains("HotReloadWatcher"));
         }
 

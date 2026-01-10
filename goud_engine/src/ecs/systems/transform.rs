@@ -50,7 +50,7 @@ mod tests {
     fn test_transform_propagation_system_new() {
         let system = TransformPropagationSystem::new();
         assert!(
-            format!("{:?}", system).contains("TransformPropagationSystem"),
+            format!("{system:?}").contains("TransformPropagationSystem"),
             "Debug formatting should work"
         );
     }
@@ -59,7 +59,7 @@ mod tests {
     fn test_transform_propagation_system_default() {
         let system = TransformPropagationSystem::default();
         assert!(
-            format!("{:?}", system).contains("TransformPropagationSystem"),
+            format!("{system:?}").contains("TransformPropagationSystem"),
             "Default should work"
         );
     }

@@ -667,7 +667,7 @@ impl From<std::io::Error> for GoudError {
         match error.kind() {
             std::io::ErrorKind::NotFound => GoudError::ResourceNotFound(error.to_string()),
             std::io::ErrorKind::PermissionDenied => {
-                GoudError::ResourceLoadFailed(format!("Permission denied: {}", error))
+                GoudError::ResourceLoadFailed(format!("Permission denied: {error}"))
             }
             _ => GoudError::ResourceLoadFailed(error.to_string()),
         }
@@ -1262,8 +1262,7 @@ mod tests {
                 assert_eq!(
                     error.category(),
                     "Context",
-                    "Error {:?} should be in Context category",
-                    error
+                    "Error {error:?} should be in Context category"
                 );
             }
         }
@@ -1282,9 +1281,7 @@ mod tests {
                 let code = error.error_code();
                 assert!(
                     code >= 1 && code < 100,
-                    "Context error {:?} has code {} which is outside range 1-99",
-                    error,
-                    code
+                    "Context error {error:?} has code {code} which is outside range 1-99"
                 );
             }
         }
@@ -1293,7 +1290,7 @@ mod tests {
         fn test_goud_error_derives() {
             // Test Debug
             let error = GoudError::NotInitialized;
-            let debug_str = format!("{:?}", error);
+            let debug_str = format!("{error:?}");
             assert!(debug_str.contains("NotInitialized"));
 
             // Test Clone
@@ -1398,8 +1395,7 @@ mod tests {
                 assert_eq!(
                     error.category(),
                     "Resource",
-                    "Error {:?} should be in Resource category",
-                    error
+                    "Error {error:?} should be in Resource category"
                 );
             }
         }
@@ -1420,9 +1416,7 @@ mod tests {
                 let code = error.error_code();
                 assert!(
                     code >= 100 && code < 200,
-                    "Resource error {:?} has code {} which is outside range 100-199",
-                    error,
-                    code
+                    "Resource error {error:?} has code {code} which is outside range 100-199"
                 );
             }
         }
@@ -1493,12 +1487,12 @@ mod tests {
         #[test]
         fn test_resource_error_debug_format() {
             let error = GoudError::ResourceNotFound("test.png".to_string());
-            let debug_str = format!("{:?}", error);
+            let debug_str = format!("{error:?}");
             assert!(debug_str.contains("ResourceNotFound"));
             assert!(debug_str.contains("test.png"));
 
             let handle_error = GoudError::InvalidHandle;
-            let debug_str = format!("{:?}", handle_error);
+            let debug_str = format!("{handle_error:?}");
             assert!(debug_str.contains("InvalidHandle"));
         }
 
@@ -1599,8 +1593,7 @@ mod tests {
                 assert_eq!(
                     error.category(),
                     "Graphics",
-                    "Error {:?} should be in Graphics category",
-                    error
+                    "Error {error:?} should be in Graphics category"
                 );
             }
         }
@@ -1621,9 +1614,7 @@ mod tests {
                 let code = error.error_code();
                 assert!(
                     code >= 200 && code < 300,
-                    "Graphics error {:?} has code {} which is outside range 200-299",
-                    error,
-                    code
+                    "Graphics error {error:?} has code {code} which is outside range 200-299"
                 );
             }
         }
@@ -1677,12 +1668,12 @@ mod tests {
         #[test]
         fn test_graphics_error_debug_format() {
             let error = GoudError::ShaderCompilationFailed("syntax error at line 5".to_string());
-            let debug_str = format!("{:?}", error);
+            let debug_str = format!("{error:?}");
             assert!(debug_str.contains("ShaderCompilationFailed"));
             assert!(debug_str.contains("syntax error at line 5"));
 
             let error2 = GoudError::DrawCallFailed("invalid state".to_string());
-            let debug_str2 = format!("{:?}", error2);
+            let debug_str2 = format!("{error2:?}");
             assert!(debug_str2.contains("DrawCallFailed"));
             assert!(debug_str2.contains("invalid state"));
         }
@@ -1706,8 +1697,7 @@ mod tests {
                     if i != j {
                         assert_ne!(
                             code1, code2,
-                            "Error codes at index {} and {} should be different",
-                            i, j
+                            "Error codes at index {i} and {j} should be different"
                         );
                     }
                 }
@@ -1792,8 +1782,7 @@ mod tests {
                 assert_eq!(
                     error.category(),
                     "Entity",
-                    "Error {:?} should be in Entity category",
-                    error
+                    "Error {error:?} should be in Entity category"
                 );
             }
         }
@@ -1812,9 +1801,7 @@ mod tests {
                 let code = error.error_code();
                 assert!(
                     code >= 300 && code < 400,
-                    "Entity error {:?} has code {} which is outside range 300-399",
-                    error,
-                    code
+                    "Entity error {error:?} has code {code} which is outside range 300-399"
                 );
             }
         }
@@ -1855,11 +1842,11 @@ mod tests {
         #[test]
         fn test_entity_error_debug_format() {
             let error = GoudError::EntityNotFound;
-            let debug_str = format!("{:?}", error);
+            let debug_str = format!("{error:?}");
             assert!(debug_str.contains("EntityNotFound"));
 
             let error2 = GoudError::QueryFailed("access conflict".to_string());
-            let debug_str2 = format!("{:?}", error2);
+            let debug_str2 = format!("{error2:?}");
             assert!(debug_str2.contains("QueryFailed"));
             assert!(debug_str2.contains("access conflict"));
         }
@@ -1879,8 +1866,7 @@ mod tests {
                     if i != j {
                         assert_ne!(
                             code1, code2,
-                            "Error codes at index {} and {} should be different",
-                            i, j
+                            "Error codes at index {i} and {j} should be different"
                         );
                     }
                 }
@@ -1951,8 +1937,7 @@ mod tests {
                 assert_eq!(
                     error.category(),
                     "System",
-                    "Error {:?} should be in System category",
-                    error
+                    "Error {error:?} should be in System category"
                 );
             }
         }
@@ -1970,9 +1955,7 @@ mod tests {
                 let code = error.error_code();
                 assert!(
                     code >= 500 && code < 600,
-                    "System error {:?} has code {} which is outside range 500-599",
-                    error,
-                    code
+                    "System error {error:?} has code {code} which is outside range 500-599"
                 );
             }
         }
@@ -2039,12 +2022,12 @@ mod tests {
         #[test]
         fn test_system_error_debug_format() {
             let error = GoudError::WindowCreationFailed("GLFW error 65543".to_string());
-            let debug_str = format!("{:?}", error);
+            let debug_str = format!("{error:?}");
             assert!(debug_str.contains("WindowCreationFailed"));
             assert!(debug_str.contains("GLFW error 65543"));
 
             let error2 = GoudError::PlatformError("Win32 error".to_string());
-            let debug_str2 = format!("{:?}", error2);
+            let debug_str2 = format!("{error2:?}");
             assert!(debug_str2.contains("PlatformError"));
             assert!(debug_str2.contains("Win32 error"));
         }
@@ -2063,8 +2046,7 @@ mod tests {
                     if i != j {
                         assert_ne!(
                             code1, code2,
-                            "Error codes at index {} and {} should be different",
-                            i, j
+                            "Error codes at index {i} and {j} should be different"
                         );
                     }
                 }
@@ -2128,8 +2110,7 @@ mod tests {
                 assert_eq!(
                     error.category(),
                     "Internal",
-                    "Error {:?} should be in Internal category",
-                    error
+                    "Error {error:?} should be in Internal category"
                 );
             }
         }
@@ -2146,9 +2127,7 @@ mod tests {
                 let code = error.error_code();
                 assert!(
                     code >= 900 && code < 1000,
-                    "Internal error {:?} has code {} which is outside range 900-999",
-                    error,
-                    code
+                    "Internal error {error:?} has code {code} which is outside range 900-999"
                 );
             }
         }
@@ -2209,17 +2188,17 @@ mod tests {
         #[test]
         fn test_internal_error_debug_format() {
             let error = GoudError::InternalError("assertion failed".to_string());
-            let debug_str = format!("{:?}", error);
+            let debug_str = format!("{error:?}");
             assert!(debug_str.contains("InternalError"));
             assert!(debug_str.contains("assertion failed"));
 
             let error2 = GoudError::NotImplemented("3D audio".to_string());
-            let debug_str2 = format!("{:?}", error2);
+            let debug_str2 = format!("{error2:?}");
             assert!(debug_str2.contains("NotImplemented"));
             assert!(debug_str2.contains("3D audio"));
 
             let error3 = GoudError::InvalidState("already running".to_string());
-            let debug_str3 = format!("{:?}", error3);
+            let debug_str3 = format!("{error3:?}");
             assert!(debug_str3.contains("InvalidState"));
             assert!(debug_str3.contains("already running"));
         }
@@ -2233,8 +2212,7 @@ mod tests {
                     if i != j {
                         assert_ne!(
                             code1, code2,
-                            "Error codes at index {} and {} should be different",
-                            i, j
+                            "Error codes at index {i} and {j} should be different"
                         );
                     }
                 }
@@ -2261,58 +2239,58 @@ mod tests {
         #[test]
         fn test_display_format_context_errors() {
             let error = GoudError::NotInitialized;
-            let display = format!("{}", error);
+            let display = format!("{error}");
             assert_eq!(display, "[GOUD-1] Context: Engine has not been initialized");
 
             let error = GoudError::InitializationFailed("GPU not found".to_string());
-            let display = format!("{}", error);
+            let display = format!("{error}");
             assert_eq!(display, "[GOUD-10] Context: GPU not found");
         }
 
         #[test]
         fn test_display_format_resource_errors() {
             let error = GoudError::ResourceNotFound("textures/player.png".to_string());
-            let display = format!("{}", error);
+            let display = format!("{error}");
             assert_eq!(display, "[GOUD-100] Resource: textures/player.png");
 
             let error = GoudError::InvalidHandle;
-            let display = format!("{}", error);
+            let display = format!("{error}");
             assert_eq!(display, "[GOUD-110] Resource: Invalid handle");
         }
 
         #[test]
         fn test_display_format_graphics_errors() {
             let error = GoudError::ShaderCompilationFailed("syntax error at line 42".to_string());
-            let display = format!("{}", error);
+            let display = format!("{error}");
             assert_eq!(display, "[GOUD-200] Graphics: syntax error at line 42");
         }
 
         #[test]
         fn test_display_format_entity_errors() {
             let error = GoudError::EntityNotFound;
-            let display = format!("{}", error);
+            let display = format!("{error}");
             assert_eq!(display, "[GOUD-300] Entity: Entity not found");
 
             let error = GoudError::QueryFailed("conflicting access".to_string());
-            let display = format!("{}", error);
+            let display = format!("{error}");
             assert_eq!(display, "[GOUD-320] Entity: conflicting access");
         }
 
         #[test]
         fn test_display_format_system_errors() {
             let error = GoudError::WindowCreationFailed("no display".to_string());
-            let display = format!("{}", error);
+            let display = format!("{error}");
             assert_eq!(display, "[GOUD-500] System: no display");
         }
 
         #[test]
         fn test_display_format_internal_errors() {
             let error = GoudError::InternalError("unexpected state".to_string());
-            let display = format!("{}", error);
+            let display = format!("{error}");
             assert_eq!(display, "[GOUD-900] Internal: unexpected state");
 
             let error = GoudError::NotImplemented("feature X".to_string());
-            let display = format!("{}", error);
+            let display = format!("{error}");
             assert_eq!(display, "[GOUD-901] Internal: feature X");
         }
 
@@ -2325,7 +2303,7 @@ mod tests {
             assert!(error_ref.source().is_none());
 
             // Verify Display works through Error trait
-            let display = format!("{}", error_ref);
+            let display = format!("{error_ref}");
             assert!(display.contains("GOUD-1"));
         }
 
@@ -2443,7 +2421,7 @@ mod tests {
         fn test_error_can_be_boxed() {
             // Verify GoudError can be used as Box<dyn Error>
             let error: Box<dyn Error> = Box::new(GoudError::NotInitialized);
-            let display = format!("{}", error);
+            let display = format!("{error}");
             assert!(display.contains("GOUD-1"));
         }
 
@@ -2451,8 +2429,8 @@ mod tests {
         fn test_display_versus_debug() {
             let error = GoudError::InitializationFailed("test message".to_string());
 
-            let display = format!("{}", error);
-            let debug = format!("{:?}", error);
+            let display = format!("{error}");
+            let debug = format!("{error:?}");
 
             // Display is user-friendly with format
             assert!(display.contains("[GOUD-10]"));
@@ -2835,7 +2813,7 @@ mod tests {
             // Test Copy (implicit in the above)
 
             // Test Debug
-            let debug_str = format!("{:?}", result1);
+            let debug_str = format!("{result1:?}");
             assert!(debug_str.contains("GoudFFIResult"));
             assert!(debug_str.contains("code"));
             assert!(debug_str.contains("success"));

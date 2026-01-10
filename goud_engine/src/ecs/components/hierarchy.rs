@@ -1178,7 +1178,7 @@ mod tests {
         #[test]
         fn test_parent_debug() {
             let parent = Parent::new(Entity::new(42, 3));
-            let debug = format!("{:?}", parent);
+            let debug = format!("{parent:?}");
             assert!(debug.contains("Parent"));
             assert!(debug.contains("42"));
         }
@@ -1186,7 +1186,7 @@ mod tests {
         #[test]
         fn test_parent_display() {
             let parent = Parent::new(Entity::new(42, 3));
-            let display = format!("{}", parent);
+            let display = format!("{parent}");
             assert!(display.contains("Parent"));
         }
 
@@ -1406,7 +1406,7 @@ mod tests {
         #[test]
         fn test_children_debug() {
             let children = Children::from_slice(&[Entity::new(1, 1)]);
-            let debug = format!("{:?}", children);
+            let debug = format!("{children:?}");
             assert!(debug.contains("Children"));
             assert!(debug.contains("count"));
         }
@@ -1414,7 +1414,7 @@ mod tests {
         #[test]
         fn test_children_display() {
             let children = Children::from_slice(&[Entity::new(1, 1), Entity::new(2, 1)]);
-            let display = format!("{}", children);
+            let display = format!("{children}");
             assert!(display.contains("Children(2)"));
         }
 
@@ -1595,7 +1595,7 @@ mod tests {
         #[test]
         fn test_name_debug() {
             let name = Name::new("Test");
-            let debug = format!("{:?}", name);
+            let debug = format!("{name:?}");
             assert!(debug.contains("Name"));
             assert!(debug.contains("Test"));
         }
@@ -1603,7 +1603,7 @@ mod tests {
         #[test]
         fn test_name_display() {
             let name = Name::new("Player");
-            let display = format!("{}", name);
+            let display = format!("{name}");
             assert_eq!(display, "Player");
         }
 

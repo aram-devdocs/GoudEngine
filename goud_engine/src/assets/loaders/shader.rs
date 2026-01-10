@@ -417,7 +417,7 @@ impl fmt::Display for ShaderAsset {
             self.total_size_bytes()
         )?;
         if let Some(name) = &self.name {
-            write!(f, ", name: {}", name)?;
+            write!(f, ", name: {name}")?;
         }
         write!(f, ")")
     }
@@ -560,7 +560,7 @@ impl ShaderLoader {
                     .nth(2)
                     .ok_or_else(|| AssetLoadError::decode_failed("Missing stage name"))?;
                 current_stage = Some(ShaderStage::from_directive(stage_name).ok_or_else(|| {
-                    AssetLoadError::decode_failed(format!("Unknown shader stage: {}", stage_name))
+                    AssetLoadError::decode_failed(format!("Unknown shader stage: {stage_name}"))
                 })?);
             } else {
                 // Add line to current source
@@ -629,7 +629,7 @@ impl AssetLoader for ShaderLoader {
     ) -> Result<Self::Asset, AssetLoadError> {
         // Decode UTF-8
         let source = std::str::from_utf8(bytes)
-            .map_err(|e| AssetLoadError::decode_failed(format!("Invalid UTF-8: {}", e)))?;
+            .map_err(|e| AssetLoadError::decode_failed(format!("Invalid UTF-8: {e}")))?;
 
         // Get file extension
         let extension = context
@@ -643,8 +643,7 @@ impl AssetLoader for ShaderLoader {
             ShaderFormat::SingleStage => {
                 let stage = ShaderStage::from_extension(extension).ok_or_else(|| {
                     AssetLoadError::unsupported_format(format!(
-                        "Unknown shader extension: {}",
-                        extension
+                        "Unknown shader extension: {extension}"
                     ))
                 })?;
                 self.parse_single_stage(source, stage)?
@@ -833,7 +832,7 @@ mod tests {
             ShaderStage::Vertex,
             "#version 330\nline2\nline3".to_string(),
         );
-        let display = format!("{}", source);
+        let display = format!("{source}");
         assert!(display.contains("vertex"));
         assert!(display.contains("3 lines"));
     }
@@ -1047,7 +1046,7 @@ mod tests {
         let mut shader = ShaderAsset::with_name("test".to_string());
         shader.add_stage(ShaderSource::new(ShaderStage::Vertex, "12345".to_string()));
 
-        let display = format!("{}", shader);
+        let display = format!("{shader}");
         assert!(display.contains("1 stages"));
         assert!(display.contains("test"));
     }

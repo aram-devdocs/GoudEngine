@@ -1196,17 +1196,17 @@ mod tests {
     #[test]
     fn test_collider_display() {
         let collider = Collider::circle(1.0);
-        let display = format!("{}", collider);
+        let display = format!("{collider}");
         assert!(display.contains("Circle"));
         assert!(display.contains("restitution"));
         assert!(display.contains("friction"));
 
         let sensor = Collider::circle(1.0).with_is_sensor(true);
-        let display = format!("{}", sensor);
+        let display = format!("{sensor}");
         assert!(display.contains("sensor"));
 
         let disabled = Collider::circle(1.0).with_enabled(false);
-        let display = format!("{}", disabled);
+        let display = format!("{disabled}");
         assert!(display.contains("disabled"));
     }
 

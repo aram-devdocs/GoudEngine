@@ -978,7 +978,7 @@ mod tests {
         #[test]
         fn test_resource_id_debug() {
             let id = ResourceId::of::<Time>();
-            let debug_str = format!("{:?}", id);
+            let debug_str = format!("{id:?}");
             assert!(debug_str.contains("ResourceId"));
         }
 
@@ -1129,7 +1129,7 @@ mod tests {
             let mut resources = Resources::new();
             resources.insert(Score(100));
 
-            let debug_str = format!("{:?}", resources);
+            let debug_str = format!("{resources:?}");
             assert!(debug_str.contains("Resources"));
             assert!(debug_str.contains("count"));
         }
@@ -1172,7 +1172,7 @@ mod tests {
         fn test_res_debug() {
             let score = Score(100);
             let res = Res::new(&score);
-            let debug_str = format!("{:?}", res);
+            let debug_str = format!("{res:?}");
             assert!(debug_str.contains("Res"));
         }
 
@@ -1243,7 +1243,7 @@ mod tests {
         fn test_res_mut_debug() {
             let mut score = Score(100);
             let res = ResMut::new(&mut score);
-            let debug_str = format!("{:?}", res);
+            let debug_str = format!("{res:?}");
             assert!(debug_str.contains("ResMut"));
         }
 
@@ -1425,7 +1425,7 @@ mod tests {
         #[test]
         fn test_non_send_resource_id_debug() {
             let id = NonSendResourceId::of::<WindowHandle>();
-            let debug_str = format!("{:?}", id);
+            let debug_str = format!("{id:?}");
             assert!(debug_str.contains("NonSendResourceId"));
         }
 
@@ -1554,7 +1554,7 @@ mod tests {
             let mut resources = NonSendResources::new();
             resources.insert(WindowHandle { id: Rc::new(42) });
 
-            let debug_str = format!("{:?}", resources);
+            let debug_str = format!("{resources:?}");
             assert!(debug_str.contains("NonSendResources"));
             assert!(debug_str.contains("count"));
         }

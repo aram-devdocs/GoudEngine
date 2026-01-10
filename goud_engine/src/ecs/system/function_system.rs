@@ -647,7 +647,7 @@ mod tests {
         #[test]
         fn test_function_system_new() {
             let system = FunctionSystem::<FnMarker, _>::new(|| {});
-            assert!(format!("{:?}", system).contains("FunctionSystem"));
+            assert!(format!("{system:?}").contains("FunctionSystem"));
         }
 
         #[test]
@@ -665,7 +665,7 @@ mod tests {
             fn my_fn() {}
 
             let system = FunctionSystem::<FnMarker, _>::new(my_fn);
-            let debug = format!("{:?}", system);
+            let debug = format!("{system:?}");
             assert!(debug.contains("FunctionSystem"));
             assert!(debug.contains("initialized"));
         }
@@ -677,9 +677,9 @@ mod tests {
             let mut world = World::new();
             let mut system = FunctionSystem::<FnMarker, _>::new(my_fn);
 
-            assert!(format!("{:?}", system).contains("initialized: false"));
+            assert!(format!("{system:?}").contains("initialized: false"));
             system.initialize(&mut world);
-            assert!(format!("{:?}", system).contains("initialized: true"));
+            assert!(format!("{system:?}").contains("initialized: true"));
         }
 
         #[test]

@@ -716,7 +716,7 @@ mod tests {
         fn test_query_debug() {
             let world = World::new();
             let query: Query<&Position> = Query::new(&world);
-            let debug_str = format!("{:?}", query);
+            let debug_str = format!("{query:?}");
             assert!(debug_str.contains("Query"));
         }
 

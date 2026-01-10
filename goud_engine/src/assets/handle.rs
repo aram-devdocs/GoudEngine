@@ -297,7 +297,7 @@ impl<A: Asset> fmt::Debug for AssetHandle<A> {
                 type_name, self.index, self.generation
             )
         } else {
-            write!(f, "AssetHandle<{}>(INVALID)", type_name)
+            write!(f, "AssetHandle<{type_name}>(INVALID)")
         }
     }
 }
@@ -998,7 +998,7 @@ impl<'a> AssetPath<'a> {
         } else if other.is_empty() {
             AssetPath::from_string(base.to_string())
         } else {
-            AssetPath::from_string(format!("{}/{}", base, other))
+            AssetPath::from_string(format!("{base}/{other}"))
         }
     }
 
@@ -1021,9 +1021,9 @@ impl<'a> AssetPath<'a> {
     pub fn with_extension(&self, ext: &str) -> AssetPath<'static> {
         if let Some(stem) = self.stem() {
             if let Some(dir) = self.directory() {
-                AssetPath::from_string(format!("{}/{}.{}", dir, stem, ext))
+                AssetPath::from_string(format!("{dir}/{stem}.{ext}"))
             } else {
-                AssetPath::from_string(format!("{}.{}", stem, ext))
+                AssetPath::from_string(format!("{stem}.{ext}"))
             }
         } else {
             // No file name, just append
@@ -1202,7 +1202,7 @@ impl<A: Asset> fmt::Debug for WeakAssetHandle<A> {
                 type_name, self.index, self.generation
             )
         } else {
-            write!(f, "WeakAssetHandle<{}>(INVALID)", type_name)
+            write!(f, "WeakAssetHandle<{type_name}>(INVALID)")
         }
     }
 }
@@ -1572,7 +1572,7 @@ impl<A: Asset> Default for AssetHandleAllocator<A> {
 impl<A: Asset> fmt::Debug for AssetHandleAllocator<A> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let type_name = A::asset_type_name();
-        f.debug_struct(&format!("AssetHandleAllocator<{}>", type_name))
+        f.debug_struct(&format!("AssetHandleAllocator<{type_name}>"))
             .field("len", &self.len())
             .field("capacity", &self.capacity())
             .field("free_slots", &self.free_list.len())
@@ -1721,24 +1721,24 @@ mod tests {
         #[test]
         fn test_debug() {
             let handle: AssetHandle<TestTexture> = AssetHandle::new(42, 7);
-            let debug_str = format!("{:?}", handle);
+            let debug_str = format!("{handle:?}");
             assert!(debug_str.contains("AssetHandle"));
             assert!(debug_str.contains("TestTexture"));
             assert!(debug_str.contains("42"));
             assert!(debug_str.contains("7"));
 
             let invalid: AssetHandle<TestTexture> = AssetHandle::INVALID;
-            let debug_str = format!("{:?}", invalid);
+            let debug_str = format!("{invalid:?}");
             assert!(debug_str.contains("INVALID"));
         }
 
         #[test]
         fn test_display() {
             let handle: AssetHandle<TestTexture> = AssetHandle::new(42, 7);
-            assert_eq!(format!("{}", handle), "42:7");
+            assert_eq!(format!("{handle}"), "42:7");
 
             let invalid: AssetHandle<TestTexture> = AssetHandle::INVALID;
-            assert_eq!(format!("{}", invalid), "INVALID");
+            assert_eq!(format!("{invalid}"), "INVALID");
         }
 
         #[test]
@@ -1918,23 +1918,23 @@ mod tests {
         #[test]
         fn test_debug() {
             let handle = UntypedAssetHandle::new(42, 7, AssetId::of::<TestTexture>());
-            let debug_str = format!("{:?}", handle);
+            let debug_str = format!("{handle:?}");
             assert!(debug_str.contains("UntypedAssetHandle"));
             assert!(debug_str.contains("42"));
             assert!(debug_str.contains("7"));
 
             let invalid = UntypedAssetHandle::invalid();
-            let debug_str = format!("{:?}", invalid);
+            let debug_str = format!("{invalid:?}");
             assert!(debug_str.contains("INVALID"));
         }
 
         #[test]
         fn test_display() {
             let handle = UntypedAssetHandle::new(42, 7, AssetId::of::<TestTexture>());
-            assert_eq!(format!("{}", handle), "42:7");
+            assert_eq!(format!("{handle}"), "42:7");
 
             let invalid = UntypedAssetHandle::invalid();
-            assert_eq!(format!("{}", invalid), "INVALID");
+            assert_eq!(format!("{invalid}"), "INVALID");
         }
 
         #[test]
@@ -2238,7 +2238,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let path = AssetPath::new("textures/player.png");
-            let debug_str = format!("{:?}", path);
+            let debug_str = format!("{path:?}");
             assert!(debug_str.contains("AssetPath"));
             assert!(debug_str.contains("textures/player.png"));
         }
@@ -2246,7 +2246,7 @@ mod tests {
         #[test]
         fn test_display() {
             let path = AssetPath::new("textures/player.png");
-            assert_eq!(format!("{}", path), "textures/player.png");
+            assert_eq!(format!("{path}"), "textures/player.png");
         }
 
         #[test]
@@ -2347,7 +2347,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let weak: WeakAssetHandle<TestTexture> = WeakAssetHandle::new(42, 7);
-            let debug_str = format!("{:?}", weak);
+            let debug_str = format!("{weak:?}");
             assert!(debug_str.contains("WeakAssetHandle"));
             assert!(debug_str.contains("TestTexture"));
             assert!(debug_str.contains("42"));
@@ -2667,7 +2667,7 @@ mod tests {
             allocator.allocate();
             allocator.allocate();
 
-            let debug_str = format!("{:?}", allocator);
+            let debug_str = format!("{allocator:?}");
             assert!(debug_str.contains("AssetHandleAllocator"));
             assert!(debug_str.contains("TestTexture"));
             assert!(debug_str.contains("len"));

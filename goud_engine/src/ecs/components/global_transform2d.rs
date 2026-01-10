@@ -539,7 +539,7 @@ impl fmt::Debug for GlobalTransform2D {
         let (t, r, s) = self.decompose();
         f.debug_struct("GlobalTransform2D")
             .field("translation", &(t.x, t.y))
-            .field("rotation", &format!("{:.3} rad", r))
+            .field("rotation", &format!("{r:.3} rad"))
             .field("scale", &(s.x, s.y))
             .finish()
     }
@@ -997,7 +997,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let global = GlobalTransform2D::from_translation(Vec2::new(100.0, 50.0));
-            let debug = format!("{:?}", global);
+            let debug = format!("{global:?}");
             assert!(debug.contains("GlobalTransform2D"));
             assert!(debug.contains("translation"));
         }

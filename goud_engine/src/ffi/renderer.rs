@@ -292,8 +292,7 @@ pub unsafe extern "C" fn goud_texture_load(
         Ok(i) => i.to_rgba8(),
         Err(e) => {
             set_last_error(GoudError::ResourceLoadFailed(format!(
-                "Failed to load image '{}': {}",
-                path_str, e
+                "Failed to load image '{path_str}': {e}"
             )));
             return GOUD_INVALID_TEXTURE;
         }
@@ -1056,6 +1055,12 @@ fn draw_sprite_rect_internal(
     // Set viewport to framebuffer size (required for HiDPI)
     unsafe {
         gl::Viewport(0, 0, fb_width as i32, fb_height as i32);
+
+        // Ensure proper OpenGL state for 2D rendering (critical after 3D rendering)
+        gl::Disable(gl::DEPTH_TEST);
+        gl::Disable(gl::CULL_FACE);
+        gl::Enable(gl::BLEND);
+        gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
     }
 
     let backend = window_state.backend_mut();
@@ -1128,13 +1133,16 @@ pub extern "C" fn goud_renderer_draw_quad(
     b: f32,
     a: f32,
 ) -> bool {
+    eprintln!("[TRACE] goud_renderer_draw_quad called: x={x}, y={y}, w={width}, h={height}");
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        eprintln!("[ERROR] goud_renderer_draw_quad: Invalid context ID");
         set_last_error(GoudError::InvalidContext);
         return false;
     }
 
     // Ensure immediate-mode resources are initialized
     if let Err(e) = ensure_immediate_state(context_id) {
+        eprintln!("[ERROR] ensure_immediate_state failed: {e:?}");
         set_last_error(e);
         return false;
     }
@@ -1165,6 +1173,7 @@ pub extern "C" fn goud_renderer_draw_quad(
     let state_data = match state_data {
         Some(data) => data,
         None => {
+            eprintln!("[ERROR] IMMEDIATE_STATE lookup failed for key {context_key:?}");
             set_last_error(GoudError::InvalidContext);
             return false;
         }
@@ -1177,10 +1186,12 @@ pub extern "C" fn goud_renderer_draw_quad(
     match result {
         Some(Ok(())) => true,
         Some(Err(e)) => {
+            eprintln!("[ERROR] draw_quad_internal failed: {e:?}");
             set_last_error(e);
             false
         }
         None => {
+            eprintln!("[ERROR] with_window_state returned None for context {context_key:?}");
             set_last_error(GoudError::InvalidContext);
             false
         }
@@ -1200,13 +1211,17 @@ fn draw_quad_internal(
     b: f32,
     a: f32,
 ) -> Result<(), GoudError> {
+    // DEBUG: Log draw_quad calls
+    eprintln!(
+        "[DEBUG] draw_quad_internal: pos=({x}, {y}), size=({width}, {height}), color=({r},{g},{b},{a})"
+    );
     use crate::libs::graphics::backend::types::PrimitiveTopology;
     use crate::libs::graphics::backend::RenderBackend;
 
     let (
         shader,
-        _vertex_buffer,
-        _index_buffer,
+        vertex_buffer,
+        index_buffer,
         vao,
         u_projection,
         u_model,
@@ -1226,6 +1241,12 @@ fn draw_quad_internal(
     // Set viewport to framebuffer size (required for HiDPI)
     unsafe {
         gl::Viewport(0, 0, fb_width as i32, fb_height as i32);
+
+        // Ensure proper OpenGL state for 2D rendering (critical after 3D rendering)
+        gl::Disable(gl::DEPTH_TEST);
+        gl::Disable(gl::CULL_FACE);
+        gl::Enable(gl::BLEND);
+        gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
     }
 
     let backend = window_state.backend_mut();
@@ -1241,6 +1262,11 @@ fn draw_quad_internal(
         gl::BindVertexArray(vao);
     }
 
+    // Sync backend buffer tracking with OpenGL state
+    // Required after 3D rendering which uses raw GL calls that bypass backend tracking
+    backend.bind_buffer(vertex_buffer)?;
+    backend.bind_buffer(index_buffer)?;
+
     // Bind shader
     backend.bind_shader(shader)?;
 
@@ -1251,7 +1277,13 @@ fn draw_quad_internal(
     backend.set_uniform_int(u_use_texture, 0); // false - no texture
 
     // Draw
-    backend.draw_indexed(PrimitiveTopology::Triangles, 6, 0)?;
+    eprintln!("[DEBUG] About to call draw_indexed...");
+    let result = backend.draw_indexed(PrimitiveTopology::Triangles, 6, 0);
+    match &result {
+        Ok(_) => eprintln!("[DEBUG] draw_indexed succeeded"),
+        Err(ref e) => eprintln!("[DEBUG] draw_indexed FAILED: {e:?}"),
+    }
+    result?;
 
     Ok(())
 }

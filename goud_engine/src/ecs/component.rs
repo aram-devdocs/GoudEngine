@@ -360,7 +360,7 @@ mod tests {
         #[test]
         fn test_component_id_debug_format() {
             let id = ComponentId::of::<Position>();
-            let debug_str = format!("{:?}", id);
+            let debug_str = format!("{id:?}");
             assert!(debug_str.contains("ComponentId"));
         }
 
@@ -440,7 +440,7 @@ mod tests {
         #[test]
         fn test_component_info_debug() {
             let info = ComponentInfo::of::<Position>();
-            let debug_str = format!("{:?}", info);
+            let debug_str = format!("{info:?}");
 
             assert!(debug_str.contains("ComponentInfo"));
             assert!(debug_str.contains("Position"));

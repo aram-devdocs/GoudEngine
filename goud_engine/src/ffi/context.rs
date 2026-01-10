@@ -670,10 +670,10 @@ mod tests {
     #[test]
     fn test_context_id_display() {
         let id = GoudContextId::new(10, 3);
-        assert_eq!(format!("{}", id), "GoudContextId(10:3)");
+        assert_eq!(format!("{id}"), "GoudContextId(10:3)");
 
         let invalid = GOUD_INVALID_CONTEXT_ID;
-        assert_eq!(format!("{}", invalid), "GoudContextId(INVALID)");
+        assert_eq!(format!("{invalid}"), "GoudContextId(INVALID)");
     }
 
     #[test]
@@ -879,7 +879,7 @@ mod tests {
         let mut registry = GoudContextRegistry::new();
         registry.create().unwrap();
 
-        let debug = format!("{:?}", registry);
+        let debug = format!("{registry:?}");
         assert!(debug.contains("GoudContextRegistry"));
         assert!(debug.contains("active"));
         assert!(debug.contains("capacity"));
@@ -919,7 +919,7 @@ mod tests {
     #[test]
     fn test_context_debug() {
         let context = GoudContext::new(5);
-        let debug = format!("{:?}", context);
+        let debug = format!("{context:?}");
         assert!(debug.contains("GoudContext"));
         assert!(debug.contains("generation"));
         assert!(debug.contains("5"));
@@ -983,7 +983,7 @@ mod tests {
         let handle = GoudContextHandle::new();
         handle.create().unwrap();
 
-        let debug = format!("{:?}", handle);
+        let debug = format!("{handle:?}");
         assert!(debug.contains("GoudContextHandle"));
     }
 

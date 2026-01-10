@@ -784,7 +784,7 @@ mod tests {
     fn test_sprite_debug() {
         let handle = dummy_handle();
         let sprite = Sprite::new(handle);
-        let debug_str = format!("{:?}", sprite);
+        let debug_str = format!("{sprite:?}");
 
         assert!(debug_str.contains("Sprite"));
     }

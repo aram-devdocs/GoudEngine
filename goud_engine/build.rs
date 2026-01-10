@@ -122,7 +122,7 @@ fn generate_csharp_bindings(output_path: &Path) -> bool {
             true
         }
         Err(e) => {
-            println!("cargo:warning=  Failed to generate C# bindings: {}", e);
+            println!("cargo:warning=  Failed to generate C# bindings: {e}");
             false
         }
     }
@@ -137,7 +137,7 @@ fn generate_csharp_bindings(output_path: &Path) -> bool {
 fn generate_c_header(_manifest_dir: &str, include_dir: &Path, output_path: &Path) -> bool {
     // Ensure include directory exists
     if let Err(e) = fs::create_dir_all(include_dir) {
-        println!("cargo:warning=  Failed to create include directory: {}", e);
+        println!("cargo:warning=  Failed to create include directory: {e}");
         return false;
     }
 
@@ -436,7 +436,7 @@ bool goud_collision_point_in_rect(
             true
         }
         Err(e) => {
-            println!("cargo:warning=  Failed to write C header: {}", e);
+            println!("cargo:warning=  Failed to write C header: {e}");
             false
         }
     }
@@ -655,7 +655,7 @@ fn generate_python_metadata(python_dir: &Path, output_path: &Path) -> bool {
             true
         }
         Err(e) => {
-            println!("cargo:warning=  Failed to write Python metadata: {}", e);
+            println!("cargo:warning=  Failed to write Python metadata: {e}");
             false
         }
     }

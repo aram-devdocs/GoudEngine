@@ -1103,7 +1103,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let global = GlobalTransform::from_translation(Vec3::new(10.0, 5.0, 0.0));
-            let debug = format!("{:?}", global);
+            let debug = format!("{global:?}");
             assert!(debug.contains("GlobalTransform"));
             assert!(debug.contains("translation"));
         }

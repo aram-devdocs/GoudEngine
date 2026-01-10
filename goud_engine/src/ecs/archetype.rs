@@ -1551,14 +1551,14 @@ mod tests {
     #[test]
     fn test_archetype_id_debug_empty() {
         let empty = ArchetypeId::EMPTY;
-        let debug_str = format!("{:?}", empty);
+        let debug_str = format!("{empty:?}");
         assert_eq!(debug_str, "ArchetypeId(EMPTY)");
     }
 
     #[test]
     fn test_archetype_id_debug_non_empty() {
         let id = ArchetypeId::new(42);
-        let debug_str = format!("{:?}", id);
+        let debug_str = format!("{id:?}");
         assert_eq!(debug_str, "ArchetypeId(42)");
     }
 
@@ -1567,8 +1567,8 @@ mod tests {
         let empty = ArchetypeId::EMPTY;
         let id = ArchetypeId::new(42);
 
-        assert_eq!(format!("{}", empty), "0");
-        assert_eq!(format!("{}", id), "42");
+        assert_eq!(format!("{empty}"), "0");
+        assert_eq!(format!("{id}"), "42");
     }
 
     #[test]
@@ -1882,7 +1882,7 @@ mod tests {
         let components = make_components(&[ComponentId::of::<Position>()]);
         let archetype = Archetype::new(ArchetypeId::new(1), components);
 
-        let debug_str = format!("{:?}", archetype);
+        let debug_str = format!("{archetype:?}");
 
         // Should contain Archetype and relevant info
         assert!(debug_str.contains("Archetype"));
@@ -2344,10 +2344,7 @@ mod tests {
             assert_eq!(
                 stored_idx,
                 Some(actual_idx),
-                "Entity {:?} should be at index {}, but entity_index returned {:?}",
-                entity,
-                actual_idx,
-                stored_idx
+                "Entity {entity:?} should be at index {actual_idx}, but entity_index returned {stored_idx:?}"
             );
         }
     }
@@ -2382,7 +2379,7 @@ mod tests {
         let e1 = Entity::new(0, 1);
         archetype.add_entity(e1);
 
-        let debug_str = format!("{:?}", archetype);
+        let debug_str = format!("{archetype:?}");
 
         // Debug should include entity_indices
         assert!(debug_str.contains("entity_indices"));
@@ -2667,7 +2664,7 @@ mod tests {
     fn test_graph_debug() {
         let graph = ArchetypeGraph::new();
 
-        let debug_str = format!("{:?}", graph);
+        let debug_str = format!("{graph:?}");
 
         assert!(debug_str.contains("ArchetypeGraph"));
         assert!(debug_str.contains("archetypes"));

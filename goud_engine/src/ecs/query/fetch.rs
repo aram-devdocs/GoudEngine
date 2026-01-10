@@ -1520,7 +1520,7 @@ impl fmt::Display for AccessConflict {
             if !first {
                 write!(f, ", ")?;
             }
-            write!(f, "{}", conflict)?;
+            write!(f, "{conflict}")?;
             first = false;
         }
 
@@ -1528,7 +1528,7 @@ impl fmt::Display for AccessConflict {
             if !first {
                 write!(f, ", ")?;
             }
-            write!(f, "{}", conflict)?;
+            write!(f, "{conflict}")?;
             first = false;
         }
 
@@ -1536,7 +1536,7 @@ impl fmt::Display for AccessConflict {
             if !first {
                 write!(f, ", ")?;
             }
-            write!(f, "{}", conflict)?;
+            write!(f, "{conflict}")?;
             first = false;
         }
 
@@ -2772,7 +2772,7 @@ mod tests {
                 AccessType::Write,
                 AccessType::Read,
             );
-            let display = format!("{}", info);
+            let display = format!("{info}");
             assert!(display.contains("Component"));
             assert!(display.contains("Write"));
             assert!(display.contains("Read"));
@@ -2811,7 +2811,7 @@ mod tests {
             access2.add_read(ComponentId::of::<Position>());
 
             let conflict = access1.get_conflicts(&access2).unwrap();
-            let display = format!("{}", conflict);
+            let display = format!("{conflict}");
 
             assert!(display.contains("AccessConflict"));
             assert!(display.contains("Component"));
@@ -2917,7 +2917,7 @@ mod tests {
         #[test]
         fn test_mut_state_debug() {
             let state = MutState::of::<Position>();
-            let debug_str = format!("{:?}", state);
+            let debug_str = format!("{state:?}");
             // Should contain "MutState" and component_id info
             assert!(debug_str.contains("MutState"));
         }

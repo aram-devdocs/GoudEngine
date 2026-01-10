@@ -669,25 +669,25 @@ mod tests {
         #[test]
         fn test_debug_format_invalid() {
             let id = SystemId::INVALID;
-            let debug = format!("{:?}", id);
+            let debug = format!("{id:?}");
             assert!(debug.contains("INVALID"));
         }
 
         #[test]
         fn test_debug_format_valid() {
             let id = SystemId::from_raw(42);
-            let debug = format!("{:?}", id);
+            let debug = format!("{id:?}");
             assert!(debug.contains("42"));
         }
 
         #[test]
         fn test_display_format() {
             let id = SystemId::from_raw(42);
-            let display = format!("{}", id);
+            let display = format!("{id}");
             assert_eq!(display, "42");
 
             let invalid = SystemId::INVALID;
-            let display_invalid = format!("{}", invalid);
+            let display_invalid = format!("{invalid}");
             assert_eq!(display_invalid, "INVALID");
         }
 
@@ -853,7 +853,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let meta = SystemMeta::new("TestSystem");
-            let debug = format!("{:?}", meta);
+            let debug = format!("{meta:?}");
             assert!(debug.contains("TestSystem"));
         }
     }
@@ -1181,7 +1181,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let boxed = BoxedSystem::new(SimpleSystem { run_count: 0 });
-            let debug = format!("{:?}", boxed);
+            let debug = format!("{boxed:?}");
 
             assert!(debug.contains("BoxedSystem"));
             assert!(debug.contains("SimpleSystem"));

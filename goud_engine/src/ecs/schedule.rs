@@ -4079,7 +4079,7 @@ mod tests {
         #[test]
         fn test_dyn_stage_label_debug() {
             let label: &dyn StageLabel = &CoreStage::Update;
-            let debug_str = format!("{:?}", label);
+            let debug_str = format!("{label:?}");
             assert!(debug_str.contains("Update"));
         }
     }
@@ -4153,14 +4153,14 @@ mod tests {
         #[test]
         fn test_debug() {
             let id = StageLabelId::of(CoreStage::Update);
-            let debug_str = format!("{:?}", id);
+            let debug_str = format!("{id:?}");
             assert!(debug_str.contains("Update"));
         }
 
         #[test]
         fn test_display() {
             let id = StageLabelId::of(CoreStage::Update);
-            assert_eq!(format!("{}", id), "Update");
+            assert_eq!(format!("{id}"), "Update");
         }
 
         #[test]
@@ -4263,7 +4263,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let pos = StagePosition::Before(CoreStage::Update.into());
-            let debug_str = format!("{:?}", pos);
+            let debug_str = format!("{pos:?}");
             assert!(debug_str.contains("Before"));
         }
     }
@@ -5034,7 +5034,7 @@ mod tests {
             stage.add_system(SimpleSystem { name: "SystemA" });
             stage.add_system(SimpleSystem { name: "SystemB" });
 
-            let debug = format!("{:?}", stage);
+            let debug = format!("{stage:?}");
             assert!(debug.contains("SystemStage"));
             assert!(debug.contains("Update"));
             assert!(debug.contains("SystemA"));
@@ -5776,8 +5776,8 @@ mod tests {
             let before = SystemOrdering::before(a, b);
             let after = SystemOrdering::after(a, b);
 
-            let before_str = format!("{}", before);
-            let after_str = format!("{}", after);
+            let before_str = format!("{before}");
+            let after_str = format!("{after}");
 
             assert!(before_str.contains("before"));
             assert!(after_str.contains("after"));
@@ -5860,7 +5860,7 @@ mod tests {
             let names = vec!["Test"];
 
             let err = OrderingCycleError::new(ids, names);
-            let display = format!("{}", err);
+            let display = format!("{err}");
 
             assert!(display.contains("cycle"));
         }
@@ -6455,7 +6455,7 @@ mod tests {
                 let b = stage.add_system(SimpleSystem { name: "B" });
                 stage.add_ordering(a, b);
 
-                let debug = format!("{:?}", stage);
+                let debug = format!("{stage:?}");
                 assert!(debug.contains("ordering_count"));
                 assert!(debug.contains("order_dirty"));
             }
@@ -6531,7 +6531,7 @@ mod tests {
                         .iter()
                         .position(|id| *id == SystemId::from_raw(to))
                         .unwrap();
-                    assert!(from_pos < to_pos, "Edge {}->{} violated", from, to);
+                    assert!(from_pos < to_pos, "Edge {from}->{to} violated");
                 }
             }
         }
@@ -7219,7 +7219,7 @@ mod tests {
         #[test]
         fn test_debug_format() {
             let stage = ParallelSystemStage::new("Test");
-            let debug = format!("{:?}", stage);
+            let debug = format!("{stage:?}");
 
             assert!(debug.contains("ParallelSystemStage"));
             assert!(debug.contains("Test"));
@@ -7463,7 +7463,7 @@ mod tests {
         #[test]
         fn test_dyn_debug() {
             let label: &dyn SystemLabel = &CustomLabel;
-            let debug = format!("{:?}", label);
+            let debug = format!("{label:?}");
             assert!(debug.contains("CustomLabel"));
         }
 
@@ -7559,14 +7559,14 @@ mod tests {
         #[test]
         fn test_debug() {
             let id = SystemLabelId::of(TestLabel);
-            let debug = format!("{:?}", id);
+            let debug = format!("{id:?}");
             assert!(debug.contains("TestLabel"));
         }
 
         #[test]
         fn test_display() {
             let id = SystemLabelId::of(CoreSystemLabel::Audio);
-            assert_eq!(format!("{}", id), "Audio");
+            assert_eq!(format!("{id}"), "Audio");
         }
 
         #[test]
@@ -7791,7 +7791,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let set = SystemSet::new("Test");
-            let debug = format!("{:?}", set);
+            let debug = format!("{set:?}");
             assert!(debug.contains("Test"));
         }
 
@@ -8093,7 +8093,7 @@ mod tests {
         #[test]
         fn test_display_before_label() {
             let constraint = LabeledOrderingConstraint::before_label(CoreSystemLabel::Physics);
-            let display = format!("{}", constraint);
+            let display = format!("{constraint}");
             assert!(display.contains("before label"));
             assert!(display.contains("Physics"));
         }
@@ -8101,7 +8101,7 @@ mod tests {
         #[test]
         fn test_display_after_label() {
             let constraint = LabeledOrderingConstraint::after_label(CoreSystemLabel::Input);
-            let display = format!("{}", constraint);
+            let display = format!("{constraint}");
             assert!(display.contains("after label"));
             assert!(display.contains("Input"));
         }
@@ -8109,7 +8109,7 @@ mod tests {
         #[test]
         fn test_display_before_system() {
             let constraint = LabeledOrderingConstraint::before_system(SystemId::from_raw(42));
-            let display = format!("{}", constraint);
+            let display = format!("{constraint}");
             assert!(display.contains("before system"));
             assert!(display.contains("42"));
         }
@@ -8117,7 +8117,7 @@ mod tests {
         #[test]
         fn test_display_after_system() {
             let constraint = LabeledOrderingConstraint::after_system(SystemId::from_raw(99));
-            let display = format!("{}", constraint);
+            let display = format!("{constraint}");
             assert!(display.contains("after system"));
             assert!(display.contains("99"));
         }
@@ -8132,7 +8132,7 @@ mod tests {
         #[test]
         fn test_debug() {
             let constraint = LabeledOrderingConstraint::before_label(CoreSystemLabel::Physics);
-            let debug = format!("{:?}", constraint);
+            let debug = format!("{constraint:?}");
             assert!(debug.contains("BeforeLabel"));
         }
     }

@@ -59,9 +59,8 @@ fn get_or_init_glfw() -> Result<Glfw, GoudError> {
     GLFW_INSTANCE.with(|cell| {
         let mut borrow = cell.borrow_mut();
         if borrow.is_none() {
-            let glfw = glfw::init(glfw::fail_on_errors).map_err(|e| {
-                GoudError::InternalError(format!("Failed to initialize GLFW: {}", e))
-            })?;
+            let glfw = glfw::init(glfw::fail_on_errors)
+                .map_err(|e| GoudError::InternalError(format!("Failed to initialize GLFW: {e}")))?;
             *borrow = Some(glfw);
         }
         borrow

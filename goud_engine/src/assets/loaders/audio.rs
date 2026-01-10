@@ -347,7 +347,7 @@ mod tests {
     #[test]
     fn test_audio_asset_debug() {
         let audio = AudioAsset::empty();
-        let debug_str = format!("{:?}", audio);
+        let debug_str = format!("{audio:?}");
         assert!(debug_str.contains("AudioAsset"));
     }
 
@@ -418,7 +418,7 @@ mod tests {
     #[test]
     fn test_audio_format_debug() {
         let format = AudioFormat::Ogg;
-        let debug_str = format!("{:?}", format);
+        let debug_str = format!("{format:?}");
         assert!(debug_str.contains("Ogg"));
     }
 
@@ -459,7 +459,7 @@ mod tests {
     #[test]
     fn test_audio_settings_debug() {
         let settings = AudioSettings::default();
-        let debug_str = format!("{:?}", settings);
+        let debug_str = format!("{settings:?}");
         assert!(debug_str.contains("AudioSettings"));
     }
 
@@ -580,7 +580,7 @@ mod tests {
     #[test]
     fn test_audio_loader_debug() {
         let loader = AudioLoader::new();
-        let debug_str = format!("{:?}", loader);
+        let debug_str = format!("{loader:?}");
         assert!(debug_str.contains("AudioLoader"));
     }
 

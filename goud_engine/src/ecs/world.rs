@@ -2151,7 +2151,7 @@ mod tests {
         #[test]
         fn test_world_debug() {
             let world = World::new();
-            let debug_str = format!("{:?}", world);
+            let debug_str = format!("{world:?}");
 
             assert!(debug_str.contains("World"));
             assert!(debug_str.contains("entities"));
@@ -2921,7 +2921,7 @@ mod tests {
             let mut world = World::new();
 
             let builder = world.spawn();
-            let debug_str = format!("{:?}", builder);
+            let debug_str = format!("{builder:?}");
 
             assert!(debug_str.contains("EntityWorldMut"));
             assert!(debug_str.contains("entity"));

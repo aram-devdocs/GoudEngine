@@ -1236,7 +1236,7 @@ mod tests {
     #[test]
     fn test_contact_debug() {
         let contact = Contact::new(Vec2::new(1.0, 2.0), Vec2::unit_x(), 0.5);
-        let debug_str = format!("{:?}", contact);
+        let debug_str = format!("{contact:?}");
         assert!(debug_str.contains("Contact"));
         assert!(debug_str.contains("point"));
         assert!(debug_str.contains("normal"));
@@ -2252,7 +2252,7 @@ mod tests {
     #[test]
     fn test_collision_response_debug() {
         let response = CollisionResponse::default();
-        let debug_str = format!("{:?}", response);
+        let debug_str = format!("{response:?}");
         assert!(debug_str.contains("CollisionResponse"));
     }
 
@@ -2946,7 +2946,7 @@ mod collision_events_tests {
         let contact = Contact::default();
 
         let event = CollisionStarted::new(entity_a, entity_b, contact);
-        let debug_str = format!("{:?}", event);
+        let debug_str = format!("{event:?}");
 
         assert!(debug_str.contains("CollisionStarted"));
         assert!(debug_str.contains("entity_a"));
@@ -3043,7 +3043,7 @@ mod collision_events_tests {
         let entity_b = Entity::from_bits(2);
 
         let event = CollisionEnded::new(entity_a, entity_b);
-        let debug_str = format!("{:?}", event);
+        let debug_str = format!("{event:?}");
 
         assert!(debug_str.contains("CollisionEnded"));
         assert!(debug_str.contains("entity_a"));

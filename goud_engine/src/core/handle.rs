@@ -527,7 +527,7 @@ impl<T> std::fmt::Debug for HandleAllocator<T> {
         let type_name = std::any::type_name::<T>();
         let short_name = type_name.rsplit("::").next().unwrap_or(type_name);
 
-        f.debug_struct(&format!("HandleAllocator<{}>", short_name))
+        f.debug_struct(&format!("HandleAllocator<{short_name}>"))
             .field("len", &self.len())
             .field("capacity", &self.capacity())
             .field("free_slots", &self.free_list.len())
@@ -1353,7 +1353,7 @@ impl<T, V: std::fmt::Debug> std::fmt::Debug for HandleMap<T, V> {
         let type_name = std::any::type_name::<T>();
         let short_name = type_name.rsplit("::").next().unwrap_or(type_name);
 
-        f.debug_struct(&format!("HandleMap<{}, ...>", short_name))
+        f.debug_struct(&format!("HandleMap<{short_name}, ...>"))
             .field("len", &self.len())
             .field("capacity", &self.capacity())
             .finish()
@@ -1876,29 +1876,25 @@ mod tests {
     fn test_handle_debug_format() {
         // Test Debug formatting: Handle<TypeName>(index:gen)
         let handle: Handle<TestResource> = Handle::new(42, 7);
-        let debug_str = format!("{:?}", handle);
+        let debug_str = format!("{handle:?}");
 
         // Should contain type name, index, and generation
         assert!(
             debug_str.contains("TestResource"),
-            "Debug should contain type name, got: {}",
-            debug_str
+            "Debug should contain type name, got: {debug_str}"
         );
         assert!(
             debug_str.contains("42"),
-            "Debug should contain index, got: {}",
-            debug_str
+            "Debug should contain index, got: {debug_str}"
         );
         assert!(
             debug_str.contains("7"),
-            "Debug should contain generation, got: {}",
-            debug_str
+            "Debug should contain generation, got: {debug_str}"
         );
         // Check format: Handle<TypeName>(index:gen)
         assert!(
             debug_str.starts_with("Handle<"),
-            "Debug should start with 'Handle<', got: {}",
-            debug_str
+            "Debug should start with 'Handle<', got: {debug_str}"
         );
     }
 
@@ -1906,17 +1902,15 @@ mod tests {
     fn test_handle_debug_invalid() {
         // Test Debug formatting for INVALID handle
         let invalid: Handle<TestResource> = Handle::INVALID;
-        let debug_str = format!("{:?}", invalid);
+        let debug_str = format!("{invalid:?}");
 
         assert!(
             debug_str.contains(&u32::MAX.to_string()),
-            "Debug of INVALID should show MAX index, got: {}",
-            debug_str
+            "Debug of INVALID should show MAX index, got: {debug_str}"
         );
         assert!(
             debug_str.contains(":0)"),
-            "Debug of INVALID should show generation 0, got: {}",
-            debug_str
+            "Debug of INVALID should show generation 0, got: {debug_str}"
         );
     }
 
@@ -2447,7 +2441,7 @@ mod tests {
         let h = allocator.allocate();
         allocator.deallocate(h);
 
-        let debug_str = format!("{:?}", allocator);
+        let debug_str = format!("{allocator:?}");
 
         assert!(
             debug_str.contains("HandleAllocator"),
@@ -2642,8 +2636,8 @@ mod tests {
 
         // Verify all are alive and unique
         for (i, h) in handles.iter().enumerate() {
-            assert!(allocator.is_alive(*h), "Handle {} should be alive", i);
-            assert_eq!(h.index(), i as u32, "Handle {} should have index {}", i, i);
+            assert!(allocator.is_alive(*h), "Handle {i} should be alive");
+            assert_eq!(h.index(), i as u32, "Handle {i} should have index {i}");
         }
 
         // Phase 2: Deallocate every other handle
@@ -2660,11 +2654,10 @@ mod tests {
             if i % 2 == 0 {
                 assert!(
                     !allocator.is_alive(*h),
-                    "Deallocated handle {} should not be alive",
-                    i
+                    "Deallocated handle {i} should not be alive"
                 );
             } else {
-                assert!(allocator.is_alive(*h), "Handle {} should still be alive", i);
+                assert!(allocator.is_alive(*h), "Handle {i} should still be alive");
             }
         }
 
@@ -2680,7 +2673,7 @@ mod tests {
 
         // Verify new handles are alive
         for (i, h) in new_handles.iter().enumerate() {
-            assert!(allocator.is_alive(*h), "New handle {} should be alive", i);
+            assert!(allocator.is_alive(*h), "New handle {i} should be alive");
         }
 
         // Phase 5: Clear and verify
@@ -3109,7 +3102,7 @@ mod tests {
         map.insert(1);
         map.insert(2);
 
-        let debug_str = format!("{:?}", map);
+        let debug_str = format!("{map:?}");
 
         assert!(
             debug_str.contains("HandleMap"),
@@ -3163,7 +3156,7 @@ mod tests {
 
         // Verify all values
         for (i, h) in handles.iter().enumerate() {
-            assert_eq!(map.get(*h), Some(&i), "Value {} should match", i);
+            assert_eq!(map.get(*h), Some(&i), "Value {i} should match");
         }
 
         // Phase 2: Remove half
@@ -3176,9 +3169,9 @@ mod tests {
         // Phase 3: Verify removals
         for (i, h) in handles.iter().enumerate() {
             if i % 2 == 0 {
-                assert!(map.get(*h).is_none(), "Removed value {} should be None", i);
+                assert!(map.get(*h).is_none(), "Removed value {i} should be None");
             } else {
-                assert_eq!(map.get(*h), Some(&i), "Kept value {} should exist", i);
+                assert_eq!(map.get(*h), Some(&i), "Kept value {i} should exist");
             }
         }
 
@@ -3563,11 +3556,10 @@ mod tests {
             if i % 2 == 0 {
                 assert!(
                     !remaining.contains(&i),
-                    "Removed value {} should not be present",
-                    i
+                    "Removed value {i} should not be present"
                 );
             } else {
-                assert!(remaining.contains(&i), "Kept value {} should be present", i);
+                assert!(remaining.contains(&i), "Kept value {i} should be present");
             }
         }
     }

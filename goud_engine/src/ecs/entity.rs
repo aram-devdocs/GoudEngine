@@ -954,16 +954,16 @@ mod tests {
     #[test]
     fn test_entity_debug_format() {
         let entity = Entity::new(42, 3);
-        assert_eq!(format!("{:?}", entity), "Entity(42:3)");
+        assert_eq!(format!("{entity:?}"), "Entity(42:3)");
 
         let placeholder = Entity::PLACEHOLDER;
-        assert_eq!(format!("{:?}", placeholder), "Entity(4294967295:0)");
+        assert_eq!(format!("{placeholder:?}"), "Entity(4294967295:0)");
     }
 
     #[test]
     fn test_entity_display_format() {
         let entity = Entity::new(100, 7);
-        assert_eq!(format!("{}", entity), "Entity(100:7)");
+        assert_eq!(format!("{entity}"), "Entity(100:7)");
     }
 
     #[test]
@@ -1039,7 +1039,7 @@ mod tests {
         let e2 = allocator.allocate();
         allocator.deallocate(e2);
 
-        let debug_str = format!("{:?}", allocator);
+        let debug_str = format!("{allocator:?}");
         assert!(debug_str.contains("EntityAllocator"));
         assert!(debug_str.contains("len"));
         assert!(debug_str.contains("capacity"));
@@ -1439,9 +1439,7 @@ mod tests {
             let key = entity.to_bits();
             assert!(
                 seen.insert(key),
-                "Duplicate entity: {:?} (bits: {})",
-                entity,
-                key
+                "Duplicate entity: {entity:?} (bits: {key})"
             );
 
             // 50% chance of deallocating

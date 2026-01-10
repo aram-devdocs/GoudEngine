@@ -689,7 +689,7 @@ impl<B: RenderBackend> SpriteBatch<B> {
 
         // Load texture from asset server
         let _texture_asset = asset_server.get(&asset_handle).ok_or_else(|| {
-            GoudError::ResourceNotFound(format!("Texture asset {:?}", asset_handle))
+            GoudError::ResourceNotFound(format!("Texture asset {asset_handle:?}"))
         })?;
 
         // TODO: Upload texture to GPU and cache handle
@@ -1227,8 +1227,7 @@ mod tests {
             for j in start..end {
                 assert_eq!(
                     batch.sprites[j].texture, texture,
-                    "Sprite {} should have texture {:?}",
-                    j, texture
+                    "Sprite {j} should have texture {texture:?}"
                 );
             }
         }
