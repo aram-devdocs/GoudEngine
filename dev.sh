@@ -105,10 +105,13 @@ if [ "$SKIP_BUILD" = false ]; then
     fi
 
     if [ "$SDK_TYPE" = "csharp" ]; then
+        # Ensure local NuGet feed directory exists
+        mkdir -p "$HOME/nuget-local"
+
         if [ "$LOCAL" = false ]; then
-            sh "$SCRIPT_DIR/package.sh" --prod
+            bash "$SCRIPT_DIR/package.sh" --prod
         else
-            sh "$SCRIPT_DIR/package.sh" --local
+            bash "$SCRIPT_DIR/package.sh" --local
         fi
     else
         # For Python and Rust, just build the native library

@@ -4,11 +4,18 @@
 PROJECT_NAME="GoudEngine"
 PACKAGE_OUTPUT_PATH="./sdks/nuget_package_output"
 LOCAL_NUGET_FEED="$HOME/nuget-local"
-NUPKG_FILES=$(find $PACKAGE_OUTPUT_PATH -name "*.nupkg")
 
 # Function to deploy locally
 deploy_local() {
     echo "Deploying packages to local NuGet feed..."
+
+    # Ensure package output directory exists
+    if [ ! -d "$PACKAGE_OUTPUT_PATH" ]; then
+        echo "No package output directory found. Build will create it."
+    fi
+
+    # Find packages after build
+    NUPKG_FILES=$(find "$PACKAGE_OUTPUT_PATH" -name "*.nupkg" 2>/dev/null)
 
     # Ensure packages exist
     if [ -z "$NUPKG_FILES" ]; then
