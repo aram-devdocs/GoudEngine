@@ -50,6 +50,8 @@ docs/diagrams/module_graph.pdf
 
 # Platform-specific native libraries
 sdks/GoudEngine/runtimes/osx-x64/native/libgoud_engine.dylib
+sdks/GoudEngine/runtimes/linux-x64/native/libgoud_engine.so
+sdks/GoudEngine/runtimes/win-x64/native/goud_engine.dll
 
 # Zenflow task files
 .zenflow/tasks/

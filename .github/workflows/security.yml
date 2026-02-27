@@ -12,6 +12,10 @@ on:
       - '**/*.csproj'
       - '.github/workflows/security.yml'
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   rust-security:
     name: Rust Security Audit

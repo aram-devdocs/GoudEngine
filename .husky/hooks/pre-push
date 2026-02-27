@@ -1,52 +1,72 @@
 #!/bin/sh
-echo "Running pre-push hook"
-
-# Get the root directory of the repo
+# Pre-push: comprehensive checks mirroring GitHub Actions CI
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT" || exit 1
 
-# =============================================================================
-# Full Test Suite
-# =============================================================================
-echo ""
-echo "=== Running Full Test Suite Before Push ==="
-
-# Run all Rust tests (more comprehensive than pre-commit)
-echo "Running all Rust tests..."
-cargo test --all-features --workspace -- --nocapture || exit 1
+echo "=============================================="
+echo "  Pre-push: Comprehensive Checks"
+echo "=============================================="
 
 # =============================================================================
-# Rust SDK Tests
+# Format Check (mirrors: ci.yml cargo fmt --check)
 # =============================================================================
 echo ""
-echo "=== Rust SDK Tests ==="
+echo "=== [1/9] Checking formatting ==="
+cargo fmt --all -- --check || exit 1
+
+# =============================================================================
+# Clippy (mirrors: ci.yml clippy --all-targets --all-features)
+# =============================================================================
+echo ""
+echo "=== [2/9] Running clippy ==="
+cargo clippy --all-targets --all-features -- -D warnings || exit 1
+
+# =============================================================================
+# Build (mirrors: ci.yml cargo build --verbose)
+# =============================================================================
+echo ""
+echo "=== [3/9] Building ==="
+cargo build --verbose || exit 1
+
+# =============================================================================
+# Tests (mirrors: ci.yml cargo test --verbose)
+# =============================================================================
+echo ""
+echo "=== [4/9] Running tests ==="
+cargo test --verbose -- --nocapture || exit 1
+
+# =============================================================================
+# Rust SDK Tests (mirrors: ci.yml cargo test --lib sdk)
+# =============================================================================
+echo ""
+echo "=== [5/9] Running Rust SDK tests ==="
 cargo test --lib sdk -- --nocapture || exit 1
 
-# Run Rust SDK doctests
-echo "Running Rust SDK doctests..."
-cargo test --doc sdk -- --nocapture || exit 1
-
 # =============================================================================
-# Python SDK Tests
+# Cargo Deny (mirrors: ci.yml EmbarkStudios/cargo-deny-action)
 # =============================================================================
 echo ""
-echo "=== Python SDK Tests ==="
+echo "=== [6/9] Running cargo deny ==="
+if command -v cargo-deny >/dev/null 2>&1; then
+    cargo deny --all-features check || exit 1
+else
+    echo "Warning: cargo-deny not installed, skipping (install with: cargo install cargo-deny)"
+fi
 
+# =============================================================================
+# Python SDK Tests (mirrors: ci.yml python-sdk-check)
+# =============================================================================
+echo ""
+echo "=== [7/9] Running Python SDK tests ==="
 if command -v python3 >/dev/null 2>&1; then
-    # Ensure native library is built
-    cargo build --release || exit 1
-    
-    # Set up environment
     export PYTHONPATH="$REPO_ROOT/sdks/python:$PYTHONPATH"
-    
+
     if [ "$(uname)" = "Darwin" ]; then
-        export DYLD_LIBRARY_PATH="$REPO_ROOT/target/release:$DYLD_LIBRARY_PATH"
+        export DYLD_LIBRARY_PATH="$REPO_ROOT/target/debug:$DYLD_LIBRARY_PATH"
     else
-        export LD_LIBRARY_PATH="$REPO_ROOT/target/release:$LD_LIBRARY_PATH"
+        export LD_LIBRARY_PATH="$REPO_ROOT/target/debug:$LD_LIBRARY_PATH"
     fi
-    
-    # Run Python SDK unit tests (excluding windowed tests that may fail in headless)
-    echo "Running Python SDK core tests..."
+
     python3 -c "
 import sys
 sys.path.insert(0, '$REPO_ROOT/sdks/python')
@@ -67,7 +87,7 @@ for test in tests:
         else:
             failed += 1
     except Exception as e:
-        print(f'  ✗ {test.__name__} failed: {e}')
+        print(f'  x {test.__name__} failed: {e}')
         failed += 1
 print(f'Python SDK tests: {passed} passed, {failed} failed')
 sys.exit(1 if failed > 0 else 0)
@@ -80,30 +100,41 @@ else
 fi
 
 # =============================================================================
-# Security Checks
+# Markdown Lint (mirrors: pr-validation.yml markdownlint-cli2-action)
 # =============================================================================
 echo ""
-echo "=== Security Checks ==="
-
-# Run cargo deny (licenses and advisories)
-echo "Running cargo deny..."
-cargo deny check || exit 1
+echo "=== [8/9] Linting markdown ==="
+if command -v npx >/dev/null 2>&1; then
+    npx markdownlint-cli2 "**/*.md" "!**/target/**" "!**/node_modules/**" || {
+        echo "Warning: Markdown lint found issues (non-blocking)"
+    }
+else
+    echo "Warning: npx not found, skipping markdown lint"
+fi
 
 # =============================================================================
-# Documentation Check
+# Large File Check (mirrors: pr-validation.yml check-file-size)
 # =============================================================================
 echo ""
-echo "=== Documentation Check ==="
+echo "=== [9/9] Checking for large files ==="
+LARGE_FILES=$(find . -type f -size +1M ! -path "./.git/*" ! -path "./target/*" ! -path "*/bin/*" ! -path "*/obj/*" ! -name "*.png" ! -name "*.jpg" ! -name "*.jpeg" ! -name "*.gif" 2>/dev/null)
+if [ -n "$LARGE_FILES" ]; then
+    TRACKED_LARGE=""
+    echo "$LARGE_FILES" | while IFS= read -r f; do
+        if ! git check-ignore -q "$f" 2>/dev/null; then
+            TRACKED_LARGE="$TRACKED_LARGE$f
+"
+        fi
+    done
+    TRACKED_LARGE=$(echo "$LARGE_FILES" | while IFS= read -r f; do git check-ignore -q "$f" 2>/dev/null || echo "$f"; done)
+    if [ -n "$TRACKED_LARGE" ]; then
+        echo "Error: Large tracked files detected (>1MB):"
+        echo "$TRACKED_LARGE"
+        echo "Consider using Git LFS or adding to .gitignore."
+        exit 1
+    fi
+fi
 
-# Ensure docs build without warnings
-echo "Checking Rust documentation..."
-RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --document-private-items 2>&1 | head -50 || {
-    echo "Warning: Documentation has warnings (non-blocking)"
-}
-
-# =============================================================================
-# Final Summary
-# =============================================================================
 echo ""
 echo "=============================================="
 echo "  Pre-push checks completed successfully!"
