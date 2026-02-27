@@ -1,0 +1,111 @@
+#!/bin/sh
+echo "Running pre-push hook"
+
+# Get the root directory of the repo
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT" || exit 1
+
+# =============================================================================
+# Full Test Suite
+# =============================================================================
+echo ""
+echo "=== Running Full Test Suite Before Push ==="
+
+# Run all Rust tests (more comprehensive than pre-commit)
+echo "Running all Rust tests..."
+cargo test --all-features --workspace -- --nocapture || exit 1
+
+# =============================================================================
+# Rust SDK Tests
+# =============================================================================
+echo ""
+echo "=== Rust SDK Tests ==="
+cargo test --lib sdk -- --nocapture || exit 1
+
+# Run Rust SDK doctests
+echo "Running Rust SDK doctests..."
+cargo test --doc sdk -- --nocapture || exit 1
+
+# =============================================================================
+# Python SDK Tests
+# =============================================================================
+echo ""
+echo "=== Python SDK Tests ==="
+
+if command -v python3 >/dev/null 2>&1; then
+    # Ensure native library is built
+    cargo build --release || exit 1
+    
+    # Set up environment
+    export PYTHONPATH="$REPO_ROOT/sdks/python:$PYTHONPATH"
+    
+    if [ "$(uname)" = "Darwin" ]; then
+        export DYLD_LIBRARY_PATH="$REPO_ROOT/target/release:$DYLD_LIBRARY_PATH"
+    else
+        export LD_LIBRARY_PATH="$REPO_ROOT/target/release:$LD_LIBRARY_PATH"
+    fi
+    
+    # Run Python SDK unit tests (excluding windowed tests that may fail in headless)
+    echo "Running Python SDK core tests..."
+    python3 -c "
+import sys
+sys.path.insert(0, '$REPO_ROOT/sdks/python')
+from test_bindings import (
+    test_imports, test_vec2, test_color, test_rect,
+    test_transform2d, test_sprite, test_context, test_context_manager
+)
+tests = [
+    test_imports, test_vec2, test_color, test_rect,
+    test_transform2d, test_sprite, test_context, test_context_manager
+]
+passed = 0
+failed = 0
+for test in tests:
+    try:
+        if test():
+            passed += 1
+        else:
+            failed += 1
+    except Exception as e:
+        print(f'  ✗ {test.__name__} failed: {e}')
+        failed += 1
+print(f'Python SDK tests: {passed} passed, {failed} failed')
+sys.exit(1 if failed > 0 else 0)
+" || {
+        echo "Error: Python SDK tests failed"
+        exit 1
+    }
+else
+    echo "Warning: Python 3 not found, skipping Python SDK tests"
+fi
+
+# =============================================================================
+# Security Checks
+# =============================================================================
+echo ""
+echo "=== Security Checks ==="
+
+# Run cargo deny (licenses and advisories)
+echo "Running cargo deny..."
+cargo deny check || exit 1
+
+# =============================================================================
+# Documentation Check
+# =============================================================================
+echo ""
+echo "=== Documentation Check ==="
+
+# Ensure docs build without warnings
+echo "Checking Rust documentation..."
+RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --document-private-items 2>&1 | head -50 || {
+    echo "Warning: Documentation has warnings (non-blocking)"
+}
+
+# =============================================================================
+# Final Summary
+# =============================================================================
+echo ""
+echo "=============================================="
+echo "  Pre-push checks completed successfully!"
+echo "  Ready to push to remote."
+echo "=============================================="

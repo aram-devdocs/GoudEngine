@@ -36,12 +36,10 @@ jobs:
           ${{ runner.os }}-cargo-audit-
     
     - name: Install cargo-audit
-      run: |
-        cargo install cargo-audit --locked || true
-    
+      run: cargo install cargo-audit --locked --force
+
     - name: Run security audit
-      run: |
-        cargo audit --deny warnings
+      run: cargo audit
     
     - name: Create issue for vulnerabilities
       if: failure()

@@ -1,19 +1,109 @@
 #!/bin/sh
 echo "Running pre-commit hook"
 
+# Get the root directory of the repo
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT" || exit 1
+
+# =============================================================================
+# Rust Checks
+# =============================================================================
+echo ""
+echo "=== Rust Checks ==="
 
 # Run fast checks first
+echo "Running cargo check..."
 cargo check || exit 1
+
+echo "Running cargo fmt..."
 cargo fmt --all -- --check || exit 1
+
+echo "Running cargo clippy..."
 cargo clippy -- -D warnings || exit 1
+
+echo "Running cargo deny..."
 cargo deny check || exit 1
 
 # Run tests without rebuilding if checks pass
+echo "Running Rust tests..."
 cargo test --no-run || exit 1
-cargo test -- --nocapture
+cargo test -- --nocapture || exit 1
+
+# =============================================================================
+# Rust SDK Tests (native Rust SDK)
+# =============================================================================
+echo ""
+echo "=== Rust SDK Tests ==="
+cargo test --lib sdk -- --nocapture || exit 1
+
+# =============================================================================
+# Python SDK Tests
+# =============================================================================
+echo ""
+echo "=== Python SDK Tests ==="
+
+# Check if Python 3 is available
+if command -v python3 >/dev/null 2>&1; then
+    # Set up environment for Python tests
+    export PYTHONPATH="$REPO_ROOT/sdks/python:$PYTHONPATH"
+    
+    # Set library path for native bindings (macOS vs Linux)
+    if [ "$(uname)" = "Darwin" ]; then
+        export DYLD_LIBRARY_PATH="$REPO_ROOT/target/debug:$DYLD_LIBRARY_PATH"
+    else
+        export LD_LIBRARY_PATH="$REPO_ROOT/target/debug:$LD_LIBRARY_PATH"
+    fi
+    
+    # Run Python SDK core tests (excluding windowed tests)
+    echo "Running Python SDK core tests..."
+    python3 -c "
+import sys
+sys.path.insert(0, '$REPO_ROOT/sdks/python')
+from test_bindings import (
+    test_imports, test_vec2, test_color, test_rect,
+    test_transform2d, test_sprite, test_context, test_context_manager
+)
+tests = [
+    test_imports, test_vec2, test_color, test_rect,
+    test_transform2d, test_sprite, test_context, test_context_manager
+]
+passed = 0
+failed = 0
+for test in tests:
+    try:
+        if test():
+            passed += 1
+        else:
+            failed += 1
+    except Exception as e:
+        print(f'  ✗ {test.__name__} failed: {e}')
+        failed += 1
+print(f'Python SDK tests: {passed} passed, {failed} failed')
+sys.exit(1 if failed > 0 else 0)
+" || {
+        echo "Warning: Python SDK core tests failed (may need native library)"
+    }
+else
+    echo "Warning: Python 3 not found, skipping Python SDK tests"
+fi
+
+# =============================================================================
+# Build
+# =============================================================================
+echo ""
+echo "=== Building ==="
 
 # Only build if all checks pass
-./build.sh --local
+./build.sh --local || exit 1
+
+# =============================================================================
+# Generate Documentation
+# =============================================================================
+echo ""
+echo "=== Generating Documentation ==="
 
 # Create graph
 ./graph.sh
+
+echo ""
+echo "=== Pre-commit checks completed successfully! ==="

@@ -1,15 +1,10 @@
-pub mod components;
-pub mod renderer;
-pub mod renderer2d;
+//! Low-level graphics abstractions and systems.
+//!
+//! This module contains the rendering backend trait, concrete backend
+//! implementations (like OpenGL), and GPU resource management. It also
+//! includes higher-level systems like the `SpriteBatch` renderer and
+//! the complete 3D rendering system.
+
+pub mod backend;
 pub mod renderer3d;
-
-/// Base Renderer trait
-///
-/// Defines common functionality for renderers.
-
-// Utility functions
-pub fn clear() {
-    unsafe {
-        gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-    }
-}
+pub mod sprite_batch;

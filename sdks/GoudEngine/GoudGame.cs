@@ -2,42 +2,27 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using CsBindgen;
+using GoudEngine.Input;
+using GoudEngine.Math;
 
-public enum RendererType
+/// <summary>
+/// Main game class for immediate-mode rendering.
+/// </summary>
+public unsafe class GoudGame : IDisposable
 {
-    Renderer2D = 0,
-    Renderer3D = 1
-}
-
-public enum PrimitiveType
-{
-    Cube = 0,
-    Sphere = 1,
-    Plane = 2,
-    Cylinder = 3
-}
-
-public enum LightType
-{
-    Point = 0,
-    Directional = 1,
-    Spot = 2
-}
-
-public enum GridRenderMode
-{
-    Blend = 0,
-    Overlap = 1
-}
-
-public unsafe class GoudGame
-{
-    private GameSdk* gameInstance;
+    private GoudContextId _contextId;
     private bool _isDisposed;
+    private float _deltaTime;
 
-    public delegate void GameCallback();
+    /// <summary>
+    /// Gets the context ID for low-level FFI operations.
+    /// </summary>
+    public GoudContextId ContextId => _contextId;
 
-    public UpdateResponseData UpdateResponseData { get; private set; }
+    /// <summary>
+    /// Gets the delta time from the last frame (in seconds).
+    /// </summary>
+    public float DeltaTime => _deltaTime;
 
     // Static constructor to initialize the library resolver
     static GoudGame()
@@ -90,758 +75,646 @@ public unsafe class GoudGame
         );
     }
 
-    public GoudGame(
-        uint width,
-        uint height,
-        string title,
-        RendererType rendererType = RendererType.Renderer2D,
-        uint targetFPS = 60
-    )
+    /// <summary>
+    /// Creates a new game window with the specified dimensions and title.
+    /// </summary>
+    public GoudGame(uint width, uint height, string title)
     {
-        unsafe
+        fixed (byte* titleBytes = System.Text.Encoding.UTF8.GetBytes(title + "\0"))
         {
-            fixed (byte* titleBytes = System.Text.Encoding.ASCII.GetBytes(title + "\0"))
+            _contextId = NativeMethods.goud_window_create(width, height, titleBytes);
+
+            if (_contextId.Item1 == ulong.MaxValue)
             {
-                gameInstance = NativeMethods.game_create(
-                    width,
-                    height,
-                    titleBytes,
-                    targetFPS,
-                    (int)rendererType
-                );
+                throw new InvalidOperationException("Failed to create game window");
             }
+
+            // Enable blending for proper sprite transparency
+            NativeMethods.goud_renderer_enable_blending(_contextId);
         }
     }
 
-    public void Initialize(GameCallback initCallback)
-    {
-        unsafe
-        {
-            NativeMethods.game_initialize(gameInstance);
-            initCallback?.Invoke();
-        }
-    }
-
-    public void Start(GameCallback startCallback)
-    {
-        unsafe
-        {
-            NativeMethods.game_start(gameInstance);
-            startCallback?.Invoke();
-        }
-    }
-
-    public void Update(GameCallback updateCallback)
-    {
-        unsafe
-        {
-            while (!ShouldClose())
-            {
-                UpdateResponseData = NativeMethods.game_update(gameInstance);
-                updateCallback?.Invoke();
-            }
-        }
-    }
-
+    /// <summary>
+    /// Returns true if the game window should close.
+    /// </summary>
     public bool ShouldClose()
     {
-        unsafe
-        {
-            return NativeMethods.game_should_close(gameInstance);
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_window_should_close(_contextId);
     }
 
-    public void Terminate()
-    {
-        unsafe
-        {
-            NativeMethods.game_terminate(gameInstance);
-        }
-    }
-
-    public uint AddSprite(SpriteCreateDto data)
-    {
-        unsafe
-        {
-            return NativeMethods.game_add_sprite(gameInstance, data);
-        }
-    }
-
-    public uint CreateTexture(string texturePath)
-    {
-        unsafe
-        {
-            fixed (byte* texturePathBytes = System.Text.Encoding.ASCII.GetBytes(texturePath + "\0"))
-            {
-                return NativeMethods.game_create_texture(gameInstance, texturePathBytes);
-            }
-        }
-    }
-
-    public void UpdateSprite(SpriteUpdateDto data)
-    {
-        unsafe
-        {
-            NativeMethods.game_update_sprite(gameInstance, data);
-        }
-    }
-
-    public void RemoveSprite(uint id)
-    {
-        unsafe
-        {
-            NativeMethods.game_remove_sprite(gameInstance, id);
-        }
-    }
-
-    public bool CheckCollision(uint id1, uint id2)
-    {
-        unsafe
-        {
-            return NativeMethods.check_collision_between_sprites(gameInstance, id1, id2);
-        }
-    }
-
+    /// <summary>
+    /// Sets the should close flag to request window closure.
+    /// </summary>
     public void Close()
     {
-        unsafe
+        ThrowIfDisposed();
+        NativeMethods.goud_window_set_should_close(_contextId, true);
+    }
+
+    /// <summary>
+    /// Begins a new frame - polls events and clears the screen.
+    /// Call this at the start of your game loop.
+    /// </summary>
+    public void BeginFrame(float r = 0.1f, float g = 0.1f, float b = 0.1f, float a = 1.0f)
+    {
+        ThrowIfDisposed();
+        _deltaTime = NativeMethods.goud_window_poll_events(_contextId);
+        NativeMethods.goud_window_clear(_contextId, r, g, b, a);
+        NativeMethods.goud_renderer_begin(_contextId);
+        
+        // Enable blending for transparency (must be done each frame)
+        NativeMethods.goud_renderer_enable_blending(_contextId);
+    }
+
+    /// <summary>
+    /// Ends the current frame - presents to screen.
+    /// Call this at the end of your game loop.
+    /// </summary>
+    public void EndFrame()
+    {
+        ThrowIfDisposed();
+        NativeMethods.goud_renderer_end(_contextId);
+        NativeMethods.goud_window_swap_buffers(_contextId);
+    }
+
+    #region Texture Management
+
+    /// <summary>
+    /// Loads a texture from the specified file path.
+    /// Returns the texture handle (0 on failure).
+    /// </summary>
+    public ulong LoadTexture(string path)
+    {
+        ThrowIfDisposed();
+        fixed (byte* pathBytes = System.Text.Encoding.UTF8.GetBytes(path + "\0"))
         {
-            NativeMethods.game_terminate(gameInstance);
+            return NativeMethods.goud_texture_load(_contextId, pathBytes);
         }
     }
 
+    /// <summary>
+    /// Alias for LoadTexture for backward compatibility.
+    /// </summary>
+    public uint CreateTexture(string path)
+    {
+        return (uint)LoadTexture(path);
+    }
+
+    /// <summary>
+    /// Destroys a previously loaded texture.
+    /// </summary>
+    public bool DestroyTexture(ulong texture)
+    {
+        ThrowIfDisposed();
+        return NativeMethods.goud_texture_destroy(_contextId, texture);
+    }
+
+    #endregion
+
+    #region Immediate-Mode Rendering
+
+    /// <summary>
+    /// Draws a textured sprite at the given position.
+    /// This is an immediate-mode draw call - the sprite is rendered immediately
+    /// and not retained between frames. Call this each frame in your game loop.
+    /// </summary>
+    /// <param name="textureId">Texture ID from LoadTexture()</param>
+    /// <param name="x">X position</param>
+    /// <param name="y">Y position</param>
+    /// <param name="width">Width of the sprite</param>
+    /// <param name="height">Height of the sprite</param>
+    /// <param name="rotation">Rotation in radians (default 0)</param>
+    /// <param name="color">Color tint (default white/no tint)</param>
+    public bool DrawSprite(ulong textureId, float x, float y,
+                           float width, float height, float rotation = 0f,
+                           Color? color = null)
+    {
+        ThrowIfDisposed();
+        var c = color ?? Color.White;
+        return NativeMethods.goud_renderer_draw_sprite(
+            _contextId, textureId, x, y, width, height, rotation,
+            c.R, c.G, c.B, c.A);
+    }
+
+    /// <summary>
+    /// Draws a textured sprite (uint overload for backward compatibility).
+    /// </summary>
+    public bool DrawSprite(uint textureId, float x, float y,
+                           float width, float height, float rotation = 0f,
+                           Color? color = null)
+    {
+        return DrawSprite((ulong)textureId, x, y, width, height, rotation, color);
+    }
+
+    /// <summary>
+    /// Draws a textured sprite with a source rectangle for sprite sheet animation.
+    /// </summary>
+    /// <param name="textureId">Texture ID from LoadTexture()</param>
+    /// <param name="x">X position</param>
+    /// <param name="y">Y position</param>
+    /// <param name="width">Width of the sprite on screen</param>
+    /// <param name="height">Height of the sprite on screen</param>
+    /// <param name="sourceRect">Source rectangle in normalized UV coordinates (0-1)</param>
+    /// <param name="rotation">Rotation in radians (default 0)</param>
+    /// <param name="color">Color tint (default white/no tint)</param>
+    /// <example>
+    /// // For a 128x128 sprite sheet with 32x32 frames (4x4 grid):
+    /// var frame0 = RectF.FromGrid(0, 0, 4, 4);  // First frame
+    /// var frame1 = RectF.FromGrid(1, 0, 4, 4);  // Second frame
+    /// game.DrawSprite(textureId, x, y, 64, 64, frame0);
+    /// </example>
+    public bool DrawSprite(ulong textureId, float x, float y,
+                           float width, float height, RectF sourceRect,
+                           float rotation = 0f, Color? color = null)
+    {
+        ThrowIfDisposed();
+        var c = color ?? Color.White;
+        return NativeMethods.goud_renderer_draw_sprite_rect(
+            _contextId, textureId, x, y, width, height, rotation,
+            sourceRect.X, sourceRect.Y, sourceRect.Width, sourceRect.Height,
+            c.R, c.G, c.B, c.A);
+    }
+
+    /// <summary>
+    /// Draws a textured sprite with a source rectangle (uint overload).
+    /// </summary>
+    public bool DrawSprite(uint textureId, float x, float y,
+                           float width, float height, RectF sourceRect,
+                           float rotation = 0f, Color? color = null)
+    {
+        return DrawSprite((ulong)textureId, x, y, width, height, sourceRect, rotation, color);
+    }
+
+    /// <summary>
+    /// Draws a colored quad (no texture) at the given position.
+    /// </summary>
+    public bool DrawQuad(float x, float y, float width, float height,
+                         Color? color = null)
+    {
+        ThrowIfDisposed();
+        var c = color ?? Color.White;
+        return NativeMethods.goud_renderer_draw_quad(
+            _contextId, x, y, width, height,
+            c.R, c.G, c.B, c.A);
+    }
+
+    #endregion
+
+    #region Input
+
+    /// <summary>
+    /// Checks if the specified key is currently pressed.
+    /// </summary>
+    public bool IsKeyPressed(Keys key)
+    {
+        ThrowIfDisposed();
+        return NativeMethods.goud_input_key_pressed(_contextId, (int)key);
+    }
+
+    /// <summary>
+    /// Checks if the specified key is currently pressed (int overload).
+    /// </summary>
     public bool IsKeyPressed(int keyCode)
     {
-        unsafe
-        {
-            return NativeMethods.game_is_key_pressed(gameInstance, keyCode);
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_input_key_pressed(_contextId, keyCode);
     }
 
+    /// <summary>
+    /// Checks if the specified key was just pressed this frame.
+    /// </summary>
+    public bool IsKeyJustPressed(Keys key)
+    {
+        ThrowIfDisposed();
+        return NativeMethods.goud_input_key_just_pressed(_contextId, (int)key);
+    }
+
+    /// <summary>
+    /// Checks if the specified key was just released this frame.
+    /// </summary>
+    public bool IsKeyJustReleased(Keys key)
+    {
+        ThrowIfDisposed();
+        return NativeMethods.goud_input_key_just_released(_contextId, (int)key);
+    }
+
+    /// <summary>
+    /// Checks if the specified mouse button is currently pressed.
+    /// </summary>
+    public bool IsMouseButtonPressed(MouseButtons button)
+    {
+        ThrowIfDisposed();
+        return NativeMethods.goud_input_mouse_button_pressed(_contextId, (int)button);
+    }
+
+    /// <summary>
+    /// Checks if the specified mouse button is currently pressed (int overload).
+    /// </summary>
     public bool IsMouseButtonPressed(int button)
     {
-        unsafe
-        {
-            return NativeMethods.game_is_mouse_button_pressed(gameInstance, button);
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_input_mouse_button_pressed(_contextId, button);
     }
 
-    public MousePosition GetMousePosition()
+    /// <summary>
+    /// Checks if the specified mouse button was just pressed this frame.
+    /// </summary>
+    public bool IsMouseButtonJustPressed(MouseButtons button)
     {
-        unsafe
-        {
-            return NativeMethods.game_get_mouse_position(gameInstance);
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_input_mouse_button_just_pressed(_contextId, (int)button);
     }
 
-    public uint LoadTiledMap(string mapName, string mapPath, uint[] textureIds)
+    /// <summary>
+    /// Gets the current mouse position.
+    /// </summary>
+    public (float X, float Y) GetMousePosition()
     {
-        unsafe
-        {
-            fixed (byte* mapNameBytes = System.Text.Encoding.ASCII.GetBytes(mapName + "\0"))
-            fixed (byte* mapPathBytes = System.Text.Encoding.ASCII.GetBytes(mapPath + "\0"))
-            {
-                fixed (uint* textureIdsPtr = textureIds)
-                {
-                    return NativeMethods.game_load_tiled_map(
-                        gameInstance,
-                        mapNameBytes,
-                        mapPathBytes,
-                        textureIdsPtr
-                    );
-                }
-            }
-        }
+        ThrowIfDisposed();
+        float x, y;
+        NativeMethods.goud_input_get_mouse_position(_contextId, &x, &y);
+        return (x, y);
     }
 
-    public void SetSelectedTiledMapById(uint id)
+    /// <summary>
+    /// Gets the mouse movement delta since last frame.
+    /// </summary>
+    public (float X, float Y) GetMouseDelta()
     {
-        unsafe
-        {
-            NativeMethods.game_set_selected_map_by_id(gameInstance, id);
-        }
+        ThrowIfDisposed();
+        float dx, dy;
+        NativeMethods.goud_input_get_mouse_delta(_contextId, &dx, &dy);
+        return (dx, dy);
     }
 
-    public void ClearSelectedTiledMap()
+    /// <summary>
+    /// Gets the scroll delta since last frame.
+    /// </summary>
+    public (float X, float Y) GetScrollDelta()
     {
-        unsafe
-        {
-            NativeMethods.game_clear_selected_map(gameInstance);
-        }
+        ThrowIfDisposed();
+        float dx, dy;
+        NativeMethods.goud_input_get_scroll_delta(_contextId, &dx, &dy);
+        return (dx, dy);
     }
 
-    public void SetCameraPosition(float x, float y)
-    {
-        unsafe
-        {
-            NativeMethods.game_set_camera_position(gameInstance, x, y);
-        }
-    }
+    #endregion
 
-    public void SetCameraPosition3D(float x, float y, float z)
-    {
-        unsafe
-        {
-            NativeMethods.game_set_camera_position_3d(gameInstance, x, y, z);
-        }
-    }
+    #region Logging
 
-    public float[] GetCameraPosition()
-    {
-        unsafe
-        {
-            float[] position = new float[3];
-            fixed (float* positionPtr = position)
-            {
-                NativeMethods.game_get_camera_position(gameInstance, positionPtr);
-            }
-            return position;
-        }
-    }
-
-    public void SetCameraRotation(float pitch, float yaw, float roll)
-    {
-        unsafe
-        {
-            NativeMethods.game_set_camera_rotation(gameInstance, pitch, yaw, roll);
-        }
-    }
-
-    public float[] GetCameraRotation()
-    {
-        unsafe
-        {
-            float[] rotation = new float[3];
-            fixed (float* rotationPtr = rotation)
-            {
-                NativeMethods.game_get_camera_rotation(gameInstance, rotationPtr);
-            }
-            return rotation;
-        }
-    }
-
-    public void SetCameraZoom(float zoom)
-    {
-        unsafe
-        {
-            NativeMethods.game_set_camera_zoom(gameInstance, zoom);
-        }
-    }
-
-    public float GetCameraZoom()
-    {
-        unsafe
-        {
-            return NativeMethods.game_get_camera_zoom(gameInstance);
-        }
-    }
-
+    /// <summary>
+    /// Logs a message (for debugging).
+    /// </summary>
     public void GameLog(string message)
     {
-        unsafe
-        {
-            fixed (byte* messageBytes = System.Text.Encoding.ASCII.GetBytes(message + "\0"))
-            {
-                NativeMethods.game_log(gameInstance, messageBytes);
-            }
-        }
+        Console.WriteLine($"[GoudEngine] {message}");
     }
 
-    public uint CreatePrimitive(CsBindgen.PrimitiveCreateInfo createInfo)
+    #endregion
+
+    #region 3D Rendering
+
+    /// <summary>
+    /// Invalid object handle constant.
+    /// </summary>
+    public const uint InvalidObject = uint.MaxValue;
+
+    /// <summary>
+    /// Invalid light handle constant.
+    /// </summary>
+    public const uint InvalidLight = uint.MaxValue;
+
+    /// <summary>
+    /// Light types for 3D rendering.
+    /// </summary>
+    public enum LightType
     {
-        return NativeMethods.game_create_primitive(gameInstance, createInfo);
+        /// <summary>Point light that emits in all directions.</summary>
+        Point = 0,
+        /// <summary>Directional light (like the sun).</summary>
+        Directional = 1,
+        /// <summary>Spot light with a cone.</summary>
+        Spot = 2
     }
 
+    // -------------------------------------------------------------------------
+    // Primitive Creation
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Creates a 3D cube object.
+    /// </summary>
+    /// <param name="textureId">Texture handle (0 for no texture)</param>
+    /// <param name="width">Cube width</param>
+    /// <param name="height">Cube height</param>
+    /// <param name="depth">Cube depth</param>
+    /// <returns>Object ID on success, InvalidObject on failure</returns>
+    public uint CreateCube(uint textureId, float width, float height, float depth)
+    {
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_create_cube(_contextId, textureId, width, height, depth);
+    }
+
+    /// <summary>
+    /// Creates a 3D plane (flat surface) object.
+    /// </summary>
+    /// <param name="textureId">Texture handle (0 for no texture)</param>
+    /// <param name="width">Plane width (X axis)</param>
+    /// <param name="depth">Plane depth (Z axis)</param>
+    /// <returns>Object ID on success, InvalidObject on failure</returns>
+    public uint CreatePlane(uint textureId, float width, float depth)
+    {
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_create_plane(_contextId, textureId, width, depth);
+    }
+
+    /// <summary>
+    /// Creates a 3D sphere object.
+    /// </summary>
+    /// <param name="textureId">Texture handle (0 for no texture)</param>
+    /// <param name="diameter">Sphere diameter</param>
+    /// <param name="segments">Number of segments (higher = smoother)</param>
+    /// <returns>Object ID on success, InvalidObject on failure</returns>
+    public uint CreateSphere(uint textureId, float diameter, uint segments = 16)
+    {
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_create_sphere(_contextId, textureId, diameter, segments);
+    }
+
+    /// <summary>
+    /// Creates a 3D cylinder object.
+    /// </summary>
+    /// <param name="textureId">Texture handle (0 for no texture)</param>
+    /// <param name="radius">Cylinder radius</param>
+    /// <param name="height">Cylinder height</param>
+    /// <param name="segments">Number of segments (higher = smoother)</param>
+    /// <returns>Object ID on success, InvalidObject on failure</returns>
+    public uint CreateCylinder(uint textureId, float radius, float height, uint segments = 16)
+    {
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_create_cylinder(_contextId, textureId, radius, height, segments);
+    }
+
+    // -------------------------------------------------------------------------
+    // Object Manipulation
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Sets the position of a 3D object.
+    /// </summary>
     public bool SetObjectPosition(uint objectId, float x, float y, float z)
     {
-        unsafe
-        {
-            return NativeMethods.game_set_object_position(gameInstance, objectId, x, y, z);
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_set_object_position(_contextId, objectId, x, y, z);
     }
 
+    /// <summary>
+    /// Sets the rotation of a 3D object (in degrees).
+    /// </summary>
     public bool SetObjectRotation(uint objectId, float x, float y, float z)
     {
-        unsafe
-        {
-            return NativeMethods.game_set_object_rotation(gameInstance, objectId, x, y, z);
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_set_object_rotation(_contextId, objectId, x, y, z);
     }
 
+    /// <summary>
+    /// Sets the scale of a 3D object.
+    /// </summary>
     public bool SetObjectScale(uint objectId, float x, float y, float z)
     {
-        unsafe
-        {
-            return NativeMethods.game_set_object_scale(gameInstance, objectId, x, y, z);
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_set_object_scale(_contextId, objectId, x, y, z);
     }
 
-    // Convenience methods for common primitives
-    public uint CreateCube(
-        uint textureId,
-        float width = 1.0f,
-        float height = 1.0f,
-        float depth = 1.0f
-    )
+    /// <summary>
+    /// Destroys a 3D object.
+    /// </summary>
+    public bool DestroyObject(uint objectId)
     {
-        var createInfo = new CsBindgen.PrimitiveCreateInfo
-        {
-            primitive_type = (CsBindgen.PrimitiveType)PrimitiveType.Cube,
-            width = width,
-            height = height,
-            depth = depth,
-            segments = 1,
-            texture_id = textureId
-        };
-        return CreatePrimitive(createInfo);
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_destroy_object(_contextId, objectId);
     }
 
-    public uint CreateSphere(uint textureId, float radius = 1.0f, uint segments = 32)
-    {
-        var createInfo = new CsBindgen.PrimitiveCreateInfo
-        {
-            primitive_type = (CsBindgen.PrimitiveType)PrimitiveType.Sphere,
-            width = radius * 2,
-            height = radius * 2,
-            depth = radius * 2,
-            segments = segments,
-            texture_id = textureId
-        };
-        return CreatePrimitive(createInfo);
-    }
+    // -------------------------------------------------------------------------
+    // Lighting
+    // -------------------------------------------------------------------------
 
-    public uint CreatePlane(uint textureId, float width = 1.0f, float depth = 1.0f)
-    {
-        var createInfo = new CsBindgen.PrimitiveCreateInfo
-        {
-            primitive_type = (CsBindgen.PrimitiveType)PrimitiveType.Plane,
-            width = width,
-            height = 0.0f,
-            depth = depth,
-            segments = 1,
-            texture_id = textureId
-        };
-        return CreatePrimitive(createInfo);
-    }
-
-    public uint CreateCylinder(
-        uint textureId,
-        float radius = 0.5f,
-        float height = 1.0f,
-        uint segments = 32
-    )
-    {
-        var createInfo = new CsBindgen.PrimitiveCreateInfo
-        {
-            primitive_type = (CsBindgen.PrimitiveType)PrimitiveType.Cylinder,
-            width = radius * 2,
-            height = height,
-            depth = radius * 2,
-            segments = segments,
-            texture_id = textureId
-        };
-        return CreatePrimitive(createInfo);
-    }
-
+    /// <summary>
+    /// Adds a light to the 3D scene.
+    /// </summary>
+    /// <param name="type">Light type</param>
+    /// <param name="positionX">Light X position</param>
+    /// <param name="positionY">Light Y position</param>
+    /// <param name="positionZ">Light Z position</param>
+    /// <param name="directionX">Light X direction</param>
+    /// <param name="directionY">Light Y direction</param>
+    /// <param name="directionZ">Light Z direction</param>
+    /// <param name="colorR">Light red component (0-1)</param>
+    /// <param name="colorG">Light green component (0-1)</param>
+    /// <param name="colorB">Light blue component (0-1)</param>
+    /// <param name="intensity">Light intensity</param>
+    /// <param name="range">Light range</param>
+    /// <param name="spotAngle">Spot cone angle in degrees</param>
+    /// <returns>Light ID on success, InvalidLight on failure</returns>
     public uint AddLight(
-        LightType lightType,
-        float positionX,
-        float positionY,
-        float positionZ,
-        float directionX,
-        float directionY,
-        float directionZ,
-        float colorR,
-        float colorG,
-        float colorB,
+        LightType type,
+        float positionX, float positionY, float positionZ,
+        float directionX, float directionY, float directionZ,
+        float colorR, float colorG, float colorB,
         float intensity = 1.0f,
-        float temperature = 6500.0f,
         float range = 10.0f,
-        float spotAngle = 45.0f
-    )
+        float spotAngle = 45.0f)
     {
-        unsafe
-        {
-            return NativeMethods.game_add_light(
-                gameInstance,
-                (int)lightType,
-                positionX,
-                positionY,
-                positionZ,
-                directionX,
-                directionY,
-                directionZ,
-                colorR,
-                colorG,
-                colorB,
-                intensity,
-                temperature,
-                range,
-                spotAngle
-            );
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_add_light(
+            _contextId, (int)type,
+            positionX, positionY, positionZ,
+            directionX, directionY, directionZ,
+            colorR, colorG, colorB,
+            intensity, range, spotAngle);
     }
 
-    public bool RemoveLight(uint lightId)
+    /// <summary>
+    /// Adds a point light to the scene (convenience method).
+    /// </summary>
+    public uint AddPointLight(float x, float y, float z, float r, float g, float b, 
+                              float intensity = 1.0f, float range = 10.0f)
     {
-        unsafe
-        {
-            return NativeMethods.game_remove_light(gameInstance, lightId);
-        }
+        return AddLight(LightType.Point, x, y, z, 0, -1, 0, r, g, b, intensity, range, 0);
     }
 
+    /// <summary>
+    /// Updates a light's properties.
+    /// </summary>
     public bool UpdateLight(
         uint lightId,
-        LightType lightType,
-        float positionX,
-        float positionY,
-        float positionZ,
-        float directionX,
-        float directionY,
-        float directionZ,
-        float colorR,
-        float colorG,
-        float colorB,
+        LightType type,
+        float positionX, float positionY, float positionZ,
+        float directionX, float directionY, float directionZ,
+        float colorR, float colorG, float colorB,
         float intensity = 1.0f,
-        float temperature = 6500.0f,
         float range = 10.0f,
-        float spotAngle = 45.0f
-    )
+        float spotAngle = 45.0f)
     {
-        unsafe
-        {
-            return NativeMethods.game_update_light(
-                gameInstance,
-                lightId,
-                (int)lightType,
-                positionX,
-                positionY,
-                positionZ,
-                directionX,
-                directionY,
-                directionZ,
-                colorR,
-                colorG,
-                colorB,
-                intensity,
-                temperature,
-                range,
-                spotAngle
-            );
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_update_light(
+            _contextId, lightId, (int)type,
+            positionX, positionY, positionZ,
+            directionX, directionY, directionZ,
+            colorR, colorG, colorB,
+            intensity, range, spotAngle);
     }
-
-    // Helper methods for common light setups
-    public uint AddPointLight(
-        float positionX,
-        float positionY,
-        float positionZ,
-        float colorR = 1.0f,
-        float colorG = 1.0f,
-        float colorB = 1.0f,
-        float intensity = 1.0f,
-        float temperature = 6500.0f,
-        float range = 10.0f
-    )
-    {
-        return AddLight(
-            LightType.Point,
-            positionX,
-            positionY,
-            positionZ,
-            0,
-            0,
-            0, // Direction doesn't matter for point lights
-            colorR,
-            colorG,
-            colorB,
-            intensity,
-            temperature,
-            range,
-            0 // Spot angle doesn't matter for point lights
-        );
-    }
-
-    public uint AddDirectionalLight(
-        float directionX,
-        float directionY,
-        float directionZ,
-        float colorR = 1.0f,
-        float colorG = 1.0f,
-        float colorB = 1.0f,
-        float intensity = 1.0f,
-        float temperature = 6500.0f
-    )
-    {
-        return AddLight(
-            LightType.Directional,
-            0,
-            0,
-            0, // Position doesn't matter for directional lights
-            directionX,
-            directionY,
-            directionZ,
-            colorR,
-            colorG,
-            colorB,
-            intensity,
-            temperature,
-            float.MaxValue, // Range doesn't matter for directional lights
-            0 // Spot angle doesn't matter for directional lights
-        );
-    }
-
-    public uint AddSpotLight(
-        float positionX,
-        float positionY,
-        float positionZ,
-        float directionX,
-        float directionY,
-        float directionZ,
-        float spotAngle = 45.0f,
-        float colorR = 1.0f,
-        float colorG = 1.0f,
-        float colorB = 1.0f,
-        float intensity = 1.0f,
-        float temperature = 6500.0f,
-        float range = 10.0f
-    )
-    {
-        return AddLight(
-            LightType.Spot,
-            positionX,
-            positionY,
-            positionZ,
-            directionX,
-            directionY,
-            directionZ,
-            colorR,
-            colorG,
-            colorB,
-            intensity,
-            temperature,
-            range,
-            spotAngle
-        );
-    }
-
-    // Grid Configuration Methods
 
     /// <summary>
-    /// Configures the 3D grid with all available options
+    /// Removes a light from the scene.
     /// </summary>
-    public bool ConfigureGrid(
-        bool enabled = true,
-        float size = 20.0f,
-        uint divisions = 20,
-        float xzColorR = 0.7f,
-        float xzColorG = 0.7f,
-        float xzColorB = 0.7f,
-        float xyColorR = 0.8f,
-        float xyColorG = 0.6f,
-        float xyColorB = 0.6f,
-        float yzColorR = 0.6f,
-        float yzColorG = 0.6f,
-        float yzColorB = 0.8f,
-        float xAxisColorR = 0.9f,
-        float xAxisColorG = 0.2f,
-        float xAxisColorB = 0.2f,
-        float yAxisColorR = 0.2f,
-        float yAxisColorG = 0.9f,
-        float yAxisColorB = 0.2f,
-        float zAxisColorR = 0.2f,
-        float zAxisColorG = 0.2f,
-        float zAxisColorB = 0.9f,
-        float lineWidth = 1.5f,
-        float axisLineWidth = 2.5f,
-        bool showAxes = true,
-        bool showXZPlane = true,
-        bool showXYPlane = true,
-        bool showYZPlane = true,
-        GridRenderMode renderMode = GridRenderMode.Overlap
-    )
+    public bool RemoveLight(uint lightId)
     {
-        unsafe
-        {
-            return NativeMethods.game_configure_grid(
-                gameInstance,
-                enabled,
-                size,
-                divisions,
-                xzColorR,
-                xzColorG,
-                xzColorB,
-                xyColorR,
-                xyColorG,
-                xyColorB,
-                yzColorR,
-                yzColorG,
-                yzColorB,
-                xAxisColorR,
-                xAxisColorG,
-                xAxisColorB,
-                yAxisColorR,
-                yAxisColorG,
-                yAxisColorB,
-                zAxisColorR,
-                zAxisColorG,
-                zAxisColorB,
-                lineWidth,
-                axisLineWidth,
-                showAxes,
-                showXZPlane,
-                showXYPlane,
-                showYZPlane,
-                (int)renderMode
-            );
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_remove_light(_contextId, lightId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Camera
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Sets the 3D camera position.
+    /// </summary>
+    public bool SetCameraPosition3D(float x, float y, float z)
+    {
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_set_camera_position(_contextId, x, y, z);
     }
 
     /// <summary>
-    /// Simple helper to enable/disable the grid
+    /// Sets the 3D camera rotation (pitch, yaw, roll in degrees).
+    /// </summary>
+    public bool SetCameraRotation(float pitch, float yaw, float roll = 0f)
+    {
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_set_camera_rotation(_contextId, pitch, yaw, roll);
+    }
+
+    // -------------------------------------------------------------------------
+    // Grid and Skybox
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Configures the ground grid.
+    /// </summary>
+    /// <param name="enabled">Whether grid is visible</param>
+    /// <param name="size">Grid size</param>
+    /// <param name="divisions">Number of grid divisions</param>
+    public bool ConfigureGrid(bool enabled, float size = 20f, uint divisions = 20)
+    {
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_configure_grid(_contextId, enabled, size, divisions);
+    }
+
+    /// <summary>
+    /// Sets grid visibility.
     /// </summary>
     public bool SetGridEnabled(bool enabled)
     {
-        unsafe
-        {
-            return NativeMethods.game_set_grid_enabled(gameInstance, enabled);
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_set_grid_enabled(_contextId, enabled);
     }
 
     /// <summary>
-    /// Set the grid render mode (blend or overlap)
+    /// Configures the skybox/background color.
     /// </summary>
-    /// <param name="blendMode">True for Blend mode (grid rendered with proper depth testing),
-    /// False for Overlap mode (grid always on top)</param>
-    /// <returns>True if successful</returns>
-    public bool SetGridRenderMode(bool blendMode)
+    public bool ConfigureSkybox(bool enabled, float r = 0.1f, float g = 0.1f, float b = 0.2f, float a = 1.0f)
     {
-        unsafe
-        {
-            return NativeMethods.game_set_grid_render_mode(gameInstance, blendMode);
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_configure_skybox(_contextId, enabled, r, g, b, a);
     }
 
     /// <summary>
-    /// Simple helper to show/hide specific grid planes
+    /// Configures fog settings for atmospheric effects.
     /// </summary>
-    public bool SetGridPlanes(bool showXZ, bool showXY, bool showYZ)
+    /// <param name="enabled">Whether fog is enabled</param>
+    /// <param name="r">Fog color red component (0-1)</param>
+    /// <param name="g">Fog color green component (0-1)</param>
+    /// <param name="b">Fog color blue component (0-1)</param>
+    /// <param name="density">Fog density (higher = thicker fog)</param>
+    public bool ConfigureFog(bool enabled, float r = 0.05f, float g = 0.05f, float b = 0.1f, float density = 0.02f)
     {
-        unsafe
-        {
-            return NativeMethods.game_set_grid_planes(gameInstance, showXZ, showXY, showYZ);
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_configure_fog(_contextId, enabled, r, g, b, density);
     }
 
     /// <summary>
-    /// Configures the skybox with all available options
+    /// Sets fog enabled state.
     /// </summary>
-    public bool ConfigureSkybox(
-        bool enabled = true,
-        float size = 100.0f,
-        uint textureSize = 128,
-        float[] rightFaceColor = null,
-        float[] leftFaceColor = null,
-        float[] topFaceColor = null,
-        float[] bottomFaceColor = null,
-        float[] frontFaceColor = null,
-        float[] backFaceColor = null,
-        float blendFactor = 0.5f,
-        float[] minColor = null,
-        bool useCustomTextures = false
-    )
+    public bool SetFogEnabled(bool enabled)
     {
-        unsafe
-        {
-            // Use default colors if not provided
-            rightFaceColor = rightFaceColor ?? new float[] { 0.7f, 0.8f, 0.9f };
-            leftFaceColor = leftFaceColor ?? new float[] { 0.7f, 0.8f, 0.9f };
-            topFaceColor = topFaceColor ?? new float[] { 0.6f, 0.7f, 0.9f };
-            bottomFaceColor = bottomFaceColor ?? new float[] { 0.3f, 0.3f, 0.4f };
-            frontFaceColor = frontFaceColor ?? new float[] { 0.7f, 0.8f, 0.9f };
-            backFaceColor = backFaceColor ?? new float[] { 0.7f, 0.8f, 0.9f };
-            minColor = minColor ?? new float[] { 0.1f, 0.1f, 0.2f };
-
-            // The method is already defined in NativeMethods.g.cs so we remove the duplicate implementation
-            // and just use the correct call
-            return NativeMethods.game_configure_skybox(
-                gameInstance,
-                enabled,
-                size,
-                textureSize,
-                rightFaceColor[0],
-                rightFaceColor[1],
-                rightFaceColor[2],
-                leftFaceColor[0],
-                leftFaceColor[1],
-                leftFaceColor[2],
-                topFaceColor[0],
-                topFaceColor[1],
-                topFaceColor[2],
-                bottomFaceColor[0],
-                bottomFaceColor[1],
-                bottomFaceColor[2],
-                frontFaceColor[0],
-                frontFaceColor[1],
-                frontFaceColor[2],
-                backFaceColor[0],
-                backFaceColor[1],
-                backFaceColor[2],
-                blendFactor,
-                minColor[0],
-                minColor[1],
-                minColor[2],
-                useCustomTextures
-            );
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_set_fog_enabled(_contextId, enabled);
     }
+
+    // -------------------------------------------------------------------------
+    // Rendering
+    // -------------------------------------------------------------------------
 
     /// <summary>
-    /// Simple helper to enable/disable the skybox
+    /// Renders all 3D objects in the scene.
+    /// Call this between BeginFrame and EndFrame.
     /// </summary>
-    public bool SetSkyboxEnabled(bool enabled)
+    public bool Render3D()
     {
-        unsafe
-        {
-            return NativeMethods.game_set_skybox_enabled(gameInstance, enabled);
-        }
+        ThrowIfDisposed();
+        return NativeMethods.goud_renderer3d_render_all(_contextId);
     }
 
-    /// <summary>
-    /// Set the skybox colors for all faces at once
-    /// </summary>
-    public bool SetSkyboxColors(
-        float[] rightFaceColor,
-        float[] leftFaceColor,
-        float[] topFaceColor,
-        float[] bottomFaceColor,
-        float[] frontFaceColor,
-        float[] backFaceColor
-    )
+    #endregion
+
+    #region IDisposable
+
+    ~GoudGame()
     {
-        unsafe
-        {
-            return NativeMethods.game_set_skybox_colors(
-                gameInstance,
-                rightFaceColor[0],
-                rightFaceColor[1],
-                rightFaceColor[2],
-                leftFaceColor[0],
-                leftFaceColor[1],
-                leftFaceColor[2],
-                topFaceColor[0],
-                topFaceColor[1],
-                topFaceColor[2],
-                bottomFaceColor[0],
-                bottomFaceColor[1],
-                bottomFaceColor[2],
-                frontFaceColor[0],
-                frontFaceColor[1],
-                frontFaceColor[2],
-                backFaceColor[0],
-                backFaceColor[1],
-                backFaceColor[2]
-            );
-        }
+        Dispose(disposing: false);
     }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_isDisposed)
+            return;
+
+        if (_contextId.Item1 != ulong.MaxValue)
+        {
+            NativeMethods.goud_window_destroy(_contextId);
+            _contextId = new GoudContextId { Item1 = ulong.MaxValue };
+        }
+
+        _isDisposed = true;
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (_isDisposed)
+            throw new ObjectDisposedException(nameof(GoudGame));
+    }
+
+    #endregion
+
+    #region Legacy API (deprecated)
+
+    /// <summary>
+    /// Terminates the game and releases native resources.
+    /// </summary>
+    [Obsolete("Use Dispose() instead.")]
+    public void Terminate()
+    {
+        Dispose();
+    }
+
+    #endregion
 }

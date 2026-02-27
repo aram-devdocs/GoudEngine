@@ -1,0 +1,9 @@
+# Cargo configuration for GoudEngine
+
+[build]
+# Use all available CPU cores for compilation
+jobs = -1
+
+# NOTE: target-cpu=native was removed because it causes SIGILL errors on CI
+# when cached build artifacts are reused on runners with different CPUs.
+# For local performance optimization, you can set CARGO_RUSTFLAGS="-C target-cpu=native"
