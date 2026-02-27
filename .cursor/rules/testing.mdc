@@ -1,0 +1,68 @@
+---
+description: Testing conventions, TDD workflow, and benchmark patterns
+globs:
+  - "**/*test*"
+  - "**/tests/**"
+  - "**/benches/**"
+alwaysApply: false
+---
+
+# Testing Rules
+
+## TDD Workflow
+
+1. **RED**: Write a failing test first — verify it fails with `cargo test`
+2. **GREEN**: Write minimal implementation to make the test pass
+3. **REFACTOR**: Improve code quality while keeping tests green
+
+No `#[ignore]`, no `todo!()` in committed test code.
+
+## Test Organization
+
+- **Unit tests**: Colocated in `#[cfg(test)]` modules within source files
+- **Integration tests**: In `goud_engine/tests/` directory (currently none — add as needed)
+- **SDK tests**: `python3 sdks/python/test_bindings.py`, `dotnet test sdks/GoudEngine.Tests/`
+- **Benchmarks**: In `goud_engine/benches/` using criterion
+
+## Test Patterns
+
+- One assertion per concept — use Arrange-Act-Assert pattern
+- Test names describe the behavior being verified (e.g., `entity_despawn_increments_generation`)
+- Use `tempfile` crate for tests needing filesystem fixtures
+- Factory functions for common test entity/component setups
+
+## Graphics / GL Tests
+
+- Tests needing OpenGL context: use `test_helpers::init_test_context()`
+- Pure math/logic tests (matrix ops, collisions, queries) MUST NOT require GL
+- Texture tests may need valid image files in `assets/`
+- GL-dependent tests may fail in CI without a display — guard with `#[cfg]` if needed
+
+## Running Tests
+
+```bash
+cargo test                         # All tests
+cargo test -- --nocapture          # Show println output
+cargo test --lib sdk               # Test Rust SDK module
+cargo test graphics                # Test graphics module
+cargo test <test_name>             # Run a specific test
+python3 sdks/python/test_bindings.py  # Python SDK tests
+```
+
+## Benchmarks
+
+- Framework: criterion with HTML reports
+- Defined in `goud_engine/benches/` — `ecs_benchmarks.rs`, `asset_benchmarks.rs`
+- Focus on hot paths: entity creation, component iteration, asset loading
+- Run: `cargo bench`
+- Compare before/after when optimizing
+
+## Pre-commit / Pre-push Checks
+
+Pre-commit (fast): `cargo fmt --check`, `cargo clippy -- -D warnings`, basic tests, Python SDK
+Pre-push (full): entire test suite, doctests, `cargo deny check`
+
+After modifying `.husky/hooks/pre-commit` or `.husky/hooks/pre-push`:
+```bash
+cargo clean && cargo test   # Required for husky-rs to reload hooks
+```

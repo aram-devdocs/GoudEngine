@@ -2,43 +2,185 @@ name: Claude Code Review
 
 on:
   pull_request:
-    types: [opened, synchronize, ready_for_review, reopened]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+    types: [opened, synchronize, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to review"
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: read
 
 jobs:
-  claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+  pre-check:
+    name: Pre-Check
+    runs-on: ubuntu-latest
+    outputs:
+      should_review: ${{ steps.check.outputs.should_review }}
+      pr_number: ${{ steps.check.outputs.pr_number }}
+    steps:
+      - name: Determine if review should run
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let prNumber;
+            let shouldReview = false;
 
+            if (context.eventName === 'workflow_dispatch') {
+              prNumber = context.payload.inputs.pr_number;
+              shouldReview = true;
+            } else if (context.eventName === 'issue_comment') {
+              const comment = context.payload.comment.body;
+              if (!comment.includes('@claude-review')) {
+                core.setOutput('should_review', 'false');
+                return;
+              }
+              prNumber = context.payload.issue.number;
+              shouldReview = true;
+            } else {
+              prNumber = context.payload.pull_request.number;
+              const pr = context.payload.pull_request;
+
+              if (pr.draft) {
+                core.info('Skipping draft PR');
+                core.setOutput('should_review', 'false');
+                return;
+              }
+
+              if (pr.user.type === 'Bot') {
+                core.info('Skipping bot PR');
+                core.setOutput('should_review', 'false');
+                return;
+              }
+
+              shouldReview = true;
+            }
+
+            if (shouldReview) {
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber
+              });
+
+              const { data: files } = await github.rest.pulls.listFiles({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                per_page: 100
+              });
+
+              if (files.length > 50) {
+                core.warning(`PR has ${files.length} files — skipping automated review (>50 files)`);
+                core.setOutput('should_review', 'false');
+                return;
+              }
+
+              const totalChanges = pr.additions + pr.deletions;
+              if (totalChanges > 5000) {
+                core.warning(`PR has ${totalChanges} changed lines — skipping automated review (>5000 lines)`);
+                core.setOutput('should_review', 'false');
+                return;
+              }
+            }
+
+            core.setOutput('should_review', String(shouldReview));
+            core.setOutput('pr_number', String(prNumber));
+
+  review:
+    name: AI Code Review
+    needs: pre-check
+    if: needs.pre-check.outputs.should_review == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write
+      issues: write
       id-token: write
-
+      actions: read
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
 
       - name: Run Claude Code Review
-        id: claude-review
         uses: anthropics/claude-code-action@v1
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
-          plugins: 'code-review@claude-code-plugins'
-          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          track_progress: true
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ needs.pre-check.outputs.pr_number }}
 
+            You are reviewing a PR for GoudEngine, a Rust game engine with C# and Python SDKs.
+            Read the root CLAUDE.md for full project context.
+
+            Perform a 7-phase review:
+
+            ## Phase 1: Context Gathering
+            - Read CLAUDE.md for project conventions
+            - Identify which layers are touched (Core, FFI, SDK, Examples)
+            - Note the PR type (feature, fix, refactor, etc.)
+
+            ## Phase 2: Architecture Validation
+            - Verify dependency flow is downward only (libs -> engine -> ffi -> sdks -> examples)
+            - Check that no logic is implemented in SDKs (Rust-first principle)
+            - Verify no raw OpenGL calls outside graphics/backend module
+            - Check file sizes (flag files exceeding 500 lines)
+
+            ## Phase 3: Anti-Pattern Scan
+            Check for these blockers:
+            - Missing #[no_mangle] or #[repr(C)] on FFI exports
+            - unsafe blocks without // SAFETY: comments
+            - FFI changes without corresponding C# AND Python SDK updates
+            - todo!() or unimplemented!() in production code
+            - unwrap()/expect() in library code (should use Result)
+            - Duplicated logic between Rust and SDK layers
+
+            ## Phase 4: Quality Assessment
+            - Code clarity and naming conventions
+            - Error handling completeness
+            - Test coverage for new code
+            - Documentation on public APIs
+
+            ## Phase 5: Security Review (if FFI/unsafe changes)
+            - Null pointer checks on all FFI pointer parameters
+            - Memory ownership documented (who allocates, who frees)
+            - Buffer bounds validation
+            - No use-after-free potential
+
+            ## Phase 6: Scope Verification
+            - Changes match the PR description
+            - No unrelated changes smuggled in
+            - Version bump included if needed
+
+            ## Phase 7: Review Output
+            Produce a structured review with:
+            - Verdict: APPROVED | CHANGES REQUESTED | BLOCKED
+            - BLOCKERS table (must fix before merge)
+            - WARNINGS table (should fix, non-blocking)
+            - Positive callouts (good patterns observed)
+
+            Provide detailed feedback using inline comments for specific issues.
+            Use top-level comments for general observations.
+          claude_args: |
+            --allowedTools "Bash(cargo check:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo test:*),Bash(cargo deny:*),Bash(wc -l:*),Bash(rg:*),Read,Glob,Grep"

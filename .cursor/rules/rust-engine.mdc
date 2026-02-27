@@ -1,0 +1,58 @@
+---
+description: Rust engine core development patterns and module organization
+globs:
+  - goud_engine/src/**
+alwaysApply: false
+---
+
+# Rust Engine Rules
+
+## Module Organization
+
+```
+goud_engine/src/
+├── core/       # Error types (thiserror), events, math (glam wrappers), generational handles
+├── ecs/        # Entity-Component-System: World, Entity, Components, Systems, Queries
+├── assets/     # AssetServer, loaders, hot-reload (notify), audio (rodio)
+├── libs/       # Low-level subsystems: graphics (OpenGL), platform (GLFW)
+├── ffi/        # FFI boundary — see ffi-sdk rule
+├── sdk/        # Native Rust SDK — zero-overhead API mirroring FFI surface
+└── lib.rs      # Public API surface, re-exports
+```
+
+## Error Handling
+
+- Use `thiserror` for error types — define in `core/error.rs`
+- Library functions return `Result<T, GoudError>`, never panic
+- Map errors at module boundaries with `.map_err()` or `?`
+
+## Generational Handles
+
+- `Handle<T>` in `core/handle.rs` for safe resource references
+- Entity IDs use generational index + generation pair (`Entity::new(index, generation)`)
+- Never store entity IDs as raw `u32` — always use `Entity` type
+
+## Component Patterns
+
+- Components are plain data structs — derive `Debug`, `Clone`
+- No side-effectful methods on components
+- Storage via `SparseSet<T>` for O(1) access and cache-friendly iteration
+- Transform hierarchy: `Transform2D` → `GlobalTransform2D` via propagation system
+
+## System Patterns
+
+- Systems implement the `System` trait or use function systems
+- Query components from `World` — type-safe generic queries
+- System scheduling via `Schedule` with `CoreStage` ordering
+- Never access `World` internals directly; go through queries
+
+## Resource Management
+
+- Resources stored in `World` via `Resources` container
+- Access with `Res<T>` (read) and `ResMut<T>` (write) system params
+- Insert resources before systems that depend on them
+
+## Crate Configuration
+
+- Crate type: `cdylib` (for FFI shared library) + `rlib` (for Rust consumers)
+- All public API goes through `lib.rs` re-exports

@@ -310,6 +310,53 @@ game.destroy()
 - [csbindgen](https://github.com/Cysharp/csbindgen) - C# bindings generator
 - [cbindgen](https://github.com/mozilla/cbindgen) - C header generator
 
+## AI Agent Setup
+
+This repository includes configuration for AI coding assistants (Claude Code, Cursor, Gemini). The setup follows a layered approach with shared infrastructure across tools.
+
+### Directory Structure
+
+```
+.claude/              # Claude Code configuration
+├── agents/           # Subagent definitions (implementer, debugger, reviewers, etc.)
+├── rules/            # Contextual rules (FFI patterns, SDK development, TDD, etc.)
+├── hooks/            # Lifecycle hooks (quality checks, secret scanning, session state)
+├── skills/           # -> symlink to .agents/skills/
+├── memory/           # Session state (gitignored)
+├── specs/            # Feature specs for multi-session work
+└── settings.local.json
+
+.agents/skills/       # Cross-tool skills (shared between Claude, Cursor, Gemini)
+├── subagent-driven-development/
+├── review-changes/
+├── code-review/
+├── hardening-checklist/
+├── tdd-workflow/
+├── sdk-parity-check/
+└── ...
+
+.cursor/              # Cursor IDE configuration
+├── rules/            # Cursor-specific contextual rules (.mdc files)
+└── skills/           # -> symlink to .agents/skills/
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `CLAUDE.md` | Root agent instructions (commands, architecture, anti-patterns) |
+| `AGENTS.md` | Symlink to `CLAUDE.md` (Copilot/Cursor compatibility) |
+| `GEMINI.md` | Symlink to `CLAUDE.md` (Gemini compatibility) |
+| `.cursorignore` | Excludes build artifacts from Cursor indexing |
+
+### Distributed CLAUDE.md
+
+Subdirectory `CLAUDE.md` files provide module-specific context to agents working in that area. Key locations include `goud_engine/`, `goud_engine/src/ffi/`, `sdks/`, and `examples/`.
+
+### Adding New Skills
+
+Skills live in `.agents/skills/<skill-name>/SKILL.md` and are automatically available to both Claude Code and Cursor through symlinks.
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
