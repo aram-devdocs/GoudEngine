@@ -1,5 +1,4 @@
 {
-  "general": {
-    "previewFeatures": true
-  }
+  "previewFeatures": true,
+  "codeExecution": true
 }

@@ -1,0 +1,75 @@
+---
+description: FFI boundary rules and SDK development patterns for C# and Python
+globs:
+  - goud_engine/src/ffi/**
+  - sdks/**
+alwaysApply: false
+---
+
+# FFI and SDK Rules
+
+## FFI Boundary (`goud_engine/src/ffi/`)
+
+### Required Annotations
+
+- All public functions: `#[no_mangle] extern "C"`
+- Structs shared across FFI: `#[repr(C)]`
+- Every `unsafe` block MUST have a `// SAFETY:` comment explaining why it is sound
+
+### Function Conventions
+
+- Error returns as `i32` via `GoudResult` (0 = success, negative = error code)
+- Context-based API: operations go through `GoudContextId` handles
+- Null pointer checks on all pointer parameters — never dereference unchecked
+- Memory ownership: document who allocates and who frees on every pointer param
+
+### Module Layout
+
+Each domain has its own file:
+- `context.rs` — context create/destroy, registry
+- `entity.rs` — entity spawn/despawn
+- `component.rs`, `component_transform2d.rs`, `component_sprite.rs` — per-component FFI
+- `renderer.rs`, `renderer3d.rs` — rendering operations
+- `input.rs`, `window.rs`, `collision.rs` — subsystem access
+- `types.rs` — shared FFI types (`FfiVec2`, `GoudEntityId`, `GoudResult`)
+
+### Build Integration
+
+- `cargo build` triggers csbindgen to auto-generate C# bindings
+- Python bindings in `sdks/python/goud_engine/bindings.py` are updated manually
+
+## SDK Development
+
+### Thin Wrapper Principle
+
+SDKs call FFI functions — they NEVER implement logic. If you find logic in SDK code, move it to Rust and expose via FFI.
+
+### Feature Parity
+
+Every FFI export MUST have wrappers in BOTH:
+1. C# SDK (`sdks/GoudEngine/`) — uses DllImport, .NET 8.0
+2. Python SDK (`sdks/python/goud_engine/`) — uses ctypes
+
+### Naming Conventions
+
+| Language | Methods        | Properties     | FFI function names |
+|----------|----------------|----------------|--------------------|
+| Rust FFI | `snake_case`   | N/A            | `goud_*`           |
+| C#       | `PascalCase`   | `PascalCase`   | via DllImport      |
+| Python   | `snake_case`   | `snake_case`   | via ctypes         |
+
+### Workflow for New Features
+
+1. Implement in Rust (`goud_engine/src/`)
+2. Add FFI exports (`goud_engine/src/ffi/`)
+3. Run `cargo build` (triggers csbindgen for C#)
+4. Update Python bindings (`sdks/python/goud_engine/bindings.py`)
+5. Update SDK wrapper classes in both C# and Python
+6. Run SDK tests for both languages
+
+### Anti-Patterns
+
+- Missing `#[no_mangle]` or `#[repr(C)]` on FFI exports
+- Adding FFI functions without updating BOTH C# and Python SDKs
+- Duplicating types between Rust and SDK (codegen only)
+- Raw pointer dereference without null check

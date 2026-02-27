@@ -1,12 +1,34 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding agents working with GoudEngine.
+The key words MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY are used per RFC 2119.
+
+## Mandatory Skills
+
+Agents SHOULD load these skills at session start when available:
+- `/subagent-driven-development` — parallel batch orchestration with two-stage review
+- `/humanizer` — remove AI writing patterns from documentation
+- `/find-skills` — discover available skills in the repository
+
+## Subagent Workflow
+
+All non-trivial implementation MUST go through subagent dispatch:
+1. Read the task or spec
+2. Consult a domain expert if the task touches graphics, ECS, or FFI
+3. Analyze task independence (different files, no import relationships)
+4. Dispatch via subagents — parallel if independent, sequential if dependent
+5. Two-stage review: spec-reviewer FIRST, then code-quality-reviewer
+6. Run test-runner to verify changes
+7. Before merge: architecture-validator + security-auditor (if FFI/unsafe touched)
+
+Agents MUST NOT skip the spec-reviewer gate before running the code-quality-reviewer.
+Security-sensitive work (FFI, unsafe blocks) MUST NOT be parallelized.
 
 ## Essential Commands
 
 ### Building and Testing
 ```bash
-# Quick development with automatic build and run (C# SDK - default)
+# Quick development with automatic build and run (C# SDK — default)
 ./dev.sh --game flappy_goud       # Run 2D game (default)
 ./dev.sh --game 3d_cube          # Run 3D demo
 ./dev.sh --game goud_jumper      # Run platform game
@@ -33,7 +55,7 @@ cargo test graphics             # Test specific module
 # Python SDK tests
 python3 sdks/python/test_bindings.py  # Run Python SDK tests
 
-# Pre-commit checks (must pass)
+# Pre-commit checks (MUST pass)
 cargo check
 cargo fmt --all -- --check
 cargo clippy -- -D warnings
@@ -41,7 +63,7 @@ cargo deny check
 ```
 
 ### Version Management
-After making changes, ALWAYS increment version before packaging:
+You MUST increment the version before packaging:
 ```bash
 ./increment_version.sh         # Patch (0.0.X)
 ./increment_version.sh --minor # Minor (0.X.0)
@@ -61,10 +83,9 @@ After making changes, ALWAYS increment version before packaging:
 ### Design Principle: Rust-First
 **All logic lives in Rust.** SDKs are thin wrappers that marshal data and call FFI functions.
 
-This means:
-- Component methods (e.g., `Transform2D.translate()`) are implemented in Rust
-- SDKs call FFI functions, they don't implement logic
-- If you need a new feature, add it to Rust first, then expose via FFI
+- Component methods (e.g., `Transform2D.translate()`) MUST be implemented in Rust
+- SDKs call FFI functions — they MUST NOT implement logic
+- New features MUST be added to Rust first, then exposed via FFI
 
 ### Core Structure
 GoudEngine is a Rust game engine with multi-language SDK support:
@@ -73,6 +94,18 @@ GoudEngine is a Rust game engine with multi-language SDK support:
 - **C# SDK** (`sdks/GoudEngine/`): User-facing .NET API via FFI
 - **Python SDK** (`sdks/python/`): Python bindings via FFI (ctypes)
 - **FFI Layer** (`goud_engine/src/ffi/`): csbindgen-generated bindings
+
+### Layer Architecture
+
+Dependencies flow DOWN only. No upward imports. No same-layer cross-imports.
+
+```
+Layer 1 (Core)   :  libs/  (graphics, platform, ecs, logger)
+Layer 2 (Engine) :  goud_engine/src/  (core, assets, sdk)
+Layer 3 (FFI)    :  goud_engine/src/ffi/
+Layer 4 (SDKs)   :  sdks/  (GoudEngine C#, python)
+Layer 5 (Apps)   :  examples/
+```
 
 ### Module Organization
 ```
@@ -99,12 +132,39 @@ new GoudGame(800, 600, "Title", RendererType.Renderer2D)  // 2D
 new GoudGame(800, 600, "Title", RendererType.Renderer3D)  // 3D
 ```
 
-### Graphics Testing Focus
-Currently improving test coverage for graphics components:
-- Texture system (`texture.rs`, `texture_manager.rs`)
-- Cameras (`camera2d.rs`, `camera3d.rs`)
-- Shader programs (`shader_program.rs`)
-- Tiled map support (`tiled.rs`)
+## Anti-Patterns
+
+Agents MUST NOT introduce any of the following:
+
+1. Implementing logic in SDKs instead of Rust core
+2. Missing `#[no_mangle]` or `#[repr(C)]` on FFI exports
+3. Using `unsafe` without a `// SAFETY:` comment
+4. Breaking the layer dependency hierarchy (upward imports)
+5. Skipping version increment before packaging
+6. Using `--no-verify` on commits
+7. Adding FFI functions without updating BOTH C# and Python SDKs
+8. Committing secrets or credentials
+9. Force-pushing to main
+10. Skipping spec-reviewer before code-quality-reviewer
+11. Not running `/humanizer` on documentation changes
+12. Direct implementation without subagent dispatch (for non-trivial tasks)
+13. Files exceeding 500 lines
+14. Raw OpenGL calls outside `graphics/backend/` module
+15. Duplicating types between Rust and SDK (codegen only)
+16. Tests without assertions or with `#[ignore]`/`todo!()`
+
+## SDK Development Workflow
+
+When adding new features, follow this sequence exactly:
+1. **Implement in Rust first** (`goud_engine/src/`)
+2. **Add FFI exports** (`goud_engine/src/ffi/`)
+3. **Run `cargo build`** — this triggers csbindgen for C# bindings
+4. **Update Python bindings** (`sdks/python/goud_engine/bindings.py`)
+5. **Update SDK wrappers** (C# in `sdks/GoudEngine/`, Python classes)
+6. **Verify parity** with the `/sdk-parity-check` skill if available
+
+DRY validation: search for method implementations in both Rust and SDK code.
+If logic exists in an SDK, it MUST be moved to Rust.
 
 ## Key Development Notes
 
@@ -128,22 +188,17 @@ Generate visual dependency graph:
 Location: `$HOME/nuget-local`
 
 ### FFI Considerations
-- All public functions in `ffi/` must be `#[no_mangle] extern "C"`
-- Structs shared with C#/Python need `#[repr(C)]`
-- Memory management crosses FFI boundary - be careful with ownership
+- All public functions in `ffi/` MUST be `#[no_mangle] extern "C"`
+- Structs shared with C#/Python MUST use `#[repr(C)]`
+- Memory management crosses the FFI boundary — document ownership on every pointer parameter
 - Component FFI exports are in `ffi/component_*.rs` files
 
-### SDK Development Guidelines
-When adding new features:
-1. **Implement in Rust first** (`goud_engine/src/`)
-2. **Add FFI exports** (`goud_engine/src/ffi/`)
-3. **Run csbindgen** to update C# bindings (`cargo build` triggers this)
-4. **Update Python bindings** (`sdks/python/goud_engine/bindings.py`)
-5. **Update SDK wrappers** if needed (C# in `sdks/GoudEngine/`, Python classes)
-
-DRY Validation:
-- Search for method implementations in both Rust and SDK code
-- If logic exists in SDK, it should be moved to Rust
+### Graphics Testing Focus
+Currently improving test coverage for graphics components:
+- Texture system (`texture.rs`, `texture_manager.rs`)
+- Cameras (`camera2d.rs`, `camera3d.rs`)
+- Shader programs (`shader_program.rs`)
+- Tiled map support (`tiled.rs`)
 
 ### Testing Graphics Components
 When testing graphics code:
@@ -151,19 +206,20 @@ When testing graphics code:
 2. Use `test_helpers::init_test_context()` for tests needing GL
 3. Texture tests may need valid image files in `assets/`
 
-### Example Games
+## Example Games
+
 Examples are organized by SDK language:
 
 **C# Examples** (`examples/csharp/`):
-- `flappy_goud/` - Flappy Bird clone
-- `3d_cube/` - 3D rendering demo
-- `goud_jumper/` - Platformer game
-- `isometric_rpg/` - Isometric RPG demo
-- `hello_ecs/` - ECS basics
+- `flappy_goud/` — Flappy Bird clone
+- `3d_cube/` — 3D rendering demo
+- `goud_jumper/` — Platformer game
+- `isometric_rpg/` — Isometric RPG demo
+- `hello_ecs/` — ECS basics
 
 **Python Examples** (`examples/python/`):
-- `main.py` - Python SDK demo
-- `flappy_bird.py` - Python Flappy Bird clone
+- `main.py` — Python SDK demo
+- `flappy_bird.py` — Python Flappy Bird clone
 
 **Rust Examples** (`examples/rust/`):
 - (Future Rust SDK examples)

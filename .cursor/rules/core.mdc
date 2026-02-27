@@ -1,0 +1,72 @@
+---
+description: Core GoudEngine development principles, build commands, and conventions
+globs:
+alwaysApply: true
+---
+
+# Core Rules
+
+## Design Principle: Rust-First
+
+All logic lives in Rust. SDKs (C#, Python) are thin wrappers that marshal data and call FFI functions. Never implement game logic in an SDK.
+
+## Layer Architecture
+
+Dependencies flow DOWN only. No upward or same-layer imports.
+
+- Layer 1 (Core): `libs/` — graphics, platform, ecs, logger
+- Layer 2 (Engine): `goud_engine/src/` — core, assets, sdk
+- Layer 3 (FFI): `goud_engine/src/ffi/`
+- Layer 4 (SDKs): `sdks/` — GoudEngine (C#), python
+- Layer 5 (Apps): `examples/`
+
+## Build and Test Commands
+
+```bash
+cargo build                        # Debug build
+cargo build --release              # Release build
+cargo test                         # Run all tests
+cargo test -- --nocapture          # Show test output
+cargo check                        # Fast type-check
+cargo fmt --all -- --check         # Format check
+cargo clippy -- -D warnings        # Lint check
+./dev.sh --game <name>             # Run an example game
+./dev.sh --sdk python --game <name> # Run a Python example
+```
+
+## Version Management
+
+ALWAYS increment version before packaging:
+
+```bash
+./increment_version.sh             # Patch (0.0.X)
+./increment_version.sh --minor     # Minor (0.X.0)
+./increment_version.sh --major     # Major (X.0.0)
+```
+
+## Local Development Cycle
+
+```bash
+./increment_version.sh    # 1. Bump version
+./build.sh                # 2. Build everything
+./package.sh --local      # 3. Deploy to local NuGet
+./dev.sh --game <g> --local # 4. Test with example
+```
+
+## Commit Conventions
+
+- Use conventional commit messages (feat:, fix:, refactor:, docs:, test:, chore:)
+- Never use `--no-verify` on commits
+- Never force-push to main/master
+- Pre-commit hook runs: format, clippy, basic tests, Python SDK
+- Pre-push hook runs: full test suite, doctests, security audit (`cargo deny check`)
+
+## Anti-Patterns
+
+- Implementing logic in SDKs instead of Rust core
+- Skipping version increment before packaging
+- Files exceeding 500 lines
+- Using `todo!()` or `unimplemented!()` in production code
+- Tests without assertions or with `#[ignore]`
+- `#[allow(unused)]` without justification
+- Using `unwrap()`/`expect()` in library code — use `Result` instead

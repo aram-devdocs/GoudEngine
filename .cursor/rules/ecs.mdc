@@ -1,0 +1,74 @@
+---
+description: Entity-Component-System architecture patterns and conventions
+globs:
+  - "**/ecs/**"
+alwaysApply: false
+---
+
+# ECS Rules
+
+## Architecture
+
+Bevy-inspired ECS: `World` → `Entity` → `Component`, with `System` functions that query components.
+
+```
+ecs/
+├── entity.rs          # Entity type (index + generation), EntityAllocator
+├── component.rs       # Component trait, ComponentId, ComponentInfo
+├── sparse_set.rs      # SparseSet<T> — O(1) storage with dense iteration
+├── archetype.rs       # Archetype, ArchetypeGraph — entity grouping
+├── storage.rs         # AnyComponentStorage, ComponentStorage traits
+├── world.rs           # World — central ECS container, EntityWorldMut builder
+├── query/             # Query<T>, type-safe component queries
+├── resource.rs        # Res<T>, ResMut<T>, Resources container
+├── schedule.rs        # CoreStage, SystemStage, Stage ordering
+├── system/            # System trait, function systems, SystemParam
+├── systems/           # Built-in systems (transform propagation, sprite rendering)
+├── components/        # Built-in components (transform, sprite, hierarchy, etc.)
+├── collision.rs       # Collision detection algorithms
+├── broad_phase.rs     # SpatialHash broad-phase
+├── physics_world.rs   # PhysicsWorld integration
+└── input_manager.rs   # InputManager, InputBinding
+```
+
+## Component Rules
+
+- Components MUST be plain data — no methods with side effects
+- Derive `Debug` and `Clone` on all components
+- Component storage uses `SparseSet<T>` for O(1) insert/remove/get
+- FFI exports for components go in `ffi/component_*.rs` files
+
+## Entity Rules
+
+- Entities are lightweight identifiers: index + generation
+- Created via `EntityAllocator` or `World::spawn()`
+- `EntityWorldMut` provides a builder pattern for spawning with components
+- NEVER store entity IDs as raw integers — always use the `Entity` type
+
+## Query Rules
+
+- Use `Query<T>` for type-safe component access
+- Queries iterate only entities that have the requested components
+- `QueryIter` / `QueryIterMut` for immutable/mutable iteration
+- Never access `SparseSet` internals directly from systems
+
+## System Rules
+
+- Systems implement `System` trait (`name()` + `run(&mut self, &mut World)`)
+- Function systems convert closures into systems via `SystemParam`
+- Schedule systems into `CoreStage` stages (First, PreUpdate, Update, PostUpdate, Last)
+- Built-in: `TransformPropagationSystem`, `SpriteRenderSystem`
+
+## Hierarchy and Transforms
+
+- `Hierarchy` component for parent/child relationships
+- `Transform2D` — local transform, `GlobalTransform2D` — world transform
+- `TransformPropagationSystem` computes global transforms from hierarchy
+- Propagation runs automatically in the `PostUpdate` stage
+
+## Physics Integration
+
+- `Collider`, `RigidBody` components for physics
+- `SpatialHash` broad-phase for collision culling
+- Collision algorithms: AABB, circle, OBB, mixed
+- `PhysicsWorld` integrates collision detection with ECS

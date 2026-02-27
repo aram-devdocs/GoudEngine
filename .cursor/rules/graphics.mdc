@@ -1,0 +1,68 @@
+---
+description: Graphics subsystem patterns, OpenGL backend rules, and rendering conventions
+globs:
+  - "**/graphics/**"
+  - "**/renderer*"
+alwaysApply: false
+---
+
+# Graphics Rules
+
+## Module Structure
+
+```
+libs/graphics/
+├── backend/
+│   ├── opengl.rs    # ALL raw OpenGL calls live here (gl:: namespace)
+│   ├── types.rs     # GPU-side type mappings
+│   └── mod.rs
+├── sprite_batch.rs  # SpriteBatch — efficient 2D sprite rendering
+├── renderer3d.rs    # 3D renderer — primitives, lighting, camera
+└── mod.rs
+```
+
+## Backend Isolation
+
+- ALL raw `gl::*` calls MUST go through `backend/opengl.rs`
+- No other module may call OpenGL functions directly
+- Backend exposes safe Rust abstractions over unsafe OpenGL operations
+- `types.rs` defines GPU-side type mappings (vertex formats, buffer types)
+
+## Renderer Selection
+
+Runtime renderer selection at `GoudGame` initialization:
+- **2D**: `RendererType::Renderer2D` — sprites, 2D camera, Tiled maps
+- **3D**: `RendererType::Renderer3D` — primitives, dynamic lighting, 3D camera
+
+## SpriteBatch (2D)
+
+- Batches draw calls to minimize GPU state changes
+- Groups sprites by texture for efficient rendering
+- Handles sprite transforms, colors, and texture regions
+- Camera: orthographic projection via 2D camera system
+
+## Renderer3D
+
+- Renders geometric primitives (cubes, etc.)
+- Dynamic lighting system
+- 3D camera with perspective projection
+- Transform hierarchy applies to 3D objects
+
+## Shader Programs
+
+- Shaders loaded via asset system (GLSL vertex + fragment pairs)
+- Compile → link → validate pipeline
+- Shader compilation errors must be reported, not silently ignored
+
+## Texture Management
+
+- Textures loaded via image crate (PNG, JPG)
+- Texture handles use generational `Handle<T>` pattern
+- Texture atlas/region support for sprite sheets
+
+## Testing
+
+- Tests requiring OpenGL context MUST use `test_helpers::init_test_context()`
+- Math/logic tests (matrix operations, projections) must NOT require GL
+- Texture tests may need valid image files in `assets/`
+- Many graphics tests may fail in CI without a display — guard appropriately

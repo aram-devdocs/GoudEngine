@@ -1,0 +1,21 @@
+# Build artifacts
+target/
+**/bin/Debug/
+**/bin/Release/
+**/obj/
+
+# Git internals
+.git/
+
+# Generated bindings (auto-generated, not useful for context)
+sdks/GoudEngine/NativeMethods.g.cs
+sdks/include/goud_engine.h
+
+# NuGet output
+nuget_package_output/
+
+# Diagram intermediates
+docs/diagrams/mods.dot
+
+# Session memory (local, not useful for context)
+.claude/memory/
