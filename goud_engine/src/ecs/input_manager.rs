@@ -73,6 +73,7 @@
 //! }
 //! ```
 
+#[cfg(feature = "native")]
 use glfw::{GamepadAxis, Key, MouseButton};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};

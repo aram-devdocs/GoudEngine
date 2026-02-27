@@ -24,6 +24,7 @@
 use crate::core::error::GoudResult;
 use std::fmt::Debug;
 
+#[cfg(feature = "native")]
 pub mod opengl;
 pub mod types;
 

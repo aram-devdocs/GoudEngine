@@ -4,6 +4,7 @@
 //! shaders, and audio files.
 
 pub mod audio;
+#[cfg(feature = "native")]
 mod rodio_integration;
 pub mod shader;
 pub mod texture;

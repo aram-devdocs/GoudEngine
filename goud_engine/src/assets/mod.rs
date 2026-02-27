@@ -70,8 +70,10 @@
 //! ```
 
 mod asset;
+#[cfg(feature = "native")]
 mod audio_manager;
 mod handle;
+#[cfg(feature = "native")]
 mod hot_reload;
 mod loader;
 mod server;
@@ -99,7 +101,9 @@ pub use server::AssetServer;
 pub use storage::{AnyAssetStorage, AssetEntry, AssetStorage, TypedAssetStorage};
 
 // Re-export hot reload types
+#[cfg(feature = "native")]
 pub use hot_reload::{AssetChangeEvent, HotReloadConfig, HotReloadWatcher};
 
 // Re-export audio manager
+#[cfg(feature = "native")]
 pub use audio_manager::AudioManager;

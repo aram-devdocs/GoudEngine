@@ -45,8 +45,10 @@
 
 use crate::assets::{
     Asset, AssetHandle, AssetId, AssetLoadError, AssetLoader, AssetPath, AssetState, AssetStorage,
-    ErasedAssetLoader, HotReloadConfig, HotReloadWatcher, LoadContext, TypedAssetLoader,
+    ErasedAssetLoader, LoadContext, TypedAssetLoader,
 };
+#[cfg(feature = "native")]
+use crate::assets::{HotReloadConfig, HotReloadWatcher};
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -542,6 +544,7 @@ impl AssetServer {
     ///     // ... rest of game loop
     /// }
     /// ```
+    #[cfg(feature = "native")]
     pub fn create_hot_reload_watcher(&self) -> notify::Result<HotReloadWatcher> {
         HotReloadWatcher::new(self)
     }
@@ -572,6 +575,7 @@ impl AssetServer {
     ///     // ... rest of game loop
     /// }
     /// ```
+    #[cfg(feature = "native")]
     pub fn create_hot_reload_watcher_with_config(
         &self,
         config: HotReloadConfig,
