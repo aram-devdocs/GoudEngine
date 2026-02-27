@@ -1,0 +1,53 @@
+{
+  "name": "@goudengine/sdk",
+  "version": "0.0.1",
+  "description": "TypeScript SDK for GoudEngine — Node.js desktop via napi-rs, web via wasm (Phase 4)",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./index.js",
+        "require": "./index.js",
+        "types": "./index.d.ts"
+      },
+      "browser": "./dist/web/index.js",
+      "default": "./index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.js"
+    }
+  },
+  "scripts": {
+    "build:native": "napi build --cargo-cwd native --platform --release",
+    "build:native:debug": "napi build --cargo-cwd native --platform",
+    "build:ts": "tsc",
+    "build": "npm run build:native && npm run build:ts",
+    "clean": "rm -rf dist *.node",
+    "test": "node --test test/*.test.mjs"
+  },
+  "napi": {
+    "name": "goud-engine-node",
+    "triples": {
+      "defaults": true
+    }
+  },
+  "keywords": ["game-engine", "goudengine", "ecs", "napi-rs", "2d", "3d"],
+  "license": "MIT",
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.0",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "dist",
+    "index.js",
+    "index.d.ts",
+    "*.node"
+  ]
+}
