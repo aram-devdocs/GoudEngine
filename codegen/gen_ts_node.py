@@ -3,9 +3,9 @@
 
 Produces:
   sdks/typescript/native/src/types.g.rs      -- Vec2, Vec3, Color, Rect + factory fns
-  sdks/typescript/native/src/components.g.rs -- Transform2DData, SpriteData + factory fns
-  sdks/typescript/native/src/entity.g.rs     -- Entity napi class
-  sdks/typescript/native/src/game.g.rs       -- GameConfig, GoudGame class
+  sdks/typescript/native/src/components.g.rs -- Transform2DData, SpriteData (FFI-only)
+  sdks/typescript/native/src/entity.g.rs     -- Entity napi class (u64 bits, no EcsEntity)
+  sdks/typescript/native/src/game.g.rs       -- GameConfig, GoudGame class (FFI-only)
   sdks/typescript/native/src/lib.rs          -- module declarations
   sdks/typescript/src/types/engine.g.ts      -- IGoudGame interface
   sdks/typescript/src/types/input.g.ts       -- Key, MouseButton enums
@@ -29,21 +29,6 @@ NATIVE_SRC = TS / "native" / "src"
 schema = load_schema()
 mapping = load_ffi_mapping()
 
-
-# Methods that already exist on the napi-rs NativeGoudGame class.
-# New schema methods not in this set will use (this.native as any) until the
-# native binding is extended.
-NATIVE_KNOWN_METHODS = {
-    "shouldClose", "close", "destroy", "beginFrame", "endFrame",
-    "loadTexture", "destroyTexture", "drawSprite", "drawQuad",
-    "isKeyPressed", "isKeyJustPressed", "isKeyJustReleased",
-    "isMouseButtonPressed", "isMouseButtonJustPressed", "isMouseButtonJustReleased",
-    "getMousePosition", "getMouseDelta", "getScrollDelta",
-    "spawnEmpty", "spawnBatch", "despawn", "entityCount", "isAlive",
-    "addTransform2D", "getTransform2D", "setTransform2D", "hasTransform2D", "removeTransform2D",
-    "addSprite", "getSprite", "hasSprite", "removeSprite",
-    "addName", "getName", "hasName", "removeName",
-}
 
 IFACE_TYPES = {
     "Entity": "IEntity",
@@ -76,7 +61,7 @@ def ts_iface_type(t: str) -> str:
     return mapped
 
 
-# ── engine.g.ts (IGoudGame interface) ───────────────────────────────
+# ---- engine.g.ts (IGoudGame interface) ------------------------------------
 
 def gen_interface():
     tool = schema["tools"]["GoudGame"]
@@ -86,7 +71,7 @@ def gen_interface():
     lines.append("export interface IVec3 { x: number; y: number; z: number; }")
     lines.append("export interface IColor { r: number; g: number; b: number; a: number; }")
     lines.append("export interface IRect { x: number; y: number; width: number; height: number; }")
-    lines.append("export interface IRenderStats { drawCalls: number; triangles: number; textureBinds: number; }")
+    lines.append("export interface IRenderStats { drawCalls: number; triangles: number; textureBinds: number; shaderBinds: number; }")
     lines.append("export interface IContact { pointX: number; pointY: number; normalX: number; normalY: number; penetration: number; }")
     lines.append("")
 
@@ -128,8 +113,6 @@ def gen_interface():
         params = method.get("params", [])
         ret = method.get("returns", "void")
 
-        # Determine which params can be optional: a param is only optional if it has
-        # a default AND all params that follow it also have defaults (TypeScript rule).
         has_default = [p.get("default") is not None for p in params]
         can_be_optional = []
         trailing_all_defaulted = True
@@ -166,7 +149,7 @@ def gen_interface():
     write_generated(GEN / "types" / "engine.g.ts", "\n".join(lines))
 
 
-# ── input.g.ts ──────────────────────────────────────────────────────
+# ---- input.g.ts -----------------------------------------------------------
 
 def gen_input():
     lines = [f"// {HEADER_COMMENT}", ""]
@@ -181,7 +164,7 @@ def gen_input():
     write_generated(GEN / "types" / "input.g.ts", "\n".join(lines))
 
 
-# ── math.g.ts ───────────────────────────────────────────────────────
+# ---- math.g.ts ------------------------------------------------------------
 
 def gen_math():
     lines = [f"// {HEADER_COMMENT}", "", "import type { IColor, IVec2, IVec3, IRect } from './engine.g.js';", ""]
@@ -192,7 +175,6 @@ def gen_math():
         iface = f"I{type_name}"
 
         lines.append(f"export class {type_name} implements {iface} {{")
-
         ctor_params = ", ".join(f"public {to_camel(f['name'])}: number" for f in fields)
         lines.append(f"  constructor({ctor_params}) {{}}")
         lines.append("")
@@ -248,7 +230,34 @@ def gen_math():
     write_generated(GEN / "types" / "math.g.ts", "\n".join(lines))
 
 
-# ── node/index.g.ts ─────────────────────────────────────────────────
+# ---- node/index.g.ts (TS wrapper) -----------------------------------------
+
+NATIVE_KNOWN_METHODS = {
+    "shouldClose", "close", "destroy", "beginFrame", "endFrame",
+    "loadTexture", "destroyTexture", "drawSprite", "drawQuad",
+    "isKeyPressed", "isKeyJustPressed", "isKeyJustReleased",
+    "isMouseButtonPressed", "isMouseButtonJustPressed", "isMouseButtonJustReleased",
+    "getMousePosition", "getMouseDelta", "getScrollDelta",
+    "spawnEmpty", "spawnBatch", "despawn", "entityCount", "isAlive",
+    "addTransform2d", "getTransform2d", "setTransform2d", "hasTransform2d", "removeTransform2d",
+    "addSprite", "getSprite", "setSprite", "hasSprite", "removeSprite",
+    "addName", "getName", "hasName", "removeName",
+    "drawSpriteRect", "setViewport", "enableDepthTest", "disableDepthTest",
+    "clearDepth", "disableBlending", "getRenderStats",
+    "mapActionKey", "isActionPressed", "isActionJustPressed", "isActionJustReleased",
+    "collisionAabbAabb", "collisionCircleCircle", "collisionCircleAabb",
+    "pointInRect", "pointInCircle", "aabbOverlap", "circleOverlap",
+    "distance", "distanceSquared",
+    "createCube", "createPlane", "createSphere", "createCylinder",
+    "setObjectPosition", "setObjectRotation", "setObjectScale", "destroyObject",
+    "addLight", "updateLight", "removeLight",
+    "setCameraPosition3D", "setCameraRotation3D",
+    "configureGrid", "setGridEnabled", "configureSkybox", "configureFog", "setFogEnabled",
+    "render3D",
+    "isAliveBatch", "despawnBatch",
+    "windowWidth", "windowHeight",
+}
+
 
 def gen_node_wrapper():
     tool = schema["tools"]["GoudGame"]
@@ -293,7 +302,6 @@ def gen_node_wrapper():
         params = method.get("params", [])
         ret = method.get("returns", "void")
 
-        # Determine which params can be optional (TypeScript: optional only at tail).
         has_default = [p.get("default") is not None for p in params]
         can_be_optional = []
         trailing_all_defaulted = True
@@ -341,13 +349,12 @@ def gen_node_wrapper():
             lines.append("    this.native.drawSprite(texture, x, y, width, height, rotation, c.r, c.g, c.b, c.a);")
         elif mn == "drawSpriteRect":
             lines.append("    const c = color ?? Color.white();")
-            lines.append("    return (this.native as any).drawSpriteRect(texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, c.r, c.g, c.b, c.a);")
+            lines.append("    return this.native.drawSpriteRect(texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, c.r, c.g, c.b, c.a);")
         elif mn == "drawQuad":
             lines.append("    const c = color ?? Color.white();")
             lines.append("    this.native.drawQuad(x, y, width, height, c.r, c.g, c.b, c.a);")
         elif mn in ("getMousePosition", "getMouseDelta", "getScrollDelta"):
-            native_mn = mn
-            lines.append(f"    const arr = this.native.{native_mn}();")
+            lines.append(f"    const arr = this.native.{mn}();")
             lines.append("    return { x: arr[0], y: arr[1] };")
         elif mn == "spawnEmpty":
             lines.append("    return this.native.spawnEmpty() as unknown as IEntity;")
@@ -361,15 +368,15 @@ def gen_node_wrapper():
         elif mn == "isAlive":
             lines.append("    return this.native.isAlive(entity as unknown as NativeEntity);")
         elif mn == "addTransform2d":
-            lines.append("    this.native.addTransform2D(entity as unknown as NativeEntity, transform as any);")
+            lines.append("    this.native.addTransform2d(entity as unknown as NativeEntity, transform as any);")
         elif mn == "getTransform2d":
-            lines.append("    return this.native.getTransform2D(entity as unknown as NativeEntity) ?? null;")
+            lines.append("    return this.native.getTransform2d(entity as unknown as NativeEntity) ?? null;")
         elif mn == "setTransform2d":
-            lines.append("    this.native.setTransform2D(entity as unknown as NativeEntity, transform as any);")
+            lines.append("    this.native.setTransform2d(entity as unknown as NativeEntity, transform as any);")
         elif mn == "hasTransform2d":
-            lines.append("    return this.native.hasTransform2D(entity as unknown as NativeEntity);")
+            lines.append("    return this.native.hasTransform2d(entity as unknown as NativeEntity);")
         elif mn == "removeTransform2d":
-            lines.append("    return this.native.removeTransform2D(entity as unknown as NativeEntity);")
+            lines.append("    return this.native.removeTransform2d(entity as unknown as NativeEntity);")
         elif mn == "addSprite":
             lines.append("    this.native.addSprite(entity as unknown as NativeEntity, sprite as any);")
         elif mn == "getSprite":
@@ -377,7 +384,7 @@ def gen_node_wrapper():
             lines.append("    if (!raw) return null;")
             lines.append("    return raw as unknown as ISpriteData;")
         elif mn == "setSprite":
-            lines.append("    (this.native as any).setSprite(entity as unknown as NativeEntity, sprite as any);")
+            lines.append("    this.native.setSprite(entity as unknown as NativeEntity, sprite as any);")
         elif mn == "hasSprite":
             lines.append("    return this.native.hasSprite(entity as unknown as NativeEntity);")
         elif mn == "removeSprite":
@@ -391,20 +398,18 @@ def gen_node_wrapper():
         elif mn == "removeName":
             lines.append("    return this.native.removeName(entity as unknown as NativeEntity);")
         elif mn == "getRenderStats":
-            lines.append("    return (this.native as any).getRenderStats() as unknown as IRenderStats;")
+            lines.append("    return this.native.getRenderStats() as unknown as IRenderStats;")
         elif mn == "loadTexture":
             lines.append("    return this.native.loadTexture(path);")
         elif mn == "destroy":
             lines.append("    this.native.destroy();")
         else:
             native_call_args = ", ".join(call_args)
-            native_mn = mn
-            # Methods not yet on the native napi-rs binding use (as any) to allow future addition.
-            native_obj = "this.native" if native_mn in NATIVE_KNOWN_METHODS else "(this.native as any)"
+            native_obj = "this.native" if mn in NATIVE_KNOWN_METHODS else "(this.native as any)"
             if ret == "void":
-                lines.append(f"    {native_obj}.{native_mn}({native_call_args});")
+                lines.append(f"    {native_obj}.{mn}({native_call_args});")
             else:
-                lines.append(f"    return {native_obj}.{native_mn}({native_call_args});")
+                lines.append(f"    return {native_obj}.{mn}({native_call_args});")
 
         lines.append("  }")
         lines.append("")
@@ -414,7 +419,7 @@ def gen_node_wrapper():
     write_generated(GEN / "node" / "index.g.ts", "\n".join(lines))
 
 
-# ── index.g.ts (entry point) ────────────────────────────────────────
+# ---- index.g.ts (entry point) ---------------------------------------------
 
 def gen_entry():
     lines = [
@@ -428,27 +433,19 @@ def gen_entry():
     write_generated(GEN / "index.g.ts", "\n".join(lines))
 
 
-# ── napi-rs Rust code generation ─────────────────────────────────────
+# ============================================================================
+# napi-rs Rust code generation (FFI-only -- no Rust SDK access)
+# ============================================================================
 
 RUST_HEADER = f"// {HEADER_COMMENT}"
 
-# Mapping from schema primitive types to napi-rs Rust types.
-# All numeric JS values come in as f64; bool and String stay as-is.
 NAPI_RUST_TYPES = {
-    "f32": "f64",
-    "f64": "f64",
-    "u32": "u32",
-    "u64": "f64",   # u64 values cross the boundary as f64 (BigInt avoided for plain handles)
-    "i32": "i32",
-    "i64": "f64",
-    "bool": "bool",
-    "string": "String",
-    "void": "()",
+    "f32": "f64", "f64": "f64", "u32": "u32", "u64": "f64",
+    "i32": "i32", "i64": "f64", "bool": "bool", "string": "String", "void": "()",
 }
 
 
 def _napi_type(schema_type: str) -> str:
-    """Map a schema type to a napi-rs Rust type for method signatures."""
     nullable = schema_type.endswith("?")
     base = schema_type.rstrip("?")
     mapped = NAPI_RUST_TYPES.get(base, base)
@@ -460,55 +457,24 @@ def _napi_type(schema_type: str) -> str:
 def gen_napi_rust_types():
     """Generate sdks/typescript/native/src/types.g.rs.
 
-    Produces napi(object) structs for Vec2, Vec3, Color, Rect together with
-    From impls for converting to/from the engine math types, plus standalone
-    #[napi] factory functions for Color.
+    Produces napi(object) structs for Vec2, Vec3, Color, Rect plus standalone
+    #[napi] factory functions for Color.  FFI-only: no engine type imports.
     """
     lines = [
         RUST_HEADER,
-        "use goud_engine::core::math::{",
-        "    Color as EngineColor, Rect as EngineRect, Vec2 as EngineVec2, Vec3 as EngineVec3,",
-        "};",
         "use napi_derive::napi;",
         "",
     ]
 
-    # ── struct + From impls ──────────────────────────────────────────
+    # -- struct definitions (no engine From impls) -------------------------
     struct_meta = {
-        "Vec2":  {
-            "engine": "EngineVec2",
-            "fields": [("x", "f64"), ("y", "f64")],
-            "from_engine": "Self { x: v.x as f64, y: v.y as f64 }",
-            "to_engine": "Self::new(v.x as f32, v.y as f32)",
-            "to_engine_var": "v",
-        },
-        "Vec3": {
-            "engine": "EngineVec3",
-            "fields": [("x", "f64"), ("y", "f64"), ("z", "f64")],
-            "from_engine": "Self { x: v.x as f64, y: v.y as f64, z: v.z as f64 }",
-            "to_engine": "Self::new(v.x as f32, v.y as f32, v.z as f32)",
-            "to_engine_var": "v",
-        },
-        "Color": {
-            "engine": "EngineColor",
-            "fields": [("r", "f64"), ("g", "f64"), ("b", "f64"), ("a", "f64")],
-            "from_engine": "Self { r: c.r as f64, g: c.g as f64, b: c.b as f64, a: c.a as f64 }",
-            "to_engine": "Self::rgba(c.r as f32, c.g as f32, c.b as f32, c.a as f32)",
-            "to_engine_var": "c",
-        },
-        "Rect": {
-            "engine": "EngineRect",
-            "fields": [("x", "f64"), ("y", "f64"), ("width", "f64"), ("height", "f64")],
-            "from_engine": "Self { x: r.x as f64, y: r.y as f64, width: r.width as f64, height: r.height as f64 }",
-            "to_engine": "Self::new(r.x as f32, r.y as f32, r.width as f32, r.height as f32)",
-            "to_engine_var": "r",
-        },
+        "Vec2":  {"fields": [("x", "f64"), ("y", "f64")]},
+        "Vec3":  {"fields": [("x", "f64"), ("y", "f64"), ("z", "f64")]},
+        "Color": {"fields": [("r", "f64"), ("g", "f64"), ("b", "f64"), ("a", "f64")]},
+        "Rect":  {"fields": [("x", "f64"), ("y", "f64"), ("width", "f64"), ("height", "f64")]},
     }
 
     for name, meta in struct_meta.items():
-        eng = meta["engine"]
-        var = meta["to_engine_var"]
-
         lines.append("#[napi(object)]")
         lines.append("#[derive(Clone, Debug)]")
         lines.append(f"pub struct {name} {{")
@@ -517,24 +483,7 @@ def gen_napi_rust_types():
         lines.append("}")
         lines.append("")
 
-        # From<Engine> for Napi
-        lines.append(f"impl From<{eng}> for {name} {{")
-        lines.append(f"    fn from({var}: {eng}) -> Self {{")
-        lines.append(f"        {meta['from_engine']}")
-        lines.append("    }")
-        lines.append("}")
-        lines.append("")
-
-        # From<&Napi> for Engine
-        lines.append(f"impl From<&{name}> for {eng} {{")
-        lines.append(f"    fn from({var}: &{name}) -> Self {{")
-        lines.append(f"        {meta['to_engine']}")
-        lines.append("    }")
-        lines.append("}")
-        lines.append("")
-
-    # ── Color factory functions ─────────────────────────────────────
-    # Derive from schema factories for Color
+    # -- Color factory functions (pure data, no engine imports) ------------
     color_schema = schema["types"]["Color"]
     for factory in color_schema.get("factories", []):
         fname = factory["name"]
@@ -545,24 +494,39 @@ def gen_napi_rust_types():
         if fname == "rgba":
             lines.append("#[napi]")
             lines.append(f"pub fn {fn_name}(r: f64, g: f64, b: f64, a: f64) -> Color {{")
-            lines.append("    EngineColor::rgba(r as f32, g as f32, b as f32, a as f32).into()")
+            lines.append("    Color { r, g, b, a }")
             lines.append("}")
         elif fname == "rgb":
             lines.append("#[napi]")
             lines.append(f"pub fn {fn_name}(r: f64, g: f64, b: f64) -> Color {{")
-            lines.append("    EngineColor::rgb(r as f32, g as f32, b as f32).into()")
+            lines.append("    Color { r, g, b, a: 1.0 }")
             lines.append("}")
         elif fname == "fromHex":
             lines.append("#[napi]")
             lines.append(f"pub fn {fn_name}(hex: u32) -> Color {{")
-            lines.append("    EngineColor::from_hex(hex).into()")
+            lines.append("    Color {")
+            lines.append("        r: ((hex >> 16) & 0xFF) as f64 / 255.0,")
+            lines.append("        g: ((hex >> 8) & 0xFF) as f64 / 255.0,")
+            lines.append("        b: (hex & 0xFF) as f64 / 255.0,")
+            lines.append("        a: 1.0,")
+            lines.append("    }")
+            lines.append("}")
+        elif fname == "fromU8":
+            lines.append("#[napi]")
+            lines.append(f"pub fn {fn_name}(r: u32, g: u32, b: u32, a: u32) -> Color {{")
+            lines.append("    Color {")
+            lines.append("        r: r as f64 / 255.0,")
+            lines.append("        g: g as f64 / 255.0,")
+            lines.append("        b: b as f64 / 255.0,")
+            lines.append("        a: a as f64 / 255.0,")
+            lines.append("    }")
             lines.append("}")
         elif val is not None and not fargs:
-            # Named constant factory (white, black, red, …)
-            const_name = to_snake(fname).upper()
+            # Named constant factory (white, black, red, ...)
+            vals = val
             lines.append("#[napi]")
             lines.append(f"pub fn {fn_name}() -> Color {{")
-            lines.append(f"    EngineColor::{const_name}.into()")
+            lines.append(f"    Color {{ r: {float(vals[0])}, g: {float(vals[1])}, b: {float(vals[2])}, a: {float(vals[3])} }}")
             lines.append("}")
         lines.append("")
 
@@ -572,18 +536,23 @@ def gen_napi_rust_types():
 def gen_napi_rust_entity():
     """Generate sdks/typescript/native/src/entity.g.rs.
 
-    Produces the Entity napi class that wraps the ECS entity handle.
-    BigInt is used for from_bits / to_bits because entity IDs are u64.
+    Produces the Entity napi class that wraps a u64 entity ID.
+    FFI-only: no EcsEntity import; bit packing done inline.
+    Entity bits layout: (generation << 32) | index
+    PLACEHOLDER: index=u32::MAX, generation=0 => bits = 0x00000000FFFFFFFF
     """
     lines = [
         RUST_HEADER,
-        "use goud_engine::ecs::Entity as EcsEntity;",
         "use napi::bindgen_prelude::*;",
         "use napi_derive::napi;",
         "",
+        "/// PLACEHOLDER entity bits: index=u32::MAX, generation=0.",
+        "const PLACEHOLDER_BITS: u64 = u32::MAX as u64;",
+        "",
         "#[napi]",
         "pub struct Entity {",
-        "    pub(crate) inner: EcsEntity,",
+        "    /// Packed entity bits: (generation << 32) | index.",
+        "    pub(crate) bits: u64,",
         "}",
         "",
         "#[napi]",
@@ -591,48 +560,48 @@ def gen_napi_rust_entity():
         "    #[napi(constructor)]",
         "    pub fn new(index: u32, generation: u32) -> Self {",
         "        Self {",
-        "            inner: EcsEntity::new(index, generation),",
+        "            bits: ((generation as u64) << 32) | (index as u64),",
         "        }",
         "    }",
         "",
         "    #[napi(factory)]",
         "    pub fn placeholder() -> Self {",
         "        Self {",
-        "            inner: EcsEntity::PLACEHOLDER,",
+        "            bits: PLACEHOLDER_BITS,",
         "        }",
         "    }",
         "",
         "    #[napi(factory)]",
         "    pub fn from_bits(bits: BigInt) -> Result<Self> {",
         "        let (_, value, _) = bits.get_u64();",
-        "        Ok(Self {",
-        "            inner: EcsEntity::from_bits(value),",
-        "        })",
+        "        Ok(Self { bits: value })",
         "    }",
         "",
         "    #[napi(getter)]",
         "    pub fn index(&self) -> u32 {",
-        "        self.inner.index()",
+        "        self.bits as u32",
         "    }",
         "",
         "    #[napi(getter)]",
         "    pub fn generation(&self) -> u32 {",
-        "        self.inner.generation()",
+        "        (self.bits >> 32) as u32",
         "    }",
         "",
         "    #[napi(getter)]",
         "    pub fn is_placeholder(&self) -> bool {",
-        "        self.inner.is_placeholder()",
+        "        self.bits == PLACEHOLDER_BITS",
         "    }",
         "",
         "    #[napi]",
         "    pub fn to_bits(&self) -> BigInt {",
-        "        BigInt::from(self.inner.to_bits())",
+        "        BigInt::from(self.bits)",
         "    }",
         "",
         "    #[napi]",
         "    pub fn display(&self) -> String {",
-        '        format!("{}", self.inner)',
+        "        let index = self.bits as u32;",
+        "        let gen = (self.bits >> 32) as u32;",
+        '        format!("Entity({}:{})", index, gen)',
         "    }",
         "}",
         "",
@@ -645,13 +614,12 @@ def gen_napi_rust_components():
     """Generate sdks/typescript/native/src/components.g.rs.
 
     Produces Transform2DData and SpriteData napi(object) structs together
-    with their From impls, plus standalone #[napi] factory functions.
+    with standalone #[napi] factory functions.
+    FFI-only: no engine component imports or From impls.
     """
     lines = [
         RUST_HEADER,
-        "use crate::types::{Color, Vec2};",
-        "use goud_engine::core::math::{Color as EngineColor, Vec2 as EngineVec2};",
-        "use goud_engine::ecs::components::{Sprite, Transform2D};",
+        "use crate::types::Color;",
         "use napi_derive::napi;",
         "",
         "// =============================================================================",
@@ -680,28 +648,6 @@ def gen_napi_rust_components():
         "    }",
         "}",
         "",
-        "impl From<&Transform2D> for Transform2DData {",
-        "    fn from(t: &Transform2D) -> Self {",
-        "        Self {",
-        "            position_x: t.position.x as f64,",
-        "            position_y: t.position.y as f64,",
-        "            rotation: t.rotation as f64,",
-        "            scale_x: t.scale.x as f64,",
-        "            scale_y: t.scale.y as f64,",
-        "        }",
-        "    }",
-        "}",
-        "",
-        "impl From<&Transform2DData> for Transform2D {",
-        "    fn from(data: &Transform2DData) -> Self {",
-        "        Transform2D {",
-        "            position: EngineVec2::new(data.position_x as f32, data.position_y as f32),",
-        "            rotation: data.rotation as f32,",
-        "            scale: EngineVec2::new(data.scale_x as f32, data.scale_y as f32),",
-        "        }",
-        "    }",
-        "}",
-        "",
         "// =============================================================================",
         "// Sprite",
         "// =============================================================================",
@@ -722,62 +668,20 @@ def gen_napi_rust_components():
         "    pub source_rect_height: Option<f64>,",
         "}",
         "",
-        "impl From<&Sprite> for SpriteData {",
-        "    fn from(s: &Sprite) -> Self {",
-        "        let (custom_width, custom_height) = match s.custom_size {",
-        "            Some(size) => (Some(size.x as f64), Some(size.y as f64)),",
-        "            None => (None, None),",
-        "        };",
-        "        let (src_x, src_y, src_w, src_h) = match s.source_rect {",
-        "            Some(rect) => (",
-        "                Some(rect.x as f64),",
-        "                Some(rect.y as f64),",
-        "                Some(rect.width as f64),",
-        "                Some(rect.height as f64),",
-        "            ),",
-        "            None => (None, None, None, None),",
-        "        };",
+        "impl Default for SpriteData {",
+        "    fn default() -> Self {",
         "        Self {",
-        "            color: s.color.into(),",
-        "            flip_x: s.flip_x,",
-        "            flip_y: s.flip_y,",
-        "            anchor_x: s.anchor.x as f64,",
-        "            anchor_y: s.anchor.y as f64,",
-        "            custom_width,",
-        "            custom_height,",
-        "            source_rect_x: src_x,",
-        "            source_rect_y: src_y,",
-        "            source_rect_width: src_w,",
-        "            source_rect_height: src_h,",
-        "        }",
-        "    }",
-        "}",
-        "",
-        "impl From<&SpriteData> for Sprite {",
-        "    fn from(data: &SpriteData) -> Self {",
-        "        Sprite {",
-        "            color: EngineColor::from(&data.color),",
-        "            flip_x: data.flip_x,",
-        "            flip_y: data.flip_y,",
-        "            anchor: EngineVec2::new(data.anchor_x as f32, data.anchor_y as f32),",
-        "            custom_size: match (data.custom_width, data.custom_height) {",
-        "                (Some(w), Some(h)) => Some(EngineVec2::new(w as f32, h as f32)),",
-        "                _ => None,",
-        "            },",
-        "            source_rect: match (",
-        "                data.source_rect_x,",
-        "                data.source_rect_y,",
-        "                data.source_rect_width,",
-        "                data.source_rect_height,",
-        "            ) {",
-        "                (Some(x), Some(y), Some(w), Some(h)) => {",
-        "                    Some(goud_engine::core::math::Rect::new(",
-        "                        x as f32, y as f32, w as f32, h as f32,",
-        "                    ))",
-        "                }",
-        "                _ => None,",
-        "            },",
-        "            ..Default::default()",
+        "            color: Color { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },",
+        "            flip_x: false,",
+        "            flip_y: false,",
+        "            anchor_x: 0.5,",
+        "            anchor_y: 0.5,",
+        "            custom_width: None,",
+        "            custom_height: None,",
+        "            source_rect_x: None,",
+        "            source_rect_y: None,",
+        "            source_rect_width: None,",
+        "            source_rect_height: None,",
         "        }",
         "    }",
         "}",
@@ -820,24 +724,23 @@ def gen_napi_rust_components():
         "// Factory functions for Sprite",
         "#[napi]",
         "pub fn sprite_default() -> SpriteData {",
-        "    let sprite = Sprite::default();",
-        "    SpriteData::from(&sprite)",
+        "    SpriteData::default()",
         "}",
         "",
         "// Factory functions for Vec2 convenience",
         "#[napi]",
-        "pub fn vec2(x: f64, y: f64) -> Vec2 {",
-        "    Vec2 { x, y }",
+        "pub fn vec2(x: f64, y: f64) -> crate::types::Vec2 {",
+        "    crate::types::Vec2 { x, y }",
         "}",
         "",
         "#[napi]",
-        "pub fn vec2_zero() -> Vec2 {",
-        "    Vec2 { x: 0.0, y: 0.0 }",
+        "pub fn vec2_zero() -> crate::types::Vec2 {",
+        "    crate::types::Vec2 { x: 0.0, y: 0.0 }",
         "}",
         "",
         "#[napi]",
-        "pub fn vec2_one() -> Vec2 {",
-        "    Vec2 { x: 1.0, y: 1.0 }",
+        "pub fn vec2_one() -> crate::types::Vec2 {",
+        "    crate::types::Vec2 { x: 1.0, y: 1.0 }",
         "}",
         "",
     ]
@@ -848,524 +751,761 @@ def gen_napi_rust_components():
 def gen_napi_rust_game():
     """Generate sdks/typescript/native/src/game.g.rs.
 
-    Produces GameConfig and the GoudGame napi class with all lifecycle,
-    rendering, input, and ECS methods.  The generated output is functionally
-    identical to the hand-written game.rs.
+    FFI-only: no EngineGoudGame.  All operations go through goud_* FFI
+    functions.  Component ops use context registry with typed ECS access.
+    Lifecycle, rendering, input, collision, and 3D use pure FFI functions.
     """
-    lines = [
-        RUST_HEADER,
-        "use crate::components::{SpriteData, Transform2DData};",
-        "use crate::entity::Entity;",
-        "use goud_engine::ecs::components::{Name, Sprite, Transform2D};",
-        "use goud_engine::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};",
-        "use goud_engine::ffi::input::{",
-        "    goud_input_get_mouse_delta, goud_input_get_mouse_position, goud_input_get_scroll_delta,",
-        "    goud_input_key_just_pressed, goud_input_key_just_released, goud_input_key_pressed,",
-        "    goud_input_mouse_button_just_pressed, goud_input_mouse_button_just_released,",
-        "    goud_input_mouse_button_pressed,",
-        "};",
-        "use goud_engine::ffi::renderer::{",
-        "    goud_renderer_begin, goud_renderer_draw_quad, goud_renderer_draw_sprite,",
-        "    goud_renderer_enable_blending, goud_renderer_end, goud_texture_destroy, goud_texture_load,",
-        "};",
-        "use goud_engine::ffi::window::{",
-        "    goud_window_clear, goud_window_create, goud_window_destroy, goud_window_get_delta_time,",
-        "    goud_window_poll_events, goud_window_set_should_close, goud_window_should_close,",
-        "    goud_window_swap_buffers,",
-        "};",
-        "use goud_engine::sdk::{GameConfig as EngineGameConfig, GoudGame as EngineGoudGame};",
-        "use napi::bindgen_prelude::*;",
-        "use napi_derive::napi;",
-        "use std::ffi::CString;",
-        "",
-        "// =============================================================================",
-        "// GameConfig",
-        "// =============================================================================",
-        "",
-        "#[napi(object)]",
-        "#[derive(Clone, Debug)]",
-        "pub struct GameConfig {",
-        "    pub title: Option<String>,",
-        "    pub width: Option<u32>,",
-        "    pub height: Option<u32>,",
-        "    pub vsync: Option<bool>,",
-        "    pub fullscreen: Option<bool>,",
-        "    pub resizable: Option<bool>,",
-        "    pub target_fps: Option<u32>,",
-        "    pub debug_rendering: Option<bool>,",
-        "}",
-        "",
-        "impl From<&GameConfig> for EngineGameConfig {",
-        "    fn from(cfg: &GameConfig) -> Self {",
-        "        let defaults = EngineGameConfig::default();",
-        "        EngineGameConfig {",
-        "            title: cfg.title.clone().unwrap_or(defaults.title),",
-        "            width: cfg.width.unwrap_or(defaults.width),",
-        "            height: cfg.height.unwrap_or(defaults.height),",
-        "            vsync: cfg.vsync.unwrap_or(defaults.vsync),",
-        "            fullscreen: cfg.fullscreen.unwrap_or(defaults.fullscreen),",
-        "            resizable: cfg.resizable.unwrap_or(defaults.resizable),",
-        "            target_fps: cfg.target_fps.unwrap_or(defaults.target_fps),",
-        "            debug_rendering: cfg.debug_rendering.unwrap_or(defaults.debug_rendering),",
-        "        }",
-        "    }",
-        "}",
-        "",
-        "// =============================================================================",
-        "// GoudGame",
-        "// =============================================================================",
-        "",
-        "#[napi]",
-        "pub struct GoudGame {",
-        "    inner: EngineGoudGame,",
-        "    context_id: GoudContextId,",
-        "    last_delta_time: f32,",
-        "}",
-        "",
-        "#[napi]",
-        "impl GoudGame {",
-        "    #[napi(constructor)]",
-        "    pub fn new(config: Option<GameConfig>) -> Result<Self> {",
-        "        let engine_config = match &config {",
-        "            Some(cfg) => EngineGameConfig::from(cfg),",
-        "            None => EngineGameConfig::default(),",
-        "        };",
-        "",
-        "        let width = config.as_ref().and_then(|c| c.width).unwrap_or(800);",
-        "        let height = config.as_ref().and_then(|c| c.height).unwrap_or(600);",
-        "        let title_str = config",
-        "            .as_ref()",
-        '            .and_then(|c| c.title.clone())',
-        '            .unwrap_or_else(|| "GoudEngine".to_string());',
-        "",
-        "        let c_title = CString::new(title_str)",
-        '            .map_err(|e| Error::from_reason(format!("Invalid title string: {}", e)))?;',
-        "",
-        "        // SAFETY: CString guarantees a valid null-terminated pointer.",
-        "        let context_id = unsafe { goud_window_create(width, height, c_title.as_ptr()) };",
-        "        if context_id == GOUD_INVALID_CONTEXT_ID {",
-        '            return Err(Error::from_reason("Failed to create GLFW window"));',
-        "        }",
-        "",
-        "        let game =",
-        '            EngineGoudGame::new(engine_config).map_err(|e| Error::from_reason(format!("{}", e)))?;',
-        "",
-        "        Ok(Self {",
-        "            inner: game,",
-        "            context_id,",
-        "            last_delta_time: 0.0,",
-        "        })",
-        "    }",
-        "",
-        "    // =========================================================================",
-        "    // Lifecycle",
-        "    // =========================================================================",
-        "",
-        "    #[napi]",
-        "    pub fn should_close(&self) -> bool {",
-        "        goud_window_should_close(self.context_id)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn close(&self) {",
-        "        goud_window_set_should_close(self.context_id, true);",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn destroy(&self) -> bool {",
-        "        goud_window_destroy(self.context_id)",
-        "    }",
-        "",
-        "    // =========================================================================",
-        "    // Frame Management",
-        "    // =========================================================================",
-        "",
-        "    #[napi]",
-        "    pub fn begin_frame(&mut self, r: Option<f64>, g: Option<f64>, b: Option<f64>, a: Option<f64>) {",
-        "        let dt = goud_window_poll_events(self.context_id);",
-        "        self.last_delta_time = dt;",
-        "        goud_window_clear(",
-        "            self.context_id,",
-        "            r.unwrap_or(0.0) as f32,",
-        "            g.unwrap_or(0.0) as f32,",
-        "            b.unwrap_or(0.0) as f32,",
-        "            a.unwrap_or(1.0) as f32,",
-        "        );",
-        "        goud_renderer_begin(self.context_id);",
-        "        goud_renderer_enable_blending(self.context_id);",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn end_frame(&self) {",
-        "        goud_renderer_end(self.context_id);",
-        "        goud_window_swap_buffers(self.context_id);",
-        "    }",
-        "",
-        "    // =========================================================================",
-        "    // Rendering",
-        "    // =========================================================================",
-        "",
-        "    #[napi]",
-        "    pub fn load_texture(&self, path: String) -> Result<f64> {",
-        "        let c_path =",
-        '            CString::new(path).map_err(|e| Error::from_reason(format!("Invalid path: {}", e)))?;',
-        "        // SAFETY: CString guarantees a valid null-terminated pointer.",
-        "        let handle = unsafe { goud_texture_load(self.context_id, c_path.as_ptr()) };",
-        "        Ok(handle as f64)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn destroy_texture(&self, handle: f64) -> bool {",
-        "        goud_texture_destroy(self.context_id, handle as u64)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn draw_sprite(",
-        "        &self,",
-        "        texture: f64,",
-        "        x: f64,",
-        "        y: f64,",
-        "        w: f64,",
-        "        h: f64,",
-        "        rotation: Option<f64>,",
-        "        r: Option<f64>,",
-        "        g: Option<f64>,",
-        "        b: Option<f64>,",
-        "        a: Option<f64>,",
-        "    ) -> bool {",
-        "        goud_renderer_draw_sprite(",
-        "            self.context_id,",
-        "            texture as u64,",
-        "            x as f32,",
-        "            y as f32,",
-        "            w as f32,",
-        "            h as f32,",
-        "            rotation.unwrap_or(0.0) as f32,",
-        "            r.unwrap_or(1.0) as f32,",
-        "            g.unwrap_or(1.0) as f32,",
-        "            b.unwrap_or(1.0) as f32,",
-        "            a.unwrap_or(1.0) as f32,",
-        "        )",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn draw_quad(",
-        "        &self,",
-        "        x: f64,",
-        "        y: f64,",
-        "        w: f64,",
-        "        h: f64,",
-        "        r: Option<f64>,",
-        "        g: Option<f64>,",
-        "        b: Option<f64>,",
-        "        a: Option<f64>,",
-        "    ) -> bool {",
-        "        goud_renderer_draw_quad(",
-        "            self.context_id,",
-        "            x as f32,",
-        "            y as f32,",
-        "            w as f32,",
-        "            h as f32,",
-        "            r.unwrap_or(1.0) as f32,",
-        "            g.unwrap_or(1.0) as f32,",
-        "            b.unwrap_or(1.0) as f32,",
-        "            a.unwrap_or(1.0) as f32,",
-        "        )",
-        "    }",
-        "",
-        "    // =========================================================================",
-        "    // Input",
-        "    // =========================================================================",
-        "",
-        "    #[napi]",
-        "    pub fn is_key_pressed(&self, key: i32) -> bool {",
-        "        goud_input_key_pressed(self.context_id, key)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn is_key_just_pressed(&self, key: i32) -> bool {",
-        "        goud_input_key_just_pressed(self.context_id, key)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn is_key_just_released(&self, key: i32) -> bool {",
-        "        goud_input_key_just_released(self.context_id, key)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn is_mouse_button_pressed(&self, button: i32) -> bool {",
-        "        goud_input_mouse_button_pressed(self.context_id, button)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn is_mouse_button_just_pressed(&self, button: i32) -> bool {",
-        "        goud_input_mouse_button_just_pressed(self.context_id, button)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn is_mouse_button_just_released(&self, button: i32) -> bool {",
-        "        goud_input_mouse_button_just_released(self.context_id, button)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn get_mouse_position(&self) -> Vec<f64> {",
-        "        let mut x: f32 = 0.0;",
-        "        let mut y: f32 = 0.0;",
-        "        // SAFETY: Passing valid mutable references as out-pointers.",
-        "        unsafe { goud_input_get_mouse_position(self.context_id, &mut x, &mut y) };",
-        "        vec![x as f64, y as f64]",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn get_mouse_delta(&self) -> Vec<f64> {",
-        "        let mut dx: f32 = 0.0;",
-        "        let mut dy: f32 = 0.0;",
-        "        // SAFETY: Passing valid mutable references as out-pointers.",
-        "        unsafe { goud_input_get_mouse_delta(self.context_id, &mut dx, &mut dy) };",
-        "        vec![dx as f64, dy as f64]",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn get_scroll_delta(&self) -> Vec<f64> {",
-        "        let mut dx: f32 = 0.0;",
-        "        let mut dy: f32 = 0.0;",
-        "        // SAFETY: Passing valid mutable references as out-pointers.",
-        "        unsafe { goud_input_get_scroll_delta(self.context_id, &mut dx, &mut dy) };",
-        "        vec![dx as f64, dy as f64]",
-        "    }",
-        "",
-        "    // =========================================================================",
-        "    // Entity Operations (ECS)",
-        "    // =========================================================================",
-        "",
-        "    #[napi]",
-        "    pub fn spawn_empty(&mut self) -> Entity {",
-        "        Entity {",
-        "            inner: self.inner.spawn_empty(),",
-        "        }",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn spawn_batch(&mut self, count: u32) -> Vec<Entity> {",
-        "        self.inner",
-        "            .spawn_batch(count as usize)",
-        "            .into_iter()",
-        "            .map(|e| Entity { inner: e })",
-        "            .collect()",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn despawn(&mut self, entity: &Entity) -> bool {",
-        "        self.inner.despawn(entity.inner)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn entity_count(&self) -> u32 {",
-        "        self.inner.entity_count() as u32",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn is_alive(&self, entity: &Entity) -> bool {",
-        "        self.inner.is_alive(entity.inner)",
-        "    }",
-        "",
-        "    // =========================================================================",
-        "    // Transform2D Component",
-        "    // =========================================================================",
-        "",
-        "    #[napi]",
-        "    pub fn add_transform2d(&mut self, entity: &Entity, data: Transform2DData) {",
-        "        let transform = Transform2D::from(&data);",
-        "        self.inner.insert(entity.inner, transform);",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn get_transform2d(&self, entity: &Entity) -> Option<Transform2DData> {",
-        "        self.inner",
-        "            .get::<Transform2D>(entity.inner)",
-        "            .map(Transform2DData::from)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn set_transform2d(&mut self, entity: &Entity, data: Transform2DData) {",
-        "        if let Some(t) = self.inner.get_mut::<Transform2D>(entity.inner) {",
-        "            t.position.x = data.position_x as f32;",
-        "            t.position.y = data.position_y as f32;",
-        "            t.rotation = data.rotation as f32;",
-        "            t.scale.x = data.scale_x as f32;",
-        "            t.scale.y = data.scale_y as f32;",
-        "        }",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn has_transform2d(&self, entity: &Entity) -> bool {",
-        "        self.inner.has::<Transform2D>(entity.inner)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn remove_transform2d(&mut self, entity: &Entity) -> bool {",
-        "        self.inner.remove::<Transform2D>(entity.inner).is_some()",
-        "    }",
-        "",
-        "    // =========================================================================",
-        "    // Sprite Component",
-        "    // =========================================================================",
-        "",
-        "    #[napi]",
-        "    pub fn add_sprite(&mut self, entity: &Entity, data: SpriteData) {",
-        "        let sprite = Sprite::from(&data);",
-        "        self.inner.insert(entity.inner, sprite);",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn get_sprite(&self, entity: &Entity) -> Option<SpriteData> {",
-        "        self.inner.get::<Sprite>(entity.inner).map(SpriteData::from)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn has_sprite(&self, entity: &Entity) -> bool {",
-        "        self.inner.has::<Sprite>(entity.inner)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn remove_sprite(&mut self, entity: &Entity) -> bool {",
-        "        self.inner.remove::<Sprite>(entity.inner).is_some()",
-        "    }",
-        "",
-        "    // =========================================================================",
-        "    // Name Component",
-        "    // =========================================================================",
-        "",
-        "    #[napi]",
-        "    pub fn add_name(&mut self, entity: &Entity, name: String) {",
-        "        self.inner.insert(entity.inner, Name::new(&name));",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn get_name(&self, entity: &Entity) -> Option<String> {",
-        "        self.inner",
-        "            .get::<Name>(entity.inner)",
-        "            .map(|n| n.as_str().to_string())",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn has_name(&self, entity: &Entity) -> bool {",
-        "        self.inner.has::<Name>(entity.inner)",
-        "    }",
-        "",
-        "    #[napi]",
-        "    pub fn remove_name(&mut self, entity: &Entity) -> bool {",
-        "        self.inner.remove::<Name>(entity.inner).is_some()",
-        "    }",
-        "",
-        "    // =========================================================================",
-        "    // Legacy Game Loop (ECS-only)",
-        "    // =========================================================================",
-        "",
-        "    #[napi]",
-        "    pub fn update_frame(&mut self, delta_time: f64) {",
-        "        let dt = delta_time as f32;",
-        "        self.last_delta_time = dt;",
-        "        self.inner.update_frame(dt, |_, _| {});",
-        "    }",
-        "",
-        "    // =========================================================================",
-        "    // Timing / Stats (getters)",
-        "    // =========================================================================",
-        "",
-        "    #[napi(getter)]",
-        "    pub fn delta_time(&self) -> f64 {",
-        "        self.last_delta_time as f64",
-        "    }",
-        "",
-        "    #[napi(getter)]",
-        "    pub fn total_time(&self) -> f64 {",
-        "        self.inner.total_time() as f64",
-        "    }",
-        "",
-        "    #[napi(getter)]",
-        "    pub fn fps(&self) -> f64 {",
-        "        if self.last_delta_time > 0.0 {",
-        "            (1.0 / self.last_delta_time) as f64",
-        "        } else {",
-        "            0.0",
-        "        }",
-        "    }",
-        "",
-        "    #[napi(getter)]",
-        "    pub fn frame_count(&self) -> u32 {",
-        "        self.inner.frame_count() as u32",
-        "    }",
-        "",
-        "    #[napi(getter)]",
-        "    pub fn is_initialized(&self) -> bool {",
-        "        self.inner.is_initialized()",
-        "    }",
-        "",
-        "    // =========================================================================",
-        "    // Configuration (getters)",
-        "    // =========================================================================",
-        "",
-        "    #[napi(getter)]",
-        "    pub fn title(&self) -> String {",
-        "        self.inner.title().to_string()",
-        "    }",
-        "",
-        "    #[napi(getter)]",
-        "    pub fn window_width(&self) -> u32 {",
-        "        self.inner.window_size().0",
-        "    }",
-        "",
-        "    #[napi(getter)]",
-        "    pub fn window_height(&self) -> u32 {",
-        "        self.inner.window_size().1",
-        "    }",
-        "",
-        "    #[napi(getter)]",
-        "    pub fn context_valid(&self) -> bool {",
-        "        self.context_id != GOUD_INVALID_CONTEXT_ID",
-        "    }",
-        "",
-        "    /// Returns the raw FFI delta time from the last poll_events call.",
-        "    #[napi(getter)]",
-        "    pub fn ffi_delta_time(&self) -> f64 {",
-        "        goud_window_get_delta_time(self.context_id) as f64",
-        "    }",
-        "}",
-        "",
-    ]
+    write_generated(NATIVE_SRC / "game.g.rs", _game_rs_content())
 
-    write_generated(NATIVE_SRC / "game.g.rs", "\n".join(lines))
+
+
+def _game_rs_content():
+    return RUST_HEADER + r"""
+use crate::components::{SpriteData, Transform2DData};
+use crate::entity::Entity;
+use goud_engine::ffi::collision::{
+    goud_collision_aabb_aabb, goud_collision_aabb_overlap, goud_collision_circle_aabb,
+    goud_collision_circle_circle, goud_collision_circle_overlap,
+    goud_collision_distance, goud_collision_distance_squared,
+    goud_collision_point_in_circle, goud_collision_point_in_rect, GoudContact,
+};
+use goud_engine::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
+use goud_engine::ffi::entity::{
+    goud_entity_count, goud_entity_despawn, goud_entity_is_alive,
+    goud_entity_spawn_batch, goud_entity_spawn_empty,
+};
+use goud_engine::ffi::input::{
+    goud_input_get_mouse_delta, goud_input_get_mouse_position,
+    goud_input_get_scroll_delta, goud_input_key_just_pressed,
+    goud_input_key_just_released, goud_input_key_pressed,
+    goud_input_mouse_button_just_pressed, goud_input_mouse_button_just_released,
+    goud_input_mouse_button_pressed,
+    goud_input_map_action_key, goud_input_action_pressed,
+    goud_input_action_just_pressed, goud_input_action_just_released,
+};
+use goud_engine::ffi::renderer::{
+    goud_renderer_begin, goud_renderer_clear_depth, goud_renderer_disable_blending,
+    goud_renderer_disable_depth_test, goud_renderer_draw_quad,
+    goud_renderer_draw_sprite, goud_renderer_draw_sprite_rect,
+    goud_renderer_enable_blending, goud_renderer_enable_depth_test,
+    goud_renderer_end, goud_renderer_get_stats, goud_renderer_set_viewport,
+    goud_texture_destroy, goud_texture_load, GoudRenderStats,
+};
+use goud_engine::ffi::renderer3d::{
+    goud_renderer3d_add_light, goud_renderer3d_configure_fog,
+    goud_renderer3d_configure_grid, goud_renderer3d_configure_skybox,
+    goud_renderer3d_create_cube, goud_renderer3d_create_cylinder,
+    goud_renderer3d_create_plane, goud_renderer3d_create_sphere,
+    goud_renderer3d_destroy_object, goud_renderer3d_remove_light,
+    goud_renderer3d_render, goud_renderer3d_set_camera_position,
+    goud_renderer3d_set_camera_rotation, goud_renderer3d_set_fog_enabled,
+    goud_renderer3d_set_grid_enabled, goud_renderer3d_set_object_position,
+    goud_renderer3d_set_object_rotation, goud_renderer3d_set_object_scale,
+    goud_renderer3d_update_light,
+};
+use goud_engine::ffi::window::{
+    goud_window_clear, goud_window_create, goud_window_destroy,
+    goud_window_get_delta_time, goud_window_get_size, goud_window_poll_events,
+    goud_window_set_should_close, goud_window_should_close,
+    goud_window_swap_buffers,
+};
+use napi::bindgen_prelude::*;
+use napi_derive::napi;
+use std::ffi::CString;
+
+// =============================================================================
+// GameConfig
+// =============================================================================
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct GameConfig {
+    pub title: Option<String>,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+}
+
+// =============================================================================
+// RenderStats / Contact napi objects
+// =============================================================================
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiRenderStats {
+    pub draw_calls: u32,
+    pub triangles: u32,
+    pub texture_binds: u32,
+    pub shader_binds: u32,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiContact {
+    pub point_x: f64,
+    pub point_y: f64,
+    pub normal_x: f64,
+    pub normal_y: f64,
+    pub penetration: f64,
+}
+
+// =============================================================================
+// GoudGame -- FFI-only, no Rust SDK access
+// =============================================================================
+
+#[napi]
+pub struct GoudGame {
+    context_id: GoudContextId,
+    last_delta_time: f32,
+}
+
+#[napi]
+impl GoudGame {
+    #[napi(constructor)]
+    pub fn new(config: Option<GameConfig>) -> Result<Self> {
+        let width = config.as_ref().and_then(|c| c.width).unwrap_or(800);
+        let height = config.as_ref().and_then(|c| c.height).unwrap_or(600);
+        let title_str = config
+            .as_ref()
+            .and_then(|c| c.title.clone())
+            .unwrap_or_else(|| "GoudEngine".to_string());
+
+        let c_title = CString::new(title_str)
+            .map_err(|e| Error::from_reason(format!("Invalid title string: {}", e)))?;
+
+        // SAFETY: CString guarantees a valid null-terminated pointer.
+        let context_id = unsafe { goud_window_create(width, height, c_title.as_ptr()) };
+        if context_id == GOUD_INVALID_CONTEXT_ID {
+            return Err(Error::from_reason("Failed to create GLFW window"));
+        }
+
+        Ok(Self { context_id, last_delta_time: 0.0 })
+    }
+
+    // =========================================================================
+    // Lifecycle
+    // =========================================================================
+
+    #[napi]
+    pub fn should_close(&self) -> bool { goud_window_should_close(self.context_id) }
+
+    #[napi]
+    pub fn close(&self) { goud_window_set_should_close(self.context_id, true); }
+
+    #[napi]
+    pub fn destroy(&self) -> bool { goud_window_destroy(self.context_id) }
+
+    // =========================================================================
+    // Frame Management
+    // =========================================================================
+
+    #[napi]
+    pub fn begin_frame(&mut self, r: Option<f64>, g: Option<f64>, b: Option<f64>, a: Option<f64>) {
+        let dt = goud_window_poll_events(self.context_id);
+        self.last_delta_time = dt;
+        goud_window_clear(self.context_id,
+            r.unwrap_or(0.0) as f32, g.unwrap_or(0.0) as f32,
+            b.unwrap_or(0.0) as f32, a.unwrap_or(1.0) as f32);
+        goud_renderer_begin(self.context_id);
+        goud_renderer_enable_blending(self.context_id);
+    }
+
+    #[napi]
+    pub fn end_frame(&self) {
+        goud_renderer_end(self.context_id);
+        goud_window_swap_buffers(self.context_id);
+    }
+
+    // =========================================================================
+    // Rendering
+    // =========================================================================
+
+    #[napi]
+    pub fn load_texture(&self, path: String) -> Result<f64> {
+        let c_path = CString::new(path)
+            .map_err(|e| Error::from_reason(format!("Invalid path: {}", e)))?;
+        // SAFETY: CString guarantees a valid null-terminated pointer.
+        let handle = unsafe { goud_texture_load(self.context_id, c_path.as_ptr()) };
+        Ok(handle as f64)
+    }
+
+    #[napi]
+    pub fn destroy_texture(&self, handle: f64) -> bool {
+        goud_texture_destroy(self.context_id, handle as u64)
+    }
+
+    #[napi]
+    pub fn draw_sprite(&self, texture: f64, x: f64, y: f64, w: f64, h: f64,
+                       rotation: Option<f64>, r: Option<f64>, g: Option<f64>,
+                       b: Option<f64>, a: Option<f64>) -> bool {
+        goud_renderer_draw_sprite(self.context_id, texture as u64,
+            x as f32, y as f32, w as f32, h as f32, rotation.unwrap_or(0.0) as f32,
+            r.unwrap_or(1.0) as f32, g.unwrap_or(1.0) as f32,
+            b.unwrap_or(1.0) as f32, a.unwrap_or(1.0) as f32)
+    }
+
+    #[napi]
+    pub fn draw_sprite_rect(&self, texture: f64, x: f64, y: f64, w: f64, h: f64,
+                            rotation: Option<f64>, src_x: f64, src_y: f64,
+                            src_w: f64, src_h: f64, r: Option<f64>, g: Option<f64>,
+                            b: Option<f64>, a: Option<f64>) -> bool {
+        goud_renderer_draw_sprite_rect(self.context_id, texture as u64,
+            x as f32, y as f32, w as f32, h as f32, rotation.unwrap_or(0.0) as f32,
+            src_x as f32, src_y as f32, src_w as f32, src_h as f32,
+            r.unwrap_or(1.0) as f32, g.unwrap_or(1.0) as f32,
+            b.unwrap_or(1.0) as f32, a.unwrap_or(1.0) as f32)
+    }
+
+    #[napi]
+    pub fn draw_quad(&self, x: f64, y: f64, w: f64, h: f64,
+                     r: Option<f64>, g: Option<f64>, b: Option<f64>, a: Option<f64>) -> bool {
+        goud_renderer_draw_quad(self.context_id,
+            x as f32, y as f32, w as f32, h as f32,
+            r.unwrap_or(1.0) as f32, g.unwrap_or(1.0) as f32,
+            b.unwrap_or(1.0) as f32, a.unwrap_or(1.0) as f32)
+    }
+
+    #[napi]
+    pub fn set_viewport(&self, x: i32, y: i32, width: u32, height: u32) {
+        goud_renderer_set_viewport(self.context_id, x, y, width, height);
+    }
+
+    #[napi]
+    pub fn enable_depth_test(&self) { goud_renderer_enable_depth_test(self.context_id); }
+    #[napi]
+    pub fn disable_depth_test(&self) { goud_renderer_disable_depth_test(self.context_id); }
+    #[napi]
+    pub fn clear_depth(&self) { goud_renderer_clear_depth(self.context_id); }
+    #[napi]
+    pub fn disable_blending(&self) { goud_renderer_disable_blending(self.context_id); }
+
+    #[napi]
+    pub fn get_render_stats(&self) -> NapiRenderStats {
+        let mut stats = GoudRenderStats { draw_calls: 0, triangles: 0, texture_binds: 0, shader_binds: 0 };
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_renderer_get_stats(self.context_id, &mut stats) };
+        NapiRenderStats { draw_calls: stats.draw_calls, triangles: stats.triangles, texture_binds: stats.texture_binds, shader_binds: stats.shader_binds }
+    }
+
+    // =========================================================================
+    // Input
+    // =========================================================================
+
+    #[napi]
+    pub fn is_key_pressed(&self, key: i32) -> bool { goud_input_key_pressed(self.context_id, key) }
+    #[napi]
+    pub fn is_key_just_pressed(&self, key: i32) -> bool { goud_input_key_just_pressed(self.context_id, key) }
+    #[napi]
+    pub fn is_key_just_released(&self, key: i32) -> bool { goud_input_key_just_released(self.context_id, key) }
+    #[napi]
+    pub fn is_mouse_button_pressed(&self, button: i32) -> bool { goud_input_mouse_button_pressed(self.context_id, button) }
+    #[napi]
+    pub fn is_mouse_button_just_pressed(&self, button: i32) -> bool { goud_input_mouse_button_just_pressed(self.context_id, button) }
+    #[napi]
+    pub fn is_mouse_button_just_released(&self, button: i32) -> bool { goud_input_mouse_button_just_released(self.context_id, button) }
+
+    #[napi]
+    pub fn get_mouse_position(&self) -> Vec<f64> {
+        let (mut x, mut y) = (0.0f32, 0.0f32);
+        // SAFETY: Passing valid mutable references as out-pointers.
+        unsafe { goud_input_get_mouse_position(self.context_id, &mut x, &mut y) };
+        vec![x as f64, y as f64]
+    }
+
+    #[napi]
+    pub fn get_mouse_delta(&self) -> Vec<f64> {
+        let (mut dx, mut dy) = (0.0f32, 0.0f32);
+        // SAFETY: Passing valid mutable references as out-pointers.
+        unsafe { goud_input_get_mouse_delta(self.context_id, &mut dx, &mut dy) };
+        vec![dx as f64, dy as f64]
+    }
+
+    #[napi]
+    pub fn get_scroll_delta(&self) -> Vec<f64> {
+        let (mut dx, mut dy) = (0.0f32, 0.0f32);
+        // SAFETY: Passing valid mutable references as out-pointers.
+        unsafe { goud_input_get_scroll_delta(self.context_id, &mut dx, &mut dy) };
+        vec![dx as f64, dy as f64]
+    }
+
+    #[napi]
+    pub fn map_action_key(&self, action: String, key: i32) -> Result<bool> {
+        let c = CString::new(action).map_err(|e| Error::from_reason(format!("{}", e)))?;
+        // SAFETY: CString guarantees a valid null-terminated pointer.
+        Ok(unsafe { goud_input_map_action_key(self.context_id, c.as_ptr(), key) })
+    }
+
+    #[napi]
+    pub fn is_action_pressed(&self, action: String) -> Result<bool> {
+        let c = CString::new(action).map_err(|e| Error::from_reason(format!("{}", e)))?;
+        // SAFETY: CString guarantees a valid null-terminated pointer.
+        Ok(unsafe { goud_input_action_pressed(self.context_id, c.as_ptr()) })
+    }
+
+    #[napi]
+    pub fn is_action_just_pressed(&self, action: String) -> Result<bool> {
+        let c = CString::new(action).map_err(|e| Error::from_reason(format!("{}", e)))?;
+        // SAFETY: CString guarantees a valid null-terminated pointer.
+        Ok(unsafe { goud_input_action_just_pressed(self.context_id, c.as_ptr()) })
+    }
+
+    #[napi]
+    pub fn is_action_just_released(&self, action: String) -> Result<bool> {
+        let c = CString::new(action).map_err(|e| Error::from_reason(format!("{}", e)))?;
+        // SAFETY: CString guarantees a valid null-terminated pointer.
+        Ok(unsafe { goud_input_action_just_released(self.context_id, c.as_ptr()) })
+    }
+
+    // =========================================================================
+    // Entity Operations (ECS) -- via FFI
+    // =========================================================================
+
+    #[napi]
+    pub fn spawn_empty(&self) -> Entity {
+        Entity { bits: goud_entity_spawn_empty(self.context_id) }
+    }
+
+    #[napi]
+    pub fn spawn_batch(&self, count: u32) -> Vec<Entity> {
+        let mut out = vec![0u64; count as usize];
+        // SAFETY: out buffer is correctly sized for count u64 values.
+        let n = unsafe { goud_entity_spawn_batch(self.context_id, count, out.as_mut_ptr()) };
+        out.truncate(n as usize);
+        out.into_iter().map(|bits| Entity { bits }).collect()
+    }
+
+    #[napi]
+    pub fn despawn(&self, entity: &Entity) -> bool {
+        goud_entity_despawn(self.context_id, entity.bits).success
+    }
+
+    #[napi]
+    pub fn entity_count(&self) -> u32 { goud_entity_count(self.context_id) }
+
+    #[napi]
+    pub fn is_alive(&self, entity: &Entity) -> bool {
+        goud_entity_is_alive(self.context_id, entity.bits)
+    }
+
+    // =========================================================================
+    // Transform2D Component -- via FFI context registry
+    // =========================================================================
+
+    #[napi]
+    pub fn add_transform2d(&self, entity: &Entity, data: Transform2DData) {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Transform2D;
+        use goud_engine::core::math::Vec2;
+        let mut reg = get_context_registry().lock().unwrap();
+        if let Some(ctx) = reg.get_mut(self.context_id) {
+            let e = goud_engine::ecs::Entity::from_bits(entity.bits);
+            ctx.world_mut().insert(e, Transform2D {
+                position: Vec2::new(data.position_x as f32, data.position_y as f32),
+                rotation: data.rotation as f32,
+                scale: Vec2::new(data.scale_x as f32, data.scale_y as f32),
+            });
+        }
+    }
+
+    #[napi]
+    pub fn get_transform2d(&self, entity: &Entity) -> Option<Transform2DData> {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Transform2D;
+        let reg = get_context_registry().lock().unwrap();
+        reg.get(self.context_id).and_then(|ctx| {
+            let e = goud_engine::ecs::Entity::from_bits(entity.bits);
+            ctx.world().get::<Transform2D>(e).map(|t| Transform2DData {
+                position_x: t.position.x as f64, position_y: t.position.y as f64,
+                rotation: t.rotation as f64, scale_x: t.scale.x as f64, scale_y: t.scale.y as f64,
+            })
+        })
+    }
+
+    #[napi]
+    pub fn set_transform2d(&self, entity: &Entity, data: Transform2DData) {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Transform2D;
+        let mut reg = get_context_registry().lock().unwrap();
+        if let Some(ctx) = reg.get_mut(self.context_id) {
+            let e = goud_engine::ecs::Entity::from_bits(entity.bits);
+            if let Some(t) = ctx.world_mut().get_mut::<Transform2D>(e) {
+                t.position.x = data.position_x as f32; t.position.y = data.position_y as f32;
+                t.rotation = data.rotation as f32;
+                t.scale.x = data.scale_x as f32; t.scale.y = data.scale_y as f32;
+            }
+        }
+    }
+
+    #[napi]
+    pub fn has_transform2d(&self, entity: &Entity) -> bool {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Transform2D;
+        let reg = get_context_registry().lock().unwrap();
+        reg.get(self.context_id).map_or(false, |ctx| {
+            ctx.world().has::<Transform2D>(goud_engine::ecs::Entity::from_bits(entity.bits))
+        })
+    }
+
+    #[napi]
+    pub fn remove_transform2d(&self, entity: &Entity) -> bool {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Transform2D;
+        let mut reg = get_context_registry().lock().unwrap();
+        reg.get_mut(self.context_id).map_or(false, |ctx| {
+            ctx.world_mut().remove::<Transform2D>(goud_engine::ecs::Entity::from_bits(entity.bits)).is_some()
+        })
+    }
+
+    // =========================================================================
+    // Sprite Component -- via FFI context registry
+    // =========================================================================
+
+    #[napi]
+    pub fn add_sprite(&self, entity: &Entity, data: SpriteData) {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Sprite;
+        use goud_engine::core::math::{Color, Rect, Vec2};
+        let mut reg = get_context_registry().lock().unwrap();
+        if let Some(ctx) = reg.get_mut(self.context_id) {
+            let e = goud_engine::ecs::Entity::from_bits(entity.bits);
+            ctx.world_mut().insert(e, Sprite {
+                color: Color::rgba(data.color.r as f32, data.color.g as f32, data.color.b as f32, data.color.a as f32),
+                flip_x: data.flip_x, flip_y: data.flip_y,
+                anchor: Vec2::new(data.anchor_x as f32, data.anchor_y as f32),
+                custom_size: match (data.custom_width, data.custom_height) {
+                    (Some(w), Some(h)) => Some(Vec2::new(w as f32, h as f32)), _ => None,
+                },
+                source_rect: match (data.source_rect_x, data.source_rect_y, data.source_rect_width, data.source_rect_height) {
+                    (Some(x), Some(y), Some(w), Some(h)) => Some(Rect::new(x as f32, y as f32, w as f32, h as f32)), _ => None,
+                },
+                ..Default::default()
+            });
+        }
+    }
+
+    #[napi]
+    pub fn get_sprite(&self, entity: &Entity) -> Option<SpriteData> {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Sprite;
+        let reg = get_context_registry().lock().unwrap();
+        reg.get(self.context_id).and_then(|ctx| {
+            let e = goud_engine::ecs::Entity::from_bits(entity.bits);
+            ctx.world().get::<Sprite>(e).map(|s| {
+                let (cw, ch) = s.custom_size.map_or((None, None), |sz| (Some(sz.x as f64), Some(sz.y as f64)));
+                let (sx, sy, sw, sh) = s.source_rect.map_or((None,None,None,None), |r| (Some(r.x as f64), Some(r.y as f64), Some(r.width as f64), Some(r.height as f64)));
+                SpriteData {
+                    color: crate::types::Color { r: s.color.r as f64, g: s.color.g as f64, b: s.color.b as f64, a: s.color.a as f64 },
+                    flip_x: s.flip_x, flip_y: s.flip_y,
+                    anchor_x: s.anchor.x as f64, anchor_y: s.anchor.y as f64,
+                    custom_width: cw, custom_height: ch,
+                    source_rect_x: sx, source_rect_y: sy, source_rect_width: sw, source_rect_height: sh,
+                }
+            })
+        })
+    }
+
+    #[napi]
+    pub fn set_sprite(&self, entity: &Entity, data: SpriteData) {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Sprite;
+        use goud_engine::core::math::{Color, Rect, Vec2};
+        let mut reg = get_context_registry().lock().unwrap();
+        if let Some(ctx) = reg.get_mut(self.context_id) {
+            let e = goud_engine::ecs::Entity::from_bits(entity.bits);
+            if let Some(s) = ctx.world_mut().get_mut::<Sprite>(e) {
+                s.color = Color::rgba(data.color.r as f32, data.color.g as f32, data.color.b as f32, data.color.a as f32);
+                s.flip_x = data.flip_x; s.flip_y = data.flip_y;
+                s.anchor = Vec2::new(data.anchor_x as f32, data.anchor_y as f32);
+                s.custom_size = match (data.custom_width, data.custom_height) { (Some(w), Some(h)) => Some(Vec2::new(w as f32, h as f32)), _ => None };
+                s.source_rect = match (data.source_rect_x, data.source_rect_y, data.source_rect_width, data.source_rect_height) {
+                    (Some(x), Some(y), Some(w), Some(h)) => Some(Rect::new(x as f32, y as f32, w as f32, h as f32)), _ => None };
+            }
+        }
+    }
+
+    #[napi]
+    pub fn has_sprite(&self, entity: &Entity) -> bool {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Sprite;
+        let reg = get_context_registry().lock().unwrap();
+        reg.get(self.context_id).map_or(false, |ctx| {
+            ctx.world().has::<Sprite>(goud_engine::ecs::Entity::from_bits(entity.bits))
+        })
+    }
+
+    #[napi]
+    pub fn remove_sprite(&self, entity: &Entity) -> bool {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Sprite;
+        let mut reg = get_context_registry().lock().unwrap();
+        reg.get_mut(self.context_id).map_or(false, |ctx| {
+            ctx.world_mut().remove::<Sprite>(goud_engine::ecs::Entity::from_bits(entity.bits)).is_some()
+        })
+    }
+
+    // =========================================================================
+    // Name Component -- via FFI context registry
+    // =========================================================================
+
+    #[napi]
+    pub fn add_name(&self, entity: &Entity, name: String) {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Name;
+        let mut reg = get_context_registry().lock().unwrap();
+        if let Some(ctx) = reg.get_mut(self.context_id) {
+            let e = goud_engine::ecs::Entity::from_bits(entity.bits);
+            ctx.world_mut().insert(e, Name::new(&name));
+        }
+    }
+
+    #[napi]
+    pub fn get_name(&self, entity: &Entity) -> Option<String> {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Name;
+        let reg = get_context_registry().lock().unwrap();
+        reg.get(self.context_id).and_then(|ctx| {
+            ctx.world().get::<Name>(goud_engine::ecs::Entity::from_bits(entity.bits)).map(|n| n.as_str().to_string())
+        })
+    }
+
+    #[napi]
+    pub fn has_name(&self, entity: &Entity) -> bool {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Name;
+        let reg = get_context_registry().lock().unwrap();
+        reg.get(self.context_id).map_or(false, |ctx| {
+            ctx.world().has::<Name>(goud_engine::ecs::Entity::from_bits(entity.bits))
+        })
+    }
+
+    #[napi]
+    pub fn remove_name(&self, entity: &Entity) -> bool {
+        use goud_engine::ffi::context::get_context_registry;
+        use goud_engine::ecs::components::Name;
+        let mut reg = get_context_registry().lock().unwrap();
+        reg.get_mut(self.context_id).map_or(false, |ctx| {
+            ctx.world_mut().remove::<Name>(goud_engine::ecs::Entity::from_bits(entity.bits)).is_some()
+        })
+    }
+
+    // =========================================================================
+    // Collision -- via FFI (no context needed)
+    // =========================================================================
+
+    #[napi]
+    pub fn collision_aabb_aabb(&self,
+        ca_x: f64, ca_y: f64, hw_a: f64, hh_a: f64,
+        cb_x: f64, cb_y: f64, hw_b: f64, hh_b: f64,
+    ) -> Option<NapiContact> {
+        let mut contact = std::mem::MaybeUninit::<GoudContact>::uninit();
+        // SAFETY: Passing valid pointer to uninitialized memory for out-param.
+        let hit = unsafe { goud_collision_aabb_aabb(
+            ca_x as f32, ca_y as f32, hw_a as f32, hh_a as f32,
+            cb_x as f32, cb_y as f32, hw_b as f32, hh_b as f32,
+            contact.as_mut_ptr()) };
+        if hit {
+            // SAFETY: goud_collision_aabb_aabb wrote into contact on success.
+            let c = unsafe { contact.assume_init() };
+            Some(NapiContact { point_x: c.point_x as f64, point_y: c.point_y as f64,
+                normal_x: c.normal_x as f64, normal_y: c.normal_y as f64, penetration: c.penetration as f64 })
+        } else { None }
+    }
+
+    #[napi]
+    pub fn collision_circle_circle(&self,
+        ca_x: f64, ca_y: f64, ra: f64, cb_x: f64, cb_y: f64, rb: f64,
+    ) -> Option<NapiContact> {
+        let mut contact = std::mem::MaybeUninit::<GoudContact>::uninit();
+        // SAFETY: Passing valid pointer to uninitialized memory for out-param.
+        let hit = unsafe { goud_collision_circle_circle(
+            ca_x as f32, ca_y as f32, ra as f32, cb_x as f32, cb_y as f32, rb as f32,
+            contact.as_mut_ptr()) };
+        if hit {
+            // SAFETY: goud_collision_circle_circle wrote into contact on success.
+            let c = unsafe { contact.assume_init() };
+            Some(NapiContact { point_x: c.point_x as f64, point_y: c.point_y as f64,
+                normal_x: c.normal_x as f64, normal_y: c.normal_y as f64, penetration: c.penetration as f64 })
+        } else { None }
+    }
+
+    #[napi]
+    pub fn collision_circle_aabb(&self,
+        cx: f64, cy: f64, cr: f64, bx: f64, by: f64, bhw: f64, bhh: f64,
+    ) -> Option<NapiContact> {
+        let mut contact = std::mem::MaybeUninit::<GoudContact>::uninit();
+        // SAFETY: Passing valid pointer to uninitialized memory for out-param.
+        let hit = unsafe { goud_collision_circle_aabb(
+            cx as f32, cy as f32, cr as f32, bx as f32, by as f32, bhw as f32, bhh as f32,
+            contact.as_mut_ptr()) };
+        if hit {
+            // SAFETY: goud_collision_circle_aabb wrote into contact on success.
+            let c = unsafe { contact.assume_init() };
+            Some(NapiContact { point_x: c.point_x as f64, point_y: c.point_y as f64,
+                normal_x: c.normal_x as f64, normal_y: c.normal_y as f64, penetration: c.penetration as f64 })
+        } else { None }
+    }
+
+    #[napi]
+    pub fn point_in_rect(&self, px: f64, py: f64, rx: f64, ry: f64, rw: f64, rh: f64) -> bool {
+        goud_collision_point_in_rect(px as f32, py as f32, rx as f32, ry as f32, rw as f32, rh as f32)
+    }
+    #[napi]
+    pub fn point_in_circle(&self, px: f64, py: f64, cx: f64, cy: f64, cr: f64) -> bool {
+        goud_collision_point_in_circle(px as f32, py as f32, cx as f32, cy as f32, cr as f32)
+    }
+    #[napi]
+    pub fn aabb_overlap(&self, ax1: f64, ay1: f64, ax2: f64, ay2: f64, bx1: f64, by1: f64, bx2: f64, by2: f64) -> bool {
+        goud_collision_aabb_overlap(ax1 as f32, ay1 as f32, ax2 as f32, ay2 as f32, bx1 as f32, by1 as f32, bx2 as f32, by2 as f32)
+    }
+    #[napi]
+    pub fn circle_overlap(&self, x1: f64, y1: f64, r1: f64, x2: f64, y2: f64, r2: f64) -> bool {
+        goud_collision_circle_overlap(x1 as f32, y1 as f32, r1 as f32, x2 as f32, y2 as f32, r2 as f32)
+    }
+    #[napi]
+    pub fn distance(&self, x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
+        goud_collision_distance(x1 as f32, y1 as f32, x2 as f32, y2 as f32) as f64
+    }
+    #[napi]
+    pub fn distance_squared(&self, x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
+        goud_collision_distance_squared(x1 as f32, y1 as f32, x2 as f32, y2 as f32) as f64
+    }
+
+    // =========================================================================
+    // 3D Renderer -- via FFI
+    // =========================================================================
+
+    #[napi]
+    pub fn create_cube(&self, texture_id: u32, width: f64, height: f64, depth: f64) -> u32 {
+        goud_renderer3d_create_cube(self.context_id, texture_id, width as f32, height as f32, depth as f32)
+    }
+    #[napi]
+    pub fn create_plane(&self, texture_id: u32, width: f64, depth: f64) -> u32 {
+        goud_renderer3d_create_plane(self.context_id, texture_id, width as f32, depth as f32)
+    }
+    #[napi]
+    pub fn create_sphere(&self, texture_id: u32, diameter: f64, segments: u32) -> u32 {
+        goud_renderer3d_create_sphere(self.context_id, texture_id, diameter as f32, segments)
+    }
+    #[napi]
+    pub fn create_cylinder(&self, texture_id: u32, radius: f64, height: f64, segments: u32) -> u32 {
+        goud_renderer3d_create_cylinder(self.context_id, texture_id, radius as f32, height as f32, segments)
+    }
+    #[napi]
+    pub fn set_object_position(&self, id: u32, x: f64, y: f64, z: f64) -> bool {
+        goud_renderer3d_set_object_position(self.context_id, id, x as f32, y as f32, z as f32)
+    }
+    #[napi]
+    pub fn set_object_rotation(&self, id: u32, x: f64, y: f64, z: f64) -> bool {
+        goud_renderer3d_set_object_rotation(self.context_id, id, x as f32, y as f32, z as f32)
+    }
+    #[napi]
+    pub fn set_object_scale(&self, id: u32, x: f64, y: f64, z: f64) -> bool {
+        goud_renderer3d_set_object_scale(self.context_id, id, x as f32, y as f32, z as f32)
+    }
+    #[napi]
+    pub fn destroy_object(&self, id: u32) -> bool {
+        goud_renderer3d_destroy_object(self.context_id, id)
+    }
+    #[napi]
+    pub fn add_light(&self, lt: i32, px: f64, py: f64, pz: f64, dx: f64, dy: f64, dz: f64,
+                     r: f64, g: f64, b: f64, intensity: f64, range: f64, spot_angle: f64) -> u32 {
+        goud_renderer3d_add_light(self.context_id, lt,
+            px as f32, py as f32, pz as f32, dx as f32, dy as f32, dz as f32,
+            r as f32, g as f32, b as f32, intensity as f32, range as f32, spot_angle as f32)
+    }
+    #[napi]
+    pub fn update_light(&self, lid: u32, lt: i32, px: f64, py: f64, pz: f64, dx: f64, dy: f64, dz: f64,
+                        r: f64, g: f64, b: f64, intensity: f64, range: f64, spot_angle: f64) -> bool {
+        goud_renderer3d_update_light(self.context_id, lid, lt,
+            px as f32, py as f32, pz as f32, dx as f32, dy as f32, dz as f32,
+            r as f32, g as f32, b as f32, intensity as f32, range as f32, spot_angle as f32)
+    }
+    #[napi]
+    pub fn remove_light(&self, lid: u32) -> bool { goud_renderer3d_remove_light(self.context_id, lid) }
+    #[napi]
+    pub fn set_camera_position_3d(&self, x: f64, y: f64, z: f64) -> bool {
+        goud_renderer3d_set_camera_position(self.context_id, x as f32, y as f32, z as f32)
+    }
+    #[napi]
+    pub fn set_camera_rotation_3d(&self, pitch: f64, yaw: f64, roll: f64) -> bool {
+        goud_renderer3d_set_camera_rotation(self.context_id, pitch as f32, yaw as f32, roll as f32)
+    }
+    #[napi]
+    pub fn configure_grid(&self, enabled: bool, size: f64, divisions: u32) -> bool {
+        goud_renderer3d_configure_grid(self.context_id, enabled, size as f32, divisions)
+    }
+    #[napi]
+    pub fn set_grid_enabled(&self, enabled: bool) -> bool { goud_renderer3d_set_grid_enabled(self.context_id, enabled) }
+    #[napi]
+    pub fn configure_skybox(&self, enabled: bool, r: f64, g: f64, b: f64, a: f64) -> bool {
+        goud_renderer3d_configure_skybox(self.context_id, enabled, r as f32, g as f32, b as f32, a as f32)
+    }
+    #[napi]
+    pub fn configure_fog(&self, enabled: bool, r: f64, g: f64, b: f64, density: f64) -> bool {
+        goud_renderer3d_configure_fog(self.context_id, enabled, r as f32, g as f32, b as f32, density as f32)
+    }
+    #[napi]
+    pub fn set_fog_enabled(&self, enabled: bool) -> bool { goud_renderer3d_set_fog_enabled(self.context_id, enabled) }
+    #[napi]
+    pub fn render_3d(&self) -> bool { goud_renderer3d_render(self.context_id) }
+
+    // =========================================================================
+    // Timing / Stats (getters)
+    // =========================================================================
+
+    #[napi(getter)]
+    pub fn delta_time(&self) -> f64 { self.last_delta_time as f64 }
+
+    #[napi(getter)]
+    pub fn fps(&self) -> f64 {
+        if self.last_delta_time > 0.0 { (1.0 / self.last_delta_time) as f64 } else { 0.0 }
+    }
+
+    #[napi(getter)]
+    pub fn window_width(&self) -> u32 {
+        let (mut w, mut h) = (0u32, 0u32);
+        // SAFETY: Passing valid mutable references as out-pointers.
+        unsafe { goud_window_get_size(self.context_id, &mut w, &mut h) };
+        w
+    }
+
+    #[napi(getter)]
+    pub fn window_height(&self) -> u32 {
+        let (mut w, mut h) = (0u32, 0u32);
+        // SAFETY: Passing valid mutable references as out-pointers.
+        unsafe { goud_window_get_size(self.context_id, &mut w, &mut h) };
+        h
+    }
+
+    #[napi(getter)]
+    pub fn context_valid(&self) -> bool { self.context_id != GOUD_INVALID_CONTEXT_ID }
+
+    /// Returns the raw FFI delta time from the last poll_events call.
+    #[napi(getter)]
+    pub fn ffi_delta_time(&self) -> f64 { goud_window_get_delta_time(self.context_id) as f64 }
+}
+"""
 
 
 def gen_napi_rust_lib():
-    """Generate sdks/typescript/native/src/lib.rs.
-
-    Declares the generated submodules with #[path] attributes so each .g.rs
-    file is loaded under its natural module name (crate::types, crate::entity,
-    crate::components, crate::game) — identical to how the hand-written files
-    were declared.
-    """
+    """Generate lib.rs."""
     lines = [
         RUST_HEADER,
         "#[allow(dead_code)]",
-        "#[path = \"components.g.rs\"]",
+        '#[path = "components.g.rs"]',
         "mod components;",
-        "#[path = \"entity.g.rs\"]",
+        '#[path = "entity.g.rs"]',
         "mod entity;",
-        "#[path = \"game.g.rs\"]",
+        '#[path = "game.g.rs"]',
         "mod game;",
         "#[allow(dead_code)]",
-        "#[path = \"types.g.rs\"]",
+        '#[path = "types.g.rs"]',
         "mod types;",
         "",
     ]
-
     write_generated(NATIVE_SRC / "lib.rs", "\n".join(lines))
 
 
 def gen_napi_rust():
-    """Entry point: generate all napi-rs Rust files for the Node.js native addon."""
     gen_napi_rust_types()
     gen_napi_rust_entity()
     gen_napi_rust_components()

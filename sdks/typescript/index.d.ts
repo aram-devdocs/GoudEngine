@@ -35,11 +35,19 @@ export interface GameConfig {
   title?: string
   width?: number
   height?: number
-  vsync?: boolean
-  fullscreen?: boolean
-  resizable?: boolean
-  targetFps?: number
-  debugRendering?: boolean
+}
+export interface NapiRenderStats {
+  drawCalls: number
+  triangles: number
+  textureBinds: number
+  shaderBinds: number
+}
+export interface NapiContact {
+  pointX: number
+  pointY: number
+  normalX: number
+  normalY: number
+  penetration: number
 }
 export interface Vec2 {
   x: number
@@ -74,6 +82,7 @@ export declare function colorTransparent(): Color
 export declare function colorRgba(r: number, g: number, b: number, a: number): Color
 export declare function colorRgb(r: number, g: number, b: number): Color
 export declare function colorFromHex(hex: number): Color
+export declare function colorFromU8(r: number, g: number, b: number, a: number): Color
 export declare class Entity {
   constructor(index: number, generation: number)
   static placeholder(): Entity
@@ -94,7 +103,14 @@ export declare class GoudGame {
   loadTexture(path: string): number
   destroyTexture(handle: number): boolean
   drawSprite(texture: number, x: number, y: number, w: number, h: number, rotation?: number | undefined | null, r?: number | undefined | null, g?: number | undefined | null, b?: number | undefined | null, a?: number | undefined | null): boolean
+  drawSpriteRect(texture: number, x: number, y: number, w: number, h: number, rotation: number | undefined | null, srcX: number, srcY: number, srcW: number, srcH: number, r?: number | undefined | null, g?: number | undefined | null, b?: number | undefined | null, a?: number | undefined | null): boolean
   drawQuad(x: number, y: number, w: number, h: number, r?: number | undefined | null, g?: number | undefined | null, b?: number | undefined | null, a?: number | undefined | null): boolean
+  setViewport(x: number, y: number, width: number, height: number): void
+  enableDepthTest(): void
+  disableDepthTest(): void
+  clearDepth(): void
+  disableBlending(): void
+  getRenderStats(): NapiRenderStats
   isKeyPressed(key: number): boolean
   isKeyJustPressed(key: number): boolean
   isKeyJustReleased(key: number): boolean
@@ -104,6 +120,10 @@ export declare class GoudGame {
   getMousePosition(): Array<number>
   getMouseDelta(): Array<number>
   getScrollDelta(): Array<number>
+  mapActionKey(action: string, key: number): boolean
+  isActionPressed(action: string): boolean
+  isActionJustPressed(action: string): boolean
+  isActionJustReleased(action: string): boolean
   spawnEmpty(): Entity
   spawnBatch(count: number): Array<Entity>
   despawn(entity: Entity): boolean
@@ -116,19 +136,43 @@ export declare class GoudGame {
   removeTransform2D(entity: Entity): boolean
   addSprite(entity: Entity, data: SpriteData): void
   getSprite(entity: Entity): SpriteData | null
+  setSprite(entity: Entity, data: SpriteData): void
   hasSprite(entity: Entity): boolean
   removeSprite(entity: Entity): boolean
   addName(entity: Entity, name: string): void
   getName(entity: Entity): string | null
   hasName(entity: Entity): boolean
   removeName(entity: Entity): boolean
-  updateFrame(deltaTime: number): void
+  collisionAabbAabb(caX: number, caY: number, hwA: number, hhA: number, cbX: number, cbY: number, hwB: number, hhB: number): NapiContact | null
+  collisionCircleCircle(caX: number, caY: number, ra: number, cbX: number, cbY: number, rb: number): NapiContact | null
+  collisionCircleAabb(cx: number, cy: number, cr: number, bx: number, by: number, bhw: number, bhh: number): NapiContact | null
+  pointInRect(px: number, py: number, rx: number, ry: number, rw: number, rh: number): boolean
+  pointInCircle(px: number, py: number, cx: number, cy: number, cr: number): boolean
+  aabbOverlap(ax1: number, ay1: number, ax2: number, ay2: number, bx1: number, by1: number, bx2: number, by2: number): boolean
+  circleOverlap(x1: number, y1: number, r1: number, x2: number, y2: number, r2: number): boolean
+  distance(x1: number, y1: number, x2: number, y2: number): number
+  distanceSquared(x1: number, y1: number, x2: number, y2: number): number
+  createCube(textureId: number, width: number, height: number, depth: number): number
+  createPlane(textureId: number, width: number, depth: number): number
+  createSphere(textureId: number, diameter: number, segments: number): number
+  createCylinder(textureId: number, radius: number, height: number, segments: number): number
+  setObjectPosition(id: number, x: number, y: number, z: number): boolean
+  setObjectRotation(id: number, x: number, y: number, z: number): boolean
+  setObjectScale(id: number, x: number, y: number, z: number): boolean
+  destroyObject(id: number): boolean
+  addLight(lt: number, px: number, py: number, pz: number, dx: number, dy: number, dz: number, r: number, g: number, b: number, intensity: number, range: number, spotAngle: number): number
+  updateLight(lid: number, lt: number, px: number, py: number, pz: number, dx: number, dy: number, dz: number, r: number, g: number, b: number, intensity: number, range: number, spotAngle: number): boolean
+  removeLight(lid: number): boolean
+  setCameraPosition3D(x: number, y: number, z: number): boolean
+  setCameraRotation3D(pitch: number, yaw: number, roll: number): boolean
+  configureGrid(enabled: boolean, size: number, divisions: number): boolean
+  setGridEnabled(enabled: boolean): boolean
+  configureSkybox(enabled: boolean, r: number, g: number, b: number, a: number): boolean
+  configureFog(enabled: boolean, r: number, g: number, b: number, density: number): boolean
+  setFogEnabled(enabled: boolean): boolean
+  render3D(): boolean
   get deltaTime(): number
-  get totalTime(): number
   get fps(): number
-  get frameCount(): number
-  get isInitialized(): boolean
-  get title(): string
   get windowWidth(): number
   get windowHeight(): number
   get contextValid(): boolean

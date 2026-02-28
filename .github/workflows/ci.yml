@@ -68,6 +68,7 @@ jobs:
     - name: Run SDK codegen (generates .g.rs files needed by workspace)
       if: matrix.rust == 'stable'
       run: |
+        python3 codegen/validate_coverage.py
         python3 codegen/gen_csharp.py
         python3 codegen/gen_python.py
         python3 codegen/gen_ts_node.py
@@ -376,6 +377,7 @@ jobs:
 
     - name: Run SDK codegen
       run: |
+        python3 codegen/validate_coverage.py
         python3 codegen/gen_csharp.py
         python3 codegen/gen_python.py
         python3 codegen/gen_ts_node.py

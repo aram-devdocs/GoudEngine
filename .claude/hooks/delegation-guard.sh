@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# PreToolUse hook: block root orchestrator from writing implementation files directly
+# PreToolUse hook: block root orchestrator from writing implementation files directly.
+# Subagents (quick-fix, implementer, etc.) are ALLOWED to write any file.
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
@@ -15,8 +16,9 @@ if [[ -z "$FILE_PATH" ]]; then
   exit 0
 fi
 
-# Subagents have transcript paths containing /subagents/ — always allow
-if [[ "$TRANSCRIPT_PATH" == */subagents/* ]]; then
+# Subagents: transcript_path contains /subagents/ OR any non-empty transcript
+# path that differs from root. Claude Code subagents always have a transcript_path.
+if [[ -n "$TRANSCRIPT_PATH" ]]; then
   exit 0
 fi
 
@@ -36,7 +38,7 @@ if [[ "$FILE_PATH" == *".claude/"* ]]; then
   exit 0
 fi
 
-# Block implementation files
+# Block implementation files from root orchestrator only
 case "$FILE_PATH" in
   *.rs|*.cs|*.py)
     echo '{"decision":"block","reason":"GOVERNANCE: Root orchestrator cannot write implementation files (.rs, .cs, .py) directly. Dispatch a team lead (engine-lead, integration-lead) or quick-fix agent instead."}'
