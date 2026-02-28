@@ -16,8 +16,8 @@ SDKs are thin wrappers over FFI. They translate Rust's C-ABI functions into idio
 ## Feature Parity
 
 Every FFI export MUST have wrappers in BOTH:
-- **C# SDK** (`sdks/GoudEngine/`) — DllImport declarations + wrapper classes
-- **Python SDK** (`sdks/python/goud_engine/`) — ctypes declarations in `bindings.py` + wrapper classes
+- **C# SDK** (`sdks/csharp/`) — DllImport declarations + wrapper classes
+- **Python SDK** (`sdks/python/goud_engine/`) — ctypes declarations in `generated/_ffi.py` + wrapper classes
 
 After adding new FFI functions, verify parity across both SDKs.
 
@@ -31,7 +31,7 @@ After adding new FFI functions, verify parity across both SDKs.
 ## Testing
 
 After SDK changes, run both:
-- `dotnet test sdks/GoudEngine.Tests/` (C#)
+- `dotnet test sdks/csharp.tests/` (C#)
 - `python3 sdks/python/test_bindings.py` (Python)
 
 ## C# Specifics
@@ -44,5 +44,5 @@ After SDK changes, run both:
 ## Python Specifics
 
 - Uses `ctypes` for FFI bindings
-- `bindings.py` declares all ctypes signatures (`argtypes`, `restype`)
+- `generated/_ffi.py` declares all ctypes signatures (`argtypes`, `restype`)
 - Handles library loading for macOS (`.dylib`) and Linux (`.so`)

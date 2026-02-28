@@ -2,9 +2,12 @@
 
 # increment_version.sh
 #
-# This script increments version numbers across the GoudEngine project files:
+# This script increments version numbers across ALL GoudEngine project files:
 # - goud_engine/Cargo.toml (source of truth)
-# - sdks/GoudEngine/GoudEngine.csproj
+# - sdks/csharp/GoudEngine.csproj
+# - sdks/typescript/package.json
+# - sdks/typescript/native/Cargo.toml
+# - codegen/goud_sdk.schema.json
 # - All .csproj files in /examples directory
 #
 # Usage:
@@ -50,9 +53,18 @@ echo "Updating version from $CURRENT_VERSION to $NEW_VERSION"
 sed -i '' "s/version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" goud_engine/Cargo.toml
 
 # Update GoudEngine.csproj
-sed -i '' "s/<Version>$CURRENT_VERSION<\/Version>/<Version>$NEW_VERSION<\/Version>/" sdks/GoudEngine/GoudEngine.csproj
+sed -i '' "s/<Version>$CURRENT_VERSION<\/Version>/<Version>$NEW_VERSION<\/Version>/" sdks/csharp/GoudEngine.csproj
 
 # Update all .csproj files in examples directory - handle both formats
 find examples -name "*.csproj" -type f -exec sed -i '' -e "s/<PackageReference Include=\"GoudEngine\" Version=\"[0-9]*\.[0-9]*\.[0-9]*\" \/>/<PackageReference Include=\"GoudEngine\" Version=\"$NEW_VERSION\" \/>/" -e "s/<PackageReference Include=\"GoudEngine\" Version=\"[0-9]*\.[0-9]*\.[0-9]*\">/<PackageReference Include=\"GoudEngine\" Version=\"$NEW_VERSION\">/" {} \;
+
+# Update codegen schema version
+sed -i '' "s/\"version\": \"[0-9]*\.[0-9]*\.[0-9]*\"/\"version\": \"$NEW_VERSION\"/" codegen/goud_sdk.schema.json
+
+# Update TypeScript package.json version
+sed -i '' "s/\"version\": \"[0-9]*\.[0-9]*\.[0-9]*\"/\"version\": \"$NEW_VERSION\"/" sdks/typescript/package.json
+
+# Update TypeScript native Cargo.toml version
+sed -i '' "s/^version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$NEW_VERSION\"/" sdks/typescript/native/Cargo.toml
 
 echo "Version update complete!"

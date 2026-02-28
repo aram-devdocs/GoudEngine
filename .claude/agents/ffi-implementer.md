@@ -22,8 +22,8 @@ Before making ANY changes:
 
 1. Read the existing FFI file you are modifying (or related files in `goud_engine/src/ffi/`)
 2. Read the corresponding Rust implementation being exposed
-3. Check existing C# bindings in `sdks/GoudEngine/` for the pattern
-4. Check existing Python bindings in `sdks/python/goud_engine/bindings.py`
+3. Check existing C# bindings in `sdks/csharp/` for the pattern
+4. Check existing Python bindings in `sdks/python/goud_engine/generated/_ffi.py`
 5. Run `cargo check` before starting
 
 ## Scope
@@ -47,7 +47,7 @@ Every public FFI function MUST have:
 1. Implement the FFI export function following the requirements above
 2. Run `cargo build` — this triggers csbindgen to auto-generate C# bindings
 3. Verify csbindgen output is correct
-4. Notify that Python bindings in `sdks/python/goud_engine/bindings.py` need manual update
+4. Notify that Python bindings in `sdks/python/goud_engine/generated/_ffi.py` need manual update
 5. Run `cargo test` on affected modules
 6. Report which SDK wrappers need updating (hand off to sdk-implementer)
 

@@ -149,7 +149,7 @@ You MUST increment the version before packaging:
 GoudEngine is a Rust game engine with multi-language SDK support:
 - **Rust Core** (`goud_engine/`): Performance-critical engine code
 - **Rust SDK** (`goud_engine/src/sdk/`): Native Rust API (zero FFI overhead)
-- **C# SDK** (`sdks/GoudEngine/`): User-facing .NET API via FFI
+- **C# SDK** (`sdks/csharp/`): User-facing .NET API via FFI
 - **Python SDK** (`sdks/python/`): Python bindings via FFI (ctypes)
 - **FFI Layer** (`goud_engine/src/ffi/`): csbindgen-generated bindings
 
@@ -161,7 +161,7 @@ Dependencies flow DOWN only. No upward imports. No same-layer cross-imports.
 Layer 1 (Core)   :  libs/  (graphics, platform, ecs, logger)
 Layer 2 (Engine) :  goud_engine/src/  (core, assets, sdk)
 Layer 3 (FFI)    :  goud_engine/src/ffi/
-Layer 4 (SDKs)   :  sdks/  (GoudEngine C#, python)
+Layer 4 (SDKs)   :  sdks/  (csharp, python)
 Layer 5 (Apps)   :  examples/
 ```
 
@@ -217,8 +217,8 @@ When adding new features, follow this sequence exactly:
 1. **Implement in Rust first** (`goud_engine/src/`)
 2. **Add FFI exports** (`goud_engine/src/ffi/`)
 3. **Run `cargo build`** — this triggers csbindgen for C# bindings
-4. **Update Python bindings** (`sdks/python/goud_engine/bindings.py`)
-5. **Update SDK wrappers** (C# in `sdks/GoudEngine/`, Python classes)
+4. **Update Python bindings** (`sdks/python/goud_engine/generated/_ffi.py`)
+5. **Update SDK wrappers** (C# in `sdks/csharp/`, Python classes)
 6. **Verify parity** with the `/sdk-parity-check` skill if available
 
 DRY validation: search for method implementations in both Rust and SDK code.

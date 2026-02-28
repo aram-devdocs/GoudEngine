@@ -28,7 +28,7 @@ Before writing ANY tests:
 ## Scope
 
 - Write new `#[test]` functions in Rust
-- Write new test cases for C# (`sdks/GoudEngine.Tests/`)
+- Write new test cases for C# (`sdks/csharp.tests/`)
 - Write new test cases for Python (`sdks/python/test_bindings.py`)
 
 ## TDD RED Phase Rules

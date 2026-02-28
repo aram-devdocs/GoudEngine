@@ -21,20 +21,20 @@ echo "Build complete."
 
 # Copy native library based on platform
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "Copying libgoud_engine.dylib to sdks/GoudEngine..."
-    mkdir -p sdks/GoudEngine/runtimes/osx-x64/native/
-    cp "$TARGET_DIR/libgoud_engine.dylib" sdks/GoudEngine/runtimes/osx-x64/native/ 2>/dev/null || echo "Warning: dylib not found"
+    echo "Copying libgoud_engine.dylib to sdks/csharp..."
+    mkdir -p sdks/csharp/runtimes/osx-x64/native/
+    cp "$TARGET_DIR/libgoud_engine.dylib" sdks/csharp/runtimes/osx-x64/native/ 2>/dev/null || echo "Warning: dylib not found"
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    echo "Copying libgoud_engine.so to sdks/GoudEngine..."
-    mkdir -p sdks/GoudEngine/runtimes/linux-x64/native/
-    cp "$TARGET_DIR/libgoud_engine.so" sdks/GoudEngine/runtimes/linux-x64/native/ 2>/dev/null || echo "Warning: .so not found"
+    echo "Copying libgoud_engine.so to sdks/csharp..."
+    mkdir -p sdks/csharp/runtimes/linux-x64/native/
+    cp "$TARGET_DIR/libgoud_engine.so" sdks/csharp/runtimes/linux-x64/native/ 2>/dev/null || echo "Warning: .so not found"
 elif [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then
-    echo "Copying goud_engine.dll to sdks/GoudEngine..."
-    mkdir -p sdks/GoudEngine/runtimes/win-x64/native/
-    cp "$TARGET_DIR/goud_engine.dll" sdks/GoudEngine/runtimes/win-x64/native/ 2>/dev/null || echo "Warning: .dll not found"
+    echo "Copying goud_engine.dll to sdks/csharp..."
+    mkdir -p sdks/csharp/runtimes/win-x64/native/
+    cp "$TARGET_DIR/goud_engine.dll" sdks/csharp/runtimes/win-x64/native/ 2>/dev/null || echo "Warning: .dll not found"
 fi
 
-cd sdks/GoudEngine
+cd sdks/csharp
 
 if [[ "$1" == "--release" || "$1" == "--prod" ]]; then
     echo "Building the project in release mode..."

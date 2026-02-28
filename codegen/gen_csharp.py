@@ -10,7 +10,7 @@ from sdk_common import (
     to_pascal, write_generated, CSHARP_TYPES, CSHARP_FFI_TYPES,
 )
 
-OUT = SDKS_DIR / "GoudEngine" / "generated"
+OUT = SDKS_DIR / "csharp" / "generated"
 schema = load_schema()
 mapping = load_ffi_mapping()
 NS = "GoudEngine"

@@ -8,9 +8,15 @@ STATE_DIR="$REPO_ROOT/.claude/state"
 INPUT=$(cat)
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"')
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.file // empty')
+TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // empty')
 
 # If no file path, allow
 if [[ -z "$FILE_PATH" ]]; then
+  exit 0
+fi
+
+# Subagents have transcript paths containing /subagents/ — always allow
+if [[ "$TRANSCRIPT_PATH" == */subagents/* ]]; then
   exit 0
 fi
 

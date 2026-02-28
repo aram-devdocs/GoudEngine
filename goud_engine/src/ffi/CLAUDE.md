@@ -32,7 +32,7 @@ C# bindings from these exports on `cargo build`.
 ## After Changes
 
 1. Run `cargo build` to trigger csbindgen (updates C# `NativeMethods.g.cs`)
-2. Manually update `sdks/python/goud_engine/bindings.py`
+2. Manually update `sdks/python/goud_engine/generated/_ffi.py`
 3. Update both C# and Python SDK wrappers
 
 ## Dependencies

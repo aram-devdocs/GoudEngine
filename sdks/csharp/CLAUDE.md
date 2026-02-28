@@ -1,4 +1,4 @@
-# sdks/GoudEngine/ — C# SDK
+# sdks/csharp/ — C# SDK
 
 ## Purpose
 
@@ -6,12 +6,10 @@
 
 ## Structure
 
-- `Components/` — Component wrappers (Transform2D, Sprite, IComponent)
-- `Core/` — Engine core wrappers (GoudContext, Entity, GoudInput, GoudWindow, GoudRenderer)
-- `Input/` — Input enums (Keys, MouseButtons)
-- `Math/` — Math types (Vector2, Vector3, Color, RectF)
-- `Examples/` — Inline component usage examples
-- `GoudGame.cs` — Main game class, entry point for user games
+- `generated/Components/` — Component wrappers (Transform2D, Sprite)
+- `generated/Core/` — Engine core wrappers (GoudContext, Entity, GoudInput, GoudWindow, GoudRenderer)
+- `generated/Input/` — Input enums (Keys, MouseButtons)
+- `generated/Math/` — Math types (Vec2, Vec3, Color, Rect)
 - `NativeMethods.g.cs` — Auto-generated P/Invoke declarations (csbindgen output)
 - `NativeMethods.Result.cs` — Result type extensions
 - `GoudEngine.csproj` — Project file targeting .NET 8.0
@@ -19,7 +17,6 @@
 ## Patterns
 
 - PascalCase for methods and properties (C# convention)
-- Components implement `IComponent` interface
 - Properties marshal data to/from Rust via FFI calls
 - NuGet packaging via `./package.sh`
 - Local NuGet feed at `$HOME/nuget-local`
@@ -33,7 +30,7 @@
 ## Build & Test
 
 ```bash
-dotnet build sdks/GoudEngine/
-dotnet test sdks/GoudEngine.Tests/
+dotnet build sdks/csharp/
+dotnet test sdks/csharp.tests/
 ./package.sh --local    # Deploy to local NuGet
 ```

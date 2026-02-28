@@ -3,8 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using GoudEngine.Input;
-using GoudEngine.Math;
 using GoudEngine;
 
 public class GameManager
@@ -142,14 +140,14 @@ public class GameManager
         // Flip horizontally if going left (negative width)
         float displayWidth = isGoingLeft ? -spriteWidth : spriteWidth;
         
-        // Draw using DrawSprite with source rectangle for sprite sheet animation
-        game.DrawSprite(textureId, 
+        // Draw using DrawSpriteRect with source rectangle for sprite sheet animation
+        game.DrawSpriteRect(textureId, 
             playerX + spriteWidth / 2, 
             playerY + spriteHeight / 2, 
             displayWidth, 
             spriteHeight,
-            sourceRect,  // Use the source rectangle for sprite sheet frame
-            0f);
+            0f,
+            sourceRect.X, sourceRect.Y, sourceRect.Width, sourceRect.Height);
     }
 
     private void UpdatePlayerPosition(float deltaTime)
@@ -263,7 +261,7 @@ public class AnimationConfig
     }
 }
 
-// Simple animator for sprite sheet animations using RectF (normalized UV coordinates)
+// Simple animator for sprite sheet animations using Rect (normalized UV coordinates)
 public class SimpleAnimator
 {
     private readonly GoudGame game;
@@ -284,12 +282,12 @@ public class SimpleAnimator
             
             // Generate frame rectangles in normalized UV coordinates
             // For horizontal sprite sheets: each frame is 1/frameCount wide
-            var frames = new List<RectF>();
+            var frames = new List<Rect>();
             float frameWidthUV = 1.0f / config.FrameCount;
             
             for (int i = 0; i < config.FrameCount; i++)
             {
-                frames.Add(new RectF(
+                frames.Add(new Rect(
                     i * frameWidthUV, 0f,    // X, Y in UV space
                     frameWidthUV, 1.0f));    // Width, Height in UV space
             }
@@ -329,25 +327,25 @@ public class SimpleAnimator
         }
     }
     
-    public (ulong textureId, RectF frame) GetCurrentFrame()
+    public (ulong textureId, Rect frame) GetCurrentFrame()
     {
         if (string.IsNullOrEmpty(currentAnimation) || !animations.ContainsKey(currentAnimation))
-            return (0, RectF.Full);
+            return (0, new Rect(0, 0, 1, 1));
             
         var anim = animations[currentAnimation];
         return (anim.TextureId, anim.Frames[currentFrame]);
     }
 }
 
-// Animation data storage using RectF for normalized UV coordinates
+// Animation data storage using Rect for normalized UV coordinates
 public class AnimationData
 {
     public ulong TextureId { get; }
-    public List<RectF> Frames { get; }
+    public List<Rect> Frames { get; }
     public float FrameDuration { get; }
     public bool Loop { get; }
     
-    public AnimationData(ulong textureId, List<RectF> frames, float frameDuration, bool loop)
+    public AnimationData(ulong textureId, List<Rect> frames, float frameDuration, bool loop)
     {
         TextureId = textureId;
         Frames = frames;

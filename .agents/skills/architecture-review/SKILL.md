@@ -20,7 +20,7 @@ Dependencies MUST flow DOWN only. No upward imports. No same-layer cross-imports
 Layer 1 (Core)    : goud_engine/src/libs/   — graphics, platform, ecs, logger
 Layer 2 (Engine)  : goud_engine/src/        — core, assets, sdk
 Layer 3 (FFI)     : goud_engine/src/ffi/
-Layer 4 (SDKs)    : sdks/                   — GoudEngine (C#), python
+Layer 4 (SDKs)    : sdks/                   — csharp, python
 Layer 5 (Apps)    : examples/               — csharp, python, rust
 ```
 
@@ -78,7 +78,7 @@ SDKs MUST be thin wrappers. Check for logic that belongs in Rust:
 
 ```bash
 # C# SDK: look for complex logic (loops, conditionals beyond null checks)
-rg "for |while |if .* && |switch " sdks/GoudEngine/ --type cs
+rg "for |while |if .* && |switch " sdks/csharp/ --type cs
 
 # Python SDK: look for logic beyond FFI calls
 rg "for |while |if .* and |if .* or " sdks/python/goud_engine/ --type py

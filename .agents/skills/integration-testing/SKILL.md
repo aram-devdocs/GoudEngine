@@ -31,7 +31,7 @@ goud_engine/
     └── ecs_bench.rs
 
 sdks/
-├── GoudEngine.Tests/        # C# SDK tests (xUnit)
+├── csharp.tests/            # C# SDK tests (xUnit)
 └── python/
     └── test_bindings.py     # Python SDK tests
 ```
@@ -108,7 +108,7 @@ Verify the same operation produces the same result in both SDKs:
 
 1. Write the test in Rust (ground truth)
 2. Write equivalent test in Python (`test_bindings.py`)
-3. Write equivalent test in C# (`GoudEngine.Tests/`)
+3. Write equivalent test in C# (`csharp.tests/`)
 4. Results must match across all three
 
 ## Test Categories
@@ -119,7 +119,7 @@ Verify the same operation produces the same result in both SDKs:
 | Integration (Rust) | `goud_engine/tests/` | Often | `cargo test --test <name>` |
 | FFI boundary | `goud_engine/tests/` | Sometimes | `cargo test --test ffi_*` |
 | Python SDK | `sdks/python/test_bindings.py` | No | `python3 sdks/python/test_bindings.py` |
-| C# SDK | `sdks/GoudEngine.Tests/` | No | `dotnet test sdks/GoudEngine.Tests/` |
+| C# SDK | `sdks/csharp.tests/` | No | `dotnet test sdks/csharp.tests/` |
 | Benchmarks | `goud_engine/benches/` | Sometimes | `cargo bench` |
 
 ## Checklist

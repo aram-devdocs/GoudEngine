@@ -1089,7 +1089,7 @@ dependencies = [
 
 [[package]]
 name = "goud-engine-node"
-version = "0.0.1"
+version = "0.0.815"
 dependencies = [
  "goud_engine",
  "napi",
@@ -1099,7 +1099,7 @@ dependencies = [
 
 [[package]]
 name = "goud_engine"
-version = "0.0.814"
+version = "0.0.815"
 dependencies = [
  "bindgen 0.64.0",
  "bytemuck",

@@ -102,6 +102,10 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/completion-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/plan-completion-guard.sh"
           }
         ]
       }

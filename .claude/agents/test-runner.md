@@ -36,7 +36,7 @@ cargo test <test_name> -- --exact   # Single test
 python3 sdks/python/test_bindings.py
 
 # C# SDK tests
-dotnet test sdks/GoudEngine.Tests/
+dotnet test sdks/csharp.tests/
 
 # Benchmarks
 cargo bench

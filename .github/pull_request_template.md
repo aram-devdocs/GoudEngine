@@ -17,7 +17,7 @@
 ### FFI Layer (`goud_engine/src/ffi/`)
 <!-- List FFI boundary changes, or write "No changes" -->
 
-### C# SDK (`sdks/GoudEngine/`)
+### C# SDK (`sdks/csharp/`)
 <!-- List C# SDK changes, or write "No changes" -->
 
 ### Python SDK (`sdks/python/`)
@@ -48,7 +48,7 @@
 - [ ] `cargo clippy -- -D warnings` is clean
 - [ ] `cargo fmt --all -- --check` passes
 - [ ] Python SDK tests pass (`python3 sdks/python/test_bindings.py`) — if SDK changed
-- [ ] C# SDK tests pass (`dotnet test sdks/GoudEngine.Tests/`) — if SDK changed
+- [ ] C# SDK tests pass (`dotnet test sdks/csharp.tests/`) — if SDK changed
 - [ ] Pre-commit hooks pass
 
 ---

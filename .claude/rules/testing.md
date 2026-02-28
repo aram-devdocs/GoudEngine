@@ -11,7 +11,7 @@ globs:
 
 - **Unit tests**: colocated in `#[cfg(test)]` modules within the source file
 - **Integration tests**: in `goud_engine/tests/` directory
-- **SDK tests**: `sdks/GoudEngine.Tests/` (C#), `sdks/python/test_bindings.py` (Python)
+- **SDK tests**: `sdks/csharp.tests/` (C#), `sdks/python/test_bindings.py` (Python)
 - **Benchmarks**: in `goud_engine/benches/` using criterion
 
 ## GL Context

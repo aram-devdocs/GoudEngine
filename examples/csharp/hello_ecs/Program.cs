@@ -7,8 +7,7 @@
 // 4. Draw quads and sprites
 
 using System;
-using GoudEngine.Input;
-using GoudEngine.Math;
+using GoudEngine;
 
 public class Program
 {

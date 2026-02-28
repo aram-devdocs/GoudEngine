@@ -111,7 +111,7 @@ This is required for the changes to take effect due to how husky-rs works with `
 
 This script automatically updates versions in:
 - `goud_engine/Cargo.toml` (source of truth)
-- `sdks/GoudEngine/GoudEngine.csproj`
+- `sdks/csharp/GoudEngine.csproj`
 - All `.csproj` files in the `/examples` directory
 
 Without incrementing the version, your changes will not be reflected in dependent projects using the NuGet package.
@@ -303,7 +303,7 @@ game.destroy()
 
 ### SDK Documentation
 - **Rust SDK**: See [`goud_engine/src/sdk/mod.rs`](goud_engine/src/sdk/mod.rs) for API documentation
-- **C# SDK**: See [`sdks/GoudEngine/`](sdks/GoudEngine/) for .NET integration
+- **C# SDK**: See [`sdks/csharp/`](sdks/csharp/) for .NET integration
 - **Python SDK**: See [`sdks/python/README.md`](sdks/python/README.md) for Python bindings
 
 ### External References

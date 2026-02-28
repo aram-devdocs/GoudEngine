@@ -313,28 +313,28 @@ jobs:
           ${{ runner.os }}-nuget-
 
     - name: Restore dependencies
-      working-directory: sdks/GoudEngine
-      run: dotnet restore ../GoudEngine.Tests/GoudEngine.Tests.csproj
+      working-directory: sdks/csharp
+      run: dotnet restore ../csharp.tests/GoudEngine.Tests.csproj
 
     - name: Build
-      working-directory: sdks/GoudEngine
-      run: dotnet build ../GoudEngine.Tests/GoudEngine.Tests.csproj --no-restore --configuration Release
+      working-directory: sdks/csharp
+      run: dotnet build ../csharp.tests/GoudEngine.Tests.csproj --no-restore --configuration Release
 
     - name: Copy native library to test directory (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
-      run: cp target/release/libgoud_engine.so sdks/GoudEngine.Tests/bin/Release/net8.0/
+      run: cp target/release/libgoud_engine.so sdks/csharp.tests/bin/Release/net8.0/
 
     - name: Copy native library to test directory (macOS)
       if: matrix.os == 'macos-latest'
-      run: cp target/release/libgoud_engine.dylib sdks/GoudEngine.Tests/bin/Release/net8.0/
+      run: cp target/release/libgoud_engine.dylib sdks/csharp.tests/bin/Release/net8.0/
 
     - name: Copy native library to test directory (Windows)
       if: matrix.os == 'windows-latest'
-      run: copy target\release\goud_engine.dll sdks\GoudEngine.Tests\bin\Release\net8.0\libgoud_engine.dll
+      run: copy target\release\goud_engine.dll sdks\csharp.tests\bin\Release\net8.0\libgoud_engine.dll
 
     - name: Test
-      working-directory: sdks/GoudEngine
-      run: dotnet test ../GoudEngine.Tests/GoudEngine.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+      working-directory: sdks/csharp
+      run: dotnet test ../csharp.tests/GoudEngine.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
@@ -390,9 +390,9 @@ jobs:
       run: |
         # Check Rust library exists
         if [[ "$RUNNER_OS" == "macOS" ]]; then
-          test -f sdks/GoudEngine/runtimes/osx-x64/native/libgoud_engine.dylib
+          test -f sdks/csharp/runtimes/osx-x64/native/libgoud_engine.dylib
         elif [[ "$RUNNER_OS" == "Linux" ]]; then
-          test -f sdks/GoudEngine/runtimes/linux-x64/native/libgoud_engine.so
+          test -f sdks/csharp/runtimes/linux-x64/native/libgoud_engine.so
         fi
         
         # Check .NET package exists

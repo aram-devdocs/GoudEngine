@@ -23,7 +23,7 @@ Use for all new feature implementation and bug fixes. Skip only for trivial docu
 2. Write test functions in the appropriate location:
    - Unit tests: `#[cfg(test)]` module in the same file
    - Integration tests: `goud_engine/tests/`
-   - SDK tests: `sdks/python/test_bindings.py` or `sdks/GoudEngine.Tests/`
+   - SDK tests: `sdks/python/test_bindings.py` or `sdks/csharp.tests/`
 3. Run tests and verify they FAIL:
 
 ```bash

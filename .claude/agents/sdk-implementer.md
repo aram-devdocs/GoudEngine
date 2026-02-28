@@ -22,13 +22,13 @@ Before making ANY changes:
 
 1. Read the FFI function(s) being wrapped in `goud_engine/src/ffi/`
 2. Read existing SDK wrappers in the same domain to follow established patterns
-3. For C#: read relevant files in `sdks/GoudEngine/`
+3. For C#: read relevant files in `sdks/csharp/`
 4. For Python: read relevant files in `sdks/python/goud_engine/`
 5. Verify both SDKs currently build/pass tests
 
 ## Scope
 
-- `sdks/GoudEngine/` — C# SDK (.NET 8.0, DllImport bindings)
+- `sdks/csharp/` — C# SDK (.NET 8.0, DllImport bindings)
 - `sdks/python/` — Python SDK (ctypes bindings)
 
 Do NOT modify:
@@ -53,21 +53,21 @@ If you find logic in an SDK, flag it for migration to Rust.
 - Method names: PascalCase
 - Property names: PascalCase
 - Use `DllImport` for native function declarations
-- Components implement `IComponent` interface
+- Components are plain data wrappers over FFI
 - NuGet packaging via `package.sh`
 
 ## Python Conventions
 
 - Function names: snake_case
 - Property names: snake_case
-- ctypes declarations in `bindings.py` (argtypes, restype)
+- ctypes declarations in `generated/_ffi.py` (argtypes, restype)
 - Python classes wrap bindings with Pythonic API
 - Handle library loading for macOS (.dylib) and Linux (.so)
 
 ## Parity Enforcement
 
 Every FFI export MUST have wrappers in BOTH C# AND Python. After changes:
-1. Run `dotnet test sdks/GoudEngine.Tests/` for C# tests
+1. Run `dotnet test sdks/csharp.tests/` for C# tests
 2. Run `python3 sdks/python/test_bindings.py` for Python tests
 3. Verify feature parity between the two SDKs
 

@@ -2,6 +2,7 @@
 // Goud Jumper - A simple platformer demo using immediate-mode rendering
 
 using System;
+using GoudEngine;
 
 public class Program
 {
