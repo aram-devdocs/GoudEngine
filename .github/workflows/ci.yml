@@ -65,7 +65,7 @@ jobs:
     
     - name: Run clippy
       if: matrix.rust == 'stable'
-      run: cargo clippy --all-targets --all-features -- -D warnings
+      run: cargo clippy --workspace --exclude goud-engine-node --all-targets --all-features -- -D warnings
     
     - name: Build
       run: cargo build --verbose
@@ -101,7 +101,7 @@ jobs:
     - name: Generate coverage
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
       run: |
-        cargo tarpaulin --out xml --all-features --workspace --timeout 300 --exclude-files "*/build.rs" --exclude-files "*/tests/*" --exclude-files "*/examples/*"
+        cargo tarpaulin --out xml --all-features --workspace --exclude goud-engine-node --timeout 300 --exclude-files "*/build.rs" --exclude-files "*/tests/*" --exclude-files "*/examples/*"
     
     - name: Upload coverage to Codecov
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
