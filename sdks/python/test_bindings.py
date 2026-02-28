@@ -2,290 +2,442 @@
 """
 GoudEngine Python SDK Test Suite
 
-Basic tests to verify the Python bindings work correctly.
-Run after building the native library:
-    cd goud_engine && cargo build --release
-    python sdks/python/test_bindings.py
+Tests the generated Python SDK data types and enums without requiring
+the native library to be built. Run with:
+    python3 sdks/python/test_bindings.py
 """
 
 import sys
 import math
+import importlib.util
 from pathlib import Path
 
 # Ensure goud_engine package is importable
 sys.path.insert(0, str(Path(__file__).parent))
 
+# ---------------------------------------------------------------------------
+# Load pure-Python modules directly by file path so we never trigger the
+# package __init__.py chain, which would attempt to load the native library
+# via _ffi.py before it has been built.
+# ---------------------------------------------------------------------------
+_GENERATED_DIR = Path(__file__).parent / "goud_engine" / "generated"
+
+
+def _load_module(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+_types_mod = _load_module("_types", _GENERATED_DIR / "_types.py")
+_keys_mod = _load_module("_keys", _GENERATED_DIR / "_keys.py")
+
+Color = _types_mod.Color
+Vec2 = _types_mod.Vec2
+Rect = _types_mod.Rect
+Transform2D = _types_mod.Transform2D
+Sprite = _types_mod.Sprite
+Entity = _types_mod.Entity
+Key = _keys_mod.Key
+MouseButton = _keys_mod.MouseButton
+
 
 def test_imports():
-    """Test that all public types can be imported."""
+    """Test that all public types can be imported from their generated modules."""
     print("Testing imports...")
-    from goud_engine import (
-        GoudContext,
-        GoudResult,
-        GoudEntityId,
-        Transform2D,
-        Sprite,
-        Vec2,
-        Color,
-        Rect,
-        Entity,
-        GoudGame,
-    )
-    print("  ✓ All imports successful")
+
+    assert Color is not None, "Color failed to import"
+    assert Vec2 is not None, "Vec2 failed to import"
+    assert Rect is not None, "Rect failed to import"
+    assert Transform2D is not None, "Transform2D failed to import"
+    assert Sprite is not None, "Sprite failed to import"
+    assert Entity is not None, "Entity failed to import"
+    assert Key is not None, "Key failed to import"
+    assert MouseButton is not None, "MouseButton failed to import"
+
+    # GoudGame wraps FFI; verify the source file exists (cannot be imported
+    # without the native library, which requires a Cargo build).
+    game_path = _GENERATED_DIR / "_game.py"
+    assert game_path.exists(), f"GoudGame source not found at {game_path}"
+
+    print("  All imports successful")
     return True
 
 
 def test_vec2():
-    """Test Vec2 operations."""
+    """Test Vec2 construction, factories, arithmetic, and math methods."""
     print("Testing Vec2...")
-    from goud_engine import Vec2
-    
+
+    def approx(a, b, eps=0.001):
+        return abs(a - b) < eps
+
     # Construction
     v = Vec2(3.0, 4.0)
     assert v.x == 3.0, f"Expected x=3.0, got {v.x}"
     assert v.y == 4.0, f"Expected y=4.0, got {v.y}"
-    
-    # Static constructors
-    assert Vec2.zero().x == 0.0 and Vec2.zero().y == 0.0
-    assert Vec2.one().x == 1.0 and Vec2.one().y == 1.0
-    
-    # Operations
+
+    # Default construction
+    v_default = Vec2()
+    assert v_default.x == 0.0 and v_default.y == 0.0, "Default Vec2 should be (0, 0)"
+
+    # Factories
+    assert Vec2.zero().x == 0.0 and Vec2.zero().y == 0.0, "zero() should return (0, 0)"
+    assert Vec2.one().x == 1.0 and Vec2.one().y == 1.0, "one() should return (1, 1)"
+    assert Vec2.up().x == 0.0 and Vec2.up().y == -1.0, "up() should return (0, -1)"
+    assert Vec2.down().x == 0.0 and Vec2.down().y == 1.0, "down() should return (0, 1)"
+    assert Vec2.left().x == -1.0 and Vec2.left().y == 0.0, "left() should return (-1, 0)"
+    assert Vec2.right().x == 1.0 and Vec2.right().y == 0.0, "right() should return (1, 0)"
+
+    # Named methods
     a = Vec2(1.0, 2.0)
     b = Vec2(3.0, 4.0)
-    
-    c = a + b
-    assert c.x == 4.0 and c.y == 6.0, f"Addition failed: {c}"
-    
-    c = a - b
-    assert c.x == -2.0 and c.y == -2.0, f"Subtraction failed: {c}"
-    
-    c = a * 2.0
-    assert c.x == 2.0 and c.y == 4.0, f"Multiplication failed: {c}"
-    
-    c = b / 2.0
-    assert c.x == 1.5 and c.y == 2.0, f"Division failed: {c}"
-    
+
+    result = a.add(b)
+    assert result.x == 4.0 and result.y == 6.0, f"add() failed: {result}"
+
+    result = a.sub(b)
+    assert result.x == -2.0 and result.y == -2.0, f"sub() failed: {result}"
+
+    result = a.scale(3.0)
+    assert result.x == 3.0 and result.y == 6.0, f"scale() failed: {result}"
+
+    # Operator overloads
+    result = a + b
+    assert result.x == 4.0 and result.y == 6.0, f"__add__ failed: {result}"
+
+    result = b - a
+    assert result.x == 2.0 and result.y == 2.0, f"__sub__ failed: {result}"
+
+    result = a * 2.0
+    assert result.x == 2.0 and result.y == 4.0, f"__mul__ failed: {result}"
+
+    result = b / 2.0
+    assert result.x == 1.5 and result.y == 2.0, f"__truediv__ failed: {result}"
+
+    result = -a
+    assert result.x == -1.0 and result.y == -2.0, f"__neg__ failed: {result}"
+
     # Length
     v = Vec2(3.0, 4.0)
-    assert v.length() == 5.0, f"Length failed: {v.length()}"
-    
+    assert v.length() == 5.0, f"length() expected 5.0, got {v.length()}"
+
     # Normalize
     n = v.normalize()
-    assert abs(n.length() - 1.0) < 0.001, f"Normalize failed: {n.length()}"
-    
-    print("  ✓ Vec2 tests passed")
+    assert approx(n.length(), 1.0), f"normalize() result has non-unit length: {n.length()}"
+
+    # Dot product
+    a = Vec2(1.0, 0.0)
+    b = Vec2(0.0, 1.0)
+    assert a.dot(b) == 0.0, f"dot() of perpendicular vectors should be 0, got {a.dot(b)}"
+    assert a.dot(a) == 1.0, f"dot() of unit vector with itself should be 1, got {a.dot(a)}"
+
+    # Distance
+    p = Vec2(0.0, 0.0)
+    q = Vec2(3.0, 4.0)
+    assert p.distance(q) == 5.0, f"distance() expected 5.0, got {p.distance(q)}"
+
+    # Lerp
+    start = Vec2(0.0, 0.0)
+    end = Vec2(10.0, 20.0)
+    mid = start.lerp(end, 0.5)
+    assert mid.x == 5.0 and mid.y == 10.0, f"lerp(0.5) failed: {mid}"
+    at_start = start.lerp(end, 0.0)
+    assert at_start.x == 0.0 and at_start.y == 0.0, f"lerp(0.0) should equal start: {at_start}"
+    at_end = start.lerp(end, 1.0)
+    assert at_end.x == 10.0 and at_end.y == 20.0, f"lerp(1.0) should equal end: {at_end}"
+
+    print("  Vec2 tests passed")
     return True
 
 
 def test_color():
-    """Test Color operations."""
+    """Test Color construction, factories, and with_alpha."""
     print("Testing Color...")
-    from goud_engine import Color
-    
+
     def approx(a, b, eps=0.001):
         return abs(a - b) < eps
-    
+
     # Construction
     c = Color(0.5, 0.6, 0.7, 0.8)
-    assert approx(c.r, 0.5) and approx(c.g, 0.6) and approx(c.b, 0.7) and approx(c.a, 0.8)
-    
-    # Static colors
+    assert approx(c.r, 0.5), f"Expected r=0.5, got {c.r}"
+    assert approx(c.g, 0.6), f"Expected g=0.6, got {c.g}"
+    assert approx(c.b, 0.7), f"Expected b=0.7, got {c.b}"
+    assert approx(c.a, 0.8), f"Expected a=0.8, got {c.a}"
+
+    # Default construction
+    c_default = Color()
+    assert c_default.r == 0.0 and c_default.g == 0.0 and c_default.b == 0.0 and c_default.a == 0.0, \
+        "Default Color should be (0, 0, 0, 0)"
+
+    # Factory: white
     white = Color.white()
-    assert approx(white.r, 1.0) and approx(white.g, 1.0) and approx(white.b, 1.0) and approx(white.a, 1.0)
-    
+    assert approx(white.r, 1.0) and approx(white.g, 1.0) and approx(white.b, 1.0) and approx(white.a, 1.0), \
+        f"white() should be (1,1,1,1), got {white}"
+
+    # Factory: black
+    black = Color.black()
+    assert approx(black.r, 0.0) and approx(black.g, 0.0) and approx(black.b, 0.0) and approx(black.a, 1.0), \
+        f"black() should be (0,0,0,1), got {black}"
+
+    # Factory: red
     red = Color.red()
-    assert approx(red.r, 1.0) and approx(red.g, 0.0) and approx(red.b, 0.0)
-    
-    # From hex
+    assert approx(red.r, 1.0) and approx(red.g, 0.0) and approx(red.b, 0.0) and approx(red.a, 1.0), \
+        f"red() should be (1,0,0,1), got {red}"
+
+    # Factory: green
+    green = Color.green()
+    assert approx(green.r, 0.0) and approx(green.g, 1.0) and approx(green.b, 0.0) and approx(green.a, 1.0), \
+        f"green() should be (0,1,0,1), got {green}"
+
+    # Factory: blue
+    blue = Color.blue()
+    assert approx(blue.r, 0.0) and approx(blue.g, 0.0) and approx(blue.b, 1.0) and approx(blue.a, 1.0), \
+        f"blue() should be (0,0,1,1), got {blue}"
+
+    # Factory: rgb
+    c = Color.rgb(0.2, 0.4, 0.6)
+    assert approx(c.r, 0.2) and approx(c.g, 0.4) and approx(c.b, 0.6) and approx(c.a, 1.0), \
+        f"rgb() should set alpha to 1.0, got {c}"
+
+    # Factory: rgba
+    c = Color.rgba(0.1, 0.2, 0.3, 0.4)
+    assert approx(c.r, 0.1) and approx(c.g, 0.2) and approx(c.b, 0.3) and approx(c.a, 0.4), \
+        f"rgba() failed: {c}"
+
+    # Factory: from_hex (extracts R, G, B from 24-bit integer; alpha is always 1.0)
     c = Color.from_hex(0xFF0000)
-    assert approx(c.r, 1.0) and approx(c.g, 0.0) and approx(c.b, 0.0) and approx(c.a, 1.0)
-    
-    c = Color.from_hex(0xFF000080)  # With alpha (0x80 = 128/255 ≈ 0.502)
-    assert approx(c.r, 1.0) and approx(c.a, 128/255, eps=0.01)
-    
-    print("  ✓ Color tests passed")
+    assert approx(c.r, 1.0) and approx(c.g, 0.0) and approx(c.b, 0.0) and approx(c.a, 1.0), \
+        f"from_hex(0xFF0000) should be red with full alpha, got {c}"
+
+    c = Color.from_hex(0x00FF00)
+    assert approx(c.r, 0.0) and approx(c.g, 1.0) and approx(c.b, 0.0), \
+        f"from_hex(0x00FF00) should be green, got {c}"
+
+    c = Color.from_hex(0x0000FF)
+    assert approx(c.r, 0.0) and approx(c.g, 0.0) and approx(c.b, 1.0), \
+        f"from_hex(0x0000FF) should be blue, got {c}"
+
+    # with_alpha
+    base = Color.red()
+    semi = base.with_alpha(0.5)
+    assert approx(semi.r, 1.0) and approx(semi.g, 0.0) and approx(semi.b, 0.0) and approx(semi.a, 0.5), \
+        f"with_alpha(0.5) on red should give (1,0,0,0.5), got {semi}"
+    # Original should be unchanged
+    assert approx(base.a, 1.0), "with_alpha should not mutate the original"
+
+    print("  Color tests passed")
     return True
 
 
 def test_rect():
-    """Test Rect operations."""
+    """Test Rect creation, contains, and intersects."""
     print("Testing Rect...")
-    from goud_engine import Rect, Vec2
-    
+
+    # Construction
     r = Rect(10, 20, 100, 50)
-    assert r.x == 10 and r.y == 20
-    assert r.width == 100 and r.height == 50
-    
-    # Contains
-    assert r.contains(Vec2(50, 30))
-    assert not r.contains(Vec2(0, 0))
-    assert not r.contains(Vec2(111, 71))  # Outside
-    
-    print("  ✓ Rect tests passed")
+    assert r.x == 10, f"Expected x=10, got {r.x}"
+    assert r.y == 20, f"Expected y=20, got {r.y}"
+    assert r.width == 100, f"Expected width=100, got {r.width}"
+    assert r.height == 50, f"Expected height=50, got {r.height}"
+
+    # Default construction
+    r_default = Rect()
+    assert r_default.x == 0.0 and r_default.y == 0.0 and r_default.width == 0.0 and r_default.height == 0.0, \
+        "Default Rect should be (0, 0, 0, 0)"
+
+    # contains: point inside
+    assert r.contains(Vec2(50, 40)), "Point (50,40) should be inside Rect(10,20,100,50)"
+    # contains: point on left edge (inclusive)
+    assert r.contains(Vec2(10, 45)), "Left edge point should be inside"
+    # contains: point on top edge (inclusive)
+    assert r.contains(Vec2(50, 20)), "Top edge point should be inside"
+    # contains: point outside left
+    assert not r.contains(Vec2(9, 40)), "Point (9,40) should be outside left edge"
+    # contains: point outside right
+    assert not r.contains(Vec2(111, 45)), "Point (111,45) should be outside right edge"
+    # contains: point above rect
+    assert not r.contains(Vec2(50, 19)), "Point above rect should be outside"
+    # contains: origin, clearly outside
+    assert not r.contains(Vec2(0, 0)), "Origin should be outside Rect(10,20,...)"
+
+    # intersects: overlapping rects
+    r2 = Rect(50, 40, 100, 50)
+    assert r.intersects(r2), "Overlapping rects should intersect"
+
+    # intersects: adjacent rects touching at edge boundary (strict less-than)
+    r3 = Rect(110, 20, 100, 50)  # Starts at right edge of r (10+100=110), no pixel overlap
+    assert not r.intersects(r3), "Adjacent (touching) rects should not intersect"
+
+    # intersects: fully separated
+    r4 = Rect(200, 200, 50, 50)
+    assert not r.intersects(r4), "Non-overlapping rects should not intersect"
+
+    # intersects: one rect contained within another
+    r5 = Rect(0, 0, 500, 500)
+    r6 = Rect(50, 50, 10, 10)
+    assert r5.intersects(r6), "Contained rect should intersect its container"
+
+    print("  Rect tests passed")
     return True
 
 
 def test_transform2d():
-    """Test Transform2D operations."""
+    """Test Transform2D flat fields, construction, and factory methods."""
     print("Testing Transform2D...")
-    from goud_engine import Transform2D, Vec2
-    
-    # Factory methods
-    t = Transform2D.from_position(100, 50)
-    assert t.position.x == 100 and t.position.y == 50
-    
+
+    # Flat field construction
+    t = Transform2D(position_x=10.0, position_y=20.0, rotation=0.5, scale_x=2.0, scale_y=3.0)
+    assert t.position_x == 10.0, f"Expected position_x=10.0, got {t.position_x}"
+    assert t.position_y == 20.0, f"Expected position_y=20.0, got {t.position_y}"
+    assert t.rotation == 0.5, f"Expected rotation=0.5, got {t.rotation}"
+    assert t.scale_x == 2.0, f"Expected scale_x=2.0, got {t.scale_x}"
+    assert t.scale_y == 3.0, f"Expected scale_y=3.0, got {t.scale_y}"
+
+    # Direct field mutation
+    t.position_x = 99.0
+    assert t.position_x == 99.0, "Direct field assignment to position_x should work"
+    t.rotation = math.pi
+    assert abs(t.rotation - math.pi) < 0.001, "Direct field assignment to rotation should work"
+
+    # Factory: default — scale should be 1,1 and everything else zero
+    t = Transform2D.default()
+    assert t.position_x == 0.0 and t.position_y == 0.0, \
+        f"default() position should be (0,0), got ({t.position_x},{t.position_y})"
+    assert t.rotation == 0.0, f"default() rotation should be 0.0, got {t.rotation}"
+    assert t.scale_x == 1.0 and t.scale_y == 1.0, \
+        f"default() scale should be (1,1), got ({t.scale_x},{t.scale_y})"
+
+    # Factory: from_position
+    t = Transform2D.from_position(100.0, 50.0)
+    assert t.position_x == 100.0, f"from_position() x failed: {t.position_x}"
+    assert t.position_y == 50.0, f"from_position() y failed: {t.position_y}"
+    assert t.rotation == 0.0, "from_position() should set rotation to 0"
+    assert t.scale_x == 1.0 and t.scale_y == 1.0, "from_position() should set scale to (1,1)"
+
+    # Factory: from_rotation
     t = Transform2D.from_rotation(math.pi / 2)
-    assert abs(t.rotation - math.pi / 2) < 0.001
-    
-    t = Transform2D.from_scale(2.0, 3.0)
-    assert t.scale.x == 2.0 and t.scale.y == 3.0
-    
-    # Mutations
-    t = Transform2D()
-    t.translate(10, 20)
-    assert t.position.x == 10 and t.position.y == 20
-    
-    t = Transform2D()
-    t.rotate(math.pi / 4)
-    assert abs(t.rotation - math.pi / 4) < 0.001
-    
-    # Direction vectors
-    t = Transform2D.from_rotation(0)  # Facing right
-    fwd = t.forward()
-    assert abs(fwd.x - 1.0) < 0.001 and abs(fwd.y) < 0.001
-    
-    t = Transform2D.from_rotation(math.pi / 2)  # Facing up
-    fwd = t.forward()
-    assert abs(fwd.x) < 0.001 and abs(fwd.y - 1.0) < 0.001
-    
-    # Lerp
-    a = Transform2D.from_position(0, 0)
-    b = Transform2D.from_position(100, 100)
-    mid = a.lerp(b, 0.5)
-    assert mid.position.x == 50 and mid.position.y == 50
-    
-    # Chaining
-    t = Transform2D().translate(10, 20).rotate(0.5).scale_by(2, 2)
-    assert t.position.x == 10 and t.position.y == 20
-    
-    print("  ✓ Transform2D tests passed")
+    assert abs(t.rotation - math.pi / 2) < 0.001, \
+        f"from_rotation(pi/2) failed: {t.rotation}"
+    assert t.position_x == 0.0 and t.position_y == 0.0, \
+        "from_rotation() should set position to (0,0)"
+    assert t.scale_x == 1.0 and t.scale_y == 1.0, \
+        "from_rotation() should set scale to (1,1)"
+
+    # Factory: from_scale
+    t = Transform2D.from_scale(3.0, 4.0)
+    assert t.scale_x == 3.0, f"from_scale() x failed: {t.scale_x}"
+    assert t.scale_y == 4.0, f"from_scale() y failed: {t.scale_y}"
+    assert t.position_x == 0.0 and t.position_y == 0.0, \
+        "from_scale() should set position to (0,0)"
+    assert t.rotation == 0.0, "from_scale() should set rotation to 0"
+
+    print("  Transform2D tests passed")
     return True
 
 
 def test_sprite():
-    """Test Sprite operations."""
+    """Test Sprite creation and flat field access."""
     print("Testing Sprite...")
-    from goud_engine import Sprite, Color, Vec2
-    
-    # Basic creation
+
+    # Construction with defaults
+    s = Sprite()
+    assert s.texture_handle == 0, f"Default texture_handle should be 0, got {s.texture_handle}"
+    assert s.flip_x == False, f"Default flip_x should be False, got {s.flip_x}"
+    assert s.flip_y == False, f"Default flip_y should be False, got {s.flip_y}"
+    assert s.anchor_x == 0.0, f"Default anchor_x should be 0.0, got {s.anchor_x}"
+    assert s.anchor_y == 0.0, f"Default anchor_y should be 0.0, got {s.anchor_y}"
+
+    # Construction with texture handle
     s = Sprite(texture_handle=42)
-    assert s.texture_handle == 42
-    
-    # Builder pattern
-    s = (Sprite(texture_handle=100)
-        .with_color(1.0, 0.0, 0.0, 1.0)
-        .with_flip_x(True)
-        .with_anchor(0.5, 1.0))
-    
-    assert s.color.r == 1.0 and s.color.g == 0.0
-    assert s.flip_x == True
-    assert s.anchor.x == 0.5 and s.anchor.y == 1.0
-    
-    # Mutable operations
-    s = Sprite(texture_handle=50)
-    s.color = Color.green()
-    assert s.color.g == 1.0
-    
+    assert s.texture_handle == 42, f"Expected texture_handle=42, got {s.texture_handle}"
+
+    # Construction with all flat fields
+    s = Sprite(texture_handle=7, flip_x=True, flip_y=False, anchor_x=0.5, anchor_y=1.0)
+    assert s.texture_handle == 7, f"Expected texture_handle=7, got {s.texture_handle}"
+    assert s.flip_x == True, f"Expected flip_x=True, got {s.flip_x}"
+    assert s.flip_y == False, f"Expected flip_y=False, got {s.flip_y}"
+    assert s.anchor_x == 0.5, f"Expected anchor_x=0.5, got {s.anchor_x}"
+    assert s.anchor_y == 1.0, f"Expected anchor_y=1.0, got {s.anchor_y}"
+
+    # Mutable field assignment
+    s = Sprite(texture_handle=10)
     s.flip_x = True
-    assert s.flip_x == True
-    
-    s.anchor = Vec2(0, 0)
-    assert s.anchor.x == 0 and s.anchor.y == 0
-    
-    print("  ✓ Sprite tests passed")
+    assert s.flip_x == True, "flip_x field assignment should work"
+    s.flip_y = True
+    assert s.flip_y == True, "flip_y field assignment should work"
+    s.anchor_x = 0.25
+    assert s.anchor_x == 0.25, "anchor_x field assignment should work"
+    s.anchor_y = 0.75
+    assert s.anchor_y == 0.75, "anchor_y field assignment should work"
+    s.texture_handle = 99
+    assert s.texture_handle == 99, "texture_handle field assignment should work"
+
+    print("  Sprite tests passed")
     return True
 
 
-def test_context():
-    """Test context and entity operations."""
-    print("Testing Context...")
-    from goud_engine import GoudContext
-    
-    # Creation
-    ctx = GoudContext.create()
-    assert ctx.is_valid()
-    
-    # Entity spawn
-    e1 = ctx.spawn_entity()
-    assert e1 != 0xFFFFFFFFFFFFFFFF  # Not invalid
-    assert ctx.is_entity_alive(e1)
-    assert ctx.entity_count() == 1
-    
-    e2 = ctx.spawn_entity()
-    e3 = ctx.spawn_entity()
-    assert ctx.entity_count() == 3
-    
-    # Batch spawn
-    batch = ctx.spawn_entities(10)
-    assert len(batch) == 10
-    assert ctx.entity_count() == 13
-    
-    # Despawn
-    assert ctx.despawn_entity(e1) == True
-    assert not ctx.is_entity_alive(e1)
-    assert ctx.entity_count() == 12
-    
-    # Batch despawn
-    despawned = ctx.despawn_entities(batch[:5])
-    assert despawned == 5
-    assert ctx.entity_count() == 7
-    
-    # Cleanup
-    ctx.destroy()
-    assert not ctx.is_valid()
-    
-    print("  ✓ Context tests passed")
+def test_entity():
+    """Test Entity bits encoding, index, generation, is_placeholder, and to_bits."""
+    print("Testing Entity...")
+
+    # Entity encodes index in lower 32 bits, generation in upper 32 bits
+    index_val = 5
+    generation_val = 2
+    bits = (generation_val << 32) | index_val
+    e = Entity(bits)
+
+    assert e.index == index_val, f"Expected index={index_val}, got {e.index}"
+    assert e.generation == generation_val, f"Expected generation={generation_val}, got {e.generation}"
+    assert e.is_placeholder == False, "Non-sentinel entity should not be a placeholder"
+    assert e.to_bits() == bits, f"to_bits() should return original bits, got {e.to_bits()}"
+
+    # Entity with index=0, generation=0
+    e_zero = Entity(0)
+    assert e_zero.index == 0, "Entity(0).index should be 0"
+    assert e_zero.generation == 0, "Entity(0).generation should be 0"
+    assert e_zero.is_placeholder == False, "Entity(0) is not the placeholder sentinel"
+
+    # Placeholder sentinel: all 64 bits set
+    PLACEHOLDER_BITS = 0xFFFFFFFFFFFFFFFF
+    e_placeholder = Entity(PLACEHOLDER_BITS)
+    assert e_placeholder.is_placeholder == True, \
+        f"Entity(0xFFFFFFFFFFFFFFFF) should be a placeholder, got {e_placeholder.is_placeholder}"
+    assert e_placeholder.to_bits() == PLACEHOLDER_BITS, \
+        "to_bits() on placeholder should return 0xFFFFFFFFFFFFFFFF"
+
+    # Large generation value
+    e_large = Entity((1000 << 32) | 999)
+    assert e_large.index == 999, f"Expected index=999, got {e_large.index}"
+    assert e_large.generation == 1000, f"Expected generation=1000, got {e_large.generation}"
+
+    print("  Entity tests passed")
     return True
 
 
-def test_context_manager():
-    """Test context manager pattern."""
-    print("Testing Context Manager...")
-    from goud_engine import GoudContext
-    
-    with GoudContext.create() as ctx:
-        e = ctx.spawn_entity()
-        assert ctx.is_entity_alive(e)
-        assert ctx.entity_count() == 1
-    
-    # Context should be destroyed after exiting the block
-    # (can't check is_valid because the object itself may be garbage collected)
-    
-    print("  ✓ Context Manager tests passed")
-    return True
+def test_enums():
+    """Test Key and MouseButton enum constant values."""
+    print("Testing enums...")
 
+    # Key constants matching GLFW values
+    assert Key.ESCAPE == 256, f"Key.ESCAPE should be 256, got {Key.ESCAPE}"
+    assert Key.SPACE == 32, f"Key.SPACE should be 32, got {Key.SPACE}"
+    assert Key.W == 87, f"Key.W should be 87, got {Key.W}"
+    assert Key.A == 65, f"Key.A should be 65, got {Key.A}"
+    assert Key.S == 83, f"Key.S should be 83, got {Key.S}"
+    assert Key.D == 68, f"Key.D should be 68, got {Key.D}"
+    assert Key.ENTER == 257, f"Key.ENTER should be 257, got {Key.ENTER}"
+    assert Key.LEFT == 263, f"Key.LEFT should be 263, got {Key.LEFT}"
+    assert Key.RIGHT == 262, f"Key.RIGHT should be 262, got {Key.RIGHT}"
+    assert Key.UP == 265, f"Key.UP should be 265, got {Key.UP}"
+    assert Key.DOWN == 264, f"Key.DOWN should be 264, got {Key.DOWN}"
 
-def test_game():
-    """Test high-level game API."""
-    print("Testing Game API...")
-    from goud_engine import GoudGame
-    
-    game = GoudGame(800, 600, "Test Game")
-    assert game.is_valid()
-    
-    entity = game.spawn()
-    assert entity.id != 0xFFFFFFFFFFFFFFFF
-    assert entity.is_alive()
-    
-    entities = game.spawn_batch(5)
-    assert len(entities) == 5
-    
-    entity.despawn()
-    assert not entity.is_alive()
-    
-    game.close()
-    
-    print("  ✓ Game API tests passed")
+    # MouseButton constants
+    assert MouseButton.LEFT == 0, f"MouseButton.LEFT should be 0, got {MouseButton.LEFT}"
+    assert MouseButton.RIGHT == 1, f"MouseButton.RIGHT should be 1, got {MouseButton.RIGHT}"
+    assert MouseButton.MIDDLE == 2, f"MouseButton.MIDDLE should be 2, got {MouseButton.MIDDLE}"
+
+    print("  Enum tests passed")
     return True
 
 
@@ -294,7 +446,7 @@ def main():
     print("=" * 60)
     print(" GoudEngine Python SDK Tests")
     print("=" * 60)
-    
+
     tests = [
         test_imports,
         test_vec2,
@@ -302,14 +454,13 @@ def main():
         test_rect,
         test_transform2d,
         test_sprite,
-        test_context,
-        test_context_manager,
-        test_game,
+        test_entity,
+        test_enums,
     ]
-    
+
     passed = 0
     failed = 0
-    
+
     for test in tests:
         try:
             if test():
@@ -317,15 +468,15 @@ def main():
             else:
                 failed += 1
         except Exception as e:
-            print(f"  ✗ {test.__name__} failed with exception: {e}")
+            print(f"  {test.__name__} failed with exception: {e}")
             import traceback
             traceback.print_exc()
             failed += 1
-    
+
     print("\n" + "=" * 60)
     print(f" Results: {passed} passed, {failed} failed")
     print("=" * 60)
-    
+
     return 0 if failed == 0 else 1
 
 

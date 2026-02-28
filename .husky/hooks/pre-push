@@ -72,11 +72,11 @@ import sys
 sys.path.insert(0, '$REPO_ROOT/sdks/python')
 from test_bindings import (
     test_imports, test_vec2, test_color, test_rect,
-    test_transform2d, test_sprite, test_context, test_context_manager
+    test_transform2d, test_sprite, test_entity, test_enums
 )
 tests = [
     test_imports, test_vec2, test_color, test_rect,
-    test_transform2d, test_sprite, test_context, test_context_manager
+    test_transform2d, test_sprite, test_entity, test_enums
 ]
 passed = 0
 failed = 0

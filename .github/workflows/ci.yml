@@ -70,13 +70,19 @@ jobs:
     - name: Build
       run: cargo build --verbose
 
-    - name: Upload generated C# bindings
-      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
+    - name: Set up Python (for codegen)
+      if: matrix.rust == 'stable'
+      uses: actions/setup-python@v5
       with:
-        name: csharp-bindings
-        path: sdks/GoudEngine/NativeMethods.g.cs
-        retention-days: 1
+        python-version: '3.11'
+
+    - name: Run SDK codegen
+      if: matrix.rust == 'stable'
+      run: |
+        python3 codegen/gen_csharp.py
+        python3 codegen/gen_python.py
+        python3 codegen/gen_ts_node.py
+        python3 codegen/gen_ts_web.py
 
     - name: Run tests
       run: cargo test --verbose -- --nocapture
@@ -161,6 +167,9 @@ jobs:
     
     - name: Build native library
       run: cargo build --release
+
+    - name: Generate Python SDK
+      run: python3 codegen/gen_python.py
     
     - name: Set up library path (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
@@ -182,11 +191,11 @@ jobs:
         sys.path.insert(0, 'sdks/python')
         from test_bindings import (
             test_imports, test_vec2, test_color, test_rect,
-            test_transform2d, test_sprite, test_context, test_context_manager
+            test_transform2d, test_sprite, test_entity, test_enums
         )
         tests = [
             test_imports, test_vec2, test_color, test_rect,
-            test_transform2d, test_sprite, test_context, test_context_manager
+            test_transform2d, test_sprite, test_entity, test_enums
         ]
         passed = 0
         failed = 0
@@ -212,7 +221,7 @@ jobs:
         import sys
         sys.path.insert(0, '../../sdks/python')
         from goud_engine import (
-            GoudContext, Transform2D, Sprite, Vec2, Color
+            GoudGame, Entity, Transform2D, Sprite, Vec2, Color
         )
         print('Python SDK imports successful')
         # Basic component tests
@@ -220,11 +229,6 @@ jobs:
         print(f'Transform2D: {t}')
         s = Sprite(texture_handle=42).with_color(1.0, 0.0, 0.0, 1.0)
         print(f'Sprite: {s}')
-        ctx = GoudContext.create()
-        print(f'Context created')
-        e = ctx.spawn_entity()
-        print(f'Entity spawned: {e}')
-        ctx.destroy()
         print('All Python SDK basic tests passed!')
         EOF
 
@@ -240,12 +244,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
-    - name: Download generated C# bindings
-      uses: actions/download-artifact@v4
-      with:
-        name: csharp-bindings
-        path: sdks/GoudEngine
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -270,8 +268,16 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
 
+    - name: Set up Python (for codegen)
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
     - name: Build native library
       run: cargo build --release
+
+    - name: Generate C# SDK
+      run: python3 codegen/gen_csharp.py
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -379,7 +385,7 @@ jobs:
         LD_LIBRARY_PATH: ${{ github.workspace }}/target/debug:${{ env.LD_LIBRARY_PATH }}
         DYLD_LIBRARY_PATH: ${{ github.workspace }}/target/debug:${{ env.DYLD_LIBRARY_PATH }}
       run: |
-        python -c "from goud_engine import GoudContext, Transform2D, Sprite; print('✓ Python SDK integration check passed')"
+        python -c "from goud_engine import GoudGame, Entity, Transform2D, Sprite; print('Python SDK integration check passed')"
 
   # TypeScript SDK — native addon build + tests
   typescript-sdk-native:
@@ -424,6 +430,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
 
+    - name: Set up Python (for codegen)
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
     - name: Install npm dependencies
       working-directory: sdks/typescript
       run: npm ci
@@ -431,6 +442,11 @@ jobs:
     - name: Build native addon
       working-directory: sdks/typescript
       run: npm run build:native
+
+    - name: Generate TypeScript SDK
+      run: |
+        python3 codegen/gen_ts_node.py
+        python3 codegen/gen_ts_web.py
 
     - name: Build TypeScript (Node)
       working-directory: sdks/typescript

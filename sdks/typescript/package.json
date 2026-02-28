@@ -2,38 +2,32 @@
   "name": "@goudengine/sdk",
   "version": "0.0.1",
   "description": "TypeScript SDK for GoudEngine — Node.js desktop via napi-rs, web via wasm-bindgen",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "dist/generated/index.g.js",
+  "types": "dist/generated/index.g.d.ts",
   "sideEffects": false,
   "exports": {
     ".": {
       "node": {
-        "types": "./index.d.ts",
-        "import": "./index.js",
-        "require": "./index.js"
+        "types": "./dist/generated/index.g.d.ts",
+        "import": "./dist/generated/index.g.js",
+        "require": "./dist/generated/index.g.js"
       },
       "browser": {
-        "types": "./dist/web/web/index.d.ts",
-        "import": "./dist/web/web/index.js"
+        "types": "./dist/generated/web/index.g.d.ts",
+        "import": "./dist/generated/web/index.g.js"
       },
       "default": {
-        "types": "./index.d.ts",
-        "default": "./index.js"
+        "types": "./dist/generated/index.g.d.ts",
+        "default": "./dist/generated/index.g.js"
       }
     },
     "./web": {
-      "types": "./dist/web/web/index.d.ts",
-      "import": "./dist/web/web/index.js"
+      "types": "./dist/generated/web/index.g.d.ts",
+      "import": "./dist/generated/web/index.g.js"
     },
     "./node": {
-      "types": "./index.d.ts",
-      "import": "./index.js",
-      "require": "./index.js"
-    },
-    "./types": {
-      "types": "./dist/web/types/index.d.ts",
-      "import": "./dist/web/types/index.js",
-      "require": "./dist/types/index.js"
+      "types": "./dist/generated/node/index.g.d.ts",
+      "import": "./dist/generated/node/index.g.js"
     }
   },
   "scripts": {

@@ -29,8 +29,8 @@ sdk_path = Path(__file__).parent.parent.parent / "sdks" / "python"
 sys.path.insert(0, str(sdk_path))
 
 from goud_engine import (
-    GoudGame, GoudEngineError,
-    Keys, MouseButtons,
+    GoudGame,
+    Key, MouseButton,
     Transform2D, Sprite,
     Vec2, Color
 )
@@ -430,19 +430,19 @@ class GameManager:
     def update(self, delta_time: float):
         """Main update loop."""
         # Handle quit
-        if self._game.key_just_pressed(Keys.ESCAPE):
+        if self._game.is_key_just_pressed(Key.ESCAPE):
             self._game.close()
             return
-        
+
         # Handle restart
-        if self._game.key_just_pressed(Keys.R):
+        if self._game.is_key_just_pressed(Key.R):
             self._reset_game()
             return
-        
+
         # Check for jump input
         jump_pressed = (
-            self._game.key_just_pressed(Keys.SPACE) or
-            self._game.mouse_button_just_pressed(MouseButtons.LEFT)
+            self._game.is_key_just_pressed(Key.SPACE) or
+            self._game.is_mouse_button_just_pressed(MouseButton.LEFT)
         )
         
         # Update bird
@@ -649,9 +649,10 @@ def main():
         manager.start()
         
         # Game loop
-        while game.is_running():
+        while not game.should_close():
             # Begin frame (polls events, clears screen)
-            dt = game.begin_frame()
+            game.begin_frame()
+            dt = game.delta_time
             
             # Update game logic
             manager.update(dt)
@@ -666,13 +667,10 @@ def main():
         game.destroy()
         print("\nGame closed successfully!")
         
-    except GoudEngineError as e:
-        print(f"\n❌ Engine Error: {e}")
+    except Exception as e:
+        print(f"\nError: {e}")
         print("\nMake sure the native library is built:")
         print("  cd goud_engine && cargo build --release")
-        return 1
-    except Exception as e:
-        print(f"\n❌ Unexpected Error: {e}")
         import traceback
         traceback.print_exc()
         return 1

@@ -16,8 +16,8 @@
     "resolveJsonModule": true
   },
   "include": [
-    "src/types/**/*",
-    "src/web/**/*"
+    "src/generated/types/**/*",
+    "src/generated/web/**/*"
   ],
   "exclude": ["node_modules", "dist"]
 }

@@ -1,0 +1,599 @@
+{
+  "version": "0.0.812",
+  "description": "Universal GoudEngine SDK schema. Every SDK (C#, Python, TypeScript) is generated from this single file. Same tools, same methods, same inputs, same outputs.",
+
+  "types": {
+    "Color": {
+      "kind": "value",
+      "doc": "RGBA color with float components in 0.0-1.0 range",
+      "fields": [
+        {"name": "r", "type": "f32", "doc": "Red channel"},
+        {"name": "g", "type": "f32", "doc": "Green channel"},
+        {"name": "b", "type": "f32", "doc": "Blue channel"},
+        {"name": "a", "type": "f32", "doc": "Alpha channel"}
+      ],
+      "factories": [
+        {"name": "white",       "args": [], "value": [1, 1, 1, 1]},
+        {"name": "black",       "args": [], "value": [0, 0, 0, 1]},
+        {"name": "red",         "args": [], "value": [1, 0, 0, 1]},
+        {"name": "green",       "args": [], "value": [0, 1, 0, 1]},
+        {"name": "blue",        "args": [], "value": [0, 0, 1, 1]},
+        {"name": "yellow",      "args": [], "value": [1, 1, 0, 1]},
+        {"name": "cyan",        "args": [], "value": [0, 1, 1, 1]},
+        {"name": "magenta",     "args": [], "value": [1, 0, 1, 1]},
+        {"name": "transparent", "args": [], "value": [0, 0, 0, 0]},
+        {"name": "rgba", "args": [
+          {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"},
+          {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}
+        ]},
+        {"name": "rgb", "args": [
+          {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}
+        ], "defaults": {"a": 1.0}},
+        {"name": "fromHex", "args": [{"name": "hex", "type": "u32"}]}
+      ],
+      "methods": [
+        {"name": "withAlpha", "params": [{"name": "a", "type": "f32"}], "returns": "Color"}
+      ]
+    },
+    "Vec2": {
+      "kind": "value",
+      "doc": "2D floating-point vector",
+      "fields": [
+        {"name": "x", "type": "f32"},
+        {"name": "y", "type": "f32"}
+      ],
+      "factories": [
+        {"name": "zero",  "args": [], "value": [0, 0]},
+        {"name": "one",   "args": [], "value": [1, 1]},
+        {"name": "up",    "args": [], "value": [0, -1]},
+        {"name": "down",  "args": [], "value": [0, 1]},
+        {"name": "left",  "args": [], "value": [-1, 0]},
+        {"name": "right", "args": [], "value": [1, 0]}
+      ],
+      "methods": [
+        {"name": "add",       "params": [{"name": "other", "type": "Vec2"}],  "returns": "Vec2"},
+        {"name": "sub",       "params": [{"name": "other", "type": "Vec2"}],  "returns": "Vec2"},
+        {"name": "scale",     "params": [{"name": "s", "type": "f32"}],       "returns": "Vec2"},
+        {"name": "length",    "params": [],                                    "returns": "f32"},
+        {"name": "normalize", "params": [],                                    "returns": "Vec2"},
+        {"name": "dot",       "params": [{"name": "other", "type": "Vec2"}],  "returns": "f32"},
+        {"name": "distance",  "params": [{"name": "other", "type": "Vec2"}],  "returns": "f32"},
+        {"name": "lerp",      "params": [{"name": "other", "type": "Vec2"}, {"name": "t", "type": "f32"}], "returns": "Vec2"}
+      ]
+    },
+    "Rect": {
+      "kind": "value",
+      "doc": "Axis-aligned rectangle",
+      "fields": [
+        {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"},
+        {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}
+      ],
+      "methods": [
+        {"name": "contains", "params": [{"name": "point", "type": "Vec2"}], "returns": "bool"},
+        {"name": "intersects", "params": [{"name": "other", "type": "Rect"}], "returns": "bool"}
+      ]
+    },
+    "Transform2D": {
+      "kind": "component",
+      "doc": "2D transform: position, rotation (radians), and scale",
+      "fields": [
+        {"name": "positionX", "type": "f32"}, {"name": "positionY", "type": "f32"},
+        {"name": "rotation", "type": "f32"},
+        {"name": "scaleX", "type": "f32"}, {"name": "scaleY", "type": "f32"}
+      ],
+      "factories": [
+        {"name": "default", "args": [], "value": [0, 0, 0, 1, 1]},
+        {"name": "fromPosition", "args": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}]},
+        {"name": "fromRotation", "args": [{"name": "radians", "type": "f32"}]},
+        {"name": "fromScale", "args": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}]}
+      ]
+    },
+    "Sprite": {
+      "kind": "component",
+      "doc": "Sprite rendering component",
+      "fields": [
+        {"name": "textureHandle", "type": "u64"},
+        {"name": "color", "type": "Color"},
+        {"name": "flipX", "type": "bool"}, {"name": "flipY", "type": "bool"},
+        {"name": "anchorX", "type": "f32"}, {"name": "anchorY", "type": "f32"}
+      ]
+    },
+    "RenderStats": {
+      "kind": "value",
+      "doc": "Per-frame rendering statistics",
+      "fields": [
+        {"name": "drawCalls",    "type": "u32", "doc": "Number of draw calls this frame"},
+        {"name": "triangles",    "type": "u32", "doc": "Number of triangles rendered"},
+        {"name": "textureBinds", "type": "u32", "doc": "Number of texture bind operations"}
+      ]
+    },
+    "Contact": {
+      "kind": "value",
+      "doc": "Collision contact point information",
+      "fields": [
+        {"name": "pointX",      "type": "f32"},
+        {"name": "pointY",      "type": "f32"},
+        {"name": "normalX",     "type": "f32"},
+        {"name": "normalY",     "type": "f32"},
+        {"name": "penetration", "type": "f32"}
+      ]
+    },
+    "Vec3": {
+      "kind": "value",
+      "doc": "3D floating-point vector",
+      "fields": [
+        {"name": "x", "type": "f32"},
+        {"name": "y", "type": "f32"},
+        {"name": "z", "type": "f32"}
+      ],
+      "factories": [
+        {"name": "zero", "args": [], "value": [0, 0, 0]},
+        {"name": "one",  "args": [], "value": [1, 1, 1]},
+        {"name": "up",   "args": [], "value": [0, 1, 0]}
+      ]
+    },
+    "Entity": {
+      "kind": "handle",
+      "doc": "Opaque handle to an ECS entity",
+      "properties": [
+        {"name": "index", "type": "u32", "readonly": true},
+        {"name": "generation", "type": "u32", "readonly": true},
+        {"name": "isPlaceholder", "type": "bool", "readonly": true}
+      ],
+      "methods": [
+        {"name": "toBits", "params": [], "returns": "u64"}
+      ]
+    }
+  },
+
+  "enums": {
+    "Key": {
+      "doc": "Keyboard key codes matching GLFW values",
+      "underlying": "i32",
+      "values": {
+        "Unknown": -1,
+        "Space": 32, "Apostrophe": 39, "Comma": 44, "Minus": 45, "Period": 46, "Slash": 47,
+        "Digit0": 48, "Digit1": 49, "Digit2": 50, "Digit3": 51, "Digit4": 52,
+        "Digit5": 53, "Digit6": 54, "Digit7": 55, "Digit8": 56, "Digit9": 57,
+        "Semicolon": 59, "Equal": 61,
+        "A": 65, "B": 66, "C": 67, "D": 68, "E": 69, "F": 70, "G": 71, "H": 72,
+        "I": 73, "J": 74, "K": 75, "L": 76, "M": 77, "N": 78, "O": 79, "P": 80,
+        "Q": 81, "R": 82, "S": 83, "T": 84, "U": 85, "V": 86, "W": 87, "X": 88,
+        "Y": 89, "Z": 90,
+        "LeftBracket": 91, "Backslash": 92, "RightBracket": 93, "GraveAccent": 96,
+        "Escape": 256, "Enter": 257, "Tab": 258, "Backspace": 259,
+        "Insert": 260, "Delete": 261,
+        "Right": 262, "Left": 263, "Down": 264, "Up": 265,
+        "PageUp": 266, "PageDown": 267, "Home": 268, "End": 269,
+        "CapsLock": 280, "ScrollLock": 281, "NumLock": 282, "PrintScreen": 283, "Pause": 284,
+        "F1": 290, "F2": 291, "F3": 292, "F4": 293, "F5": 294, "F6": 295,
+        "F7": 296, "F8": 297, "F9": 298, "F10": 299, "F11": 300, "F12": 301,
+        "Numpad0": 320, "Numpad1": 321, "Numpad2": 322, "Numpad3": 323, "Numpad4": 324,
+        "Numpad5": 325, "Numpad6": 326, "Numpad7": 327, "Numpad8": 328, "Numpad9": 329,
+        "NumpadDecimal": 330, "NumpadDivide": 331, "NumpadMultiply": 332,
+        "NumpadSubtract": 333, "NumpadAdd": 334, "NumpadEnter": 335,
+        "LeftShift": 340, "LeftControl": 341, "LeftAlt": 342, "LeftSuper": 343,
+        "RightShift": 344, "RightControl": 345, "RightAlt": 346, "RightSuper": 347
+      },
+      "web_code_map": {
+        "Space": "Space", "Apostrophe": "Quote", "Comma": "Comma", "Minus": "Minus",
+        "Period": "Period", "Slash": "Slash",
+        "Digit0": "Digit0", "Digit1": "Digit1", "Digit2": "Digit2", "Digit3": "Digit3",
+        "Digit4": "Digit4", "Digit5": "Digit5", "Digit6": "Digit6", "Digit7": "Digit7",
+        "Digit8": "Digit8", "Digit9": "Digit9",
+        "Semicolon": "Semicolon", "Equal": "Equal",
+        "A": "KeyA", "B": "KeyB", "C": "KeyC", "D": "KeyD", "E": "KeyE",
+        "F": "KeyF", "G": "KeyG", "H": "KeyH", "I": "KeyI", "J": "KeyJ",
+        "K": "KeyK", "L": "KeyL", "M": "KeyM", "N": "KeyN", "O": "KeyO",
+        "P": "KeyP", "Q": "KeyQ", "R": "KeyR", "S": "KeyS", "T": "KeyT",
+        "U": "KeyU", "V": "KeyV", "W": "KeyW", "X": "KeyX", "Y": "KeyY", "Z": "KeyZ",
+        "LeftBracket": "BracketLeft", "Backslash": "Backslash", "RightBracket": "BracketRight",
+        "GraveAccent": "Backquote",
+        "Escape": "Escape", "Enter": "Enter", "Tab": "Tab", "Backspace": "Backspace",
+        "Insert": "Insert", "Delete": "Delete",
+        "Right": "ArrowRight", "Left": "ArrowLeft", "Down": "ArrowDown", "Up": "ArrowUp",
+        "PageUp": "PageUp", "PageDown": "PageDown", "Home": "Home", "End": "End",
+        "CapsLock": "CapsLock", "ScrollLock": "ScrollLock", "NumLock": "NumLock",
+        "PrintScreen": "PrintScreen", "Pause": "Pause",
+        "F1": "F1", "F2": "F2", "F3": "F3", "F4": "F4", "F5": "F5", "F6": "F6",
+        "F7": "F7", "F8": "F8", "F9": "F9", "F10": "F10", "F11": "F11", "F12": "F12",
+        "Numpad0": "Numpad0", "Numpad1": "Numpad1", "Numpad2": "Numpad2", "Numpad3": "Numpad3",
+        "Numpad4": "Numpad4", "Numpad5": "Numpad5", "Numpad6": "Numpad6", "Numpad7": "Numpad7",
+        "Numpad8": "Numpad8", "Numpad9": "Numpad9",
+        "NumpadDecimal": "NumpadDecimal", "NumpadDivide": "NumpadDivide",
+        "NumpadMultiply": "NumpadMultiply", "NumpadSubtract": "NumpadSubtract",
+        "NumpadAdd": "NumpadAdd", "NumpadEnter": "NumpadEnter",
+        "LeftShift": "ShiftLeft", "LeftControl": "ControlLeft",
+        "LeftAlt": "AltLeft", "LeftSuper": "MetaLeft",
+        "RightShift": "ShiftRight", "RightControl": "ControlRight",
+        "RightAlt": "AltRight", "RightSuper": "MetaRight"
+      }
+    },
+    "MouseButton": {
+      "doc": "Mouse button identifiers",
+      "underlying": "i32",
+      "values": {
+        "Left": 0, "Right": 1, "Middle": 2,
+        "Button4": 3, "Button5": 4, "Button6": 5, "Button7": 6, "Button8": 7
+      }
+    },
+    "RendererType": {
+      "doc": "Rendering backend selection",
+      "underlying": "i32",
+      "values": {
+        "Renderer2D": 0, "Renderer3D": 1
+      }
+    }
+  },
+
+  "tools": {
+    "GoudGame": {
+      "doc": "Main game engine instance. Creates a window, manages rendering, input, and ECS.",
+      "constructor": {
+        "params": [
+          {"name": "width",  "type": "u32",    "default": 800,          "doc": "Window width in pixels"},
+          {"name": "height", "type": "u32",    "default": 600,          "doc": "Window height in pixels"},
+          {"name": "title",  "type": "string", "default": "GoudEngine", "doc": "Window title"}
+        ]
+      },
+      "properties": [
+        {"name": "deltaTime",    "type": "f32", "readonly": true, "doc": "Seconds elapsed since last frame"},
+        {"name": "fps",          "type": "f32", "readonly": true, "doc": "Current frames per second"},
+        {"name": "windowWidth",  "type": "u32", "readonly": true, "doc": "Window width in pixels"},
+        {"name": "windowHeight", "type": "u32", "readonly": true, "doc": "Window height in pixels"}
+      ],
+      "methods": [
+        {
+          "name": "shouldClose",
+          "doc": "Returns true if the window close has been requested",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "close",
+          "doc": "Signals the window to close",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "destroy",
+          "doc": "Releases all engine resources",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "beginFrame",
+          "doc": "Starts a new render frame with the given clear color",
+          "params": [
+            {"name": "r", "type": "f32", "default": 0.0, "doc": "Clear color red"},
+            {"name": "g", "type": "f32", "default": 0.0, "doc": "Clear color green"},
+            {"name": "b", "type": "f32", "default": 0.0, "doc": "Clear color blue"},
+            {"name": "a", "type": "f32", "default": 1.0, "doc": "Clear color alpha"}
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "endFrame",
+          "doc": "Finishes the current frame and presents it to the screen",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "run",
+          "doc": "Runs the game loop. Calls the update callback each frame with delta time. Blocks until the window is closed.",
+          "params": [
+            {"name": "update", "type": "callback(f32)", "doc": "Per-frame update function receiving delta time in seconds"}
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "loadTexture",
+          "doc": "Loads a texture from a file path and returns its handle",
+          "params": [{"name": "path", "type": "string", "doc": "Path to the image file"}],
+          "returns": "u64",
+          "async": true
+        },
+        {
+          "name": "destroyTexture",
+          "doc": "Destroys a previously loaded texture",
+          "params": [{"name": "handle", "type": "u64"}],
+          "returns": "void"
+        },
+        {
+          "name": "drawSprite",
+          "doc": "Draws a textured sprite",
+          "params": [
+            {"name": "texture",  "type": "u64", "doc": "Texture handle from loadTexture"},
+            {"name": "x",        "type": "f32"}, {"name": "y", "type": "f32"},
+            {"name": "width",    "type": "f32"}, {"name": "height", "type": "f32"},
+            {"name": "rotation", "type": "f32", "default": 0.0, "doc": "Rotation in radians"},
+            {"name": "color",    "type": "Color", "default": "Color.white()", "doc": "Tint color"}
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "drawQuad",
+          "doc": "Draws a colored rectangle",
+          "params": [
+            {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"},
+            {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"},
+            {"name": "color", "type": "Color", "default": "Color.white()", "doc": "Fill color"}
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "isKeyPressed",
+          "doc": "Returns true if the key is currently held down",
+          "params": [{"name": "key", "type": "Key"}],
+          "returns": "bool"
+        },
+        {
+          "name": "isKeyJustPressed",
+          "doc": "Returns true if the key was pressed this frame",
+          "params": [{"name": "key", "type": "Key"}],
+          "returns": "bool"
+        },
+        {
+          "name": "isKeyJustReleased",
+          "doc": "Returns true if the key was released this frame",
+          "params": [{"name": "key", "type": "Key"}],
+          "returns": "bool"
+        },
+        {
+          "name": "isMouseButtonPressed",
+          "doc": "Returns true if the mouse button is currently held",
+          "params": [{"name": "button", "type": "MouseButton"}],
+          "returns": "bool"
+        },
+        {
+          "name": "isMouseButtonJustPressed",
+          "doc": "Returns true if the mouse button was pressed this frame",
+          "params": [{"name": "button", "type": "MouseButton"}],
+          "returns": "bool"
+        },
+        {
+          "name": "isMouseButtonJustReleased",
+          "doc": "Returns true if the mouse button was released this frame",
+          "params": [{"name": "button", "type": "MouseButton"}],
+          "returns": "bool"
+        },
+        {
+          "name": "getMousePosition",
+          "doc": "Returns the mouse position relative to the window",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "getMouseDelta",
+          "doc": "Returns the mouse movement since last frame",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "getScrollDelta",
+          "doc": "Returns the scroll wheel delta this frame",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "spawnEmpty",
+          "doc": "Creates a new empty entity",
+          "params": [],
+          "returns": "Entity"
+        },
+        {
+          "name": "despawn",
+          "doc": "Destroys an entity and all its components",
+          "params": [{"name": "entity", "type": "Entity"}],
+          "returns": "bool"
+        },
+        {
+          "name": "entityCount",
+          "doc": "Returns the number of living entities",
+          "params": [],
+          "returns": "u32"
+        },
+        {
+          "name": "isAlive",
+          "doc": "Returns true if the entity still exists",
+          "params": [{"name": "entity", "type": "Entity"}],
+          "returns": "bool"
+        },
+        {
+          "name": "addTransform2d",
+          "doc": "Attaches a Transform2D component to the entity",
+          "params": [
+            {"name": "entity", "type": "Entity"},
+            {"name": "transform", "type": "Transform2D"}
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "getTransform2d",
+          "doc": "Returns the entity's Transform2D, or null if absent",
+          "params": [{"name": "entity", "type": "Entity"}],
+          "returns": "Transform2D?",
+          "nullable": true
+        },
+        {
+          "name": "setTransform2d",
+          "doc": "Overwrites the entity's Transform2D",
+          "params": [
+            {"name": "entity", "type": "Entity"},
+            {"name": "transform", "type": "Transform2D"}
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "hasTransform2d",
+          "doc": "Returns true if the entity has a Transform2D",
+          "params": [{"name": "entity", "type": "Entity"}],
+          "returns": "bool"
+        },
+        {
+          "name": "removeTransform2d",
+          "doc": "Removes the Transform2D from the entity",
+          "params": [{"name": "entity", "type": "Entity"}],
+          "returns": "bool"
+        },
+        {
+          "name": "addName",
+          "doc": "Attaches a Name component to the entity",
+          "params": [
+            {"name": "entity", "type": "Entity"},
+            {"name": "name", "type": "string"}
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "getName",
+          "doc": "Returns the entity's Name, or null if absent",
+          "params": [{"name": "entity", "type": "Entity"}],
+          "returns": "string?",
+          "nullable": true
+        },
+        {
+          "name": "hasName",
+          "doc": "Returns true if the entity has a Name",
+          "params": [{"name": "entity", "type": "Entity"}],
+          "returns": "bool"
+        },
+        {
+          "name": "removeName",
+          "doc": "Removes the Name from the entity",
+          "params": [{"name": "entity", "type": "Entity"}],
+          "returns": "bool"
+        },
+        {"name": "addSprite",    "doc": "Attaches a Sprite component to the entity",    "params": [{"name": "entity", "type": "Entity"}, {"name": "sprite", "type": "Sprite"}], "returns": "void"},
+        {"name": "getSprite",    "doc": "Returns the entity's Sprite, or null if absent", "params": [{"name": "entity", "type": "Entity"}], "returns": "Sprite?", "nullable": true},
+        {"name": "setSprite",    "doc": "Overwrites the entity's Sprite",                "params": [{"name": "entity", "type": "Entity"}, {"name": "sprite", "type": "Sprite"}], "returns": "void"},
+        {"name": "hasSprite",    "doc": "Returns true if the entity has a Sprite",       "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
+        {"name": "removeSprite", "doc": "Removes the Sprite from the entity",            "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
+        {"name": "spawnBatch",   "doc": "Spawns multiple empty entities at once",        "params": [{"name": "count", "type": "u32"}], "returns": "Entity[]"},
+        {"name": "despawnBatch", "doc": "Despawns multiple entities at once",            "params": [{"name": "entities", "type": "Entity[]"}], "returns": "u32"},
+        {"name": "createCube",      "doc": "Creates a 3D cube",     "params": [{"name": "textureId", "type": "u32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}, {"name": "depth", "type": "f32"}], "returns": "u32"},
+        {"name": "createPlane",     "doc": "Creates a 3D plane",    "params": [{"name": "textureId", "type": "u32"}, {"name": "width", "type": "f32"}, {"name": "depth", "type": "f32"}], "returns": "u32"},
+        {"name": "createSphere",    "doc": "Creates a 3D sphere",   "params": [{"name": "textureId", "type": "u32"}, {"name": "diameter", "type": "f32"}, {"name": "segments", "type": "u32", "default": 16}], "returns": "u32"},
+        {"name": "createCylinder",  "doc": "Creates a 3D cylinder", "params": [{"name": "textureId", "type": "u32"}, {"name": "radius", "type": "f32"}, {"name": "height", "type": "f32"}, {"name": "segments", "type": "u32", "default": 16}], "returns": "u32"},
+        {"name": "setObjectPosition", "doc": "Sets a 3D object's position",          "params": [{"name": "objectId", "type": "u32"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "z", "type": "f32"}], "returns": "bool"},
+        {"name": "setObjectRotation", "doc": "Sets a 3D object's rotation in degrees", "params": [{"name": "objectId", "type": "u32"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "z", "type": "f32"}], "returns": "bool"},
+        {"name": "setObjectScale",    "doc": "Sets a 3D object's scale",              "params": [{"name": "objectId", "type": "u32"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "z", "type": "f32"}], "returns": "bool"},
+        {"name": "destroyObject",     "doc": "Destroys a 3D object",                  "params": [{"name": "objectId", "type": "u32"}], "returns": "bool"},
+        {
+          "name": "addLight",
+          "doc": "Adds a light to the 3D scene",
+          "params": [
+            {"name": "lightType", "type": "i32"},
+            {"name": "posX",      "type": "f32"}, {"name": "posY", "type": "f32"}, {"name": "posZ", "type": "f32"},
+            {"name": "dirX",      "type": "f32"}, {"name": "dirY", "type": "f32"}, {"name": "dirZ", "type": "f32"},
+            {"name": "r",         "type": "f32"}, {"name": "g",   "type": "f32"}, {"name": "b",    "type": "f32"},
+            {"name": "intensity", "type": "f32"}, {"name": "range", "type": "f32"}, {"name": "spotAngle", "type": "f32"}
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "updateLight",
+          "doc": "Updates a light's properties",
+          "params": [
+            {"name": "lightId",   "type": "u32"},
+            {"name": "lightType", "type": "i32"},
+            {"name": "posX",      "type": "f32"}, {"name": "posY", "type": "f32"}, {"name": "posZ", "type": "f32"},
+            {"name": "dirX",      "type": "f32"}, {"name": "dirY", "type": "f32"}, {"name": "dirZ", "type": "f32"},
+            {"name": "r",         "type": "f32"}, {"name": "g",   "type": "f32"}, {"name": "b",    "type": "f32"},
+            {"name": "intensity", "type": "f32"}, {"name": "range", "type": "f32"}, {"name": "spotAngle", "type": "f32"}
+          ],
+          "returns": "bool"
+        },
+        {"name": "removeLight",         "doc": "Removes a light",                     "params": [{"name": "lightId", "type": "u32"}], "returns": "bool"},
+        {"name": "setCameraPosition3D", "doc": "Sets the 3D camera position",         "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "z", "type": "f32"}], "returns": "bool"},
+        {"name": "setCameraRotation3D", "doc": "Sets the 3D camera rotation",         "params": [{"name": "pitch", "type": "f32"}, {"name": "yaw", "type": "f32"}, {"name": "roll", "type": "f32"}], "returns": "bool"},
+        {"name": "configureGrid",       "doc": "Configures the ground grid",          "params": [{"name": "enabled", "type": "bool"}, {"name": "size", "type": "f32"}, {"name": "divisions", "type": "u32"}], "returns": "bool"},
+        {"name": "setGridEnabled",      "doc": "Sets grid visibility",                "params": [{"name": "enabled", "type": "bool"}], "returns": "bool"},
+        {
+          "name": "configureSkybox",
+          "doc": "Configures the skybox/background color",
+          "params": [
+            {"name": "enabled", "type": "bool"},
+            {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "configureFog",
+          "doc": "Configures fog settings",
+          "params": [
+            {"name": "enabled", "type": "bool"},
+            {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"},
+            {"name": "density", "type": "f32"}
+          ],
+          "returns": "bool"
+        },
+        {"name": "setFogEnabled", "doc": "Sets fog visibility",   "params": [{"name": "enabled", "type": "bool"}], "returns": "bool"},
+        {"name": "render3D",      "doc": "Renders all 3D objects", "params": [], "returns": "bool"},
+        {
+          "name": "drawSpriteRect",
+          "doc": "Draws a sprite with source rectangle for sprite sheets",
+          "params": [
+            {"name": "texture",  "type": "u64"},
+            {"name": "x",        "type": "f32"}, {"name": "y",    "type": "f32"},
+            {"name": "width",    "type": "f32"}, {"name": "height", "type": "f32"},
+            {"name": "rotation", "type": "f32", "default": 0.0},
+            {"name": "srcX",     "type": "f32"}, {"name": "srcY", "type": "f32"},
+            {"name": "srcW",     "type": "f32"}, {"name": "srcH", "type": "f32"},
+            {"name": "color",    "type": "Color", "default": "Color.white()"}
+          ],
+          "returns": "bool"
+        },
+        {"name": "setViewport",      "doc": "Sets the rendering viewport", "params": [{"name": "x", "type": "i32"}, {"name": "y", "type": "i32"}, {"name": "width", "type": "u32"}, {"name": "height", "type": "u32"}], "returns": "void"},
+        {"name": "enableDepthTest",  "doc": "Enables depth testing",       "params": [], "returns": "void"},
+        {"name": "disableDepthTest", "doc": "Disables depth testing",      "params": [], "returns": "void"},
+        {"name": "clearDepth",       "doc": "Clears the depth buffer",     "params": [], "returns": "void"},
+        {"name": "disableBlending",  "doc": "Disables alpha blending",     "params": [], "returns": "void"},
+        {"name": "getRenderStats",   "doc": "Returns rendering statistics for the current frame", "params": [], "returns": "RenderStats"},
+        {"name": "mapActionKey",         "doc": "Maps an action name to a key",                     "params": [{"name": "action", "type": "string"}, {"name": "key", "type": "Key"}], "returns": "bool"},
+        {"name": "isActionPressed",      "doc": "Returns true if the action is currently pressed",  "params": [{"name": "action", "type": "string"}], "returns": "bool"},
+        {"name": "isActionJustPressed",  "doc": "Returns true if the action was pressed this frame", "params": [{"name": "action", "type": "string"}], "returns": "bool"},
+        {"name": "isActionJustReleased", "doc": "Returns true if the action was released this frame", "params": [{"name": "action", "type": "string"}], "returns": "bool"},
+        {"name": "collisionAabbAabb",   "doc": "AABB vs AABB collision test with contact",  "params": [{"name": "centerAx", "type": "f32"}, {"name": "centerAy", "type": "f32"}, {"name": "halfWa", "type": "f32"}, {"name": "halfHa", "type": "f32"}, {"name": "centerBx", "type": "f32"}, {"name": "centerBy", "type": "f32"}, {"name": "halfWb", "type": "f32"}, {"name": "halfHb", "type": "f32"}], "returns": "Contact?", "nullable": true},
+        {"name": "collisionCircleCircle", "doc": "Circle vs circle collision test",         "params": [{"name": "centerAx", "type": "f32"}, {"name": "centerAy", "type": "f32"}, {"name": "radiusA", "type": "f32"}, {"name": "centerBx", "type": "f32"}, {"name": "centerBy", "type": "f32"}, {"name": "radiusB", "type": "f32"}], "returns": "Contact?", "nullable": true},
+        {"name": "collisionCircleAabb",   "doc": "Circle vs AABB collision test",           "params": [{"name": "circleX", "type": "f32"}, {"name": "circleY", "type": "f32"}, {"name": "circleRadius", "type": "f32"}, {"name": "boxX", "type": "f32"}, {"name": "boxY", "type": "f32"}, {"name": "boxHw", "type": "f32"}, {"name": "boxHh", "type": "f32"}], "returns": "Contact?", "nullable": true},
+        {"name": "pointInRect",     "doc": "Tests if a point is inside a rectangle", "params": [{"name": "px", "type": "f32"}, {"name": "py", "type": "f32"}, {"name": "rx", "type": "f32"}, {"name": "ry", "type": "f32"}, {"name": "rw", "type": "f32"}, {"name": "rh", "type": "f32"}], "returns": "bool"},
+        {"name": "pointInCircle",   "doc": "Tests if a point is inside a circle",    "params": [{"name": "px", "type": "f32"}, {"name": "py", "type": "f32"}, {"name": "cx", "type": "f32"}, {"name": "cy", "type": "f32"}, {"name": "radius", "type": "f32"}], "returns": "bool"},
+        {"name": "aabbOverlap",     "doc": "Fast AABB overlap test",                  "params": [{"name": "minAx", "type": "f32"}, {"name": "minAy", "type": "f32"}, {"name": "maxAx", "type": "f32"}, {"name": "maxAy", "type": "f32"}, {"name": "minBx", "type": "f32"}, {"name": "minBy", "type": "f32"}, {"name": "maxBx", "type": "f32"}, {"name": "maxBy", "type": "f32"}], "returns": "bool"},
+        {"name": "circleOverlap",   "doc": "Fast circle overlap test",                "params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "r1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}, {"name": "r2", "type": "f32"}], "returns": "bool"},
+        {"name": "distance",        "doc": "Distance between two points",             "params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}], "returns": "f32"},
+        {"name": "distanceSquared", "doc": "Squared distance between two points",     "params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}], "returns": "f32"}
+      ]
+    },
+    "GoudContext": {
+      "doc": "Headless engine context for CI tests and non-windowed entity management.",
+      "constructor": {
+        "params": []
+      },
+      "methods": [
+        {"name": "destroy",  "params": [], "returns": "bool"},
+        {"name": "isValid",  "params": [], "returns": "bool"},
+        {"name": "spawnEmpty", "params": [], "returns": "Entity"},
+        {"name": "spawnBatch", "doc": "Spawns multiple entities at once", "params": [{"name": "count", "type": "u32"}], "returns": "Entity[]"},
+        {"name": "despawn",      "params": [{"name": "entity",   "type": "Entity"}],    "returns": "bool"},
+        {"name": "despawnBatch", "params": [{"name": "entities", "type": "Entity[]"}],  "returns": "u32"},
+        {"name": "isAlive",     "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
+        {"name": "entityCount", "params": [], "returns": "u32"},
+        {"name": "addTransform2d",    "params": [{"name": "entity", "type": "Entity"}, {"name": "transform", "type": "Transform2D"}], "returns": "void"},
+        {"name": "getTransform2d",    "params": [{"name": "entity", "type": "Entity"}], "returns": "Transform2D?", "nullable": true},
+        {"name": "setTransform2d",    "params": [{"name": "entity", "type": "Entity"}, {"name": "transform", "type": "Transform2D"}], "returns": "void"},
+        {"name": "hasTransform2d",    "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
+        {"name": "removeTransform2d", "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
+        {"name": "addSprite",    "params": [{"name": "entity", "type": "Entity"}, {"name": "sprite", "type": "Sprite"}], "returns": "void"},
+        {"name": "getSprite",    "params": [{"name": "entity", "type": "Entity"}], "returns": "Sprite?", "nullable": true},
+        {"name": "setSprite",    "params": [{"name": "entity", "type": "Entity"}, {"name": "sprite", "type": "Sprite"}], "returns": "void"},
+        {"name": "hasSprite",    "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
+        {"name": "removeSprite", "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
+        {"name": "addName",    "params": [{"name": "entity", "type": "Entity"}, {"name": "name", "type": "string"}], "returns": "void"},
+        {"name": "getName",    "params": [{"name": "entity", "type": "Entity"}], "returns": "string?", "nullable": true},
+        {"name": "hasName",    "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
+        {"name": "removeName", "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"}
+      ]
+    }
+  }
+}

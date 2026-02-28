@@ -84,6 +84,24 @@ export declare class Entity {
 }
 export declare class GoudGame {
   constructor(config?: GameConfig | undefined | null)
+  shouldClose(): boolean
+  close(): void
+  destroy(): boolean
+  beginFrame(r?: number | undefined | null, g?: number | undefined | null, b?: number | undefined | null, a?: number | undefined | null): void
+  endFrame(): void
+  loadTexture(path: string): number
+  destroyTexture(handle: number): boolean
+  drawSprite(texture: number, x: number, y: number, w: number, h: number, rotation?: number | undefined | null, r?: number | undefined | null, g?: number | undefined | null, b?: number | undefined | null, a?: number | undefined | null): boolean
+  drawQuad(x: number, y: number, w: number, h: number, r?: number | undefined | null, g?: number | undefined | null, b?: number | undefined | null, a?: number | undefined | null): boolean
+  isKeyPressed(key: number): boolean
+  isKeyJustPressed(key: number): boolean
+  isKeyJustReleased(key: number): boolean
+  isMouseButtonPressed(button: number): boolean
+  isMouseButtonJustPressed(button: number): boolean
+  isMouseButtonJustReleased(button: number): boolean
+  getMousePosition(): Array<number>
+  getMouseDelta(): Array<number>
+  getScrollDelta(): Array<number>
   spawnEmpty(): Entity
   spawnBatch(count: number): Array<Entity>
   despawn(entity: Entity): boolean
@@ -111,4 +129,7 @@ export declare class GoudGame {
   get title(): string
   get windowWidth(): number
   get windowHeight(): number
+  get contextValid(): boolean
+  /** Returns the raw FFI delta time from the last poll_events call. */
+  get ffiDeltaTime(): number
 }

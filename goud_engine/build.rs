@@ -26,6 +26,10 @@ use std::fs;
 use std::path::Path;
 
 fn main() {
+    if std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("wasm32") {
+        return;
+    }
+
     println!("cargo:rerun-if-changed=src/ffi/");
     println!("cargo:rerun-if-changed=src/core/math.rs");
     println!("cargo:rerun-if-changed=src/core/error.rs");

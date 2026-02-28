@@ -1,0 +1,461 @@
+{
+  "description": "Maps SDK schema tools/methods to extern C FFI functions. Implementation detail -- game developers never see this.",
+
+  "ffi_types": {
+    "Color":       {"ffi_name": "FfiColor",       "fields": ["r", "g", "b", "a"]},
+    "Vec2":        {"ffi_name": "FfiVec2",         "fields": ["x", "y"]},
+    "Rect":        {"ffi_name": "FfiRect",         "fields": ["x", "y", "width", "height"]},
+    "Transform2D": {"ffi_name": "FfiTransform2D",  "fields": ["position_x", "position_y", "rotation", "scale_x", "scale_y"]},
+    "Sprite":      {"ffi_name": "FfiSprite"},
+    "Entity":      {"ffi_name": "u64", "sentinel": "0xFFFFFFFFFFFFFFFF"},
+    "RenderStats": {"ffi_name": "GoudRenderStats", "fields": ["draw_calls", "triangles", "texture_binds"]},
+    "Contact":     {"ffi_name": "GoudContact",     "fields": ["point_x", "point_y", "normal_x", "normal_y", "penetration"]},
+    "Vec3":        {"ffi_name": "FfiVec3",          "fields": ["x", "y", "z"]}
+  },
+
+  "ffi_handles": {
+    "GoudContextId":     {"type": "u64", "invalid": "u64::MAX"},
+    "GoudTextureHandle": {"type": "u64", "invalid": "u64::MAX"}
+  },
+
+  "ctypes_mappings": {
+    "*mut GoudContact":    "ctypes.POINTER(GoudContact)",
+    "*mut GoudRenderStats": "ctypes.POINTER(GoudRenderStats)",
+    "*const u64":          "ctypes.POINTER(ctypes.c_uint64)",
+    "*mut u64":            "ctypes.POINTER(ctypes.c_uint64)"
+  },
+
+  "tools": {
+    "GoudGame": {
+      "handle": "GoudContextId",
+      "constructor": {
+        "ffi": "goud_window_create",
+        "params": [
+          {"sdk": "width",  "ffi_name": "width",  "ffi_type": "u32"},
+          {"sdk": "height", "ffi_name": "height", "ffi_type": "u32"},
+          {"sdk": "title",  "ffi_name": "title",  "ffi_type": "*const c_char"}
+        ]
+      },
+      "destructor": "goud_window_destroy",
+
+      "lifecycle": {
+        "beginFrame": {
+          "sequence": [
+            {"ffi": "goud_window_poll_events", "capture_return": "delta_time"},
+            {"ffi": "goud_window_clear", "params_from_sdk": ["r", "g", "b", "a"]},
+            {"ffi": "goud_renderer_begin"},
+            {"ffi": "goud_renderer_enable_blending"}
+          ]
+        },
+        "endFrame": {
+          "sequence": [
+            {"ffi": "goud_renderer_end"},
+            {"ffi": "goud_window_swap_buffers"}
+          ]
+        }
+      },
+
+      "methods": {
+        "shouldClose": {
+          "ffi": "goud_window_should_close"
+        },
+        "close": {
+          "ffi": "goud_window_set_should_close",
+          "append_args": [true]
+        },
+        "destroy": {
+          "ffi": "goud_window_destroy"
+        },
+        "loadTexture": {
+          "ffi": "goud_texture_load",
+          "string_params": ["path"],
+          "return_cast": "u64"
+        },
+        "destroyTexture": {
+          "ffi": "goud_texture_destroy"
+        },
+        "drawSprite": {
+          "ffi": "goud_renderer_draw_sprite",
+          "param_order": ["texture", "x", "y", "width", "height", "rotation"],
+          "expand_params": {
+            "color": {"fields": ["r", "g", "b", "a"], "defaults": [1.0, 1.0, 1.0, 1.0]}
+          }
+        },
+        "drawQuad": {
+          "ffi": "goud_renderer_draw_quad",
+          "param_order": ["x", "y", "width", "height"],
+          "expand_params": {
+            "color": {"fields": ["r", "g", "b", "a"], "defaults": [1.0, 1.0, 1.0, 1.0]}
+          }
+        },
+        "isKeyPressed": {
+          "ffi": "goud_input_key_pressed",
+          "enum_params": {"key": "i32"}
+        },
+        "isKeyJustPressed": {
+          "ffi": "goud_input_key_just_pressed",
+          "enum_params": {"key": "i32"}
+        },
+        "isKeyJustReleased": {
+          "ffi": "goud_input_key_just_released",
+          "enum_params": {"key": "i32"}
+        },
+        "isMouseButtonPressed": {
+          "ffi": "goud_input_mouse_button_pressed",
+          "enum_params": {"button": "i32"}
+        },
+        "isMouseButtonJustPressed": {
+          "ffi": "goud_input_mouse_button_just_pressed",
+          "enum_params": {"button": "i32"}
+        },
+        "isMouseButtonJustReleased": {
+          "ffi": "goud_input_mouse_button_just_released",
+          "enum_params": {"button": "i32"}
+        },
+        "getMousePosition": {
+          "ffi": "goud_input_get_mouse_position",
+          "out_params": [
+            {"name": "x", "type": "f32"},
+            {"name": "y", "type": "f32"}
+          ],
+          "returns_struct": "Vec2"
+        },
+        "getMouseDelta": {
+          "ffi": "goud_input_get_mouse_delta",
+          "out_params": [
+            {"name": "dx", "type": "f32"},
+            {"name": "dy", "type": "f32"}
+          ],
+          "returns_struct": "Vec2"
+        },
+        "getScrollDelta": {
+          "ffi": "goud_input_get_scroll_delta",
+          "out_params": [
+            {"name": "dx", "type": "f32"},
+            {"name": "dy", "type": "f32"}
+          ],
+          "returns_struct": "Vec2"
+        },
+        "spawnEmpty": {
+          "ffi": "goud_entity_spawn_empty",
+          "returns_entity": true
+        },
+        "despawn": {
+          "ffi": "goud_entity_despawn",
+          "entity_params": ["entity"]
+        },
+        "entityCount": {
+          "ffi": "goud_entity_count"
+        },
+        "isAlive": {
+          "ffi": "goud_entity_is_alive",
+          "entity_params": ["entity"]
+        },
+        "addTransform2d": {
+          "ffi_strategy": "component_add",
+          "component_type": "Transform2D",
+          "entity_params": ["entity"],
+          "struct_params": ["transform"]
+        },
+        "getTransform2d": {
+          "ffi_strategy": "component_get",
+          "component_type": "Transform2D",
+          "entity_params": ["entity"]
+        },
+        "setTransform2d": {
+          "ffi_strategy": "component_set",
+          "component_type": "Transform2D",
+          "entity_params": ["entity"],
+          "struct_params": ["transform"]
+        },
+        "hasTransform2d": {
+          "ffi_strategy": "component_has",
+          "component_type": "Transform2D",
+          "entity_params": ["entity"]
+        },
+        "removeTransform2d": {
+          "ffi_strategy": "component_remove",
+          "component_type": "Transform2D",
+          "entity_params": ["entity"]
+        },
+        "addName": {
+          "ffi_strategy": "name_add",
+          "entity_params": ["entity"]
+        },
+        "getName": {
+          "ffi_strategy": "name_get",
+          "entity_params": ["entity"]
+        },
+        "hasName": {
+          "ffi_strategy": "name_has",
+          "entity_params": ["entity"]
+        },
+        "removeName": {
+          "ffi_strategy": "name_remove",
+          "entity_params": ["entity"]
+        },
+        "addSprite": {
+          "ffi_strategy": "component_add",
+          "component_type": "Sprite",
+          "entity_params": ["entity"],
+          "struct_params": ["sprite"]
+        },
+        "getSprite": {
+          "ffi_strategy": "component_get",
+          "component_type": "Sprite",
+          "entity_params": ["entity"]
+        },
+        "setSprite": {
+          "ffi_strategy": "component_set",
+          "component_type": "Sprite",
+          "entity_params": ["entity"],
+          "struct_params": ["sprite"]
+        },
+        "hasSprite": {
+          "ffi_strategy": "component_has",
+          "component_type": "Sprite",
+          "entity_params": ["entity"]
+        },
+        "removeSprite": {
+          "ffi_strategy": "component_remove",
+          "component_type": "Sprite",
+          "entity_params": ["entity"]
+        },
+        "spawnBatch": {
+          "ffi": "goud_entity_spawn_batch",
+          "batch_out": true
+        },
+        "despawnBatch": {
+          "ffi": "goud_entity_despawn_batch",
+          "batch_in": true
+        },
+        "createCube":            {"ffi": "goud_renderer3d_create_cube"},
+        "createPlane":           {"ffi": "goud_renderer3d_create_plane"},
+        "createSphere":          {"ffi": "goud_renderer3d_create_sphere"},
+        "createCylinder":        {"ffi": "goud_renderer3d_create_cylinder"},
+        "setObjectPosition":     {"ffi": "goud_renderer3d_set_object_position"},
+        "setObjectRotation":     {"ffi": "goud_renderer3d_set_object_rotation"},
+        "setObjectScale":        {"ffi": "goud_renderer3d_set_object_scale"},
+        "destroyObject":         {"ffi": "goud_renderer3d_destroy_object"},
+        "addLight":              {"ffi": "goud_renderer3d_add_light"},
+        "updateLight":           {"ffi": "goud_renderer3d_update_light"},
+        "removeLight":           {"ffi": "goud_renderer3d_remove_light"},
+        "setCameraPosition3D":   {"ffi": "goud_renderer3d_set_camera_position"},
+        "setCameraRotation3D":   {"ffi": "goud_renderer3d_set_camera_rotation"},
+        "configureGrid":         {"ffi": "goud_renderer3d_configure_grid"},
+        "setGridEnabled":        {"ffi": "goud_renderer3d_set_grid_enabled"},
+        "configureSkybox":       {"ffi": "goud_renderer3d_configure_skybox"},
+        "configureFog":          {"ffi": "goud_renderer3d_configure_fog"},
+        "setFogEnabled":         {"ffi": "goud_renderer3d_set_fog_enabled"},
+        "render3D":              {"ffi": "goud_renderer3d_render"},
+        "drawSpriteRect": {
+          "ffi": "goud_renderer_draw_sprite_rect",
+          "param_order": ["texture", "x", "y", "width", "height", "rotation", "srcX", "srcY", "srcW", "srcH"],
+          "expand_params": {
+            "color": {"fields": ["r", "g", "b", "a"], "defaults": [1.0, 1.0, 1.0, 1.0]}
+          }
+        },
+        "setViewport":        {"ffi": "goud_renderer_set_viewport"},
+        "enableDepthTest":    {"ffi": "goud_renderer_enable_depth_test"},
+        "disableDepthTest":   {"ffi": "goud_renderer_disable_depth_test"},
+        "clearDepth":         {"ffi": "goud_renderer_clear_depth"},
+        "disableBlending":    {"ffi": "goud_renderer_disable_blending"},
+        "getRenderStats": {
+          "ffi": "goud_renderer_get_stats",
+          "out_params": [
+            {"name": "stats", "type": "GoudRenderStats"}
+          ],
+          "returns_struct": "RenderStats"
+        },
+        "mapActionKey": {
+          "ffi": "goud_input_map_action_key",
+          "string_params": ["action"],
+          "enum_params": {"key": "i32"}
+        },
+        "isActionPressed": {
+          "ffi": "goud_input_action_pressed",
+          "string_params": ["action"]
+        },
+        "isActionJustPressed": {
+          "ffi": "goud_input_action_just_pressed",
+          "string_params": ["action"]
+        },
+        "isActionJustReleased": {
+          "ffi": "goud_input_action_just_released",
+          "string_params": ["action"]
+        },
+        "collisionAabbAabb": {
+          "ffi": "goud_collision_aabb_aabb",
+          "no_context": true,
+          "out_params": [{"name": "contact", "type": "GoudContact"}],
+          "returns_nullable_struct": "Contact"
+        },
+        "collisionCircleCircle": {
+          "ffi": "goud_collision_circle_circle",
+          "no_context": true,
+          "out_params": [{"name": "contact", "type": "GoudContact"}],
+          "returns_nullable_struct": "Contact"
+        },
+        "collisionCircleAabb": {
+          "ffi": "goud_collision_circle_aabb",
+          "no_context": true,
+          "out_params": [{"name": "contact", "type": "GoudContact"}],
+          "returns_nullable_struct": "Contact"
+        },
+        "pointInRect":       {"ffi": "goud_collision_point_in_rect",      "no_context": true},
+        "pointInCircle":     {"ffi": "goud_collision_point_in_circle",    "no_context": true},
+        "aabbOverlap":       {"ffi": "goud_collision_aabb_overlap",       "no_context": true},
+        "circleOverlap":     {"ffi": "goud_collision_circle_overlap",     "no_context": true},
+        "distance":          {"ffi": "goud_collision_distance",           "no_context": true},
+        "distanceSquared":   {"ffi": "goud_collision_distance_squared",   "no_context": true}
+      },
+
+      "properties": {
+        "deltaTime": {
+          "source": "cached",
+          "doc": "Set from goud_window_poll_events return value during beginFrame"
+        },
+        "fps": {
+          "source": "computed",
+          "expression": "1.0 / deltaTime"
+        },
+        "windowWidth": {
+          "ffi": "goud_window_get_size",
+          "out_index": 0,
+          "out_type": "u32"
+        },
+        "windowHeight": {
+          "ffi": "goud_window_get_size",
+          "out_index": 1,
+          "out_type": "u32"
+        }
+      }
+    },
+
+    "GoudContext": {
+      "handle": "GoudContextId",
+      "constructor": {
+        "ffi": "goud_context_create",
+        "params": []
+      },
+      "destructor": "goud_context_destroy",
+      "methods": {
+        "destroy":          {"ffi": "goud_context_destroy"},
+        "isValid":          {"ffi": "goud_context_is_valid"},
+        "spawnEmpty":       {"ffi": "goud_entity_spawn_empty", "returns_entity": true},
+        "spawnBatch":       {"ffi": "goud_entity_spawn_batch", "batch_out": true},
+        "despawn":          {"ffi": "goud_entity_despawn",     "entity_params": ["entity"]},
+        "despawnBatch":     {"ffi": "goud_entity_despawn_batch", "batch_in": true},
+        "isAlive":          {"ffi": "goud_entity_is_alive",    "entity_params": ["entity"]},
+        "entityCount":      {"ffi": "goud_entity_count"},
+        "addTransform2d":   {"ffi_strategy": "component_add",    "component_type": "Transform2D", "entity_params": ["entity"], "struct_params": ["transform"]},
+        "getTransform2d":   {"ffi_strategy": "component_get",    "component_type": "Transform2D", "entity_params": ["entity"]},
+        "setTransform2d":   {"ffi_strategy": "component_set",    "component_type": "Transform2D", "entity_params": ["entity"], "struct_params": ["transform"]},
+        "hasTransform2d":   {"ffi_strategy": "component_has",    "component_type": "Transform2D", "entity_params": ["entity"]},
+        "removeTransform2d":{"ffi_strategy": "component_remove", "component_type": "Transform2D", "entity_params": ["entity"]},
+        "addSprite":        {"ffi_strategy": "component_add",    "component_type": "Sprite", "entity_params": ["entity"], "struct_params": ["sprite"]},
+        "getSprite":        {"ffi_strategy": "component_get",    "component_type": "Sprite", "entity_params": ["entity"]},
+        "setSprite":        {"ffi_strategy": "component_set",    "component_type": "Sprite", "entity_params": ["entity"], "struct_params": ["sprite"]},
+        "hasSprite":        {"ffi_strategy": "component_has",    "component_type": "Sprite", "entity_params": ["entity"]},
+        "removeSprite":     {"ffi_strategy": "component_remove", "component_type": "Sprite", "entity_params": ["entity"]},
+        "addName":          {"ffi_strategy": "name_add",         "entity_params": ["entity"]},
+        "getName":          {"ffi_strategy": "name_get",         "entity_params": ["entity"]},
+        "hasName":          {"ffi_strategy": "name_has",         "entity_params": ["entity"]},
+        "removeName":       {"ffi_strategy": "name_remove",      "entity_params": ["entity"]}
+      }
+    }
+  },
+
+  "ffi_functions": {
+    "_comment": "Complete list of extern C functions used by the SDK. Generators use this to produce raw binding layers (P/Invoke, ctypes, etc.)",
+    "context": {
+      "goud_context_create":   {"params": [],                                                 "returns": "GoudContextId"},
+      "goud_context_destroy":  {"params": [{"name": "ctx", "type": "GoudContextId"}],         "returns": "bool"},
+      "goud_context_is_valid": {"params": [{"name": "ctx", "type": "GoudContextId"}],         "returns": "bool"}
+    },
+    "window": {
+      "goud_window_create":           {"params": [{"name": "width", "type": "u32"}, {"name": "height", "type": "u32"}, {"name": "title", "type": "*const c_char"}], "returns": "GoudContextId", "unsafe": true},
+      "goud_window_destroy":          {"params": [{"name": "ctx", "type": "GoudContextId"}],  "returns": "bool"},
+      "goud_window_should_close":     {"params": [{"name": "ctx", "type": "GoudContextId"}],  "returns": "bool"},
+      "goud_window_set_should_close": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "should_close", "type": "bool"}], "returns": "void"},
+      "goud_window_poll_events":      {"params": [{"name": "ctx", "type": "GoudContextId"}],  "returns": "f32"},
+      "goud_window_swap_buffers":     {"params": [{"name": "ctx", "type": "GoudContextId"}],  "returns": "void"},
+      "goud_window_clear":            {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "void"},
+      "goud_window_get_delta_time":   {"params": [{"name": "ctx", "type": "GoudContextId"}],  "returns": "f32"},
+      "goud_window_get_size":         {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "out_w", "type": "*mut u32"}, {"name": "out_h", "type": "*mut u32"}], "returns": "bool", "unsafe": true}
+    },
+    "renderer": {
+      "goud_renderer_begin":           {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "bool"},
+      "goud_renderer_end":             {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "bool"},
+      "goud_renderer_enable_blending": {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "void"},
+      "goud_renderer_draw_sprite":     {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "texture", "type": "u64"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}, {"name": "rotation", "type": "f32"}, {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "bool"},
+      "goud_renderer_draw_quad":       {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}, {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "bool"},
+      "goud_texture_load":             {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "path", "type": "*const c_char"}], "returns": "u64", "unsafe": true},
+      "goud_texture_destroy":          {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "texture", "type": "u64"}], "returns": "bool"},
+      "goud_renderer_draw_sprite_rect":{"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "texture", "type": "u64"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}, {"name": "rotation", "type": "f32"}, {"name": "src_x", "type": "f32"}, {"name": "src_y", "type": "f32"}, {"name": "src_w", "type": "f32"}, {"name": "src_h", "type": "f32"}, {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "bool"},
+      "goud_renderer_set_viewport":    {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "x", "type": "i32"}, {"name": "y", "type": "i32"}, {"name": "width", "type": "u32"}, {"name": "height", "type": "u32"}], "returns": "void"},
+      "goud_renderer_enable_depth_test": {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "void"},
+      "goud_renderer_disable_depth_test":{"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "void"},
+      "goud_renderer_clear_depth":       {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "void"},
+      "goud_renderer_disable_blending":  {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "void"},
+      "goud_renderer_get_stats":         {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "out_stats", "type": "*mut GoudRenderStats"}], "returns": "bool", "unsafe": true}
+    },
+    "renderer_3d": {
+      "goud_renderer3d_create_cube":      {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "texture_id", "type": "u32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}, {"name": "depth", "type": "f32"}], "returns": "u32"},
+      "goud_renderer3d_create_plane":     {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "texture_id", "type": "u32"}, {"name": "width", "type": "f32"}, {"name": "depth", "type": "f32"}], "returns": "u32"},
+      "goud_renderer3d_create_sphere":    {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "texture_id", "type": "u32"}, {"name": "diameter", "type": "f32"}, {"name": "segments", "type": "u32"}], "returns": "u32"},
+      "goud_renderer3d_create_cylinder":  {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "texture_id", "type": "u32"}, {"name": "radius", "type": "f32"}, {"name": "height", "type": "f32"}, {"name": "segments", "type": "u32"}], "returns": "u32"},
+      "goud_renderer3d_set_object_position": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "object_id", "type": "u32"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "z", "type": "f32"}], "returns": "bool"},
+      "goud_renderer3d_set_object_rotation": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "object_id", "type": "u32"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "z", "type": "f32"}], "returns": "bool"},
+      "goud_renderer3d_set_object_scale":    {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "object_id", "type": "u32"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "z", "type": "f32"}], "returns": "bool"},
+      "goud_renderer3d_destroy_object":      {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "object_id", "type": "u32"}], "returns": "bool"},
+      "goud_renderer3d_add_light":    {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "light_type", "type": "i32"}, {"name": "pos_x", "type": "f32"}, {"name": "pos_y", "type": "f32"}, {"name": "pos_z", "type": "f32"}, {"name": "dir_x", "type": "f32"}, {"name": "dir_y", "type": "f32"}, {"name": "dir_z", "type": "f32"}, {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "intensity", "type": "f32"}, {"name": "range", "type": "f32"}, {"name": "spot_angle", "type": "f32"}], "returns": "u32"},
+      "goud_renderer3d_update_light": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "light_id", "type": "u32"}, {"name": "light_type", "type": "i32"}, {"name": "pos_x", "type": "f32"}, {"name": "pos_y", "type": "f32"}, {"name": "pos_z", "type": "f32"}, {"name": "dir_x", "type": "f32"}, {"name": "dir_y", "type": "f32"}, {"name": "dir_z", "type": "f32"}, {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "intensity", "type": "f32"}, {"name": "range", "type": "f32"}, {"name": "spot_angle", "type": "f32"}], "returns": "bool"},
+      "goud_renderer3d_remove_light": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "light_id", "type": "u32"}], "returns": "bool"},
+      "goud_renderer3d_set_camera_position": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "z", "type": "f32"}], "returns": "bool"},
+      "goud_renderer3d_set_camera_rotation": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "pitch", "type": "f32"}, {"name": "yaw", "type": "f32"}, {"name": "roll", "type": "f32"}], "returns": "bool"},
+      "goud_renderer3d_configure_grid":    {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "enabled", "type": "bool"}, {"name": "size", "type": "f32"}, {"name": "divisions", "type": "u32"}], "returns": "bool"},
+      "goud_renderer3d_set_grid_enabled":  {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "enabled", "type": "bool"}], "returns": "bool"},
+      "goud_renderer3d_configure_skybox":  {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "enabled", "type": "bool"}, {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "bool"},
+      "goud_renderer3d_configure_fog":     {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "enabled", "type": "bool"}, {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "density", "type": "f32"}], "returns": "bool"},
+      "goud_renderer3d_set_fog_enabled":   {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "enabled", "type": "bool"}], "returns": "bool"},
+      "goud_renderer3d_render":            {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "bool"}
+    },
+    "input": {
+      "goud_input_key_pressed":               {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "key", "type": "i32"}],    "returns": "bool"},
+      "goud_input_key_just_pressed":          {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "key", "type": "i32"}],    "returns": "bool"},
+      "goud_input_key_just_released":         {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "key", "type": "i32"}],    "returns": "bool"},
+      "goud_input_mouse_button_pressed":      {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "button", "type": "i32"}], "returns": "bool"},
+      "goud_input_mouse_button_just_pressed": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "button", "type": "i32"}], "returns": "bool"},
+      "goud_input_mouse_button_just_released":{"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "button", "type": "i32"}], "returns": "bool"},
+      "goud_input_get_mouse_position":        {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "out_x", "type": "*mut f32"}, {"name": "out_y", "type": "*mut f32"}], "returns": "bool", "unsafe": true},
+      "goud_input_get_mouse_delta":           {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "out_dx", "type": "*mut f32"}, {"name": "out_dy", "type": "*mut f32"}], "returns": "bool", "unsafe": true},
+      "goud_input_get_scroll_delta":          {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "out_dx", "type": "*mut f32"}, {"name": "out_dy", "type": "*mut f32"}], "returns": "bool", "unsafe": true}
+    },
+    "input_actions": {
+      "goud_input_map_action_key":    {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "action_name", "type": "*const c_char"}, {"name": "key", "type": "i32"}], "returns": "bool", "unsafe": true},
+      "goud_input_action_pressed":    {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "action_name", "type": "*const c_char"}], "returns": "bool", "unsafe": true},
+      "goud_input_action_just_pressed":  {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "action_name", "type": "*const c_char"}], "returns": "bool", "unsafe": true},
+      "goud_input_action_just_released": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "action_name", "type": "*const c_char"}], "returns": "bool", "unsafe": true}
+    },
+    "entity": {
+      "goud_entity_spawn_empty":  {"params": [{"name": "ctx", "type": "GoudContextId"}],                                          "returns": "u64"},
+      "goud_entity_despawn":      {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_id", "type": "u64"}],   "returns": "GoudResult"},
+      "goud_entity_is_alive":     {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_id", "type": "u64"}],   "returns": "bool"},
+      "goud_entity_count":        {"params": [{"name": "ctx", "type": "GoudContextId"}],                                          "returns": "u32"},
+      "goud_entity_spawn_batch":  {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "count", "type": "u32"}, {"name": "out_entities", "type": "*mut u64"}], "returns": "u32", "unsafe": true},
+      "goud_entity_despawn_batch":{"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_ids", "type": "*const u64"}, {"name": "count", "type": "u32"}], "returns": "u32", "unsafe": true}
+    },
+    "collision": {
+      "goud_collision_aabb_aabb":        {"params": [{"name": "center_a_x", "type": "f32"}, {"name": "center_a_y", "type": "f32"}, {"name": "half_w_a", "type": "f32"}, {"name": "half_h_a", "type": "f32"}, {"name": "center_b_x", "type": "f32"}, {"name": "center_b_y", "type": "f32"}, {"name": "half_w_b", "type": "f32"}, {"name": "half_h_b", "type": "f32"}, {"name": "out_contact", "type": "*mut GoudContact"}], "returns": "bool", "unsafe": true},
+      "goud_collision_circle_circle":    {"params": [{"name": "center_a_x", "type": "f32"}, {"name": "center_a_y", "type": "f32"}, {"name": "radius_a", "type": "f32"}, {"name": "center_b_x", "type": "f32"}, {"name": "center_b_y", "type": "f32"}, {"name": "radius_b", "type": "f32"}, {"name": "out_contact", "type": "*mut GoudContact"}], "returns": "bool", "unsafe": true},
+      "goud_collision_circle_aabb":      {"params": [{"name": "circle_x", "type": "f32"}, {"name": "circle_y", "type": "f32"}, {"name": "circle_radius", "type": "f32"}, {"name": "box_x", "type": "f32"}, {"name": "box_y", "type": "f32"}, {"name": "box_hw", "type": "f32"}, {"name": "box_hh", "type": "f32"}, {"name": "out_contact", "type": "*mut GoudContact"}], "returns": "bool", "unsafe": true},
+      "goud_collision_point_in_rect":    {"params": [{"name": "point_x", "type": "f32"}, {"name": "point_y", "type": "f32"}, {"name": "rect_x", "type": "f32"}, {"name": "rect_y", "type": "f32"}, {"name": "rect_w", "type": "f32"}, {"name": "rect_h", "type": "f32"}], "returns": "bool"},
+      "goud_collision_point_in_circle":  {"params": [{"name": "point_x", "type": "f32"}, {"name": "point_y", "type": "f32"}, {"name": "circle_x", "type": "f32"}, {"name": "circle_y", "type": "f32"}, {"name": "circle_radius", "type": "f32"}], "returns": "bool"},
+      "goud_collision_aabb_overlap":     {"params": [{"name": "min_a_x", "type": "f32"}, {"name": "min_a_y", "type": "f32"}, {"name": "max_a_x", "type": "f32"}, {"name": "max_a_y", "type": "f32"}, {"name": "min_b_x", "type": "f32"}, {"name": "min_b_y", "type": "f32"}, {"name": "max_b_x", "type": "f32"}, {"name": "max_b_y", "type": "f32"}], "returns": "bool"},
+      "goud_collision_circle_overlap":   {"params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "r1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}, {"name": "r2", "type": "f32"}], "returns": "bool"},
+      "goud_collision_distance":         {"params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}], "returns": "f32"},
+      "goud_collision_distance_squared": {"params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}], "returns": "f32"}
+    }
+  }
+}

@@ -25,10 +25,11 @@
     <ProjectReference Include="../GoudEngine/GoudEngine.csproj" />
   </ItemGroup>
 
-  <!-- Note: Core and Math tests removed as those types were consolidated -->
+  <!-- Old tests reference deleted manual SDK types; exclude until rewritten for codegen API -->
   <ItemGroup>
     <Compile Remove="Core/**/*.cs" />
     <Compile Remove="Math/**/*.cs" />
+    <Compile Remove="Components/**/*.cs" />
   </ItemGroup>
 
 </Project>

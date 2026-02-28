@@ -1,9 +1,26 @@
 use crate::components::{SpriteData, Transform2DData};
 use crate::entity::Entity;
 use goud_engine::ecs::components::{Name, Sprite, Transform2D};
+use goud_engine::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
+use goud_engine::ffi::input::{
+    goud_input_get_mouse_delta, goud_input_get_mouse_position, goud_input_get_scroll_delta,
+    goud_input_key_just_pressed, goud_input_key_just_released, goud_input_key_pressed,
+    goud_input_mouse_button_just_pressed, goud_input_mouse_button_just_released,
+    goud_input_mouse_button_pressed,
+};
+use goud_engine::ffi::renderer::{
+    goud_renderer_begin, goud_renderer_draw_quad, goud_renderer_draw_sprite,
+    goud_renderer_enable_blending, goud_renderer_end, goud_texture_destroy, goud_texture_load,
+};
+use goud_engine::ffi::window::{
+    goud_window_clear, goud_window_create, goud_window_destroy, goud_window_get_delta_time,
+    goud_window_poll_events, goud_window_set_should_close, goud_window_should_close,
+    goud_window_swap_buffers,
+};
 use goud_engine::sdk::{GameConfig as EngineGameConfig, GoudGame as EngineGoudGame};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
+use std::ffi::CString;
 
 // =============================================================================
 // GameConfig
@@ -45,6 +62,7 @@ impl From<&GameConfig> for EngineGameConfig {
 #[napi]
 pub struct GoudGame {
     inner: EngineGoudGame,
+    context_id: GoudContextId,
     last_delta_time: f32,
 }
 
@@ -56,16 +74,212 @@ impl GoudGame {
             Some(cfg) => EngineGameConfig::from(cfg),
             None => EngineGameConfig::default(),
         };
+
+        let width = config.as_ref().and_then(|c| c.width).unwrap_or(800);
+        let height = config.as_ref().and_then(|c| c.height).unwrap_or(600);
+        let title_str = config
+            .as_ref()
+            .and_then(|c| c.title.clone())
+            .unwrap_or_else(|| "GoudEngine".to_string());
+
+        let c_title = CString::new(title_str)
+            .map_err(|e| Error::from_reason(format!("Invalid title string: {}", e)))?;
+
+        // SAFETY: CString guarantees a valid null-terminated pointer.
+        let context_id = unsafe { goud_window_create(width, height, c_title.as_ptr()) };
+        if context_id == GOUD_INVALID_CONTEXT_ID {
+            return Err(Error::from_reason("Failed to create GLFW window"));
+        }
+
         let game =
             EngineGoudGame::new(engine_config).map_err(|e| Error::from_reason(format!("{}", e)))?;
+
         Ok(Self {
             inner: game,
+            context_id,
             last_delta_time: 0.0,
         })
     }
 
     // =========================================================================
-    // Entity Operations
+    // Lifecycle
+    // =========================================================================
+
+    #[napi]
+    pub fn should_close(&self) -> bool {
+        goud_window_should_close(self.context_id)
+    }
+
+    #[napi]
+    pub fn close(&self) {
+        goud_window_set_should_close(self.context_id, true);
+    }
+
+    #[napi]
+    pub fn destroy(&self) -> bool {
+        goud_window_destroy(self.context_id)
+    }
+
+    // =========================================================================
+    // Frame Management
+    // =========================================================================
+
+    #[napi]
+    pub fn begin_frame(&mut self, r: Option<f64>, g: Option<f64>, b: Option<f64>, a: Option<f64>) {
+        let dt = goud_window_poll_events(self.context_id);
+        self.last_delta_time = dt;
+        goud_window_clear(
+            self.context_id,
+            r.unwrap_or(0.0) as f32,
+            g.unwrap_or(0.0) as f32,
+            b.unwrap_or(0.0) as f32,
+            a.unwrap_or(1.0) as f32,
+        );
+        goud_renderer_begin(self.context_id);
+        goud_renderer_enable_blending(self.context_id);
+    }
+
+    #[napi]
+    pub fn end_frame(&self) {
+        goud_renderer_end(self.context_id);
+        goud_window_swap_buffers(self.context_id);
+    }
+
+    // =========================================================================
+    // Rendering
+    // =========================================================================
+
+    #[napi]
+    pub fn load_texture(&self, path: String) -> Result<f64> {
+        let c_path =
+            CString::new(path).map_err(|e| Error::from_reason(format!("Invalid path: {}", e)))?;
+        // SAFETY: CString guarantees a valid null-terminated pointer.
+        let handle = unsafe { goud_texture_load(self.context_id, c_path.as_ptr()) };
+        Ok(handle as f64)
+    }
+
+    #[napi]
+    pub fn destroy_texture(&self, handle: f64) -> bool {
+        goud_texture_destroy(self.context_id, handle as u64)
+    }
+
+    #[napi]
+    pub fn draw_sprite(
+        &self,
+        texture: f64,
+        x: f64,
+        y: f64,
+        w: f64,
+        h: f64,
+        rotation: Option<f64>,
+        r: Option<f64>,
+        g: Option<f64>,
+        b: Option<f64>,
+        a: Option<f64>,
+    ) -> bool {
+        goud_renderer_draw_sprite(
+            self.context_id,
+            texture as u64,
+            x as f32,
+            y as f32,
+            w as f32,
+            h as f32,
+            rotation.unwrap_or(0.0) as f32,
+            r.unwrap_or(1.0) as f32,
+            g.unwrap_or(1.0) as f32,
+            b.unwrap_or(1.0) as f32,
+            a.unwrap_or(1.0) as f32,
+        )
+    }
+
+    #[napi]
+    pub fn draw_quad(
+        &self,
+        x: f64,
+        y: f64,
+        w: f64,
+        h: f64,
+        r: Option<f64>,
+        g: Option<f64>,
+        b: Option<f64>,
+        a: Option<f64>,
+    ) -> bool {
+        goud_renderer_draw_quad(
+            self.context_id,
+            x as f32,
+            y as f32,
+            w as f32,
+            h as f32,
+            r.unwrap_or(1.0) as f32,
+            g.unwrap_or(1.0) as f32,
+            b.unwrap_or(1.0) as f32,
+            a.unwrap_or(1.0) as f32,
+        )
+    }
+
+    // =========================================================================
+    // Input
+    // =========================================================================
+
+    #[napi]
+    pub fn is_key_pressed(&self, key: i32) -> bool {
+        goud_input_key_pressed(self.context_id, key)
+    }
+
+    #[napi]
+    pub fn is_key_just_pressed(&self, key: i32) -> bool {
+        goud_input_key_just_pressed(self.context_id, key)
+    }
+
+    #[napi]
+    pub fn is_key_just_released(&self, key: i32) -> bool {
+        goud_input_key_just_released(self.context_id, key)
+    }
+
+    #[napi]
+    pub fn is_mouse_button_pressed(&self, button: i32) -> bool {
+        goud_input_mouse_button_pressed(self.context_id, button)
+    }
+
+    #[napi]
+    pub fn is_mouse_button_just_pressed(&self, button: i32) -> bool {
+        goud_input_mouse_button_just_pressed(self.context_id, button)
+    }
+
+    #[napi]
+    pub fn is_mouse_button_just_released(&self, button: i32) -> bool {
+        goud_input_mouse_button_just_released(self.context_id, button)
+    }
+
+    #[napi]
+    pub fn get_mouse_position(&self) -> Vec<f64> {
+        let mut x: f32 = 0.0;
+        let mut y: f32 = 0.0;
+        // SAFETY: Passing valid mutable references as out-pointers.
+        unsafe { goud_input_get_mouse_position(self.context_id, &mut x, &mut y) };
+        vec![x as f64, y as f64]
+    }
+
+    #[napi]
+    pub fn get_mouse_delta(&self) -> Vec<f64> {
+        let mut dx: f32 = 0.0;
+        let mut dy: f32 = 0.0;
+        // SAFETY: Passing valid mutable references as out-pointers.
+        unsafe { goud_input_get_mouse_delta(self.context_id, &mut dx, &mut dy) };
+        vec![dx as f64, dy as f64]
+    }
+
+    #[napi]
+    pub fn get_scroll_delta(&self) -> Vec<f64> {
+        let mut dx: f32 = 0.0;
+        let mut dy: f32 = 0.0;
+        // SAFETY: Passing valid mutable references as out-pointers.
+        unsafe { goud_input_get_scroll_delta(self.context_id, &mut dx, &mut dy) };
+        vec![dx as f64, dy as f64]
+    }
+
+    // =========================================================================
+    // Entity Operations (ECS)
     // =========================================================================
 
     #[napi]
@@ -189,7 +403,7 @@ impl GoudGame {
     }
 
     // =========================================================================
-    // Game Loop
+    // Legacy Game Loop (ECS-only)
     // =========================================================================
 
     #[napi]
@@ -215,7 +429,11 @@ impl GoudGame {
 
     #[napi(getter)]
     pub fn fps(&self) -> f64 {
-        self.inner.fps() as f64
+        if self.last_delta_time > 0.0 {
+            (1.0 / self.last_delta_time) as f64
+        } else {
+            0.0
+        }
     }
 
     #[napi(getter)]
@@ -245,5 +463,16 @@ impl GoudGame {
     #[napi(getter)]
     pub fn window_height(&self) -> u32 {
         self.inner.window_size().1
+    }
+
+    #[napi(getter)]
+    pub fn context_valid(&self) -> bool {
+        self.context_id != GOUD_INVALID_CONTEXT_ID
+    }
+
+    /// Returns the raw FFI delta time from the last poll_events call.
+    #[napi(getter)]
+    pub fn ffi_delta_time(&self) -> f64 {
+        goud_window_get_delta_time(self.context_id) as f64
     }
 }
