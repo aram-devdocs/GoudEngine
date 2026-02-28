@@ -9,6 +9,8 @@
  * import this module and pass their platform's GoudGame.
  */
 
+import type { IGoudGame, IColor } from '@goudengine/sdk';
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -40,26 +42,44 @@ const IDLE = 0;
 const PLAY = 1;
 const DEAD = 2;
 
+type GameState = typeof IDLE | typeof PLAY | typeof DEAD;
+
+interface Pipe {
+  x: number;
+  gapTop: number;
+  scored: boolean;
+}
+
 // Colors (IColor-compatible objects)
-const SKY        = { r: 0.31, g: 0.75, b: 0.93, a: 1 };
-const BIRD_COLOR = { r: 0.97, g: 0.86, b: 0.43, a: 1 };
-const BIRD_EYE   = { r: 1, g: 1, b: 1, a: 1 };
-const BIRD_PUPIL = { r: 0.1, g: 0.1, b: 0.1, a: 1 };
-const BIRD_BEAK  = { r: 0.91, g: 0.30, b: 0.24, a: 1 };
-const PIPE_BODY  = { r: 0.42, g: 0.75, b: 0.19, a: 1 };
-const PIPE_CAP   = { r: 0.35, g: 0.62, b: 0.12, a: 1 };
-const GROUND_TOP = { r: 0.13, g: 0.55, b: 0.13, a: 1 };
-const GROUND_COL = { r: 0.87, g: 0.72, b: 0.53, a: 1 };
-const OVERLAY    = { r: 0, g: 0, b: 0, a: 0.3 };
-const WHITE_DIM  = { r: 1, g: 1, b: 1, a: 0.7 };
-const RED_DIM    = { r: 1, g: 0.3, b: 0.3, a: 0.8 };
-const SCORE_DOT  = { r: 1, g: 1, b: 1, a: 0.9 };
+const SKY: IColor        = { r: 0.31, g: 0.75, b: 0.93, a: 1 };
+const BIRD_COLOR: IColor = { r: 0.97, g: 0.86, b: 0.43, a: 1 };
+const BIRD_EYE: IColor   = { r: 1, g: 1, b: 1, a: 1 };
+const BIRD_PUPIL: IColor = { r: 0.1, g: 0.1, b: 0.1, a: 1 };
+const BIRD_BEAK: IColor  = { r: 0.91, g: 0.30, b: 0.24, a: 1 };
+const PIPE_BODY: IColor  = { r: 0.42, g: 0.75, b: 0.19, a: 1 };
+const PIPE_CAP: IColor   = { r: 0.35, g: 0.62, b: 0.12, a: 1 };
+const GROUND_TOP: IColor = { r: 0.13, g: 0.55, b: 0.13, a: 1 };
+const GROUND_COL: IColor = { r: 0.87, g: 0.72, b: 0.53, a: 1 };
+const OVERLAY: IColor    = { r: 0, g: 0, b: 0, a: 0.3 };
+const WHITE_DIM: IColor  = { r: 1, g: 1, b: 1, a: 0.7 };
+const RED_DIM: IColor    = { r: 1, g: 0.3, b: 0.3, a: 0.8 };
+const SCORE_DOT: IColor  = { r: 1, g: 1, b: 1, a: 0.9 };
 
 // ---------------------------------------------------------------------------
 // FlappyBirdGame
 // ---------------------------------------------------------------------------
 
 export class FlappyBirdGame {
+  birdY: number;
+  velocity: number;
+  rotation: number;
+  state: GameState;
+  score: number;
+  best: number;
+  pipes: Pipe[];
+  pipeTimer: number;
+  bobTimer: number;
+
   constructor() {
     this.birdY     = PLAY_H / 2;
     this.velocity  = 0;
@@ -72,22 +92,14 @@ export class FlappyBirdGame {
     this.bobTimer  = 0;
   }
 
-  /** Load textures or other assets. Currently a no-op (quad-only rendering). */
-  async init(_game) {}
+  async init(_game: IGoudGame): Promise<void> {}
 
-  /**
-   * Per-frame update: handle input, advance physics, draw everything.
-   * @param {IGoudGame} game  The engine instance (rendering + input).
-   * @param {number}    dt    Seconds since last frame.
-   */
-  update(game, dt) {
+  update(game: IGoudGame, dt: number): void {
     dt = Math.min(dt, 0.05);
 
     const jump =
       game.isKeyJustPressed(KEY_SPACE) ||
       game.isMouseButtonJustPressed(0);
-
-    // ---- State machine ----
 
     if (this.state === IDLE) {
       this.bobTimer += dt;
@@ -108,9 +120,7 @@ export class FlappyBirdGame {
     this._draw(game);
   }
 
-  // -- internal: play state -------------------------------------------------
-
-  _updatePlay(dt, jump) {
+  private _updatePlay(dt: number, jump: boolean): void {
     if (jump) this.velocity = JUMP_VEL;
 
     this.velocity = Math.min(this.velocity + GRAVITY * dt, MAX_VEL);
@@ -155,9 +165,7 @@ export class FlappyBirdGame {
     }
   }
 
-  // -- internal: dead state -------------------------------------------------
-
-  _updateDead(dt, jump) {
+  private _updateDead(dt: number, jump: boolean): void {
     if (this.birdY + BIRD_SIZE / 2 < PLAY_H) {
       this.velocity = Math.min(this.velocity + GRAVITY * dt, MAX_VEL);
       this.birdY += this.velocity * dt;
@@ -166,13 +174,9 @@ export class FlappyBirdGame {
     if (jump) this._restart();
   }
 
-  // -- internal: drawing ----------------------------------------------------
-
-  _draw(game) {
-    // Sky
+  private _draw(game: IGoudGame): void {
     game.drawQuad(0, 0, SCREEN_W, PLAY_H, SKY);
 
-    // Pipes
     for (const p of this.pipes) {
       const capX = p.x - 3;
       game.drawQuad(p.x, 0, PIPE_W, Math.max(0, p.gapTop - PIPE_CAP_H), PIPE_BODY);
@@ -182,27 +186,21 @@ export class FlappyBirdGame {
       game.drawQuad(p.x, botY + PIPE_CAP_H, PIPE_W, PLAY_H - botY - PIPE_CAP_H, PIPE_BODY);
     }
 
-    // Bird body
     const bx = BIRD_X - BIRD_SIZE / 2;
     const by = this.birdY - BIRD_SIZE / 2;
     game.drawQuad(bx, by, BIRD_SIZE, BIRD_SIZE, BIRD_COLOR);
-    // Eye
     game.drawQuad(bx + 14, by + 4, 6, 6, BIRD_EYE);
     game.drawQuad(bx + 16, by + 5, 3, 4, BIRD_PUPIL);
-    // Beak
     game.drawQuad(bx + BIRD_SIZE - 2, by + 10, 8, 6, BIRD_BEAK);
 
-    // Ground
     game.drawQuad(0, PLAY_H, SCREEN_W, 4, GROUND_TOP);
     game.drawQuad(0, PLAY_H + 4, SCREEN_W, GROUND_H - 4, GROUND_COL);
 
-    // Score dots (one white dot per point, up to 30)
     const dots = Math.min(this.score, 30);
     for (let i = 0; i < dots; i++) {
       game.drawQuad(8 + i * 9, 8, 7, 7, SCORE_DOT);
     }
 
-    // State overlays
     if (this.state === IDLE) {
       game.drawQuad(0, 0, SCREEN_W, PLAY_H, OVERLAY);
       game.drawQuad(SCREEN_W / 2 - 50, PLAY_H / 2 - 6, 100, 12, WHITE_DIM);
@@ -213,21 +211,19 @@ export class FlappyBirdGame {
     }
   }
 
-  // -- internal helpers -----------------------------------------------------
-
-  _spawnPipe() {
+  private _spawnPipe(): void {
     const min = PIPE_MIN_Y;
     const max = PLAY_H - PIPE_GAP - PIPE_MIN_Y;
     const gapTop = min + Math.random() * (max - min);
     this.pipes.push({ x: SCREEN_W, gapTop, scored: false });
   }
 
-  _die() {
+  private _die(): void {
     this.state = DEAD;
     if (this.score > this.best) this.best = this.score;
   }
 
-  _restart() {
+  private _restart(): void {
     this.pipes     = [];
     this.velocity  = JUMP_VEL;
     this.rotation  = 0;
@@ -239,6 +235,6 @@ export class FlappyBirdGame {
   }
 }
 
-function _aabb(ax, ay, aw, ah, bx, by, bw, bh) {
+function _aabb(ax: number, ay: number, aw: number, ah: number, bx: number, by: number, bw: number, bh: number): boolean {
   return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
 }

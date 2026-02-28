@@ -65,7 +65,16 @@ jobs:
     
     - name: Run clippy
       if: matrix.rust == 'stable'
-      run: cargo clippy --workspace --exclude goud-engine-node --all-targets --all-features -- -D warnings
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          # wgpu-backend/web features target wasm32 only; the D3D12 backend
+          # has an upstream windows-crate version conflict (gpu-allocator 0.28
+          # uses windows 0.54, wgpu-hal uses windows 0.62)
+          cargo clippy --all-targets --features native -- -D warnings
+        else
+          cargo clippy --all-targets --all-features -- -D warnings
+        fi
+      shell: bash
     
     - name: Build
       run: cargo build --verbose
@@ -101,7 +110,7 @@ jobs:
     - name: Generate coverage
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
       run: |
-        cargo tarpaulin --out xml --all-features --workspace --exclude goud-engine-node --timeout 300 --exclude-files "*/build.rs" --exclude-files "*/tests/*" --exclude-files "*/examples/*"
+        cargo tarpaulin --out xml --all-features -p goud_engine --timeout 300 --exclude-files "*/build.rs" --exclude-files "*/tests/*" --exclude-files "*/examples/*"
     
     - name: Upload coverage to Codecov
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
@@ -439,14 +448,14 @@ jobs:
       working-directory: sdks/typescript
       run: npm ci
 
-    - name: Build native addon
-      working-directory: sdks/typescript
-      run: npm run build:native
-
-    - name: Generate TypeScript SDK
+    - name: Generate TypeScript SDK (must run before native build)
       run: |
         python3 codegen/gen_ts_node.py
         python3 codegen/gen_ts_web.py
+
+    - name: Build native addon
+      working-directory: sdks/typescript
+      run: npm run build:native
 
     - name: Build TypeScript (Node)
       working-directory: sdks/typescript

@@ -310,7 +310,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { transform2DDefault, transform2DFromPosition, transform2DFromScale, transform2DFromRotation, spriteDefault, vec2, vec2Zero, vec2One, Entity, GoudGame, colorWhite, colorBlack, colorRed, colorGreen, colorBlue, colorYellow, colorTransparent, colorRgba, colorRgb, colorFromHex } = nativeBinding
+const { transform2DDefault, transform2DFromPosition, transform2DFromScale, transform2DFromRotation, spriteDefault, vec2, vec2Zero, vec2One, Entity, GoudGame, colorWhite, colorBlack, colorRed, colorGreen, colorBlue, colorYellow, colorCyan, colorMagenta, colorTransparent, colorRgba, colorRgb, colorFromHex } = nativeBinding
 
 module.exports.transform2DDefault = transform2DDefault
 module.exports.transform2DFromPosition = transform2DFromPosition
@@ -328,6 +328,8 @@ module.exports.colorRed = colorRed
 module.exports.colorGreen = colorGreen
 module.exports.colorBlue = colorBlue
 module.exports.colorYellow = colorYellow
+module.exports.colorCyan = colorCyan
+module.exports.colorMagenta = colorMagenta
 module.exports.colorTransparent = colorTransparent
 module.exports.colorRgba = colorRgba
 module.exports.colorRgb = colorRgb

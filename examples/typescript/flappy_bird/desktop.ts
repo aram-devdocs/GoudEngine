@@ -2,7 +2,7 @@
  * Desktop Flappy Bird — Node.js + GoudEngine napi-rs SDK.
  *
  * Uses the real engine: GLFW window, OpenGL rendering, native input.
- * The game logic in game.mjs calls game.drawQuad() and
+ * The game logic in game.ts calls game.drawQuad() and
  * game.isKeyJustPressed() directly — no terminal hacks, no adapter.
  *
  * Run:
@@ -14,13 +14,13 @@
  */
 
 import { GoudGame } from '@goudengine/sdk';
-import { FlappyBirdGame, SCREEN_W, SCREEN_H } from './game.mjs';
+import { FlappyBirdGame, SCREEN_W, SCREEN_H } from './game.js';
 
 // ---------------------------------------------------------------------------
 // Create engine + game
 // ---------------------------------------------------------------------------
 
-const game = new GoudGame({
+const game: InstanceType<typeof GoudGame> = new GoudGame({
   width: SCREEN_W,
   height: SCREEN_H,
   title: 'Flappy Goud',

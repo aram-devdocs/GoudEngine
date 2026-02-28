@@ -68,6 +68,8 @@ export declare function colorRed(): Color
 export declare function colorGreen(): Color
 export declare function colorBlue(): Color
 export declare function colorYellow(): Color
+export declare function colorCyan(): Color
+export declare function colorMagenta(): Color
 export declare function colorTransparent(): Color
 export declare function colorRgba(r: number, g: number, b: number, a: number): Color
 export declare function colorRgb(r: number, g: number, b: number): Color
