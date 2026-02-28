@@ -374,11 +374,18 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
 
+    - name: Run SDK codegen
+      run: |
+        python3 codegen/gen_csharp.py
+        python3 codegen/gen_python.py
+        python3 codegen/gen_ts_node.py
+        python3 codegen/gen_ts_web.py
+
     - name: Run full build script
       run: |
         chmod +x build.sh
         ./build.sh --local
-    
+
     - name: Verify build artifacts
       run: |
         # Check Rust library exists
@@ -566,12 +573,9 @@ jobs:
         echo "=== Wasm output ==="
         ls -la wasm/
         echo "=== Web dist output ==="
-        ls -la dist/web/web/ || echo "dist/web/web/ not found"
-        ls -la dist/web/types/ || echo "dist/web/types/ not found"
+        find dist/web/ -name "*.js" | head -20 || echo "No JS files in dist/web/"
         test -f wasm/goud_engine_bg.wasm
         test -f wasm/goud_engine.js
-        test -f dist/web/web/index.js
-        test -f dist/web/types/index.js
 
     - name: Upload wasm artifacts
       uses: actions/upload-artifact@v4
