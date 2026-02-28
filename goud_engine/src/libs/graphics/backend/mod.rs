@@ -27,6 +27,8 @@ use std::fmt::Debug;
 #[cfg(feature = "native")]
 pub mod opengl;
 pub mod types;
+#[cfg(feature = "wgpu-backend")]
+pub mod wgpu_backend;
 
 // Re-export for convenience
 #[allow(unused_imports)]

@@ -32,7 +32,10 @@
 
 #[cfg(feature = "native")]
 pub mod glfw_platform;
+#[cfg(all(feature = "wgpu-backend", feature = "native"))]
+pub mod winit_platform;
 
+#[cfg(feature = "native")]
 use crate::ecs::InputManager;
 
 /// Configuration for creating a platform window.
@@ -82,6 +85,7 @@ impl Default for WindowConfig {
 ///
 /// Most windowing APIs require main-thread access. Implementations are NOT
 /// required to be `Send` or `Sync`.
+#[cfg(feature = "native")]
 pub trait PlatformBackend {
     /// Returns `true` if the window has been requested to close.
     fn should_close(&self) -> bool;

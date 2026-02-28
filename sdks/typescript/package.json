@@ -1,22 +1,38 @@
 {
   "name": "@goudengine/sdk",
   "version": "0.0.1",
-  "description": "TypeScript SDK for GoudEngine — Node.js desktop via napi-rs, web via wasm (Phase 4)",
+  "description": "TypeScript SDK for GoudEngine — Node.js desktop via napi-rs, web via wasm-bindgen",
   "main": "index.js",
   "types": "index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
       "node": {
+        "types": "./index.d.ts",
         "import": "./index.js",
-        "require": "./index.js",
-        "types": "./index.d.ts"
+        "require": "./index.js"
       },
-      "browser": "./dist/web/index.js",
-      "default": "./index.js"
+      "browser": {
+        "types": "./dist/web/web/index.d.ts",
+        "import": "./dist/web/web/index.js"
+      },
+      "default": {
+        "types": "./index.d.ts",
+        "default": "./index.js"
+      }
+    },
+    "./web": {
+      "types": "./dist/web/web/index.d.ts",
+      "import": "./dist/web/web/index.js"
+    },
+    "./node": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "require": "./index.js"
     },
     "./types": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/types/index.js",
+      "types": "./dist/web/types/index.d.ts",
+      "import": "./dist/web/types/index.js",
       "require": "./dist/types/index.js"
     }
   },
@@ -24,18 +40,50 @@
     "build:native": "napi build --cargo-cwd native --platform --release",
     "build:native:debug": "napi build --cargo-cwd native --platform",
     "build:ts": "tsc",
+    "build:ts:web": "tsc -p tsconfig.web.json",
+    "build:wasm": "wasm-pack build ../../goud_engine --target web --out-dir ../sdks/typescript/wasm --features web --no-default-features",
+    "build:wasm:opt": "wasm-opt -Oz --enable-bulk-memory -o wasm/goud_engine_bg.wasm wasm/goud_engine_bg.wasm 2>/dev/null || echo 'wasm-opt not found — skipping optimization'",
+    "build:web": "npm run build:wasm && npm run build:wasm:opt && npm run build:ts:web",
     "build": "npm run build:native && npm run build:ts",
-    "clean": "rm -rf dist *.node",
-    "test": "node --test test/*.test.mjs"
+    "build:all": "npm run build && npm run build:web",
+    "clean": "rm -rf dist wasm *.node",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.web.json --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "prepublishOnly": "npm run clean && npm run build:all",
+    "size": "node -e \"const fs=require('fs');try{const s=fs.statSync('wasm/goud_engine_bg.wasm');console.log((s.size/1024).toFixed(1)+'KB')}catch{console.log('No wasm build found')}\""
   },
   "napi": {
     "name": "goud-engine-node",
     "triples": {
-      "defaults": true
+      "defaults": true,
+      "additional": [
+        "aarch64-apple-darwin",
+        "aarch64-unknown-linux-gnu",
+        "aarch64-unknown-linux-musl"
+      ]
     }
   },
-  "keywords": ["game-engine", "goudengine", "ecs", "napi-rs", "2d", "3d"],
+  "keywords": [
+    "game-engine",
+    "goudengine",
+    "ecs",
+    "napi-rs",
+    "wasm",
+    "webgpu",
+    "webassembly",
+    "2d",
+    "3d"
+  ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/goudengine/GoudEngine.git",
+    "directory": "sdks/typescript"
+  },
+  "homepage": "https://github.com/goudengine/GoudEngine#readme",
+  "bugs": {
+    "url": "https://github.com/goudengine/GoudEngine/issues"
+  },
   "devDependencies": {
     "@napi-rs/cli": "^2.18.0",
     "typescript": "^5.0.0",
@@ -46,8 +94,14 @@
   },
   "files": [
     "dist",
+    "wasm/*.js",
+    "wasm/*.wasm",
+    "wasm/*.d.ts",
     "index.js",
     "index.d.ts",
     "*.node"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

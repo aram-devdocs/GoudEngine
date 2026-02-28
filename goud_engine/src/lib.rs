@@ -43,6 +43,7 @@
 pub mod assets;
 pub mod core;
 pub mod ecs;
+#[cfg(feature = "native")]
 pub mod ffi;
 /// Low-level libraries for graphics, platform, and other systems.
 pub mod libs;
@@ -65,3 +66,9 @@ pub mod libs;
 ///     .build();
 /// ```
 pub mod sdk;
+/// WebAssembly bindings for browser-based game development.
+///
+/// Exposes the engine's ECS, input, and timing through `wasm-bindgen`
+/// for consumption by the TypeScript web SDK.
+#[cfg(feature = "web")]
+pub mod wasm;

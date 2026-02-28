@@ -3,14 +3,15 @@
  *
  * Unified entry point that re-exports the appropriate backend.
  * In Node.js, this uses the napi-rs native addon for zero-overhead
- * Rust bindings. In browsers (Phase 4), this will use wasm-bindgen.
+ * Rust bindings. In browsers, use the `@goudengine/sdk/web` export
+ * which loads the wasm-bindgen module.
  *
- * Usage:
+ * Node.js usage:
  *   import { GoudGame, Entity, vec2 } from '@goudengine/sdk';
  *
- *   const game = new GoudGame({ title: 'My Game', width: 800, height: 600 });
- *   const player = game.spawnEmpty();
- *   game.addTransform2D(player, transform2DFromPosition(100, 200));
+ * Browser usage:
+ *   import { createWebGame } from '@goudengine/sdk/web';
+ *   const game = await createWebGame({ title: 'My Game', width: 800, height: 600 });
  */
 
 export * from './node';

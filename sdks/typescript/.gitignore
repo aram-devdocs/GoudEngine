@@ -1,6 +1,8 @@
 node_modules/
 dist/
+wasm/
 *.node
 target/
 .napi/
 npm-debug.log
+*.tsbuildinfo
