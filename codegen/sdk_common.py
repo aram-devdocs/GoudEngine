@@ -61,13 +61,15 @@ def to_camel(name: str) -> str:
 # Schema primitive types -> language types
 CSHARP_TYPES = {
     "f32": "float", "f64": "double",
-    "u32": "uint", "u64": "ulong", "i32": "int", "i64": "long",
+    "u8": "byte", "u16": "ushort", "u32": "uint", "u64": "ulong",
+    "i8": "sbyte", "i16": "short", "i32": "int", "i64": "long",
     "bool": "bool", "string": "string", "void": "void",
 }
 
 PYTHON_TYPES = {
     "f32": "float", "f64": "float",
-    "u32": "int", "u64": "int", "i32": "int", "i64": "int",
+    "u8": "int", "u16": "int", "u32": "int", "u64": "int",
+    "i8": "int", "i16": "int", "i32": "int", "i64": "int",
     "bool": "bool", "string": "str", "void": "None",
 }
 

@@ -6,23 +6,34 @@
     "Vec2":        {"ffi_name": "FfiVec2",         "fields": ["x", "y"]},
     "Rect":        {"ffi_name": "FfiRect",         "fields": ["x", "y", "width", "height"]},
     "Transform2D": {"ffi_name": "FfiTransform2D",  "fields": ["position_x", "position_y", "rotation", "scale_x", "scale_y"]},
-    "Sprite":      {"ffi_name": "FfiSprite"},
+    "Sprite":      {"ffi_name": "FfiSprite",       "fields": ["texture_handle", "color_r", "color_g", "color_b", "color_a", "source_rect_x", "source_rect_y", "source_rect_width", "source_rect_height", "has_source_rect", "flip_x", "flip_y", "anchor_x", "anchor_y", "custom_size_x", "custom_size_y", "has_custom_size"]},
     "Entity":      {"ffi_name": "u64", "sentinel": "0xFFFFFFFFFFFFFFFF"},
     "RenderStats": {"ffi_name": "GoudRenderStats", "fields": ["draw_calls", "triangles", "texture_binds"]},
     "Contact":     {"ffi_name": "GoudContact",     "fields": ["point_x", "point_y", "normal_x", "normal_y", "penetration"]},
-    "Vec3":        {"ffi_name": "FfiVec3",          "fields": ["x", "y", "z"]}
+    "Vec3":        {"ffi_name": "FfiVec3",          "fields": ["x", "y", "z"]},
+    "Mat3x3":      {"ffi_name": "FfiMat3x3",        "fields": ["m"]}
   },
 
   "ffi_handles": {
     "GoudContextId":     {"type": "u64", "invalid": "u64::MAX"},
-    "GoudTextureHandle": {"type": "u64", "invalid": "u64::MAX"}
+    "GoudTextureHandle": {"type": "u64", "invalid": "u64::MAX"},
+    "Transform2DBuilder": {"type": "*mut FfiTransform2DBuilder", "invalid": "null"},
+    "SpriteBuilder":      {"type": "*mut FfiSpriteBuilder",      "invalid": "null"}
   },
 
   "ctypes_mappings": {
     "*mut GoudContact":    "ctypes.POINTER(GoudContact)",
     "*mut GoudRenderStats": "ctypes.POINTER(GoudRenderStats)",
     "*const u64":          "ctypes.POINTER(ctypes.c_uint64)",
-    "*mut u64":            "ctypes.POINTER(ctypes.c_uint64)"
+    "*mut u64":            "ctypes.POINTER(ctypes.c_uint64)",
+    "*mut u8":             "ctypes.POINTER(ctypes.c_uint8)",
+    "*const u8":           "ctypes.POINTER(ctypes.c_uint8)",
+    "*mut FfiTransform2D": "ctypes.POINTER(FfiTransform2D)",
+    "*const FfiTransform2D": "ctypes.POINTER(FfiTransform2D)",
+    "*mut FfiSprite":      "ctypes.POINTER(FfiSprite)",
+    "*const FfiSprite":    "ctypes.POINTER(FfiSprite)",
+    "*mut FfiTransform2DBuilder": "ctypes.POINTER(FfiTransform2DBuilder)",
+    "*mut FfiSpriteBuilder":      "ctypes.POINTER(FfiSpriteBuilder)"
   },
 
   "tools": {
@@ -150,6 +161,11 @@
         "isAlive": {
           "ffi": "goud_entity_is_alive",
           "entity_params": ["entity"]
+        },
+        "isAliveBatch": {
+          "ffi": "goud_entity_is_alive_batch",
+          "batch_in": true,
+          "batch_out_results": true
         },
         "addTransform2d": {
           "ffi_strategy": "component_add",
@@ -307,7 +323,44 @@
         "aabbOverlap":       {"ffi": "goud_collision_aabb_overlap",       "no_context": true},
         "circleOverlap":     {"ffi": "goud_collision_circle_overlap",     "no_context": true},
         "distance":          {"ffi": "goud_collision_distance",           "no_context": true},
-        "distanceSquared":   {"ffi": "goud_collision_distance_squared",   "no_context": true}
+        "distanceSquared":   {"ffi": "goud_collision_distance_squared",   "no_context": true},
+        "componentRegisterType": {
+          "ffi": "goud_component_register_type",
+          "no_context": true
+        },
+        "componentAdd": {
+          "ffi": "goud_component_add",
+          "entity_params": ["entity"]
+        },
+        "componentRemove": {
+          "ffi": "goud_component_remove",
+          "entity_params": ["entity"]
+        },
+        "componentHas": {
+          "ffi": "goud_component_has",
+          "entity_params": ["entity"]
+        },
+        "componentGet": {
+          "ffi": "goud_component_get",
+          "entity_params": ["entity"]
+        },
+        "componentGetMut": {
+          "ffi": "goud_component_get_mut",
+          "entity_params": ["entity"]
+        },
+        "componentAddBatch": {
+          "ffi": "goud_component_add_batch",
+          "batch_in": true
+        },
+        "componentRemoveBatch": {
+          "ffi": "goud_component_remove_batch",
+          "batch_in": true
+        },
+        "componentHasBatch": {
+          "ffi": "goud_component_has_batch",
+          "batch_in": true,
+          "batch_out_results": true
+        }
       },
 
       "properties": {
@@ -347,6 +400,7 @@
         "despawn":          {"ffi": "goud_entity_despawn",     "entity_params": ["entity"]},
         "despawnBatch":     {"ffi": "goud_entity_despawn_batch", "batch_in": true},
         "isAlive":          {"ffi": "goud_entity_is_alive",    "entity_params": ["entity"]},
+        "isAliveBatch":     {"ffi": "goud_entity_is_alive_batch", "batch_in": true, "batch_out_results": true},
         "entityCount":      {"ffi": "goud_entity_count"},
         "addTransform2d":   {"ffi_strategy": "component_add",    "component_type": "Transform2D", "entity_params": ["entity"], "struct_params": ["transform"]},
         "getTransform2d":   {"ffi_strategy": "component_get",    "component_type": "Transform2D", "entity_params": ["entity"]},
@@ -361,7 +415,16 @@
         "addName":          {"ffi_strategy": "name_add",         "entity_params": ["entity"]},
         "getName":          {"ffi_strategy": "name_get",         "entity_params": ["entity"]},
         "hasName":          {"ffi_strategy": "name_has",         "entity_params": ["entity"]},
-        "removeName":       {"ffi_strategy": "name_remove",      "entity_params": ["entity"]}
+        "removeName":       {"ffi_strategy": "name_remove",      "entity_params": ["entity"]},
+        "componentRegisterType": {"ffi": "goud_component_register_type", "no_context": true},
+        "componentAdd":         {"ffi": "goud_component_add",          "entity_params": ["entity"]},
+        "componentRemove":      {"ffi": "goud_component_remove",       "entity_params": ["entity"]},
+        "componentHas":         {"ffi": "goud_component_has",          "entity_params": ["entity"]},
+        "componentGet":         {"ffi": "goud_component_get",          "entity_params": ["entity"]},
+        "componentGetMut":      {"ffi": "goud_component_get_mut",      "entity_params": ["entity"]},
+        "componentAddBatch":    {"ffi": "goud_component_add_batch",    "batch_in": true},
+        "componentRemoveBatch": {"ffi": "goud_component_remove_batch", "batch_in": true},
+        "componentHasBatch":    {"ffi": "goud_component_has_batch",    "batch_in": true, "batch_out_results": true}
       }
     }
   },
@@ -419,7 +482,8 @@
       "goud_renderer3d_configure_skybox":  {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "enabled", "type": "bool"}, {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "bool"},
       "goud_renderer3d_configure_fog":     {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "enabled", "type": "bool"}, {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "density", "type": "f32"}], "returns": "bool"},
       "goud_renderer3d_set_fog_enabled":   {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "enabled", "type": "bool"}], "returns": "bool"},
-      "goud_renderer3d_render":            {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "bool"}
+      "goud_renderer3d_render":            {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "bool"},
+      "goud_renderer3d_render_all":        {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "bool", "alias_of": "goud_renderer3d_render"}
     },
     "input": {
       "goud_input_key_pressed":               {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "key", "type": "i32"}],    "returns": "bool"},
@@ -442,6 +506,7 @@
       "goud_entity_spawn_empty":  {"params": [{"name": "ctx", "type": "GoudContextId"}],                                          "returns": "u64"},
       "goud_entity_despawn":      {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_id", "type": "u64"}],   "returns": "GoudResult"},
       "goud_entity_is_alive":     {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_id", "type": "u64"}],   "returns": "bool"},
+      "goud_entity_is_alive_batch": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_ids", "type": "*const u64"}, {"name": "count", "type": "u32"}, {"name": "out_results", "type": "*mut u8"}], "returns": "u32", "unsafe": true},
       "goud_entity_count":        {"params": [{"name": "ctx", "type": "GoudContextId"}],                                          "returns": "u32"},
       "goud_entity_spawn_batch":  {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "count", "type": "u32"}, {"name": "out_entities", "type": "*mut u64"}], "returns": "u32", "unsafe": true},
       "goud_entity_despawn_batch":{"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_ids", "type": "*const u64"}, {"name": "count", "type": "u32"}], "returns": "u32", "unsafe": true}
@@ -456,6 +521,262 @@
       "goud_collision_circle_overlap":   {"params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "r1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}, {"name": "r2", "type": "f32"}], "returns": "bool"},
       "goud_collision_distance":         {"params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}], "returns": "f32"},
       "goud_collision_distance_squared": {"params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}], "returns": "f32"}
+    },
+    "component_transform2d": {
+      "goud_transform2d_default":                     {"params": [],                                                                                                         "returns": "FfiTransform2D"},
+      "goud_transform2d_from_position":               {"params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}],                                              "returns": "FfiTransform2D"},
+      "goud_transform2d_from_rotation":               {"params": [{"name": "rotation", "type": "f32"}],                                                                     "returns": "FfiTransform2D"},
+      "goud_transform2d_from_rotation_degrees":       {"params": [{"name": "degrees", "type": "f32"}],                                                                      "returns": "FfiTransform2D"},
+      "goud_transform2d_from_scale":                  {"params": [{"name": "scale_x", "type": "f32"}, {"name": "scale_y", "type": "f32"}],                                  "returns": "FfiTransform2D"},
+      "goud_transform2d_from_scale_uniform":          {"params": [{"name": "scale", "type": "f32"}],                                                                        "returns": "FfiTransform2D"},
+      "goud_transform2d_from_position_rotation":      {"params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "rotation", "type": "f32"}],         "returns": "FfiTransform2D"},
+      "goud_transform2d_new":                         {"params": [{"name": "pos_x", "type": "f32"}, {"name": "pos_y", "type": "f32"}, {"name": "rotation", "type": "f32"}, {"name": "scale_x", "type": "f32"}, {"name": "scale_y", "type": "f32"}], "returns": "FfiTransform2D"},
+      "goud_transform2d_look_at":                     {"params": [{"name": "pos_x", "type": "f32"}, {"name": "pos_y", "type": "f32"}, {"name": "target_x", "type": "f32"}, {"name": "target_y", "type": "f32"}], "returns": "FfiTransform2D"},
+      "goud_transform2d_translate":                   {"params": [{"name": "transform", "type": "*mut FfiTransform2D"}, {"name": "dx", "type": "f32"}, {"name": "dy", "type": "f32"}],   "returns": "void", "unsafe": true},
+      "goud_transform2d_translate_local":             {"params": [{"name": "transform", "type": "*mut FfiTransform2D"}, {"name": "dx", "type": "f32"}, {"name": "dy", "type": "f32"}],   "returns": "void", "unsafe": true},
+      "goud_transform2d_set_position":                {"params": [{"name": "transform", "type": "*mut FfiTransform2D"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}],     "returns": "void", "unsafe": true},
+      "goud_transform2d_get_position":                {"params": [{"name": "transform", "type": "*const FfiTransform2D"}],                                                                "returns": "FfiVec2", "unsafe": true},
+      "goud_transform2d_rotate":                      {"params": [{"name": "transform", "type": "*mut FfiTransform2D"}, {"name": "angle", "type": "f32"}],                                "returns": "void", "unsafe": true},
+      "goud_transform2d_rotate_degrees":              {"params": [{"name": "transform", "type": "*mut FfiTransform2D"}, {"name": "degrees", "type": "f32"}],                              "returns": "void", "unsafe": true},
+      "goud_transform2d_set_rotation":                {"params": [{"name": "transform", "type": "*mut FfiTransform2D"}, {"name": "rotation", "type": "f32"}],                             "returns": "void", "unsafe": true},
+      "goud_transform2d_set_rotation_degrees":        {"params": [{"name": "transform", "type": "*mut FfiTransform2D"}, {"name": "degrees", "type": "f32"}],                              "returns": "void", "unsafe": true},
+      "goud_transform2d_get_rotation":                {"params": [{"name": "transform", "type": "*const FfiTransform2D"}],                                                                "returns": "f32", "unsafe": true},
+      "goud_transform2d_get_rotation_degrees":        {"params": [{"name": "transform", "type": "*const FfiTransform2D"}],                                                                "returns": "f32", "unsafe": true},
+      "goud_transform2d_look_at_target":              {"params": [{"name": "transform", "type": "*mut FfiTransform2D"}, {"name": "target_x", "type": "f32"}, {"name": "target_y", "type": "f32"}], "returns": "void", "unsafe": true},
+      "goud_transform2d_set_scale":                   {"params": [{"name": "transform", "type": "*mut FfiTransform2D"}, {"name": "scale_x", "type": "f32"}, {"name": "scale_y", "type": "f32"}], "returns": "void", "unsafe": true},
+      "goud_transform2d_set_scale_uniform":           {"params": [{"name": "transform", "type": "*mut FfiTransform2D"}, {"name": "scale", "type": "f32"}],                                "returns": "void", "unsafe": true},
+      "goud_transform2d_get_scale":                   {"params": [{"name": "transform", "type": "*const FfiTransform2D"}],                                                                "returns": "FfiVec2", "unsafe": true},
+      "goud_transform2d_scale_by":                    {"params": [{"name": "transform", "type": "*mut FfiTransform2D"}, {"name": "factor_x", "type": "f32"}, {"name": "factor_y", "type": "f32"}], "returns": "void", "unsafe": true},
+      "goud_transform2d_forward":                     {"params": [{"name": "transform", "type": "*const FfiTransform2D"}],                                                                "returns": "FfiVec2", "unsafe": true},
+      "goud_transform2d_right":                       {"params": [{"name": "transform", "type": "*const FfiTransform2D"}],                                                                "returns": "FfiVec2", "unsafe": true},
+      "goud_transform2d_backward":                    {"params": [{"name": "transform", "type": "*const FfiTransform2D"}],                                                                "returns": "FfiVec2", "unsafe": true},
+      "goud_transform2d_left":                        {"params": [{"name": "transform", "type": "*const FfiTransform2D"}],                                                                "returns": "FfiVec2", "unsafe": true},
+      "goud_transform2d_matrix":                      {"params": [{"name": "transform", "type": "*const FfiTransform2D"}],                                                                "returns": "FfiMat3x3", "unsafe": true},
+      "goud_transform2d_matrix_inverse":              {"params": [{"name": "transform", "type": "*const FfiTransform2D"}],                                                                "returns": "FfiMat3x3", "unsafe": true},
+      "goud_transform2d_transform_point":             {"params": [{"name": "transform", "type": "*const FfiTransform2D"}, {"name": "point_x", "type": "f32"}, {"name": "point_y", "type": "f32"}], "returns": "FfiVec2", "unsafe": true},
+      "goud_transform2d_transform_direction":         {"params": [{"name": "transform", "type": "*const FfiTransform2D"}, {"name": "dir_x", "type": "f32"}, {"name": "dir_y", "type": "f32"}],     "returns": "FfiVec2", "unsafe": true},
+      "goud_transform2d_inverse_transform_point":     {"params": [{"name": "transform", "type": "*const FfiTransform2D"}, {"name": "point_x", "type": "f32"}, {"name": "point_y", "type": "f32"}], "returns": "FfiVec2", "unsafe": true},
+      "goud_transform2d_inverse_transform_direction": {"params": [{"name": "transform", "type": "*const FfiTransform2D"}, {"name": "dir_x", "type": "f32"}, {"name": "dir_y", "type": "f32"}],     "returns": "FfiVec2", "unsafe": true},
+      "goud_transform2d_lerp":                        {"params": [{"name": "from", "type": "FfiTransform2D"}, {"name": "to", "type": "FfiTransform2D"}, {"name": "t", "type": "f32"}],             "returns": "FfiTransform2D"},
+      "goud_transform2d_normalize_angle":             {"params": [{"name": "angle", "type": "f32"}],                                                                                               "returns": "f32"},
+      "goud_transform2d_builder_new":                 {"params": [],                                                                                                                                "returns": "*mut FfiTransform2DBuilder"},
+      "goud_transform2d_builder_at_position":         {"params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}],                                                                    "returns": "*mut FfiTransform2DBuilder"},
+      "goud_transform2d_builder_with_position":       {"params": [{"name": "builder", "type": "*mut FfiTransform2DBuilder"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}],          "returns": "*mut FfiTransform2DBuilder", "unsafe": true},
+      "goud_transform2d_builder_with_rotation":       {"params": [{"name": "builder", "type": "*mut FfiTransform2DBuilder"}, {"name": "rotation", "type": "f32"}],                                 "returns": "*mut FfiTransform2DBuilder", "unsafe": true},
+      "goud_transform2d_builder_with_rotation_degrees": {"params": [{"name": "builder", "type": "*mut FfiTransform2DBuilder"}, {"name": "degrees", "type": "f32"}],                               "returns": "*mut FfiTransform2DBuilder", "unsafe": true},
+      "goud_transform2d_builder_with_scale":          {"params": [{"name": "builder", "type": "*mut FfiTransform2DBuilder"}, {"name": "scale_x", "type": "f32"}, {"name": "scale_y", "type": "f32"}], "returns": "*mut FfiTransform2DBuilder", "unsafe": true},
+      "goud_transform2d_builder_with_scale_uniform":  {"params": [{"name": "builder", "type": "*mut FfiTransform2DBuilder"}, {"name": "scale", "type": "f32"}],                                    "returns": "*mut FfiTransform2DBuilder", "unsafe": true},
+      "goud_transform2d_builder_looking_at":          {"params": [{"name": "builder", "type": "*mut FfiTransform2DBuilder"}, {"name": "target_x", "type": "f32"}, {"name": "target_y", "type": "f32"}], "returns": "*mut FfiTransform2DBuilder", "unsafe": true},
+      "goud_transform2d_builder_translate":           {"params": [{"name": "builder", "type": "*mut FfiTransform2DBuilder"}, {"name": "dx", "type": "f32"}, {"name": "dy", "type": "f32"}],        "returns": "*mut FfiTransform2DBuilder", "unsafe": true},
+      "goud_transform2d_builder_rotate":              {"params": [{"name": "builder", "type": "*mut FfiTransform2DBuilder"}, {"name": "angle", "type": "f32"}],                                    "returns": "*mut FfiTransform2DBuilder", "unsafe": true},
+      "goud_transform2d_builder_scale_by":            {"params": [{"name": "builder", "type": "*mut FfiTransform2DBuilder"}, {"name": "factor_x", "type": "f32"}, {"name": "factor_y", "type": "f32"}], "returns": "*mut FfiTransform2DBuilder", "unsafe": true},
+      "goud_transform2d_builder_build":               {"params": [{"name": "builder", "type": "*mut FfiTransform2DBuilder"}],                                                                      "returns": "FfiTransform2D", "unsafe": true},
+      "goud_transform2d_builder_free":                {"params": [{"name": "builder", "type": "*mut FfiTransform2DBuilder"}],                                                                      "returns": "void", "unsafe": true}
+    },
+    "component_sprite": {
+      "goud_sprite_new":                    {"params": [{"name": "texture_handle", "type": "u64"}],                                                                                               "returns": "FfiSprite"},
+      "goud_sprite_default":                {"params": [],                                                                                                                                         "returns": "FfiSprite"},
+      "goud_sprite_set_color":              {"params": [{"name": "sprite", "type": "*mut FfiSprite"}, {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "void", "unsafe": true},
+      "goud_sprite_get_color":              {"params": [{"name": "sprite", "type": "*const FfiSprite"}],                                                                                           "returns": "FfiColor", "unsafe": true},
+      "goud_sprite_with_color":             {"params": [{"name": "sprite", "type": "FfiSprite"}, {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "FfiSprite"},
+      "goud_sprite_set_alpha":              {"params": [{"name": "sprite", "type": "*mut FfiSprite"}, {"name": "alpha", "type": "f32"}],                                                           "returns": "void", "unsafe": true},
+      "goud_sprite_get_alpha":              {"params": [{"name": "sprite", "type": "*const FfiSprite"}],                                                                                           "returns": "f32", "unsafe": true},
+      "goud_sprite_set_source_rect":        {"params": [{"name": "sprite", "type": "*mut FfiSprite"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "void", "unsafe": true},
+      "goud_sprite_clear_source_rect":      {"params": [{"name": "sprite", "type": "*mut FfiSprite"}],                                                                                            "returns": "void", "unsafe": true},
+      "goud_sprite_get_source_rect":        {"params": [{"name": "sprite", "type": "*const FfiSprite"}],                                                                                          "returns": "FfiRect", "unsafe": true},
+      "goud_sprite_has_source_rect":        {"params": [{"name": "sprite", "type": "*const FfiSprite"}],                                                                                          "returns": "bool", "unsafe": true},
+      "goud_sprite_with_source_rect":       {"params": [{"name": "sprite", "type": "FfiSprite"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "FfiSprite"},
+      "goud_sprite_set_flip_x":             {"params": [{"name": "sprite", "type": "*mut FfiSprite"}, {"name": "flip", "type": "bool"}],                                                          "returns": "void", "unsafe": true},
+      "goud_sprite_get_flip_x":             {"params": [{"name": "sprite", "type": "*const FfiSprite"}],                                                                                          "returns": "bool", "unsafe": true},
+      "goud_sprite_set_flip_y":             {"params": [{"name": "sprite", "type": "*mut FfiSprite"}, {"name": "flip", "type": "bool"}],                                                          "returns": "void", "unsafe": true},
+      "goud_sprite_get_flip_y":             {"params": [{"name": "sprite", "type": "*const FfiSprite"}],                                                                                          "returns": "bool", "unsafe": true},
+      "goud_sprite_set_flip":               {"params": [{"name": "sprite", "type": "*mut FfiSprite"}, {"name": "flip_x", "type": "bool"}, {"name": "flip_y", "type": "bool"}],                    "returns": "void", "unsafe": true},
+      "goud_sprite_with_flip_x":            {"params": [{"name": "sprite", "type": "FfiSprite"}, {"name": "flip", "type": "bool"}],                                                               "returns": "FfiSprite"},
+      "goud_sprite_with_flip_y":            {"params": [{"name": "sprite", "type": "FfiSprite"}, {"name": "flip", "type": "bool"}],                                                               "returns": "FfiSprite"},
+      "goud_sprite_with_flip":              {"params": [{"name": "sprite", "type": "FfiSprite"}, {"name": "flip_x", "type": "bool"}, {"name": "flip_y", "type": "bool"}],                         "returns": "FfiSprite"},
+      "goud_sprite_is_flipped":             {"params": [{"name": "sprite", "type": "*const FfiSprite"}],                                                                                          "returns": "bool", "unsafe": true},
+      "goud_sprite_set_anchor":             {"params": [{"name": "sprite", "type": "*mut FfiSprite"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}],                                "returns": "void", "unsafe": true},
+      "goud_sprite_get_anchor":             {"params": [{"name": "sprite", "type": "*const FfiSprite"}],                                                                                          "returns": "FfiVec2", "unsafe": true},
+      "goud_sprite_with_anchor":            {"params": [{"name": "sprite", "type": "FfiSprite"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}],                                     "returns": "FfiSprite"},
+      "goud_sprite_set_custom_size":        {"params": [{"name": "sprite", "type": "*mut FfiSprite"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}],                       "returns": "void", "unsafe": true},
+      "goud_sprite_clear_custom_size":      {"params": [{"name": "sprite", "type": "*mut FfiSprite"}],                                                                                            "returns": "void", "unsafe": true},
+      "goud_sprite_get_custom_size":        {"params": [{"name": "sprite", "type": "*const FfiSprite"}],                                                                                          "returns": "FfiVec2", "unsafe": true},
+      "goud_sprite_has_custom_size":        {"params": [{"name": "sprite", "type": "*const FfiSprite"}],                                                                                          "returns": "bool", "unsafe": true},
+      "goud_sprite_with_custom_size":       {"params": [{"name": "sprite", "type": "FfiSprite"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}],                            "returns": "FfiSprite"},
+      "goud_sprite_set_texture":            {"params": [{"name": "sprite", "type": "*mut FfiSprite"}, {"name": "handle", "type": "u64"}],                                                         "returns": "void", "unsafe": true},
+      "goud_sprite_get_texture":            {"params": [{"name": "sprite", "type": "*const FfiSprite"}],                                                                                          "returns": "u64", "unsafe": true},
+      "goud_sprite_size_or_rect":           {"params": [{"name": "sprite", "type": "*const FfiSprite"}],                                                                                          "returns": "FfiVec2", "unsafe": true},
+      "goud_sprite_builder_new":            {"params": [{"name": "texture_handle", "type": "u64"}],                                                                                               "returns": "*mut FfiSpriteBuilder"},
+      "goud_sprite_builder_default":        {"params": [],                                                                                                                                         "returns": "*mut FfiSpriteBuilder"},
+      "goud_sprite_builder_with_texture":   {"params": [{"name": "builder", "type": "*mut FfiSpriteBuilder"}, {"name": "handle", "type": "u64"}],                                                 "returns": "*mut FfiSpriteBuilder", "unsafe": true},
+      "goud_sprite_builder_with_color":     {"params": [{"name": "builder", "type": "*mut FfiSpriteBuilder"}, {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "*mut FfiSpriteBuilder", "unsafe": true},
+      "goud_sprite_builder_with_alpha":     {"params": [{"name": "builder", "type": "*mut FfiSpriteBuilder"}, {"name": "alpha", "type": "f32"}],                                                  "returns": "*mut FfiSpriteBuilder", "unsafe": true},
+      "goud_sprite_builder_with_source_rect": {"params": [{"name": "builder", "type": "*mut FfiSpriteBuilder"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "*mut FfiSpriteBuilder", "unsafe": true},
+      "goud_sprite_builder_with_flip_x":    {"params": [{"name": "builder", "type": "*mut FfiSpriteBuilder"}, {"name": "flip", "type": "bool"}],                                                  "returns": "*mut FfiSpriteBuilder", "unsafe": true},
+      "goud_sprite_builder_with_flip_y":    {"params": [{"name": "builder", "type": "*mut FfiSpriteBuilder"}, {"name": "flip", "type": "bool"}],                                                  "returns": "*mut FfiSpriteBuilder", "unsafe": true},
+      "goud_sprite_builder_with_flip":      {"params": [{"name": "builder", "type": "*mut FfiSpriteBuilder"}, {"name": "flip_x", "type": "bool"}, {"name": "flip_y", "type": "bool"}],            "returns": "*mut FfiSpriteBuilder", "unsafe": true},
+      "goud_sprite_builder_with_anchor":    {"params": [{"name": "builder", "type": "*mut FfiSpriteBuilder"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}],                        "returns": "*mut FfiSpriteBuilder", "unsafe": true},
+      "goud_sprite_builder_with_custom_size": {"params": [{"name": "builder", "type": "*mut FfiSpriteBuilder"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}],             "returns": "*mut FfiSpriteBuilder", "unsafe": true},
+      "goud_sprite_builder_build":          {"params": [{"name": "builder", "type": "*mut FfiSpriteBuilder"}],                                                                                     "returns": "FfiSprite", "unsafe": true},
+      "goud_sprite_builder_free":           {"params": [{"name": "builder", "type": "*mut FfiSpriteBuilder"}],                                                                                     "returns": "void", "unsafe": true}
+    },
+    "color": {
+      "goud_color_white":       {"params": [],                                                                                                        "returns": "FfiColor"},
+      "goud_color_black":       {"params": [],                                                                                                        "returns": "FfiColor"},
+      "goud_color_red":         {"params": [],                                                                                                        "returns": "FfiColor"},
+      "goud_color_green":       {"params": [],                                                                                                        "returns": "FfiColor"},
+      "goud_color_blue":        {"params": [],                                                                                                        "returns": "FfiColor"},
+      "goud_color_yellow":      {"params": [],                                                                                                        "returns": "FfiColor"},
+      "goud_color_transparent": {"params": [],                                                                                                        "returns": "FfiColor"},
+      "goud_color_rgba":        {"params": [{"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "FfiColor"},
+      "goud_color_rgb":         {"params": [{"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}],               "returns": "FfiColor"},
+      "goud_color_from_u8":     {"params": [{"name": "r", "type": "u8"}, {"name": "g", "type": "u8"}, {"name": "b", "type": "u8"}, {"name": "a", "type": "u8"}], "returns": "FfiColor"},
+      "goud_color_from_hex":    {"params": [{"name": "hex", "type": "u32"}],                                                                          "returns": "FfiColor"},
+      "goud_color_lerp":        {"params": [{"name": "from", "type": "FfiColor"}, {"name": "to", "type": "FfiColor"}, {"name": "t", "type": "f32"}],  "returns": "FfiColor"},
+      "goud_color_with_alpha":  {"params": [{"name": "color", "type": "FfiColor"}, {"name": "alpha", "type": "f32"}],                                 "returns": "FfiColor"}
+    },
+    "component_generic": {
+      "goud_component_register_type": {"params": [{"name": "type_id_hash", "type": "u64"}, {"name": "name_ptr", "type": "*const u8"}, {"name": "name_len", "type": "usize"}, {"name": "size", "type": "usize"}, {"name": "align", "type": "usize"}], "returns": "bool", "unsafe": true},
+      "goud_component_add":           {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_id", "type": "u64"}, {"name": "type_id_hash", "type": "u64"}, {"name": "data_ptr", "type": "*const u8"}, {"name": "data_size", "type": "usize"}], "returns": "GoudResult", "unsafe": true},
+      "goud_component_remove":        {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_id", "type": "u64"}, {"name": "type_id_hash", "type": "u64"}], "returns": "GoudResult"},
+      "goud_component_has":           {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_id", "type": "u64"}, {"name": "type_id_hash", "type": "u64"}], "returns": "bool"},
+      "goud_component_get":           {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_id", "type": "u64"}, {"name": "type_id_hash", "type": "u64"}], "returns": "*const u8"},
+      "goud_component_get_mut":       {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_id", "type": "u64"}, {"name": "type_id_hash", "type": "u64"}], "returns": "*mut u8"},
+      "goud_component_add_batch":     {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_ids", "type": "*const u64"}, {"name": "count", "type": "u32"}, {"name": "type_id_hash", "type": "u64"}, {"name": "data_ptr", "type": "*const u8"}, {"name": "component_size", "type": "usize"}], "returns": "u32", "unsafe": true},
+      "goud_component_remove_batch":  {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_ids", "type": "*const u64"}, {"name": "count", "type": "u32"}, {"name": "type_id_hash", "type": "u64"}], "returns": "u32", "unsafe": true},
+      "goud_component_has_batch":     {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_ids", "type": "*const u64"}, {"name": "count", "type": "u32"}, {"name": "type_id_hash", "type": "u64"}, {"name": "out_results", "type": "*mut u8"}], "returns": "u32", "unsafe": true}
+    }
+  },
+
+  "type_methods": {
+    "Color": {
+      "factories": {
+        "white":       {"ffi": "goud_color_white"},
+        "black":       {"ffi": "goud_color_black"},
+        "red":         {"ffi": "goud_color_red"},
+        "green":       {"ffi": "goud_color_green"},
+        "blue":        {"ffi": "goud_color_blue"},
+        "yellow":      {"ffi": "goud_color_yellow"},
+        "transparent": {"ffi": "goud_color_transparent"},
+        "rgba":        {"ffi": "goud_color_rgba"},
+        "rgb":         {"ffi": "goud_color_rgb"},
+        "fromU8":      {"ffi": "goud_color_from_u8"},
+        "fromHex":     {"ffi": "goud_color_from_hex"}
+      },
+      "methods": {
+        "lerp":      {"ffi": "goud_color_lerp",       "self_param": "FfiColor"},
+        "withAlpha": {"ffi": "goud_color_with_alpha",  "self_param": "FfiColor"}
+      }
+    },
+    "Transform2D": {
+      "factories": {
+        "default":              {"ffi": "goud_transform2d_default"},
+        "fromPosition":         {"ffi": "goud_transform2d_from_position"},
+        "fromRotation":         {"ffi": "goud_transform2d_from_rotation"},
+        "fromRotationDegrees":  {"ffi": "goud_transform2d_from_rotation_degrees"},
+        "fromScale":            {"ffi": "goud_transform2d_from_scale"},
+        "fromScaleUniform":     {"ffi": "goud_transform2d_from_scale_uniform"},
+        "fromPositionRotation": {"ffi": "goud_transform2d_from_position_rotation"},
+        "new":                  {"ffi": "goud_transform2d_new"},
+        "lookAt":               {"ffi": "goud_transform2d_look_at"}
+      },
+      "methods": {
+        "translate":                  {"ffi": "goud_transform2d_translate",                   "self_param": "*mut FfiTransform2D"},
+        "translateLocal":             {"ffi": "goud_transform2d_translate_local",              "self_param": "*mut FfiTransform2D"},
+        "setPosition":                {"ffi": "goud_transform2d_set_position",                "self_param": "*mut FfiTransform2D"},
+        "getPosition":                {"ffi": "goud_transform2d_get_position",                "self_param": "*const FfiTransform2D"},
+        "rotate":                     {"ffi": "goud_transform2d_rotate",                      "self_param": "*mut FfiTransform2D"},
+        "rotateDegrees":              {"ffi": "goud_transform2d_rotate_degrees",              "self_param": "*mut FfiTransform2D"},
+        "setRotation":                {"ffi": "goud_transform2d_set_rotation",                "self_param": "*mut FfiTransform2D"},
+        "setRotationDegrees":         {"ffi": "goud_transform2d_set_rotation_degrees",        "self_param": "*mut FfiTransform2D"},
+        "getRotation":                {"ffi": "goud_transform2d_get_rotation",                "self_param": "*const FfiTransform2D"},
+        "getRotationDegrees":         {"ffi": "goud_transform2d_get_rotation_degrees",        "self_param": "*const FfiTransform2D"},
+        "lookAtTarget":               {"ffi": "goud_transform2d_look_at_target",              "self_param": "*mut FfiTransform2D"},
+        "setScale":                   {"ffi": "goud_transform2d_set_scale",                   "self_param": "*mut FfiTransform2D"},
+        "setScaleUniform":            {"ffi": "goud_transform2d_set_scale_uniform",           "self_param": "*mut FfiTransform2D"},
+        "getScale":                   {"ffi": "goud_transform2d_get_scale",                   "self_param": "*const FfiTransform2D"},
+        "scaleBy":                    {"ffi": "goud_transform2d_scale_by",                    "self_param": "*mut FfiTransform2D"},
+        "forward":                    {"ffi": "goud_transform2d_forward",                     "self_param": "*const FfiTransform2D"},
+        "right":                      {"ffi": "goud_transform2d_right",                       "self_param": "*const FfiTransform2D"},
+        "backward":                   {"ffi": "goud_transform2d_backward",                    "self_param": "*const FfiTransform2D"},
+        "left":                       {"ffi": "goud_transform2d_left",                        "self_param": "*const FfiTransform2D"},
+        "matrix":                     {"ffi": "goud_transform2d_matrix",                      "self_param": "*const FfiTransform2D"},
+        "matrixInverse":              {"ffi": "goud_transform2d_matrix_inverse",              "self_param": "*const FfiTransform2D"},
+        "transformPoint":             {"ffi": "goud_transform2d_transform_point",             "self_param": "*const FfiTransform2D"},
+        "transformDirection":         {"ffi": "goud_transform2d_transform_direction",         "self_param": "*const FfiTransform2D"},
+        "inverseTransformPoint":      {"ffi": "goud_transform2d_inverse_transform_point",     "self_param": "*const FfiTransform2D"},
+        "inverseTransformDirection":  {"ffi": "goud_transform2d_inverse_transform_direction", "self_param": "*const FfiTransform2D"},
+        "lerp":                       {"ffi": "goud_transform2d_lerp",                        "self_param": "FfiTransform2D"},
+        "normalizeAngle":             {"ffi": "goud_transform2d_normalize_angle",             "static": true}
+      },
+      "builder": {
+        "new":                  {"ffi": "goud_transform2d_builder_new"},
+        "atPosition":           {"ffi": "goud_transform2d_builder_at_position"},
+        "withPosition":         {"ffi": "goud_transform2d_builder_with_position",         "self_param": "*mut FfiTransform2DBuilder"},
+        "withRotation":         {"ffi": "goud_transform2d_builder_with_rotation",         "self_param": "*mut FfiTransform2DBuilder"},
+        "withRotationDegrees":  {"ffi": "goud_transform2d_builder_with_rotation_degrees", "self_param": "*mut FfiTransform2DBuilder"},
+        "withScale":            {"ffi": "goud_transform2d_builder_with_scale",            "self_param": "*mut FfiTransform2DBuilder"},
+        "withScaleUniform":     {"ffi": "goud_transform2d_builder_with_scale_uniform",    "self_param": "*mut FfiTransform2DBuilder"},
+        "lookingAt":            {"ffi": "goud_transform2d_builder_looking_at",            "self_param": "*mut FfiTransform2DBuilder"},
+        "translate":            {"ffi": "goud_transform2d_builder_translate",             "self_param": "*mut FfiTransform2DBuilder"},
+        "rotate":               {"ffi": "goud_transform2d_builder_rotate",                "self_param": "*mut FfiTransform2DBuilder"},
+        "scaleBy":              {"ffi": "goud_transform2d_builder_scale_by",              "self_param": "*mut FfiTransform2DBuilder"},
+        "build":                {"ffi": "goud_transform2d_builder_build",                 "self_param": "*mut FfiTransform2DBuilder", "consumes": true},
+        "free":                 {"ffi": "goud_transform2d_builder_free",                  "self_param": "*mut FfiTransform2DBuilder", "consumes": true}
+      }
+    },
+    "Sprite": {
+      "factories": {
+        "new":     {"ffi": "goud_sprite_new"},
+        "default": {"ffi": "goud_sprite_default"}
+      },
+      "methods": {
+        "setColor":         {"ffi": "goud_sprite_set_color",         "self_param": "*mut FfiSprite"},
+        "getColor":         {"ffi": "goud_sprite_get_color",         "self_param": "*const FfiSprite"},
+        "withColor":        {"ffi": "goud_sprite_with_color",        "self_param": "FfiSprite"},
+        "setAlpha":         {"ffi": "goud_sprite_set_alpha",         "self_param": "*mut FfiSprite"},
+        "getAlpha":         {"ffi": "goud_sprite_get_alpha",         "self_param": "*const FfiSprite"},
+        "setSourceRect":    {"ffi": "goud_sprite_set_source_rect",   "self_param": "*mut FfiSprite"},
+        "clearSourceRect":  {"ffi": "goud_sprite_clear_source_rect", "self_param": "*mut FfiSprite"},
+        "getSourceRect":    {"ffi": "goud_sprite_get_source_rect",   "self_param": "*const FfiSprite"},
+        "hasSourceRect":    {"ffi": "goud_sprite_has_source_rect",   "self_param": "*const FfiSprite"},
+        "withSourceRect":   {"ffi": "goud_sprite_with_source_rect",  "self_param": "FfiSprite"},
+        "setFlipX":         {"ffi": "goud_sprite_set_flip_x",        "self_param": "*mut FfiSprite"},
+        "getFlipX":         {"ffi": "goud_sprite_get_flip_x",        "self_param": "*const FfiSprite"},
+        "setFlipY":         {"ffi": "goud_sprite_set_flip_y",        "self_param": "*mut FfiSprite"},
+        "getFlipY":         {"ffi": "goud_sprite_get_flip_y",        "self_param": "*const FfiSprite"},
+        "setFlip":          {"ffi": "goud_sprite_set_flip",          "self_param": "*mut FfiSprite"},
+        "withFlipX":        {"ffi": "goud_sprite_with_flip_x",       "self_param": "FfiSprite"},
+        "withFlipY":        {"ffi": "goud_sprite_with_flip_y",       "self_param": "FfiSprite"},
+        "withFlip":         {"ffi": "goud_sprite_with_flip",         "self_param": "FfiSprite"},
+        "isFlipped":        {"ffi": "goud_sprite_is_flipped",        "self_param": "*const FfiSprite"},
+        "setAnchor":        {"ffi": "goud_sprite_set_anchor",        "self_param": "*mut FfiSprite"},
+        "getAnchor":        {"ffi": "goud_sprite_get_anchor",        "self_param": "*const FfiSprite"},
+        "withAnchor":       {"ffi": "goud_sprite_with_anchor",       "self_param": "FfiSprite"},
+        "setCustomSize":    {"ffi": "goud_sprite_set_custom_size",   "self_param": "*mut FfiSprite"},
+        "clearCustomSize":  {"ffi": "goud_sprite_clear_custom_size", "self_param": "*mut FfiSprite"},
+        "getCustomSize":    {"ffi": "goud_sprite_get_custom_size",   "self_param": "*const FfiSprite"},
+        "hasCustomSize":    {"ffi": "goud_sprite_has_custom_size",   "self_param": "*const FfiSprite"},
+        "withCustomSize":   {"ffi": "goud_sprite_with_custom_size",  "self_param": "FfiSprite"},
+        "setTexture":       {"ffi": "goud_sprite_set_texture",       "self_param": "*mut FfiSprite"},
+        "getTexture":       {"ffi": "goud_sprite_get_texture",       "self_param": "*const FfiSprite"},
+        "sizeOrRect":       {"ffi": "goud_sprite_size_or_rect",      "self_param": "*const FfiSprite"}
+      },
+      "builder": {
+        "new":              {"ffi": "goud_sprite_builder_new"},
+        "default":          {"ffi": "goud_sprite_builder_default"},
+        "withTexture":      {"ffi": "goud_sprite_builder_with_texture",    "self_param": "*mut FfiSpriteBuilder"},
+        "withColor":        {"ffi": "goud_sprite_builder_with_color",      "self_param": "*mut FfiSpriteBuilder"},
+        "withAlpha":        {"ffi": "goud_sprite_builder_with_alpha",      "self_param": "*mut FfiSpriteBuilder"},
+        "withSourceRect":   {"ffi": "goud_sprite_builder_with_source_rect","self_param": "*mut FfiSpriteBuilder"},
+        "withFlipX":        {"ffi": "goud_sprite_builder_with_flip_x",     "self_param": "*mut FfiSpriteBuilder"},
+        "withFlipY":        {"ffi": "goud_sprite_builder_with_flip_y",     "self_param": "*mut FfiSpriteBuilder"},
+        "withFlip":         {"ffi": "goud_sprite_builder_with_flip",       "self_param": "*mut FfiSpriteBuilder"},
+        "withAnchor":       {"ffi": "goud_sprite_builder_with_anchor",     "self_param": "*mut FfiSpriteBuilder"},
+        "withCustomSize":   {"ffi": "goud_sprite_builder_with_custom_size","self_param": "*mut FfiSpriteBuilder"},
+        "build":            {"ffi": "goud_sprite_builder_build",           "self_param": "*mut FfiSpriteBuilder", "consumes": true},
+        "free":             {"ffi": "goud_sprite_builder_free",            "self_param": "*mut FfiSpriteBuilder", "consumes": true}
+      }
     }
   }
 }

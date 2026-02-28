@@ -128,6 +128,7 @@ _VEC2_METHODS = {
 }
 _OTHER_METHODS = {
     ("Color", "WithAlpha"):    "public Color WithAlpha(float a) => new Color(R, G, B, a);",
+    ("Color", "Lerp"):         "public Color Lerp(Color other, float t) => new Color(R + (other.R - R) * t, G + (other.G - G) * t, B + (other.B - B) * t, A + (other.A - A) * t);",
     ("Rect", "Contains"):      "public bool Contains(Vec2 p) => p.X >= X && p.X <= X + Width && p.Y >= Y && p.Y <= Y + Height;",
     ("Rect", "Intersects"):    "public bool Intersects(Rect o) => X < o.X + o.Width && X + Width > o.X && Y < o.Y + o.Height && Y + Height > o.Y;",
 }
@@ -142,6 +143,7 @@ _FACTORY_OVERRIDES: dict = {
     # Color partial-arg factories.
     ("Color", "Rgb"):     "public static Color Rgb(float r, float g, float b) => new Color(r, g, b, 1f);",
     ("Color", "FromHex"): "public static Color FromHex(uint hex) => new Color(((hex >> 16) & 0xFF) / 255f, ((hex >> 8) & 0xFF) / 255f, (hex & 0xFF) / 255f, 1f);",
+    ("Color", "FromU8"):  "public static Color FromU8(byte r, byte g, byte b, byte a) => new Color(r / 255f, g / 255f, b / 255f, a / 255f);",
 }
 
 

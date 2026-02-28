@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from sdk_common import (
     HEADER_COMMENT, SDKS_DIR, load_schema, load_ffi_mapping,
-    to_snake, to_screaming_snake, write_generated, CTYPES_MAP,
+    to_snake, to_screaming_snake, write_generated, CTYPES_MAP, PYTHON_TYPES,
 )
 
 OUT = SDKS_DIR / "python" / "goud_engine" / "generated"
@@ -223,11 +223,13 @@ def gen_types():
                 lines.append(f"    def {fname}() -> '{type_name}':")
                 lines.append(f"        return {type_name}({val_str})")
             elif fargs:
-                arg_str = ", ".join(f"{to_snake(a['name'])}: float" for a in fargs)
+                arg_str = ", ".join(f"{to_snake(a['name'])}: {PYTHON_TYPES.get(a.get('type', 'f32'), 'float')}" for a in fargs)
                 lines.append("    @staticmethod")
                 lines.append(f"    def {fname}({arg_str}) -> '{type_name}':")
                 if fname == "from_hex":
                     lines.append(f"        return {type_name}(((hex >> 16) & 0xFF) / 255.0, ((hex >> 8) & 0xFF) / 255.0, (hex & 0xFF) / 255.0, 1.0)")
+                elif fname == "from_u8":
+                    lines.append(f"        return {type_name}(r / 255.0, g / 255.0, b / 255.0, a / 255.0)")
                 else:
                     # Build field values: start with type-aware defaults, then override with factory args
                     field_vals = {}
@@ -317,6 +319,9 @@ def gen_types():
             elif mname == "distance":
                 lines.append(f"    def {mname}(self, other: '{type_name}') -> float:")
                 lines.append("        return self.sub(other).length()")
+            elif mname == "lerp" and type_name == "Color":
+                lines.append(f"    def {mname}(self, other: '{type_name}', t: float) -> '{type_name}':")
+                lines.append(f"        return {type_name}(self.r + (other.r - self.r) * t, self.g + (other.g - self.g) * t, self.b + (other.b - self.b) * t, self.a + (other.a - self.a) * t)")
             elif mname == "lerp":
                 lines.append(f"    def {mname}(self, other: '{type_name}', t: float) -> '{type_name}':")
                 lines.append(f"        return {type_name}(self.x + (other.x - self.x) * t, self.y + (other.y - self.y) * t)")

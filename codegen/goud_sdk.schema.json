@@ -29,10 +29,15 @@
         {"name": "rgb", "args": [
           {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}
         ], "defaults": {"a": 1.0}},
-        {"name": "fromHex", "args": [{"name": "hex", "type": "u32"}]}
+        {"name": "fromHex", "args": [{"name": "hex", "type": "u32"}]},
+        {"name": "fromU8", "args": [
+          {"name": "r", "type": "u8"}, {"name": "g", "type": "u8"},
+          {"name": "b", "type": "u8"}, {"name": "a", "type": "u8"}
+        ]}
       ],
       "methods": [
-        {"name": "withAlpha", "params": [{"name": "a", "type": "f32"}], "returns": "Color"}
+        {"name": "withAlpha", "params": [{"name": "a", "type": "f32"}], "returns": "Color"},
+        {"name": "lerp", "params": [{"name": "to", "type": "Color"}, {"name": "t", "type": "f32"}], "returns": "Color"}
       ]
     },
     "Vec2": {
@@ -73,6 +78,13 @@
         {"name": "intersects", "params": [{"name": "other", "type": "Rect"}], "returns": "bool"}
       ]
     },
+    "Mat3x3": {
+      "kind": "value",
+      "doc": "3x3 matrix in column-major order for 2D transforms",
+      "fields": [
+        {"name": "m", "type": "f32[9]", "doc": "Matrix elements in column-major order"}
+      ]
+    },
     "Transform2D": {
       "kind": "component",
       "doc": "2D transform: position, rotation (radians), and scale",
@@ -85,18 +97,128 @@
         {"name": "default", "args": [], "value": [0, 0, 0, 1, 1]},
         {"name": "fromPosition", "args": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}]},
         {"name": "fromRotation", "args": [{"name": "radians", "type": "f32"}]},
-        {"name": "fromScale", "args": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}]}
-      ]
+        {"name": "fromRotationDegrees", "args": [{"name": "degrees", "type": "f32"}]},
+        {"name": "fromScale", "args": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}]},
+        {"name": "fromScaleUniform", "args": [{"name": "scale", "type": "f32"}]},
+        {"name": "fromPositionRotation", "args": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "rotation", "type": "f32"}]},
+        {"name": "new", "args": [{"name": "posX", "type": "f32"}, {"name": "posY", "type": "f32"}, {"name": "rotation", "type": "f32"}, {"name": "scaleX", "type": "f32"}, {"name": "scaleY", "type": "f32"}]},
+        {"name": "lookAt", "args": [{"name": "posX", "type": "f32"}, {"name": "posY", "type": "f32"}, {"name": "targetX", "type": "f32"}, {"name": "targetY", "type": "f32"}]}
+      ],
+      "methods": [
+        {"name": "translate", "doc": "Translates by world-space offset", "params": [{"name": "dx", "type": "f32"}, {"name": "dy", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "translateLocal", "doc": "Translates by local-space offset (relative to rotation)", "params": [{"name": "dx", "type": "f32"}, {"name": "dy", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "setPosition", "doc": "Sets world-space position", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "getPosition", "doc": "Gets world-space position", "params": [], "returns": "Vec2"},
+        {"name": "rotate", "doc": "Rotates by angle in radians", "params": [{"name": "angle", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "rotateDegrees", "doc": "Rotates by angle in degrees", "params": [{"name": "degrees", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "setRotation", "doc": "Sets rotation in radians", "params": [{"name": "rotation", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "setRotationDegrees", "doc": "Sets rotation in degrees", "params": [{"name": "degrees", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "getRotation", "doc": "Gets rotation in radians", "params": [], "returns": "f32"},
+        {"name": "getRotationDegrees", "doc": "Gets rotation in degrees", "params": [], "returns": "f32"},
+        {"name": "lookAtTarget", "doc": "Rotates to face a target point", "params": [{"name": "targetX", "type": "f32"}, {"name": "targetY", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "setScale", "doc": "Sets non-uniform scale", "params": [{"name": "scaleX", "type": "f32"}, {"name": "scaleY", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "setScaleUniform", "doc": "Sets uniform scale", "params": [{"name": "scale", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "getScale", "doc": "Gets scale as Vec2", "params": [], "returns": "Vec2"},
+        {"name": "scaleBy", "doc": "Multiplies current scale by factors", "params": [{"name": "factorX", "type": "f32"}, {"name": "factorY", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "forward", "doc": "Gets the forward direction vector", "params": [], "returns": "Vec2"},
+        {"name": "right", "doc": "Gets the right direction vector", "params": [], "returns": "Vec2"},
+        {"name": "backward", "doc": "Gets the backward direction vector", "params": [], "returns": "Vec2"},
+        {"name": "left", "doc": "Gets the left direction vector", "params": [], "returns": "Vec2"},
+        {"name": "matrix", "doc": "Gets the 3x3 transformation matrix", "params": [], "returns": "Mat3x3"},
+        {"name": "matrixInverse", "doc": "Gets the inverse transformation matrix", "params": [], "returns": "Mat3x3"},
+        {"name": "transformPoint", "doc": "Transforms a point from local to world space", "params": [{"name": "pointX", "type": "f32"}, {"name": "pointY", "type": "f32"}], "returns": "Vec2"},
+        {"name": "transformDirection", "doc": "Transforms a direction from local to world space", "params": [{"name": "dirX", "type": "f32"}, {"name": "dirY", "type": "f32"}], "returns": "Vec2"},
+        {"name": "inverseTransformPoint", "doc": "Transforms a point from world to local space", "params": [{"name": "pointX", "type": "f32"}, {"name": "pointY", "type": "f32"}], "returns": "Vec2"},
+        {"name": "inverseTransformDirection", "doc": "Transforms a direction from world to local space", "params": [{"name": "dirX", "type": "f32"}, {"name": "dirY", "type": "f32"}], "returns": "Vec2"},
+        {"name": "lerp", "doc": "Linearly interpolates between this and another transform", "params": [{"name": "to", "type": "Transform2D"}, {"name": "t", "type": "f32"}], "returns": "Transform2D"},
+        {"name": "normalizeAngle", "doc": "Normalizes an angle to [-PI, PI)", "params": [{"name": "angle", "type": "f32"}], "returns": "f32", "static": true}
+      ],
+      "builder": {
+        "doc": "Fluent builder for constructing Transform2D instances",
+        "methods": [
+          {"name": "new", "doc": "Creates a builder with default values", "params": [], "returns": "Transform2DBuilder"},
+          {"name": "atPosition", "doc": "Creates a builder at a specific position", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}], "returns": "Transform2DBuilder"},
+          {"name": "withPosition", "doc": "Sets position", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}], "returns": "Transform2DBuilder"},
+          {"name": "withRotation", "doc": "Sets rotation in radians", "params": [{"name": "rotation", "type": "f32"}], "returns": "Transform2DBuilder"},
+          {"name": "withRotationDegrees", "doc": "Sets rotation in degrees", "params": [{"name": "degrees", "type": "f32"}], "returns": "Transform2DBuilder"},
+          {"name": "withScale", "doc": "Sets non-uniform scale", "params": [{"name": "scaleX", "type": "f32"}, {"name": "scaleY", "type": "f32"}], "returns": "Transform2DBuilder"},
+          {"name": "withScaleUniform", "doc": "Sets uniform scale", "params": [{"name": "scale", "type": "f32"}], "returns": "Transform2DBuilder"},
+          {"name": "lookingAt", "doc": "Rotates to face a target", "params": [{"name": "targetX", "type": "f32"}, {"name": "targetY", "type": "f32"}], "returns": "Transform2DBuilder"},
+          {"name": "translate", "doc": "Translates by offset", "params": [{"name": "dx", "type": "f32"}, {"name": "dy", "type": "f32"}], "returns": "Transform2DBuilder"},
+          {"name": "rotate", "doc": "Rotates by angle in radians", "params": [{"name": "angle", "type": "f32"}], "returns": "Transform2DBuilder"},
+          {"name": "scaleBy", "doc": "Multiplies scale by factors", "params": [{"name": "factorX", "type": "f32"}, {"name": "factorY", "type": "f32"}], "returns": "Transform2DBuilder"},
+          {"name": "build", "doc": "Builds the Transform2D and consumes the builder", "params": [], "returns": "Transform2D"},
+          {"name": "free", "doc": "Frees the builder without building", "params": [], "returns": "void"}
+        ]
+      }
     },
     "Sprite": {
       "kind": "component",
       "doc": "Sprite rendering component",
       "fields": [
         {"name": "textureHandle", "type": "u64"},
-        {"name": "color", "type": "Color"},
+        {"name": "colorR", "type": "f32"}, {"name": "colorG", "type": "f32"}, {"name": "colorB", "type": "f32"}, {"name": "colorA", "type": "f32"},
+        {"name": "sourceRectX", "type": "f32"}, {"name": "sourceRectY", "type": "f32"}, {"name": "sourceRectWidth", "type": "f32"}, {"name": "sourceRectHeight", "type": "f32"},
+        {"name": "hasSourceRect", "type": "bool"},
         {"name": "flipX", "type": "bool"}, {"name": "flipY", "type": "bool"},
-        {"name": "anchorX", "type": "f32"}, {"name": "anchorY", "type": "f32"}
-      ]
+        {"name": "anchorX", "type": "f32"}, {"name": "anchorY", "type": "f32"},
+        {"name": "customSizeX", "type": "f32"}, {"name": "customSizeY", "type": "f32"},
+        {"name": "hasCustomSize", "type": "bool"}
+      ],
+      "factories": [
+        {"name": "new", "args": [{"name": "textureHandle", "type": "u64"}]},
+        {"name": "default", "args": []}
+      ],
+      "methods": [
+        {"name": "setColor", "doc": "Sets the RGBA color tint", "params": [{"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "getColor", "doc": "Gets the color tint as FfiColor", "params": [], "returns": "Color"},
+        {"name": "withColor", "doc": "Returns a copy with modified color", "params": [{"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "Sprite"},
+        {"name": "setAlpha", "doc": "Sets the alpha channel", "params": [{"name": "alpha", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "getAlpha", "doc": "Gets the alpha channel", "params": [], "returns": "f32"},
+        {"name": "setSourceRect", "doc": "Sets the source rectangle for sprite sheets", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "clearSourceRect", "doc": "Clears the source rectangle (uses full texture)", "params": [], "returns": "void", "mutates": true},
+        {"name": "getSourceRect", "doc": "Gets the source rectangle", "params": [], "returns": "Rect"},
+        {"name": "hasSourceRect", "doc": "Returns true if a source rectangle is set", "params": [], "returns": "bool"},
+        {"name": "withSourceRect", "doc": "Returns a copy with a source rectangle", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "Sprite"},
+        {"name": "setFlipX", "doc": "Sets horizontal flip", "params": [{"name": "flip", "type": "bool"}], "returns": "void", "mutates": true},
+        {"name": "getFlipX", "doc": "Gets horizontal flip state", "params": [], "returns": "bool"},
+        {"name": "setFlipY", "doc": "Sets vertical flip", "params": [{"name": "flip", "type": "bool"}], "returns": "void", "mutates": true},
+        {"name": "getFlipY", "doc": "Gets vertical flip state", "params": [], "returns": "bool"},
+        {"name": "setFlip", "doc": "Sets both flip flags at once", "params": [{"name": "flipX", "type": "bool"}, {"name": "flipY", "type": "bool"}], "returns": "void", "mutates": true},
+        {"name": "withFlipX", "doc": "Returns a copy with horizontal flip", "params": [{"name": "flip", "type": "bool"}], "returns": "Sprite"},
+        {"name": "withFlipY", "doc": "Returns a copy with vertical flip", "params": [{"name": "flip", "type": "bool"}], "returns": "Sprite"},
+        {"name": "withFlip", "doc": "Returns a copy with both flip flags", "params": [{"name": "flipX", "type": "bool"}, {"name": "flipY", "type": "bool"}], "returns": "Sprite"},
+        {"name": "isFlipped", "doc": "Returns true if either flip flag is set", "params": [], "returns": "bool"},
+        {"name": "setAnchor", "doc": "Sets the anchor point (normalized 0-1)", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "getAnchor", "doc": "Gets the anchor point", "params": [], "returns": "Vec2"},
+        {"name": "withAnchor", "doc": "Returns a copy with modified anchor", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}], "returns": "Sprite"},
+        {"name": "setCustomSize", "doc": "Sets a custom render size", "params": [{"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "void", "mutates": true},
+        {"name": "clearCustomSize", "doc": "Clears custom size (uses texture dimensions)", "params": [], "returns": "void", "mutates": true},
+        {"name": "getCustomSize", "doc": "Gets the custom size", "params": [], "returns": "Vec2"},
+        {"name": "hasCustomSize", "doc": "Returns true if custom size is set", "params": [], "returns": "bool"},
+        {"name": "withCustomSize", "doc": "Returns a copy with custom size", "params": [{"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "Sprite"},
+        {"name": "setTexture", "doc": "Sets the texture handle", "params": [{"name": "handle", "type": "u64"}], "returns": "void", "mutates": true},
+        {"name": "getTexture", "doc": "Gets the texture handle", "params": [], "returns": "u64"},
+        {"name": "sizeOrRect", "doc": "Returns custom size if set, otherwise source rect dimensions, otherwise zero", "params": [], "returns": "Vec2"}
+      ],
+      "builder": {
+        "doc": "Fluent builder for constructing Sprite instances",
+        "methods": [
+          {"name": "new", "doc": "Creates a builder with a texture handle", "params": [{"name": "textureHandle", "type": "u64"}], "returns": "SpriteBuilder"},
+          {"name": "default", "doc": "Creates a builder with default values", "params": [], "returns": "SpriteBuilder"},
+          {"name": "withTexture", "doc": "Sets texture handle", "params": [{"name": "handle", "type": "u64"}], "returns": "SpriteBuilder"},
+          {"name": "withColor", "doc": "Sets color tint", "params": [{"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "SpriteBuilder"},
+          {"name": "withAlpha", "doc": "Sets alpha channel", "params": [{"name": "alpha", "type": "f32"}], "returns": "SpriteBuilder"},
+          {"name": "withSourceRect", "doc": "Sets source rectangle", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "SpriteBuilder"},
+          {"name": "withFlipX", "doc": "Sets horizontal flip", "params": [{"name": "flip", "type": "bool"}], "returns": "SpriteBuilder"},
+          {"name": "withFlipY", "doc": "Sets vertical flip", "params": [{"name": "flip", "type": "bool"}], "returns": "SpriteBuilder"},
+          {"name": "withFlip", "doc": "Sets both flip flags", "params": [{"name": "flipX", "type": "bool"}, {"name": "flipY", "type": "bool"}], "returns": "SpriteBuilder"},
+          {"name": "withAnchor", "doc": "Sets anchor point", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}], "returns": "SpriteBuilder"},
+          {"name": "withCustomSize", "doc": "Sets custom size", "params": [{"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "SpriteBuilder"},
+          {"name": "build", "doc": "Builds the Sprite and consumes the builder", "params": [], "returns": "Sprite"},
+          {"name": "free", "doc": "Frees the builder without building", "params": [], "returns": "void"}
+        ]
+      }
     },
     "RenderStats": {
       "kind": "value",
@@ -400,6 +522,12 @@
           "returns": "bool"
         },
         {
+          "name": "isAliveBatch",
+          "doc": "Checks if multiple entities are alive, writing results to an output array",
+          "params": [{"name": "entities", "type": "Entity[]"}, {"name": "outResults", "type": "u8[]"}],
+          "returns": "u32"
+        },
+        {
           "name": "addTransform2d",
           "doc": "Attaches a Transform2D component to the entity",
           "params": [
@@ -562,7 +690,16 @@
         {"name": "aabbOverlap",     "doc": "Fast AABB overlap test",                  "params": [{"name": "minAx", "type": "f32"}, {"name": "minAy", "type": "f32"}, {"name": "maxAx", "type": "f32"}, {"name": "maxAy", "type": "f32"}, {"name": "minBx", "type": "f32"}, {"name": "minBy", "type": "f32"}, {"name": "maxBx", "type": "f32"}, {"name": "maxBy", "type": "f32"}], "returns": "bool"},
         {"name": "circleOverlap",   "doc": "Fast circle overlap test",                "params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "r1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}, {"name": "r2", "type": "f32"}], "returns": "bool"},
         {"name": "distance",        "doc": "Distance between two points",             "params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}], "returns": "f32"},
-        {"name": "distanceSquared", "doc": "Squared distance between two points",     "params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}], "returns": "f32"}
+        {"name": "distanceSquared", "doc": "Squared distance between two points",     "params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}], "returns": "f32"},
+        {"name": "componentRegisterType", "doc": "Registers a component type for generic operations", "params": [{"name": "typeIdHash", "type": "u64"}, {"name": "name", "type": "string"}, {"name": "size", "type": "usize"}, {"name": "align", "type": "usize"}], "returns": "bool"},
+        {"name": "componentAdd", "doc": "Adds a generic component to an entity", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}, {"name": "dataPtr", "type": "ptr"}, {"name": "dataSize", "type": "usize"}], "returns": "bool"},
+        {"name": "componentRemove", "doc": "Removes a generic component from an entity", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "bool"},
+        {"name": "componentHas", "doc": "Checks if an entity has a generic component", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "bool"},
+        {"name": "componentGet", "doc": "Gets a read-only pointer to a generic component", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "ptr"},
+        {"name": "componentGetMut", "doc": "Gets a mutable pointer to a generic component", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "ptr"},
+        {"name": "componentAddBatch", "doc": "Adds a generic component to multiple entities", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "typeIdHash", "type": "u64"}, {"name": "dataPtr", "type": "ptr"}, {"name": "componentSize", "type": "usize"}], "returns": "u32"},
+        {"name": "componentRemoveBatch", "doc": "Removes a generic component from multiple entities", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "typeIdHash", "type": "u64"}], "returns": "u32"},
+        {"name": "componentHasBatch", "doc": "Checks if multiple entities have a generic component", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "typeIdHash", "type": "u64"}, {"name": "outResults", "type": "u8[]"}], "returns": "u32"}
       ]
     },
     "GoudContext": {
@@ -578,6 +715,7 @@
         {"name": "despawn",      "params": [{"name": "entity",   "type": "Entity"}],    "returns": "bool"},
         {"name": "despawnBatch", "params": [{"name": "entities", "type": "Entity[]"}],  "returns": "u32"},
         {"name": "isAlive",     "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
+        {"name": "isAliveBatch", "doc": "Checks if multiple entities are alive", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "outResults", "type": "u8[]"}], "returns": "u32"},
         {"name": "entityCount", "params": [], "returns": "u32"},
         {"name": "addTransform2d",    "params": [{"name": "entity", "type": "Entity"}, {"name": "transform", "type": "Transform2D"}], "returns": "void"},
         {"name": "getTransform2d",    "params": [{"name": "entity", "type": "Entity"}], "returns": "Transform2D?", "nullable": true},
@@ -592,7 +730,16 @@
         {"name": "addName",    "params": [{"name": "entity", "type": "Entity"}, {"name": "name", "type": "string"}], "returns": "void"},
         {"name": "getName",    "params": [{"name": "entity", "type": "Entity"}], "returns": "string?", "nullable": true},
         {"name": "hasName",    "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
-        {"name": "removeName", "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"}
+        {"name": "removeName", "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
+        {"name": "componentRegisterType", "doc": "Registers a component type for generic operations", "params": [{"name": "typeIdHash", "type": "u64"}, {"name": "name", "type": "string"}, {"name": "size", "type": "usize"}, {"name": "align", "type": "usize"}], "returns": "bool"},
+        {"name": "componentAdd", "doc": "Adds a generic component to an entity", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}, {"name": "dataPtr", "type": "ptr"}, {"name": "dataSize", "type": "usize"}], "returns": "bool"},
+        {"name": "componentRemove", "doc": "Removes a generic component from an entity", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "bool"},
+        {"name": "componentHas", "doc": "Checks if an entity has a generic component", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "bool"},
+        {"name": "componentGet", "doc": "Gets a read-only pointer to a generic component", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "ptr"},
+        {"name": "componentGetMut", "doc": "Gets a mutable pointer to a generic component", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "ptr"},
+        {"name": "componentAddBatch", "doc": "Adds a generic component to multiple entities", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "typeIdHash", "type": "u64"}, {"name": "dataPtr", "type": "ptr"}, {"name": "componentSize", "type": "usize"}], "returns": "u32"},
+        {"name": "componentRemoveBatch", "doc": "Removes a generic component from multiple entities", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "typeIdHash", "type": "u64"}], "returns": "u32"},
+        {"name": "componentHasBatch", "doc": "Checks if multiple entities have a generic component", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "typeIdHash", "type": "u64"}, {"name": "outResults", "type": "u8[]"}], "returns": "u32"}
       ]
     }
   }
