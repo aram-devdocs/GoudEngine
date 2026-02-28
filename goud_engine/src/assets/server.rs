@@ -321,37 +321,146 @@ impl AssetServer {
         handle
     }
 
-    /// Internal method to load an asset synchronously.
-    fn load_asset_sync<A: Asset>(&mut self, path: &AssetPath) -> Result<A, AssetLoadError> {
-        // Get file extension
+    /// Runs raw bytes through the registered loader for the given asset path's extension.
+    fn parse_bytes<A: Asset>(&self, path: &AssetPath, bytes: &[u8]) -> Result<A, AssetLoadError> {
         let extension = path
             .extension()
             .ok_or_else(|| AssetLoadError::unsupported_format(""))?;
 
-        // Find loader
         let loader = self
             .loaders
             .get(extension)
             .ok_or_else(|| AssetLoadError::unsupported_format(extension))?;
 
-        // Build full path
-        let full_path = self.asset_root.join(path.as_str());
-
-        // Read file
-        let bytes =
-            std::fs::read(&full_path).map_err(|e| AssetLoadError::io_error(&full_path, e))?;
-
-        // Create load context
         let mut context = LoadContext::new(path.clone().into_owned());
+        let boxed = loader.load_erased(bytes, &mut context)?;
 
-        // Load asset (type-erased)
-        let boxed = loader.load_erased(&bytes, &mut context)?;
-
-        // Downcast to concrete type
         boxed
             .downcast::<A>()
             .map(|boxed| *boxed)
             .map_err(|_| AssetLoadError::custom("Type mismatch after loading"))
+    }
+
+    /// Reads a file from disk and parses it into an asset.
+    fn load_asset_sync<A: Asset>(&self, path: &AssetPath) -> Result<A, AssetLoadError> {
+        let full_path = self.asset_root.join(path.as_str());
+        let bytes =
+            std::fs::read(&full_path).map_err(|e| AssetLoadError::io_error(&full_path, e))?;
+        self.parse_bytes::<A>(path, &bytes)
+    }
+
+    /// Loads an asset from pre-fetched bytes, returning a handle.
+    ///
+    /// This is the platform-agnostic entry point for loading assets when you
+    /// already have the raw bytes (e.g., from a web fetch, embedded resource,
+    /// or custom I/O layer). The bytes are run through the registered loader
+    /// matched by the path's file extension.
+    ///
+    /// Returns an existing handle if an asset with the same path is already loaded.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - Logical asset path (used for loader lookup and deduplication)
+    /// * `bytes` - Raw asset bytes to parse
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::assets::{Asset, AssetServer, AssetLoader, LoadContext, AssetLoadError};
+    ///
+    /// #[derive(Clone)]
+    /// struct JsonAsset { data: String }
+    /// impl Asset for JsonAsset {}
+    ///
+    /// #[derive(Clone)]
+    /// struct JsonLoader;
+    /// impl AssetLoader for JsonLoader {
+    ///     type Asset = JsonAsset;
+    ///     type Settings = ();
+    ///     fn extensions(&self) -> &[&str] { &["json"] }
+    ///     fn load<'a>(
+    ///         &'a self, bytes: &'a [u8], _: &'a (), _: &'a mut LoadContext,
+    ///     ) -> Result<Self::Asset, AssetLoadError> {
+    ///         Ok(JsonAsset { data: String::from_utf8_lossy(bytes).into_owned() })
+    ///     }
+    /// }
+    ///
+    /// let mut server = AssetServer::new();
+    /// server.register_loader(JsonLoader);
+    ///
+    /// let bytes = br#"{"key": "value"}"#;
+    /// let handle = server.load_from_bytes::<JsonAsset>("config.json", bytes);
+    /// assert!(server.is_loaded(&handle));
+    /// ```
+    pub fn load_from_bytes<A: Asset>(
+        &mut self,
+        path: impl AsRef<Path>,
+        bytes: &[u8],
+    ) -> AssetHandle<A> {
+        let asset_path = AssetPath::new(path.as_ref().to_str().unwrap_or_default());
+
+        if let Some(handle) = self.storage.get_handle_by_path::<A>(asset_path.as_str()) {
+            return handle;
+        }
+
+        let handle = self.storage.reserve_with_path::<A>(asset_path.clone());
+
+        match self.parse_bytes::<A>(&asset_path, bytes) {
+            Ok(asset) => {
+                self.storage.set_loaded(&handle, asset);
+            }
+            Err(error) => {
+                if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
+                    entry.set_failed(error.to_string());
+                }
+            }
+        }
+
+        handle
+    }
+
+    /// Loads an asset asynchronously via the browser Fetch API.
+    ///
+    /// Constructs a URL from the asset root and path, fetches the bytes over
+    /// HTTP, then runs them through the registered loader. Only available when
+    /// the `web` feature is enabled (wasm32 targets).
+    ///
+    /// Returns an existing handle if an asset with the same path is already loaded.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - Asset path relative to the asset root (e.g., "textures/player.png")
+    #[cfg(feature = "web")]
+    pub async fn load_async<A: Asset>(&mut self, path: impl AsRef<Path>) -> AssetHandle<A> {
+        let asset_path = AssetPath::new(path.as_ref().to_str().unwrap_or_default());
+
+        if let Some(handle) = self.storage.get_handle_by_path::<A>(asset_path.as_str()) {
+            return handle;
+        }
+
+        let handle = self.storage.reserve_with_path::<A>(asset_path.clone());
+
+        let url = format!("{}/{}", self.asset_root.display(), asset_path.as_str());
+
+        match crate::assets::web_fetch::web_fetch(&url).await {
+            Ok(bytes) => match self.parse_bytes::<A>(&asset_path, &bytes) {
+                Ok(asset) => {
+                    self.storage.set_loaded(&handle, asset);
+                }
+                Err(error) => {
+                    if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
+                        entry.set_failed(error.to_string());
+                    }
+                }
+            },
+            Err(error) => {
+                if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
+                    entry.set_failed(error.to_string());
+                }
+            }
+        }
+
+        handle
     }
 
     /// Gets a reference to a loaded asset.
@@ -996,6 +1105,76 @@ mod tests {
             assert_eq!(server.loaded_count::<TestAsset>(), 1);
             assert_eq!(server.loaded_count::<TestTexture>(), 1);
             assert_eq!(server.total_loaded_count(), 2);
+        }
+    }
+
+    mod load_from_bytes {
+        use super::*;
+
+        #[test]
+        fn test_load_from_bytes_success() {
+            let mut server = AssetServer::new();
+            server.register_loader(TestAssetLoader);
+
+            let handle = server.load_from_bytes::<TestAsset>("greeting.test", b"Hello from bytes");
+
+            assert!(server.is_loaded(&handle));
+            assert_eq!(server.get(&handle).unwrap().content, "Hello from bytes");
+        }
+
+        #[test]
+        fn test_load_from_bytes_deduplication() {
+            let mut server = AssetServer::new();
+            server.register_loader(TestAssetLoader);
+
+            let h1 = server.load_from_bytes::<TestAsset>("dup.test", b"first");
+            let h2 = server.load_from_bytes::<TestAsset>("dup.test", b"second");
+
+            assert_eq!(h1, h2);
+            assert_eq!(server.loaded_count::<TestAsset>(), 1);
+            assert_eq!(server.get(&h1).unwrap().content, "first");
+        }
+
+        #[test]
+        fn test_load_from_bytes_unsupported_extension() {
+            let mut server = AssetServer::new();
+            server.register_loader(TestAssetLoader);
+
+            let handle = server.load_from_bytes::<TestAsset>("data.unknown", b"data");
+
+            assert!(!server.is_loaded(&handle));
+            let state = server.get_load_state(&handle);
+            assert!(state.unwrap().is_failed());
+        }
+
+        #[test]
+        fn test_load_from_bytes_decode_error() {
+            let mut server = AssetServer::new();
+            server.register_loader(TestTextureLoader);
+
+            // TestTextureLoader requires at least 8 bytes
+            let handle = server.load_from_bytes::<TestTexture>("tiny.png", &[1, 2]);
+
+            assert!(!server.is_loaded(&handle));
+            assert!(server.get_load_state(&handle).unwrap().is_failed());
+        }
+
+        #[test]
+        fn test_load_from_bytes_multiple_types() {
+            let mut server = AssetServer::new();
+            server.register_loader(TestAssetLoader);
+            server.register_loader(TestTextureLoader);
+
+            let h1 = server.load_from_bytes::<TestAsset>("hello.test", b"text data");
+            let h2 =
+                server.load_from_bytes::<TestTexture>("sprite.png", &[64, 0, 0, 0, 32, 0, 0, 0]);
+
+            assert!(server.is_loaded(&h1));
+            assert!(server.is_loaded(&h2));
+            assert_eq!(server.get(&h1).unwrap().content, "text data");
+            let tex = server.get(&h2).unwrap();
+            assert_eq!(tex.width, 64);
+            assert_eq!(tex.height, 32);
         }
     }
 

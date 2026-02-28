@@ -740,6 +740,7 @@ dependencies = [
  "glfw",
  "husky-rs",
  "image",
+ "js-sys",
  "log",
  "notify",
  "rayon",
@@ -747,6 +748,9 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tiled",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]

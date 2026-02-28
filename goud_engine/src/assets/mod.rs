@@ -78,6 +78,8 @@ mod hot_reload;
 mod loader;
 mod server;
 mod storage;
+#[cfg(feature = "web")]
+pub mod web_fetch;
 
 // Built-in asset loaders
 pub mod loaders;
@@ -107,3 +109,7 @@ pub use hot_reload::{AssetChangeEvent, HotReloadConfig, HotReloadWatcher};
 // Re-export audio manager
 #[cfg(feature = "native")]
 pub use audio_manager::AudioManager;
+
+// Re-export web fetch
+#[cfg(feature = "web")]
+pub use web_fetch::web_fetch;

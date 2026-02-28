@@ -30,6 +30,7 @@ rpath = false
 [features]
 default = ["native"]
 native = ["dep:gl", "dep:glfw", "dep:rodio", "dep:notify"]
+web = ["dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:web-sys", "dep:js-sys"]
 
 # TODO: https://github.com/aram-devdocs/GoudEngine/issues/8
 [dependencies]
@@ -49,7 +50,10 @@ rayon = "1.10"
 notify = { version = "6.1", optional = true }
 rodio = { version = "0.17", optional = true }
 bytemuck = "1.14"
-
+wasm-bindgen = { version = "0.2", optional = true }
+wasm-bindgen-futures = { version = "0.4", optional = true }
+js-sys = { version = "0.3", optional = true }
+web-sys = { version = "0.3", optional = true, features = ["Window", "Response"] }
 
 [lib]
 crate-type = ["cdylib", "rlib"]
