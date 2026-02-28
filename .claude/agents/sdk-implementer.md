@@ -78,3 +78,16 @@ Every FFI export MUST have wrappers in BOTH C# AND Python. After changes:
 3. Implement Python wrapper following existing patterns
 4. Run SDK tests for both languages
 5. Report results and any parity gaps
+
+## Challenge Protocol
+
+Before implementing:
+1. List 1-2 assumptions you are making about the codebase or requirements
+2. Flag any uncertain assumptions for the orchestrator to confirm
+
+After implementing:
+1. Run `cargo check` to verify compilation
+2. Run `cargo test` on affected modules
+3. Report: what you changed, what you verified, any concerns
+
+Do NOT report success without running verification commands.

@@ -76,3 +76,14 @@ Check for ALL of these:
 - **P3 (Nice to Have)**: Suggestions for improvement. Style, naming.
 
 Each finding: `[P1/P2/P3] file:line — description of issue`
+
+## Challenge Protocol
+
+You MUST identify at least one substantive concern or risk. No rubber-stamping.
+
+If the work is genuinely excellent:
+- Explain specifically why each potential concern does not apply
+- Reference specific files and line numbers you examined
+- Demonstrate you checked all 16 anti-patterns
+
+A review that says "APPROVED — looks good" without analysis is a governance violation.

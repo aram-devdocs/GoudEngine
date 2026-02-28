@@ -42,7 +42,10 @@
       "Bash(file:*)",
       "Bash(mkdir:*)",
       "Bash(cp:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "WebFetch(domain:claudefa.st)",
+      "WebFetch(domain:claudelog.com)",
+      "Bash(chmod +x:*)"
     ],
     "deny": [
       "Bash(cargo publish:*)",

@@ -67,6 +67,9 @@ sdks/GoudEngine/runtimes/win-x64/native/goud_engine.dll
 # Claude session memory (local, not shared)
 .claude/memory/
 
+# Claude session state (ephemeral, per-session governance state)
+.claude/state/
+
 # Playwright MCP
 .playwright-mcp/
 

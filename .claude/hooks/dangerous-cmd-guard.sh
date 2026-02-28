@@ -2,7 +2,8 @@
 # PreToolUse hook: block destructive or dangerous shell commands
 set -euo pipefail
 
-CMD="${TOOL_INPUT_COMMAND:-}"
+INPUT=$(cat)
+CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 
 if [[ -z "$CMD" ]]; then
   exit 0

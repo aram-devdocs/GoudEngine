@@ -2,8 +2,9 @@
 # PreToolUse hook: block writes containing secrets or credentials
 set -euo pipefail
 
-FILE="${TOOL_INPUT_FILE:-}"
-CONTENT="${TOOL_INPUT_CONTENT:-}"
+INPUT=$(cat)
+FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.file // empty')
+CONTENT=$(echo "$INPUT" | jq -r '.tool_input.content // .tool_input.new_string // empty')
 
 if [[ -z "$CONTENT" ]]; then
   exit 0

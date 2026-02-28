@@ -65,3 +65,16 @@ Never introduce upward dependencies.
 - No `todo!()` or `unimplemented!()` in production code
 - No `#[allow(unused)]` without justification
 - Files must not exceed 500 lines
+
+## Challenge Protocol
+
+Before implementing:
+1. List 1-2 assumptions you are making about the codebase or requirements
+2. Flag any uncertain assumptions for the orchestrator to confirm
+
+After implementing:
+1. Run `cargo check` to verify compilation
+2. Run `cargo test` on affected modules
+3. Report: what you changed, what you verified, any concerns
+
+Do NOT report success without running verification commands.

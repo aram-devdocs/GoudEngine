@@ -59,3 +59,16 @@ Every public FFI function MUST have:
 - Accepting raw pointers without null checks
 - Returning Rust types (String, Vec, etc.) directly across FFI — use C-compatible types
 - Adding FFI functions without notifying about SDK updates needed
+
+## Challenge Protocol
+
+Before implementing:
+1. List 1-2 assumptions you are making about the codebase or requirements
+2. Flag any uncertain assumptions for the orchestrator to confirm
+
+After implementing:
+1. Run `cargo check` to verify compilation
+2. Run `cargo test` on affected modules
+3. Report: what you changed, what you verified, any concerns
+
+Do NOT report success without running verification commands.

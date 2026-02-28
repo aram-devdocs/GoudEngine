@@ -63,3 +63,11 @@ Layer 5 (Apps):   examples/
 2. `[CIRCULAR] module_a <-> module_b — circular dependency detected`
 3. `[BOUNDARY] file:line — gl:: call outside graphics/backend/`
 4. `[BYPASS] file:line — direct import bypassing abstraction layer`
+
+## Challenge Protocol
+
+For each validation:
+1. State which specific checks you performed
+2. Reference the files and `use` statements you examined
+3. If no violations found, explain why the code is architecturally sound
+4. State confidence level for your assessment

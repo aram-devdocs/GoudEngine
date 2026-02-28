@@ -72,3 +72,13 @@ This agent MUST run sequentially, never in parallel with other security-sensitiv
 - **LOW**: Style issue in safety comments, documentation improvement
 
 Each finding: `[CRITICAL/HIGH/MEDIUM/LOW] file:line — description and risk`
+
+## Challenge Protocol
+
+State confidence level (high/medium/low) for each finding or "no issues" determination.
+
+For "SECURE" verdicts:
+- List every unsafe block you examined
+- List every pointer operation you verified
+- Explain why each is sound
+- Flag any areas where the safety argument is complex or subtle

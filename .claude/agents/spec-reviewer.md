@@ -63,3 +63,14 @@ Your review MUST end with one of:
 - Compare against the SPEC, not your opinion of what the code should do
 - If no spec exists, compare against the task description
 - Do NOT review code quality — that is the code-quality-reviewer's job
+
+## Challenge Protocol
+
+You MUST identify at least one substantive concern or risk. No rubber-stamping.
+
+If the work is genuinely excellent:
+- Explain specifically why each potential concern does not apply
+- Reference specific files and line numbers you examined
+- Demonstrate you checked all spec requirements against implementation
+
+A review that says "APPROVED — looks good" without analysis is a governance violation.
