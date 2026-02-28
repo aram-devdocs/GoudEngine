@@ -70,5 +70,5 @@ pub mod sdk;
 ///
 /// Exposes the engine's ECS, input, and timing through `wasm-bindgen`
 /// for consumption by the TypeScript web SDK.
-#[cfg(feature = "web")]
+#[cfg(all(feature = "web", target_arch = "wasm32"))]
 pub mod wasm;

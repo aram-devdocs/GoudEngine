@@ -148,10 +148,10 @@ impl WasmGame {
                 ..Default::default()
             })
             .await
-            .ok_or_else(|| JsValue::from_str("No suitable GPU adapter found"))?;
+            .map_err(|e| JsValue::from_str(&format!("No suitable GPU adapter found: {}", e)))?;
 
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default(), None)
+        let (device, queue): (wgpu::Device, wgpu::Queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .map_err(|e| JsValue::from_str(&format!("Device request failed: {}", e)))?;
 
