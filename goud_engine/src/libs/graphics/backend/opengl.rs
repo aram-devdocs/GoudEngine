@@ -5,8 +5,8 @@
 
 use super::{
     types::{
-        BufferHandle, BufferType, BufferUsage, ShaderHandle, TextureFilter, TextureFormat,
-        TextureHandle, TextureWrap,
+        BufferHandle, BufferType, BufferUsage, DepthFunc, FrontFace, ShaderHandle, TextureFilter,
+        TextureFormat, TextureHandle, TextureWrap,
     },
     BackendCapabilities, BackendInfo, BlendFactor, CullFace, RenderBackend,
 };
@@ -94,6 +94,9 @@ pub struct OpenGLBackend {
 
     // Currently bound shader program
     bound_shader: Option<u32>,
+
+    // Default VAO kept bound for backends that require vertex array state (OpenGL 3.3 core)
+    default_vao: u32,
 }
 
 #[allow(dead_code)] // Methods used in OpenGL context tests
@@ -184,6 +187,14 @@ impl OpenGLBackend {
             capabilities,
         };
 
+        // Create a default VAO that stays bound for the lifetime of the backend.
+        // OpenGL 3.3 core requires a VAO for draw calls and vertex attribute setup.
+        let mut default_vao = 0u32;
+        unsafe {
+            gl::GenVertexArrays(1, &mut default_vao);
+            gl::BindVertexArray(default_vao);
+        }
+
         let max_units = capabilities.max_texture_units as usize;
         Ok(Self {
             info,
@@ -199,6 +210,7 @@ impl OpenGLBackend {
             shader_allocator: HandleAllocator::new(),
             shaders: HashMap::new(),
             bound_shader: None,
+            default_vao,
         })
     }
 
@@ -334,6 +346,48 @@ impl RenderBackend for OpenGLBackend {
         };
         unsafe {
             gl::CullFace(gl_face);
+        }
+    }
+
+    fn set_depth_func(&mut self, func: DepthFunc) {
+        let gl_func = match func {
+            DepthFunc::Always => gl::ALWAYS,
+            DepthFunc::Never => gl::NEVER,
+            DepthFunc::Less => gl::LESS,
+            DepthFunc::LessEqual => gl::LEQUAL,
+            DepthFunc::Greater => gl::GREATER,
+            DepthFunc::GreaterEqual => gl::GEQUAL,
+            DepthFunc::Equal => gl::EQUAL,
+            DepthFunc::NotEqual => gl::NOTEQUAL,
+        };
+        // SAFETY: Valid GL enum passed to DepthFunc
+        unsafe {
+            gl::DepthFunc(gl_func);
+        }
+    }
+
+    fn set_front_face(&mut self, face: FrontFace) {
+        let gl_face = match face {
+            FrontFace::Ccw => gl::CCW,
+            FrontFace::Cw => gl::CW,
+        };
+        // SAFETY: Valid GL enum passed to FrontFace
+        unsafe {
+            gl::FrontFace(gl_face);
+        }
+    }
+
+    fn set_depth_mask(&mut self, enabled: bool) {
+        // SAFETY: Boolean mapped to GL_TRUE/GL_FALSE
+        unsafe {
+            gl::DepthMask(if enabled { gl::TRUE } else { gl::FALSE });
+        }
+    }
+
+    fn set_line_width(&mut self, width: f32) {
+        // SAFETY: Positive float passed to LineWidth
+        unsafe {
+            gl::LineWidth(width);
         }
     }
 
@@ -1125,6 +1179,24 @@ impl RenderBackend for OpenGLBackend {
         }
 
         Ok(())
+    }
+}
+
+impl Drop for OpenGLBackend {
+    fn drop(&mut self) {
+        // SAFETY: Cleaning up all GL resources owned by this backend instance
+        unsafe {
+            for meta in self.buffers.values() {
+                gl::DeleteBuffers(1, &meta.gl_id);
+            }
+            for meta in self.textures.values() {
+                gl::DeleteTextures(1, &meta.gl_id);
+            }
+            for meta in self.shaders.values() {
+                gl::DeleteProgram(meta.gl_id);
+            }
+            gl::DeleteVertexArrays(1, &self.default_vao);
+        }
     }
 }
 
