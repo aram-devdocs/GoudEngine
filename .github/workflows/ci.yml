@@ -59,10 +59,24 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
     
+    - name: Set up Python (for codegen)
+      if: matrix.rust == 'stable'
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Run SDK codegen (generates .g.rs files needed by workspace)
+      if: matrix.rust == 'stable'
+      run: |
+        python3 codegen/gen_csharp.py
+        python3 codegen/gen_python.py
+        python3 codegen/gen_ts_node.py
+        python3 codegen/gen_ts_web.py
+
     - name: Check formatting
       if: matrix.rust == 'stable'
       run: cargo fmt --all -- --check
-    
+
     - name: Run clippy
       if: matrix.rust == 'stable'
       run: |
@@ -75,23 +89,9 @@ jobs:
           cargo clippy --all-targets --all-features -- -D warnings
         fi
       shell: bash
-    
+
     - name: Build
       run: cargo build --verbose
-
-    - name: Set up Python (for codegen)
-      if: matrix.rust == 'stable'
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Run SDK codegen
-      if: matrix.rust == 'stable'
-      run: |
-        python3 codegen/gen_csharp.py
-        python3 codegen/gen_python.py
-        python3 codegen/gen_ts_node.py
-        python3 codegen/gen_ts_web.py
 
     - name: Run tests
       run: cargo test --verbose -- --nocapture
