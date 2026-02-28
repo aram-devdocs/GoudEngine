@@ -7,6 +7,7 @@
 # - sdks/csharp/GoudEngine.csproj
 # - sdks/typescript/package.json
 # - sdks/typescript/native/Cargo.toml
+# - sdks/rust/Cargo.toml
 # - codegen/goud_sdk.schema.json
 # - All .csproj files in /examples directory
 #
@@ -66,5 +67,8 @@ sed -i '' "s/\"version\": \"[0-9]*\.[0-9]*\.[0-9]*\"/\"version\": \"$NEW_VERSION
 
 # Update TypeScript native Cargo.toml version
 sed -i '' "s/^version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$NEW_VERSION\"/" sdks/typescript/native/Cargo.toml
+
+# Update Rust SDK Cargo.toml version
+sed -i '' "s/^version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$NEW_VERSION\"/" sdks/rust/Cargo.toml
 
 echo "Version update complete!"

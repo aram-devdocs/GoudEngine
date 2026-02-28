@@ -1098,6 +1098,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "goud-engine-sdk"
+version = "0.0.815"
+dependencies = [
+ "goud_engine",
+]
+
+[[package]]
 name = "goud_engine"
 version = "0.0.815"
 dependencies = [

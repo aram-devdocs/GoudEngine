@@ -1,0 +1,9 @@
+[package]
+name = "goud-engine-sdk"
+version = "0.0.815"
+edition = "2021"
+description = "GoudEngine Rust SDK — native re-export of the engine API"
+license = "MIT"
+
+[dependencies]
+goud_engine = { path = "../../goud_engine" }
