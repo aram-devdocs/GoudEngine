@@ -66,3 +66,12 @@ sdks/GoudEngine/runtimes/win-x64/native/goud_engine.dll
 
 # Claude session memory (local, not shared)
 .claude/memory/
+
+# Playwright MCP
+.playwright-mcp/
+
+# TypeScript compiled output
+examples/typescript/**/dist/
+
+# Screenshots from browser testing
+flappy-web-*.png

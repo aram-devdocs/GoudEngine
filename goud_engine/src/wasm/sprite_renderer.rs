@@ -292,21 +292,22 @@ impl WgpuSpriteRenderer {
         }
 
         let color = [r, g, b, a];
-        let cx = x + w * 0.5;
-        let cy = y + h * 0.5;
+        let hw = w * 0.5;
+        let hh = h * 0.5;
         let cos = rotation.cos();
         let sin = rotation.sin();
 
+        // (x, y) is the sprite CENTER, matching the OpenGL/FFI renderer convention.
         let corners = [
-            (x - cx, y - cy, 0.0f32, 0.0f32),
-            (x + w - cx, y - cy, 1.0, 0.0),
-            (x + w - cx, y + h - cy, 1.0, 1.0),
-            (x - cx, y + h - cy, 0.0, 1.0),
+            (-hw, -hh, 0.0f32, 0.0f32),
+            (hw, -hh, 1.0, 0.0),
+            (hw, hh, 1.0, 1.0),
+            (-hw, hh, 0.0, 1.0),
         ];
 
         for &(dx, dy, u, v) in &corners {
             self.vertices.push(SpriteVertex {
-                position: [cx + dx * cos - dy * sin, cy + dx * sin + dy * cos],
+                position: [x + dx * cos - dy * sin, y + dx * sin + dy * cos],
                 tex_coords: [u, v],
                 color,
             });

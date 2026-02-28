@@ -2,7 +2,7 @@
 
 using System;
 using System.Collections.Generic;
-using GoudEngine.Input;
+using GoudEngine;
 
 public class GameManager
 {

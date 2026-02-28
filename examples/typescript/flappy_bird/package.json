@@ -6,9 +6,13 @@
   "description": "Flappy Bird built on GoudEngine TypeScript SDK — shared game logic, desktop + web renderers",
   "scripts": {
     "desktop": "npx tsx desktop.ts",
+    "build:web": "npx tsc",
     "web": "python3 -m http.server 8765 --bind 127.0.0.1"
   },
   "dependencies": {
     "@goudengine/sdk": "file:../../../sdks/typescript"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
   }
 }

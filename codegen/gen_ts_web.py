@@ -108,14 +108,14 @@ def gen_web_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from '../types/engine.g';",
-        "import { Color, Vec2, Vec3 } from '../types/math.g';",
-        "import { attachInputHandlers } from './input.g';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from '../types/engine.g.js';",
+        "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
+        "import { attachInputHandlers } from './input.g.js';",
         "",
-        "export { Color, Vec2, Vec3 } from '../types/math.g';",
-        "export { Key, MouseButton } from '../types/input.g';",
-        "export { Rect } from '../types/math.g';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from '../types/engine.g';",
+        "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
+        "export { Key, MouseButton } from '../types/input.g.js';",
+        "export { Rect } from '../types/math.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from '../types/engine.g.js';",
         "",
     ]
 
@@ -202,9 +202,9 @@ def gen_web_wrapper():
     lines.append("export async function initWasm(wasmUrl?: string): Promise<void> {")
     lines.append("  if (_wasmModule) return;")
     lines.append("  const url = wasmUrl ?? new URL('goud_engine_bg.wasm', import.meta.url).href;")
-    lines.append("  const initFn: (input?: string | URL) => Promise<WasmExports> =")
-    lines.append("    (await import(/* webpackIgnore: true */ url.replace(/_bg\\.wasm$/, '.js'))).default;")
-    lines.append("  _wasmModule = await initFn(url);")
+    lines.append("  const mod = await import(/* webpackIgnore: true */ url.replace(/_bg\\.wasm$/, '.js'));")
+    lines.append("  await mod.default(url);")
+    lines.append("  _wasmModule = mod as unknown as WasmExports;")
     lines.append("}")
     lines.append("")
     lines.append("function getWasm(): WasmExports {")
@@ -253,7 +253,9 @@ def gen_web_wrapper():
     lines.append("    try { handle = await wasm.WasmGame.createWithCanvas(canvas, w, h, t); }")
     lines.append("    catch { handle = new wasm.WasmGame(w, h, t); }")
     lines.append("    const game = new GoudGame(handle, canvas);")
-    lines.append("    new ResizeObserver(entries => { for (const e of entries) { const r = e.contentRect; handle.set_canvas_size(Math.round(r.width), Math.round(r.height)); } }).observe(canvas);")
+    lines.append("    let resizeReady = false;")
+    lines.append("    new ResizeObserver(entries => { if (!resizeReady) return; requestAnimationFrame(() => { for (const e of entries) { const r = e.contentRect; handle.set_canvas_size(Math.round(r.width), Math.round(r.height)); } }); }).observe(canvas);")
+    lines.append("    resizeReady = true;")
     lines.append("    return game;")
     lines.append("  }")
     lines.append("")
@@ -270,6 +272,8 @@ def gen_web_wrapper():
             lines.append(f"  get {pn}(): number {{ return this.handle.window_height; }}")
     lines.append("")
 
+    lines.append("  setClearColor(r: number, g: number, b: number, a: number): void { this.handle.set_clear_color(r, g, b, a); }")
+    lines.append("")
     lines.append("  shouldClose(): boolean { return this._shouldClose; }")
     lines.append("  close(): void { this._shouldClose = true; this.stop(); }")
     lines.append("  destroy(): void { this.stop(); this.handle.free(); }")
@@ -289,7 +293,7 @@ def gen_web_wrapper():
     lines.append("    this.detachInput = attachInputHandlers(this.canvas, this.handle);")
     lines.append("    const loop = (ts: number) => {")
     lines.append("      if (!this.running) return;")
-    lines.append("      const dt = (ts - this.lastTs) / 1000; this.lastTs = ts;")
+    lines.append("      const dt = Math.min((ts - this.lastTs) / 1000, 0.1); this.lastTs = ts;")
     lines.append("      this.handle.begin_frame(dt);")
     lines.append("      update(this.handle.delta_time);")
     lines.append("      this.handle.end_frame();")

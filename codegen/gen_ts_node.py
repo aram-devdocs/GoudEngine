@@ -184,7 +184,7 @@ def gen_input():
 # ── math.g.ts ───────────────────────────────────────────────────────
 
 def gen_math():
-    lines = [f"// {HEADER_COMMENT}", "", "import type { IColor, IVec2, IVec3, IRect } from './engine.g';", ""]
+    lines = [f"// {HEADER_COMMENT}", "", "import type { IColor, IVec2, IVec3, IRect } from './engine.g.js';", ""]
 
     for type_name in ("Color", "Vec2", "Vec3", "Rect"):
         type_def = schema["types"][type_name]
@@ -263,11 +263,11 @@ def gen_node_wrapper():
         "  type GameConfig,",
         "} from '../../../index';",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from '../types/engine.g';",
-        "import { Color, Vec2, Vec3 } from '../types/math.g';",
-        "export { Color, Vec2, Vec3 } from '../types/math.g';",
-        "export { Key, MouseButton } from '../types/input.g';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from '../types/engine.g';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from '../types/engine.g.js';",
+        "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
+        "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
+        "export { Key, MouseButton } from '../types/input.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from '../types/engine.g.js';",
         "",
         "export class GoudGame implements IGoudGame {",
         "  private native: NativeGoudGame;",
@@ -420,9 +420,9 @@ def gen_entry():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "export { GoudGame, Color, Vec2, Vec3, Key, MouseButton } from './node/index.g';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from './types/engine.g';",
-        "export type { Rect } from './types/math.g';",
+        "export { GoudGame, Color, Vec2, Vec3, Key, MouseButton } from './node/index.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from './types/engine.g.js';",
+        "export type { Rect } from './types/math.g.js';",
         "",
     ]
     write_generated(GEN / "index.g.ts", "\n".join(lines))

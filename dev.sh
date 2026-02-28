@@ -5,7 +5,7 @@ GAME="flappy_goud"
 LOCAL=false
 SKIP_BUILD=false
 NEXT=false
-SDK_TYPE="csharp"  # csharp, python, rust
+SDK_TYPE="csharp"  # csharp, python, rust, typescript
 
 # Script directory for absolute paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -29,21 +29,24 @@ while [[ "$#" -gt 0 ]]; do
         echo ""
         echo "Options:"
         echo "  --game <name>    Game to run (default: flappy_goud)"
-        echo "  --sdk <type>     SDK type: csharp, python, rust (default: csharp)"
+        echo "  --sdk <type>     SDK type: csharp, python, rust, typescript (default: csharp)"
         echo "  --local          Use local NuGet feed"
         echo "  --skipBuild      Skip build step"
         echo "  --next           Run version increment and rebuild"
         echo "  -h, --help       Show this help message"
         echo ""
-        echo "C# Games:     flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs"
-        echo "Python Demos: python_demo, flappy_bird (use --sdk python)"
-        echo "Rust SDK:     rust_demo (use --sdk rust)"
+        echo "C# Games:       flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs"
+        echo "Python Demos:   python_demo, flappy_bird (use --sdk python)"
+        echo "Rust SDK:       rust_demo (use --sdk rust)"
+        echo "TypeScript:     flappy_bird (desktop), flappy_bird_web (web) (use --sdk typescript)"
         echo ""
         echo "Examples:"
         echo "  ./dev.sh --game flappy_goud            # Run C# Flappy Goud"
         echo "  ./dev.sh --sdk python --game python_demo  # Run Python demo"
         echo "  ./dev.sh --sdk python --game flappy_bird  # Run Python Flappy Bird"
         echo "  ./dev.sh --sdk rust                    # Run Rust SDK tests"
+        echo "  ./dev.sh --sdk typescript --game flappy_bird      # TS desktop"
+        echo "  ./dev.sh --sdk typescript --game flappy_bird_web  # TS web (browser)"
         exit 0
         ;;
     *)
@@ -57,10 +60,10 @@ done
 
 # Validate SDK type
 case $SDK_TYPE in
-"csharp" | "python" | "rust")
+"csharp" | "python" | "rust" | "typescript")
     ;;
 *)
-    echo "Error: Invalid SDK type. Choose from: csharp, python, rust"
+    echo "Error: Invalid SDK type. Choose from: csharp, python, rust, typescript"
     exit 1
     ;;
 esac
@@ -94,6 +97,18 @@ case $SDK_TYPE in
 "rust")
     echo "Running Rust SDK..."
     ;;
+"typescript")
+    case $GAME in
+    "flappy_bird" | "flappy_bird_web")
+        echo "Building and running TypeScript example: $GAME..."
+        ;;
+    *)
+        echo "Error: Invalid TypeScript example selection."
+        echo "Choose from: flappy_bird (desktop), flappy_bird_web (web)"
+        exit 1
+        ;;
+    esac
+    ;;
 esac
 
 # Build the project if not skipped
@@ -113,6 +128,24 @@ if [ "$SKIP_BUILD" = false ]; then
         else
             bash "$SCRIPT_DIR/package.sh" --local
         fi
+    elif [ "$SDK_TYPE" = "typescript" ]; then
+        echo "Running codegen..."
+        python3 "$SCRIPT_DIR/codegen/gen_ts_node.py"
+        python3 "$SCRIPT_DIR/codegen/gen_ts_web.py"
+
+        if [ "$GAME" = "flappy_bird_web" ]; then
+            echo "Building TypeScript web SDK (wasm)..."
+            cd "$SCRIPT_DIR/sdks/typescript" && npm run build:web
+            cd "$SCRIPT_DIR"
+        else
+            echo "Building TypeScript native SDK..."
+            cd "$SCRIPT_DIR/sdks/typescript" && npm run build:native && npm run build:ts
+            cd "$SCRIPT_DIR"
+        fi
+
+        echo "Installing example dependencies..."
+        cd "$SCRIPT_DIR/examples/typescript/flappy_bird" && npm install
+        cd "$SCRIPT_DIR"
     else
         # For Python and Rust, just build the native library
         echo "Building native library..."
@@ -170,13 +203,36 @@ case $SDK_TYPE in
     # Run Rust SDK tests and examples
     echo "Running Rust SDK tests..."
     cargo test --lib sdk -- --nocapture
-    
+
     echo ""
     echo "Running Rust SDK doctests..."
     cargo test --doc sdk -- --nocapture
-    
+
     echo ""
     echo "=== Rust SDK Demo Complete ==="
     echo "All Rust SDK tests passed!"
+    ;;
+
+"typescript")
+    case $GAME in
+    "flappy_bird")
+        echo "Running TypeScript Flappy Bird (desktop)..."
+        cd "$SCRIPT_DIR/examples/typescript/flappy_bird"
+        npx tsx desktop.ts
+        ;;
+    "flappy_bird_web")
+        echo "Compiling game.ts for web..."
+        cd "$SCRIPT_DIR/examples/typescript/flappy_bird"
+        npx tsc
+
+        echo ""
+        echo "Starting web server on http://localhost:8765"
+        echo "Open: http://localhost:8765/examples/typescript/flappy_bird/web/index.html"
+        echo "Press Ctrl+C to stop."
+        echo ""
+        cd "$SCRIPT_DIR"
+        python3 -m http.server 8765 --bind 127.0.0.1
+        ;;
+    esac
     ;;
 esac

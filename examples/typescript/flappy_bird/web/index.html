@@ -22,9 +22,9 @@
 <canvas id="c"></canvas>
 
 <!--
-  Web entry for Flappy Goud. Imports the SAME shared game logic (game.mjs)
+  Web entry for Flappy Goud. Imports the SAME shared game logic (dist/game.js)
   that the desktop entry uses. Rendering is handled by the engine's wgpu
-  backend via drawQuad/drawSprite — no Canvas 2D, no adapter pattern.
+  backend via drawSprite — no Canvas 2D, no adapter pattern.
 
   Serve from the project root:
     python3 -m http.server 8765
@@ -42,20 +42,22 @@
 
 <script type="module">
 import { GoudGame } from '@goudengine/sdk/web';
-import { FlappyBirdGame, SCREEN_W, SCREEN_H } from '../game.mjs';
+import { FlappyBirdGame, SCREEN_WIDTH, SCREEN_HEIGHT, BASE_HEIGHT } from '../dist/game.js';
 
 const canvas = document.getElementById('c');
 
 const game = await GoudGame.create({
-  width: SCREEN_W,
-  height: SCREEN_H,
+  width: SCREEN_WIDTH,
+  height: SCREEN_HEIGHT + BASE_HEIGHT,
   title: 'Flappy Goud',
   canvas,
+  wasmUrl: '/sdks/typescript/wasm/goud_engine_bg.wasm',
 });
 
 const flappy = new FlappyBirdGame();
-await flappy.init(game);
+await flappy.init(game, '/examples/csharp/flappy_goud/assets/sprites');
 
+game.setClearColor(0.4, 0.7, 0.9, 1.0);
 game.run((dt) => flappy.update(game, dt));
 </script>
 </body>
