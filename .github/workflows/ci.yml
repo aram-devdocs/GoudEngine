@@ -75,7 +75,10 @@ jobs:
 
     - name: Check formatting
       if: matrix.rust == 'stable'
-      run: cargo fmt --all -- --check
+      run: |
+        cargo fmt -p goud_engine -- --check
+        # Format generated napi-rs files (gitignored, no --check needed)
+        cargo fmt -p goud-engine-node
 
     - name: Run clippy
       if: matrix.rust == 'stable'
