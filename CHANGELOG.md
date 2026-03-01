@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.822](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.821...v0.0.822) (2026-03-01)
+
+
+### Bug Fixes
+
+* publish goud_engine_macros to crates.io and auto-merge release PRs ([#102](https://github.com/aram-devdocs/GoudEngine/issues/102)) ([ecb0d3f](https://github.com/aram-devdocs/GoudEngine/commit/ecb0d3f9ddd7cdcc7b9360d068f1cb4510e24700))
+
 ## [0.0.821](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.820...v0.0.821) (2026-03-01)
 
 
