@@ -33,8 +33,8 @@ fn main() {
     println!("cargo:rerun-if-changed=src/core/math.rs");
     println!("cargo:rerun-if-changed=src/core/error.rs");
     println!("cargo:rerun-if-changed=src/core/types.rs");
-    println!("cargo:rerun-if-changed=src/core/context_registry.rs");
-    println!("cargo:rerun-if-changed=src/core/component_ops.rs");
+    println!("cargo:rerun-if-changed=src/core/context_registry/");
+    println!("cargo:rerun-if-changed=src/core/component_ops/");
 
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let sdks_dir = Path::new(&manifest_dir).join("..").join("sdks");
@@ -77,8 +77,11 @@ fn generate_csharp_bindings(output_path: &Path) -> bool {
         .input_extern_file("src/core/math.rs")
         .input_extern_file("src/core/error.rs")
         .input_extern_file("src/core/types.rs")
-        .input_extern_file("src/core/context_registry.rs")
-        .input_extern_file("src/core/component_ops.rs")
+        .input_extern_file("src/core/context_registry/context_id.rs")
+        .input_extern_file("src/core/component_ops/storage.rs")
+        .input_extern_file("src/core/component_ops/helpers.rs")
+        .input_extern_file("src/core/component_ops/single_ops.rs")
+        .input_extern_file("src/core/component_ops/batch_ops.rs")
         // FFI entry points
         .input_extern_file("src/ffi/context.rs")
         .input_extern_file("src/ffi/entity.rs")
@@ -120,8 +123,11 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/core/math.rs",
     "src/core/error.rs",
     "src/core/types.rs",
-    "src/core/context_registry.rs",
-    "src/core/component_ops.rs",
+    "src/core/context_registry/context_id.rs",
+    "src/core/component_ops/storage.rs",
+    "src/core/component_ops/helpers.rs",
+    "src/core/component_ops/single_ops.rs",
+    "src/core/component_ops/batch_ops.rs",
     "src/ffi/context.rs",
     "src/ffi/entity.rs",
     "src/ffi/component.rs",
