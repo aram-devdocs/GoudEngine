@@ -7,6 +7,7 @@ All raw OpenGL calls live here. This is the ONLY module that may use the `gl::` 
 ## Files
 
 - `opengl.rs` — OpenGL function wrappers (draw calls, state management, context)
+- `wgpu_backend.rs` — wgpu backend implementation (WebGPU/cross-platform rendering)
 - `types.rs` — GPU-side type mappings (vertex formats, buffer types, texture formats)
 - `mod.rs` — Backend re-exports
 

@@ -1,8 +1,7 @@
-//! # Build Script: C# Bindings + FFI Manifest
+//! # Build Script: FFI Manifest
 //!
 //! This build script generates:
 //!
-//! - **C# Bindings** (`NativeMethods.g.cs`) via csbindgen
 //! - **FFI Manifest** (`codegen/ffi_manifest.json`) via regex-free source parsing
 //!
 //! ## Design Philosophy
@@ -15,8 +14,7 @@
 //! ```bash
 //! cargo build
 //! # Outputs:
-//! #   - ../sdks/csharp/NativeMethods.g.cs (C# bindings)
-//! #   - ../codegen/ffi_manifest.json      (auto-extracted FFI surface)
+//! #   - ../codegen/ffi_manifest.json (auto-extracted FFI surface)
 //! ```
 
 use std::collections::BTreeMap;
@@ -37,14 +35,7 @@ fn main() {
     println!("cargo:rerun-if-changed=src/core/component_ops/");
 
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let sdks_dir = Path::new(&manifest_dir).join("..").join("sdks");
     let codegen_dir = Path::new(&manifest_dir).join("..").join("codegen");
-
-    // =========================================================================
-    // Generate C# Bindings (csbindgen)
-    // =========================================================================
-    let csharp_output = sdks_dir.join("csharp").join("NativeMethods.g.cs");
-    let csharp_result = generate_csharp_bindings(&csharp_output);
 
     // =========================================================================
     // Generate FFI Manifest (codegen/ffi_manifest.json)
@@ -53,71 +44,19 @@ fn main() {
     let manifest_count = generate_ffi_manifest(&manifest_dir, &manifest_output);
     println!("cargo:rerun-if-changed=../codegen/");
 
-    let status = if csharp_result { "OK" } else { "FAILED" };
-    let short_path = csharp_output.display().to_string();
-    let short_path = short_path
-        .split("sdks/")
-        .last()
-        .unwrap_or("NativeMethods.g.cs");
-
     println!("cargo:warning=");
-    println!("cargo:warning=GoudEngine SDK Binding Generation");
-    println!("cargo:warning=  C# Bindings [{status}]: {short_path}");
+    println!("cargo:warning=GoudEngine Build");
     println!(
         "cargo:warning=  FFI Manifest [OK]: codegen/ffi_manifest.json ({manifest_count} functions)"
     );
     println!("cargo:warning=");
 }
 
-/// Generates C# bindings using csbindgen.
-fn generate_csharp_bindings(output_path: &Path) -> bool {
-    let result = csbindgen::Builder::default()
-        // FFI type definitions
-        .input_extern_file("src/ffi/types.rs")
-        .input_extern_file("src/core/math.rs")
-        .input_extern_file("src/core/error.rs")
-        .input_extern_file("src/core/types.rs")
-        .input_extern_file("src/core/context_registry/context_id.rs")
-        .input_extern_file("src/core/component_ops/storage.rs")
-        .input_extern_file("src/core/component_ops/helpers.rs")
-        .input_extern_file("src/core/component_ops/single_ops.rs")
-        .input_extern_file("src/core/component_ops/batch_ops.rs")
-        // FFI entry points
-        .input_extern_file("src/ffi/context.rs")
-        .input_extern_file("src/ffi/entity.rs")
-        .input_extern_file("src/ffi/component.rs")
-        .input_extern_file("src/ffi/component_transform2d.rs")
-        .input_extern_file("src/ffi/component_sprite.rs")
-        .input_extern_file("src/ffi/window.rs")
-        .input_extern_file("src/ffi/renderer.rs")
-        .input_extern_file("src/ffi/renderer3d.rs")
-        .input_extern_file("src/ffi/input.rs")
-        .input_extern_file("src/ffi/collision.rs")
-        // Configuration
-        .csharp_dll_name("libgoud_engine")
-        .csharp_class_accessibility("public")
-        .generate_csharp_file(output_path);
-
-    match result {
-        Ok(_) => {
-            println!(
-                "cargo:warning=  Generated C# bindings: {}",
-                output_path.display()
-            );
-            true
-        }
-        Err(e) => {
-            println!("cargo:warning=  Failed to generate C# bindings: {}", e);
-            false
-        }
-    }
-}
-
 // =============================================================================
 // FFI Manifest Generation
 // =============================================================================
 
-/// Files to scan for FFI functions (same set csbindgen processes).
+/// Files to scan for FFI functions.
 const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/types.rs",
     "src/core/math.rs",
@@ -154,7 +93,7 @@ struct FfiFunction {
 /// Returns the total number of functions extracted.
 fn generate_ffi_manifest(manifest_dir: &str, output_path: &Path) -> usize {
     let version = env::var("CARGO_PKG_VERSION").unwrap_or_else(|_| "unknown".to_string());
-    let generated_at = build_timestamp();
+    let generated_at = "build-time".to_string();
 
     let mut functions: BTreeMap<String, FfiFunction> = BTreeMap::new();
 
@@ -437,75 +376,4 @@ fn json_escape(s: &str) -> String {
         }
     }
     out
-}
-
-/// Returns an ISO 8601 timestamp string for the current build time.
-///
-/// Uses a simple approach: reads from environment or falls back to a
-/// placeholder that still sorts correctly.
-fn build_timestamp() -> String {
-    // Try SOURCE_DATE_EPOCH for reproducible builds, otherwise use a
-    // compile-time-constant placeholder (build.rs runs at build time,
-    // but std::time is available).
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    let secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0);
-
-    // Convert epoch seconds to ISO 8601 manually (no chrono dep)
-    let (year, month, day, hour, min, sec) = epoch_to_datetime(secs);
-    format!("{year:04}-{month:02}-{day:02}T{hour:02}:{min:02}:{sec:02}Z")
-}
-
-/// Converts Unix epoch seconds to (year, month, day, hour, minute, second).
-/// Simplified algorithm -- correct for dates 1970-2099.
-fn epoch_to_datetime(epoch: u64) -> (u64, u64, u64, u64, u64, u64) {
-    let sec = epoch % 60;
-    let min = (epoch / 60) % 60;
-    let hour = (epoch / 3600) % 24;
-    let mut days = epoch / 86400;
-
-    let mut year = 1970u64;
-    loop {
-        let days_in_year = if is_leap_year(year) { 366 } else { 365 };
-        if days < days_in_year {
-            break;
-        }
-        days -= days_in_year;
-        year += 1;
-    }
-
-    let leap = is_leap_year(year);
-    let month_days: [u64; 12] = [
-        31,
-        if leap { 29 } else { 28 },
-        31,
-        30,
-        31,
-        30,
-        31,
-        31,
-        30,
-        31,
-        30,
-        31,
-    ];
-
-    let mut month = 0u64;
-    for (i, &md) in month_days.iter().enumerate() {
-        if days < md {
-            month = i as u64 + 1;
-            break;
-        }
-        days -= md;
-    }
-
-    let day = days + 1;
-    (year, month, day, hour, min, sec)
-}
-
-fn is_leap_year(y: u64) -> bool {
-    (y.is_multiple_of(4) && !y.is_multiple_of(100)) || y.is_multiple_of(400)
 }

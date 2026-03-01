@@ -1,154 +1,1031 @@
 {
   "version": "0.0.815",
   "description": "Universal GoudEngine SDK schema. Every SDK (C#, Python, TypeScript) is generated from this single file. Same tools, same methods, same inputs, same outputs.",
-
   "types": {
     "Color": {
       "kind": "value",
       "doc": "RGBA color with float components in 0.0-1.0 range",
       "fields": [
-        {"name": "r", "type": "f32", "doc": "Red channel"},
-        {"name": "g", "type": "f32", "doc": "Green channel"},
-        {"name": "b", "type": "f32", "doc": "Blue channel"},
-        {"name": "a", "type": "f32", "doc": "Alpha channel"}
+        {
+          "name": "r",
+          "type": "f32",
+          "doc": "Red channel"
+        },
+        {
+          "name": "g",
+          "type": "f32",
+          "doc": "Green channel"
+        },
+        {
+          "name": "b",
+          "type": "f32",
+          "doc": "Blue channel"
+        },
+        {
+          "name": "a",
+          "type": "f32",
+          "doc": "Alpha channel"
+        }
       ],
       "factories": [
-        {"name": "white",       "args": [], "value": [1, 1, 1, 1]},
-        {"name": "black",       "args": [], "value": [0, 0, 0, 1]},
-        {"name": "red",         "args": [], "value": [1, 0, 0, 1]},
-        {"name": "green",       "args": [], "value": [0, 1, 0, 1]},
-        {"name": "blue",        "args": [], "value": [0, 0, 1, 1]},
-        {"name": "yellow",      "args": [], "value": [1, 1, 0, 1]},
-        {"name": "cyan",        "args": [], "value": [0, 1, 1, 1]},
-        {"name": "magenta",     "args": [], "value": [1, 0, 1, 1]},
-        {"name": "transparent", "args": [], "value": [0, 0, 0, 0]},
-        {"name": "rgba", "args": [
-          {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"},
-          {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}
-        ]},
-        {"name": "rgb", "args": [
-          {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}
-        ], "defaults": {"a": 1.0}},
-        {"name": "fromHex", "args": [{"name": "hex", "type": "u32"}]},
-        {"name": "fromU8", "args": [
-          {"name": "r", "type": "u8"}, {"name": "g", "type": "u8"},
-          {"name": "b", "type": "u8"}, {"name": "a", "type": "u8"}
-        ]}
+        {
+          "name": "white",
+          "args": [],
+          "value": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "black",
+          "args": [],
+          "value": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "name": "red",
+          "args": [],
+          "value": [
+            1,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "name": "green",
+          "args": [],
+          "value": [
+            0,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "name": "blue",
+          "args": [],
+          "value": [
+            0,
+            0,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "yellow",
+          "args": [],
+          "value": [
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "name": "cyan",
+          "args": [],
+          "value": [
+            0,
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "magenta",
+          "args": [],
+          "value": [
+            1,
+            0,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "transparent",
+          "args": [],
+          "value": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "name": "rgba",
+          "args": [
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            },
+            {
+              "name": "a",
+              "type": "f32"
+            }
+          ]
+        },
+        {
+          "name": "rgb",
+          "args": [
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            }
+          ],
+          "defaults": {
+            "a": 1.0
+          }
+        },
+        {
+          "name": "fromHex",
+          "args": [
+            {
+              "name": "hex",
+              "type": "u32"
+            }
+          ]
+        },
+        {
+          "name": "fromU8",
+          "args": [
+            {
+              "name": "r",
+              "type": "u8"
+            },
+            {
+              "name": "g",
+              "type": "u8"
+            },
+            {
+              "name": "b",
+              "type": "u8"
+            },
+            {
+              "name": "a",
+              "type": "u8"
+            }
+          ]
+        }
       ],
       "methods": [
-        {"name": "withAlpha", "params": [{"name": "a", "type": "f32"}], "returns": "Color"},
-        {"name": "lerp", "params": [{"name": "to", "type": "Color"}, {"name": "t", "type": "f32"}], "returns": "Color"}
+        {
+          "name": "withAlpha",
+          "params": [
+            {
+              "name": "a",
+              "type": "f32"
+            }
+          ],
+          "returns": "Color"
+        },
+        {
+          "name": "lerp",
+          "params": [
+            {
+              "name": "to",
+              "type": "Color"
+            },
+            {
+              "name": "t",
+              "type": "f32"
+            }
+          ],
+          "returns": "Color"
+        }
       ]
     },
     "Vec2": {
       "kind": "value",
       "doc": "2D floating-point vector",
       "fields": [
-        {"name": "x", "type": "f32"},
-        {"name": "y", "type": "f32"}
+        {
+          "name": "x",
+          "type": "f32"
+        },
+        {
+          "name": "y",
+          "type": "f32"
+        }
       ],
       "factories": [
-        {"name": "zero",  "args": [], "value": [0, 0]},
-        {"name": "one",   "args": [], "value": [1, 1]},
-        {"name": "up",    "args": [], "value": [0, -1]},
-        {"name": "down",  "args": [], "value": [0, 1]},
-        {"name": "left",  "args": [], "value": [-1, 0]},
-        {"name": "right", "args": [], "value": [1, 0]}
+        {
+          "name": "zero",
+          "args": [],
+          "value": [
+            0,
+            0
+          ]
+        },
+        {
+          "name": "one",
+          "args": [],
+          "value": [
+            1,
+            1
+          ]
+        },
+        {
+          "name": "up",
+          "args": [],
+          "value": [
+            0,
+            -1
+          ]
+        },
+        {
+          "name": "down",
+          "args": [],
+          "value": [
+            0,
+            1
+          ]
+        },
+        {
+          "name": "left",
+          "args": [],
+          "value": [
+            -1,
+            0
+          ]
+        },
+        {
+          "name": "right",
+          "args": [],
+          "value": [
+            1,
+            0
+          ]
+        }
       ],
       "methods": [
-        {"name": "add",       "params": [{"name": "other", "type": "Vec2"}],  "returns": "Vec2"},
-        {"name": "sub",       "params": [{"name": "other", "type": "Vec2"}],  "returns": "Vec2"},
-        {"name": "scale",     "params": [{"name": "s", "type": "f32"}],       "returns": "Vec2"},
-        {"name": "length",    "params": [],                                    "returns": "f32"},
-        {"name": "normalize", "params": [],                                    "returns": "Vec2"},
-        {"name": "dot",       "params": [{"name": "other", "type": "Vec2"}],  "returns": "f32"},
-        {"name": "distance",  "params": [{"name": "other", "type": "Vec2"}],  "returns": "f32"},
-        {"name": "lerp",      "params": [{"name": "other", "type": "Vec2"}, {"name": "t", "type": "f32"}], "returns": "Vec2"}
+        {
+          "name": "add",
+          "params": [
+            {
+              "name": "other",
+              "type": "Vec2"
+            }
+          ],
+          "returns": "Vec2"
+        },
+        {
+          "name": "sub",
+          "params": [
+            {
+              "name": "other",
+              "type": "Vec2"
+            }
+          ],
+          "returns": "Vec2"
+        },
+        {
+          "name": "scale",
+          "params": [
+            {
+              "name": "s",
+              "type": "f32"
+            }
+          ],
+          "returns": "Vec2"
+        },
+        {
+          "name": "length",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "normalize",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "dot",
+          "params": [
+            {
+              "name": "other",
+              "type": "Vec2"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "distance",
+          "params": [
+            {
+              "name": "other",
+              "type": "Vec2"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "lerp",
+          "params": [
+            {
+              "name": "other",
+              "type": "Vec2"
+            },
+            {
+              "name": "t",
+              "type": "f32"
+            }
+          ],
+          "returns": "Vec2"
+        }
       ]
     },
     "Rect": {
       "kind": "value",
       "doc": "Axis-aligned rectangle",
       "fields": [
-        {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"},
-        {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}
+        {
+          "name": "x",
+          "type": "f32"
+        },
+        {
+          "name": "y",
+          "type": "f32"
+        },
+        {
+          "name": "width",
+          "type": "f32"
+        },
+        {
+          "name": "height",
+          "type": "f32"
+        }
       ],
       "methods": [
-        {"name": "contains", "params": [{"name": "point", "type": "Vec2"}], "returns": "bool"},
-        {"name": "intersects", "params": [{"name": "other", "type": "Rect"}], "returns": "bool"}
+        {
+          "name": "contains",
+          "params": [
+            {
+              "name": "point",
+              "type": "Vec2"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "intersects",
+          "params": [
+            {
+              "name": "other",
+              "type": "Rect"
+            }
+          ],
+          "returns": "bool"
+        }
       ]
     },
     "Mat3x3": {
       "kind": "value",
       "doc": "3x3 matrix in column-major order for 2D transforms",
       "fields": [
-        {"name": "m", "type": "f32[9]", "doc": "Matrix elements in column-major order"}
+        {
+          "name": "m",
+          "type": "f32[9]",
+          "doc": "Matrix elements in column-major order"
+        }
       ]
     },
     "Transform2D": {
       "kind": "component",
       "doc": "2D transform: position, rotation (radians), and scale",
       "fields": [
-        {"name": "positionX", "type": "f32"}, {"name": "positionY", "type": "f32"},
-        {"name": "rotation", "type": "f32"},
-        {"name": "scaleX", "type": "f32"}, {"name": "scaleY", "type": "f32"}
+        {
+          "name": "positionX",
+          "type": "f32"
+        },
+        {
+          "name": "positionY",
+          "type": "f32"
+        },
+        {
+          "name": "rotation",
+          "type": "f32"
+        },
+        {
+          "name": "scaleX",
+          "type": "f32"
+        },
+        {
+          "name": "scaleY",
+          "type": "f32"
+        }
       ],
       "factories": [
-        {"name": "default", "args": [], "value": [0, 0, 0, 1, 1]},
-        {"name": "fromPosition", "args": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}]},
-        {"name": "fromRotation", "args": [{"name": "radians", "type": "f32"}]},
-        {"name": "fromRotationDegrees", "args": [{"name": "degrees", "type": "f32"}]},
-        {"name": "fromScale", "args": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}]},
-        {"name": "fromScaleUniform", "args": [{"name": "scale", "type": "f32"}]},
-        {"name": "fromPositionRotation", "args": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "rotation", "type": "f32"}]},
-        {"name": "new", "args": [{"name": "posX", "type": "f32"}, {"name": "posY", "type": "f32"}, {"name": "rotation", "type": "f32"}, {"name": "scaleX", "type": "f32"}, {"name": "scaleY", "type": "f32"}]},
-        {"name": "lookAt", "args": [{"name": "posX", "type": "f32"}, {"name": "posY", "type": "f32"}, {"name": "targetX", "type": "f32"}, {"name": "targetY", "type": "f32"}]}
+        {
+          "name": "default",
+          "args": [],
+          "value": [
+            0,
+            0,
+            0,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "fromPosition",
+          "args": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ]
+        },
+        {
+          "name": "fromRotation",
+          "args": [
+            {
+              "name": "radians",
+              "type": "f32"
+            }
+          ]
+        },
+        {
+          "name": "fromRotationDegrees",
+          "args": [
+            {
+              "name": "degrees",
+              "type": "f32"
+            }
+          ]
+        },
+        {
+          "name": "fromScale",
+          "args": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ]
+        },
+        {
+          "name": "fromScaleUniform",
+          "args": [
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ]
+        },
+        {
+          "name": "fromPositionRotation",
+          "args": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "rotation",
+              "type": "f32"
+            }
+          ]
+        },
+        {
+          "name": "new",
+          "args": [
+            {
+              "name": "posX",
+              "type": "f32"
+            },
+            {
+              "name": "posY",
+              "type": "f32"
+            },
+            {
+              "name": "rotation",
+              "type": "f32"
+            },
+            {
+              "name": "scaleX",
+              "type": "f32"
+            },
+            {
+              "name": "scaleY",
+              "type": "f32"
+            }
+          ]
+        },
+        {
+          "name": "lookAt",
+          "args": [
+            {
+              "name": "posX",
+              "type": "f32"
+            },
+            {
+              "name": "posY",
+              "type": "f32"
+            },
+            {
+              "name": "targetX",
+              "type": "f32"
+            },
+            {
+              "name": "targetY",
+              "type": "f32"
+            }
+          ]
+        }
       ],
       "methods": [
-        {"name": "translate", "doc": "Translates by world-space offset", "params": [{"name": "dx", "type": "f32"}, {"name": "dy", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "translateLocal", "doc": "Translates by local-space offset (relative to rotation)", "params": [{"name": "dx", "type": "f32"}, {"name": "dy", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "setPosition", "doc": "Sets world-space position", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "getPosition", "doc": "Gets world-space position", "params": [], "returns": "Vec2"},
-        {"name": "rotate", "doc": "Rotates by angle in radians", "params": [{"name": "angle", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "rotateDegrees", "doc": "Rotates by angle in degrees", "params": [{"name": "degrees", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "setRotation", "doc": "Sets rotation in radians", "params": [{"name": "rotation", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "setRotationDegrees", "doc": "Sets rotation in degrees", "params": [{"name": "degrees", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "getRotation", "doc": "Gets rotation in radians", "params": [], "returns": "f32"},
-        {"name": "getRotationDegrees", "doc": "Gets rotation in degrees", "params": [], "returns": "f32"},
-        {"name": "lookAtTarget", "doc": "Rotates to face a target point", "params": [{"name": "targetX", "type": "f32"}, {"name": "targetY", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "setScale", "doc": "Sets non-uniform scale", "params": [{"name": "scaleX", "type": "f32"}, {"name": "scaleY", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "setScaleUniform", "doc": "Sets uniform scale", "params": [{"name": "scale", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "getScale", "doc": "Gets scale as Vec2", "params": [], "returns": "Vec2"},
-        {"name": "scaleBy", "doc": "Multiplies current scale by factors", "params": [{"name": "factorX", "type": "f32"}, {"name": "factorY", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "forward", "doc": "Gets the forward direction vector", "params": [], "returns": "Vec2"},
-        {"name": "right", "doc": "Gets the right direction vector", "params": [], "returns": "Vec2"},
-        {"name": "backward", "doc": "Gets the backward direction vector", "params": [], "returns": "Vec2"},
-        {"name": "left", "doc": "Gets the left direction vector", "params": [], "returns": "Vec2"},
-        {"name": "matrix", "doc": "Gets the 3x3 transformation matrix", "params": [], "returns": "Mat3x3"},
-        {"name": "matrixInverse", "doc": "Gets the inverse transformation matrix", "params": [], "returns": "Mat3x3"},
-        {"name": "transformPoint", "doc": "Transforms a point from local to world space", "params": [{"name": "pointX", "type": "f32"}, {"name": "pointY", "type": "f32"}], "returns": "Vec2"},
-        {"name": "transformDirection", "doc": "Transforms a direction from local to world space", "params": [{"name": "dirX", "type": "f32"}, {"name": "dirY", "type": "f32"}], "returns": "Vec2"},
-        {"name": "inverseTransformPoint", "doc": "Transforms a point from world to local space", "params": [{"name": "pointX", "type": "f32"}, {"name": "pointY", "type": "f32"}], "returns": "Vec2"},
-        {"name": "inverseTransformDirection", "doc": "Transforms a direction from world to local space", "params": [{"name": "dirX", "type": "f32"}, {"name": "dirY", "type": "f32"}], "returns": "Vec2"},
-        {"name": "lerp", "doc": "Linearly interpolates between this and another transform", "params": [{"name": "to", "type": "Transform2D"}, {"name": "t", "type": "f32"}], "returns": "Transform2D"},
-        {"name": "normalizeAngle", "doc": "Normalizes an angle to [-PI, PI)", "params": [{"name": "angle", "type": "f32"}], "returns": "f32", "static": true}
+        {
+          "name": "translate",
+          "doc": "Translates by world-space offset",
+          "params": [
+            {
+              "name": "dx",
+              "type": "f32"
+            },
+            {
+              "name": "dy",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "translateLocal",
+          "doc": "Translates by local-space offset (relative to rotation)",
+          "params": [
+            {
+              "name": "dx",
+              "type": "f32"
+            },
+            {
+              "name": "dy",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "setPosition",
+          "doc": "Sets world-space position",
+          "params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getPosition",
+          "doc": "Gets world-space position",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "rotate",
+          "doc": "Rotates by angle in radians",
+          "params": [
+            {
+              "name": "angle",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "rotateDegrees",
+          "doc": "Rotates by angle in degrees",
+          "params": [
+            {
+              "name": "degrees",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "setRotation",
+          "doc": "Sets rotation in radians",
+          "params": [
+            {
+              "name": "rotation",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "setRotationDegrees",
+          "doc": "Sets rotation in degrees",
+          "params": [
+            {
+              "name": "degrees",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getRotation",
+          "doc": "Gets rotation in radians",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "getRotationDegrees",
+          "doc": "Gets rotation in degrees",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "lookAtTarget",
+          "doc": "Rotates to face a target point",
+          "params": [
+            {
+              "name": "targetX",
+              "type": "f32"
+            },
+            {
+              "name": "targetY",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "setScale",
+          "doc": "Sets non-uniform scale",
+          "params": [
+            {
+              "name": "scaleX",
+              "type": "f32"
+            },
+            {
+              "name": "scaleY",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "setScaleUniform",
+          "doc": "Sets uniform scale",
+          "params": [
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getScale",
+          "doc": "Gets scale as Vec2",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "scaleBy",
+          "doc": "Multiplies current scale by factors",
+          "params": [
+            {
+              "name": "factorX",
+              "type": "f32"
+            },
+            {
+              "name": "factorY",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "forward",
+          "doc": "Gets the forward direction vector",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "right",
+          "doc": "Gets the right direction vector",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "backward",
+          "doc": "Gets the backward direction vector",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "left",
+          "doc": "Gets the left direction vector",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "matrix",
+          "doc": "Gets the 3x3 transformation matrix",
+          "params": [],
+          "returns": "Mat3x3"
+        },
+        {
+          "name": "matrixInverse",
+          "doc": "Gets the inverse transformation matrix",
+          "params": [],
+          "returns": "Mat3x3"
+        },
+        {
+          "name": "transformPoint",
+          "doc": "Transforms a point from local to world space",
+          "params": [
+            {
+              "name": "pointX",
+              "type": "f32"
+            },
+            {
+              "name": "pointY",
+              "type": "f32"
+            }
+          ],
+          "returns": "Vec2"
+        },
+        {
+          "name": "transformDirection",
+          "doc": "Transforms a direction from local to world space",
+          "params": [
+            {
+              "name": "dirX",
+              "type": "f32"
+            },
+            {
+              "name": "dirY",
+              "type": "f32"
+            }
+          ],
+          "returns": "Vec2"
+        },
+        {
+          "name": "inverseTransformPoint",
+          "doc": "Transforms a point from world to local space",
+          "params": [
+            {
+              "name": "pointX",
+              "type": "f32"
+            },
+            {
+              "name": "pointY",
+              "type": "f32"
+            }
+          ],
+          "returns": "Vec2"
+        },
+        {
+          "name": "inverseTransformDirection",
+          "doc": "Transforms a direction from world to local space",
+          "params": [
+            {
+              "name": "dirX",
+              "type": "f32"
+            },
+            {
+              "name": "dirY",
+              "type": "f32"
+            }
+          ],
+          "returns": "Vec2"
+        },
+        {
+          "name": "lerp",
+          "doc": "Linearly interpolates between this and another transform",
+          "params": [
+            {
+              "name": "to",
+              "type": "Transform2D"
+            },
+            {
+              "name": "t",
+              "type": "f32"
+            }
+          ],
+          "returns": "Transform2D"
+        },
+        {
+          "name": "normalizeAngle",
+          "doc": "Normalizes an angle to [-PI, PI)",
+          "params": [
+            {
+              "name": "angle",
+              "type": "f32"
+            }
+          ],
+          "returns": "f32",
+          "static": true
+        }
       ],
       "builder": {
         "doc": "Fluent builder for constructing Transform2D instances",
         "methods": [
-          {"name": "new", "doc": "Creates a builder with default values", "params": [], "returns": "Transform2DBuilder"},
-          {"name": "atPosition", "doc": "Creates a builder at a specific position", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}], "returns": "Transform2DBuilder"},
-          {"name": "withPosition", "doc": "Sets position", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}], "returns": "Transform2DBuilder"},
-          {"name": "withRotation", "doc": "Sets rotation in radians", "params": [{"name": "rotation", "type": "f32"}], "returns": "Transform2DBuilder"},
-          {"name": "withRotationDegrees", "doc": "Sets rotation in degrees", "params": [{"name": "degrees", "type": "f32"}], "returns": "Transform2DBuilder"},
-          {"name": "withScale", "doc": "Sets non-uniform scale", "params": [{"name": "scaleX", "type": "f32"}, {"name": "scaleY", "type": "f32"}], "returns": "Transform2DBuilder"},
-          {"name": "withScaleUniform", "doc": "Sets uniform scale", "params": [{"name": "scale", "type": "f32"}], "returns": "Transform2DBuilder"},
-          {"name": "lookingAt", "doc": "Rotates to face a target", "params": [{"name": "targetX", "type": "f32"}, {"name": "targetY", "type": "f32"}], "returns": "Transform2DBuilder"},
-          {"name": "translate", "doc": "Translates by offset", "params": [{"name": "dx", "type": "f32"}, {"name": "dy", "type": "f32"}], "returns": "Transform2DBuilder"},
-          {"name": "rotate", "doc": "Rotates by angle in radians", "params": [{"name": "angle", "type": "f32"}], "returns": "Transform2DBuilder"},
-          {"name": "scaleBy", "doc": "Multiplies scale by factors", "params": [{"name": "factorX", "type": "f32"}, {"name": "factorY", "type": "f32"}], "returns": "Transform2DBuilder"},
-          {"name": "build", "doc": "Builds the Transform2D and consumes the builder", "params": [], "returns": "Transform2D"},
-          {"name": "free", "doc": "Frees the builder without building", "params": [], "returns": "void"}
+          {
+            "name": "new",
+            "doc": "Creates a builder with default values",
+            "params": [],
+            "returns": "Transform2DBuilder"
+          },
+          {
+            "name": "atPosition",
+            "doc": "Creates a builder at a specific position",
+            "params": [
+              {
+                "name": "x",
+                "type": "f32"
+              },
+              {
+                "name": "y",
+                "type": "f32"
+              }
+            ],
+            "returns": "Transform2DBuilder"
+          },
+          {
+            "name": "withPosition",
+            "doc": "Sets position",
+            "params": [
+              {
+                "name": "x",
+                "type": "f32"
+              },
+              {
+                "name": "y",
+                "type": "f32"
+              }
+            ],
+            "returns": "Transform2DBuilder"
+          },
+          {
+            "name": "withRotation",
+            "doc": "Sets rotation in radians",
+            "params": [
+              {
+                "name": "rotation",
+                "type": "f32"
+              }
+            ],
+            "returns": "Transform2DBuilder"
+          },
+          {
+            "name": "withRotationDegrees",
+            "doc": "Sets rotation in degrees",
+            "params": [
+              {
+                "name": "degrees",
+                "type": "f32"
+              }
+            ],
+            "returns": "Transform2DBuilder"
+          },
+          {
+            "name": "withScale",
+            "doc": "Sets non-uniform scale",
+            "params": [
+              {
+                "name": "scaleX",
+                "type": "f32"
+              },
+              {
+                "name": "scaleY",
+                "type": "f32"
+              }
+            ],
+            "returns": "Transform2DBuilder"
+          },
+          {
+            "name": "withScaleUniform",
+            "doc": "Sets uniform scale",
+            "params": [
+              {
+                "name": "scale",
+                "type": "f32"
+              }
+            ],
+            "returns": "Transform2DBuilder"
+          },
+          {
+            "name": "lookingAt",
+            "doc": "Rotates to face a target",
+            "params": [
+              {
+                "name": "targetX",
+                "type": "f32"
+              },
+              {
+                "name": "targetY",
+                "type": "f32"
+              }
+            ],
+            "returns": "Transform2DBuilder"
+          },
+          {
+            "name": "translate",
+            "doc": "Translates by offset",
+            "params": [
+              {
+                "name": "dx",
+                "type": "f32"
+              },
+              {
+                "name": "dy",
+                "type": "f32"
+              }
+            ],
+            "returns": "Transform2DBuilder"
+          },
+          {
+            "name": "rotate",
+            "doc": "Rotates by angle in radians",
+            "params": [
+              {
+                "name": "angle",
+                "type": "f32"
+              }
+            ],
+            "returns": "Transform2DBuilder"
+          },
+          {
+            "name": "scaleBy",
+            "doc": "Multiplies scale by factors",
+            "params": [
+              {
+                "name": "factorX",
+                "type": "f32"
+              },
+              {
+                "name": "factorY",
+                "type": "f32"
+              }
+            ],
+            "returns": "Transform2DBuilder"
+          },
+          {
+            "name": "build",
+            "doc": "Builds the Transform2D and consumes the builder",
+            "params": [],
+            "returns": "Transform2D"
+          },
+          {
+            "name": "free",
+            "doc": "Frees the builder without building",
+            "params": [],
+            "returns": "void"
+          }
         ]
       }
     },
@@ -156,67 +1033,602 @@
       "kind": "component",
       "doc": "Sprite rendering component",
       "fields": [
-        {"name": "textureHandle", "type": "u64"},
-        {"name": "colorR", "type": "f32"}, {"name": "colorG", "type": "f32"}, {"name": "colorB", "type": "f32"}, {"name": "colorA", "type": "f32"},
-        {"name": "sourceRectX", "type": "f32"}, {"name": "sourceRectY", "type": "f32"}, {"name": "sourceRectWidth", "type": "f32"}, {"name": "sourceRectHeight", "type": "f32"},
-        {"name": "hasSourceRect", "type": "bool"},
-        {"name": "flipX", "type": "bool"}, {"name": "flipY", "type": "bool"},
-        {"name": "anchorX", "type": "f32"}, {"name": "anchorY", "type": "f32"},
-        {"name": "customSizeX", "type": "f32"}, {"name": "customSizeY", "type": "f32"},
-        {"name": "hasCustomSize", "type": "bool"}
+        {
+          "name": "textureHandle",
+          "type": "u64"
+        },
+        {
+          "name": "colorR",
+          "type": "f32"
+        },
+        {
+          "name": "colorG",
+          "type": "f32"
+        },
+        {
+          "name": "colorB",
+          "type": "f32"
+        },
+        {
+          "name": "colorA",
+          "type": "f32"
+        },
+        {
+          "name": "sourceRectX",
+          "type": "f32"
+        },
+        {
+          "name": "sourceRectY",
+          "type": "f32"
+        },
+        {
+          "name": "sourceRectWidth",
+          "type": "f32"
+        },
+        {
+          "name": "sourceRectHeight",
+          "type": "f32"
+        },
+        {
+          "name": "hasSourceRect",
+          "type": "bool"
+        },
+        {
+          "name": "flipX",
+          "type": "bool"
+        },
+        {
+          "name": "flipY",
+          "type": "bool"
+        },
+        {
+          "name": "anchorX",
+          "type": "f32"
+        },
+        {
+          "name": "anchorY",
+          "type": "f32"
+        },
+        {
+          "name": "customSizeX",
+          "type": "f32"
+        },
+        {
+          "name": "customSizeY",
+          "type": "f32"
+        },
+        {
+          "name": "hasCustomSize",
+          "type": "bool"
+        }
       ],
       "factories": [
-        {"name": "new", "args": [{"name": "textureHandle", "type": "u64"}]},
-        {"name": "default", "args": []}
+        {
+          "name": "new",
+          "args": [
+            {
+              "name": "textureHandle",
+              "type": "u64"
+            }
+          ]
+        },
+        {
+          "name": "default",
+          "args": []
+        }
       ],
       "methods": [
-        {"name": "setColor", "doc": "Sets the RGBA color tint", "params": [{"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "getColor", "doc": "Gets the color tint as FfiColor", "params": [], "returns": "Color"},
-        {"name": "withColor", "doc": "Returns a copy with modified color", "params": [{"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "Sprite"},
-        {"name": "setAlpha", "doc": "Sets the alpha channel", "params": [{"name": "alpha", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "getAlpha", "doc": "Gets the alpha channel", "params": [], "returns": "f32"},
-        {"name": "setSourceRect", "doc": "Sets the source rectangle for sprite sheets", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "clearSourceRect", "doc": "Clears the source rectangle (uses full texture)", "params": [], "returns": "void", "mutates": true},
-        {"name": "getSourceRect", "doc": "Gets the source rectangle", "params": [], "returns": "Rect"},
-        {"name": "hasSourceRect", "doc": "Returns true if a source rectangle is set", "params": [], "returns": "bool"},
-        {"name": "withSourceRect", "doc": "Returns a copy with a source rectangle", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "Sprite"},
-        {"name": "setFlipX", "doc": "Sets horizontal flip", "params": [{"name": "flip", "type": "bool"}], "returns": "void", "mutates": true},
-        {"name": "getFlipX", "doc": "Gets horizontal flip state", "params": [], "returns": "bool"},
-        {"name": "setFlipY", "doc": "Sets vertical flip", "params": [{"name": "flip", "type": "bool"}], "returns": "void", "mutates": true},
-        {"name": "getFlipY", "doc": "Gets vertical flip state", "params": [], "returns": "bool"},
-        {"name": "setFlip", "doc": "Sets both flip flags at once", "params": [{"name": "flipX", "type": "bool"}, {"name": "flipY", "type": "bool"}], "returns": "void", "mutates": true},
-        {"name": "withFlipX", "doc": "Returns a copy with horizontal flip", "params": [{"name": "flip", "type": "bool"}], "returns": "Sprite"},
-        {"name": "withFlipY", "doc": "Returns a copy with vertical flip", "params": [{"name": "flip", "type": "bool"}], "returns": "Sprite"},
-        {"name": "withFlip", "doc": "Returns a copy with both flip flags", "params": [{"name": "flipX", "type": "bool"}, {"name": "flipY", "type": "bool"}], "returns": "Sprite"},
-        {"name": "isFlipped", "doc": "Returns true if either flip flag is set", "params": [], "returns": "bool"},
-        {"name": "setAnchor", "doc": "Sets the anchor point (normalized 0-1)", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "getAnchor", "doc": "Gets the anchor point", "params": [], "returns": "Vec2"},
-        {"name": "withAnchor", "doc": "Returns a copy with modified anchor", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}], "returns": "Sprite"},
-        {"name": "setCustomSize", "doc": "Sets a custom render size", "params": [{"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "void", "mutates": true},
-        {"name": "clearCustomSize", "doc": "Clears custom size (uses texture dimensions)", "params": [], "returns": "void", "mutates": true},
-        {"name": "getCustomSize", "doc": "Gets the custom size", "params": [], "returns": "Vec2"},
-        {"name": "hasCustomSize", "doc": "Returns true if custom size is set", "params": [], "returns": "bool"},
-        {"name": "withCustomSize", "doc": "Returns a copy with custom size", "params": [{"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "Sprite"},
-        {"name": "setTexture", "doc": "Sets the texture handle", "params": [{"name": "handle", "type": "u64"}], "returns": "void", "mutates": true},
-        {"name": "getTexture", "doc": "Gets the texture handle", "params": [], "returns": "u64"},
-        {"name": "sizeOrRect", "doc": "Returns custom size if set, otherwise source rect dimensions, otherwise zero", "params": [], "returns": "Vec2"}
+        {
+          "name": "setColor",
+          "doc": "Sets the RGBA color tint",
+          "params": [
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            },
+            {
+              "name": "a",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getColor",
+          "doc": "Gets the color tint as FfiColor",
+          "params": [],
+          "returns": "Color"
+        },
+        {
+          "name": "withColor",
+          "doc": "Returns a copy with modified color",
+          "params": [
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            },
+            {
+              "name": "a",
+              "type": "f32"
+            }
+          ],
+          "returns": "Sprite"
+        },
+        {
+          "name": "setAlpha",
+          "doc": "Sets the alpha channel",
+          "params": [
+            {
+              "name": "alpha",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getAlpha",
+          "doc": "Gets the alpha channel",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "setSourceRect",
+          "doc": "Sets the source rectangle for sprite sheets",
+          "params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "width",
+              "type": "f32"
+            },
+            {
+              "name": "height",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "clearSourceRect",
+          "doc": "Clears the source rectangle (uses full texture)",
+          "params": [],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getSourceRect",
+          "doc": "Gets the source rectangle",
+          "params": [],
+          "returns": "Rect"
+        },
+        {
+          "name": "hasSourceRect",
+          "doc": "Returns true if a source rectangle is set",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "withSourceRect",
+          "doc": "Returns a copy with a source rectangle",
+          "params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "width",
+              "type": "f32"
+            },
+            {
+              "name": "height",
+              "type": "f32"
+            }
+          ],
+          "returns": "Sprite"
+        },
+        {
+          "name": "setFlipX",
+          "doc": "Sets horizontal flip",
+          "params": [
+            {
+              "name": "flip",
+              "type": "bool"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getFlipX",
+          "doc": "Gets horizontal flip state",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "setFlipY",
+          "doc": "Sets vertical flip",
+          "params": [
+            {
+              "name": "flip",
+              "type": "bool"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getFlipY",
+          "doc": "Gets vertical flip state",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "setFlip",
+          "doc": "Sets both flip flags at once",
+          "params": [
+            {
+              "name": "flipX",
+              "type": "bool"
+            },
+            {
+              "name": "flipY",
+              "type": "bool"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "withFlipX",
+          "doc": "Returns a copy with horizontal flip",
+          "params": [
+            {
+              "name": "flip",
+              "type": "bool"
+            }
+          ],
+          "returns": "Sprite"
+        },
+        {
+          "name": "withFlipY",
+          "doc": "Returns a copy with vertical flip",
+          "params": [
+            {
+              "name": "flip",
+              "type": "bool"
+            }
+          ],
+          "returns": "Sprite"
+        },
+        {
+          "name": "withFlip",
+          "doc": "Returns a copy with both flip flags",
+          "params": [
+            {
+              "name": "flipX",
+              "type": "bool"
+            },
+            {
+              "name": "flipY",
+              "type": "bool"
+            }
+          ],
+          "returns": "Sprite"
+        },
+        {
+          "name": "isFlipped",
+          "doc": "Returns true if either flip flag is set",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "setAnchor",
+          "doc": "Sets the anchor point (normalized 0-1)",
+          "params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getAnchor",
+          "doc": "Gets the anchor point",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "withAnchor",
+          "doc": "Returns a copy with modified anchor",
+          "params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ],
+          "returns": "Sprite"
+        },
+        {
+          "name": "setCustomSize",
+          "doc": "Sets a custom render size",
+          "params": [
+            {
+              "name": "width",
+              "type": "f32"
+            },
+            {
+              "name": "height",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "clearCustomSize",
+          "doc": "Clears custom size (uses texture dimensions)",
+          "params": [],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getCustomSize",
+          "doc": "Gets the custom size",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "hasCustomSize",
+          "doc": "Returns true if custom size is set",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "withCustomSize",
+          "doc": "Returns a copy with custom size",
+          "params": [
+            {
+              "name": "width",
+              "type": "f32"
+            },
+            {
+              "name": "height",
+              "type": "f32"
+            }
+          ],
+          "returns": "Sprite"
+        },
+        {
+          "name": "setTexture",
+          "doc": "Sets the texture handle",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getTexture",
+          "doc": "Gets the texture handle",
+          "params": [],
+          "returns": "u64"
+        },
+        {
+          "name": "sizeOrRect",
+          "doc": "Returns custom size if set, otherwise source rect dimensions, otherwise zero",
+          "params": [],
+          "returns": "Vec2"
+        }
       ],
       "builder": {
         "doc": "Fluent builder for constructing Sprite instances",
         "methods": [
-          {"name": "new", "doc": "Creates a builder with a texture handle", "params": [{"name": "textureHandle", "type": "u64"}], "returns": "SpriteBuilder"},
-          {"name": "default", "doc": "Creates a builder with default values", "params": [], "returns": "SpriteBuilder"},
-          {"name": "withTexture", "doc": "Sets texture handle", "params": [{"name": "handle", "type": "u64"}], "returns": "SpriteBuilder"},
-          {"name": "withColor", "doc": "Sets color tint", "params": [{"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}], "returns": "SpriteBuilder"},
-          {"name": "withAlpha", "doc": "Sets alpha channel", "params": [{"name": "alpha", "type": "f32"}], "returns": "SpriteBuilder"},
-          {"name": "withSourceRect", "doc": "Sets source rectangle", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "SpriteBuilder"},
-          {"name": "withFlipX", "doc": "Sets horizontal flip", "params": [{"name": "flip", "type": "bool"}], "returns": "SpriteBuilder"},
-          {"name": "withFlipY", "doc": "Sets vertical flip", "params": [{"name": "flip", "type": "bool"}], "returns": "SpriteBuilder"},
-          {"name": "withFlip", "doc": "Sets both flip flags", "params": [{"name": "flipX", "type": "bool"}, {"name": "flipY", "type": "bool"}], "returns": "SpriteBuilder"},
-          {"name": "withAnchor", "doc": "Sets anchor point", "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}], "returns": "SpriteBuilder"},
-          {"name": "withCustomSize", "doc": "Sets custom size", "params": [{"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}], "returns": "SpriteBuilder"},
-          {"name": "build", "doc": "Builds the Sprite and consumes the builder", "params": [], "returns": "Sprite"},
-          {"name": "free", "doc": "Frees the builder without building", "params": [], "returns": "void"}
+          {
+            "name": "new",
+            "doc": "Creates a builder with a texture handle",
+            "params": [
+              {
+                "name": "textureHandle",
+                "type": "u64"
+              }
+            ],
+            "returns": "SpriteBuilder"
+          },
+          {
+            "name": "default",
+            "doc": "Creates a builder with default values",
+            "params": [],
+            "returns": "SpriteBuilder"
+          },
+          {
+            "name": "withTexture",
+            "doc": "Sets texture handle",
+            "params": [
+              {
+                "name": "handle",
+                "type": "u64"
+              }
+            ],
+            "returns": "SpriteBuilder"
+          },
+          {
+            "name": "withColor",
+            "doc": "Sets color tint",
+            "params": [
+              {
+                "name": "r",
+                "type": "f32"
+              },
+              {
+                "name": "g",
+                "type": "f32"
+              },
+              {
+                "name": "b",
+                "type": "f32"
+              },
+              {
+                "name": "a",
+                "type": "f32"
+              }
+            ],
+            "returns": "SpriteBuilder"
+          },
+          {
+            "name": "withAlpha",
+            "doc": "Sets alpha channel",
+            "params": [
+              {
+                "name": "alpha",
+                "type": "f32"
+              }
+            ],
+            "returns": "SpriteBuilder"
+          },
+          {
+            "name": "withSourceRect",
+            "doc": "Sets source rectangle",
+            "params": [
+              {
+                "name": "x",
+                "type": "f32"
+              },
+              {
+                "name": "y",
+                "type": "f32"
+              },
+              {
+                "name": "width",
+                "type": "f32"
+              },
+              {
+                "name": "height",
+                "type": "f32"
+              }
+            ],
+            "returns": "SpriteBuilder"
+          },
+          {
+            "name": "withFlipX",
+            "doc": "Sets horizontal flip",
+            "params": [
+              {
+                "name": "flip",
+                "type": "bool"
+              }
+            ],
+            "returns": "SpriteBuilder"
+          },
+          {
+            "name": "withFlipY",
+            "doc": "Sets vertical flip",
+            "params": [
+              {
+                "name": "flip",
+                "type": "bool"
+              }
+            ],
+            "returns": "SpriteBuilder"
+          },
+          {
+            "name": "withFlip",
+            "doc": "Sets both flip flags",
+            "params": [
+              {
+                "name": "flipX",
+                "type": "bool"
+              },
+              {
+                "name": "flipY",
+                "type": "bool"
+              }
+            ],
+            "returns": "SpriteBuilder"
+          },
+          {
+            "name": "withAnchor",
+            "doc": "Sets anchor point",
+            "params": [
+              {
+                "name": "x",
+                "type": "f32"
+              },
+              {
+                "name": "y",
+                "type": "f32"
+              }
+            ],
+            "returns": "SpriteBuilder"
+          },
+          {
+            "name": "withCustomSize",
+            "doc": "Sets custom size",
+            "params": [
+              {
+                "name": "width",
+                "type": "f32"
+              },
+              {
+                "name": "height",
+                "type": "f32"
+              }
+            ],
+            "returns": "SpriteBuilder"
+          },
+          {
+            "name": "build",
+            "doc": "Builds the Sprite and consumes the builder",
+            "params": [],
+            "returns": "Sprite"
+          },
+          {
+            "name": "free",
+            "doc": "Frees the builder without building",
+            "params": [],
+            "returns": "void"
+          }
         ]
       }
     },
@@ -224,149 +1636,895 @@
       "kind": "value",
       "doc": "Per-frame rendering statistics",
       "fields": [
-        {"name": "drawCalls",    "type": "u32", "doc": "Number of draw calls this frame"},
-        {"name": "triangles",    "type": "u32", "doc": "Number of triangles rendered"},
-        {"name": "textureBinds", "type": "u32", "doc": "Number of texture bind operations"},
-        {"name": "shaderBinds",  "type": "u32", "doc": "Number of shader bind operations"}
+        {
+          "name": "drawCalls",
+          "type": "u32",
+          "doc": "Number of draw calls this frame"
+        },
+        {
+          "name": "triangles",
+          "type": "u32",
+          "doc": "Number of triangles rendered"
+        },
+        {
+          "name": "textureBinds",
+          "type": "u32",
+          "doc": "Number of texture bind operations"
+        },
+        {
+          "name": "shaderBinds",
+          "type": "u32",
+          "doc": "Number of shader bind operations"
+        }
       ]
     },
     "Contact": {
       "kind": "value",
       "doc": "Collision contact point information",
       "fields": [
-        {"name": "pointX",      "type": "f32"},
-        {"name": "pointY",      "type": "f32"},
-        {"name": "normalX",     "type": "f32"},
-        {"name": "normalY",     "type": "f32"},
-        {"name": "penetration", "type": "f32"}
+        {
+          "name": "pointX",
+          "type": "f32"
+        },
+        {
+          "name": "pointY",
+          "type": "f32"
+        },
+        {
+          "name": "normalX",
+          "type": "f32"
+        },
+        {
+          "name": "normalY",
+          "type": "f32"
+        },
+        {
+          "name": "penetration",
+          "type": "f32"
+        }
       ]
     },
     "Vec3": {
       "kind": "value",
       "doc": "3D floating-point vector",
       "fields": [
-        {"name": "x", "type": "f32"},
-        {"name": "y", "type": "f32"},
-        {"name": "z", "type": "f32"}
+        {
+          "name": "x",
+          "type": "f32"
+        },
+        {
+          "name": "y",
+          "type": "f32"
+        },
+        {
+          "name": "z",
+          "type": "f32"
+        }
       ],
       "factories": [
-        {"name": "zero", "args": [], "value": [0, 0, 0]},
-        {"name": "one",  "args": [], "value": [1, 1, 1]},
-        {"name": "up",   "args": [], "value": [0, 1, 0]}
+        {
+          "name": "zero",
+          "args": [],
+          "value": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "name": "one",
+          "args": [],
+          "value": [
+            1,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "up",
+          "args": [],
+          "value": [
+            0,
+            1,
+            0
+          ]
+        }
       ]
     },
     "Entity": {
       "kind": "handle",
       "doc": "Opaque handle to an ECS entity",
       "properties": [
-        {"name": "index", "type": "u32", "readonly": true},
-        {"name": "generation", "type": "u32", "readonly": true},
-        {"name": "isPlaceholder", "type": "bool", "readonly": true}
+        {
+          "name": "index",
+          "type": "u32",
+          "readonly": true
+        },
+        {
+          "name": "generation",
+          "type": "u32",
+          "readonly": true
+        },
+        {
+          "name": "isPlaceholder",
+          "type": "bool",
+          "readonly": true
+        }
       ],
       "methods": [
-        {"name": "toBits", "params": [], "returns": "u64"}
+        {
+          "name": "toBits",
+          "params": [],
+          "returns": "u64"
+        }
       ]
     }
   },
-
   "enums": {
     "Key": {
       "doc": "Keyboard key codes matching GLFW values",
       "underlying": "i32",
       "values": {
         "Unknown": -1,
-        "Space": 32, "Apostrophe": 39, "Comma": 44, "Minus": 45, "Period": 46, "Slash": 47,
-        "Digit0": 48, "Digit1": 49, "Digit2": 50, "Digit3": 51, "Digit4": 52,
-        "Digit5": 53, "Digit6": 54, "Digit7": 55, "Digit8": 56, "Digit9": 57,
-        "Semicolon": 59, "Equal": 61,
-        "A": 65, "B": 66, "C": 67, "D": 68, "E": 69, "F": 70, "G": 71, "H": 72,
-        "I": 73, "J": 74, "K": 75, "L": 76, "M": 77, "N": 78, "O": 79, "P": 80,
-        "Q": 81, "R": 82, "S": 83, "T": 84, "U": 85, "V": 86, "W": 87, "X": 88,
-        "Y": 89, "Z": 90,
-        "LeftBracket": 91, "Backslash": 92, "RightBracket": 93, "GraveAccent": 96,
-        "Escape": 256, "Enter": 257, "Tab": 258, "Backspace": 259,
-        "Insert": 260, "Delete": 261,
-        "Right": 262, "Left": 263, "Down": 264, "Up": 265,
-        "PageUp": 266, "PageDown": 267, "Home": 268, "End": 269,
-        "CapsLock": 280, "ScrollLock": 281, "NumLock": 282, "PrintScreen": 283, "Pause": 284,
-        "F1": 290, "F2": 291, "F3": 292, "F4": 293, "F5": 294, "F6": 295,
-        "F7": 296, "F8": 297, "F9": 298, "F10": 299, "F11": 300, "F12": 301,
-        "Numpad0": 320, "Numpad1": 321, "Numpad2": 322, "Numpad3": 323, "Numpad4": 324,
-        "Numpad5": 325, "Numpad6": 326, "Numpad7": 327, "Numpad8": 328, "Numpad9": 329,
-        "NumpadDecimal": 330, "NumpadDivide": 331, "NumpadMultiply": 332,
-        "NumpadSubtract": 333, "NumpadAdd": 334, "NumpadEnter": 335,
-        "LeftShift": 340, "LeftControl": 341, "LeftAlt": 342, "LeftSuper": 343,
-        "RightShift": 344, "RightControl": 345, "RightAlt": 346, "RightSuper": 347
+        "Space": 32,
+        "Apostrophe": 39,
+        "Comma": 44,
+        "Minus": 45,
+        "Period": 46,
+        "Slash": 47,
+        "Digit0": 48,
+        "Digit1": 49,
+        "Digit2": 50,
+        "Digit3": 51,
+        "Digit4": 52,
+        "Digit5": 53,
+        "Digit6": 54,
+        "Digit7": 55,
+        "Digit8": 56,
+        "Digit9": 57,
+        "Semicolon": 59,
+        "Equal": 61,
+        "A": 65,
+        "B": 66,
+        "C": 67,
+        "D": 68,
+        "E": 69,
+        "F": 70,
+        "G": 71,
+        "H": 72,
+        "I": 73,
+        "J": 74,
+        "K": 75,
+        "L": 76,
+        "M": 77,
+        "N": 78,
+        "O": 79,
+        "P": 80,
+        "Q": 81,
+        "R": 82,
+        "S": 83,
+        "T": 84,
+        "U": 85,
+        "V": 86,
+        "W": 87,
+        "X": 88,
+        "Y": 89,
+        "Z": 90,
+        "LeftBracket": 91,
+        "Backslash": 92,
+        "RightBracket": 93,
+        "GraveAccent": 96,
+        "Escape": 256,
+        "Enter": 257,
+        "Tab": 258,
+        "Backspace": 259,
+        "Insert": 260,
+        "Delete": 261,
+        "Right": 262,
+        "Left": 263,
+        "Down": 264,
+        "Up": 265,
+        "PageUp": 266,
+        "PageDown": 267,
+        "Home": 268,
+        "End": 269,
+        "CapsLock": 280,
+        "ScrollLock": 281,
+        "NumLock": 282,
+        "PrintScreen": 283,
+        "Pause": 284,
+        "F1": 290,
+        "F2": 291,
+        "F3": 292,
+        "F4": 293,
+        "F5": 294,
+        "F6": 295,
+        "F7": 296,
+        "F8": 297,
+        "F9": 298,
+        "F10": 299,
+        "F11": 300,
+        "F12": 301,
+        "Numpad0": 320,
+        "Numpad1": 321,
+        "Numpad2": 322,
+        "Numpad3": 323,
+        "Numpad4": 324,
+        "Numpad5": 325,
+        "Numpad6": 326,
+        "Numpad7": 327,
+        "Numpad8": 328,
+        "Numpad9": 329,
+        "NumpadDecimal": 330,
+        "NumpadDivide": 331,
+        "NumpadMultiply": 332,
+        "NumpadSubtract": 333,
+        "NumpadAdd": 334,
+        "NumpadEnter": 335,
+        "LeftShift": 340,
+        "LeftControl": 341,
+        "LeftAlt": 342,
+        "LeftSuper": 343,
+        "RightShift": 344,
+        "RightControl": 345,
+        "RightAlt": 346,
+        "RightSuper": 347
       },
       "web_code_map": {
-        "Space": "Space", "Apostrophe": "Quote", "Comma": "Comma", "Minus": "Minus",
-        "Period": "Period", "Slash": "Slash",
-        "Digit0": "Digit0", "Digit1": "Digit1", "Digit2": "Digit2", "Digit3": "Digit3",
-        "Digit4": "Digit4", "Digit5": "Digit5", "Digit6": "Digit6", "Digit7": "Digit7",
-        "Digit8": "Digit8", "Digit9": "Digit9",
-        "Semicolon": "Semicolon", "Equal": "Equal",
-        "A": "KeyA", "B": "KeyB", "C": "KeyC", "D": "KeyD", "E": "KeyE",
-        "F": "KeyF", "G": "KeyG", "H": "KeyH", "I": "KeyI", "J": "KeyJ",
-        "K": "KeyK", "L": "KeyL", "M": "KeyM", "N": "KeyN", "O": "KeyO",
-        "P": "KeyP", "Q": "KeyQ", "R": "KeyR", "S": "KeyS", "T": "KeyT",
-        "U": "KeyU", "V": "KeyV", "W": "KeyW", "X": "KeyX", "Y": "KeyY", "Z": "KeyZ",
-        "LeftBracket": "BracketLeft", "Backslash": "Backslash", "RightBracket": "BracketRight",
+        "Space": "Space",
+        "Apostrophe": "Quote",
+        "Comma": "Comma",
+        "Minus": "Minus",
+        "Period": "Period",
+        "Slash": "Slash",
+        "Digit0": "Digit0",
+        "Digit1": "Digit1",
+        "Digit2": "Digit2",
+        "Digit3": "Digit3",
+        "Digit4": "Digit4",
+        "Digit5": "Digit5",
+        "Digit6": "Digit6",
+        "Digit7": "Digit7",
+        "Digit8": "Digit8",
+        "Digit9": "Digit9",
+        "Semicolon": "Semicolon",
+        "Equal": "Equal",
+        "A": "KeyA",
+        "B": "KeyB",
+        "C": "KeyC",
+        "D": "KeyD",
+        "E": "KeyE",
+        "F": "KeyF",
+        "G": "KeyG",
+        "H": "KeyH",
+        "I": "KeyI",
+        "J": "KeyJ",
+        "K": "KeyK",
+        "L": "KeyL",
+        "M": "KeyM",
+        "N": "KeyN",
+        "O": "KeyO",
+        "P": "KeyP",
+        "Q": "KeyQ",
+        "R": "KeyR",
+        "S": "KeyS",
+        "T": "KeyT",
+        "U": "KeyU",
+        "V": "KeyV",
+        "W": "KeyW",
+        "X": "KeyX",
+        "Y": "KeyY",
+        "Z": "KeyZ",
+        "LeftBracket": "BracketLeft",
+        "Backslash": "Backslash",
+        "RightBracket": "BracketRight",
         "GraveAccent": "Backquote",
-        "Escape": "Escape", "Enter": "Enter", "Tab": "Tab", "Backspace": "Backspace",
-        "Insert": "Insert", "Delete": "Delete",
-        "Right": "ArrowRight", "Left": "ArrowLeft", "Down": "ArrowDown", "Up": "ArrowUp",
-        "PageUp": "PageUp", "PageDown": "PageDown", "Home": "Home", "End": "End",
-        "CapsLock": "CapsLock", "ScrollLock": "ScrollLock", "NumLock": "NumLock",
-        "PrintScreen": "PrintScreen", "Pause": "Pause",
-        "F1": "F1", "F2": "F2", "F3": "F3", "F4": "F4", "F5": "F5", "F6": "F6",
-        "F7": "F7", "F8": "F8", "F9": "F9", "F10": "F10", "F11": "F11", "F12": "F12",
-        "Numpad0": "Numpad0", "Numpad1": "Numpad1", "Numpad2": "Numpad2", "Numpad3": "Numpad3",
-        "Numpad4": "Numpad4", "Numpad5": "Numpad5", "Numpad6": "Numpad6", "Numpad7": "Numpad7",
-        "Numpad8": "Numpad8", "Numpad9": "Numpad9",
-        "NumpadDecimal": "NumpadDecimal", "NumpadDivide": "NumpadDivide",
-        "NumpadMultiply": "NumpadMultiply", "NumpadSubtract": "NumpadSubtract",
-        "NumpadAdd": "NumpadAdd", "NumpadEnter": "NumpadEnter",
-        "LeftShift": "ShiftLeft", "LeftControl": "ControlLeft",
-        "LeftAlt": "AltLeft", "LeftSuper": "MetaLeft",
-        "RightShift": "ShiftRight", "RightControl": "ControlRight",
-        "RightAlt": "AltRight", "RightSuper": "MetaRight"
+        "Escape": "Escape",
+        "Enter": "Enter",
+        "Tab": "Tab",
+        "Backspace": "Backspace",
+        "Insert": "Insert",
+        "Delete": "Delete",
+        "Right": "ArrowRight",
+        "Left": "ArrowLeft",
+        "Down": "ArrowDown",
+        "Up": "ArrowUp",
+        "PageUp": "PageUp",
+        "PageDown": "PageDown",
+        "Home": "Home",
+        "End": "End",
+        "CapsLock": "CapsLock",
+        "ScrollLock": "ScrollLock",
+        "NumLock": "NumLock",
+        "PrintScreen": "PrintScreen",
+        "Pause": "Pause",
+        "F1": "F1",
+        "F2": "F2",
+        "F3": "F3",
+        "F4": "F4",
+        "F5": "F5",
+        "F6": "F6",
+        "F7": "F7",
+        "F8": "F8",
+        "F9": "F9",
+        "F10": "F10",
+        "F11": "F11",
+        "F12": "F12",
+        "Numpad0": "Numpad0",
+        "Numpad1": "Numpad1",
+        "Numpad2": "Numpad2",
+        "Numpad3": "Numpad3",
+        "Numpad4": "Numpad4",
+        "Numpad5": "Numpad5",
+        "Numpad6": "Numpad6",
+        "Numpad7": "Numpad7",
+        "Numpad8": "Numpad8",
+        "Numpad9": "Numpad9",
+        "NumpadDecimal": "NumpadDecimal",
+        "NumpadDivide": "NumpadDivide",
+        "NumpadMultiply": "NumpadMultiply",
+        "NumpadSubtract": "NumpadSubtract",
+        "NumpadAdd": "NumpadAdd",
+        "NumpadEnter": "NumpadEnter",
+        "LeftShift": "ShiftLeft",
+        "LeftControl": "ControlLeft",
+        "LeftAlt": "AltLeft",
+        "LeftSuper": "MetaLeft",
+        "RightShift": "ShiftRight",
+        "RightControl": "ControlRight",
+        "RightAlt": "AltRight",
+        "RightSuper": "MetaRight"
       }
     },
     "MouseButton": {
       "doc": "Mouse button identifiers",
       "underlying": "i32",
       "values": {
-        "Left": 0, "Right": 1, "Middle": 2,
-        "Button4": 3, "Button5": 4, "Button6": 5, "Button7": 6, "Button8": 7
+        "Left": 0,
+        "Right": 1,
+        "Middle": 2,
+        "Button4": 3,
+        "Button5": 4,
+        "Button6": 5,
+        "Button7": 6,
+        "Button8": 7
       }
     },
     "RendererType": {
       "doc": "Rendering backend selection",
       "underlying": "i32",
       "values": {
-        "Renderer2D": 0, "Renderer3D": 1
+        "Renderer2D": 0,
+        "Renderer3D": 1
       }
     }
   },
-
+  "mixins": {
+    "EcsMethods": {
+      "doc": "Entity/component methods shared by GoudGame and GoudContext",
+      "methods": [
+        {
+          "name": "addName",
+          "doc": "Attaches a Name component to the entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ],
+          "returns": "void",
+          "wasm_name": "add_name",
+          "wasm_signature": "add_name(bits: bigint, name: string): void"
+        },
+        {
+          "name": "addSprite",
+          "doc": "Attaches a Sprite component to the entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "sprite",
+              "type": "Sprite"
+            }
+          ],
+          "returns": "void",
+          "wasm_name": "add_sprite",
+          "wasm_signature": "add_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, anchor_x: number, anchor_y: number): void"
+        },
+        {
+          "name": "addTransform2d",
+          "doc": "Attaches a Transform2D component to the entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "transform",
+              "type": "Transform2D"
+            }
+          ],
+          "returns": "void",
+          "wasm_name": "add_transform2d",
+          "wasm_signature": "add_transform2d(bits: bigint, px: number, py: number, r: number, sx: number, sy: number): void"
+        },
+        {
+          "name": "componentAdd",
+          "doc": "Adds a generic component to an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "typeIdHash",
+              "type": "u64"
+            },
+            {
+              "name": "dataPtr",
+              "type": "ptr"
+            },
+            {
+              "name": "dataSize",
+              "type": "usize"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "componentAddBatch",
+          "doc": "Adds a generic component to multiple entities",
+          "params": [
+            {
+              "name": "entities",
+              "type": "Entity[]"
+            },
+            {
+              "name": "typeIdHash",
+              "type": "u64"
+            },
+            {
+              "name": "dataPtr",
+              "type": "ptr"
+            },
+            {
+              "name": "componentSize",
+              "type": "usize"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "componentGet",
+          "doc": "Gets a read-only pointer to a generic component",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "typeIdHash",
+              "type": "u64"
+            }
+          ],
+          "returns": "ptr"
+        },
+        {
+          "name": "componentGetMut",
+          "doc": "Gets a mutable pointer to a generic component",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "typeIdHash",
+              "type": "u64"
+            }
+          ],
+          "returns": "ptr"
+        },
+        {
+          "name": "componentHas",
+          "doc": "Checks if an entity has a generic component",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "typeIdHash",
+              "type": "u64"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "componentHasBatch",
+          "doc": "Checks if multiple entities have a generic component",
+          "params": [
+            {
+              "name": "entities",
+              "type": "Entity[]"
+            },
+            {
+              "name": "typeIdHash",
+              "type": "u64"
+            },
+            {
+              "name": "outResults",
+              "type": "u8[]"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "componentRegisterType",
+          "doc": "Registers a component type for generic operations",
+          "params": [
+            {
+              "name": "typeIdHash",
+              "type": "u64"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "size",
+              "type": "usize"
+            },
+            {
+              "name": "align",
+              "type": "usize"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "componentRemove",
+          "doc": "Removes a generic component from an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "typeIdHash",
+              "type": "u64"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "componentRemoveBatch",
+          "doc": "Removes a generic component from multiple entities",
+          "params": [
+            {
+              "name": "entities",
+              "type": "Entity[]"
+            },
+            {
+              "name": "typeIdHash",
+              "type": "u64"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "despawn",
+          "doc": "Destroys an entity and all its components",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "despawn",
+          "wasm_signature": "despawn(bits: bigint): boolean"
+        },
+        {
+          "name": "despawnBatch",
+          "doc": "Despawns multiple entities at once",
+          "params": [
+            {
+              "name": "entities",
+              "type": "Entity[]"
+            }
+          ],
+          "returns": "u32",
+          "wasm_name": "despawn_batch",
+          "wasm_signature": "despawn_batch(bits: BigUint64Array): number"
+        },
+        {
+          "name": "entityCount",
+          "doc": "Returns the number of living entities",
+          "params": [],
+          "returns": "u32",
+          "wasm_name": "entity_count",
+          "wasm_signature": "entity_count(): number"
+        },
+        {
+          "name": "getName",
+          "doc": "Returns the entity's Name, or null if absent",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "string?",
+          "nullable": true,
+          "wasm_name": "get_name",
+          "wasm_signature": "get_name(bits: bigint): string | undefined"
+        },
+        {
+          "name": "getSprite",
+          "doc": "Returns the entity's Sprite, or null if absent",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "Sprite?",
+          "nullable": true,
+          "wasm_name": "get_sprite",
+          "wasm_signature": "get_sprite(bits: bigint): { texture_handle: number; r: number; g: number; b: number; a: number; flip_x: boolean; flip_y: boolean; anchor_x: number; anchor_y: number } | undefined"
+        },
+        {
+          "name": "getTransform2d",
+          "doc": "Returns the entity's Transform2D, or null if absent",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "Transform2D?",
+          "nullable": true,
+          "wasm_name": "get_transform2d",
+          "wasm_signature": "get_transform2d(bits: bigint): { position_x: number; position_y: number; rotation: number; scale_x: number; scale_y: number } | undefined"
+        },
+        {
+          "name": "hasName",
+          "doc": "Returns true if the entity has a Name",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "has_name",
+          "wasm_signature": "has_name(bits: bigint): boolean"
+        },
+        {
+          "name": "hasSprite",
+          "doc": "Returns true if the entity has a Sprite",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "has_sprite",
+          "wasm_signature": "has_sprite(bits: bigint): boolean"
+        },
+        {
+          "name": "hasTransform2d",
+          "doc": "Returns true if the entity has a Transform2D",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "has_transform2d",
+          "wasm_signature": "has_transform2d(bits: bigint): boolean"
+        },
+        {
+          "name": "isAlive",
+          "doc": "Returns true if the entity still exists",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "is_alive",
+          "wasm_signature": "is_alive(bits: bigint): boolean"
+        },
+        {
+          "name": "isAliveBatch",
+          "doc": "Checks if multiple entities are alive, writing results to an output array",
+          "params": [
+            {
+              "name": "entities",
+              "type": "Entity[]"
+            },
+            {
+              "name": "outResults",
+              "type": "u8[]"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "removeName",
+          "doc": "Removes the Name from the entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "remove_name",
+          "wasm_signature": "remove_name(bits: bigint): boolean"
+        },
+        {
+          "name": "removeSprite",
+          "doc": "Removes the Sprite from the entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "remove_sprite",
+          "wasm_signature": "remove_sprite(bits: bigint): boolean"
+        },
+        {
+          "name": "removeTransform2d",
+          "doc": "Removes the Transform2D from the entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "remove_transform2d",
+          "wasm_signature": "remove_transform2d(bits: bigint): boolean"
+        },
+        {
+          "name": "setSprite",
+          "doc": "Overwrites the entity's Sprite",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "sprite",
+              "type": "Sprite"
+            }
+          ],
+          "returns": "void",
+          "wasm_name": "set_sprite",
+          "wasm_signature": "set_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, anchor_x: number, anchor_y: number): void"
+        },
+        {
+          "name": "setTransform2d",
+          "doc": "Overwrites the entity's Transform2D",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "transform",
+              "type": "Transform2D"
+            }
+          ],
+          "returns": "void",
+          "wasm_name": "set_transform2d",
+          "wasm_signature": "set_transform2d(bits: bigint, px: number, py: number, r: number, sx: number, sy: number): void"
+        },
+        {
+          "name": "spawnBatch",
+          "doc": "Spawns multiple empty entities at once",
+          "params": [
+            {
+              "name": "count",
+              "type": "u32"
+            }
+          ],
+          "returns": "Entity[]",
+          "wasm_name": "spawn_batch",
+          "wasm_signature": "spawn_batch(count: number): BigUint64Array"
+        },
+        {
+          "name": "spawnEmpty",
+          "doc": "Creates a new empty entity",
+          "params": [],
+          "returns": "Entity",
+          "wasm_name": "spawn_empty",
+          "wasm_signature": "spawn_empty(): bigint"
+        }
+      ]
+    }
+  },
   "tools": {
     "GoudGame": {
       "doc": "Main game engine instance. Creates a window, manages rendering, input, and ECS.",
       "constructor": {
         "params": [
-          {"name": "width",  "type": "u32",    "default": 800,          "doc": "Window width in pixels"},
-          {"name": "height", "type": "u32",    "default": 600,          "doc": "Window height in pixels"},
-          {"name": "title",  "type": "string", "default": "GoudEngine", "doc": "Window title"}
+          {
+            "name": "width",
+            "type": "u32",
+            "default": 800,
+            "doc": "Window width in pixels"
+          },
+          {
+            "name": "height",
+            "type": "u32",
+            "default": 600,
+            "doc": "Window height in pixels"
+          },
+          {
+            "name": "title",
+            "type": "string",
+            "default": "GoudEngine",
+            "doc": "Window title"
+          }
         ]
       },
       "properties": [
-        {"name": "deltaTime",    "type": "f32", "readonly": true, "doc": "Seconds elapsed since last frame"},
-        {"name": "fps",          "type": "f32", "readonly": true, "doc": "Current frames per second"},
-        {"name": "windowWidth",  "type": "u32", "readonly": true, "doc": "Window width in pixels"},
-        {"name": "windowHeight", "type": "u32", "readonly": true, "doc": "Window height in pixels"},
-        {"name": "title",        "type": "string", "readonly": true, "doc": "Window title"},
-        {"name": "totalTime",    "type": "f64", "readonly": true, "doc": "Total elapsed time in seconds"},
-        {"name": "frameCount",   "type": "u32", "readonly": true, "doc": "Number of frames processed"}
+        {
+          "name": "deltaTime",
+          "type": "f32",
+          "readonly": true,
+          "doc": "Seconds elapsed since last frame"
+        },
+        {
+          "name": "fps",
+          "type": "f32",
+          "readonly": true,
+          "doc": "Current frames per second"
+        },
+        {
+          "name": "windowWidth",
+          "type": "u32",
+          "readonly": true,
+          "doc": "Window width in pixels"
+        },
+        {
+          "name": "windowHeight",
+          "type": "u32",
+          "readonly": true,
+          "doc": "Window height in pixels"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "readonly": true,
+          "doc": "Window title"
+        },
+        {
+          "name": "totalTime",
+          "type": "f64",
+          "readonly": true,
+          "doc": "Total elapsed time in seconds"
+        },
+        {
+          "name": "frameCount",
+          "type": "u32",
+          "readonly": true,
+          "doc": "Number of frames processed"
+        }
       ],
       "methods": [
         {
@@ -391,10 +2549,30 @@
           "name": "beginFrame",
           "doc": "Starts a new render frame with the given clear color",
           "params": [
-            {"name": "r", "type": "f32", "default": 0.0, "doc": "Clear color red"},
-            {"name": "g", "type": "f32", "default": 0.0, "doc": "Clear color green"},
-            {"name": "b", "type": "f32", "default": 0.0, "doc": "Clear color blue"},
-            {"name": "a", "type": "f32", "default": 1.0, "doc": "Clear color alpha"}
+            {
+              "name": "r",
+              "type": "f32",
+              "default": 0.0,
+              "doc": "Clear color red"
+            },
+            {
+              "name": "g",
+              "type": "f32",
+              "default": 0.0,
+              "doc": "Clear color green"
+            },
+            {
+              "name": "b",
+              "type": "f32",
+              "default": 0.0,
+              "doc": "Clear color blue"
+            },
+            {
+              "name": "a",
+              "type": "f32",
+              "default": 1.0,
+              "doc": "Clear color alpha"
+            }
           ],
           "returns": "void"
         },
@@ -407,86 +2585,202 @@
         {
           "name": "updateFrame",
           "doc": "Advance timing by the given delta (seconds). Increments frame count and accumulates total time.",
-          "params": [{"name": "dt", "type": "f64", "doc": "Delta time in seconds"}],
+          "params": [
+            {
+              "name": "dt",
+              "type": "f64",
+              "doc": "Delta time in seconds"
+            }
+          ],
           "returns": "void"
         },
         {
           "name": "run",
           "doc": "Runs the game loop. Calls the update callback each frame with delta time. Blocks until the window is closed.",
           "params": [
-            {"name": "update", "type": "callback(f32)", "doc": "Per-frame update function receiving delta time in seconds"}
+            {
+              "name": "update",
+              "type": "callback(f32)",
+              "doc": "Per-frame update function receiving delta time in seconds"
+            }
           ],
           "returns": "void"
         },
         {
           "name": "loadTexture",
           "doc": "Loads a texture from a file path and returns its handle",
-          "params": [{"name": "path", "type": "string", "doc": "Path to the image file"}],
+          "params": [
+            {
+              "name": "path",
+              "type": "string",
+              "doc": "Path to the image file"
+            }
+          ],
           "returns": "u64",
-          "async": true
+          "async": true,
+          "wasm_name": "load_texture",
+          "wasm_signature": "load_texture(url: string): Promise<number>"
         },
         {
           "name": "destroyTexture",
           "doc": "Destroys a previously loaded texture",
-          "params": [{"name": "handle", "type": "u64"}],
-          "returns": "void"
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "void",
+          "wasm_name": "destroy_texture",
+          "wasm_signature": "destroy_texture(handle: number): void"
         },
         {
           "name": "drawSprite",
           "doc": "Draws a textured sprite",
           "params": [
-            {"name": "texture",  "type": "u64", "doc": "Texture handle from loadTexture"},
-            {"name": "x",        "type": "f32"}, {"name": "y", "type": "f32"},
-            {"name": "width",    "type": "f32"}, {"name": "height", "type": "f32"},
-            {"name": "rotation", "type": "f32", "default": 0.0, "doc": "Rotation in radians"},
-            {"name": "color",    "type": "Color", "default": "Color.white()", "doc": "Tint color"}
+            {
+              "name": "texture",
+              "type": "u64",
+              "doc": "Texture handle from loadTexture"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "width",
+              "type": "f32"
+            },
+            {
+              "name": "height",
+              "type": "f32"
+            },
+            {
+              "name": "rotation",
+              "type": "f32",
+              "default": 0.0,
+              "doc": "Rotation in radians"
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "default": "Color.white()",
+              "doc": "Tint color"
+            }
           ],
-          "returns": "void"
+          "returns": "void",
+          "wasm_name": "draw_sprite",
+          "wasm_signature": "draw_sprite(t: number, x: number, y: number, w: number, h: number, rot: number, r: number, g: number, b: number, a: number): void"
         },
         {
           "name": "drawQuad",
           "doc": "Draws a colored rectangle",
           "params": [
-            {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"},
-            {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"},
-            {"name": "color", "type": "Color", "default": "Color.white()", "doc": "Fill color"}
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "width",
+              "type": "f32"
+            },
+            {
+              "name": "height",
+              "type": "f32"
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "default": "Color.white()",
+              "doc": "Fill color"
+            }
           ],
-          "returns": "void"
+          "returns": "void",
+          "wasm_name": "draw_quad",
+          "wasm_signature": "draw_quad(x: number, y: number, w: number, h: number, r: number, g: number, b: number, a: number): void"
         },
         {
           "name": "isKeyPressed",
           "doc": "Returns true if the key is currently held down",
-          "params": [{"name": "key", "type": "Key"}],
-          "returns": "bool"
+          "params": [
+            {
+              "name": "key",
+              "type": "Key"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "is_key_pressed",
+          "wasm_signature": "is_key_pressed(kc: number): boolean"
         },
         {
           "name": "isKeyJustPressed",
           "doc": "Returns true if the key was pressed this frame",
-          "params": [{"name": "key", "type": "Key"}],
-          "returns": "bool"
+          "params": [
+            {
+              "name": "key",
+              "type": "Key"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "is_key_just_pressed",
+          "wasm_signature": "is_key_just_pressed(kc: number): boolean"
         },
         {
           "name": "isKeyJustReleased",
           "doc": "Returns true if the key was released this frame",
-          "params": [{"name": "key", "type": "Key"}],
-          "returns": "bool"
+          "params": [
+            {
+              "name": "key",
+              "type": "Key"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "is_key_just_released",
+          "wasm_signature": "is_key_just_released(kc: number): boolean"
         },
         {
           "name": "isMouseButtonPressed",
           "doc": "Returns true if the mouse button is currently held",
-          "params": [{"name": "button", "type": "MouseButton"}],
-          "returns": "bool"
+          "params": [
+            {
+              "name": "button",
+              "type": "MouseButton"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "is_mouse_button_pressed",
+          "wasm_signature": "is_mouse_button_pressed(btn: number): boolean"
         },
         {
           "name": "isMouseButtonJustPressed",
           "doc": "Returns true if the mouse button was pressed this frame",
-          "params": [{"name": "button", "type": "MouseButton"}],
-          "returns": "bool"
+          "params": [
+            {
+              "name": "button",
+              "type": "MouseButton"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "is_mouse_button_just_pressed",
+          "wasm_signature": "is_mouse_button_just_pressed(btn: number): boolean"
         },
         {
           "name": "isMouseButtonJustReleased",
           "doc": "Returns true if the mouse button was released this frame",
-          "params": [{"name": "button", "type": "MouseButton"}],
+          "params": [
+            {
+              "name": "button",
+              "type": "MouseButton"
+            }
+          ],
           "returns": "bool"
         },
         {
@@ -508,124 +2802,311 @@
           "returns": "Vec2"
         },
         {
-          "name": "spawnEmpty",
-          "doc": "Creates a new empty entity",
-          "params": [],
-          "returns": "Entity"
+          "$ref": "EcsMethods",
+          "name": "spawnEmpty"
         },
         {
-          "name": "despawn",
-          "doc": "Destroys an entity and all its components",
-          "params": [{"name": "entity", "type": "Entity"}],
-          "returns": "bool"
+          "$ref": "EcsMethods",
+          "name": "despawn"
         },
         {
-          "name": "entityCount",
-          "doc": "Returns the number of living entities",
-          "params": [],
+          "$ref": "EcsMethods",
+          "name": "entityCount"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "isAlive"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "isAliveBatch"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "addTransform2d"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "getTransform2d"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "setTransform2d"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "hasTransform2d"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "removeTransform2d"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "addName"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "getName"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "hasName"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "removeName"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "addSprite"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "getSprite"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "setSprite"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "hasSprite"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "removeSprite"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "spawnBatch"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "despawnBatch"
+        },
+        {
+          "name": "createCube",
+          "doc": "Creates a 3D cube",
+          "params": [
+            {
+              "name": "textureId",
+              "type": "u32"
+            },
+            {
+              "name": "width",
+              "type": "f32"
+            },
+            {
+              "name": "height",
+              "type": "f32"
+            },
+            {
+              "name": "depth",
+              "type": "f32"
+            }
+          ],
           "returns": "u32"
         },
         {
-          "name": "isAlive",
-          "doc": "Returns true if the entity still exists",
-          "params": [{"name": "entity", "type": "Entity"}],
-          "returns": "bool"
-        },
-        {
-          "name": "isAliveBatch",
-          "doc": "Checks if multiple entities are alive, writing results to an output array",
-          "params": [{"name": "entities", "type": "Entity[]"}, {"name": "outResults", "type": "u8[]"}],
+          "name": "createPlane",
+          "doc": "Creates a 3D plane",
+          "params": [
+            {
+              "name": "textureId",
+              "type": "u32"
+            },
+            {
+              "name": "width",
+              "type": "f32"
+            },
+            {
+              "name": "depth",
+              "type": "f32"
+            }
+          ],
           "returns": "u32"
         },
         {
-          "name": "addTransform2d",
-          "doc": "Attaches a Transform2D component to the entity",
+          "name": "createSphere",
+          "doc": "Creates a 3D sphere",
           "params": [
-            {"name": "entity", "type": "Entity"},
-            {"name": "transform", "type": "Transform2D"}
+            {
+              "name": "textureId",
+              "type": "u32"
+            },
+            {
+              "name": "diameter",
+              "type": "f32"
+            },
+            {
+              "name": "segments",
+              "type": "u32",
+              "default": 16
+            }
           ],
-          "returns": "void"
+          "returns": "u32"
         },
         {
-          "name": "getTransform2d",
-          "doc": "Returns the entity's Transform2D, or null if absent",
-          "params": [{"name": "entity", "type": "Entity"}],
-          "returns": "Transform2D?",
-          "nullable": true
-        },
-        {
-          "name": "setTransform2d",
-          "doc": "Overwrites the entity's Transform2D",
+          "name": "createCylinder",
+          "doc": "Creates a 3D cylinder",
           "params": [
-            {"name": "entity", "type": "Entity"},
-            {"name": "transform", "type": "Transform2D"}
+            {
+              "name": "textureId",
+              "type": "u32"
+            },
+            {
+              "name": "radius",
+              "type": "f32"
+            },
+            {
+              "name": "height",
+              "type": "f32"
+            },
+            {
+              "name": "segments",
+              "type": "u32",
+              "default": 16
+            }
           ],
-          "returns": "void"
+          "returns": "u32"
         },
         {
-          "name": "hasTransform2d",
-          "doc": "Returns true if the entity has a Transform2D",
-          "params": [{"name": "entity", "type": "Entity"}],
-          "returns": "bool"
-        },
-        {
-          "name": "removeTransform2d",
-          "doc": "Removes the Transform2D from the entity",
-          "params": [{"name": "entity", "type": "Entity"}],
-          "returns": "bool"
-        },
-        {
-          "name": "addName",
-          "doc": "Attaches a Name component to the entity",
+          "name": "setObjectPosition",
+          "doc": "Sets a 3D object's position",
           "params": [
-            {"name": "entity", "type": "Entity"},
-            {"name": "name", "type": "string"}
+            {
+              "name": "objectId",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
           ],
-          "returns": "void"
-        },
-        {
-          "name": "getName",
-          "doc": "Returns the entity's Name, or null if absent",
-          "params": [{"name": "entity", "type": "Entity"}],
-          "returns": "string?",
-          "nullable": true
-        },
-        {
-          "name": "hasName",
-          "doc": "Returns true if the entity has a Name",
-          "params": [{"name": "entity", "type": "Entity"}],
           "returns": "bool"
         },
         {
-          "name": "removeName",
-          "doc": "Removes the Name from the entity",
-          "params": [{"name": "entity", "type": "Entity"}],
+          "name": "setObjectRotation",
+          "doc": "Sets a 3D object's rotation in degrees",
+          "params": [
+            {
+              "name": "objectId",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
           "returns": "bool"
         },
-        {"name": "addSprite",    "doc": "Attaches a Sprite component to the entity",    "params": [{"name": "entity", "type": "Entity"}, {"name": "sprite", "type": "Sprite"}], "returns": "void"},
-        {"name": "getSprite",    "doc": "Returns the entity's Sprite, or null if absent", "params": [{"name": "entity", "type": "Entity"}], "returns": "Sprite?", "nullable": true},
-        {"name": "setSprite",    "doc": "Overwrites the entity's Sprite",                "params": [{"name": "entity", "type": "Entity"}, {"name": "sprite", "type": "Sprite"}], "returns": "void"},
-        {"name": "hasSprite",    "doc": "Returns true if the entity has a Sprite",       "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
-        {"name": "removeSprite", "doc": "Removes the Sprite from the entity",            "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
-        {"name": "spawnBatch",   "doc": "Spawns multiple empty entities at once",        "params": [{"name": "count", "type": "u32"}], "returns": "Entity[]"},
-        {"name": "despawnBatch", "doc": "Despawns multiple entities at once",            "params": [{"name": "entities", "type": "Entity[]"}], "returns": "u32"},
-        {"name": "createCube",      "doc": "Creates a 3D cube",     "params": [{"name": "textureId", "type": "u32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}, {"name": "depth", "type": "f32"}], "returns": "u32"},
-        {"name": "createPlane",     "doc": "Creates a 3D plane",    "params": [{"name": "textureId", "type": "u32"}, {"name": "width", "type": "f32"}, {"name": "depth", "type": "f32"}], "returns": "u32"},
-        {"name": "createSphere",    "doc": "Creates a 3D sphere",   "params": [{"name": "textureId", "type": "u32"}, {"name": "diameter", "type": "f32"}, {"name": "segments", "type": "u32", "default": 16}], "returns": "u32"},
-        {"name": "createCylinder",  "doc": "Creates a 3D cylinder", "params": [{"name": "textureId", "type": "u32"}, {"name": "radius", "type": "f32"}, {"name": "height", "type": "f32"}, {"name": "segments", "type": "u32", "default": 16}], "returns": "u32"},
-        {"name": "setObjectPosition", "doc": "Sets a 3D object's position",          "params": [{"name": "objectId", "type": "u32"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "z", "type": "f32"}], "returns": "bool"},
-        {"name": "setObjectRotation", "doc": "Sets a 3D object's rotation in degrees", "params": [{"name": "objectId", "type": "u32"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "z", "type": "f32"}], "returns": "bool"},
-        {"name": "setObjectScale",    "doc": "Sets a 3D object's scale",              "params": [{"name": "objectId", "type": "u32"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "z", "type": "f32"}], "returns": "bool"},
-        {"name": "destroyObject",     "doc": "Destroys a 3D object",                  "params": [{"name": "objectId", "type": "u32"}], "returns": "bool"},
+        {
+          "name": "setObjectScale",
+          "doc": "Sets a 3D object's scale",
+          "params": [
+            {
+              "name": "objectId",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "destroyObject",
+          "doc": "Destroys a 3D object",
+          "params": [
+            {
+              "name": "objectId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
         {
           "name": "addLight",
           "doc": "Adds a light to the 3D scene",
           "params": [
-            {"name": "lightType", "type": "i32"},
-            {"name": "posX",      "type": "f32"}, {"name": "posY", "type": "f32"}, {"name": "posZ", "type": "f32"},
-            {"name": "dirX",      "type": "f32"}, {"name": "dirY", "type": "f32"}, {"name": "dirZ", "type": "f32"},
-            {"name": "r",         "type": "f32"}, {"name": "g",   "type": "f32"}, {"name": "b",    "type": "f32"},
-            {"name": "intensity", "type": "f32"}, {"name": "range", "type": "f32"}, {"name": "spotAngle", "type": "f32"}
+            {
+              "name": "lightType",
+              "type": "i32"
+            },
+            {
+              "name": "posX",
+              "type": "f32"
+            },
+            {
+              "name": "posY",
+              "type": "f32"
+            },
+            {
+              "name": "posZ",
+              "type": "f32"
+            },
+            {
+              "name": "dirX",
+              "type": "f32"
+            },
+            {
+              "name": "dirY",
+              "type": "f32"
+            },
+            {
+              "name": "dirZ",
+              "type": "f32"
+            },
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            },
+            {
+              "name": "intensity",
+              "type": "f32"
+            },
+            {
+              "name": "range",
+              "type": "f32"
+            },
+            {
+              "name": "spotAngle",
+              "type": "f32"
+            }
           ],
           "returns": "u32"
         },
@@ -633,26 +3114,168 @@
           "name": "updateLight",
           "doc": "Updates a light's properties",
           "params": [
-            {"name": "lightId",   "type": "u32"},
-            {"name": "lightType", "type": "i32"},
-            {"name": "posX",      "type": "f32"}, {"name": "posY", "type": "f32"}, {"name": "posZ", "type": "f32"},
-            {"name": "dirX",      "type": "f32"}, {"name": "dirY", "type": "f32"}, {"name": "dirZ", "type": "f32"},
-            {"name": "r",         "type": "f32"}, {"name": "g",   "type": "f32"}, {"name": "b",    "type": "f32"},
-            {"name": "intensity", "type": "f32"}, {"name": "range", "type": "f32"}, {"name": "spotAngle", "type": "f32"}
+            {
+              "name": "lightId",
+              "type": "u32"
+            },
+            {
+              "name": "lightType",
+              "type": "i32"
+            },
+            {
+              "name": "posX",
+              "type": "f32"
+            },
+            {
+              "name": "posY",
+              "type": "f32"
+            },
+            {
+              "name": "posZ",
+              "type": "f32"
+            },
+            {
+              "name": "dirX",
+              "type": "f32"
+            },
+            {
+              "name": "dirY",
+              "type": "f32"
+            },
+            {
+              "name": "dirZ",
+              "type": "f32"
+            },
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            },
+            {
+              "name": "intensity",
+              "type": "f32"
+            },
+            {
+              "name": "range",
+              "type": "f32"
+            },
+            {
+              "name": "spotAngle",
+              "type": "f32"
+            }
           ],
           "returns": "bool"
         },
-        {"name": "removeLight",         "doc": "Removes a light",                     "params": [{"name": "lightId", "type": "u32"}], "returns": "bool"},
-        {"name": "setCameraPosition3D", "doc": "Sets the 3D camera position",         "params": [{"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "z", "type": "f32"}], "returns": "bool"},
-        {"name": "setCameraRotation3D", "doc": "Sets the 3D camera rotation",         "params": [{"name": "pitch", "type": "f32"}, {"name": "yaw", "type": "f32"}, {"name": "roll", "type": "f32"}], "returns": "bool"},
-        {"name": "configureGrid",       "doc": "Configures the ground grid",          "params": [{"name": "enabled", "type": "bool"}, {"name": "size", "type": "f32"}, {"name": "divisions", "type": "u32"}], "returns": "bool"},
-        {"name": "setGridEnabled",      "doc": "Sets grid visibility",                "params": [{"name": "enabled", "type": "bool"}], "returns": "bool"},
+        {
+          "name": "removeLight",
+          "doc": "Removes a light",
+          "params": [
+            {
+              "name": "lightId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setCameraPosition3D",
+          "doc": "Sets the 3D camera position",
+          "params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setCameraRotation3D",
+          "doc": "Sets the 3D camera rotation",
+          "params": [
+            {
+              "name": "pitch",
+              "type": "f32"
+            },
+            {
+              "name": "yaw",
+              "type": "f32"
+            },
+            {
+              "name": "roll",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "configureGrid",
+          "doc": "Configures the ground grid",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            },
+            {
+              "name": "size",
+              "type": "f32"
+            },
+            {
+              "name": "divisions",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setGridEnabled",
+          "doc": "Sets grid visibility",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "bool"
+        },
         {
           "name": "configureSkybox",
           "doc": "Configures the skybox/background color",
           "params": [
-            {"name": "enabled", "type": "bool"},
-            {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"}
+            {
+              "name": "enabled",
+              "type": "bool"
+            },
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            },
+            {
+              "name": "a",
+              "type": "f32"
+            }
           ],
           "returns": "bool"
         },
@@ -660,56 +3283,751 @@
           "name": "configureFog",
           "doc": "Configures fog settings",
           "params": [
-            {"name": "enabled", "type": "bool"},
-            {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"}, {"name": "b", "type": "f32"},
-            {"name": "density", "type": "f32"}
+            {
+              "name": "enabled",
+              "type": "bool"
+            },
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            },
+            {
+              "name": "density",
+              "type": "f32"
+            }
           ],
           "returns": "bool"
         },
-        {"name": "setFogEnabled", "doc": "Sets fog visibility",   "params": [{"name": "enabled", "type": "bool"}], "returns": "bool"},
-        {"name": "render3D",      "doc": "Renders all 3D objects", "params": [], "returns": "bool"},
+        {
+          "name": "setFogEnabled",
+          "doc": "Sets fog visibility",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "render3D",
+          "doc": "Renders all 3D objects",
+          "params": [],
+          "returns": "bool"
+        },
         {
           "name": "drawSpriteRect",
           "doc": "Draws a sprite with source rectangle for sprite sheets",
           "params": [
-            {"name": "texture",  "type": "u64"},
-            {"name": "x",        "type": "f32"}, {"name": "y",    "type": "f32"},
-            {"name": "width",    "type": "f32"}, {"name": "height", "type": "f32"},
-            {"name": "rotation", "type": "f32", "default": 0.0},
-            {"name": "srcX",     "type": "f32"}, {"name": "srcY", "type": "f32"},
-            {"name": "srcW",     "type": "f32"}, {"name": "srcH", "type": "f32"},
-            {"name": "color",    "type": "Color", "default": "Color.white()"}
+            {
+              "name": "texture",
+              "type": "u64"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "width",
+              "type": "f32"
+            },
+            {
+              "name": "height",
+              "type": "f32"
+            },
+            {
+              "name": "rotation",
+              "type": "f32",
+              "default": 0.0
+            },
+            {
+              "name": "srcX",
+              "type": "f32"
+            },
+            {
+              "name": "srcY",
+              "type": "f32"
+            },
+            {
+              "name": "srcW",
+              "type": "f32"
+            },
+            {
+              "name": "srcH",
+              "type": "f32"
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "default": "Color.white()"
+            }
           ],
-          "returns": "bool"
+          "returns": "bool",
+          "wasm_name": "draw_sprite_rect",
+          "wasm_signature": "draw_sprite_rect(t: number, x: number, y: number, w: number, h: number, rot: number, src_x: number, src_y: number, src_w: number, src_h: number, r: number, g: number, b: number, a: number): boolean"
         },
-        {"name": "setViewport",      "doc": "Sets the rendering viewport", "params": [{"name": "x", "type": "i32"}, {"name": "y", "type": "i32"}, {"name": "width", "type": "u32"}, {"name": "height", "type": "u32"}], "returns": "void"},
-        {"name": "enableDepthTest",  "doc": "Enables depth testing",       "params": [], "returns": "void"},
-        {"name": "disableDepthTest", "doc": "Disables depth testing",      "params": [], "returns": "void"},
-        {"name": "clearDepth",       "doc": "Clears the depth buffer",     "params": [], "returns": "void"},
-        {"name": "disableBlending",  "doc": "Disables alpha blending",     "params": [], "returns": "void"},
-        {"name": "getRenderStats",   "doc": "Returns rendering statistics for the current frame", "params": [], "returns": "RenderStats"},
-        {"name": "mapActionKey",         "doc": "Maps an action name to a key",                     "params": [{"name": "action", "type": "string"}, {"name": "key", "type": "Key"}], "returns": "bool"},
-        {"name": "isActionPressed",      "doc": "Returns true if the action is currently pressed",  "params": [{"name": "action", "type": "string"}], "returns": "bool"},
-        {"name": "isActionJustPressed",  "doc": "Returns true if the action was pressed this frame", "params": [{"name": "action", "type": "string"}], "returns": "bool"},
-        {"name": "isActionJustReleased", "doc": "Returns true if the action was released this frame", "params": [{"name": "action", "type": "string"}], "returns": "bool"},
-        {"name": "collisionAabbAabb",   "doc": "AABB vs AABB collision test with contact",  "params": [{"name": "centerAx", "type": "f32"}, {"name": "centerAy", "type": "f32"}, {"name": "halfWa", "type": "f32"}, {"name": "halfHa", "type": "f32"}, {"name": "centerBx", "type": "f32"}, {"name": "centerBy", "type": "f32"}, {"name": "halfWb", "type": "f32"}, {"name": "halfHb", "type": "f32"}], "returns": "Contact?", "nullable": true},
-        {"name": "collisionCircleCircle", "doc": "Circle vs circle collision test",         "params": [{"name": "centerAx", "type": "f32"}, {"name": "centerAy", "type": "f32"}, {"name": "radiusA", "type": "f32"}, {"name": "centerBx", "type": "f32"}, {"name": "centerBy", "type": "f32"}, {"name": "radiusB", "type": "f32"}], "returns": "Contact?", "nullable": true},
-        {"name": "collisionCircleAabb",   "doc": "Circle vs AABB collision test",           "params": [{"name": "circleX", "type": "f32"}, {"name": "circleY", "type": "f32"}, {"name": "circleRadius", "type": "f32"}, {"name": "boxX", "type": "f32"}, {"name": "boxY", "type": "f32"}, {"name": "boxHw", "type": "f32"}, {"name": "boxHh", "type": "f32"}], "returns": "Contact?", "nullable": true},
-        {"name": "pointInRect",     "doc": "Tests if a point is inside a rectangle", "params": [{"name": "px", "type": "f32"}, {"name": "py", "type": "f32"}, {"name": "rx", "type": "f32"}, {"name": "ry", "type": "f32"}, {"name": "rw", "type": "f32"}, {"name": "rh", "type": "f32"}], "returns": "bool"},
-        {"name": "pointInCircle",   "doc": "Tests if a point is inside a circle",    "params": [{"name": "px", "type": "f32"}, {"name": "py", "type": "f32"}, {"name": "cx", "type": "f32"}, {"name": "cy", "type": "f32"}, {"name": "radius", "type": "f32"}], "returns": "bool"},
-        {"name": "aabbOverlap",     "doc": "Fast AABB overlap test",                  "params": [{"name": "minAx", "type": "f32"}, {"name": "minAy", "type": "f32"}, {"name": "maxAx", "type": "f32"}, {"name": "maxAy", "type": "f32"}, {"name": "minBx", "type": "f32"}, {"name": "minBy", "type": "f32"}, {"name": "maxBx", "type": "f32"}, {"name": "maxBy", "type": "f32"}], "returns": "bool"},
-        {"name": "circleOverlap",   "doc": "Fast circle overlap test",                "params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "r1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}, {"name": "r2", "type": "f32"}], "returns": "bool"},
-        {"name": "distance",        "doc": "Distance between two points",             "params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}], "returns": "f32"},
-        {"name": "distanceSquared", "doc": "Squared distance between two points",     "params": [{"name": "x1", "type": "f32"}, {"name": "y1", "type": "f32"}, {"name": "x2", "type": "f32"}, {"name": "y2", "type": "f32"}], "returns": "f32"},
-        {"name": "componentRegisterType", "doc": "Registers a component type for generic operations", "params": [{"name": "typeIdHash", "type": "u64"}, {"name": "name", "type": "string"}, {"name": "size", "type": "usize"}, {"name": "align", "type": "usize"}], "returns": "bool"},
-        {"name": "componentAdd", "doc": "Adds a generic component to an entity", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}, {"name": "dataPtr", "type": "ptr"}, {"name": "dataSize", "type": "usize"}], "returns": "bool"},
-        {"name": "componentRemove", "doc": "Removes a generic component from an entity", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "bool"},
-        {"name": "componentHas", "doc": "Checks if an entity has a generic component", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "bool"},
-        {"name": "componentGet", "doc": "Gets a read-only pointer to a generic component", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "ptr"},
-        {"name": "componentGetMut", "doc": "Gets a mutable pointer to a generic component", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "ptr"},
-        {"name": "componentAddBatch", "doc": "Adds a generic component to multiple entities", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "typeIdHash", "type": "u64"}, {"name": "dataPtr", "type": "ptr"}, {"name": "componentSize", "type": "usize"}], "returns": "u32"},
-        {"name": "componentRemoveBatch", "doc": "Removes a generic component from multiple entities", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "typeIdHash", "type": "u64"}], "returns": "u32"},
-        {"name": "componentHasBatch", "doc": "Checks if multiple entities have a generic component", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "typeIdHash", "type": "u64"}, {"name": "outResults", "type": "u8[]"}], "returns": "u32"}
+        {
+          "name": "setViewport",
+          "doc": "Sets the rendering viewport",
+          "params": [
+            {
+              "name": "x",
+              "type": "i32"
+            },
+            {
+              "name": "y",
+              "type": "i32"
+            },
+            {
+              "name": "width",
+              "type": "u32"
+            },
+            {
+              "name": "height",
+              "type": "u32"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "enableDepthTest",
+          "doc": "Enables depth testing",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "disableDepthTest",
+          "doc": "Disables depth testing",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "clearDepth",
+          "doc": "Clears the depth buffer",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "disableBlending",
+          "doc": "Disables alpha blending",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "getRenderStats",
+          "doc": "Returns rendering statistics for the current frame",
+          "params": [],
+          "returns": "RenderStats",
+          "wasm_name": "get_render_stats",
+          "wasm_signature": "get_render_stats(): { draw_calls: number; triangles: number; texture_binds: number; shader_binds: number } | undefined"
+        },
+        {
+          "name": "mapActionKey",
+          "doc": "Maps an action name to a key",
+          "params": [
+            {
+              "name": "action",
+              "type": "string"
+            },
+            {
+              "name": "key",
+              "type": "Key"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "map_action_key",
+          "wasm_signature": "map_action_key(action: string, key: number): boolean"
+        },
+        {
+          "name": "isActionPressed",
+          "doc": "Returns true if the action is currently pressed",
+          "params": [
+            {
+              "name": "action",
+              "type": "string"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "is_action_pressed",
+          "wasm_signature": "is_action_pressed(action: string): boolean"
+        },
+        {
+          "name": "isActionJustPressed",
+          "doc": "Returns true if the action was pressed this frame",
+          "params": [
+            {
+              "name": "action",
+              "type": "string"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "is_action_just_pressed",
+          "wasm_signature": "is_action_just_pressed(action: string): boolean"
+        },
+        {
+          "name": "isActionJustReleased",
+          "doc": "Returns true if the action was released this frame",
+          "params": [
+            {
+              "name": "action",
+              "type": "string"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "is_action_just_released",
+          "wasm_signature": "is_action_just_released(action: string): boolean"
+        },
+        {
+          "name": "collisionAabbAabb",
+          "doc": "AABB vs AABB collision test with contact",
+          "params": [
+            {
+              "name": "centerAx",
+              "type": "f32"
+            },
+            {
+              "name": "centerAy",
+              "type": "f32"
+            },
+            {
+              "name": "halfWa",
+              "type": "f32"
+            },
+            {
+              "name": "halfHa",
+              "type": "f32"
+            },
+            {
+              "name": "centerBx",
+              "type": "f32"
+            },
+            {
+              "name": "centerBy",
+              "type": "f32"
+            },
+            {
+              "name": "halfWb",
+              "type": "f32"
+            },
+            {
+              "name": "halfHb",
+              "type": "f32"
+            }
+          ],
+          "returns": "Contact?",
+          "nullable": true,
+          "wasm_name": "collision_aabb_aabb",
+          "wasm_signature": "collision_aabb_aabb(cax: number, cay: number, hwa: number, hha: number, cbx: number, cby: number, hwb: number, hhb: number): { point_x: number; point_y: number; normal_x: number; normal_y: number; penetration: number } | undefined"
+        },
+        {
+          "name": "collisionCircleCircle",
+          "doc": "Circle vs circle collision test",
+          "params": [
+            {
+              "name": "centerAx",
+              "type": "f32"
+            },
+            {
+              "name": "centerAy",
+              "type": "f32"
+            },
+            {
+              "name": "radiusA",
+              "type": "f32"
+            },
+            {
+              "name": "centerBx",
+              "type": "f32"
+            },
+            {
+              "name": "centerBy",
+              "type": "f32"
+            },
+            {
+              "name": "radiusB",
+              "type": "f32"
+            }
+          ],
+          "returns": "Contact?",
+          "nullable": true,
+          "wasm_name": "collision_circle_circle",
+          "wasm_signature": "collision_circle_circle(cax: number, cay: number, ra: number, cbx: number, cby: number, rb: number): { point_x: number; point_y: number; normal_x: number; normal_y: number; penetration: number } | undefined"
+        },
+        {
+          "name": "collisionCircleAabb",
+          "doc": "Circle vs AABB collision test",
+          "params": [
+            {
+              "name": "circleX",
+              "type": "f32"
+            },
+            {
+              "name": "circleY",
+              "type": "f32"
+            },
+            {
+              "name": "circleRadius",
+              "type": "f32"
+            },
+            {
+              "name": "boxX",
+              "type": "f32"
+            },
+            {
+              "name": "boxY",
+              "type": "f32"
+            },
+            {
+              "name": "boxHw",
+              "type": "f32"
+            },
+            {
+              "name": "boxHh",
+              "type": "f32"
+            }
+          ],
+          "returns": "Contact?",
+          "nullable": true,
+          "wasm_name": "collision_circle_aabb",
+          "wasm_signature": "collision_circle_aabb(cx: number, cy: number, cr: number, bx: number, by: number, bhw: number, bhh: number): { point_x: number; point_y: number; normal_x: number; normal_y: number; penetration: number } | undefined"
+        },
+        {
+          "name": "pointInRect",
+          "doc": "Tests if a point is inside a rectangle",
+          "params": [
+            {
+              "name": "px",
+              "type": "f32"
+            },
+            {
+              "name": "py",
+              "type": "f32"
+            },
+            {
+              "name": "rx",
+              "type": "f32"
+            },
+            {
+              "name": "ry",
+              "type": "f32"
+            },
+            {
+              "name": "rw",
+              "type": "f32"
+            },
+            {
+              "name": "rh",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "point_in_rect",
+          "wasm_signature": "point_in_rect(px: number, py: number, rx: number, ry: number, rw: number, rh: number): boolean"
+        },
+        {
+          "name": "pointInCircle",
+          "doc": "Tests if a point is inside a circle",
+          "params": [
+            {
+              "name": "px",
+              "type": "f32"
+            },
+            {
+              "name": "py",
+              "type": "f32"
+            },
+            {
+              "name": "cx",
+              "type": "f32"
+            },
+            {
+              "name": "cy",
+              "type": "f32"
+            },
+            {
+              "name": "radius",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "point_in_circle",
+          "wasm_signature": "point_in_circle(px: number, py: number, cx: number, cy: number, r: number): boolean"
+        },
+        {
+          "name": "aabbOverlap",
+          "doc": "Fast AABB overlap test",
+          "params": [
+            {
+              "name": "minAx",
+              "type": "f32"
+            },
+            {
+              "name": "minAy",
+              "type": "f32"
+            },
+            {
+              "name": "maxAx",
+              "type": "f32"
+            },
+            {
+              "name": "maxAy",
+              "type": "f32"
+            },
+            {
+              "name": "minBx",
+              "type": "f32"
+            },
+            {
+              "name": "minBy",
+              "type": "f32"
+            },
+            {
+              "name": "maxBx",
+              "type": "f32"
+            },
+            {
+              "name": "maxBy",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "aabb_overlap",
+          "wasm_signature": "aabb_overlap(minax: number, minay: number, maxax: number, maxay: number, minbx: number, minby: number, maxbx: number, maxby: number): boolean"
+        },
+        {
+          "name": "circleOverlap",
+          "doc": "Fast circle overlap test",
+          "params": [
+            {
+              "name": "x1",
+              "type": "f32"
+            },
+            {
+              "name": "y1",
+              "type": "f32"
+            },
+            {
+              "name": "r1",
+              "type": "f32"
+            },
+            {
+              "name": "x2",
+              "type": "f32"
+            },
+            {
+              "name": "y2",
+              "type": "f32"
+            },
+            {
+              "name": "r2",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "circle_overlap",
+          "wasm_signature": "circle_overlap(x1: number, y1: number, r1: number, x2: number, y2: number, r2: number): boolean"
+        },
+        {
+          "name": "distance",
+          "doc": "Distance between two points",
+          "params": [
+            {
+              "name": "x1",
+              "type": "f32"
+            },
+            {
+              "name": "y1",
+              "type": "f32"
+            },
+            {
+              "name": "x2",
+              "type": "f32"
+            },
+            {
+              "name": "y2",
+              "type": "f32"
+            }
+          ],
+          "returns": "f32",
+          "wasm_name": "distance",
+          "wasm_signature": "distance(x1: number, y1: number, x2: number, y2: number): number"
+        },
+        {
+          "name": "distanceSquared",
+          "doc": "Squared distance between two points",
+          "params": [
+            {
+              "name": "x1",
+              "type": "f32"
+            },
+            {
+              "name": "y1",
+              "type": "f32"
+            },
+            {
+              "name": "x2",
+              "type": "f32"
+            },
+            {
+              "name": "y2",
+              "type": "f32"
+            }
+          ],
+          "returns": "f32",
+          "wasm_name": "distance_squared",
+          "wasm_signature": "distance_squared(x1: number, y1: number, x2: number, y2: number): number"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentRegisterType"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentAdd"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentRemove"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentHas"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentGet"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentGetMut"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentAddBatch"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentRemoveBatch"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentHasBatch"
+        }
+      ],
+      "wasm_interface": [
+        {
+          "sig": "free(): void"
+        },
+        {
+          "sig": "begin_frame(dt: number): void"
+        },
+        {
+          "sig": "end_frame(): void"
+        },
+        {
+          "sig": "set_clear_color(r: number, g: number, b: number, a: number): void"
+        },
+        {
+          "sig": "readonly delta_time: number"
+        },
+        {
+          "sig": "readonly total_time: number"
+        },
+        {
+          "sig": "readonly fps: number"
+        },
+        {
+          "sig": "readonly title: string"
+        },
+        {
+          "sig": "readonly frame_count: bigint"
+        },
+        {
+          "sig": "readonly window_width: number"
+        },
+        {
+          "sig": "readonly window_height: number"
+        },
+        {
+          "sig": "set_canvas_size(w: number, h: number): void"
+        },
+        {
+          "sig": "has_renderer(): boolean"
+        },
+        {
+          "method": "loadTexture"
+        },
+        {
+          "method": "destroyTexture"
+        },
+        {
+          "method": "drawSprite"
+        },
+        {
+          "method": "drawSpriteRect"
+        },
+        {
+          "method": "drawQuad"
+        },
+        {
+          "method": "spawnEmpty"
+        },
+        {
+          "method": "spawnBatch"
+        },
+        {
+          "method": "despawn"
+        },
+        {
+          "method": "despawnBatch"
+        },
+        {
+          "method": "entityCount"
+        },
+        {
+          "method": "isAlive"
+        },
+        {
+          "method": "addTransform2d"
+        },
+        {
+          "method": "getTransform2d"
+        },
+        {
+          "method": "setTransform2d"
+        },
+        {
+          "method": "hasTransform2d"
+        },
+        {
+          "method": "removeTransform2d"
+        },
+        {
+          "method": "addSprite"
+        },
+        {
+          "method": "getSprite"
+        },
+        {
+          "method": "setSprite"
+        },
+        {
+          "method": "hasSprite"
+        },
+        {
+          "method": "removeSprite"
+        },
+        {
+          "method": "addName"
+        },
+        {
+          "method": "getName"
+        },
+        {
+          "method": "hasName"
+        },
+        {
+          "method": "removeName"
+        },
+        {
+          "sig": "press_key(kc: number): void"
+        },
+        {
+          "sig": "release_key(kc: number): void"
+        },
+        {
+          "sig": "press_mouse_button(btn: number): void"
+        },
+        {
+          "sig": "release_mouse_button(btn: number): void"
+        },
+        {
+          "sig": "set_mouse_position(x: number, y: number): void"
+        },
+        {
+          "sig": "add_scroll_delta(dx: number, dy: number): void"
+        },
+        {
+          "method": "isKeyPressed"
+        },
+        {
+          "method": "isKeyJustPressed"
+        },
+        {
+          "method": "isKeyJustReleased"
+        },
+        {
+          "method": "isMouseButtonPressed"
+        },
+        {
+          "method": "isMouseButtonJustPressed"
+        },
+        {
+          "sig": "mouse_x(): number"
+        },
+        {
+          "sig": "mouse_y(): number"
+        },
+        {
+          "sig": "scroll_dx(): number"
+        },
+        {
+          "sig": "scroll_dy(): number"
+        },
+        {
+          "method": "mapActionKey"
+        },
+        {
+          "method": "isActionPressed"
+        },
+        {
+          "method": "isActionJustPressed"
+        },
+        {
+          "method": "isActionJustReleased"
+        },
+        {
+          "method": "getRenderStats"
+        },
+        {
+          "method": "collisionAabbAabb"
+        },
+        {
+          "method": "collisionCircleCircle"
+        },
+        {
+          "method": "collisionCircleAabb"
+        },
+        {
+          "method": "pointInRect"
+        },
+        {
+          "method": "pointInCircle"
+        },
+        {
+          "method": "aabbOverlap"
+        },
+        {
+          "method": "circleOverlap"
+        },
+        {
+          "method": "distance"
+        },
+        {
+          "method": "distanceSquared"
+        }
       ]
     },
     "GoudContext": {
@@ -718,38 +4036,136 @@
         "params": []
       },
       "methods": [
-        {"name": "destroy",  "params": [], "returns": "bool"},
-        {"name": "isValid",  "params": [], "returns": "bool"},
-        {"name": "spawnEmpty", "params": [], "returns": "Entity"},
-        {"name": "spawnBatch", "doc": "Spawns multiple entities at once", "params": [{"name": "count", "type": "u32"}], "returns": "Entity[]"},
-        {"name": "despawn",      "params": [{"name": "entity",   "type": "Entity"}],    "returns": "bool"},
-        {"name": "despawnBatch", "params": [{"name": "entities", "type": "Entity[]"}],  "returns": "u32"},
-        {"name": "isAlive",     "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
-        {"name": "isAliveBatch", "doc": "Checks if multiple entities are alive", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "outResults", "type": "u8[]"}], "returns": "u32"},
-        {"name": "entityCount", "params": [], "returns": "u32"},
-        {"name": "addTransform2d",    "params": [{"name": "entity", "type": "Entity"}, {"name": "transform", "type": "Transform2D"}], "returns": "void"},
-        {"name": "getTransform2d",    "params": [{"name": "entity", "type": "Entity"}], "returns": "Transform2D?", "nullable": true},
-        {"name": "setTransform2d",    "params": [{"name": "entity", "type": "Entity"}, {"name": "transform", "type": "Transform2D"}], "returns": "void"},
-        {"name": "hasTransform2d",    "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
-        {"name": "removeTransform2d", "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
-        {"name": "addSprite",    "params": [{"name": "entity", "type": "Entity"}, {"name": "sprite", "type": "Sprite"}], "returns": "void"},
-        {"name": "getSprite",    "params": [{"name": "entity", "type": "Entity"}], "returns": "Sprite?", "nullable": true},
-        {"name": "setSprite",    "params": [{"name": "entity", "type": "Entity"}, {"name": "sprite", "type": "Sprite"}], "returns": "void"},
-        {"name": "hasSprite",    "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
-        {"name": "removeSprite", "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
-        {"name": "addName",    "params": [{"name": "entity", "type": "Entity"}, {"name": "name", "type": "string"}], "returns": "void"},
-        {"name": "getName",    "params": [{"name": "entity", "type": "Entity"}], "returns": "string?", "nullable": true},
-        {"name": "hasName",    "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
-        {"name": "removeName", "params": [{"name": "entity", "type": "Entity"}], "returns": "bool"},
-        {"name": "componentRegisterType", "doc": "Registers a component type for generic operations", "params": [{"name": "typeIdHash", "type": "u64"}, {"name": "name", "type": "string"}, {"name": "size", "type": "usize"}, {"name": "align", "type": "usize"}], "returns": "bool"},
-        {"name": "componentAdd", "doc": "Adds a generic component to an entity", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}, {"name": "dataPtr", "type": "ptr"}, {"name": "dataSize", "type": "usize"}], "returns": "bool"},
-        {"name": "componentRemove", "doc": "Removes a generic component from an entity", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "bool"},
-        {"name": "componentHas", "doc": "Checks if an entity has a generic component", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "bool"},
-        {"name": "componentGet", "doc": "Gets a read-only pointer to a generic component", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "ptr"},
-        {"name": "componentGetMut", "doc": "Gets a mutable pointer to a generic component", "params": [{"name": "entity", "type": "Entity"}, {"name": "typeIdHash", "type": "u64"}], "returns": "ptr"},
-        {"name": "componentAddBatch", "doc": "Adds a generic component to multiple entities", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "typeIdHash", "type": "u64"}, {"name": "dataPtr", "type": "ptr"}, {"name": "componentSize", "type": "usize"}], "returns": "u32"},
-        {"name": "componentRemoveBatch", "doc": "Removes a generic component from multiple entities", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "typeIdHash", "type": "u64"}], "returns": "u32"},
-        {"name": "componentHasBatch", "doc": "Checks if multiple entities have a generic component", "params": [{"name": "entities", "type": "Entity[]"}, {"name": "typeIdHash", "type": "u64"}, {"name": "outResults", "type": "u8[]"}], "returns": "u32"}
+        {
+          "name": "destroy",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "isValid",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "spawnEmpty"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "spawnBatch"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "despawn"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "despawnBatch"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "isAlive"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "isAliveBatch"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "entityCount"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "addTransform2d"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "getTransform2d"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "setTransform2d"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "hasTransform2d"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "removeTransform2d"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "addSprite"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "getSprite"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "setSprite"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "hasSprite"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "removeSprite"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "addName"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "getName"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "hasName"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "removeName"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentRegisterType"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentAdd"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentRemove"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentHas"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentGet"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentGetMut"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentAddBatch"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentRemoveBatch"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentHasBatch"
+        }
       ]
     }
   }

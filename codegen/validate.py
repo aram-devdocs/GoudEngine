@@ -11,12 +11,14 @@ import json
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent))
+from sdk_common import load_schema
+
 CODEGEN_DIR = Path(__file__).parent
 
 
 def main():
-    with open(CODEGEN_DIR / "goud_sdk.schema.json") as f:
-        schema = json.load(f)
+    schema = load_schema()
     with open(CODEGEN_DIR / "ffi_mapping.json") as f:
         mapping = json.load(f)
 

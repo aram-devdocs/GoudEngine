@@ -137,6 +137,60 @@ jobs:
         command: check
         arguments: --all-features
 
+  # Codegen drift detection — ensures generated SDK code is up to date
+  codegen-drift-check:
+    name: Codegen Drift Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-codegen-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-codegen-
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Build (generates ffi_manifest.json)
+      run: cargo build
+
+    - name: Run all codegen scripts
+      run: |
+        python3 codegen/gen_csharp.py
+        python3 codegen/gen_python.py
+        python3 codegen/gen_ts_node.py
+        python3 codegen/gen_ts_web.py
+
+    - name: Validate codegen
+      run: |
+        python3 codegen/validate.py
+        python3 codegen/validate_coverage.py
+
+    - name: Lint layer dependencies
+      run: cargo run -p lint-layers
+
+    - name: Check for codegen drift
+      run: git diff --exit-code -- sdks/ codegen/
+
   # Python SDK checks and tests
   python-sdk-check:
     name: Python SDK on ${{ matrix.os }}
@@ -473,6 +527,10 @@ jobs:
       working-directory: sdks/typescript
       run: npm run build:ts
 
+    - name: Type-check TypeScript examples
+      run: |
+        cd examples/typescript/flappy_bird && npm install && npx tsc --noEmit
+
     - name: Run smoke tests (Ubuntu with virtual display)
       if: matrix.os == 'ubuntu-latest'
       working-directory: sdks/typescript
@@ -593,13 +651,14 @@ jobs:
   ci-success:
     name: CI Success
     if: always()
-    needs: [rust-check, cargo-deny, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm]
+    needs: [rust-check, cargo-deny, codegen-drift-check, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm]
     runs-on: ubuntu-latest
     steps:
     - name: Check all jobs
       run: |
         if [[ "${{ needs.rust-check.result }}" != "success" ]] || \
            [[ "${{ needs.cargo-deny.result }}" != "success" ]] || \
+           [[ "${{ needs.codegen-drift-check.result }}" != "success" ]] || \
            [[ "${{ needs.dotnet-check.result }}" != "success" ]] || \
            [[ "${{ needs.python-sdk-check.result }}" != "success" ]] || \
            [[ "${{ needs.integration-build.result }}" != "success" ]] || \

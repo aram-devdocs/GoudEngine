@@ -101,7 +101,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '7.0.x'
+        dotnet-version: '8.0.x'
     
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -120,7 +120,7 @@ jobs:
         sed -i "s/^version = \".*\"/version = \"$VERSION\"/" goud_engine/Cargo.toml
         
         # Update C# version
-        sed -i "s/<Version>.*<\/Version>/<Version>$VERSION<\/Version>/" sdks/GoudEngine/GoudEngine.csproj
+        sed -i "s/<Version>.*<\/Version>/<Version>$VERSION<\/Version>/" sdks/csharp/GoudEngine.csproj
     
     - name: Build all platforms
       run: |
@@ -130,20 +130,20 @@ jobs:
         cd ..
         
         # Copy Linux library
-        mkdir -p sdks/GoudEngine/runtimes/linux-x64/native
-        cp goud_engine/target/x86_64-unknown-linux-gnu/release/libgoud_engine.so sdks/GoudEngine/runtimes/linux-x64/native/
+        mkdir -p sdks/csharp/runtimes/linux-x64/native
+        cp goud_engine/target/x86_64-unknown-linux-gnu/release/libgoud_engine.so sdks/csharp/runtimes/linux-x64/native/
         
         # Note: For a complete release, you'd need to download the other platform binaries
         # from the previous job's artifacts or use cross-compilation
     
     - name: Pack NuGet package
       run: |
-        cd sdks/GoudEngine
+        cd sdks/csharp
         dotnet pack -c Release
     
     - name: Push to NuGet.org
       run: |
-        cd sdks/GoudEngine
+        cd sdks/csharp
         dotnet nuget push ../nuget_package_output/GoudEngine.*.nupkg \
           --api-key ${{ secrets.NUGET_API_KEY }} \
           --source https://api.nuget.org/v3/index.json \

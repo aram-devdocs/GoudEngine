@@ -119,14 +119,14 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '7.0.x'
+        dotnet-version: '8.0.x'
     
     - name: Restore dependencies
-      working-directory: sdks/GoudEngine
+      working-directory: sdks/csharp
       run: dotnet restore
     
     - name: Run .NET security scan
-      working-directory: sdks/GoudEngine
+      working-directory: sdks/csharp
       run: |
         dotnet list package --vulnerable --include-transitive > vulnerable.txt
         
@@ -139,7 +139,7 @@ jobs:
         fi
     
     - name: Check for outdated packages
-      working-directory: sdks/GoudEngine
+      working-directory: sdks/csharp
       run: |
         echo "## Outdated .NET Packages" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY

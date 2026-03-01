@@ -1166,7 +1166,7 @@ impl GoudGame {
         use goud_engine::ffi::context::get_context_registry;
         use goud_engine::ecs::components::Transform2D;
         let reg = get_context_registry().lock().unwrap();
-        reg.get(self.context_id).map_or(false, |ctx| {
+        reg.get(self.context_id).is_some_and(|ctx| {
             ctx.world().has::<Transform2D>(goud_engine::ecs::Entity::from_bits(entity.bits))
         })
     }
@@ -1176,7 +1176,7 @@ impl GoudGame {
         use goud_engine::ffi::context::get_context_registry;
         use goud_engine::ecs::components::Transform2D;
         let mut reg = get_context_registry().lock().unwrap();
-        reg.get_mut(self.context_id).map_or(false, |ctx| {
+        reg.get_mut(self.context_id).is_some_and(|ctx| {
             ctx.world_mut().remove::<Transform2D>(goud_engine::ecs::Entity::from_bits(entity.bits)).is_some()
         })
     }
@@ -1253,7 +1253,7 @@ impl GoudGame {
         use goud_engine::ffi::context::get_context_registry;
         use goud_engine::ecs::components::Sprite;
         let reg = get_context_registry().lock().unwrap();
-        reg.get(self.context_id).map_or(false, |ctx| {
+        reg.get(self.context_id).is_some_and(|ctx| {
             ctx.world().has::<Sprite>(goud_engine::ecs::Entity::from_bits(entity.bits))
         })
     }
@@ -1263,7 +1263,7 @@ impl GoudGame {
         use goud_engine::ffi::context::get_context_registry;
         use goud_engine::ecs::components::Sprite;
         let mut reg = get_context_registry().lock().unwrap();
-        reg.get_mut(self.context_id).map_or(false, |ctx| {
+        reg.get_mut(self.context_id).is_some_and(|ctx| {
             ctx.world_mut().remove::<Sprite>(goud_engine::ecs::Entity::from_bits(entity.bits)).is_some()
         })
     }
@@ -1298,7 +1298,7 @@ impl GoudGame {
         use goud_engine::ffi::context::get_context_registry;
         use goud_engine::ecs::components::Name;
         let reg = get_context_registry().lock().unwrap();
-        reg.get(self.context_id).map_or(false, |ctx| {
+        reg.get(self.context_id).is_some_and(|ctx| {
             ctx.world().has::<Name>(goud_engine::ecs::Entity::from_bits(entity.bits))
         })
     }
@@ -1308,7 +1308,7 @@ impl GoudGame {
         use goud_engine::ffi::context::get_context_registry;
         use goud_engine::ecs::components::Name;
         let mut reg = get_context_registry().lock().unwrap();
-        reg.get_mut(self.context_id).map_or(false, |ctx| {
+        reg.get_mut(self.context_id).is_some_and(|ctx| {
             ctx.world_mut().remove::<Name>(goud_engine::ecs::Entity::from_bits(entity.bits)).is_some()
         })
     }

@@ -36,7 +36,7 @@ updates:
 
   # .NET dependencies
   - package-ecosystem: "nuget"
-    directory: "/sdks/GoudEngine"
+    directory: "/sdks/csharp"
     schedule:
       interval: "weekly"
       day: "monday"
