@@ -14,7 +14,7 @@ cargo add goud-engine
 ## Quick Start
 
 ```rust
-use goud_engine::*;
+use goudengine::*;
 
 fn main() {
     // GoudGame, Transform2D, Sprite, Vec2, Color, etc.
@@ -33,7 +33,7 @@ cargo run -p flappy-bird
 The example demonstrates the main loop, sprite rendering, physics, and collision detection:
 
 ```rust
-use goud_engine::*;
+use goudengine::*;
 
 fn main() {
     let engine = Engine::new(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, "Flappy Bird");

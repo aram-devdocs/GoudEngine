@@ -10,5 +10,10 @@ readme = "README.md"
 keywords = ["game-engine", "ecs", "2d", "3d", "rust"]
 categories = ["game-engines", "graphics"]
 
+[lib]
+# Explicit name avoids collision with goud-engine-core's [lib] name = "goud_engine".
+# Users write: use goudengine::*;
+name = "goudengine"
+
 [dependencies]
 goud-engine-core = { version = "=0.0.820", path = "../../goud_engine" } # x-release-please-version

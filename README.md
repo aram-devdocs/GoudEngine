@@ -260,7 +260,7 @@ cargo run -p flappy-bird
 The Rust SDK provides zero-overhead access to the engine with full type safety:
 
 ```rust
-use goud_engine::*;
+use goudengine::*;
 
 fn main() {
     // Create game with fluent config
