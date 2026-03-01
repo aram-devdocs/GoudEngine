@@ -259,7 +259,7 @@ jobs:
           python3 validate_coverage.py
 
       - name: Check layer dependencies
-        run: cargo run -p tools -- lint-layers
+        run: cargo run -p lint-layers
 
   # ── Step 4: Publish to npm ──
   publish-npm:
