@@ -31,7 +31,7 @@ jobs:
             rust: nightly
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@master
@@ -118,7 +118,7 @@ jobs:
     
     - name: Upload coverage to Codecov
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         file: ./cobertura.xml
         flags: rust
@@ -130,7 +130,7 @@ jobs:
     name: Cargo Deny Check
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - uses: EmbarkStudios/cargo-deny-action@v2
       with:
         log-level: warn
@@ -142,7 +142,7 @@ jobs:
     name: Codegen Drift Check
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -204,7 +204,7 @@ jobs:
         python-version: ['3.10', '3.11', '3.12']
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -311,7 +311,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -409,7 +409,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -474,7 +474,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -558,7 +558,7 @@ jobs:
     needs: [rust-check]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
