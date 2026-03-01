@@ -1,6 +1,6 @@
 {
   "version": "0.0.815",
-  "generated_at": "2026-03-01T04:09:42Z",
+  "generated_at": "2026-03-01T04:20:24Z",
   "functions": {
     "goud_collision_aabb_aabb": {
       "source_file": "ffi/collision.rs",

@@ -381,6 +381,21 @@
           "ffi": "goud_window_get_size",
           "out_index": 1,
           "out_type": "u32"
+        },
+        "title": {
+          "source": "cached",
+          "field": "_title",
+          "doc": "Stored from constructor arg"
+        },
+        "totalTime": {
+          "source": "cached",
+          "field": "_total_time",
+          "doc": "Accumulated in update_frame"
+        },
+        "frameCount": {
+          "source": "cached",
+          "field": "_frame_count",
+          "doc": "Incremented in update_frame"
         }
       }
     },

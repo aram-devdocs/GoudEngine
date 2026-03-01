@@ -1067,6 +1067,9 @@ def _gen_tool_class(tool_name: str, lines: list):
             "width, height, title.encode('utf-8'))"
         )
         lines.append("        self._delta_time = 0.0")
+        lines.append("        self._title = title")
+        lines.append("        self._frame_count = 0")
+        lines.append("        self._total_time = 0.0")
     else:
         lines.append("    def __init__(self):")
         lines.append("        lib = get_lib()")
@@ -1081,14 +1084,16 @@ def _gen_tool_class(tool_name: str, lines: list):
     # Properties (only GoudGame has them)
     for prop in tool.get("properties", []):
         pname = to_snake(prop["name"])
+        py_type = PYTHON_TYPES.get(prop.get("type", "f32"), "float")
         lines.append("    @property")
-        lines.append(f"    def {pname}(self) -> float:")
+        lines.append(f"    def {pname}(self) -> {py_type}:")
         prop_map = tool_mapping.get("properties", {}).get(
             prop["name"], {}
         )
         src = prop_map.get("source")
         if src == "cached":
-            lines.append("        return self._delta_time")
+            field_name = prop_map.get("field", "_delta_time")
+            lines.append(f"        return self.{field_name}")
         elif src == "computed":
             lines.append(
                 "        return 1.0 / self._delta_time "
@@ -1197,6 +1202,10 @@ def _gen_tool_class(tool_name: str, lines: list):
             lines.append(
                 "        self._lib.goud_window_swap_buffers(self._ctx)"
             )
+        elif mname == "update_frame":
+            lines.append("        self._delta_time = dt")
+            lines.append("        self._frame_count += 1")
+            lines.append("        self._total_time += dt")
         elif mname == "run":
             lines.append("        while not self.should_close():")
             lines.append("            self.begin_frame()")
