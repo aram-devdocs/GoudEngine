@@ -127,6 +127,7 @@ def gen_web_wrapper():
     lines.append("  readonly delta_time: number;")
     lines.append("  readonly total_time: number;")
     lines.append("  readonly fps: number;")
+    lines.append("  readonly title: string;")
     lines.append("  readonly frame_count: bigint;")
     lines.append("  readonly window_width: number;")
     lines.append("  readonly window_height: number;")
@@ -260,16 +261,25 @@ def gen_web_wrapper():
     lines.append("  }")
     lines.append("")
 
+    # Property name mapping: camelCase schema name -> snake_case wasm handle property
+    _WASM_PROP = {
+        "deltaTime": "delta_time",
+        "fps": "fps",
+        "windowWidth": "window_width",
+        "windowHeight": "window_height",
+        "title": "title",
+        "totalTime": "total_time",
+        "frameCount": "frame_count",
+    }
     for prop in tool["properties"]:
         pn = to_camel(prop["name"])
-        if pn == "deltaTime":
-            lines.append(f"  get {pn}(): number {{ return this.handle.delta_time; }}")
-        elif pn == "fps":
-            lines.append(f"  get {pn}(): number {{ return this.handle.fps; }}")
-        elif pn == "windowWidth":
-            lines.append(f"  get {pn}(): number {{ return this.handle.window_width; }}")
-        elif pn == "windowHeight":
-            lines.append(f"  get {pn}(): number {{ return this.handle.window_height; }}")
+        pt = ts_type(prop["type"])
+        wasm_name = _WASM_PROP.get(pn, pn)
+        # frame_count comes back as bigint from wasm, coerce to number
+        if pn == "frameCount":
+            lines.append(f"  get {pn}(): {pt} {{ return Number(this.handle.{wasm_name}); }}")
+        else:
+            lines.append(f"  get {pn}(): {pt} {{ return this.handle.{wasm_name}; }}")
     lines.append("")
 
     lines.append("  setClearColor(r: number, g: number, b: number, a: number): void { this.handle.set_clear_color(r, g, b, a); }")
@@ -286,6 +296,7 @@ def gen_web_wrapper():
     lines.append("    this.handle.begin_frame(dtMs / 1000);")
     lines.append("  }")
     lines.append("  endFrame(): void { this.handle.end_frame(); }")
+    lines.append("  updateFrame(dt: number): void { this.handle.begin_frame(dt); }")
     lines.append("")
     lines.append("  run(update: (dt: number) => void): void {")
     lines.append("    if (this.running) return;")

@@ -28,7 +28,7 @@ describe('GoudGame', () => {
   it('creates with default config', () => {
     const game = new GoudGame();
     assert.equal(game.entityCount(), 0);
-    assert.equal(game.title, 'GoudEngine Game');
+    assert.equal(game.title, 'GoudEngine');
     assert.equal(game.windowWidth, 800);
     assert.equal(game.windowHeight, 600);
   });

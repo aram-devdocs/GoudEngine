@@ -309,7 +309,8 @@ def gen_node_wrapper():
 
     for prop in tool["properties"]:
         pn = to_camel(prop["name"])
-        lines.append(f"  get {pn}(): number {{ return this.native.{pn}; }}")
+        pt = ts_type(prop["type"])
+        lines.append(f"  get {pn}(): {pt} {{ return this.native.{pn}; }}")
     lines.append("")
 
     for method in tool["methods"]:
@@ -878,6 +879,9 @@ pub struct NapiContact {
 pub struct GoudGame {
     context_id: GoudContextId,
     last_delta_time: f32,
+    title: String,
+    frame_count: u64,
+    total_time: f64,
 }
 
 #[napi]
@@ -891,7 +895,7 @@ impl GoudGame {
             .and_then(|c| c.title.clone())
             .unwrap_or_else(|| "GoudEngine".to_string());
 
-        let c_title = CString::new(title_str)
+        let c_title = CString::new(title_str.as_str())
             .map_err(|e| Error::from_reason(format!("Invalid title string: {}", e)))?;
 
         // SAFETY: CString guarantees a valid null-terminated pointer.
@@ -900,7 +904,7 @@ impl GoudGame {
             return Err(Error::from_reason("Failed to create GLFW window"));
         }
 
-        Ok(Self { context_id, last_delta_time: 0.0 })
+        Ok(Self { context_id, last_delta_time: 0.0, title: title_str, frame_count: 0, total_time: 0.0 })
     }
 
     // =========================================================================
@@ -1481,6 +1485,22 @@ impl GoudGame {
     pub fn fps(&self) -> f64 {
         if self.last_delta_time > 0.0 { (1.0 / self.last_delta_time) as f64 } else { 0.0 }
     }
+
+    #[napi]
+    pub fn update_frame(&mut self, dt: f64) {
+        self.last_delta_time = dt as f32;
+        self.frame_count += 1;
+        self.total_time += dt;
+    }
+
+    #[napi(getter)]
+    pub fn title(&self) -> String { self.title.clone() }
+
+    #[napi(getter)]
+    pub fn frame_count(&self) -> u32 { self.frame_count as u32 }
+
+    #[napi(getter)]
+    pub fn total_time(&self) -> f64 { self.total_time }
 
     #[napi(getter)]
     pub fn window_width(&self) -> u32 {

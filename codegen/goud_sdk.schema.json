@@ -363,7 +363,10 @@
         {"name": "deltaTime",    "type": "f32", "readonly": true, "doc": "Seconds elapsed since last frame"},
         {"name": "fps",          "type": "f32", "readonly": true, "doc": "Current frames per second"},
         {"name": "windowWidth",  "type": "u32", "readonly": true, "doc": "Window width in pixels"},
-        {"name": "windowHeight", "type": "u32", "readonly": true, "doc": "Window height in pixels"}
+        {"name": "windowHeight", "type": "u32", "readonly": true, "doc": "Window height in pixels"},
+        {"name": "title",        "type": "string", "readonly": true, "doc": "Window title"},
+        {"name": "totalTime",    "type": "f64", "readonly": true, "doc": "Total elapsed time in seconds"},
+        {"name": "frameCount",   "type": "u32", "readonly": true, "doc": "Number of frames processed"}
       ],
       "methods": [
         {
@@ -399,6 +402,12 @@
           "name": "endFrame",
           "doc": "Finishes the current frame and presents it to the screen",
           "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "updateFrame",
+          "doc": "Advance timing by the given delta (seconds). Increments frame count and accumulates total time.",
+          "params": [{"name": "dt", "type": "f64", "doc": "Delta time in seconds"}],
           "returns": "void"
         },
         {

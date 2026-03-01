@@ -171,8 +171,12 @@ export declare class GoudGame {
   configureFog(enabled: boolean, r: number, g: number, b: number, density: number): boolean
   setFogEnabled(enabled: boolean): boolean
   render3D(): boolean
+  updateFrame(dt: number): void
   get deltaTime(): number
   get fps(): number
+  get title(): string
+  get frameCount(): number
+  get totalTime(): number
   get windowWidth(): number
   get windowHeight(): number
   get contextValid(): boolean
