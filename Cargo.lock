@@ -1079,7 +1079,7 @@ dependencies = [
 
 [[package]]
 name = "goud-engine-node"
-version = "0.0.816"
+version = "0.0.819"
 dependencies = [
  "goud_engine",
  "napi",
@@ -1089,14 +1089,14 @@ dependencies = [
 
 [[package]]
 name = "goud-engine-sdk"
-version = "0.0.816"
+version = "0.0.819"
 dependencies = [
  "goud_engine",
 ]
 
 [[package]]
 name = "goud_engine"
-version = "0.0.816"
+version = "0.0.819"
 dependencies = [
  "bindgen 0.64.0",
  "bytemuck",
@@ -1129,7 +1129,7 @@ dependencies = [
 
 [[package]]
 name = "goud_engine_macros"
-version = "0.0.816"
+version = "0.0.819"
 dependencies = [
  "proc-macro2",
  "quote",
