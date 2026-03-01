@@ -29,6 +29,15 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+      - name: Auto-merge release PR
+        if: steps.release.outputs.prs_created == 'true'
+        run: |
+          PR_NUMBER=$(echo '${{ steps.release.outputs.pr }}' | jq -r '.number')
+          echo "Enabling auto-merge on release PR #${PR_NUMBER}"
+          gh pr merge "${PR_NUMBER}" --auto --squash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   # ── Sync example csproj versions after release ──
   sync-example-versions:
     name: Sync Example Versions
