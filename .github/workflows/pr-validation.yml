@@ -56,8 +56,53 @@ jobs:
             });
           }
 
-  # check-version-bump removed: release-please handles versioning automatically
-  # via conventional commits. See release-please-config.json.
+  validate-release-config:
+    name: Validate Release Config
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Validate release-please config
+      run: |
+        python3 -c "
+        import json, sys
+        with open('release-please-config.json') as f:
+            config = json.load(f)
+        with open('.release-please-manifest.json') as f:
+            manifest = json.load(f)
+        pkgs = config.get('packages', {})
+        if '.' not in pkgs:
+            print('ERROR: No root package in release-please-config.json')
+            sys.exit(1)
+        if '.' not in manifest:
+            print('ERROR: No root entry in .release-please-manifest.json')
+            sys.exit(1)
+        print(f'release-please config OK (version: {manifest[\".\"]}, type: {pkgs[\".\"].get(\"release-type\", \"unknown\")})')
+        "
+
+    - name: Validate version.txt
+      run: |
+        if [ ! -f version.txt ]; then
+          echo "ERROR: version.txt missing (required by release-please simple type)"
+          exit 1
+        fi
+        VERSION=$(cat version.txt | tr -d '[:space:]')
+        if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          echo "ERROR: version.txt contains invalid version: $VERSION"
+          exit 1
+        fi
+        echo "version.txt OK: $VERSION"
+
+    - name: Validate version consistency
+      run: |
+        VERSION=$(cat version.txt | tr -d '[:space:]')
+        CARGO_VERSION=$(grep '^version = ' goud_engine/Cargo.toml | head -1 | cut -d'"' -f2)
+        if [ "$VERSION" != "$CARGO_VERSION" ]; then
+          echo "ERROR: version.txt ($VERSION) does not match goud_engine/Cargo.toml ($CARGO_VERSION)"
+          exit 1
+        fi
+        echo "Version consistency OK: $VERSION"
 
   check-file-size:
     name: Check File Sizes
@@ -181,7 +226,7 @@ jobs:
 
   validate-success:
     name: PR Validation Success
-    needs: [validate-pr-title, check-file-size, check-todos, lint-markdown, pr-size-labeler]
+    needs: [validate-pr-title, validate-release-config, check-file-size, check-todos, lint-markdown, pr-size-labeler]
     runs-on: ubuntu-latest
     if: always()
 
@@ -189,6 +234,7 @@ jobs:
     - name: Check validation status
       run: |
         if [[ "${{ needs.validate-pr-title.result }}" == "failure" ]] || \
+           [[ "${{ needs.validate-release-config.result }}" == "failure" ]] || \
            [[ "${{ needs.check-file-size.result }}" == "failure" ]]; then
           echo "PR validation failed!"
           exit 1

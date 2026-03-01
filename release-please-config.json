@@ -27,6 +27,10 @@
         {
           "type": "generic",
           "path": "sdks/csharp/GoudEngine.csproj"
+        },
+        {
+          "type": "generic",
+          "path": "sdks/rust/Cargo.toml"
         }
       ]
     }
