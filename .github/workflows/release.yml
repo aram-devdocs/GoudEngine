@@ -272,6 +272,15 @@ jobs:
           name: wasm-bundle
           path: sdks/typescript/wasm/
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate TypeScript source
+        run: |
+          python3 codegen/gen_ts_node.py
+          python3 codegen/gen_ts_web.py
+
       - name: Build TypeScript
         working-directory: sdks/typescript
         run: |
@@ -316,8 +325,11 @@ jobs:
           cp artifacts/native-osx-arm64/libgoud_engine.dylib sdks/csharp/runtimes/osx-arm64/native/
           cp artifacts/native-win-x64/goud_engine.dll        sdks/csharp/runtimes/win-x64/native/
 
+      - name: Build
+        run: dotnet build sdks/csharp -c Release
+
       - name: Pack
-        run: dotnet pack sdks/csharp -c Release
+        run: dotnet pack sdks/csharp -c Release --no-build
 
       - name: Push
         run: |
