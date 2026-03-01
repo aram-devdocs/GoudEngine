@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.825](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.824...v0.0.825) (2026-03-01)
+
+
+### Bug Fixes
+
+* add concurrency group and guard workflow_dispatch publish ([#109](https://github.com/aram-devdocs/GoudEngine/issues/109)) ([0c95ca6](https://github.com/aram-devdocs/GoudEngine/commit/0c95ca6b27df9f20f74b34e7e1fe4204da3f0d9b))
+
 ## [0.0.824](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.823...v0.0.824) (2026-03-01)
 
 
