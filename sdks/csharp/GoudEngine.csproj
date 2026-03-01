@@ -6,7 +6,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>GoudEngine</PackageId>
-    <Version>0.0.817</Version> <!-- x-release-please-version -->
+    <Version>0.0.818</Version> <!-- x-release-please-version -->
     <Authors>Aram Hammoudeh</Authors>
     <Description>Rust-powered game engine for C# developers using FFI.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
