@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.821](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.820...v0.0.821) (2026-03-01)
+
+
+### Features
+
+* SDK developer experience overhaul ([#99](https://github.com/aram-devdocs/GoudEngine/issues/99)) ([a9c3ccf](https://github.com/aram-devdocs/GoudEngine/commit/a9c3ccf31e57809ac81be17e47f732146e6f074b))
+
 ## [0.0.820](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.819...v0.0.820) (2026-03-01)
 
 
