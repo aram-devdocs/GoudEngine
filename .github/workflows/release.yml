@@ -29,13 +29,31 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      - name: Sync example versions
-        if: steps.release.outputs.release_created == 'true'
-        uses: actions/checkout@v4
+  # ── Sync example csproj versions after release ──
+  sync-example-versions:
+    name: Sync Example Versions
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
 
-      - name: Update example .csproj versions
-        if: steps.release.outputs.release_created == 'true'
+      - name: Sync versions
         run: ./scripts/sync-version.sh
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add examples/
+          if git diff --cached --quiet; then
+            echo "No example version changes needed"
+          else
+            git commit -m "chore: sync example versions to ${{ needs.release-please.outputs.version }}"
+            git push
+          fi
 
   # ── Step 2a: Build native libraries for all platforms ──
   build-native-libs:

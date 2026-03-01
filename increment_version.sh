@@ -76,4 +76,10 @@ sed -i '' "s/^version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$NEW_VERSION\"/" 
 # Update Rust SDK Cargo.toml version
 sed -i '' "s/^version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$NEW_VERSION\"/" sdks/rust/Cargo.toml
 
+# Update Rust SDK dependency version constraint
+sed -i '' "s/version = \"=$CURRENT_VERSION\"/version = \"=$NEW_VERSION\"/" sdks/rust/Cargo.toml
+
+# Update version.txt (used by release-please)
+echo "$NEW_VERSION" > version.txt
+
 echo "Version update complete!"
