@@ -76,3 +76,9 @@ examples/typescript/**/dist/
 
 # Screenshots from browser testing
 flappy-web-*.png
+
+# Python SDK build output
+sdks/python/dist/
+
+# Claude worktrees (ephemeral, per-session)
+.claude/worktrees/

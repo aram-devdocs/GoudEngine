@@ -1,6 +1,7 @@
 #!/bin/bash
 # build.sh
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_MODE="debug"
 TARGET_DIR="target/debug"
 
@@ -48,3 +49,18 @@ else
 fi
 
 echo "Build complete."
+
+# Clean old .nupkg files from package output (keep only latest)
+NUPKG_DIR="$SCRIPT_DIR/sdks/nuget_package_output"
+if [ -d "$NUPKG_DIR" ]; then
+    NUPKG_COUNT=$(ls -1 "$NUPKG_DIR"/*.nupkg 2>/dev/null | wc -l)
+    if [ "$NUPKG_COUNT" -gt 1 ]; then
+        LATEST=$(ls -1t "$NUPKG_DIR"/*.nupkg 2>/dev/null | head -1)
+        for pkg in "$NUPKG_DIR"/*.nupkg; do
+            if [ "$pkg" != "$LATEST" ]; then
+                echo "Removing old package: $(basename "$pkg")"
+                rm -f "$pkg"
+            fi
+        done
+    fi
+fi
