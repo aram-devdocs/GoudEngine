@@ -20,16 +20,29 @@ jobs:
     name: Release Please
     runs-on: ubuntu-latest
     outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-      version: ${{ steps.release.outputs.version }}
+      should_publish: ${{ steps.release.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
+      tag_name: ${{ steps.release.outputs.tag_name || steps.fallback.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version || steps.fallback.outputs.version }}
     steps:
+      - uses: actions/checkout@v6
+
       - uses: googleapis/release-please-action@v4
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # On workflow_dispatch, release-please won't set outputs. Read from
+      # version.txt so downstream jobs have the version available.
+      - name: Fallback version from version.txt
+        id: fallback
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          VERSION=$(cat version.txt | tr -d '[:space:]')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag_name=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Using fallback version: ${VERSION}"
 
       # GitHub suppresses pull_request events for GITHUB_TOKEN-created PRs,
       # so CI never runs on release-please PRs. We satisfy the required
@@ -64,7 +77,7 @@ jobs:
   build-native-libs:
     name: Native Lib (${{ matrix.rid }})
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    if: needs.release-please.outputs.should_publish == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -127,7 +140,7 @@ jobs:
   build-napi:
     name: Napi (${{ matrix.name }})
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    if: needs.release-please.outputs.should_publish == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -189,7 +202,7 @@ jobs:
   build-wasm:
     name: WASM
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    if: needs.release-please.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -224,7 +237,7 @@ jobs:
   codegen-verify:
     name: Codegen Verify
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    if: needs.release-please.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -467,7 +480,7 @@ jobs:
   release-summary:
     name: Release Summary
     needs: [release-please, publish-npm, publish-nuget, publish-pypi, publish-crates]
-    if: always() && needs.release-please.outputs.release_created == 'true'
+    if: always() && needs.release-please.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Summary
