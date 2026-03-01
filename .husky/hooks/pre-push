@@ -11,42 +11,42 @@ echo "=============================================="
 # Format Check (mirrors: ci.yml cargo fmt --check)
 # =============================================================================
 echo ""
-echo "=== [1/9] Checking formatting ==="
+echo "=== [1/11] Checking formatting ==="
 cargo fmt --all -- --check || exit 1
 
 # =============================================================================
 # Clippy (mirrors: ci.yml clippy --all-targets --all-features)
 # =============================================================================
 echo ""
-echo "=== [2/9] Running clippy ==="
+echo "=== [2/11] Running clippy ==="
 cargo clippy --all-targets --all-features -- -D warnings || exit 1
 
 # =============================================================================
 # Build (mirrors: ci.yml cargo build --verbose)
 # =============================================================================
 echo ""
-echo "=== [3/9] Building ==="
+echo "=== [3/11] Building ==="
 cargo build --verbose || exit 1
 
 # =============================================================================
 # Tests (mirrors: ci.yml cargo test --verbose)
 # =============================================================================
 echo ""
-echo "=== [4/9] Running tests ==="
+echo "=== [4/11] Running tests ==="
 cargo test --verbose -- --nocapture || exit 1
 
 # =============================================================================
 # Rust SDK Tests (mirrors: ci.yml cargo test --lib sdk)
 # =============================================================================
 echo ""
-echo "=== [5/9] Running Rust SDK tests ==="
+echo "=== [5/11] Running Rust SDK tests ==="
 cargo test --lib sdk -- --nocapture || exit 1
 
 # =============================================================================
 # Cargo Deny (mirrors: ci.yml EmbarkStudios/cargo-deny-action)
 # =============================================================================
 echo ""
-echo "=== [6/9] Running cargo deny ==="
+echo "=== [6/11] Running cargo deny ==="
 if command -v cargo-deny >/dev/null 2>&1; then
     cargo deny --all-features check || exit 1
 else
@@ -57,7 +57,7 @@ fi
 # Python SDK Tests (mirrors: ci.yml python-sdk-check)
 # =============================================================================
 echo ""
-echo "=== [7/9] Running Python SDK tests ==="
+echo "=== [7/11] Running Python SDK tests ==="
 if command -v python3 >/dev/null 2>&1; then
     export PYTHONPATH="$REPO_ROOT/sdks/python:$PYTHONPATH"
 
@@ -100,10 +100,36 @@ else
 fi
 
 # =============================================================================
+# npm Audit (mirrors: security.yml npm-security)
+# =============================================================================
+echo ""
+echo "=== [8/11] Running npm audit (TypeScript SDK) ==="
+if command -v npm >/dev/null 2>&1 && [ -f "$REPO_ROOT/sdks/typescript/package-lock.json" ]; then
+    (cd "$REPO_ROOT/sdks/typescript" && npm audit --audit-level=moderate 2>/dev/null) || {
+        echo "Warning: npm audit found issues (non-blocking)"
+    }
+else
+    echo "Warning: npm not found or no package-lock.json, skipping npm audit"
+fi
+
+# =============================================================================
+# .NET Vulnerability Check (mirrors: security.yml dotnet-security)
+# =============================================================================
+echo ""
+echo "=== [9/11] Running .NET vulnerability check (C# SDK) ==="
+if command -v dotnet >/dev/null 2>&1; then
+    (cd "$REPO_ROOT/sdks/csharp" && dotnet list package --vulnerable 2>/dev/null) || {
+        echo "Warning: dotnet vulnerability check failed (non-blocking)"
+    }
+else
+    echo "Warning: dotnet not found, skipping .NET vulnerability check"
+fi
+
+# =============================================================================
 # Markdown Lint (mirrors: pr-validation.yml markdownlint-cli2-action)
 # =============================================================================
 echo ""
-echo "=== [8/9] Linting markdown ==="
+echo "=== [10/11] Linting markdown ==="
 if command -v npx >/dev/null 2>&1; then
     npx markdownlint-cli2 "**/*.md" "!**/target/**" "!**/node_modules/**" || {
         echo "Warning: Markdown lint found issues (non-blocking)"
@@ -116,7 +142,7 @@ fi
 # Large File Check (mirrors: pr-validation.yml check-file-size)
 # =============================================================================
 echo ""
-echo "=== [9/9] Checking for large files ==="
+echo "=== [11/11] Checking for large files ==="
 LARGE_FILES=$(find . -type f -size +1M ! -path "./.git/*" ! -path "./target/*" ! -path "*/bin/*" ! -path "*/obj/*" ! -name "*.png" ! -name "*.jpg" ! -name "*.jpeg" ! -name "*.gif" 2>/dev/null)
 if [ -n "$LARGE_FILES" ]; then
     TRACKED_LARGE=""

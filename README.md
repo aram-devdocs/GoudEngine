@@ -9,6 +9,9 @@
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![NuGet](https://img.shields.io/nuget/v/GoudEngine.svg)](https://www.nuget.org/packages/GoudEngine/)
+[![PyPI](https://img.shields.io/pypi/v/goudengine.svg)](https://pypi.org/project/goudengine/)
+[![npm](https://img.shields.io/npm/v/@goudengine/sdk.svg)](https://www.npmjs.com/package/@goudengine/sdk)
+[![crates.io](https://img.shields.io/crates/v/goud-engine-sdk.svg)](https://crates.io/crates/goud-engine-sdk)
 
 GoudEngine is a game engine written in Rust with multi-language SDK support. It provides a set of tools and libraries for creating 2D and 3D games, accessible from Rust, C#, Python, and TypeScript.
 
