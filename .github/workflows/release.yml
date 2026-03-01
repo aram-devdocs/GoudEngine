@@ -4,12 +4,21 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      force_publish:
+        description: "Force publish pipeline (for re-running failed releases)"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
   pull-requests: write
   id-token: write
   checks: write
+
+concurrency:
+  group: release-pipeline
+  cancel-in-progress: false
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,7 +29,7 @@ jobs:
     name: Release Please
     runs-on: ubuntu-latest
     outputs:
-      should_publish: ${{ steps.release.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
+      should_publish: ${{ steps.release.outputs.release_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.force_publish) }}
       tag_name: ${{ steps.release.outputs.tag_name || steps.fallback.outputs.tag_name }}
       version: ${{ steps.release.outputs.version || steps.fallback.outputs.version }}
     steps:
