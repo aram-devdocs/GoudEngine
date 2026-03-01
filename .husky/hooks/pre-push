@@ -24,7 +24,7 @@ cargo fmt ${FMT_PACKAGES} -- --check || exit 1
 # =============================================================================
 echo ""
 echo "=== [2/11] Running clippy ==="
-cargo clippy ${FMT_PACKAGES} --all-targets -- -D warnings || exit 1
+cargo clippy ${FMT_PACKAGES} --all-targets --all-features -- -D warnings || exit 1
 
 # =============================================================================
 # Build (mirrors: ci.yml cargo build --verbose)

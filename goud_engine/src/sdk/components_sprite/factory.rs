@@ -5,10 +5,10 @@ use crate::core::types::FfiSprite;
 /// Zero-sized type hosting Sprite factory operations.
 pub struct SpriteOps;
 
-#[goud_engine_macros::goud_api(module = "sprite")]
+// NOTE: FFI wrappers are hand-written in ffi/component_sprite.rs. The `#[goud_api]`
+// attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl SpriteOps {
     /// Creates a new sprite with a texture handle.
-    #[goud_api(name = "new")]
     pub fn new_sprite(texture_handle: u64) -> FfiSprite {
         FfiSprite {
             texture_handle,
@@ -32,19 +32,12 @@ impl SpriteOps {
     }
 
     /// Creates a default sprite with an invalid texture handle.
-    #[goud_api(name = "default")]
     pub fn new_default() -> FfiSprite {
         SpriteOps::new_sprite(u64::MAX)
     }
 
     /// Creates a new sprite with the specified color tint.
-    pub fn with_color(
-        sprite: FfiSprite,
-        r: f32,
-        g: f32,
-        b: f32,
-        a: f32,
-    ) -> FfiSprite {
+    pub fn with_color(sprite: FfiSprite, r: f32, g: f32, b: f32, a: f32) -> FfiSprite {
         let mut result = sprite;
         result.color_r = r;
         result.color_g = g;
@@ -85,11 +78,7 @@ impl SpriteOps {
     }
 
     /// Creates a new sprite with both flip flags set.
-    pub fn with_flip(
-        sprite: FfiSprite,
-        flip_x: bool,
-        flip_y: bool,
-    ) -> FfiSprite {
+    pub fn with_flip(sprite: FfiSprite, flip_x: bool, flip_y: bool) -> FfiSprite {
         let mut result = sprite;
         result.flip_x = flip_x;
         result.flip_y = flip_y;
@@ -97,11 +86,7 @@ impl SpriteOps {
     }
 
     /// Creates a new sprite with the specified anchor.
-    pub fn with_anchor(
-        sprite: FfiSprite,
-        x: f32,
-        y: f32,
-    ) -> FfiSprite {
+    pub fn with_anchor(sprite: FfiSprite, x: f32, y: f32) -> FfiSprite {
         let mut result = sprite;
         result.anchor_x = x;
         result.anchor_y = y;
@@ -109,11 +94,7 @@ impl SpriteOps {
     }
 
     /// Creates a new sprite with the specified custom size.
-    pub fn with_custom_size(
-        sprite: FfiSprite,
-        width: f32,
-        height: f32,
-    ) -> FfiSprite {
+    pub fn with_custom_size(sprite: FfiSprite, width: f32, height: f32) -> FfiSprite {
         let mut result = sprite;
         result.custom_size_x = width;
         result.custom_size_y = height;

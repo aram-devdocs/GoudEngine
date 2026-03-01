@@ -21,10 +21,10 @@ const INVALID_OBJECT: u32 = u32::MAX;
 // 3D Rendering (annotated for FFI generation)
 // =============================================================================
 
-#[goud_engine_macros::goud_api(module = "renderer3d", feature = "native")]
+// NOTE: FFI wrappers are hand-written in ffi/renderer.rs. The `#[goud_api]`
+// attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl GoudGame {
     /// Creates a 3D primitive and returns its object ID.
-    #[goud_api(skip)]
     pub fn create_primitive(&mut self, info: PrimitiveCreateInfo) -> u32 {
         match &mut self.renderer_3d {
             Some(renderer) => renderer.create_primitive(info),
@@ -33,13 +33,7 @@ impl GoudGame {
     }
 
     /// Creates a 3D cube and returns its object ID.
-    pub fn create_cube(
-        &mut self,
-        texture_id: u32,
-        width: f32,
-        height: f32,
-        depth: f32,
-    ) -> u32 {
+    pub fn create_cube(&mut self, texture_id: u32, width: f32, height: f32, depth: f32) -> u32 {
         self.create_primitive(PrimitiveCreateInfo {
             primitive_type: PrimitiveType::Cube,
             width,
@@ -51,12 +45,7 @@ impl GoudGame {
     }
 
     /// Creates a 3D plane and returns its object ID.
-    pub fn create_plane(
-        &mut self,
-        texture_id: u32,
-        width: f32,
-        depth: f32,
-    ) -> u32 {
+    pub fn create_plane(&mut self, texture_id: u32, width: f32, depth: f32) -> u32 {
         self.create_primitive(PrimitiveCreateInfo {
             primitive_type: PrimitiveType::Plane,
             width,
@@ -68,12 +57,7 @@ impl GoudGame {
     }
 
     /// Creates a 3D sphere and returns its object ID.
-    pub fn create_sphere(
-        &mut self,
-        texture_id: u32,
-        diameter: f32,
-        segments: u32,
-    ) -> u32 {
+    pub fn create_sphere(&mut self, texture_id: u32, diameter: f32, segments: u32) -> u32 {
         self.create_primitive(PrimitiveCreateInfo {
             primitive_type: PrimitiveType::Sphere,
             width: diameter,
@@ -103,13 +87,7 @@ impl GoudGame {
     }
 
     /// Sets the position of a 3D object.
-    pub fn set_object_position(
-        &mut self,
-        id: u32,
-        x: f32,
-        y: f32,
-        z: f32,
-    ) -> bool {
+    pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         match &mut self.renderer_3d {
             Some(renderer) => renderer.set_object_position(id, x, y, z),
             None => false,
@@ -117,13 +95,7 @@ impl GoudGame {
     }
 
     /// Sets the rotation of a 3D object (Euler angles in degrees).
-    pub fn set_object_rotation(
-        &mut self,
-        id: u32,
-        x: f32,
-        y: f32,
-        z: f32,
-    ) -> bool {
+    pub fn set_object_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         match &mut self.renderer_3d {
             Some(renderer) => renderer.set_object_rotation(id, x, y, z),
             None => false,
@@ -131,13 +103,7 @@ impl GoudGame {
     }
 
     /// Sets the scale of a 3D object.
-    pub fn set_object_scale(
-        &mut self,
-        id: u32,
-        x: f32,
-        y: f32,
-        z: f32,
-    ) -> bool {
+    pub fn set_object_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         match &mut self.renderer_3d {
             Some(renderer) => renderer.set_object_scale(id, x, y, z),
             None => false,
@@ -241,12 +207,7 @@ impl GoudGame {
     }
 
     /// Sets the 3D camera position.
-    pub fn set_camera_position(
-        &mut self,
-        x: f32,
-        y: f32,
-        z: f32,
-    ) -> bool {
+    pub fn set_camera_position(&mut self, x: f32, y: f32, z: f32) -> bool {
         match &mut self.renderer_3d {
             Some(renderer) => {
                 renderer.set_camera_position(x, y, z);
@@ -257,12 +218,7 @@ impl GoudGame {
     }
 
     /// Sets the 3D camera rotation (pitch, yaw, roll in degrees).
-    pub fn set_camera_rotation(
-        &mut self,
-        pitch: f32,
-        yaw: f32,
-        roll: f32,
-    ) -> bool {
+    pub fn set_camera_rotation(&mut self, pitch: f32, yaw: f32, roll: f32) -> bool {
         match &mut self.renderer_3d {
             Some(renderer) => {
                 renderer.set_camera_rotation(pitch, yaw, roll);
@@ -273,12 +229,7 @@ impl GoudGame {
     }
 
     /// Configures the ground grid.
-    pub fn configure_grid(
-        &mut self,
-        enabled: bool,
-        size: f32,
-        divisions: u32,
-    ) -> bool {
+    pub fn configure_grid(&mut self, enabled: bool, size: f32, divisions: u32) -> bool {
         match &mut self.renderer_3d {
             Some(renderer) => {
                 renderer.configure_grid(GridConfig {
@@ -305,14 +256,7 @@ impl GoudGame {
     }
 
     /// Configures the skybox/background color.
-    pub fn configure_skybox(
-        &mut self,
-        enabled: bool,
-        r: f32,
-        g: f32,
-        b: f32,
-        a: f32,
-    ) -> bool {
+    pub fn configure_skybox(&mut self, enabled: bool, r: f32, g: f32, b: f32, a: f32) -> bool {
         match &mut self.renderer_3d {
             Some(renderer) => {
                 renderer.configure_skybox(SkyboxConfig {
@@ -326,14 +270,7 @@ impl GoudGame {
     }
 
     /// Configures fog settings.
-    pub fn configure_fog(
-        &mut self,
-        enabled: bool,
-        r: f32,
-        g: f32,
-        b: f32,
-        density: f32,
-    ) -> bool {
+    pub fn configure_fog(&mut self, enabled: bool, r: f32, g: f32, b: f32, density: f32) -> bool {
         match &mut self.renderer_3d {
             Some(renderer) => {
                 renderer.configure_fog(FogConfig {
@@ -376,7 +313,6 @@ impl GoudGame {
 
     /// Returns `true` if a 3D renderer is initialized.
     #[inline]
-    #[goud_api(skip)]
     pub fn has_3d_renderer(&self) -> bool {
         self.renderer_3d.is_some()
     }

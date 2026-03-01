@@ -16,7 +16,8 @@ use crate::core::context_registry::{get_context_registry, GoudContextId, GOUD_IN
 /// via the `#[goud_api]` proc-macro.
 pub struct Context;
 
-#[goud_engine_macros::goud_api(module = "context")]
+// NOTE: FFI wrappers are hand-written in ffi/context.rs. The `#[goud_api]`
+// attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl Context {
     /// Creates a new engine context.
     ///

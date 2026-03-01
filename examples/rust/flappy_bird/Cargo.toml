@@ -6,5 +6,5 @@ license = "MIT"
 publish = false
 
 [dependencies]
-goud-engine-core = { path = "../../../goud_engine" }
+goud-engine = { path = "../../../sdks/rust" }
 rand = "0.8"

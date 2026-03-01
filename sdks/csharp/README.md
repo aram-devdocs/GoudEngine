@@ -2,6 +2,8 @@
 
 [![NuGet](https://img.shields.io/nuget/v/GoudEngine.svg)](https://www.nuget.org/packages/GoudEngine/)
 
+> **Alpha** — This SDK is under active development. APIs change frequently. [Report issues](https://github.com/aram-devdocs/GoudEngine/issues) · [Contact](mailto:aram.devdocs@gmail.com)
+
 Rust-powered game engine for C# developers. Build 2D and 3D games with a familiar .NET API backed by a high-performance Rust core.
 
 ## Install

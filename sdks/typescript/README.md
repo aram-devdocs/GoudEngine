@@ -2,6 +2,8 @@
 
 [![npm](https://img.shields.io/npm/v/goudengine.svg)](https://www.npmjs.com/package/goudengine)
 
+> **Alpha** — This SDK is under active development. APIs change frequently. [Report issues](https://github.com/aram-devdocs/GoudEngine/issues) · [Contact](mailto:aram.devdocs@gmail.com)
+
 TypeScript bindings for GoudEngine with two targets: Node.js desktop (via napi-rs)
 and web browser (via wasm-bindgen). Published as `goudengine` on npm.
 

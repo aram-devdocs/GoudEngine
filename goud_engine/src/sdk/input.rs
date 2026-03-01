@@ -42,7 +42,8 @@ pub use glfw::{Key, MouseButton};
 // Input API (annotated for FFI generation)
 // =============================================================================
 
-#[goud_engine_macros::goud_api(module = "input", feature = "native")]
+// NOTE: FFI wrappers are hand-written in ffi/input.rs. The `#[goud_api]`
+// attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl GoudGame {
     // =========================================================================
     // Keyboard Input
@@ -58,7 +59,6 @@ impl GoudGame {
     /// }
     /// ```
     #[inline]
-    #[goud_api(name = "key_pressed")]
     pub fn is_key_pressed(&self, key: Key) -> bool {
         self.input_manager.key_pressed(key)
     }
@@ -67,14 +67,12 @@ impl GoudGame {
     ///
     /// Use this for one-shot actions like jumping or menu selection.
     #[inline]
-    #[goud_api(name = "key_just_pressed")]
     pub fn is_key_just_pressed(&self, key: Key) -> bool {
         self.input_manager.key_just_pressed(key)
     }
 
     /// Returns `true` if the given key was released this frame.
     #[inline]
-    #[goud_api(name = "key_just_released")]
     pub fn is_key_just_released(&self, key: Key) -> bool {
         self.input_manager.key_just_released(key)
     }
@@ -85,21 +83,18 @@ impl GoudGame {
 
     /// Returns `true` if the given mouse button is currently held down.
     #[inline]
-    #[goud_api(name = "mouse_button_pressed")]
     pub fn is_mouse_button_pressed(&self, button: MouseButton) -> bool {
         self.input_manager.mouse_button_pressed(button)
     }
 
     /// Returns `true` if the given mouse button was pressed this frame.
     #[inline]
-    #[goud_api(name = "mouse_button_just_pressed")]
     pub fn is_mouse_button_just_pressed(&self, button: MouseButton) -> bool {
         self.input_manager.mouse_button_just_pressed(button)
     }
 
     /// Returns `true` if the given mouse button was released this frame.
     #[inline]
-    #[goud_api(name = "mouse_button_just_released")]
     pub fn is_mouse_button_just_released(&self, button: MouseButton) -> bool {
         self.input_manager.mouse_button_just_released(button)
     }
@@ -108,7 +103,6 @@ impl GoudGame {
     ///
     /// Returns `(x, y)` where `(0, 0)` is the top-left corner.
     #[inline]
-    #[goud_api(name = "get_mouse_position")]
     pub fn mouse_position(&self) -> (f32, f32) {
         let pos = self.input_manager.mouse_position();
         (pos.x, pos.y)
@@ -118,7 +112,6 @@ impl GoudGame {
     ///
     /// Returns `(dx, dy)` where positive X is right and positive Y is down.
     #[inline]
-    #[goud_api(name = "get_mouse_delta")]
     pub fn mouse_delta(&self) -> (f32, f32) {
         let delta = self.input_manager.mouse_delta();
         (delta.x, delta.y)
@@ -128,7 +121,6 @@ impl GoudGame {
     ///
     /// Returns `(horizontal, vertical)` scroll amounts.
     #[inline]
-    #[goud_api(name = "get_scroll_delta")]
     pub fn scroll_delta(&self) -> (f32, f32) {
         let delta = self.input_manager.scroll_delta();
         (delta.x, delta.y)
@@ -161,7 +153,6 @@ impl GoudGame {
 
     /// Maps a mouse button to a named action.
     #[inline]
-    #[goud_api(skip)]
     pub fn map_action_mouse_button(&mut self, action: &str, button: MouseButton) {
         self.input_manager
             .map_action(action, InputBinding::MouseButton(button));
@@ -169,21 +160,18 @@ impl GoudGame {
 
     /// Returns `true` if any binding for the named action is currently held.
     #[inline]
-    #[goud_api(name = "action_pressed")]
     pub fn is_action_pressed(&self, action: &str) -> bool {
         self.input_manager.action_pressed(action)
     }
 
     /// Returns `true` if any binding for the named action was pressed this frame.
     #[inline]
-    #[goud_api(name = "action_just_pressed")]
     pub fn is_action_just_pressed(&self, action: &str) -> bool {
         self.input_manager.action_just_pressed(action)
     }
 
     /// Returns `true` if any binding for the named action was released this frame.
     #[inline]
-    #[goud_api(name = "action_just_released")]
     pub fn is_action_just_released(&self, action: &str) -> bool {
         self.input_manager.action_just_released(action)
     }
@@ -197,7 +185,6 @@ impl GoudGame {
     /// Use this for advanced input queries (gamepad, input buffering, etc.)
     /// that are not exposed through convenience methods.
     #[inline]
-    #[goud_api(skip)]
     pub fn input(&self) -> &InputManager {
         &self.input_manager
     }
@@ -206,7 +193,6 @@ impl GoudGame {
     ///
     /// Use this for advanced configuration (deadzone, buffer duration, etc.).
     #[inline]
-    #[goud_api(skip)]
     pub fn input_mut(&mut self) -> &mut InputManager {
         &mut self.input_manager
     }

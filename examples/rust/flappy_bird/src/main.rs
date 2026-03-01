@@ -18,42 +18,53 @@
 
 mod bird;
 mod constants;
-mod engine;
 mod game_manager;
 mod pipe;
 mod score;
 
 use constants::*;
-use engine::Engine;
 use game_manager::GameManager;
+use goudengine::{GameConfig, GoudGame};
 
 fn main() {
+    // This binary must be run from the repository root so that relative asset
+    // paths (e.g. "examples/csharp/flappy_goud/assets/...") resolve correctly:
+    //   cargo run -p flappy-bird
+    if !std::path::Path::new("examples/rust/flappy_bird/assets").exists()
+        && !std::path::Path::new("examples/csharp/flappy_goud/assets").exists()
+    {
+        eprintln!("Error: assets directory not found. Run from the repository root:");
+        eprintln!("  cargo run -p flappy-bird");
+        std::process::exit(1);
+    }
+
     // Window height includes the base strip below the playfield.
     let window_height = SCREEN_HEIGHT as u32 + BASE_HEIGHT as u32;
-    let engine = Engine::new(SCREEN_WIDTH as u32, window_height, "Flappy Bird");
+    let config = GameConfig::new("Flappy Bird", SCREEN_WIDTH as u32, window_height);
+    let mut game = GoudGame::with_platform(config).expect("Failed to create game");
 
     // Assets live in the shared C# example directory.
     let asset_base = "examples/csharp/flappy_goud/assets";
 
-    let mut manager = GameManager::new(&engine, asset_base);
+    let mut manager = GameManager::new(&mut game, asset_base);
     manager.start();
 
-    engine.enable_blending();
+    game.enable_blending();
 
     // -- Game loop ------------------------------------------------------------
-    while !engine.should_close() {
-        let dt = engine.poll_events();
-        engine.begin_frame();
-        engine.clear(0.4, 0.7, 0.9, 1.0); // sky blue
+    while !game.should_close() {
+        let dt = game.poll_events().unwrap_or(0.016);
+        game.begin_render();
+        game.clear(0.4, 0.7, 0.9, 1.0); // sky blue
 
-        if !manager.update(&engine, dt) {
+        if !manager.update(&game, dt) {
             break; // Escape was pressed
         }
-        manager.draw(&engine);
+        manager.draw(&mut game);
 
-        engine.end_frame();
-        engine.swap_buffers();
+        game.end_render();
+        game.swap_buffers().expect("swap_buffers failed");
     }
 
-    // Engine is dropped here, which destroys the window context.
+    // GoudGame is dropped here, which destroys the window context.
 }

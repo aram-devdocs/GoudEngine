@@ -922,7 +922,7 @@ dependencies = [
 name = "flappy-bird"
 version = "0.1.0"
 dependencies = [
- "goud-engine-core",
+ "goud-engine",
  "rand",
 ]
 

@@ -7,7 +7,8 @@ use crate::ecs::components::Transform2D;
 /// Zero-sized type for Transform2D builder operations.
 pub struct Transform2DBuilderOps;
 
-#[goud_engine_macros::goud_api(module = "transform2d")]
+// NOTE: FFI wrappers are hand-written in ffi/component_transform2d.rs. The `#[goud_api]`
+// attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl Transform2DBuilderOps {
     /// Creates a new transform builder with default values.
     pub fn builder_new() -> *mut FfiTransform2DBuilder {
@@ -18,10 +19,7 @@ impl Transform2DBuilderOps {
     }
 
     /// Creates a new transform builder at a specific position.
-    pub fn builder_at_position(
-        x: f32,
-        y: f32,
-    ) -> *mut FfiTransform2DBuilder {
+    pub fn builder_at_position(x: f32, y: f32) -> *mut FfiTransform2DBuilder {
         let builder = FfiTransform2DBuilder {
             transform: Transform2D::from_position(Vec2::new(x, y)).into(),
         };
@@ -64,9 +62,7 @@ impl Transform2DBuilderOps {
         if builder.is_null() {
             return builder;
         }
-        unsafe {
-            (*builder).transform.rotation = degrees.to_radians()
-        };
+        unsafe { (*builder).transform.rotation = degrees.to_radians() };
         builder
     }
 
@@ -158,9 +154,7 @@ impl Transform2DBuilderOps {
     }
 
     /// Builds the transform, consuming and freeing the builder.
-    pub fn builder_build(
-        builder: *mut FfiTransform2DBuilder,
-    ) -> FfiTransform2D {
+    pub fn builder_build(builder: *mut FfiTransform2DBuilder) -> FfiTransform2D {
         if builder.is_null() {
             return Transform2D::default().into();
         }

@@ -109,10 +109,10 @@ impl GoudGame {
 // Renderer FFI (single annotated impl block for all goud_renderer_* functions)
 // =============================================================================
 
-#[goud_engine_macros::goud_api(module = "renderer", feature = "native")]
+// NOTE: FFI wrappers are hand-written in ffi/renderer.rs. The `#[goud_api]`
+// attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl GoudGame {
     /// Begins a new rendering frame. Call before any drawing operations.
-    #[goud_api(name = "begin")]
     pub fn begin_render(&mut self) -> bool {
         let backend = match self.render_backend.as_mut() {
             Some(b) => b,
@@ -130,7 +130,6 @@ impl GoudGame {
     }
 
     /// Ends the current rendering frame.
-    #[goud_api(name = "end")]
     pub fn end_render(&mut self) -> bool {
         match self.render_backend.as_mut() {
             Some(b) => b.end_frame().is_ok(),
@@ -342,8 +341,12 @@ impl GoudGame {
     ///
     /// Writes default statistics to the provided out-pointer.
     /// Returns `true` on success, `false` if the pointer is null.
-    #[goud_api(name = "get_stats")]
-    pub fn get_render_stats(
+    ///
+    /// # Safety
+    ///
+    /// `out_stats` must be a valid, aligned, writable pointer to a
+    /// `GoudRenderStats` value, or null (in which case this returns `false`).
+    pub unsafe fn get_render_stats(
         &self,
         out_stats: *mut crate::ffi::renderer::GoudRenderStats,
     ) -> bool {
@@ -367,9 +370,18 @@ fn ortho_matrix(left: f32, right: f32, bottom: f32, top: f32) -> [f32; 16] {
     let near = -1.0f32;
     let far = 1.0f32;
     [
-        2.0 / (right - left), 0.0, 0.0, 0.0,
-        0.0, 2.0 / (top - bottom), 0.0, 0.0,
-        0.0, 0.0, -2.0 / (far - near), 0.0,
+        2.0 / (right - left),
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0 / (top - bottom),
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -2.0 / (far - near),
+        0.0,
         -(right + left) / (right - left),
         -(top + bottom) / (top - bottom),
         -(far + near) / (far - near),
@@ -382,10 +394,22 @@ fn model_matrix(x: f32, y: f32, width: f32, height: f32, rotation: f32) -> [f32;
     let cos_r = rotation.cos();
     let sin_r = rotation.sin();
     [
-        width * cos_r, width * sin_r, 0.0, 0.0,
-        -height * sin_r, height * cos_r, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        x, y, 0.0, 1.0,
+        width * cos_r,
+        width * sin_r,
+        0.0,
+        0.0,
+        -height * sin_r,
+        height * cos_r,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        x,
+        y,
+        0.0,
+        1.0,
     ]
 }
 

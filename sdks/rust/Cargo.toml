@@ -15,5 +15,9 @@ categories = ["game-engines", "graphics"]
 # Users write: use goudengine::*;
 name = "goudengine"
 
+[features]
+default = ["native"]
+native = ["goud-engine-core/native"]
+
 [dependencies]
-goud-engine-core = { version = "=0.0.820", path = "../../goud_engine" } # x-release-please-version
+goud-engine-core = { version = "=0.0.820", path = "../../goud_engine", default-features = false } # x-release-please-version

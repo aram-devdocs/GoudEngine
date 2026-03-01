@@ -9,12 +9,12 @@
 use super::GoudGame;
 use crate::ecs::Entity;
 
-#[goud_engine_macros::goud_api(module = "entity")]
+// NOTE: FFI wrappers are hand-written in ffi/entity.rs. The `#[goud_api]`
+// attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl GoudGame {
     /// Spawns a new empty entity with no components.
     ///
     /// Returns the entity as a u64 bit representation for FFI compatibility.
-    #[goud_api(name = "spawn_empty")]
     pub fn ffi_entity_spawn_empty(&mut self) -> u64 {
         self.world.spawn_empty().to_bits()
     }
@@ -28,12 +28,7 @@ impl GoudGame {
     ///
     /// `out_entities` must point to valid memory with capacity for at
     /// least `count` u64 values.
-    #[goud_api(name = "spawn_batch")]
-    pub unsafe fn ffi_entity_spawn_batch(
-        &mut self,
-        count: u32,
-        out_entities: *mut u64,
-    ) -> u32 {
+    pub unsafe fn ffi_entity_spawn_batch(&mut self, count: u32, out_entities: *mut u64) -> u32 {
         if out_entities.is_null() || count == 0 {
             return 0;
         }
@@ -49,7 +44,6 @@ impl GoudGame {
     /// Despawns an entity and all its components from the world.
     ///
     /// Returns `true` if the entity was despawned, `false` otherwise.
-    #[goud_api(name = "despawn")]
     pub fn ffi_entity_despawn(&mut self, entity_id: u64) -> bool {
         let entity = Entity::from_bits(entity_id);
         self.world.despawn(entity)
@@ -63,12 +57,7 @@ impl GoudGame {
     ///
     /// `entity_ids` must point to valid memory with at least `count` u64
     /// values.
-    #[goud_api(name = "despawn_batch")]
-    pub unsafe fn ffi_entity_despawn_batch(
-        &mut self,
-        entity_ids: *const u64,
-        count: u32,
-    ) -> u32 {
+    pub unsafe fn ffi_entity_despawn_batch(&mut self, entity_ids: *const u64, count: u32) -> u32 {
         if entity_ids.is_null() || count == 0 {
             return 0;
         }
@@ -82,14 +71,12 @@ impl GoudGame {
     }
 
     /// Checks if an entity is currently alive in the world.
-    #[goud_api(name = "is_alive")]
     pub fn ffi_entity_is_alive(&self, entity_id: u64) -> bool {
         let entity = Entity::from_bits(entity_id);
         self.world.is_alive(entity)
     }
 
     /// Returns the total number of alive entities in the world.
-    #[goud_api(name = "count")]
     pub fn ffi_entity_count(&self) -> u32 {
         self.world.entity_count() as u32
     }
@@ -105,7 +92,6 @@ impl GoudGame {
     ///   values.
     /// - `out_results` must point to valid memory with at least `count` u8
     ///   values.
-    #[goud_api(name = "is_alive_batch")]
     pub unsafe fn ffi_entity_is_alive_batch(
         &self,
         entity_ids: *const u64,
@@ -190,9 +176,8 @@ mod tests {
         game.ffi_entity_despawn(entities[1]);
 
         let mut results = vec![0u8; 3];
-        let count = unsafe {
-            game.ffi_entity_is_alive_batch(entities.as_ptr(), 3, results.as_mut_ptr())
-        };
+        let count =
+            unsafe { game.ffi_entity_is_alive_batch(entities.as_ptr(), 3, results.as_mut_ptr()) };
         assert_eq!(count, 3);
         assert_eq!(results[0], 1);
         assert_eq!(results[1], 0);

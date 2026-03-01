@@ -1,8 +1,9 @@
 use crate::bird::Bird;
 use crate::constants::*;
-use crate::engine::{Engine, KEY_ESCAPE, KEY_R, KEY_SPACE, MOUSE_LEFT};
 use crate::pipe::Pipe;
 use crate::score::ScoreCounter;
+use goudengine::input::{Key, MouseButton};
+use goudengine::GoudGame;
 
 /// Loaded texture handles (created once at init, reused every frame).
 pub struct Textures {
@@ -13,14 +14,14 @@ pub struct Textures {
 }
 
 impl Textures {
-    pub fn load(engine: &Engine, asset_base: &str) -> Self {
-        let background = engine.load_texture(&format!("{asset_base}/sprites/background-day.png"));
-        let base = engine.load_texture(&format!("{asset_base}/sprites/base.png"));
-        let pipe = engine.load_texture(&format!("{asset_base}/sprites/pipe-green.png"));
+    pub fn load(game: &mut GoudGame, asset_base: &str) -> Self {
+        let background = game.load(&format!("{asset_base}/sprites/background-day.png"));
+        let base = game.load(&format!("{asset_base}/sprites/base.png"));
+        let pipe = game.load(&format!("{asset_base}/sprites/pipe-green.png"));
         let bird_frames = [
-            engine.load_texture(&format!("{asset_base}/sprites/bluebird-downflap.png")),
-            engine.load_texture(&format!("{asset_base}/sprites/bluebird-midflap.png")),
-            engine.load_texture(&format!("{asset_base}/sprites/bluebird-upflap.png")),
+            game.load(&format!("{asset_base}/sprites/bluebird-downflap.png")),
+            game.load(&format!("{asset_base}/sprites/bluebird-midflap.png")),
+            game.load(&format!("{asset_base}/sprites/bluebird-upflap.png")),
         ];
         Self {
             background,
@@ -41,10 +42,10 @@ pub struct GameManager {
 }
 
 impl GameManager {
-    pub fn new(engine: &Engine, asset_base: &str) -> Self {
-        let textures = Textures::load(engine, asset_base);
+    pub fn new(game: &mut GoudGame, asset_base: &str) -> Self {
+        let textures = Textures::load(game, asset_base);
         let mut score = ScoreCounter::new();
-        score.load_textures(engine, asset_base);
+        score.load_textures(game, asset_base);
         Self {
             bird: Bird::new(),
             pipes: Vec::new(),
@@ -64,17 +65,18 @@ impl GameManager {
 
     /// Runs one frame of game logic. Returns `false` when the window
     /// should close (user pressed Escape).
-    pub fn update(&mut self, engine: &Engine, dt: f32) -> bool {
+    pub fn update(&mut self, game: &GoudGame, dt: f32) -> bool {
         // -- Input --------------------------------------------------------
-        if engine.is_key_pressed(KEY_ESCAPE) {
+        if game.is_key_pressed(Key::Escape) {
             return false;
         }
-        if engine.is_key_pressed(KEY_R) {
+        if game.is_key_pressed(Key::R) {
             self.start();
             return true;
         }
 
-        let jump = engine.is_key_pressed(KEY_SPACE) || engine.is_mouse_button_pressed(MOUSE_LEFT);
+        let jump =
+            game.is_key_pressed(Key::Space) || game.is_mouse_button_pressed(MouseButton::Button1);
 
         // -- Update bird --------------------------------------------------
         self.bird.update(dt, jump);
@@ -102,6 +104,7 @@ impl GameManager {
         }
 
         // -- Remove off-screen pipes and increment score ------------------
+        // Score increments when pipes scroll off-screen, matching the C#/Python/TS Flappy Bird examples.
         let before = self.pipes.len();
         self.pipes.retain(|pipe| !pipe.is_off_screen());
         let removed = before - self.pipes.len();
@@ -113,64 +116,84 @@ impl GameManager {
     }
 
     /// Draws all layers in painter's order (back to front).
-    pub fn draw(&self, engine: &Engine) {
+    pub fn draw(&self, game: &mut GoudGame) {
         let tex = &self.textures;
 
         // Layer 0: Background
-        engine.draw_sprite(
+        game.draw_sprite(
             tex.background,
             BACKGROUND_WIDTH / 2.0,
             BACKGROUND_HEIGHT / 2.0,
             BACKGROUND_WIDTH,
             BACKGROUND_HEIGHT,
             0.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
         );
 
         // Layer 1: Score (behind pipes, in front of background)
-        self.score.draw(engine);
+        self.score.draw(game);
 
         // Layer 2: Pipes
         for pipe in &self.pipes {
             // Top pipe (rotated 180 degrees)
-            engine.draw_sprite(
+            game.draw_sprite(
                 tex.pipe,
                 pipe.x + PIPE_IMAGE_WIDTH / 2.0,
                 pipe.top_pipe_y() + PIPE_IMAGE_HEIGHT / 2.0,
                 PIPE_IMAGE_WIDTH,
                 PIPE_IMAGE_HEIGHT,
                 std::f32::consts::PI,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
             );
             // Bottom pipe (no rotation)
-            engine.draw_sprite(
+            game.draw_sprite(
                 tex.pipe,
                 pipe.x + PIPE_IMAGE_WIDTH / 2.0,
                 pipe.bottom_pipe_y() + PIPE_IMAGE_HEIGHT / 2.0,
                 PIPE_IMAGE_WIDTH,
                 PIPE_IMAGE_HEIGHT,
                 0.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
             );
         }
 
         // Layer 3: Bird
         let bird_tex = tex.bird_frames[self.bird.animator.frame_index];
         let rotation_rad = self.bird.rotation_deg().to_radians();
-        engine.draw_sprite(
+        game.draw_sprite(
             bird_tex,
             self.bird.x + BIRD_WIDTH / 2.0,
             self.bird.y + BIRD_HEIGHT / 2.0,
             BIRD_WIDTH,
             BIRD_HEIGHT,
             rotation_rad,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
         );
 
         // Layer 4: Base / ground (in front of everything)
-        engine.draw_sprite(
+        game.draw_sprite(
             tex.base,
             BASE_SPRITE_WIDTH / 2.0,
             SCREEN_HEIGHT + BASE_HEIGHT / 2.0,
             BASE_SPRITE_WIDTH,
             BASE_HEIGHT,
             0.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
         );
     }
 }

@@ -7,7 +7,8 @@ use crate::ecs::components::Transform2D;
 /// Zero-sized type for Transform2D pointer operations.
 pub struct Transform2DPtrOps;
 
-#[goud_engine_macros::goud_api(module = "transform2d")]
+// NOTE: FFI wrappers are hand-written in ffi/component_transform2d.rs. The `#[goud_api]`
+// attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl Transform2DPtrOps {
     /// Translates the transform by the given offset.
     pub fn translate(transform: *mut FfiTransform2D, dx: f32, dy: f32) {
@@ -22,11 +23,7 @@ impl Transform2DPtrOps {
     }
 
     /// Translates the transform in local space.
-    pub fn translate_local(
-        transform: *mut FfiTransform2D,
-        dx: f32,
-        dy: f32,
-    ) {
+    pub fn translate_local(transform: *mut FfiTransform2D, dx: f32, dy: f32) {
         if transform.is_null() {
             return;
         }
@@ -37,11 +34,7 @@ impl Transform2DPtrOps {
     }
 
     /// Sets the position of the transform.
-    pub fn set_position(
-        transform: *mut FfiTransform2D,
-        x: f32,
-        y: f32,
-    ) {
+    pub fn set_position(transform: *mut FfiTransform2D, x: f32, y: f32) {
         if transform.is_null() {
             return;
         }
@@ -51,9 +44,7 @@ impl Transform2DPtrOps {
     }
 
     /// Gets the position of the transform.
-    pub fn get_position(
-        transform: *const FfiTransform2D,
-    ) -> FfiVec2 {
+    pub fn get_position(transform: *const FfiTransform2D) -> FfiVec2 {
         if transform.is_null() {
             return FfiVec2 { x: 0.0, y: 0.0 };
         }
@@ -76,10 +67,7 @@ impl Transform2DPtrOps {
     }
 
     /// Rotates the transform by the given angle in degrees.
-    pub fn rotate_degrees(
-        transform: *mut FfiTransform2D,
-        degrees: f32,
-    ) {
+    pub fn rotate_degrees(transform: *mut FfiTransform2D, degrees: f32) {
         if transform.is_null() {
             return;
         }
@@ -90,10 +78,7 @@ impl Transform2DPtrOps {
     }
 
     /// Sets the rotation angle in radians.
-    pub fn set_rotation(
-        transform: *mut FfiTransform2D,
-        rotation: f32,
-    ) {
+    pub fn set_rotation(transform: *mut FfiTransform2D, rotation: f32) {
         if transform.is_null() {
             return;
         }
@@ -104,10 +89,7 @@ impl Transform2DPtrOps {
     }
 
     /// Sets the rotation angle in degrees.
-    pub fn set_rotation_degrees(
-        transform: *mut FfiTransform2D,
-        degrees: f32,
-    ) {
+    pub fn set_rotation_degrees(transform: *mut FfiTransform2D, degrees: f32) {
         if transform.is_null() {
             return;
         }
@@ -126,9 +108,7 @@ impl Transform2DPtrOps {
     }
 
     /// Gets the rotation angle in degrees.
-    pub fn get_rotation_degrees(
-        transform: *const FfiTransform2D,
-    ) -> f32 {
+    pub fn get_rotation_degrees(transform: *const FfiTransform2D) -> f32 {
         if transform.is_null() {
             return 0.0;
         }
@@ -136,11 +116,7 @@ impl Transform2DPtrOps {
     }
 
     /// Makes the transform look at a target position.
-    pub fn look_at_target(
-        transform: *mut FfiTransform2D,
-        target_x: f32,
-        target_y: f32,
-    ) {
+    pub fn look_at_target(transform: *mut FfiTransform2D, target_x: f32, target_y: f32) {
         if transform.is_null() {
             return;
         }
@@ -151,11 +127,7 @@ impl Transform2DPtrOps {
     }
 
     /// Sets the scale of the transform.
-    pub fn set_scale(
-        transform: *mut FfiTransform2D,
-        scale_x: f32,
-        scale_y: f32,
-    ) {
+    pub fn set_scale(transform: *mut FfiTransform2D, scale_x: f32, scale_y: f32) {
         if transform.is_null() {
             return;
         }
@@ -165,10 +137,7 @@ impl Transform2DPtrOps {
     }
 
     /// Sets uniform scale on both axes.
-    pub fn set_scale_uniform(
-        transform: *mut FfiTransform2D,
-        scale: f32,
-    ) {
+    pub fn set_scale_uniform(transform: *mut FfiTransform2D, scale: f32) {
         if transform.is_null() {
             return;
         }
@@ -190,11 +159,7 @@ impl Transform2DPtrOps {
     }
 
     /// Multiplies the current scale by the given factors.
-    pub fn scale_by(
-        transform: *mut FfiTransform2D,
-        factor_x: f32,
-        factor_y: f32,
-    ) {
+    pub fn scale_by(transform: *mut FfiTransform2D, factor_x: f32, factor_y: f32) {
         if transform.is_null() {
             return;
         }
@@ -256,9 +221,7 @@ impl Transform2DPtrOps {
     }
 
     /// Computes the inverse transformation matrix.
-    pub fn matrix_inverse(
-        transform: *const FfiTransform2D,
-    ) -> FfiMat3x3 {
+    pub fn matrix_inverse(transform: *const FfiTransform2D) -> FfiMat3x3 {
         if transform.is_null() {
             return FfiMat3x3 {
                 m: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
