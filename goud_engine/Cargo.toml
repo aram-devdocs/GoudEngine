@@ -1,6 +1,6 @@
 [package]
 name = "goud-engine-core"
-version = "0.0.820" # x-release-please-version
+version = "0.0.821" # x-release-please-version
 edition = "2021"
 license = "MIT"
 description = "GoudEngine core — internal implementation crate. Use goud-engine for the public API."
