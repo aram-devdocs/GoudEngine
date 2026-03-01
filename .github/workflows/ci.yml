@@ -77,7 +77,7 @@ jobs:
     - name: Check formatting
       if: matrix.rust == 'stable'
       run: |
-        cargo fmt -p goud_engine -- --check
+        cargo fmt -p goud-engine-core -- --check
         # Format generated napi-rs files (gitignored, no --check needed)
         cargo fmt -p goud-engine-node
 
@@ -114,7 +114,7 @@ jobs:
     - name: Generate coverage
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
       run: |
-        cargo tarpaulin --out xml --all-features -p goud_engine --timeout 300 --exclude-files "*/build.rs" --exclude-files "*/tests/*" --exclude-files "*/examples/*"
+        cargo tarpaulin --out xml --all-features -p goud-engine-core --timeout 300 --exclude-files "*/build.rs" --exclude-files "*/tests/*" --exclude-files "*/examples/*"
     
     - name: Upload coverage to Codecov
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'

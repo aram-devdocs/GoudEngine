@@ -10,10 +10,19 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![NuGet](https://img.shields.io/nuget/v/GoudEngine.svg)](https://www.nuget.org/packages/GoudEngine/)
 [![PyPI](https://img.shields.io/pypi/v/goudengine.svg)](https://pypi.org/project/goudengine/)
-[![npm](https://img.shields.io/npm/v/@goudengine/sdk.svg)](https://www.npmjs.com/package/@goudengine/sdk)
-[![crates.io](https://img.shields.io/crates/v/goud-engine-sdk.svg)](https://crates.io/crates/goud-engine-sdk)
+[![npm](https://img.shields.io/npm/v/goudengine.svg)](https://www.npmjs.com/package/goudengine)
+[![crates.io](https://img.shields.io/crates/v/goud-engine.svg)](https://crates.io/crates/goud-engine)
 
 GoudEngine is a game engine written in Rust with multi-language SDK support. It provides a set of tools and libraries for creating 2D and 3D games, accessible from Rust, C#, Python, and TypeScript.
+
+## Get Started
+
+| Language | Install | Examples |
+|----------|---------|----------|
+| C# (.NET) | `dotnet add package GoudEngine` | [C# examples](examples/csharp/) |
+| Python | `pip install goudengine` | [Python examples](examples/python/) |
+| TypeScript | `npm install goudengine` | [TypeScript examples](examples/typescript/) |
+| Rust | `cargo add goud-engine` | [Rust examples](examples/rust/) |
 
 ## Design Philosophy
 
@@ -232,6 +241,13 @@ cd examples/typescript/flappy_bird
 npm run start:web
 ```
 
+### Rust Examples
+
+#### Flappy Bird (Rust)
+```sh
+cargo run -p flappy-bird
+```
+
 **Controls (all Flappy Bird variants):**
 - `SPACE` or `Left Click` - Flap / Jump
 - `R` - Restart
@@ -244,9 +260,7 @@ npm run start:web
 The Rust SDK provides zero-overhead access to the engine with full type safety:
 
 ```rust
-use goud_engine::sdk::{GoudGame, GameConfig};
-use goud_engine::sdk::components::{Transform2D, Sprite};
-use goud_engine::core::math::Vec2;
+use goud_engine::*;
 
 fn main() {
     // Create game with fluent config

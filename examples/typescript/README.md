@@ -64,7 +64,7 @@ identical across both targets.
 ## Adding a New Example
 
 1. Create a directory under `examples/typescript/`
-2. Add a `package.json` with a file dependency on `@goudengine/sdk`
+2. Add a `package.json` with a file dependency on `goudengine`
 3. Write shared game logic in a platform-agnostic `.ts` file
 4. Add `desktop.ts` and `web/index.html` entry points
 5. Match constants and physics with C#/Python versions for parity testing

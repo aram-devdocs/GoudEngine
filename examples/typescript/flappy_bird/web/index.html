@@ -35,13 +35,13 @@
 <script type="importmap">
 {
   "imports": {
-    "@goudengine/sdk/web": "/sdks/typescript/dist/web/generated/web/index.g.js"
+    "goudengine/web": "/sdks/typescript/dist/web/generated/web/index.g.js"
   }
 }
 </script>
 
 <script type="module">
-import { GoudGame } from '@goudengine/sdk/web';
+import { GoudGame } from 'goudengine/web';
 import { FlappyBirdGame, SCREEN_WIDTH, SCREEN_HEIGHT, BASE_HEIGHT } from '../dist/game.js';
 
 const canvas = document.getElementById('c');

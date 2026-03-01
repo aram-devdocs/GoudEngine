@@ -1,144 +1,182 @@
 # GoudEngine Python SDK
 
-Python bindings for the GoudEngine game engine, providing a Pythonic interface
-to the Rust core through ctypes FFI.
+[![PyPI](https://img.shields.io/pypi/v/goudengine.svg)](https://pypi.org/project/goudengine/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Design Philosophy
+Python SDK for GoudEngine. Build 2D and 3D games powered by a Rust core.
 
-**All logic lives in Rust.** This SDK is a thin wrapper that marshals data and
-calls FFI functions. This ensures consistent behavior across all language
-bindings (C#, Python, Rust native).
+## Install
 
-## Installation
-
-### Prerequisites
-
-1. Build the GoudEngine native library:
-   ```bash
-   cd goud_engine
-   cargo build --release
-   ```
-
-2. The Python SDK will automatically locate the library in:
-   - `target/release/libgoud_engine.dylib` (macOS)
-   - `target/release/libgoud_engine.so` (Linux)
-   - `target/release/goud_engine.dll` (Windows)
-
-### Using the SDK
-
-```python
-# Add the SDK to your Python path
-import sys
-sys.path.insert(0, '/path/to/GoudEngine/sdks/python')
-
-from goud_engine import GoudContext, Transform2D, Sprite, Vec2
+```bash
+pip install goudengine
 ```
 
 ## Quick Start
 
-### Context Management
-
 ```python
-from goud_engine import GoudContext
+from goud_engine import GoudGame, Key
 
-# Create a context (manages an ECS world)
-ctx = GoudContext.create()
+game = GoudGame(800, 600, "My Game")
 
-# Spawn entities
-entity_id = ctx.spawn_entity()
-print(f"Spawned entity: {entity_id}")
+player_tex = game.load_texture("assets/player.png")
 
-# Check entity status
-print(f"Entity alive: {ctx.is_entity_alive(entity_id)}")
-print(f"Entity count: {ctx.entity_count()}")
+while not game.should_close():
+    game.begin_frame()
+    dt = game.delta_time
 
-# Despawn when done
-ctx.despawn_entity(entity_id)
+    if game.is_key_just_pressed(Key.ESCAPE):
+        game.close()
 
-# Clean up
-ctx.destroy()
+    game.draw_sprite(player_tex, 400, 300, 64, 64)
+
+    game.end_frame()
+
+game.destroy()
 ```
 
-### Using Context Manager
+## Flappy Bird Example
 
-```python
-from goud_engine import GoudContext
-
-with GoudContext.create() as ctx:
-    entity_id = ctx.spawn_entity()
-    # Context automatically destroyed when exiting the block
-```
-
-### Transform2D Component
+Here's a condensed version of the [complete Flappy Bird example](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/python/flappy_bird.py):
 
 ```python
 import math
-from goud_engine import Transform2D, Vec2
+import random
+from goud_engine import GoudGame, Key, MouseButton
 
-# Factory methods (all delegate to Rust FFI)
-transform = Transform2D.from_position(100, 50)
-transform = Transform2D.from_rotation(math.pi / 4)  # 45 degrees
-transform = Transform2D.look_at(0, 0, 100, 100)  # Position looking at target
+# Constants
+SCREEN_W, SCREEN_H = 288, 512
+GRAVITY = 9.8
+JUMP_STRENGTH = -3.5
+PIPE_SPEED = 1.0
+PIPE_SPAWN_INTERVAL = 1.5
+PIPE_GAP = 100
+TARGET_FPS = 120
 
-# Mutation methods (chainable)
-transform = Transform2D()
-transform.translate(10, 20).rotate(0.5).scale_by(2, 2)
+game = GoudGame(SCREEN_W, SCREEN_H + 112, "Flappy Bird")
 
-# Direction vectors
-forward = transform.forward()  # Returns Vec2
-right = transform.right()
+# Load textures
+bg_tex   = game.load_texture("assets/sprites/background-day.png")
+bird_frames = [
+    game.load_texture("assets/sprites/bluebird-downflap.png"),
+    game.load_texture("assets/sprites/bluebird-midflap.png"),
+    game.load_texture("assets/sprites/bluebird-upflap.png"),
+]
+pipe_tex  = game.load_texture("assets/sprites/pipe-green.png")
+base_tex  = game.load_texture("assets/sprites/base.png")
+digit_tex = [game.load_texture(f"assets/sprites/{i}.png") for i in range(10)]
 
-# Point transformation
-world_point = transform.transform_point(5, 5)  # Local to world
-local_point = transform.inverse_transform_point(105, 55)  # World to local
+# Bird state
+bird_x, bird_y = SCREEN_W / 4, SCREEN_H / 2
+velocity = 0.0
+rotation = 0.0
+frame_idx = 0
+frame_timer = 0.0
+jump_cooldown = 0.0
 
-# Interpolation
-transform_a = Transform2D.from_position(0, 0)
-transform_b = Transform2D.from_position(100, 100)
-mid = transform_a.lerp(transform_b, 0.5)  # Midpoint
+# Pipe state
+pipes = []          # list of dicts: {x, top_y, bottom_y, counted}
+pipe_timer = 0.0
+score = 0
+
+def reset():
+    global bird_x, bird_y, velocity, rotation, frame_idx, frame_timer
+    global jump_cooldown, pipes, pipe_timer, score
+    bird_x, bird_y = SCREEN_W / 4, SCREEN_H / 2
+    velocity = rotation = frame_idx = frame_timer = jump_cooldown = 0.0
+    pipes.clear()
+    pipe_timer = score = 0
+
+def spawn_pipe():
+    gap_y = random.randint(PIPE_GAP, SCREEN_H - PIPE_GAP)
+    pipes.append({
+        "x": SCREEN_W,
+        "top_y": gap_y - PIPE_GAP - 320,   # 320 = pipe image height
+        "bottom_y": gap_y + PIPE_GAP,
+        "counted": False,
+    })
+
+def aabb(ax, ay, aw, ah, bx, by, bw, bh):
+    return ax < bx + bw and ax + aw > bx and ay < by + bh and ay + ah > by
+
+reset()
+
+while not game.should_close():
+    game.begin_frame()
+    dt = game.delta_time
+
+    # --- Input ---
+    if game.is_key_just_pressed(Key.ESCAPE):
+        game.close()
+    if game.is_key_just_pressed(Key.R):
+        reset()
+
+    jump = (game.is_key_just_pressed(Key.SPACE) or
+            game.is_mouse_button_just_pressed(MouseButton.LEFT))
+    if jump and jump_cooldown <= 0:
+        velocity = JUMP_STRENGTH * TARGET_FPS
+        jump_cooldown = 0.30
+    jump_cooldown = max(0.0, jump_cooldown - dt)
+
+    # --- Physics ---
+    velocity += GRAVITY * dt * TARGET_FPS
+    bird_y += velocity * dt
+    target_rot = max(-45, min(45, velocity * 3))
+    rotation += (target_rot - rotation) * 0.03
+
+    # --- Bird animation ---
+    frame_timer += dt
+    if frame_timer >= 0.1:
+        frame_idx = (frame_idx + 1) % 3
+        frame_timer = 0.0
+
+    # --- Pipes ---
+    pipe_timer += dt
+    if pipe_timer >= PIPE_SPAWN_INTERVAL:
+        spawn_pipe()
+        pipe_timer = 0.0
+
+    survived = []
+    for p in pipes:
+        p["x"] -= PIPE_SPEED * dt * TARGET_FPS
+        if p["x"] + 52 < 0:            # pipe scrolled off screen
+            score += 1
+            continue
+        if (aabb(bird_x, bird_y, 34, 24, p["x"], p["top_y"],    52, 320) or
+            aabb(bird_x, bird_y, 34, 24, p["x"], p["bottom_y"], 52, 320) or
+            bird_y < 0 or bird_y > SCREEN_H):
+            reset()
+            break
+        survived.append(p)
+    else:
+        pipes = survived
+
+    # --- Draw ---
+    game.draw_sprite(bg_tex,   SCREEN_W / 2, SCREEN_H / 2, SCREEN_W, SCREEN_H)
+
+    for p in pipes:
+        game.draw_sprite(pipe_tex, p["x"] + 26, p["top_y"]    + 160, 52, 320, math.pi)
+        game.draw_sprite(pipe_tex, p["x"] + 26, p["bottom_y"] + 160, 52, 320)
+
+    game.draw_sprite(
+        bird_frames[frame_idx],
+        bird_x + 17, bird_y + 12, 34, 24,
+        math.radians(rotation)
+    )
+
+    # Score digits
+    digits = [int(d) for d in str(max(score, 0))]
+    start_x = (SCREEN_W - len(digits) * 24) / 2 + 12
+    for i, d in enumerate(digits):
+        game.draw_sprite(digit_tex[d], start_x + i * 24, 50, 24, 36)
+
+    game.draw_sprite(base_tex, SCREEN_W / 2, SCREEN_H + 56, SCREEN_W, 112)
+
+    game.end_frame()
+
+game.destroy()
 ```
 
-### Sprite Component
-
-```python
-from goud_engine import Sprite, Color
-
-# Create a sprite
-sprite = Sprite(texture_handle=42)
-
-# Builder pattern (returns new instances)
-sprite = (Sprite(texture_handle=42)
-    .with_color(1.0, 0.0, 0.0, 1.0)  # Red tint
-    .with_flip_x(True)
-    .with_anchor(0.5, 1.0)  # Bottom-center
-    .with_source_rect(0, 0, 32, 32)  # Sprite sheet
-    .with_custom_size(64, 64))  # Scale to 64x64
-
-# Mutable operations (modify in place)
-sprite.color = Color.red()
-sprite.flip_x = True
-sprite.set_source_rect(32, 0, 32, 32)  # Next frame
-```
-
-### High-Level Game API
-
-```python
-from goud_engine import GoudGame, Transform2D, Sprite
-
-# Create game (placeholder - full implementation coming)
-game = GoudGame(800, 600, "My Game")
-
-# Spawn entities
-entity = game.spawn()
-
-# Batch spawn
-entities = game.spawn_batch(100)
-
-# Clean up
-game.close()
-```
-
-## API Reference
+## API Overview
 
 ### Types
 
@@ -201,34 +239,28 @@ game.close()
 | `set_custom_size(...)` | Mutate size |
 | `clear_custom_size()` | Clear size |
 
-## Error Handling
+## Platform Support
 
-```python
-from goud_engine import GoudContext, GoudEngineError
+| OS | Architecture | Status |
+|----|-------------|--------|
+| Windows | x64 | Supported |
+| macOS | x64 | Supported |
+| macOS | ARM64 (Apple Silicon) | Supported |
+| Linux | x64 | Supported |
 
-try:
-    ctx = GoudContext.create()
-    # ... operations
-except GoudEngineError as e:
-    print(f"Engine error: {e}")
-```
+Native libraries are bundled in the PyPI package.
 
-## Thread Safety
+## Development
 
-- Context creation/destruction is thread-safe
-- Individual contexts are NOT thread-safe
-- Use one context per thread, or synchronize access
-
-## Building from Source
+For contributors building from source:
 
 ```bash
-# Build the native library
-cd goud_engine
 cargo build --release
-
-# The Python SDK automatically finds the library in target/release/
+python3 sdks/python/test_bindings.py
 ```
 
-## License
+## Links
 
-MIT License - same as GoudEngine core.
+- [Repository](https://github.com/aram-devdocs/GoudEngine)
+- [Examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/python)
+- [License: MIT](https://github.com/aram-devdocs/GoudEngine/blob/main/LICENSE)

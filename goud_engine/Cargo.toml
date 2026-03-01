@@ -1,9 +1,9 @@
 [package]
-name = "goud_engine"
+name = "goud-engine-core"
 version = "0.0.820" # x-release-please-version
 edition = "2021"
 license = "MIT"
-description = "GoudEngine core — internal implementation crate. Use goud-engine-sdk for the public API."
+description = "GoudEngine core — internal implementation crate. Use goud-engine for the public API."
 repository = "https://github.com/aram-devdocs/GoudEngine"
 homepage = "https://github.com/aram-devdocs/GoudEngine"
 readme = "README.md"
@@ -73,6 +73,7 @@ web-sys = { version = "0.3", optional = true, features = [
 ] }
 
 [lib]
+name = "goud_engine"
 crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"
 

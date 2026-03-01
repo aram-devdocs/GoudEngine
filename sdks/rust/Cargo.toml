@@ -1,8 +1,8 @@
 [package]
-name = "goud-engine-sdk"
+name = "goud-engine"
 version = "0.0.820" # x-release-please-version
 edition = "2021"
-description = "GoudEngine Rust SDK — native re-export of the engine API"
+description = "GoudEngine — build 2D and 3D games in Rust with zero FFI overhead"
 license = "MIT"
 repository = "https://github.com/aram-devdocs/GoudEngine"
 homepage = "https://github.com/aram-devdocs/GoudEngine"
@@ -11,4 +11,4 @@ keywords = ["game-engine", "ecs", "2d", "3d", "rust"]
 categories = ["game-engines", "graphics"]
 
 [dependencies]
-goud_engine = { version = "=0.0.820", path = "../../goud_engine" } # x-release-please-version
+goud-engine-core = { version = "=0.0.820", path = "../../goud_engine" } # x-release-please-version

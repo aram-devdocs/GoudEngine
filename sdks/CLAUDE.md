@@ -15,7 +15,7 @@ If you find logic in an SDK that should be in Rust, move it.
 - `csharp.tests/` — C# SDK test suite (xUnit)
 - `python/` — Python SDK (ctypes-based FFI bindings)
 - `typescript/` — TypeScript SDK: Node.js desktop (napi-rs) + Web browser (wasm-bindgen)
-- `rust/` — Rust SDK re-export crate (`goud-engine-sdk`), zero FFI overhead
+- `rust/` — Rust SDK re-export crate (`goud-engine`), zero FFI overhead
 
 ## Feature Parity
 

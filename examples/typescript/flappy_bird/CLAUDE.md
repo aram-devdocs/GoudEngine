@@ -36,7 +36,7 @@ npm run web              # python3 -m http.server 8765
 ```
 
 Then open `http://localhost:8765/examples/typescript/flappy_bird/web/index.html`.
-The web entry uses an importmap to resolve `@goudengine/sdk/web` from the SDK dist.
+The web entry uses an importmap to resolve `goudengine/web` from the SDK dist.
 
 ## Architecture
 

@@ -1,0 +1,9 @@
+[package]
+name = "flappy-bird"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+goud-engine-core = { path = "../../../goud_engine" }
+rand = "0.8"

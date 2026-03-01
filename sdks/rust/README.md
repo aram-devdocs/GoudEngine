@@ -1,39 +1,133 @@
 # GoudEngine Rust SDK
 
-Standalone crate that re-exports the GoudEngine SDK module for Rust consumers.
-Unlike the C#, Python, and TypeScript SDKs which go through FFI, this crate
-links directly against the engine with zero overhead.
+[![crates.io](https://img.shields.io/crates/v/goud-engine.svg)](https://crates.io/crates/goud-engine)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Usage
+Build 2D and 3D games in Rust with zero FFI overhead.
 
-Add the dependency to your `Cargo.toml`:
+## Install
 
-```toml
-[dependencies]
-goud-engine-sdk = { path = "path/to/GoudEngine/sdks/rust" }
+```bash
+cargo add goud-engine
 ```
 
-Then use it in your code:
+## Quick Start
 
 ```rust
-use goud_engine_sdk::*;
+use goud_engine::*;
 
-// All types from goud_engine::sdk are available directly:
-// GoudGame, Transform2D, Sprite, Vec2, Color, etc.
+fn main() {
+    // GoudGame, Transform2D, Sprite, Vec2, Color, etc.
+    // are all available directly through this crate.
+}
 ```
+
+## Flappy Bird Example
+
+A complete Flappy Bird game is included in [`examples/rust/flappy_bird/`](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/rust/flappy_bird). Run it with:
+
+```bash
+cargo run -p flappy-bird
+```
+
+The example demonstrates the main loop, sprite rendering, physics, and collision detection:
+
+```rust
+use goud_engine::*;
+
+fn main() {
+    let engine = Engine::new(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, "Flappy Bird");
+    let mut manager = GameManager::new(&engine, "examples/csharp/flappy_goud/assets");
+    manager.start();
+    engine.enable_blending();
+
+    while !engine.should_close() {
+        let dt = engine.poll_events();
+        engine.begin_frame();
+        engine.clear(0.4, 0.7, 0.9, 1.0);
+
+        if !manager.update(&engine, dt) { break; }
+        manager.draw(&engine);
+
+        engine.end_frame();
+        engine.swap_buffers();
+    }
+}
+
+// Bird physics: gravity, jump cooldown, rotation smoothing
+pub struct Movement {
+    pub velocity: f32,
+    gravity: f32,
+    jump_strength: f32,
+    jump_cooldown_timer: f32,
+}
+
+impl Movement {
+    pub fn apply_gravity(&mut self, dt: f32) {
+        self.velocity += self.gravity * dt * TARGET_FPS;
+        self.jump_cooldown_timer = (self.jump_cooldown_timer - dt).max(0.0);
+    }
+
+    pub fn try_jump(&mut self) {
+        if self.jump_cooldown_timer <= 0.0 {
+            self.velocity = self.jump_strength * TARGET_FPS;
+            self.jump_cooldown_timer = JUMP_COOLDOWN;
+        }
+    }
+}
+
+// Pipe pair: random gap position, AABB collision
+pub struct Pipe { pub x: f32, pub gap_y: f32 }
+
+impl Pipe {
+    pub fn collides_with_bird(&self, bird_x: f32, bird_y: f32, w: f32, h: f32) -> bool {
+        aabb_overlap(bird_x, bird_y, w, h, self.x, self.top_pipe_y(), PIPE_IMAGE_WIDTH, PIPE_IMAGE_HEIGHT)
+        || aabb_overlap(bird_x, bird_y, w, h, self.x, self.bottom_pipe_y(), PIPE_IMAGE_WIDTH, PIPE_IMAGE_HEIGHT)
+    }
+}
+
+// Game loop: update → collision → spawn pipes → draw layers back-to-front
+pub fn update(&mut self, engine: &Engine, dt: f32) -> bool {
+    self.bird.update(dt, engine.is_key_pressed(KEY_SPACE));
+
+    for pipe in &mut self.pipes {
+        pipe.update(dt);
+        if pipe.collides_with_bird(self.bird.x, self.bird.y, BIRD_WIDTH, BIRD_HEIGHT) {
+            self.start(); // reset on collision
+            return true;
+        }
+    }
+
+    self.pipe_spawn_timer += dt;
+    if self.pipe_spawn_timer > PIPE_SPAWN_INTERVAL {
+        self.pipe_spawn_timer = 0.0;
+        self.pipes.push(Pipe::new());
+    }
+
+    self.pipes.retain(|p| !p.is_off_screen());
+    true
+}
+```
+
+Controls: Space / Left Click to flap, R to restart, Escape to quit.
 
 ## Why a Separate Crate
 
-A standalone crate lets downstream Rust projects depend on `goud-engine-sdk`
-without pulling in FFI exports, codegen build scripts, or napi dependencies.
-It also provides a clean versioned package boundary for crates.io publishing.
+This crate re-exports `goud_engine::sdk::*` from the internal engine. A standalone crate lets you depend on `goud-engine` without pulling in FFI exports, codegen build scripts, or napi dependencies. It also provides a clean versioned package for crates.io.
+
+The internal crate `goud-engine-core` on crates.io is not intended for direct use.
 
 ## Design
 
-This crate contains a single re-export:
+Unlike the C#, Python, and TypeScript SDKs which call through FFI, this crate links directly against the Rust engine with zero overhead.
 
 ```rust
+// This crate is a single re-export:
 pub use goud_engine::sdk::*;
 ```
 
-All implementation lives in `goud_engine/src/sdk/`. This crate is a pass-through.
+## Links
+
+- [Repository](https://github.com/aram-devdocs/GoudEngine)
+- [Rust Examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/rust)
+- [License: MIT](https://github.com/aram-devdocs/GoudEngine/blob/main/LICENSE)
