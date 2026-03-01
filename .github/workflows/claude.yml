@@ -43,7 +43,7 @@ jobs:
       - name: Run Claude Code
         uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           trigger_phrase: "@claude"
           claude_args: |
             --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Read,Write,Edit,MultiEdit,Glob,Grep"
