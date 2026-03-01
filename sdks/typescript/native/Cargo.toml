@@ -1,6 +1,6 @@
 [package]
 name = "goud-engine-node"
-version = "0.0.815"
+version = "0.0.816" # x-release-please-version
 edition = "2021"
 license = "MIT"
 description = "Node.js native addon for GoudEngine (napi-rs)"
