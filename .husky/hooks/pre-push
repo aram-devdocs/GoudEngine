@@ -63,7 +63,9 @@ fi
 # =============================================================================
 echo ""
 echo "=== [7/11] Running Python SDK tests ==="
-if command -v python3 >/dev/null 2>&1; then
+if [ ! -d "$REPO_ROOT/sdks/python/goud_engine/generated" ]; then
+    echo "Warning: Python SDK generated files not found (run codegen first), skipping"
+elif command -v python3 >/dev/null 2>&1; then
     export PYTHONPATH="$REPO_ROOT/sdks/python:$PYTHONPATH"
 
     if [ "$(uname)" = "Darwin" ]; then
