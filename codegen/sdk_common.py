@@ -75,8 +75,11 @@ PYTHON_TYPES = {
 
 TYPESCRIPT_TYPES = {
     "f32": "number", "f64": "number",
-    "u32": "number", "u64": "number", "i32": "number", "i64": "number",
+    "u8": "number", "u16": "number", "u32": "number", "u64": "number",
+    "i8": "number", "i16": "number", "i32": "number", "i64": "number",
+    "usize": "number", "ptr": "number",
     "bool": "boolean", "string": "string", "void": "void",
+    "u8[]": "Uint8Array",
 }
 
 CTYPES_MAP = {

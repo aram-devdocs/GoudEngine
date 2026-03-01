@@ -44,6 +44,14 @@ IFACE_TYPES = {
 }
 
 
+TS_EXCLUDE_METHODS = {
+    "componentRegisterType", "componentAdd", "componentRemove",
+    "componentHas", "componentGet", "componentGetMut",
+    "componentAddBatch", "componentRemoveBatch", "componentHasBatch",
+    "isAliveBatch",
+}
+
+
 def ts_type(t: str) -> str:
     base = t.rstrip("?")
     mapped = TYPESCRIPT_TYPES.get(base, base)
@@ -71,7 +79,9 @@ def gen_interface():
     lines.append("export interface IVec3 { x: number; y: number; z: number; }")
     lines.append("export interface IColor { r: number; g: number; b: number; a: number; }")
     lines.append("export interface IRect { x: number; y: number; width: number; height: number; }")
-    lines.append("export interface IRenderStats { drawCalls: number; triangles: number; textureBinds: number; shaderBinds: number; }")
+    rs_fields = schema["types"]["RenderStats"]["fields"]
+    rs_str = "; ".join(f"{to_camel(f['name'])}: number" for f in rs_fields)
+    lines.append(f"export interface IRenderStats {{ {rs_str}; }}")
     lines.append("export interface IContact { pointX: number; pointY: number; normalX: number; normalY: number; penetration: number; }")
     lines.append("")
 
@@ -110,6 +120,8 @@ def gen_interface():
 
     for method in tool["methods"]:
         mn = to_camel(method["name"])
+        if mn in TS_EXCLUDE_METHODS:
+            continue
         params = method.get("params", [])
         ret = method.get("returns", "void")
 
@@ -216,7 +228,11 @@ def gen_math():
             elif mn == "distance":
                 lines.append(f"  {mn}(other: {type_name}): number {{ return this.sub(other).length(); }}")
             elif mn == "lerp":
-                lines.append(f"  {mn}(other: {type_name}, t: number): {type_name} {{ return new {type_name}(this.x + (other.x - this.x) * t, this.y + (other.y - this.y) * t); }}")
+                field_names = [to_camel(f['name']) for f in fields]
+                interps = ", ".join(
+                    f"this.{fn} + (other.{fn} - this.{fn}) * t" for fn in field_names
+                )
+                lines.append(f"  {mn}(other: {type_name}, t: number): {type_name} {{ return new {type_name}({interps}); }}")
             elif mn == "withAlpha":
                 lines.append(f"  {mn}(a: number): {type_name} {{ return new {type_name}(this.r, this.g, this.b, a); }}")
             elif mn == "contains":
@@ -239,7 +255,7 @@ NATIVE_KNOWN_METHODS = {
     "isMouseButtonPressed", "isMouseButtonJustPressed", "isMouseButtonJustReleased",
     "getMousePosition", "getMouseDelta", "getScrollDelta",
     "spawnEmpty", "spawnBatch", "despawn", "entityCount", "isAlive",
-    "addTransform2d", "getTransform2d", "setTransform2d", "hasTransform2d", "removeTransform2d",
+    "addTransform2D", "getTransform2D", "setTransform2D", "hasTransform2D", "removeTransform2D",
     "addSprite", "getSprite", "setSprite", "hasSprite", "removeSprite",
     "addName", "getName", "hasName", "removeName",
     "drawSpriteRect", "setViewport", "enableDepthTest", "disableDepthTest",
@@ -298,6 +314,8 @@ def gen_node_wrapper():
 
     for method in tool["methods"]:
         mn = to_camel(method["name"])
+        if mn in TS_EXCLUDE_METHODS:
+            continue
         mm = tm["methods"].get(method["name"], {})
         params = method.get("params", [])
         ret = method.get("returns", "void")
@@ -328,7 +346,11 @@ def gen_node_wrapper():
             else:
                 ts_t = ts_iface_type(pt)
                 param_strs.append(f"{pn}{opt}: {ts_t}")
-                call_args.append(pn)
+                if can_be_optional[i]:
+                    default_val = p.get("default")
+                    call_args.append(f"{pn} ?? {default_val}")
+                else:
+                    call_args.append(pn)
 
         sig = ", ".join(param_strs)
         ts_ret = ts_iface_type(ret)
@@ -368,15 +390,15 @@ def gen_node_wrapper():
         elif mn == "isAlive":
             lines.append("    return this.native.isAlive(entity as unknown as NativeEntity);")
         elif mn == "addTransform2d":
-            lines.append("    this.native.addTransform2d(entity as unknown as NativeEntity, transform as any);")
+            lines.append("    this.native.addTransform2D(entity as unknown as NativeEntity, transform as any);")
         elif mn == "getTransform2d":
-            lines.append("    return this.native.getTransform2d(entity as unknown as NativeEntity) ?? null;")
+            lines.append("    return this.native.getTransform2D(entity as unknown as NativeEntity) ?? null;")
         elif mn == "setTransform2d":
-            lines.append("    this.native.setTransform2d(entity as unknown as NativeEntity, transform as any);")
+            lines.append("    this.native.setTransform2D(entity as unknown as NativeEntity, transform as any);")
         elif mn == "hasTransform2d":
-            lines.append("    return this.native.hasTransform2d(entity as unknown as NativeEntity);")
+            lines.append("    return this.native.hasTransform2D(entity as unknown as NativeEntity);")
         elif mn == "removeTransform2d":
-            lines.append("    return this.native.removeTransform2d(entity as unknown as NativeEntity);")
+            lines.append("    return this.native.removeTransform2D(entity as unknown as NativeEntity);")
         elif mn == "addSprite":
             lines.append("    this.native.addSprite(entity as unknown as NativeEntity, sprite as any);")
         elif mn == "getSprite":

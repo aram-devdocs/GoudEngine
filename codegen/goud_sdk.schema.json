@@ -226,7 +226,8 @@
       "fields": [
         {"name": "drawCalls",    "type": "u32", "doc": "Number of draw calls this frame"},
         {"name": "triangles",    "type": "u32", "doc": "Number of triangles rendered"},
-        {"name": "textureBinds", "type": "u32", "doc": "Number of texture bind operations"}
+        {"name": "textureBinds", "type": "u32", "doc": "Number of texture bind operations"},
+        {"name": "shaderBinds",  "type": "u32", "doc": "Number of shader bind operations"}
       ]
     },
     "Contact": {

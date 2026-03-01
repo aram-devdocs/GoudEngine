@@ -8,7 +8,7 @@
     "Transform2D": {"ffi_name": "FfiTransform2D",  "fields": ["position_x", "position_y", "rotation", "scale_x", "scale_y"]},
     "Sprite":      {"ffi_name": "FfiSprite",       "fields": ["texture_handle", "color_r", "color_g", "color_b", "color_a", "source_rect_x", "source_rect_y", "source_rect_width", "source_rect_height", "has_source_rect", "flip_x", "flip_y", "anchor_x", "anchor_y", "custom_size_x", "custom_size_y", "has_custom_size"]},
     "Entity":      {"ffi_name": "u64", "sentinel": "0xFFFFFFFFFFFFFFFF"},
-    "RenderStats": {"ffi_name": "GoudRenderStats", "fields": ["draw_calls", "triangles", "texture_binds"]},
+    "RenderStats": {"ffi_name": "GoudRenderStats", "fields": ["draw_calls", "triangles", "texture_binds", "shader_binds"]},
     "Contact":     {"ffi_name": "GoudContact",     "fields": ["point_x", "point_y", "normal_x", "normal_y", "penetration"]},
     "Vec3":        {"ffi_name": "FfiVec3",          "fields": ["x", "y", "z"]},
     "Mat3x3":      {"ffi_name": "FfiMat3x3",        "fields": ["m"]}
