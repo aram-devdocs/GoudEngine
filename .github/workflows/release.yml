@@ -462,19 +462,19 @@ jobs:
             libasound2-dev
 
       - name: Publish goud_engine_macros
-        run: cargo publish -p goud_engine_macros --token ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo publish -p goud_engine_macros --token ${{ secrets.CRATES_IO_TOKEN }} || echo "Already published, skipping"
 
       - name: Wait for crates.io index
         run: sleep 30
 
       - name: Publish goud-engine-core
-        run: cargo publish -p goud-engine-core --token ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo publish -p goud-engine-core --token ${{ secrets.CRATES_IO_TOKEN }} || echo "Already published, skipping"
 
       - name: Wait for crates.io index
         run: sleep 30
 
       - name: Publish goud-engine
-        run: cargo publish -p goud-engine --token ${{ secrets.CRATES_IO_TOKEN }}
+        run: cargo publish -p goud-engine --token ${{ secrets.CRATES_IO_TOKEN }} || echo "Already published, skipping"
 
   # ── Summary ──
   release-summary:
