@@ -1,0 +1,4 @@
+include goud_engine/*.so
+include goud_engine/*.dylib
+include goud_engine/*.dll
+include README.md

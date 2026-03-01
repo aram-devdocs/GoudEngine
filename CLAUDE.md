@@ -127,20 +127,20 @@ cargo clippy -- -D warnings
 cargo deny check
 ```
 
-### Version Management
-You MUST increment the version before packaging:
-```bash
-./increment_version.sh         # Patch (0.0.X)
-./increment_version.sh --minor # Minor (0.X.0)
-./increment_version.sh --major # Major (X.0.0)
-```
+### Version Management (Automated)
+Versioning is handled by **release-please** via conventional commits:
+1. Use conventional commit prefixes (`feat:`, `fix:`, etc.) in PR titles
+2. On merge to main, release-please creates/updates a Release PR
+3. When the Release PR merges, it creates a tag + GitHub release
+4. The tag triggers the publish pipeline (npm, NuGet, PyPI, crates.io)
+
+For local development, `./increment_version.sh` still works but is not required for releases.
 
 ### Local Development Cycle
 ```bash
-./increment_version.sh          # 1. Increment version
-./build.sh                      # 2. Build everything
-./package.sh --local           # 3. Deploy to local NuGet
-./dev.sh --game <game> --local # 4. Test with example
+./build.sh                      # 1. Build everything
+./package.sh --local           # 2. Deploy to local NuGet
+./dev.sh --game <game> --local # 3. Test with example
 ```
 
 ## Architecture Overview

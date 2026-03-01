@@ -3,6 +3,12 @@ name = "goud_engine"
 version = "0.0.815"
 edition = "2021"
 license = "MIT"
+description = "GoudEngine core — internal implementation crate. Use goud-engine-sdk for the public API."
+repository = "https://github.com/aram-devdocs/GoudEngine"
+homepage = "https://github.com/aram-devdocs/GoudEngine"
+readme = "README.md"
+keywords = ["game-engine", "ecs", "rendering", "ffi"]
+categories = ["game-engines", "graphics", "rendering"]
 
 # Enable parallel compilation
 [profile.dev]

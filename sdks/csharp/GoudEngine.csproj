@@ -6,17 +6,21 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>GoudEngine</PackageId>
-    <Version>0.0.815</Version>
+    <Version>0.0.815</Version> <!-- x-release-please-version -->
     <Authors>Aram Hammoudeh</Authors>
     <Description>Rust-powered game engine for C# developers using FFI.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageOutputPath>../nuget_package_output</PackageOutputPath>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/aram-devdocs/GoudEngine</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
 
   <ItemGroup>
     <None Include="runtimes/**" Pack="true" PackagePath="runtimes/" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
   <!-- Exclude nested SDK paths from compilation -->
@@ -27,11 +31,19 @@
 
   <Target Name="CopyNativeLibraries" AfterTargets="Build">
     <Copy SourceFiles="runtimes/osx-x64/native/libgoud_engine.dylib"
-      DestinationFolder="$(OutputPath)" Condition="'$(OS)' == 'OSX' And Exists('runtimes/osx-x64/native/libgoud_engine.dylib')" />
+      DestinationFolder="$(OutputPath)"
+      Condition="'$(OS)' == 'OSX' And Exists('runtimes/osx-x64/native/libgoud_engine.dylib')" />
+    <Copy SourceFiles="runtimes/osx-arm64/native/libgoud_engine.dylib"
+      DestinationFolder="$(OutputPath)"
+      Condition="'$(OS)' == 'OSX' And Exists('runtimes/osx-arm64/native/libgoud_engine.dylib')" />
     <Copy SourceFiles="runtimes/linux-x64/native/libgoud_engine.so"
-      DestinationFolder="$(OutputPath)" Condition="'$(OS)' == 'Linux' And Exists('runtimes/linux-x64/native/libgoud_engine.so')" />
-    <Copy SourceFiles="runtimes/win-x64/native/goud_engine.dll" DestinationFolder="$(OutputPath)"
+      DestinationFolder="$(OutputPath)"
+      Condition="'$(OS)' == 'Linux' And Exists('runtimes/linux-x64/native/libgoud_engine.so')" />
+    <Copy SourceFiles="runtimes/win-x64/native/goud_engine.dll"
+      DestinationFolder="$(OutputPath)"
       Condition="'$(OS)' == 'Windows_NT' And Exists('runtimes/win-x64/native/goud_engine.dll')" />
   </Target>
+
+  <Import Project="build/GoudEngine.targets" Condition="Exists('build/GoudEngine.targets')" />
 
 </Project>

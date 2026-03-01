@@ -1,0 +1,34 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "include-component-in-tag": false,
+      "changelog-sections": [
+        { "type": "feat", "section": "Features" },
+        { "type": "fix", "section": "Bug Fixes" },
+        { "type": "perf", "section": "Performance" },
+        { "type": "refactor", "section": "Refactoring" },
+        { "type": "docs", "section": "Documentation", "hidden": true },
+        { "type": "chore", "section": "Maintenance", "hidden": true },
+        { "type": "ci", "section": "CI/CD", "hidden": true },
+        { "type": "test", "section": "Tests", "hidden": true },
+        { "type": "build", "section": "Build", "hidden": true }
+      ],
+      "extra-files": [
+        "goud_engine/Cargo.toml",
+        "sdks/rust/Cargo.toml",
+        "sdks/typescript/native/Cargo.toml",
+        "goud_engine_macros/Cargo.toml",
+        "sdks/typescript/package.json",
+        "codegen/goud_sdk.schema.json",
+        {
+          "type": "generic",
+          "path": "sdks/csharp/GoudEngine.csproj"
+        }
+      ]
+    }
+  }
+}

@@ -71,12 +71,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/goudengine/GoudEngine.git",
+    "url": "https://github.com/aram-devdocs/GoudEngine.git",
     "directory": "sdks/typescript"
   },
-  "homepage": "https://github.com/goudengine/GoudEngine#readme",
+  "homepage": "https://github.com/aram-devdocs/GoudEngine#readme",
   "bugs": {
-    "url": "https://github.com/goudengine/GoudEngine/issues"
+    "url": "https://github.com/aram-devdocs/GoudEngine/issues"
   },
   "devDependencies": {
     "@napi-rs/cli": "^2.18.0",

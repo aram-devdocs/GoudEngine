@@ -2,7 +2,12 @@
 
 # increment_version.sh
 #
-# This script increments version numbers across ALL GoudEngine project files:
+# DEPRECATED: Versioning is now handled automatically by release-please.
+# Use conventional commits (feat:, fix:, etc.) and merge to main.
+# release-please will create a Release PR with the correct version bumps.
+#
+# This script is kept for local development convenience only.
+# It increments version numbers across ALL GoudEngine project files:
 # - goud_engine/Cargo.toml (source of truth)
 # - sdks/csharp/GoudEngine.csproj
 # - sdks/typescript/package.json
