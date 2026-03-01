@@ -6,7 +6,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>GoudEngine</PackageId>
-    <Version>0.0.821</Version> <!-- x-release-please-version -->
+    <Version>0.0.822</Version> <!-- x-release-please-version -->
     <Authors>Aram Hammoudeh</Authors>
     <Description>Rust-powered game engine for .NET. Build 2D and 3D games with C#.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
