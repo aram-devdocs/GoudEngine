@@ -4,6 +4,8 @@ version = "0.0.821" # x-release-please-version
 edition = "2021"
 description = "Proc-macro crate for GoudEngine FFI code generation"
 license = "MIT"
+repository = "https://github.com/aram-devdocs/GoudEngine"
+homepage = "https://github.com/aram-devdocs/GoudEngine"
 
 [lib]
 proc-macro = true
