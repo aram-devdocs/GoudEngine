@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.824](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.823...v0.0.824) (2026-03-01)
+
+
+### Bug Fixes
+
+* handle already-published crates in release workflow ([#107](https://github.com/aram-devdocs/GoudEngine/issues/107)) ([cd2e6c1](https://github.com/aram-devdocs/GoudEngine/commit/cd2e6c1042a9180a0a28731dd2b825ea42fd9c39))
+
 ## [0.0.823](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.822...v0.0.823) (2026-03-01)
 
 
