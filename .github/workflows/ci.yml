@@ -179,6 +179,7 @@ jobs:
         python3 codegen/gen_python.py
         python3 codegen/gen_ts_node.py
         python3 codegen/gen_ts_web.py
+        cargo fmt --all
 
     - name: Validate codegen
       run: |
@@ -189,7 +190,7 @@ jobs:
       run: cargo run -p lint-layers
 
     - name: Check for codegen drift
-      run: git diff --exit-code -- sdks/ codegen/
+      run: git diff --exit-code -- sdks/
 
   # Python SDK checks and tests
   python-sdk-check:

@@ -2583,18 +2583,6 @@
           "returns": "void"
         },
         {
-          "name": "updateFrame",
-          "doc": "Advance timing by the given delta (seconds). Increments frame count and accumulates total time.",
-          "params": [
-            {
-              "name": "dt",
-              "type": "f64",
-              "doc": "Delta time in seconds"
-            }
-          ],
-          "returns": "void"
-        },
-        {
           "name": "run",
           "doc": "Runs the game loop. Calls the update callback each frame with delta time. Blocks until the window is closed.",
           "params": [
