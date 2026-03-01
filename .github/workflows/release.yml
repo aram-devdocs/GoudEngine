@@ -34,35 +34,9 @@ jobs:
         run: |
           PR_NUMBER=$(echo '${{ steps.release.outputs.pr }}' | jq -r '.number')
           echo "Enabling auto-merge on release PR #${PR_NUMBER}"
-          gh pr merge "${PR_NUMBER}" --auto --squash
+          gh pr merge "${PR_NUMBER}" --auto --squash --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # ── Sync example csproj versions after release ──
-  sync-example-versions:
-    name: Sync Example Versions
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Sync versions
-        run: ./scripts/sync-version.sh
-
-      - name: Commit if changed
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add examples/
-          if git diff --cached --quiet; then
-            echo "No example version changes needed"
-          else
-            git commit -m "chore: sync example versions to ${{ needs.release-please.outputs.version }}"
-            git push
-          fi
 
   # ── Step 2a: Build native libraries for all platforms ──
   build-native-libs:
@@ -78,7 +52,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             rid: linux-x64
             lib: libgoud_engine.so
-          - os: macos-13
+          - os: macos-latest
             target: x86_64-apple-darwin
             rid: osx-x64
             lib: libgoud_engine.dylib
@@ -103,7 +77,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libgl1-mesa-dev libglu1-mesa-dev \
-            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev
+            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev \
+            libasound2-dev
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }} -p goud_engine
@@ -139,7 +114,7 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             name: linux-x64-gnu
-          - os: macos-13
+          - os: macos-latest
             target: x86_64-apple-darwin
             name: darwin-x64
           - os: macos-latest
@@ -159,13 +134,21 @@ jobs:
         with:
           node-version: 20
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Install system deps (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             libgl1-mesa-dev libglu1-mesa-dev \
-            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev
+            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev \
+            libasound2-dev
+
+      - name: Generate napi source files
+        run: python3 codegen/gen_ts_node.py
 
       - name: Build napi addon
         working-directory: sdks/typescript
@@ -239,7 +222,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libgl1-mesa-dev libglu1-mesa-dev \
-            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev
+            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev \
+            libasound2-dev
 
       - name: Run codegen
         run: |
@@ -427,7 +411,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libgl1-mesa-dev libglu1-mesa-dev \
-            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev
+            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev \
+            libasound2-dev
 
       - name: Publish goud_engine
         run: cargo publish -p goud_engine --token ${{ secrets.CRATES_IO_TOKEN }}
