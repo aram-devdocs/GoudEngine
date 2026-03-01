@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.823](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.822...v0.0.823) (2026-03-01)
+
+
+### Bug Fixes
+
+* allow workflow_dispatch to trigger full publish pipeline ([#105](https://github.com/aram-devdocs/GoudEngine/issues/105)) ([d14e383](https://github.com/aram-devdocs/GoudEngine/commit/d14e3834cfef3e729d8e252bd513dece81b0fb68))
+
 ## [0.0.822](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.821...v0.0.822) (2026-03-01)
 
 
