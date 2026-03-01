@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.820](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.819...v0.0.820) (2026-03-01)
+
+
+### Bug Fixes
+
+* skip prepublishOnly during CI npm publish ([0fe80a8](https://github.com/aram-devdocs/GoudEngine/commit/0fe80a8582c068dae0ba46a3b227d2968602cbf9))
+
 ## [0.0.819](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.818...v0.0.819) (2026-03-01)
 
 
