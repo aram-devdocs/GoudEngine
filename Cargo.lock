@@ -1118,6 +1118,7 @@ dependencies = [
  "env_logger",
  "gl",
  "glfw",
+ "goud_engine_macros",
  "husky-rs",
  "image",
  "js-sys",
@@ -1135,6 +1136,17 @@ dependencies = [
  "web-sys",
  "wgpu",
  "winit",
+]
+
+[[package]]
+name = "goud_engine_macros"
+version = "0.0.815"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "syn 2.0.87",
 ]
 
 [[package]]

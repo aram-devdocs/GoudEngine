@@ -213,7 +213,9 @@ fn expand_goud_api(attrs: GoudApiAttrs, input: ItemImpl) -> syn::Result<TokenStr
     let mut cleaned_input = input.clone();
     for item in &mut cleaned_input.items {
         if let ImplItem::Fn(method) = item {
-            method.attrs.retain(|attr| !attr.path().is_ident("goud_api"));
+            method
+                .attrs
+                .retain(|attr| !attr.path().is_ident("goud_api"));
         }
     }
 

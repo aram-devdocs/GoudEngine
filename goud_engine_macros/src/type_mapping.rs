@@ -394,14 +394,20 @@ pub fn map_type(ty: &Type) -> FfiTypeInfo {
     // These types are defined in core/types.rs and core/context_registry.rs.
     const FFI_PASSTHROUGH_TYPES: &[(&str, &str)] = &[
         ("FfiTransform2D", "crate::core::types::FfiTransform2D"),
-        ("FfiTransform2DBuilder", "crate::core::types::FfiTransform2DBuilder"),
+        (
+            "FfiTransform2DBuilder",
+            "crate::core::types::FfiTransform2DBuilder",
+        ),
         ("FfiMat3x3", "crate::core::types::FfiMat3x3"),
         ("FfiSprite", "crate::core::types::FfiSprite"),
         ("FfiSpriteBuilder", "crate::core::types::FfiSpriteBuilder"),
         ("FfiColor", "crate::core::types::FfiColor"),
         ("FfiRect", "crate::core::types::FfiRect"),
         ("FfiVec2", "crate::core::types::FfiVec2"),
-        ("GoudContextId", "crate::core::context_registry::GoudContextId"),
+        (
+            "GoudContextId",
+            "crate::core::context_registry::GoudContextId",
+        ),
         ("GoudEntityId", "crate::core::types::GoudEntityId"),
         ("GoudResult", "crate::core::types::GoudResult"),
         ("GoudRenderStats", "crate::ffi::renderer::GoudRenderStats"),
