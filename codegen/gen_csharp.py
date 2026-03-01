@@ -46,6 +46,31 @@ def ffi_type(t: str) -> str:
     return CSHARP_FFI_TYPES.get(t, t)
 
 
+def _to_cs_field(snake: str) -> str:
+    """Convert _snake_case to _camelCase for C# private fields.
+
+    Examples: _delta_time -> _deltaTime, _title -> _title,
+              _total_time -> _totalTime, _frame_count -> _frameCount
+    """
+    parts = snake.lstrip('_').split('_')
+    return '_' + parts[0] + ''.join(p.capitalize() for p in parts[1:])
+
+
+def _cs_default_value(cs_ty: str) -> str:
+    """Return the C# default literal for a given C# type."""
+    if cs_ty == "string":
+        return '""'
+    if cs_ty == "double":
+        return "0.0"
+    if cs_ty == "float":
+        return "0.0f"
+    if cs_ty in ("uint", "int", "ulong", "long", "byte", "ushort", "short", "sbyte"):
+        return "0"
+    if cs_ty == "bool":
+        return "false"
+    return "default"
+
+
 def _cs_ffi_param_type(raw: str) -> str:
     """Convert an ffi_mapping param type to valid C# for NativeMethods."""
     ptr_map = {
@@ -740,6 +765,9 @@ _WINDOWED_BODIES: dict = {
     "DestroyTexture": [f"{_I}NativeMethods.goud_texture_destroy(_ctx, handle);"],
     "Close":          [f"{_I}NativeMethods.goud_window_set_should_close(_ctx, true);"],
     "ShouldClose":    [f"{_I}return NativeMethods.goud_window_should_close(_ctx);"],
+    "UpdateFrame":    [f"{_I}_deltaTime = (float)dt;",
+                       f"{_I}_frameCount++;",
+                       f"{_I}_totalTime += dt;"],
 }
 
 
@@ -924,7 +952,14 @@ def _safe_param_strs(params: list) -> list:
 def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = False):
     tool = schema["tools"][tool_name]
     class_name = tool_name
-    extra = ["        private float _deltaTime;"] if is_windowed else []
+    extra = []
+    if is_windowed:
+        for prop in tool.get("properties", []):
+            pm_check = tm.get("properties", {}).get(prop["name"], {})
+            if pm_check.get("source") == "cached":
+                pt_priv = cs_type(prop["type"])
+                field = _to_cs_field(pm_check.get("field", f"_{to_snake(prop['name'])}"))
+                extra.append(f"        private {pt_priv} {field};")
     ctor_params = tool.get("constructor", {}).get("params", [])
     ctor_ffi = tm.get("constructor", {}).get("ffi", "goud_context_create")
 
@@ -946,6 +981,23 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
         ctor_call = f"NativeMethods.{ctor_ffi}()"
 
     err_msg = "Failed to create GLFW window" if is_windowed else "Failed to create headless context"
+    # Build constructor body with cached field initialization
+    ctor_body_lines = [
+        f"            _ctx = {ctor_call};",
+        f'            if (!_ctx.IsValid) throw new Exception("{err_msg}");',
+    ]
+    if is_windowed:
+        ctor_param_names = {p["name"] for p in ctor_params}
+        for prop in tool.get("properties", []):
+            pm_init = tm.get("properties", {}).get(prop["name"], {})
+            if pm_init.get("source") == "cached":
+                field = _to_cs_field(pm_init.get("field", f"_{to_snake(prop['name'])}"))
+                if prop["name"] in ctor_param_names:
+                    ctor_body_lines.append(f"            {field} = {prop['name']};")
+                else:
+                    default_val = _cs_default_value(cs_type(prop["type"]))
+                    ctor_body_lines.append(f"            {field} = {default_val};")
+
     lines = [
         f"// {HEADER_COMMENT}",
         "using System;", "using System.Runtime.InteropServices;", "",
@@ -956,8 +1008,7 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
         "        private bool _disposed;",
         *extra, "",
         f"        public {class_name}({ctor_sig})", "        {",
-        f"            _ctx = {ctor_call};",
-        f'            if (!_ctx.IsValid) throw new Exception("{err_msg}");',
+        *ctor_body_lines,
         "        }", "",
     ]
 
@@ -968,8 +1019,10 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
         pm = tm.get("properties", {}).get(prop["name"], {})
         src = pm.get("source", "")
         if src == "cached":
-            lines.append(f"        public {pt} {pn} => _deltaTime;")
+            field = _to_cs_field(pm.get("field", f"_{to_snake(prop['name'])}"))
+            lines.append(f"        public {pt} {pn} => {field};")
         elif src == "computed":
+            # Computed properties reference their dependent cached fields
             lines.append(f"        public {pt} {pn} => _deltaTime > 0 ? 1f / _deltaTime : 0f;")
         elif "out_index" in pm:
             idx = pm["out_index"]
