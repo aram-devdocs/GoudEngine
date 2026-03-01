@@ -355,8 +355,8 @@ static CONTEXT_COMPONENT_STORAGE: Mutex<Option<HashMap<u64, ContextComponentStor
 
 /// Gets or initializes the context component storage map.
 fn get_context_storage_map(
-) -> std::sync::MutexGuard<'static, Option<HashMap<u64, ContextComponentStorage>>> {
-    CONTEXT_COMPONENT_STORAGE.lock().unwrap()
+) -> Option<std::sync::MutexGuard<'static, Option<HashMap<u64, ContextComponentStorage>>>> {
+    CONTEXT_COMPONENT_STORAGE.lock().ok()
 }
 
 // ============================================================================
@@ -379,15 +379,19 @@ struct ComponentTypeInfo {
 static COMPONENT_TYPE_REGISTRY: Mutex<Option<HashMap<u64, ComponentTypeInfo>>> = Mutex::new(None);
 
 /// Gets or initializes the component type registry.
-fn get_type_registry() -> std::sync::MutexGuard<'static, Option<HashMap<u64, ComponentTypeInfo>>> {
-    COMPONENT_TYPE_REGISTRY.lock().unwrap()
+fn get_type_registry(
+) -> Option<std::sync::MutexGuard<'static, Option<HashMap<u64, ComponentTypeInfo>>>> {
+    COMPONENT_TYPE_REGISTRY.lock().ok()
 }
 
 /// Registers a component type with the given information.
 ///
 /// Returns true if the type was newly registered, false if it already existed.
 fn register_component_type_internal(type_id_hash: u64, size: usize, align: usize) -> bool {
-    let mut registry = get_type_registry();
+    let mut registry = match get_type_registry() {
+        Some(r) => r,
+        None => return false,
+    };
     let map = registry.get_or_insert_with(HashMap::new);
 
     use std::collections::hash_map::Entry;
@@ -402,7 +406,7 @@ fn register_component_type_internal(type_id_hash: u64, size: usize, align: usize
 
 /// Looks up component type information by type ID hash.
 fn get_component_type_info(type_id_hash: u64) -> Option<ComponentTypeInfo> {
-    let registry = get_type_registry();
+    let registry = get_type_registry()?;
     registry.as_ref()?.get(&type_id_hash).cloned()
 }
 
@@ -540,7 +544,10 @@ pub unsafe extern "C" fn goud_component_add(
 
     // Check entity is alive using context registry
     {
-        let registry = get_context_registry().lock().unwrap();
+        let registry = match get_context_registry().lock() {
+            Ok(r) => r,
+            Err(_) => return GoudResult::err(crate::core::error::ERR_INTERNAL_ERROR),
+        };
         let context = match registry.get(context_id) {
             Some(ctx) => ctx,
             None => {
@@ -557,7 +564,10 @@ pub unsafe extern "C" fn goud_component_add(
     }
 
     // Get or create component storage for this context
-    let mut storage_map = get_context_storage_map();
+    let mut storage_map = match get_context_storage_map() {
+        Some(s) => s,
+        None => return GoudResult::err(crate::core::error::ERR_INTERNAL_ERROR),
+    };
     let map = storage_map.get_or_insert_with(HashMap::new);
 
     // Pack context ID into u64 for use as key
@@ -615,7 +625,10 @@ pub extern "C" fn goud_component_remove(
 
     // Check entity is alive using context registry
     {
-        let registry = get_context_registry().lock().unwrap();
+        let registry = match get_context_registry().lock() {
+            Ok(r) => r,
+            Err(_) => return GoudResult::err(crate::core::error::ERR_INTERNAL_ERROR),
+        };
         let context = match registry.get(context_id) {
             Some(ctx) => ctx,
             None => {
@@ -632,7 +645,10 @@ pub extern "C" fn goud_component_remove(
     }
 
     // Get component storage for this context
-    let mut storage_map = get_context_storage_map();
+    let mut storage_map = match get_context_storage_map() {
+        Some(s) => s,
+        None => return GoudResult::err(crate::core::error::ERR_INTERNAL_ERROR),
+    };
     let map = match storage_map.as_mut() {
         Some(m) => m,
         None => {
@@ -701,7 +717,10 @@ pub extern "C" fn goud_component_has(
 
     // Check entity is alive using context registry
     {
-        let registry = get_context_registry().lock().unwrap();
+        let registry = match get_context_registry().lock() {
+            Ok(r) => r,
+            Err(_) => return false,
+        };
         let context = match registry.get(context_id) {
             Some(ctx) => ctx,
             None => {
@@ -717,7 +736,10 @@ pub extern "C" fn goud_component_has(
     }
 
     // Get component storage for this context
-    let storage_map = get_context_storage_map();
+    let storage_map = match get_context_storage_map() {
+        Some(s) => s,
+        None => return false,
+    };
     let map = match storage_map.as_ref() {
         Some(m) => m,
         None => return false, // No storage exists
@@ -784,7 +806,10 @@ pub extern "C" fn goud_component_get(
 
     // Check entity is alive using context registry
     {
-        let registry = get_context_registry().lock().unwrap();
+        let registry = match get_context_registry().lock() {
+            Ok(r) => r,
+            Err(_) => return std::ptr::null(),
+        };
         let context = match registry.get(context_id) {
             Some(ctx) => ctx,
             None => {
@@ -801,7 +826,10 @@ pub extern "C" fn goud_component_get(
     }
 
     // Get component storage for this context
-    let storage_map = get_context_storage_map();
+    let storage_map = match get_context_storage_map() {
+        Some(s) => s,
+        None => return std::ptr::null(),
+    };
     let map = match storage_map.as_ref() {
         Some(m) => m,
         None => return std::ptr::null(), // No storage exists
@@ -868,7 +896,10 @@ pub extern "C" fn goud_component_get_mut(
 
     // Check entity is alive using context registry
     {
-        let registry = get_context_registry().lock().unwrap();
+        let registry = match get_context_registry().lock() {
+            Ok(r) => r,
+            Err(_) => return std::ptr::null_mut(),
+        };
         let context = match registry.get(context_id) {
             Some(ctx) => ctx,
             None => {
@@ -885,7 +916,10 @@ pub extern "C" fn goud_component_get_mut(
     }
 
     // Get component storage for this context
-    let mut storage_map = get_context_storage_map();
+    let mut storage_map = match get_context_storage_map() {
+        Some(s) => s,
+        None => return std::ptr::null_mut(),
+    };
     let map = match storage_map.as_mut() {
         Some(m) => m,
         None => return std::ptr::null_mut(), // No storage exists
@@ -1000,7 +1034,10 @@ pub unsafe extern "C" fn goud_component_add_batch(
 
     // Verify component type is registered and get info
     let type_info = {
-        let type_registry = get_type_registry();
+        let type_registry = match get_type_registry() {
+            Some(r) => r,
+            None => return 0,
+        };
         let registry_map = match type_registry.as_ref() {
             Some(map) => map,
             None => {
@@ -1033,7 +1070,10 @@ pub unsafe extern "C" fn goud_component_add_batch(
     }
 
     // Get component storage for this context
-    let mut storage_map = get_context_storage_map();
+    let mut storage_map = match get_context_storage_map() {
+        Some(s) => s,
+        None => return 0,
+    };
     let map = storage_map.get_or_insert_with(HashMap::new);
 
     // Pack context ID into u64 for use as key
@@ -1122,7 +1162,10 @@ pub unsafe extern "C" fn goud_component_remove_batch(
 
     // Verify component type is registered
     {
-        let type_registry = get_type_registry();
+        let type_registry = match get_type_registry() {
+            Some(r) => r,
+            None => return 0,
+        };
         let registry_map = match type_registry.as_ref() {
             Some(map) => map,
             None => {
@@ -1143,7 +1186,10 @@ pub unsafe extern "C" fn goud_component_remove_batch(
     }
 
     // Get component storage for this context
-    let mut storage_map = get_context_storage_map();
+    let mut storage_map = match get_context_storage_map() {
+        Some(s) => s,
+        None => return 0,
+    };
     let map = match storage_map.as_mut() {
         Some(m) => m,
         None => return 0, // No storage exists
@@ -1255,7 +1301,10 @@ pub unsafe extern "C" fn goud_component_has_batch(
 
     // Verify component type is registered
     {
-        let type_registry = get_type_registry();
+        let type_registry = match get_type_registry() {
+            Some(r) => r,
+            None => return 0,
+        };
         let registry_map = match type_registry.as_ref() {
             Some(map) => map,
             None => {
@@ -1276,20 +1325,22 @@ pub unsafe extern "C" fn goud_component_has_batch(
     }
 
     // Get component storage for this context
-    let storage_map = get_context_storage_map();
-
-    // Check for storage existence
-    let storage_exists = storage_map.as_ref().is_some_and(|map| {
-        let key = (context_id.generation() as u64) << 32 | (context_id.index() as u64);
-        map.get(&key)
-            .and_then(|cs| cs.get_storage(type_id_hash))
-            .is_some()
-    });
+    let storage_map = match get_context_storage_map() {
+        Some(s) => s,
+        None => return 0,
+    };
 
     let entity_slice = std::slice::from_raw_parts(entity_ids, count as usize);
     let results_slice = std::slice::from_raw_parts_mut(out_results, count as usize);
 
-    if !storage_exists {
+    // Check for storage existence
+    let key = (context_id.generation() as u64) << 32 | (context_id.index() as u64);
+    let storage_opt = storage_map
+        .as_ref()
+        .and_then(|map| map.get(&key))
+        .and_then(|cs| cs.get_storage(type_id_hash));
+
+    if storage_opt.is_none() {
         // No storage exists, all results are false
         for result in results_slice.iter_mut() {
             *result = 0;
@@ -1297,11 +1348,7 @@ pub unsafe extern "C" fn goud_component_has_batch(
         return count;
     }
 
-    // Need to get storage again to use it
-    let map = storage_map.as_ref().unwrap();
-    let key = (context_id.generation() as u64) << 32 | (context_id.index() as u64);
-    let context_storage = map.get(&key).unwrap();
-    let storage = context_storage.get_storage(type_id_hash).unwrap();
+    let storage = storage_opt.unwrap();
 
     // Check each entity
     for (i, &entity_bits) in entity_slice.iter().enumerate() {

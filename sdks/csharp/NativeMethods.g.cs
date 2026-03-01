@@ -29,18 +29,8 @@ namespace CsBindgen
         ///
         ///  # Error Codes
         ///
-        ///  - `INTERNAL_ERROR_BASE + 0` (InternalError) - Failed to lock registry or create context
-        ///
-        ///  # Example (C#)
-        ///
-        ///  ```csharp
-        ///  var contextId = goud_context_create();
-        ///  if (contextId == GOUD_INVALID_CONTEXT_ID) {
-        ///      var error = goud_get_last_error_message();
-        ///      Console.WriteLine($"Failed to create context: {error}");
-        ///      return;
-        ///  }
-        ///  ```
+        ///  - `INTERNAL_ERROR_BASE + 0` (InternalError) - Failed to lock registry or
+        ///    create context
         /// </summary>
         [DllImport(__DllName, EntryPoint = "goud_context_create", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern GoudContextId goud_context_create();
@@ -59,23 +49,9 @@ namespace CsBindgen
         ///
         ///  `true` if the context was successfully destroyed, `false` on error.
         ///
-        ///  # Error Codes
-        ///
-        ///  - `CONTEXT_ERROR_BASE + 3` (InvalidContext) - Invalid or already-destroyed context ID
-        ///  - `INTERNAL_ERROR_BASE + 0` (InternalError) - Failed to lock registry
-        ///
         ///  # Thread Safety
         ///
         ///  This function is thread-safe and can be called from any thread.
-        ///
-        ///  # Example (C#)
-        ///
-        ///  ```csharp
-        ///  if (!goud_context_destroy(contextId)) {
-        ///      var error = goud_get_last_error_message();
-        ///      Console.WriteLine($"Failed to destroy context: {error}");
-        ///  }
-        ///  ```
         /// </summary>
         [DllImport(__DllName, EntryPoint = "goud_context_destroy", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         [return: MarshalAs(UnmanagedType.U1)]
@@ -93,14 +69,6 @@ namespace CsBindgen
         ///  # Returns
         ///
         ///  `true` if the context is valid, `false` otherwise.
-        ///
-        ///  # Example (C#)
-        ///
-        ///  ```csharp
-        ///  if (goud_context_is_valid(contextId)) {
-        ///      Console.WriteLine("Context is valid");
-        ///  }
-        ///  ```
         /// </summary>
         [DllImport(__DllName, EntryPoint = "goud_context_is_valid", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         [return: MarshalAs(UnmanagedType.U1)]
@@ -3227,31 +3195,13 @@ namespace CsBindgen
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct GoudContextId
+    public unsafe partial struct GoudContact
     {
-        public ulong Item1;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct FfiTransform2D
-    {
-        public float position_x;
-        public float position_y;
-        public float rotation;
-        public float scale_x;
-        public float scale_y;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct FfiMat3x3
-    {
-        public fixed float m[9];
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct FfiTransform2DBuilder
-    {
-        public FfiTransform2D transform;
+        public float point_x;
+        public float point_y;
+        public float normal_x;
+        public float normal_y;
+        public float penetration;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -3301,22 +3251,40 @@ namespace CsBindgen
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public unsafe partial struct FfiTransform2D
+    {
+        public float position_x;
+        public float position_y;
+        public float rotation;
+        public float scale_x;
+        public float scale_y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe partial struct FfiMat3x3
+    {
+        public fixed float m[9];
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe partial struct FfiTransform2DBuilder
+    {
+        public FfiTransform2D transform;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe partial struct GoudContextId
+    {
+        public ulong Item1;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe partial struct GoudRenderStats
     {
         public uint draw_calls;
         public uint triangles;
         public uint texture_binds;
         public uint shader_binds;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe partial struct GoudContact
-    {
-        public float point_x;
-        public float point_y;
-        public float normal_x;
-        public float normal_y;
-        public float penetration;
     }
 
 

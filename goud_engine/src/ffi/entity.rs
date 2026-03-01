@@ -90,7 +90,10 @@ macro_rules! with_context_mut_entity {
         }
 
         // Lock registry and get context
-        let mut registry = get_context_registry().lock().unwrap();
+        let mut registry = match get_context_registry().lock() {
+            Ok(r) => r,
+            Err(_) => return GOUD_INVALID_ENTITY_ID,
+        };
         let context = match registry.get_mut($context_id) {
             Some(ctx) => ctx,
             None => {
@@ -124,7 +127,10 @@ macro_rules! with_context_bool {
         }
 
         // Lock registry and get context
-        let registry = get_context_registry().lock().unwrap();
+        let registry = match get_context_registry().lock() {
+            Ok(r) => r,
+            Err(_) => return false,
+        };
         let context = match registry.get($context_id) {
             Some(ctx) => ctx,
             None => {
@@ -239,7 +245,10 @@ pub unsafe extern "C" fn goud_entity_spawn_batch(
     }
 
     // Lock registry and get context
-    let mut registry = get_context_registry().lock().unwrap();
+    let mut registry = match get_context_registry().lock() {
+        Ok(r) => r,
+        Err(_) => return 0,
+    };
     let context = match registry.get_mut(context_id) {
         Some(guard) => guard,
         None => {
@@ -305,7 +314,10 @@ pub extern "C" fn goud_entity_despawn(context_id: GoudContextId, entity_id: u64)
     }
 
     // Lock registry and get context
-    let mut registry = get_context_registry().lock().unwrap();
+    let mut registry = match get_context_registry().lock() {
+        Ok(r) => r,
+        Err(_) => return GoudResult::err(crate::core::error::ERR_INTERNAL_ERROR),
+    };
     let context = match registry.get_mut(context_id) {
         Some(guard) => guard,
         None => {
@@ -378,7 +390,10 @@ pub unsafe extern "C" fn goud_entity_despawn_batch(
     }
 
     // Lock registry and get context
-    let mut registry = get_context_registry().lock().unwrap();
+    let mut registry = match get_context_registry().lock() {
+        Ok(r) => r,
+        Err(_) => return 0,
+    };
     let context = match registry.get_mut(context_id) {
         Some(guard) => guard,
         None => {
@@ -461,7 +476,10 @@ pub extern "C" fn goud_entity_count(context_id: GoudContextId) -> u32 {
         return 0;
     }
 
-    let registry = get_context_registry().lock().unwrap();
+    let registry = match get_context_registry().lock() {
+        Ok(r) => r,
+        Err(_) => return 0,
+    };
     let context = match registry.get(context_id) {
         Some(ctx) => ctx,
         None => {
@@ -549,7 +567,10 @@ pub unsafe extern "C" fn goud_entity_is_alive_batch(
     }
 
     // Lock registry and get context
-    let registry = get_context_registry().lock().unwrap();
+    let registry = match get_context_registry().lock() {
+        Ok(r) => r,
+        Err(_) => return 0,
+    };
     let context = match registry.get(context_id) {
         Some(guard) => guard,
         None => {

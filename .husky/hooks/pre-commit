@@ -11,4 +11,7 @@ cargo fmt --all -- --check || exit 1
 echo "Running clippy..."
 cargo clippy -- -D warnings || exit 1
 
+echo "Checking layer dependencies..."
+cargo run -p lint-layers || exit 1
+
 echo "=== Pre-commit passed ==="

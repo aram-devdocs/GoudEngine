@@ -1,495 +1,18 @@
 //! # FFI Context Management
 //!
-//! This module implements the core context type for FFI operations. A context
-//! represents a single engine instance with its own World, asset storage,
-//! and error state.
-//!
-//! ## Context Lifecycle
-//!
-//! 1. **Creation**: `goud_context_create()` allocates a new context
-//! 2. **Operations**: All FFI functions accept `GoudContextId` as first parameter
-//! 3. **Destruction**: `goud_context_destroy()` releases all resources
-//!
-//! ## Thread Safety
-//!
-//! - Contexts are stored in a global registry protected by `RwLock`
-//! - Each context owns its World (not Send+Sync)
-//! - Context operations must be called from the thread that created the context
-//! - Future: Add thread ownership validation for debug builds
+//! This module provides FFI entry points for context lifecycle operations.
+//! The core context types and registry are defined in `core::context_registry`
+//! and re-exported here for backward compatibility.
 
 #![allow(clippy::arc_with_non_send_sync)]
 
+// Re-export all context types from core for backward compatibility
+pub use crate::core::context_registry::{
+    get_context_registry, GoudContext, GoudContextHandle, GoudContextId, GoudContextRegistry,
+    GOUD_INVALID_CONTEXT_ID,
+};
+
 use crate::core::error::GoudError;
-use crate::ecs::World;
-use std::sync::{Arc, RwLock};
-
-/// Opaque identifier for an FFI context.
-///
-/// This ID is returned to FFI callers and used to look up the actual context.
-/// It uses generational indexing to detect use-after-free bugs.
-///
-/// # FFI Safety
-///
-/// - `#[repr(C)]` ensures predictable memory layout
-/// - 64-bit value can be passed by value on all platforms
-/// - Invalid ID (all bits 1) is distinguishable from any valid ID
-#[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct GoudContextId(u64);
-
-impl GoudContextId {
-    /// Creates a new context ID from index and generation.
-    ///
-    /// # Layout
-    ///
-    /// ```text
-    /// | 32 bits: generation | 32 bits: index |
-    /// ```
-    pub(crate) fn new(index: u32, generation: u32) -> Self {
-        let packed = ((generation as u64) << 32) | (index as u64);
-        Self(packed)
-    }
-
-    /// Returns the index component (lower 32 bits).
-    pub(crate) fn index(self) -> u32 {
-        self.0 as u32
-    }
-
-    /// Returns the generation component (upper 32 bits).
-    pub(crate) fn generation(self) -> u32 {
-        (self.0 >> 32) as u32
-    }
-
-    /// Returns true if this is the invalid sentinel ID.
-    pub fn is_invalid(self) -> bool {
-        self.0 == u64::MAX
-    }
-}
-
-impl Default for GoudContextId {
-    fn default() -> Self {
-        GOUD_INVALID_CONTEXT_ID
-    }
-}
-
-impl std::fmt::Display for GoudContextId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.is_invalid() {
-            write!(f, "GoudContextId(INVALID)")
-        } else {
-            write!(f, "GoudContextId({}:{})", self.index(), self.generation())
-        }
-    }
-}
-
-/// Sentinel value representing an invalid context ID.
-///
-/// This is returned by `goud_context_create()` on failure and should be
-/// checked by callers before using the ID.
-pub const GOUD_INVALID_CONTEXT_ID: GoudContextId = GoudContextId(u64::MAX);
-
-/// A single engine context containing a World and associated state.
-///
-/// Each context is isolated - it has its own entities, components, resources,
-/// and assets. Multiple contexts can exist simultaneously (e.g., for multiple
-/// game instances or editor viewports).
-///
-/// # Thread Safety
-///
-/// Contexts are NOT Send or Sync - they must be used from a single thread.
-/// The registry that holds contexts IS thread-safe.
-pub struct GoudContext {
-    /// The ECS world for this context.
-    world: World,
-
-    /// Generation counter for this context slot.
-    ///
-    /// When a context is destroyed, the generation increments. This detects
-    /// use-after-free when old IDs are used.
-    generation: u32,
-
-    /// Thread ID that created this context (for validation in debug builds).
-    #[cfg(debug_assertions)]
-    #[allow(dead_code)]
-    owner_thread: std::thread::ThreadId,
-}
-
-impl GoudContext {
-    /// Creates a new context with the given generation.
-    pub(crate) fn new(generation: u32) -> Self {
-        Self {
-            world: World::new(),
-            generation,
-            #[cfg(debug_assertions)]
-            owner_thread: std::thread::current().id(),
-        }
-    }
-
-    /// Returns a reference to the world.
-    pub fn world(&self) -> &World {
-        &self.world
-    }
-
-    /// Returns a mutable reference to the world.
-    pub fn world_mut(&mut self) -> &mut World {
-        &mut self.world
-    }
-
-    /// Returns the generation of this context.
-    pub(crate) fn generation(&self) -> u32 {
-        self.generation
-    }
-
-    /// Validates that this context is being accessed from the correct thread.
-    ///
-    /// In debug builds, panics if called from wrong thread.
-    /// In release builds, this is a no-op.
-    #[cfg(debug_assertions)]
-    #[allow(dead_code)]
-    pub(crate) fn validate_thread(&self) {
-        let current = std::thread::current().id();
-        if current != self.owner_thread {
-            panic!(
-                "GoudContext accessed from wrong thread! Created on {:?}, accessed from {:?}",
-                self.owner_thread, current
-            );
-        }
-    }
-
-    #[cfg(not(debug_assertions))]
-    #[allow(dead_code)]
-    pub(crate) fn validate_thread(&self) {
-        // No-op in release builds
-    }
-}
-
-impl std::fmt::Debug for GoudContext {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GoudContext")
-            .field("world", &self.world)
-            .field("generation", &self.generation)
-            .finish()
-    }
-}
-
-/// Entry in the context registry, tracking allocation state.
-#[derive(Debug)]
-enum ContextSlot {
-    /// Slot is occupied by a live context.
-    ///
-    /// Boxed to avoid large enum size difference (World is large).
-    Occupied(Box<GoudContext>),
-
-    /// Slot was freed and can be reused (stores next generation).
-    Free { next_generation: u32 },
-}
-
-/// Global registry for all FFI contexts.
-///
-/// This is the central storage for all active contexts. It uses generational
-/// indexing to detect use-after-free bugs and allows safe context lookup
-/// from FFI code.
-///
-/// # Thread Safety
-///
-/// The registry itself is thread-safe (protected by RwLock), but individual
-/// contexts are not. Callers must ensure they don't use a context from
-/// multiple threads simultaneously.
-pub struct GoudContextRegistry {
-    /// Slots for context storage.
-    ///
-    /// Invariants:
-    /// - Occupied slots have valid contexts
-    /// - Free slots store the next generation to use
-    /// - Index corresponds to lower 32 bits of GoudContextId
-    slots: Vec<ContextSlot>,
-
-    /// Free list of indices that can be reused.
-    ///
-    /// When a context is destroyed, its index is pushed here.
-    /// When creating a new context, we pop from here first.
-    free_list: Vec<u32>,
-}
-
-impl GoudContextRegistry {
-    /// Creates a new empty registry.
-    pub fn new() -> Self {
-        Self {
-            slots: Vec::new(),
-            free_list: Vec::new(),
-        }
-    }
-
-    /// Allocates a new context and returns its ID.
-    ///
-    /// # Returns
-    ///
-    /// - `Ok(id)` - Successfully created context with given ID
-    /// - `Err(error)` - Failed to create context (e.g., out of memory)
-    pub fn create(&mut self) -> Result<GoudContextId, GoudError> {
-        // Try to reuse a free slot first
-        if let Some(index) = self.free_list.pop() {
-            let generation = match &self.slots[index as usize] {
-                ContextSlot::Free { next_generation } => *next_generation,
-                ContextSlot::Occupied(_) => {
-                    return Err(GoudError::InternalError(
-                        "Free list points to occupied slot".to_string(),
-                    ))
-                }
-            };
-
-            let context = GoudContext::new(generation);
-            self.slots[index as usize] = ContextSlot::Occupied(Box::new(context));
-
-            Ok(GoudContextId::new(index, generation))
-        } else {
-            // Allocate new slot
-            let index = self.slots.len() as u32;
-            if index == u32::MAX {
-                return Err(GoudError::InternalError(
-                    "Context registry full (u32::MAX contexts)".to_string(),
-                ));
-            }
-
-            let generation = 1; // Generation 0 reserved for "never allocated"
-            let context = GoudContext::new(generation);
-            self.slots.push(ContextSlot::Occupied(Box::new(context)));
-
-            Ok(GoudContextId::new(index, generation))
-        }
-    }
-
-    /// Destroys a context and frees its slot for reuse.
-    ///
-    /// # Returns
-    ///
-    /// - `Ok(())` - Context destroyed successfully
-    /// - `Err(error)` - Context not found or already destroyed
-    pub fn destroy(&mut self, id: GoudContextId) -> Result<(), GoudError> {
-        if id.is_invalid() {
-            return Err(GoudError::InvalidContext);
-        }
-
-        let index = id.index() as usize;
-        if index >= self.slots.len() {
-            return Err(GoudError::InvalidContext);
-        }
-
-        match &self.slots[index] {
-            ContextSlot::Occupied(context) => {
-                if context.generation() != id.generation() {
-                    return Err(GoudError::InvalidContext);
-                }
-
-                // Increment generation for next allocation
-                let next_generation = context.generation().checked_add(1).unwrap_or(1); // Wrap to 1 on overflow
-
-                self.slots[index] = ContextSlot::Free { next_generation };
-                self.free_list.push(id.index());
-
-                Ok(())
-            }
-            ContextSlot::Free { .. } => Err(GoudError::InvalidContext),
-        }
-    }
-
-    /// Gets an immutable reference to a context.
-    ///
-    /// # Returns
-    ///
-    /// - `Some(&context)` - Context exists and generation matches
-    /// - `None` - Context not found or generation mismatch (use-after-free)
-    pub fn get(&self, id: GoudContextId) -> Option<&GoudContext> {
-        if id.is_invalid() {
-            return None;
-        }
-
-        let index = id.index() as usize;
-        if index >= self.slots.len() {
-            return None;
-        }
-
-        match &self.slots[index] {
-            ContextSlot::Occupied(context) => {
-                if context.generation() == id.generation() {
-                    Some(context)
-                } else {
-                    None // Stale ID
-                }
-            }
-            ContextSlot::Free { .. } => None,
-        }
-    }
-
-    /// Gets a mutable reference to a context.
-    pub fn get_mut(&mut self, id: GoudContextId) -> Option<&mut GoudContext> {
-        if id.is_invalid() {
-            return None;
-        }
-
-        let index = id.index() as usize;
-        if index >= self.slots.len() {
-            return None;
-        }
-
-        match &mut self.slots[index] {
-            ContextSlot::Occupied(context) => {
-                if context.generation() == id.generation() {
-                    Some(context)
-                } else {
-                    None // Stale ID
-                }
-            }
-            ContextSlot::Free { .. } => None,
-        }
-    }
-
-    /// Returns true if the context exists and is valid.
-    pub fn is_valid(&self, id: GoudContextId) -> bool {
-        self.get(id).is_some()
-    }
-
-    /// Returns the number of active contexts.
-    pub fn len(&self) -> usize {
-        self.slots.len() - self.free_list.len()
-    }
-
-    /// Returns true if there are no active contexts.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    /// Returns the total capacity (including free slots).
-    pub fn capacity(&self) -> usize {
-        self.slots.len()
-    }
-}
-
-impl Default for GoudContextRegistry {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl std::fmt::Debug for GoudContextRegistry {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GoudContextRegistry")
-            .field("active", &self.len())
-            .field("capacity", &self.capacity())
-            .field("free", &self.free_list.len())
-            .finish()
-    }
-}
-
-// Safety: GoudContextRegistry is Send despite containing non-Send World because:
-// 1. Access is always synchronized via Mutex in the global registry
-// 2. Contexts are single-threaded (thread ownership validated)
-// 3. Only the registry structure crosses thread boundaries
-unsafe impl Send for GoudContextRegistry {}
-
-/// Handle to the global context registry.
-///
-/// This is a thread-safe `Arc<RwLock>` wrapper that allows concurrent access
-/// to the registry from multiple threads.
-///
-/// Note: The Arc contains !Send+!Sync data (World with NonSendResources),
-/// but the `RwLock` ensures only one thread can access mutable data at a time,
-/// making this safe for multi-threaded context ID operations (create/destroy/is_valid).
-#[derive(Clone)]
-#[allow(clippy::arc_with_non_send_sync)]
-pub struct GoudContextHandle {
-    inner: Arc<RwLock<GoudContextRegistry>>,
-}
-
-impl GoudContextHandle {
-    /// Creates a new context handle with an empty registry.
-    pub fn new() -> Self {
-        Self {
-            inner: Arc::new(RwLock::new(GoudContextRegistry::new())),
-        }
-    }
-
-    /// Creates a new context and returns its ID.
-    pub fn create(&self) -> Result<GoudContextId, GoudError> {
-        self.inner
-            .write()
-            .map_err(|_| GoudError::InternalError("Failed to acquire registry lock".to_string()))?
-            .create()
-    }
-
-    /// Destroys a context.
-    pub fn destroy(&self, id: GoudContextId) -> Result<(), GoudError> {
-        self.inner
-            .write()
-            .map_err(|_| GoudError::InternalError("Failed to acquire registry lock".to_string()))?
-            .destroy(id)
-    }
-
-    /// Validates that a context exists.
-    pub fn is_valid(&self, id: GoudContextId) -> bool {
-        self.inner
-            .read()
-            .map(|registry| registry.is_valid(id))
-            .unwrap_or(false)
-    }
-
-    /// Returns the number of active contexts.
-    pub fn len(&self) -> usize {
-        self.inner.read().map(|r| r.len()).unwrap_or(0)
-    }
-
-    /// Returns true if there are no active contexts.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-}
-
-impl Default for GoudContextHandle {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl std::fmt::Debug for GoudContextHandle {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Ok(registry) = self.inner.read() {
-            write!(f, "GoudContextHandle({:?})", *registry)
-        } else {
-            write!(f, "GoudContextHandle(<locked>)")
-        }
-    }
-}
-
-// Safety: GoudContextHandle is Send despite containing non-Send World because:
-// 1. The RwLock provides synchronization for all access
-// 2. World operations are always performed while holding the lock
-// 3. Each context is single-threaded (thread ownership is validated)
-// 4. Only the handle itself crosses thread boundaries, not the World
-unsafe impl Send for GoudContextHandle {}
-
-// ============================================================================
-// Global Registry
-// ============================================================================
-
-use std::sync::Mutex;
-use std::sync::OnceLock;
-
-/// Global context registry for FFI access.
-///
-/// This is the single source of truth for all engine contexts accessed via FFI.
-/// It's thread-safe and can be accessed from any thread, but individual contexts
-/// are single-threaded and must be used from the thread that created them.
-///
-/// Note: We use `Mutex<GoudContextRegistry>` (not GoudContextHandle) to avoid
-/// double-locking. The registry is the actual storage, the handle is a wrapper.
-static GOUD_CONTEXT_REGISTRY_CELL: OnceLock<Mutex<GoudContextRegistry>> = OnceLock::new();
-
-/// Gets a reference to the global context registry.
-///
-/// Initializes the registry on first access.
-pub fn get_context_registry() -> &'static Mutex<GoudContextRegistry> {
-    GOUD_CONTEXT_REGISTRY_CELL.get_or_init(|| Mutex::new(GoudContextRegistry::new()))
-}
 
 // ============================================================================
 // FFI Functions
@@ -507,18 +30,8 @@ pub fn get_context_registry() -> &'static Mutex<GoudContextRegistry> {
 ///
 /// # Error Codes
 ///
-/// - `INTERNAL_ERROR_BASE + 0` (InternalError) - Failed to lock registry or create context
-///
-/// # Example (C#)
-///
-/// ```csharp
-/// var contextId = goud_context_create();
-/// if (contextId == GOUD_INVALID_CONTEXT_ID) {
-///     var error = goud_get_last_error_message();
-///     Console.WriteLine($"Failed to create context: {error}");
-///     return;
-/// }
-/// ```
+/// - `INTERNAL_ERROR_BASE + 0` (InternalError) - Failed to lock registry or
+///   create context
 #[no_mangle]
 pub extern "C" fn goud_context_create() -> GoudContextId {
     use crate::core::error::set_last_error;
@@ -555,23 +68,9 @@ pub extern "C" fn goud_context_create() -> GoudContextId {
 ///
 /// `true` if the context was successfully destroyed, `false` on error.
 ///
-/// # Error Codes
-///
-/// - `CONTEXT_ERROR_BASE + 3` (InvalidContext) - Invalid or already-destroyed context ID
-/// - `INTERNAL_ERROR_BASE + 0` (InternalError) - Failed to lock registry
-///
 /// # Thread Safety
 ///
 /// This function is thread-safe and can be called from any thread.
-///
-/// # Example (C#)
-///
-/// ```csharp
-/// if (!goud_context_destroy(contextId)) {
-///     var error = goud_get_last_error_message();
-///     Console.WriteLine($"Failed to destroy context: {error}");
-/// }
-/// ```
 #[no_mangle]
 pub extern "C" fn goud_context_destroy(context_id: GoudContextId) -> bool {
     use crate::core::error::set_last_error;
@@ -611,14 +110,6 @@ pub extern "C" fn goud_context_destroy(context_id: GoudContextId) -> bool {
 /// # Returns
 ///
 /// `true` if the context is valid, `false` otherwise.
-///
-/// # Example (C#)
-///
-/// ```csharp
-/// if (goud_context_is_valid(contextId)) {
-///     Console.WriteLine("Context is valid");
-/// }
-/// ```
 #[no_mangle]
 pub extern "C" fn goud_context_is_valid(context_id: GoudContextId) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
@@ -847,9 +338,9 @@ mod tests {
         let mut registry = GoudContextRegistry::new();
 
         // Create 3 contexts
-        let id1 = registry.create().unwrap();
+        let _id1 = registry.create().unwrap();
         let id2 = registry.create().unwrap();
-        let id3 = registry.create().unwrap();
+        let _id3 = registry.create().unwrap();
 
         // Destroy middle one
         registry.destroy(id2).unwrap();
@@ -996,10 +487,6 @@ mod tests {
     // ========================================================================
     // Thread Safety Tests
     // ========================================================================
-
-    // Note: GoudContextHandle is NOT Send+Sync because it contains World,
-    // which has NonSendResources. This is intentional - contexts are
-    // single-threaded. Only GoudContextId needs to be Send+Sync.
 
     #[test]
     fn test_context_id_is_send() {

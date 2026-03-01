@@ -1,0 +1,146 @@
+# SDK-First Architecture
+
+GoudEngine is a Rust game engine with multi-language SDK support. All game logic lives in Rust. SDKs are thin wrappers: they marshal data and call FFI functions, never implementing logic of their own.
+
+## Layer Architecture
+
+Dependencies flow DOWN only. A higher-numbered layer may import from lower layers; the reverse is a violation.
+
+```
+Layer 1 (Core)   : goud_engine/src/core/   — error types, math, handles, context registry
+Layer 2 (Engine) : goud_engine/src/sdk/    — native Rust API, zero FFI overhead
+Layer 3 (FFI)    : goud_engine/src/ffi/    — C-compatible exports, #[no_mangle] extern "C"
+Layer 4 (SDKs)   : sdks/                   — C#, Python, TypeScript wrappers
+Layer 5 (Apps)   : examples/               — game demos per SDK language
+```
+
+Each layer knows nothing about the layers above it. `ffi/` may import from `core/`, `sdk/`, `ecs/`, and `assets/`. It must never import from `sdks/`.
+
+### Layer Enforcement
+
+A `lint-layers` binary scans `use crate::` imports across all source files and fails the build if any upward dependency is found. It runs in two places:
+
+- `codegen.sh` step 2 (`cargo run -p lint-layers`)
+- Pre-commit hook (via `.husky/`)
+
+## Key Files by Layer
+
+### Core (`goud_engine/src/core/`)
+
+| File | Purpose |
+|---|---|
+| `types.rs` | Shared FFI-compatible types (`FfiVec2`, `GoudContextId`, `GoudResult`) |
+| `context_registry.rs` | Thread-safe registry mapping `GoudContextId` → engine instances |
+| `component_ops.rs` | Generic component CRUD used by FFI component handlers |
+| `math.rs` | `Vec2`, `Vec3`, `Color`, `Rect`, `Mat3x3` with `#[repr(C)]` for FFI |
+| `error.rs` | `GoudError`, `GoudErrorCode`, `GoudResult` |
+
+### FFI (`goud_engine/src/ffi/`)
+
+Each domain has its own file. All public functions are `#[no_mangle] pub extern "C"`.
+
+| File | Domain |
+|---|---|
+| `context.rs` | Engine context create/destroy |
+| `entity.rs` | Entity spawn/despawn |
+| `component.rs` | Generic component add/remove/query |
+| `component_transform2d.rs` | Transform2D component operations |
+| `component_sprite.rs` | Sprite component operations |
+| `window.rs` | Window management, frame lifecycle |
+| `renderer.rs` | 2D rendering |
+| `renderer3d.rs` | 3D rendering |
+| `input.rs` | Input state queries |
+| `collision.rs` | Collision detection |
+| `types.rs` | Re-exports `core/types.rs` types at the FFI boundary |
+
+### SDK (`sdks/`)
+
+| Directory | Target |
+|---|---|
+| `sdks/csharp/` | .NET 8, `DllImport`, NuGet package |
+| `sdks/python/` | Python 3, `ctypes`, local install |
+| `sdks/typescript/` | TypeScript, Node.js (napi-rs) + Web (WASM) |
+
+## Codegen Pipeline
+
+All SDK source files under `sdks/*/generated/` and `sdks/typescript/src/generated/` are auto-generated. Do not edit them by hand.
+
+```
+goud_sdk.schema.json   — universal type/method definitions
+ffi_mapping.json       — maps schema methods → C ABI function names + signatures
+ffi_manifest.json      — auto-extracted from Rust source by build.rs (each cargo build)
+                                           │
+                    ┌──────────────────────┼───────────────────┐
+                    ▼                      ▼                   ▼
+             gen_csharp.py        gen_python.py         gen_ts_node.py
+                    │                      │             gen_ts_web.py
+                    ▼                      ▼                   ▼
+          sdks/csharp/generated/   sdks/python/generated/   sdks/typescript/src/generated/
+```
+
+Run the full pipeline:
+
+```bash
+./codegen.sh
+```
+
+The script runs 8 steps in order:
+
+1. `cargo build` — builds Rust, triggers csbindgen (C# `NativeMethods.g.cs`) and writes `ffi_manifest.json`
+2. `lint-layers` — validates no upward imports
+3. `validate_coverage.py` — checks every function in `ffi_manifest.json` is covered by `ffi_mapping.json`
+4. `gen_csharp.py` — generates C# SDK wrappers
+5. `gen_python.py` — generates Python SDK wrappers
+6. `gen_ts_node.py` — generates TypeScript Node.js SDK
+7. `gen_ts_web.py` — generates TypeScript Web (WASM) SDK
+8. `validate.py` — schema consistency check
+
+Steps 3 and 8 are validation gates. If either fails, the script exits with an error.
+
+### Schema Files
+
+**`codegen/goud_sdk.schema.json`** — the single source of truth. Defines:
+
+- `types` — value types (e.g., `Color`, `Vec2`, `Transform2D`) with fields and factory methods
+- `enums` — enumeration types (e.g., `Key`, `MouseButton`) with values and optional platform maps
+- `tools` — high-level objects like `GoudGame` with constructor, destructor, lifecycle hooks, and methods
+
+**`codegen/ffi_mapping.json`** — implementation details. Defines:
+
+- `ffi_types` — how each schema type maps to a C struct name and its fields
+- `ffi_handles` — opaque handle types (`GoudContextId`, `GoudTextureHandle`)
+- `ctypes_mappings` — Python ctypes annotations for pointer types
+- `tools` — per-method mapping from schema method name to FFI function name and parameters
+
+**`codegen/ffi_manifest.json`** — auto-generated by `build.rs`. Contains the full list of `#[no_mangle] extern "C"` functions extracted from `goud_engine/src/ffi/`. Used by `validate_coverage.py` to detect unmapped functions.
+
+### Shared Utilities (`codegen/sdk_common.py`)
+
+All generators import `sdk_common.py` for:
+
+- `load_schema()` / `load_ffi_mapping()` — JSON loading
+- Name converters: `to_pascal()`, `to_snake()`, `to_camel()`, `to_screaming_snake()`
+- Type maps: `CSHARP_TYPES`, `PYTHON_TYPES`, `TYPESCRIPT_TYPES`, `CTYPES_MAP`, `CSHARP_FFI_TYPES`
+- `write_generated(path, content)` — writes output files, creating parent directories
+
+## Key Design Decisions
+
+**Rust-first.** Logic is never duplicated in SDKs. If a SDK method does anything beyond marshaling and calling an FFI function, that logic belongs in Rust.
+
+**Single schema, four generators.** Adding a type to `goud_sdk.schema.json` causes it to appear in every SDK on the next codegen run. Naming conventions (PascalCase in C#, snake_case in Python, camelCase in TypeScript) are applied by the generators.
+
+**C# bindings are doubly generated.** `NativeMethods.g.cs` is produced by csbindgen (a Rust build dependency) on every `cargo build`. The higher-level C# wrapper classes in `sdks/csharp/generated/` are produced by `gen_csharp.py`. The two files work together: csbindgen handles the raw `[DllImport]` declarations; the Python generator handles the ergonomic wrapper API.
+
+**Context handles, not pointers.** All FFI calls take a `GoudContextId` (an opaque `u64`) rather than a raw pointer. The context registry resolves handles to engine instances under a mutex. This prevents use-after-free and type confusion across the FFI boundary.
+
+**Error propagation.** FFI functions return `GoudResult` (an `i32`) — 0 for success, negative for error. Detailed error messages are stored in thread-local storage and retrieved via `goud_get_last_error_message()`.
+
+## What Goes Where
+
+| You want to... | Where to put it |
+|---|---|
+| Add a new game mechanic | `goud_engine/src/` (core, ecs, or assets) |
+| Expose a mechanic to SDKs | Add `#[no_mangle] extern "C"` function in `goud_engine/src/ffi/` |
+| Add a new type to all SDKs | Add to `codegen/goud_sdk.schema.json`, run `./codegen.sh` |
+| Change method naming in one SDK | Edit the relevant generator in `codegen/gen_<lang>.py` |
+| Add a new SDK language | See `docs/architecture/adding-a-new-language.md` |
