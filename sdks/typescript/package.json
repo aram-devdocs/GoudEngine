@@ -1,6 +1,6 @@
 {
   "name": "@goudengine/sdk",
-  "version": "0.0.815",
+  "version": "0.0.816",
   "description": "TypeScript SDK for GoudEngine — Node.js desktop via napi-rs, web via wasm-bindgen",
   "main": "dist/generated/index.g.js",
   "types": "dist/generated/index.g.d.ts",

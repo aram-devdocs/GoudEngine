@@ -1,5 +1,5 @@
 {
-  "version": "0.0.815",
+  "version": "0.0.816",
   "description": "Universal GoudEngine SDK schema. Every SDK (C#, Python, TypeScript) is generated from this single file. Same tools, same methods, same inputs, same outputs.",
   "types": {
     "Color": {
@@ -156,7 +156,7 @@
             }
           ],
           "defaults": {
-            "a": 1.0
+            "a": 1
           }
         },
         {
@@ -2552,25 +2552,25 @@
             {
               "name": "r",
               "type": "f32",
-              "default": 0.0,
+              "default": 0,
               "doc": "Clear color red"
             },
             {
               "name": "g",
               "type": "f32",
-              "default": 0.0,
+              "default": 0,
               "doc": "Clear color green"
             },
             {
               "name": "b",
               "type": "f32",
-              "default": 0.0,
+              "default": 0,
               "doc": "Clear color blue"
             },
             {
               "name": "a",
               "type": "f32",
-              "default": 1.0,
+              "default": 1,
               "doc": "Clear color alpha"
             }
           ],
@@ -2650,7 +2650,7 @@
             {
               "name": "rotation",
               "type": "f32",
-              "default": 0.0,
+              "default": 0,
               "doc": "Rotation in radians"
             },
             {
@@ -3338,7 +3338,7 @@
             {
               "name": "rotation",
               "type": "f32",
-              "default": 0.0
+              "default": 0
             },
             {
               "name": "srcX",

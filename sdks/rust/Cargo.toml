@@ -11,4 +11,4 @@ keywords = ["game-engine", "ecs", "2d", "3d", "rust"]
 categories = ["game-engines", "graphics"]
 
 [dependencies]
-goud_engine = { version = "=0.0.815", path = "../../goud_engine" } # x-release-please-version
+goud_engine = { version = "=0.0.816", path = "../../goud_engine" } # x-release-please-version
