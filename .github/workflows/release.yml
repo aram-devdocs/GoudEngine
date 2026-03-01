@@ -260,14 +260,14 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - name: Download napi artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: napi-*
           path: sdks/typescript/
           merge-multiple: true
 
       - name: Download WASM bundle
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: wasm-bundle
           path: sdks/typescript/wasm/
@@ -308,7 +308,7 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Download native libs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: native-*
           path: artifacts/
@@ -357,7 +357,7 @@ jobs:
         run: pip install build wheel
 
       - name: Download all native libs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: native-*
           path: artifacts/
