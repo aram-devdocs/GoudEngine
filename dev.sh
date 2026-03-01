@@ -113,6 +113,11 @@ esac
 
 # Build the project if not skipped
 if [ "$SKIP_BUILD" = false ]; then
+    # Prune stale incremental compilation cache (>7 days old) to prevent unbounded growth
+    if [ -d "target/debug/incremental" ]; then
+        find "$SCRIPT_DIR/target/debug/incremental" -maxdepth 1 -type d -mtime +7 -exec rm -rf {} + 2>/dev/null
+    fi
+
     # Run cargo check first to catch compilation errors early
     if ! cargo check; then
         echo "Cargo check failed. Fixing errors before proceeding with full build."

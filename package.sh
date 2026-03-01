@@ -36,6 +36,21 @@ deploy_local() {
     done
 
     echo "Packages deployed to local NuGet feed at $LOCAL_NUGET_FEED."
+
+    # Prune old NuGet packages — keep latest 3 versions
+    echo "Pruning old NuGet packages..."
+    KEEP_COUNT=3
+    TOTAL_PKGS=$(ls -1 "$LOCAL_NUGET_FEED"/GoudEngine.*.nupkg 2>/dev/null | wc -l | tr -d ' ')
+    REMOVE_COUNT=$((TOTAL_PKGS - KEEP_COUNT))
+    if [ "$REMOVE_COUNT" -gt 0 ]; then
+        ls -1 "$LOCAL_NUGET_FEED"/GoudEngine.*.nupkg | sort -V | head -n "$REMOVE_COUNT" | while read -r pkg; do
+            echo "  Removing: $(basename "$pkg")"
+            rm -f "$pkg"
+        done
+        echo "Pruned to latest $KEEP_COUNT versions."
+    else
+        echo "No old packages to prune."
+    fi
 }
 
 # Function to handle production deployment (TODO)
