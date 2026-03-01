@@ -36,7 +36,7 @@ cargo test <test_name> -- --exact   # Single test
 python3 sdks/python/test_bindings.py
 
 # C# SDK tests
-dotnet test sdks/GoudEngine.Tests/
+dotnet test sdks/csharp.tests/
 
 # Benchmarks
 cargo bench
@@ -75,3 +75,11 @@ When tests fail:
 2. Collect pass/fail results
 3. Analyze any failures
 4. Report results with actionable details
+
+## Challenge Protocol
+
+After running tests:
+1. Verify results are meaningful — not just "no tests found" or "0 tests ran"
+2. Report both pass counts and failure details
+3. Flag suspicious patterns: all tests skipped, zero assertions, unusually fast runs
+4. State confidence level in the test results

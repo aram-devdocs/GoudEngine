@@ -1,0 +1,10 @@
+[package]
+name = "lint-layers"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "lint-layers"
+path = "lint_layers.rs"

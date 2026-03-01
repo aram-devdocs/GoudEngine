@@ -3623,21 +3623,31 @@ impl ParallelSystemStage {
                 // We use raw pointers wrapped in UnsafePtr to satisfy Send bounds.
                 // The safety is guaranteed by the non-overlapping access patterns
                 // verified during batch construction.
-                let systems_ptr = UnsafePtr(self.systems.as_mut_ptr());
-                let world_ptr = UnsafePtr(world as *mut World);
+                #[cfg(feature = "native")]
+                {
+                    let systems_ptr = UnsafePtr(self.systems.as_mut_ptr());
+                    let world_ptr = UnsafePtr(world as *mut World);
 
-                rayon::scope(|s| {
+                    rayon::scope(|s| {
+                        for &idx in &runnable {
+                            s.spawn(move |_| {
+                                // SAFETY: See above - each system in the batch accesses disjoint data
+                                unsafe {
+                                    let system = &mut *systems_ptr.get().add(idx);
+                                    let world_ref = &mut *world_ptr.get();
+                                    system.run(world_ref);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                #[cfg(not(feature = "native"))]
+                {
                     for &idx in &runnable {
-                        s.spawn(move |_| {
-                            // SAFETY: See above - each system in the batch accesses disjoint data
-                            unsafe {
-                                let system = &mut *systems_ptr.get().add(idx);
-                                let world_ref = &mut *world_ptr.get();
-                                system.run(world_ref);
-                            }
-                        });
+                        self.systems[idx].run(world);
                     }
-                });
+                }
             }
         }
 

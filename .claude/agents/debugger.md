@@ -64,3 +64,11 @@ Before debugging:
 3. Categorize: compile error, logic bug, data issue, FFI mismatch, missing dependency
 4. Report: root cause, affected files, suggested minimal fix
 5. Hand off to the appropriate implementer agent
+
+## Challenge Protocol
+
+For each diagnosis:
+1. State confidence level: high, medium, or low
+2. Trace through the code to confirm — do not guess
+3. If multiple root causes are possible, rank by likelihood
+4. Flag areas where you need more information to be certain

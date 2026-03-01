@@ -2,7 +2,7 @@ name: Claude Code Review
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, reopened, ready_for_review]
   issue_comment:
     types: [created]
   workflow_dispatch:
@@ -79,18 +79,7 @@ jobs:
                 per_page: 100
               });
 
-              if (files.length > 50) {
-                core.warning(`PR has ${files.length} files — skipping automated review (>50 files)`);
-                core.setOutput('should_review', 'false');
-                return;
-              }
-
-              const totalChanges = pr.additions + pr.deletions;
-              if (totalChanges > 5000) {
-                core.warning(`PR has ${totalChanges} changed lines — skipping automated review (>5000 lines)`);
-                core.setOutput('should_review', 'false');
-                return;
-              }
+              core.info(`PR has ${files.length} files and ${pr.additions + pr.deletions} changed lines`);
             }
 
             core.setOutput('should_review', String(shouldReview));
@@ -126,6 +115,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-opus-4-6
           track_progress: true
           prompt: |
             REPO: ${{ github.repository }}

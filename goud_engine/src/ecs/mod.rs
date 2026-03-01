@@ -70,6 +70,7 @@ pub mod collision;
 pub mod component;
 pub mod components;
 pub mod entity;
+#[cfg(feature = "native")]
 pub mod input_manager;
 pub mod physics_world;
 pub mod query;
@@ -91,6 +92,7 @@ pub use collision::{
 };
 pub use component::{Component, ComponentId, ComponentInfo};
 pub use entity::{Entity, EntityAllocator};
+#[cfg(feature = "native")]
 pub use input_manager::{InputBinding, InputManager};
 pub use physics_world::PhysicsWorld;
 pub use query::{Query, QueryIter, QueryIterMut, QuerySystemParamState};

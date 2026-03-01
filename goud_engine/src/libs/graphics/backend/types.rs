@@ -286,6 +286,40 @@ pub enum PrimitiveTopology {
     TriangleFan = 5,
 }
 
+/// Depth comparison function.
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum DepthFunc {
+    /// Always pass
+    Always = 0,
+    /// Never pass
+    Never = 1,
+    /// Pass if fragment depth < buffer depth
+    #[default]
+    Less = 2,
+    /// Pass if fragment depth <= buffer depth
+    LessEqual = 3,
+    /// Pass if fragment depth > buffer depth
+    Greater = 4,
+    /// Pass if fragment depth >= buffer depth
+    GreaterEqual = 5,
+    /// Pass if fragment depth == buffer depth
+    Equal = 6,
+    /// Pass if fragment depth != buffer depth
+    NotEqual = 7,
+}
+
+/// Front face winding order.
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum FrontFace {
+    /// Counter-clockwise winding (OpenGL default)
+    #[default]
+    Ccw = 0,
+    /// Clockwise winding
+    Cw = 1,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

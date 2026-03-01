@@ -24,37 +24,8 @@
 use crate::core::math::Vec2;
 use crate::ecs::collision::{aabb_aabb_collision, circle_aabb_collision, circle_circle_collision};
 
-// ============================================================================
-// Contact Structure (FFI-compatible)
-// ============================================================================
-
-/// FFI-compatible contact information from a collision.
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
-pub struct GoudContact {
-    /// Contact point X coordinate
-    pub point_x: f32,
-    /// Contact point Y coordinate
-    pub point_y: f32,
-    /// Collision normal X component (unit vector pointing from A to B)
-    pub normal_x: f32,
-    /// Collision normal Y component
-    pub normal_y: f32,
-    /// Penetration depth (positive = overlapping)
-    pub penetration: f32,
-}
-
-impl From<crate::ecs::collision::Contact> for GoudContact {
-    fn from(contact: crate::ecs::collision::Contact) -> Self {
-        Self {
-            point_x: contact.point.x,
-            point_y: contact.point.y,
-            normal_x: contact.normal.x,
-            normal_y: contact.normal.y,
-            penetration: contact.penetration,
-        }
-    }
-}
+// Re-export GoudContact from core for backward compatibility
+pub use crate::core::types::GoudContact;
 
 // ============================================================================
 // AABB Collision

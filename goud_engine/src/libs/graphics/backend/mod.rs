@@ -24,8 +24,11 @@
 use crate::core::error::GoudResult;
 use std::fmt::Debug;
 
+#[cfg(feature = "native")]
 pub mod opengl;
 pub mod types;
+#[cfg(feature = "wgpu-backend")]
+pub mod wgpu_backend;
 
 // Re-export for convenience
 #[allow(unused_imports)]
@@ -224,6 +227,18 @@ pub trait RenderBackend: Send + Sync {
 
     /// Sets which faces to cull.
     fn set_cull_face(&mut self, face: CullFace);
+
+    /// Sets the depth comparison function.
+    fn set_depth_func(&mut self, func: DepthFunc);
+
+    /// Sets the front face winding order.
+    fn set_front_face(&mut self, face: FrontFace);
+
+    /// Enables or disables writing to the depth buffer.
+    fn set_depth_mask(&mut self, enabled: bool);
+
+    /// Sets the line width for line primitives.
+    fn set_line_width(&mut self, width: f32);
 
     // ============================================================================
     // Buffer Operations

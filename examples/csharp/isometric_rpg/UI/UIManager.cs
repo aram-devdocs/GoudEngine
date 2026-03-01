@@ -1,6 +1,8 @@
 // UI/UIManager.cs
 // Simple UI manager (rendering moved to GameManager)
 
+using GoudEngine;
+
 namespace IsometricRpg.UI;
 
 public class SimpleUI

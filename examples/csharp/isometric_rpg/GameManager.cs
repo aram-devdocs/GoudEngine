@@ -1,8 +1,7 @@
 // GameManager.cs
 // Main game manager using immediate-mode rendering
 
-using GoudEngine.Input;
-using GoudEngine.Math;
+using GoudEngine;
 using IsometricRpg.Core;
 using IsometricRpg.Player;
 using IsometricRpg.Enemies;
@@ -77,7 +76,7 @@ public class GameManager
         _ui = new SimpleUI(_game, _titleTexture, _pressStartTexture, 
             _healthBgTexture, _healthFillTexture, _dialogueBoxTexture);
 
-        _game.GameLog("Isometric RPG initialized");
+        Console.WriteLine("Isometric RPG initialized");
     }
 
     private void LoadTextures()
@@ -117,14 +116,14 @@ public class GameManager
 
         var enemy = new SimpleEnemy(x, y);
         _enemies.Add(enemy);
-        _game.GameLog($"Enemy spawned at ({x:F0}, {y:F0})");
+        Console.WriteLine($"Enemy spawned at ({x:F0}, {y:F0})");
     }
 
     public void Start()
     {
         _stateManager.SetState(GameState.Title);
         _startCooldown = 0.5f;
-        _game.GameLog("Game started - showing title screen");
+        Console.WriteLine("Game started - showing title screen");
     }
 
     public void Update(float deltaTime)
@@ -204,7 +203,7 @@ public class GameManager
         SpawnEnemy();
         _enemySpawnTimer = EnemySpawnInterval;
         _stateManager.SetState(GameState.Playing);
-        _game.GameLog("=== GAME STARTED ===");
+        Console.WriteLine("=== GAME STARTED ===");
     }
 
     private void UpdatePlaying(float deltaTime)
@@ -274,7 +273,7 @@ public class GameManager
         {
             _stateManager.SetState(GameState.GameOver);
             _startCooldown = 0.5f;
-            _game.GameLog("=== GAME OVER ===");
+            Console.WriteLine("=== GAME OVER ===");
         }
     }
 
@@ -293,8 +292,8 @@ public class GameManager
         // Shooting with left mouse button
         if (_game.IsMouseButtonJustPressed(MouseButtons.Left))
         {
-            var (mx, my) = _game.GetMousePosition();
-            ShootProjectile(_player.X, _player.Y, mx, my);
+            var mousePos = _game.GetMousePosition();
+            ShootProjectile(_player.X, _player.Y, mousePos.X, mousePos.Y);
         }
     }
 
@@ -444,6 +443,6 @@ public class GameManager
 
     private void HandleStateChanged(GameState oldState, GameState newState)
     {
-        _game.GameLog($"State: {oldState} -> {newState}");
+        Console.WriteLine($"State: {oldState} -> {newState}");
     }
 }

@@ -9,6 +9,9 @@ Reference documentation, generated diagrams, and development guides.
 - `husky-rs.docs.md` — Reference for the husky-rs git hooks system
 - `cbindgen.docs.md` — Reference for C header generation tooling
 - `diagrams/` — Auto-generated module dependency graphs
+- `architecture/` — Architecture design documents
+  - `sdk-first-architecture.md` — Layer architecture, codegen pipeline, context handles
+  - `adding-a-new-language.md` — Step-by-step guide for adding a new SDK language target
 
 ## Diagrams
 

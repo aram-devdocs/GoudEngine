@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GoudEngine" Version="0.0.812" />
+    <PackageReference Include="GoudEngine" Version="0.0.815" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,5 +17,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Target Name="CopyNativeLib" AfterTargets="Build">
+    <Copy SourceFiles="$(OutputPath)runtimes/osx-x64/native/libgoud_engine.dylib"
+          DestinationFolder="$(OutputPath)"
+          Condition="Exists('$(OutputPath)runtimes/osx-x64/native/libgoud_engine.dylib')" />
+  </Target>
 
 </Project>

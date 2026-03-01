@@ -45,11 +45,11 @@ C# SDK (csbindgen)    Python SDK (ctypes)
 - Generates C# DllImport declarations from Rust `extern "C"` functions
 - Handles basic type mapping (i32 → int, f32 → float, *mut T → IntPtr)
 - Complex types need manual C# wrappers
-- Output goes to `sdks/GoudEngine/` generated bindings file
+- Output goes to `sdks/csharp/` generated bindings file
 
 ### Python ctypes
 
-- Manual declarations in `sdks/python/goud_engine/bindings.py`
+- Manual declarations in `sdks/python/goud_engine/generated/_ffi.py`
 - Set `argtypes` and `restype` for each function
 - Type mapping: `c_int`, `c_float`, `c_char_p`, `POINTER()`
 - Library loading handles macOS (.dylib) and Linux (.so)

@@ -1,6 +1,6 @@
 // Bird.cs
 
-using GoudEngine.Input;
+using GoudEngine;
 
 public class Bird
 {

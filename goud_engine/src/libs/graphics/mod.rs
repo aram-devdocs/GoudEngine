@@ -6,5 +6,6 @@
 //! the complete 3D rendering system.
 
 pub mod backend;
+#[cfg(feature = "native")]
 pub mod renderer3d;
 pub mod sprite_batch;

@@ -28,7 +28,7 @@ Before writing ANY tests:
 ## Scope
 
 - Write new `#[test]` functions in Rust
-- Write new test cases for C# (`sdks/GoudEngine.Tests/`)
+- Write new test cases for C# (`sdks/csharp.tests/`)
 - Write new test cases for Python (`sdks/python/test_bindings.py`)
 
 ## TDD RED Phase Rules
@@ -62,3 +62,16 @@ Before writing ANY tests:
 3. Run tests to confirm they FAIL
 4. Report the failing tests and what implementation is needed
 5. Hand off to the implementer agent for the GREEN phase
+
+## Challenge Protocol
+
+Before implementing:
+1. List 1-2 assumptions you are making about the codebase or requirements
+2. Flag any uncertain assumptions for the orchestrator to confirm
+
+After implementing:
+1. Run `cargo check` to verify compilation
+2. Run `cargo test` on affected modules
+3. Report: what you changed, what you verified, any concerns
+
+Do NOT report success without running verification commands.

@@ -1,6 +1,7 @@
 // Program.cs
 
 using System;
+using GoudEngine;
 
 public class Program
 {
@@ -13,8 +14,6 @@ public class Program
         );
 
         GameManager gameManager = new GameManager(game);
-
-        game.GameLog("Game initialized successfully!");
 
         // Initialize
         gameManager.Initialize();

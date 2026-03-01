@@ -1,6 +1,7 @@
 // ScoreCounter.cs
 
 using System.Collections.Generic;
+using GoudEngine;
 
 public class ScoreCounter
 {

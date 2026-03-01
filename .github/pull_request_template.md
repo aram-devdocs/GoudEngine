@@ -17,11 +17,39 @@
 ### FFI Layer (`goud_engine/src/ffi/`)
 <!-- List FFI boundary changes, or write "No changes" -->
 
-### C# SDK (`sdks/GoudEngine/`)
+### C# SDK (`sdks/csharp/`)
 <!-- List C# SDK changes, or write "No changes" -->
 
 ### Python SDK (`sdks/python/`)
 <!-- List Python SDK changes, or write "No changes" -->
+
+### TypeScript SDK (`sdks/typescript/`)
+- [ ] Node napi binding changes
+- [ ] Web WASM binding changes
+- [ ] Type definition changes
+- [ ] Tests updated
+<!-- List TypeScript SDK changes, or write "No changes" -->
+
+### Codegen Pipeline (`codegen/`)
+- [ ] Schema changes
+- [ ] Generator changes
+- [ ] Validator changes
+- [ ] ffi_mapping changes
+<!-- List codegen pipeline changes, or write "No changes" -->
+
+### Proc Macros (`goud_engine_macros/`)
+- [ ] `#[goud_api]` attribute changes
+<!-- List proc macro changes, or write "No changes" -->
+
+### Tools (`tools/`)
+- [ ] lint-layers changes
+<!-- List tooling changes, or write "No changes" -->
+
+### WASM (`goud_engine/src/wasm/`)
+- [ ] wasm-bindgen exports
+- [ ] Sprite renderer changes
+- [ ] Texture loader changes
+<!-- List WASM changes, or write "No changes" -->
 
 ### Examples (`examples/`)
 <!-- List example game changes, or write "No changes" -->
@@ -36,7 +64,7 @@
 - [ ] **Rust-first**: All logic lives in Rust; SDKs are thin wrappers
 - [ ] **FFI boundary**: New exports use `#[no_mangle] extern "C"` and `#[repr(C)]` where needed
 - [ ] **Dependency flow**: Imports follow layer hierarchy (down only)
-- [ ] **SDK parity**: Changes exposed via FFI are wrapped in both C# and Python SDKs
+- [ ] **SDK parity**: Changes exposed via FFI are wrapped in C#, Python, AND TypeScript SDKs
 - [ ] **Unsafe discipline**: No `unsafe` block without a `// SAFETY:` comment
 - [ ] **File size**: No file exceeds 500 lines
 
@@ -48,7 +76,9 @@
 - [ ] `cargo clippy -- -D warnings` is clean
 - [ ] `cargo fmt --all -- --check` passes
 - [ ] Python SDK tests pass (`python3 sdks/python/test_bindings.py`) — if SDK changed
-- [ ] C# SDK tests pass (`dotnet test sdks/GoudEngine.Tests/`) — if SDK changed
+- [ ] C# SDK tests pass (`dotnet test sdks/csharp.tests/`) — if SDK changed
+- [ ] TypeScript SDK tests pass (`cd sdks/typescript && npm test`) — if TS SDK changed
+- [ ] Codegen produces consistent output (`python3 codegen/validate.py && python3 codegen/validate_coverage.py`)
 - [ ] Pre-commit hooks pass
 
 ---
@@ -108,6 +138,7 @@
 
 - [ ] NuGet package version updated (if SDK changed)
 - [ ] Python package version updated (if SDK changed)
+- [ ] npm package version updated (if TS SDK changed)
 - [ ] Native library builds on all targets (macOS, Linux, Windows)
 
 ---

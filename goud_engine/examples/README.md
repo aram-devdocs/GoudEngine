@@ -341,7 +341,7 @@ for event in world.read_events::<CollisionEvent>() {
 ## See Also
 
 - [Full API Documentation](../src/) - Complete Rust API reference
-- [C# SDK Examples](../../sdks/GoudEngine/Examples/) - C# integration examples
+- [C# SDK Examples](../../sdks/csharp/Examples/) - C# integration examples
 - [Architecture Spec](../.zenflow/tasks/full-refactor-audit-5545/spec.md) - Engine architecture
 - [GitHub Issues](https://github.com/yourusername/goudengine/issues) - Bug reports and feature requests
 

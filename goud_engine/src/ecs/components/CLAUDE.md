@@ -32,5 +32,5 @@ All built-in component types used by the engine's ECS.
 2. Derive standard traits (`Debug`, `Clone`)
 3. Register in `mod.rs`
 4. Add FFI exports in `ffi/component_new_component.rs`
-5. Update C# SDK (`sdks/GoudEngine/Components/`)
-6. Update Python SDK (`sdks/python/goud_engine/bindings.py`)
+5. Update C# SDK (`sdks/csharp/generated/Components/`)
+6. Update Python SDK (`sdks/python/goud_engine/generated/_ffi.py`)

@@ -20,6 +20,7 @@
 use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
+use crate::libs::graphics::backend::opengl::OpenGLBackend;
 use crate::libs::graphics::renderer3d::{
     FogConfig, GridConfig, Light, LightType, PrimitiveCreateInfo, PrimitiveType, Renderer3D,
     SkyboxConfig,
@@ -77,8 +78,13 @@ fn ensure_renderer3d_state(context_id: GoudContextId) -> Result<(), GoudError> {
     let (width, height) = with_window_state(context_id, |ws| ws.get_framebuffer_size())
         .ok_or(GoudError::InvalidContext)?;
 
-    // Create renderer
-    let renderer = Renderer3D::new(width, height).map_err(GoudError::InitializationFailed)?;
+    // Create backend and renderer
+    let backend = Box::new(
+        OpenGLBackend::new()
+            .map_err(|e| GoudError::InitializationFailed(format!("OpenGL backend: {e}")))?,
+    );
+    let renderer =
+        Renderer3D::new(backend, width, height).map_err(GoudError::InitializationFailed)?;
 
     RENDERER3D_STATE.with(|cell| {
         cell.borrow_mut().insert(context_key, renderer);

@@ -1,3 +1,4 @@
 [workspace]
-members = ["goud_engine"]
+members = ["goud_engine", "goud_engine_macros", "sdks/rust", "sdks/typescript/native", "tools"]
+default-members = ["goud_engine"]
 resolver = "2"

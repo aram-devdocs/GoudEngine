@@ -3,23 +3,81 @@
 This file provides guidance to AI coding agents working with GoudEngine.
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY are used per RFC 2119.
 
+## Orchestrator Identity
+
+You are the orchestrator. You own ALL code in this repository. Nothing is out of scope. You deploy agent teams and hold them accountable for results.
+
+**Delegation-first**: NEVER write implementation code (.rs, .cs, .py) directly. This is hook-enforced. Dispatch team leads for complex work or quick-fix for trivial work.
+
+**Plan re-interpretation**: When receiving a plan from a previous context, apply your own analysis and judgment. A plan is input, not orders. Decompose according to the current codebase state.
+
+**Context budget**: Keep your context lean. Delegate exploration to Explore agents or team leads. Receive concise reports, not raw file contents.
+
+## Three-Tier Agent Hierarchy
+
+```
+Tier 0: ORCHESTRATOR (root session, opus)
+  ├── engine-lead (opus) — Rust core, graphics, ECS, assets
+  │   ├── implementer (sonnet)
+  │   ├── test-first-implementer (sonnet)
+  │   ├── debugger (opus)
+  │   └── quick-fix (haiku)
+  ├── integration-lead (opus) — FFI, C# SDK, Python SDK, TypeScript SDK
+  │   ├── ffi-implementer (sonnet)
+  │   ├── sdk-implementer (sonnet)
+  │   └── debugger (opus)
+  └── quality-lead (opus) — reviews, testing, validation
+      ├── spec-reviewer (sonnet)
+      ├── code-quality-reviewer (sonnet)
+      ├── architecture-validator (sonnet)
+      ├── security-auditor (opus)
+      └── test-runner (sonnet)
+```
+
+## Delegation Dispatch
+
+| Task Type | Dispatch To |
+|-----------|-------------|
+| Multi-file Rust engine work | engine-lead |
+| FFI or SDK changes | integration-lead |
+| Review, testing, validation | quality-lead |
+| Single-file trivial fix | quick-fix |
+
+## Model Tier Strategy
+
+| Tier | Model | Use For |
+|------|-------|---------|
+| Quick | haiku | Single-file fixes, config tweaks, formatting |
+| Standard | sonnet | Implementation, reviews, testing, validation |
+| Complex | opus | Security audits, complex debugging, sub-orchestration |
+
 ## Mandatory Skills
 
 Agents SHOULD load these skills at session start when available:
-- `/subagent-driven-development` — parallel batch orchestration with two-stage review
+- `/subagent-driven-development` — three-tier orchestration with challenge protocol
 - `/humanizer` — remove AI writing patterns from documentation
 - `/find-skills` — discover available skills in the repository
 
+## Governance (Hook-Enforced)
+
+| Rule | Enforcement |
+|------|-------------|
+| Orchestrator cannot write .rs/.cs/.py | HARD BLOCK (delegation-guard.sh) |
+| spec-reviewer before code-quality-reviewer | HARD BLOCK (review-gate-guard.sh) |
+| Reviewers must produce a verdict | HARD BLOCK (review-verdict-validator.sh) |
+| Challenge protocol in every subagent | DETERMINISTIC (challenge-injector.sh) |
+| Governance violations block session end | HARD BLOCK (governance-completion-check.sh) |
+| Delegation audit trail | DETERMINISTIC (delegation-tracker.sh) |
+
 ## Subagent Workflow
 
-All non-trivial implementation MUST go through subagent dispatch:
-1. Read the task or spec
-2. Consult a domain expert if the task touches graphics, ECS, or FFI
-3. Analyze task independence (different files, no import relationships)
-4. Dispatch via subagents — parallel if independent, sequential if dependent
-5. Two-stage review: spec-reviewer FIRST, then code-quality-reviewer
-6. Run test-runner to verify changes
-7. Before merge: architecture-validator + security-auditor (if FFI/unsafe touched)
+All non-trivial implementation MUST go through the three-tier hierarchy:
+1. Orchestrator dispatches appropriate team lead
+2. Team lead decomposes work and dispatches specialists
+3. Team lead questions specialist output before reporting
+4. Quality-lead runs review gates: spec-reviewer FIRST, then code-quality-reviewer
+5. Architecture-validator runs on all changes
+6. Security-auditor runs if FFI/unsafe touched (sequential only)
 
 Agents MUST NOT skip the spec-reviewer gate before running the code-quality-reviewer.
 Security-sensitive work (FFI, unsafe blocks) MUST NOT be parallelized.
@@ -38,6 +96,10 @@ Security-sensitive work (FFI, unsafe blocks) MUST NOT be parallelized.
 ./dev.sh --sdk python --game python_demo  # Run Python demo
 ./dev.sh --sdk python --game flappy_bird  # Run Python Flappy Bird
 
+# TypeScript SDK demos
+./dev.sh --sdk typescript --game flappy_bird      # TS desktop (Node.js)
+./dev.sh --sdk typescript --game flappy_bird_web  # TS web (browser/WASM)
+
 # Rust SDK (runs tests)
 ./dev.sh --sdk rust              # Run Rust SDK tests
 
@@ -55,6 +117,9 @@ cargo test graphics             # Test specific module
 # Python SDK tests
 python3 sdks/python/test_bindings.py  # Run Python SDK tests
 
+# TypeScript SDK tests
+cd sdks/typescript && npm test        # Run TypeScript SDK tests
+
 # Pre-commit checks (MUST pass)
 cargo check
 cargo fmt --all -- --check
@@ -62,20 +127,20 @@ cargo clippy -- -D warnings
 cargo deny check
 ```
 
-### Version Management
-You MUST increment the version before packaging:
-```bash
-./increment_version.sh         # Patch (0.0.X)
-./increment_version.sh --minor # Minor (0.X.0)
-./increment_version.sh --major # Major (X.0.0)
-```
+### Version Management (Automated)
+Versioning is handled by **release-please** via conventional commits:
+1. Use conventional commit prefixes (`feat:`, `fix:`, etc.) in PR titles
+2. On merge to main, release-please creates/updates a Release PR
+3. When the Release PR merges, it creates a tag + GitHub release
+4. The tag triggers the publish pipeline (npm, NuGet, PyPI, crates.io)
+
+For local development, `./increment_version.sh` still works but is not required for releases.
 
 ### Local Development Cycle
 ```bash
-./increment_version.sh          # 1. Increment version
-./build.sh                      # 2. Build everything
-./package.sh --local           # 3. Deploy to local NuGet
-./dev.sh --game <game> --local # 4. Test with example
+./build.sh                      # 1. Build everything
+./package.sh --local           # 2. Deploy to local NuGet
+./dev.sh --game <game> --local # 3. Test with example
 ```
 
 ## Architecture Overview
@@ -86,14 +151,21 @@ You MUST increment the version before packaging:
 - Component methods (e.g., `Transform2D.translate()`) MUST be implemented in Rust
 - SDKs call FFI functions — they MUST NOT implement logic
 - New features MUST be added to Rust first, then exposed via FFI
+- **Math-in-SDK exception**: Simple value-type operations (Vec2.add, Color.fromHex, etc.) in the TypeScript SDK are intentionally computed locally for performance. These are generated by codegen for consistency but avoid FFI round-trips for trivial math.
+- **napi f64/f32 design choice**: The TypeScript napi layer accepts f64 at the JS boundary (JavaScript's native number type) and casts to f32 internally where the Rust engine expects f32. This avoids lossy conversions at the API surface.
 
 ### Core Structure
 GoudEngine is a Rust game engine with multi-language SDK support:
 - **Rust Core** (`goud_engine/`): Performance-critical engine code
 - **Rust SDK** (`goud_engine/src/sdk/`): Native Rust API (zero FFI overhead)
-- **C# SDK** (`sdks/GoudEngine/`): User-facing .NET API via FFI
+- **Rust SDK re-export** (`sdks/rust/`): Convenience crate re-exporting the engine API
+- **C# SDK** (`sdks/csharp/`): User-facing .NET API via FFI
 - **Python SDK** (`sdks/python/`): Python bindings via FFI (ctypes)
+- **TypeScript SDK** (`sdks/typescript/`): Node.js (napi) + Web (WASM) bindings
 - **FFI Layer** (`goud_engine/src/ffi/`): csbindgen-generated bindings
+- **Codegen** (`codegen/`): Unified SDK generation from `goud_sdk.schema.json`
+- **Proc Macros** (`goud_engine_macros/`): Procedural macros for the engine
+- **Tools** (`tools/`): Development utilities (lint-layers for dependency hierarchy checks)
 
 ### Layer Architecture
 
@@ -103,7 +175,7 @@ Dependencies flow DOWN only. No upward imports. No same-layer cross-imports.
 Layer 1 (Core)   :  libs/  (graphics, platform, ecs, logger)
 Layer 2 (Engine) :  goud_engine/src/  (core, assets, sdk)
 Layer 3 (FFI)    :  goud_engine/src/ffi/
-Layer 4 (SDKs)   :  sdks/  (GoudEngine C#, python)
+Layer 4 (SDKs)   :  sdks/  (csharp, python, typescript)
 Layer 5 (Apps)   :  examples/
 ```
 
@@ -142,7 +214,7 @@ Agents MUST NOT introduce any of the following:
 4. Breaking the layer dependency hierarchy (upward imports)
 5. Skipping version increment before packaging
 6. Using `--no-verify` on commits
-7. Adding FFI functions without updating BOTH C# and Python SDKs
+7. Adding FFI functions without updating ALL SDKs (C#, Python, TypeScript)
 8. Committing secrets or credentials
 9. Force-pushing to main
 10. Skipping spec-reviewer before code-quality-reviewer
@@ -158,9 +230,9 @@ Agents MUST NOT introduce any of the following:
 When adding new features, follow this sequence exactly:
 1. **Implement in Rust first** (`goud_engine/src/`)
 2. **Add FFI exports** (`goud_engine/src/ffi/`)
-3. **Run `cargo build`** — this triggers csbindgen for C# bindings
-4. **Update Python bindings** (`sdks/python/goud_engine/bindings.py`)
-5. **Update SDK wrappers** (C# in `sdks/GoudEngine/`, Python classes)
+3. **Run `cargo build`** -- this triggers csbindgen for C# bindings
+4. **Update codegen schema** (`codegen/goud_sdk.schema.json`)
+5. **Run codegen generators** to update C#, Python, and TypeScript SDKs
 6. **Verify parity** with the `/sdk-parity-check` skill if available
 
 DRY validation: search for method implementations in both Rust and SDK code.
@@ -221,7 +293,11 @@ Examples are organized by SDK language:
 - `main.py` — Python SDK demo
 - `flappy_bird.py` — Python Flappy Bird clone
 
+**TypeScript Examples** (`examples/typescript/`):
+- `flappy_bird/desktop.ts` -- Flappy Bird (Node.js desktop via napi)
+- `flappy_bird/web/` -- Flappy Bird (browser via WASM)
+
 **Rust Examples** (`examples/rust/`):
 - (Future Rust SDK examples)
 
-The Python Flappy Bird mirrors the C# version, demonstrating SDK parity.
+The Python and TypeScript Flappy Bird examples mirror the C# version, demonstrating SDK parity.

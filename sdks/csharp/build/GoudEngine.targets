@@ -1,0 +1,40 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Copy the correct native library to the output directory at build time -->
+  <Target Name="CopyGoudEngineNativeLib" AfterTargets="Build">
+
+    <PropertyGroup>
+      <GoudNativeDir>$(MSBuildThisFileDirectory)..\runtimes\</GoudNativeDir>
+    </PropertyGroup>
+
+    <!-- macOS x64 -->
+    <Copy
+      SourceFiles="$(GoudNativeDir)osx-x64\native\libgoud_engine.dylib"
+      DestinationFolder="$(OutputPath)"
+      Condition="$([MSBuild]::IsOSPlatform('OSX')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64' And Exists('$(GoudNativeDir)osx-x64\native\libgoud_engine.dylib')"
+      SkipUnchangedFiles="true" />
+
+    <!-- macOS ARM64 -->
+    <Copy
+      SourceFiles="$(GoudNativeDir)osx-arm64\native\libgoud_engine.dylib"
+      DestinationFolder="$(OutputPath)"
+      Condition="$([MSBuild]::IsOSPlatform('OSX')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64' And Exists('$(GoudNativeDir)osx-arm64\native\libgoud_engine.dylib')"
+      SkipUnchangedFiles="true" />
+
+    <!-- Linux x64 -->
+    <Copy
+      SourceFiles="$(GoudNativeDir)linux-x64\native\libgoud_engine.so"
+      DestinationFolder="$(OutputPath)"
+      Condition="$([MSBuild]::IsOSPlatform('Linux')) And Exists('$(GoudNativeDir)linux-x64\native\libgoud_engine.so')"
+      SkipUnchangedFiles="true" />
+
+    <!-- Windows x64 -->
+    <Copy
+      SourceFiles="$(GoudNativeDir)win-x64\native\goud_engine.dll"
+      DestinationFolder="$(OutputPath)"
+      Condition="$([MSBuild]::IsOSPlatform('Windows')) And Exists('$(GoudNativeDir)win-x64\native\goud_engine.dll')"
+      SkipUnchangedFiles="true" />
+
+  </Target>
+
+</Project>

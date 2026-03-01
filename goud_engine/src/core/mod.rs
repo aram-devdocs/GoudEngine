@@ -11,8 +11,11 @@
 //! These utilities form the foundation for all other engine subsystems and
 //! provide consistent patterns for cross-language interoperability.
 
+pub mod component_ops;
+pub mod context_registry;
 pub mod error;
 pub mod event;
 pub mod events;
 pub mod handle;
 pub mod math;
+pub mod types;

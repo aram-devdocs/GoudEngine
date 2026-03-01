@@ -8,7 +8,7 @@
 
 using System;
 using System.IO;
-using GoudEngine.Input;
+using GoudEngine;
 
 class Program
 {
@@ -76,7 +76,7 @@ class Program
         uint textureId = 0;
         if (File.Exists(texturePath))
         {
-            textureId = game.CreateTexture(texturePath);
+            textureId = (uint)game.LoadTexture(texturePath);
             Console.WriteLine($"Loaded texture: {texturePath}");
         }
         else
@@ -111,16 +111,16 @@ class Program
 
         // Create lights
         // Red orbiting light
-        uint redLightId = game.AddPointLight(5.0f, 5.0f, -5.0f, 1.0f, 0.2f, 0.2f, 2.0f, 20.0f);
+        uint redLightId = game.AddLight(0, 5.0f, 5.0f, -5.0f, 0, -1, 0, 1.0f, 0.2f, 0.2f, 2.0f, 20.0f, 0);
 
         // Blue orbiting light
-        uint blueLightId = game.AddPointLight(-5.0f, 5.0f, 5.0f, 0.2f, 0.2f, 1.0f, 2.0f, 20.0f);
+        uint blueLightId = game.AddLight(0, -5.0f, 5.0f, 5.0f, 0, -1, 0, 0.2f, 0.2f, 1.0f, 2.0f, 20.0f, 0);
 
         // Green orbiting light
-        uint greenLightId = game.AddPointLight(5.0f, 5.0f, 5.0f, 0.2f, 1.0f, 0.2f, 2.0f, 20.0f);
+        uint greenLightId = game.AddLight(0, 5.0f, 5.0f, 5.0f, 0, -1, 0, 0.2f, 1.0f, 0.2f, 2.0f, 20.0f, 0);
 
         // Sun light (bright white from above)
-        uint sunLightId = game.AddPointLight(0.0f, 20.0f, 0.0f, 1.0f, 1.0f, 0.9f, 50.0f, 50.0f);
+        uint sunLightId = game.AddLight(0, 0.0f, 20.0f, 0.0f, 0, -1, 0, 1.0f, 1.0f, 0.9f, 50.0f, 50.0f, 0);
 
         // Animation state
         float elapsedTime = 0.0f;
@@ -144,7 +144,7 @@ class Program
 
         // Set initial camera position
         game.SetCameraPosition3D(positionX, positionY, positionZ);
-        game.SetCameraRotation(pitch, yaw, 0);
+        game.SetCameraRotation3D(pitch, yaw, 0);
 
         // Main game loop
         while (!game.ShouldClose())
@@ -167,7 +167,7 @@ class Program
 
             // Update camera
             game.SetCameraPosition3D(positionX, positionY, positionZ);
-            game.SetCameraRotation(pitch, yaw, 0);
+            game.SetCameraRotation3D(pitch, yaw, 0);
 
             // Animate player cube - bounce
             float bounceOffset = (float)Math.Sin(elapsedTime * bounceSpeed) * bounceHeight;
@@ -184,7 +184,7 @@ class Program
             float redX = (float)Math.Cos(lightAngle) * lightOrbitRadius;
             float redZ = (float)Math.Sin(lightAngle) * lightOrbitRadius;
             float redPulse = (float)(Math.Sin(lightAngle) * 0.5f + 0.5f);
-            game.UpdateLight(redLightId, GoudGame.LightType.Point,
+            game.UpdateLight(redLightId, 0,
                 redX, lightHeight, redZ, 0, -1, 0,
                 1.0f, redPulse * 0.2f, redPulse * 0.2f, 2.0f, 20.0f, 0);
 
@@ -192,7 +192,7 @@ class Program
             float blueX = (float)Math.Cos(lightAngle + 2.0f * Math.PI / 3.0f) * lightOrbitRadius;
             float blueZ = (float)Math.Sin(lightAngle + 2.0f * Math.PI / 3.0f) * lightOrbitRadius;
             float bluePulse = (float)(Math.Sin(lightAngle + 2.0f * Math.PI / 3.0f) * 0.5f + 0.5f);
-            game.UpdateLight(blueLightId, GoudGame.LightType.Point,
+            game.UpdateLight(blueLightId, 0,
                 blueX, lightHeight, blueZ, 0, -1, 0,
                 bluePulse * 0.2f, bluePulse * 0.2f, 1.0f, 2.0f, 20.0f, 0);
 
@@ -200,7 +200,7 @@ class Program
             float greenX = (float)Math.Cos(lightAngle + 4.0f * Math.PI / 3.0f) * lightOrbitRadius;
             float greenZ = (float)Math.Sin(lightAngle + 4.0f * Math.PI / 3.0f) * lightOrbitRadius;
             float greenPulse = (float)(Math.Sin(lightAngle + 4.0f * Math.PI / 3.0f) * 0.5f + 0.5f);
-            game.UpdateLight(greenLightId, GoudGame.LightType.Point,
+            game.UpdateLight(greenLightId, 0,
                 greenX, lightHeight, greenZ, 0, -1, 0,
                 greenPulse * 0.2f, 1.0f, greenPulse * 0.2f, 2.0f, 20.0f, 0);
 
@@ -208,7 +208,7 @@ class Program
             sunLightAngle += sunLightOrbitSpeed * deltaTime;
             float sunX = (float)Math.Cos(sunLightAngle) * sunLightOrbitRadius;
             float sunZ = (float)Math.Sin(sunLightAngle) * sunLightOrbitRadius;
-            game.UpdateLight(sunLightId, GoudGame.LightType.Point,
+            game.UpdateLight(sunLightId, 0,
                 sunX, 20.0f, sunZ, 0, -1, 0,
                 1.0f, 1.0f, 0.9f, 50.0f, 50.0f, 0);
 

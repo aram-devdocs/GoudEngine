@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flappy Goud — GoudEngine Web</title>
+  <style>
+    * { margin: 0; padding: 0; }
+    body {
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; background: #2c3e50;
+      user-select: none; -webkit-user-select: none;
+    }
+    canvas {
+      display: block; border-radius: 4px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!--
+  Web entry for Flappy Goud. Imports the SAME shared game logic (dist/game.js)
+  that the desktop entry uses. Rendering is handled by the engine's wgpu
+  backend via drawSprite — no Canvas 2D, no adapter pattern.
+
+  Serve from the project root:
+    python3 -m http.server 8765
+  Then open:
+    http://localhost:8765/examples/typescript/flappy_bird/web/index.html
+-->
+
+<script type="importmap">
+{
+  "imports": {
+    "@goudengine/sdk/web": "/sdks/typescript/dist/web/generated/web/index.g.js"
+  }
+}
+</script>
+
+<script type="module">
+import { GoudGame } from '@goudengine/sdk/web';
+import { FlappyBirdGame, SCREEN_WIDTH, SCREEN_HEIGHT, BASE_HEIGHT } from '../dist/game.js';
+
+const canvas = document.getElementById('c');
+
+const game = await GoudGame.create({
+  width: SCREEN_WIDTH,
+  height: SCREEN_HEIGHT + BASE_HEIGHT,
+  title: 'Flappy Goud',
+  canvas,
+  wasmUrl: '/sdks/typescript/wasm/goud_engine_bg.wasm',
+});
+
+const flappy = new FlappyBirdGame();
+await flappy.init(game, '/examples/csharp/flappy_goud/assets/sprites');
+
+game.setClearColor(0.4, 0.7, 0.9, 1.0);
+game.run((dt) => flappy.update(game, dt));
+</script>
+</body>
+</html>

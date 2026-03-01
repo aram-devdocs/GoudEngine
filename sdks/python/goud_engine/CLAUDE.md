@@ -7,12 +7,12 @@ The installable Python package providing GoudEngine bindings.
 ## Files
 
 - `__init__.py` — Public API exports
-- `bindings.py` — ctypes function declarations (argtypes, restype for every FFI function)
+- `generated/_ffi.py` — ctypes function declarations (argtypes, restype for every FFI function)
 - `ffi_metadata.json` — FFI function metadata for tooling
 
 ## Patterns
 
-- `bindings.py` declares every FFI function with explicit `argtypes` and `restype`
+- `generated/_ffi.py` declares every FFI function with explicit `argtypes` and `restype`
 - Rust `snake_case` FFI names map directly to Python `snake_case` wrappers
 - Library loading handles macOS (`.dylib`) and Linux (`.so`) paths
 - `__init__.py` re-exports the public API — users import from `goud_engine`
@@ -21,7 +21,7 @@ The installable Python package providing GoudEngine bindings.
 
 When new FFI functions are added in Rust (`goud_engine/src/ffi/`):
 
-1. Add ctypes declaration in `bindings.py`:
+1. Add ctypes declaration in `generated/_ffi.py`:
    - Set `argtypes` to match the C function signature
    - Set `restype` to match the return type
 2. Add Python wrapper class methods as needed

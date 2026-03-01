@@ -5,20 +5,22 @@
 [![Security Audit](https://github.com/aram-devdocs/GoudEngine/actions/workflows/security.yml/badge.svg)](https://github.com/aram-devdocs/GoudEngine/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=flat&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![.NET](https://img.shields.io/badge/.NET-7.0-512BD4)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![NuGet](https://img.shields.io/nuget/v/GoudEngine.svg)](https://www.nuget.org/packages/GoudEngine/)
 
-GoudEngine is a game engine written in Rust with multi-language SDK support. It provides a set of tools and libraries for creating 2D and 3D games, accessible from Rust, C#, and Python.
+GoudEngine is a game engine written in Rust with multi-language SDK support. It provides a set of tools and libraries for creating 2D and 3D games, accessible from Rust, C#, Python, and TypeScript.
 
 ## Design Philosophy
 
-**All logic lives in Rust.** The engine follows a Rust-first architecture where all game logic, components, and systems are implemented in Rust. Language SDKs (C#, Python) are thin wrappers that marshal data and call FFI functions, ensuring consistent behavior across all bindings.
+**All logic lives in Rust.** The engine follows a Rust-first architecture where all game logic, components, and systems are implemented in Rust. Language SDKs (C#, Python, TypeScript) are thin wrappers that marshal data and call FFI functions, ensuring consistent behavior across all bindings.
 
 ## Features
 
-- **Multi-language SDK support**: Rust (native), C# (.NET), and Python
+- **Multi-language SDK support**: Rust (native), C# (.NET), Python, and TypeScript (Node.js + Web/WASM)
 - **Rust-first architecture**: All logic in Rust, SDKs are thin FFI wrappers
+- **WASM support**: TypeScript SDK runs in browsers via WebAssembly
 - **Flexible renderer selection**: 2D or 3D at runtime
 - **2D rendering**: Sprites, 2D camera, Tiled map support
 - **3D rendering**: Primitives (cubes, spheres, planes, cylinders)
@@ -35,16 +37,16 @@ GoudEngine follows a layered architecture with all game logic in Rust:
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Your Game Code                            │
-│            (Rust / C# / Python)                              │
+│         (Rust / C# / Python / TypeScript)                     │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                     Language SDKs                            │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │  Rust SDK   │  │   C# SDK    │  │ Python SDK  │         │
-│  │ (zero FFI)  │  │ (csbindgen) │  │  (ctypes)   │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐    │
+│  │ Rust SDK │ │ C# SDK   │ │Python SDK│ │TypeScript SDK│    │
+│  │(zero FFI)│ │(csbindgen│ │ (ctypes) │ │(napi + WASM) │    │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────────┘    │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -71,6 +73,39 @@ You can regenerate this module dependency graph by running:
 
 This will create both PNG and PDF versions of the module graph using `cargo modules` and GraphViz tools.
 
+### Codegen Pipeline
+
+SDK bindings are generated from a unified schema rather than hand-written:
+
+```
+codegen/goud_sdk.schema.json   (source of truth)
+         │
+         ├── gen_csharp.py     → sdks/csharp/
+         ├── gen_python.py     → sdks/python/
+         ├── gen_ts_node.py    → sdks/typescript/ (Node.js/napi)
+         └── gen_ts_web.py     → sdks/typescript/wasm/ (WebAssembly)
+```
+
+The schema captures every FFI function, struct, enum, and component. Language-specific generators produce idiomatic wrappers for each target. See `codegen/CLAUDE.md` for details.
+
+### Project Directory Overview
+
+| Directory | Purpose |
+|-----------|---------|
+| `libs/` | Core libraries (graphics, platform, ECS, logger) |
+| `goud_engine/` | Engine crate (core, assets, SDK, FFI) |
+| `goud_engine_macros/` | Procedural macros for the engine |
+| `sdks/` | Language SDKs (C#, Python, TypeScript, Rust re-export) |
+| `codegen/` | Unified SDK code generation pipeline |
+| `tools/` | Development utilities (lint-layers) |
+| `examples/` | Example games organized by SDK language |
+| `docs/architecture/` | Architecture documentation |
+
+### Architecture Documentation
+
+- [SDK-First Architecture](docs/architecture/sdk-first-architecture.md) -- design principles and layer boundaries
+- [Adding a New Language](docs/architecture/adding-a-new-language.md) -- guide for adding SDK support for a new language
+
 ## Development
 
 ### Quick Start
@@ -86,6 +121,10 @@ For rapid development and testing, use the `dev.sh` script:
 # Python SDK
 ./dev.sh --sdk python --game python_demo  # Run Python demo
 ./dev.sh --sdk python --game flappy_bird  # Run Python Flappy Bird
+
+# TypeScript SDK
+./dev.sh --sdk typescript --game flappy_bird      # TS desktop (Node.js)
+./dev.sh --sdk typescript --game flappy_bird_web  # TS web (browser/WASM)
 
 # Rust SDK
 ./dev.sh --sdk rust  # Run Rust SDK tests
@@ -111,7 +150,7 @@ This is required for the changes to take effect due to how husky-rs works with `
 
 This script automatically updates versions in:
 - `goud_engine/Cargo.toml` (source of truth)
-- `sdks/GoudEngine/GoudEngine.csproj`
+- `sdks/csharp/GoudEngine.csproj`
 - All `.csproj` files in the `/examples` directory
 
 Without incrementing the version, your changes will not be reflected in dependent projects using the NuGet package.
@@ -146,14 +185,14 @@ dotnet add package GoudEngine --version <desired_version>
 
 #### 2D Sample: Flappy Goud
 ```sh
-cd examples/flappy_goud
+cd examples/csharp/flappy_goud
 dotnet build
 dotnet run
 ```
 
 #### 3D Sample: Cube Demo
 ```sh
-cd examples/3d_cube
+cd examples/csharp/3d_cube
 dotnet build
 dotnet run
 ```
@@ -163,18 +202,34 @@ dotnet run
 #### SDK Demo
 Demonstrates Transform2D, Sprite components, and entity management:
 ```sh
-cd examples/python_demo
+cd examples/python
 python main.py
 ```
 
 #### Flappy Bird (Python)
 A complete Flappy Bird clone demonstrating the Python SDK:
 ```sh
-cd examples/python_demo
+cd examples/python
 python flappy_bird.py
 ```
 
-**Controls:**
+### TypeScript Examples
+
+#### Flappy Bird (Desktop)
+Runs natively via Node.js with napi bindings:
+```sh
+cd examples/typescript/flappy_bird
+npm install && npm start
+```
+
+#### Flappy Bird (Web)
+Runs in the browser via WebAssembly:
+```sh
+cd examples/typescript/flappy_bird
+npm run start:web
+```
+
+**Controls (all Flappy Bird variants):**
 - `SPACE` or `Left Click` - Flap / Jump
 - `R` - Restart
 - `ESC` - Quit
@@ -303,8 +358,9 @@ game.destroy()
 
 ### SDK Documentation
 - **Rust SDK**: See [`goud_engine/src/sdk/mod.rs`](goud_engine/src/sdk/mod.rs) for API documentation
-- **C# SDK**: See [`sdks/GoudEngine/`](sdks/GoudEngine/) for .NET integration
+- **C# SDK**: See [`sdks/csharp/`](sdks/csharp/) for .NET integration
 - **Python SDK**: See [`sdks/python/README.md`](sdks/python/README.md) for Python bindings
+- **TypeScript SDK**: See [`sdks/typescript/`](sdks/typescript/) for Node.js and Web/WASM bindings
 
 ### External References
 - [csbindgen](https://github.com/Cysharp/csbindgen) - C# bindings generator

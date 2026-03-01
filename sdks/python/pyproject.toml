@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "goudengine"
+version = "0.0.815"
+description = "Python SDK for GoudEngine - a Rust-powered game engine"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [{ name = "Aram Hammoudeh" }]
+keywords = ["game-engine", "ecs", "2d", "3d", "rust", "ffi"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Games/Entertainment",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://github.com/aram-devdocs/GoudEngine"
+Repository = "https://github.com/aram-devdocs/GoudEngine"
+Issues = "https://github.com/aram-devdocs/GoudEngine/issues"
+Documentation = "https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/python"
+
+[tool.setuptools.packages.find]
+include = ["goud_engine*"]
+
+[tool.setuptools.package-data]
+goud_engine = ["*.so", "*.dylib", "*.dll"]

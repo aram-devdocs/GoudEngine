@@ -1,15 +1,19 @@
 //! # FFI Window Management
 //!
 //! This module provides C-compatible functions for window creation, event handling,
-//! and game loop management. It integrates GLFW with the ECS context system.
+//! and game loop management. It integrates the platform backend with the ECS
+//! context system.
 //!
 //! ## Design
 //!
 //! Window operations are integrated into the context system. When you create a
 //! windowed context, it includes:
-//! - A GLFW window
+//! - A [`GlfwPlatform`] backend (window + input polling)
 //! - An InputManager (as an ECS resource)
 //! - An OpenGL rendering backend
+//!
+//! The platform-specific code lives in [`GlfwPlatform`]; this module handles
+//! FFI marshalling and context integration.
 //!
 //! ## Example Usage (C#)
 //!
@@ -39,114 +43,50 @@ use crate::ecs::InputManager;
 use crate::ffi::context::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::libs::graphics::backend::opengl::OpenGLBackend;
 use crate::libs::graphics::backend::RenderBackend;
-use glfw::{Action, Context, Glfw, GlfwReceiver, PWindow, WindowEvent, WindowMode};
+use crate::libs::platform::glfw_platform::GlfwPlatform;
+use crate::libs::platform::{PlatformBackend, WindowConfig};
 use std::cell::RefCell;
 use std::ffi::CStr;
 use std::os::raw::c_char;
-
-// ============================================================================
-// Thread-Local GLFW Instance
-// ============================================================================
-
-// GLFW must be used from the main thread only. We use thread_local to ensure
-// proper initialization and avoid Send/Sync issues.
-thread_local! {
-    static GLFW_INSTANCE: RefCell<Option<Glfw>> = const { RefCell::new(None) };
-}
-
-/// Initializes GLFW if not already initialized.
-fn get_or_init_glfw() -> Result<Glfw, GoudError> {
-    GLFW_INSTANCE.with(|cell| {
-        let mut borrow = cell.borrow_mut();
-        if borrow.is_none() {
-            let glfw = glfw::init(glfw::fail_on_errors).map_err(|e| {
-                GoudError::InternalError(format!("Failed to initialize GLFW: {}", e))
-            })?;
-            *borrow = Some(glfw);
-        }
-        borrow
-            .clone()
-            .ok_or_else(|| GoudError::InternalError("GLFW not initialized".to_string()))
-    })
-}
 
 // ============================================================================
 // Window State
 // ============================================================================
 
 /// Window state attached to a context.
+///
+/// Composes a [`GlfwPlatform`] (windowing + input) with an [`OpenGLBackend`]
+/// (rendering). The platform backend owns the window handle and event loop;
+/// the render backend is stored alongside it.
 pub struct WindowState {
-    /// GLFW window handle
-    window: PWindow,
-
-    /// Event receiver for window events
-    events: GlfwReceiver<(f64, WindowEvent)>,
+    platform: GlfwPlatform,
 
     /// OpenGL rendering backend
     pub(crate) backend: OpenGLBackend,
 
     /// Delta time from last frame
     delta_time: f32,
-
-    /// Timestamp of last frame
-    last_frame_time: f64,
-
-    /// Window width
-    width: u32,
-
-    /// Window height
-    height: u32,
 }
 
 impl WindowState {
     /// Returns true if the window should close.
     pub fn should_close(&self) -> bool {
-        self.window.should_close()
+        self.platform.should_close()
     }
 
-    /// Polls events and updates input state.
-    pub fn poll_events(&mut self, input: &mut InputManager, glfw: &mut Glfw) -> f32 {
-        // Update input state for new frame
-        input.update();
+    /// Sets whether the window should close.
+    pub fn set_should_close(&mut self, should_close: bool) {
+        self.platform.set_should_close(should_close);
+    }
 
-        glfw.poll_events();
+    /// Polls events, updates input state, and syncs the viewport on resize.
+    pub fn poll_events(&mut self, input: &mut InputManager) -> f32 {
+        let old_size = self.platform.get_size();
+        self.delta_time = self.platform.poll_events(input);
+        let new_size = self.platform.get_size();
 
-        // Calculate delta time
-        let current_time = glfw.get_time();
-        self.delta_time = (current_time - self.last_frame_time) as f32;
-        self.last_frame_time = current_time;
-
-        // Process events
-        for (_, event) in glfw::flush_messages(&self.events) {
-            match event {
-                WindowEvent::Key(key, _scancode, action, _mods) => {
-                    match action {
-                        Action::Press => input.press_key(key),
-                        Action::Release => input.release_key(key),
-                        Action::Repeat => {} // Handled by key_pressed
-                    }
-                }
-                WindowEvent::MouseButton(button, action, _mods) => match action {
-                    Action::Press => input.press_mouse_button(button),
-                    Action::Release => input.release_mouse_button(button),
-                    Action::Repeat => {}
-                },
-                WindowEvent::CursorPos(x, y) => {
-                    input.set_mouse_position(crate::core::math::Vec2::new(x as f32, y as f32));
-                }
-                WindowEvent::Scroll(x, y) => {
-                    input.add_scroll_delta(crate::core::math::Vec2::new(x as f32, y as f32));
-                }
-                WindowEvent::Close => {
-                    self.window.set_should_close(true);
-                }
-                WindowEvent::Size(w, h) => {
-                    self.width = w as u32;
-                    self.height = h as u32;
-                    self.backend.set_viewport(0, 0, self.width, self.height);
-                }
-                _ => {}
-            }
+        if old_size != new_size {
+            self.backend.set_viewport(0, 0, new_size.0, new_size.1);
         }
 
         self.delta_time
@@ -154,18 +94,17 @@ impl WindowState {
 
     /// Swaps the front and back buffers.
     pub fn swap_buffers(&mut self) {
-        self.window.swap_buffers();
+        self.platform.swap_buffers();
     }
 
     /// Gets window size (logical).
     pub fn get_size(&self) -> (u32, u32) {
-        (self.width, self.height)
+        self.platform.get_size()
     }
 
     /// Gets framebuffer size (physical - may differ on HiDPI/Retina displays).
     pub fn get_framebuffer_size(&self) -> (u32, u32) {
-        let (w, h) = self.window.get_framebuffer_size();
-        (w as u32, h as u32)
+        self.platform.get_framebuffer_size()
     }
 
     /// Gets a mutable reference to the backend.
@@ -183,8 +122,6 @@ impl WindowState {
 // Window State Storage (Thread-Local)
 // ============================================================================
 
-// Window states are stored per-context in a thread-local container.
-// This avoids Sync requirements and ensures GLFW is used from the correct thread.
 thread_local! {
     static WINDOW_STATES: RefCell<Vec<Option<WindowState>>> = const { RefCell::new(Vec::new()) };
 }
@@ -194,7 +131,6 @@ fn set_window_state(context_id: GoudContextId, state: WindowState) -> Result<(),
         let mut states = cell.borrow_mut();
         let index = context_id.index() as usize;
 
-        // Ensure capacity
         while states.len() <= index {
             states.push(None);
         }
@@ -260,7 +196,7 @@ pub unsafe extern "C" fn goud_window_create(
     height: u32,
     title: *const c_char,
 ) -> GoudContextId {
-    // Parse title
+    // SAFETY: Caller guarantees `title` is a valid C string or null.
     let title_str = if title.is_null() {
         "GoudEngine"
     } else {
@@ -275,53 +211,22 @@ pub unsafe extern "C" fn goud_window_create(
         }
     };
 
-    // Initialize GLFW
-    let mut glfw = match get_or_init_glfw() {
-        Ok(g) => g,
+    let config = WindowConfig {
+        width,
+        height,
+        title: title_str.to_string(),
+        vsync: true,
+        resizable: true,
+    };
+
+    let platform = match GlfwPlatform::new(&config) {
+        Ok(p) => p,
         Err(e) => {
             set_last_error(e);
             return GOUD_INVALID_CONTEXT_ID;
         }
     };
 
-    // Configure GLFW for OpenGL 3.3 Core
-    glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3));
-    glfw.window_hint(glfw::WindowHint::OpenGlProfile(
-        glfw::OpenGlProfileHint::Core,
-    ));
-    #[cfg(target_os = "macos")]
-    glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
-
-    // Create window
-    let (mut window, events) =
-        match glfw.create_window(width, height, title_str, WindowMode::Windowed) {
-            Some(w) => w,
-            None => {
-                set_last_error(GoudError::WindowCreationFailed(
-                    "Failed to create GLFW window".to_string(),
-                ));
-                return GOUD_INVALID_CONTEXT_ID;
-            }
-        };
-
-    // Make OpenGL context current
-    window.make_current();
-
-    // Enable vsync
-    glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
-
-    // Set up event polling
-    window.set_key_polling(true);
-    window.set_mouse_button_polling(true);
-    window.set_cursor_pos_polling(true);
-    window.set_close_polling(true);
-    window.set_size_polling(true);
-    window.set_scroll_polling(true);
-
-    // Load OpenGL function pointers
-    gl::load_with(|s| window.get_proc_address(s));
-
-    // Create OpenGL backend
     let mut backend = match OpenGLBackend::new() {
         Ok(b) => b,
         Err(e) => {
@@ -330,10 +235,8 @@ pub unsafe extern "C" fn goud_window_create(
         }
     };
 
-    // Set initial viewport
     backend.set_viewport(0, 0, width, height);
 
-    // Create context with ECS World
     let context_id = {
         let mut registry = match get_context_registry().lock() {
             Ok(r) => r,
@@ -354,7 +257,6 @@ pub unsafe extern "C" fn goud_window_create(
         }
     };
 
-    // Insert InputManager as a resource in the World
     {
         let mut registry = match get_context_registry().lock() {
             Ok(r) => r,
@@ -371,20 +273,13 @@ pub unsafe extern "C" fn goud_window_create(
         }
     }
 
-    // Create window state
     let window_state = WindowState {
-        window,
-        events,
+        platform,
         backend,
         delta_time: 0.0,
-        last_frame_time: glfw.get_time(),
-        width,
-        height,
     };
 
-    // Store window state
     if let Err(e) = set_window_state(context_id, window_state) {
-        // Clean up context on failure
         if let Ok(mut registry) = get_context_registry().lock() {
             let _ = registry.destroy(context_id);
         }
@@ -413,10 +308,8 @@ pub extern "C" fn goud_window_destroy(context_id: GoudContextId) -> bool {
         return false;
     }
 
-    // Remove window state first (closes GLFW window)
     remove_window_state(context_id);
 
-    // Destroy the context
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
         Err(_) => {
@@ -481,17 +374,6 @@ pub extern "C" fn goud_window_poll_events(context_id: GoudContextId) -> f32 {
         return 0.0;
     }
 
-    // Get GLFW instance
-    let mut glfw = match get_or_init_glfw() {
-        Ok(g) => g,
-        Err(e) => {
-            set_last_error(e);
-            return 0.0;
-        }
-    };
-
-    // We need to handle this carefully due to borrow checker constraints
-    // First, get InputManager pointer (while holding registry lock)
     let input_ptr: Option<*mut InputManager> = {
         let mut registry = match get_context_registry().lock() {
             Ok(r) => r,
@@ -511,17 +393,13 @@ pub extern "C" fn goud_window_poll_events(context_id: GoudContextId) -> f32 {
             }
         };
 
-        // Ensure InputManager exists
         if context.world().resource::<InputManager>().is_none() {
             context.world_mut().insert_resource(InputManager::new());
         }
 
-        // Get a raw pointer to InputManager
         // SAFETY: The resource exists because we just inserted it if missing.
-        // We're getting a pointer while holding the lock, but we'll release the lock
-        // before using the pointer. This is safe because:
-        // 1. The context won't be destroyed (we hold a valid context_id)
-        // 2. We're the only ones holding the resource (single-threaded access)
+        // The pointer is obtained while holding the lock and used below with
+        // exclusive access guaranteed by single-threaded window state access.
         context
             .world_mut()
             .resource_mut::<InputManager>()
@@ -538,26 +416,24 @@ pub extern "C" fn goud_window_poll_events(context_id: GoudContextId) -> f32 {
         }
     };
 
-    // Now poll events with window state
-    // SAFETY: We have exclusive access to the InputManager and WindowState
-    let delta_time = WINDOW_STATES.with(|cell| {
+    WINDOW_STATES.with(|cell| {
         let mut states = cell.borrow_mut();
         let index = context_id.index() as usize;
 
         match states.get_mut(index).and_then(|opt| opt.as_mut()) {
             Some(window_state) => {
-                // SAFETY: We have exclusive access to InputManager
+                // SAFETY: We have exclusive access to InputManager via the raw
+                // pointer obtained above. No other code accesses it concurrently
+                // because GLFW and this module are single-threaded.
                 let input = unsafe { &mut *input_ptr };
-                window_state.poll_events(input, &mut glfw)
+                window_state.poll_events(input)
             }
             None => {
                 set_last_error(GoudError::InvalidContext);
                 0.0
             }
         }
-    });
-
-    delta_time
+    })
 }
 
 /// Swaps the front and back buffers, presenting the rendered frame.
@@ -612,6 +488,7 @@ pub unsafe extern "C" fn goud_window_get_size(
         let index = context_id.index() as usize;
         if let Some(Some(state)) = states.get(index) {
             let (w, h) = state.get_size();
+            // SAFETY: Caller guarantees pointers are valid.
             *out_width = w;
             *out_height = h;
             true
@@ -637,7 +514,7 @@ pub extern "C" fn goud_window_set_should_close(context_id: GoudContextId, should
         let mut states = cell.borrow_mut();
         let index = context_id.index() as usize;
         if let Some(Some(state)) = states.get_mut(index) {
-            state.window.set_should_close(should_close);
+            state.set_should_close(should_close);
         }
     });
 }

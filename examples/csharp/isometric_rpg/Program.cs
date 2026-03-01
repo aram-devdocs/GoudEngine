@@ -2,6 +2,7 @@
 // Isometric RPG - Simplified version using immediate-mode rendering
 
 using System;
+using GoudEngine;
 using IsometricRpg;
 
 class Program

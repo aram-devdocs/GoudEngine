@@ -29,7 +29,7 @@ The FFI layer is the bridge between Rust and external SDKs (C#, Python). Every f
 ## After FFI Changes
 
 1. Run `cargo build` — triggers csbindgen to regenerate C# bindings
-2. Manually update `sdks/python/goud_engine/bindings.py` for ctypes declarations
+2. Manually update `sdks/python/goud_engine/generated/_ffi.py` for ctypes declarations
 3. Update BOTH the C# and Python SDK wrappers to expose the new functionality
 4. Run SDK tests for both languages
 

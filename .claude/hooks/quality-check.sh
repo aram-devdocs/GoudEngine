@@ -5,7 +5,8 @@
 # pre-commit hooks and CI — running it on every edit is too expensive.
 set -euo pipefail
 
-FILE="${TOOL_INPUT_FILE:-}"
+INPUT=$(cat)
+FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.file // empty')
 if [[ -z "$FILE" ]]; then
   exit 0
 fi

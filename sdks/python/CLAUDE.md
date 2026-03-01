@@ -27,7 +27,7 @@ python3 sdks/python/test_bindings.py                    # Run tests
 
 ## After FFI Changes
 
-1. Update `goud_engine/bindings.py` with new ctypes function signatures
+1. Update `goud_engine/generated/_ffi.py` with new ctypes function signatures
 2. Add wrapper methods to appropriate Python classes
 3. Run `test_bindings.py` to verify
 

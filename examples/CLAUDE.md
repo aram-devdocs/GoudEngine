@@ -8,6 +8,7 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 
 - `csharp/` — C# example games (flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs)
 - `python/` — Python example games (main.py demo, flappy_bird.py)
+- `typescript/` — TypeScript example games (flappy_bird — desktop + web targets)
 - `rust/` — Rust examples (future)
 
 ## Running
@@ -20,6 +21,16 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 ./dev.sh --game hello_ecs            # C# ECS basics
 ./dev.sh --sdk python --game python_demo    # Python demo
 ./dev.sh --sdk python --game flappy_bird    # Python Flappy Bird
+./dev.sh --sdk typescript --game flappy_bird  # TypeScript Flappy Bird (desktop)
+```
+
+### TypeScript Web Target
+
+```bash
+cd examples/typescript/flappy_bird
+npm run build:web        # Compile TS to dist/
+npm run web              # Start local server on port 8765
+# Open http://localhost:8765/examples/typescript/flappy_bird/web/index.html
 ```
 
 ## Rules
@@ -28,6 +39,7 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 - Examples MUST work with the latest SDK version
 - Examples demonstrate engine features — keep code readable and well-commented
 - Python Flappy Bird mirrors C# flappy_goud for SDK parity testing
+- TypeScript Flappy Bird mirrors C# and Python versions with shared game logic across desktop/web
 
 ## Dependencies
 
