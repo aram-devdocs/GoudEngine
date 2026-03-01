@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.817](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.816...v0.0.817) (2026-03-01)
+
+
+### Bug Fixes
+
+* auto-merge release-please PR to complete release flow ([#90](https://github.com/aram-devdocs/GoudEngine/issues/90)) ([e16e2a7](https://github.com/aram-devdocs/GoudEngine/commit/e16e2a78405662cfb51b462369fc06bdf4f88221))
+* sync crate versions to 0.0.816 and fix release-please updaters ([#92](https://github.com/aram-devdocs/GoudEngine/issues/92)) ([e6cca3f](https://github.com/aram-devdocs/GoudEngine/commit/e6cca3f9ba161cfae9c25492f1333df0c9ae7425))
+
 ## [0.0.816](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.815...v0.0.816) (2026-03-01)
 
 
