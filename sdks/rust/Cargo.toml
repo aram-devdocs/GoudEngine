@@ -1,6 +1,6 @@
 [package]
 name = "goud-engine-sdk"
-version = "0.0.818" # x-release-please-version
+version = "0.0.819" # x-release-please-version
 edition = "2021"
 description = "GoudEngine Rust SDK — native re-export of the engine API"
 license = "MIT"
@@ -11,4 +11,4 @@ keywords = ["game-engine", "ecs", "2d", "3d", "rust"]
 categories = ["game-engines", "graphics"]
 
 [dependencies]
-goud_engine = { version = "=0.0.818", path = "../../goud_engine" } # x-release-please-version
+goud_engine = { version = "=0.0.819", path = "../../goud_engine" } # x-release-please-version

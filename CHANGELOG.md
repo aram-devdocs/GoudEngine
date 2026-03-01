@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.819](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.818...v0.0.819) (2026-03-01)
+
+
+### Bug Fixes
+
+* add codegen + build steps to npm and NuGet publish jobs ([#95](https://github.com/aram-devdocs/GoudEngine/issues/95)) ([640a3bb](https://github.com/aram-devdocs/GoudEngine/commit/640a3bbdb09df47918ccd63ee2f75a3bd22d8750))
+
 ## [0.0.818](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.817...v0.0.818) (2026-03-01)
 
 
