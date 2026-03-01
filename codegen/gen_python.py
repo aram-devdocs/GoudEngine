@@ -1271,6 +1271,17 @@ def _gen_tool_class(tool_name: str, lines: list):
                 f"        return self._lib.{mmap['ffi']}("
                 "self._ctx, entity._bits)"
             )
+        elif "out_params" in mmap and mmap.get("returns_struct") == "RenderStats":
+            rs_fields = schema["types"]["RenderStats"]["fields"]
+            field_args = ", ".join(
+                f"_stats.{to_snake(f['name'])}" for f in rs_fields
+            )
+            lines.append("        _stats = GoudRenderStats()")
+            lines.append(
+                f"        self._lib.{mmap['ffi']}("
+                "self._ctx, ctypes.byref(_stats))"
+            )
+            lines.append(f"        return RenderStats({field_args})")
         elif "out_params" in mmap:
             for op in mmap["out_params"]:
                 lines.append(
@@ -1323,7 +1334,7 @@ def gen_game():
         "from ._ffi import (get_lib, GoudContextId, FfiVec2, "
         "FfiTransform2D, FfiSprite,",
         "    GoudRenderStats, GoudContact)",
-        "from ._types import Entity, Vec2, Color, Transform2D, Sprite",
+        "from ._types import Entity, Vec2, Color, Transform2D, Sprite, RenderStats",
         "from ._keys import Key, MouseButton",
         "",
         "# Type IDs for built-in component types (hash of type name)",

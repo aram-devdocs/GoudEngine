@@ -836,9 +836,11 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         return
     if "out_params" in mm and mm.get("returns_struct") == "RenderStats":
         ffi_fn = mm["ffi"]
+        rs_fields = schema["types"]["RenderStats"]["fields"]
+        field_args = ", ".join(f"stats.{to_pascal(f['name'])}" for f in rs_fields)
         L += ["            var stats = new GoudRenderStats();",
               f"            NativeMethods.{ffi_fn}(_ctx, ref stats);",
-              "            return new RenderStats(stats.DrawCalls, stats.Triangles, stats.TextureBinds);"]
+              f"            return new RenderStats({field_args});"]
         return
     if "out_params" in mm:
         for op in mm["out_params"]:
