@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "goudengine"
-version = "0.0.817" # x-release-please-version
+version = "0.0.818" # x-release-please-version
 description = "Python SDK for GoudEngine - a Rust-powered game engine"
 readme = "README.md"
 license = { text = "MIT" }

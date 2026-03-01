@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.818](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.817...v0.0.818) (2026-03-01)
+
+
+### Bug Fixes
+
+* resolve all release workflow build failures ([#93](https://github.com/aram-devdocs/GoudEngine/issues/93)) ([96ca555](https://github.com/aram-devdocs/GoudEngine/commit/96ca5552d83551539c80b07a2ca805687bb0a2bf))
+
 ## [0.0.817](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.816...v0.0.817) (2026-03-01)
 
 
