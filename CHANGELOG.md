@@ -1,0 +1,77 @@
+# Changelog
+
+## [0.0.816](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.815...v0.0.816) (2026-03-01)
+
+
+### Features
+
+* add async asset loading path for web (Phase 2d) ([184216f](https://github.com/aram-devdocs/GoudEngine/commit/184216f10985ac297e851befa1304feca03b727c))
+* add comprehensive AI agent DX infrastructure ([db7b883](https://github.com/aram-devdocs/GoudEngine/commit/db7b88325506d83bd88140e7407b37865586b612))
+* add comprehensive AI agent DX infrastructure ([e2277f6](https://github.com/aram-devdocs/GoudEngine/commit/e2277f63cae57d132323d938b1e586cef02842e7))
+* add initial graphics and logger modules, restructure rendering components ([5d9e3f3](https://github.com/aram-devdocs/GoudEngine/commit/5d9e3f34c1120b70d99df1efc1b25b7f726baf02))
+* add Node.js TypeScript SDK with napi-rs (Phase 1) ([076a0c6](https://github.com/aram-devdocs/GoudEngine/commit/076a0c6e765266dc60d0deba6d02055fcaf30eec))
+* add PlatformBackend trait and GlfwPlatform implementation (Phase 2b) ([2c1bc0c](https://github.com/aram-devdocs/GoudEngine/commit/2c1bc0c789884503e8f9f0ccd38d753764171331))
+* Add RendererType to support dynamic 2D and 3D rendering ([ccf3929](https://github.com/aram-devdocs/GoudEngine/commit/ccf3929218e1de917b6e26ab2bb9cf98ad6723eb))
+* add three-tier agent governance with hook-enforced delegation ([a5e0010](https://github.com/aram-devdocs/GoudEngine/commit/a5e00103fd3db5727e3d61eb0467f4eaae3f99e4))
+* add wgpu render backend, wasm bindings, and web TypeScript SDK (Phases 3-4) ([7c9820b](https://github.com/aram-devdocs/GoudEngine/commit/7c9820b726e41e5e883446841f0c09dd0ac6b07f))
+* architecture hardening — layer enforcement, circular dep fix, security fixes, SDK split ([a4b2f6e](https://github.com/aram-devdocs/GoudEngine/commit/a4b2f6eac3253f010e608592400cff27cabea45a))
+* complete ECS and render backend refactor ([2703f62](https://github.com/aram-devdocs/GoudEngine/commit/2703f62d0deee9bb66d719b45501d9cf3d850807))
+* **engine:** Complete ECS and Render Backend Refactor ([f41b634](https://github.com/aram-devdocs/GoudEngine/commit/f41b63480bdf4c4951dca51ebaabc0880323a277))
+* feature-flag native platform deps behind 'native' feature ([2b2f587](https://github.com/aram-devdocs/GoudEngine/commit/2b2f58795b3e2d3d500e8de691d4cdc6d4d690ac))
+* **ffi:** add Window, Renderer, Input, Collision FFI + C# SDK wrappers ([6fbf87c](https://github.com/aram-devdocs/GoudEngine/commit/6fbf87c5c377c964e48f40a1c2ad428af998008c))
+* Phase 1 — 100% FFI coverage (191/191 functions mapped) ([72737ff](https://github.com/aram-devdocs/GoudEngine/commit/72737ffff51d22f842f2fb88bce4f9c11faac97f))
+* Phase 2 — working component operations in C# and Python SDKs ([eea73ba](https://github.com/aram-devdocs/GoudEngine/commit/eea73ba21a2f1ccb26d62df0cf81799f1e531cec))
+* Phase 3+6 — TS Node FFI-only rewrite, pipeline validation, delegation fix ([43208a1](https://github.com/aram-devdocs/GoudEngine/commit/43208a17ac5e1e4cde9552200a4ac30a891c9afc))
+* Phase 5 — create Rust SDK re-export package ([dff4126](https://github.com/aram-devdocs/GoudEngine/commit/dff4126477fad89d3b296d073b26cc2f8e404b21))
+* reorganize examples by SDK, add 3D renderer with fog/grid, Python SDK ([4d1575c](https://github.com/aram-devdocs/GoudEngine/commit/4d1575c5d0feeeb91dea1eae1b6a6ee0d75c60ea))
+* SDK codegen migration — generate all SDK code from schema ([c5e98bb](https://github.com/aram-devdocs/GoudEngine/commit/c5e98bbb6c541591abe36e3e75fd7abc9011d87c))
+* TypeScript SDK, codegen system, and SDK migration ([db017e6](https://github.com/aram-devdocs/GoudEngine/commit/db017e6d8d768e0e20b953fc5afeae5878c78bbf))
+
+
+### Bug Fixes
+
+* add goud_engine_macros to workspace and dev-dependencies ([4f2802b](https://github.com/aram-devdocs/GoudEngine/commit/4f2802b06c6d134bbe0baad85d2a6ac229ebfb58))
+* add MIT license to lint-layers tool ([fc49d69](https://github.com/aram-devdocs/GoudEngine/commit/fc49d6967ad971e91e539b902505e22634a1a48f))
+* add title, updateFrame, frameCount, totalTime to Node napi binding ([81a5b1d](https://github.com/aram-devdocs/GoudEngine/commit/81a5b1d5c96f068891ca7281ef871e11745c3b24))
+* bump version to 0.0.813 and fix CI for napi/wgpu workspace ([600c55d](https://github.com/aram-devdocs/GoudEngine/commit/600c55d3bbd82d7de5d2c7153bd6ad51575c1fd9))
+* C# codegen — use correct types and fields for cached properties ([b3b6670](https://github.com/aram-devdocs/GoudEngine/commit/b3b667058c7181a1081e939b84cf3274eedb42f2))
+* check formatting only on committed code, format generated napi files ([aa81879](https://github.com/aram-devdocs/GoudEngine/commit/aa81879d394c9fa0578d9f000f35ed87b227d8ef))
+* CI issues — Python Sprite API, wasm codegen, TS native display ([b56d663](https://github.com/aram-devdocs/GoudEngine/commit/b56d663f9f654f4824647fca9b5a61e318eb3eda))
+* CI wasm verify paths, add codegen to integration build ([feeda9b](https://github.com/aram-devdocs/GoudEngine/commit/feeda9b0d9e5386c46405cc0bfad30a982f42925))
+* **ci:** address multiple GitHub Actions failures ([5217977](https://github.com/aram-devdocs/GoudEngine/commit/52179771f19cec083da338a80dcf5d264d6fb824))
+* **ci:** expand markdownlint config to disable failing rules ([a8a66f1](https://github.com/aram-devdocs/GoudEngine/commit/a8a66f14171796ea2d3bb8a63c16e1236bca47f7))
+* **ci:** fix .NET and Python SDK CI failures ([a2ed59b](https://github.com/aram-devdocs/GoudEngine/commit/a2ed59b885864775a5307b373c47eed5759848ba))
+* **ci:** remove target-cpu=native to fix SIGILL errors ([304c1e7](https://github.com/aram-devdocs/GoudEngine/commit/304c1e785ac8df472f3227c2d6f273c71c04b4d5))
+* **ci:** rename Windows DLL to match expected libgoud_engine name ([f35571b](https://github.com/aram-devdocs/GoudEngine/commit/f35571b9346ee99036e8b267e115e01f546cc7b0))
+* downgrade version number to 0.0.644 in GoudEngine project file ([150b0d9](https://github.com/aram-devdocs/GoudEngine/commit/150b0d9f2302bc8a218f687ddfd9ef2c7faa184a))
+* escape asterisks in README.md for proper formatting ([5468ec6](https://github.com/aram-devdocs/GoudEngine/commit/5468ec6abe6d46e81c25c343bf35c6b1d16dda88))
+* gate wasm module on wasm32 target and update wgpu 28 API ([4c2de2b](https://github.com/aram-devdocs/GoudEngine/commit/4c2de2b82b6ea00e3b5823bad37d0947852336e8))
+* generate napi-rs Rust via codegen, convert examples to .ts, fix CI ([3b68b70](https://github.com/aram-devdocs/GoudEngine/commit/3b68b701f132e2f57080d20f758d02f1998f3691))
+* improve WSL/Linux compatibility for dev scripts ([ff2b12f](https://github.com/aram-devdocs/GoudEngine/commit/ff2b12fe9eeb510e1be33f6165a2b55e7f94954b))
+* Python SDK codegen — add bodies for title, totalTime, frameCount properties ([8839c4d](https://github.com/aram-devdocs/GoudEngine/commit/8839c4d3a81a7fec5279077791e52935b5cdc849))
+* remove ghost updateFrame from schema, add cargo fmt to CI drift check ([a2adb5d](https://github.com/aram-devdocs/GoudEngine/commit/a2adb5d505a29edc41f215b36897229750642fcb))
+* resolve clippy warnings and formatting for CI ([e603655](https://github.com/aram-devdocs/GoudEngine/commit/e6036551e975e2695bbb55510dc544180dcbf634))
+* resolve DRY/SSOT/drift issues, harden CI, update all documentation ([95be1db](https://github.com/aram-devdocs/GoudEngine/commit/95be1db91a441ad96dd031ed4c12cf21b268272e))
+* resolve release pipeline CI failures ([1c06e39](https://github.com/aram-devdocs/GoudEngine/commit/1c06e39f79d8bead19af1fe89b9d43e6e5e01e37))
+* resolve release pipeline CI failures ([49594bd](https://github.com/aram-devdocs/GoudEngine/commit/49594bd5d3eb64ccf331350df38eb0da6ccb9a01))
+* resolve TS SDK codegen errors causing 4 CI failures ([8ffd231](https://github.com/aram-devdocs/GoudEngine/commit/8ffd231c1caa91df2315b6c6e53eab9c80982ee7))
+* run codegen before formatting check in CI ([7ab7b0c](https://github.com/aram-devdocs/GoudEngine/commit/7ab7b0c0b3013ea4298c3d1aa396655eb5d379b1))
+* **sdk:** exclude tests for excluded SDK types ([a2d651a](https://github.com/aram-devdocs/GoudEngine/commit/a2d651a7a77dd570f92cb313c3e5a05f4e33b66f))
+* **sdk:** resolve .NET SDK CI build failures ([daab6da](https://github.com/aram-devdocs/GoudEngine/commit/daab6daf895d1816b3b00fb513efd243dfc6b2c6))
+* update C# and Python codegen to include shaderBinds in RenderStats ([e415319](https://github.com/aram-devdocs/GoudEngine/commit/e415319650fd510bd65a056ef2ae3e97806a6475))
+* update GoudEngine version to 0.0.648 and improve local package restoration ([511186b](https://github.com/aram-devdocs/GoudEngine/commit/511186b5edd59dca91c6da613dc70b9783fe603a))
+* update relative paths for texture and map loading in GameManager ([8a8f4d8](https://github.com/aram-devdocs/GoudEngine/commit/8a8f4d8db9f2619900d52087cb2337ba57751811))
+* web Flappy Bird rendering — sprite center convention, clear color, dt cap ([7e98897](https://github.com/aram-devdocs/GoudEngine/commit/7e98897876c85f6b679572871c9e7402a04167a8))
+
+
+### Refactoring
+
+* clean up unused imports and commented-out code, reorganize module declarations ([4251cf5](https://github.com/aram-devdocs/GoudEngine/commit/4251cf52e07781a744ce49e6fa6b8ca4066d4df7))
+* clean up unused rotation and scaling code, update README for CsBindGen usage ([f9da176](https://github.com/aram-devdocs/GoudEngine/commit/f9da176247318e7979dc04bab2fcdf84d7aae873))
+* comment out tests in TiledManager for future cleanup ([58a3e87](https://github.com/aram-devdocs/GoudEngine/commit/58a3e87432ed1cdd3028d8dccebd829ca018cd6e))
+* Phase 0 — dead code cleanup, SDK directory rename, version sync ([970bc7a](https://github.com/aram-devdocs/GoudEngine/commit/970bc7af093a7b8b29785d663a7ec6818c64b0b3))
+* remove old shader files and update ShaderProgram initializa… ([455e248](https://github.com/aram-devdocs/GoudEngine/commit/455e2484d69b850859aeb99d9310952d3438b2ae))
+* remove old shader files and update ShaderProgram initialization ([a16138b](https://github.com/aram-devdocs/GoudEngine/commit/a16138b022665ec617404409c9936b797ae98b69))
+* route renderer3d through RenderBackend trait (Phase 2c) ([47c6bc7](https://github.com/aram-devdocs/GoudEngine/commit/47c6bc708cd9d6541d9e4d8ed9fc501724d194fb))
+* split 3 oversized files into directory modules (&lt;500 lines each) ([b56868a](https://github.com/aram-devdocs/GoudEngine/commit/b56868a7df527490938919bf73049dce0c1aaf06))
+* update crate-type in Cargo.toml and make sdk and types modules public; clean up logger test output and remove commented code from window module ([96f515a](https://github.com/aram-devdocs/GoudEngine/commit/96f515a4ea522fc548850db2282d9120874e6370))
