@@ -6,10 +6,14 @@ cd "$REPO_ROOT" || exit 1
 echo "=== Pre-commit: Fast Checks ==="
 
 echo "Checking formatting..."
-cargo fmt --all -- --check || exit 1
+# Exclude goud-engine-node from fmt/clippy: its .g.rs source files are codegen
+# output (gitignored) and won't exist on a fresh checkout or worktree.
+FMT_PACKAGES=$(cargo metadata --no-deps --format-version 1 2>/dev/null \
+  | python3 -c 'import sys,json;d=json.load(sys.stdin);print(" ".join("-p "+p["name"] for p in d["packages"] if p["name"] not in ["goud-engine-node"]))')
+cargo fmt ${FMT_PACKAGES} -- --check || exit 1
 
 echo "Running clippy..."
-cargo clippy -- -D warnings || exit 1
+cargo clippy ${FMT_PACKAGES} -- -D warnings || exit 1
 
 echo "Checking layer dependencies..."
 cargo run -p lint-layers || exit 1

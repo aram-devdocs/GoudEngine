@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Standalone crate (`goud-engine-sdk`) that re-exports `goud_engine::sdk::*` for Rust consumers.
+Standalone crate (`goud-engine`) that re-exports `goud_engine::sdk::*` for Rust consumers.
 Unlike the C#, Python, and TypeScript SDKs which go through FFI, this crate links directly
 against the engine with zero overhead.
 
@@ -13,7 +13,7 @@ against the engine with zero overhead.
 
 ## Why This Exists
 
-A separate crate lets downstream Rust projects depend on `goud-engine-sdk` without pulling
+A separate crate lets downstream Rust projects depend on `goud-engine` without pulling
 in FFI exports, codegen build scripts, or napi dependencies. It also provides a clean
 versioned package boundary if the SDK is published to crates.io.
 

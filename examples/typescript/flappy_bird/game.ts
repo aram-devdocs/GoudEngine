@@ -9,7 +9,7 @@
  * import this module and pass their platform's GoudGame.
  */
 
-import type { IGoudGame } from '@goudengine/sdk';
+import type { IGoudGame } from 'goudengine';
 
 // ---------------------------------------------------------------------------
 // Constants (matching GameConstants.cs exactly)

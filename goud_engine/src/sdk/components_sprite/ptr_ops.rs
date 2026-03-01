@@ -5,16 +5,11 @@ use crate::core::types::{FfiColor, FfiRect, FfiSprite, FfiVec2};
 /// Zero-sized type for Sprite pointer operations.
 pub struct SpritePtrOps;
 
-#[goud_engine_macros::goud_api(module = "sprite")]
+// NOTE: FFI wrappers are hand-written in ffi/component_sprite.rs. The `#[goud_api]`
+// attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl SpritePtrOps {
     /// Sets the color tint for the sprite.
-    pub fn set_color(
-        sprite: *mut FfiSprite,
-        r: f32,
-        g: f32,
-        b: f32,
-        a: f32,
-    ) {
+    pub fn set_color(sprite: *mut FfiSprite, r: f32, g: f32, b: f32, a: f32) {
         if sprite.is_null() {
             return;
         }
@@ -62,13 +57,7 @@ impl SpritePtrOps {
     }
 
     /// Sets the source rectangle for sprite sheet rendering.
-    pub fn set_source_rect(
-        sprite: *mut FfiSprite,
-        x: f32,
-        y: f32,
-        width: f32,
-        height: f32,
-    ) {
+    pub fn set_source_rect(sprite: *mut FfiSprite, x: f32, y: f32, width: f32, height: f32) {
         if sprite.is_null() {
             return;
         }
@@ -89,10 +78,7 @@ impl SpritePtrOps {
     }
 
     /// Gets the source rectangle. Returns true if set.
-    pub fn get_source_rect(
-        sprite: *const FfiSprite,
-        out_rect: *mut FfiRect,
-    ) -> bool {
+    pub fn get_source_rect(sprite: *const FfiSprite, out_rect: *mut FfiRect) -> bool {
         if sprite.is_null() || out_rect.is_null() {
             return false;
         }
@@ -154,11 +140,7 @@ impl SpritePtrOps {
     }
 
     /// Sets both flip flags at once.
-    pub fn set_flip(
-        sprite: *mut FfiSprite,
-        flip_x: bool,
-        flip_y: bool,
-    ) {
+    pub fn set_flip(sprite: *mut FfiSprite, flip_x: bool, flip_y: bool) {
         if sprite.is_null() {
             return;
         }
@@ -199,11 +181,7 @@ impl SpritePtrOps {
     }
 
     /// Sets a custom size for the sprite.
-    pub fn set_custom_size(
-        sprite: *mut FfiSprite,
-        width: f32,
-        height: f32,
-    ) {
+    pub fn set_custom_size(sprite: *mut FfiSprite, width: f32, height: f32) {
         if sprite.is_null() {
             return;
         }
@@ -222,10 +200,7 @@ impl SpritePtrOps {
     }
 
     /// Gets the custom size. Returns true if set.
-    pub fn get_custom_size(
-        sprite: *const FfiSprite,
-        out_size: *mut FfiVec2,
-    ) -> bool {
+    pub fn get_custom_size(sprite: *const FfiSprite, out_size: *mut FfiVec2) -> bool {
         if sprite.is_null() || out_size.is_null() {
             return false;
         }

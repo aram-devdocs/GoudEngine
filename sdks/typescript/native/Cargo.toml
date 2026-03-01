@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 [dependencies]
 napi = { version = "2", default-features = false, features = ["napi8"] }
 napi-derive = "2"
-goud_engine = { path = "../../../goud_engine" }
+goud-engine-core = { path = "../../../goud_engine" }
 
 [build-dependencies]
 napi-build = "2"

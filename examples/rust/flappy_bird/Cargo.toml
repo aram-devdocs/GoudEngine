@@ -1,0 +1,10 @@
+[package]
+name = "flappy-bird"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+goud-engine = { path = "../../../sdks/rust" }
+rand = "0.8"

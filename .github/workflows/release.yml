@@ -81,7 +81,7 @@ jobs:
             libasound2-dev
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }} -p goud_engine
+        run: cargo build --release --target ${{ matrix.target }} -p goud-engine-core
 
       - name: Verify artifact
         shell: bash
@@ -426,14 +426,14 @@ jobs:
             libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev \
             libasound2-dev
 
-      - name: Publish goud_engine
-        run: cargo publish -p goud_engine --token ${{ secrets.CRATES_IO_TOKEN }}
+      - name: Publish goud-engine-core
+        run: cargo publish -p goud-engine-core --token ${{ secrets.CRATES_IO_TOKEN }}
 
       - name: Wait for crates.io index
         run: sleep 30
 
-      - name: Publish goud-engine-sdk
-        run: cargo publish -p goud-engine-sdk --token ${{ secrets.CRATES_IO_TOKEN }}
+      - name: Publish goud-engine
+        run: cargo publish -p goud-engine --token ${{ secrets.CRATES_IO_TOKEN }}
 
   # ── Summary ──
   release-summary:
@@ -450,8 +450,8 @@ jobs:
 
           | Registry | Package | Status |
           |----------|---------|--------|
-          | npm | \`@goudengine/sdk\` | ${{ needs.publish-npm.result }} |
+          | npm | \`goudengine\` | ${{ needs.publish-npm.result }} |
           | NuGet | \`GoudEngine\` | ${{ needs.publish-nuget.result }} |
           | PyPI | \`goudengine\` | ${{ needs.publish-pypi.result }} |
-          | crates.io | \`goud-engine-sdk\` | ${{ needs.publish-crates.result }} |
+          | crates.io | \`goud-engine\` | ${{ needs.publish-crates.result }} |
           EOF

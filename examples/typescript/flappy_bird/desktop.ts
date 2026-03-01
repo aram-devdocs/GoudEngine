@@ -13,7 +13,7 @@
  *   cd sdks/typescript && npm run build:native
  */
 
-import { GoudGame } from '@goudengine/sdk';
+import { GoudGame } from 'goudengine';
 import { FlappyBirdGame, SCREEN_WIDTH, SCREEN_HEIGHT, BASE_HEIGHT } from './game.js';
 
 // ---------------------------------------------------------------------------

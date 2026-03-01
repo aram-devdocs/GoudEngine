@@ -13,7 +13,8 @@ use crate::core::types::FfiColor;
 /// FFI wrappers.
 pub struct ColorOps;
 
-#[goud_engine_macros::goud_api(module = "color")]
+// NOTE: FFI wrappers are hand-written in ffi/component_sprite.rs. The
+// `#[goud_api]` attribute is omitted to avoid duplicate symbol conflicts.
 impl ColorOps {
     /// Returns the white color constant.
     pub fn white() -> FfiColor {

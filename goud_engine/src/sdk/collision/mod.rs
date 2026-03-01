@@ -40,7 +40,8 @@ pub use crate::ecs::collision::CollisionResponse;
 /// FFI wrappers. The free functions below delegate to these methods.
 pub struct Collision;
 
-#[goud_engine_macros::goud_api(module = "collision")]
+// NOTE: FFI wrappers are hand-written in ffi/collision.rs. The `#[goud_api]`
+// attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl Collision {
     /// Tests collision between two axis-aligned bounding boxes.
     pub fn aabb_aabb(
@@ -64,9 +65,7 @@ impl Collision {
         center_b: Vec2,
         radius_b: f32,
     ) -> Option<Contact> {
-        crate::ecs::collision::circle_circle_collision(
-            center_a, radius_a, center_b, radius_b,
-        )
+        crate::ecs::collision::circle_circle_collision(center_a, radius_a, center_b, radius_b)
     }
 
     /// Tests collision between a circle and an AABB.
@@ -93,11 +92,7 @@ impl Collision {
     }
 
     /// Checks whether a point lies inside a circle.
-    pub fn point_in_circle(
-        point: Vec2,
-        circle_center: Vec2,
-        circle_radius: f32,
-    ) -> bool {
+    pub fn point_in_circle(point: Vec2, circle_center: Vec2, circle_radius: f32) -> bool {
         let dx = point.x - circle_center.x;
         let dy = point.y - circle_center.y;
         (dx * dx + dy * dy) <= (circle_radius * circle_radius)
@@ -105,19 +100,11 @@ impl Collision {
 
     /// Fast boolean overlap test for two AABBs using min/max corners.
     pub fn aabb_overlap(min_a: Vec2, max_a: Vec2, min_b: Vec2, max_b: Vec2) -> bool {
-        max_a.x >= min_b.x
-            && min_a.x <= max_b.x
-            && max_a.y >= min_b.y
-            && min_a.y <= max_b.y
+        max_a.x >= min_b.x && min_a.x <= max_b.x && max_a.y >= min_b.y && min_a.y <= max_b.y
     }
 
     /// Fast boolean overlap test for two circles.
-    pub fn circle_overlap(
-        center_a: Vec2,
-        radius_a: f32,
-        center_b: Vec2,
-        radius_b: f32,
-    ) -> bool {
+    pub fn circle_overlap(center_a: Vec2, radius_a: f32, center_b: Vec2, radius_b: f32) -> bool {
         let dx = center_b.x - center_a.x;
         let dy = center_b.y - center_a.y;
         let combined_radius = radius_a + radius_b;

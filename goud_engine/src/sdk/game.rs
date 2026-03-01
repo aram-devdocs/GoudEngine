@@ -6,6 +6,17 @@
 use crate::core::error::GoudResult;
 use crate::ecs::{Component, Entity, World};
 
+#[cfg(feature = "native")]
+use crate::ecs::InputManager;
+#[cfg(feature = "native")]
+use crate::libs::graphics::backend::opengl::OpenGLBackend;
+#[cfg(feature = "native")]
+use crate::libs::graphics::renderer3d::Renderer3D;
+#[cfg(feature = "native")]
+use crate::libs::graphics::sprite_batch::SpriteBatch;
+#[cfg(feature = "native")]
+use crate::libs::platform::PlatformBackend;
+
 use super::entity_builder::EntityBuilder;
 use super::game_config::{GameConfig, GameContext};
 
@@ -25,20 +36,55 @@ use super::game_config::{GameConfig, GameContext};
 /// ```
 pub struct GoudGame {
     /// The ECS world containing all game state.
-    world: World,
+    pub(crate) world: World,
 
     /// Game configuration.
-    config: GameConfig,
+    pub(crate) config: GameConfig,
 
     /// Runtime context for the game loop.
-    context: GameContext,
+    pub(crate) context: GameContext,
 
     /// Whether the game has been initialized.
-    initialized: bool,
+    pub(crate) initialized: bool,
+
+    // =========================================================================
+    // Native-only fields (require windowing + OpenGL)
+    // =========================================================================
+    /// Platform backend for window management (GLFW).
+    #[cfg(feature = "native")]
+    pub(crate) platform: Option<Box<dyn PlatformBackend>>,
+
+    /// OpenGL rendering backend.
+    #[cfg(feature = "native")]
+    pub(crate) render_backend: Option<OpenGLBackend>,
+
+    /// Input manager for keyboard/mouse/gamepad state.
+    #[cfg(feature = "native")]
+    pub(crate) input_manager: InputManager,
+
+    /// 2D sprite batch renderer.
+    #[cfg(feature = "native")]
+    pub(crate) sprite_batch: Option<SpriteBatch<OpenGLBackend>>,
+
+    /// Asset server for loading and managing assets.
+    #[cfg(feature = "native")]
+    pub(crate) asset_server: Option<crate::assets::AssetServer>,
+
+    /// 3D renderer for primitives, lighting, and camera.
+    #[cfg(feature = "native")]
+    pub(crate) renderer_3d: Option<Renderer3D>,
+
+    /// GPU resources for immediate-mode sprite/quad rendering.
+    #[cfg(feature = "native")]
+    pub(crate) immediate_state: Option<super::rendering::ImmediateRenderState>,
 }
 
 impl GoudGame {
     /// Creates a new game instance with the given configuration.
+    ///
+    /// This creates a headless game instance suitable for testing and
+    /// non-graphical use. For a windowed game with rendering, use
+    /// [`with_platform`](Self::with_platform) instead.
     pub fn new(config: GameConfig) -> GoudResult<Self> {
         let window_size = (config.width, config.height);
         Ok(Self {
@@ -46,12 +92,65 @@ impl GoudGame {
             config,
             context: GameContext::new(window_size),
             initialized: false,
+            #[cfg(feature = "native")]
+            platform: None,
+            #[cfg(feature = "native")]
+            render_backend: None,
+            #[cfg(feature = "native")]
+            input_manager: InputManager::default(),
+            #[cfg(feature = "native")]
+            sprite_batch: None,
+            #[cfg(feature = "native")]
+            asset_server: None,
+            #[cfg(feature = "native")]
+            renderer_3d: None,
+            #[cfg(feature = "native")]
+            immediate_state: None,
         })
     }
 
     /// Creates a game with default configuration.
     pub fn default_game() -> GoudResult<Self> {
         Self::new(GameConfig::default())
+    }
+
+    /// Creates a windowed game instance with a GLFW platform backend.
+    ///
+    /// This initializes a GLFW window with an OpenGL 3.3 Core context,
+    /// sets up the sprite batch renderer, and prepares the asset server.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if GLFW initialization or window creation fails.
+    #[cfg(feature = "native")]
+    pub fn with_platform(config: GameConfig) -> GoudResult<Self> {
+        use crate::libs::platform::glfw_platform::GlfwPlatform;
+        use crate::libs::platform::WindowConfig;
+
+        let window_config = WindowConfig {
+            width: config.width,
+            height: config.height,
+            title: config.title.clone(),
+            vsync: config.vsync,
+            resizable: config.resizable,
+        };
+
+        let platform = GlfwPlatform::new(&window_config)?;
+        let window_size = (config.width, config.height);
+
+        Ok(Self {
+            world: World::new(),
+            config,
+            context: GameContext::new(window_size),
+            initialized: false,
+            platform: Some(Box::new(platform)),
+            render_backend: None,
+            input_manager: InputManager::default(),
+            sprite_batch: None,
+            asset_server: None,
+            renderer_3d: None,
+            immediate_state: None,
+        })
     }
 
     /// Returns a reference to the ECS world.

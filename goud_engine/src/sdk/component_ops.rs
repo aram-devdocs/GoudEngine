@@ -12,10 +12,9 @@
 //! `ffi/component.rs` and are accessed via public helper functions.
 
 use crate::core::component_ops::{
-    component_add_impl, component_add_batch_impl, component_get_impl,
-    component_get_mut_impl, component_has_batch_impl, component_has_impl,
-    component_register_type_impl, component_remove_batch_impl,
-    component_remove_impl,
+    component_add_batch_impl, component_add_impl, component_get_impl, component_get_mut_impl,
+    component_has_batch_impl, component_has_impl, component_register_type_impl,
+    component_remove_batch_impl, component_remove_impl,
 };
 use crate::core::context_registry::GoudContextId;
 use crate::core::types::{GoudEntityId, GoudResult};
@@ -23,7 +22,8 @@ use crate::core::types::{GoudEntityId, GoudResult};
 /// Zero-sized type hosting generic component FFI operations.
 pub struct ComponentOps;
 
-#[goud_engine_macros::goud_api(module = "component")]
+// NOTE: FFI wrappers are hand-written in ffi/component.rs. The `#[goud_api]`
+// attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl ComponentOps {
     /// Registers a component type with the engine.
     ///
@@ -67,20 +67,12 @@ impl ComponentOps {
     }
 
     /// Checks if an entity has a specific component.
-    pub fn has(
-        context_id: GoudContextId,
-        entity_id: GoudEntityId,
-        type_id_hash: u64,
-    ) -> bool {
+    pub fn has(context_id: GoudContextId, entity_id: GoudEntityId, type_id_hash: u64) -> bool {
         component_has_impl(context_id, entity_id, type_id_hash)
     }
 
     /// Gets a read-only pointer to a component on an entity.
-    pub fn get(
-        context_id: GoudContextId,
-        entity_id: GoudEntityId,
-        type_id_hash: u64,
-    ) -> *const u8 {
+    pub fn get(context_id: GoudContextId, entity_id: GoudEntityId, type_id_hash: u64) -> *const u8 {
         component_get_impl(context_id, entity_id, type_id_hash)
     }
 
@@ -108,7 +100,11 @@ impl ComponentOps {
         component_size: usize,
     ) -> u32 {
         component_add_batch_impl(
-            context_id, entity_ids, count, type_id_hash, data_ptr,
+            context_id,
+            entity_ids,
+            count,
+            type_id_hash,
+            data_ptr,
             component_size,
         )
     }
@@ -140,8 +136,6 @@ impl ComponentOps {
         type_id_hash: u64,
         out_results: *mut u8,
     ) -> u32 {
-        component_has_batch_impl(
-            context_id, entity_ids, count, type_id_hash, out_results,
-        )
+        component_has_batch_impl(context_id, entity_ids, count, type_id_hash, out_results)
     }
 }

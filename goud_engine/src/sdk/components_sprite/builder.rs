@@ -5,12 +5,11 @@ use crate::core::types::{FfiSprite, FfiSpriteBuilder};
 /// Zero-sized type for Sprite builder operations.
 pub struct SpriteBuilderOps;
 
-#[goud_engine_macros::goud_api(module = "sprite")]
+// NOTE: FFI wrappers are hand-written in ffi/component_sprite.rs. The `#[goud_api]`
+// attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl SpriteBuilderOps {
     /// Creates a new sprite builder with a texture handle.
-    pub fn builder_new(
-        texture_handle: u64,
-    ) -> *mut FfiSpriteBuilder {
+    pub fn builder_new(texture_handle: u64) -> *mut FfiSpriteBuilder {
         let builder = FfiSpriteBuilder {
             sprite: super::factory::SpriteOps::new_sprite(texture_handle),
         };
@@ -58,10 +57,7 @@ impl SpriteBuilderOps {
     }
 
     /// Sets the alpha on the builder.
-    pub fn builder_with_alpha(
-        builder: *mut FfiSpriteBuilder,
-        alpha: f32,
-    ) -> *mut FfiSpriteBuilder {
+    pub fn builder_with_alpha(builder: *mut FfiSpriteBuilder, alpha: f32) -> *mut FfiSpriteBuilder {
         if builder.is_null() {
             return builder;
         }
@@ -160,9 +156,7 @@ impl SpriteBuilderOps {
     }
 
     /// Builds the sprite, consuming and freeing the builder.
-    pub fn builder_build(
-        builder: *mut FfiSpriteBuilder,
-    ) -> FfiSprite {
+    pub fn builder_build(builder: *mut FfiSpriteBuilder) -> FfiSprite {
         if builder.is_null() {
             return super::factory::SpriteOps::new_default();
         }

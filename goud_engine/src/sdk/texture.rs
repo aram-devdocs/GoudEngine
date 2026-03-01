@@ -17,7 +17,8 @@ const INVALID_TEXTURE: u64 = u64::MAX;
 // Texture Operations (annotated for FFI generation)
 // =============================================================================
 
-#[goud_engine_macros::goud_api(module = "texture", feature = "native")]
+// NOTE: FFI wrappers are hand-written in ffi/texture.rs. The `#[goud_api]`
+// attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl GoudGame {
     /// Loads a texture from an image file and returns a packed u64 handle.
     ///

@@ -3,7 +3,7 @@
 ## Purpose
 
 TypeScript bindings for GoudEngine with two targets: Node.js desktop (via napi-rs)
-and web browser (via wasm-bindgen). Published as `@goudengine/sdk` on npm with
+and web browser (via wasm-bindgen). Published as `goudengine` on npm with
 conditional exports that select the right backend automatically.
 
 ## Structure

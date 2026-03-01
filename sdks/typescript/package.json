@@ -1,7 +1,7 @@
 {
-  "name": "@goudengine/sdk",
+  "name": "goudengine",
   "version": "0.0.820",
-  "description": "TypeScript SDK for GoudEngine — Node.js desktop via napi-rs, web via wasm-bindgen",
+  "description": "GoudEngine — build 2D and 3D games with TypeScript for Node.js and web",
   "main": "dist/generated/index.g.js",
   "types": "dist/generated/index.g.d.ts",
   "sideEffects": false,

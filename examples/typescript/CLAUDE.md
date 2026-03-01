@@ -36,7 +36,7 @@ Requires the WASM build: see `sdks/typescript/wasm/`.
 
 - Game logic lives in a shared `.ts` file (e.g., `game.ts`) that is platform-agnostic
 - Desktop and web entry points import the shared logic and pass their platform's GoudGame
-- Examples depend on `@goudengine/sdk` via file reference to `sdks/typescript/`
+- Examples depend on `goudengine` via file reference to `sdks/typescript/`
 - Constants and physics match the C#/Python Flappy Bird implementations exactly
 
 ## Dependencies

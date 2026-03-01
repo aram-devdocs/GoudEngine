@@ -61,10 +61,26 @@
 //! | Type Safety | Compile-time | Runtime checks |
 //! | API Style | Idiomatic Rust | C-compatible |
 
+pub mod collision;
+pub mod color;
+pub mod component_ops;
 pub mod components;
+pub mod components_sprite;
+pub mod components_transform2d;
+pub mod entity;
 pub mod entity_builder;
 pub mod game;
 pub mod game_config;
+#[cfg(feature = "native")]
+pub mod input;
+#[cfg(feature = "native")]
+pub mod rendering;
+#[cfg(feature = "native")]
+pub mod rendering_3d;
+#[cfg(feature = "native")]
+pub mod texture;
+#[cfg(feature = "native")]
+pub mod window;
 
 // Re-export commonly used types for convenience
 pub use crate::core::error::{GoudError, GoudResult};
