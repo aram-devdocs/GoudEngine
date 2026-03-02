@@ -1,0 +1,37 @@
+name: Task
+description: Implementation task (usually created from a feature sub-issue)
+labels: ["type:feature"]
+body:
+  - type: input
+    id: parent
+    attributes:
+      label: Parent Issue
+      description: Link to feature sub-issue
+      placeholder: "#000"
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be done
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How do we know this is done?
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+    validations:
+      required: true
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical Notes
+      description: Implementation guidance, relevant files, patterns to follow
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing
+      description: How to verify this is done correctly

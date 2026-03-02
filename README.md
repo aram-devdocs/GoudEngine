@@ -20,6 +20,14 @@ Game engine written in Rust. Build 2D and 3D games from Rust, C#, Python, or Typ
 | **Examples** | [All Examples](examples/) · [Flappy Bird (Rust)](examples/rust/flappy_bird/) |
 | **Docs** | [Architecture](docs/architecture/) · [Development](docs/DEVELOPMENT.md) · [Building](docs/BUILDING.md) · [AI Setup](docs/AI_SETUP.md) |
 
+## Alpha Roadmap
+
+GoudEngine is working toward an alpha release. The full plan covers physics, audio, text rendering, animation, scenes, UI, 5 new SDK languages (C/C++, Lua, Swift, Kotlin, Go), mobile/console support, and a networking system.
+
+- **[ALPHA_ROADMAP.md](ALPHA_ROADMAP.md)** — Full technical roadmap
+- **[Master tracking issue](https://github.com/aram-devdocs/GoudEngine/issues/114)** — ALPHA-001: GoudEngine Alpha Release
+- **[Contributing](CONTRIBUTING.md)** — How to contribute
+
 ## Get Started
 
 | Language | Install | Examples |
