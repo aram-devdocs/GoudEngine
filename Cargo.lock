@@ -398,10 +398,11 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.1.34"
+version = "1.2.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67b9470d453346108f93a59222a9a1a5724db32d0a4727b7ab7ace4b4d822dc9"
+checksum = "aebf35691d1bfb0ac386a69bac2fde4dd276fb618cf8bf4f5318fe285e821bb2"
 dependencies = [
+ "find-msvc-tools",
  "jobserver",
  "libc",
  "shlex",
@@ -919,6 +920,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "find-msvc-tools"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
+
+[[package]]
 name = "flappy-bird"
 version = "0.1.0"
 dependencies = [
@@ -1098,14 +1105,14 @@ dependencies = [
 
 [[package]]
 name = "goud-engine"
-version = "0.0.821"
+version = "0.0.825"
 dependencies = [
  "goud-engine-core",
 ]
 
 [[package]]
 name = "goud-engine-core"
-version = "0.0.821"
+version = "0.0.825"
 dependencies = [
  "bindgen 0.64.0",
  "bytemuck",
@@ -1138,7 +1145,7 @@ dependencies = [
 
 [[package]]
 name = "goud-engine-node"
-version = "0.0.821"
+version = "0.0.825"
 dependencies = [
  "goud-engine-core",
  "napi",
@@ -1148,7 +1155,7 @@ dependencies = [
 
 [[package]]
 name = "goud_engine_macros"
-version = "0.0.821"
+version = "0.0.825"
 dependencies = [
  "proc-macro2",
  "quote",
