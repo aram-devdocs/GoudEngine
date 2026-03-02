@@ -198,7 +198,7 @@ jobs:
         working-directory: sdks/typescript
         run: |
           npm ci
-          npx napi build --manifest-path native/Cargo.toml --platform --release --target ${{ matrix.target }}
+          npx napi build --manifest-path native/Cargo.toml --platform --release --output-dir . --target ${{ matrix.target }}
 
       - uses: actions/upload-artifact@v4
         with:
