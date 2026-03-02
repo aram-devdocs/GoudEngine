@@ -18,7 +18,7 @@ Game engine written in Rust. Build 2D and 3D games from Rust, C#, Python, or Typ
 |---|---|
 | **SDKs** | [Rust](sdks/rust/) · [C#](sdks/csharp/) · [Python](sdks/python/) · [TypeScript](sdks/typescript/) |
 | **Examples** | [All Examples](examples/) · [Flappy Bird (Rust)](examples/rust/flappy_bird/) |
-| **Docs** | [Architecture](docs/architecture/) · [Development](docs/DEVELOPMENT.md) · [Building](docs/BUILDING.md) · [AI Setup](docs/AI_SETUP.md) |
+| **Docs** | [Getting Started](docs/) · [Architecture](docs/architecture/) · [Development](docs/DEVELOPMENT.md) · [Building](docs/BUILDING.md) · [AI Setup](docs/AI_SETUP.md) |
 
 ## Alpha Roadmap
 
@@ -30,12 +30,12 @@ GoudEngine is working toward an alpha release. The full plan covers physics, aud
 
 ## Get Started
 
-| Language | Install | Examples |
-|----------|---------|----------|
-| C# (.NET) | `dotnet add package GoudEngine` | [C# examples](examples/csharp/) |
-| Python | `pip install goudengine` | [Python examples](examples/python/) |
-| TypeScript | `npm install goudengine` | [TypeScript examples](examples/typescript/) |
-| Rust | `cargo add goud-engine` | [Rust examples](examples/rust/) |
+| Language | Install | Guide | Examples |
+|----------|---------|-------|----------|
+| C# (.NET) | `dotnet add package GoudEngine` | [Getting Started](docs/getting-started-csharp.md) | [C# examples](examples/csharp/) |
+| Python | `pip install goudengine` | [Getting Started](docs/getting-started-python.md) | [Python examples](examples/python/) |
+| TypeScript | `npm install goudengine` | [Getting Started](docs/getting-started-typescript.md) | [TypeScript examples](examples/typescript/) |
+| Rust | `cargo add goud-engine` | [Getting Started](docs/getting-started-rust.md) | [Rust examples](examples/rust/) |
 
 ## Design Philosophy
 
@@ -125,6 +125,7 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 
 ## Documentation
 
+- Getting Started: [C#](docs/getting-started-csharp.md) · [Python](docs/getting-started-python.md) · [TypeScript](docs/getting-started-typescript.md) · [Rust](docs/getting-started-rust.md)
 - [SDK-First Architecture](docs/architecture/sdk-first-architecture.md)
 - [Adding a New Language](docs/architecture/adding-a-new-language.md)
 - [Development Guide](docs/DEVELOPMENT.md) — dev.sh, Git hooks, version management
