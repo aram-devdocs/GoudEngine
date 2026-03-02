@@ -1,3 +1,8 @@
 * @aramhammoudeh
 goud_engine/src/ffi/ @aramhammoudeh
 sdks/ @aramhammoudeh
+.github/ @aramhammoudeh
+CLAUDE.md @aramhammoudeh
+AI_CONTRIBUTORS.md @aramhammoudeh
+release-please-config.json @aramhammoudeh
+.release-please-manifest.json @aramhammoudeh

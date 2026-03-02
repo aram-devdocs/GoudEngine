@@ -143,6 +143,14 @@ For local development, `./increment_version.sh` still works but is not required 
 ./dev.sh --game <game> --local # 3. Test with example
 ```
 
+### Agent Dispatch
+```bash
+./scripts/dispatch-agent.sh 123 456              # Label specific issues
+./scripts/dispatch-agent.sh --milestone alpha-phase-0  # Label all in milestone
+./scripts/dispatch-agent.sh --dry-run 123         # Preview without labeling
+./scripts/agent-status.sh                         # Check agent queue/progress
+```
+
 ## Architecture Overview
 
 ### Design Principle: Rust-First

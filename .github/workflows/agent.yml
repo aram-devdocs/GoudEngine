@@ -1,0 +1,140 @@
+name: GoudEngine Agent
+
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+
+jobs:
+  autonomous-agent:
+    name: Autonomous Agent
+    if: >-
+      github.event_name == 'issues' &&
+      github.event.label.name == 'agent-ready'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: agent-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Generate App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.AGENT_APP_ID }}
+          private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+
+      - name: Swap label to agent-working
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --remove-label "agent-ready" \
+            --add-label "agent-working" \
+            --repo ${{ github.repository }}
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        continue-on-error: true
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          direct_prompt: |
+            Implement the following GitHub issue.
+
+            Title: ${{ github.event.issue.title }}
+            Number: #${{ github.event.issue.number }}
+
+            Body:
+            ${{ github.event.issue.body }}
+
+            Requirements:
+            - Create a branch named: agent/issue-${{ github.event.issue.number }}-<short-slug>
+            - Use conventional commits (feat:, fix:, etc.)
+            - Include "Closes #${{ github.event.issue.number }}" in PR body
+            - Read CLAUDE.md for project conventions
+            - Run cargo check, cargo fmt --check, cargo clippy -- -D warnings
+            - Open a PR when done
+          claude_args: |
+            --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Read,Write,Edit,MultiEdit,Glob,Grep"
+            --denyTools "Bash(cargo publish:*),Bash(gh issue delete:*),Bash(gh repo delete:*)"
+            --system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
+
+      - name: Handle success
+        if: steps.claude.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --remove-label "agent-working" \
+            --repo ${{ github.repository }}
+
+      - name: Handle failure
+        if: steps.claude.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --remove-label "agent-working" \
+            --add-label "agent-blocked" \
+            --repo ${{ github.repository }}
+          gh issue comment ${{ github.event.issue.number }} \
+            --body "The autonomous agent failed to complete this issue. Manual intervention required. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details." \
+            --repo ${{ github.repository }}
+
+  interactive-agent:
+    name: Interactive Agent
+    if: >-
+      github.event_name == 'issue_comment' &&
+      contains(github.event.comment.body, '@goudengine-agent')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          trigger_phrase: "@goudengine-agent"
+          claude_args: |
+            --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Read,Write,Edit,MultiEdit,Glob,Grep"
+            --denyTools "Bash(cargo publish:*),Bash(gh issue delete:*),Bash(gh repo delete:*)"
+            --system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
