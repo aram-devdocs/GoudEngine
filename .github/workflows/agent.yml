@@ -108,6 +108,9 @@ jobs:
       github.event_name == 'issue_comment' &&
       contains(github.event.comment.body, '@goudengine-agent')
     runs-on: ubuntu-latest
+    concurrency:
+      group: agent-interactive-${{ github.event.issue.number }}
+      cancel-in-progress: false
     permissions:
       contents: write
       pull-requests: write

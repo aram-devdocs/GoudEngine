@@ -46,6 +46,10 @@ while [[ $# -gt 0 ]]; do
       usage
       ;;
     *)
+      if ! [[ "$1" =~ ^[0-9]+$ ]]; then
+        echo "ERROR: '$1' is not a valid issue number"
+        exit 1
+      fi
       ISSUES+=("$1")
       shift
       ;;
