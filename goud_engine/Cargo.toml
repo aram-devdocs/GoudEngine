@@ -41,7 +41,7 @@ web = ["wgpu-backend", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:web-
 
 # TODO: https://github.com/aram-devdocs/GoudEngine/issues/8
 [dependencies]
-cc = { version = "1.0.79", optional = true }
+cc = { version = "1.2", optional = true }
 bindgen = { version = "0.64.0", optional = true }
 cgmath = "0.18.0"
 env_logger = { version = "0.11.6", optional = true }
@@ -49,12 +49,12 @@ gl = { version = "0.14.0", optional = true }
 glfw = { version = "0.59.0", optional = true }
 log = "0.4.17"
 thiserror = "2.0.12"
-image = "0.24"
-cbindgen = { version = "0.27.0", optional = true }
-tiled = { version = "0.13.0", optional = true }
-rayon = { version = "1.10", optional = true }
-notify = { version = "6.1", optional = true }
-rodio = { version = "0.17", optional = true }
+image = "0.25"
+cbindgen = { version = "0.29", optional = true }
+tiled = { version = "0.15", optional = true }
+rayon = { version = "1.11", optional = true }
+notify = { version = "8", optional = true }
+rodio = { version = "0.22", optional = true }
 bytemuck = "1.14"
 goud_engine_macros = { version = "=0.0.825", path = "../goud_engine_macros" } # x-release-please-version
 wgpu = { version = "28", optional = true }
@@ -79,7 +79,7 @@ crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"
 
 [build-dependencies]
-cbindgen = "0.27.0"
+cbindgen = "0.29"
 
 [dev-dependencies]
 husky-rs = "0.1.3"

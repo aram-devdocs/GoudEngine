@@ -1,5 +1,5 @@
 use crate::constants::*;
-use rand::Rng;
+use rand::RngExt;
 
 /// A pair of pipes (top and bottom) forming an obstacle.
 pub struct Pipe {
@@ -11,8 +11,8 @@ impl Pipe {
     /// Creates a new pipe pair at the right edge of the screen with a
     /// random gap position (matching the C#/Python implementations).
     pub fn new() -> Self {
-        let mut rng = rand::thread_rng();
-        let gap_y = rng.gen_range(PIPE_GAP as i32..(SCREEN_HEIGHT - PIPE_GAP) as i32) as f32;
+        let mut rng = rand::rng();
+        let gap_y = rng.random_range(PIPE_GAP as i32..(SCREEN_HEIGHT - PIPE_GAP) as i32) as f32;
         Self {
             x: SCREEN_WIDTH,
             gap_y,

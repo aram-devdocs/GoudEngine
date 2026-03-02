@@ -4,5 +4,7 @@ wasm/
 *.node
 target/
 .napi/
+native/index.d.ts
+native/index.js
 npm-debug.log
 *.tsbuildinfo

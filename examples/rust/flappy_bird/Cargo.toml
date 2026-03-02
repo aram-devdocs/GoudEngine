@@ -7,4 +7,4 @@ publish = false
 
 [dependencies]
 goud-engine = { path = "../../../sdks/rust" }
-rand = "0.8"
+rand = "0.10"
