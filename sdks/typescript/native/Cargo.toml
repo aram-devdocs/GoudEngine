@@ -9,8 +9,8 @@ description = "Node.js native addon for GoudEngine (napi-rs)"
 crate-type = ["cdylib"]
 
 [dependencies]
-napi = { version = "2", default-features = false, features = ["napi8"] }
-napi-derive = "2"
+napi = { version = "3", default-features = false, features = ["napi8"] }
+napi-derive = "3"
 goud-engine-core = { path = "../../../goud_engine" }
 
 [build-dependencies]

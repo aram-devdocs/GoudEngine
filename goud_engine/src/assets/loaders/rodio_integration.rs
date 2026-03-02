@@ -10,10 +10,10 @@ mod tests {
     fn test_rodio_availability() {
         // This test simply verifies that rodio can be imported and basic types are available
         // The rodio crate provides the audio playback infrastructure
-        use rodio::OutputStream;
+        use rodio::Player;
 
         // Verify we can reference rodio types (compilation test)
-        let _type_check: Option<OutputStream> = None;
+        let _type_check: Option<Player> = None;
     }
 
     /// Verifies that rodio Decoder type is available for audio decoding.
@@ -37,11 +37,7 @@ mod tests {
         // This allows for audio manipulation (volume, speed, filters, etc.)
 
         // We use a function pointer to verify the trait exists and is accessible
-        fn _verify_source_trait<S: Source>(_source: S)
-        where
-            S::Item: rodio::Sample,
-        {
-        }
+        fn _verify_source_trait<S: Source>(_source: S) {}
 
         // If this compiles, the Source trait is properly available
     }
