@@ -11,6 +11,7 @@
 
 # Development
 
+- [Dev Environment Setup](development/dev-setup.md)
 - [Building](development/building.md)
 - [Development Guide](development/guide.md)
 - [AI Agent Setup](development/ai-setup.md)
