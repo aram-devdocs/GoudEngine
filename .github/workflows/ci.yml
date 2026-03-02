@@ -494,7 +494,7 @@ jobs:
           ${{ runner.os }}-cargo-
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: '20'
         cache: 'npm'
@@ -579,7 +579,7 @@ jobs:
           ubuntu-cargo-ts-wasm-
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: '20'
         cache: 'npm'
