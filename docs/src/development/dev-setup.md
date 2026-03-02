@@ -155,25 +155,19 @@ cargo deny check                   # Dependency audit
 
 ## Common Issues
 
-**`glfw` build fails on Linux**
+### `glfw` build fails on Linux
 
 Missing X11 or OpenGL dev libraries. Install the full set from the [Linux (Ubuntu/Debian)](#linux-ubuntudebian) section above.
 
----
-
-**`libasound2-dev` not found (Ubuntu 24.04+)**
+### `libasound2-dev` not found (Ubuntu 24.04+)
 
 Ubuntu 24.04 ships a transitional package. If `libasound2-dev` fails, try `libasound-dev` instead.
 
----
-
-**`dotnet` command not found after install.sh**
+### `dotnet` command not found after install.sh
 
 The .NET SDK install may need a new shell session to take effect. Close and reopen your terminal, or run `source ~/.bashrc`.
 
----
-
-**`cargo test` fails with "failed to initialize any backend" or GL errors**
+### `cargo test` fails with "failed to initialize any backend" or GL errors
 
 Tests that need an OpenGL context fail without a display server. On headless Linux (CI, WSL without WSLg, SSH sessions), use Xvfb:
 
@@ -182,17 +176,13 @@ sudo apt-get install -y xvfb
 xvfb-run -a cargo test
 ```
 
----
-
-**Permission denied on install.sh**
+### Permission denied on install.sh
 
 ```sh
 chmod +x install.sh
 ```
 
----
-
-**cbindgen version mismatch**
+### cbindgen version mismatch
 
 The project uses cbindgen 0.29. If you have an older version installed:
 
@@ -200,9 +190,7 @@ The project uses cbindgen 0.29. If you have an older version installed:
 cargo install cbindgen --force
 ```
 
----
-
-**Node.js native addon build fails (TypeScript SDK)**
+### Node.js native addon build fails (TypeScript SDK)
 
 node-gyp requires a C++ compiler and Python 3:
 
