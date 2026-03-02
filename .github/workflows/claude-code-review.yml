@@ -56,8 +56,9 @@ jobs:
                 return;
               }
 
-              if (pr.user.type === 'Bot') {
-                core.info('Skipping bot PR');
+              const skipBots = ['dependabot[bot]', 'renovate[bot]'];
+              if (pr.user.type === 'Bot' && skipBots.includes(pr.user.login)) {
+                core.info(`Skipping dependency bot PR from ${pr.user.login}`);
                 core.setOutput('should_review', 'false');
                 return;
               }
@@ -173,3 +174,63 @@ jobs:
             Use top-level comments for general observations.
           claude_args: |
             --allowedTools "Bash(cargo check:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo test:*),Bash(cargo deny:*),Bash(wc -l:*),Bash(rg:*),Read,Glob,Grep"
+
+  agent-feedback:
+    name: Agent Feedback Loop
+    needs: [pre-check, review]
+    if: needs.pre-check.outputs.should_review == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Trigger agent feedback if needed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ needs.pre-check.outputs.pr_number }};
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+
+            // Only trigger feedback for agent-created PRs (branch starts with agent/)
+            const isAgentPR = pr.head.ref.startsWith('agent/');
+            if (!isAgentPR) {
+              core.info('Not an agent PR, skipping feedback loop');
+              return;
+            }
+
+            // Count existing review rounds to prevent infinite loops
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber
+            });
+
+            const reviewRounds = comments.filter(c =>
+              c.body.includes('<!-- agent-review-round')
+            ).length;
+
+            if (reviewRounds >= 2) {
+              core.info(`Already completed ${reviewRounds} review rounds, leaving for human review`);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `<!-- agent-review-round: ${reviewRounds + 1} -->\n\nThis agent PR has completed ${reviewRounds} automated review rounds. Remaining issues require human review.`
+              });
+              return;
+            }
+
+            const round = reviewRounds + 1;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: `<!-- agent-review-round: ${round} -->\n\n@goudengine-agent The automated code review above has completed (round ${round}/2). Please address any issues found in the review and push fixes to this PR.`
+            });
+
+            core.info(`Posted agent feedback trigger (round ${round})`);

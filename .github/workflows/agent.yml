@@ -5,6 +5,8 @@ on:
     types: [labeled]
   issue_comment:
     types: [created]
+  pull_request_review_comment:
+    types: [created]
 
 jobs:
   autonomous-agent:
@@ -63,14 +65,16 @@ jobs:
             Requirements:
             - Create a branch named: agent/issue-${{ github.event.issue.number }}-<short-slug>
             - Use conventional commits (feat:, fix:, etc.)
-            - Include "Closes #${{ github.event.issue.number }}" in PR body
             - Read CLAUDE.md for project conventions
             - Run cargo check, cargo fmt --check, cargo clippy -- -D warnings
-            - Open a PR when done
+            - When opening the PR, read .github/pull_request_template.md and use it to structure the PR body
+            - Include "Closes #${{ github.event.issue.number }}" in the Related Issues field
           claude_args: |
-            --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Read,Write,Edit,MultiEdit,Glob,Grep"
+            --model claude-opus-4-6
+            --max-turns 50
+            --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr view:*),Bash(gh issue view:*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
             --disallowedTools "Bash(cargo publish:*),Bash(gh issue delete:*),Bash(gh repo delete:*)"
-            --system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
 
       - name: Handle success
         if: steps.claude.outcome == 'success'
@@ -101,11 +105,13 @@ jobs:
   interactive-agent:
     name: Interactive Agent
     if: >-
-      github.event_name == 'issue_comment' &&
-      contains(github.event.comment.body, '@goudengine-agent')
+      (github.event_name == 'issue_comment' &&
+      contains(github.event.comment.body, '@goudengine-agent')) ||
+      (github.event_name == 'pull_request_review_comment' &&
+      contains(github.event.comment.body, '@goudengine-agent'))
     runs-on: ubuntu-latest
     concurrency:
-      group: agent-interactive-${{ github.event.issue.number }}
+      group: agent-interactive-${{ github.event.issue.number || github.event.pull_request.number }}
       cancel-in-progress: false
     permissions:
       contents: write
@@ -133,6 +139,8 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           trigger_phrase: "@goudengine-agent"
           claude_args: |
-            --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Read,Write,Edit,MultiEdit,Glob,Grep"
+            --model claude-opus-4-6
+            --max-turns 50
+            --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr view:*),Bash(gh issue view:*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
             --disallowedTools "Bash(cargo publish:*),Bash(gh issue delete:*),Bash(gh repo delete:*)"
-            --system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
