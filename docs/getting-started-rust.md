@@ -10,14 +10,14 @@ Other SDKs: [C#](getting-started-csharp.md) · [Python](getting-started-python.m
 
 ## Prerequisites
 
-**Rust toolchain**
+### Rust toolchain
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 rustup update stable
 ```
 
-**System dependencies**
+### System dependencies
 
 Linux:
 ```bash
