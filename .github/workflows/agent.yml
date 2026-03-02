@@ -15,6 +15,7 @@ jobs:
       github.event_name == 'issues' &&
       github.event.label.name == 'agent-ready'
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     concurrency:
       group: agent-${{ github.event.issue.number }}
       cancel-in-progress: false
@@ -22,6 +23,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      actions: read
       id-token: write
     steps:
       - name: Swap label to agent-working
@@ -33,17 +35,9 @@ jobs:
             --add-label "agent-working" \
             --repo ${{ github.repository }}
 
-      - name: Generate App token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.AGENT_APP_ID }}
-          private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
-
       - uses: actions/checkout@v6
         with:
           fetch-depth: 1
-          token: ${{ steps.app-token.outputs.token }}
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -55,9 +49,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
 
-      - name: Install markdownlint
-        run: npm install -g markdownlint-cli2
-
       - name: Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@v1
@@ -65,6 +56,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           allowed_bots: "goudengine-agent"
+          show_full_output: "true"
           prompt: |
             Implement the following GitHub issue.
 
@@ -79,15 +71,14 @@ jobs:
             - Use conventional commits (feat:, fix:, etc.)
             - Read CLAUDE.md for project conventions
             - Run cargo check, cargo fmt --check, cargo clippy -- -D warnings
-            - If you create or modify .md files, run: npx markdownlint-cli2 '**/*.md' '!**/target/**' '!**/node_modules/**' and fix any errors before committing
             - When opening the PR, read .github/pull_request_template.md and use it to structure the PR body
             - Include "Closes #${{ github.event.issue.number }}" in the Related Issues field
           claude_args: |
             --model claude-opus-4-6
-            --max-turns 50
-            --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(npx markdownlint-cli2:*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
-            --disallowedTools "Bash(cargo publish:*),Bash(gh issue delete:*),Bash(gh repo delete:*)"
-            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes. If you modify .md files, run npx markdownlint-cli2 on the changed files and fix any errors before pushing."
+            --max-budget-usd 50
+            --allowedTools "Bash(*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
+            --disallowedTools "Bash(cargo publish:*),Bash(git push --force:*),Bash(git push -f:*),Bash(rm -rf /:*),Bash(rm -rf ~:*),Bash(chmod -R 777:*),Bash(gh issue delete:*),Bash(gh repo delete:*),Bash(gh repo archive:*)"
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
 
       - name: Check if PR was created
         id: check-pr
@@ -137,6 +128,7 @@ jobs:
       (github.event_name == 'pull_request_review_comment' &&
       contains(github.event.comment.body, '@goudengine-agent'))
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     concurrency:
       group: agent-interactive-${{ github.event.issue.number || github.event.pull_request.number }}
       cancel-in-progress: false
@@ -144,19 +136,12 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      actions: read
       id-token: write
     steps:
-      - name: Generate App token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.AGENT_APP_ID }}
-          private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
-
       - uses: actions/checkout@v6
         with:
           fetch-depth: 1
-          token: ${{ steps.app-token.outputs.token }}
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -168,18 +153,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
 
-      - name: Install markdownlint
-        run: npm install -g markdownlint-cli2
-
       - name: Run Claude Code
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           allowed_bots: "goudengine-agent"
           trigger_phrase: "@goudengine-agent"
+          show_full_output: "true"
           claude_args: |
             --model claude-opus-4-6
-            --max-turns 50
-            --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(npx markdownlint-cli2:*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
-            --disallowedTools "Bash(cargo publish:*),Bash(gh issue delete:*),Bash(gh repo delete:*)"
-            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes. If you modify .md files, run npx markdownlint-cli2 on the changed files and fix any errors before pushing."
+            --max-budget-usd 50
+            --allowedTools "Bash(*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
+            --disallowedTools "Bash(cargo publish:*),Bash(git push --force:*),Bash(git push -f:*),Bash(rm -rf /:*),Bash(rm -rf ~:*),Bash(chmod -R 777:*),Bash(gh issue delete:*),Bash(gh repo delete:*),Bash(gh repo archive:*)"
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
