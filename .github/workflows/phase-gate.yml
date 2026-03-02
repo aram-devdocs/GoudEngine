@@ -19,7 +19,7 @@ jobs:
           private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
 
       - name: Check and advance milestone
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         with:
