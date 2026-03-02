@@ -9,7 +9,7 @@ Performed as part of F00-12 (#158): Triage and update all existing open issues.
 | Total open issues | 274 | 265 |
 | Missing `type:*` label | 11 | 0 |
 | Missing `phase:*` label | 1 | 0 |
-| Missing milestone | 12 | 0 |
+| Missing milestone | 13 | 0 |
 | Closed as duplicate | — | 9 |
 
 ## Labels Added
