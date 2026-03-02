@@ -190,7 +190,7 @@ cargo build --release
 
 ## Next Steps
 
-- [Python examples](../../../examples/python/) — source code for `main.py` and `flappy_bird.py`
-- [Python SDK README](../../../sdks/python/README.md) — full API reference
+- [Python examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/python/) — source code for `main.py` and `flappy_bird.py`
+- [Python SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/python/) — full API reference
 - [Architecture overview](../architecture/sdk-first.md) — how the Rust core and Python SDK connect
 - [Development guide](../development/guide.md) — building from source, running tests

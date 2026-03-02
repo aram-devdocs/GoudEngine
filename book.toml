@@ -10,4 +10,4 @@ build-dir = "docs/book"
 
 [output.html]
 git-repository-url = "https://github.com/aram-devdocs/GoudEngine"
-edit-url-template = "https://github.com/aram-devdocs/GoudEngine/edit/main/{path}"
+edit-url-template = "https://github.com/aram-devdocs/GoudEngine/edit/main/docs/src/{path}"

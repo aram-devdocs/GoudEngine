@@ -196,7 +196,7 @@ The game reuses the shared asset directory at `examples/csharp/flappy_goud/asset
 
 ## Next Steps
 
-- [Rust SDK README](../../../sdks/rust/README.md) — crate design and re-export structure
-- [Rust examples](../../../examples/rust/) — flappy_bird source code
+- [Rust SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/rust/) — crate design and re-export structure
+- [Rust examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/rust/) — flappy_bird source code
 - [Architecture](../architecture/sdk-first.md) — layer design and engine internals
 - [Development guide](../development/guide.md) — building from source, running tests

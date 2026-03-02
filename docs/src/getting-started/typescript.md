@@ -262,7 +262,7 @@ Controls: `Space` or left-click to flap, `R` to restart, `Escape` to quit (deskt
 
 ## Next Steps
 
-- [TypeScript SDK README](../../../sdks/typescript/README.md) — full API reference and build instructions
-- [TypeScript examples](../../../examples/typescript/) — Flappy Bird source with shared desktop/web logic
+- [TypeScript SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/typescript/) — full API reference and build instructions
+- [TypeScript examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/typescript/) — Flappy Bird source with shared desktop/web logic
 - [Architecture overview](../architecture/sdk-first.md) — layer design and codegen pipeline
 - [Development guide](../development/guide.md) — build system, git hooks, version management
