@@ -85,6 +85,7 @@ All open issues now follow this taxonomy:
 `phase:0-foundation`, `phase:1-core`, `phase:2-content`, `phase:3-sdks`, `phase:4-platform`, `phase:5-quality`, `phase:6-polish`
 
 **Milestone mapping**:
+
 | Phase | Milestone |
 |---|---|
 | phase:0-foundation | alpha-phase-0 |
