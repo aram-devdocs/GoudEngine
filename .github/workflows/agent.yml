@@ -20,19 +20,10 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
-      id-token: write
-      actions: read
     steps:
-      - name: Generate App token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.AGENT_APP_ID }}
-          private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
-
       - name: Swap label to agent-working
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh issue edit ${{ github.event.issue.number }} \
             --remove-label "agent-ready" \
@@ -77,13 +68,13 @@ jobs:
             - Open a PR when done
           claude_args: |
             --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Read,Write,Edit,MultiEdit,Glob,Grep"
-            --denyTools "Bash(cargo publish:*),Bash(gh issue delete:*),Bash(gh repo delete:*)"
+            --disallowedTools "Bash(cargo publish:*),Bash(gh issue delete:*),Bash(gh repo delete:*)"
             --system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
 
       - name: Handle success
         if: steps.claude.outcome == 'success'
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh issue edit ${{ github.event.issue.number }} \
             --remove-label "agent-working" \
@@ -92,7 +83,7 @@ jobs:
       - name: Handle failure
         if: steps.claude.outcome == 'failure'
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh issue edit ${{ github.event.issue.number }} \
             --remove-label "agent-working" \
@@ -101,6 +92,10 @@ jobs:
           gh issue comment ${{ github.event.issue.number }} \
             --body "The autonomous agent failed to complete this issue. Manual intervention required. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details." \
             --repo ${{ github.repository }}
+
+      - name: Fail job if Claude failed
+        if: steps.claude.outcome == 'failure'
+        run: exit 1
 
   interactive-agent:
     name: Interactive Agent
@@ -115,8 +110,6 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
-      id-token: write
-      actions: read
     steps:
       - uses: actions/checkout@v6
         with:
@@ -139,5 +132,5 @@ jobs:
           trigger_phrase: "@goudengine-agent"
           claude_args: |
             --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Read,Write,Edit,MultiEdit,Glob,Grep"
-            --denyTools "Bash(cargo publish:*),Bash(gh issue delete:*),Bash(gh repo delete:*)"
+            --disallowedTools "Bash(cargo publish:*),Bash(gh issue delete:*),Bash(gh repo delete:*)"
             --system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
