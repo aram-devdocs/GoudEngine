@@ -1,0 +1,40 @@
+name: RFC (Request for Comments)
+description: Propose a significant design decision
+labels: ["status:needs-design"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One paragraph explanation
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why are we doing this?
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: Design
+      description: Detailed design. Include code examples.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: What else was considered?
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What does this change? What breaks?
+  - type: textarea
+    id: questions
+    attributes:
+      label: Open Questions
+      description: What isn't decided yet?

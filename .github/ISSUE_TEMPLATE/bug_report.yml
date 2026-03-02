@@ -1,0 +1,92 @@
+name: Bug Report
+description: Report a bug in GoudEngine
+labels: ["type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please fill out the sections below.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Clear description of the bug
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this?
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happens?
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - macOS
+        - Windows
+        - Linux
+        - Web (Browser)
+        - iOS
+        - Android
+    validations:
+      required: true
+  - type: dropdown
+    id: sdk
+    attributes:
+      label: SDK Language
+      options:
+        - Rust
+        - C#
+        - Python
+        - TypeScript (Node)
+        - TypeScript (Web/WASM)
+        - C/C++
+        - Lua
+        - Swift
+        - Kotlin
+        - Go
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SDK Version
+      placeholder: "0.0.825"
+  - type: dropdown
+    id: renderer
+    attributes:
+      label: Renderer
+      options:
+        - OpenGL
+        - wgpu (Vulkan)
+        - wgpu (Metal)
+        - wgpu (D3D12)
+        - wgpu (WebGPU)
+        - Unknown
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal Reproduction
+      description: Code snippet or link to minimal repo
+      render: rust
