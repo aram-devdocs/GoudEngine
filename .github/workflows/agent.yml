@@ -77,8 +77,22 @@ jobs:
             --disallowedTools "Bash(cargo publish:*),Bash(gh issue delete:*),Bash(gh repo delete:*)"
             --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
 
+      - name: Check if PR was created
+        id: check-pr
+        if: steps.claude.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_URL=$(gh pr list --head "agent/issue-${{ github.event.issue.number }}" --json url --jq '.[0].url' --repo ${{ github.repository }})
+          if [ -n "$PR_URL" ]; then
+            echo "pr_created=true" >> "$GITHUB_OUTPUT"
+            echo "Agent created PR despite reporting failure: $PR_URL"
+          else
+            echo "pr_created=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Handle success
-        if: steps.claude.outcome == 'success'
+        if: steps.claude.outcome == 'success' || steps.check-pr.outputs.pr_created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -87,7 +101,7 @@ jobs:
             --repo ${{ github.repository }}
 
       - name: Handle failure
-        if: steps.claude.outcome == 'failure'
+        if: steps.claude.outcome == 'failure' && steps.check-pr.outputs.pr_created != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -99,8 +113,8 @@ jobs:
             --body "The autonomous agent failed to complete this issue. Manual intervention required. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details." \
             --repo ${{ github.repository }}
 
-      - name: Fail job if Claude failed
-        if: steps.claude.outcome == 'failure'
+      - name: Fail job if Claude truly failed
+        if: steps.claude.outcome == 'failure' && steps.check-pr.outputs.pr_created != 'true'
         run: exit 1
 
   interactive-agent:
