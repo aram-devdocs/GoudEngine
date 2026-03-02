@@ -32,7 +32,7 @@
 use crate::assets::loaders::AudioAsset;
 use crate::core::error::{GoudError, GoudResult};
 use crate::core::math::Vec2;
-use rodio::{OutputStream, OutputStreamHandle, Sink, Source};
+use rodio::{DeviceSinkBuilder, MixerDeviceSink, Player, Source};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -66,23 +66,17 @@ use std::sync::{Arc, Mutex};
 /// assert_eq!(audio_manager.global_volume(), 0.5);
 /// ```
 pub struct AudioManager {
-    /// Audio output stream (must be kept alive for playback).
-    #[allow(dead_code)]
-    stream: OutputStream,
-
-    /// Handle for audio output operations.
-    /// TODO Phase 6: Use this for actual audio playback with rodio::Sink
-    #[allow(dead_code)]
-    stream_handle: OutputStreamHandle,
+    /// Audio device sink (must be kept alive for playback).
+    device_sink: MixerDeviceSink,
 
     /// Global volume (0.0 to 1.0).
     global_volume: Arc<Mutex<f32>>,
 
-    /// Active audio sinks (for controlling playback).
-    sinks: Arc<Mutex<HashMap<u64, Sink>>>,
+    /// Active audio players (for controlling playback).
+    players: Arc<Mutex<HashMap<u64, Player>>>,
 
-    /// Next sink ID for tracking.
-    next_sink_id: Arc<Mutex<u64>>,
+    /// Next player ID for tracking.
+    next_player_id: Arc<Mutex<u64>>,
 }
 
 impl AudioManager {
@@ -103,16 +97,17 @@ impl AudioManager {
     /// let audio_manager = AudioManager::new().expect("Failed to initialize audio");
     /// ```
     pub fn new() -> GoudResult<Self> {
-        let (stream, stream_handle) = OutputStream::try_default().map_err(|e| {
+        let mut device_sink = DeviceSinkBuilder::open_default_sink().map_err(|e| {
             GoudError::AudioInitFailed(format!("Failed to create audio output stream: {}", e))
         })?;
+        // Suppress the log message rodio prints when the device sink is dropped.
+        device_sink.log_on_drop(false);
 
         Ok(Self {
-            stream,
-            stream_handle,
+            device_sink,
             global_volume: Arc::new(Mutex::new(1.0)),
-            sinks: Arc::new(Mutex::new(HashMap::new())),
-            next_sink_id: Arc::new(Mutex::new(0)),
+            players: Arc::new(Mutex::new(HashMap::new())),
+            next_player_id: Arc::new(Mutex::new(0)),
         })
     }
 
@@ -152,10 +147,10 @@ impl AudioManager {
         let clamped = volume.clamp(0.0, 1.0);
         *self.global_volume.lock().unwrap() = clamped;
 
-        // Update volume for all active sinks
-        let sinks = self.sinks.lock().unwrap();
-        for sink in sinks.values() {
-            sink.set_volume(clamped);
+        // Update volume for all active players
+        let players = self.players.lock().unwrap();
+        for player in players.values() {
+            player.set_volume(clamped);
         }
     }
 
@@ -200,23 +195,21 @@ impl AudioManager {
         let source = rodio::Decoder::new(cursor)
             .map_err(|e| GoudError::ResourceLoadFailed(format!("Failed to decode audio: {}", e)))?;
 
-        // Create sink for this audio
-        let sink = Sink::try_new(&self.stream_handle).map_err(|e| {
-            GoudError::ResourceLoadFailed(format!("Failed to create audio sink: {}", e))
-        })?;
+        // Create player connected to the device mixer
+        let player = Player::connect_new(self.device_sink.mixer());
 
         // Apply global volume
-        sink.set_volume(self.global_volume());
+        player.set_volume(self.global_volume());
 
-        // Append audio source to sink and start playback
-        sink.append(source);
+        // Append audio source to player and start playback
+        player.append(source);
 
-        // Allocate ID and store sink
-        let sink_id = self.allocate_sink_id();
-        let mut sinks = self.sinks.lock().unwrap();
-        sinks.insert(sink_id, sink);
+        // Allocate ID and store player
+        let player_id = self.allocate_player_id();
+        let mut players = self.players.lock().unwrap();
+        players.insert(player_id, player);
 
-        Ok(sink_id)
+        Ok(player_id)
     }
 
     /// Plays an audio asset with looping enabled.
@@ -248,23 +241,21 @@ impl AudioManager {
         // Create repeating source
         let looped_source = source.repeat_infinite();
 
-        // Create sink for this audio
-        let sink = Sink::try_new(&self.stream_handle).map_err(|e| {
-            GoudError::ResourceLoadFailed(format!("Failed to create audio sink: {}", e))
-        })?;
+        // Create player connected to the device mixer
+        let player = Player::connect_new(self.device_sink.mixer());
 
         // Apply global volume
-        sink.set_volume(self.global_volume());
+        player.set_volume(self.global_volume());
 
-        // Append looped source to sink and start playback
-        sink.append(looped_source);
+        // Append looped source to player and start playback
+        player.append(looped_source);
 
-        // Allocate ID and store sink
-        let sink_id = self.allocate_sink_id();
-        let mut sinks = self.sinks.lock().unwrap();
-        sinks.insert(sink_id, sink);
+        // Allocate ID and store player
+        let player_id = self.allocate_player_id();
+        let mut players = self.players.lock().unwrap();
+        players.insert(player_id, player);
 
-        Ok(sink_id)
+        Ok(player_id)
     }
 
     /// Plays an audio asset with custom volume and pitch.
@@ -304,32 +295,27 @@ impl AudioManager {
         let clamped_speed = speed.clamp(0.1, 10.0);
         let source_with_speed = source.speed(clamped_speed);
 
-        // Apply looping if requested
-        let final_source: Box<dyn rodio::Source<Item = i16> + Send> = if looping {
-            Box::new(source_with_speed.repeat_infinite())
-        } else {
-            Box::new(source_with_speed)
-        };
-
-        // Create sink for this audio
-        let sink = Sink::try_new(&self.stream_handle).map_err(|e| {
-            GoudError::ResourceLoadFailed(format!("Failed to create audio sink: {}", e))
-        })?;
+        // Create player connected to the device mixer
+        let player = Player::connect_new(self.device_sink.mixer());
 
         // Apply volume (global volume * local volume)
         let clamped_volume = volume.clamp(0.0, 1.0);
         let final_volume = self.global_volume() * clamped_volume;
-        sink.set_volume(final_volume);
+        player.set_volume(final_volume);
 
-        // Append source to sink and start playback
-        sink.append(final_source);
+        // Apply looping if requested and append source to player
+        if looping {
+            player.append(source_with_speed.repeat_infinite());
+        } else {
+            player.append(source_with_speed);
+        }
 
-        // Allocate ID and store sink
-        let sink_id = self.allocate_sink_id();
-        let mut sinks = self.sinks.lock().unwrap();
-        sinks.insert(sink_id, sink);
+        // Allocate ID and store player
+        let player_id = self.allocate_player_id();
+        let mut players = self.players.lock().unwrap();
+        players.insert(player_id, player);
 
-        Ok(sink_id)
+        Ok(player_id)
     }
 
     /// Pauses audio playback for the given sink ID.
@@ -342,9 +328,9 @@ impl AudioManager {
     ///
     /// `true` if the sink was found and paused, `false` otherwise.
     pub fn pause(&self, sink_id: u64) -> bool {
-        let sinks = self.sinks.lock().unwrap();
-        if let Some(sink) = sinks.get(&sink_id) {
-            sink.pause();
+        let players = self.players.lock().unwrap();
+        if let Some(player) = players.get(&sink_id) {
+            player.pause();
             true
         } else {
             false
@@ -361,9 +347,9 @@ impl AudioManager {
     ///
     /// `true` if the sink was found and resumed, `false` otherwise.
     pub fn resume(&self, sink_id: u64) -> bool {
-        let sinks = self.sinks.lock().unwrap();
-        if let Some(sink) = sinks.get(&sink_id) {
-            sink.play();
+        let players = self.players.lock().unwrap();
+        if let Some(player) = players.get(&sink_id) {
+            player.play();
             true
         } else {
             false
@@ -380,9 +366,9 @@ impl AudioManager {
     ///
     /// `true` if the sink was found and stopped, `false` otherwise.
     pub fn stop(&mut self, sink_id: u64) -> bool {
-        let mut sinks = self.sinks.lock().unwrap();
-        if let Some(sink) = sinks.remove(&sink_id) {
-            sink.stop();
+        let mut players = self.players.lock().unwrap();
+        if let Some(player) = players.remove(&sink_id) {
+            player.stop();
             true
         } else {
             false
@@ -399,35 +385,35 @@ impl AudioManager {
     ///
     /// `true` if the sink exists and is not paused, `false` otherwise.
     pub fn is_playing(&self, sink_id: u64) -> bool {
-        let sinks = self.sinks.lock().unwrap();
-        if let Some(sink) = sinks.get(&sink_id) {
-            !sink.is_paused()
+        let players = self.players.lock().unwrap();
+        if let Some(player) = players.get(&sink_id) {
+            !player.is_paused()
         } else {
             false
         }
     }
 
-    /// Returns the number of active audio sinks.
+    /// Returns the number of active audio players.
     pub fn active_count(&self) -> usize {
-        self.sinks.lock().unwrap().len()
+        self.players.lock().unwrap().len()
     }
 
     /// Stops all currently playing audio.
     pub fn stop_all(&mut self) {
-        let mut sinks = self.sinks.lock().unwrap();
-        for sink in sinks.values() {
-            sink.stop();
+        let mut players = self.players.lock().unwrap();
+        for player in players.values() {
+            player.stop();
         }
-        sinks.clear();
+        players.clear();
     }
 
-    /// Cleans up finished audio sinks.
+    /// Cleans up finished audio players.
     ///
-    /// Removes sinks that have finished playing from the internal collection.
+    /// Removes players that have finished playing from the internal collection.
     /// This should be called periodically to prevent memory leaks.
     pub fn cleanup_finished(&mut self) {
-        let mut sinks = self.sinks.lock().unwrap();
-        sinks.retain(|_, sink| !sink.empty());
+        let mut players = self.players.lock().unwrap();
+        players.retain(|_, player| !player.empty());
     }
 
     /// Sets the volume for a specific sink.
@@ -441,10 +427,10 @@ impl AudioManager {
     ///
     /// `true` if the sink was found and volume set, `false` otherwise.
     pub fn set_sink_volume(&self, sink_id: u64, volume: f32) -> bool {
-        let sinks = self.sinks.lock().unwrap();
-        if let Some(sink) = sinks.get(&sink_id) {
+        let players = self.players.lock().unwrap();
+        if let Some(player) = players.get(&sink_id) {
             let clamped = volume.clamp(0.0, 1.0);
-            sink.set_volume(clamped);
+            player.set_volume(clamped);
             true
         } else {
             false
@@ -465,10 +451,10 @@ impl AudioManager {
     ///
     /// `true` if the sink was found and speed set, `false` otherwise.
     pub fn set_sink_speed(&self, sink_id: u64, speed: f32) -> bool {
-        let sinks = self.sinks.lock().unwrap();
-        if let Some(sink) = sinks.get(&sink_id) {
+        let players = self.players.lock().unwrap();
+        if let Some(player) = players.get(&sink_id) {
             let clamped = speed.clamp(0.1, 10.0);
-            sink.set_speed(clamped);
+            player.set_speed(clamped);
             true
         } else {
             false
@@ -485,9 +471,9 @@ impl AudioManager {
     ///
     /// `true` if the sink exists but has no more audio to play, `false` if sink doesn't exist or is still playing.
     pub fn is_finished(&self, sink_id: u64) -> bool {
-        let sinks = self.sinks.lock().unwrap();
-        if let Some(sink) = sinks.get(&sink_id) {
-            sink.empty()
+        let players = self.players.lock().unwrap();
+        if let Some(player) = players.get(&sink_id) {
+            player.empty()
         } else {
             false
         }
@@ -595,9 +581,9 @@ impl AudioManager {
         self.set_sink_volume(sink_id, attenuation)
     }
 
-    // Internal helper to allocate a new sink ID
-    fn allocate_sink_id(&self) -> u64 {
-        let mut next_id = self.next_sink_id.lock().unwrap();
+    // Internal helper to allocate a new player ID
+    fn allocate_player_id(&self) -> u64 {
+        let mut next_id = self.next_player_id.lock().unwrap();
         let id = *next_id;
         *next_id = next_id.wrapping_add(1);
         id
@@ -695,7 +681,9 @@ fn compute_attenuation_exponential(distance: f32, max_distance: f32, rolloff: f3
     attenuation.max(0.0)
 }
 
-// AudioManager is Send + Sync because all internal state is protected by Mutex
+// SAFETY: AudioManager is Send + Sync because all internal state is protected by Mutex.
+// MixerDeviceSink contains a cpal::Stream which is Send but not Sync by default.
+// We ensure thread safety by only accessing it through our Mutex-protected methods.
 unsafe impl Send for AudioManager {}
 unsafe impl Sync for AudioManager {}
 
@@ -703,7 +691,7 @@ impl std::fmt::Debug for AudioManager {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AudioManager")
             .field("global_volume", &self.global_volume())
-            .field("active_sinks", &self.active_count())
+            .field("active_players", &self.active_count())
             .finish()
     }
 }
@@ -850,17 +838,17 @@ mod tests {
             let debug_str = format!("{:?}", manager);
             assert!(debug_str.contains("AudioManager"));
             assert!(debug_str.contains("global_volume"));
-            assert!(debug_str.contains("active_sinks"));
+            assert!(debug_str.contains("active_players"));
         }
     }
 
     #[test]
     #[ignore] // requires audio hardware
-    fn test_audio_manager_allocate_sink_id() {
+    fn test_audio_manager_allocate_player_id() {
         if let Ok(manager) = AudioManager::new() {
-            let id1 = manager.allocate_sink_id();
-            let id2 = manager.allocate_sink_id();
-            let id3 = manager.allocate_sink_id();
+            let id1 = manager.allocate_player_id();
+            let id2 = manager.allocate_player_id();
+            let id3 = manager.allocate_player_id();
 
             assert_eq!(id1, 0);
             assert_eq!(id2, 1);

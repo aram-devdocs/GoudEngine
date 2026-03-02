@@ -31,8 +31,8 @@
     }
   },
   "scripts": {
-    "build:native": "napi build --cargo-cwd native --platform --release",
-    "build:native:debug": "napi build --cargo-cwd native --platform",
+    "build:native": "napi build --manifest-path native/Cargo.toml --platform --release --output-dir .",
+    "build:native:debug": "napi build --manifest-path native/Cargo.toml --platform --output-dir .",
     "build:ts": "tsc",
     "build:ts:web": "tsc -p tsconfig.web.json",
     "build:wasm": "wasm-pack build ../../goud_engine --target web --out-dir ../sdks/typescript/wasm --features web --no-default-features",
@@ -47,15 +47,15 @@
     "size": "node -e \"const fs=require('fs');try{const s=fs.statSync('wasm/goud_engine_bg.wasm');console.log((s.size/1024).toFixed(1)+'KB')}catch{console.log('No wasm build found')}\""
   },
   "napi": {
-    "name": "goud-engine-node",
-    "triples": {
-      "defaults": true,
-      "additional": [
-        "aarch64-apple-darwin",
-        "aarch64-unknown-linux-gnu",
-        "aarch64-unknown-linux-musl"
-      ]
-    }
+    "binaryName": "goud-engine-node",
+    "targets": [
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-pc-windows-msvc",
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-linux-musl"
+    ]
   },
   "keywords": [
     "game-engine",
@@ -79,9 +79,9 @@
     "url": "https://github.com/aram-devdocs/GoudEngine/issues"
   },
   "devDependencies": {
-    "@napi-rs/cli": "^2.18.0",
-    "typescript": "^5.0.0",
-    "@types/node": "^20.0.0"
+    "@napi-rs/cli": "^3.5.1",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
   },
   "engines": {
     "node": ">=16.0.0"
