@@ -33,9 +33,17 @@ jobs:
             --add-label "agent-working" \
             --repo ${{ github.repository }}
 
+      - name: Generate App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.AGENT_APP_ID }}
+          private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v6
         with:
           fetch-depth: 1
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -46,6 +54,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli2
 
       - name: Run Claude Code
         id: claude
@@ -68,14 +79,15 @@ jobs:
             - Use conventional commits (feat:, fix:, etc.)
             - Read CLAUDE.md for project conventions
             - Run cargo check, cargo fmt --check, cargo clippy -- -D warnings
+            - If you create or modify .md files, run: npx markdownlint-cli2 '**/*.md' '!**/target/**' '!**/node_modules/**' and fix any errors before committing
             - When opening the PR, read .github/pull_request_template.md and use it to structure the PR body
             - Include "Closes #${{ github.event.issue.number }}" in the Related Issues field
           claude_args: |
             --model claude-opus-4-6
             --max-turns 50
-            --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr view:*),Bash(gh issue view:*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
+            --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(npx markdownlint-cli2:*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
             --disallowedTools "Bash(cargo publish:*),Bash(gh issue delete:*),Bash(gh repo delete:*)"
-            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes. If you modify .md files, run npx markdownlint-cli2 on the changed files and fix any errors before pushing."
 
       - name: Check if PR was created
         id: check-pr
@@ -134,9 +146,17 @@ jobs:
       issues: write
       id-token: write
     steps:
+      - name: Generate App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.AGENT_APP_ID }}
+          private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v6
         with:
           fetch-depth: 1
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -148,6 +168,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
 
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli2
+
       - name: Run Claude Code
         uses: anthropics/claude-code-action@v1
         with:
@@ -157,6 +180,6 @@ jobs:
           claude_args: |
             --model claude-opus-4-6
             --max-turns 50
-            --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr view:*),Bash(gh issue view:*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
+            --allowedTools "Bash(cargo build:*),Bash(cargo check:*),Bash(cargo test:*),Bash(cargo fmt:*),Bash(cargo clippy:*),Bash(cargo bench:*),Bash(cargo deny:*),Bash(rustup:*),Bash(dotnet:*),Bash(python3:*),Bash(./dev.sh:*),Bash(./build.sh:*),Bash(./increment_version.sh:*),Bash(ls:*),Bash(rg:*),Bash(wc:*),Bash(tree:*),Bash(git:*),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(npx markdownlint-cli2:*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
             --disallowedTools "Bash(cargo publish:*),Bash(gh issue delete:*),Bash(gh repo delete:*)"
-            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes. If you modify .md files, run npx markdownlint-cli2 on the changed files and fix any errors before pushing."
