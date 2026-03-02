@@ -154,7 +154,7 @@ cd GoudEngine
 ./dev.sh --game hello_ecs       # ECS basics
 ```
 
-`dev.sh` builds the engine and runs the example in one step. Source for each example is in [`examples/csharp/`](../examples/csharp/).
+`dev.sh` builds the engine and runs the example in one step. Source for each example is in [`examples/csharp/`](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/csharp/).
 
 To use a locally built version of the engine instead of the published NuGet package:
 
@@ -166,8 +166,8 @@ To use a locally built version of the engine instead of the published NuGet pack
 
 ## Next Steps
 
-- [C# SDK README](../sdks/csharp/README.md) — full API reference
-- [C# examples source](../examples/csharp/) — complete game source code
-- [SDK-first architecture](architecture/sdk-first-architecture.md) — how the engine layers fit together
-- [Development guide](DEVELOPMENT.md) — building from source, version management, git hooks
-- Other getting started guides: [Python](getting-started-python.md) · [TypeScript](getting-started-typescript.md) · [Rust](getting-started-rust.md)
+- [C# SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/csharp/) — full API reference
+- [C# examples source](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/csharp/) — complete game source code
+- [SDK-first architecture](../architecture/sdk-first.md) — how the engine layers fit together
+- [Development guide](../development/guide.md) — building from source, version management, git hooks
+- Other getting started guides: [Python](python.md) · [TypeScript](typescript.md) · [Rust](rust.md)

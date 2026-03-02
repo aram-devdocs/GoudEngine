@@ -10,7 +10,7 @@ The TypeScript SDK ships a single npm package (`goudengine`) with two backends:
 
 Both backends expose the same TypeScript API. Game logic written for one target works on the other.
 
-Other getting-started guides: [C#](getting-started-csharp.md) · [Python](getting-started-python.md) · [Rust](getting-started-rust.md)
+Other getting-started guides: [C#](csharp.md) · [Python](python.md) · [Rust](rust.md)
 
 ---
 
@@ -262,7 +262,7 @@ Controls: `Space` or left-click to flap, `R` to restart, `Escape` to quit (deskt
 
 ## Next Steps
 
-- [TypeScript SDK README](../sdks/typescript/README.md) — full API reference and build instructions
-- [TypeScript examples](../examples/typescript/) — Flappy Bird source with shared desktop/web logic
-- [Architecture overview](architecture/sdk-first-architecture.md) — layer design and codegen pipeline
-- [Development guide](DEVELOPMENT.md) — build system, git hooks, version management
+- [TypeScript SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/typescript/) — full API reference and build instructions
+- [TypeScript examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/typescript/) — Flappy Bird source with shared desktop/web logic
+- [Architecture overview](../architecture/sdk-first.md) — layer design and codegen pipeline
+- [Development guide](../development/guide.md) — build system, git hooks, version management

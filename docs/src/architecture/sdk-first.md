@@ -143,4 +143,4 @@ All generators import `sdk_common.py` for:
 | Expose a mechanic to SDKs | Add `#[no_mangle] extern "C"` function in `goud_engine/src/ffi/` |
 | Add a new type to all SDKs | Add to `codegen/goud_sdk.schema.json`, run `./codegen.sh` |
 | Change method naming in one SDK | Edit the relevant generator in `codegen/gen_<lang>.py` |
-| Add a new SDK language | See `docs/architecture/adding-a-new-language.md` |
+| Add a new SDK language | See [Adding a New Language](adding-a-language.md) |

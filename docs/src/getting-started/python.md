@@ -4,7 +4,7 @@
 
 This guide covers installing the Python SDK, opening a window, drawing a sprite, and handling input.
 
-See also: [C# guide](getting-started-csharp.md) · [TypeScript guide](getting-started-typescript.md) · [Rust guide](getting-started-rust.md)
+See also: [C# guide](csharp.md) · [TypeScript guide](typescript.md) · [Rust guide](rust.md)
 
 ## Prerequisites
 
@@ -190,7 +190,7 @@ cargo build --release
 
 ## Next Steps
 
-- [Python examples](../examples/python/) — source code for `main.py` and `flappy_bird.py`
-- [Python SDK README](../sdks/python/README.md) — full API reference
-- [Architecture overview](architecture/sdk-first-architecture.md) — how the Rust core and Python SDK connect
-- [Development guide](DEVELOPMENT.md) — building from source, running tests
+- [Python examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/python/) — source code for `main.py` and `flappy_bird.py`
+- [Python SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/python/) — full API reference
+- [Architecture overview](../architecture/sdk-first.md) — how the Rust core and Python SDK connect
+- [Development guide](../development/guide.md) — building from source, running tests

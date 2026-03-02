@@ -35,7 +35,7 @@ Use `dev.sh` to build and run examples in one step:
 
 ## Git Hooks
 
-This project uses [husky-rs](../docs/husky-rs.docs.md) for Git hook management.
+This project uses [husky-rs](../reference/husky-rs.md) for Git hook management.
 
 **Pre-commit** (fast): format, clippy, basic tests, Python SDK checks.
 

@@ -2,7 +2,7 @@
 
 This guide walks through adding a new language binding (e.g., Lua, Go, Java) to GoudEngine. The existing generators are the best reference: `codegen/gen_csharp.py` for a complete, mature implementation and `codegen/gen_ts_web.py` for a simpler one.
 
-Before starting, read `docs/architecture/sdk-first-architecture.md` to understand the pipeline.
+Before starting, read [SDK-First Architecture](sdk-first.md) to understand the pipeline.
 
 ---
 
