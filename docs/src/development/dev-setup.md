@@ -10,7 +10,7 @@ GoudEngine builds on Rust with SDK bindings for C#, Python, and TypeScript. The 
 | .NET SDK | 8.0 | For C# SDK and examples |
 | Python | 3.9+ (3.11 recommended) | For codegen scripts and Python SDK |
 | Node.js | 16+ (20 recommended) | For TypeScript SDK |
-| cbindgen | latest | `cargo install cbindgen` |
+| cbindgen | 0.29 | `cargo install cbindgen` |
 | wasm-pack | latest | Only needed for TypeScript Web/WASM builds |
 | cargo-deny | latest | `cargo install cargo-deny` |
 
@@ -98,7 +98,7 @@ Run the manual system dependency commands above even after running `install.sh` 
 
 2. **Install system dependencies** — run `./install.sh` or use the manual commands in the [System Dependencies](#system-dependencies) section above.
 
-3. **Install Rust** (if not already installed)
+3. **Install Rust** (skip if `install.sh` already installed it — run `cargo --version` to check)
 
    ```sh
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -179,7 +179,7 @@ Tests that need an OpenGL context fail without a display server. On headless Lin
 
 ```sh
 sudo apt-get install -y xvfb
-xvfb-run cargo test
+xvfb-run -a cargo test
 ```
 
 ---
