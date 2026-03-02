@@ -4,7 +4,7 @@ The Rust SDK links directly against the engine with no FFI overhead. It re-expor
 `goud_engine::sdk::*` from a single crate, so all engine types are available through
 `use goudengine::*;`.
 
-Other SDKs: [C#](getting-started-csharp.md) · [Python](getting-started-python.md) · [TypeScript](getting-started-typescript.md)
+Other SDKs: [C#](csharp.md) · [Python](python.md) · [TypeScript](typescript.md)
 
 ---
 
@@ -196,7 +196,7 @@ The game reuses the shared asset directory at `examples/csharp/flappy_goud/asset
 
 ## Next Steps
 
-- [Rust SDK README](../sdks/rust/README.md) — crate design and re-export structure
-- [Rust examples](../examples/rust/) — flappy_bird source code
-- [Architecture](architecture/sdk-first-architecture.md) — layer design and engine internals
-- [Development guide](DEVELOPMENT.md) — building from source, running tests
+- [Rust SDK README](../../../sdks/rust/README.md) — crate design and re-export structure
+- [Rust examples](../../../examples/rust/) — flappy_bird source code
+- [Architecture](../architecture/sdk-first.md) — layer design and engine internals
+- [Development guide](../development/guide.md) — building from source, running tests

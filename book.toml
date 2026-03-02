@@ -1,0 +1,13 @@
+[book]
+title = "GoudEngine Documentation"
+authors = ["GoudEngine Contributors"]
+description = "Documentation for GoudEngine, a Rust game engine with multi-language SDK support"
+src = "docs/src"
+language = "en"
+
+[build]
+build-dir = "docs/book"
+
+[output.html]
+git-repository-url = "https://github.com/aram-devdocs/GoudEngine"
+edit-url-template = "https://github.com/aram-devdocs/GoudEngine/edit/main/{path}"
