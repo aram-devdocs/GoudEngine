@@ -9,11 +9,140 @@ on:
     types: [created]
 
 jobs:
-  autonomous-agent:
-    name: Autonomous Agent
+  # Job 1: Plan-only agent for default flow (no skip-plan label)
+  plan-agent:
+    name: Plan Agent
     if: >-
       github.event_name == 'issues' &&
-      github.event.label.name == 'agent-ready'
+      github.event.label.name == 'agent-ready' &&
+      !contains(toJSON(github.event.issue.labels.*.name), 'skip-plan')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: agent-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: write
+      actions: read
+      id-token: write
+    steps:
+      - name: Swap label to agent-planning
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --remove-label "agent-ready" \
+            --add-label "agent-planning" \
+            --repo ${{ github.repository }}
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+
+      - name: Run Claude Code (planning)
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        continue-on-error: true
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "goudengine-agent"
+          show_full_output: "true"
+          prompt: |
+            You are in PLANNING MODE for the following issue.
+
+            Title: ${{ github.event.issue.title }}
+            Number: #${{ github.event.issue.number }}
+
+            Body:
+            ${{ github.event.issue.body }}
+
+            Your task:
+            1. Read CLAUDE.md for project conventions and architecture
+            2. Explore the relevant codebase areas thoroughly
+            3. Understand the full scope of changes needed
+            4. Produce a structured implementation plan
+
+            Rules:
+            - Do NOT create branches, modify files, or open PRs
+            - Do NOT write implementation code
+            - Focus entirely on analysis and planning
+
+            When your plan is ready, post it as a comment on the issue using:
+            gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "<plan>"
+
+            The plan MUST use this structure:
+            <!-- agent-plan -->
+            ## Implementation Plan for #${{ github.event.issue.number }}
+            ### Summary
+            <brief description of what this plan covers>
+            ### Analysis
+            - **Issue type**: feature | fix | refactor | docs | ci
+            - **Layers touched**: Core | FFI | SDK | Examples
+            - **Complexity**: low | medium | high
+            - **Agent teams**: engine-lead | integration-lead | quality-lead
+            ### Approach
+            <numbered steps for implementation>
+            ### Files to Modify
+            <list of existing files that need changes>
+            ### Files to Create
+            <list of new files, or "None">
+            ### Testing Strategy
+            <how to verify the changes work>
+            ### Open Questions
+            <any uncertainties or decisions needed, or "None">
+            <!-- end-agent-plan -->
+          claude_args: |
+            --model claude-opus-4-6
+            --max-budget-usd 15
+            --allowedTools "Read,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet,Bash(cargo check:*),Bash(cargo test --no-run:*),Bash(gh:*),Bash(git log:*),Bash(git diff:*),Bash(git status:*),Bash(ls:*),Bash(find:*),Bash(wc:*),Bash(tree:*),Bash(rg:*)"
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. You are in PLANNING MODE — do NOT modify any files, create branches, or open PRs. Read the root CLAUDE.md for full project context, architecture, and conventions. Your sole output is an implementation plan posted as an issue comment."
+
+      - name: Handle success — move to plan review
+        if: steps.claude.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --remove-label "agent-planning" \
+            --add-label "agent-plan-review" \
+            --repo ${{ github.repository }}
+
+      - name: Handle failure
+        if: steps.claude.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --remove-label "agent-planning" \
+            --add-label "agent-blocked" \
+            --repo ${{ github.repository }}
+          gh issue comment ${{ github.event.issue.number }} \
+            --body "The planning agent failed to produce a plan. Manual intervention required. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details." \
+            --repo ${{ github.repository }}
+
+      - name: Fail job if Claude failed
+        if: steps.claude.outcome == 'failure'
+        run: exit 1
+
+  # Job 2: Single-shot agent for trivial issues with skip-plan label
+  skip-plan-agent:
+    name: Skip-Plan Agent
+    if: >-
+      github.event_name == 'issues' &&
+      github.event.label.name == 'agent-ready' &&
+      contains(toJSON(github.event.issue.labels.*.name), 'skip-plan')
     runs-on: ubuntu-latest
     concurrency:
       group: agent-${{ github.event.issue.number }}
@@ -117,13 +246,230 @@ jobs:
         if: steps.claude.outcome == 'failure' && steps.check-pr.outputs.pr_created != 'true'
         run: exit 1
 
+  # Job 3: Revise plan based on human feedback via @goudengine-plan
+  revise-plan-agent:
+    name: Revise Plan Agent
+    if: >-
+      github.event_name == 'issue_comment' &&
+      contains(github.event.comment.body, '@goudengine-plan')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: agent-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: write
+      actions: read
+      id-token: write
+    steps:
+      - name: Check label gate
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          labels=$(gh issue view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json labels --jq '.labels[].name')
+          if ! echo "$labels" | grep -q "^agent-plan-review$"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Issue does not have agent-plan-review label, skipping."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check revision cap
+        id: cap
+        if: steps.gate.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          revision_count=$(gh issue view ${{ github.event.issue.number }} --repo ${{ github.repository }} --comments --json comments --jq '[.comments[].body | select(contains("<!-- agent-plan-revision:"))] | length')
+          if [ "$revision_count" -ge 3 ]; then
+            echo "capped=true" >> "$GITHUB_OUTPUT"
+            gh issue comment ${{ github.event.issue.number }} \
+              --body "Plan revision cap reached (3 revisions). Please apply \`agent-plan-approved\` to proceed with the current plan, or manually revise the plan in a comment." \
+              --repo ${{ github.repository }}
+          else
+            echo "capped=false" >> "$GITHUB_OUTPUT"
+            echo "revision_number=$((revision_count + 1))" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.gate.outputs.skip != 'true' && steps.cap.outputs.capped != 'true'
+        with:
+          fetch-depth: 1
+
+      - name: Install Rust toolchain
+        if: steps.gate.outputs.skip != 'true' && steps.cap.outputs.capped != 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install system dependencies
+        if: steps.gate.outputs.skip != 'true' && steps.cap.outputs.capped != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+
+      - name: Run Claude Code (revision)
+        if: steps.gate.outputs.skip != 'true' && steps.cap.outputs.capped != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "goudengine-agent"
+          trigger_phrase: "@goudengine-plan"
+          show_full_output: "true"
+          prompt: |
+            You are revising an implementation plan for issue #${{ github.event.issue.number }}.
+
+            Title: ${{ github.event.issue.title }}
+
+            Read the full comment thread:
+              gh issue view ${{ github.event.issue.number }} --repo ${{ github.repository }} --comments --json comments
+
+            Find the most recent comment containing "<!-- agent-plan -->" (the current plan).
+            The human's feedback is in their comment (which triggered this run).
+
+            Post a REVISED plan as a new comment incorporating the feedback.
+            Use the same <!-- agent-plan --> / <!-- end-agent-plan --> structure.
+            Add a "### Changes from Previous Plan" section at the top of the plan body.
+            Include this marker: <!-- agent-plan-revision: ${{ steps.cap.outputs.revision_number }} -->
+          claude_args: |
+            --model claude-opus-4-6
+            --max-budget-usd 10
+            --allowedTools "Read,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet,Bash(cargo check:*),Bash(cargo test --no-run:*),Bash(gh:*),Bash(git log:*),Bash(git diff:*),Bash(git status:*),Bash(ls:*),Bash(find:*),Bash(wc:*),Bash(tree:*),Bash(rg:*)"
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. You are in PLAN REVISION MODE — do NOT modify any files, create branches, or open PRs. Read the root CLAUDE.md for full project context. Your sole output is a revised implementation plan posted as an issue comment."
+
+  # Job 4: Execute the approved plan
+  execute-plan-agent:
+    name: Execute Plan Agent
+    if: >-
+      github.event_name == 'issues' &&
+      github.event.label.name == 'agent-plan-approved'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    concurrency:
+      group: agent-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: read
+      id-token: write
+    steps:
+      - name: Swap labels to agent-working
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --remove-label "agent-plan-approved" \
+            --remove-label "agent-plan-review" \
+            --add-label "agent-working" \
+            --repo ${{ github.repository }}
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+
+      - name: Run Claude Code (execution)
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        continue-on-error: true
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "goudengine-agent"
+          show_full_output: "true"
+          prompt: |
+            Implement the following GitHub issue according to the approved plan.
+
+            Title: ${{ github.event.issue.title }}
+            Number: #${{ github.event.issue.number }}
+
+            Body:
+            ${{ github.event.issue.body }}
+
+            IMPORTANT: An implementation plan has been approved for this issue.
+            Read the approved plan by running:
+              gh issue view ${{ github.event.issue.number }} --repo ${{ github.repository }} --comments --json comments --jq '.comments[].body'
+            Find the most recent comment containing "<!-- agent-plan -->" and follow that plan.
+
+            The plan is your blueprint. Follow it closely, but apply judgment if the
+            codebase has changed. Document any deviations.
+
+            Requirements:
+            - Create a branch named: agent/issue-${{ github.event.issue.number }}-<short-slug>
+            - Use conventional commits (feat:, fix:, etc.)
+            - Read CLAUDE.md for project conventions
+            - Run cargo check, cargo fmt --check, cargo clippy -- -D warnings
+            - When opening the PR, read .github/pull_request_template.md and use it to structure the PR body
+            - Include "Closes #${{ github.event.issue.number }}" in the Related Issues field
+          claude_args: |
+            --model claude-opus-4-6
+            --max-budget-usd 50
+            --allowedTools "Bash(*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
+            --disallowedTools "Bash(cargo publish:*),Bash(git push --force:*),Bash(git push -f:*),Bash(rm -rf /:*),Bash(rm -rf ~:*),Bash(chmod -R 777:*),Bash(gh issue delete:*),Bash(gh repo delete:*),Bash(gh repo archive:*)"
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes. IMPORTANT: An approved plan exists in the issue comments — read it first and follow it."
+
+      - name: Check if PR was created
+        id: check-pr
+        if: steps.claude.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_URL=$(gh pr list --head "agent/issue-${{ github.event.issue.number }}" --json url --jq '.[0].url' --repo ${{ github.repository }})
+          if [ -n "$PR_URL" ]; then
+            echo "pr_created=true" >> "$GITHUB_OUTPUT"
+            echo "Agent created PR despite reporting failure: $PR_URL"
+          else
+            echo "pr_created=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Handle success
+        if: steps.claude.outcome == 'success' || steps.check-pr.outputs.pr_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --remove-label "agent-working" \
+            --repo ${{ github.repository }}
+
+      - name: Handle failure
+        if: steps.claude.outcome == 'failure' && steps.check-pr.outputs.pr_created != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} \
+            --remove-label "agent-working" \
+            --add-label "agent-blocked" \
+            --repo ${{ github.repository }}
+          gh issue comment ${{ github.event.issue.number }} \
+            --body "The execution agent failed to implement this issue. Manual intervention required. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details." \
+            --repo ${{ github.repository }}
+
+      - name: Fail job if Claude truly failed
+        if: steps.claude.outcome == 'failure' && steps.check-pr.outputs.pr_created != 'true'
+        run: exit 1
+
+  # Job 5: Interactive agent triggered by @goudengine-agent mentions
   interactive-agent:
     name: Interactive Agent
     if: >-
-      (github.event_name == 'issue_comment' &&
-      contains(github.event.comment.body, '@goudengine-agent')) ||
+      ((github.event_name == 'issue_comment' &&
+      contains(github.event.comment.body, '@goudengine-agent') &&
+      !contains(github.event.comment.body, '@goudengine-plan')) ||
       (github.event_name == 'pull_request_review_comment' &&
-      contains(github.event.comment.body, '@goudengine-agent'))
+      contains(github.event.comment.body, '@goudengine-agent')))
     runs-on: ubuntu-latest
     concurrency:
       group: agent-interactive-${{ github.event.issue.number || github.event.pull_request.number }}
