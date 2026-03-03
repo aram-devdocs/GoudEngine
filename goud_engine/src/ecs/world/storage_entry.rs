@@ -10,13 +10,10 @@ use super::super::Component;
 /// component type at runtime.
 pub(super) type RemoveEntityFn = fn(storage: &mut dyn Any, entity: Entity) -> bool;
 
-/// Type-erased function pointer for clearing all entities from storage.
-pub(super) type ClearStorageFn = fn(storage: &mut dyn Any);
-
 /// Internal wrapper for type-erased component storage.
 ///
-/// This struct allows us to both:
-/// 1. Perform type-erased operations (remove, clear) via stored function pointers
+/// This struct allows us to:
+/// 1. Perform type-erased operations (remove) via stored function pointers
 /// 2. Downcast to the concrete `SparseSet<T>` for typed operations
 ///
 /// The function pointers are captured at creation time when we know the concrete
@@ -29,10 +26,6 @@ pub(super) struct ComponentStorageEntry {
     /// Function pointer to remove an entity from this storage.
     /// Returns true if a component was removed.
     remove_entity_fn: RemoveEntityFn,
-
-    /// Function pointer to clear all entities from this storage.
-    #[allow(dead_code)] // Used in World::clear and future batch operations
-    clear_fn: ClearStorageFn,
 }
 
 impl ComponentStorageEntry {
@@ -41,7 +34,6 @@ impl ComponentStorageEntry {
         Self {
             storage: Box::new(SparseSet::<T>::new()),
             remove_entity_fn: Self::remove_entity_impl::<T>,
-            clear_fn: Self::clear_impl::<T>,
         }
     }
 
@@ -52,25 +44,6 @@ impl ComponentStorageEntry {
         } else {
             false
         }
-    }
-
-    /// Type-erased implementation of storage clearing for `SparseSet<T>`.
-    fn clear_impl<T: Component>(storage: &mut dyn Any) {
-        if let Some(sparse_set) = storage.downcast_mut::<SparseSet<T>>() {
-            sparse_set.clear();
-        }
-    }
-
-    /// Returns a reference to the underlying storage as `dyn Any`.
-    #[allow(dead_code)]
-    pub(super) fn as_any(&self) -> &dyn Any {
-        self.storage.as_ref()
-    }
-
-    /// Returns a mutable reference to the underlying storage as `dyn Any`.
-    #[allow(dead_code)]
-    pub(super) fn as_any_mut(&mut self) -> &mut dyn Any {
-        self.storage.as_mut()
     }
 
     /// Attempts to downcast to a specific `SparseSet<T>`.
@@ -88,12 +61,6 @@ impl ComponentStorageEntry {
     /// Returns `true` if the entity had a component that was removed.
     pub(super) fn remove_entity(&mut self, entity: Entity) -> bool {
         (self.remove_entity_fn)(self.storage.as_mut(), entity)
-    }
-
-    /// Clears all entities from this storage.
-    #[allow(dead_code)] // Used in World::clear and future batch operations
-    pub(super) fn clear(&mut self) {
-        (self.clear_fn)(self.storage.as_mut())
     }
 }
 

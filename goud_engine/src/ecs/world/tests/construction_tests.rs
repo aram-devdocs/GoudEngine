@@ -184,11 +184,11 @@ mod storage {
     }
 
     #[test]
-    fn test_get_storage_mut_creates_storage() {
+    fn test_get_or_create_storage_mut_creates_storage() {
         let mut world = World::new();
 
         // Access storage (will create it)
-        let storage = world.get_storage_mut::<Position>();
+        let storage = world.get_or_create_storage_mut::<Position>();
 
         // Should be empty but exist
         assert!(storage.is_empty());
@@ -199,20 +199,20 @@ mod storage {
     }
 
     #[test]
-    fn test_get_storage_mut_returns_same_storage() {
+    fn test_get_or_create_storage_mut_returns_same_storage() {
         let mut world = World::new();
 
         // First access creates storage
-        world.get_storage_mut::<Position>();
+        world.get_or_create_storage_mut::<Position>();
 
         // Insert a component
         let entity = Entity::new(0, 1);
         world
-            .get_storage_mut::<Position>()
+            .get_or_create_storage_mut::<Position>()
             .insert(entity, Position { x: 1.0, y: 2.0 });
 
         // Second access returns same storage with data
-        let storage = world.get_storage_mut::<Position>();
+        let storage = world.get_or_create_storage_mut::<Position>();
         assert_eq!(storage.len(), 1);
         assert_eq!(storage.get(entity), Some(&Position { x: 1.0, y: 2.0 }));
     }
@@ -222,8 +222,8 @@ mod storage {
         let mut world = World::new();
 
         // Create storages for different types
-        world.get_storage_mut::<Position>();
-        world.get_storage_mut::<Velocity>();
+        world.get_or_create_storage_mut::<Position>();
+        world.get_or_create_storage_mut::<Velocity>();
 
         assert_eq!(world.component_type_count(), 2);
         assert!(world.has_component_type::<Position>());
@@ -237,7 +237,7 @@ mod storage {
         // Create and populate storage
         let entity = Entity::new(0, 1);
         world
-            .get_storage_mut::<Position>()
+            .get_or_create_storage_mut::<Position>()
             .insert(entity, Position { x: 5.0, y: 10.0 });
 
         // Now immutable access should work

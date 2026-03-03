@@ -7,7 +7,9 @@ mod component_access {
     // Helper function to insert a component directly via storage
     // (This simulates what insert() will do in Step 2.4.5)
     fn insert_component<T: Component>(world: &mut World, entity: Entity, component: T) {
-        world.get_storage_mut::<T>().insert(entity, component);
+        world
+            .get_or_create_storage_mut::<T>()
+            .insert(entity, component);
     }
 
     // =====================================================================

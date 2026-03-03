@@ -247,7 +247,6 @@ impl World {
     /// 1. `ComponentId::of::<T>()` uniquely identifies type T
     /// 2. We only insert `SparseSet<T>` for that `ComponentId`
     /// 3. Downcast uses the same type T
-    #[allow(dead_code)] // Used in Step 2.4.5 - Component Insertion
     pub(crate) fn get_or_create_storage_mut<T: Component>(&mut self) -> &mut SparseSet<T> {
         let id = ComponentId::of::<T>();
 
@@ -257,11 +256,5 @@ impl World {
             .or_insert_with(ComponentStorageEntry::new::<T>)
             .downcast_mut::<T>()
             .expect("Storage type mismatch - this is a bug")
-    }
-
-    // Keep old name as alias for backward compatibility with existing tests
-    #[allow(dead_code)]
-    pub(crate) fn get_storage_mut<T: Component>(&mut self) -> &mut SparseSet<T> {
-        self.get_or_create_storage_mut::<T>()
     }
 }
