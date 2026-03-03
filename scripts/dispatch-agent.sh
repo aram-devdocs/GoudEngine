@@ -76,6 +76,18 @@ label_issue() {
     echo "  SKIP #$issue_number (agent-working)"
     return
   fi
+  if echo "$labels" | grep -q "^agent-planning$"; then
+    echo "  SKIP #$issue_number (agent-planning)"
+    return
+  fi
+  if echo "$labels" | grep -q "^agent-plan-review$"; then
+    echo "  SKIP #$issue_number (agent-plan-review)"
+    return
+  fi
+  if echo "$labels" | grep -q "^agent-plan-approved$"; then
+    echo "  SKIP #$issue_number (agent-plan-approved)"
+    return
+  fi
 
   if [[ "$DRY_RUN" == "true" ]]; then
     local title

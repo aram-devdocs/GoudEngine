@@ -140,7 +140,7 @@ jobs:
               const nextSibling = openSiblings[0];
               const siblingLabels = nextSibling.labels.map(l => typeof l === 'string' ? l : l.name);
 
-              if (siblingLabels.includes('agent-ready') || siblingLabels.includes('agent-working')) {
+              if (siblingLabels.includes('agent-ready') || siblingLabels.includes('agent-working') || siblingLabels.includes('agent-planning') || siblingLabels.includes('agent-plan-review') || siblingLabels.includes('agent-plan-approved')) {
                 console.log(`Sibling #${nextSibling.number} already has agent label, skipping.`);
                 continue;
               }

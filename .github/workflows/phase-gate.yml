@@ -98,7 +98,7 @@ jobs:
               for (const nextIssue of issues.data) {
                 // Skip if already labeled
                 const labels = nextIssue.labels.map(l => typeof l === 'string' ? l : l.name);
-                if (labels.includes('agent-ready') || labels.includes('agent-working')) {
+                if (labels.includes('agent-ready') || labels.includes('agent-working') || labels.includes('agent-planning') || labels.includes('agent-plan-review') || labels.includes('agent-plan-approved')) {
                   continue;
                 }
 
