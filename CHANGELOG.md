@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.0.826](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.825...v0.0.826) (2026-03-03)
+
+
+### Features
+
+* add autonomous AI agent infrastructure ([#390](https://github.com/aram-devdocs/GoudEngine/issues/390)) ([89ea5a8](https://github.com/aram-devdocs/GoudEngine/commit/89ea5a84f8e6fab6899a12df699688fd4d2eb6f1))
+* add plan-review-execute workflow for agent issues ([69f3990](https://github.com/aram-devdocs/GoudEngine/commit/69f3990040aa817862896560e3b20623d04fa573))
+* add plan-review-execute workflow for agent issues ([23907d5](https://github.com/aram-devdocs/GoudEngine/commit/23907d5fa39aba32f1d0725a35cc4094886b81de))
+* harden agent workflow with Opus, subagents, review feedback loop ([b00d26a](https://github.com/aram-devdocs/GoudEngine/commit/b00d26a1e05febb75a64f9a46f8c65fb45393cc9))
+* set up mdBook for documentation site ([e0217ee](https://github.com/aram-devdocs/GoudEngine/commit/e0217ee508f3cb9f9c9b6dab047ad9f649451a0b))
+* set up mdBook for documentation site ([84b8337](https://github.com/aram-devdocs/GoudEngine/commit/84b833791220bf0bd82840dcc5d717791866a1e1)), closes [#151](https://github.com/aram-devdocs/GoudEngine/issues/151)
+
+
+### Bug Fixes
+
+* add --output-dir to napi v3 build commands ([ae6f3c8](https://github.com/aram-devdocs/GoudEngine/commit/ae6f3c8d342d0b8b92ddbcb64662d58229e86480))
+* add claude[bot] to allowed_bots in code review workflow ([c0a8edd](https://github.com/aram-devdocs/GoudEngine/commit/c0a8edd48aed7381fc6f5bfb33c9936ba1866015))
+* add goudengine-agent to allowed_bots for claude-code-action ([026934a](https://github.com/aram-devdocs/GoudEngine/commit/026934a0feb593bb16b2b043ee05879b0bbb9526))
+* address review warnings in schedule module split ([6baa195](https://github.com/aram-devdocs/GoudEngine/commit/6baa1954544253edf6a4ddf70b4e6a9d94bac813))
+* address review warnings in world module split ([9cadb81](https://github.com/aram-devdocs/GoudEngine/commit/9cadb810efa2ea8a7d8dbc24d073cdb7e7e25016))
+* correct broken links in mdBook documentation ([d58ce54](https://github.com/aram-devdocs/GoudEngine/commit/d58ce54e64db9cabebc451ed5d1e750d40bd8f92))
+* correct milestone count in triage audit summary (12 → 13) ([318f8a2](https://github.com/aram-devdocs/GoudEngine/commit/318f8a2ad97db8fcfb545b9a2671014ce57a9e82))
+* fix agent workflow crash, false-green status, and cascading runs ([4beca94](https://github.com/aram-devdocs/GoudEngine/commit/4beca940a14b512859b83cbdfc7b37361d9b453a))
+* improve agent workflow failure handling and feedback loop ([3287f87](https://github.com/aram-devdocs/GoudEngine/commit/3287f87aaaec8891dfe3516d5bcc39218750467f))
+* improve agent workflow failure handling and feedback loop ([a64a16e](https://github.com/aram-devdocs/GoudEngine/commit/a64a16ee94d9423d7da5a03c0d8ed9f5664c29e3))
+* rename direct_prompt to prompt for claude-code-action v1 ([19a4c9c](https://github.com/aram-devdocs/GoudEngine/commit/19a4c9c6d42a206a2c90c9459c01f1da0df92f37)), closes [#389](https://github.com/aram-devdocs/GoudEngine/issues/389)
+* restore id-token permission required by claude-code-action OIDC auth ([3af9fa1](https://github.com/aram-devdocs/GoudEngine/commit/3af9fa11733750a7117e3164fad06f1a7c8820cf))
+* revert synchronize trigger from code review workflow ([415cd18](https://github.com/aram-devdocs/GoudEngine/commit/415cd1848d53b25bbd5762fbb8c2f8499bd6f3d6))
+* unblock agent workflow with broadened permissions and budget cap ([8e43925](https://github.com/aram-devdocs/GoudEngine/commit/8e43925629e613c374e13a7545964fb8956052ea))
+* unblock agent workflow with broadened permissions and budget cap ([a5bf7a2](https://github.com/aram-devdocs/GoudEngine/commit/a5bf7a2faebfb946623bfa3124766d9f809c5dd0))
+* use headings instead of bold for markdown lint compliance ([605c3b4](https://github.com/aram-devdocs/GoudEngine/commit/605c3b455ae0cc754b0c6577d2328046130a4360))
+
+
+### Refactoring
+
+* split handle.rs (3574 lines) into focused handle/ module directory ([5d48292](https://github.com/aram-devdocs/GoudEngine/commit/5d482923d268ea3aab149a5b09d498a718124943)), closes [#171](https://github.com/aram-devdocs/GoudEngine/issues/171)
+* split schedule.rs (8301 lines) into focused module directory ([180c073](https://github.com/aram-devdocs/GoudEngine/commit/180c073465a0b44951156bfd6af30f6b11658854))
+* split schedule.rs (8301 lines) into focused module directory ([c716fd9](https://github.com/aram-devdocs/GoudEngine/commit/c716fd97f8b4efe103c2ac1fc480f721dea1e4e3)), closes [#162](https://github.com/aram-devdocs/GoudEngine/issues/162)
+* split world.rs (4374 lines) into world/ directory module ([c0f9f85](https://github.com/aram-devdocs/GoudEngine/commit/c0f9f854b51f45b13211dd03994355a9cfa58e90))
+* split world.rs (4374 lines) into world/ directory module ([0f9ecb0](https://github.com/aram-devdocs/GoudEngine/commit/0f9ecb08a8a14a2ffe956aec85424fd8fca9d956)), closes [#163](https://github.com/aram-devdocs/GoudEngine/issues/163)
+
 ## [0.0.825](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.824...v0.0.825) (2026-03-01)
 
 
