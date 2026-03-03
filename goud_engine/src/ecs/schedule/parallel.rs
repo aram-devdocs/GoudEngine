@@ -365,7 +365,12 @@ impl ParallelSystemStage {
     /// Runs all systems using parallel execution.
     pub fn run_parallel(&mut self, world: &mut World) {
         if (self.dirty || self.batches.is_empty()) && self.config.auto_rebuild {
-            let _ = self.rebuild_batches();
+            if let Err(err) = self.rebuild_batches() {
+                log::warn!(
+                    "ParallelSystemStage '{}': ordering cycle detected, batches may be stale: {err}",
+                    self.name
+                );
+            }
         }
         if !self.initialized {
             for system in &mut self.systems {

@@ -10,35 +10,12 @@ use super::system_stage::SystemStage;
 impl SystemStage {
     /// Checks if any systems have conflicting access patterns.
     pub fn has_conflicts(&self) -> bool {
-        for i in 0..self.systems.len() {
-            for j in (i + 1)..self.systems.len() {
-                if self.systems[i].conflicts_with(&self.systems[j]) {
-                    return true;
-                }
-            }
-        }
-        false
+        super::conflict_utils::has_conflicts(&self.systems)
     }
 
     /// Finds all conflicting system pairs.
     pub fn find_conflicts(&self) -> Vec<SystemConflict> {
-        let mut conflicts = Vec::new();
-        for i in 0..self.systems.len() {
-            for j in (i + 1)..self.systems.len() {
-                let access_i = self.systems[i].component_access();
-                let access_j = self.systems[j].component_access();
-                if let Some(access_conflict) = access_i.get_conflicts(&access_j) {
-                    conflicts.push(SystemConflict {
-                        first_system_id: self.systems[i].id(),
-                        first_system_name: self.systems[i].name(),
-                        second_system_id: self.systems[j].id(),
-                        second_system_name: self.systems[j].name(),
-                        conflict: access_conflict,
-                    });
-                }
-            }
-        }
-        conflicts
+        super::conflict_utils::find_conflicts(&self.systems)
     }
 
     /// Finds conflicts for a specific system.
@@ -69,20 +46,12 @@ impl SystemStage {
 
     /// Returns all read-only systems.
     pub fn read_only_systems(&self) -> Vec<SystemId> {
-        self.systems
-            .iter()
-            .filter(|s| s.is_read_only())
-            .map(|s| s.id())
-            .collect()
+        super::conflict_utils::read_only_systems(&self.systems)
     }
 
     /// Returns all systems with write access.
     pub fn writing_systems(&self) -> Vec<SystemId> {
-        self.systems
-            .iter()
-            .filter(|s| !s.is_read_only())
-            .map(|s| s.id())
-            .collect()
+        super::conflict_utils::writing_systems(&self.systems)
     }
 
     /// Groups systems by conflict-free parallel groups.
@@ -111,7 +80,10 @@ impl SystemStage {
                 assigned[i] = Some(groups.len());
                 groups.push(Vec::new());
             }
-            let group_idx = assigned[i].unwrap();
+            // The loop above always sets assigned[i] = Some(...) via either branch
+            let group_idx = assigned[i].unwrap_or_else(|| {
+                unreachable!("assigned[i] is always set by conflict-checking loop")
+            });
             groups[group_idx].push(self.systems[i].id());
         }
         groups

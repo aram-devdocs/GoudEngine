@@ -19,6 +19,7 @@
 //! - **System Conflict**: Conflict detection types
 //! - **Parallel**: Parallel execution stage (`ParallelSystemStage`)
 
+mod conflict_utils;
 mod core_stage;
 mod core_system_label;
 mod parallel;

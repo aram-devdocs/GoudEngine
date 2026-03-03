@@ -333,7 +333,12 @@ impl Stage for SystemStage {
 
     fn run(&mut self, world: &mut World) {
         if self.order_dirty {
-            let _ = self.rebuild_order();
+            if let Err(err) = self.rebuild_order() {
+                log::warn!(
+                    "SystemStage '{}': ordering cycle detected, systems may not run: {err}",
+                    self.name
+                );
+            }
         }
         if !self.initialized {
             self.initialize(world);
