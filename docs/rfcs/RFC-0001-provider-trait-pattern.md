@@ -1,5 +1,5 @@
 ---
-rfc: 0001
+rfc: "0001"
 title: Provider Trait Pattern
 status: accepted
 created: 2026-03-06
@@ -21,7 +21,7 @@ This RFC defines a universal provider abstraction for all GoudEngine subsystems.
 
 ```rust
 #[cfg(feature = "native")]
-backend: Option<OpenGLBackend>,
+render_backend: Option<OpenGLBackend>,
 #[cfg(feature = "native")]
 sprite_batch: Option<SpriteBatch<OpenGLBackend>>,
 ```
@@ -33,7 +33,7 @@ This hardcoding creates several problems:
 - Cross-platform targets (consoles, mobile) need NDA-bound backends that cannot ship in the public repo. There is no way to inject them without forking engine internals.
 - Runtime renderer selection (e.g., falling back from Vulkan to OpenGL) is not possible.
 
-`PlatformBackend` in `libs/platform/mod.rs` already solves this for the platform layer: `GoudGame` stores `Option<Box<dyn PlatformBackend>>`. This RFC extends that pattern to all subsystems.
+`PlatformBackend` in `goud_engine/src/libs/platform/mod.rs` already solves this for the platform layer: `GoudGame` stores `Option<Box<dyn PlatformBackend>>`. This RFC extends that pattern to all subsystems.
 
 ---
 
@@ -98,7 +98,7 @@ pub trait RenderProvider: Provider {
 | `WgpuRenderProvider` | `wgpu` | Future (F02-03) |
 | `NullRenderProvider` | always | No-op, for headless tests |
 
-The existing `RenderBackend` trait (`libs/graphics/backend/render_backend.rs`) is NOT object-safe by design. It becomes an internal detail of `OpenGLRenderProvider` and `WgpuRenderProvider` and does not appear in the public provider API.
+The existing `RenderBackend` trait (`goud_engine/src/libs/graphics/backend/render_backend.rs`) is NOT object-safe by design. It becomes an internal detail of `OpenGLRenderProvider` and `WgpuRenderProvider` and does not appear in the public provider API.
 
 #### PhysicsProvider
 
@@ -181,7 +181,7 @@ pub trait WindowProvider: 'static {  // NOT Send + Sync
 | `WinitWindowProvider` | `winit` | Future — needed for mobile/web targets |
 | `NullWindowProvider` | always | No-op for headless contexts |
 
-GLFW is the current platform layer (`libs/platform/glfw_platform.rs`). The roadmap targets winit for broader platform support (mobile, web); `WinitWindowProvider` will be added when that migration begins.
+GLFW is the current platform layer (`goud_engine/src/libs/platform/glfw_platform.rs`). The roadmap targets winit for broader platform support (mobile, web); `WinitWindowProvider` will be added when that migration begins.
 
 #### InputProvider
 
@@ -222,11 +222,13 @@ pub trait ProviderLifecycle {
 }
 ```
 
+All subsystem provider traits (`RenderProvider`, `PhysicsProvider`, etc.) extend both `Provider` and `ProviderLifecycle`. For example: `pub trait RenderProvider: Provider + ProviderLifecycle { ... }`.
+
 ---
 
 ### 3.4 Capability Query Pattern
 
-Each subsystem defines a typed capability struct, building on the existing `BackendCapabilities` pattern in `libs/graphics/backend/capabilities.rs`:
+Each subsystem defines a typed capability struct, building on the existing `BackendCapabilities` pattern in `goud_engine/src/libs/graphics/backend/capabilities.rs`:
 
 ```rust
 pub struct RenderCapabilities {
@@ -243,7 +245,10 @@ The engine downcasts and checks capabilities before using optional features:
 ```rust
 let caps = render_provider.capabilities()
     .downcast::<RenderCapabilities>()
-    .expect("provider must return RenderCapabilities");
+    .map_err(|_| GoudError::ProviderError {
+        subsystem: "render",
+        message: "capabilities type mismatch".into(),
+    })?;
 if caps.supports_instancing {
     renderer.use_instanced_path();
 } else {
@@ -311,7 +316,7 @@ The renderer enum exposes wgpu backend sub-selection to allow SDK users to force
 
 All provider traits are object-safe: no associated types, no generic methods. Stored as `Box<dyn RenderProvider>` etc. Dynamic dispatch overhead is acceptable here because calls are coarse-grained (per-frame or per-batch), not per-vertex.
 
-The existing `RenderBackend` trait (`libs/graphics/backend/render_backend.rs`) is intentionally NOT object-safe and remains an internal detail inside concrete providers. This mirrors `AssetLoader`/`ErasedAssetLoader` in `goud_engine/src/assets/loader/traits.rs`: typed generics for hot paths, erased trait objects for storage.
+The existing `RenderBackend` trait (`goud_engine/src/libs/graphics/backend/render_backend.rs`) is intentionally NOT object-safe and remains an internal detail inside concrete providers. This mirrors `AssetLoader`/`ErasedAssetLoader` in `goud_engine/src/assets/loader/traits.rs` (same crate): typed generics for hot paths, erased trait objects for storage.
 
 For performance-critical inner loops needing direct backend access, providers expose typed accessors:
 
@@ -327,7 +332,7 @@ impl OpenGLRenderProvider {
 
 Default bound: `Send + Sync + 'static` on all provider traits.
 
-**Exception: `WindowProvider`.** GLFW requires main-thread access, so `WindowProvider` is `!Send + !Sync`. The engine enforces this by storing it outside `ProviderRegistry` directly in `GoudGame`, making `GoudGame` itself `!Send` when a native window is present. This matches `PlatformBackend` in `libs/platform/mod.rs`.
+**Exception: `WindowProvider`.** GLFW requires main-thread access, so `WindowProvider` is `!Send + !Sync`. The engine enforces this by storing it outside `ProviderRegistry` directly in `GoudGame`, making `GoudGame` itself `!Send` when a native window is present. This matches `PlatformBackend` in `goud_engine/src/libs/platform/mod.rs`.
 
 ---
 
@@ -360,16 +365,18 @@ FFI error code range: 600–699 (currently unassigned). If `init()` fails and no
 
 ### 3.10 Layer Placement
 
-| Component | Layer | Path |
-|-----------|-------|------|
-| Provider trait definitions | Layer 1 | `libs/providers/` (new module) |
-| Concrete implementations | Layer 1 | `libs/providers/impls/` or feature-gated sub-crates |
-| `ProviderRegistry` | Layer 2 | `goud_engine/src/core/providers/registry.rs` |
-| Builder (`GoudEngine::builder()`) | Layer 2 | `goud_engine/src/core/providers/builder.rs` |
-| FFI enum selection | Layer 3 | `goud_engine/src/ffi/providers.rs` |
-| SDK enum wrappers | Layer 4 | generated via codegen from `goud_sdk.schema.json` |
+Note: `libs/` currently exists as a module within `goud_engine/src/libs/`, not as a standalone workspace crate. The layer numbering in CLAUDE.md maps these modules logically:
 
-Provider traits in `libs/providers/` may import from `libs/graphics/` (for `BackendCapabilities`) and `libs/ecs/` (for handle types), but not from `goud_engine/src/`.
+| Component | Logical Layer | Path |
+|-----------|--------------|------|
+| Provider trait definitions | Layer 1 (core) | `goud_engine/src/libs/providers/` (new module) |
+| Concrete implementations | Layer 1 (core) | `goud_engine/src/libs/providers/impls/` |
+| `ProviderRegistry` | Layer 2 (engine) | `goud_engine/src/core/providers/registry.rs` |
+| Builder (`GoudEngine::builder()`) | Layer 2 (engine) | `goud_engine/src/core/providers/builder.rs` |
+| FFI enum selection | Layer 3 (FFI) | `goud_engine/src/ffi/providers.rs` |
+| SDK enum wrappers | Layer 4 (SDKs) | generated via codegen from `goud_sdk.schema.json` |
+
+Provider traits in `goud_engine/src/libs/providers/` may import from sibling modules (`libs/graphics/` for `BackendCapabilities`, `libs/ecs/` for handle types) but must not import from `goud_engine/src/core/`, `goud_engine/src/sdk/`, or `goud_engine/src/ffi/`. This preserves the logical downward-only dependency flow within the crate.
 
 ---
 
