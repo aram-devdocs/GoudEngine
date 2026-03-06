@@ -272,4 +272,5 @@ impl Clone for TopologicalSorter {
 
 #[cfg(test)]
 #[path = "tests/topological_sort_tests.rs"]
+#[cfg(test)]
 mod tests;

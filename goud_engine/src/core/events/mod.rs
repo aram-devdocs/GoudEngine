@@ -42,6 +42,7 @@
 
 mod app;
 mod frame;
+#[cfg(test)]
 mod tests;
 mod window;
 

@@ -314,4 +314,5 @@ pub fn distance_squared(a: Vec2, b: Vec2) -> f32 {
 
 #[cfg(test)]
 #[path = "tests.rs"]
+#[cfg(test)]
 mod tests;

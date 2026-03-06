@@ -5,6 +5,7 @@
 
 mod helpers;
 mod mapping;
+#[cfg(test)]
 mod tests;
 mod types;
 

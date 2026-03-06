@@ -49,6 +49,7 @@ mod grid;
 mod queries;
 mod spatial_hash;
 mod stats;
+#[cfg(test)]
 mod tests;
 
 pub use spatial_hash::SpatialHash;

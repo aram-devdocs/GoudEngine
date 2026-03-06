@@ -20,6 +20,7 @@ mod sprite_renderer;
 mod texture_loader;
 
 #[cfg(all(test, target_arch = "wasm32"))]
+#[cfg(test)]
 mod tests;
 
 pub use collision::WasmContact;

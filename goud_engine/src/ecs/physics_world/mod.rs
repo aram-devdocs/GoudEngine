@@ -8,6 +8,7 @@
 
 mod resource;
 mod simulation;
+#[cfg(test)]
 mod tests;
 
 pub use resource::PhysicsWorld;
