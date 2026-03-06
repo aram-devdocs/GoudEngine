@@ -91,7 +91,7 @@ mod tests {
     mod graphics_errors;
     mod internal_errors;
     mod resource_errors;
-    mod system_errors;
     mod round_trip;
+    mod system_errors;
     mod traits;
 }
