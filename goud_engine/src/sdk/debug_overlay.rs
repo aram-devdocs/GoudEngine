@@ -93,10 +93,10 @@ impl DebugOverlay {
     /// Records a frame and recomputes stats if the update interval has elapsed.
     pub fn update(&mut self, delta_time: f32) {
         // Always record frame times so stats are ready when queried.
-        self.frame_times.push_back(delta_time);
-        while self.frame_times.len() > DEFAULT_WINDOW_CAPACITY {
+        if self.frame_times.len() >= DEFAULT_WINDOW_CAPACITY {
             self.frame_times.pop_front();
         }
+        self.frame_times.push_back(delta_time);
 
         self.time_since_update += delta_time;
         if self.time_since_update >= self.update_interval {
