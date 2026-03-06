@@ -129,6 +129,18 @@ pub struct WasmGame {
     scroll_dx: f32,
     scroll_dy: f32,
 
+    // Event accumulation buffers (filled by JS event handlers between frames)
+    keys_pressed_buffer: HashSet<u32>,
+    keys_released_buffer: HashSet<u32>,
+    mouse_pressed_buffer: HashSet<u32>,
+    mouse_released_buffer: HashSet<u32>,
+
+    // Frame snapshots (swapped in at begin_frame, read by queries)
+    frame_keys_just_pressed: HashSet<u32>,
+    frame_keys_just_released: HashSet<u32>,
+    frame_mouse_just_pressed: HashSet<u32>,
+    frame_mouse_just_released: HashSet<u32>,
+
     // Action map: action name → list of bound key codes
     action_map: HashMap<String, Vec<u32>>,
 
@@ -166,6 +178,14 @@ impl WasmGame {
             mouse_y: 0.0,
             scroll_dx: 0.0,
             scroll_dy: 0.0,
+            keys_pressed_buffer: HashSet::new(),
+            keys_released_buffer: HashSet::new(),
+            mouse_pressed_buffer: HashSet::new(),
+            mouse_released_buffer: HashSet::new(),
+            frame_keys_just_pressed: HashSet::new(),
+            frame_keys_just_released: HashSet::new(),
+            frame_mouse_just_pressed: HashSet::new(),
+            frame_mouse_just_released: HashSet::new(),
             action_map: HashMap::new(),
             render_state: None,
         }
@@ -259,6 +279,14 @@ impl WasmGame {
             mouse_y: 0.0,
             scroll_dx: 0.0,
             scroll_dy: 0.0,
+            keys_pressed_buffer: HashSet::new(),
+            keys_released_buffer: HashSet::new(),
+            mouse_pressed_buffer: HashSet::new(),
+            mouse_released_buffer: HashSet::new(),
+            frame_keys_just_pressed: HashSet::new(),
+            frame_keys_just_released: HashSet::new(),
+            frame_mouse_just_pressed: HashSet::new(),
+            frame_mouse_just_released: HashSet::new(),
             action_map: HashMap::new(),
             render_state: Some(render_state),
         })
@@ -272,6 +300,10 @@ impl WasmGame {
     ///
     /// Call this at the start of each `requestAnimationFrame` callback.
     pub fn begin_frame(&mut self, delta_time: f32) {
+        self.frame_keys_just_pressed = std::mem::take(&mut self.keys_pressed_buffer);
+        self.frame_keys_just_released = std::mem::take(&mut self.keys_released_buffer);
+        self.frame_mouse_just_pressed = std::mem::take(&mut self.mouse_pressed_buffer);
+        self.frame_mouse_just_released = std::mem::take(&mut self.mouse_released_buffer);
         self.keys_previous = self.keys_current.clone();
         self.mouse_buttons_previous = self.mouse_buttons_current.clone();
         self.scroll_dx = 0.0;

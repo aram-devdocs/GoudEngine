@@ -80,10 +80,12 @@ fn input_key_state() {
     game.begin_frame(0.016);
     game.press_key(32);
     assert!(game.is_key_pressed(32));
+    // Buffer not yet snapshotted — still from last begin_frame
     assert!(!game.is_key_just_pressed(32));
     game.begin_frame(0.016);
     assert!(game.is_key_pressed(32));
-    assert!(!game.is_key_just_pressed(32));
+    // Buffer snapshotted — key was pressed since last begin_frame
+    assert!(game.is_key_just_pressed(32));
     game.release_key(32);
     game.begin_frame(0.016);
     assert!(!game.is_key_pressed(32));
@@ -107,6 +109,30 @@ fn scroll_delta_resets_per_frame() {
     assert!((game.scroll_dy() - 3.0).abs() < f32::EPSILON);
     game.begin_frame(0.016);
     assert!((game.scroll_dy()).abs() < f32::EPSILON);
+}
+
+#[test]
+fn input_key_just_pressed_survives_release() {
+    let mut game = WasmGame::new(800, 600, "Test");
+    game.begin_frame(0.016);
+    game.press_key(32);
+    game.release_key(32);
+    game.begin_frame(0.016);
+    assert!(game.is_key_just_pressed(32));
+    assert!(game.is_key_just_released(32));
+    assert!(!game.is_key_pressed(32));
+}
+
+#[test]
+fn mouse_button_just_released() {
+    let mut game = WasmGame::new(800, 600, "Test");
+    game.begin_frame(0.016);
+    game.press_mouse_button(0);
+    game.begin_frame(0.016);
+    game.release_mouse_button(0);
+    game.begin_frame(0.016);
+    assert!(game.is_mouse_button_just_released(0));
+    assert!(!game.is_mouse_button_pressed(0));
 }
 
 #[test]

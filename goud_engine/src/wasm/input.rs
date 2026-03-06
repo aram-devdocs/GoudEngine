@@ -14,18 +14,22 @@ use super::WasmGame;
 impl WasmGame {
     pub fn press_key(&mut self, key_code: u32) {
         self.keys_current.insert(key_code);
+        self.keys_pressed_buffer.insert(key_code);
     }
 
     pub fn release_key(&mut self, key_code: u32) {
         self.keys_current.remove(&key_code);
+        self.keys_released_buffer.insert(key_code);
     }
 
     pub fn press_mouse_button(&mut self, button: u32) {
         self.mouse_buttons_current.insert(button);
+        self.mouse_pressed_buffer.insert(button);
     }
 
     pub fn release_mouse_button(&mut self, button: u32) {
         self.mouse_buttons_current.remove(&button);
+        self.mouse_released_buffer.insert(button);
     }
 
     pub fn set_mouse_position(&mut self, x: f32, y: f32) {
@@ -47,11 +51,11 @@ impl WasmGame {
     }
 
     pub fn is_key_just_pressed(&self, key_code: u32) -> bool {
-        self.keys_current.contains(&key_code) && !self.keys_previous.contains(&key_code)
+        self.frame_keys_just_pressed.contains(&key_code)
     }
 
     pub fn is_key_just_released(&self, key_code: u32) -> bool {
-        !self.keys_current.contains(&key_code) && self.keys_previous.contains(&key_code)
+        self.frame_keys_just_released.contains(&key_code)
     }
 
     pub fn is_mouse_button_pressed(&self, button: u32) -> bool {
@@ -59,8 +63,11 @@ impl WasmGame {
     }
 
     pub fn is_mouse_button_just_pressed(&self, button: u32) -> bool {
-        self.mouse_buttons_current.contains(&button)
-            && !self.mouse_buttons_previous.contains(&button)
+        self.frame_mouse_just_pressed.contains(&button)
+    }
+
+    pub fn is_mouse_button_just_released(&self, button: u32) -> bool {
+        self.frame_mouse_just_released.contains(&button)
     }
 
     pub fn mouse_x(&self) -> f32 {
@@ -105,7 +112,7 @@ impl WasmGame {
             .get(&action)
             .map(|keys| {
                 keys.iter()
-                    .any(|k| self.keys_current.contains(k) && !self.keys_previous.contains(k))
+                    .any(|k| self.frame_keys_just_pressed.contains(k))
             })
             .unwrap_or(false)
     }
@@ -117,7 +124,7 @@ impl WasmGame {
             .get(&action)
             .map(|keys| {
                 keys.iter()
-                    .any(|k| !self.keys_current.contains(k) && self.keys_previous.contains(k))
+                    .any(|k| self.frame_keys_just_released.contains(k))
             })
             .unwrap_or(false)
     }

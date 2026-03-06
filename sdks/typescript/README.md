@@ -136,6 +136,24 @@ game.destroy();
 **Controls:** `Space` or left-click to flap, `R` to restart, `Escape` to quit.
 The web variant works the same way — import from `goudengine/web` and call `await GoudGame.create(...)`.
 
+## Web Platform Notes
+
+A few things to keep in mind when targeting the browser:
+
+- **Synchronous game loop callback** -- The `game.run()` callback must be
+  synchronous. Passing an `async` function triggers a console warning because
+  wasm-bindgen's `RefCell` borrow cannot be held across `await` points.
+- **Texture loading uses `fetch()`** -- `loadTexture(path)` calls `fetch()`
+  internally, so relative URLs resolve from the page's origin. Make sure your
+  asset paths are correct relative to your HTML file or use absolute URLs.
+- **`pause()` / `resume()`** -- You can pause the game loop without detaching
+  input handlers by calling `game.pause()`. Call `game.resume()` to restart.
+  `game.stop()` fully tears down the loop and input handlers.
+- **Tab visibility** -- `requestAnimationFrame` automatically pauses when the
+  browser tab is hidden. No extra handling is needed.
+- **Touch input** -- Touch events are automatically mapped to mouse button 0.
+  `touchstart` maps to `press_mouse_button(0)`, `touchend` maps to `release_mouse_button(0)`.
+
 ## Node vs Web Targets
 
 The package uses conditional exports to select the right backend automatically:

@@ -4,7 +4,9 @@
 
 use wasm_bindgen::prelude::*;
 
-use super::texture_loader;
+use image::GenericImageView;
+
+use super::sprite_renderer::create_texture_entry;
 use super::{WasmGame, WasmRenderStats};
 
 // ---------------------------------------------------------------------------
@@ -68,22 +70,32 @@ impl WasmGame {
     // Texture management
     // ======================================================================
 
-    /// Loads a texture from a URL. Returns the texture handle (1-based;
-    /// 0 is reserved for the white fallback texture used by draw_quad).
-    pub async fn load_texture(&mut self, url: String) -> Result<u32, JsValue> {
+    /// Registers a texture from raw image bytes (PNG, JPG, etc.).
+    ///
+    /// The browser-side SDK fetches the image data asynchronously, then
+    /// passes the raw bytes here for synchronous decode + GPU upload.
+    /// Returns the texture handle (1-based; 0 is reserved for the white
+    /// fallback texture used by `draw_quad`).
+    pub fn register_texture_from_bytes(&mut self, data: &[u8]) -> Result<u32, JsValue> {
         let rs = self
             .render_state
             .as_mut()
             .ok_or_else(|| JsValue::from_str("Rendering not initialized"))?;
 
-        let entry = texture_loader::load_texture_from_url(
+        let img = image::load_from_memory(data)
+            .map_err(|e| JsValue::from_str(&format!("Image decode error: {e}")))?;
+        let rgba = img.to_rgba8();
+        let (width, height) = rgba.dimensions();
+
+        let entry = create_texture_entry(
             &rs.device,
             &rs.queue,
             &rs.renderer.texture_bind_group_layout,
             &rs.renderer.sampler,
-            &url,
-        )
-        .await?;
+            width,
+            height,
+            &rgba,
+        );
 
         let idx = rs.textures.len();
         rs.textures.push(Some(entry));
