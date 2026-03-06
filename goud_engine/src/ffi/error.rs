@@ -80,7 +80,10 @@ mod tests {
             unsafe { goud_last_error_message(buf.as_mut_ptr(), buf.len()) };
 
         // The implementation truncates and returns copy_len (buf_len - 1 = 9)
-        assert_eq!(result, 9, "expected truncated copy of 9 bytes, got {result}");
+        assert_eq!(
+            result, 9,
+            "expected truncated copy of 9 bytes, got {result}"
+        );
         assert_eq!(buf[9], 0, "expected null terminator at position 9");
     }
 

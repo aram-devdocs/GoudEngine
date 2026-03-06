@@ -26,6 +26,7 @@
 mod codes;
 mod conversions;
 mod ffi_bridge;
+mod methods;
 mod reverse_mapping;
 mod types;
 
