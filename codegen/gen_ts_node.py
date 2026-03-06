@@ -75,16 +75,30 @@ def gen_interface():
     tool = schema["tools"]["GoudGame"]
     lines = [f"// {HEADER_COMMENT}", ""]
 
+    if schema["types"]["Vec2"].get("doc"):
+        lines.append(f"/** {schema['types']['Vec2']['doc']} */")
     lines.append("export interface IVec2 { x: number; y: number; }")
+    if schema["types"]["Vec3"].get("doc"):
+        lines.append(f"/** {schema['types']['Vec3']['doc']} */")
     lines.append("export interface IVec3 { x: number; y: number; z: number; }")
+    if schema["types"]["Color"].get("doc"):
+        lines.append(f"/** {schema['types']['Color']['doc']} */")
     lines.append("export interface IColor { r: number; g: number; b: number; a: number; }")
+    if schema["types"]["Rect"].get("doc"):
+        lines.append(f"/** {schema['types']['Rect']['doc']} */")
     lines.append("export interface IRect { x: number; y: number; width: number; height: number; }")
     rs_fields = schema["types"]["RenderStats"]["fields"]
     rs_str = "; ".join(f"{to_camel(f['name'])}: number" for f in rs_fields)
+    if schema["types"]["RenderStats"].get("doc"):
+        lines.append(f"/** {schema['types']['RenderStats']['doc']} */")
     lines.append(f"export interface IRenderStats {{ {rs_str}; }}")
+    if schema["types"].get("Contact", {}).get("doc"):
+        lines.append(f"/** {schema['types']['Contact']['doc']} */")
     lines.append("export interface IContact { pointX: number; pointY: number; normalX: number; normalY: number; penetration: number; }")
     lines.append("")
 
+    if schema["types"].get("Entity", {}).get("doc"):
+        lines.append(f"/** {schema['types']['Entity']['doc']} */")
     lines.append("export interface IEntity {")
     lines.append("  readonly index: number;")
     lines.append("  readonly generation: number;")
@@ -93,16 +107,24 @@ def gen_interface():
     lines.append("}")
     lines.append("")
 
+    if schema["types"]["Transform2D"].get("doc"):
+        lines.append(f"/** {schema['types']['Transform2D']['doc']} */")
     lines.append("export interface ITransform2DData {")
     for f in schema["types"]["Transform2D"]["fields"]:
+        if f.get("doc"):
+            lines.append(f"  /** {f['doc']} */")
         lines.append(f"  {to_camel(f['name'])}: number;")
     lines.append("}")
     lines.append("")
 
+    if schema["types"]["Sprite"].get("doc"):
+        lines.append(f"/** {schema['types']['Sprite']['doc']} */")
     lines.append("export interface ISpriteData {")
     for f in schema["types"]["Sprite"]["fields"]:
         fn = to_camel(f["name"])
         ft = f["type"]
+        if f.get("doc"):
+            lines.append(f"  /** {f['doc']} */")
         if ft == "Color":
             lines.append(f"  {fn}: IColor;")
         elif ft == "bool":
@@ -114,8 +136,12 @@ def gen_interface():
     lines.append("}")
     lines.append("")
 
+    if tool.get("doc"):
+        lines.append(f"/** {tool['doc']} */")
     lines.append("export interface IGoudGame {")
     for prop in tool["properties"]:
+        if prop.get("doc"):
+            lines.append(f"  /** {prop['doc']} */")
         lines.append(f"  readonly {to_camel(prop['name'])}: {ts_iface_type(prop['type'])};")
 
     for method in tool["methods"]:
@@ -151,6 +177,8 @@ def gen_interface():
 
         sig = ", ".join(param_strs)
         ts_ret = ts_iface_type(ret)
+        if method.get("doc"):
+            lines.append(f"  /** {method['doc']} */")
         if method.get("async"):
             lines.append(f"  {mn}({sig}): Promise<{ts_ret}>;")
         else:
@@ -167,8 +195,13 @@ def gen_input():
     lines = [f"// {HEADER_COMMENT}", ""]
 
     for enum_name, enum_def in schema["enums"].items():
+        if enum_def.get("doc"):
+            lines.append(f"/** {enum_def['doc']} */")
         lines.append(f"export enum {enum_name} {{")
+        value_docs = enum_def.get("value_docs", {})
         for vname, vval in enum_def["values"].items():
+            if value_docs.get(vname):
+                lines.append(f"  /** {value_docs[vname]} */")
             lines.append(f"  {vname} = {vval},")
         lines.append("}")
         lines.append("")
@@ -186,6 +219,8 @@ def gen_math():
         fields = type_def.get("fields", [])
         iface = f"I{type_name}"
 
+        if type_def.get("doc"):
+            lines.append(f"/** {type_def['doc']} */")
         lines.append(f"export class {type_name} implements {iface} {{")
         ctor_params = ", ".join(f"public {to_camel(f['name'])}: number" for f in fields)
         lines.append(f"  constructor({ctor_params}) {{}}")
@@ -195,6 +230,8 @@ def gen_math():
             fn = to_camel(factory["name"])
             fargs = factory.get("args", [])
             val = factory.get("value")
+            if factory.get("doc"):
+                lines.append(f"  /** {factory['doc']} */")
             if val and not fargs:
                 val_str = ", ".join(str(v) for v in val)
                 lines.append(f"  static {fn}(): {type_name} {{ return new {type_name}({val_str}); }}")
@@ -213,6 +250,8 @@ def gen_math():
 
         for meth in type_def.get("methods", []):
             mn = to_camel(meth["name"])
+            if meth.get("doc"):
+                lines.append(f"  /** {meth['doc']} */")
             if mn == "add":
                 lines.append(f"  {mn}(other: {type_name}): {type_name} {{ return new {type_name}(this.x + other.x, this.y + other.y); }}")
             elif mn == "sub":
@@ -294,6 +333,10 @@ def gen_node_wrapper():
         "export { Key, MouseButton } from '../types/input.g.js';",
         "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from '../types/engine.g.js';",
         "",
+    ]
+    if tool.get("doc"):
+        lines.append(f"/** {tool['doc']} */")
+    lines += [
         "export class GoudGame implements IGoudGame {",
         "  private native: NativeGoudGame;",
         "",
@@ -310,6 +353,8 @@ def gen_node_wrapper():
     for prop in tool["properties"]:
         pn = to_camel(prop["name"])
         pt = ts_type(prop["type"])
+        if prop.get("doc"):
+            lines.append(f"  /** {prop['doc']} */")
         lines.append(f"  get {pn}(): {pt} {{ return this.native.{pn}; }}")
     lines.append("")
 
@@ -356,6 +401,8 @@ def gen_node_wrapper():
         sig = ", ".join(param_strs)
         ts_ret = ts_iface_type(ret)
 
+        if method.get("doc"):
+            lines.append(f"  /** {method['doc']} */")
         if method.get("async"):
             lines.append(f"  async {mn}({sig}): Promise<{ts_ret}> {{")
         else:
