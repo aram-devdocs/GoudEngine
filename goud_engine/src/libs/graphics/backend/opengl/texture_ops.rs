@@ -5,7 +5,7 @@ use super::{
     conversions::{
         bytes_per_pixel, texture_filter_to_gl, texture_format_to_gl, texture_wrap_to_gl,
     },
-    TextureMetadata,
+    gl_check_debug, TextureMetadata,
 };
 use crate::core::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::{
@@ -232,10 +232,13 @@ pub(super) fn bind_texture(
 
     let gl_id = metadata.gl_id;
 
+    // SAFETY: unit is validated to be within bounds above; TEXTURE0 + unit selects a valid texture unit.
+    // gl_id is a live GL texture object. TEXTURE_2D is a valid texture target.
     unsafe {
         gl::ActiveTexture(gl::TEXTURE0 + unit);
         gl::BindTexture(gl::TEXTURE_2D, gl_id);
     }
+    gl_check_debug!("bind_texture");
 
     set_bound_texture(backend, unit, Some(gl_id));
 
@@ -245,10 +248,13 @@ pub(super) fn bind_texture(
 /// Unbinds any texture from the specified texture unit.
 pub(super) fn unbind_texture(backend: &mut OpenGLBackend, unit: u32) {
     if unit < backend.bound_textures.len() as u32 {
+        // SAFETY: unit is validated to be within bounds; TEXTURE0 + unit selects a valid texture unit.
+        // Passing 0 unbinds any texture on the TEXTURE_2D target for that unit.
         unsafe {
             gl::ActiveTexture(gl::TEXTURE0 + unit);
             gl::BindTexture(gl::TEXTURE_2D, 0);
         }
+        gl_check_debug!("unbind_texture");
 
         set_bound_texture(backend, unit, None);
     }
