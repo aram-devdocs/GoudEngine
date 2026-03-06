@@ -3,6 +3,7 @@ use super::super::component::ComponentId;
 use super::super::entity::Entity;
 use super::entity_world_mut::EntityWorldMut;
 use super::World;
+use crate::ecs::components::hierarchy::Children;
 
 impl World {
     // =========================================================================
@@ -350,6 +351,75 @@ impl World {
             }
         }
         count
+    }
+
+    /// Despawns the entity and all its descendants recursively.
+    ///
+    /// Walks the hierarchy via [`Children`] components, despawning from
+    /// leaves up to the root. Returns `true` if the root entity was alive
+    /// and successfully despawned.
+    ///
+    /// # Arguments
+    ///
+    /// * `entity` - The root entity to despawn along with its entire subtree
+    ///
+    /// # Returns
+    ///
+    /// `true` if the root entity was alive and successfully despawned,
+    /// `false` if the root entity was already dead or invalid.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::ecs::World;
+    /// use goud_engine::ecs::components::Children;
+    ///
+    /// let mut world = World::new();
+    /// let parent = world.spawn_empty();
+    /// let child = world.spawn_empty();
+    /// world.insert(parent, Children::from_slice(&[child]));
+    ///
+    /// assert!(world.despawn_recursive(parent));
+    /// assert!(!world.is_alive(parent));
+    /// assert!(!world.is_alive(child));
+    /// ```
+    ///
+    /// # Performance
+    ///
+    /// This is O(n) in the number of descendants. Descendants are collected
+    /// first to avoid borrow conflicts, then despawned from leaves toward
+    /// the root.
+    pub fn despawn_recursive(&mut self, entity: Entity) -> bool {
+        if !self.entities.is_alive(entity) {
+            return false;
+        }
+
+        // Collect all descendants first to avoid borrow conflicts
+        let mut to_despawn = Vec::new();
+        self.collect_descendants(entity, &mut to_despawn);
+
+        // Despawn descendants in reverse (leaves first)
+        for descendant in to_despawn.into_iter().rev() {
+            self.despawn(descendant);
+        }
+
+        // Despawn the root entity
+        self.despawn(entity)
+    }
+
+    /// Recursively collects all descendant entities into `out`.
+    ///
+    /// Performs a depth-first traversal of the hierarchy rooted at `entity`,
+    /// appending each child (and its descendants) to `out` in pre-order.
+    /// The root itself is not included.
+    fn collect_descendants(&self, entity: Entity, out: &mut Vec<Entity>) {
+        if let Some(children) = self.get::<Children>(entity) {
+            let child_entities: Vec<Entity> = children.as_slice().to_vec();
+            for child in child_entities {
+                out.push(child);
+                self.collect_descendants(child, out);
+            }
+        }
     }
 
     // =========================================================================

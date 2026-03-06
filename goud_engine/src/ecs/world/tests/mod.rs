@@ -28,6 +28,7 @@ impl Component for Player {}
 
 mod component_access_tests;
 mod construction_tests;
+mod despawn_recursive_tests;
 mod despawn_tests;
 mod entity_world_mut_tests;
 mod insert_batch_builder_tests;
