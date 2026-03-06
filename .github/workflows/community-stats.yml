@@ -24,8 +24,8 @@ jobs:
         # Fetch registry download counts
         CRATES_DOWNLOADS=$(curl -sf https://crates.io/api/v1/crates/goud-engine | jq '.crate.downloads // 0')
         NUGET_DOWNLOADS=$(curl -sf "https://api.nuget.org/v3/registration5-gz-semver2/goudengine/index.json" | jq '[.items[].items[]?.catalogEntry.downloads // 0] | add // 0' 2>/dev/null || echo "0")
-        PYPI_MONTHLY=$(curl -sf https://pypistats.org/api/packages/goudengine/recent | jq '.data.last_month // 0')
-        NPM_MONTHLY=$(curl -sf "https://api.npmjs.org/downloads/point/last-month/goudengine" | jq '.downloads // 0')
+        PYPI_DOWNLOADS=$(curl -sf https://pypistats.org/api/packages/goudengine/overall | jq '[.data[].downloads] | add // 0')
+        NPM_DOWNLOADS=$(curl -sf "https://api.npmjs.org/downloads/range/2020-01-01:2099-12-31/goudengine" | jq '[.downloads[].downloads] | add // 0')
 
         # Fallback for NuGet — use search API if registration returns 0
         if [ "$NUGET_DOWNLOADS" = "0" ] || [ -z "$NUGET_DOWNLOADS" ]; then
@@ -37,7 +37,8 @@ jobs:
         python3 -c "
         import json
         h = json.loads(open('.github/stats/history.json').read())
-        entry = {'date': '$DATE', 'crates_io': $CRATES_DOWNLOADS, 'nuget': $NUGET_DOWNLOADS, 'pypi_monthly': $PYPI_MONTHLY, 'npm_monthly': $NPM_MONTHLY}
+        total = $CRATES_DOWNLOADS + $NUGET_DOWNLOADS + $PYPI_DOWNLOADS + $NPM_DOWNLOADS
+        entry = {'date': '$DATE', 'crates_io': $CRATES_DOWNLOADS, 'nuget': $NUGET_DOWNLOADS, 'pypi': $PYPI_DOWNLOADS, 'npm': $NPM_DOWNLOADS, 'total': total}
         # Replace if same date exists, otherwise append
         h = [e for e in h if e['date'] != '$DATE'] + [entry]
         h.sort(key=lambda e: e['date'])
@@ -47,9 +48,6 @@ jobs:
         # Generate downloads chart
         python3 .github/stats/generate_chart.py
 
-        # Format numbers with commas
-        fmt() { printf "%'d" "$1" 2>/dev/null || echo "$1"; }
-
         STATS_BLOCK="<!-- COMMUNITY-STATS:START -->
         | | Stars | Forks | Contributors |
         |--|-------|-------|--------------|
@@ -57,12 +55,12 @@ jobs:
 
         ### Downloads
 
-        | Registry | | Downloads |
-        |----------|-|-----------|
-        | crates.io | [![crates.io](https://img.shields.io/crates/d/goud-engine)](https://crates.io/crates/goud-engine) | $(fmt $CRATES_DOWNLOADS) total |
-        | NuGet | [![NuGet](https://img.shields.io/nuget/dt/GoudEngine)](https://www.nuget.org/packages/GoudEngine/) | $(fmt $NUGET_DOWNLOADS) total |
-        | PyPI | [![PyPI](https://img.shields.io/pypi/dm/goudengine)](https://pypi.org/project/goudengine/) | $(fmt $PYPI_MONTHLY) /month |
-        | npm | [![npm](https://img.shields.io/npm/dm/goudengine)](https://www.npmjs.com/package/goudengine) | $(fmt $NPM_MONTHLY) /month |
+        | Registry | Total Downloads |
+        |----------|-----------------|
+        | crates.io | [![crates.io](https://img.shields.io/crates/d/goud-engine)](https://crates.io/crates/goud-engine) |
+        | NuGet | [![NuGet](https://img.shields.io/nuget/dt/GoudEngine)](https://www.nuget.org/packages/GoudEngine/) |
+        | PyPI | [![PyPI](https://img.shields.io/pypi/dd/goudengine)](https://pypi.org/project/goudengine/) |
+        | npm | [![npm](https://img.shields.io/npm/dt/goudengine)](https://www.npmjs.com/package/goudengine) |
 
         ![Total Downloads Over Time](.github/stats/downloads.svg)
 

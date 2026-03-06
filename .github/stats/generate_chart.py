@@ -39,7 +39,8 @@ def main() -> None:
 
     dates = [d["date"] for d in data]
     totals = [
-        d.get("crates_io", 0) + d.get("nuget", 0) + d.get("pypi_monthly", 0) + d.get("npm_monthly", 0)
+        d["total"] if "total" in d
+        else d.get("crates_io", 0) + d.get("nuget", 0) + d.get("pypi_monthly", 0) + d.get("npm_monthly", 0)
         for d in data
     ]
 
