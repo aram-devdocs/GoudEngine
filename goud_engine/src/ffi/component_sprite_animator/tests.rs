@@ -29,9 +29,7 @@ fn test_clip_builder_new_returns_non_null() {
 fn test_clip_builder_add_frame_returns_same_pointer() {
     let builder = goud_animation_clip_builder_new(0.1, FfiPlaybackMode::Loop);
     // SAFETY: builder is non-null (asserted by new returning non-null).
-    let builder2 = unsafe {
-        goud_animation_clip_builder_add_frame(builder, 0.0, 0.0, 32.0, 32.0)
-    };
+    let builder2 = unsafe { goud_animation_clip_builder_add_frame(builder, 0.0, 0.0, 32.0, 32.0) };
     assert_eq!(builder, builder2);
     // SAFETY: builder is still the valid sole owner.
     unsafe { goud_animation_clip_builder_free(builder) };
@@ -147,9 +145,7 @@ fn test_null_safety() {
     // SAFETY: All FFI functions are documented to handle null pointers gracefully.
     unsafe {
         // Builder null safety
-        let returned = goud_animation_clip_builder_add_frame(
-            null_builder, 0.0, 0.0, 32.0, 32.0,
-        );
+        let returned = goud_animation_clip_builder_add_frame(null_builder, 0.0, 0.0, 32.0, 32.0);
         assert!(returned.is_null());
 
         // Free null should not crash

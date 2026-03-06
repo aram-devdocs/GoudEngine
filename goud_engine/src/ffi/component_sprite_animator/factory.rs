@@ -175,8 +175,7 @@ pub unsafe extern "C" fn goud_sprite_animator_from_clip(
     }
     // SAFETY: builder is non-null and was allocated via Box::into_raw
     let boxed = Box::from_raw(builder);
-    let clip = AnimationClip::new(boxed.frames, boxed.frame_duration)
-        .with_mode(boxed.mode.into());
+    let clip = AnimationClip::new(boxed.frames, boxed.frame_duration).with_mode(boxed.mode.into());
     let animator = SpriteAnimator::new(clip);
     FfiSpriteAnimator::from(&animator)
 }
