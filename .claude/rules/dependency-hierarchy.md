@@ -1,1 +1,0 @@
-../../.agents/rules/dependency-hierarchy.md

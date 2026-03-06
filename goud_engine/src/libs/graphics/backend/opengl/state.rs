@@ -3,7 +3,7 @@
 use super::{
     super::{BackendInfo, BlendFactor, CullFace, RenderBackend},
     backend::OpenGLBackend,
-    conversions,
+    conversions, gl_check_debug,
 };
 use crate::core::error::GoudResult;
 use crate::libs::graphics::backend::types::{DepthFunc, FrontFace};
@@ -26,73 +26,95 @@ impl RenderBackend for OpenGLBackend {
 
     fn set_clear_color(&mut self, r: f32, g: f32, b: f32, a: f32) {
         self.clear_color = [r, g, b, a];
+        // SAFETY: RGBA floats in [0.0, 1.0] are valid arguments for ClearColor.
         unsafe {
             gl::ClearColor(r, g, b, a);
         }
+        gl_check_debug!("set_clear_color");
     }
 
     fn clear_color(&mut self) {
+        // SAFETY: COLOR_BUFFER_BIT is a valid mask for gl::Clear.
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT);
         }
+        gl_check_debug!("clear_color");
     }
 
     fn clear_depth(&mut self) {
+        // SAFETY: DEPTH_BUFFER_BIT is a valid mask for gl::Clear.
         unsafe {
             gl::Clear(gl::DEPTH_BUFFER_BIT);
         }
+        gl_check_debug!("clear_depth");
     }
 
     fn set_viewport(&mut self, x: i32, y: i32, width: u32, height: u32) {
+        // SAFETY: x, y are signed integers and width/height are cast from valid u32 values.
         unsafe {
             gl::Viewport(x, y, width as i32, height as i32);
         }
+        gl_check_debug!("set_viewport");
     }
 
     fn enable_depth_test(&mut self) {
+        // SAFETY: DEPTH_TEST is a valid capability enum for gl::Enable.
         unsafe {
             gl::Enable(gl::DEPTH_TEST);
         }
+        gl_check_debug!("enable_depth_test");
     }
 
     fn disable_depth_test(&mut self) {
+        // SAFETY: DEPTH_TEST is a valid capability enum for gl::Disable.
         unsafe {
             gl::Disable(gl::DEPTH_TEST);
         }
+        gl_check_debug!("disable_depth_test");
     }
 
     fn enable_blending(&mut self) {
+        // SAFETY: BLEND is a valid capability enum; SRC_ALPHA and ONE_MINUS_SRC_ALPHA are valid blend factors.
         unsafe {
             gl::Enable(gl::BLEND);
             // Set standard alpha blending function
             gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
         }
+        gl_check_debug!("enable_blending");
     }
 
     fn disable_blending(&mut self) {
+        // SAFETY: BLEND is a valid capability enum for gl::Disable.
         unsafe {
             gl::Disable(gl::BLEND);
         }
+        gl_check_debug!("disable_blending");
     }
 
     fn set_blend_func(&mut self, src: BlendFactor, dst: BlendFactor) {
         let src_gl = conversions::blend_factor_to_gl(src);
         let dst_gl = conversions::blend_factor_to_gl(dst);
+        // SAFETY: src_gl and dst_gl are valid GL blend factor enums produced by blend_factor_to_gl.
         unsafe {
             gl::BlendFunc(src_gl, dst_gl);
         }
+        gl_check_debug!("set_blend_func");
     }
 
     fn enable_culling(&mut self) {
+        // SAFETY: CULL_FACE is a valid capability enum for gl::Enable.
         unsafe {
             gl::Enable(gl::CULL_FACE);
         }
+        gl_check_debug!("enable_culling");
     }
 
     fn disable_culling(&mut self) {
+        // SAFETY: CULL_FACE is a valid capability enum for gl::Disable.
         unsafe {
             gl::Disable(gl::CULL_FACE);
         }
+        gl_check_debug!("disable_culling");
     }
 
     fn set_cull_face(&mut self, face: CullFace) {
@@ -101,9 +123,11 @@ impl RenderBackend for OpenGLBackend {
             CullFace::Back => gl::BACK,
             CullFace::FrontAndBack => gl::FRONT_AND_BACK,
         };
+        // SAFETY: gl_face is a valid GL face enum produced by the match above.
         unsafe {
             gl::CullFace(gl_face);
         }
+        gl_check_debug!("set_cull_face");
     }
 
     fn set_depth_func(&mut self, func: DepthFunc) {
@@ -146,6 +170,7 @@ impl RenderBackend for OpenGLBackend {
         unsafe {
             gl::LineWidth(width);
         }
+        gl_check_debug!("set_line_width");
     }
 
     // Buffer, texture, shader, draw-call and vertex-attribute methods are implemented

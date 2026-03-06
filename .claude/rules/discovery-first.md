@@ -1,1 +1,0 @@
-../../.agents/rules/discovery-first.md
