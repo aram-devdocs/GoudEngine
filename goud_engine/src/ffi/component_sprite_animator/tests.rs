@@ -40,6 +40,7 @@ fn test_clip_builder_add_frame_returns_same_pointer() {
 #[test]
 fn test_clip_builder_free_does_not_crash() {
     let builder = goud_animation_clip_builder_new(0.1, FfiPlaybackMode::OneShot);
+    assert!(!builder.is_null(), "builder should be non-null before free");
     // SAFETY: builder is non-null and is the sole owner.
     unsafe { goud_animation_clip_builder_free(builder) };
 }
