@@ -30,11 +30,6 @@ jobs:
               sed -i 's/^status: proposed/status: accepted/' "$file"
               changed=true
               echo "Updated: $file"
-
-              # Update the matching row in docs/rfcs/README.md index
-              basename=$(basename "$file")
-              sed -i "/$basename/s/| proposed |/| accepted |/" docs/rfcs/README.md
-              echo "Updated README.md index for: $basename"
             fi
           done
           if [ "$changed" = false ]; then
