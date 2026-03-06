@@ -1692,70 +1692,61 @@
           "returns": "bool"
         }
       ],
-      "builder": "AnimationClipBuilder"
-    },
-    "AnimationClipBuilder": {
-      "kind": "builder",
-      "doc": "Builder for constructing animation clips with frame data",
-      "target": "SpriteAnimator",
-      "factories": [
-        {
-          "name": "new",
-          "args": [
-            {
-              "name": "frameDuration",
-              "type": "f32",
-              "doc": "Seconds per frame"
-            },
-            {
-              "name": "mode",
-              "type": "PlaybackMode",
-              "doc": "Playback mode"
-            }
-          ]
-        }
-      ],
-      "methods": [
-        {
-          "name": "addFrame",
-          "doc": "Adds a source rectangle frame to the animation",
-          "params": [
-            {
-              "name": "x",
-              "type": "f32",
-              "doc": "X position of source rect"
-            },
-            {
-              "name": "y",
-              "type": "f32",
-              "doc": "Y position of source rect"
-            },
-            {
-              "name": "w",
-              "type": "f32",
-              "doc": "Width of source rect"
-            },
-            {
-              "name": "h",
-              "type": "f32",
-              "doc": "Height of source rect"
-            }
-          ],
-          "returns": "AnimationClipBuilder"
-        },
-        {
-          "name": "build",
-          "doc": "Builds the SpriteAnimator and consumes the builder",
-          "params": [],
-          "returns": "SpriteAnimator"
-        },
-        {
-          "name": "free",
-          "doc": "Frees the builder without building",
-          "params": [],
-          "returns": "void"
-        }
-      ]
+      "builder": {
+        "doc": "Fluent builder for constructing SpriteAnimator instances via animation clips",
+        "methods": [
+          {
+            "name": "new",
+            "doc": "Creates a new animation clip builder",
+            "params": [
+              {
+                "name": "frameDuration",
+                "type": "f32"
+              },
+              {
+                "name": "mode",
+                "type": "PlaybackMode"
+              }
+            ],
+            "returns": "AnimationClipBuilder"
+          },
+          {
+            "name": "addFrame",
+            "doc": "Adds a source rectangle frame to the animation",
+            "params": [
+              {
+                "name": "x",
+                "type": "f32"
+              },
+              {
+                "name": "y",
+                "type": "f32"
+              },
+              {
+                "name": "w",
+                "type": "f32"
+              },
+              {
+                "name": "h",
+                "type": "f32"
+              }
+            ],
+            "returns": "AnimationClipBuilder"
+          },
+          {
+            "name": "build",
+            "doc": "Builds the SpriteAnimator and consumes the builder",
+            "params": [],
+            "returns": "SpriteAnimator"
+          },
+          {
+            "name": "free",
+            "doc": "Frees the builder without building",
+            "params": [],
+            "returns": "void"
+          }
+        ]
+      }
     },
     "RenderStats": {
       "kind": "value",
