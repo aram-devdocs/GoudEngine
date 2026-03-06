@@ -73,7 +73,9 @@ jobs:
           RUSTDOCFLAGS: "--default-theme ayu"
 
       - name: Copy Rust docs into site
-        run: cp -r target/doc docs/book/api/rust
+        run: |
+          mkdir -p docs/book/api
+          cp -r target/doc docs/book/api/rust
 
       # ── Run codegen (generates SDK files with doc comments) ────────
       - name: Run codegen
