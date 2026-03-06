@@ -1,12 +1,12 @@
 //! Null physics provider -- silent no-op for headless testing.
 
-use crate::libs::error::GoudResult;
-use crate::libs::providers::physics::PhysicsProvider;
-use crate::libs::providers::types::{
+use crate::core::error::GoudResult;
+use crate::core::providers::physics::PhysicsProvider;
+use crate::core::providers::types::{
     BodyDesc, BodyHandle, ColliderDesc, ColliderHandle, CollisionEvent, ContactPair, DebugShape,
     JointDesc, JointHandle, PhysicsCapabilities, RaycastHit,
 };
-use crate::libs::providers::{Provider, ProviderLifecycle};
+use crate::core::providers::{Provider, ProviderLifecycle};
 
 /// A physics provider that does nothing. Used for headless testing and as
 /// a default when no physics backend is needed.

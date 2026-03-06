@@ -1,12 +1,10 @@
 //! Central registry holding all engine providers.
 
-use crate::libs::providers::audio::AudioProvider;
-use crate::libs::providers::impls::{
-    NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullRenderProvider,
-};
-use crate::libs::providers::input::InputProvider;
-use crate::libs::providers::physics::PhysicsProvider;
-use crate::libs::providers::render::RenderProvider;
+use super::audio::AudioProvider;
+use super::input::InputProvider;
+use super::physics::PhysicsProvider;
+use super::render::RenderProvider;
+use super::impls::{NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullRenderProvider};
 
 /// Central registry holding all engine providers.
 ///

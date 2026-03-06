@@ -1,13 +1,13 @@
 //! Null render provider -- silent no-op for headless testing.
 
-use crate::libs::error::GoudResult;
-use crate::libs::providers::render::RenderProvider;
-use crate::libs::providers::types::{
+use crate::core::error::GoudResult;
+use crate::core::providers::render::RenderProvider;
+use crate::core::providers::types::{
     BufferDesc, BufferHandle, CameraData, DrawCommand, FrameContext, MeshDrawCommand,
     ParticleDrawCommand, PipelineDesc, PipelineHandle, RenderCapabilities, RenderTargetDesc,
     RenderTargetHandle, ShaderDesc, ShaderHandle, TextDrawCommand, TextureDesc, TextureHandle,
 };
-use crate::libs::providers::{Provider, ProviderLifecycle};
+use crate::core::providers::{Provider, ProviderLifecycle};
 
 /// A render provider that does nothing. Used for headless testing and as
 /// a default before a real renderer is configured.

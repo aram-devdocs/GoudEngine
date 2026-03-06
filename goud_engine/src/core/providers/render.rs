@@ -9,7 +9,7 @@ use super::types::{
     RenderTargetHandle, ShaderDesc, ShaderHandle, TextDrawCommand, TextureDesc, TextureHandle,
 };
 use super::{Provider, ProviderLifecycle};
-use crate::libs::error::GoudResult;
+use crate::core::error::GoudResult;
 
 /// Trait for rendering backends.
 ///

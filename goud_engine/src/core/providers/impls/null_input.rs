@@ -1,11 +1,11 @@
 //! Null input provider -- silent no-op for headless testing.
 
-use crate::libs::error::GoudResult;
-use crate::libs::providers::input::InputProvider;
-use crate::libs::providers::types::{
+use crate::core::error::GoudResult;
+use crate::core::providers::input::InputProvider;
+use crate::core::providers::types::{
     GamepadAxis, GamepadButton, GamepadId, InputCapabilities, KeyCode, MouseButton,
 };
-use crate::libs::providers::Provider;
+use crate::core::providers::Provider;
 
 /// An input provider that does nothing. Used for headless testing and as
 /// a default when no input system is available.

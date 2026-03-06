@@ -5,7 +5,7 @@
 
 use super::types::{AudioCapabilities, AudioChannel, PlayConfig, PlaybackId, SoundHandle};
 use super::{Provider, ProviderLifecycle};
-use crate::libs::error::GoudResult;
+use crate::core::error::GoudResult;
 
 /// Trait for audio backends.
 ///

@@ -11,7 +11,7 @@ use super::types::{
     GamepadAxis, GamepadButton, GamepadId, InputCapabilities, KeyCode, MouseButton,
 };
 use super::Provider;
-use crate::libs::error::GoudResult;
+use crate::core::error::GoudResult;
 
 /// Trait for input backends.
 ///

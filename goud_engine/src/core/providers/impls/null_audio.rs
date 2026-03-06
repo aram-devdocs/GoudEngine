@@ -1,11 +1,11 @@
 //! Null audio provider -- silent no-op for headless testing.
 
-use crate::libs::error::GoudResult;
-use crate::libs::providers::audio::AudioProvider;
-use crate::libs::providers::types::{
+use crate::core::error::GoudResult;
+use crate::core::providers::audio::AudioProvider;
+use crate::core::providers::types::{
     AudioCapabilities, AudioChannel, PlayConfig, PlaybackId, SoundHandle,
 };
-use crate::libs::providers::{Provider, ProviderLifecycle};
+use crate::core::providers::{Provider, ProviderLifecycle};
 
 /// An audio provider that does nothing. Used for headless testing and as
 /// a default when no audio backend is available.

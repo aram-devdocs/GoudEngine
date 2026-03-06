@@ -9,7 +9,7 @@
 //! window calls on the main thread. The engine enforces this by storing
 //! `WindowProvider` outside `ProviderRegistry`, directly in `GoudGame`.
 
-use crate::libs::error::GoudResult;
+use crate::core::error::GoudResult;
 
 /// Trait for windowing backends.
 ///

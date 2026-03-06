@@ -8,7 +8,7 @@ use super::types::{
     JointDesc, JointHandle, PhysicsCapabilities, RaycastHit,
 };
 use super::{Provider, ProviderLifecycle};
-use crate::libs::error::GoudResult;
+use crate::core::error::GoudResult;
 
 /// Trait for physics backends.
 ///

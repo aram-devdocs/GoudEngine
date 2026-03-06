@@ -1,13 +1,21 @@
 //! Concrete provider implementations.
 //!
-//! Provides null (no-op) implementations for headless testing and
-//! native (GLFW/OpenGL/rodio) implementations for desktop platforms.
+//! Null (no-op) implementations are canonical in `crate::core::providers::impls`
+//! and re-exported here for backward compatibility. Native (GLFW/OpenGL/rodio)
+//! implementations live here because they depend on Libs-layer crates.
 
-pub mod null_audio;
-pub mod null_input;
-pub mod null_physics;
-pub mod null_render;
-pub mod null_window;
+// Re-export null providers from core (Foundation layer)
+pub use crate::core::providers::impls::null_audio;
+pub use crate::core::providers::impls::null_input;
+pub use crate::core::providers::impls::null_physics;
+pub use crate::core::providers::impls::null_render;
+pub use crate::core::providers::impls::null_window;
+
+pub use crate::core::providers::impls::NullAudioProvider;
+pub use crate::core::providers::impls::NullInputProvider;
+pub use crate::core::providers::impls::NullPhysicsProvider;
+pub use crate::core::providers::impls::NullRenderProvider;
+pub use crate::core::providers::impls::NullWindowProvider;
 
 #[cfg(feature = "native")]
 pub mod glfw_input;
@@ -17,12 +25,6 @@ pub mod glfw_window;
 pub mod opengl_render;
 #[cfg(feature = "native")]
 pub mod rodio_audio;
-
-pub use null_audio::NullAudioProvider;
-pub use null_input::NullInputProvider;
-pub use null_physics::NullPhysicsProvider;
-pub use null_render::NullRenderProvider;
-pub use null_window::NullWindowProvider;
 
 #[cfg(feature = "native")]
 pub use glfw_input::GlfwInputProvider;

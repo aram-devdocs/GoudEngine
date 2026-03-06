@@ -1,7 +1,7 @@
 //! Null window provider -- silent no-op for headless testing.
 
-use crate::libs::error::GoudResult;
-use crate::libs::providers::window::WindowProvider;
+use crate::core::error::GoudResult;
+use crate::core::providers::window::WindowProvider;
 
 /// A window provider that does nothing. Used for headless testing and as
 /// a default when no windowing system is available.
