@@ -39,6 +39,7 @@ IFACE_TYPES = {
     "Color": "IColor",
     "Rect": "IRect",
     "RenderStats": "IRenderStats",
+    "FpsStats": "IFpsStats",
     "Contact": "IContact",
     "Entity[]": "IEntity[]",
 }
@@ -95,6 +96,11 @@ def gen_interface():
     if schema["types"].get("Contact", {}).get("doc"):
         lines.append(f"/** {schema['types']['Contact']['doc']} */")
     lines.append("export interface IContact { pointX: number; pointY: number; normalX: number; normalY: number; penetration: number; }")
+    fps_fields = schema["types"]["FpsStats"]["fields"]
+    fps_str = "; ".join(f"{to_camel(f['name'])}: number" for f in fps_fields)
+    if schema["types"]["FpsStats"].get("doc"):
+        lines.append(f"/** {schema['types']['FpsStats']['doc']} */")
+    lines.append(f"export interface IFpsStats {{ {fps_str}; }}")
     lines.append("")
 
     if schema["types"].get("Entity", {}).get("doc"):
@@ -299,6 +305,7 @@ NATIVE_KNOWN_METHODS = {
     "addName", "getName", "hasName", "removeName",
     "drawSpriteRect", "setViewport", "enableDepthTest", "disableDepthTest",
     "clearDepth", "disableBlending", "getRenderStats",
+    "getFpsStats", "setFpsOverlayEnabled", "setFpsUpdateInterval", "setFpsOverlayCorner",
     "mapActionKey", "isActionPressed", "isActionJustPressed", "isActionJustReleased",
     "collisionAabbAabb", "collisionCircleCircle", "collisionCircleAabb",
     "pointInRect", "pointInCircle", "aabbOverlap", "circleOverlap",
@@ -327,11 +334,11 @@ def gen_node_wrapper():
         "  type GameConfig,",
         "} from '../../../index';",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from '../types/engine.g.js';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton } from '../types/input.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from '../types/engine.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';",
         "",
     ]
     if tool.get("doc"):
@@ -469,6 +476,8 @@ def gen_node_wrapper():
             lines.append("    return this.native.removeName(entity as unknown as NativeEntity);")
         elif mn == "getRenderStats":
             lines.append("    return this.native.getRenderStats() as unknown as IRenderStats;")
+        elif mn == "getFpsStats":
+            lines.append("    return this.native.getFpsStats() as unknown as IFpsStats;")
         elif mn == "loadTexture":
             lines.append("    return this.native.loadTexture(path);")
         elif mn == "destroy":
@@ -496,7 +505,7 @@ def gen_entry():
         f"// {HEADER_COMMENT}",
         "",
         "export { GoudGame, Color, Vec2, Vec3, Key, MouseButton } from './node/index.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from './types/engine.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from './types/engine.g.js';",
         "export type { Rect } from './types/math.g.js';",
         "",
     ]
@@ -840,6 +849,11 @@ use goud_engine::ffi::collision::{
     goud_collision_point_in_circle, goud_collision_point_in_rect, GoudContact,
 };
 use goud_engine::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
+use goud_engine::ffi::debug::{
+    goud_debug_get_fps_stats, goud_debug_set_fps_overlay_corner,
+    goud_debug_set_fps_overlay_enabled, goud_debug_set_fps_update_interval,
+};
+use goud_engine::sdk::debug_overlay::FpsStats;
 use goud_engine::ffi::entity::{
     goud_entity_count, goud_entity_despawn, goud_entity_is_alive,
     goud_entity_spawn_batch, goud_entity_spawn_empty,
@@ -916,6 +930,16 @@ pub struct NapiContact {
     pub normal_x: f64,
     pub normal_y: f64,
     pub penetration: f64,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiFpsStats {
+    pub current_fps: f64,
+    pub min_fps: f64,
+    pub max_fps: f64,
+    pub avg_fps: f64,
+    pub frame_time_ms: f64,
 }
 
 // =============================================================================
@@ -1057,6 +1081,39 @@ impl GoudGame {
         // SAFETY: Passing a valid mutable reference as out-pointer.
         unsafe { goud_renderer_get_stats(self.context_id, &mut stats) };
         NapiRenderStats { draw_calls: stats.draw_calls, triangles: stats.triangles, texture_binds: stats.texture_binds, shader_binds: stats.shader_binds }
+    }
+
+    // =========================================================================
+    // Debug overlay
+    // =========================================================================
+
+    #[napi]
+    pub fn get_fps_stats(&self) -> NapiFpsStats {
+        let mut stats = FpsStats::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_debug_get_fps_stats(self.context_id, &mut stats) };
+        NapiFpsStats {
+            current_fps: stats.current_fps as f64,
+            min_fps: stats.min_fps as f64,
+            max_fps: stats.max_fps as f64,
+            avg_fps: stats.avg_fps as f64,
+            frame_time_ms: stats.frame_time_ms as f64,
+        }
+    }
+
+    #[napi]
+    pub fn set_fps_overlay_enabled(&self, enabled: bool) {
+        goud_debug_set_fps_overlay_enabled(self.context_id, enabled);
+    }
+
+    #[napi]
+    pub fn set_fps_update_interval(&self, interval: f64) {
+        goud_debug_set_fps_update_interval(self.context_id, interval as f32);
+    }
+
+    #[napi]
+    pub fn set_fps_overlay_corner(&self, corner: i32) {
+        goud_debug_set_fps_overlay_corner(self.context_id, corner);
     }
 
     // =========================================================================

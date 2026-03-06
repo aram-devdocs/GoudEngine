@@ -119,6 +119,8 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/input/actions.rs",
     // collision (not yet split)
     "src/ffi/collision.rs",
+    // debug overlay
+    "src/ffi/debug.rs",
 ];
 
 /// A single extracted FFI function signature.

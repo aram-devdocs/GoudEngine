@@ -100,6 +100,8 @@ pub mod component;
 pub mod component_sprite;
 pub mod component_transform2d;
 pub mod context;
+#[cfg(feature = "native")]
+pub mod debug;
 pub mod entity;
 #[cfg(feature = "native")]
 pub mod input;

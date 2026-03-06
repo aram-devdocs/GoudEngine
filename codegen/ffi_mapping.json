@@ -9,6 +9,7 @@
     "Sprite":      {"ffi_name": "FfiSprite",       "fields": ["texture_handle", "color_r", "color_g", "color_b", "color_a", "source_rect_x", "source_rect_y", "source_rect_width", "source_rect_height", "has_source_rect", "flip_x", "flip_y", "anchor_x", "anchor_y", "custom_size_x", "custom_size_y", "has_custom_size"]},
     "Entity":      {"ffi_name": "u64", "sentinel": "0xFFFFFFFFFFFFFFFF"},
     "RenderStats": {"ffi_name": "GoudRenderStats", "fields": ["draw_calls", "triangles", "texture_binds", "shader_binds"]},
+    "FpsStats":    {"ffi_name": "FpsStats",         "fields": ["current_fps", "min_fps", "max_fps", "avg_fps", "frame_time_ms"]},
     "Contact":     {"ffi_name": "GoudContact",     "fields": ["point_x", "point_y", "normal_x", "normal_y", "penetration"]},
     "Vec3":        {"ffi_name": "FfiVec3",          "fields": ["x", "y", "z"]},
     "Mat3x3":      {"ffi_name": "FfiMat3x3",        "fields": ["m"]}
@@ -24,6 +25,7 @@
   "ctypes_mappings": {
     "*mut GoudContact":    "ctypes.POINTER(GoudContact)",
     "*mut GoudRenderStats": "ctypes.POINTER(GoudRenderStats)",
+    "*mut FpsStats":        "ctypes.POINTER(FpsStats)",
     "*const u64":          "ctypes.POINTER(ctypes.c_uint64)",
     "*mut u64":            "ctypes.POINTER(ctypes.c_uint64)",
     "*mut u8":             "ctypes.POINTER(ctypes.c_uint8)",
@@ -283,6 +285,23 @@
           ],
           "returns_struct": "RenderStats"
         },
+        "getFpsStats": {
+          "ffi": "goud_debug_get_fps_stats",
+          "out_params": [
+            {"name": "stats", "type": "FpsStats"}
+          ],
+          "returns_struct": "FpsStats"
+        },
+        "setFpsOverlayEnabled": {
+          "ffi": "goud_debug_set_fps_overlay_enabled"
+        },
+        "setFpsUpdateInterval": {
+          "ffi": "goud_debug_set_fps_update_interval"
+        },
+        "setFpsOverlayCorner": {
+          "ffi": "goud_debug_set_fps_overlay_corner",
+          "enum_params": {"corner": "i32"}
+        },
         "mapActionKey": {
           "ffi": "goud_input_map_action_key",
           "string_params": ["action"],
@@ -477,6 +496,12 @@
       "goud_renderer_clear_depth":       {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "void"},
       "goud_renderer_disable_blending":  {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "void"},
       "goud_renderer_get_stats":         {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "out_stats", "type": "*mut GoudRenderStats"}], "returns": "bool", "unsafe": true}
+    },
+    "debug": {
+      "goud_debug_get_fps_stats":           {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "out_stats", "type": "*mut FpsStats"}], "returns": "i32", "unsafe": true},
+      "goud_debug_set_fps_overlay_enabled": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "enabled", "type": "bool"}], "returns": "i32"},
+      "goud_debug_set_fps_update_interval": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "interval", "type": "f32"}], "returns": "i32"},
+      "goud_debug_set_fps_overlay_corner":  {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "corner", "type": "i32"}], "returns": "i32"}
     },
     "renderer_3d": {
       "goud_renderer3d_create_cube":      {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "texture_id", "type": "u32"}, {"name": "width", "type": "f32"}, {"name": "height", "type": "f32"}, {"name": "depth", "type": "f32"}], "returns": "u32"},

@@ -1280,17 +1280,19 @@ def _gen_tool_class(tool_name: str, lines: list):
                 f"        return self._lib.{mmap['ffi']}("
                 "self._ctx, entity._bits)"
             )
-        elif "out_params" in mmap and mmap.get("returns_struct") == "RenderStats":
-            rs_fields = schema["types"]["RenderStats"]["fields"]
+        elif "out_params" in mmap and "returns_struct" in mmap:
+            struct_name = mmap["returns_struct"]
+            ffi_type_name = mapping["ffi_types"][struct_name]["ffi_name"]
+            rs_fields = schema["types"][struct_name]["fields"]
             field_args = ", ".join(
                 f"_stats.{to_snake(f['name'])}" for f in rs_fields
             )
-            lines.append("        _stats = GoudRenderStats()")
+            lines.append(f"        _stats = {ffi_type_name}()")
             lines.append(
                 f"        self._lib.{mmap['ffi']}("
                 "self._ctx, ctypes.byref(_stats))"
             )
-            lines.append(f"        return RenderStats({field_args})")
+            lines.append(f"        return {struct_name}({field_args})")
         elif "out_params" in mmap:
             for op in mmap["out_params"]:
                 lines.append(

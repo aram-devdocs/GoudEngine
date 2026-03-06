@@ -856,19 +856,22 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
     if "enum_params" in mm and mm.get("ffi"):
         ek = list(mm["enum_params"].keys())[0]
         ffi_fn = mm["ffi"]
+        prefix = "return " if ret != "void" else ""
         if mm.get("string_params"):
             sp = mm["string_params"][0]
-            L.append(f"            return NativeMethods.{ffi_fn}(_ctx, {sp}, (int){ek});")
+            L.append(f"            {prefix}NativeMethods.{ffi_fn}(_ctx, {sp}, (int){ek});")
         else:
-            L.append(f"            return NativeMethods.{ffi_fn}(_ctx, (int){ek});")
+            L.append(f"            {prefix}NativeMethods.{ffi_fn}(_ctx, (int){ek});")
         return
-    if "out_params" in mm and mm.get("returns_struct") == "RenderStats":
+    if "out_params" in mm and "returns_struct" in mm:
+        struct_name = mm["returns_struct"]
         ffi_fn = mm["ffi"]
-        rs_fields = schema["types"]["RenderStats"]["fields"]
+        ffi_type_name = mapping["ffi_types"][struct_name]["ffi_name"]
+        rs_fields = schema["types"][struct_name]["fields"]
         field_args = ", ".join(f"stats.{to_pascal(f['name'])}" for f in rs_fields)
-        L += ["            var stats = new GoudRenderStats();",
+        L += [f"            var stats = new {ffi_type_name}();",
               f"            NativeMethods.{ffi_fn}(_ctx, ref stats);",
-              f"            return new RenderStats({field_args});"]
+              f"            return new {struct_name}({field_args});"]
         return
     if "out_params" in mm:
         for op in mm["out_params"]:
