@@ -46,6 +46,7 @@ use super::component::ComponentId;
 use super::entity::{Entity, EntityAllocator};
 use super::resource::{NonSendResources, Resources};
 
+mod clone_entity;
 mod component_access;
 mod component_mutation;
 mod entity_ops;

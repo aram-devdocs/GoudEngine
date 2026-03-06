@@ -2244,6 +2244,32 @@
           "wasm_signature": "despawn_batch(bits: BigUint64Array): number"
         },
         {
+          "name": "cloneEntity",
+          "doc": "Clones an entity, creating a new entity with copies of all cloneable components",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "Entity",
+          "wasm_name": "clone_entity",
+          "wasm_signature": "clone_entity(bits: bigint): bigint"
+        },
+        {
+          "name": "cloneEntityRecursive",
+          "doc": "Clones an entity and all its descendants recursively",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "Entity",
+          "wasm_name": "clone_entity_recursive",
+          "wasm_signature": "clone_entity_recursive(bits: bigint): bigint"
+        },
+        {
           "name": "entityCount",
           "doc": "Returns the number of living entities",
           "params": [],
@@ -2798,6 +2824,14 @@
         {
           "$ref": "EcsMethods",
           "name": "despawn"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "cloneEntity"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "cloneEntityRecursive"
         },
         {
           "$ref": "EcsMethods",
@@ -3884,6 +3918,12 @@
           "method": "despawnBatch"
         },
         {
+          "method": "cloneEntity"
+        },
+        {
+          "method": "cloneEntityRecursive"
+        },
+        {
           "method": "entityCount"
         },
         {
@@ -4054,6 +4094,14 @@
         {
           "$ref": "EcsMethods",
           "name": "despawnBatch"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "cloneEntity"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "cloneEntityRecursive"
         },
         {
           "$ref": "EcsMethods",
