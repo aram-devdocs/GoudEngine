@@ -426,7 +426,10 @@ impl RenderBackend for WgpuBackend {
         count: u32,
         offset: usize,
     ) -> GoudResult<()> {
-        self.record_draw(DrawType::Indexed { count, _offset: offset })
+        self.record_draw(DrawType::Indexed {
+            count,
+            _offset: offset,
+        })
     }
 
     fn draw_indexed_u16(
@@ -435,7 +438,10 @@ impl RenderBackend for WgpuBackend {
         count: u32,
         offset: usize,
     ) -> GoudResult<()> {
-        self.record_draw(DrawType::IndexedU16 { count, _offset: offset })
+        self.record_draw(DrawType::IndexedU16 {
+            count,
+            _offset: offset,
+        })
     }
 
     fn draw_arrays_instanced(
