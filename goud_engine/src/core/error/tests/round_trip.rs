@@ -7,12 +7,13 @@ use crate::core::error::{
     GoudError, ERR_ALREADY_INITIALIZED, ERR_AUDIO_INIT_FAILED, ERR_BACKEND_NOT_SUPPORTED,
     ERR_BUFFER_CREATION_FAILED, ERR_COMPONENT_ALREADY_EXISTS, ERR_COMPONENT_NOT_FOUND,
     ERR_CONTEXT_DESTROYED, ERR_DRAW_CALL_FAILED, ERR_ENTITY_ALREADY_EXISTS, ERR_ENTITY_NOT_FOUND,
-    ERR_HANDLE_EXPIRED, ERR_HANDLE_TYPE_MISMATCH, ERR_INITIALIZATION_FAILED, ERR_INTERNAL_ERROR,
-    ERR_INVALID_CONTEXT, ERR_INVALID_HANDLE, ERR_INVALID_STATE, ERR_NOT_IMPLEMENTED,
-    ERR_NOT_INITIALIZED, ERR_PHYSICS_INIT_FAILED, ERR_PLATFORM_ERROR, ERR_QUERY_FAILED,
-    ERR_RENDER_TARGET_FAILED, ERR_RESOURCE_ALREADY_EXISTS, ERR_RESOURCE_INVALID_FORMAT,
-    ERR_RESOURCE_LOAD_FAILED, ERR_RESOURCE_NOT_FOUND, ERR_SHADER_COMPILATION_FAILED,
-    ERR_SHADER_LINK_FAILED, ERR_TEXTURE_CREATION_FAILED, ERR_WINDOW_CREATION_FAILED, SUCCESS,
+    ERR_HANDLE_EXPIRED, ERR_HANDLE_TYPE_MISMATCH, ERR_INITIALIZATION_FAILED,
+    ERR_INPUT_DEVICE_NOT_FOUND, ERR_INTERNAL_ERROR, ERR_INVALID_CONTEXT, ERR_INVALID_HANDLE,
+    ERR_INVALID_INPUT_ACTION, ERR_INVALID_STATE, ERR_NOT_IMPLEMENTED, ERR_NOT_INITIALIZED,
+    ERR_PHYSICS_INIT_FAILED, ERR_PLATFORM_ERROR, ERR_QUERY_FAILED, ERR_RENDER_TARGET_FAILED,
+    ERR_RESOURCE_ALREADY_EXISTS, ERR_RESOURCE_INVALID_FORMAT, ERR_RESOURCE_LOAD_FAILED,
+    ERR_RESOURCE_NOT_FOUND, ERR_SHADER_COMPILATION_FAILED, ERR_SHADER_LINK_FAILED,
+    ERR_TEXTURE_CREATION_FAILED, ERR_WINDOW_CREATION_FAILED, SUCCESS,
 };
 
 #[test]
@@ -116,6 +117,24 @@ fn test_round_trip_entity_errors() {
 }
 
 #[test]
+fn test_round_trip_input_errors() {
+    let variants = vec![
+        GoudError::InputDeviceNotFound,
+        GoudError::InvalidInputAction("jump".to_string()),
+    ];
+    for error in variants {
+        let code = error.error_code();
+        let recovered = GoudError::from_error_code(code)
+            .unwrap_or_else(|| panic!("from_error_code({code}) returned None"));
+        assert_eq!(
+            recovered.error_code(),
+            code,
+            "Round-trip failed for code {code}"
+        );
+    }
+}
+
+#[test]
 fn test_round_trip_system_errors() {
     let variants = vec![
         GoudError::WindowCreationFailed("test".to_string()),
@@ -181,6 +200,8 @@ fn test_all_err_constants_have_mappings() {
         ERR_COMPONENT_NOT_FOUND,
         ERR_COMPONENT_ALREADY_EXISTS,
         ERR_QUERY_FAILED,
+        ERR_INPUT_DEVICE_NOT_FOUND,
+        ERR_INVALID_INPUT_ACTION,
         ERR_WINDOW_CREATION_FAILED,
         ERR_AUDIO_INIT_FAILED,
         ERR_PHYSICS_INIT_FAILED,
@@ -217,6 +238,7 @@ fn test_from_error_code_uses_empty_string_for_payloads() {
         ERR_BACKEND_NOT_SUPPORTED,
         ERR_DRAW_CALL_FAILED,
         ERR_QUERY_FAILED,
+        ERR_INVALID_INPUT_ACTION,
         ERR_WINDOW_CREATION_FAILED,
         ERR_AUDIO_INIT_FAILED,
         ERR_PHYSICS_INIT_FAILED,

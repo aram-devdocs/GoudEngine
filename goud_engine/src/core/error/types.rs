@@ -7,9 +7,10 @@ use super::codes::{
     ERR_BACKEND_NOT_SUPPORTED, ERR_BUFFER_CREATION_FAILED, ERR_COMPONENT_ALREADY_EXISTS,
     ERR_COMPONENT_NOT_FOUND, ERR_CONTEXT_DESTROYED, ERR_DRAW_CALL_FAILED,
     ERR_ENTITY_ALREADY_EXISTS, ERR_ENTITY_NOT_FOUND, ERR_HANDLE_EXPIRED, ERR_HANDLE_TYPE_MISMATCH,
-    ERR_INITIALIZATION_FAILED, ERR_INTERNAL_ERROR, ERR_INVALID_CONTEXT, ERR_INVALID_HANDLE,
-    ERR_INVALID_STATE, ERR_NOT_IMPLEMENTED, ERR_NOT_INITIALIZED, ERR_PHYSICS_INIT_FAILED,
-    ERR_PLATFORM_ERROR, ERR_QUERY_FAILED, ERR_RENDER_TARGET_FAILED, ERR_RESOURCE_ALREADY_EXISTS,
+    ERR_INITIALIZATION_FAILED, ERR_INPUT_DEVICE_NOT_FOUND, ERR_INTERNAL_ERROR,
+    ERR_INVALID_CONTEXT, ERR_INVALID_HANDLE, ERR_INVALID_INPUT_ACTION, ERR_INVALID_STATE,
+    ERR_NOT_IMPLEMENTED, ERR_NOT_INITIALIZED, ERR_PHYSICS_INIT_FAILED, ERR_PLATFORM_ERROR,
+    ERR_QUERY_FAILED, ERR_RENDER_TARGET_FAILED, ERR_RESOURCE_ALREADY_EXISTS,
     ERR_RESOURCE_INVALID_FORMAT, ERR_RESOURCE_LOAD_FAILED, ERR_RESOURCE_NOT_FOUND,
     ERR_SHADER_COMPILATION_FAILED, ERR_SHADER_LINK_FAILED, ERR_TEXTURE_CREATION_FAILED,
     ERR_WINDOW_CREATION_FAILED,
@@ -321,6 +322,30 @@ pub enum GoudError {
     QueryFailed(String),
 
     // -------------------------------------------------------------------------
+    // Input Errors (codes 400-499)
+    // -------------------------------------------------------------------------
+    /// Input device not found or disconnected.
+    ///
+    /// This error occurs when attempting to use an input device that is not
+    /// connected or not recognized by the operating system.
+    ///
+    /// # Recovery
+    ///
+    /// Check that the input device is connected and recognized by the OS.
+    InputDeviceNotFound,
+
+    /// Invalid input action name.
+    ///
+    /// This error occurs when referencing an input action that has not been
+    /// registered with the input system.
+    /// The string contains the invalid action name.
+    ///
+    /// # Recovery
+    ///
+    /// Verify the action name matches one registered with the input system.
+    InvalidInputAction(String),
+
+    // -------------------------------------------------------------------------
     // System Errors (codes 500-599)
     // -------------------------------------------------------------------------
     /// Window creation failed.
@@ -463,6 +488,10 @@ impl GoudError {
             GoudError::ComponentAlreadyExists => ERR_COMPONENT_ALREADY_EXISTS,
             GoudError::QueryFailed(_) => ERR_QUERY_FAILED,
 
+            // Input errors (400-499)
+            GoudError::InputDeviceNotFound => ERR_INPUT_DEVICE_NOT_FOUND,
+            GoudError::InvalidInputAction(_) => ERR_INVALID_INPUT_ACTION,
+
             // System errors (500-599)
             GoudError::WindowCreationFailed(_) => ERR_WINDOW_CREATION_FAILED,
             GoudError::AudioInitFailed(_) => ERR_AUDIO_INIT_FAILED,
@@ -541,6 +570,10 @@ impl GoudError {
             GoudError::ComponentNotFound => "Component not found",
             GoudError::ComponentAlreadyExists => "Component already exists",
             GoudError::QueryFailed(msg) => msg,
+
+            // Input errors
+            GoudError::InputDeviceNotFound => "Input device not found",
+            GoudError::InvalidInputAction(msg) => msg,
 
             // System errors
             GoudError::WindowCreationFailed(msg) => msg,
