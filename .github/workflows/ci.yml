@@ -125,7 +125,7 @@ jobs:
           --exclude-files "*/build.rs" \
           --exclude-files "*/tests/*" \
           --exclude-files "*/examples/*" \
-          --exclude-files "*/ffi/*" \
+          --exclude-files "*/ffi/**" \
           --exclude-files "*/sdk.rs"
 
     - name: Check branch coverage threshold (70%)
