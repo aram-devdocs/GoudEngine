@@ -48,10 +48,10 @@ impl<Q: WorldQuery> WorldQuery for Option<Q> {
     }
 
     #[inline]
-    fn component_access(_state: &Self::State) -> BTreeSet<ComponentId> {
-        // Optional queries don't create hard access conflicts.
-        // The component may not be present, so we don't declare access.
-        BTreeSet::new()
+    fn component_access(state: &Self::State) -> BTreeSet<ComponentId> {
+        // Forward to inner query so mutable optional queries (Option<&mut T>)
+        // correctly declare write access for conflict detection.
+        Q::component_access(state)
     }
 
     #[inline]
