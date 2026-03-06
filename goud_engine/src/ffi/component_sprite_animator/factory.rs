@@ -20,7 +20,43 @@
 
 use crate::core::math::Rect;
 use crate::core::types::{FfiAnimationClipBuilder, FfiPlaybackMode, FfiSpriteAnimator};
-use crate::ecs::components::sprite_animator::{AnimationClip, SpriteAnimator};
+use crate::ecs::components::sprite_animator::{AnimationClip, PlaybackMode, SpriteAnimator};
+
+// =============================================================================
+// Conversion impls (live in FFI layer to avoid core -> ecs dependency)
+// =============================================================================
+
+impl From<PlaybackMode> for FfiPlaybackMode {
+    fn from(mode: PlaybackMode) -> Self {
+        match mode {
+            PlaybackMode::Loop => FfiPlaybackMode::Loop,
+            PlaybackMode::OneShot => FfiPlaybackMode::OneShot,
+        }
+    }
+}
+
+impl From<FfiPlaybackMode> for PlaybackMode {
+    fn from(mode: FfiPlaybackMode) -> Self {
+        match mode {
+            FfiPlaybackMode::Loop => PlaybackMode::Loop,
+            FfiPlaybackMode::OneShot => PlaybackMode::OneShot,
+        }
+    }
+}
+
+impl From<&SpriteAnimator> for FfiSpriteAnimator {
+    fn from(animator: &SpriteAnimator) -> Self {
+        Self {
+            current_frame: animator.current_frame as u32,
+            elapsed: animator.elapsed,
+            playing: animator.playing,
+            finished: animator.finished,
+            frame_duration: animator.clip.frame_duration,
+            mode: animator.clip.mode.into(),
+            frame_count: animator.clip.frames.len() as u32,
+        }
+    }
+}
 
 /// Creates a new animation clip builder.
 ///

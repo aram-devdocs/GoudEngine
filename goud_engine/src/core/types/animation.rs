@@ -1,7 +1,6 @@
 //! FFI-safe animation types for sprite animation.
 
 use crate::core::math::Rect;
-use crate::ecs::components::sprite_animator::{PlaybackMode, SpriteAnimator};
 
 // =============================================================================
 // PlaybackMode
@@ -18,24 +17,6 @@ pub enum FfiPlaybackMode {
     Loop = 0,
     /// Stop at the last frame and mark the animation as finished.
     OneShot = 1,
-}
-
-impl From<PlaybackMode> for FfiPlaybackMode {
-    fn from(mode: PlaybackMode) -> Self {
-        match mode {
-            PlaybackMode::Loop => FfiPlaybackMode::Loop,
-            PlaybackMode::OneShot => FfiPlaybackMode::OneShot,
-        }
-    }
-}
-
-impl From<FfiPlaybackMode> for PlaybackMode {
-    fn from(mode: FfiPlaybackMode) -> Self {
-        match mode {
-            FfiPlaybackMode::Loop => PlaybackMode::Loop,
-            FfiPlaybackMode::OneShot => PlaybackMode::OneShot,
-        }
-    }
 }
 
 // =============================================================================
@@ -82,19 +63,6 @@ impl FfiSpriteAnimator {
     }
 }
 
-impl From<&SpriteAnimator> for FfiSpriteAnimator {
-    fn from(animator: &SpriteAnimator) -> Self {
-        Self {
-            current_frame: animator.current_frame as u32,
-            elapsed: animator.elapsed,
-            playing: animator.playing,
-            finished: animator.finished,
-            frame_duration: animator.clip.frame_duration,
-            mode: animator.clip.mode.into(),
-            frame_count: animator.clip.frames.len() as u32,
-        }
-    }
-}
 
 // =============================================================================
 // FfiAnimationClipBuilder
@@ -110,6 +78,8 @@ impl From<&SpriteAnimator> for FfiSpriteAnimator {
 /// - Allocated by `goud_animation_clip_builder_new()`
 /// - Consumed by `goud_sprite_animator_from_clip()` (frees builder)
 /// - If not consumed, must be freed with `goud_animation_clip_builder_free()`
+// NOT repr(C): this is an opaque heap-allocated handle. Callers only hold
+// a raw pointer and never inspect the struct layout across FFI.
 pub struct FfiAnimationClipBuilder {
     /// Accumulated frame rectangles.
     pub frames: Vec<Rect>,
