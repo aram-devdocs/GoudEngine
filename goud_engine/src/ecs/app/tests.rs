@@ -281,6 +281,56 @@ fn test_plugin_propagates_2d_on_run() {
     );
 }
 
+#[test]
+fn test_transform_repropagation_across_multiple_updates() {
+    let mut app = App::new();
+    app.add_plugin(TransformPropagationPlugin);
+
+    // Create parent at (10, 0, 0)
+    let parent = app.world_mut().spawn_empty();
+    app.world_mut()
+        .insert(parent, Transform::from_position(Vec3::new(10.0, 0.0, 0.0)));
+    app.world_mut().insert(parent, GlobalTransform::IDENTITY);
+
+    // Create child at local (5, 0, 0)
+    let child = app.world_mut().spawn_empty();
+    app.world_mut()
+        .insert(child, Transform::from_position(Vec3::new(5.0, 0.0, 0.0)));
+    app.world_mut().insert(child, GlobalTransform::IDENTITY);
+    app.world_mut().insert(child, Parent::new(parent));
+
+    // Set up parent's children
+    let mut children = Children::new();
+    children.push(child);
+    app.world_mut().insert(parent, children);
+
+    // First update: verify initial propagation
+    app.update();
+
+    let child_global = app.world().get::<GlobalTransform>(child).unwrap();
+    let child_pos = child_global.translation();
+    assert!(
+        (child_pos.x - 15.0).abs() < 0.001,
+        "Child global x should be 15.0 after first update, got {}",
+        child_pos.x
+    );
+
+    // Modify parent's transform
+    let parent_transform = Transform::from_position(Vec3::new(20.0, 0.0, 0.0));
+    app.world_mut().insert(parent, parent_transform);
+
+    // Second update: verify re-propagation
+    app.update();
+
+    let child_global = app.world().get::<GlobalTransform>(child).unwrap();
+    let child_pos = child_global.translation();
+    assert!(
+        (child_pos.x - 25.0).abs() < 0.001,
+        "Child global x should be 25.0 after parent modification and update, got {}",
+        child_pos.x
+    );
+}
+
 // =========================================================================
 // PluginGroup
 // =========================================================================
