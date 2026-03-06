@@ -1,0 +1,92 @@
+name: Community Stats
+
+on:
+  schedule:
+    # Run at 3 AM UTC every day
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-stats:
+    name: Update Community Stats
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Collect stats and update README
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # Fetch GitHub stats
+        STARS=$(gh api repos/${{ github.repository }} --jq '.stargazers_count')
+        FORKS=$(gh api repos/${{ github.repository }} --jq '.forks_count')
+        OPEN_ISSUES=$(gh api repos/${{ github.repository }} --jq '.open_issues_count')
+        CONTRIBUTORS=$(gh api "repos/${{ github.repository }}/contributors?per_page=1&anon=true" -i | grep -i 'link:' | grep -oP '&page=\K[0-9]+(?=>; rel="last")' || echo "")
+        if [ -z "$CONTRIBUTORS" ]; then
+          CONTRIBUTORS=$(gh api "repos/${{ github.repository }}/contributors?per_page=100&anon=true" --jq 'length')
+        fi
+
+        # Fetch registry download counts
+        CRATES_DOWNLOADS=$(curl -sf https://crates.io/api/v1/crates/goud-engine | jq '.crate.downloads // 0')
+        NUGET_DOWNLOADS=$(curl -sf "https://api.nuget.org/v3/registration5-gz-semver2/goudengine/index.json" | jq '[.items[].items[]?.catalogEntry.downloads // 0] | add // 0' 2>/dev/null || echo "0")
+        PYPI_MONTHLY=$(curl -sf https://pypistats.org/api/packages/goudengine/recent | jq '.data.last_month // 0')
+        NPM_MONTHLY=$(curl -sf "https://api.npmjs.org/downloads/point/last-month/goudengine" | jq '.downloads // 0')
+
+        # Fallback for NuGet — use search API if registration returns 0
+        if [ "$NUGET_DOWNLOADS" = "0" ] || [ -z "$NUGET_DOWNLOADS" ]; then
+          NUGET_DOWNLOADS=$(curl -sf "https://azuresearch-usnc.nuget.org/query?q=packageid:GoudEngine&prerelease=false" | jq '.data[0].totalDownloads // 0')
+        fi
+
+        # Compute all-time total (crates.io + NuGet are all-time; PyPI + npm are monthly)
+        ALLTIME_TOTAL=$((CRATES_DOWNLOADS + NUGET_DOWNLOADS))
+
+        # Format numbers with commas
+        fmt() { printf "%'d" "$1" 2>/dev/null || echo "$1"; }
+
+        STATS_BLOCK="## Community
+
+        <!-- COMMUNITY-STATS:START -->
+        | | Stars | Forks | Contributors | Open Issues |
+        |--|-------|-------|--------------|-------------|
+        | **GitHub** | $(fmt $STARS) | $(fmt $FORKS) | $(fmt $CONTRIBUTORS) | $(fmt $OPEN_ISSUES) |
+
+        **Downloads**
+
+        | Registry | Downloads | Period |
+        |----------|-----------|--------|
+        | crates.io | $(fmt $CRATES_DOWNLOADS) | total |
+        | NuGet | $(fmt $NUGET_DOWNLOADS) | total |
+        | PyPI | $(fmt $PYPI_MONTHLY) | /month |
+        | npm | $(fmt $NPM_MONTHLY) | /month |
+
+        [![Star History Chart](https://api.star-history.com/svg?repos=aram-devdocs/GoudEngine&type=Date)](https://star-history.com/#aram-devdocs/GoudEngine&Date)
+
+        <sub>Last updated: $(date -u '+%Y-%m-%d') via [GitHub Action](.github/workflows/community-stats.yml)</sub>
+        <!-- COMMUNITY-STATS:END -->"
+
+        # Remove leading whitespace from heredoc-style indentation
+        STATS_BLOCK=$(echo "$STATS_BLOCK" | sed 's/^        //')
+
+        # Replace content between markers
+        python3 -c "
+        import re, sys
+        readme = open('README.md').read()
+        pattern = r'<!-- COMMUNITY-STATS:START -->.*?<!-- COMMUNITY-STATS:END -->'
+        replacement = open('/dev/stdin').read().split('<!-- COMMUNITY-STATS:START -->')[1].split('<!-- COMMUNITY-STATS:END -->')[0]
+        replacement = '<!-- COMMUNITY-STATS:START -->' + replacement + '<!-- COMMUNITY-STATS:END -->'
+        updated = re.sub(pattern, replacement, readme, flags=re.DOTALL)
+        open('README.md', 'w').write(updated)
+        " <<< "$STATS_BLOCK"
+
+    - name: Commit if changed
+      run: |
+        git diff --quiet README.md && exit 0
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add README.md
+        git commit -m "chore: update community stats [skip ci]"
+        git push
