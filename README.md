@@ -160,6 +160,8 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 | PyPI | [![PyPI](https://img.shields.io/pypi/dm/goudengine)](https://pypi.org/project/goudengine/) | — /month |
 | npm | [![npm](https://img.shields.io/npm/dm/goudengine)](https://www.npmjs.com/package/goudengine) | — /month |
 
+![Total Downloads Over Time](.github/stats/downloads.svg)
+
 [![Star History Chart](https://api.star-history.com/svg?repos=aram-devdocs/GoudEngine&type=Date)](https://star-history.com/#aram-devdocs/GoudEngine&Date)
 
 <sub>Last updated: daily via [GitHub Action](.github/workflows/community-stats.yml)</sub>

@@ -32,6 +32,21 @@ jobs:
           NUGET_DOWNLOADS=$(curl -sf "https://azuresearch-usnc.nuget.org/query?q=packageid:GoudEngine&prerelease=false" | jq '.data[0].totalDownloads // 0')
         fi
 
+        # Append to history
+        DATE=$(date -u '+%Y-%m-%d')
+        python3 -c "
+        import json
+        h = json.loads(open('.github/stats/history.json').read())
+        entry = {'date': '$DATE', 'crates_io': $CRATES_DOWNLOADS, 'nuget': $NUGET_DOWNLOADS, 'pypi_monthly': $PYPI_MONTHLY, 'npm_monthly': $NPM_MONTHLY}
+        # Replace if same date exists, otherwise append
+        h = [e for e in h if e['date'] != '$DATE'] + [entry]
+        h.sort(key=lambda e: e['date'])
+        open('.github/stats/history.json', 'w').write(json.dumps(h, indent=2) + '\n')
+        "
+
+        # Generate downloads chart
+        python3 .github/stats/generate_chart.py
+
         # Format numbers with commas
         fmt() { printf "%'d" "$1" 2>/dev/null || echo "$1"; }
 
@@ -48,6 +63,8 @@ jobs:
         | NuGet | [![NuGet](https://img.shields.io/nuget/dt/GoudEngine)](https://www.nuget.org/packages/GoudEngine/) | $(fmt $NUGET_DOWNLOADS) total |
         | PyPI | [![PyPI](https://img.shields.io/pypi/dm/goudengine)](https://pypi.org/project/goudengine/) | $(fmt $PYPI_MONTHLY) /month |
         | npm | [![npm](https://img.shields.io/npm/dm/goudengine)](https://www.npmjs.com/package/goudengine) | $(fmt $NPM_MONTHLY) /month |
+
+        ![Total Downloads Over Time](.github/stats/downloads.svg)
 
         [![Star History Chart](https://api.star-history.com/svg?repos=aram-devdocs/GoudEngine&type=Date)](https://star-history.com/#aram-devdocs/GoudEngine&Date)
 
@@ -70,9 +87,9 @@ jobs:
 
     - name: Commit if changed
       run: |
-        git diff --quiet README.md && exit 0
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add README.md
+        git add README.md .github/stats/history.json .github/stats/downloads.svg
+        git diff --cached --quiet && exit 0
         git commit -m "chore: update community stats [skip ci]"
         git push
