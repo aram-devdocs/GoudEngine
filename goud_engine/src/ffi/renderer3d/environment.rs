@@ -1,0 +1,171 @@
+//! FFI functions for environment features: grid, skybox, fog, and the render call.
+
+use super::state::{ensure_renderer3d_state, with_renderer};
+use crate::core::error::{set_last_error, GoudError};
+use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
+use crate::libs::graphics::renderer3d::{FogConfig, GridConfig, SkyboxConfig};
+use cgmath::{Vector3, Vector4};
+
+// ============================================================================
+// FFI: Grid
+// ============================================================================
+
+/// Configures the ground grid.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_configure_grid(
+    context_id: GoudContextId,
+    enabled: bool,
+    size: f32,
+    divisions: u32,
+) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        return false;
+    }
+
+    if ensure_renderer3d_state(context_id).is_err() {
+        return false;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let config = GridConfig {
+            enabled,
+            size,
+            divisions,
+            ..Default::default()
+        };
+        renderer.configure_grid(config);
+        true
+    })
+    .unwrap_or(false)
+}
+
+/// Sets grid enabled state.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_grid_enabled(
+    context_id: GoudContextId,
+    enabled: bool,
+) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        return false;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer.set_grid_enabled(enabled);
+        true
+    })
+    .unwrap_or(false)
+}
+
+// ============================================================================
+// FFI: Skybox
+// ============================================================================
+
+/// Configures the skybox/background color.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_configure_skybox(
+    context_id: GoudContextId,
+    enabled: bool,
+    r: f32,
+    g: f32,
+    b: f32,
+    a: f32,
+) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        return false;
+    }
+
+    if ensure_renderer3d_state(context_id).is_err() {
+        return false;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer.configure_skybox(SkyboxConfig {
+            enabled,
+            color: Vector4::new(r, g, b, a),
+        });
+        true
+    })
+    .unwrap_or(false)
+}
+
+// ============================================================================
+// FFI: Fog
+// ============================================================================
+
+/// Configures fog settings.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_configure_fog(
+    context_id: GoudContextId,
+    enabled: bool,
+    r: f32,
+    g: f32,
+    b: f32,
+    density: f32,
+) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        return false;
+    }
+
+    if ensure_renderer3d_state(context_id).is_err() {
+        return false;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer.configure_fog(FogConfig {
+            enabled,
+            color: Vector3::new(r, g, b),
+            density,
+        });
+        true
+    })
+    .unwrap_or(false)
+}
+
+/// Sets fog enabled state.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_fog_enabled(
+    context_id: GoudContextId,
+    enabled: bool,
+) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        return false;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer.set_fog_enabled(enabled);
+        true
+    })
+    .unwrap_or(false)
+}
+
+// ============================================================================
+// FFI: Rendering
+// ============================================================================
+
+/// Renders all 3D objects in the scene.
+///
+/// Call this between goud_renderer_begin and goud_renderer_end (or in game loop).
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_render(context_id: GoudContextId) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+
+    if let Err(e) = ensure_renderer3d_state(context_id) {
+        set_last_error(e);
+        return false;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer.render(None);
+        true
+    })
+    .unwrap_or(false)
+}
+
+/// Renders all 3D objects (alias for goud_renderer3d_render).
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_render_all(context_id: GoudContextId) -> bool {
+    goud_renderer3d_render(context_id)
+}
