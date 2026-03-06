@@ -18,5 +18,7 @@ pub mod handle;
 pub mod math;
 pub mod types;
 
+pub mod providers;
+
 #[cfg(feature = "native")]
 pub mod input_manager;
