@@ -1,7 +1,7 @@
 ---
 rfc: "0002"
 title: "NetworkProvider Trait Design"
-status: draft
+status: proposed
 created: 2026-03-06
 authors: ["aram-devdocs"]
 tracking-issue: "#356"
@@ -141,6 +141,7 @@ pub enum DisconnectReason {
 /// Configuration for hosting (accepting inbound connections).
 #[derive(Debug, Clone)]
 pub struct HostConfig {
+    pub bind_address: String,
     pub port: u16,
     pub max_connections: u32,
 }
@@ -217,6 +218,8 @@ Disconnected
 
 `NetworkProvider` extends `Provider`, which requires `Send + Sync + 'static`. Concrete implementations use background I/O threads that communicate with the main thread via `std::sync::mpsc` channels. `drain_events` drains the receiver end of that channel each frame. No locking is required on the call sites.
 
+`ProviderLifecycle::update(delta)` is called once per frame by the engine loop. For network providers, `update` flushes the outbound send queue and transfers inbound data from the I/O thread channel into the event buffer that `drain_events` returns. Providers that do not need per-frame work (e.g., `NullNetProvider`) implement `update` as a no-op returning `Ok(())`.
+
 ---
 
 ### 3.6 Layer Placement
@@ -241,7 +244,7 @@ pub struct ProviderRegistry {
 }
 ```
 
-The field is `Option` because networking is not required. Games that do not configure a network provider receive `None`; the engine does not substitute `NullNetProvider` automatically. SDK users that want a no-op provider pass `GoudNetworkType::Null` at init.
+The field is `Option` because networking is not required — unlike render, physics, audio, and input, which every game needs at minimum as a `Null*Provider`. Most single-player games never touch networking. Making it `Option` avoids forcing a `NullNetProvider` allocation on every game and makes "networking not configured" a distinct, type-level state rather than a silent no-op. Call sites use `if let Some(net) = registry.network.as_mut()` (see §3.9). Open Question 1 tracks whether this should change.
 
 The error type prerequisite from RFC-0001 §3.10 applies here too: `GoudError` must move to Layer 1 before `NetworkProvider` trait methods can return `GoudResult<T>` without a Layer 1 → Layer 2 import violation.
 
@@ -255,13 +258,22 @@ Network errors use the `ProviderError` variant established in RFC-0001 §3.9:
 ProviderError { subsystem: "network", message: String }
 ```
 
-Error codes 700–799 are reserved for the network subsystem (600–699 is allocated to render/physics per RFC-0001). The `error_code` match arm routes `ProviderError` by `subsystem` discriminator to the appropriate code range. The existing pattern in `goud_engine/src/core/error/types.rs` applies: the `message` carries a human-readable description; the code carries the machine-readable category.
+Error codes 700–709 are reserved for the network subsystem, following the 10-codes-per-subsystem granularity established in RFC-0001 (600–609 render, 610–619 physics, etc.). The `error_code` match arm routes `ProviderError` by `subsystem` discriminator to the appropriate code range. The existing pattern in `goud_engine/src/core/error/types.rs` applies: the `message` carries a human-readable description; the code carries the machine-readable category.
 
 ---
 
 ### 3.8 FFI Boundary
 
 SDK users select the transport at engine initialization. Per RFC-0001 §5, `goud_game_create` gains provider-type parameters; networking adds `GoudNetworkType` to that signature. Passing `GoudNetworkType::Null` leaves `ProviderRegistry.network` as `None`. SDK-level overloads may default to `Null` when the parameter is omitted.
+
+Rust SDK users configure networking through the builder pattern established in RFC-0001 §3.5:
+
+```rust
+let game = GoudEngine::builder()
+    .with_renderer(OpenGLRenderProvider::new(RenderConfig::default()))
+    .with_network(UdpNetProvider::new(NetworkConfig::default()))
+    .build()?;
+```
 
 ```rust
 #[repr(C)]
@@ -307,7 +319,33 @@ pub unsafe extern "C" fn goud_network_drain_events(
 ) -> i32 { ... }
 ```
 
-`GoudNetworkEvent` is a `#[repr(C)]` tagged union. All pointer parameters require null checks before dereferencing; each `unsafe` block carries a `// SAFETY:` comment per the FFI patterns rule.
+`GoudNetworkEvent` is a `#[repr(C)]` flat struct with a discriminant field:
+
+```rust
+#[repr(u32)]
+pub enum GoudNetworkEventKind {
+    Connected    = 0,
+    Disconnected = 1,
+    Received     = 2,
+    Error        = 3,
+}
+
+/// C-compatible network event. Fields are variant-dependent:
+/// - Connected/Disconnected: `conn` is set; `data`/`data_len` are zero/null.
+/// - Received: `conn`, `channel`, `data`, `data_len` are set.
+/// - Error: `conn` is set; `message` points to a null-terminated string.
+#[repr(C)]
+pub struct GoudNetworkEvent {
+    pub kind: GoudNetworkEventKind,
+    pub conn: u64,
+    pub channel: u8,
+    pub data: *const u8,
+    pub data_len: usize,
+    pub message: *const c_char,
+}
+```
+
+All pointer parameters require null checks before dereferencing; each `unsafe` block carries a `// SAFETY:` comment per the FFI patterns rule. The `data` and `message` pointers are valid only until the next call to `goud_network_drain_events`; the provider owns the backing memory.
 
 ---
 
@@ -366,7 +404,7 @@ A `PeerId` implies game-level identity (player slot, lobby position). `Connectio
 This RFC introduces a new subsystem with no breaking changes to existing code.
 
 - **`ProviderRegistry`**: gains `network: Option<Box<dyn NetworkProvider>>`. Existing construction code continues to compile; the field defaults to `None`.
-- **Error types**: network errors use `ProviderError { subsystem: "network", message }` from RFC-0001; error codes 700–799 reserved. No new `GoudError` variant needed.
+- **Error types**: network errors use `ProviderError { subsystem: "network", message }` from RFC-0001; error codes 700–709 reserved. No new `GoudError` variant needed.
 - **FFI**: new `goud_network_*` functions in `goud_engine/src/ffi/network.rs`. No existing FFI function signatures change. C# bindings regenerate automatically on `cargo build`. Python `generated/_ffi.py` requires manual update.
 - **SDK wrappers**: generated from `goud_sdk.schema.json` for C#, Python, and TypeScript. No existing wrapper changes.
 - **Examples**: unaffected unless they explicitly opt in to networking.
