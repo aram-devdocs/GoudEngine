@@ -114,14 +114,14 @@ def gen_web_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from '../types/engine.g.js';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "import { attachInputHandlers } from './input.g.js';",
         "",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton } from '../types/input.g.js';",
         "export { Rect } from '../types/math.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact } from '../types/engine.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';",
         "",
     ]
 
@@ -498,6 +498,13 @@ def gen_web_wrapper():
     lines.append("  disableDepthTest(): void {}")
     lines.append("  clearDepth(): void {}")
     lines.append("  disableBlending(): void {}")
+    lines.append("")
+    # FPS overlay methods - stub implementations for wasm (overlay not available in wasm build)
+    lines.append("  // TODO: wasm FPS overlay -- these stub methods satisfy the IGoudGame interface")
+    lines.append("  getFpsStats(): IFpsStats { return { currentFps: this.handle.fps, minFps: 0, maxFps: 0, avgFps: 0, frameTimeMs: 0 }; }")
+    lines.append("  setFpsOverlayEnabled(_enabled: boolean): void {}")
+    lines.append("  setFpsUpdateInterval(_interval: number): void {}")
+    lines.append("  setFpsOverlayCorner(_corner: number): void {}")
     lines.append("}")
     lines.append("")
 
