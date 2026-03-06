@@ -1,0 +1,136 @@
+//! Core `AssetServer` type definition and construction helpers.
+
+use crate::assets::{AssetId, AssetStorage, ErasedAssetLoader};
+use std::collections::HashMap;
+use std::fmt;
+use std::path::{Path, PathBuf};
+
+// =============================================================================
+// AssetServer
+// =============================================================================
+
+/// Central coordinator for asset loading and caching.
+///
+/// The `AssetServer` manages:
+/// - Asset loaders (registered by file extension)
+/// - Asset storage (cached loaded assets)
+/// - Loading queue (assets being loaded)
+/// - Hot reloading (watching for file changes)
+///
+/// # Thread Safety
+///
+/// `AssetServer` is `Send` but NOT `Sync` - it should be accessed from a single
+/// thread (typically the main thread). For multi-threaded asset loading, use
+/// async handles and check loading state from the main thread.
+///
+/// # Example
+///
+/// ```
+/// use goud_engine::assets::{Asset, AssetServer};
+///
+/// struct MyAsset { data: String }
+/// impl Asset for MyAsset {}
+///
+/// let mut server = AssetServer::new();
+///
+/// // Load returns a handle immediately
+/// let handle = server.load::<MyAsset>("data/config.json");
+///
+/// // Asset loads in background, check state
+/// match server.get_load_state(&handle) {
+///     Some(state) => println!("Loading: {}", state),
+///     None => println!("Not found"),
+/// }
+/// ```
+pub struct AssetServer {
+    /// Base directory for asset files (e.g., "assets/").
+    pub(super) asset_root: PathBuf,
+
+    /// Asset storage (cache).
+    pub(super) storage: AssetStorage,
+
+    /// Registered asset loaders by extension.
+    pub(super) loaders: HashMap<String, Box<dyn ErasedAssetLoader>>,
+
+    /// Loader registry by AssetId (for lookup without extension).
+    pub(super) loader_by_type: HashMap<AssetId, Box<dyn ErasedAssetLoader>>,
+}
+
+impl AssetServer {
+    /// Creates a new asset server with the default asset root ("assets/").
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::assets::AssetServer;
+    ///
+    /// let server = AssetServer::new();
+    /// ```
+    pub fn new() -> Self {
+        Self::with_root("assets")
+    }
+
+    /// Creates a new asset server with a custom asset root directory.
+    ///
+    /// # Arguments
+    ///
+    /// * `root` - Base directory for asset files (relative or absolute)
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::assets::AssetServer;
+    ///
+    /// let server = AssetServer::with_root("game_assets");
+    /// ```
+    pub fn with_root(root: impl AsRef<Path>) -> Self {
+        Self {
+            asset_root: root.as_ref().to_path_buf(),
+            storage: AssetStorage::new(),
+            loaders: HashMap::new(),
+            loader_by_type: HashMap::new(),
+        }
+    }
+
+    /// Returns the asset root directory.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::assets::AssetServer;
+    ///
+    /// let server = AssetServer::with_root("game_assets");
+    /// assert_eq!(server.asset_root().to_str().unwrap(), "game_assets");
+    /// ```
+    #[inline]
+    pub fn asset_root(&self) -> &Path {
+        &self.asset_root
+    }
+
+    /// Sets the asset root directory.
+    ///
+    /// # Arguments
+    ///
+    /// * `root` - New base directory for asset files
+    pub fn set_asset_root(&mut self, root: impl AsRef<Path>) {
+        self.asset_root = root.as_ref().to_path_buf();
+    }
+}
+
+impl Default for AssetServer {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Debug for AssetServer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AssetServer")
+            .field("asset_root", &self.asset_root)
+            .field("total_assets", &self.storage.total_len())
+            .field("registered_types", &self.storage.type_count())
+            .field("loaders", &self.loader_by_type.len())
+            .finish()
+    }
+}

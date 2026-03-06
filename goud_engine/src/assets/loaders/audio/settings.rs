@@ -1,0 +1,23 @@
+//! [`AudioSettings`] for controlling audio load behavior.
+
+/// Audio loading settings.
+#[derive(Clone, Debug)]
+pub struct AudioSettings {
+    /// Whether to load the entire audio file into memory.
+    /// If false, audio will be streamed from disk (not yet implemented).
+    pub preload: bool,
+    /// Target sample rate (0 = use original).
+    pub target_sample_rate: u32,
+    /// Target channel count (0 = use original, 1 = mono, 2 = stereo).
+    pub target_channel_count: u16,
+}
+
+impl Default for AudioSettings {
+    fn default() -> Self {
+        Self {
+            preload: true,
+            target_sample_rate: 0,   // Use original
+            target_channel_count: 0, // Use original
+        }
+    }
+}
