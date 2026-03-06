@@ -1,0 +1,60 @@
+#!/bin/sh
+# check-rs-line-limit.sh — Enforce 500-line limit on .rs files
+#
+# Usage:
+#   scripts/check-rs-line-limit.sh [--error|--warn]
+#
+# Scans all tracked .rs files for lines > 500.
+# Exits non-zero in --error mode (default) when violations found.
+# Exits zero in --warn mode, printing warnings only.
+#
+# Documented exceptions (Rust language constraints):
+#   - render_backend.rs  — trait definition must be contiguous
+#   - backend_impl.rs    — impl Trait block must be contiguous
+
+set -e
+
+MODE="${1:---error}"
+LIMIT=500
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+# Files exempt from the line limit (Rust language constraints require contiguous blocks)
+is_exempt() {
+    case "$1" in
+        */render_backend.rs) return 0 ;;
+        */backend_impl.rs)   return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+VIOLATIONS=""
+COUNT=0
+
+for file in $(git ls-files '*.rs'); do
+    if is_exempt "$file"; then
+        continue
+    fi
+
+    lines=$(wc -l < "$file")
+    if [ "$lines" -gt "$LIMIT" ]; then
+        VIOLATIONS="${VIOLATIONS}  ${file} (${lines} lines)\n"
+        COUNT=$((COUNT + 1))
+    fi
+done
+
+if [ "$COUNT" -gt 0 ]; then
+    echo ""
+    echo "Rust file line limit check: ${COUNT} file(s) exceed ${LIMIT} lines"
+    echo ""
+    printf "%b" "$VIOLATIONS"
+    echo ""
+    echo "Exempt files: render_backend.rs, backend_impl.rs (contiguous trait/impl blocks)"
+    echo "Split oversized files into submodules: file.rs -> file/mod.rs + submodules"
+
+    if [ "$MODE" = "--error" ]; then
+        exit 1
+    fi
+else
+    echo "Rust file line limit check: all files within ${LIMIT}-line limit"
+fi

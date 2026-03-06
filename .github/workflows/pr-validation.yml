@@ -107,17 +107,17 @@ jobs:
   check-file-size:
     name: Check File Sizes
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v6
       with:
         fetch-depth: 0
-    
+
     - name: Check for large files
       run: |
         # Find files larger than 1MB
         LARGE_FILES=$(find . -type f -size +1M ! -path "./.git/*" ! -path "./target/*" ! -path "*/bin/*" ! -path "*/obj/*" ! -name "*.png" ! -name "*.jpg" ! -name "*.jpeg" ! -name "*.gif")
-        
+
         if [ -n "$LARGE_FILES" ]; then
           echo "## ⚠️ Large files detected (>1MB):" >> $GITHUB_STEP_SUMMARY
           echo "$LARGE_FILES" >> $GITHUB_STEP_SUMMARY
@@ -125,6 +125,18 @@ jobs:
           echo "Consider using Git LFS for large binary files." >> $GITHUB_STEP_SUMMARY
           exit 1
         fi
+
+  check-rs-line-limit:
+    name: Rust File Line Limit
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Check .rs files do not exceed 500 lines
+      run: |
+        chmod +x scripts/check-rs-line-limit.sh
+        scripts/check-rs-line-limit.sh --error
 
   check-todos:
     name: Check TODOs
@@ -240,7 +252,7 @@ jobs:
 
   validate-success:
     name: PR Validation Success
-    needs: [validate-pr-title, validate-release-config, check-file-size, check-todos, lint-markdown, pr-size-labeler]
+    needs: [validate-pr-title, validate-release-config, check-file-size, check-rs-line-limit, check-todos, lint-markdown, pr-size-labeler]
     runs-on: ubuntu-latest
     if: always()
 
@@ -249,7 +261,8 @@ jobs:
       run: |
         if [[ "${{ needs.validate-pr-title.result }}" == "failure" ]] || \
            [[ "${{ needs.validate-release-config.result }}" == "failure" ]] || \
-           [[ "${{ needs.check-file-size.result }}" == "failure" ]]; then
+           [[ "${{ needs.check-file-size.result }}" == "failure" ]] || \
+           [[ "${{ needs.check-rs-line-limit.result }}" == "failure" ]]; then
           echo "PR validation failed!"
           exit 1
         fi
