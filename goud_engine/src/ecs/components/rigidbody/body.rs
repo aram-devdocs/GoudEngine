@@ -45,12 +45,10 @@ impl RigidBodyFlags {
 /// - `inverse_mass`: f32 (4 bytes)
 /// - `inertia`: f32 (4 bytes)
 /// - `inverse_inertia`: f32 (4 bytes)
-/// - `restitution`: f32 (4 bytes)
-/// - `friction`: f32 (4 bytes)
 /// - `gravity_scale`: f32 (4 bytes)
 /// - `flags`: u8 (1 byte) + 3 bytes padding
 /// - `sleep_time`: f32 (4 bytes)
-/// - Total: 64 bytes (may vary with padding)
+/// - Total: 56 bytes (may vary with padding)
 ///
 /// # Examples
 ///
@@ -62,8 +60,7 @@ impl RigidBodyFlags {
 /// let body = RigidBody::dynamic()
 ///     .with_mass(2.0)
 ///     .with_velocity(Vec2::new(100.0, 0.0))
-///     .with_restitution(0.8)  // Bouncy
-///     .with_friction(0.5);
+///     .with_gravity_scale(1.5);
 ///
 /// // Kinematic platform
 /// let platform = RigidBody::kinematic()
@@ -72,6 +69,15 @@ impl RigidBodyFlags {
 /// // Static wall
 /// let wall = RigidBody::static_body();
 /// ```
+///
+/// # Material Properties
+///
+/// Material properties (restitution, friction) live on [`Collider`], not `RigidBody`.
+/// Set them via [`Collider::with_restitution`] and [`Collider::with_friction`].
+///
+/// [`Collider`]: crate::ecs::components::Collider
+/// [`Collider::with_restitution`]: crate::ecs::components::Collider::with_restitution
+/// [`Collider::with_friction`]: crate::ecs::components::Collider::with_friction
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RigidBody {
     /// Physics behavior type (Dynamic, Kinematic, or Static).
@@ -105,17 +111,6 @@ pub struct RigidBody {
     /// Inverse inertia (1.0 / inertia). Pre-calculated for performance.
     /// Zero for static/kinematic bodies.
     pub inverse_inertia: f32,
-
-    /// Restitution (bounciness) coefficient.
-    /// - 0.0 = inelastic (no bounce)
-    /// - 1.0 = perfectly elastic (full bounce)
-    /// - >1.0 = super-elastic (gains energy)
-    pub restitution: f32,
-
-    /// Friction coefficient.
-    /// - 0.0 = frictionless (ice)
-    /// - 1.0 = high friction (rubber)
-    pub friction: f32,
 
     /// Gravity scale multiplier.
     /// - 0.0 = no gravity
@@ -177,8 +172,6 @@ impl RigidBody {
             } else {
                 0.0
             },
-            restitution: 0.0,                 // No bounce by default
-            friction: 0.5,                    // Moderate friction
             gravity_scale: 1.0,               // Full gravity
             flags: RigidBodyFlags::CAN_SLEEP, // Can sleep by default
             sleep_time: 0.0,
@@ -270,18 +263,6 @@ impl RigidBody {
     /// Sets the angular damping.
     pub fn with_angular_damping(mut self, damping: f32) -> Self {
         self.angular_damping = damping.max(0.0);
-        self
-    }
-
-    /// Sets the restitution (bounciness).
-    pub fn with_restitution(mut self, restitution: f32) -> Self {
-        self.restitution = restitution.max(0.0);
-        self
-    }
-
-    /// Sets the friction coefficient.
-    pub fn with_friction(mut self, friction: f32) -> Self {
-        self.friction = friction.max(0.0);
         self
     }
 
