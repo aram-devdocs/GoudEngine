@@ -3,3 +3,4 @@
 mod conflict_tests;
 mod integration_tests;
 mod ordering_tests;
+mod parallel_safety_tests;
