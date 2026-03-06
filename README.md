@@ -13,6 +13,11 @@
 [![NuGet](https://img.shields.io/nuget/v/GoudEngine.svg)](https://www.nuget.org/packages/GoudEngine/)
 [![PyPI](https://img.shields.io/pypi/v/goudengine.svg)](https://pypi.org/project/goudengine/)
 
+[![crates.io downloads](https://img.shields.io/crates/d/goud-engine)](https://crates.io/crates/goud-engine)
+[![npm downloads](https://img.shields.io/npm/dm/goudengine)](https://www.npmjs.com/package/goudengine)
+[![NuGet downloads](https://img.shields.io/nuget/dt/GoudEngine)](https://www.nuget.org/packages/GoudEngine/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/goudengine)](https://pypi.org/project/goudengine/)
+
 Game engine written in Rust. Build 2D and 3D games from Rust, C#, Python, or TypeScript.
 
 | | |
@@ -138,6 +143,27 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 - [TypeScript SDK](sdks/typescript/README.md)
 - [csbindgen](https://github.com/Cysharp/csbindgen) — C# bindings generator
 - [cbindgen](https://github.com/mozilla/cbindgen) — C header generator
+
+## Community
+
+<!-- COMMUNITY-STATS:START -->
+| | Stars | Forks | Contributors |
+|--|-------|-------|--------------|
+| **GitHub** | ![stars](https://img.shields.io/github/stars/aram-devdocs/GoudEngine) | ![forks](https://img.shields.io/github/forks/aram-devdocs/GoudEngine) | ![contributors](https://img.shields.io/github/contributors/aram-devdocs/GoudEngine) |
+
+**Downloads**
+
+| Registry | | Downloads |
+|----------|-|-----------|
+| crates.io | [![crates.io](https://img.shields.io/crates/d/goud-engine)](https://crates.io/crates/goud-engine) | total |
+| NuGet | [![NuGet](https://img.shields.io/nuget/dt/GoudEngine)](https://www.nuget.org/packages/GoudEngine/) | total |
+| PyPI | [![PyPI](https://img.shields.io/pypi/dm/goudengine)](https://pypi.org/project/goudengine/) | /month |
+| npm | [![npm](https://img.shields.io/npm/dm/goudengine)](https://www.npmjs.com/package/goudengine) | /month |
+
+[![Star History Chart](https://api.star-history.com/svg?repos=aram-devdocs/GoudEngine&type=Date)](https://star-history.com/#aram-devdocs/GoudEngine&Date)
+
+<sub>Last updated: daily via [GitHub Action](.github/workflows/community-stats.yml)</sub>
+<!-- COMMUNITY-STATS:END -->
 
 ## License
 
