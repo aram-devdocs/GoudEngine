@@ -1,8 +1,8 @@
 //! Core `AssetServer` type definition and construction helpers.
 
-use crate::assets::{AssetId, AssetStorage, ErasedAssetLoader};
 #[cfg(feature = "native")]
 use crate::assets::AssetLoadError;
+use crate::assets::{AssetId, AssetStorage, ErasedAssetLoader};
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
