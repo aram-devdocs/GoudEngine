@@ -171,7 +171,6 @@ impl World {
 
 #[cfg(test)]
 mod tests {
-    use super::super::super::component::ComponentId;
     use super::super::super::entity::Entity;
     use super::super::super::Component;
     use super::super::World;
