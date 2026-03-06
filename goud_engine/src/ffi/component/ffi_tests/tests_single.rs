@@ -2,8 +2,7 @@
 
 use super::{
     goud_component_add, goud_component_get, goud_component_get_mut, goud_component_has,
-    goud_component_register_type, goud_component_remove, register_test_type, setup_test_context,
-    TestComponent, TEST_TYPE_ID,
+    goud_component_remove, register_test_type, setup_test_context, TestComponent, TEST_TYPE_ID,
 };
 use crate::ffi::{GoudEntityId, GOUD_INVALID_CONTEXT_ID};
 

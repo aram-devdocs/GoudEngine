@@ -7,7 +7,7 @@
 
 use crate::ecs::Component;
 use crate::ffi::context::goud_context_create;
-use crate::ffi::{GoudContextId, GoudEntityId, GOUD_INVALID_CONTEXT_ID};
+use crate::ffi::GoudContextId;
 
 use super::access::{goud_component_get, goud_component_get_mut, goud_component_has};
 use super::batch::{

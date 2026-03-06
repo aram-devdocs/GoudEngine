@@ -490,5 +490,4 @@ unsafe impl Sync for ParallelSystemStage {}
 
 #[cfg(test)]
 #[path = "tests/parallel_tests.rs"]
-#[cfg(test)]
 mod tests;

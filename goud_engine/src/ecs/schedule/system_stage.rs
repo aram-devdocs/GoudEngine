@@ -389,5 +389,4 @@ unsafe impl Sync for SystemStage {}
 
 #[cfg(test)]
 #[path = "tests/system_stage_tests.rs"]
-#[cfg(test)]
 mod tests;

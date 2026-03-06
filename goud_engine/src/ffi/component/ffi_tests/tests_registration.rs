@@ -1,10 +1,6 @@
 //! Type registration tests for FFI component operations.
 
-use super::{
-    goud_component_register_type, register_test_type, setup_test_context, TestComponent,
-    TEST_TYPE_ID,
-};
-use crate::ffi::GoudEntityId;
+use super::{goud_component_register_type, TestComponent, TEST_TYPE_ID};
 
 // ============================================================================
 // Type Registration Tests

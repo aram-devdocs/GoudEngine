@@ -1,9 +1,6 @@
 //! Tests for `AssetServer`.
 
-use crate::assets::{
-    Asset, AssetHandle, AssetLoadError, AssetLoader, AssetServer, AssetState, AssetType,
-    LoadContext,
-};
+use crate::assets::{Asset, AssetLoadError, AssetLoader, AssetServer, AssetType, LoadContext};
 use std::path::Path;
 
 // Test asset types
