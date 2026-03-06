@@ -5,8 +5,8 @@
 use crate::core::math::{Color, Vec2};
 use crate::ecs::Entity;
 use crate::libs::graphics::backend::opengl::OpenGLBackend;
-use crate::libs::graphics::sprite_batch::batch::SpriteBatch;
-use crate::libs::graphics::sprite_batch::config::SpriteBatchConfig;
+use crate::rendering::sprite_batch::batch::SpriteBatch;
+use crate::rendering::sprite_batch::config::SpriteBatchConfig;
 
 #[test]
 #[ignore] // Requires OpenGL context

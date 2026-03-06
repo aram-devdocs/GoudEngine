@@ -147,6 +147,7 @@ mod tests {
     fn test_ffi_entity_spawn_batch() {
         let mut game = GoudGame::new(GameConfig::default()).unwrap();
         let mut out = vec![0u64; 5];
+        // SAFETY: Test-only call; `out` has capacity for exactly 5 u64 values as required.
         let count = unsafe { game.ffi_entity_spawn_batch(5, out.as_mut_ptr()) };
         assert_eq!(count, 5);
         for &bits in &out {
@@ -158,9 +159,11 @@ mod tests {
     fn test_ffi_entity_despawn_batch() {
         let mut game = GoudGame::new(GameConfig::default()).unwrap();
         let mut out = vec![0u64; 3];
+        // SAFETY: Test-only call; `out` has capacity for exactly 3 u64 values as required.
         unsafe { game.ffi_entity_spawn_batch(3, out.as_mut_ptr()) };
         assert_eq!(game.ffi_entity_count(), 3);
 
+        // SAFETY: Test-only call; `out` contains 3 valid entity IDs from spawn_batch above.
         let count = unsafe { game.ffi_entity_despawn_batch(out.as_ptr(), 3) };
         assert_eq!(count, 3);
         assert_eq!(game.ffi_entity_count(), 0);
@@ -170,12 +173,14 @@ mod tests {
     fn test_ffi_entity_is_alive_batch() {
         let mut game = GoudGame::new(GameConfig::default()).unwrap();
         let mut entities = vec![0u64; 3];
+        // SAFETY: Test-only call; `entities` has capacity for exactly 3 u64 values as required.
         unsafe { game.ffi_entity_spawn_batch(3, entities.as_mut_ptr()) };
 
         // Despawn middle one
         game.ffi_entity_despawn(entities[1]);
 
         let mut results = vec![0u8; 3];
+        // SAFETY: Test-only call; both `entities` and `results` have capacity for 3 elements.
         let count =
             unsafe { game.ffi_entity_is_alive_batch(entities.as_ptr(), 3, results.as_mut_ptr()) };
         assert_eq!(count, 3);

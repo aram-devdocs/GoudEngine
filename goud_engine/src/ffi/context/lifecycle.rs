@@ -3,7 +3,7 @@
 //! This module provides FFI entry points for context creation, destruction,
 //! and validity checking.
 
-use crate::core::context_registry::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
+use crate::context_registry::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::core::error::GoudError;
 
 /// Creates a new engine context.

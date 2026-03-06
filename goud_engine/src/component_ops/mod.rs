@@ -25,7 +25,7 @@ mod single_ops;
 mod storage;
 
 // Re-export all public _impl functions so external callers can use
-// `crate::core::component_ops::function_name` unchanged.
+// `crate::component_ops::function_name` unchanged.
 pub use batch_ops::{
     component_add_batch_impl, component_has_batch_impl, component_remove_batch_impl,
 };

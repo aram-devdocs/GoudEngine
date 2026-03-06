@@ -68,6 +68,7 @@ impl OpenGLBackend {
     pub fn new() -> GoudResult<Self> {
         // Query OpenGL information
         // Note: These queries require an active OpenGL context
+        // SAFETY: GL context is active; GetString returns a pointer valid for the context lifetime, checked for null before use.
         let version_str = unsafe {
             let ptr = gl::GetString(gl::VERSION);
             if ptr.is_null() {
@@ -80,6 +81,7 @@ impl OpenGLBackend {
                 .into_owned()
         };
 
+        // SAFETY: GL context is active; GetString(VENDOR) returns a static C string valid for the context lifetime, null-checked before use.
         let vendor_str = unsafe {
             let ptr = gl::GetString(gl::VENDOR);
             if ptr.is_null() {
@@ -91,6 +93,7 @@ impl OpenGLBackend {
             }
         };
 
+        // SAFETY: GL context is active; GetString(RENDERER) returns a static C string valid for the context lifetime, null-checked before use.
         let renderer_str = unsafe {
             let ptr = gl::GetString(gl::RENDERER);
             if ptr.is_null() {
@@ -108,6 +111,7 @@ impl OpenGLBackend {
         let mut max_vertex_attribs: i32 = 0;
         let mut max_uniform_buffer_size: i32 = 0;
 
+        // SAFETY: GL context is active; output variables are stack-allocated integers with correct size for GetIntegerv.
         unsafe {
             gl::GetIntegerv(gl::MAX_TEXTURE_IMAGE_UNITS, &mut max_texture_units);
             gl::GetIntegerv(gl::MAX_TEXTURE_SIZE, &mut max_texture_size);
@@ -139,6 +143,7 @@ impl OpenGLBackend {
         // Create a default VAO that stays bound for the lifetime of the backend.
         // OpenGL 3.3 core requires a VAO for draw calls and vertex attribute setup.
         let mut default_vao = 0u32;
+        // SAFETY: GL context is active; default_vao is a stack-allocated output variable; the VAO is bound immediately after generation and freed in Drop.
         unsafe {
             gl::GenVertexArrays(1, &mut default_vao);
             gl::BindVertexArray(default_vao);

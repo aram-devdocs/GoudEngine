@@ -259,6 +259,7 @@ mod function_system_direct {
         static mut CALLED: bool = false;
 
         fn my_fn() {
+            // SAFETY: Single-threaded test; no other thread accesses CALLED.
             unsafe {
                 CALLED = true;
             }
@@ -269,6 +270,7 @@ mod function_system_direct {
 
         // Running should initialize if needed
         system.run(&mut world);
+        // SAFETY: Single-threaded test; no other thread accesses CALLED.
         assert!(unsafe { CALLED });
     }
 }
@@ -429,6 +431,7 @@ mod edge_cases {
         static mut RUN_COUNT: u32 = 0;
 
         fn counting_system() {
+            // SAFETY: Single-threaded test; no other thread accesses RUN_COUNT.
             unsafe {
                 RUN_COUNT += 1;
             }
@@ -441,6 +444,7 @@ mod edge_cases {
             boxed.run(&mut world);
         }
 
+        // SAFETY: Single-threaded test; no other thread accesses RUN_COUNT.
         assert_eq!(unsafe { RUN_COUNT }, 100);
     }
 

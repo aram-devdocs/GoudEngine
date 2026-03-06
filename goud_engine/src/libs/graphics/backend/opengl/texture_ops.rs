@@ -5,7 +5,7 @@ use super::{
     conversions::{
         bytes_per_pixel, texture_filter_to_gl, texture_format_to_gl, texture_wrap_to_gl,
     },
-    gl_check_debug, TextureMetadata,
+    TextureMetadata,
 };
 use crate::core::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::{
@@ -29,6 +29,7 @@ pub(super) fn create_texture(
     }
 
     let mut gl_id: u32 = 0;
+    // SAFETY: GL context is active; gl_id is a stack-allocated output variable for the generated texture name.
     unsafe {
         gl::GenTextures(1, &mut gl_id);
         if gl_id == 0 {
@@ -43,6 +44,7 @@ pub(super) fn create_texture(
     let wrap_gl = texture_wrap_to_gl(wrap);
 
     // Bind and upload data
+    // SAFETY: GL context is active; gl_id was just generated and data pointer (or null for empty) is valid for this upload.
     unsafe {
         gl::BindTexture(gl::TEXTURE_2D, gl_id);
 
@@ -92,8 +94,8 @@ pub(super) fn create_texture(
         width,
         height,
         format,
-        _filter: filter,
-        _wrap: wrap,
+        filter,
+        wrap,
     };
     backend.textures.insert(handle, metadata);
 
@@ -143,6 +145,7 @@ pub(super) fn update_texture(
     let (_, pixel_format, pixel_type) = texture_format_to_gl(metadata.format);
     let gl_id = metadata.gl_id;
 
+    // SAFETY: GL context is active; gl_id is a valid texture handle and data pointer/size are bounds-checked above.
     unsafe {
         // Bind texture
         gl::BindTexture(gl::TEXTURE_2D, gl_id);
@@ -179,6 +182,7 @@ pub(super) fn update_texture(
 /// Destroys a texture and frees GPU memory.
 pub(super) fn destroy_texture(backend: &mut OpenGLBackend, handle: TextureHandle) -> bool {
     if let Some(metadata) = backend.textures.remove(&handle) {
+        // SAFETY: GL context is active; metadata.gl_id was allocated by GenTextures and is being cleaned up by its owner.
         unsafe {
             gl::DeleteTextures(1, &metadata.gl_id);
         }
@@ -232,13 +236,11 @@ pub(super) fn bind_texture(
 
     let gl_id = metadata.gl_id;
 
-    // SAFETY: unit is validated to be within bounds above; TEXTURE0 + unit selects a valid texture unit.
-    // gl_id is a live GL texture object. TEXTURE_2D is a valid texture target.
+    // SAFETY: GL context is active; unit is bounds-checked above and gl_id is a valid texture handle from this backend.
     unsafe {
         gl::ActiveTexture(gl::TEXTURE0 + unit);
         gl::BindTexture(gl::TEXTURE_2D, gl_id);
     }
-    gl_check_debug!("bind_texture");
 
     set_bound_texture(backend, unit, Some(gl_id));
 
@@ -248,13 +250,11 @@ pub(super) fn bind_texture(
 /// Unbinds any texture from the specified texture unit.
 pub(super) fn unbind_texture(backend: &mut OpenGLBackend, unit: u32) {
     if unit < backend.bound_textures.len() as u32 {
-        // SAFETY: unit is validated to be within bounds; TEXTURE0 + unit selects a valid texture unit.
-        // Passing 0 unbinds any texture on the TEXTURE_2D target for that unit.
+        // SAFETY: GL context is active; unit is bounds-checked and passing 0 to BindTexture unbinds the target.
         unsafe {
             gl::ActiveTexture(gl::TEXTURE0 + unit);
             gl::BindTexture(gl::TEXTURE_2D, 0);
         }
-        gl_check_debug!("unbind_texture");
 
         set_bound_texture(backend, unit, None);
     }

@@ -2,7 +2,7 @@
 //!
 //! Tests for context ID, registry, handle, and integration scenarios.
 
-use crate::core::context_registry::{
+use crate::context_registry::{
     GoudContext, GoudContextHandle, GoudContextId, GoudContextRegistry, GOUD_INVALID_CONTEXT_ID,
 };
 

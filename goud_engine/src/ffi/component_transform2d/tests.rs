@@ -34,6 +34,7 @@ fn test_ffi_transform2d_from_position() {
 #[test]
 fn test_ffi_transform2d_translate() {
     let mut t = goud_transform2d_from_position(10.0, 20.0);
+    // SAFETY: t is a valid stack-allocated FfiTransform2D.
     unsafe {
         goud_transform2d_translate(&mut t, 5.0, 10.0);
     }
@@ -44,6 +45,7 @@ fn test_ffi_transform2d_translate() {
 #[test]
 fn test_ffi_transform2d_rotate() {
     let mut t = goud_transform2d_default();
+    // SAFETY: t is a valid stack-allocated FfiTransform2D.
     unsafe {
         goud_transform2d_rotate(&mut t, FRAC_PI_4);
     }
@@ -53,6 +55,7 @@ fn test_ffi_transform2d_rotate() {
 #[test]
 fn test_ffi_transform2d_forward() {
     let t = goud_transform2d_from_rotation(FRAC_PI_2);
+    // SAFETY: t is a valid stack-allocated FfiTransform2D.
     let forward = unsafe { goud_transform2d_forward(&t) };
     // 90 degree rotation: forward (1, 0) -> (0, 1)
     assert!(forward.x.abs() < 0.0001);
@@ -71,6 +74,7 @@ fn test_ffi_transform2d_lerp() {
 #[test]
 fn test_ffi_transform2d_null_safety() {
     // Test that null pointer functions don't crash
+    // SAFETY: The FFI functions are documented to handle null pointers gracefully.
     unsafe {
         goud_transform2d_translate(std::ptr::null_mut(), 1.0, 2.0);
         goud_transform2d_rotate(std::ptr::null_mut(), 1.0);
@@ -107,6 +111,7 @@ fn test_builder_new_and_build() {
     let builder = goud_transform2d_builder_new();
     assert!(!builder.is_null());
 
+    // SAFETY: builder is non-null (asserted above) and was created by goud_transform2d_builder_new.
     let transform = unsafe { goud_transform2d_builder_build(builder) };
     assert_eq!(transform.position_x, 0.0);
     assert_eq!(transform.position_y, 0.0);
@@ -118,6 +123,7 @@ fn test_builder_new_and_build() {
 #[test]
 fn test_builder_at_position() {
     let builder = goud_transform2d_builder_at_position(100.0, 50.0);
+    // SAFETY: builder is non-null (created by the at_position constructor) and valid.
     let transform = unsafe { goud_transform2d_builder_build(builder) };
 
     assert_eq!(transform.position_x, 100.0);
@@ -127,6 +133,7 @@ fn test_builder_at_position() {
 #[test]
 fn test_builder_with_position() {
     let builder = goud_transform2d_builder_new();
+    // SAFETY: builder is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder = unsafe { goud_transform2d_builder_with_position(builder, 200.0, 150.0) };
     let transform = unsafe { goud_transform2d_builder_build(builder) };
 
@@ -137,6 +144,7 @@ fn test_builder_with_position() {
 #[test]
 fn test_builder_with_rotation() {
     let builder = goud_transform2d_builder_new();
+    // SAFETY: builder is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder = unsafe { goud_transform2d_builder_with_rotation(builder, FRAC_PI_4) };
     let transform = unsafe { goud_transform2d_builder_build(builder) };
 
@@ -146,6 +154,7 @@ fn test_builder_with_rotation() {
 #[test]
 fn test_builder_with_rotation_degrees() {
     let builder = goud_transform2d_builder_new();
+    // SAFETY: builder is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder = unsafe { goud_transform2d_builder_with_rotation_degrees(builder, 90.0) };
     let transform = unsafe { goud_transform2d_builder_build(builder) };
 
@@ -155,6 +164,7 @@ fn test_builder_with_rotation_degrees() {
 #[test]
 fn test_builder_with_scale() {
     let builder = goud_transform2d_builder_new();
+    // SAFETY: builder is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder = unsafe { goud_transform2d_builder_with_scale(builder, 2.0, 3.0) };
     let transform = unsafe { goud_transform2d_builder_build(builder) };
 
@@ -165,6 +175,7 @@ fn test_builder_with_scale() {
 #[test]
 fn test_builder_with_scale_uniform() {
     let builder = goud_transform2d_builder_new();
+    // SAFETY: builder is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder = unsafe { goud_transform2d_builder_with_scale_uniform(builder, 5.0) };
     let transform = unsafe { goud_transform2d_builder_build(builder) };
 
@@ -175,6 +186,7 @@ fn test_builder_with_scale_uniform() {
 #[test]
 fn test_builder_looking_at() {
     let builder = goud_transform2d_builder_at_position(0.0, 0.0);
+    // SAFETY: builder is non-null (created by at_position constructor) and valid; each call returns a valid builder.
     let builder = unsafe { goud_transform2d_builder_looking_at(builder, 0.0, 10.0) };
     let transform = unsafe { goud_transform2d_builder_build(builder) };
 
@@ -185,6 +197,7 @@ fn test_builder_looking_at() {
 #[test]
 fn test_builder_translate() {
     let builder = goud_transform2d_builder_at_position(10.0, 20.0);
+    // SAFETY: builder is non-null (created by at_position constructor) and valid; each call returns a valid builder.
     let builder = unsafe { goud_transform2d_builder_translate(builder, 5.0, 10.0) };
     let transform = unsafe { goud_transform2d_builder_build(builder) };
 
@@ -195,6 +208,7 @@ fn test_builder_translate() {
 #[test]
 fn test_builder_rotate() {
     let builder = goud_transform2d_builder_new();
+    // SAFETY: builder is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder = unsafe { goud_transform2d_builder_with_rotation(builder, FRAC_PI_4) };
     let builder = unsafe { goud_transform2d_builder_rotate(builder, FRAC_PI_4) };
     let transform = unsafe { goud_transform2d_builder_build(builder) };
@@ -205,6 +219,7 @@ fn test_builder_rotate() {
 #[test]
 fn test_builder_scale_by() {
     let builder = goud_transform2d_builder_new();
+    // SAFETY: builder is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder = unsafe { goud_transform2d_builder_with_scale(builder, 2.0, 3.0) };
     let builder = unsafe { goud_transform2d_builder_scale_by(builder, 2.0, 2.0) };
     let transform = unsafe { goud_transform2d_builder_build(builder) };
@@ -215,11 +230,14 @@ fn test_builder_scale_by() {
 
 #[test]
 fn test_builder_chain() {
+    // SAFETY: All builder pointers are non-null (created by builder_new); each call returns a valid builder.
     let builder = goud_transform2d_builder_new();
     let builder = unsafe { goud_transform2d_builder_with_position(builder, 100.0, 50.0) };
     let builder = unsafe { goud_transform2d_builder_with_rotation(builder, FRAC_PI_4) };
+    // SAFETY: builder is the valid result of the previous builder call above.
     let builder = unsafe { goud_transform2d_builder_with_scale(builder, 2.0, 2.0) };
     let builder = unsafe { goud_transform2d_builder_translate(builder, 10.0, 10.0) };
+    // SAFETY: builder is the valid result of all preceding builder calls above.
     let transform = unsafe { goud_transform2d_builder_build(builder) };
 
     assert_eq!(transform.position_x, 110.0);
@@ -232,6 +250,7 @@ fn test_builder_chain() {
 #[test]
 fn test_builder_free() {
     let builder = goud_transform2d_builder_new();
+    // SAFETY: builder is non-null (created by builder_new) and is the sole owner; freeing it is valid.
     unsafe { goud_transform2d_builder_free(builder) };
     // Should not crash - just testing memory is freed properly
 }
@@ -239,6 +258,7 @@ fn test_builder_free() {
 #[test]
 fn test_builder_null_safety() {
     // All builder functions should handle null safely
+    // SAFETY: The builder FFI functions are documented to handle null pointers gracefully.
     unsafe {
         let null_builder: *mut FfiTransform2DBuilder = std::ptr::null_mut();
 

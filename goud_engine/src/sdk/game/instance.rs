@@ -10,9 +10,9 @@ use crate::libs::graphics::backend::opengl::OpenGLBackend;
 #[cfg(feature = "native")]
 use crate::libs::graphics::renderer3d::Renderer3D;
 #[cfg(feature = "native")]
-use crate::libs::graphics::sprite_batch::SpriteBatch;
-#[cfg(feature = "native")]
 use crate::libs::platform::PlatformBackend;
+#[cfg(feature = "native")]
+use crate::rendering::sprite_batch::SpriteBatch;
 
 use crate::sdk::entity_builder::EntityBuilder;
 use crate::sdk::game_config::{GameConfig, GameContext};

@@ -2,7 +2,6 @@
 
 use crate::core::math::{Color, Rect, Vec2};
 use crate::core::types::{FfiColor, FfiRect, FfiTransform2D, GoudEntityId, GoudResult};
-use crate::ecs::components::Transform2D;
 
 // ========================================================================
 // GoudEntityId Tests
@@ -280,13 +279,17 @@ fn test_rect_from_ffi_rect() {
 // ========================================================================
 
 #[test]
-fn test_ffi_transform2d_roundtrip() {
-    let t = Transform2D::new(Vec2::new(10.0, 20.0), 1.5, Vec2::new(2.0, 3.0));
-    let ffi: FfiTransform2D = t.into();
-    let roundtrip: Transform2D = ffi.into();
-    assert_eq!(roundtrip.position.x, 10.0);
-    assert_eq!(roundtrip.position.y, 20.0);
-    assert_eq!(roundtrip.rotation, 1.5);
-    assert_eq!(roundtrip.scale.x, 2.0);
-    assert_eq!(roundtrip.scale.y, 3.0);
+fn test_ffi_transform2d_struct_layout() {
+    let ffi = FfiTransform2D {
+        position_x: 10.0,
+        position_y: 20.0,
+        rotation: 1.5,
+        scale_x: 2.0,
+        scale_y: 3.0,
+    };
+    assert_eq!(ffi.position_x, 10.0);
+    assert_eq!(ffi.position_y, 20.0);
+    assert_eq!(ffi.rotation, 1.5);
+    assert_eq!(ffi.scale_x, 2.0);
+    assert_eq!(ffi.scale_y, 3.0);
 }

@@ -50,6 +50,7 @@ fn test_ffi_sprite_new() {
 #[test]
 fn test_ffi_sprite_set_color() {
     let mut s = goud_sprite_new(1);
+    // SAFETY: s is a valid stack-allocated FfiSprite.
     unsafe {
         goud_sprite_set_color(&mut s, 1.0, 0.0, 0.0, 0.5);
     }
@@ -72,6 +73,7 @@ fn test_ffi_sprite_with_color() {
 #[test]
 fn test_ffi_sprite_flip() {
     let mut s = goud_sprite_new(1);
+    // SAFETY: s is a valid stack-allocated FfiSprite.
     unsafe {
         goud_sprite_set_flip_x(&mut s, true);
         assert!(goud_sprite_get_flip_x(&s));
@@ -87,6 +89,7 @@ fn test_ffi_sprite_flip() {
 #[test]
 fn test_ffi_sprite_anchor() {
     let mut s = goud_sprite_new(1);
+    // SAFETY: s is a valid stack-allocated FfiSprite.
     unsafe {
         goud_sprite_set_anchor(&mut s, 0.0, 1.0);
         let anchor = goud_sprite_get_anchor(&s);
@@ -98,6 +101,7 @@ fn test_ffi_sprite_anchor() {
 #[test]
 fn test_ffi_sprite_source_rect() {
     let mut s = goud_sprite_new(1);
+    // SAFETY: s is a valid stack-allocated FfiSprite.
     unsafe {
         assert!(!goud_sprite_has_source_rect(&s));
 
@@ -124,6 +128,7 @@ fn test_ffi_sprite_source_rect() {
 #[test]
 fn test_ffi_sprite_custom_size() {
     let mut s = goud_sprite_new(1);
+    // SAFETY: s is a valid stack-allocated FfiSprite.
     unsafe {
         assert!(!goud_sprite_has_custom_size(&s));
 
@@ -157,6 +162,7 @@ fn test_ffi_sprite_builder_chain() {
 
 #[test]
 fn test_ffi_sprite_null_safety() {
+    // SAFETY: The FFI functions are documented to handle null pointers gracefully.
     unsafe {
         // Test that null pointer functions don't crash
         goud_sprite_set_color(std::ptr::null_mut(), 1.0, 0.0, 0.0, 1.0);
@@ -236,6 +242,7 @@ fn test_builder_new_and_build() {
     let builder = goud_sprite_builder_new(42);
     assert!(!builder.is_null());
 
+    // SAFETY: builder is non-null (asserted above) and was created by goud_sprite_builder_new.
     let sprite = unsafe { goud_sprite_builder_build(builder) };
     assert_eq!(sprite.texture_handle, 42);
     assert_eq!(sprite.color_r, 1.0);
@@ -247,6 +254,7 @@ fn test_builder_default() {
     let builder = goud_sprite_builder_default();
     assert!(!builder.is_null());
 
+    // SAFETY: builder is non-null (asserted above) and was created by goud_sprite_builder_default.
     let sprite = unsafe { goud_sprite_builder_build(builder) };
     assert_eq!(sprite.texture_handle, u64::MAX);
 }
@@ -254,6 +262,7 @@ fn test_builder_default() {
 #[test]
 fn test_builder_with_texture() {
     let builder = goud_sprite_builder_default();
+    // SAFETY: builder is non-null (created by builder_default) and valid; each call returns a valid builder.
     let builder = unsafe { goud_sprite_builder_with_texture(builder, 123) };
     let sprite = unsafe { goud_sprite_builder_build(builder) };
 
@@ -263,6 +272,7 @@ fn test_builder_with_texture() {
 #[test]
 fn test_builder_with_color() {
     let builder = goud_sprite_builder_new(1);
+    // SAFETY: builder is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder = unsafe { goud_sprite_builder_with_color(builder, 1.0, 0.5, 0.25, 0.75) };
     let sprite = unsafe { goud_sprite_builder_build(builder) };
 
@@ -275,6 +285,7 @@ fn test_builder_with_color() {
 #[test]
 fn test_builder_with_alpha() {
     let builder = goud_sprite_builder_new(1);
+    // SAFETY: builder is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder = unsafe { goud_sprite_builder_with_alpha(builder, 0.5) };
     let sprite = unsafe { goud_sprite_builder_build(builder) };
 
@@ -284,6 +295,7 @@ fn test_builder_with_alpha() {
 #[test]
 fn test_builder_with_source_rect() {
     let builder = goud_sprite_builder_new(1);
+    // SAFETY: builder is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder = unsafe { goud_sprite_builder_with_source_rect(builder, 10.0, 20.0, 32.0, 64.0) };
     let sprite = unsafe { goud_sprite_builder_build(builder) };
 
@@ -297,6 +309,7 @@ fn test_builder_with_source_rect() {
 #[test]
 fn test_builder_with_flip() {
     let builder = goud_sprite_builder_new(1);
+    // SAFETY: builder is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder = unsafe { goud_sprite_builder_with_flip_x(builder, true) };
     let sprite = unsafe { goud_sprite_builder_build(builder) };
 
@@ -304,6 +317,7 @@ fn test_builder_with_flip() {
     assert!(!sprite.flip_y);
 
     let builder2 = goud_sprite_builder_new(1);
+    // SAFETY: builder2 is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder2 = unsafe { goud_sprite_builder_with_flip(builder2, true, true) };
     let sprite2 = unsafe { goud_sprite_builder_build(builder2) };
 
@@ -314,6 +328,7 @@ fn test_builder_with_flip() {
 #[test]
 fn test_builder_with_anchor() {
     let builder = goud_sprite_builder_new(1);
+    // SAFETY: builder is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder = unsafe { goud_sprite_builder_with_anchor(builder, 0.0, 1.0) };
     let sprite = unsafe { goud_sprite_builder_build(builder) };
 
@@ -324,6 +339,7 @@ fn test_builder_with_anchor() {
 #[test]
 fn test_builder_with_custom_size() {
     let builder = goud_sprite_builder_new(1);
+    // SAFETY: builder is non-null (created by builder_new) and valid; each call returns a valid builder.
     let builder = unsafe { goud_sprite_builder_with_custom_size(builder, 128.0, 256.0) };
     let sprite = unsafe { goud_sprite_builder_build(builder) };
 
@@ -334,12 +350,16 @@ fn test_builder_with_custom_size() {
 
 #[test]
 fn test_builder_chain() {
+    // SAFETY: All builder pointers are non-null (created by builder_new); each call returns a valid builder.
     let builder = goud_sprite_builder_new(42);
     let builder = unsafe { goud_sprite_builder_with_color(builder, 1.0, 0.0, 0.0, 1.0) };
+    // SAFETY: builder is the valid result of the previous builder call above.
     let builder = unsafe { goud_sprite_builder_with_flip_x(builder, true) };
     let builder = unsafe { goud_sprite_builder_with_anchor(builder, 0.5, 1.0) };
+    // SAFETY: builder is the valid result of the previous builder call above.
     let builder = unsafe { goud_sprite_builder_with_custom_size(builder, 64.0, 64.0) };
     let builder = unsafe { goud_sprite_builder_with_source_rect(builder, 0.0, 0.0, 32.0, 32.0) };
+    // SAFETY: builder is the valid result of all preceding builder calls above.
     let sprite = unsafe { goud_sprite_builder_build(builder) };
 
     assert_eq!(sprite.texture_handle, 42);
@@ -354,6 +374,7 @@ fn test_builder_chain() {
 #[test]
 fn test_builder_free() {
     let builder = goud_sprite_builder_new(1);
+    // SAFETY: builder is non-null (created by builder_new) and is the sole owner; freeing it is valid.
     unsafe { goud_sprite_builder_free(builder) };
     // Should not crash - just testing memory is freed properly
 }
@@ -361,6 +382,7 @@ fn test_builder_free() {
 #[test]
 fn test_builder_null_safety() {
     // All builder functions should handle null safely
+    // SAFETY: The sprite builder FFI functions are documented to handle null pointers gracefully.
     unsafe {
         let null_builder: *mut FfiSpriteBuilder = std::ptr::null_mut();
 

@@ -17,6 +17,7 @@ fn test_component_add_batch_basic() {
     register_test_type(TEST_TYPE_ID);
 
     let mut entities = [0u64; 5];
+    // SAFETY: entities has capacity for 5 u64 values.
     unsafe {
         crate::ffi::entity::goud_entity_spawn_batch(context_id, 5, entities.as_mut_ptr());
     }
@@ -29,6 +30,7 @@ fn test_component_add_batch_basic() {
         TestComponent { x: 9.0, y: 10.0 },
     ];
 
+    // SAFETY: entities and components are valid slices of length 5; size matches the registered type.
     let added = unsafe {
         goud_component_add_batch(
             context_id,
@@ -48,6 +50,7 @@ fn test_component_add_batch_invalid_context() {
     let entities = [1u64, 2, 3];
     let components = [TestComponent { x: 0.0, y: 0.0 }; 3];
 
+    // SAFETY: entities and components are valid slices; the function handles invalid context gracefully.
     let added = unsafe {
         goud_component_add_batch(
             GOUD_INVALID_CONTEXT_ID,
@@ -67,6 +70,7 @@ fn test_component_add_batch_null_entities() {
     let context_id = setup_test_context();
     let components = [TestComponent { x: 0.0, y: 0.0 }; 3];
 
+    // SAFETY: Passing null for entities tests that the function handles null gracefully.
     let added = unsafe {
         goud_component_add_batch(
             context_id,
@@ -86,6 +90,7 @@ fn test_component_add_batch_null_data() {
     let context_id = setup_test_context();
     let entities = [1u64, 2, 3];
 
+    // SAFETY: Passing null for data tests that the function handles null gracefully.
     let added = unsafe {
         goud_component_add_batch(
             context_id,
@@ -106,6 +111,7 @@ fn test_component_add_batch_unregistered_type() {
     let entities = [1u64, 2, 3];
     let components = [TestComponent { x: 0.0, y: 0.0 }; 3];
 
+    // SAFETY: entities and components are valid slices; the function handles unregistered types gracefully.
     let added = unsafe {
         goud_component_add_batch(
             context_id,
@@ -128,6 +134,7 @@ fn test_component_add_batch_size_mismatch() {
     let entities = [1u64, 2, 3];
     let components = [TestComponent { x: 0.0, y: 0.0 }; 3];
 
+    // SAFETY: entities and components are valid slices; the function handles size mismatch gracefully.
     let added = unsafe {
         goud_component_add_batch(
             context_id,
@@ -152,6 +159,7 @@ fn test_component_remove_batch_basic() {
     register_test_type(TEST_TYPE_ID);
 
     let mut entities = [0u64; 5];
+    // SAFETY: entities has capacity for 5 u64 values.
     unsafe {
         crate::ffi::entity::goud_entity_spawn_batch(context_id, 5, entities.as_mut_ptr());
     }
@@ -164,6 +172,7 @@ fn test_component_remove_batch_basic() {
         TestComponent { x: 9.0, y: 10.0 },
     ];
 
+    // SAFETY: entities and components are valid slices of length 5; size matches the registered type.
     unsafe {
         goud_component_add_batch(
             context_id,
@@ -183,6 +192,7 @@ fn test_component_remove_batch_basic() {
         ));
     }
 
+    // SAFETY: entities is a valid slice of 5 u64 values.
     let removed =
         unsafe { goud_component_remove_batch(context_id, entities.as_ptr(), 5, TEST_TYPE_ID) };
 
@@ -201,6 +211,7 @@ fn test_component_remove_batch_basic() {
 fn test_component_remove_batch_invalid_context() {
     let entities = [1u64, 2, 3];
 
+    // SAFETY: entities is a valid slice; the function handles invalid context gracefully.
     let removed = unsafe {
         goud_component_remove_batch(GOUD_INVALID_CONTEXT_ID, entities.as_ptr(), 3, TEST_TYPE_ID)
     };
@@ -213,6 +224,7 @@ fn test_component_remove_batch_unregistered_type() {
     let context_id = setup_test_context();
     let entities = [1u64, 2, 3];
 
+    // SAFETY: entities is a valid slice; the function handles unregistered types gracefully.
     let removed = unsafe { goud_component_remove_batch(context_id, entities.as_ptr(), 3, 99999) };
 
     assert_eq!(removed, 0);
@@ -228,6 +240,7 @@ fn test_component_has_batch_basic() {
     register_test_type(TEST_TYPE_ID);
 
     let mut entities = [0u64; 5];
+    // SAFETY: entities has capacity for 5 u64 values.
     unsafe {
         crate::ffi::entity::goud_entity_spawn_batch(context_id, 5, entities.as_mut_ptr());
     }
@@ -238,6 +251,7 @@ fn test_component_has_batch_basic() {
         TestComponent { x: 5.0, y: 6.0 },
     ];
 
+    // SAFETY: entities and components are valid slices; size matches the registered type.
     unsafe {
         goud_component_add_batch(
             context_id,
@@ -251,6 +265,7 @@ fn test_component_has_batch_basic() {
 
     let mut results = [0u8; 5];
 
+    // SAFETY: entities and results are valid slices of length 5.
     let count = unsafe {
         goud_component_has_batch(
             context_id,
@@ -274,6 +289,7 @@ fn test_component_has_batch_invalid_context() {
     let entities = [1u64, 2, 3];
     let mut results = [0u8; 3];
 
+    // SAFETY: entities and results are valid slices; the function handles invalid context gracefully.
     let count = unsafe {
         goud_component_has_batch(
             GOUD_INVALID_CONTEXT_ID,
@@ -292,6 +308,7 @@ fn test_component_has_batch_null_results() {
     let context_id = setup_test_context();
     let entities = [1u64, 2, 3];
 
+    // SAFETY: Passing null for results tests that the function handles null gracefully.
     let count = unsafe {
         goud_component_has_batch(
             context_id,
@@ -311,6 +328,7 @@ fn test_component_has_batch_unregistered_type() {
     let entities = [1u64, 2, 3];
     let mut results = [0u8; 3];
 
+    // SAFETY: entities and results are valid slices; the function handles unregistered types gracefully.
     let count = unsafe {
         goud_component_has_batch(
             context_id,
@@ -335,6 +353,7 @@ fn test_component_batch_zero_count() {
     let components = [TestComponent { x: 0.0, y: 0.0 }];
     let mut results = [0u8; 1];
 
+    // SAFETY: entities and components are valid slices; count 0 means no elements are accessed.
     let added = unsafe {
         goud_component_add_batch(
             context_id,
@@ -347,10 +366,12 @@ fn test_component_batch_zero_count() {
     };
     assert_eq!(added, 0);
 
+    // SAFETY: entities is a valid slice; count 0 means no elements are accessed.
     let removed =
         unsafe { goud_component_remove_batch(context_id, entities.as_ptr(), 0, TEST_TYPE_ID) };
     assert_eq!(removed, 0);
 
+    // SAFETY: entities and results are valid slices; count 0 means no elements are accessed.
     let count = unsafe {
         goud_component_has_batch(
             context_id,

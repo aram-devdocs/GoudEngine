@@ -4,8 +4,8 @@ use crate::assets::AssetHandle;
 use crate::core::math::{Color, Rect, Vec2};
 use crate::ecs::components::Mat3x3;
 use crate::ecs::Entity;
-use crate::libs::graphics::sprite_batch::config::SpriteBatchConfig;
-use crate::libs::graphics::sprite_batch::types::{SpriteBatchEntry, SpriteInstance, SpriteVertex};
+use crate::rendering::sprite_batch::config::SpriteBatchConfig;
+use crate::rendering::sprite_batch::types::{SpriteBatchEntry, SpriteInstance, SpriteVertex};
 
 #[test]
 fn test_sprite_batch_config_default() {

@@ -168,8 +168,9 @@ pub(super) fn ensure_immediate_state(context_id: GoudContextId) -> Result<(), Go
 
             // Create VAO (required for macOS Core Profile)
             let mut vao: u32 = 0;
+            // SAFETY: gl::GenVertexArrays writes to a valid stack variable; BindVertexArray
+            // takes the returned VAO name which is guaranteed valid by OpenGL.
             unsafe {
-                // SAFETY: gl::GenVertexArrays writes to vao which is a valid stack address
                 gl::GenVertexArrays(1, &mut vao);
                 gl::BindVertexArray(vao);
             }
@@ -206,8 +207,9 @@ pub(super) fn ensure_immediate_state(context_id: GoudContextId) -> Result<(), Go
 
             // Set up vertex attributes (position at location 0, texcoord at location 1)
             // Stride is 16 bytes (2 floats for position + 2 floats for texcoord)
+            // SAFETY: VAO is bound above, vertex buffer is bound, and attribute locations
+            // 0 and 1 are valid for the shader created in this function.
             unsafe {
-                // SAFETY: VAO is bound above and vertex buffer is valid
                 // Position attribute (location 0)
                 gl::EnableVertexAttribArray(0);
                 gl::VertexAttribPointer(
@@ -243,8 +245,9 @@ pub(super) fn ensure_immediate_state(context_id: GoudContextId) -> Result<(), Go
             backend.bind_buffer(index_buffer)?;
 
             // Unbind VAO (will be bound during draw)
+            // SAFETY: Passing 0 to gl::BindVertexArray unbinds the current VAO, which is
+            // always valid per the OpenGL specification.
             unsafe {
-                // SAFETY: unbinding is always safe
                 gl::BindVertexArray(0);
             }
 

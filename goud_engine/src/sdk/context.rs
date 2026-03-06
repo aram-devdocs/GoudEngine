@@ -8,7 +8,7 @@
 //! must be created before a GoudGame instance exists.
 
 use crate::core::error::{set_last_error, GoudError};
-use crate::core::context_registry::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
+use crate::context_registry::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
 
 /// Zero-sized type that hosts context lifecycle functions.
 ///

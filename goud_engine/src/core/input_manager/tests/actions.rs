@@ -1,6 +1,6 @@
 use glfw::{Key, MouseButton};
 
-use crate::ecs::input_manager::{InputBinding, InputManager};
+use crate::core::input_manager::{InputBinding, InputManager};
 
 #[test]
 fn test_map_action_basic() {

@@ -48,9 +48,9 @@ impl WgpuBackend {
                     });
 
             let blend_state = if key.blend_enabled {
-                // SAFETY: key.blend_src/dst are stored as u8 casts from BlendFactor,
-                // which is repr(u8). The reverse transmute is always valid.
+                // SAFETY: key.blend_src is stored as u8 cast from BlendFactor (repr(u8)); the reverse transmute is always valid.
                 let src = unsafe { std::mem::transmute::<u8, BlendFactor>(key.blend_src) };
+                // SAFETY: key.blend_dst is stored as u8 cast from BlendFactor (repr(u8)); the reverse transmute is always valid.
                 let dst = unsafe { std::mem::transmute::<u8, BlendFactor>(key.blend_dst) };
                 Some(wgpu::BlendState {
                     color: wgpu::BlendComponent {
@@ -89,10 +89,11 @@ impl WgpuBackend {
             } else {
                 None
             };
-            // SAFETY: front_face and topology stored as u8 casts from repr(u8) enums.
+            // SAFETY: key.front_face is stored as u8 cast from FrontFace (repr(u8)); the reverse transmute is always valid.
             let front_face = convert::map_front_face(unsafe {
                 std::mem::transmute::<u8, FrontFace>(key.front_face)
             });
+            // SAFETY: key.topology is stored as u8 cast from PrimitiveTopology (repr(u8)); the reverse transmute is always valid.
             let topology = convert::map_topology(unsafe {
                 std::mem::transmute::<u8, PrimitiveTopology>(key.topology)
             });

@@ -50,6 +50,7 @@ impl Transform2DBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         unsafe { (*builder).transform.rotation = rotation };
         builder
     }
@@ -62,6 +63,7 @@ impl Transform2DBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         unsafe { (*builder).transform.rotation = degrees.to_radians() };
         builder
     }
@@ -75,6 +77,7 @@ impl Transform2DBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         let t = unsafe { &mut (*builder).transform };
         t.scale_x = scale_x;
         t.scale_y = scale_y;
@@ -89,6 +92,7 @@ impl Transform2DBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         let t = unsafe { &mut (*builder).transform };
         t.scale_x = scale;
         t.scale_y = scale;
@@ -104,6 +108,7 @@ impl Transform2DBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         let t = unsafe { &mut (*builder).transform };
         let dx = target_x - t.position_x;
         let dy = target_y - t.position_y;
@@ -120,6 +125,7 @@ impl Transform2DBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         let t = unsafe { &mut (*builder).transform };
         t.position_x += dx;
         t.position_y += dy;
@@ -134,6 +140,7 @@ impl Transform2DBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         unsafe { (*builder).transform.rotation += angle };
         builder
     }
@@ -147,6 +154,7 @@ impl Transform2DBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         let t = unsafe { &mut (*builder).transform };
         t.scale_x *= factor_x;
         t.scale_y *= factor_y;

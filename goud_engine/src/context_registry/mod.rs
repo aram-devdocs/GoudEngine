@@ -23,7 +23,7 @@ pub mod registry;
 #[cfg(test)]
 mod tests;
 
-// Re-export all public items so existing `use crate::core::context_registry::*` works.
+// Re-export all public items so existing `use crate::context_registry::*` works.
 pub use context::GoudContext;
 pub use context_id::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 pub use registry::{get_context_registry, GoudContextHandle, GoudContextRegistry};

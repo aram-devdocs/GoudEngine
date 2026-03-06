@@ -36,7 +36,7 @@ pub mod glfw_platform;
 pub mod winit_platform;
 
 #[cfg(feature = "native")]
-use crate::ecs::InputManager;
+use crate::core::input_manager::InputManager;
 
 /// Configuration for creating a platform window.
 #[derive(Debug, Clone)]

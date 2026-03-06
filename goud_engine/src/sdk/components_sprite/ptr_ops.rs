@@ -31,6 +31,7 @@ impl SpritePtrOps {
                 a: 1.0,
             };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let s = unsafe { &*sprite };
         FfiColor {
             r: s.color_r,
@@ -45,6 +46,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*sprite).color_a = alpha };
     }
 
@@ -53,6 +55,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return 1.0;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*sprite).color_a }
     }
 
@@ -61,6 +64,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let s = unsafe { &mut *sprite };
         s.source_rect_x = x;
         s.source_rect_y = y;
@@ -74,6 +78,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*sprite).has_source_rect = false };
     }
 
@@ -82,6 +87,7 @@ impl SpritePtrOps {
         if sprite.is_null() || out_rect.is_null() {
             return false;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let s = unsafe { &*sprite };
         if s.has_source_rect {
             // SAFETY: Checked non-null above.
@@ -104,6 +110,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return false;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*sprite).has_source_rect }
     }
 
@@ -112,6 +119,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*sprite).flip_x = flip };
     }
 
@@ -120,6 +128,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return false;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*sprite).flip_x }
     }
 
@@ -128,6 +137,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*sprite).flip_y = flip };
     }
 
@@ -136,6 +146,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return false;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*sprite).flip_y }
     }
 
@@ -144,6 +155,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let s = unsafe { &mut *sprite };
         s.flip_x = flip_x;
         s.flip_y = flip_y;
@@ -154,6 +166,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return false;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let s = unsafe { &*sprite };
         s.flip_x || s.flip_y
     }
@@ -163,6 +176,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let s = unsafe { &mut *sprite };
         s.anchor_x = x;
         s.anchor_y = y;
@@ -173,6 +187,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return FfiVec2 { x: 0.5, y: 0.5 };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let s = unsafe { &*sprite };
         FfiVec2 {
             x: s.anchor_x,
@@ -185,6 +200,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let s = unsafe { &mut *sprite };
         s.custom_size_x = width;
         s.custom_size_y = height;
@@ -196,6 +212,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*sprite).has_custom_size = false };
     }
 
@@ -204,6 +221,7 @@ impl SpritePtrOps {
         if sprite.is_null() || out_size.is_null() {
             return false;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let s = unsafe { &*sprite };
         if s.has_custom_size {
             // SAFETY: Checked non-null above.
@@ -224,6 +242,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return false;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*sprite).has_custom_size }
     }
 
@@ -232,6 +251,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*sprite).texture_handle = handle };
     }
 
@@ -240,6 +260,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return u64::MAX;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*sprite).texture_handle }
     }
 
@@ -248,6 +269,7 @@ impl SpritePtrOps {
         if sprite.is_null() {
             return FfiVec2 { x: 0.0, y: 0.0 };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let s = unsafe { &*sprite };
         if s.has_custom_size {
             FfiVec2 {

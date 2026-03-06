@@ -137,6 +137,8 @@ impl RawComponentStorage {
             // Free the component data
             let ptr = self.data[dense_index];
             if !ptr.is_null() {
+                // SAFETY: ptr was allocated with the same layout via alloc() in insert(),
+                // and is non-null as checked above.
                 unsafe {
                     dealloc(ptr, self.layout());
                 }
@@ -217,6 +219,8 @@ impl Drop for RawComponentStorage {
         let layout = self.layout();
         for &ptr in &self.data {
             if !ptr.is_null() {
+                // SAFETY: Each ptr in self.data was allocated with this same layout via
+                // alloc() in insert(), and is non-null as checked above.
                 unsafe {
                     dealloc(ptr, layout);
                 }

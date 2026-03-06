@@ -24,11 +24,11 @@
 //! render_system.run(&mut world)?;
 //! ```
 
+use super::sprite_batch::{SpriteBatch, SpriteBatchConfig};
 use crate::assets::AssetServer;
 use crate::core::error::GoudResult;
 use crate::ecs::World;
 use crate::libs::graphics::backend::RenderBackend;
-use crate::libs::graphics::sprite_batch::{SpriteBatch, SpriteBatchConfig};
 
 /// System for rendering 2D sprites using batched rendering.
 ///

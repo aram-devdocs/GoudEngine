@@ -70,8 +70,8 @@ pub mod collision;
 pub mod component;
 pub mod components;
 pub mod entity;
-#[cfg(feature = "native")]
-pub mod input_manager;
+// InputManager lives in core/ (Foundation layer) so libs/platform/ can use it
+// without violating the layer hierarchy. Re-exported here for backward compat.
 pub mod physics_world;
 pub mod query;
 pub mod resource;
@@ -83,6 +83,8 @@ pub mod systems;
 pub mod world;
 
 // Re-export commonly used types
+#[cfg(feature = "native")]
+pub use crate::core::input_manager::{InputBinding, InputManager};
 pub use archetype::{Archetype, ArchetypeGraph, ArchetypeId};
 pub use broad_phase::{SpatialHash, SpatialHashStats};
 pub use collision::{
@@ -92,8 +94,6 @@ pub use collision::{
 };
 pub use component::{Component, ComponentId, ComponentInfo};
 pub use entity::{Entity, EntityAllocator};
-#[cfg(feature = "native")]
-pub use input_manager::{InputBinding, InputManager};
 pub use physics_world::PhysicsWorld;
 pub use query::{Query, QueryIter, QueryIterMut, QuerySystemParamState};
 pub use resource::{Res, ResMut, Resource, ResourceId, Resources};
@@ -102,5 +102,5 @@ pub use schedule::{
 };
 pub use sparse_set::{SparseSet, SparseSetIter, SparseSetIterMut};
 pub use storage::{AnyComponentStorage, ComponentStorage};
-pub use systems::{SpriteRenderSystem, TransformPropagationSystem};
+pub use systems::TransformPropagationSystem;
 pub use world::{EntityWorldMut, World};
