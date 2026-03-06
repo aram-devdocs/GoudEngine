@@ -11,6 +11,7 @@ use crate::libs::graphics::backend::opengl::OpenGLBackend;
 use crate::libs::graphics::backend::RenderBackend;
 use crate::libs::platform::glfw_platform::GlfwPlatform;
 use crate::libs::platform::PlatformBackend;
+use crate::sdk::debug_overlay::DebugOverlay;
 use std::cell::RefCell;
 
 // ============================================================================
@@ -30,6 +31,9 @@ pub struct WindowState {
 
     /// Delta time from last frame
     delta_time: f32,
+
+    /// Debug overlay for FPS stats tracking.
+    pub(crate) debug_overlay: DebugOverlay,
 }
 
 impl WindowState {
@@ -39,6 +43,7 @@ impl WindowState {
             platform,
             backend,
             delta_time: 0.0,
+            debug_overlay: DebugOverlay::new(0.5),
         }
     }
 
@@ -61,6 +66,8 @@ impl WindowState {
         if old_size != new_size {
             self.backend.set_viewport(0, 0, new_size.0, new_size.1);
         }
+
+        self.debug_overlay.update(self.delta_time);
 
         self.delta_time
     }

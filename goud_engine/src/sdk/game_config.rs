@@ -50,6 +50,12 @@ pub struct GameConfig {
 
     /// Enable debug rendering (collision boxes, etc.).
     pub debug_rendering: bool,
+
+    /// Show the FPS stats overlay.
+    pub show_fps_overlay: bool,
+
+    /// How often (in seconds) the FPS overlay recomputes statistics.
+    pub fps_update_interval: f32,
 }
 
 impl Default for GameConfig {
@@ -63,6 +69,8 @@ impl Default for GameConfig {
             resizable: true,
             target_fps: 60,
             debug_rendering: false,
+            show_fps_overlay: false,
+            fps_update_interval: 0.5,
         }
     }
 }
@@ -114,6 +122,18 @@ impl GameConfig {
     /// Sets the target FPS (0 for unlimited).
     pub fn with_target_fps(mut self, fps: u32) -> Self {
         self.target_fps = fps;
+        self
+    }
+
+    /// Enables or disables the FPS stats overlay.
+    pub fn with_fps_overlay(mut self, enabled: bool) -> Self {
+        self.show_fps_overlay = enabled;
+        self
+    }
+
+    /// Sets how often (in seconds) the FPS overlay recomputes statistics.
+    pub fn with_fps_update_interval(mut self, interval: f32) -> Self {
+        self.fps_update_interval = interval;
         self
     }
 }

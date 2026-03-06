@@ -67,6 +67,7 @@ pub mod component_ops;
 pub mod components;
 pub mod components_sprite;
 pub mod components_transform2d;
+pub mod debug_overlay;
 pub mod entity;
 pub mod entity_builder;
 pub mod game;
