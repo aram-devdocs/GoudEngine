@@ -24,7 +24,6 @@ use std::collections::HashMap;
 /// batch.draw_sprites(&world, &asset_server);  // Gather and batch sprites
 /// batch.end();             // Flush remaining batches
 /// ```
-#[allow(dead_code)] // TODO: Remove when sprite batch is integrated with game loop
 pub struct SpriteBatch<B: RenderBackend> {
     /// Graphics backend
     pub(super) backend: B,
@@ -50,7 +49,6 @@ pub struct SpriteBatch<B: RenderBackend> {
     pub(super) frame_count: u64,
 }
 
-#[allow(dead_code)] // TODO: Remove when sprite batch is integrated with game loop
 impl<B: RenderBackend> SpriteBatch<B> {
     // =========================================================================
     // Lifecycle
@@ -224,7 +222,7 @@ impl<B: RenderBackend> SpriteBatch<B> {
         let gpu_texture = self.resolve_texture(texture_handle, asset_server)?;
 
         self.batches.push(SpriteBatchEntry {
-            texture_handle,
+            _texture_handle: texture_handle,
             gpu_texture: Some(gpu_texture),
             vertex_start,
             vertex_count,

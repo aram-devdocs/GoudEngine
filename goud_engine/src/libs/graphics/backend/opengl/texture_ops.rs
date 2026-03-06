@@ -92,8 +92,8 @@ pub(super) fn create_texture(
         width,
         height,
         format,
-        filter,
-        wrap,
+        _filter: filter,
+        _wrap: wrap,
     };
     backend.textures.insert(handle, metadata);
 

@@ -27,24 +27,33 @@ use super::{asset::AudioAsset, format::AudioFormat, settings::AudioSettings};
 /// ```
 #[derive(Clone, Debug)]
 pub struct AudioLoader {
-    // Settings are intentionally unused in the stub implementation.
-    // They will be used in Phase 6 when actual audio decoding is implemented.
-    // pub(crate) visibility allows internal tests to inspect the loader's configuration.
-    #[allow(dead_code)]
+    // Settings are stored for test inspection and will be actively used in
+    // Phase 6 when actual audio decoding is implemented with rodio.
+    #[cfg(test)]
     pub(crate) settings: AudioSettings,
+    #[cfg(not(test))]
+    _settings: AudioSettings,
 }
 
 impl AudioLoader {
     /// Creates a new audio loader with default settings.
     pub fn new() -> Self {
         Self {
+            #[cfg(test)]
             settings: AudioSettings::default(),
+            #[cfg(not(test))]
+            _settings: AudioSettings::default(),
         }
     }
 
     /// Creates a new audio loader with custom settings.
     pub fn with_settings(settings: AudioSettings) -> Self {
-        Self { settings }
+        Self {
+            #[cfg(test)]
+            settings,
+            #[cfg(not(test))]
+            _settings: settings,
+        }
     }
 }
 

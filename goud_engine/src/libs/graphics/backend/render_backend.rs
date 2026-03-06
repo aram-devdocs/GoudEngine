@@ -32,7 +32,6 @@ use super::types::{
 /// - Associated types for handle wrappers
 /// - Generic methods for efficient implementations
 /// - Zero-cost abstractions where possible
-#[allow(dead_code)] // Will be used in Step 5.1.3+
 pub trait RenderBackend: Send + Sync {
     // ============================================================================
     // Lifecycle & Information

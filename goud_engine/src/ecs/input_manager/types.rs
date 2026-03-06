@@ -34,11 +34,6 @@ impl GamepadState {
             vibration: 0.0,
         }
     }
-
-    #[allow(dead_code)]
-    pub(super) fn is_empty(&self) -> bool {
-        self.buttons.is_empty() && self.axes.is_empty()
-    }
 }
 
 /// Represents a single input binding that can be mapped to an action.

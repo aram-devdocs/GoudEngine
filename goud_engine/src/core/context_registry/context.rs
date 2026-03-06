@@ -26,9 +26,8 @@ pub struct GoudContext {
     /// use-after-free when old IDs are used.
     generation: u32,
 
-    /// Thread ID that created this context (for validation in debug builds).
-    #[cfg(debug_assertions)]
-    #[allow(dead_code)]
+    /// Thread ID that created this context (for validation in test builds).
+    #[cfg(test)]
     owner_thread: std::thread::ThreadId,
 }
 
@@ -38,7 +37,7 @@ impl GoudContext {
         Self {
             world: World::new(),
             generation,
-            #[cfg(debug_assertions)]
+            #[cfg(test)]
             owner_thread: std::thread::current().id(),
         }
     }
@@ -60,10 +59,9 @@ impl GoudContext {
 
     /// Validates that this context is being accessed from the correct thread.
     ///
-    /// In debug builds, panics if called from wrong thread.
-    /// In release builds, this is a no-op.
-    #[cfg(debug_assertions)]
-    #[allow(dead_code)]
+    /// Panics if called from a different thread than the one that created the context.
+    /// Available in test builds only; use this in tests to verify thread safety invariants.
+    #[cfg(test)]
     pub(crate) fn validate_thread(&self) {
         let current = std::thread::current().id();
         if current != self.owner_thread {
@@ -72,12 +70,6 @@ impl GoudContext {
                 self.owner_thread, current
             );
         }
-    }
-
-    #[cfg(not(debug_assertions))]
-    #[allow(dead_code)]
-    pub(crate) fn validate_thread(&self) {
-        // No-op in release builds
     }
 }
 

@@ -18,7 +18,6 @@ use std::collections::HashMap;
 ///
 /// OpenGL contexts are thread-local, so this backend is Send but operations
 /// must be called from the thread that owns the OpenGL context.
-#[allow(dead_code)] // Used in OpenGL context tests
 pub struct OpenGLBackend {
     pub(super) info: BackendInfo,
     pub(super) clear_color: [f32; 4],
@@ -50,7 +49,6 @@ pub struct OpenGLBackend {
     pub(super) default_vao: u32,
 }
 
-#[allow(dead_code)] // Methods used in OpenGL context tests
 impl OpenGLBackend {
     /// Creates a new OpenGL backend.
     ///

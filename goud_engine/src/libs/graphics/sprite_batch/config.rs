@@ -1,7 +1,6 @@
 //! Configuration for the sprite batch renderer.
 
 /// Configuration for sprite batch rendering.
-#[allow(dead_code)] // TODO: Remove when sprite batch is integrated with game loop
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SpriteBatchConfig {
     /// Initial capacity for vertex buffer (number of sprites).

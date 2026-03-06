@@ -57,9 +57,8 @@ pub struct SpatialHash {
     /// Size of each grid cell (world units).
     pub(super) cell_size: f32,
 
-    /// Inverse of cell size for faster division.
-    #[allow(dead_code)]
-    pub(super) cell_size_inv: f32,
+    /// Inverse of cell size for faster division (reserved for future use).
+    pub(super) _cell_size_inv: f32,
 
     /// Grid cells: each cell contains a list of entities.
     /// Key is the cell coordinate, value is the set of entities in that cell.
@@ -111,7 +110,7 @@ impl SpatialHash {
 
         Self {
             cell_size,
-            cell_size_inv: 1.0 / cell_size,
+            _cell_size_inv: 1.0 / cell_size,
             grid: HashMap::new(),
             entity_bounds: HashMap::new(),
             entity_cells: HashMap::new(),
@@ -145,7 +144,7 @@ impl SpatialHash {
 
         Self {
             cell_size,
-            cell_size_inv: 1.0 / cell_size,
+            _cell_size_inv: 1.0 / cell_size,
             grid: HashMap::with_capacity(capacity),
             entity_bounds: HashMap::with_capacity(capacity),
             entity_cells: HashMap::with_capacity(capacity),
