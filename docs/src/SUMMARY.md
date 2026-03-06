@@ -21,6 +21,11 @@
 - [SDK-First Architecture](architecture/sdk-first.md)
 - [Adding a New Language](architecture/adding-a-language.md)
 
+# RFCs
+
+- [RFC Process](../rfcs/README.md)
+- [RFC-0001: Provider Trait Pattern](../rfcs/RFC-0001-provider-trait-pattern.md)
+
 # Reference
 
 - [API Reference](reference/api.md)
