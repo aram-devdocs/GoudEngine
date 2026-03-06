@@ -129,5 +129,8 @@ The orchestrator MUST:
 - Read the plan's Metadata section to establish working directory and branch
 - Read the plan's "Execution Context" block for role reminders
 - Execute steps in order, checking off `- [ ]` items
-- Use literal subagent prompts from the plan (do not improvise)
+- Use literal subagent prompts from the plan (do not improvise prompts).
+  Note: "Plan Re-Interpretation" applies to plan *structure* and task decomposition.
+  Within each step, use the prompts as written — they contain worktree paths and
+  verification commands that must not be improvised.
 - Self-reference the skill that created the plan if additional context needed

@@ -58,6 +58,7 @@ Derive `<short-slug>` from the primary issue title (2-3 word kebab-case). Use th
 - [ ] Record working directory: the repo root (output of `pwd`)
 
 **Worktree mode (--worktree):**
+- [ ] Record main repo path: output of `pwd` (before entering worktree)
 - [ ] Create isolated worktree:
   ```bash
   git fetch origin main
@@ -88,6 +89,7 @@ Copy the template below into the plan file. Replace every `{{PLACEHOLDER}}` with
 - **Issues**: {{COMMA_SEPARATED_ISSUE_NUMBERS}}
 - **Branch**: `agent/issue-{{PRIMARY}}-{{SLUG}}`
 - **Working directory**: `{{WORKTREE_ABSPATH_OR_REPO_ROOT}}`
+- **Main repo path**: `{{MAIN_REPO_PATH}}` (worktree mode only)
 - **Mode**: {{worktree|in-place}}
 - **Created by skill**: `/gh-issue` (see `.agents/skills/gh-issue/SKILL.md`)
 - **Created**: {{TIMESTAMP}}
@@ -264,7 +266,7 @@ You are the **ORCHESTRATOR** executing a `/gh-issue` plan.
   ```
 - [ ] (Worktree mode) Remove worktree:
   ```bash
-  cd /Users/aramhammoudeh/dev/game/GoudEngine && git worktree remove {{WORKTREE_PATH}}
+  cd {{MAIN_REPO_PATH}} && git worktree remove {{WORKTREE_PATH}}
   ```
 ````
 
