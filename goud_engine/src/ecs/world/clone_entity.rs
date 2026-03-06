@@ -51,6 +51,9 @@ impl World {
     /// built-in components. This is opt-in to avoid overhead for
     /// applications that do not need cloning.
     pub fn register_builtin_cloneables(&mut self) {
+        if self.builtins_registered {
+            return;
+        }
         use crate::ecs::components::{
             GlobalTransform, GlobalTransform2D, Name, Transform, Transform2D,
         };
@@ -61,6 +64,7 @@ impl World {
         self.register_cloneable::<Parent>();
         self.register_cloneable::<Children>();
         self.register_cloneable::<Name>();
+        self.builtins_registered = true;
     }
 
     /// Clones an entity, producing a new entity with copies of all

@@ -153,6 +153,9 @@ pub struct World {
     /// window handles, OpenGL contexts, and other thread-local data.
     /// Non-send resources must only be accessed from the main thread.
     non_send_resources: NonSendResources,
+
+    /// Whether built-in components have been registered as cloneable.
+    builtins_registered: bool,
 }
 
 impl World {
@@ -181,6 +184,7 @@ impl World {
             storages: HashMap::new(),
             resources: Resources::new(),
             non_send_resources: NonSendResources::new(),
+            builtins_registered: false,
         }
     }
 
@@ -212,6 +216,7 @@ impl World {
             storages: HashMap::with_capacity(component_type_capacity),
             resources: Resources::new(),
             non_send_resources: NonSendResources::new(),
+            builtins_registered: false,
         }
     }
 
