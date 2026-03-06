@@ -152,6 +152,13 @@ pub struct World {
     /// window handles, OpenGL contexts, and other thread-local data.
     /// Non-send resources must only be accessed from the main thread.
     non_send_resources: NonSendResources,
+
+    /// Current change tick, incremented at system boundaries.
+    change_tick: u32,
+
+    /// The change tick value from the end of the previous system run.
+    /// Used by `Changed<T>` and `Added<T>` filters to detect new changes.
+    last_change_tick: u32,
 }
 
 impl World {
@@ -180,6 +187,8 @@ impl World {
             storages: HashMap::new(),
             resources: Resources::new(),
             non_send_resources: NonSendResources::new(),
+            change_tick: 0,
+            last_change_tick: 0,
         }
     }
 
@@ -211,6 +220,8 @@ impl World {
             storages: HashMap::with_capacity(component_type_capacity),
             resources: Resources::new(),
             non_send_resources: NonSendResources::new(),
+            change_tick: 0,
+            last_change_tick: 0,
         }
     }
 
@@ -278,6 +289,39 @@ impl World {
         // Reset entity allocator by creating a new one
         // This is safe because we've cleared all references
         self.entities = EntityAllocator::new();
+
+        // Reset change detection ticks
+        self.change_tick = 0;
+        self.last_change_tick = 0;
+    }
+
+    // =========================================================================
+    // Change Detection Ticks
+    // =========================================================================
+
+    /// Returns the current change tick.
+    #[inline]
+    pub fn change_tick(&self) -> u32 {
+        self.change_tick
+    }
+
+    /// Returns the change tick from the end of the previous system run.
+    #[inline]
+    pub fn last_change_tick(&self) -> u32 {
+        self.last_change_tick
+    }
+
+    /// Increments the change tick and returns the new value.
+    #[inline]
+    pub fn increment_change_tick(&mut self) -> u32 {
+        self.change_tick += 1;
+        self.change_tick
+    }
+
+    /// Sets the last change tick (typically called at the end of a system).
+    #[inline]
+    pub fn set_last_change_tick(&mut self, tick: u32) {
+        self.last_change_tick = tick;
     }
 }
 
