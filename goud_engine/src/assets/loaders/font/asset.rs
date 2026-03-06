@@ -1,5 +1,7 @@
 //! [`FontAsset`] definition and implementation.
 
+use std::fmt;
+
 use crate::assets::{Asset, AssetType};
 
 use super::format::FontFormat;
@@ -16,6 +18,21 @@ pub enum FontStyle {
     Italic,
     /// Bold weight with italic style.
     BoldItalic,
+}
+
+impl fmt::Display for FontStyle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                FontStyle::Regular => "Regular",
+                FontStyle::Bold => "Bold",
+                FontStyle::Italic => "Italic",
+                FontStyle::BoldItalic => "Bold Italic",
+            }
+        )
+    }
 }
 
 /// Font asset containing parsed font data.
@@ -93,6 +110,8 @@ impl FontAsset {
     }
 
     /// Returns the font style.
+    ///
+    /// Note: currently always returns `FontStyle::Regular` as fontdue does not expose style metadata.
     pub fn style(&self) -> FontStyle {
         self.style
     }

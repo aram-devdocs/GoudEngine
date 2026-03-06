@@ -62,7 +62,7 @@ impl AssetLoader for FontLoader {
             family_name,
             Default::default(), // FontStyle detection not available in fontdue
             format,
-            units_per_em as u16,
+            units_per_em.round() as u16, // fontdue returns f32; standard values (1000, 2048) fit safely in u16
             glyph_count,
         ))
     }
