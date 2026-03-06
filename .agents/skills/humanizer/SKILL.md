@@ -10,7 +10,7 @@ Detect and rewrite AI-sounding prose in documentation, README files, code commen
 
 ## When to Use
 
-Run on all documentation changes before committing. Mandatory for README.md updates, CLAUDE.md files, doc comments, and any prose that will be read by humans.
+Run on all documentation changes before committing. Mandatory for README.md updates, AGENTS.md files, doc comments, and any prose that will be read by humans.
 
 ## 6 Anti-Pattern Categories
 
@@ -109,8 +109,7 @@ Remove or replace words that add no information:
 
 Apply to:
 - `README.md`
-- `CLAUDE.md` (root and subdirectory)
-- `AGENTS.md`, `GEMINI.md`
+- `AGENTS.md` (root and subdirectory; CLAUDE.md/GEMINI.md are symlinks)
 - Doc comments (`///` in Rust, `///` XML docs in C#, docstrings in Python)
 - PR descriptions
 - Commit messages (light touch — just remove obvious AI patterns)

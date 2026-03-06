@@ -43,4 +43,4 @@ The same game logic exists in:
 - Python: `examples/python/flappy_bird.py`
 - TypeScript: `examples/typescript/flappy_bird/`
 
-Constants in `constants.rs` must stay in sync with those files. See the constants table in `examples/CLAUDE.md`.
+Constants in `constants.rs` must stay in sync with those files. See the constants table in `examples/AGENTS.md`.

@@ -27,3 +27,7 @@
 *.so binary
 *.dylib binary
 *.nupkg binary
+
+# AI config symlinks (generated from AGENTS.md source of truth)
+CLAUDE.md linguist-generated
+GEMINI.md linguist-generated

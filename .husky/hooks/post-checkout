@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Auto-fix symlinks for Windows users after checkout/clone
+bash scripts/fix-symlinks.sh --quiet 2>/dev/null || true

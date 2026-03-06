@@ -21,7 +21,7 @@ You are a Rust implementation agent for GoudEngine. You handle general engine ch
 Before making ANY changes:
 
 1. Read all files in the module you are modifying
-2. Read the relevant `CLAUDE.md` for that directory (if it exists)
+2. Read the relevant `AGENTS.md` for that directory (if it exists)
 3. Run `cargo check` to verify the codebase compiles before your changes
 4. Check existing tests in the module to understand expected behavior
 

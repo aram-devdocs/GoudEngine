@@ -1,27 +1,33 @@
 # AI Agent Setup
 
-This repository includes configuration for AI coding assistants (Claude Code, Cursor, Gemini) with shared infrastructure across tools.
+This repository includes configuration for AI coding assistants (Claude Code, Codex, Cursor, Gemini) with shared infrastructure across tools.
 
 ## Directory Structure
 
 ```
+.agents/              # Shared cross-tool configuration (source of truth)
+├── rules/            # Coding/domain rules (dependency hierarchy, FFI, TDD, etc.)
+└── skills/           # Cross-tool skills (shared between Claude, Codex, Cursor, Gemini)
+    ├── subagent-driven-development/
+    ├── review-changes/
+    ├── code-review/
+    ├── gh-issue/
+    ├── hardening-checklist/
+    ├── tdd-workflow/
+    ├── sdk-parity-check/
+    └── ...
+
 .claude/              # Claude Code configuration
 ├── agents/           # Subagent definitions (implementer, debugger, reviewers, etc.)
-├── rules/            # Contextual rules (FFI patterns, SDK development, TDD, etc.)
+├── rules/            # -> symlinks to .agents/rules/
 ├── hooks/            # Lifecycle hooks (quality checks, secret scanning, session state)
-├── skills/           # -> symlink to .agents/skills/
+├── skills/           # -> symlinks to .agents/skills/
 ├── memory/           # Session state (gitignored)
 ├── specs/            # Feature specs for multi-session work
 └── settings.local.json
 
-.agents/skills/       # Cross-tool skills (shared between Claude, Cursor, Gemini)
-├── subagent-driven-development/
-├── review-changes/
-├── code-review/
-├── hardening-checklist/
-├── tdd-workflow/
-├── sdk-parity-check/
-└── ...
+.codex/               # OpenAI Codex configuration
+└── config.toml       # Agent roles pointing to shared .agents/rules/
 
 .cursor/              # Cursor IDE configuration
 ├── rules/            # Cursor-specific contextual rules (.mdc files)
@@ -32,20 +38,20 @@ This repository includes configuration for AI coding assistants (Claude Code, Cu
 
 | File | Purpose |
 |------|---------|
-| `CLAUDE.md` | Root agent instructions (commands, architecture, anti-patterns) |
-| `AGENTS.md` | Symlink to `CLAUDE.md` (Copilot/Cursor compatibility) |
-| `GEMINI.md` | Symlink to `CLAUDE.md` (Gemini compatibility) |
+| `AGENTS.md` | Root agent instructions (commands, architecture, anti-patterns) |
+| `CLAUDE.md` | Symlink to `AGENTS.md` (Claude Code compatibility) |
+| `GEMINI.md` | Symlink to `AGENTS.md` (Gemini compatibility) |
 | `.cursorignore` | Excludes build artifacts from Cursor indexing |
 
-## Distributed CLAUDE.md
+## Distributed AGENTS.md
 
-Each subdirectory with non-trivial logic has its own `CLAUDE.md` providing module-specific context to agents working in that area. Key locations:
+Each subdirectory with non-trivial logic has its own `AGENTS.md` providing module-specific context to agents working in that area. A `CLAUDE.md` symlink exists alongside each for Claude Code compatibility. Key locations:
 
-- `goud_engine/CLAUDE.md` — engine core patterns
-- `goud_engine/src/ffi/CLAUDE.md` — FFI boundary rules
-- `sdks/CLAUDE.md` — SDK development rules
-- `codegen/CLAUDE.md` — codegen pipeline details
-- `examples/CLAUDE.md` — example game conventions
+- `goud_engine/AGENTS.md` -- engine core patterns
+- `goud_engine/src/ffi/AGENTS.md` -- FFI boundary rules
+- `sdks/AGENTS.md` -- SDK development rules
+- `codegen/AGENTS.md` -- codegen pipeline details
+- `examples/AGENTS.md` -- example game conventions
 
 ## Adding New Skills
 
@@ -54,4 +60,4 @@ Skills live at `.agents/skills/<skill-name>/SKILL.md`. They are available to bot
 To add a skill:
 
 1. Create `.agents/skills/<skill-name>/SKILL.md`
-2. The symlinks pick it up automatically — no further configuration needed.
+2. The symlinks pick it up automatically -- no further configuration needed.

@@ -123,12 +123,12 @@ jobs:
             PR NUMBER: ${{ needs.pre-check.outputs.pr_number }}
 
             You are reviewing a PR for GoudEngine, a Rust game engine with C# and Python SDKs.
-            Read the root CLAUDE.md for full project context.
+            Read the root AGENTS.md for full project context.
 
             Perform a 7-phase review:
 
             ## Phase 1: Context Gathering
-            - Read CLAUDE.md for project conventions
+            - Read AGENTS.md for project conventions
             - Identify which layers are touched (Core, FFI, SDK, Examples)
             - Note the PR type (feature, fix, refactor, etc.)
 

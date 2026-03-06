@@ -71,9 +71,9 @@ Each area is scored 0-10. Total score out of 120. Ratings:
 
 ### 6. AI Agent Configuration (0-10)
 
-- [ ] Root CLAUDE.md with commands, architecture, anti-patterns
-- [ ] Distributed CLAUDE.md in subdirectories
-- [ ] AGENTS.md and GEMINI.md symlinks
+- [ ] Root AGENTS.md with commands, architecture, anti-patterns
+- [ ] Distributed AGENTS.md in subdirectories
+- [ ] CLAUDE.md and GEMINI.md symlinks to AGENTS.md
 - [ ] `.claude/agents/` with subagent definitions
 - [ ] `.claude/rules/` with contextual rules
 - [ ] `.cursor/rules/` with IDE-specific rules

@@ -131,13 +131,13 @@ Keep PRs focused. One logical change per PR. Large refactors should be discussed
 
 | Resource | Location |
 |----------|----------|
-| AI agent guidance | `CLAUDE.md` |
+| AI agent guidance | `AGENTS.md` |
 | Alpha development roadmap | `ALPHA_ROADMAP.md` |
-| Architecture rules | `.claude/rules/` |
-| Graphics subsystem | `.claude/rules/graphics-patterns.md` |
-| FFI boundary patterns | `.claude/rules/ffi-patterns.md` |
-| ECS patterns | `.claude/rules/ecs-patterns.md` |
-| SDK development | `.claude/rules/sdk-development.md` |
+| Architecture rules | `.agents/rules/` |
+| Graphics subsystem | `.agents/rules/graphics-patterns.md` |
+| FFI boundary patterns | `.agents/rules/ffi-patterns.md` |
+| ECS patterns | `.agents/rules/ecs-patterns.md` |
+| SDK development | `.agents/rules/sdk-development.md` |
 | Architecture docs | `docs/architecture/` |
 | Development guide | `docs/DEVELOPMENT.md` |
 | Build guide | `docs/BUILDING.md` |

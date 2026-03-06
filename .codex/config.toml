@@ -1,0 +1,92 @@
+# .codex/config.toml
+
+# Multi-agent support
+[features]
+multi_agent = true
+
+# Agent configuration
+[agents]
+max_threads = 5
+max_depth = 2
+job_max_runtime_seconds = 1800
+
+# --- Team Leads ---
+
+[agents.engine-lead]
+description = """Sub-orchestrator for Rust core engine, graphics, ECS, and asset system.
+Owns goud_engine/src/ (excluding ffi/) and libs/.
+Before starting work, read: .agents/rules/dependency-hierarchy.md
+For graphics: .agents/rules/graphics-patterns.md
+For ECS: .agents/rules/ecs-patterns.md
+For assets: .agents/rules/asset-patterns.md"""
+
+[agents.integration-lead]
+description = """Sub-orchestrator for FFI boundary, C#/Python/TypeScript SDKs.
+Owns goud_engine/src/ffi/ and sdks/.
+Before starting work, read: .agents/rules/ffi-patterns.md, .agents/rules/sdk-development.md"""
+
+[agents.quality-lead]
+description = """Sub-orchestrator for reviews, testing, validation.
+Review gate: spec-reviewer FIRST, then code-quality-reviewer.
+Before starting work, read: .agents/rules/testing.md, .agents/rules/tdd-workflow.md"""
+
+# --- Implementers ---
+
+[agents.implementer]
+description = """General Rust implementation agent for engine core changes.
+Before starting work, read: .agents/rules/discovery-first.md, .agents/rules/tdd-workflow.md"""
+
+[agents.test-first-implementer]
+description = """TDD RED phase agent -- writes failing tests before implementation.
+Read: .agents/rules/tdd-workflow.md, .agents/rules/testing.md"""
+
+[agents.quick-fix]
+description = "Lightweight single-file fixer for trivial changes (config tweaks, formatting, quick patches)."
+
+[agents.ffi-implementer]
+description = """FFI boundary specialist for cross-language interop.
+Read: .agents/rules/ffi-patterns.md before any FFI work."""
+
+[agents.sdk-implementer]
+description = """SDK wrapper development for C#, Python, and TypeScript bindings.
+Read: .agents/rules/sdk-development.md"""
+
+# --- Reviewers ---
+
+[agents.spec-reviewer]
+description = "First review gate -- validates implementation matches spec/task requirements. Must run BEFORE code-quality-reviewer."
+
+[agents.code-quality-reviewer]
+description = "Second review gate -- code patterns, anti-patterns, and quality validation. Must run AFTER spec-reviewer."
+
+[agents.architecture-validator]
+description = """Layer rule validation and dependency direction checker.
+Read: .agents/rules/dependency-hierarchy.md"""
+
+[agents.security-auditor]
+description = "FFI safety, unsafe blocks, and memory ownership auditor. Sequential only -- never parallelize."
+
+# --- Support ---
+
+[agents.test-runner]
+description = "Test execution, fixture creation, and coverage analysis."
+
+[agents.debugger]
+description = "Root cause analysis for failing tests and runtime errors."
+
+[agents.documentation-writer]
+description = "Documentation and README updates with natural writing style."
+
+# --- Domain Experts ---
+
+[agents.graphics-domain-expert]
+description = """OpenGL, rendering pipeline, shader, and camera expertise.
+Read: .agents/rules/graphics-patterns.md"""
+
+[agents.ecs-domain-expert]
+description = """Entity-Component-System architecture guidance.
+Read: .agents/rules/ecs-patterns.md"""
+
+[agents.ffi-domain-expert]
+description = """Cross-language FFI, csbindgen, ctypes, and memory management.
+Read: .agents/rules/ffi-patterns.md"""

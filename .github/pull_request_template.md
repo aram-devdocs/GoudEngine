@@ -94,7 +94,7 @@
 
 ## Documentation
 
-- [ ] Updated relevant `CLAUDE.md` files (if architecture changed)
+- [ ] Updated relevant `AGENTS.md` files (if architecture changed)
 - [ ] Updated `README.md` (if user-facing behavior changed)
 - [ ] Added or updated doc comments on new public APIs
 

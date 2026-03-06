@@ -21,7 +21,7 @@ You do NOT modify code. You read and analyze only.
 
 1. Read all changed/new files
 2. Read the module's existing code for pattern consistency
-3. Read relevant CLAUDE.md for module-specific rules
+3. Read relevant AGENTS.md for module-specific rules
 
 ## Anti-Pattern Scan (16 items)
 

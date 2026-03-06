@@ -157,7 +157,7 @@ For Python the equivalent is `sdks/python/test_bindings.py`. Run it with:
 python3 sdks/python/test_bindings.py
 ```
 
-Add a corresponding command to the project `CLAUDE.md` Essential Commands section.
+Add a corresponding command to the project `AGENTS.md` Essential Commands section.
 
 ---
 
@@ -183,7 +183,7 @@ Before merging a new language target:
 - [ ] `./codegen.sh` runs end-to-end cleanly
 - [ ] Test file exists and passes
 - [ ] At least one example game exists under `examples/<lang>/`
-- [ ] `CLAUDE.md` Essential Commands lists how to run the new SDK
+- [ ] `AGENTS.md` Essential Commands lists how to run the new SDK
 
 ---
 

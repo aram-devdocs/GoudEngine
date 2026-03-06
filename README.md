@@ -96,7 +96,7 @@ codegen/goud_sdk.schema.json   (source of truth)
          └── gen_ts_web.py     → sdks/typescript/wasm/ (WebAssembly)
 ```
 
-See `codegen/CLAUDE.md` for details.
+See `codegen/AGENTS.md` for details.
 
 ### Project Directory
 

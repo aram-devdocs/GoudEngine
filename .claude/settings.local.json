@@ -45,7 +45,8 @@
       "Bash(mv:*)",
       "WebFetch(domain:claudefa.st)",
       "WebFetch(domain:claudelog.com)",
-      "Bash(chmod +x:*)"
+      "Bash(chmod +x:*)",
+      "Bash(gh issue:*)"
     ],
     "deny": [
       "Bash(cargo publish:*)",

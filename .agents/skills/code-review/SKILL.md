@@ -67,7 +67,7 @@ Run on PRs, before merges, or on any set of changes that need careful review. Mo
 - Public items have doc comments
 - FFI functions document memory ownership
 - Complex algorithms have explanatory comments
-- CLAUDE.md files updated if module structure changed
+- AGENTS.md files updated if module structure changed
 - No AI-sounding prose ("leverage", "utilize", "comprehensive", "robust")
 
 ## Output Format

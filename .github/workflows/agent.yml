@@ -13,6 +13,7 @@ jobs:
   plan-agent:
     name: Plan Agent
     if: >-
+      vars.AGENT_ENABLED == 'true' &&
       github.event_name == 'issues' &&
       github.event.label.name == 'agent-ready' &&
       !contains(toJSON(github.event.issue.labels.*.name), 'skip-plan')
@@ -69,7 +70,7 @@ jobs:
             ${{ github.event.issue.body }}
 
             Your task:
-            1. Read CLAUDE.md for project conventions and architecture
+            1. Read AGENTS.md for project conventions and architecture
             2. Explore the relevant codebase areas thoroughly
             3. Understand the full scope of changes needed
             4. Produce a structured implementation plan
@@ -107,7 +108,7 @@ jobs:
             --model claude-opus-4-6
             --max-budget-usd 15
             --allowedTools "Read,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet,Bash(cargo check:*),Bash(cargo test --no-run:*),Bash(gh:*),Bash(git log:*),Bash(git diff:*),Bash(git status:*),Bash(ls:*),Bash(find:*),Bash(wc:*),Bash(tree:*),Bash(rg:*)"
-            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. You are in PLANNING MODE — do NOT modify any files, create branches, or open PRs. Read the root CLAUDE.md for full project context, architecture, and conventions. Your sole output is an implementation plan posted as an issue comment."
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. You are in PLANNING MODE — do NOT modify any files, create branches, or open PRs. Read the root AGENTS.md for full project context, architecture, and conventions. Your sole output is an implementation plan posted as an issue comment."
 
       - name: Handle success — move to plan review
         if: steps.claude.outcome == 'success'
@@ -140,6 +141,7 @@ jobs:
   skip-plan-agent:
     name: Skip-Plan Agent
     if: >-
+      vars.AGENT_ENABLED == 'true' &&
       github.event_name == 'issues' &&
       github.event.label.name == 'agent-ready' &&
       contains(toJSON(github.event.issue.labels.*.name), 'skip-plan')
@@ -198,7 +200,7 @@ jobs:
             Requirements:
             - Create a branch named: agent/issue-${{ github.event.issue.number }}-<short-slug>
             - Use conventional commits (feat:, fix:, etc.)
-            - Read CLAUDE.md for project conventions
+            - Read AGENTS.md for project conventions
             - Run cargo check, cargo fmt --check, cargo clippy -- -D warnings
             - When opening the PR, read .github/pull_request_template.md and use it to structure the PR body
             - Include "Closes #${{ github.event.issue.number }}" in the Related Issues field
@@ -207,7 +209,7 @@ jobs:
             --max-budget-usd 50
             --allowedTools "Bash(*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
             --disallowedTools "Bash(cargo publish:*),Bash(git push --force:*),Bash(git push -f:*),Bash(rm -rf /:*),Bash(rm -rf ~:*),Bash(chmod -R 777:*),Bash(gh issue delete:*),Bash(gh repo delete:*),Bash(gh repo archive:*)"
-            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root AGENTS.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
 
       - name: Check if PR was created
         id: check-pr
@@ -253,6 +255,7 @@ jobs:
   revise-plan-agent:
     name: Revise Plan Agent
     if: >-
+      vars.AGENT_ENABLED == 'true' &&
       github.event_name == 'issue_comment' &&
       contains(github.event.comment.body, '@goudengine-plan')
     runs-on: ubuntu-latest
@@ -341,12 +344,13 @@ jobs:
             --model claude-opus-4-6
             --max-budget-usd 10
             --allowedTools "Read,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet,Bash(cargo check:*),Bash(cargo test --no-run:*),Bash(gh:*),Bash(git log:*),Bash(git diff:*),Bash(git status:*),Bash(ls:*),Bash(find:*),Bash(wc:*),Bash(tree:*),Bash(rg:*)"
-            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. You are in PLAN REVISION MODE — do NOT modify any files, create branches, or open PRs. Read the root CLAUDE.md for full project context. Your sole output is a revised implementation plan posted as an issue comment."
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. You are in PLAN REVISION MODE — do NOT modify any files, create branches, or open PRs. Read the root AGENTS.md for full project context. Your sole output is a revised implementation plan posted as an issue comment."
 
   # Job 4: Execute the approved plan
   execute-plan-agent:
     name: Execute Plan Agent
     if: >-
+      vars.AGENT_ENABLED == 'true' &&
       github.event_name == 'issues' &&
       github.event.label.name == 'agent-plan-approved'
     runs-on: ubuntu-latest
@@ -413,7 +417,7 @@ jobs:
             Requirements:
             - Create a branch named: agent/issue-${{ github.event.issue.number }}-<short-slug>
             - Use conventional commits (feat:, fix:, etc.)
-            - Read CLAUDE.md for project conventions
+            - Read AGENTS.md for project conventions
             - Run cargo check, cargo fmt --check, cargo clippy -- -D warnings
             - When opening the PR, read .github/pull_request_template.md and use it to structure the PR body
             - Include "Closes #${{ github.event.issue.number }}" in the Related Issues field
@@ -422,7 +426,7 @@ jobs:
             --max-budget-usd 50
             --allowedTools "Bash(*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
             --disallowedTools "Bash(cargo publish:*),Bash(git push --force:*),Bash(git push -f:*),Bash(rm -rf /:*),Bash(rm -rf ~:*),Bash(chmod -R 777:*),Bash(gh issue delete:*),Bash(gh repo delete:*),Bash(gh repo archive:*)"
-            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes. IMPORTANT: An approved plan exists in the issue comments — read it first and follow it."
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root AGENTS.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes. IMPORTANT: An approved plan exists in the issue comments — read it first and follow it."
 
       - name: Check if PR was created
         id: check-pr
@@ -468,6 +472,7 @@ jobs:
   interactive-agent:
     name: Interactive Agent
     if: >-
+      vars.AGENT_ENABLED == 'true' &&
       ((github.event_name == 'issue_comment' &&
       contains(github.event.comment.body, '@goudengine-agent') &&
       !contains(github.event.comment.body, '@goudengine-plan')) ||
@@ -511,4 +516,4 @@ jobs:
             --max-budget-usd 50
             --allowedTools "Bash(*),Read,Write,Edit,MultiEdit,Glob,Grep,Agent,Skill,TaskCreate,TaskUpdate,TaskList,TaskGet"
             --disallowedTools "Bash(cargo publish:*),Bash(git push --force:*),Bash(git push -f:*),Bash(rm -rf /:*),Bash(rm -rf ~:*),Bash(chmod -R 777:*),Bash(gh issue delete:*),Bash(gh repo delete:*),Bash(gh repo archive:*)"
-            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root CLAUDE.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."
+            --append-system-prompt "You are working on GoudEngine, a Rust game engine with C# and Python SDK bindings. Read the root AGENTS.md for full project context, architecture, and conventions. Key principles: Rust-first (all logic in Rust, SDKs are thin FFI wrappers), layer hierarchy (libs -> engine -> ffi -> sdks -> examples), FFI exports need #[no_mangle] extern C and #[repr(C)], SDK parity (every FFI function must have both C# and Python wrappers). Run cargo check, cargo fmt --check, and cargo clippy after changes."

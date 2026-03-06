@@ -54,7 +54,7 @@ Prefixes: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`
 These files require human review and cannot be modified by agents:
 
 - `.github/` — workflows, CODEOWNERS, issue templates
-- `CLAUDE.md` — agent instructions
+- `AGENTS.md` — agent instructions (CLAUDE.md is a symlink to this)
 - `AI_CONTRIBUTORS.md` — this file
 - `release-please-config.json` — release configuration
 - `.release-please-manifest.json` — version manifest

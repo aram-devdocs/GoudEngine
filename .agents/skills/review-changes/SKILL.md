@@ -53,7 +53,7 @@ All five agents run simultaneously on the diff output:
   - Layer 5 (Apps): `examples/`
 
 #### Pattern Reviewer
-- Checks against the 16 anti-patterns from CLAUDE.md
+- Checks against the 16 anti-patterns from AGENTS.md
 - Validates FFI patterns (`#[no_mangle]`, `#[repr(C)]`)
 - Ensures SDK wrappers remain thin (no logic)
 - Verifies error handling uses `Result`, not `unwrap`/`expect` in library code
