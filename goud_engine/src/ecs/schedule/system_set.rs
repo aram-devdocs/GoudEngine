@@ -358,5 +358,4 @@ impl fmt::Display for LabeledOrderingConstraint {
 
 #[cfg(test)]
 #[path = "tests/system_set_tests.rs"]
-#[cfg(test)]
 mod tests;

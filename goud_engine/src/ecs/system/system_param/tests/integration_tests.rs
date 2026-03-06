@@ -2,9 +2,7 @@
 
 use crate::ecs::component::ComponentId;
 use crate::ecs::query::Access;
-use crate::ecs::system::{
-    StaticSystemParam, StaticSystemParamState, SystemParam, SystemParamState,
-};
+use crate::ecs::system::{StaticSystemParamState, SystemParam, SystemParamState};
 use crate::ecs::World;
 
 // Shared test components

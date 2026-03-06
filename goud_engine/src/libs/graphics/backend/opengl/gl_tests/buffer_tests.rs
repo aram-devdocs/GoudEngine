@@ -1,6 +1,5 @@
 //! Tests for OpenGL buffer operations (require GL context).
 
-use crate::core::error::GoudError;
 use crate::libs::graphics::backend::opengl::backend::OpenGLBackend;
 use crate::libs::graphics::backend::types::{BufferHandle, BufferType, BufferUsage};
 use crate::libs::graphics::backend::RenderBackend;

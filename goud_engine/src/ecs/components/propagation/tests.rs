@@ -4,8 +4,8 @@ use crate::core::math::{Vec2, Vec3};
 use crate::ecs::components::hierarchy::{Children, Parent};
 use crate::ecs::components::propagation::{
     compute_local_transform, compute_local_transform_2d, ensure_global_transforms,
-    ensure_global_transforms_2d, propagate_transform_2d_subtree, propagate_transform_subtree,
-    propagate_transforms, propagate_transforms_2d,
+    ensure_global_transforms_2d, propagate_transform_subtree, propagate_transforms,
+    propagate_transforms_2d,
 };
 use crate::ecs::components::transform::Quat;
 use crate::ecs::components::{GlobalTransform, GlobalTransform2D, Transform, Transform2D};

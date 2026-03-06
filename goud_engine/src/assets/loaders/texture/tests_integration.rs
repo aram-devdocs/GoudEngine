@@ -1,8 +1,7 @@
 //! Integration and thread-safety tests for the texture loader.
 
 use super::{
-    asset::TextureAsset, format::TextureFormat, loader::TextureLoader, settings::TextureSettings,
-    tests::create_test_png,
+    asset::TextureAsset, loader::TextureLoader, settings::TextureSettings, tests::create_test_png,
 };
 
 use crate::assets::{AssetLoader, AssetPath, LoadContext};

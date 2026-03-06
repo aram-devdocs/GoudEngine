@@ -9,7 +9,7 @@ use crate::libs::graphics::backend::types::{
     BufferType, BufferUsage, PrimitiveTopology, TextureFilter, TextureFormat, TextureWrap,
     VertexAttributeType,
 };
-use crate::libs::graphics::backend::{BlendFactor, RenderBackend};
+use crate::libs::graphics::backend::BlendFactor;
 
 #[test]
 fn test_buffer_type_to_gl_target() {

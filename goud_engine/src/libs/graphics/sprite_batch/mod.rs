@@ -40,8 +40,11 @@ pub mod config;
 pub mod resources;
 pub mod types;
 
+#[cfg(test)]
 mod batching_tests;
+#[cfg(test)]
 mod gl_tests;
+#[cfg(test)]
 mod integration_tests;
 #[cfg(test)]
 mod tests;

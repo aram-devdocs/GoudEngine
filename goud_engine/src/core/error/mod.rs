@@ -28,19 +28,6 @@ mod conversions;
 mod ffi_bridge;
 mod types;
 
-#[cfg(test)]
-mod tests {
-    mod codes_tests;
-    mod context_errors;
-    mod entity_errors;
-    mod ffi_tests;
-    mod graphics_errors;
-    mod internal_errors;
-    mod resource_errors;
-    mod system_errors;
-    mod traits;
-}
-
 // Re-export everything so external code sees the same flat API as before.
 
 pub use codes::{
@@ -93,3 +80,16 @@ pub use types::GoudError;
 /// }
 /// ```
 pub type GoudResult<T> = Result<T, GoudError>;
+
+#[cfg(test)]
+mod tests {
+    mod codes_tests;
+    mod context_errors;
+    mod entity_errors;
+    mod ffi_tests;
+    mod graphics_errors;
+    mod internal_errors;
+    mod resource_errors;
+    mod system_errors;
+    mod traits;
+}
