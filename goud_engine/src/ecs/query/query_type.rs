@@ -4,6 +4,7 @@ use crate::ecs::archetype::Archetype;
 use crate::ecs::entity::Entity;
 use crate::ecs::World;
 
+use super::cache::QueryArchetypeCache;
 use super::fetch::{Access, ReadOnlyWorldQuery, WorldQuery};
 use super::iter::{QueryIter, QueryIterMut};
 
@@ -56,6 +57,8 @@ pub struct Query<Q: WorldQuery, F: WorldQuery = ()> {
     pub(crate) query_state: Q::State,
     /// Cached state for the filter.
     pub(crate) filter_state: F::State,
+    /// Optional archetype cache for faster iteration between frames.
+    pub(crate) archetype_cache: Option<QueryArchetypeCache>,
 }
 
 impl<Q: WorldQuery, F: WorldQuery> Query<Q, F> {
@@ -86,6 +89,7 @@ impl<Q: WorldQuery, F: WorldQuery> Query<Q, F> {
         Self {
             query_state: Q::init_state(world),
             filter_state: F::init_state(world),
+            archetype_cache: None,
         }
     }
 
@@ -103,6 +107,7 @@ impl<Q: WorldQuery, F: WorldQuery> Query<Q, F> {
         Self {
             query_state,
             filter_state,
+            archetype_cache: None,
         }
     }
 
@@ -250,6 +255,51 @@ impl<Q: WorldQuery, F: WorldQuery> Query<Q, F> {
     #[inline]
     pub fn iter_mut<'w, 'q>(&'q self, world: &'w mut World) -> QueryIterMut<'w, 'q, Q, F> {
         QueryIterMut::new(self, world)
+    }
+
+    /// Returns a reference to the archetype cache, if present.
+    #[inline]
+    pub fn archetype_cache(&self) -> Option<&QueryArchetypeCache> {
+        self.archetype_cache.as_ref()
+    }
+
+    /// Updates the archetype cache from the current world state.
+    ///
+    /// If no cache exists, one is created and all archetypes are evaluated.
+    /// If a cache exists but is stale, only newly added archetypes are checked.
+    /// If the cache is already current, this is a no-op.
+    #[inline]
+    pub fn update_cache(&mut self, world: &World) {
+        let archetypes = world.archetypes();
+        let count = archetypes.len();
+
+        // Borrow query_state and filter_state directly to avoid borrowing all
+        // of `self` while also mutating the cache.
+        let query_state = &self.query_state;
+        let filter_state = &self.filter_state;
+
+        let cache = self.archetype_cache.get_or_insert_with(QueryArchetypeCache::new);
+        cache.update(count, |id| {
+            if let Some(archetype) = archetypes.get(id) {
+                Q::matches_archetype(query_state, archetype)
+                    && F::matches_archetype(filter_state, archetype)
+            } else {
+                false
+            }
+        });
+    }
+
+    /// Clears the archetype cache, forcing a full re-evaluation next time.
+    #[inline]
+    pub fn invalidate_cache(&mut self) {
+        self.archetype_cache = None;
+    }
+
+    /// Builder method: creates the query with an initialized archetype cache.
+    #[inline]
+    pub fn with_cache(mut self, world: &World) -> Self {
+        self.update_cache(world);
+        self
     }
 
     /// Returns the number of entities that match this query.

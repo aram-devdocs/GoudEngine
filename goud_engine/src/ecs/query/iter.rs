@@ -1,5 +1,6 @@
 //! Query iterators: [`QueryIter`] (immutable) and [`QueryIterMut`] (mutable).
 
+use crate::ecs::archetype::ArchetypeId;
 use crate::ecs::entity::Entity;
 use crate::ecs::World;
 
@@ -11,26 +12,56 @@ use super::query_type::Query;
 // =============================================================================
 
 /// Iterator over query results (immutable access).
+///
+/// When the query has an archetype cache, the iterator only visits cached
+/// archetype indices instead of scanning every archetype in the world.
 pub struct QueryIter<'w, 'q, Q: WorldQuery, F: WorldQuery> {
     /// Reference to the query.
     query: &'q Query<Q, F>,
     /// Reference to the world.
     world: &'w World,
-    /// Current archetype index in the archetype graph.
-    archetype_index: usize,
+    /// Current position in the iteration (either archetype graph index or
+    /// index into the cached archetype list, depending on `cached`).
+    cursor: usize,
     /// Current entity index within the current archetype.
     entity_index: usize,
+    /// Whether we are iterating over cached archetype indices.
+    cached: bool,
 }
 
 impl<'w, 'q, Q: WorldQuery, F: WorldQuery> QueryIter<'w, 'q, Q, F> {
     /// Creates a new query iterator.
     #[inline]
     pub(crate) fn new(query: &'q Query<Q, F>, world: &'w World) -> Self {
+        let cached = query.archetype_cache.is_some();
         Self {
             query,
             world,
-            archetype_index: 0,
+            cursor: 0,
             entity_index: 0,
+            cached,
+        }
+    }
+
+    /// Resolves the current cursor to an actual archetype graph index.
+    #[inline]
+    fn current_archetype_index(&self) -> Option<usize> {
+        if self.cached {
+            // SAFETY: `cached` is only true when archetype_cache is Some
+            let cache = self.query.archetype_cache.as_ref()?;
+            let indices = cache.archetype_indices();
+            if self.cursor < indices.len() {
+                Some(indices[self.cursor])
+            } else {
+                None
+            }
+        } else {
+            let total = self.world.archetypes().len();
+            if self.cursor < total {
+                Some(self.cursor)
+            } else {
+                None
+            }
         }
     }
 }
@@ -40,27 +71,21 @@ impl<'w, 'q, Q: WorldQuery, F: WorldQuery> Iterator for QueryIter<'w, 'q, Q, F> 
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            // Get current archetype
-            let archetypes: Vec<_> = self.world.archetypes().iter().collect();
-            if self.archetype_index >= archetypes.len() {
-                return None;
-            }
+            let graph_index = self.current_archetype_index()?;
+            let id = ArchetypeId::new(graph_index as u32);
+            let archetype = self.world.archetypes().get(id)?;
 
-            let archetype = archetypes[self.archetype_index];
-
-            // Skip archetypes that don't match
-            if !self.query.matches_archetype(archetype) {
-                self.archetype_index += 1;
+            // When not using cache, skip non-matching archetypes
+            if !self.cached && !self.query.matches_archetype(archetype) {
+                self.cursor += 1;
                 self.entity_index = 0;
                 continue;
             }
 
-            // Get entities in this archetype
             let entities = archetype.entities();
 
             if self.entity_index >= entities.len() {
-                // Move to next archetype
-                self.archetype_index += 1;
+                self.cursor += 1;
                 self.entity_index = 0;
                 continue;
             }
@@ -102,9 +127,22 @@ impl<'w, 'q, Q: WorldQuery, F: WorldQuery> QueryIterMut<'w, 'q, Q, F> {
     pub(crate) fn new(query: &'q Query<Q, F>, world: &'w mut World) -> Self {
         // Collect all matching entities first
         let mut entities = Vec::new();
-        for archetype in world.archetypes().iter() {
-            if query.matches_archetype(archetype) {
-                entities.extend_from_slice(archetype.entities());
+
+        if let Some(cache) = &query.archetype_cache {
+            // Use cached archetype indices -- skip the full scan
+            let archetypes = world.archetypes();
+            for &idx in cache.archetype_indices() {
+                let id = ArchetypeId::new(idx as u32);
+                if let Some(archetype) = archetypes.get(id) {
+                    entities.extend_from_slice(archetype.entities());
+                }
+            }
+        } else {
+            // Fallback: scan all archetypes
+            for archetype in world.archetypes().iter() {
+                if query.matches_archetype(archetype) {
+                    entities.extend_from_slice(archetype.entities());
+                }
             }
         }
 
