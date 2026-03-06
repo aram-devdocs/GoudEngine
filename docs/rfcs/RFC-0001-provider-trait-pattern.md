@@ -1,7 +1,7 @@
 ---
 rfc: "0001"
 title: Provider Trait Pattern
-status: proposed
+status: accepted
 created: 2026-03-06
 authors: ["aram-devdocs"]
 tracking-issue: "#217"
