@@ -4,7 +4,7 @@
 //! be contiguous so that readers can see the full API contract in one place.
 //! Do NOT split this file further.
 
-use crate::core::error::GoudResult;
+use crate::libs::error::GoudResult;
 
 use super::blend::{BlendFactor, CullFace};
 use super::capabilities::{BackendCapabilities, BackendInfo};

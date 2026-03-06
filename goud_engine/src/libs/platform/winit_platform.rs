@@ -12,7 +12,7 @@
 //!
 //! [`pump_app_events`]: winit::platform::pump_events::EventLoopExtPumpEvents
 
-use crate::core::error::{GoudError, GoudResult};
+use crate::libs::error::{GoudError, GoudResult};
 use crate::core::input_manager::InputManager;
 use crate::core::math::Vec2;
 use crate::libs::platform::{PlatformBackend, WindowConfig};

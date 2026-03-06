@@ -9,7 +9,7 @@ use super::{
     FrontFace, PipelineKey, PrimitiveTopology, RenderBackend, ShaderHandle, TextureHandle,
     VertexLayout, WgpuBackend,
 };
-use crate::core::error::{GoudError, GoudResult};
+use crate::libs::error::{GoudError, GoudResult};
 
 impl RenderBackend for WgpuBackend {
     fn info(&self) -> &BackendInfo {
