@@ -48,6 +48,10 @@ pub fn update_sprite_animations(world: &mut World, dt: f32) {
                 continue;
             }
 
+            if animator.clip.frame_duration <= 0.0 {
+                continue;
+            }
+
             animator.elapsed += dt;
 
             while animator.elapsed >= animator.clip.frame_duration {

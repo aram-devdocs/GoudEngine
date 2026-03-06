@@ -11,14 +11,17 @@
     "RenderStats": {"ffi_name": "GoudRenderStats", "fields": ["draw_calls", "triangles", "texture_binds", "shader_binds"]},
     "Contact":     {"ffi_name": "GoudContact",     "fields": ["point_x", "point_y", "normal_x", "normal_y", "penetration"]},
     "Vec3":        {"ffi_name": "FfiVec3",          "fields": ["x", "y", "z"]},
-    "Mat3x3":      {"ffi_name": "FfiMat3x3",        "fields": ["m"]}
+    "Mat3x3":      {"ffi_name": "FfiMat3x3",        "fields": ["m"]},
+    "PlaybackMode": {"ffi_name": "FfiPlaybackMode", "enum_values": {"Loop": 0, "OneShot": 1}},
+    "SpriteAnimator": {"ffi_name": "FfiSpriteAnimator", "fields": ["current_frame", "elapsed", "playing", "finished", "frame_duration", "mode", "frame_count"]}
   },
 
   "ffi_handles": {
     "GoudContextId":     {"type": "u64", "invalid": "u64::MAX"},
     "GoudTextureHandle": {"type": "u64", "invalid": "u64::MAX"},
     "Transform2DBuilder": {"type": "*mut FfiTransform2DBuilder", "invalid": "null"},
-    "SpriteBuilder":      {"type": "*mut FfiSpriteBuilder",      "invalid": "null"}
+    "SpriteBuilder":      {"type": "*mut FfiSpriteBuilder",      "invalid": "null"},
+    "AnimationClipBuilder": {"type": "*mut FfiAnimationClipBuilder", "invalid": "null"}
   },
 
   "ctypes_mappings": {
@@ -33,7 +36,9 @@
     "*mut FfiSprite":      "ctypes.POINTER(FfiSprite)",
     "*const FfiSprite":    "ctypes.POINTER(FfiSprite)",
     "*mut FfiTransform2DBuilder": "ctypes.POINTER(FfiTransform2DBuilder)",
-    "*mut FfiSpriteBuilder":      "ctypes.POINTER(FfiSpriteBuilder)"
+    "*mut FfiSpriteBuilder":      "ctypes.POINTER(FfiSpriteBuilder)",
+    "*mut FfiAnimationClipBuilder": "ctypes.POINTER(FfiAnimationClipBuilder)",
+    "*const FfiSpriteAnimator": "ctypes.POINTER(FfiSpriteAnimator)"
   },
 
   "tools": {
@@ -650,6 +655,15 @@
       "goud_color_lerp":        {"params": [{"name": "from", "type": "FfiColor"}, {"name": "to", "type": "FfiColor"}, {"name": "t", "type": "f32"}],  "returns": "FfiColor"},
       "goud_color_with_alpha":  {"params": [{"name": "color", "type": "FfiColor"}, {"name": "alpha", "type": "f32"}],                                 "returns": "FfiColor"}
     },
+    "sprite_animator": {
+      "goud_animation_clip_builder_new":       {"params": [{"name": "frame_duration", "type": "f32"}, {"name": "mode", "type": "FfiPlaybackMode"}],                                                    "returns": "*mut FfiAnimationClipBuilder"},
+      "goud_animation_clip_builder_add_frame": {"params": [{"name": "builder", "type": "*mut FfiAnimationClipBuilder"}, {"name": "x", "type": "f32"}, {"name": "y", "type": "f32"}, {"name": "w", "type": "f32"}, {"name": "h", "type": "f32"}], "returns": "*mut FfiAnimationClipBuilder", "unsafe": true},
+      "goud_animation_clip_builder_free":      {"params": [{"name": "builder", "type": "*mut FfiAnimationClipBuilder"}],                                                                                "returns": "void", "unsafe": true},
+      "goud_sprite_animator_from_clip":        {"params": [{"name": "builder", "type": "*mut FfiAnimationClipBuilder"}],                                                                                "returns": "FfiSpriteAnimator", "unsafe": true},
+      "goud_sprite_animator_get_current_frame": {"params": [{"name": "animator", "type": "*const FfiSpriteAnimator"}],                                                                                  "returns": "u32", "unsafe": true},
+      "goud_sprite_animator_is_playing":       {"params": [{"name": "animator", "type": "*const FfiSpriteAnimator"}],                                                                                   "returns": "bool", "unsafe": true},
+      "goud_sprite_animator_is_finished":      {"params": [{"name": "animator", "type": "*const FfiSpriteAnimator"}],                                                                                   "returns": "bool", "unsafe": true}
+    },
     "component_generic": {
       "goud_component_register_type": {"params": [{"name": "type_id_hash", "type": "u64"}, {"name": "name_ptr", "type": "*const u8"}, {"name": "name_len", "type": "usize"}, {"name": "size", "type": "usize"}, {"name": "align", "type": "usize"}], "returns": "bool", "unsafe": true},
       "goud_component_add":           {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_id", "type": "u64"}, {"name": "type_id_hash", "type": "u64"}, {"name": "data_ptr", "type": "*const u8"}, {"name": "data_size", "type": "usize"}], "returns": "GoudResult", "unsafe": true},
@@ -791,6 +805,19 @@
         "withCustomSize":   {"ffi": "goud_sprite_builder_with_custom_size","self_param": "*mut FfiSpriteBuilder"},
         "build":            {"ffi": "goud_sprite_builder_build",           "self_param": "*mut FfiSpriteBuilder", "consumes": true},
         "free":             {"ffi": "goud_sprite_builder_free",            "self_param": "*mut FfiSpriteBuilder", "consumes": true}
+      }
+    },
+    "SpriteAnimator": {
+      "methods": {
+        "getCurrentFrame": {"ffi": "goud_sprite_animator_get_current_frame", "self_param": "*const FfiSpriteAnimator"},
+        "isPlaying":       {"ffi": "goud_sprite_animator_is_playing",        "self_param": "*const FfiSpriteAnimator"},
+        "isFinished":      {"ffi": "goud_sprite_animator_is_finished",       "self_param": "*const FfiSpriteAnimator"}
+      },
+      "builder": {
+        "new":       {"ffi": "goud_animation_clip_builder_new"},
+        "addFrame":  {"ffi": "goud_animation_clip_builder_add_frame", "self_param": "*mut FfiAnimationClipBuilder"},
+        "build":     {"ffi": "goud_sprite_animator_from_clip",        "self_param": "*mut FfiAnimationClipBuilder", "consumes": true},
+        "free":      {"ffi": "goud_animation_clip_builder_free",      "self_param": "*mut FfiAnimationClipBuilder", "consumes": true}
       }
     }
   }

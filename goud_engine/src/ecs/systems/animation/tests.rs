@@ -157,3 +157,22 @@ fn test_animation_system_no_sprite_no_crash() {
     let animator = world.get::<SpriteAnimator>(entity).unwrap();
     assert_eq!(animator.current_frame, 1);
 }
+
+#[test]
+fn test_animation_system_zero_frame_duration_no_hang() {
+    let mut world = World::new();
+    let entity = world.spawn_empty();
+
+    // Create an animator with frame_duration = 0.0 (edge case that could cause infinite loop)
+    let clip = AnimationClip::new(sample_frames(), 0.0);
+    world.insert(entity, SpriteAnimator::new(clip));
+
+    // This should not hang and should skip the animator gracefully
+    update_sprite_animations(&mut world, 0.1);
+
+    // Verify the animator state is unchanged (still on frame 0, elapsed should be 0.0)
+    let animator = world.get::<SpriteAnimator>(entity).unwrap();
+    assert_eq!(animator.current_frame, 0);
+    assert_eq!(animator.elapsed, 0.0);
+    assert!(animator.playing);
+}
