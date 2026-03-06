@@ -1,12 +1,7 @@
-<!--
-  Status lifecycle: draft → proposed → accepted → implemented → superseded
-  Set to "proposed" when opening a PR.
-  On PR merge, rfc-approve.yml automatically changes "proposed" to "accepted".
--->
 ---
 rfc: "NNNN"
 title: "Short descriptive title"
-status: draft
+status: draft # draft → proposed (on PR open) → accepted (auto on merge) → implemented → superseded
 created: YYYY-MM-DD
 authors: ["github-username"]
 tracking-issue: "#NNN"
