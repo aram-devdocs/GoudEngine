@@ -179,10 +179,7 @@ impl RenderProvider for OpenGLRenderProvider {
 
     fn destroy_pipeline(&mut self, _handle: PipelineHandle) {}
 
-    fn create_render_target(
-        &mut self,
-        _desc: &RenderTargetDesc,
-    ) -> GoudResult<RenderTargetHandle> {
+    fn create_render_target(&mut self, _desc: &RenderTargetDesc) -> GoudResult<RenderTargetHandle> {
         Err(GoudError::NotImplemented(
             "OpenGL render target creation via provider not yet available".to_string(),
         ))

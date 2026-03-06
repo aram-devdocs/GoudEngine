@@ -83,12 +83,7 @@ pub trait PhysicsProvider: Provider + ProviderLifecycle {
     ///
     /// `origin` and `dir` are [x, y] arrays. `max_dist` is the maximum
     /// ray length.
-    fn raycast(
-        &self,
-        origin: [f32; 2],
-        dir: [f32; 2],
-        max_dist: f32,
-    ) -> Option<RaycastHit>;
+    fn raycast(&self, origin: [f32; 2], dir: [f32; 2], max_dist: f32) -> Option<RaycastHit>;
 
     /// Find all bodies whose colliders overlap the given circle.
     fn overlap_circle(&self, center: [f32; 2], radius: f32) -> Vec<BodyHandle>;

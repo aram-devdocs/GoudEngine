@@ -54,10 +54,7 @@ impl RodioAudioProvider {
     /// audio device is available (e.g., in CI environments).
     pub fn new() -> GoudResult<Self> {
         let mut device_sink = DeviceSinkBuilder::open_default_sink().map_err(|e| {
-            GoudError::AudioInitFailed(format!(
-                "Failed to open default audio device: {}",
-                e
-            ))
+            GoudError::AudioInitFailed(format!("Failed to open default audio device: {}", e))
         })?;
         device_sink.log_on_drop(false);
 
@@ -135,11 +132,7 @@ impl AudioProvider for RodioAudioProvider {
         Ok(())
     }
 
-    fn play(
-        &mut self,
-        _handle: SoundHandle,
-        config: &PlayConfig,
-    ) -> GoudResult<PlaybackId> {
+    fn play(&mut self, _handle: SoundHandle, config: &PlayConfig) -> GoudResult<PlaybackId> {
         // The provider receives a SoundHandle but does not own the sound
         // data. The actual audio data must be loaded and appended by
         // higher-layer code through a bridge method. Here we create the
@@ -198,19 +191,14 @@ impl AudioProvider for RodioAudioProvider {
     }
 
     fn set_channel_volume(&mut self, channel: AudioChannel, volume: f32) {
-        self.channel_volumes
-            .insert(channel, volume.clamp(0.0, 1.0));
+        self.channel_volumes.insert(channel, volume.clamp(0.0, 1.0));
     }
 
     fn set_listener_position(&mut self, _pos: [f32; 3]) {
         // Spatial audio not yet supported.
     }
 
-    fn set_source_position(
-        &mut self,
-        _id: PlaybackId,
-        _pos: [f32; 3],
-    ) -> GoudResult<()> {
+    fn set_source_position(&mut self, _id: PlaybackId, _pos: [f32; 3]) -> GoudResult<()> {
         // Spatial audio not yet supported.
         Ok(())
     }

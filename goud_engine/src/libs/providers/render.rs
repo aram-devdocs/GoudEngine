@@ -74,10 +74,7 @@ pub trait RenderProvider: Provider + ProviderLifecycle {
     fn destroy_pipeline(&mut self, handle: PipelineHandle);
 
     /// Create a render target (framebuffer) from a descriptor.
-    fn create_render_target(
-        &mut self,
-        desc: &RenderTargetDesc,
-    ) -> GoudResult<RenderTargetHandle>;
+    fn create_render_target(&mut self, desc: &RenderTargetDesc) -> GoudResult<RenderTargetHandle>;
 
     /// Destroy a previously created render target.
     fn destroy_render_target(&mut self, handle: RenderTargetHandle);

@@ -118,12 +118,7 @@ impl PhysicsProvider for NullPhysicsProvider {
 
     fn destroy_collider(&mut self, _handle: ColliderHandle) {}
 
-    fn raycast(
-        &self,
-        _origin: [f32; 2],
-        _dir: [f32; 2],
-        _max_dist: f32,
-    ) -> Option<RaycastHit> {
+    fn raycast(&self, _origin: [f32; 2], _dir: [f32; 2], _max_dist: f32) -> Option<RaycastHit> {
         None
     }
 
