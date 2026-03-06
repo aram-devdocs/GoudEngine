@@ -13,8 +13,13 @@ pub extern "C" fn goud_last_error_code() -> GoudErrorCode {
 }
 
 /// Writes the last error message into a caller-provided buffer.
+///
 /// Returns the number of bytes written (excluding null terminator).
-/// If the buffer is too small, returns the required size as a negative number.
+/// If the buffer is too small, the message is truncated to fit and the
+/// number of bytes actually written is returned. To query the required
+/// buffer size without writing, pass a null pointer for `buf` — the
+/// return value will be the negative required size (including null
+/// terminator), e.g. `-26` means 26 bytes are needed.
 /// Returns 0 if no error message is set.
 ///
 /// # Safety

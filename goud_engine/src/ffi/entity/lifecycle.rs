@@ -57,7 +57,7 @@ macro_rules! with_context_mut_entity {
 /// # Returns
 ///
 /// The entity ID on success, or `GOUD_INVALID_ENTITY_ID` on failure.
-/// Call `goud_get_last_error_message()` for error details.
+/// Call `goud_last_error_message()` for error details.
 ///
 /// # Error Codes
 ///
