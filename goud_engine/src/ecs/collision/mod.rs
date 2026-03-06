@@ -47,6 +47,7 @@ pub mod detection_circle;
 pub mod events;
 pub mod response;
 
+#[cfg(test)]
 mod tests;
 
 // Re-export public types at the collision module level to preserve the existing public API.

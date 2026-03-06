@@ -51,6 +51,7 @@ pub mod core;
 pub mod ops;
 pub mod quat;
 
+#[cfg(test)]
 mod tests;
 mod tests_spatial;
 

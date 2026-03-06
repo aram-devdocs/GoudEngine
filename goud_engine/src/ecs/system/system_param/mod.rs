@@ -45,6 +45,7 @@
 mod param_set;
 mod resource_params;
 mod static_param;
+#[cfg(test)]
 mod tests;
 mod traits;
 mod tuple_impl;

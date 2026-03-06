@@ -63,4 +63,5 @@ pub use utils::{
 // Keep tests in a separate file to keep mod.rs lean
 #[cfg(test)]
 #[path = "tests.rs"]
+#[cfg(test)]
 mod tests;

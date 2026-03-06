@@ -6,6 +6,7 @@
 mod core;
 mod iter;
 mod ops;
+#[cfg(test)]
 mod tests;
 
 pub use core::SparseSet;

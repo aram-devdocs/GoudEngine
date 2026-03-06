@@ -57,6 +57,7 @@ pub mod attenuation;
 pub mod channel;
 pub mod source;
 
+#[cfg(test)]
 mod tests;
 
 pub use attenuation::AttenuationModel;

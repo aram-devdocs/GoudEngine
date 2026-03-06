@@ -13,6 +13,7 @@ pub use crate::core::context_registry::{
 };
 
 mod lifecycle;
+#[cfg(test)]
 mod tests;
 
 pub use lifecycle::{goud_context_create, goud_context_destroy, goud_context_is_valid};

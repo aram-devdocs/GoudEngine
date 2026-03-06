@@ -8,6 +8,7 @@ pub mod format;
 pub mod loader;
 pub mod settings;
 
+#[cfg(test)]
 mod tests;
 
 pub use asset::AudioAsset;

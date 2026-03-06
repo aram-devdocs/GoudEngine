@@ -34,6 +34,7 @@ pub(super) mod spatial;
 mod controls;
 mod playback;
 mod spatial_playback;
+#[cfg(test)]
 mod tests;
 
 use crate::core::error::{GoudError, GoudResult};

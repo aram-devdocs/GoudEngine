@@ -43,6 +43,7 @@ pub mod types;
 mod batching_tests;
 mod gl_tests;
 mod integration_tests;
+#[cfg(test)]
 mod tests;
 
 pub use batch::SpriteBatch;
