@@ -1,7 +1,7 @@
 ---
 rfc: "0001"
 title: Provider Trait Pattern
-status: accepted
+status: proposed
 created: 2026-03-06
 authors: ["aram-devdocs"]
 tracking-issue: "#217"
@@ -95,10 +95,12 @@ pub trait RenderProvider: Provider {
 | Built-in | Feature Flag | Notes |
 |----------|-------------|-------|
 | `OpenGLRenderProvider` | `native` | Wraps existing `OpenGLBackend` |
-| `WgpuRenderProvider` | `wgpu` | Future (F02-03) |
+| `WgpuRenderProvider` | `wgpu` | F02-03; wraps existing `wgpu_backend/` modules |
 | `NullRenderProvider` | always | No-op, for headless tests |
 
 The existing `RenderBackend` trait (`goud_engine/src/libs/graphics/backend/render_backend.rs`) is NOT object-safe by design. It becomes an internal detail of `OpenGLRenderProvider` and `WgpuRenderProvider` and does not appear in the public provider API.
+
+A partial wgpu backend already exists at `goud_engine/src/libs/graphics/backend/wgpu_backend/` (frame, texture, shader, buffer, pipeline modules). F02-03 will wrap this existing code inside `WgpuRenderProvider` rather than rewriting it.
 
 #### PhysicsProvider
 
@@ -165,7 +167,9 @@ pub trait AudioProvider: Provider {
 `WindowProvider` extracts the surface-management part of `PlatformBackend`. It is NOT `Send + Sync` because GLFW requires all window calls on the main thread (see §3.7).
 
 ```rust
-pub trait WindowProvider: 'static {  // NOT Send + Sync
+pub trait WindowProvider: 'static {  // NOT Send + Sync — see §3.7
+    fn init(&mut self) -> GoudResult<()>;
+    fn shutdown(&mut self);
     fn should_close(&self) -> bool;
     fn set_should_close(&mut self, value: bool);
     fn poll_events(&mut self);
@@ -174,6 +178,8 @@ pub trait WindowProvider: 'static {  // NOT Send + Sync
     fn get_framebuffer_size(&self) -> (u32, u32);
 }
 ```
+
+`WindowProvider` does NOT extend `Provider` (which requires `Send + Sync`) but does include its own `init()`/`shutdown()` methods matching the `ProviderLifecycle` contract. It cannot implement `ProviderLifecycle` directly because that trait will likely require `Provider` as a supertrait.
 
 | Built-in | Feature Flag | Notes |
 |----------|-------------|-------|
@@ -193,7 +199,12 @@ pub trait InputProvider: Provider {
     fn key_just_pressed(&self, key: KeyCode) -> bool;
     fn key_just_released(&self, key: KeyCode) -> bool;
     fn mouse_position(&self) -> Vec2;
+    fn mouse_delta(&self) -> Vec2;
     fn mouse_button_pressed(&self, button: MouseButton) -> bool;
+    fn scroll_delta(&self) -> Vec2;
+    fn gamepad_connected(&self, id: GamepadId) -> bool;
+    fn gamepad_axis(&self, id: GamepadId, axis: GamepadAxis) -> f32;
+    fn gamepad_button_pressed(&self, id: GamepadId, button: GamepadButton) -> bool;
 }
 ```
 
@@ -240,15 +251,20 @@ pub struct RenderCapabilities {
 }
 ```
 
-The engine downcasts and checks capabilities before using optional features:
+Each subsystem trait also provides a typed accessor that avoids the downcast:
 
 ```rust
-let caps = render_provider.capabilities()
-    .downcast::<RenderCapabilities>()
-    .map_err(|_| GoudError::ProviderError {
-        subsystem: "render",
-        message: "capabilities type mismatch".into(),
-    })?;
+pub trait RenderProvider: Provider + ProviderLifecycle {
+    fn render_capabilities(&self) -> &RenderCapabilities;
+    // ... other methods
+}
+```
+
+The generic `Provider::capabilities()` returning `Box<dyn Any>` remains available for code that operates on providers generically (e.g., logging all provider capabilities at startup). For subsystem-specific code, prefer the typed accessor:
+
+```rust
+// Preferred — no downcast, no runtime failure path
+let caps = render_provider.render_capabilities();
 if caps.supports_instancing {
     renderer.use_instanced_path();
 } else {
@@ -349,6 +365,8 @@ Providers declare support with `fn supports_hot_swap(&self) -> bool` (default `f
 
 **Constraints:** handle invalidation must produce errors (not silent UB), hot-swap must not be called from multiple threads, and replacement must pass `init()` before the old provider is dropped.
 
+**Expected invalidation mechanism:** the engine already uses generational handles (see `core/handle.rs`). On hot-swap, the provider epoch increments; all existing handles carry the old epoch and fail validation on next use. This avoids scanning all live handles.
+
 ---
 
 ### 3.9 Error Handling
@@ -433,6 +451,7 @@ Wrapping all built-in providers in an enum and dispatching with `match` avoids d
 - `goud_game_create` gains `GoudPhysicsType` and `GoudAudioType` parameters.
 - New capability query functions added to the FFI surface.
 - C# bindings regenerated via csbindgen after `cargo build`.
+- **Minimum migration for existing games:** pass `GoudRendererType::OpenGL`, `GoudPhysicsType::Null`, `GoudAudioType::Null` to preserve current behavior with no functional change.
 
 ### SDK Changes
 

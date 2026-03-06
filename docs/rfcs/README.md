@@ -51,4 +51,4 @@ Acceptance requires at least one PR review approval from a maintainer. Update th
 
 | RFC | Title | Status |
 |---|---|---|
-| [RFC-0001](RFC-0001-provider-trait-pattern.md) | Provider Trait Pattern | accepted |
+| [RFC-0001](RFC-0001-provider-trait-pattern.md) | Provider Trait Pattern | proposed |
