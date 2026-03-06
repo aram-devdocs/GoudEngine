@@ -1,3 +1,8 @@
+<!--
+  Status lifecycle: draft → proposed → accepted → implemented → superseded
+  Set to "proposed" when opening a PR.
+  On PR merge, rfc-approve.yml automatically changes "proposed" to "accepted".
+-->
 ---
 rfc: "NNNN"
 title: "Short descriptive title"
