@@ -9,10 +9,10 @@ use super::codes::{
     ERR_ENTITY_ALREADY_EXISTS, ERR_ENTITY_NOT_FOUND, ERR_HANDLE_EXPIRED, ERR_HANDLE_TYPE_MISMATCH,
     ERR_INITIALIZATION_FAILED, ERR_INTERNAL_ERROR, ERR_INVALID_CONTEXT, ERR_INVALID_HANDLE,
     ERR_INVALID_STATE, ERR_NOT_IMPLEMENTED, ERR_NOT_INITIALIZED, ERR_PHYSICS_INIT_FAILED,
-    ERR_PLATFORM_ERROR, ERR_QUERY_FAILED, ERR_RENDER_TARGET_FAILED, ERR_RESOURCE_ALREADY_EXISTS,
-    ERR_RESOURCE_INVALID_FORMAT, ERR_RESOURCE_LOAD_FAILED, ERR_RESOURCE_NOT_FOUND,
-    ERR_SHADER_COMPILATION_FAILED, ERR_SHADER_LINK_FAILED, ERR_TEXTURE_CREATION_FAILED,
-    ERR_WINDOW_CREATION_FAILED,
+    ERR_PLATFORM_ERROR, ERR_PROVIDER_OPERATION_FAILED, ERR_QUERY_FAILED,
+    ERR_RENDER_TARGET_FAILED, ERR_RESOURCE_ALREADY_EXISTS, ERR_RESOURCE_INVALID_FORMAT,
+    ERR_RESOURCE_LOAD_FAILED, ERR_RESOURCE_NOT_FOUND, ERR_SHADER_COMPILATION_FAILED,
+    ERR_SHADER_LINK_FAILED, ERR_TEXTURE_CREATION_FAILED, ERR_WINDOW_CREATION_FAILED,
 };
 
 /// The main error type for GoudEngine.
@@ -30,6 +30,7 @@ use super::codes::{
 /// - **Entity**: ECS entity and component errors (codes 300-399)
 /// - **Input**: Input handling errors (codes 400-499)
 /// - **System**: Platform and system errors (codes 500-599)
+/// - **Provider**: Provider subsystem errors (codes 600-699)
 /// - **Internal**: Unexpected internal errors (codes 900-999)
 ///
 /// # FFI Compatibility
@@ -259,6 +260,21 @@ pub enum GoudError {
     PlatformError(String),
 
     // -------------------------------------------------------------------------
+    // Provider Errors (codes 600-699)
+    // -------------------------------------------------------------------------
+    /// Provider subsystem error.
+    ///
+    /// This error occurs when a provider operation fails. The `subsystem`
+    /// field identifies which provider category (e.g., "render", "physics",
+    /// "audio") encountered the error, enabling FFI error code routing.
+    ProviderError {
+        /// The provider subsystem that encountered the error.
+        subsystem: &'static str,
+        /// Details about the failure.
+        message: String,
+    },
+
+    // -------------------------------------------------------------------------
     // Internal Errors (codes 900-999)
     // -------------------------------------------------------------------------
     /// Internal engine error.
@@ -345,6 +361,9 @@ impl GoudError {
             GoudError::PhysicsInitFailed(_) => ERR_PHYSICS_INIT_FAILED,
             GoudError::PlatformError(_) => ERR_PLATFORM_ERROR,
 
+            // Provider errors (600-699)
+            GoudError::ProviderError { .. } => ERR_PROVIDER_OPERATION_FAILED,
+
             // Internal errors (900-999)
             GoudError::InternalError(_) => ERR_INTERNAL_ERROR,
             GoudError::NotImplemented(_) => ERR_NOT_IMPLEMENTED,
@@ -423,6 +442,9 @@ impl GoudError {
             GoudError::AudioInitFailed(msg) => msg,
             GoudError::PhysicsInitFailed(msg) => msg,
             GoudError::PlatformError(msg) => msg,
+
+            // Provider errors
+            GoudError::ProviderError { message, .. } => message,
 
             // Internal errors
             GoudError::InternalError(msg) => msg,

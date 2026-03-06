@@ -14,6 +14,7 @@
 //! | 300-399   | Entity     | ECS entity and component errors      |
 //! | 400-499   | Input      | Input handling errors                |
 //! | 500-599   | System     | Platform and system errors           |
+//! | 600-699   | Provider   | Provider subsystem errors            |
 //! | 900-999   | Internal   | Unexpected internal errors           |
 
 /// FFI-compatible error code type.
@@ -163,6 +164,29 @@ pub const ERR_PHYSICS_INIT_FAILED: GoudErrorCode = 520;
 pub const ERR_PLATFORM_ERROR: GoudErrorCode = 530;
 
 // -----------------------------------------------------------------------------
+// Provider Errors (600-699): Provider subsystem errors
+// -----------------------------------------------------------------------------
+
+/// Base code for provider errors.
+pub const PROVIDER_ERROR_BASE: GoudErrorCode = 600;
+
+/// Provider initialization failed.
+pub const ERR_PROVIDER_INIT_FAILED: GoudErrorCode = 600;
+
+/// Provider was not found or not registered.
+pub const ERR_PROVIDER_NOT_FOUND: GoudErrorCode = 601;
+
+/// Provider operation failed.
+pub const ERR_PROVIDER_OPERATION_FAILED: GoudErrorCode = 602;
+
+// Provider subsystem ranges:
+// 600-609: Render provider errors
+// 610-619: Physics provider errors
+// 620-629: Audio provider errors
+// 630-639: Window provider errors
+// 640-649: Input provider errors
+
+// -----------------------------------------------------------------------------
 // Internal Errors (900-999): Unexpected internal errors
 // -----------------------------------------------------------------------------
 
@@ -202,6 +226,7 @@ pub const fn error_category(code: GoudErrorCode) -> &'static str {
         300..=399 => "Entity",
         400..=499 => "Input",
         500..=599 => "System",
+        600..=699 => "Provider",
         900..=999 => "Internal",
         _ => "Unknown",
     }
