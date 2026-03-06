@@ -55,145 +55,231 @@ Derive `<short-slug>` from the primary issue title (2-3 word kebab-case). Use th
   git fetch origin main
   git checkout -b agent/issue-<PRIMARY>-<short-slug> origin/main
   ```
+- [ ] Record working directory: the repo root (output of `pwd`)
 
 **Worktree mode (--worktree):**
 - [ ] Create isolated worktree:
   ```bash
   git fetch origin main
   git worktree add -b agent/issue-<PRIMARY>-<short-slug> ../GoudEngine-issue-<PRIMARY> origin/main
-  cd ../GoudEngine-issue-<PRIMARY>
   ```
+- [ ] Record working directory: the absolute path to `../GoudEngine-issue-<PRIMARY>` (use `realpath`)
 
 ## Phase 3: Planning (enter plan mode)
 
 - [ ] Read `CLAUDE.md` for project conventions and architecture
 - [ ] Read relevant `.agents/rules/*.md` files based on which areas the issues touch
 - [ ] Explore the relevant codebase areas thoroughly (discovery-first protocol)
-- [ ] Create a structured plan with ALL of the following as checkboxed items:
-  - [ ] Summary of combined changes needed across all issues
-  - [ ] Files to modify/create (with rationale)
-  - [ ] Testing strategy (TDD: red-green-refactor)
-  - [ ] Which agent teams to involve (engine-lead, integration-lead, quality-lead)
-  - [ ] Review cycle checkpoints (spec-reviewer, code-quality-reviewer, architecture-validator)
-  - [ ] PR creation and CI verification steps
+- [ ] **Fill in the Execution Plan Template below -- EVERY `{{PLACEHOLDER}}`**. The template IS the plan. Do not create a different structure.
 - [ ] If any issue is ambiguous, comment questions on that issue and STOP until answered
 
-**CRITICAL**: The plan file MUST use `- [ ]` checkbox syntax for every actionable step. The `plan-completion-guard.sh` hook blocks session end if unchecked items remain. Every review gate, verification command, and feedback loop must be a checkbox -- not just prose.
+**CRITICAL**: The plan file MUST use `- [ ]` checkbox syntax for every actionable step. The `plan-completion-guard.sh` hook blocks session end if unchecked items remain.
 
-### Required Plan Checkboxes
+---
 
-The plan MUST include these checkpoint items (copy them into the plan):
+### Execution Plan Template
 
-```markdown
-### Implementation
-- [ ] Implement changes following TDD (red-green-refactor)
-- [ ] Run `cargo check` after each significant change
-- [ ] Run `cargo fmt --all -- --check`
-- [ ] Run `cargo clippy -- -D warnings`
-- [ ] Run `cargo test`
-- [ ] Commit with conventional prefix (feat:/fix:/refactor:/etc.)
+Copy the template below into the plan file. Replace every `{{PLACEHOLDER}}` with actual values. Do not remove any sections.
 
-### Review Gates (hook-enforced ordering)
-- [ ] Run spec-reviewer -- validate implementation matches issue requirements
-- [ ] Receive spec-reviewer verdict: APPROVED
-- [ ] Run code-quality-reviewer -- validate patterns, anti-patterns, quality
-- [ ] Receive code-quality-reviewer verdict: APPROVED
-- [ ] Run architecture-validator -- check layer hierarchy, dependency flow
-- [ ] Run security-auditor (if FFI/unsafe touched -- sequential only)
-- [ ] Address all REJECTED/CHANGES REQUESTED verdicts
+````markdown
+# Execution Plan: {{ISSUE_TITLES}}
 
-### PR & CI
-- [ ] Push branch to origin
-- [ ] Create PR with conventional commit title and `Closes #<ISSUE>` for each issue
-- [ ] Verify CI passes (plan-completion-guard checks this)
-- [ ] Handle code review feedback (max 3 iterations)
+## Metadata (DO NOT MODIFY after creation)
+- **Issues**: {{COMMA_SEPARATED_ISSUE_NUMBERS}}
+- **Branch**: `agent/issue-{{PRIMARY}}-{{SLUG}}`
+- **Working directory**: `{{WORKTREE_ABSPATH_OR_REPO_ROOT}}`
+- **Mode**: {{worktree|in-place}}
+- **Created by skill**: `/gh-issue` (see `.agents/skills/gh-issue/SKILL.md`)
+- **Created**: {{TIMESTAMP}}
 
-### Cleanup (worktree mode only)
-- [ ] Remove worktree after PR is created and pushed
-```
+## Execution Context (READ THIS FIRST)
 
-## Phase 4: Implementation
+You are the **ORCHESTRATOR** executing a `/gh-issue` plan.
+- Your working directory is `{{WORKTREE_PATH}}`. EVERY bash command must start with
+  `cd {{WORKTREE_PATH}} &&`.
+- You MUST NOT write .rs/.cs/.py files directly -- dispatch subagents.
+- Read `CLAUDE.md` sections: "Worktree Execution Protocol", "Plan Execution Protocol",
+  "Subagent Dispatch Reference".
+- Read `.agents/skills/gh-issue/SKILL.md` to understand the full workflow this plan follows.
+- Read `.agents/rules/orchestrator-protocol.md` for the three-tier agent hierarchy.
 
-Execute the plan using proper orchestration:
+## Issue Summary
+{{For each issue: number, title, key requirements, acceptance criteria}}
 
-- [ ] Follow the project's orchestration flow -- delegate to appropriate team leads:
-  - **engine-lead** for Rust core changes
-  - **integration-lead** for FFI/SDK changes
-  - **quality-lead** for reviews and validation
-- [ ] Use conventional commits (`feat:`, `fix:`, `refactor:`, etc.)
-- [ ] After each significant change, run verification:
-  ```bash
-  cargo check
-  cargo fmt --all -- --check
-  cargo clippy -- -D warnings
-  cargo test
+## Changes Needed
+{{Unified analysis of what code changes are required across all issues}}
+- Files to modify: {{list with rationale}}
+- Files to create: {{list with rationale}}
+- Testing strategy: {{TDD approach}}
+
+---
+
+## Phase 1: Implementation
+
+### Step 1.1: {{TEAM_LEAD_TYPE}} -- {{TASK_SUMMARY}}
+- [ ] Dispatch `{{engine-lead|integration-lead}}` subagent:
   ```
-- [ ] Governance hooks enforce: delegation-guard (no direct .rs/.cs/.py writes from orchestrator), delegation-tracker (audit trail), quality-check (auto-lint on edit)
+  You are the {{engine-lead|integration-lead}} for GoudEngine.
+  Working directory: {{WORKTREE_PATH}}
 
-## Phase 5: Review Cycles (hook-enforced gate ordering)
+  ## Task
+  {{SPECIFIC_TASK_DESCRIPTION}}
 
-Run the full review pipeline before creating the PR. The `review-gate-guard.sh` hook enforces ordering.
+  ## Files
+  {{LIST_OF_FILES_WITH_RATIONALE}}
 
-- [ ] **spec-reviewer** -- validates implementation matches ALL issue requirements
-- [ ] Confirm spec-reviewer verdict is APPROVED (tracked by `review-gate-tracker.sh`)
-- [ ] **code-quality-reviewer** -- validates patterns, anti-patterns, quality (BLOCKED until spec-reviewer APPROVED)
-- [ ] Confirm code-quality-reviewer verdict is APPROVED
-- [ ] **architecture-validator** -- checks layer hierarchy, dependency flow
-- [ ] **security-auditor** -- if FFI/unsafe code was touched (sequential only, never parallelized)
-- [ ] Address ALL REJECTED/CHANGES REQUESTED verdicts before proceeding
-- [ ] Re-run failed review gates after fixes (review-verdict-validator.sh enforces verdicts exist)
+  ## Requirements
+  1. Use TDD: write failing test first, then implement, then refactor.
+  2. After changes run: cd {{WORKTREE_PATH}} && cargo check && cargo test && cargo clippy -- -D warnings
+  3. Commit with conventional prefix (feat:/fix:/refactor:).
+  4. You may dispatch sub-specialists: implementer, test-first-implementer, quick-fix.
 
-## Phase 6: Create PR
-
-- [ ] Push the branch:
-  ```bash
-  git push -u origin agent/issue-<PRIMARY>-<branch-slug>
+  ## Report Back
+  - Files changed (with line counts)
+  - Tests added/modified
+  - Verification results (cargo check, test, clippy)
+  - Any concerns or assumptions made
   ```
-- [ ] Read the PR template:
-  ```bash
-  cat .github/pull_request_template.md
+- [ ] Review engine-lead report. Question gaps. Verify claims.
+
+### Step 1.N: {{REPEAT for each independent task batch}}
+(parallel if independent files, sequential if dependent)
+
+## Phase 2: Verification
+- [ ] Run: `cd {{WORKTREE_PATH}} && cargo check`
+- [ ] Run: `cd {{WORKTREE_PATH}} && cargo fmt --all -- --check`
+- [ ] Run: `cd {{WORKTREE_PATH}} && cargo clippy -- -D warnings`
+- [ ] Run: `cd {{WORKTREE_PATH}} && cargo test`
+- [ ] All pass? If not, dispatch quick-fix or engine-lead to address failures.
+
+## Phase 3: Review Gates (SEQUENTIAL -- hook-enforced)
+
+### Step 3.1: spec-reviewer (FIRST)
+- [ ] Dispatch `spec-reviewer` subagent:
   ```
-- [ ] Create the PR. Include `Closes #<N>` for EVERY issue number in the Related Issues field:
-  ```bash
-  gh pr create --title "<conventional-commit-prefix>: <description>" \
-    --body "<filled-in PR template with Closes #N for each issue>" \
-    --base main
+  Review implementation against these issue requirements:
+  {{ISSUE_REQUIREMENTS_SUMMARY}}
+
+  Working directory: {{WORKTREE_PATH}}
+  Run: cd {{WORKTREE_PATH}} && git diff origin/main --stat
+  Then read the changed files.
+
+  Check:
+  1. Does the implementation satisfy ALL issue requirements?
+  2. Are there missing edge cases or requirements?
+  3. Do tests cover the specified behavior?
+
+  You MUST end with a verdict: APPROVED, REJECTED, or CHANGES REQUESTED.
+  If not APPROVED, cite specific file:line references.
   ```
+- [ ] spec-reviewer verdict: ________
 
-## Phase 7: Code Review Feedback Loop (max 3 iterations)
+### Step 3.2: code-quality-reviewer (BLOCKED until spec-reviewer APPROVED)
+- [ ] Dispatch `code-quality-reviewer` subagent:
+  ```
+  Review code quality of changes in: {{WORKTREE_PATH}}
+  Run: cd {{WORKTREE_PATH}} && git diff origin/main --stat
+  Then read the changed files.
 
-After creating the PR, handle automated code review feedback:
+  Check against CLAUDE.md anti-patterns:
+  1. Logic in SDKs instead of Rust?
+  2. Missing #[no_mangle] or #[repr(C)] on FFI?
+  3. Unsafe without // SAFETY: comment?
+  4. Layer hierarchy violations?
+  5. Files exceeding 500 lines?
+  6. Tests without assertions?
 
+  You MUST end with a verdict: APPROVED, REJECTED, or CHANGES REQUESTED.
+  Cite specific file:line references.
+  ```
+- [ ] code-quality-reviewer verdict: ________
+
+### Step 3.3: architecture-validator
+- [ ] Dispatch `architecture-validator` subagent:
+  ```
+  Validate dependency flow in: {{WORKTREE_PATH}}
+  Run: cd {{WORKTREE_PATH}} && git diff origin/main --name-only
+  Check all changed files for layer violations.
+  Layer hierarchy: libs(1) -> engine(2) -> ffi(3) -> sdks(4) -> examples(5)
+  No upward imports. No same-layer cross-imports.
+
+  End with verdict: APPROVED or REJECTED with specific violations.
+  ```
+- [ ] architecture-validator verdict: ________
+
+### Step 3.4: security-auditor (ONLY if FFI/unsafe changed)
+- [ ] Dispatch `security-auditor` subagent (SEQUENTIAL -- never parallel):
+  ```
+  Audit FFI and unsafe code in: {{WORKTREE_PATH}}
+  {{SPECIFIC_FFI_FILES_CHANGED}}
+  Check: null pointer validation, SAFETY comments, memory ownership docs,
+  repr(C) on shared structs, C-compatible types only.
+  End with verdict.
+  ```
+- [ ] security-auditor verdict: ________
+
+### Step 3.5: Address rejections
+- [ ] If ANY verdict is REJECTED or CHANGES REQUESTED:
+  - Dispatch engine-lead/integration-lead to fix cited issues
+  - Re-run the failed reviewer(s)
+  - Max 2 fix-review iterations per gate
+
+## Phase 4: Create PR
+- [ ] Push branch:
+  ```bash
+  cd {{WORKTREE_PATH}} && git push -u origin agent/issue-{{PRIMARY}}-{{SLUG}}
+  ```
+- [ ] Read PR template:
+  ```bash
+  cd {{WORKTREE_PATH}} && cat .github/pull_request_template.md
+  ```
+- [ ] Create PR with template filled in and `Closes #N` for each issue:
+  ```bash
+  cd {{WORKTREE_PATH}} && gh pr create \
+    --title "{{CONVENTIONAL_PREFIX}}: {{SHORT_DESCRIPTION}}" \
+    --body "$(cat <<'PREOF'
+  {{FILLED_IN_PR_TEMPLATE}}
+  PREOF
+  )" --base main
+  ```
+- [ ] Record PR number: ________
+
+## Phase 5: CI Verification & Review Loop (max 3 iterations)
+- [ ] Wait 30s, then check CI:
+  ```bash
+  cd {{WORKTREE_PATH}} && gh pr checks {{PR_NUMBER}}
+  ```
+- [ ] If CI fails: diagnose, dispatch quick-fix, push fix commit, re-check
 - [ ] Check for review comments:
   ```bash
-  gh pr view <pr-number> --comments --json comments
-  gh pr reviews <pr-number> --json body,state
+  cd {{WORKTREE_PATH}} && gh pr view {{PR_NUMBER}} --json reviews --jq '.reviews[-3:]'
   ```
-- [ ] If changes are requested:
-  - [ ] Address each review comment
-  - [ ] Push fixes with a `fix:` commit
-  - [ ] Re-verify: `cargo check && cargo test`
-  - [ ] Comment iteration count:
-    ```bash
-    gh pr comment <pr-number> --body "<!-- agent-review-round: N --> Addressed review feedback (round N/3)."
-    ```
-- [ ] **Maximum 3 review iterations** -- after 3 rounds, leave remaining issues for human review
-- [ ] Verify CI passes on final push (plan-completion-guard checks this at session end)
+- [ ] If changes requested: fix, push, comment iteration count
+- [ ] CI green and reviews addressed? Mark complete.
 
-## Phase 8: Cleanup
-
-**Worktree mode only:**
-- [ ] After PR is created and pushed, remove the worktree:
+## Phase 6: Cleanup
+- [ ] Comment on each issue:
   ```bash
-  cd /Users/aramhammoudeh/dev/game/GoudEngine
-  git worktree remove ../GoudEngine-issue-<PRIMARY>
+  gh issue comment {{ISSUE_N}} --body "Resolved in PR #{{PR_NUMBER}}. All review gates passed."
   ```
-
-**All modes:**
-- [ ] Comment final status on each issue:
+- [ ] (Worktree mode) Remove worktree:
   ```bash
-  gh issue comment <ISSUE> --body "PR #<pr-number> created. All review gates passed."
+  cd /Users/aramhammoudeh/dev/game/GoudEngine && git worktree remove {{WORKTREE_PATH}}
   ```
+````
+
+---
+
+## Rules
+
+- Never force-push
+- Never skip pre-commit hooks (no `--no-verify`)
+- Never implement logic in SDKs -- all logic in Rust
+- Follow the layer hierarchy: libs -> engine -> ffi -> sdks -> examples
+- If any issue is unclear, ask questions on that issue rather than guessing
+- If blocked after 3 attempts at the same problem, comment on the issue explaining the blocker and stop
+- Multiple issues = one branch, one plan, one PR (with `Closes #N` for each)
+- Every actionable step in the plan MUST be a `- [ ]` checkbox for hook enforcement
 
 ## Hook Integration Summary
 
@@ -211,14 +297,3 @@ These hooks fire automatically and enforce governance. The plan checkboxes align
 | `governance-completion-check.sh` | Stop | Blocks if impl files changed without delegation/reviews |
 | `completion-check.sh` | Stop | Advisory warnings (cargo check, FFI/SDK parity, todo!()) |
 | `save-session.sh` | PreCompact | Saves session state for context recovery |
-
-## Rules
-
-- Never force-push
-- Never skip pre-commit hooks (no `--no-verify`)
-- Never implement logic in SDKs -- all logic in Rust
-- Follow the layer hierarchy: libs -> engine -> ffi -> sdks -> examples
-- If any issue is unclear, ask questions on that issue rather than guessing
-- If blocked after 3 attempts at the same problem, comment on the issue explaining the blocker and stop
-- Multiple issues = one branch, one plan, one PR (with `Closes #N` for each)
-- Every actionable step in the plan MUST be a `- [ ]` checkbox for hook enforcement

@@ -1,1 +1,0 @@
-../../.agents/rules/ecs-patterns.md
