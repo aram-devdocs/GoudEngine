@@ -1,0 +1,41 @@
+name: RFC Auto-Approve
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - "docs/rfcs/RFC-*.md"
+
+permissions:
+  contents: write
+
+jobs:
+  approve-rfc:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Update RFC status from proposed to accepted
+        run: |
+          changed=false
+          for file in docs/rfcs/RFC-*.md; do
+            [ "$file" = "docs/rfcs/RFC-0000-template.md" ] && continue
+            [ ! -f "$file" ] && continue
+            if head -20 "$file" | grep -q '^status: proposed'; then
+              sed -i 's/^status: proposed/status: accepted/' "$file"
+              changed=true
+              echo "Updated: $file"
+            fi
+          done
+          if [ "$changed" = true ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add docs/rfcs/RFC-*.md
+            git commit -m "docs: auto-approve merged RFCs [skip ci]"
+            git push
+          else
+            echo "No RFCs to update"
+          fi

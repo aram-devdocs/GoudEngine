@@ -36,7 +36,7 @@ draft → proposed → accepted → implemented → superseded
 | `implemented` | Code is shipped; RFC is complete |
 | `superseded` | Replaced by a later RFC (link to successor) |
 
-Acceptance requires at least one PR review approval from a maintainer. Update the `status` field in the front matter when the RFC advances.
+Acceptance requires at least one PR review approval from a maintainer. The `proposed` → `accepted` transition is automated: a GitHub Action (`rfc-approve.yml`) updates the front matter status when the PR merges. The `implemented` and `superseded` transitions remain manual.
 
 ## Writing an RFC
 
@@ -45,7 +45,7 @@ Acceptance requires at least one PR review approval from a maintainer. Update th
 3. Fill in: motivation, detailed design, drawbacks, alternatives considered
 4. Open a PR; set `status: proposed` in the front matter
 5. Address review feedback on the PR
-6. On merge: set `status: accepted` and update the index below
+6. On merge: `rfc-approve.yml` automatically sets `status: accepted`; update the index below
 
 ## Index
 

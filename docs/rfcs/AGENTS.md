@@ -16,8 +16,8 @@ goes through a review process before implementation begins.
 1. Create a new RFC file with the next available number
 2. Set `status: draft` in front matter while writing
 3. Open a PR and set `status: proposed`
-4. On merge with review approval, set `status: accepted`
-5. After implementation ships, set `status: implemented`
+4. On merge, `rfc-approve.yml` automatically sets `status: accepted`
+5. After implementation ships, manually set `status: implemented`
 
 ## When Working Here
 
