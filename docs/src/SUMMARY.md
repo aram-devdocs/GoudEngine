@@ -23,5 +23,6 @@
 
 # Reference
 
+- [API Reference](reference/api.md)
 - [husky-rs (Git Hooks)](reference/husky-rs.md)
 - [cbindgen (C Headers)](reference/cbindgen.md)

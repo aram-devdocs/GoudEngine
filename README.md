@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/aram-devdocs/GoudEngine/branch/main/graph/badge.svg)](https://codecov.io/gh/aram-devdocs/GoudEngine)
 [![Security Audit](https://github.com/aram-devdocs/GoudEngine/actions/workflows/security.yml/badge.svg)](https://github.com/aram-devdocs/GoudEngine/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Docs](https://img.shields.io/badge/docs-mdBook-blue)](https://aram-devdocs.github.io/GoudEngine/)
+[![Docs](https://img.shields.io/badge/docs-mdBook-blue)](https://goudengine.aramhammoudeh.com/)
 
 [![crates.io](https://img.shields.io/crates/v/goud-engine.svg)](https://crates.io/crates/goud-engine)
 [![npm](https://img.shields.io/npm/v/goudengine.svg)](https://www.npmjs.com/package/goudengine)
@@ -19,7 +19,7 @@ Game engine written in Rust. Build 2D and 3D games from Rust, C#, Python, or Typ
 |---|---|
 | **SDKs** | [Rust](sdks/rust/) · [C#](sdks/csharp/) · [Python](sdks/python/) · [TypeScript](sdks/typescript/) |
 | **Examples** | [All Examples](examples/) · [Flappy Bird (Rust)](examples/rust/flappy_bird/) |
-| **Docs** | [Documentation Site](https://aram-devdocs.github.io/GoudEngine/) · [Getting Started](docs/) · [Architecture](docs/architecture/) · [Development](docs/DEVELOPMENT.md) · [Building](docs/BUILDING.md) · [AI Setup](docs/AI_SETUP.md) |
+| **Docs** | [Documentation Site](https://goudengine.aramhammoudeh.com/) · [Getting Started](docs/) · [Architecture](docs/architecture/) · [Development](docs/DEVELOPMENT.md) · [Building](docs/BUILDING.md) · [AI Setup](docs/AI_SETUP.md) |
 
 ## Alpha Roadmap
 

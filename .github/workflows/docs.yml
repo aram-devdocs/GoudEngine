@@ -1,0 +1,146 @@
+name: Deploy Docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ubuntu-cargo-docs-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ubuntu-cargo-docs-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install mdbook
+        run: |
+          mkdir -p "$HOME/.cargo/bin"
+          curl -sSL https://github.com/rust-lang/mdBook/releases/latest/download/mdbook-v0.4.44-x86_64-unknown-linux-gnu.tar.gz \
+            | tar -xz -C "$HOME/.cargo/bin"
+
+      # ── Build mdBook site ──────────────────────────────────────────
+      - name: Build mdBook
+        run: mdbook build
+
+      # ── Rust API docs ──────────────────────────────────────────────
+      - name: Build Rust API docs
+        run: cargo doc --no-deps -p goud-engine-core -p goud-engine
+        env:
+          RUSTDOCFLAGS: "--default-theme ayu"
+
+      - name: Copy Rust docs into site
+        run: cp -r target/doc docs/book/api/rust
+
+      # ── Run codegen (generates SDK files with doc comments) ────────
+      - name: Run codegen
+        run: |
+          python3 codegen/gen_csharp.py
+          python3 codegen/gen_python.py
+          python3 codegen/gen_ts_node.py
+          python3 codegen/gen_ts_web.py
+
+      # ── Python API docs ────────────────────────────────────────────
+      - name: Build native library for Python docs
+        run: cargo build --release
+
+      - name: Install pdoc
+        run: pip install pdoc
+
+      - name: Build Python API docs
+        run: |
+          pdoc --output-dir docs/book/api/python sdks/python/goud_engine
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/target/release
+          PYTHONPATH: ${{ github.workspace }}/sdks/python
+
+      # ── TypeScript API docs ────────────────────────────────────────
+      - name: Install TypeScript dependencies
+        working-directory: sdks/typescript
+        run: npm ci
+
+      - name: Build TypeScript SDK
+        working-directory: sdks/typescript
+        run: npm run build:ts || true
+
+      - name: Build TypeScript API docs
+        working-directory: sdks/typescript
+        run: |
+          npx typedoc \
+            --entryPoints src/generated/node/index.g.ts src/generated/web/index.g.ts src/generated/types/engine.g.ts src/generated/types/math.g.ts \
+            --out ../../docs/book/api/typescript \
+            --skipErrorChecking \
+            --name "GoudEngine TypeScript SDK"
+
+      # ── C# API docs ───────────────────────────────────────────────
+      - name: Install DocFX
+        run: dotnet tool install -g docfx
+
+      - name: Build C# API docs
+        working-directory: sdks/csharp
+        run: |
+          dotnet build -c Release --no-restore || true
+          docfx build docfx.json || echo "DocFX build completed with warnings"
+          cp -r _site ../../docs/book/api/csharp || true
+
+      # ── Finalize ───────────────────────────────────────────────────
+      - name: Copy CNAME
+        run: cp docs/CNAME docs/book/CNAME
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/book
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
