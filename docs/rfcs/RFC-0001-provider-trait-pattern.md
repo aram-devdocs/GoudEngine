@@ -191,7 +191,7 @@ GLFW is the current platform layer (`goud_engine/src/libs/platform/glfw_platform
 
 #### InputProvider
 
-Extracted from `PlatformBackend` separately because input has a different update cadence and can be mocked without a real window (e.g., test harnesses injecting synthetic events).
+Extracted from `PlatformBackend` separately because input has a different update cadence and can be mocked without a real window (e.g., test harnesses injecting synthetic events). For the common GLFW case, a `WindowInputBridge` helper wires GLFW window events into the `InputProvider` interface.
 
 ```rust
 pub trait InputProvider: Provider {
@@ -334,6 +334,8 @@ All provider traits are object-safe: no associated types, no generic methods. St
 
 The existing `RenderBackend` trait (`goud_engine/src/libs/graphics/backend/render_backend.rs`) is intentionally NOT object-safe and remains an internal detail inside concrete providers. This mirrors `AssetLoader`/`ErasedAssetLoader` in `goud_engine/src/assets/loader/traits.rs` (same crate): typed generics for hot paths, erased trait objects for storage.
 
+For future cross-provider resource sharing, providers MAY expose `fn shared_resources(&self) -> Option<&dyn Any>` as an extension point.
+
 For performance-critical inner loops needing direct backend access, providers expose typed accessors:
 
 ```rust
@@ -348,7 +350,7 @@ impl OpenGLRenderProvider {
 
 Default bound: `Send + Sync + 'static` on all provider traits.
 
-**Exception: `WindowProvider`.** GLFW requires main-thread access, so `WindowProvider` is `!Send + !Sync`. The engine enforces this by storing it outside `ProviderRegistry` directly in `GoudGame`, making `GoudGame` itself `!Send` when a native window is present. This matches `PlatformBackend` in `goud_engine/src/libs/platform/mod.rs`.
+**Exception: `WindowProvider`.** GLFW requires main-thread access, so `WindowProvider` is `!Send + !Sync`. The engine enforces this by storing it outside `ProviderRegistry` directly in `GoudGame`, making `GoudGame` itself `!Send` when a native window is present. This matches `PlatformBackend` in `goud_engine/src/libs/platform/mod.rs`. If an async executor is adopted in the future, `WindowProvider` calls must be scheduled on the main thread via a `MainThreadScheduler` that queues operations from async tasks.
 
 ---
 
@@ -479,12 +481,12 @@ Implementation proceeds in phases F02-02 through F02-09 as defined in `ALPHA_ROA
 
 ---
 
-## 6. Open Questions
+## 6. Resolved Decisions
 
-1. **Window+Input split vs. merge**: Should `WindowProvider` and `InputProvider` remain separate traits, or is a single `PlatformProvider` with both responsibilities simpler? The split enables better headless testing but adds an interface boundary. Decision needed before F02-06.
+1. **Window+Input: Keep Separate.** `WindowProvider` and `InputProvider` remain separate traits. `glfw_platform.rs` pumps events via `poll_events(&mut self, input: &mut InputManager)` — tight event dispatch but loose storage. `InputManager` is an independent resource, and `GamepadState` infrastructure in `core/input_manager/types.rs` exists but isn't wired to GLFW, proving input sources can be window-independent. Headless testing needs input without a window; gamepad/network inputs don't come from windows. `WindowProvider` is `!Send + !Sync` (GLFW main-thread) while `InputProvider` can be `Send + Sync`. A `WindowInputBridge` helper wires GLFW events → `InputProvider` for the common case.
 
-2. **Shared resource pool vs. provider-owned resources**: Should textures and buffers be owned by the render provider, or by a separate `ResourcePool` that the provider borrows from? Provider ownership is simpler; a shared pool enables multi-backend scenarios (e.g., a compute provider sharing buffers with a render provider). Deferred to post-provider-trait stabilization.
+2. **Resource Ownership: Provider-Owned.** Providers own their resources. A shared `ResourcePool` is deferred to post-stabilization. `RenderBackend` already uses handle-based resource management (`create_buffer()`, `create_texture()`, `destroy_*()`), and `GoudGame` is the single root owner. No cross-subsystem resource sharing exists today. Extension point: providers MAY expose `fn shared_resources(&self) -> Option<&dyn Any>` for future cross-provider sharing.
 
-3. **NullProvider as trait default methods or separate struct**: Default no-op behavior could live as provided methods on the trait (e.g., `fn update(&mut self, _delta: f32) -> GoudResult<()> { Ok(()) }`), or in an explicit `Null*Provider` struct. Default methods reduce boilerplate for providers that do not need every lifecycle call; explicit structs are more visible and testable. Current leaning: explicit `Null*Provider` structs, no default method implementations.
+3. **NullProvider: Explicit Structs.** Use explicit `Null*Provider` structs, not default method implementations. The codebase uses `Option<T>` for conditional features and `AssetState` enum with explicit states (`NotLoaded`, `Loading`, `Failed`) rather than silent defaults. Explicit structs are visible, debuggable, and testable (can count draw calls, track state). FFI enum values (`GoudRendererType::Null`) map cleanly to concrete structs. Trait methods stay without defaults — forces implementors to be explicit.
 
-4. **Async context and main-thread window access**: If GoudEngine adds async systems in the future, `WindowProvider`'s main-thread requirement becomes a scheduling constraint. The current design pins `GoudGame` as `!Send` when a native window is present. This may conflict with an async executor that migrates tasks across threads. No resolution proposed here; flagged for the async systems design.
+4. **Async & Main-Thread: Document Constraint, Defer.** The `!Send` constraint on `GoudGame` when a native `WindowProvider` is present is documented and correct. No async resolution is needed now — there is no async code in the codebase, and parallelism is Rayon scope-based (`parallel.rs`). GLFW requires main-thread access (`glfw_platform.rs` lines 7–10) and `GoudContext` is already `!Send + !Sync`. If an async executor is adopted later, `WindowProvider` calls must be scheduled on the main thread via a `MainThreadScheduler` that queues operations from async tasks.
