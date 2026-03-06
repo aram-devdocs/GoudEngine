@@ -3,6 +3,7 @@ rfc: 0001
 title: Provider Trait Pattern
 status: accepted
 created: 2026-03-06
+authors: ["aram-devdocs"]
 tracking-issue: "#217"
 ---
 
@@ -60,26 +61,36 @@ pub trait Provider: Send + Sync + 'static {
 
 ```rust
 pub trait RenderProvider: Provider {
-    fn begin_frame(&mut self) -> GoudResult<()>;
-    fn end_frame(&mut self) -> GoudResult<()>;
+    // Lifecycle — FrameContext token enforces begin/end pairing
+    fn begin_frame(&mut self) -> GoudResult<FrameContext>;
+    fn end_frame(&mut self, frame: FrameContext) -> GoudResult<()>;
     fn resize(&mut self, width: u32, height: u32) -> GoudResult<()>;
+    // Resources
     fn create_texture(&mut self, desc: &TextureDesc) -> GoudResult<TextureHandle>;
     fn destroy_texture(&mut self, handle: TextureHandle);
     fn create_buffer(&mut self, desc: &BufferDesc) -> GoudResult<BufferHandle>;
     fn destroy_buffer(&mut self, handle: BufferHandle);
     fn create_shader(&mut self, desc: &ShaderDesc) -> GoudResult<ShaderHandle>;
     fn destroy_shader(&mut self, handle: ShaderHandle);
+    fn create_pipeline(&mut self, desc: &PipelineDesc) -> GoudResult<PipelineHandle>;
+    fn destroy_pipeline(&mut self, handle: PipelineHandle);
     fn create_render_target(&mut self, desc: &RenderTargetDesc) -> GoudResult<RenderTargetHandle>;
     fn destroy_render_target(&mut self, handle: RenderTargetHandle);
+    // Drawing
     fn draw(&mut self, cmd: &DrawCommand) -> GoudResult<()>;
     fn draw_batch(&mut self, cmds: &[DrawCommand]) -> GoudResult<()>;
     fn draw_mesh(&mut self, cmd: &MeshDrawCommand) -> GoudResult<()>;
+    fn draw_text(&mut self, cmd: &TextDrawCommand) -> GoudResult<()>;
+    fn draw_particles(&mut self, cmd: &ParticleDrawCommand) -> GoudResult<()>;
+    // State
     fn set_viewport(&mut self, x: i32, y: i32, width: u32, height: u32);
     fn set_camera(&mut self, camera: &CameraData);
     fn set_render_target(&mut self, handle: Option<RenderTargetHandle>);
     fn clear(&mut self, color: [f32; 4]);
 }
 ```
+
+`FrameContext` is an opaque token returned by `begin_frame` and consumed by `end_frame`, ensuring the caller cannot skip frame finalization. `PipelineDesc` abstracts render pipeline state (shader + vertex layout + blend mode) required by wgpu; OpenGL providers can map this to their internal state tracking.
 
 | Built-in | Feature Flag | Notes |
 |----------|-------------|-------|
@@ -100,20 +111,29 @@ pub trait PhysicsProvider: Provider {
     fn destroy_body(&mut self, handle: BodyHandle);
     fn body_position(&self, handle: BodyHandle) -> GoudResult<Vec2>;
     fn set_body_position(&mut self, handle: BodyHandle, pos: Vec2) -> GoudResult<()>;
+    fn body_velocity(&self, handle: BodyHandle) -> GoudResult<Vec2>;
+    fn set_body_velocity(&mut self, handle: BodyHandle, vel: Vec2) -> GoudResult<()>;
+    fn apply_force(&mut self, handle: BodyHandle, force: Vec2) -> GoudResult<()>;
     fn apply_impulse(&mut self, handle: BodyHandle, impulse: Vec2) -> GoudResult<()>;
     fn create_collider(&mut self, body: BodyHandle, desc: &ColliderDesc) -> GoudResult<ColliderHandle>;
     fn destroy_collider(&mut self, handle: ColliderHandle);
     fn raycast(&self, origin: Vec2, dir: Vec2, max_dist: f32) -> Option<RaycastHit>;
+    fn overlap_circle(&self, center: Vec2, radius: f32) -> Vec<BodyHandle>;
     fn drain_collision_events(&mut self) -> Vec<CollisionEvent>;
+    fn contact_pairs(&self) -> Vec<ContactPair>;
     fn create_joint(&mut self, desc: &JointDesc) -> GoudResult<JointHandle>;
     fn destroy_joint(&mut self, handle: JointHandle);
+    fn debug_shapes(&self) -> Vec<DebugShape>;
 }
 ```
+
+`drain_collision_events` returns owned `Vec` rather than a slice reference to avoid lifetime coupling between the event buffer and the provider borrow — callers process events after the physics step without holding a borrow on the provider.
 
 | Built-in | Feature Flag | Notes |
 |----------|-------------|-------|
 | `Rapier2DPhysicsProvider` | `rapier2d` | 2D rigid-body physics |
 | `Rapier3DPhysicsProvider` | `rapier3d` | 3D rigid-body physics |
+| `SimplePhysicsProvider` | always | AABB collision + gravity only, no rapier dependency |
 | `NullPhysicsProvider` | always | No-op passthrough |
 
 #### AudioProvider
@@ -125,8 +145,10 @@ pub trait AudioProvider: Provider {
     fn stop(&mut self, id: PlaybackId) -> GoudResult<()>;
     fn pause(&mut self, id: PlaybackId) -> GoudResult<()>;
     fn resume(&mut self, id: PlaybackId) -> GoudResult<()>;
+    fn is_playing(&self, id: PlaybackId) -> bool;
     fn set_volume(&mut self, id: PlaybackId, volume: f32) -> GoudResult<()>;
     fn set_master_volume(&mut self, volume: f32);
+    fn set_channel_volume(&mut self, channel: AudioChannel, volume: f32);
     fn set_listener_position(&mut self, pos: Vec3);
     fn set_source_position(&mut self, id: PlaybackId, pos: Vec3) -> GoudResult<()>;
 }
@@ -135,6 +157,7 @@ pub trait AudioProvider: Provider {
 | Built-in | Feature Flag | Notes |
 |----------|-------------|-------|
 | `RodioAudioProvider` | `audio` | Uses existing rodio integration |
+| `WebAudioProvider` | `web` | Browser/WASM via web-sys |
 | `NullAudioProvider` | always | No-op, for CI / headless |
 
 #### WindowProvider
@@ -155,7 +178,10 @@ pub trait WindowProvider: 'static {  // NOT Send + Sync
 | Built-in | Feature Flag | Notes |
 |----------|-------------|-------|
 | `GlfwWindowProvider` | `native` | Wraps existing GLFW platform layer |
+| `WinitWindowProvider` | `winit` | Future — needed for mobile/web targets |
 | `NullWindowProvider` | always | No-op for headless contexts |
+
+GLFW is the current platform layer (`libs/platform/glfw_platform.rs`). The roadmap targets winit for broader platform support (mobile, web); `WinitWindowProvider` will be added when that migration begins.
 
 #### InputProvider
 
@@ -260,12 +286,24 @@ let game = GoudEngine::builder()
 
 ```rust
 #[repr(C)]
-pub enum GoudRendererType { OpenGL = 0, Wgpu = 1, Null = 2 }
+pub enum GoudRendererType {
+    WgpuAuto = 0,     // Auto-select best wgpu backend
+    WgpuVulkan = 1,
+    WgpuMetal = 2,
+    WgpuDx12 = 3,
+    WgpuWebGpu = 4,
+    OpenGL = 10,
+    Null = 99,
+}
+
 #[repr(C)]
-pub enum GoudPhysicsType { Rapier2D = 0, Rapier3D = 1, Null = 2 }
+pub enum GoudPhysicsType { Rapier2D = 0, Rapier3D = 1, Simple = 2, Null = 99 }
+
 #[repr(C)]
-pub enum GoudAudioType { Rodio = 0, Null = 1 }
+pub enum GoudAudioType { Rodio = 0, WebAudio = 1, Null = 99 }
 ```
+
+The renderer enum exposes wgpu backend sub-selection to allow SDK users to force a specific GPU API when needed (e.g., Vulkan for Linux, Metal for macOS).
 
 ---
 
