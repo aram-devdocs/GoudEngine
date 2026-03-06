@@ -16,7 +16,7 @@ impl GoudGame {
     ///
     /// Returns the entity as a u64 bit representation for FFI compatibility.
     pub fn ffi_entity_spawn_empty(&mut self) -> u64 {
-        self.world.spawn_empty().to_bits()
+        self.world_mut().spawn_empty().to_bits()
     }
 
     /// Spawns multiple empty entities in a batch and writes their IDs to
@@ -32,7 +32,7 @@ impl GoudGame {
         if out_entities.is_null() || count == 0 {
             return 0;
         }
-        let entities = self.world.spawn_batch(count as usize);
+        let entities = self.world_mut().spawn_batch(count as usize);
         // SAFETY: Caller guarantees out_entities has capacity for count u64s.
         let out_slice = std::slice::from_raw_parts_mut(out_entities, count as usize);
         for (i, entity) in entities.iter().enumerate() {
@@ -46,7 +46,7 @@ impl GoudGame {
     /// Returns `true` if the entity was despawned, `false` otherwise.
     pub fn ffi_entity_despawn(&mut self, entity_id: u64) -> bool {
         let entity = Entity::from_bits(entity_id);
-        self.world.despawn(entity)
+        self.world_mut().despawn(entity)
     }
 
     /// Despawns multiple entities in a batch.
@@ -67,18 +67,18 @@ impl GoudGame {
             .iter()
             .map(|&bits| Entity::from_bits(bits))
             .collect();
-        self.world.despawn_batch(&entities) as u32
+        self.world_mut().despawn_batch(&entities) as u32
     }
 
     /// Checks if an entity is currently alive in the world.
     pub fn ffi_entity_is_alive(&self, entity_id: u64) -> bool {
         let entity = Entity::from_bits(entity_id);
-        self.world.is_alive(entity)
+        self.world().is_alive(entity)
     }
 
     /// Returns the total number of alive entities in the world.
     pub fn ffi_entity_count(&self) -> u32 {
-        self.world.entity_count() as u32
+        self.world().entity_count() as u32
     }
 
     /// Checks if multiple entities are alive in the world.
@@ -106,7 +106,7 @@ impl GoudGame {
         let results_slice = std::slice::from_raw_parts_mut(out_results, count as usize);
         for (i, &entity_bits) in entity_slice.iter().enumerate() {
             let entity = Entity::from_bits(entity_bits);
-            results_slice[i] = if self.world.is_alive(entity) { 1 } else { 0 };
+            results_slice[i] = if self.world().is_alive(entity) { 1 } else { 0 };
         }
         count
     }

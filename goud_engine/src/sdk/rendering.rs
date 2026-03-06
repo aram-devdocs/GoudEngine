@@ -82,8 +82,13 @@ impl GoudGame {
             .asset_server
             .as_ref()
             .ok_or(GoudError::NotInitialized)?;
+        let default = self.scene_manager.default_scene();
+        let world = self
+            .scene_manager
+            .get_scene(default)
+            .ok_or(GoudError::NotInitialized)?;
         match &mut self.sprite_batch {
-            Some(batch) => batch.draw_sprites(&self.world, asset_server),
+            Some(batch) => batch.draw_sprites(world, asset_server),
             None => Err(GoudError::NotInitialized),
         }
     }
