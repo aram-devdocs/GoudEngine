@@ -1,160 +1,39 @@
-//! Type mapping from SDK/Rust types to FFI-compatible types.
+//! Core type mapping logic.
 //!
-//! This module defines how Rust types are converted to C-ABI-safe types
-//! for generated FFI wrapper functions.
+//! Maps Rust types to their FFI-compatible representations, handling
+//! flattening, pointer-based returns, and `GoudResult` wrapping.
 
-use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Type;
 
-/// Information about how a Rust type maps to FFI.
-#[derive(Debug, Clone)]
-pub struct FfiTypeInfo {
-    /// The FFI-compatible parameter type(s). For flattened types like Vec2,
-    /// this produces multiple parameters.
-    pub ffi_params: Vec<FfiParam>,
+use super::helpers::{
+    extract_generic_inner, extract_tuple_types, primitive_passthrough, primitive_token,
+    simple_type_name, type_path_matches, PRIMITIVES,
+};
+use super::types::{FfiParam, FfiReturn, FfiTypeInfo};
 
-    /// The FFI return type, if this type is used as a return value.
-    pub ffi_return: FfiReturn,
-
-    /// Whether using this type requires the FFI function to be `unsafe`.
-    pub needs_unsafe: bool,
-
-    /// Human-readable name for manifest generation.
-    pub manifest_type_name: String,
-}
-
-/// A single FFI parameter derived from a Rust type.
-#[derive(Debug, Clone)]
-pub struct FfiParam {
-    /// Parameter name suffix (e.g., "_x", "_y" for Vec2 flattening).
-    pub name_suffix: String,
-
-    /// The FFI type for this parameter.
-    pub ffi_type: TokenStream,
-
-    /// Human-readable type name for manifest.
-    pub type_name: String,
-}
-
-/// How a Rust return type maps to FFI.
-#[derive(Debug, Clone)]
-pub enum FfiReturn {
-    /// Direct return (e.g., bool -> bool, f32 -> f32).
-    Direct(TokenStream, String),
-
-    /// Return via GoudResult with out-parameters for the value.
-    ResultWithOutParams {
-        out_params: Vec<FfiParam>,
-        /// The conversion expression from the Ok value to writing out-params.
-        /// Not stored as TokenStream since it depends on context.
-        inner_type_name: String,
-    },
-
-    /// Return via bool with optional out-parameter (for Option types).
-    OptionWithOutParam {
-        out_params: Vec<FfiParam>,
-        inner_type_name: String,
-    },
-
-    /// Void return (the Rust function returns ()).
-    Void,
-
-    /// Tuple return via multiple out-parameters.
-    TupleOutParams { out_params: Vec<FfiParam> },
-}
-
-/// Identifies whether a type path matches a known type name.
-fn type_path_matches(ty: &Type, name: &str) -> bool {
-    if let Type::Path(type_path) = ty {
-        if let Some(segment) = type_path.path.segments.last() {
-            return segment.ident == name;
-        }
-    }
-    false
-}
-
-/// Extracts the inner type from a generic type like `GoudResult<T>` or `Option<T>`.
-fn extract_generic_inner(ty: &Type) -> Option<&Type> {
-    if let Type::Path(type_path) = ty {
-        if let Some(segment) = type_path.path.segments.last() {
-            if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
-                if let Some(syn::GenericArgument::Type(inner)) = args.args.first() {
-                    return Some(inner);
-                }
-            }
-        }
-    }
-    None
-}
-
-/// Extracts types from a tuple type like `(f32, f32)`.
-fn extract_tuple_types(ty: &Type) -> Option<Vec<&Type>> {
-    if let Type::Tuple(tuple) = ty {
-        Some(tuple.elems.iter().collect())
-    } else {
-        None
-    }
-}
-
-/// Gets a simple type name string from a syn::Type.
-fn simple_type_name(ty: &Type) -> String {
-    match ty {
-        Type::Path(p) => {
-            if let Some(seg) = p.path.segments.last() {
-                let ident = seg.ident.to_string();
-                if let syn::PathArguments::AngleBracketed(args) = &seg.arguments {
-                    let inner: Vec<String> = args
-                        .args
-                        .iter()
-                        .filter_map(|arg| {
-                            if let syn::GenericArgument::Type(t) = arg {
-                                Some(simple_type_name(t))
-                            } else {
-                                None
-                            }
-                        })
-                        .collect();
-                    format!("{}<{}>", ident, inner.join(", "))
-                } else {
-                    ident
-                }
-            } else {
-                "unknown".to_string()
-            }
-        }
-        Type::Tuple(t) => {
-            let inner: Vec<String> = t.elems.iter().map(simple_type_name).collect();
-            format!("({})", inner.join(", "))
-        }
-        Type::Reference(r) => {
-            let inner = simple_type_name(&r.elem);
-            if r.mutability.is_some() {
-                format!("&mut {}", inner)
-            } else {
-                format!("&{}", inner)
-            }
-        }
-        _ => "unknown".to_string(),
-    }
-}
-
-/// Creates an FfiTypeInfo for a primitive pass-through type.
-fn primitive_passthrough(name: &str, ffi_type: TokenStream) -> FfiTypeInfo {
-    FfiTypeInfo {
-        ffi_params: vec![FfiParam {
-            name_suffix: String::new(),
-            ffi_type: ffi_type.clone(),
-            type_name: name.to_string(),
-        }],
-        ffi_return: FfiReturn::Direct(ffi_type, name.to_string()),
-        needs_unsafe: false,
-        manifest_type_name: name.to_string(),
-    }
-}
-
-/// Primitive type names that map directly to the same FFI type.
-const PRIMITIVES: &[&str] = &["bool", "f32", "i32", "u8", "u32", "u64", "usize"];
+/// FFI repr(C) struct types that pass through directly as they are already C-compatible.
+/// These types are defined in `core/types.rs` and `core/context_registry.rs`.
+const FFI_PASSTHROUGH_TYPES: &[(&str, &str)] = &[
+    ("FfiTransform2D", "crate::core::types::FfiTransform2D"),
+    (
+        "FfiTransform2DBuilder",
+        "crate::core::types::FfiTransform2DBuilder",
+    ),
+    ("FfiMat3x3", "crate::core::types::FfiMat3x3"),
+    ("FfiSprite", "crate::core::types::FfiSprite"),
+    ("FfiSpriteBuilder", "crate::core::types::FfiSpriteBuilder"),
+    ("FfiColor", "crate::core::types::FfiColor"),
+    ("FfiRect", "crate::core::types::FfiRect"),
+    ("FfiVec2", "crate::core::types::FfiVec2"),
+    (
+        "GoudContextId",
+        "crate::core::context_registry::GoudContextId",
+    ),
+    ("GoudEntityId", "crate::core::types::GoudEntityId"),
+    ("GoudResult", "crate::core::types::GoudResult"),
+    ("GoudRenderStats", "crate::ffi::renderer::GoudRenderStats"),
+];
 
 /// Maps a Rust type to its FFI representation.
 ///
@@ -165,17 +44,7 @@ pub fn map_type(ty: &Type) -> FfiTypeInfo {
     // Primitives: pass-through
     for prim in PRIMITIVES {
         if type_path_matches(ty, prim) {
-            let ffi_type = match *prim {
-                "bool" => quote! { bool },
-                "f32" => quote! { f32 },
-                "i32" => quote! { i32 },
-                "u8" => quote! { u8 },
-                "u32" => quote! { u32 },
-                "u64" => quote! { u64 },
-                "usize" => quote! { usize },
-                _ => unreachable!(),
-            };
-            return primitive_passthrough(prim, ffi_type);
+            return primitive_passthrough(prim, primitive_token(prim));
         }
     }
 
@@ -298,11 +167,7 @@ pub fn map_type(ty: &Type) -> FfiTypeInfo {
                 .ffi_params
                 .iter()
                 .map(|p| FfiParam {
-                    name_suffix: if p.name_suffix.is_empty() {
-                        String::new()
-                    } else {
-                        p.name_suffix.clone()
-                    },
+                    name_suffix: p.name_suffix.clone(),
                     ffi_type: {
                         let t = &p.ffi_type;
                         quote! { *mut #t }
@@ -391,28 +256,6 @@ pub fn map_type(ty: &Type) -> FfiTypeInfo {
     }
 
     // FFI repr(C) struct types: pass through directly as they are already C-compatible.
-    // These types are defined in core/types.rs and core/context_registry.rs.
-    const FFI_PASSTHROUGH_TYPES: &[(&str, &str)] = &[
-        ("FfiTransform2D", "crate::core::types::FfiTransform2D"),
-        (
-            "FfiTransform2DBuilder",
-            "crate::core::types::FfiTransform2DBuilder",
-        ),
-        ("FfiMat3x3", "crate::core::types::FfiMat3x3"),
-        ("FfiSprite", "crate::core::types::FfiSprite"),
-        ("FfiSpriteBuilder", "crate::core::types::FfiSpriteBuilder"),
-        ("FfiColor", "crate::core::types::FfiColor"),
-        ("FfiRect", "crate::core::types::FfiRect"),
-        ("FfiVec2", "crate::core::types::FfiVec2"),
-        (
-            "GoudContextId",
-            "crate::core::context_registry::GoudContextId",
-        ),
-        ("GoudEntityId", "crate::core::types::GoudEntityId"),
-        ("GoudResult", "crate::core::types::GoudResult"),
-        ("GoudRenderStats", "crate::ffi::renderer::GoudRenderStats"),
-    ];
-
     for &(name, _path) in FFI_PASSTHROUGH_TYPES {
         if type_path_matches(ty, name) {
             // Use the type as-is (the SDK file imports it, so the short name works)
@@ -466,7 +309,7 @@ pub fn map_type(ty: &Type) -> FfiTypeInfo {
     }
 }
 
-/// Maps a return type to FfiReturn info. Handles the unit type `()` specially.
+/// Maps a return type to `FfiReturn` info. Handles the unit type `()` specially.
 pub fn map_return_type(ty: &syn::ReturnType) -> FfiReturn {
     match ty {
         syn::ReturnType::Default => FfiReturn::Void,
@@ -478,87 +321,6 @@ pub fn map_return_type(ty: &syn::ReturnType) -> FfiReturn {
                 }
             }
             map_type(ty).ffi_return
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_map_bool() {
-        let ty: Type = syn::parse_str("bool").unwrap();
-        let info = map_type(&ty);
-        assert_eq!(info.manifest_type_name, "bool");
-        assert!(!info.needs_unsafe);
-        assert_eq!(info.ffi_params.len(), 1);
-    }
-
-    #[test]
-    fn test_map_f32() {
-        let ty: Type = syn::parse_str("f32").unwrap();
-        let info = map_type(&ty);
-        assert_eq!(info.manifest_type_name, "f32");
-        assert!(!info.needs_unsafe);
-    }
-
-    #[test]
-    fn test_map_vec2() {
-        let ty: Type = syn::parse_str("Vec2").unwrap();
-        let info = map_type(&ty);
-        assert_eq!(info.manifest_type_name, "Vec2");
-        assert_eq!(info.ffi_params.len(), 2);
-        assert_eq!(info.ffi_params[0].name_suffix, "_x");
-        assert_eq!(info.ffi_params[1].name_suffix, "_y");
-    }
-
-    #[test]
-    fn test_map_entity() {
-        let ty: Type = syn::parse_str("Entity").unwrap();
-        let info = map_type(&ty);
-        assert_eq!(info.manifest_type_name, "Entity");
-        assert_eq!(info.ffi_params[0].type_name, "u64");
-    }
-
-    #[test]
-    fn test_map_str_ref() {
-        let ty: Type = syn::parse_str("&str").unwrap();
-        let info = map_type(&ty);
-        assert_eq!(info.manifest_type_name, "&str");
-        assert!(info.needs_unsafe);
-    }
-
-    #[test]
-    fn test_map_goud_result_unit() {
-        let ty: Type = syn::parse_str("GoudResult<()>").unwrap();
-        let info = map_type(&ty);
-        assert_eq!(info.manifest_type_name, "GoudResult<()>");
-        matches!(info.ffi_return, FfiReturn::ResultWithOutParams { .. });
-    }
-
-    #[test]
-    fn test_map_goud_result_f32() {
-        let ty: Type = syn::parse_str("GoudResult<f32>").unwrap();
-        let info = map_type(&ty);
-        assert_eq!(info.manifest_type_name, "GoudResult<f32>");
-        assert!(info.needs_unsafe);
-        if let FfiReturn::ResultWithOutParams { out_params, .. } = &info.ffi_return {
-            assert_eq!(out_params.len(), 1);
-        } else {
-            panic!("Expected ResultWithOutParams");
-        }
-    }
-
-    #[test]
-    fn test_map_tuple() {
-        let ty: Type = syn::parse_str("(f32, f32)").unwrap();
-        let info = map_type(&ty);
-        assert!(info.needs_unsafe);
-        if let FfiReturn::TupleOutParams { out_params } = &info.ffi_return {
-            assert_eq!(out_params.len(), 2);
-        } else {
-            panic!("Expected TupleOutParams");
         }
     }
 }

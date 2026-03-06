@@ -12,15 +12,22 @@
 //!    canvas)
 //! ```
 
+mod collision;
+mod ecs_ops;
+mod input;
+mod rendering;
 mod sprite_renderer;
 mod texture_loader;
 
-use std::collections::HashSet;
+#[cfg(all(test, target_arch = "wasm32"))]
+mod tests;
+
+pub use collision::WasmContact;
+
+use std::collections::{HashMap, HashSet};
 use wasm_bindgen::prelude::*;
 
-use crate::core::math::Vec2;
-use crate::ecs::components::{Name, Transform2D};
-use crate::ecs::{Entity, World};
+use crate::ecs::World;
 
 use sprite_renderer::{TextureEntry, WgpuSpriteRenderer};
 
@@ -28,6 +35,8 @@ use sprite_renderer::{TextureEntry, WgpuSpriteRenderer};
 // Transform2D data transfer object
 // ---------------------------------------------------------------------------
 
+/// A plain-data snapshot of a `Transform2D` component, safe to pass across
+/// the wasm-bindgen boundary.
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy)]
 pub struct WasmTransform2D {
@@ -36,6 +45,39 @@ pub struct WasmTransform2D {
     pub rotation: f32,
     pub scale_x: f32,
     pub scale_y: f32,
+}
+
+// ---------------------------------------------------------------------------
+// Sprite data transfer object
+// ---------------------------------------------------------------------------
+
+/// A plain-data snapshot of a `Sprite` component, safe to pass across
+/// the wasm-bindgen boundary.
+#[wasm_bindgen]
+#[derive(Debug, Clone, Copy)]
+pub struct WasmSprite {
+    pub texture_handle: u32,
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub a: f32,
+    pub flip_x: bool,
+    pub flip_y: bool,
+    pub anchor_x: f32,
+    pub anchor_y: f32,
+}
+
+// ---------------------------------------------------------------------------
+// Render statistics data transfer object
+// ---------------------------------------------------------------------------
+
+/// Per-frame rendering statistics exposed to JavaScript.
+#[wasm_bindgen]
+#[derive(Debug, Clone, Copy)]
+pub struct WasmRenderStats {
+    pub draw_calls: u32,
+    pub triangles: u32,
+    pub texture_binds: u32,
 }
 
 // ---------------------------------------------------------------------------
@@ -58,6 +100,10 @@ struct WgpuRenderState {
 // Main game handle exposed to JavaScript
 // ---------------------------------------------------------------------------
 
+/// The primary game handle for browser-based games.
+///
+/// Owns the ECS world, input state, frame timing, and an optional wgpu
+/// rendering backend attached to an HTML canvas element.
 #[wasm_bindgen]
 pub struct WasmGame {
     world: World,
@@ -81,6 +127,9 @@ pub struct WasmGame {
     mouse_y: f32,
     scroll_dx: f32,
     scroll_dy: f32,
+
+    // Action map: action name → list of bound key codes
+    action_map: HashMap<String, Vec<u32>>,
 
     // Optional wgpu renderer (None for ECS-only / headless mode)
     render_state: Option<WgpuRenderState>,
@@ -116,6 +165,7 @@ impl WasmGame {
             mouse_y: 0.0,
             scroll_dx: 0.0,
             scroll_dy: 0.0,
+            action_map: HashMap::new(),
             render_state: None,
         }
     }
@@ -208,6 +258,7 @@ impl WasmGame {
             mouse_y: 0.0,
             scroll_dx: 0.0,
             scroll_dy: 0.0,
+            action_map: HashMap::new(),
             render_state: Some(render_state),
         })
     }
@@ -216,6 +267,9 @@ impl WasmGame {
     // Frame lifecycle
     // ======================================================================
 
+    /// Advances frame timing and prepares the wgpu surface for drawing.
+    ///
+    /// Call this at the start of each `requestAnimationFrame` callback.
     pub fn begin_frame(&mut self, delta_time: f32) {
         self.keys_previous = self.keys_current.clone();
         self.mouse_buttons_previous = self.mouse_buttons_current.clone();
@@ -237,6 +291,9 @@ impl WasmGame {
         }
     }
 
+    /// Flushes queued draw calls and presents the frame to the canvas.
+    ///
+    /// Call this at the end of each `requestAnimationFrame` callback.
     pub fn end_frame(&mut self) {
         if let Some(rs) = &mut self.render_state {
             if let Some(view) = rs.current_view.take() {
@@ -256,8 +313,9 @@ impl WasmGame {
         }
     }
 
-    /// Sets the background clear color (called before begin_frame or via
-    /// the TypeScript SDK's beginFrame parameters).
+    /// Sets the background clear color.
+    ///
+    /// Takes effect on the next `begin_frame` / `end_frame` pair.
     pub fn set_clear_color(&mut self, r: f32, g: f32, b: f32, a: f32) {
         if let Some(rs) = &mut self.render_state {
             rs.clear_color = [r as f64, g as f64, b as f64, a as f64];
@@ -265,66 +323,53 @@ impl WasmGame {
     }
 
     // ======================================================================
-    // Rendering
+    // Timing queries
     // ======================================================================
 
-    pub fn draw_sprite(
-        &mut self,
-        texture: u32,
-        x: f32,
-        y: f32,
-        w: f32,
-        h: f32,
-        rotation: f32,
-        r: f32,
-        g: f32,
-        b: f32,
-        a: f32,
-    ) {
-        if let Some(rs) = &mut self.render_state {
-            rs.renderer
-                .draw_sprite(texture, x, y, w, h, rotation, r, g, b, a);
+    /// Seconds elapsed since the previous frame.
+    #[wasm_bindgen(getter)]
+    pub fn delta_time(&self) -> f32 {
+        self.delta_time
+    }
+
+    /// Total seconds elapsed since the game started.
+    #[wasm_bindgen(getter)]
+    pub fn total_time(&self) -> f32 {
+        self.total_time
+    }
+
+    /// Approximate frames per second based on the most recent delta.
+    #[wasm_bindgen(getter)]
+    pub fn fps(&self) -> f32 {
+        if self.delta_time > 0.0 {
+            1.0 / self.delta_time
+        } else {
+            0.0
         }
     }
 
-    pub fn draw_quad(&mut self, x: f32, y: f32, w: f32, h: f32, r: f32, g: f32, b: f32, a: f32) {
-        if let Some(rs) = &mut self.render_state {
-            rs.renderer.draw_quad(x, y, w, h, r, g, b, a);
-        }
+    /// Number of frames rendered since the game started.
+    #[wasm_bindgen(getter)]
+    pub fn frame_count(&self) -> u64 {
+        self.frame_count
     }
 
-    /// Loads a texture from a URL. Returns the texture handle (1-based;
-    /// 0 is reserved for the white fallback texture used by draw_quad).
-    pub async fn load_texture(&mut self, url: String) -> Result<u32, JsValue> {
-        let rs = self
-            .render_state
-            .as_mut()
-            .ok_or_else(|| JsValue::from_str("Rendering not initialized"))?;
-
-        let entry = texture_loader::load_texture_from_url(
-            &rs.device,
-            &rs.queue,
-            &rs.renderer.texture_bind_group_layout,
-            &rs.renderer.sampler,
-            &url,
-        )
-        .await?;
-
-        let idx = rs.textures.len();
-        rs.textures.push(Some(entry));
-        Ok((idx + 1) as u32)
+    /// The title string passed at construction time.
+    #[wasm_bindgen(getter)]
+    pub fn title(&self) -> String {
+        self.title.clone()
     }
 
-    pub fn destroy_texture(&mut self, handle: u32) {
-        if handle == 0 {
-            return;
-        }
-        if let Some(rs) = &mut self.render_state {
-            let idx = (handle - 1) as usize;
-            if idx < rs.textures.len() {
-                rs.textures[idx] = None;
-            }
-        }
+    /// Logical canvas width in pixels.
+    #[wasm_bindgen(getter)]
+    pub fn window_width(&self) -> u32 {
+        self.width
+    }
+
+    /// Logical canvas height in pixels.
+    #[wasm_bindgen(getter)]
+    pub fn window_height(&self) -> u32 {
+        self.height
     }
 
     /// Reconfigures the wgpu surface after a canvas resize.
@@ -338,242 +383,10 @@ impl WasmGame {
         }
     }
 
-    /// Whether wgpu rendering is active.
+    /// Returns `true` when wgpu rendering is active (canvas was provided at
+    /// construction time).
     pub fn has_renderer(&self) -> bool {
         self.render_state.is_some()
-    }
-
-    // ======================================================================
-    // Timing queries
-    // ======================================================================
-
-    #[wasm_bindgen(getter)]
-    pub fn delta_time(&self) -> f32 {
-        self.delta_time
-    }
-
-    #[wasm_bindgen(getter)]
-    pub fn total_time(&self) -> f32 {
-        self.total_time
-    }
-
-    #[wasm_bindgen(getter)]
-    pub fn fps(&self) -> f32 {
-        if self.delta_time > 0.0 {
-            1.0 / self.delta_time
-        } else {
-            0.0
-        }
-    }
-
-    #[wasm_bindgen(getter)]
-    pub fn frame_count(&self) -> u64 {
-        self.frame_count
-    }
-
-    #[wasm_bindgen(getter)]
-    pub fn title(&self) -> String {
-        self.title.clone()
-    }
-
-    #[wasm_bindgen(getter)]
-    pub fn window_width(&self) -> u32 {
-        self.width
-    }
-
-    #[wasm_bindgen(getter)]
-    pub fn window_height(&self) -> u32 {
-        self.height
-    }
-
-    // ======================================================================
-    // Entity operations
-    // ======================================================================
-
-    pub fn spawn_empty(&mut self) -> u64 {
-        self.world.spawn_empty().to_bits()
-    }
-
-    pub fn spawn_batch(&mut self, count: u32) -> Vec<u64> {
-        self.world
-            .spawn_batch(count as usize)
-            .into_iter()
-            .map(|e| e.to_bits())
-            .collect()
-    }
-
-    pub fn despawn(&mut self, entity_bits: u64) -> bool {
-        self.world.despawn(Entity::from_bits(entity_bits))
-    }
-
-    pub fn entity_count(&self) -> u32 {
-        self.world.entity_count() as u32
-    }
-
-    pub fn is_alive(&self, entity_bits: u64) -> bool {
-        self.world.is_alive(Entity::from_bits(entity_bits))
-    }
-
-    // ======================================================================
-    // Transform2D component
-    // ======================================================================
-
-    pub fn add_transform2d(
-        &mut self,
-        entity_bits: u64,
-        px: f32,
-        py: f32,
-        rotation: f32,
-        sx: f32,
-        sy: f32,
-    ) {
-        let entity = Entity::from_bits(entity_bits);
-        self.world.insert(
-            entity,
-            Transform2D {
-                position: Vec2::new(px, py),
-                rotation,
-                scale: Vec2::new(sx, sy),
-            },
-        );
-    }
-
-    pub fn get_transform2d(&self, entity_bits: u64) -> Option<WasmTransform2D> {
-        let entity = Entity::from_bits(entity_bits);
-        self.world
-            .get::<Transform2D>(entity)
-            .map(|t| WasmTransform2D {
-                position_x: t.position.x,
-                position_y: t.position.y,
-                rotation: t.rotation,
-                scale_x: t.scale.x,
-                scale_y: t.scale.y,
-            })
-    }
-
-    pub fn set_transform2d(
-        &mut self,
-        entity_bits: u64,
-        px: f32,
-        py: f32,
-        rotation: f32,
-        sx: f32,
-        sy: f32,
-    ) {
-        let entity = Entity::from_bits(entity_bits);
-        if let Some(t) = self.world.get_mut::<Transform2D>(entity) {
-            t.position = Vec2::new(px, py);
-            t.rotation = rotation;
-            t.scale = Vec2::new(sx, sy);
-        }
-    }
-
-    pub fn has_transform2d(&self, entity_bits: u64) -> bool {
-        self.world
-            .has::<Transform2D>(Entity::from_bits(entity_bits))
-    }
-
-    pub fn remove_transform2d(&mut self, entity_bits: u64) -> bool {
-        self.world
-            .remove::<Transform2D>(Entity::from_bits(entity_bits))
-            .is_some()
-    }
-
-    // ======================================================================
-    // Name component
-    // ======================================================================
-
-    pub fn add_name(&mut self, entity_bits: u64, name: &str) {
-        let entity = Entity::from_bits(entity_bits);
-        self.world.insert(entity, Name::new(name));
-    }
-
-    pub fn get_name(&self, entity_bits: u64) -> Option<String> {
-        let entity = Entity::from_bits(entity_bits);
-        self.world
-            .get::<Name>(entity)
-            .map(|n| n.as_str().to_string())
-    }
-
-    pub fn has_name(&self, entity_bits: u64) -> bool {
-        self.world.has::<Name>(Entity::from_bits(entity_bits))
-    }
-
-    pub fn remove_name(&mut self, entity_bits: u64) -> bool {
-        self.world
-            .remove::<Name>(Entity::from_bits(entity_bits))
-            .is_some()
-    }
-
-    // ======================================================================
-    // Input — setters (called from JS event handlers)
-    // ======================================================================
-
-    pub fn press_key(&mut self, key_code: u32) {
-        self.keys_current.insert(key_code);
-    }
-
-    pub fn release_key(&mut self, key_code: u32) {
-        self.keys_current.remove(&key_code);
-    }
-
-    pub fn press_mouse_button(&mut self, button: u32) {
-        self.mouse_buttons_current.insert(button);
-    }
-
-    pub fn release_mouse_button(&mut self, button: u32) {
-        self.mouse_buttons_current.remove(&button);
-    }
-
-    pub fn set_mouse_position(&mut self, x: f32, y: f32) {
-        self.mouse_x = x;
-        self.mouse_y = y;
-    }
-
-    pub fn add_scroll_delta(&mut self, dx: f32, dy: f32) {
-        self.scroll_dx += dx;
-        self.scroll_dy += dy;
-    }
-
-    // ======================================================================
-    // Input — queries (called from game logic)
-    // ======================================================================
-
-    pub fn is_key_pressed(&self, key_code: u32) -> bool {
-        self.keys_current.contains(&key_code)
-    }
-
-    pub fn is_key_just_pressed(&self, key_code: u32) -> bool {
-        self.keys_current.contains(&key_code) && !self.keys_previous.contains(&key_code)
-    }
-
-    pub fn is_key_just_released(&self, key_code: u32) -> bool {
-        !self.keys_current.contains(&key_code) && self.keys_previous.contains(&key_code)
-    }
-
-    pub fn is_mouse_button_pressed(&self, button: u32) -> bool {
-        self.mouse_buttons_current.contains(&button)
-    }
-
-    pub fn is_mouse_button_just_pressed(&self, button: u32) -> bool {
-        self.mouse_buttons_current.contains(&button)
-            && !self.mouse_buttons_previous.contains(&button)
-    }
-
-    pub fn mouse_x(&self) -> f32 {
-        self.mouse_x
-    }
-
-    pub fn mouse_y(&self) -> f32 {
-        self.mouse_y
-    }
-
-    pub fn scroll_dx(&self) -> f32 {
-        self.scroll_dx
-    }
-
-    pub fn scroll_dy(&self) -> f32 {
-        self.scroll_dy
     }
 }
 
@@ -584,125 +397,4 @@ impl WasmGame {
 fn console_error_panic_hook(info: &std::panic::PanicHookInfo<'_>) {
     let msg = info.to_string();
     web_sys::console::error_1(&JsValue::from_str(&msg));
-}
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
-#[cfg(all(test, target_arch = "wasm32"))]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn wasm_game_creation() {
-        let game = WasmGame::new(800, 600, "Test");
-        assert_eq!(game.window_width(), 800);
-        assert_eq!(game.window_height(), 600);
-        assert_eq!(game.entity_count(), 0);
-        assert_eq!(game.frame_count(), 0);
-    }
-
-    #[test]
-    fn entity_lifecycle() {
-        let mut game = WasmGame::new(800, 600, "Test");
-        let bits = game.spawn_empty();
-        assert!(game.is_alive(bits));
-        assert_eq!(game.entity_count(), 1);
-        assert!(game.despawn(bits));
-        assert!(!game.is_alive(bits));
-        assert_eq!(game.entity_count(), 0);
-    }
-
-    #[test]
-    fn spawn_batch_returns_correct_count() {
-        let mut game = WasmGame::new(800, 600, "Test");
-        let entities = game.spawn_batch(10);
-        assert_eq!(entities.len(), 10);
-        assert_eq!(game.entity_count(), 10);
-    }
-
-    #[test]
-    fn transform2d_crud() {
-        let mut game = WasmGame::new(800, 600, "Test");
-        let bits = game.spawn_empty();
-        assert!(!game.has_transform2d(bits));
-        game.add_transform2d(bits, 10.0, 20.0, 0.5, 1.0, 1.0);
-        assert!(game.has_transform2d(bits));
-        let t = game.get_transform2d(bits).unwrap();
-        assert!((t.position_x - 10.0).abs() < f32::EPSILON);
-        assert!((t.position_y - 20.0).abs() < f32::EPSILON);
-        assert!((t.rotation - 0.5).abs() < f32::EPSILON);
-        game.set_transform2d(bits, 30.0, 40.0, 1.0, 2.0, 2.0);
-        let t = game.get_transform2d(bits).unwrap();
-        assert!((t.position_x - 30.0).abs() < f32::EPSILON);
-        assert!(game.remove_transform2d(bits));
-        assert!(!game.has_transform2d(bits));
-    }
-
-    #[test]
-    fn name_crud() {
-        let mut game = WasmGame::new(800, 600, "Test");
-        let bits = game.spawn_empty();
-        assert!(!game.has_name(bits));
-        game.add_name(bits, "Player");
-        assert!(game.has_name(bits));
-        assert_eq!(game.get_name(bits).unwrap(), "Player");
-        assert!(game.remove_name(bits));
-        assert!(!game.has_name(bits));
-    }
-
-    #[test]
-    fn frame_timing() {
-        let mut game = WasmGame::new(800, 600, "Test");
-        game.begin_frame(0.016);
-        assert!((game.delta_time() - 0.016).abs() < 0.001);
-        assert_eq!(game.frame_count(), 1);
-        game.begin_frame(0.016);
-        assert!((game.total_time() - 0.032).abs() < 0.001);
-        assert_eq!(game.frame_count(), 2);
-    }
-
-    #[test]
-    fn input_key_state() {
-        let mut game = WasmGame::new(800, 600, "Test");
-        game.begin_frame(0.016);
-        game.press_key(32);
-        assert!(game.is_key_pressed(32));
-        assert!(!game.is_key_just_pressed(32));
-        game.begin_frame(0.016);
-        assert!(game.is_key_pressed(32));
-        assert!(!game.is_key_just_pressed(32));
-        game.release_key(32);
-        game.begin_frame(0.016);
-        assert!(!game.is_key_pressed(32));
-        assert!(game.is_key_just_released(32));
-    }
-
-    #[test]
-    fn mouse_state() {
-        let mut game = WasmGame::new(800, 600, "Test");
-        game.set_mouse_position(100.0, 200.0);
-        assert!((game.mouse_x() - 100.0).abs() < f32::EPSILON);
-        assert!((game.mouse_y() - 200.0).abs() < f32::EPSILON);
-        game.press_mouse_button(0);
-        assert!(game.is_mouse_button_pressed(0));
-    }
-
-    #[test]
-    fn scroll_delta_resets_per_frame() {
-        let mut game = WasmGame::new(800, 600, "Test");
-        game.add_scroll_delta(0.0, 3.0);
-        assert!((game.scroll_dy() - 3.0).abs() < f32::EPSILON);
-        game.begin_frame(0.016);
-        assert!((game.scroll_dy()).abs() < f32::EPSILON);
-    }
-
-    #[test]
-    fn canvas_resize() {
-        let mut game = WasmGame::new(800, 600, "Test");
-        game.set_canvas_size(1920, 1080);
-        assert_eq!(game.window_width(), 1920);
-        assert_eq!(game.window_height(), 1080);
-    }
 }

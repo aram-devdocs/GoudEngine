@@ -1,123 +1,35 @@
-//! Immediate-mode sprite batcher for wgpu on WebAssembly.
+//! [`WgpuSpriteRenderer`] — immediate-mode sprite batcher for wgpu.
 //!
-//! Collects draw calls during a frame, then flushes them in a single
-//! render pass at `end_frame()`. Sprites are batched by texture to
-//! minimise bind group switches.
+//! Collects draw calls during a frame, then flushes them in a single render pass
+//! at [`WgpuSpriteRenderer::flush`]. Sprites are batched by texture to minimise
+//! bind-group switches.
 
-use bytemuck::{Pod, Zeroable};
+use bytemuck::bytes_of;
 use wgpu::util::DeviceExt;
 
-// ---------------------------------------------------------------------------
-// Vertex format
-// ---------------------------------------------------------------------------
+use super::texture::{
+    create_white_texture, generate_indices, ortho_projection, INDICES_PER_SPRITE, MAX_SPRITES,
+    VERTS_PER_SPRITE,
+};
+use super::types::{DrawBatch, RenderStats, SpriteVertex, TextureEntry, SHADER_SRC};
 
-#[repr(C)]
-#[derive(Copy, Clone, Pod, Zeroable)]
-pub struct SpriteVertex {
-    pub position: [f32; 2],
-    pub tex_coords: [f32; 2],
-    pub color: [f32; 4],
-}
-
-impl SpriteVertex {
-    const ATTRIBS: [wgpu::VertexAttribute; 3] = wgpu::vertex_attr_array![
-        0 => Float32x2,
-        1 => Float32x2,
-        2 => Float32x4,
-    ];
-
-    pub fn layout() -> wgpu::VertexBufferLayout<'static> {
-        wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<SpriteVertex>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &Self::ATTRIBS,
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Draw batch (contiguous range of indices sharing one texture)
-// ---------------------------------------------------------------------------
-
-struct DrawBatch {
-    texture_idx: u32,
-    first_index: u32,
-    index_count: u32,
-}
-
-// ---------------------------------------------------------------------------
-// Public texture entry returned by the loader
-// ---------------------------------------------------------------------------
-
-pub struct TextureEntry {
-    pub view: wgpu::TextureView,
-    pub bind_group: wgpu::BindGroup,
-    pub width: u32,
-    pub height: u32,
-}
-
-// ---------------------------------------------------------------------------
-// WGSL shader source
-// ---------------------------------------------------------------------------
-
-const SHADER_SRC: &str = r#"
-struct Uniforms {
-    projection: mat4x4<f32>,
-}
-
-struct VertexInput {
-    @location(0) position: vec2<f32>,
-    @location(1) tex_coords: vec2<f32>,
-    @location(2) color: vec4<f32>,
-}
-
-struct VertexOutput {
-    @builtin(position) clip_position: vec4<f32>,
-    @location(0) tex_coords: vec2<f32>,
-    @location(1) color: vec4<f32>,
-}
-
-@group(0) @binding(0)
-var<uniform> uniforms: Uniforms;
-
-@group(1) @binding(0)
-var sprite_texture: texture_2d<f32>;
-
-@group(1) @binding(1)
-var sprite_sampler: sampler;
-
-@vertex
-fn vs_main(input: VertexInput) -> VertexOutput {
-    var output: VertexOutput;
-    output.clip_position = uniforms.projection * vec4<f32>(input.position, 0.0, 1.0);
-    output.tex_coords = input.tex_coords;
-    output.color = input.color;
-    return output;
-}
-
-@fragment
-fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-    let tex_color = textureSample(sprite_texture, sprite_sampler, input.tex_coords);
-    return tex_color * input.color;
-}
-"#;
-
-// ---------------------------------------------------------------------------
-// Sprite renderer
-// ---------------------------------------------------------------------------
-
-const MAX_SPRITES: usize = 4096;
-const VERTS_PER_SPRITE: usize = 4;
-const INDICES_PER_SPRITE: usize = 6;
-
+/// Immediate-mode wgpu sprite renderer.
+///
+/// Call [`begin_frame`](WgpuSpriteRenderer::begin_frame) at the start of each tick,
+/// queue sprites with [`draw_sprite`](WgpuSpriteRenderer::draw_sprite) /
+/// [`draw_quad`](WgpuSpriteRenderer::draw_quad), then call
+/// [`flush`](WgpuSpriteRenderer::flush) to submit the render pass.
 pub struct WgpuSpriteRenderer {
     pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
+    /// Bind group layout for texture + sampler pairs.
     pub texture_bind_group_layout: wgpu::BindGroupLayout,
+    /// Shared nearest-neighbour sampler.
     pub sampler: wgpu::Sampler,
+    /// Pre-built bind group for the 1×1 white fallback texture.
     pub white_bind_group: wgpu::BindGroup,
 
     vertices: Vec<SpriteVertex>,
@@ -126,6 +38,7 @@ pub struct WgpuSpriteRenderer {
 }
 
 impl WgpuSpriteRenderer {
+    /// Creates all wgpu resources needed by the sprite renderer.
     pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, format: wgpu::TextureFormat) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("sprite_shader"),
@@ -261,14 +174,18 @@ impl WgpuSpriteRenderer {
         }
     }
 
+    /// Clears accumulated draw calls and resets batch state for the next frame.
     pub fn begin_frame(&mut self) {
         self.vertices.clear();
         self.batches.clear();
         self.current_texture_idx = u32::MAX;
     }
 
-    /// Queue a textured sprite. `texture_idx` is an index into the
-    /// texture table managed by WasmGame (0 = white fallback).
+    /// Queues a textured sprite.
+    ///
+    /// `texture_idx` is an index into the texture table managed by `WasmGame`
+    /// (0 = white fallback). `(x, y)` is the sprite centre, matching the
+    /// OpenGL/FFI renderer convention.
     pub fn draw_sprite(
         &mut self,
         texture_idx: u32,
@@ -297,7 +214,6 @@ impl WgpuSpriteRenderer {
         let cos = rotation.cos();
         let sin = rotation.sin();
 
-        // (x, y) is the sprite CENTER, matching the OpenGL/FFI renderer convention.
         let corners = [
             (-hw, -hh, 0.0f32, 0.0f32),
             (hw, -hh, 1.0, 0.0),
@@ -314,10 +230,84 @@ impl WgpuSpriteRenderer {
         }
     }
 
+    /// Queues an untextured coloured quad (uses the white fallback texture).
     pub fn draw_quad(&mut self, x: f32, y: f32, w: f32, h: f32, r: f32, g: f32, b: f32, a: f32) {
         self.draw_sprite(0, x, y, w, h, 0.0, r, g, b, a);
     }
 
+    /// Queues a textured sprite using a sub-rectangle of the source texture.
+    ///
+    /// `(src_x, src_y, src_w, src_h)` are UV coordinates in normalised [0, 1]
+    /// space. Returns `true` if the sprite was queued, `false` if the batch is
+    /// full.
+    pub fn draw_sprite_rect(
+        &mut self,
+        texture_idx: u32,
+        x: f32,
+        y: f32,
+        w: f32,
+        h: f32,
+        rotation: f32,
+        src_x: f32,
+        src_y: f32,
+        src_w: f32,
+        src_h: f32,
+        r: f32,
+        g: f32,
+        b: f32,
+        a: f32,
+    ) -> bool {
+        if self.vertices.len() / VERTS_PER_SPRITE >= MAX_SPRITES {
+            return false;
+        }
+
+        if texture_idx != self.current_texture_idx {
+            self.flush_batch();
+            self.current_texture_idx = texture_idx;
+        }
+
+        let color = [r, g, b, a];
+        let hw = w * 0.5;
+        let hh = h * 0.5;
+        let cos = rotation.cos();
+        let sin = rotation.sin();
+
+        let u1 = src_x;
+        let v1 = src_y;
+        let u2 = src_x + src_w;
+        let v2 = src_y + src_h;
+
+        let corners = [
+            (-hw, -hh, u1, v1),
+            (hw, -hh, u2, v1),
+            (hw, hh, u2, v2),
+            (-hw, hh, u1, v2),
+        ];
+
+        for &(dx, dy, u, v) in &corners {
+            self.vertices.push(SpriteVertex {
+                position: [x + dx * cos - dy * sin, y + dx * sin + dy * cos],
+                tex_coords: [u, v],
+                color,
+            });
+        }
+
+        true
+    }
+
+    /// Returns per-frame rendering statistics based on the batches queued so far.
+    pub fn render_stats(&self) -> RenderStats {
+        let draw_calls = self.batches.len() as u32;
+        let triangles = self.batches.iter().map(|b| b.index_count / 3).sum();
+        let texture_binds = draw_calls;
+        RenderStats {
+            draw_calls,
+            triangles,
+            texture_binds,
+        }
+    }
+
+    /// Uploads accumulated vertices, builds a render pass, and submits to the GPU.
     pub fn flush(
         &mut self,
         device: &wgpu::Device,
@@ -331,7 +321,7 @@ impl WgpuSpriteRenderer {
         self.flush_batch();
 
         let projection = ortho_projection(screen_w as f32, screen_h as f32);
-        queue.write_buffer(&self.uniform_buffer, 0, bytemuck::bytes_of(&projection));
+        queue.write_buffer(&self.uniform_buffer, 0, bytes_of(&projection));
 
         if !self.vertices.is_empty() {
             queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&self.vertices));
@@ -390,6 +380,7 @@ impl WgpuSpriteRenderer {
         queue.submit(std::iter::once(encoder.finish()));
     }
 
+    /// Closes the current batch if it contains any sprites.
     fn flush_batch(&mut self) {
         let sprite_count = self.vertices.len() / VERTS_PER_SPRITE - self.batch_sprite_offset();
         if sprite_count == 0 {
@@ -404,164 +395,11 @@ impl WgpuSpriteRenderer {
         });
     }
 
+    /// Returns the total number of sprites already recorded in completed batches.
     fn batch_sprite_offset(&self) -> usize {
         self.batches
             .iter()
             .map(|b| b.index_count as usize / INDICES_PER_SPRITE)
             .sum()
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-fn generate_indices(max_sprites: usize) -> Vec<u32> {
-    let mut indices = Vec::with_capacity(max_sprites * INDICES_PER_SPRITE);
-    for i in 0..max_sprites as u32 {
-        let base = i * VERTS_PER_SPRITE as u32;
-        indices.extend_from_slice(&[base, base + 1, base + 2, base + 2, base + 3, base]);
-    }
-    indices
-}
-
-fn create_white_texture(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    layout: &wgpu::BindGroupLayout,
-    sampler: &wgpu::Sampler,
-) -> wgpu::BindGroup {
-    let texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("white_1x1"),
-        size: wgpu::Extent3d {
-            width: 1,
-            height: 1,
-            depth_or_array_layers: 1,
-        },
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Rgba8UnormSrgb,
-        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-        view_formats: &[],
-    });
-    queue.write_texture(
-        wgpu::TexelCopyTextureInfo {
-            texture: &texture,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        },
-        &[255u8, 255, 255, 255],
-        wgpu::TexelCopyBufferLayout {
-            offset: 0,
-            bytes_per_row: Some(4),
-            rows_per_image: None,
-        },
-        wgpu::Extent3d {
-            width: 1,
-            height: 1,
-            depth_or_array_layers: 1,
-        },
-    );
-    let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-    device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("white_bg"),
-        layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::TextureView(&view),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: wgpu::BindingResource::Sampler(sampler),
-            },
-        ],
-    })
-}
-
-/// 2D orthographic projection: (0,0) top-left, (w,h) bottom-right.
-/// Column-major layout matching WGSL mat4x4<f32>.
-#[repr(C)]
-#[derive(Copy, Clone, Pod, Zeroable)]
-struct OrthoMatrix {
-    data: [[f32; 4]; 4],
-}
-
-fn ortho_projection(w: f32, h: f32) -> OrthoMatrix {
-    OrthoMatrix {
-        data: [
-            [2.0 / w, 0.0, 0.0, 0.0],
-            [0.0, -2.0 / h, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [-1.0, 1.0, 0.0, 1.0],
-        ],
-    }
-}
-
-/// Creates a [`TextureEntry`] from raw RGBA pixels.
-pub fn create_texture_entry(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    layout: &wgpu::BindGroupLayout,
-    sampler: &wgpu::Sampler,
-    width: u32,
-    height: u32,
-    rgba: &[u8],
-) -> TextureEntry {
-    let texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("sprite_texture"),
-        size: wgpu::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        },
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Rgba8UnormSrgb,
-        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-        view_formats: &[],
-    });
-    queue.write_texture(
-        wgpu::TexelCopyTextureInfo {
-            texture: &texture,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        },
-        rgba,
-        wgpu::TexelCopyBufferLayout {
-            offset: 0,
-            bytes_per_row: Some(4 * width),
-            rows_per_image: None,
-        },
-        wgpu::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        },
-    );
-    let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-    let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("sprite_tex_bg"),
-        layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::TextureView(&view),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: wgpu::BindingResource::Sampler(sampler),
-            },
-        ],
-    });
-    TextureEntry {
-        view,
-        bind_group,
-        width,
-        height,
     }
 }
