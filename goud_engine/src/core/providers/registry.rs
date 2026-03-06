@@ -1,10 +1,10 @@
 //! Central registry holding all engine providers.
 
 use super::audio::AudioProvider;
+use super::impls::{NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullRenderProvider};
 use super::input::InputProvider;
 use super::physics::PhysicsProvider;
 use super::render::RenderProvider;
-use super::impls::{NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullRenderProvider};
 
 /// Central registry holding all engine providers.
 ///

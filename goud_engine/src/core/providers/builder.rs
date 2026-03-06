@@ -1,11 +1,11 @@
 //! Builder pattern for constructing a [`ProviderRegistry`].
 
-use super::registry::ProviderRegistry;
 use super::audio::AudioProvider;
+use super::impls::{NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullRenderProvider};
 use super::input::InputProvider;
 use super::physics::PhysicsProvider;
+use super::registry::ProviderRegistry;
 use super::render::RenderProvider;
-use super::impls::{NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullRenderProvider};
 
 /// Builder for constructing a [`ProviderRegistry`] with optional overrides.
 ///
