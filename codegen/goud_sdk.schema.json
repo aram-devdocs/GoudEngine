@@ -1632,6 +1632,131 @@
         ]
       }
     },
+    "SpriteAnimator": {
+      "kind": "component",
+      "doc": "Sprite sheet animation component",
+      "fields": [
+        {
+          "name": "currentFrame",
+          "type": "u32",
+          "doc": "Index of the current frame"
+        },
+        {
+          "name": "elapsed",
+          "type": "f32",
+          "doc": "Accumulated time since last frame advance (seconds)"
+        },
+        {
+          "name": "playing",
+          "type": "bool",
+          "doc": "Whether the animation is currently playing"
+        },
+        {
+          "name": "finished",
+          "type": "bool",
+          "doc": "Whether a OneShot animation has completed"
+        },
+        {
+          "name": "frameDuration",
+          "type": "f32",
+          "doc": "Seconds per frame"
+        },
+        {
+          "name": "mode",
+          "type": "PlaybackMode",
+          "doc": "Playback mode (Loop or OneShot)"
+        },
+        {
+          "name": "frameCount",
+          "type": "u32",
+          "doc": "Total number of frames in the clip"
+        }
+      ],
+      "methods": [
+        {
+          "name": "getCurrentFrame",
+          "doc": "Returns the current frame index",
+          "params": [],
+          "returns": "u32"
+        },
+        {
+          "name": "isPlaying",
+          "doc": "Returns whether the animation is currently playing",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "isFinished",
+          "doc": "Returns whether the animation has finished (OneShot only)",
+          "params": [],
+          "returns": "bool"
+        }
+      ],
+      "builder": "AnimationClipBuilder"
+    },
+    "AnimationClipBuilder": {
+      "kind": "builder",
+      "doc": "Builder for constructing animation clips with frame data",
+      "target": "SpriteAnimator",
+      "factories": [
+        {
+          "name": "new",
+          "args": [
+            {
+              "name": "frameDuration",
+              "type": "f32",
+              "doc": "Seconds per frame"
+            },
+            {
+              "name": "mode",
+              "type": "PlaybackMode",
+              "doc": "Playback mode"
+            }
+          ]
+        }
+      ],
+      "methods": [
+        {
+          "name": "addFrame",
+          "doc": "Adds a source rectangle frame to the animation",
+          "params": [
+            {
+              "name": "x",
+              "type": "f32",
+              "doc": "X position of source rect"
+            },
+            {
+              "name": "y",
+              "type": "f32",
+              "doc": "Y position of source rect"
+            },
+            {
+              "name": "w",
+              "type": "f32",
+              "doc": "Width of source rect"
+            },
+            {
+              "name": "h",
+              "type": "f32",
+              "doc": "Height of source rect"
+            }
+          ],
+          "returns": "AnimationClipBuilder"
+        },
+        {
+          "name": "build",
+          "doc": "Builds the SpriteAnimator and consumes the builder",
+          "params": [],
+          "returns": "SpriteAnimator"
+        },
+        {
+          "name": "free",
+          "doc": "Frees the builder without building",
+          "params": [],
+          "returns": "void"
+        }
+      ]
+    },
     "RenderStats": {
       "kind": "value",
       "doc": "Per-frame rendering statistics",
@@ -1996,6 +2121,14 @@
       "values": {
         "Renderer2D": 0,
         "Renderer3D": 1
+      }
+    },
+    "PlaybackMode": {
+      "doc": "Animation playback mode",
+      "underlying": "i32",
+      "values": {
+        "Loop": 0,
+        "OneShot": 1
       }
     }
   },

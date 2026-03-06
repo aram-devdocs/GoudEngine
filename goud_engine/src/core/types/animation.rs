@@ -1,0 +1,120 @@
+//! FFI-safe animation types for sprite animation.
+
+use crate::core::math::Rect;
+use crate::ecs::components::sprite_animator::{PlaybackMode, SpriteAnimator};
+
+// =============================================================================
+// PlaybackMode
+// =============================================================================
+
+/// FFI-safe playback mode enum.
+///
+/// Maps to the Rust-side `PlaybackMode` enum but uses a fixed integer
+/// representation for ABI stability.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FfiPlaybackMode {
+    /// Restart from frame 0 after the last frame.
+    Loop = 0,
+    /// Stop at the last frame and mark the animation as finished.
+    OneShot = 1,
+}
+
+impl From<PlaybackMode> for FfiPlaybackMode {
+    fn from(mode: PlaybackMode) -> Self {
+        match mode {
+            PlaybackMode::Loop => FfiPlaybackMode::Loop,
+            PlaybackMode::OneShot => FfiPlaybackMode::OneShot,
+        }
+    }
+}
+
+impl From<FfiPlaybackMode> for PlaybackMode {
+    fn from(mode: FfiPlaybackMode) -> Self {
+        match mode {
+            FfiPlaybackMode::Loop => PlaybackMode::Loop,
+            FfiPlaybackMode::OneShot => PlaybackMode::OneShot,
+        }
+    }
+}
+
+// =============================================================================
+// FfiSpriteAnimator
+// =============================================================================
+
+/// FFI-safe, flat representation of a `SpriteAnimator` snapshot.
+///
+/// This struct contains only C-compatible primitive types. The `frames`
+/// data from the underlying `AnimationClip` is not included here because
+/// variable-length arrays cannot cross FFI safely as struct fields. Instead,
+/// frames are managed through the `FfiAnimationClipBuilder`.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct FfiSpriteAnimator {
+    /// Index of the current frame in the animation clip.
+    pub current_frame: u32,
+    /// Accumulated time since the last frame advance (seconds).
+    pub elapsed: f32,
+    /// Whether the animation is currently playing.
+    pub playing: bool,
+    /// Whether a OneShot animation has completed.
+    pub finished: bool,
+    /// Seconds per frame.
+    pub frame_duration: f32,
+    /// Playback mode.
+    pub mode: FfiPlaybackMode,
+    /// Total number of frames in the clip.
+    pub frame_count: u32,
+}
+
+impl FfiSpriteAnimator {
+    /// Returns a default (empty, stopped) animator snapshot.
+    pub fn default_value() -> Self {
+        Self {
+            current_frame: 0,
+            elapsed: 0.0,
+            playing: false,
+            finished: false,
+            frame_duration: 0.0,
+            mode: FfiPlaybackMode::Loop,
+            frame_count: 0,
+        }
+    }
+}
+
+impl From<&SpriteAnimator> for FfiSpriteAnimator {
+    fn from(animator: &SpriteAnimator) -> Self {
+        Self {
+            current_frame: animator.current_frame as u32,
+            elapsed: animator.elapsed,
+            playing: animator.playing,
+            finished: animator.finished,
+            frame_duration: animator.clip.frame_duration,
+            mode: animator.clip.mode.into(),
+            frame_count: animator.clip.frames.len() as u32,
+        }
+    }
+}
+
+// =============================================================================
+// FfiAnimationClipBuilder
+// =============================================================================
+
+/// Heap-allocated builder for constructing an `AnimationClip` across FFI.
+///
+/// Accumulates frames (as `Rect` values) and configuration, then produces
+/// an `FfiSpriteAnimator` snapshot when built.
+///
+/// ## Memory Management
+///
+/// - Allocated by `goud_animation_clip_builder_new()`
+/// - Consumed by `goud_sprite_animator_from_clip()` (frees builder)
+/// - If not consumed, must be freed with `goud_animation_clip_builder_free()`
+pub struct FfiAnimationClipBuilder {
+    /// Accumulated frame rectangles.
+    pub frames: Vec<Rect>,
+    /// Seconds per frame.
+    pub frame_duration: f32,
+    /// Playback mode.
+    pub mode: FfiPlaybackMode,
+}
