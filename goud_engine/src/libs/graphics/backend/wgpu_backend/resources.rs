@@ -30,7 +30,7 @@ pub(super) struct WgpuTextureMeta {
 
 pub(super) struct UniformSlot {
     pub(super) offset: usize,
-    pub(super) size: usize,
+    pub(super) _size: usize,
 }
 
 pub(super) struct WgpuShaderMeta {
@@ -40,7 +40,7 @@ pub(super) struct WgpuShaderMeta {
     pub(super) uniform_staging: Vec<u8>,
     pub(super) uniform_buffer: wgpu::Buffer,
     pub(super) uniform_bind_group: wgpu::BindGroup,
-    pub(super) next_uniform_offset: usize,
+    pub(super) _next_uniform_offset: usize,
 }
 
 // =============================================================================
@@ -75,11 +75,11 @@ pub(super) enum DrawType {
     },
     Indexed {
         count: u32,
-        offset: usize,
+        _offset: usize,
     },
     IndexedU16 {
         count: u32,
-        offset: usize,
+        _offset: usize,
     },
     ArraysInstanced {
         first: u32,
@@ -88,7 +88,7 @@ pub(super) enum DrawType {
     },
     IndexedInstanced {
         count: u32,
-        offset: usize,
+        _offset: usize,
         instances: u32,
     },
 }
