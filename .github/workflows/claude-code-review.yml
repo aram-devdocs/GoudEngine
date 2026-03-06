@@ -179,7 +179,9 @@ jobs:
   agent-feedback:
     name: Agent Feedback Loop
     needs: [pre-check, review]
-    if: needs.pre-check.outputs.should_review == 'true'
+    if: >-
+      vars.AGENT_REVIEW_FEEDBACK_ENABLED == 'true' &&
+      needs.pre-check.outputs.should_review == 'true'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
