@@ -9,8 +9,8 @@ use std::path::Path;
 impl AssetServer {
     /// Loads an asset from a path, returning a handle immediately.
     ///
-    /// The asset loads synchronously (blocking). Use `load_async` for
-    /// non-blocking loads in a real implementation.
+    /// The asset loads synchronously (blocking). Use [`AssetServer::load_async`] for
+    /// non-blocking loads that don't stall the main thread.
     ///
     /// # Arguments
     ///
