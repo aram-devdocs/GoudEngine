@@ -44,9 +44,7 @@ pub unsafe extern "C" fn goud_scene_create(
     }
 
     if name_ptr.is_null() {
-        set_last_error(GoudError::InvalidState(
-            "name_ptr is null".to_string(),
-        ));
+        set_last_error(GoudError::InvalidState("name_ptr is null".to_string()));
         return INVALID_SCENE_ID;
     }
 
@@ -101,10 +99,7 @@ pub unsafe extern "C" fn goud_scene_create(
 ///
 /// A `GoudResult` indicating success or failure.
 #[no_mangle]
-pub extern "C" fn goud_scene_destroy(
-    context_id: GoudContextId,
-    scene_id: u32,
-) -> GoudResult {
+pub extern "C" fn goud_scene_destroy(context_id: GoudContextId, scene_id: u32) -> GoudResult {
     if context_id == GOUD_INVALID_CONTEXT_ID {
         set_last_error(GoudError::InvalidContext);
         return GoudResult::err(GoudError::InvalidContext.error_code());
@@ -164,9 +159,7 @@ pub unsafe extern "C" fn goud_scene_get_by_name(
     }
 
     if name_ptr.is_null() {
-        set_last_error(GoudError::InvalidState(
-            "name_ptr is null".to_string(),
-        ));
+        set_last_error(GoudError::InvalidState("name_ptr is null".to_string()));
         return INVALID_SCENE_ID;
     }
 
@@ -266,10 +259,7 @@ pub extern "C" fn goud_scene_set_active(
 ///
 /// `true` if the scene is active, `false` otherwise (including on error).
 #[no_mangle]
-pub extern "C" fn goud_scene_is_active(
-    context_id: GoudContextId,
-    scene_id: u32,
-) -> bool {
+pub extern "C" fn goud_scene_is_active(context_id: GoudContextId, scene_id: u32) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
         return false;
     }
@@ -336,10 +326,7 @@ pub extern "C" fn goud_scene_count(context_id: GoudContextId) -> u32 {
 /// A `GoudResult` indicating success or failure. Fails if the scene
 /// does not exist.
 #[no_mangle]
-pub extern "C" fn goud_scene_set_current(
-    context_id: GoudContextId,
-    scene_id: u32,
-) -> GoudResult {
+pub extern "C" fn goud_scene_set_current(context_id: GoudContextId, scene_id: u32) -> GoudResult {
     if context_id == GOUD_INVALID_CONTEXT_ID {
         set_last_error(GoudError::InvalidContext);
         return GoudResult::err(GoudError::InvalidContext.error_code());
@@ -359,10 +346,7 @@ pub extern "C" fn goud_scene_set_current(
 
     // Verify the scene exists before setting it as current.
     if context.scene_manager().get_scene(scene_id).is_none() {
-        let err = GoudError::ResourceNotFound(format!(
-            "Scene id {} not found",
-            scene_id
-        ));
+        let err = GoudError::ResourceNotFound(format!("Scene id {} not found", scene_id));
         let code = err.error_code();
         set_last_error(err);
         return GoudResult::err(code);

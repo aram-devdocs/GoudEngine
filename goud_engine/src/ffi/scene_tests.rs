@@ -19,9 +19,7 @@ fn test_create_scene_success() {
     let name = b"level_1";
 
     // SAFETY: name is a valid UTF-8 byte slice.
-    let id = unsafe {
-        goud_scene_create(ctx, name.as_ptr(), name.len() as u32)
-    };
+    let id = unsafe { goud_scene_create(ctx, name.as_ptr(), name.len() as u32) };
 
     assert_ne!(id, INVALID_SCENE_ID);
     teardown_context(ctx);
@@ -48,9 +46,8 @@ fn test_create_scene_duplicate_fails() {
 fn test_create_scene_invalid_context() {
     let name = b"test";
     // SAFETY: name is a valid UTF-8 byte slice.
-    let id = unsafe {
-        goud_scene_create(GOUD_INVALID_CONTEXT_ID, name.as_ptr(), name.len() as u32)
-    };
+    let id =
+        unsafe { goud_scene_create(GOUD_INVALID_CONTEXT_ID, name.as_ptr(), name.len() as u32) };
     assert_eq!(id, INVALID_SCENE_ID);
 }
 
@@ -58,9 +55,7 @@ fn test_create_scene_invalid_context() {
 fn test_create_scene_null_name() {
     let ctx = setup_context();
     // SAFETY: Passing null intentionally to test null-check.
-    let id = unsafe {
-        goud_scene_create(ctx, std::ptr::null(), 5)
-    };
+    let id = unsafe { goud_scene_create(ctx, std::ptr::null(), 5) };
     assert_eq!(id, INVALID_SCENE_ID);
     teardown_context(ctx);
 }
@@ -73,9 +68,7 @@ fn test_destroy_scene_success() {
     let name = b"temp";
 
     // SAFETY: name is a valid UTF-8 byte slice.
-    let scene_id = unsafe {
-        goud_scene_create(ctx, name.as_ptr(), name.len() as u32)
-    };
+    let scene_id = unsafe { goud_scene_create(ctx, name.as_ptr(), name.len() as u32) };
     assert_ne!(scene_id, INVALID_SCENE_ID);
 
     let result = goud_scene_destroy(ctx, scene_id);
@@ -106,15 +99,11 @@ fn test_get_by_name_success() {
     let name = b"named";
 
     // SAFETY: name is a valid UTF-8 byte slice.
-    let created_id = unsafe {
-        goud_scene_create(ctx, name.as_ptr(), name.len() as u32)
-    };
+    let created_id = unsafe { goud_scene_create(ctx, name.as_ptr(), name.len() as u32) };
     assert_ne!(created_id, INVALID_SCENE_ID);
 
     // SAFETY: name is a valid UTF-8 byte slice.
-    let found_id = unsafe {
-        goud_scene_get_by_name(ctx, name.as_ptr(), name.len() as u32)
-    };
+    let found_id = unsafe { goud_scene_get_by_name(ctx, name.as_ptr(), name.len() as u32) };
     assert_eq!(found_id, created_id);
 
     teardown_context(ctx);
@@ -126,9 +115,7 @@ fn test_get_by_name_not_found() {
     let name = b"nonexistent";
 
     // SAFETY: name is a valid UTF-8 byte slice.
-    let id = unsafe {
-        goud_scene_get_by_name(ctx, name.as_ptr(), name.len() as u32)
-    };
+    let id = unsafe { goud_scene_get_by_name(ctx, name.as_ptr(), name.len() as u32) };
     assert_eq!(id, INVALID_SCENE_ID);
 
     teardown_context(ctx);
@@ -138,9 +125,7 @@ fn test_get_by_name_not_found() {
 fn test_get_by_name_null_ptr() {
     let ctx = setup_context();
     // SAFETY: Passing null intentionally to test null-check.
-    let id = unsafe {
-        goud_scene_get_by_name(ctx, std::ptr::null(), 3)
-    };
+    let id = unsafe { goud_scene_get_by_name(ctx, std::ptr::null(), 3) };
     assert_eq!(id, INVALID_SCENE_ID);
     teardown_context(ctx);
 }
@@ -153,9 +138,7 @@ fn test_set_active_and_check() {
     let name = b"active_test";
 
     // SAFETY: name is a valid UTF-8 byte slice.
-    let scene_id = unsafe {
-        goud_scene_create(ctx, name.as_ptr(), name.len() as u32)
-    };
+    let scene_id = unsafe { goud_scene_create(ctx, name.as_ptr(), name.len() as u32) };
 
     // New scene is not active by default.
     assert!(!goud_scene_is_active(ctx, scene_id));
@@ -229,9 +212,7 @@ fn test_set_and_get_current() {
     let name = b"target";
 
     // SAFETY: name is a valid UTF-8 byte slice.
-    let scene_id = unsafe {
-        goud_scene_create(ctx, name.as_ptr(), name.len() as u32)
-    };
+    let scene_id = unsafe { goud_scene_create(ctx, name.as_ptr(), name.len() as u32) };
 
     let result = goud_scene_set_current(ctx, scene_id);
     assert!(result.is_ok());

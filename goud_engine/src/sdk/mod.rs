@@ -71,13 +71,13 @@ pub mod entity;
 pub mod entity_builder;
 pub mod game;
 pub mod game_config;
-pub mod scene;
 #[cfg(feature = "native")]
 pub mod input;
 #[cfg(feature = "native")]
 pub mod rendering;
 #[cfg(feature = "native")]
 pub mod rendering_3d;
+pub mod scene;
 #[cfg(feature = "native")]
 pub mod texture;
 #[cfg(feature = "native")]

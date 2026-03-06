@@ -155,10 +155,12 @@ impl SceneManager {
 
     /// Returns a mutable reference to the [`World`] for the given scene.
     pub fn get_scene_mut(&mut self, id: SceneId) -> Option<&mut World> {
-        self.scenes.get_mut(id as usize).and_then(|slot| match slot {
-            SceneSlot::Occupied { world, .. } => Some(world.as_mut()),
-            SceneSlot::Free => None,
-        })
+        self.scenes
+            .get_mut(id as usize)
+            .and_then(|slot| match slot {
+                SceneSlot::Occupied { world, .. } => Some(world.as_mut()),
+                SceneSlot::Free => None,
+            })
     }
 
     /// Looks up a scene by name, returning its ID if found.
@@ -423,10 +425,7 @@ mod tests {
         mgr.set_active(b, true).unwrap();
 
         // Should only appear once.
-        assert_eq!(
-            mgr.active_scenes().iter().filter(|&&s| s == b).count(),
-            1
-        );
+        assert_eq!(mgr.active_scenes().iter().filter(|&&s| s == b).count(), 1);
     }
 
     // ----- slot reuse --------------------------------------------------------

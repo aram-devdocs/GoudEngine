@@ -273,11 +273,7 @@ impl GoudGame {
     }
 
     /// Sets whether a scene is active.
-    pub fn set_scene_active(
-        &mut self,
-        id: SceneId,
-        active: bool,
-    ) -> Result<(), GoudError> {
+    pub fn set_scene_active(&mut self, id: SceneId, active: bool) -> Result<(), GoudError> {
         self.scene_manager.set_active(id, active)
     }
 
