@@ -59,23 +59,65 @@ fn main() {
 /// Files to scan for FFI functions.
 const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/types.rs",
-    "src/core/math.rs",
-    "src/core/error.rs",
-    "src/core/types.rs",
+    // core types (split into directories)
+    "src/core/math/vec2.rs",
+    "src/core/math/vec3.rs",
+    "src/core/math/vec4.rs",
+    "src/core/math/color.rs",
+    "src/core/math/rect.rs",
+    "src/core/error/ffi_bridge.rs",
+    "src/core/error/types.rs",
+    "src/core/types/entity.rs",
+    "src/core/types/math_types.rs",
+    "src/core/types/result.rs",
+    "src/core/types/sprite.rs",
+    "src/core/types/transform.rs",
     "src/core/context_registry/context_id.rs",
     "src/core/component_ops/storage.rs",
     "src/core/component_ops/helpers.rs",
     "src/core/component_ops/single_ops.rs",
     "src/core/component_ops/batch_ops.rs",
-    "src/ffi/context.rs",
-    "src/ffi/entity.rs",
-    "src/ffi/component.rs",
-    "src/ffi/component_transform2d.rs",
-    "src/ffi/component_sprite.rs",
-    "src/ffi/window.rs",
-    "src/ffi/renderer.rs",
-    "src/ffi/renderer3d.rs",
-    "src/ffi/input.rs",
+    // context module
+    "src/ffi/context/lifecycle.rs",
+    // entity module
+    "src/ffi/entity/lifecycle.rs",
+    "src/ffi/entity/queries.rs",
+    // component module
+    "src/ffi/component/ops.rs",
+    "src/ffi/component/access.rs",
+    "src/ffi/component/batch.rs",
+    // component_transform2d module
+    "src/ffi/component_transform2d/factory.rs",
+    "src/ffi/component_transform2d/builder.rs",
+    "src/ffi/component_transform2d/position.rs",
+    "src/ffi/component_transform2d/rotation.rs",
+    "src/ffi/component_transform2d/scale.rs",
+    "src/ffi/component_transform2d/direction.rs",
+    "src/ffi/component_transform2d/matrix_ops.rs",
+    // component_sprite module
+    "src/ffi/component_sprite/factory.rs",
+    "src/ffi/component_sprite/builder.rs",
+    "src/ffi/component_sprite/color.rs",
+    "src/ffi/component_sprite/properties.rs",
+    "src/ffi/component_sprite/texture.rs",
+    // window module
+    "src/ffi/window/lifecycle.rs",
+    "src/ffi/window/properties.rs",
+    // renderer module
+    "src/ffi/renderer/lifecycle.rs",
+    "src/ffi/renderer/draw.rs",
+    "src/ffi/renderer/texture.rs",
+    "src/ffi/renderer/handles.rs",
+    // renderer3d module
+    "src/ffi/renderer3d/camera.rs",
+    "src/ffi/renderer3d/environment.rs",
+    "src/ffi/renderer3d/lighting.rs",
+    "src/ffi/renderer3d/primitives.rs",
+    // input module
+    "src/ffi/input/keyboard.rs",
+    "src/ffi/input/mouse.rs",
+    "src/ffi/input/actions.rs",
+    // collision (not yet split)
     "src/ffi/collision.rs",
 ];
 
