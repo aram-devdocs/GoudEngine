@@ -8,6 +8,7 @@ goes through a review process before implementation begins.
 ## Key Files
 
 - `README.md` -- RFC process documentation, numbering scheme, status lifecycle, index
+- `RFC-0000-template.md` -- Template for new RFCs; copy and rename to start a new one
 - `RFC-NNNN-short-title.md` -- Individual RFC documents with YAML front matter
 
 ## RFC Process
