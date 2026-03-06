@@ -2606,8 +2606,8 @@
           ],
           "returns": "u64",
           "async": true,
-          "wasm_name": "load_texture",
-          "wasm_signature": "load_texture(url: string): Promise<number>"
+          "wasm_name": "register_texture_from_bytes",
+          "wasm_signature": "register_texture_from_bytes(data: Uint8Array): number"
         },
         {
           "name": "destroyTexture",
@@ -3855,7 +3855,7 @@
           "sig": "has_renderer(): boolean"
         },
         {
-          "method": "loadTexture"
+          "sig": "register_texture_from_bytes(data: Uint8Array): number"
         },
         {
           "method": "destroyTexture"
@@ -3961,6 +3961,9 @@
         },
         {
           "method": "isMouseButtonJustPressed"
+        },
+        {
+          "sig": "is_mouse_button_just_released(btn: number): boolean"
         },
         {
           "sig": "mouse_x(): number"
