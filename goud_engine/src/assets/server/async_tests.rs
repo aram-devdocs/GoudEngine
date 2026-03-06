@@ -1,133 +1,133 @@
 //! Tests for async (non-blocking) asset loading.
 
-use crate::assets::{Asset, AssetLoadError, AssetLoader, AssetServer, AssetType, LoadContext};
-use std::time::Duration;
-
-// ---------------------------------------------------------------------------
-// Test asset types (mirror the ones in tests.rs)
-// ---------------------------------------------------------------------------
-
-#[derive(Debug, Clone, PartialEq)]
-struct TestAsset {
-    content: String,
-}
-
-impl Asset for TestAsset {
-    fn asset_type_name() -> &'static str {
-        "TestAsset"
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-struct TestTexture {
-    width: u32,
-    height: u32,
-}
-
-impl Asset for TestTexture {
-    fn asset_type_name() -> &'static str {
-        "TestTexture"
-    }
-
-    fn asset_type() -> AssetType {
-        AssetType::Texture
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Test loaders
-// ---------------------------------------------------------------------------
-
-#[derive(Clone)]
-struct TestAssetLoader;
-
-impl AssetLoader for TestAssetLoader {
-    type Asset = TestAsset;
-    type Settings = ();
-
-    fn extensions(&self) -> &[&str] {
-        &["test"]
-    }
-
-    fn load<'a>(
-        &'a self,
-        bytes: &'a [u8],
-        _settings: &'a Self::Settings,
-        _context: &'a mut LoadContext,
-    ) -> Result<Self::Asset, AssetLoadError> {
-        let content = String::from_utf8(bytes.to_vec())
-            .map_err(|e| AssetLoadError::decode_failed(e.to_string()))?;
-        Ok(TestAsset { content })
-    }
-}
-
-#[derive(Clone)]
-struct TestTextureLoader;
-
-impl AssetLoader for TestTextureLoader {
-    type Asset = TestTexture;
-    type Settings = ();
-
-    fn extensions(&self) -> &[&str] {
-        &["png", "jpg"]
-    }
-
-    fn load<'a>(
-        &'a self,
-        bytes: &'a [u8],
-        _settings: &'a Self::Settings,
-        _context: &'a mut LoadContext,
-    ) -> Result<Self::Asset, AssetLoadError> {
-        if bytes.len() < 8 {
-            return Err(AssetLoadError::decode_failed("Not enough data"));
-        }
-        let width = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
-        let height = u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]);
-        Ok(TestTexture { width, height })
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Helper: poll process_loads until at least one result arrives or timeout
-// ---------------------------------------------------------------------------
-
-fn poll_until_processed(server: &mut AssetServer, max_iters: usize) -> usize {
-    let mut total = 0;
-    for _ in 0..max_iters {
-        let n = server.process_loads();
-        total += n;
-        if total > 0 {
-            break;
-        }
-        std::thread::sleep(Duration::from_millis(10));
-    }
-    total
-}
-
-/// Poll until the expected number of results arrive.
-fn poll_until_count(server: &mut AssetServer, expected: usize, max_iters: usize) -> usize {
-    let mut total = 0;
-    for _ in 0..max_iters {
-        total += server.process_loads();
-        if total >= expected {
-            break;
-        }
-        std::thread::sleep(Duration::from_millis(10));
-    }
-    total
-}
-
-// =============================================================================
-// Async loading tests
-// =============================================================================
-
 #[cfg(all(feature = "native", not(feature = "web")))]
-mod async_loading {
-    use super::*;
+mod async_loading_tests {
+    use crate::assets::{Asset, AssetLoadError, AssetLoader, AssetServer, AssetType, LoadContext};
+    use std::time::Duration;
+
+    // ---------------------------------------------------------------------------
+    // Test asset types (mirror the ones in tests.rs)
+    // ---------------------------------------------------------------------------
+
+    #[derive(Debug, Clone, PartialEq)]
+    struct TestAsset {
+        content: String,
+    }
+
+    impl Asset for TestAsset {
+        fn asset_type_name() -> &'static str {
+            "TestAsset"
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    struct TestTexture {
+        width: u32,
+        height: u32,
+    }
+
+    impl Asset for TestTexture {
+        fn asset_type_name() -> &'static str {
+            "TestTexture"
+        }
+
+        fn asset_type() -> AssetType {
+            AssetType::Texture
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Test loaders
+    // ---------------------------------------------------------------------------
+
+    #[derive(Clone)]
+    struct TestAssetLoader;
+
+    impl AssetLoader for TestAssetLoader {
+        type Asset = TestAsset;
+        type Settings = ();
+
+        fn extensions(&self) -> &[&str] {
+            &["test"]
+        }
+
+        fn load<'a>(
+            &'a self,
+            bytes: &'a [u8],
+            _settings: &'a Self::Settings,
+            _context: &'a mut LoadContext,
+        ) -> Result<Self::Asset, AssetLoadError> {
+            let content = String::from_utf8(bytes.to_vec())
+                .map_err(|e| AssetLoadError::decode_failed(e.to_string()))?;
+            Ok(TestAsset { content })
+        }
+    }
+
+    #[derive(Clone)]
+    struct TestTextureLoader;
+
+    impl AssetLoader for TestTextureLoader {
+        type Asset = TestTexture;
+        type Settings = ();
+
+        fn extensions(&self) -> &[&str] {
+            &["png", "jpg"]
+        }
+
+        fn load<'a>(
+            &'a self,
+            bytes: &'a [u8],
+            _settings: &'a Self::Settings,
+            _context: &'a mut LoadContext,
+        ) -> Result<Self::Asset, AssetLoadError> {
+            if bytes.len() < 8 {
+                return Err(AssetLoadError::decode_failed("Not enough data"));
+            }
+            let width = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+            let height = u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]);
+            Ok(TestTexture { width, height })
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Helper: poll process_loads until at least one result arrives or timeout
+    // ---------------------------------------------------------------------------
+
+    fn poll_until_processed(server: &mut AssetServer, max_iters: usize) -> usize {
+        let mut total = 0;
+        for _ in 0..max_iters {
+            let n = server.process_loads();
+            total += n;
+            if total > 0 {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        total
+    }
+
+    /// Poll until the expected number of results arrive.
+    fn poll_until_count(server: &mut AssetServer, expected: usize, max_iters: usize) -> usize {
+        let mut total = 0;
+        for _ in 0..max_iters {
+            total += server.process_loads();
+            if total >= expected {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        total
+    }
+
+    // =============================================================================
+    // Async loading tests
+    // =============================================================================
+
     use std::fs;
     use std::io::Write;
     use tempfile::TempDir;
 
+    // Actual async tests
     #[test]
     fn test_load_async_returns_handle_in_loading_state() {
         let temp_dir = TempDir::new().unwrap();
