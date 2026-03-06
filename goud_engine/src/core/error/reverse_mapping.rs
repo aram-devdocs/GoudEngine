@@ -46,12 +46,8 @@ impl GoudError {
             // Resource errors (100-199)
             ERR_RESOURCE_NOT_FOUND => Some(GoudError::ResourceNotFound(String::new())),
             ERR_RESOURCE_LOAD_FAILED => Some(GoudError::ResourceLoadFailed(String::new())),
-            ERR_RESOURCE_INVALID_FORMAT => {
-                Some(GoudError::ResourceInvalidFormat(String::new()))
-            }
-            ERR_RESOURCE_ALREADY_EXISTS => {
-                Some(GoudError::ResourceAlreadyExists(String::new()))
-            }
+            ERR_RESOURCE_INVALID_FORMAT => Some(GoudError::ResourceInvalidFormat(String::new())),
+            ERR_RESOURCE_ALREADY_EXISTS => Some(GoudError::ResourceAlreadyExists(String::new())),
             ERR_INVALID_HANDLE => Some(GoudError::InvalidHandle),
             ERR_HANDLE_EXPIRED => Some(GoudError::HandleExpired),
             ERR_HANDLE_TYPE_MISMATCH => Some(GoudError::HandleTypeMismatch),
@@ -61,16 +57,10 @@ impl GoudError {
                 Some(GoudError::ShaderCompilationFailed(String::new()))
             }
             ERR_SHADER_LINK_FAILED => Some(GoudError::ShaderLinkFailed(String::new())),
-            ERR_TEXTURE_CREATION_FAILED => {
-                Some(GoudError::TextureCreationFailed(String::new()))
-            }
-            ERR_BUFFER_CREATION_FAILED => {
-                Some(GoudError::BufferCreationFailed(String::new()))
-            }
+            ERR_TEXTURE_CREATION_FAILED => Some(GoudError::TextureCreationFailed(String::new())),
+            ERR_BUFFER_CREATION_FAILED => Some(GoudError::BufferCreationFailed(String::new())),
             ERR_RENDER_TARGET_FAILED => Some(GoudError::RenderTargetFailed(String::new())),
-            ERR_BACKEND_NOT_SUPPORTED => {
-                Some(GoudError::BackendNotSupported(String::new()))
-            }
+            ERR_BACKEND_NOT_SUPPORTED => Some(GoudError::BackendNotSupported(String::new())),
             ERR_DRAW_CALL_FAILED => Some(GoudError::DrawCallFailed(String::new())),
 
             // Entity errors (300-399)
@@ -81,9 +71,7 @@ impl GoudError {
             ERR_QUERY_FAILED => Some(GoudError::QueryFailed(String::new())),
 
             // System errors (500-599)
-            ERR_WINDOW_CREATION_FAILED => {
-                Some(GoudError::WindowCreationFailed(String::new()))
-            }
+            ERR_WINDOW_CREATION_FAILED => Some(GoudError::WindowCreationFailed(String::new())),
             ERR_AUDIO_INIT_FAILED => Some(GoudError::AudioInitFailed(String::new())),
             ERR_PHYSICS_INIT_FAILED => Some(GoudError::PhysicsInitFailed(String::new())),
             ERR_PLATFORM_ERROR => Some(GoudError::PlatformError(String::new())),
