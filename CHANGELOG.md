@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.0.827](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.826...v0.0.827) (2026-03-06)
+
+
+### Features
+
+* add community stats & download metrics to README ([85537db](https://github.com/aram-devdocs/GoudEngine/commit/85537db9c52a62bd0182cc4429b1f53bb72907b5))
+* add hierarchy cascade deletion (despawn_recursive) ([2ec6558](https://github.com/aram-devdocs/GoudEngine/commit/2ec6558c7f2e2c8513ca736c65d1840374af7404)), closes [#193](https://github.com/aram-devdocs/GoudEngine/issues/193)
+* add hosted docs site with API reference generation ([2f60b32](https://github.com/aram-devdocs/GoudEngine/commit/2f60b32551db8448a019ed709d82a9904fe41415)), closes [#288](https://github.com/aram-devdocs/GoudEngine/issues/288) [#292](https://github.com/aram-devdocs/GoudEngine/issues/292)
+* persist download history and render chart over time ([392e84b](https://github.com/aram-devdocs/GoudEngine/commit/392e84b4990eb94dfa87b0e2abd928cf3d3d3a2e))
+
+
+### Bug Fixes
+
+* add CopyNativeLib target to all C# examples and update SDK version ([4c0c938](https://github.com/aram-devdocs/GoudEngine/commit/4c0c9389da7d7934f97a2232315384b7b470e9ba))
+* address code review — remove dead fields, fix shader_binds, DRY RAF loop ([6e72425](https://github.com/aram-devdocs/GoudEngine/commit/6e72425f70d891155448e65605d1d42826c441ad))
+* align OpenGL backend files with main after rebase ([dd5a299](https://github.com/aram-devdocs/GoudEngine/commit/dd5a2994203087e2ccd08f2df6e25bc200ac1bda))
+* align workflow output with README placeholder structure ([b3be6aa](https://github.com/aram-devdocs/GoudEngine/commit/b3be6aa0d5b5bc2fc7c9b0048e0680a25f059e6e))
+* clean up community stats to show total downloads only ([b8d0b34](https://github.com/aram-devdocs/GoudEngine/commit/b8d0b34d7d404eeb7a6006baedf6d5f0d14bb5fd))
+* create api directory before copying rust docs ([32a9726](https://github.com/aram-devdocs/GoudEngine/commit/32a9726a986318e71ff2d306d6925b1afbef36bb))
+* deduplicate backend/mod.rs — extract to submodules (898→42 lines) ([40e2ae0](https://github.com/aram-devdocs/GoudEngine/commit/40e2ae05272efbe9358d85f4e7a36a75b374fb53))
+* escape hash in C# markdown heading for markdownlint ([9ec8693](https://github.com/aram-devdocs/GoudEngine/commit/9ec8693e80c7680c3571e2a547fbb53b28e5bae5))
+* make plan execution protocol tool-agnostic (not Claude Code-specific) ([03f949d](https://github.com/aram-devdocs/GoudEngine/commit/03f949d32216dd207df35dcacc0ed77a535a8d10))
+* prefix unread wgpu_backend fields with _ to fix CI dead_code errors ([d521095](https://github.com/aram-devdocs/GoudEngine/commit/d521095f4d3b97e80c1271f3557c7d5a2fb9e5f3))
+* remove unused Vec2 import in core/types/tests.rs ([01681b7](https://github.com/aram-devdocs/GoudEngine/commit/01681b7a6cadae8edc0df21c15009d59ac0086a9))
+* replace hardcoded path with {{MAIN_REPO_PATH}} placeholder, clarify plan re-interpretation scope ([aef4086](https://github.com/aram-devdocs/GoudEngine/commit/aef4086ea222d9e8ad81a9e857cf829cd48a3776))
+* replace RefCell with Mutex for sound Sync impl ([6a3a426](https://github.com/aram-devdocs/GoudEngine/commit/6a3a426a9474ca860439c041296e6ea1747789a0))
+* resolve clippy::module_inception in all tests.rs files ([51af6a2](https://github.com/aram-devdocs/GoudEngine/commit/51af6a2ce371efa9a703080bd0cc3c390224403a))
+* resolve layer violations and add SAFETY comments ([#175](https://github.com/aram-devdocs/GoudEngine/issues/175), [#177](https://github.com/aram-devdocs/GoudEngine/issues/177), [#196](https://github.com/aram-devdocs/GoudEngine/issues/196)) ([1593d70](https://github.com/aram-devdocs/GoudEngine/commit/1593d70d84a4b107ab93c82f0e517ad5cebbe4f0))
+* resolve mdbook download URL in docs workflow ([6b563f6](https://github.com/aram-devdocs/GoudEngine/commit/6b563f664d79876280055f3353fc5ef775c66924))
+* resolve remaining clippy errors from test module restructuring ([08842cd](https://github.com/aram-devdocs/GoudEngine/commit/08842cd95b0494ea6eca8e7de42756ba9b1cf3fc))
+* resolve WASM input buffering, texture borrow crash, and TS SDK polish ([d942b93](https://github.com/aram-devdocs/GoudEngine/commit/d942b935c9777c9413d90ab04976549d55133376)), closes [#272](https://github.com/aram-devdocs/GoudEngine/issues/272) [#274](https://github.com/aram-devdocs/GoudEngine/issues/274) [#285](https://github.com/aram-devdocs/GoudEngine/issues/285)
+* seed history.json, fix PyPI badge and JSONPath query ([7f72d00](https://github.com/aram-devdocs/GoudEngine/commit/7f72d00c7a34ff8f4cda6c73ebf1640829c66449))
+* use heading instead of bold emphasis for Downloads section ([475cf90](https://github.com/aram-devdocs/GoudEngine/commit/475cf90ea53395c4d13ec10228e49c1214e89667))
+
+
+### Refactoring
+
+* add uniform location caching and debug GL error checking ([aab354d](https://github.com/aram-devdocs/GoudEngine/commit/aab354dbb7a6eb4b3a3975b99ed714094e2b1bef))
+* remove #[allow(dead_code)] from production code ([597afce](https://github.com/aram-devdocs/GoudEngine/commit/597afcefac72838b6f759fab604ba305aafb5f91)), closes [#214](https://github.com/aram-devdocs/GoudEngine/issues/214)
+* remove duplicate restitution/friction from RigidBody ([1a0d818](https://github.com/aram-devdocs/GoudEngine/commit/1a0d8189bd4fe65fc75a18f826cad9d12ec786bb)), closes [#194](https://github.com/aram-devdocs/GoudEngine/issues/194)
+* split batch 1 — ECS core files under 500-line limit ([4abb8f7](https://github.com/aram-devdocs/GoudEngine/commit/4abb8f76a41525f781e8e3ed17ca4e08bf75163e))
+* split batch 2 — ECS component files under 500-line limit ([7b28d8e](https://github.com/aram-devdocs/GoudEngine/commit/7b28d8e0131ec2fd2ac332bae9b7c9f126c058bd))
+* split batch 3 — ECS system files under 500-line limit ([8c0b6f9](https://github.com/aram-devdocs/GoudEngine/commit/8c0b6f913554c73ce92155212862f3d534cfb80d))
+* split batch 4 — ECS physics/input files under 500-line limit ([813cb66](https://github.com/aram-devdocs/GoudEngine/commit/813cb667a9fbdb17bfcda20d9a78f07c1cc36c6d))
+* split batch 5 — core files under 500-line limit ([1fcfe26](https://github.com/aram-devdocs/GoudEngine/commit/1fcfe26ab92ecaf4c52a8e9a9e9af9b22e9d4ab5))
+* split batch 6 — asset files under 500-line limit ([be94b8c](https://github.com/aram-devdocs/GoudEngine/commit/be94b8cca570a1c0f5003425ce872b5bc0cd2385))
+* split batch 7 — graphics files under 500-line limit ([78fb841](https://github.com/aram-devdocs/GoudEngine/commit/78fb84141f9196ae6a36a1b19b94b41aea66a869))
+* split batch 8 — FFI files under 500-line limit ([0bfc9ca](https://github.com/aram-devdocs/GoudEngine/commit/0bfc9cacc4677534059fbc22ef3f83914aebd02d))
+* split batch 9 — WASM/SDK/macros files under 500-line limit ([86319a9](https://github.com/aram-devdocs/GoudEngine/commit/86319a996efa0114a5e18d4ecd3fd582af9644a7)), closes [#173](https://github.com/aram-devdocs/GoudEngine/issues/173)
+
 ## [0.0.826](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.825...v0.0.826) (2026-03-03)
 
 
