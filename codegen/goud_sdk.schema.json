@@ -4158,6 +4158,88 @@
         {
           "$ref": "EcsMethods",
           "name": "componentHasBatch"
+        },
+        {
+          "name": "sceneCreate",
+          "doc": "Creates a new named scene and returns its ID",
+          "params": [
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "sceneDestroy",
+          "doc": "Destroys a scene by ID",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            }
+          ],
+          "returns": "GoudResult"
+        },
+        {
+          "name": "sceneGetByName",
+          "doc": "Looks up a scene ID by name",
+          "params": [
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "sceneSetActive",
+          "doc": "Sets whether a scene is active",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            },
+            {
+              "name": "active",
+              "type": "bool"
+            }
+          ],
+          "returns": "GoudResult"
+        },
+        {
+          "name": "sceneIsActive",
+          "doc": "Checks if a scene is active",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "sceneCount",
+          "doc": "Returns the number of scenes",
+          "params": [],
+          "returns": "u32"
+        },
+        {
+          "name": "sceneSetCurrent",
+          "doc": "Sets which scene subsequent entity/component operations target",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            }
+          ],
+          "returns": "GoudResult"
+        },
+        {
+          "name": "sceneGetCurrent",
+          "doc": "Returns the currently targeted scene ID",
+          "params": [],
+          "returns": "u32"
         }
       ]
     }

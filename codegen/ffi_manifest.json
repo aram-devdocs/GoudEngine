@@ -1,0 +1,1928 @@
+{
+  "version": "0.0.827",
+  "generated_at": "build-time",
+  "functions": {
+    "goud_collision_aabb_aabb": {
+      "source_file": "ffi/collision.rs",
+      "params": [
+        "center_a_x: f32",
+        "center_a_y: f32",
+        "half_w_a: f32",
+        "half_h_a: f32",
+        "center_b_x: f32",
+        "center_b_y: f32",
+        "half_w_b: f32",
+        "half_h_b: f32",
+        "out_contact: *mut GoudContact"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_collision_aabb_overlap": {
+      "source_file": "ffi/collision.rs",
+      "params": [
+        "min_a_x: f32",
+        "min_a_y: f32",
+        "max_a_x: f32",
+        "max_a_y: f32",
+        "min_b_x: f32",
+        "min_b_y: f32",
+        "max_b_x: f32",
+        "max_b_y: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_collision_circle_aabb": {
+      "source_file": "ffi/collision.rs",
+      "params": [
+        "circle_x: f32",
+        "circle_y: f32",
+        "circle_radius: f32",
+        "box_x: f32",
+        "box_y: f32",
+        "box_hw: f32",
+        "box_hh: f32",
+        "out_contact: *mut GoudContact"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_collision_circle_circle": {
+      "source_file": "ffi/collision.rs",
+      "params": [
+        "center_a_x: f32",
+        "center_a_y: f32",
+        "radius_a: f32",
+        "center_b_x: f32",
+        "center_b_y: f32",
+        "radius_b: f32",
+        "out_contact: *mut GoudContact"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_collision_circle_overlap": {
+      "source_file": "ffi/collision.rs",
+      "params": [
+        "x1: f32",
+        "y1: f32",
+        "r1: f32",
+        "x2: f32",
+        "y2: f32",
+        "r2: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_collision_distance": {
+      "source_file": "ffi/collision.rs",
+      "params": [
+        "x1: f32",
+        "y1: f32",
+        "x2: f32",
+        "y2: f32"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_collision_distance_squared": {
+      "source_file": "ffi/collision.rs",
+      "params": [
+        "x1: f32",
+        "y1: f32",
+        "x2: f32",
+        "y2: f32"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_collision_point_in_circle": {
+      "source_file": "ffi/collision.rs",
+      "params": [
+        "point_x: f32",
+        "point_y: f32",
+        "circle_x: f32",
+        "circle_y: f32",
+        "circle_radius: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_collision_point_in_rect": {
+      "source_file": "ffi/collision.rs",
+      "params": [
+        "point_x: f32",
+        "point_y: f32",
+        "rect_x: f32",
+        "rect_y: f32",
+        "rect_w: f32",
+        "rect_h: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_color_black": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [],
+      "return_type": "FfiColor",
+      "is_unsafe": false
+    },
+    "goud_color_blue": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [],
+      "return_type": "FfiColor",
+      "is_unsafe": false
+    },
+    "goud_color_from_hex": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [
+        "hex: u32"
+      ],
+      "return_type": "FfiColor",
+      "is_unsafe": false
+    },
+    "goud_color_from_u8": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [
+        "r: u8",
+        "g: u8",
+        "b: u8",
+        "a: u8"
+      ],
+      "return_type": "FfiColor",
+      "is_unsafe": false
+    },
+    "goud_color_green": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [],
+      "return_type": "FfiColor",
+      "is_unsafe": false
+    },
+    "goud_color_lerp": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [
+        "from: FfiColor",
+        "to: FfiColor",
+        "t: f32"
+      ],
+      "return_type": "FfiColor",
+      "is_unsafe": false
+    },
+    "goud_color_red": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [],
+      "return_type": "FfiColor",
+      "is_unsafe": false
+    },
+    "goud_color_rgb": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [
+        "r: f32",
+        "g: f32",
+        "b: f32"
+      ],
+      "return_type": "FfiColor",
+      "is_unsafe": false
+    },
+    "goud_color_rgba": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32"
+      ],
+      "return_type": "FfiColor",
+      "is_unsafe": false
+    },
+    "goud_color_transparent": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [],
+      "return_type": "FfiColor",
+      "is_unsafe": false
+    },
+    "goud_color_white": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [],
+      "return_type": "FfiColor",
+      "is_unsafe": false
+    },
+    "goud_color_with_alpha": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [
+        "color: FfiColor",
+        "alpha: f32"
+      ],
+      "return_type": "FfiColor",
+      "is_unsafe": false
+    },
+    "goud_color_yellow": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [],
+      "return_type": "FfiColor",
+      "is_unsafe": false
+    },
+    "goud_component_add": {
+      "source_file": "ffi/component/ops.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: GoudEntityId",
+        "type_id_hash: u64",
+        "data_ptr: *const u8",
+        "data_size: usize"
+      ],
+      "return_type": "GoudResult",
+      "is_unsafe": true
+    },
+    "goud_component_add_batch": {
+      "source_file": "ffi/component/batch.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_ids: *const u64",
+        "count: u32",
+        "type_id_hash: u64",
+        "data_ptr: *const u8",
+        "component_size: usize"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_component_get": {
+      "source_file": "ffi/component/access.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: GoudEntityId",
+        "type_id_hash: u64"
+      ],
+      "return_type": "*const u8",
+      "is_unsafe": false
+    },
+    "goud_component_get_mut": {
+      "source_file": "ffi/component/access.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: GoudEntityId",
+        "type_id_hash: u64"
+      ],
+      "return_type": "*mut u8",
+      "is_unsafe": false
+    },
+    "goud_component_has": {
+      "source_file": "ffi/component/access.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: GoudEntityId",
+        "type_id_hash: u64"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_component_has_batch": {
+      "source_file": "ffi/component/batch.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_ids: *const u64",
+        "count: u32",
+        "type_id_hash: u64",
+        "out_results: *mut u8"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_component_register_type": {
+      "source_file": "ffi/component/ops.rs",
+      "params": [
+        "type_id_hash: u64",
+        "name_ptr: *const u8",
+        "name_len: usize",
+        "size: usize",
+        "align: usize"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_component_remove": {
+      "source_file": "ffi/component/ops.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: GoudEntityId",
+        "type_id_hash: u64"
+      ],
+      "return_type": "GoudResult",
+      "is_unsafe": false
+    },
+    "goud_component_remove_batch": {
+      "source_file": "ffi/component/batch.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_ids: *const u64",
+        "count: u32",
+        "type_id_hash: u64"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_context_create": {
+      "source_file": "ffi/context/lifecycle.rs",
+      "params": [],
+      "return_type": "GoudContextId",
+      "is_unsafe": false
+    },
+    "goud_context_destroy": {
+      "source_file": "ffi/context/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_context_is_valid": {
+      "source_file": "ffi/context/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_entity_count": {
+      "source_file": "ffi/entity/queries.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_entity_despawn": {
+      "source_file": "ffi/entity/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64"
+      ],
+      "return_type": "GoudResult",
+      "is_unsafe": false
+    },
+    "goud_entity_despawn_batch": {
+      "source_file": "ffi/entity/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_ids: *const u64",
+        "count: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_entity_is_alive": {
+      "source_file": "ffi/entity/queries.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_entity_is_alive_batch": {
+      "source_file": "ffi/entity/queries.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_ids: *const u64",
+        "count: u32",
+        "out_results: *mut u8"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_entity_spawn_batch": {
+      "source_file": "ffi/entity/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "count: u32",
+        "out_entities: *mut u64"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_entity_spawn_empty": {
+      "source_file": "ffi/entity/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "u64",
+      "is_unsafe": false
+    },
+    "goud_input_action_just_pressed": {
+      "source_file": "ffi/input/actions.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "action_name: *const std::os::raw::c_char"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_input_action_just_released": {
+      "source_file": "ffi/input/actions.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "action_name: *const std::os::raw::c_char"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_input_action_pressed": {
+      "source_file": "ffi/input/actions.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "action_name: *const std::os::raw::c_char"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_input_get_mouse_delta": {
+      "source_file": "ffi/input/mouse.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out_dx: *mut f32",
+        "out_dy: *mut f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_input_get_mouse_position": {
+      "source_file": "ffi/input/mouse.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out_x: *mut f32",
+        "out_y: *mut f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_input_get_scroll_delta": {
+      "source_file": "ffi/input/mouse.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out_dx: *mut f32",
+        "out_dy: *mut f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_input_key_just_pressed": {
+      "source_file": "ffi/input/keyboard.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "key: GoudKeyCode"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_input_key_just_released": {
+      "source_file": "ffi/input/keyboard.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "key: GoudKeyCode"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_input_key_pressed": {
+      "source_file": "ffi/input/keyboard.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "key: GoudKeyCode"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_input_map_action_key": {
+      "source_file": "ffi/input/actions.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "action_name: *const std::os::raw::c_char",
+        "key: GoudKeyCode"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_input_mouse_button_just_pressed": {
+      "source_file": "ffi/input/mouse.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "button: GoudMouseButton"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_input_mouse_button_just_released": {
+      "source_file": "ffi/input/mouse.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "button: GoudMouseButton"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_input_mouse_button_pressed": {
+      "source_file": "ffi/input/mouse.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "button: GoudMouseButton"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_add_light": {
+      "source_file": "ffi/renderer3d/lighting.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "light_type: i32",
+        "pos_x: f32",
+        "pos_y: f32",
+        "pos_z: f32",
+        "dir_x: f32",
+        "dir_y: f32",
+        "dir_z: f32",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "intensity: f32",
+        "range: f32",
+        "spot_angle: f32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_configure_fog": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "density: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_configure_grid": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool",
+        "size: f32",
+        "divisions: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_configure_skybox": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_create_cube": {
+      "source_file": "ffi/renderer3d/primitives.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "texture_id: u32",
+        "width: f32",
+        "height: f32",
+        "depth: f32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_create_cylinder": {
+      "source_file": "ffi/renderer3d/primitives.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "texture_id: u32",
+        "radius: f32",
+        "height: f32",
+        "segments: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_create_plane": {
+      "source_file": "ffi/renderer3d/primitives.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "texture_id: u32",
+        "width: f32",
+        "depth: f32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_create_sphere": {
+      "source_file": "ffi/renderer3d/primitives.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "texture_id: u32",
+        "diameter: f32",
+        "segments: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_destroy_object": {
+      "source_file": "ffi/renderer3d/primitives.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "object_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_remove_light": {
+      "source_file": "ffi/renderer3d/lighting.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "light_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_render": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_render_all": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_camera_position": {
+      "source_file": "ffi/renderer3d/camera.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "x: f32",
+        "y: f32",
+        "z: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_camera_rotation": {
+      "source_file": "ffi/renderer3d/camera.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "pitch: f32",
+        "yaw: f32",
+        "roll: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_fog_enabled": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_grid_enabled": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_object_position": {
+      "source_file": "ffi/renderer3d/primitives.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "object_id: u32",
+        "x: f32",
+        "y: f32",
+        "z: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_object_rotation": {
+      "source_file": "ffi/renderer3d/primitives.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "object_id: u32",
+        "x: f32",
+        "y: f32",
+        "z: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_object_scale": {
+      "source_file": "ffi/renderer3d/primitives.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "object_id: u32",
+        "x: f32",
+        "y: f32",
+        "z: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_update_light": {
+      "source_file": "ffi/renderer3d/lighting.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "light_id: u32",
+        "light_type: i32",
+        "pos_x: f32",
+        "pos_y: f32",
+        "pos_z: f32",
+        "dir_x: f32",
+        "dir_y: f32",
+        "dir_z: f32",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "intensity: f32",
+        "range: f32",
+        "spot_angle: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer_begin": {
+      "source_file": "ffi/renderer/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer_clear_depth": {
+      "source_file": "ffi/renderer/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "()",
+      "is_unsafe": false
+    },
+    "goud_renderer_disable_blending": {
+      "source_file": "ffi/renderer/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "()",
+      "is_unsafe": false
+    },
+    "goud_renderer_disable_depth_test": {
+      "source_file": "ffi/renderer/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "()",
+      "is_unsafe": false
+    },
+    "goud_renderer_draw_quad": {
+      "source_file": "ffi/renderer/draw.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "x: f32",
+        "y: f32",
+        "width: f32",
+        "height: f32",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer_draw_sprite": {
+      "source_file": "ffi/renderer/draw.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "texture: GoudTextureHandle",
+        "x: f32",
+        "y: f32",
+        "width: f32",
+        "height: f32",
+        "rotation: f32",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer_draw_sprite_rect": {
+      "source_file": "ffi/renderer/draw.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "texture: GoudTextureHandle",
+        "x: f32",
+        "y: f32",
+        "width: f32",
+        "height: f32",
+        "rotation: f32",
+        "src_x: f32",
+        "src_y: f32",
+        "src_w: f32",
+        "src_h: f32",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer_enable_blending": {
+      "source_file": "ffi/renderer/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "()",
+      "is_unsafe": false
+    },
+    "goud_renderer_enable_depth_test": {
+      "source_file": "ffi/renderer/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "()",
+      "is_unsafe": false
+    },
+    "goud_renderer_end": {
+      "source_file": "ffi/renderer/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer_get_stats": {
+      "source_file": "ffi/renderer/handles.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out_stats: *mut GoudRenderStats"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_renderer_set_viewport": {
+      "source_file": "ffi/renderer/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "x: i32",
+        "y: i32",
+        "width: u32",
+        "height: u32"
+      ],
+      "return_type": "()",
+      "is_unsafe": false
+    },
+    "goud_scene_count": {
+      "source_file": "ffi/scene.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_scene_create": {
+      "source_file": "ffi/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "name_ptr: *const u8",
+        "name_len: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_scene_destroy": {
+      "source_file": "ffi/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "scene_id: u32"
+      ],
+      "return_type": "GoudResult",
+      "is_unsafe": false
+    },
+    "goud_scene_get_by_name": {
+      "source_file": "ffi/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "name_ptr: *const u8",
+        "name_len: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_scene_get_current": {
+      "source_file": "ffi/scene.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_scene_is_active": {
+      "source_file": "ffi/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "scene_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_scene_set_active": {
+      "source_file": "ffi/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "scene_id: u32",
+        "active: bool"
+      ],
+      "return_type": "GoudResult",
+      "is_unsafe": false
+    },
+    "goud_scene_set_current": {
+      "source_file": "ffi/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "scene_id: u32"
+      ],
+      "return_type": "GoudResult",
+      "is_unsafe": false
+    },
+    "goud_sprite_builder_build": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [
+        "builder: *mut FfiSpriteBuilder"
+      ],
+      "return_type": "FfiSprite",
+      "is_unsafe": true
+    },
+    "goud_sprite_builder_default": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [],
+      "return_type": "*mut FfiSpriteBuilder",
+      "is_unsafe": false
+    },
+    "goud_sprite_builder_free": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [
+        "builder: *mut FfiSpriteBuilder"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_sprite_builder_new": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [
+        "texture_handle: u64"
+      ],
+      "return_type": "*mut FfiSpriteBuilder",
+      "is_unsafe": false
+    },
+    "goud_sprite_builder_with_alpha": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [
+        "builder: *mut FfiSpriteBuilder",
+        "alpha: f32"
+      ],
+      "return_type": "*mut FfiSpriteBuilder",
+      "is_unsafe": true
+    },
+    "goud_sprite_builder_with_anchor": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [
+        "builder: *mut FfiSpriteBuilder",
+        "x: f32",
+        "y: f32"
+      ],
+      "return_type": "*mut FfiSpriteBuilder",
+      "is_unsafe": true
+    },
+    "goud_sprite_builder_with_color": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [
+        "builder: *mut FfiSpriteBuilder",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32"
+      ],
+      "return_type": "*mut FfiSpriteBuilder",
+      "is_unsafe": true
+    },
+    "goud_sprite_builder_with_custom_size": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [
+        "builder: *mut FfiSpriteBuilder",
+        "width: f32",
+        "height: f32"
+      ],
+      "return_type": "*mut FfiSpriteBuilder",
+      "is_unsafe": true
+    },
+    "goud_sprite_builder_with_flip": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [
+        "builder: *mut FfiSpriteBuilder",
+        "flip_x: bool",
+        "flip_y: bool"
+      ],
+      "return_type": "*mut FfiSpriteBuilder",
+      "is_unsafe": true
+    },
+    "goud_sprite_builder_with_flip_x": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [
+        "builder: *mut FfiSpriteBuilder",
+        "flip: bool"
+      ],
+      "return_type": "*mut FfiSpriteBuilder",
+      "is_unsafe": true
+    },
+    "goud_sprite_builder_with_flip_y": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [
+        "builder: *mut FfiSpriteBuilder",
+        "flip: bool"
+      ],
+      "return_type": "*mut FfiSpriteBuilder",
+      "is_unsafe": true
+    },
+    "goud_sprite_builder_with_source_rect": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [
+        "builder: *mut FfiSpriteBuilder",
+        "x: f32",
+        "y: f32",
+        "width: f32",
+        "height: f32"
+      ],
+      "return_type": "*mut FfiSpriteBuilder",
+      "is_unsafe": true
+    },
+    "goud_sprite_builder_with_texture": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [
+        "builder: *mut FfiSpriteBuilder",
+        "texture_handle: u64"
+      ],
+      "return_type": "*mut FfiSpriteBuilder",
+      "is_unsafe": true
+    },
+    "goud_sprite_clear_custom_size": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *mut FfiSprite"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_sprite_clear_source_rect": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *mut FfiSprite"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_sprite_default": {
+      "source_file": "ffi/component_sprite/factory.rs",
+      "params": [],
+      "return_type": "FfiSprite",
+      "is_unsafe": false
+    },
+    "goud_sprite_get_alpha": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [
+        "sprite: *const FfiSprite"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_sprite_get_anchor": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *const FfiSprite"
+      ],
+      "return_type": "FfiVec2",
+      "is_unsafe": true
+    },
+    "goud_sprite_get_color": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [
+        "sprite: *const FfiSprite"
+      ],
+      "return_type": "FfiColor",
+      "is_unsafe": true
+    },
+    "goud_sprite_get_custom_size": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *const FfiSprite",
+        "out_size: *mut FfiVec2"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_sprite_get_flip_x": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *const FfiSprite"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_sprite_get_flip_y": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *const FfiSprite"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_sprite_get_source_rect": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *const FfiSprite",
+        "out_rect: *mut FfiRect"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_sprite_get_texture": {
+      "source_file": "ffi/component_sprite/texture.rs",
+      "params": [
+        "sprite: *const FfiSprite"
+      ],
+      "return_type": "u64",
+      "is_unsafe": true
+    },
+    "goud_sprite_has_custom_size": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *const FfiSprite"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_sprite_has_source_rect": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *const FfiSprite"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_sprite_is_flipped": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *const FfiSprite"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_sprite_new": {
+      "source_file": "ffi/component_sprite/factory.rs",
+      "params": [
+        "texture_handle: u64"
+      ],
+      "return_type": "FfiSprite",
+      "is_unsafe": false
+    },
+    "goud_sprite_set_alpha": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [
+        "sprite: *mut FfiSprite",
+        "alpha: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_sprite_set_anchor": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *mut FfiSprite",
+        "x: f32",
+        "y: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_sprite_set_color": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [
+        "sprite: *mut FfiSprite",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_sprite_set_custom_size": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *mut FfiSprite",
+        "width: f32",
+        "height: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_sprite_set_flip": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *mut FfiSprite",
+        "flip_x: bool",
+        "flip_y: bool"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_sprite_set_flip_x": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *mut FfiSprite",
+        "flip: bool"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_sprite_set_flip_y": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *mut FfiSprite",
+        "flip: bool"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_sprite_set_source_rect": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *mut FfiSprite",
+        "x: f32",
+        "y: f32",
+        "width: f32",
+        "height: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_sprite_set_texture": {
+      "source_file": "ffi/component_sprite/texture.rs",
+      "params": [
+        "sprite: *mut FfiSprite",
+        "handle: u64"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_sprite_size_or_rect": {
+      "source_file": "ffi/component_sprite/texture.rs",
+      "params": [
+        "sprite: *const FfiSprite"
+      ],
+      "return_type": "FfiVec2",
+      "is_unsafe": true
+    },
+    "goud_sprite_with_anchor": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: FfiSprite",
+        "x: f32",
+        "y: f32"
+      ],
+      "return_type": "FfiSprite",
+      "is_unsafe": false
+    },
+    "goud_sprite_with_color": {
+      "source_file": "ffi/component_sprite/color.rs",
+      "params": [
+        "sprite: FfiSprite",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32"
+      ],
+      "return_type": "FfiSprite",
+      "is_unsafe": false
+    },
+    "goud_sprite_with_custom_size": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: FfiSprite",
+        "width: f32",
+        "height: f32"
+      ],
+      "return_type": "FfiSprite",
+      "is_unsafe": false
+    },
+    "goud_sprite_with_flip": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: FfiSprite",
+        "flip_x: bool",
+        "flip_y: bool"
+      ],
+      "return_type": "FfiSprite",
+      "is_unsafe": false
+    },
+    "goud_sprite_with_flip_x": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: FfiSprite",
+        "flip: bool"
+      ],
+      "return_type": "FfiSprite",
+      "is_unsafe": false
+    },
+    "goud_sprite_with_flip_y": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: FfiSprite",
+        "flip: bool"
+      ],
+      "return_type": "FfiSprite",
+      "is_unsafe": false
+    },
+    "goud_sprite_with_source_rect": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: FfiSprite",
+        "x: f32",
+        "y: f32",
+        "width: f32",
+        "height: f32"
+      ],
+      "return_type": "FfiSprite",
+      "is_unsafe": false
+    },
+    "goud_texture_destroy": {
+      "source_file": "ffi/renderer/texture.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "texture: GoudTextureHandle"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_texture_load": {
+      "source_file": "ffi/renderer/texture.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "path: *const std::os::raw::c_char"
+      ],
+      "return_type": "GoudTextureHandle",
+      "is_unsafe": true
+    },
+    "goud_transform2d_backward": {
+      "source_file": "ffi/component_transform2d/direction.rs",
+      "params": [
+        "transform: *const FfiTransform2D"
+      ],
+      "return_type": "FfiVec2",
+      "is_unsafe": true
+    },
+    "goud_transform2d_builder_at_position": {
+      "source_file": "ffi/component_transform2d/builder.rs",
+      "params": [
+        "x: f32",
+        "y: f32"
+      ],
+      "return_type": "*mut FfiTransform2DBuilder",
+      "is_unsafe": false
+    },
+    "goud_transform2d_builder_build": {
+      "source_file": "ffi/component_transform2d/builder.rs",
+      "params": [
+        "builder: *mut FfiTransform2DBuilder"
+      ],
+      "return_type": "FfiTransform2D",
+      "is_unsafe": true
+    },
+    "goud_transform2d_builder_free": {
+      "source_file": "ffi/component_transform2d/builder.rs",
+      "params": [
+        "builder: *mut FfiTransform2DBuilder"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_transform2d_builder_looking_at": {
+      "source_file": "ffi/component_transform2d/builder.rs",
+      "params": [
+        "builder: *mut FfiTransform2DBuilder",
+        "target_x: f32",
+        "target_y: f32"
+      ],
+      "return_type": "*mut FfiTransform2DBuilder",
+      "is_unsafe": true
+    },
+    "goud_transform2d_builder_new": {
+      "source_file": "ffi/component_transform2d/builder.rs",
+      "params": [],
+      "return_type": "*mut FfiTransform2DBuilder",
+      "is_unsafe": false
+    },
+    "goud_transform2d_builder_rotate": {
+      "source_file": "ffi/component_transform2d/builder.rs",
+      "params": [
+        "builder: *mut FfiTransform2DBuilder",
+        "angle: f32"
+      ],
+      "return_type": "*mut FfiTransform2DBuilder",
+      "is_unsafe": true
+    },
+    "goud_transform2d_builder_scale_by": {
+      "source_file": "ffi/component_transform2d/builder.rs",
+      "params": [
+        "builder: *mut FfiTransform2DBuilder",
+        "factor_x: f32",
+        "factor_y: f32"
+      ],
+      "return_type": "*mut FfiTransform2DBuilder",
+      "is_unsafe": true
+    },
+    "goud_transform2d_builder_translate": {
+      "source_file": "ffi/component_transform2d/builder.rs",
+      "params": [
+        "builder: *mut FfiTransform2DBuilder",
+        "dx: f32",
+        "dy: f32"
+      ],
+      "return_type": "*mut FfiTransform2DBuilder",
+      "is_unsafe": true
+    },
+    "goud_transform2d_builder_with_position": {
+      "source_file": "ffi/component_transform2d/builder.rs",
+      "params": [
+        "builder: *mut FfiTransform2DBuilder",
+        "x: f32",
+        "y: f32"
+      ],
+      "return_type": "*mut FfiTransform2DBuilder",
+      "is_unsafe": true
+    },
+    "goud_transform2d_builder_with_rotation": {
+      "source_file": "ffi/component_transform2d/builder.rs",
+      "params": [
+        "builder: *mut FfiTransform2DBuilder",
+        "rotation: f32"
+      ],
+      "return_type": "*mut FfiTransform2DBuilder",
+      "is_unsafe": true
+    },
+    "goud_transform2d_builder_with_rotation_degrees": {
+      "source_file": "ffi/component_transform2d/builder.rs",
+      "params": [
+        "builder: *mut FfiTransform2DBuilder",
+        "degrees: f32"
+      ],
+      "return_type": "*mut FfiTransform2DBuilder",
+      "is_unsafe": true
+    },
+    "goud_transform2d_builder_with_scale": {
+      "source_file": "ffi/component_transform2d/builder.rs",
+      "params": [
+        "builder: *mut FfiTransform2DBuilder",
+        "scale_x: f32",
+        "scale_y: f32"
+      ],
+      "return_type": "*mut FfiTransform2DBuilder",
+      "is_unsafe": true
+    },
+    "goud_transform2d_builder_with_scale_uniform": {
+      "source_file": "ffi/component_transform2d/builder.rs",
+      "params": [
+        "builder: *mut FfiTransform2DBuilder",
+        "scale: f32"
+      ],
+      "return_type": "*mut FfiTransform2DBuilder",
+      "is_unsafe": true
+    },
+    "goud_transform2d_default": {
+      "source_file": "ffi/component_transform2d/factory.rs",
+      "params": [],
+      "return_type": "FfiTransform2D",
+      "is_unsafe": false
+    },
+    "goud_transform2d_forward": {
+      "source_file": "ffi/component_transform2d/direction.rs",
+      "params": [
+        "transform: *const FfiTransform2D"
+      ],
+      "return_type": "FfiVec2",
+      "is_unsafe": true
+    },
+    "goud_transform2d_from_position": {
+      "source_file": "ffi/component_transform2d/factory.rs",
+      "params": [
+        "x: f32",
+        "y: f32"
+      ],
+      "return_type": "FfiTransform2D",
+      "is_unsafe": false
+    },
+    "goud_transform2d_from_position_rotation": {
+      "source_file": "ffi/component_transform2d/factory.rs",
+      "params": [
+        "x: f32",
+        "y: f32",
+        "rotation: f32"
+      ],
+      "return_type": "FfiTransform2D",
+      "is_unsafe": false
+    },
+    "goud_transform2d_from_rotation": {
+      "source_file": "ffi/component_transform2d/factory.rs",
+      "params": [
+        "rotation: f32"
+      ],
+      "return_type": "FfiTransform2D",
+      "is_unsafe": false
+    },
+    "goud_transform2d_from_rotation_degrees": {
+      "source_file": "ffi/component_transform2d/factory.rs",
+      "params": [
+        "degrees: f32"
+      ],
+      "return_type": "FfiTransform2D",
+      "is_unsafe": false
+    },
+    "goud_transform2d_from_scale": {
+      "source_file": "ffi/component_transform2d/factory.rs",
+      "params": [
+        "scale_x: f32",
+        "scale_y: f32"
+      ],
+      "return_type": "FfiTransform2D",
+      "is_unsafe": false
+    },
+    "goud_transform2d_from_scale_uniform": {
+      "source_file": "ffi/component_transform2d/factory.rs",
+      "params": [
+        "scale: f32"
+      ],
+      "return_type": "FfiTransform2D",
+      "is_unsafe": false
+    },
+    "goud_transform2d_get_position": {
+      "source_file": "ffi/component_transform2d/position.rs",
+      "params": [
+        "transform: *const FfiTransform2D"
+      ],
+      "return_type": "FfiVec2",
+      "is_unsafe": true
+    },
+    "goud_transform2d_get_rotation": {
+      "source_file": "ffi/component_transform2d/rotation.rs",
+      "params": [
+        "transform: *const FfiTransform2D"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_transform2d_get_rotation_degrees": {
+      "source_file": "ffi/component_transform2d/rotation.rs",
+      "params": [
+        "transform: *const FfiTransform2D"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_transform2d_get_scale": {
+      "source_file": "ffi/component_transform2d/scale.rs",
+      "params": [
+        "transform: *const FfiTransform2D"
+      ],
+      "return_type": "FfiVec2",
+      "is_unsafe": true
+    },
+    "goud_transform2d_inverse_transform_direction": {
+      "source_file": "ffi/component_transform2d/matrix_ops.rs",
+      "params": [
+        "transform: *const FfiTransform2D",
+        "dir_x: f32",
+        "dir_y: f32"
+      ],
+      "return_type": "FfiVec2",
+      "is_unsafe": true
+    },
+    "goud_transform2d_inverse_transform_point": {
+      "source_file": "ffi/component_transform2d/matrix_ops.rs",
+      "params": [
+        "transform: *const FfiTransform2D",
+        "point_x: f32",
+        "point_y: f32"
+      ],
+      "return_type": "FfiVec2",
+      "is_unsafe": true
+    },
+    "goud_transform2d_left": {
+      "source_file": "ffi/component_transform2d/direction.rs",
+      "params": [
+        "transform: *const FfiTransform2D"
+      ],
+      "return_type": "FfiVec2",
+      "is_unsafe": true
+    },
+    "goud_transform2d_lerp": {
+      "source_file": "ffi/component_transform2d/matrix_ops.rs",
+      "params": [
+        "from: FfiTransform2D",
+        "to: FfiTransform2D",
+        "t: f32"
+      ],
+      "return_type": "FfiTransform2D",
+      "is_unsafe": false
+    },
+    "goud_transform2d_look_at": {
+      "source_file": "ffi/component_transform2d/factory.rs",
+      "params": [
+        "pos_x: f32",
+        "pos_y: f32",
+        "target_x: f32",
+        "target_y: f32"
+      ],
+      "return_type": "FfiTransform2D",
+      "is_unsafe": false
+    },
+    "goud_transform2d_look_at_target": {
+      "source_file": "ffi/component_transform2d/rotation.rs",
+      "params": [
+        "transform: *mut FfiTransform2D",
+        "target_x: f32",
+        "target_y: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_transform2d_matrix": {
+      "source_file": "ffi/component_transform2d/matrix_ops.rs",
+      "params": [
+        "transform: *const FfiTransform2D"
+      ],
+      "return_type": "FfiMat3x3",
+      "is_unsafe": true
+    },
+    "goud_transform2d_matrix_inverse": {
+      "source_file": "ffi/component_transform2d/matrix_ops.rs",
+      "params": [
+        "transform: *const FfiTransform2D"
+      ],
+      "return_type": "FfiMat3x3",
+      "is_unsafe": true
+    },
+    "goud_transform2d_new": {
+      "source_file": "ffi/component_transform2d/factory.rs",
+      "params": [
+        "pos_x: f32",
+        "pos_y: f32",
+        "rotation: f32",
+        "scale_x: f32",
+        "scale_y: f32"
+      ],
+      "return_type": "FfiTransform2D",
+      "is_unsafe": false
+    },
+    "goud_transform2d_normalize_angle": {
+      "source_file": "ffi/component_transform2d/matrix_ops.rs",
+      "params": [
+        "angle: f32"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_transform2d_right": {
+      "source_file": "ffi/component_transform2d/direction.rs",
+      "params": [
+        "transform: *const FfiTransform2D"
+      ],
+      "return_type": "FfiVec2",
+      "is_unsafe": true
+    },
+    "goud_transform2d_rotate": {
+      "source_file": "ffi/component_transform2d/rotation.rs",
+      "params": [
+        "transform: *mut FfiTransform2D",
+        "angle: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_transform2d_rotate_degrees": {
+      "source_file": "ffi/component_transform2d/rotation.rs",
+      "params": [
+        "transform: *mut FfiTransform2D",
+        "degrees: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_transform2d_scale_by": {
+      "source_file": "ffi/component_transform2d/scale.rs",
+      "params": [
+        "transform: *mut FfiTransform2D",
+        "factor_x: f32",
+        "factor_y: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_transform2d_set_position": {
+      "source_file": "ffi/component_transform2d/position.rs",
+      "params": [
+        "transform: *mut FfiTransform2D",
+        "x: f32",
+        "y: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_transform2d_set_rotation": {
+      "source_file": "ffi/component_transform2d/rotation.rs",
+      "params": [
+        "transform: *mut FfiTransform2D",
+        "rotation: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_transform2d_set_rotation_degrees": {
+      "source_file": "ffi/component_transform2d/rotation.rs",
+      "params": [
+        "transform: *mut FfiTransform2D",
+        "degrees: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_transform2d_set_scale": {
+      "source_file": "ffi/component_transform2d/scale.rs",
+      "params": [
+        "transform: *mut FfiTransform2D",
+        "scale_x: f32",
+        "scale_y: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_transform2d_set_scale_uniform": {
+      "source_file": "ffi/component_transform2d/scale.rs",
+      "params": [
+        "transform: *mut FfiTransform2D",
+        "scale: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_transform2d_transform_direction": {
+      "source_file": "ffi/component_transform2d/matrix_ops.rs",
+      "params": [
+        "transform: *const FfiTransform2D",
+        "dir_x: f32",
+        "dir_y: f32"
+      ],
+      "return_type": "FfiVec2",
+      "is_unsafe": true
+    },
+    "goud_transform2d_transform_point": {
+      "source_file": "ffi/component_transform2d/matrix_ops.rs",
+      "params": [
+        "transform: *const FfiTransform2D",
+        "point_x: f32",
+        "point_y: f32"
+      ],
+      "return_type": "FfiVec2",
+      "is_unsafe": true
+    },
+    "goud_transform2d_translate": {
+      "source_file": "ffi/component_transform2d/position.rs",
+      "params": [
+        "transform: *mut FfiTransform2D",
+        "dx: f32",
+        "dy: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_transform2d_translate_local": {
+      "source_file": "ffi/component_transform2d/position.rs",
+      "params": [
+        "transform: *mut FfiTransform2D",
+        "dx: f32",
+        "dy: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_window_clear": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": false
+    },
+    "goud_window_create": {
+      "source_file": "ffi/window/lifecycle.rs",
+      "params": [
+        "width: u32",
+        "height: u32",
+        "title: *const c_char"
+      ],
+      "return_type": "GoudContextId",
+      "is_unsafe": true
+    },
+    "goud_window_destroy": {
+      "source_file": "ffi/window/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_window_get_delta_time": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_window_get_size": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out_width: *mut u32",
+        "out_height: *mut u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_window_poll_events": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_window_set_should_close": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "should_close: bool"
+      ],
+      "return_type": "()",
+      "is_unsafe": false
+    },
+    "goud_window_should_close": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_window_swap_buffers": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "()",
+      "is_unsafe": false
+    }
+  },
+  "total_count": 199
+}

@@ -439,7 +439,15 @@
         "componentGetMut":      {"ffi": "goud_component_get_mut",      "entity_params": ["entity"]},
         "componentAddBatch":    {"ffi": "goud_component_add_batch",    "batch_in": true},
         "componentRemoveBatch": {"ffi": "goud_component_remove_batch", "batch_in": true},
-        "componentHasBatch":    {"ffi": "goud_component_has_batch",    "batch_in": true, "batch_out_results": true}
+        "componentHasBatch":    {"ffi": "goud_component_has_batch",    "batch_in": true, "batch_out_results": true},
+        "sceneCreate":          {"ffi": "goud_scene_create",          "string_params": ["name"]},
+        "sceneDestroy":         {"ffi": "goud_scene_destroy"},
+        "sceneGetByName":       {"ffi": "goud_scene_get_by_name",     "string_params": ["name"]},
+        "sceneSetActive":       {"ffi": "goud_scene_set_active"},
+        "sceneIsActive":        {"ffi": "goud_scene_is_active"},
+        "sceneCount":           {"ffi": "goud_scene_count"},
+        "sceneSetCurrent":      {"ffi": "goud_scene_set_current"},
+        "sceneGetCurrent":      {"ffi": "goud_scene_get_current"}
       }
     }
   },
@@ -450,6 +458,16 @@
       "goud_context_create":   {"params": [],                                                 "returns": "GoudContextId"},
       "goud_context_destroy":  {"params": [{"name": "ctx", "type": "GoudContextId"}],         "returns": "bool"},
       "goud_context_is_valid": {"params": [{"name": "ctx", "type": "GoudContextId"}],         "returns": "bool"}
+    },
+    "scene": {
+      "goud_scene_create":      {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "name_ptr", "type": "*const u8"}, {"name": "name_len", "type": "u32"}], "returns": "u32", "unsafe": true},
+      "goud_scene_destroy":     {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "scene_id", "type": "u32"}], "returns": "GoudResult"},
+      "goud_scene_get_by_name": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "name_ptr", "type": "*const u8"}, {"name": "name_len", "type": "u32"}], "returns": "u32", "unsafe": true},
+      "goud_scene_set_active":  {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "scene_id", "type": "u32"}, {"name": "active", "type": "bool"}], "returns": "GoudResult"},
+      "goud_scene_is_active":   {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "scene_id", "type": "u32"}], "returns": "bool"},
+      "goud_scene_count":       {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "u32"},
+      "goud_scene_set_current": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "scene_id", "type": "u32"}], "returns": "GoudResult"},
+      "goud_scene_get_current": {"params": [{"name": "ctx", "type": "GoudContextId"}], "returns": "u32"}
     },
     "window": {
       "goud_window_create":           {"params": [{"name": "width", "type": "u32"}, {"name": "height", "type": "u32"}, {"name": "title", "type": "*const c_char"}], "returns": "GoudContextId", "unsafe": true},
