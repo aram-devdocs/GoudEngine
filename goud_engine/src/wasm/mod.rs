@@ -121,9 +121,7 @@ pub struct WasmGame {
 
     // Input state
     keys_current: HashSet<u32>,
-    keys_previous: HashSet<u32>,
     mouse_buttons_current: HashSet<u32>,
-    mouse_buttons_previous: HashSet<u32>,
     mouse_x: f32,
     mouse_y: f32,
     scroll_dx: f32,
@@ -171,9 +169,7 @@ impl WasmGame {
             height,
             title: title.to_string(),
             keys_current: HashSet::new(),
-            keys_previous: HashSet::new(),
             mouse_buttons_current: HashSet::new(),
-            mouse_buttons_previous: HashSet::new(),
             mouse_x: 0.0,
             mouse_y: 0.0,
             scroll_dx: 0.0,
@@ -272,9 +268,7 @@ impl WasmGame {
             height,
             title: title.to_string(),
             keys_current: HashSet::new(),
-            keys_previous: HashSet::new(),
             mouse_buttons_current: HashSet::new(),
-            mouse_buttons_previous: HashSet::new(),
             mouse_x: 0.0,
             mouse_y: 0.0,
             scroll_dx: 0.0,
@@ -304,8 +298,6 @@ impl WasmGame {
         self.frame_keys_just_released = std::mem::take(&mut self.keys_released_buffer);
         self.frame_mouse_just_pressed = std::mem::take(&mut self.mouse_pressed_buffer);
         self.frame_mouse_just_released = std::mem::take(&mut self.mouse_released_buffer);
-        self.keys_previous = self.keys_current.clone();
-        self.mouse_buttons_previous = self.mouse_buttons_current.clone();
         self.scroll_dx = 0.0;
         self.scroll_dy = 0.0;
         self.delta_time = delta_time;

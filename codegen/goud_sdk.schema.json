@@ -2769,7 +2769,9 @@
               "type": "MouseButton"
             }
           ],
-          "returns": "bool"
+          "returns": "bool",
+          "wasm_name": "is_mouse_button_just_released",
+          "wasm_signature": "is_mouse_button_just_released(btn: number): boolean"
         },
         {
           "name": "getMousePosition",
@@ -3963,7 +3965,7 @@
           "method": "isMouseButtonJustPressed"
         },
         {
-          "sig": "is_mouse_button_just_released(btn: number): boolean"
+          "method": "isMouseButtonJustReleased"
         },
         {
           "sig": "mouse_x(): number"
