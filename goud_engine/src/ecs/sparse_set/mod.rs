@@ -6,6 +6,7 @@
 mod core;
 mod iter;
 mod ops;
+mod tick_tracking;
 #[cfg(test)]
 mod tests;
 
