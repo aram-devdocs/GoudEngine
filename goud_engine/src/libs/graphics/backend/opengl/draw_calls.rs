@@ -1,12 +1,13 @@
 //! OpenGL draw call dispatch and vertex attribute setup.
 
-use super::{backend::OpenGLBackend, conversions};
+use super::{backend::OpenGLBackend, conversions, gl_check_debug};
 use crate::core::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::{PrimitiveTopology, VertexLayout};
 
 /// Sets up vertex attribute pointers for the currently bound vertex buffer.
 pub(super) fn set_vertex_attributes(layout: &VertexLayout) {
-    // SAFETY: GL context is active; a vertex buffer is expected to be bound; attribute offsets are valid within the stride.
+    // SAFETY: Attribute location and type values come from validated VertexLayout;
+    // a VAO/VBO must be bound by the caller before this is invoked.
     unsafe {
         for attr in &layout.attributes {
             gl::EnableVertexAttribArray(attr.location);
@@ -24,6 +25,7 @@ pub(super) fn set_vertex_attributes(layout: &VertexLayout) {
             );
         }
     }
+    gl_check_debug!("set_vertex_attributes");
 }
 
 /// Draws primitives using array-based vertex data.
@@ -47,10 +49,11 @@ pub(super) fn draw_arrays(
 
     let gl_topology = conversions::topology_to_gl(topology);
 
-    // SAFETY: GL context is active; shader and vertex buffer are bound (validated above); parameters are in-range.
+    // SAFETY: Topology, first, and count are validated above; a shader and vertex buffer are bound.
     unsafe {
         gl::DrawArrays(gl_topology, first as i32, count as i32);
     }
+    gl_check_debug!("draw_arrays");
 
     Ok(())
 }
@@ -81,7 +84,7 @@ pub(super) fn draw_indexed(
 
     let gl_topology = conversions::topology_to_gl(topology);
 
-    // SAFETY: GL context is active; shader, vertex buffer, and index buffer are bound (validated above); offset is a byte offset into the bound index buffer.
+    // SAFETY: Topology, count, and offset are validated above; shader, vertex buffer, and index buffer are bound.
     unsafe {
         gl::DrawElements(
             gl_topology,
@@ -90,6 +93,7 @@ pub(super) fn draw_indexed(
             offset as *const _,
         );
     }
+    gl_check_debug!("draw_indexed");
 
     Ok(())
 }
@@ -120,7 +124,7 @@ pub(super) fn draw_indexed_u16(
 
     let gl_topology = conversions::topology_to_gl(topology);
 
-    // SAFETY: GL context is active; shader, vertex buffer, and index buffer are bound (validated above); offset is a byte offset into the bound u16 index buffer.
+    // SAFETY: Topology, count, and offset are validated above; shader, vertex buffer, and index buffer are bound.
     unsafe {
         gl::DrawElements(
             gl_topology,
@@ -129,6 +133,7 @@ pub(super) fn draw_indexed_u16(
             offset as *const _,
         );
     }
+    gl_check_debug!("draw_indexed_u16");
 
     Ok(())
 }
@@ -162,7 +167,7 @@ pub(super) fn draw_arrays_instanced(
 
     let gl_topology = conversions::topology_to_gl(topology);
 
-    // SAFETY: GL context is active; shader and vertex buffer are bound (validated above); instancing is confirmed supported.
+    // SAFETY: Topology, first, count, and instance_count are validated above; shader and vertex buffer are bound.
     unsafe {
         gl::DrawArraysInstanced(
             gl_topology,
@@ -171,6 +176,7 @@ pub(super) fn draw_arrays_instanced(
             instance_count as i32,
         );
     }
+    gl_check_debug!("draw_arrays_instanced");
 
     Ok(())
 }
@@ -209,7 +215,8 @@ pub(super) fn draw_indexed_instanced(
 
     let gl_topology = conversions::topology_to_gl(topology);
 
-    // SAFETY: GL context is active; shader, vertex buffer, and index buffer are bound (validated above); instancing is confirmed supported.
+    // SAFETY: Topology, count, offset, and instance_count are validated above;
+    // shader, vertex buffer, and index buffer are bound.
     unsafe {
         gl::DrawElementsInstanced(
             gl_topology,
@@ -219,6 +226,7 @@ pub(super) fn draw_indexed_instanced(
             instance_count as i32,
         );
     }
+    gl_check_debug!("draw_indexed_instanced");
 
     Ok(())
 }

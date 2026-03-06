@@ -3,7 +3,7 @@
 use super::{
     backend::OpenGLBackend,
     conversions::{buffer_type_to_gl_target, buffer_usage_to_gl_usage},
-    BufferMetadata,
+    gl_check_debug, BufferMetadata,
 };
 use crate::core::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::{BufferHandle, BufferType, BufferUsage};
@@ -16,7 +16,6 @@ pub(super) fn create_buffer(
     data: &[u8],
 ) -> GoudResult<BufferHandle> {
     let mut gl_id: u32 = 0;
-    // SAFETY: GL context is active; gl_id is a stack-allocated output variable for the generated buffer name.
     unsafe {
         gl::GenBuffers(1, &mut gl_id);
         if gl_id == 0 {
@@ -30,7 +29,6 @@ pub(super) fn create_buffer(
     let gl_usage = buffer_usage_to_gl_usage(usage);
 
     // Bind and upload data
-    // SAFETY: GL context is active; gl_id was just generated, data pointer and length are valid for this upload.
     unsafe {
         gl::BindBuffer(target, gl_id);
         gl::BufferData(
@@ -59,7 +57,7 @@ pub(super) fn create_buffer(
     let metadata = BufferMetadata {
         gl_id,
         buffer_type,
-        usage,
+        _usage: usage,
         size: data.len(),
     };
     backend.buffers.insert(handle, metadata);
@@ -95,7 +93,6 @@ pub(super) fn update_buffer(
     let gl_id = metadata.gl_id;
     let buf_type = metadata.buffer_type;
 
-    // SAFETY: GL context is active; gl_id is a valid buffer handle and data pointer/length are bounds-checked above.
     unsafe {
         gl::BindBuffer(target, gl_id);
         gl::BufferSubData(
@@ -124,7 +121,6 @@ pub(super) fn update_buffer(
 /// Destroys a buffer and frees GPU memory.
 pub(super) fn destroy_buffer(backend: &mut OpenGLBackend, handle: BufferHandle) -> bool {
     if let Some(metadata) = backend.buffers.remove(&handle) {
-        // SAFETY: GL context is active; metadata.gl_id was allocated by GenBuffers and is being cleaned up by its owner.
         unsafe {
             gl::DeleteBuffers(1, &metadata.gl_id);
         }
@@ -162,10 +158,11 @@ pub(super) fn bind_buffer(backend: &mut OpenGLBackend, handle: BufferHandle) -> 
     let gl_id = metadata.gl_id;
     let buf_type = metadata.buffer_type;
 
-    // SAFETY: GL context is active; gl_id is a valid buffer handle tracked by this backend.
+    // SAFETY: target is a valid GL buffer target enum and gl_id is a live GL buffer object.
     unsafe {
         gl::BindBuffer(target, gl_id);
     }
+    gl_check_debug!("bind_buffer");
 
     set_bound_buffer(backend, buf_type, Some(gl_id));
 
@@ -176,10 +173,11 @@ pub(super) fn bind_buffer(backend: &mut OpenGLBackend, handle: BufferHandle) -> 
 pub(super) fn unbind_buffer(backend: &mut OpenGLBackend, buffer_type: BufferType) {
     let target = buffer_type_to_gl_target(buffer_type);
 
-    // SAFETY: GL context is active; passing 0 to BindBuffer is the defined way to unbind a buffer target.
+    // SAFETY: target is a valid GL buffer target enum; passing 0 unbinds any buffer on that target.
     unsafe {
         gl::BindBuffer(target, 0);
     }
+    gl_check_debug!("unbind_buffer");
 
     set_bound_buffer(backend, buffer_type, None);
 }
