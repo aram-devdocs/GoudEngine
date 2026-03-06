@@ -359,24 +359,28 @@ All fallible provider methods return `GoudResult<T>`. A new variant is added to 
 ProviderError { subsystem: &'static str, message: String }
 ```
 
-FFI error code range: 600–699 (currently unassigned). If `init()` fails and no fallback is configured, `GoudGame::new()` returns `Err(GoudError::ProviderError { ... })`. Fallback providers can be configured via `.with_fallback_renderer(NullRenderProvider::new())`.
+This uses a struct variant (unlike the existing tuple variants like `InitializationFailed(String)`) because provider errors need the `subsystem` discriminator for FFI error code routing — error codes 600–609 for render, 610–619 for physics, etc. A single `String` would require parsing to extract the subsystem.
+
+If `init()` fails and no fallback is configured, `GoudGame::new()` returns `Err(GoudError::ProviderError { ... })`. Fallback providers can be configured via `.with_fallback_renderer(NullRenderProvider::new())`.
 
 ---
 
 ### 3.10 Layer Placement
 
-Note: `libs/` currently exists as a module within `goud_engine/src/libs/`, not as a standalone workspace crate. The layer numbering in CLAUDE.md maps these modules logically:
+`libs/` is a module within `goud_engine/src/libs/`, not a standalone workspace crate. Per CLAUDE.md, `libs/` is Layer 1 (lowest) and must not import from Layer 2 (`core/`, `assets/`, `sdk/`) or higher.
 
-| Component | Logical Layer | Path |
-|-----------|--------------|------|
-| Provider trait definitions | Layer 1 (core) | `goud_engine/src/libs/providers/` (new module) |
-| Concrete implementations | Layer 1 (core) | `goud_engine/src/libs/providers/impls/` |
-| `ProviderRegistry` | Layer 2 (engine) | `goud_engine/src/core/providers/registry.rs` |
-| Builder (`GoudEngine::builder()`) | Layer 2 (engine) | `goud_engine/src/core/providers/builder.rs` |
-| FFI enum selection | Layer 3 (FFI) | `goud_engine/src/ffi/providers.rs` |
-| SDK enum wrappers | Layer 4 (SDKs) | generated via codegen from `goud_sdk.schema.json` |
+| Component | Layer | Path |
+|-----------|-------|------|
+| Provider trait definitions | Layer 1 | `goud_engine/src/libs/providers/` (new module) |
+| Concrete implementations | Layer 1 | `goud_engine/src/libs/providers/impls/` |
+| `ProviderRegistry` | Layer 2 | `goud_engine/src/core/providers/registry.rs` |
+| Builder (`GoudEngine::builder()`) | Layer 2 | `goud_engine/src/core/providers/builder.rs` |
+| FFI enum selection | Layer 3 | `goud_engine/src/ffi/providers.rs` |
+| SDK enum wrappers | Layer 4 | generated via codegen from `goud_sdk.schema.json` |
 
-Provider traits in `goud_engine/src/libs/providers/` may import from sibling modules (`libs/graphics/` for `BackendCapabilities`, `libs/ecs/` for handle types) but must not import from `goud_engine/src/core/`, `goud_engine/src/sdk/`, or `goud_engine/src/ffi/`. This preserves the logical downward-only dependency flow within the crate.
+Provider traits in `goud_engine/src/libs/providers/` may import from sibling Layer 1 modules (`libs/graphics/`, `libs/ecs/`) but must not import from `core/`, `sdk/`, or `ffi/` — those are Layer 2+ and importing them would violate the downward-only rule.
+
+**Prerequisite: error type placement.** Provider trait methods return `GoudResult<T>`, but `GoudResult` and `GoudError` currently live in `goud_engine/src/core/error/` (Layer 2). Existing `libs/` modules already import from `core/error/` (e.g., `libs/graphics/backend/` uses `GoudResult`), which is an existing Layer 1→2 violation. Before implementing this RFC, error types must be moved to a Layer 1 location (e.g., `libs/error/`) so that provider traits can reference them without upward imports. This is tracked as a prerequisite for F02-02.
 
 ---
 
