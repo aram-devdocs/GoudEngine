@@ -143,7 +143,11 @@ impl<A: Asset> AnyAssetStorage for TypedAssetStorage<A> {
         let handle = AssetHandle::<A>::new(index, generation);
         match boxed.downcast::<A>() {
             Ok(asset) => self.set_loaded(&handle, *asset),
-            Err(_) => self.set_failed_raw(index, generation, "Type mismatch during async load downcast".to_string()),
+            Err(_) => self.set_failed_raw(
+                index,
+                generation,
+                "Type mismatch during async load downcast".to_string(),
+            ),
         }
     }
 
