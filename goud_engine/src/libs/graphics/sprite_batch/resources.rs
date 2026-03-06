@@ -8,7 +8,6 @@ use crate::core::math::Vec2;
 use crate::libs::graphics::backend::types::{BufferType, BufferUsage, TextureHandle};
 use crate::libs::graphics::backend::RenderBackend;
 
-#[allow(dead_code)] // TODO: Remove when sprite batch is integrated with game loop
 impl<B: RenderBackend> SpriteBatch<B> {
     /// Ensures GPU resources (buffers, shader) are created.
     pub(super) fn ensure_resources(&mut self) -> GoudResult<()> {

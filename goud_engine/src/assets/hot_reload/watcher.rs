@@ -46,8 +46,7 @@ use super::events::AssetChangeEvent;
 /// ```
 pub struct HotReloadWatcher {
     /// File system watcher (kept alive to receive events).
-    #[allow(dead_code)]
-    watcher: RecommendedWatcher,
+    _watcher: RecommendedWatcher,
 
     /// Channel receiver for file system events.
     receiver: Receiver<NotifyResult<Event>>,
@@ -62,8 +61,8 @@ pub struct HotReloadWatcher {
     watched_paths: HashSet<PathBuf>,
 
     /// Asset root directory (for relative path calculation).
-    #[allow(dead_code)] // Will be used in future when implementing actual reload logic
-    asset_root: PathBuf,
+    // Will be used in future when implementing actual reload logic
+    _asset_root: PathBuf,
 }
 
 impl HotReloadWatcher {
@@ -100,12 +99,12 @@ impl HotReloadWatcher {
         let watcher = Self::create_watcher(sender, &config)?;
 
         Ok(Self {
-            watcher,
+            _watcher: watcher,
             receiver,
             config,
             debounce_map: HashMap::new(),
             watched_paths: HashSet::new(),
-            asset_root,
+            _asset_root: asset_root,
         })
     }
 
@@ -150,7 +149,7 @@ impl HotReloadWatcher {
             RecursiveMode::NonRecursive
         };
 
-        self.watcher.watch(path, mode)?;
+        self._watcher.watch(path, mode)?;
         self.watched_paths.insert(path.to_path_buf());
 
         Ok(())
@@ -163,7 +162,7 @@ impl HotReloadWatcher {
     /// Returns an error if the path cannot be unwatched.
     pub fn unwatch(&mut self, path: impl AsRef<Path>) -> NotifyResult<()> {
         let path = path.as_ref();
-        self.watcher.unwatch(path)?;
+        self._watcher.unwatch(path)?;
         self.watched_paths.remove(path);
 
         Ok(())

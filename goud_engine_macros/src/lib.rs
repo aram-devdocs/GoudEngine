@@ -180,10 +180,13 @@ fn expand_goud_api(attrs: GoudApiAttrs, input: ItemImpl) -> syn::Result<TokenStr
     );
 
     // Generate the hidden manifest const
+    // `#[used]` prevents the linker from discarding the const even if it appears
+    // unused at the Rust level; external tooling (build.rs / codegen) scans the
+    // compiled binary or source for `GOUD_API_MANIFEST_*` prefixed symbols.
     let manifest_const = quote! {
         #[doc(hidden)]
-        #[allow(dead_code)]
-        const #const_name: &str = #manifest_json;
+        #[used]
+        static #const_name: &str = #manifest_json;
     };
 
     // Optionally wrap FFI functions in cfg(feature)

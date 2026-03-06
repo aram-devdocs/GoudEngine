@@ -210,13 +210,13 @@ impl AudioSource {
     }
 
     /// Sets the internal sink ID (managed by audio system).
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub(crate) fn set_sink_id(&mut self, id: Option<u64>) {
         self.sink_id = id;
     }
 
     /// Returns the internal sink ID.
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub(crate) fn sink_id(&self) -> Option<u64> {
         self.sink_id
     }

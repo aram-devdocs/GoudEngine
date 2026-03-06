@@ -17,7 +17,6 @@ use std::collections::HashMap;
 pub(super) struct WgpuBufferMeta {
     pub(super) buffer: wgpu::Buffer,
     pub(super) buffer_type: BufferType,
-    #[allow(dead_code)]
     pub(super) size: usize,
 }
 
@@ -29,7 +28,6 @@ pub(super) struct WgpuTextureMeta {
     pub(super) height: u32,
 }
 
-#[allow(dead_code)]
 pub(super) struct UniformSlot {
     pub(super) offset: usize,
     pub(super) size: usize,
@@ -42,7 +40,6 @@ pub(super) struct WgpuShaderMeta {
     pub(super) uniform_staging: Vec<u8>,
     pub(super) uniform_buffer: wgpu::Buffer,
     pub(super) uniform_bind_group: wgpu::BindGroup,
-    #[allow(dead_code)]
     pub(super) next_uniform_offset: usize,
 }
 
@@ -71,7 +68,6 @@ pub(super) struct DrawCommand {
     pub(super) draw_type: DrawType,
 }
 
-#[allow(dead_code)]
 pub(super) enum DrawType {
     Arrays {
         first: u32,

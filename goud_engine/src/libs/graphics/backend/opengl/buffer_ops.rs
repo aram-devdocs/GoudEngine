@@ -57,7 +57,7 @@ pub(super) fn create_buffer(
     let metadata = BufferMetadata {
         gl_id,
         buffer_type,
-        usage,
+        _usage: usage,
         size: data.len(),
     };
     backend.buffers.insert(handle, metadata);

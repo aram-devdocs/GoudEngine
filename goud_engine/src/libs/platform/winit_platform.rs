@@ -37,8 +37,7 @@ struct WinitState {
     height: u32,
     last_frame_time: Instant,
     title: String,
-    #[allow(dead_code)]
-    vsync: bool,
+    _vsync: bool,
     resizable: bool,
 }
 
@@ -75,7 +74,7 @@ impl WinitPlatform {
             height: config.height,
             last_frame_time: Instant::now(),
             title: config.title.clone(),
-            vsync: config.vsync,
+            _vsync: config.vsync,
             resizable: config.resizable,
         };
 

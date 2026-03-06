@@ -43,7 +43,7 @@ pub(super) fn compute_attenuation_linear(distance: f32, max_distance: f32, rollo
 /// # Returns
 ///
 /// Attenuation factor (0.0-1.0)
-#[allow(dead_code)]
+#[cfg(test)]
 pub(super) fn compute_attenuation_inverse(distance: f32, max_distance: f32, rolloff: f32) -> f32 {
     if max_distance <= 0.0 {
         return 1.0;
@@ -73,7 +73,7 @@ pub(super) fn compute_attenuation_inverse(distance: f32, max_distance: f32, roll
 /// # Returns
 ///
 /// Attenuation factor (0.0-1.0)
-#[allow(dead_code)]
+#[cfg(test)]
 pub(super) fn compute_attenuation_exponential(
     distance: f32,
     max_distance: f32,

@@ -46,7 +46,7 @@ fn test_sprite_instance_creation() {
 #[test]
 fn test_sprite_batch_entry_creation() {
     let entry = SpriteBatchEntry {
-        texture_handle: AssetHandle::new(1, 1),
+        _texture_handle: AssetHandle::new(1, 1),
         gpu_texture: None,
         vertex_start: 0,
         vertex_count: 24,

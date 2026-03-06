@@ -34,21 +34,19 @@ pub use backend::OpenGLBackend;
 
 /// Internal buffer metadata stored alongside the OpenGL buffer ID.
 #[derive(Debug, Clone)]
-#[allow(dead_code)] // Used in OpenGL context tests
 struct BufferMetadata {
     /// OpenGL buffer object ID
     gl_id: u32,
     /// Type of buffer (Vertex, Index, Uniform)
     buffer_type: super::types::BufferType,
-    /// Usage hint (Static, Dynamic, Stream)
-    usage: super::types::BufferUsage,
+    /// Usage hint (Static, Dynamic, Stream) — reserved for future rebind optimisation
+    _usage: super::types::BufferUsage,
     /// Size of buffer in bytes
     size: usize,
 }
 
 /// Internal texture metadata stored alongside the OpenGL texture ID.
 #[derive(Debug, Clone)]
-#[allow(dead_code)] // Used in OpenGL context tests
 struct TextureMetadata {
     /// OpenGL texture object ID
     gl_id: u32,
@@ -58,15 +56,14 @@ struct TextureMetadata {
     height: u32,
     /// Pixel format
     format: super::types::TextureFormat,
-    /// Filtering mode
-    filter: super::types::TextureFilter,
-    /// Wrapping mode
-    wrap: super::types::TextureWrap,
+    /// Filtering mode — reserved for future texture parameter queries
+    _filter: super::types::TextureFilter,
+    /// Wrapping mode — reserved for future texture parameter queries
+    _wrap: super::types::TextureWrap,
 }
 
 /// Internal shader metadata stored alongside the OpenGL shader program ID.
 #[derive(Debug)]
-#[allow(dead_code)] // Used in OpenGL context tests
 struct ShaderMetadata {
     /// OpenGL shader program ID
     gl_id: u32,

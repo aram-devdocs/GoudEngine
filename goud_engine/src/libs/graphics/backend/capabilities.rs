@@ -8,7 +8,6 @@
 /// Different graphics APIs support different feature sets. This struct
 /// describes what features the current backend supports, allowing the
 /// engine to gracefully degrade or choose alternative code paths.
-#[allow(dead_code)] // Will be used in Step 5.1.3+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BackendCapabilities {
     /// Maximum number of texture units that can be bound simultaneously
@@ -61,7 +60,6 @@ impl Default for BackendCapabilities {
 }
 
 /// Information about the render backend implementation.
-#[allow(dead_code)] // Will be used in Step 5.1.3+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BackendInfo {
     /// Backend name (e.g., "OpenGL", "Vulkan", "Metal")

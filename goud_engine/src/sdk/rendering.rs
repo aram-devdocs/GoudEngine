@@ -30,14 +30,13 @@ pub use crate::libs::graphics::renderer3d::{
 /// Created when the OpenGL backend is initialized and stored in GoudGame.
 /// Contains the compiled shader program, vertex/index buffers, VAO, and
 /// cached uniform locations needed by `draw_sprite` and `draw_quad`.
-#[allow(dead_code)]
 pub struct ImmediateRenderState {
     /// Shader program for sprite rendering
     pub(crate) shader: crate::libs::graphics::backend::types::ShaderHandle,
-    /// Vertex buffer for quad rendering
-    pub(crate) vertex_buffer: crate::libs::graphics::backend::types::BufferHandle,
-    /// Index buffer for quad rendering (shared)
-    pub(crate) index_buffer: crate::libs::graphics::backend::types::BufferHandle,
+    /// Vertex buffer for quad rendering (reserved for future immediate-mode draw calls)
+    pub(crate) _vertex_buffer: crate::libs::graphics::backend::types::BufferHandle,
+    /// Index buffer for quad rendering (reserved for future immediate-mode draw calls)
+    pub(crate) _index_buffer: crate::libs::graphics::backend::types::BufferHandle,
     /// Vertex Array Object (required for macOS Core Profile)
     pub(crate) vao: u32,
     /// Cached uniform locations

@@ -12,7 +12,6 @@ use crate::libs::graphics::backend::types::{
 ///
 /// Each sprite is composed of 4 vertices forming a quad.
 /// The vertex layout is optimized for cache coherency.
-#[allow(dead_code)] // TODO: Remove when sprite batch is integrated with game loop
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub(super) struct SpriteVertex {
@@ -26,7 +25,6 @@ pub(super) struct SpriteVertex {
 
 impl SpriteVertex {
     /// Returns the vertex layout descriptor for GPU.
-    #[allow(dead_code)] // TODO: Remove when sprite batch is integrated with game loop
     pub(super) fn layout() -> VertexLayout {
         VertexLayout::new(std::mem::size_of::<Self>() as u32)
             .with_attribute(VertexAttribute {
@@ -51,10 +49,10 @@ impl SpriteVertex {
 }
 
 /// Internal representation of a sprite instance for batching.
-#[allow(dead_code)] // TODO: Remove when sprite batch is integrated with game loop
 #[derive(Debug, Clone)]
 pub(super) struct SpriteInstance {
-    /// Entity that owns this sprite
+    /// Entity that owns this sprite — available in tests for assertion purposes.
+    #[cfg(test)]
     pub(super) entity: Entity,
     /// Texture handle
     pub(super) texture: AssetHandle<TextureAsset>,
@@ -76,13 +74,15 @@ pub(super) struct SpriteInstance {
 impl SpriteInstance {
     /// Constructs a `SpriteInstance` from ECS components and a computed world transform.
     pub(super) fn from_components(
-        entity: Entity,
+        #[cfg(test)] entity: Entity,
+        #[cfg(not(test))] _entity: Entity,
         sprite: &Sprite,
         transform_matrix: Mat3x3,
         z_layer: f32,
         size: Vec2,
     ) -> Self {
         Self {
+            #[cfg(test)]
             entity,
             transform: transform_matrix,
             texture: sprite.texture,
@@ -97,11 +97,10 @@ impl SpriteInstance {
 }
 
 /// A single draw batch for sprites sharing the same texture.
-#[allow(dead_code)] // TODO: Remove when sprite batch is integrated with game loop
 #[derive(Debug)]
 pub(super) struct SpriteBatchEntry {
-    /// Texture used by this batch
-    pub(super) texture_handle: AssetHandle<TextureAsset>,
+    /// Texture used by this batch (will be passed to the draw call when the render stage is wired up)
+    pub(super) _texture_handle: AssetHandle<TextureAsset>,
     /// GPU texture handle (resolved from asset handle)
     pub(super) gpu_texture: Option<TextureHandle>,
     /// Start index in vertex buffer

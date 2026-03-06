@@ -4,7 +4,6 @@
 //! blend and rasterisation stages of the render pipeline.
 
 /// Blend factor for alpha blending operations.
-#[allow(dead_code)] // Will be used in Step 5.1.3+
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BlendFactor {
@@ -39,7 +38,6 @@ pub enum BlendFactor {
 }
 
 /// Face culling mode.
-#[allow(dead_code)] // Will be used in Step 5.1.3+
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum CullFace {

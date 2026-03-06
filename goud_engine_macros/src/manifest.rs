@@ -7,17 +7,6 @@
 
 use serde::{Deserialize, Serialize};
 
-/// Top-level SDK API manifest.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[allow(dead_code)]
-pub struct SdkManifest {
-    /// Engine version (e.g., "0.0.815").
-    pub version: String,
-
-    /// All annotated modules.
-    pub modules: Vec<SdkModule>,
-}
-
 /// A single module's worth of annotated methods.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SdkModule {
