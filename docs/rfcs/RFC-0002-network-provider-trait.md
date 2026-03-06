@@ -1,7 +1,7 @@
 ---
 rfc: "0002"
 title: "NetworkProvider Trait Design"
-status: proposed
+status: accepted
 created: 2026-03-06
 authors: ["aram-devdocs"]
 tracking-issue: "#356"
