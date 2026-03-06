@@ -215,7 +215,7 @@ When working in a git worktree (created by `/gh-issue --worktree` or `git worktr
 
 ### Plan Execution Protocol
 
-When executing a plan from `.claude/plans/`:
+When executing a plan (from `.claude/plans/`, `.codex/plans/`, or any plan file):
 
 1. **Read Metadata first** -- it has your working directory, branch, issues, and mode.
 2. **You are the ORCHESTRATOR** -- you MUST NOT write .rs/.cs/.py files directly.
