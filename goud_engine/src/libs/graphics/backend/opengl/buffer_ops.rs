@@ -3,7 +3,7 @@
 use super::{
     backend::OpenGLBackend,
     conversions::{buffer_type_to_gl_target, buffer_usage_to_gl_usage},
-    BufferMetadata,
+    gl_check_debug, BufferMetadata,
 };
 use crate::core::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::{BufferHandle, BufferType, BufferUsage};
@@ -158,9 +158,11 @@ pub(super) fn bind_buffer(backend: &mut OpenGLBackend, handle: BufferHandle) -> 
     let gl_id = metadata.gl_id;
     let buf_type = metadata.buffer_type;
 
+    // SAFETY: target is a valid GL buffer target enum and gl_id is a live GL buffer object.
     unsafe {
         gl::BindBuffer(target, gl_id);
     }
+    gl_check_debug!("bind_buffer");
 
     set_bound_buffer(backend, buf_type, Some(gl_id));
 
@@ -171,9 +173,11 @@ pub(super) fn bind_buffer(backend: &mut OpenGLBackend, handle: BufferHandle) -> 
 pub(super) fn unbind_buffer(backend: &mut OpenGLBackend, buffer_type: BufferType) {
     let target = buffer_type_to_gl_target(buffer_type);
 
+    // SAFETY: target is a valid GL buffer target enum; passing 0 unbinds any buffer on that target.
     unsafe {
         gl::BindBuffer(target, 0);
     }
+    gl_check_debug!("unbind_buffer");
 
     set_bound_buffer(backend, buffer_type, None);
 }
