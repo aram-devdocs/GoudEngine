@@ -59,7 +59,7 @@ jobs:
         |----------|-----------------|
         | crates.io | [![crates.io](https://img.shields.io/crates/d/goud-engine)](https://crates.io/crates/goud-engine) |
         | NuGet | [![NuGet](https://img.shields.io/nuget/dt/GoudEngine)](https://www.nuget.org/packages/GoudEngine/) |
-        | PyPI | [![PyPI](https://img.shields.io/pypi/dd/goudengine)](https://pypi.org/project/goudengine/) |
+        | PyPI | [![PyPI](https://img.shields.io/pypi/dm/goudengine)](https://pypi.org/project/goudengine/) |
         | npm | [![npm](https://img.shields.io/npm/dt/goudengine)](https://www.npmjs.com/package/goudengine) |
 
         ![Total Downloads Over Time](.github/stats/downloads.svg)

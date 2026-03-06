@@ -13,7 +13,7 @@
 [![NuGet](https://img.shields.io/nuget/v/GoudEngine.svg)](https://www.nuget.org/packages/GoudEngine/)
 [![PyPI](https://img.shields.io/pypi/v/goudengine.svg)](https://pypi.org/project/goudengine/)
 
-![total downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Faram-devdocs%2FGoudEngine%2Fmain%2F.github%2Fstats%2Fhistory.json&query=%24[-1%3A].total&label=total%20downloads&color=brightgreen)
+![total downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Faram-devdocs%2FGoudEngine%2Fmain%2F.github%2Fstats%2Fhistory.json&query=%24[-1].total&label=total%20downloads&color=brightgreen)
 
 Game engine written in Rust. Build 2D and 3D games from Rust, C#, Python, or TypeScript.
 
@@ -154,7 +154,7 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 |----------|-----------------|
 | crates.io | [![crates.io](https://img.shields.io/crates/d/goud-engine)](https://crates.io/crates/goud-engine) |
 | NuGet | [![NuGet](https://img.shields.io/nuget/dt/GoudEngine)](https://www.nuget.org/packages/GoudEngine/) |
-| PyPI | [![PyPI](https://img.shields.io/pypi/dd/goudengine)](https://pypi.org/project/goudengine/) |
+| PyPI | [![PyPI](https://img.shields.io/pypi/dm/goudengine)](https://pypi.org/project/goudengine/) |
 | npm | [![npm](https://img.shields.io/npm/dt/goudengine)](https://www.npmjs.com/package/goudengine) |
 
 ![Total Downloads Over Time](.github/stats/downloads.svg)
