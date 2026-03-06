@@ -4,7 +4,7 @@
 //! and assets.  Multiple contexts can exist simultaneously (e.g. for multiple
 //! game instances or editor viewports).
 
-use crate::core::scene::{SceneId, SceneManager};
+use crate::context_registry::scene::{SceneId, SceneManager};
 use crate::ecs::World;
 
 /// A single engine context containing scene management and associated state.
@@ -85,9 +85,10 @@ impl GoudContext {
     /// Returns `GoudError::ResourceNotFound` if the scene does not exist.
     pub fn set_current_scene(&mut self, id: SceneId) -> Result<(), crate::core::error::GoudError> {
         if self.scene_manager.get_scene(id).is_none() {
-            return Err(crate::core::error::GoudError::ResourceNotFound(
-                format!("Scene id {} not found", id),
-            ));
+            return Err(crate::core::error::GoudError::ResourceNotFound(format!(
+                "Scene id {} not found",
+                id
+            )));
         }
         self.current_scene = id;
         Ok(())
