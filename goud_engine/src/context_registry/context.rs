@@ -5,7 +5,7 @@
 //! game instances or editor viewports).
 
 use crate::ecs::World;
-use crate::sdk::scene::{SceneId, SceneManager};
+use crate::core::scene::{SceneId, SceneManager};
 
 /// A single engine context containing scene management and associated state.
 ///

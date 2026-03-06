@@ -1,11 +1,7 @@
-//! Scene management for multiple isolated ECS worlds.
+//! Scene management re-exports.
 //!
-//! The [`SceneManager`] allows creating, destroying, and switching between
-//! multiple [`World`](crate::ecs::World) instances. Each scene is fully
-//! isolated: entities in one scene are invisible to another.
-//!
-//! A "default" scene is always created automatically and cannot be destroyed.
+//! The scene management implementation lives in [`crate::core::scene`].
+//! This module re-exports those types for backward compatibility with
+//! existing SDK consumers.
 
-mod manager;
-
-pub use manager::{SceneId, SceneManager, DEFAULT_SCENE_NAME};
+pub use crate::core::scene::{SceneId, SceneManager, DEFAULT_SCENE_NAME};

@@ -2,7 +2,7 @@
 
 use crate::core::error::{GoudError, GoudResult};
 use crate::ecs::{Component, Entity, World};
-use crate::sdk::scene::{SceneId, SceneManager};
+use crate::core::scene::{SceneId, SceneManager};
 
 #[cfg(feature = "native")]
 use crate::ecs::InputManager;
@@ -329,12 +329,14 @@ impl GoudGame {
         // Real implementation would integrate with windowing system
         while self.context.is_running() {
             self.context.update(frame_time);
-            let default = self.scene_manager.default_scene();
-            let world = self
-                .scene_manager
-                .get_scene_mut(default)
-                .expect("default scene must exist");
-            update(&mut self.context, world);
+
+            // Update all active scenes each frame.
+            let active: Vec<SceneId> = self.scene_manager.active_scenes().to_vec();
+            for scene_id in active {
+                if let Some(world) = self.scene_manager.get_scene_mut(scene_id) {
+                    update(&mut self.context, world);
+                }
+            }
 
             // Safety: Limit iterations in tests/examples without actual window
             if self.context.frame_count() > 10000 {
@@ -343,18 +345,19 @@ impl GoudGame {
         }
     }
 
-    /// Runs a single frame update.
+    /// Runs a single frame update for all active scenes.
     pub fn update_frame<F>(&mut self, delta_time: f32, mut update: F)
     where
         F: FnMut(&mut GameContext, &mut World),
     {
         self.context.update(delta_time);
-        let default = self.scene_manager.default_scene();
-        let world = self
-            .scene_manager
-            .get_scene_mut(default)
-            .expect("default scene must exist");
-        update(&mut self.context, world);
+
+        let active: Vec<SceneId> = self.scene_manager.active_scenes().to_vec();
+        for scene_id in active {
+            if let Some(world) = self.scene_manager.get_scene_mut(scene_id) {
+                update(&mut self.context, world);
+            }
+        }
     }
 
     /// Returns the current frame count.
