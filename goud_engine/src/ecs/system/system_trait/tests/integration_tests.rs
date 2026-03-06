@@ -130,7 +130,7 @@ fn test_boxed_system_pipeline() {
             "IncrementCounter"
         }
         fn run(&mut self, _: &mut World) {
-            // SAFETY: pointer is valid for the duration of this test
+            // SAFETY: Pointer is valid for the duration of this test; single-threaded access.
             unsafe {
                 *self.counter += 1;
             }

@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use crate::core::context_registry::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
+use crate::context_registry::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::core::error::{set_last_error, GoudError};
 use crate::core::types::{GoudEntityId, GoudResult};
 

@@ -41,12 +41,18 @@
 //! - [`libs`]: Low-level libraries, currently containing the graphics backend.
 
 pub mod assets;
+/// Type-erased component operations shared by FFI and SDK layers.
+pub mod component_ops;
+/// Engine context management (isolated World instances).
+pub mod context_registry;
 pub mod core;
 pub mod ecs;
 #[cfg(feature = "native")]
 pub mod ffi;
 /// Low-level libraries for graphics, platform, and other systems.
 pub mod libs;
+/// High-level rendering systems (sprite batching) bridging ECS, assets, and graphics.
+pub mod rendering;
 /// High-level Rust-native SDK for game development.
 ///
 /// This module provides an ergonomic, zero-overhead API for building games

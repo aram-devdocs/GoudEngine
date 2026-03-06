@@ -11,12 +11,12 @@
 //! The raw component storage and type registry internals remain in
 //! `ffi/component.rs` and are accessed via public helper functions.
 
-use crate::core::component_ops::{
+use crate::component_ops::{
     component_add_batch_impl, component_add_impl, component_get_impl, component_get_mut_impl,
     component_has_batch_impl, component_has_impl, component_register_type_impl,
     component_remove_batch_impl, component_remove_impl,
 };
-use crate::core::context_registry::GoudContextId;
+use crate::context_registry::GoudContextId;
 use crate::core::types::{GoudEntityId, GoudResult};
 
 /// Zero-sized type hosting generic component FFI operations.

@@ -364,8 +364,8 @@ fn draw_sprite_rect_internal(
     let (win_width, win_height) = window_state.get_size();
 
     // Set viewport to framebuffer size (required for HiDPI)
+    // SAFETY: gl::Viewport is always safe to call with valid dimensions.
     unsafe {
-        // SAFETY: gl::Viewport is always safe to call with valid dimensions
         gl::Viewport(0, 0, fb_width as i32, fb_height as i32);
     }
 
@@ -383,8 +383,8 @@ fn draw_sprite_rect_internal(
     let tex_handle = TextureHandle::new(tex_index, tex_generation);
 
     // Bind VAO (includes vertex buffer, index buffer, and vertex attributes)
+    // SAFETY: vao was created by ensure_immediate_state and is valid for this context.
     unsafe {
-        // SAFETY: vao was created by ensure_immediate_state and is valid for this context
         gl::BindVertexArray(vao);
     }
 
@@ -447,8 +447,8 @@ fn draw_quad_internal(
     let (win_width, win_height) = window_state.get_size();
 
     // Set viewport to framebuffer size (required for HiDPI)
+    // SAFETY: gl::Viewport is always safe to call with valid dimensions.
     unsafe {
-        // SAFETY: gl::Viewport is always safe to call with valid dimensions
         gl::Viewport(0, 0, fb_width as i32, fb_height as i32);
     }
 
@@ -461,8 +461,8 @@ fn draw_quad_internal(
     let model = model_matrix(x, y, width, height, 0.0);
 
     // Bind VAO (includes vertex buffer, index buffer, and vertex attributes)
+    // SAFETY: vao was created by ensure_immediate_state and is valid for this context.
     unsafe {
-        // SAFETY: vao was created by ensure_immediate_state and is valid for this context
         gl::BindVertexArray(vao);
     }
 

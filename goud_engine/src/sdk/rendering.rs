@@ -13,7 +13,7 @@ use crate::core::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::RenderBackend;
 
 // Re-export rendering types for SDK users
-pub use crate::libs::graphics::sprite_batch::SpriteBatchConfig;
+pub use crate::rendering::sprite_batch::SpriteBatchConfig;
 
 // Re-export 3D types (they live in rendering_3d but users expect them here)
 pub use crate::libs::graphics::renderer3d::{

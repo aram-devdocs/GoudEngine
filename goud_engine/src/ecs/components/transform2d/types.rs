@@ -142,3 +142,33 @@ impl Default for Transform2D {
 
 // Implement Component trait for Transform2D
 impl Component for Transform2D {}
+
+// FFI conversion impls — kept here (Services layer) to avoid Foundation→Services dependency.
+
+impl From<Transform2D> for crate::core::types::FfiTransform2D {
+    fn from(t: Transform2D) -> Self {
+        Self {
+            position_x: t.position.x,
+            position_y: t.position.y,
+            rotation: t.rotation,
+            scale_x: t.scale.x,
+            scale_y: t.scale.y,
+        }
+    }
+}
+
+impl From<crate::core::types::FfiTransform2D> for Transform2D {
+    fn from(t: crate::core::types::FfiTransform2D) -> Self {
+        Self {
+            position: Vec2::new(t.position_x, t.position_y),
+            rotation: t.rotation,
+            scale: Vec2::new(t.scale_x, t.scale_y),
+        }
+    }
+}
+
+impl From<super::Mat3x3> for crate::core::types::FfiMat3x3 {
+    fn from(m: super::Mat3x3) -> Self {
+        Self { m: m.m }
+    }
+}

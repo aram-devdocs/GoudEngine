@@ -1,14 +1,19 @@
-//! lint-layers: Enforces the GoudEngine layer architecture by scanning for import violations.
+//! lint-layers: Enforces the GoudEngine 5-layer architecture by scanning for import violations.
 //!
-//! Layer mapping:
-//!   - Layer 1 (Core):   libs/, core/, ecs/, assets/
-//!   - Layer 2 (Engine): src/sdk/
-//!   - Layer 3 (FFI):    src/ffi/, src/wasm/
+//! Layer mapping (ordered from lowest to highest):
+//!   - Layer 1 (Foundation): core/
+//!   - Layer 2 (Libs):       libs/
+//!   - Layer 3 (Services):   ecs/, assets/
+//!   - Layer 4 (Engine):     sdk/
+//!   - Layer 5 (FFI):        ffi/, wasm/
 //!
 //! Rules:
-//!   - Layer 2 MUST NOT import from Layer 3 (sdk/ must not use ffi:: or wasm::)
-//!   - Layer 1 MUST NOT import from Layer 2 or Layer 3
-//!   - Layer 3 MAY import from Layer 2 and Layer 1 (that is fine)
+//!   - Dependencies flow DOWN only (higher layers may import from lower layers)
+//!   - Foundation MUST NOT import from any other layer
+//!   - Libs MUST NOT import from Services, Engine, or FFI
+//!   - Services MUST NOT import from Engine or FFI
+//!   - Engine MUST NOT import from FFI
+//!   - FFI MAY import from all other layers
 
 use std::fmt;
 use std::fs;
@@ -16,19 +21,26 @@ use std::path::{Path, PathBuf};
 use std::process;
 
 /// Which architectural layer a source file belongs to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+///
+/// Variants are ordered from lowest to highest layer. A layer may only
+/// import from layers with a *lower* ordinal (i.e. declared earlier).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Layer {
-    Core,   // Layer 1: libs/, core/, ecs/, assets/
-    Engine, // Layer 2: sdk/
-    Ffi,    // Layer 3: ffi/, wasm/
+    Foundation, // Layer 1: core/
+    Libs,       // Layer 2: libs/
+    Services,   // Layer 3: ecs/, assets/
+    Engine,     // Layer 4: sdk/
+    Ffi,        // Layer 5: ffi/, wasm/
 }
 
 impl fmt::Display for Layer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Layer::Core => write!(f, "Layer 1 (Core)"),
-            Layer::Engine => write!(f, "Layer 2 (Engine/SDK)"),
-            Layer::Ffi => write!(f, "Layer 3 (FFI/WASM)"),
+            Layer::Foundation => write!(f, "Layer 1 (Foundation)"),
+            Layer::Libs => write!(f, "Layer 2 (Libs)"),
+            Layer::Services => write!(f, "Layer 3 (Services)"),
+            Layer::Engine => write!(f, "Layer 4 (Engine/SDK)"),
+            Layer::Ffi => write!(f, "Layer 5 (FFI/WASM)"),
         }
     }
 }
@@ -58,51 +70,53 @@ impl fmt::Display for Violation {
 
 /// Determines which layer a file belongs to based on its path relative to `goud_engine/src/`.
 fn classify_file(relative_path: &str) -> Option<Layer> {
-    if relative_path.starts_with("sdk/") {
+    if relative_path.starts_with("core/") {
+        Some(Layer::Foundation)
+    } else if relative_path.starts_with("libs/") {
+        Some(Layer::Libs)
+    } else if relative_path.starts_with("ecs/") || relative_path.starts_with("assets/") {
+        Some(Layer::Services)
+    } else if relative_path.starts_with("sdk/")
+        || relative_path.starts_with("rendering/")
+        || relative_path.starts_with("component_ops/")
+        || relative_path.starts_with("context_registry/")
+    {
         Some(Layer::Engine)
     } else if relative_path.starts_with("ffi/") || relative_path.starts_with("wasm/") {
         Some(Layer::Ffi)
-    } else if relative_path.starts_with("core/")
-        || relative_path.starts_with("ecs/")
-        || relative_path.starts_with("assets/")
-        || relative_path.starts_with("libs/")
-    {
-        Some(Layer::Core)
     } else {
-        // Files directly in src/ (like lib.rs) are not layer-classified
         None
     }
 }
 
 /// Determines which layer a `use crate::` import targets.
 fn classify_import(import_path: &str) -> Option<Layer> {
-    // Extract the first module segment after `crate::` or `super::` resolution.
-    // We look for known module prefixes.
+    // Check more specific prefixes first to avoid false matches.
     if import_path.contains("crate::ffi") || import_path.contains("crate::wasm") {
         Some(Layer::Ffi)
-    } else if import_path.contains("crate::sdk") {
-        Some(Layer::Engine)
-    } else if import_path.contains("crate::core")
-        || import_path.contains("crate::ecs")
-        || import_path.contains("crate::assets")
-        || import_path.contains("crate::libs")
+    } else if import_path.contains("crate::sdk")
+        || import_path.contains("crate::rendering")
+        || import_path.contains("crate::component_ops")
+        || import_path.contains("crate::context_registry")
     {
-        Some(Layer::Core)
+        Some(Layer::Engine)
+    } else if import_path.contains("crate::ecs") || import_path.contains("crate::assets") {
+        Some(Layer::Services)
+    } else if import_path.contains("crate::libs") {
+        Some(Layer::Libs)
+    } else if import_path.contains("crate::core") {
+        Some(Layer::Foundation)
     } else {
         None
     }
 }
 
-/// Returns true if an import from `from` to `to` is a violation.
+/// Returns true if an import from `from` layer to `to` layer is a violation.
+///
+/// A lower layer must not import from a higher layer. Since the enum variants
+/// are ordered from lowest to highest, `from < to` means an upward import.
 fn is_violation(from: Layer, to: Layer) -> bool {
-    match (from, to) {
-        // Layer 1 must not import Layer 2 or Layer 3
-        (Layer::Core, Layer::Engine) | (Layer::Core, Layer::Ffi) => true,
-        // Layer 2 must not import Layer 3
-        (Layer::Engine, Layer::Ffi) => true,
-        // Everything else is allowed
-        _ => false,
-    }
+    from < to
 }
 
 /// Recursively collects all `.rs` files under a directory.
@@ -139,7 +153,6 @@ fn main() {
     let mut violations = Vec::new();
 
     for file_path in &rs_files {
-        // Get path relative to goud_engine/src/
         let relative = match file_path.strip_prefix(&src_dir) {
             Ok(r) => r.to_string_lossy().to_string(),
             Err(_) => continue,
@@ -197,8 +210,148 @@ fn main() {
             eprintln!("{}\n", v);
         }
         eprintln!(
-            "Layer rules: Core(1) <- Engine/SDK(2) <- FFI/WASM(3). Dependencies flow DOWN only."
+            "Layer rules: Foundation(1) <- Libs(2) <- Services(3) <- Engine(4) <- FFI(5). \
+             Dependencies flow DOWN only."
         );
         process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── classify_file ──
+
+    #[test]
+    fn classify_file_foundation() {
+        assert_eq!(classify_file("core/error.rs"), Some(Layer::Foundation));
+        assert_eq!(classify_file("core/math/mod.rs"), Some(Layer::Foundation));
+    }
+
+    #[test]
+    fn classify_file_libs() {
+        assert_eq!(classify_file("libs/graphics/mod.rs"), Some(Layer::Libs));
+        assert_eq!(classify_file("libs/platform/glfw.rs"), Some(Layer::Libs));
+    }
+
+    #[test]
+    fn classify_file_services() {
+        assert_eq!(classify_file("ecs/world.rs"), Some(Layer::Services));
+        assert_eq!(classify_file("assets/server.rs"), Some(Layer::Services));
+    }
+
+    #[test]
+    fn classify_file_engine() {
+        assert_eq!(classify_file("sdk/game.rs"), Some(Layer::Engine));
+    }
+
+    #[test]
+    fn classify_file_ffi() {
+        assert_eq!(classify_file("ffi/renderer.rs"), Some(Layer::Ffi));
+        assert_eq!(classify_file("wasm/bindings.rs"), Some(Layer::Ffi));
+    }
+
+    #[test]
+    fn classify_file_unclassified() {
+        assert_eq!(classify_file("lib.rs"), None);
+    }
+
+    // ── classify_import ──
+
+    #[test]
+    fn classify_import_foundation() {
+        assert_eq!(
+            classify_import("use crate::core::math::Vec2;"),
+            Some(Layer::Foundation)
+        );
+    }
+
+    #[test]
+    fn classify_import_libs() {
+        assert_eq!(
+            classify_import("use crate::libs::graphics::backend::RenderBackend;"),
+            Some(Layer::Libs)
+        );
+    }
+
+    #[test]
+    fn classify_import_services() {
+        assert_eq!(
+            classify_import("use crate::ecs::World;"),
+            Some(Layer::Services)
+        );
+        assert_eq!(
+            classify_import("use crate::assets::AssetServer;"),
+            Some(Layer::Services)
+        );
+    }
+
+    #[test]
+    fn classify_import_engine() {
+        assert_eq!(
+            classify_import("use crate::sdk::GoudGame;"),
+            Some(Layer::Engine)
+        );
+    }
+
+    #[test]
+    fn classify_import_ffi() {
+        assert_eq!(
+            classify_import("use crate::ffi::renderer;"),
+            Some(Layer::Ffi)
+        );
+        assert_eq!(
+            classify_import("use crate::wasm::bindings;"),
+            Some(Layer::Ffi)
+        );
+    }
+
+    #[test]
+    fn classify_import_unknown() {
+        assert_eq!(classify_import("use std::collections::HashMap;"), None);
+    }
+
+    // ── is_violation ──
+
+    #[test]
+    fn violation_foundation_imports_higher() {
+        assert!(is_violation(Layer::Foundation, Layer::Libs));
+        assert!(is_violation(Layer::Foundation, Layer::Services));
+        assert!(is_violation(Layer::Foundation, Layer::Engine));
+        assert!(is_violation(Layer::Foundation, Layer::Ffi));
+    }
+
+    #[test]
+    fn violation_libs_imports_higher() {
+        assert!(is_violation(Layer::Libs, Layer::Services));
+        assert!(is_violation(Layer::Libs, Layer::Engine));
+        assert!(is_violation(Layer::Libs, Layer::Ffi));
+    }
+
+    #[test]
+    fn violation_services_imports_higher() {
+        assert!(is_violation(Layer::Services, Layer::Engine));
+        assert!(is_violation(Layer::Services, Layer::Ffi));
+    }
+
+    #[test]
+    fn violation_engine_imports_ffi() {
+        assert!(is_violation(Layer::Engine, Layer::Ffi));
+    }
+
+    #[test]
+    fn allowed_same_layer() {
+        assert!(!is_violation(Layer::Foundation, Layer::Foundation));
+        assert!(!is_violation(Layer::Libs, Layer::Libs));
+        assert!(!is_violation(Layer::Services, Layer::Services));
+    }
+
+    #[test]
+    fn allowed_downward_imports() {
+        assert!(!is_violation(Layer::Ffi, Layer::Foundation));
+        assert!(!is_violation(Layer::Engine, Layer::Services));
+        assert!(!is_violation(Layer::Services, Layer::Libs));
+        assert!(!is_violation(Layer::Libs, Layer::Foundation));
     }
 }

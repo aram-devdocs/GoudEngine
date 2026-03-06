@@ -15,10 +15,12 @@ fn test_component_add_basic() {
     let context_id = setup_test_context();
     register_test_type(TEST_TYPE_ID + 2);
 
+    // SAFETY: context_id is a valid context created by setup_test_context.
     let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
     assert_ne!(entity_id, crate::ffi::entity::GOUD_INVALID_ENTITY_ID);
 
     let component = TestComponent { x: 10.0, y: 20.0 };
+    // SAFETY: component is a valid stack-allocated TestComponent; size matches the registered type.
     let result = unsafe {
         goud_component_add(
             context_id,
@@ -37,6 +39,7 @@ fn test_component_add_invalid_context() {
     register_test_type(TEST_TYPE_ID + 3);
 
     let component = TestComponent { x: 10.0, y: 20.0 };
+    // SAFETY: component is a valid stack-allocated TestComponent; the function handles invalid context gracefully.
     let result = unsafe {
         goud_component_add(
             GOUD_INVALID_CONTEXT_ID,
@@ -53,9 +56,11 @@ fn test_component_add_invalid_context() {
 #[test]
 fn test_component_add_unregistered_type() {
     let context_id = setup_test_context();
+    // SAFETY: context_id is a valid context created by setup_test_context.
     let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
 
     let component = TestComponent { x: 10.0, y: 20.0 };
+    // SAFETY: component is a valid stack-allocated TestComponent; the function handles unregistered types gracefully.
     let result = unsafe {
         goud_component_add(
             context_id,
@@ -73,8 +78,10 @@ fn test_component_add_unregistered_type() {
 fn test_component_add_null_data() {
     let context_id = setup_test_context();
     register_test_type(TEST_TYPE_ID + 4);
+    // SAFETY: context_id is a valid context created by setup_test_context.
     let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
 
+    // SAFETY: Passing null data explicitly tests that the function handles null gracefully.
     let result = unsafe {
         goud_component_add(
             context_id,
@@ -93,9 +100,11 @@ fn test_component_add_wrong_size() {
     let context_id = setup_test_context();
     register_test_type(TEST_TYPE_ID + 5);
 
+    // SAFETY: context_id is a valid context created by setup_test_context.
     let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
     let component = TestComponent { x: 10.0, y: 20.0 };
 
+    // SAFETY: component is a valid stack-allocated value; the function handles size mismatch gracefully.
     let result = unsafe {
         goud_component_add(
             context_id,
@@ -118,6 +127,7 @@ fn test_component_remove_basic() {
     let context_id = setup_test_context();
     register_test_type(TEST_TYPE_ID + 6);
 
+    // SAFETY: context_id is a valid context created by setup_test_context.
     let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
 
     let result = goud_component_remove(context_id, GoudEntityId::new(entity_id), TEST_TYPE_ID + 6);
@@ -135,6 +145,7 @@ fn test_component_has_basic() {
     let context_id = setup_test_context();
     register_test_type(TEST_TYPE_ID + 7);
 
+    // SAFETY: context_id is a valid context created by setup_test_context.
     let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
 
     // Before adding component - should return false
@@ -144,6 +155,7 @@ fn test_component_has_basic() {
 
     // Add component
     let component = TestComponent { x: 1.0, y: 2.0 };
+    // SAFETY: component is a valid stack-allocated TestComponent; size matches the registered type.
     unsafe {
         goud_component_add(
             context_id,
@@ -169,6 +181,7 @@ fn test_component_get_basic() {
     let context_id = setup_test_context();
     register_test_type(TEST_TYPE_ID + 8);
 
+    // SAFETY: context_id is a valid context created by setup_test_context.
     let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
 
     // Before adding - should return null
@@ -177,6 +190,7 @@ fn test_component_get_basic() {
 
     // Add component
     let component = TestComponent { x: 42.0, y: 99.0 };
+    // SAFETY: component is a valid stack-allocated TestComponent; size matches the registered type.
     unsafe {
         goud_component_add(
             context_id,
@@ -192,6 +206,7 @@ fn test_component_get_basic() {
     assert!(!ptr.is_null());
 
     // Read back the component data and verify
+    // SAFETY: ptr is non-null (asserted above) and points to a valid TestComponent written by goud_component_add.
     let read_component = unsafe { *(ptr as *const TestComponent) };
     assert_eq!(read_component.x, 42.0);
     assert_eq!(read_component.y, 99.0);
@@ -202,6 +217,7 @@ fn test_component_get_mut_basic() {
     let context_id = setup_test_context();
     register_test_type(TEST_TYPE_ID + 9);
 
+    // SAFETY: context_id is a valid context created by setup_test_context.
     let entity_id = unsafe { crate::ffi::entity::goud_entity_spawn_empty(context_id) };
 
     // Before adding - should return null
@@ -210,6 +226,7 @@ fn test_component_get_mut_basic() {
 
     // Add component
     let component = TestComponent { x: 10.0, y: 20.0 };
+    // SAFETY: component is a valid stack-allocated TestComponent; size matches the registered type.
     unsafe {
         goud_component_add(
             context_id,
@@ -225,6 +242,7 @@ fn test_component_get_mut_basic() {
     assert!(!ptr.is_null());
 
     // Modify the component through the mutable pointer
+    // SAFETY: ptr is non-null (asserted above) and points to a valid TestComponent in component storage.
     unsafe {
         let comp = &mut *(ptr as *mut TestComponent);
         comp.x = 100.0;
@@ -233,6 +251,7 @@ fn test_component_get_mut_basic() {
 
     // Read back and verify changes
     let ptr = goud_component_get(context_id, GoudEntityId::new(entity_id), TEST_TYPE_ID + 9);
+    // SAFETY: ptr is non-null (asserted above) and points to a valid TestComponent written by goud_component_add.
     let read_component = unsafe { *(ptr as *const TestComponent) };
     assert_eq!(read_component.x, 100.0);
     assert_eq!(read_component.y, 200.0);

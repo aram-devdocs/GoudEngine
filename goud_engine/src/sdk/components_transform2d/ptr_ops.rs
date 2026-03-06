@@ -27,6 +27,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &mut *transform };
         let mut t2d: Transform2D = (*t).into();
         t2d.translate_local(Vec2::new(dx, dy));
@@ -38,6 +39,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &mut *transform };
         t.position_x = x;
         t.position_y = y;
@@ -48,6 +50,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return FfiVec2 { x: 0.0, y: 0.0 };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &*transform };
         FfiVec2 {
             x: t.position_x,
@@ -60,6 +63,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &mut *transform };
         let mut t2d: Transform2D = (*t).into();
         t2d.rotate(angle);
@@ -71,6 +75,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &mut *transform };
         let mut t2d: Transform2D = (*t).into();
         t2d.rotate_degrees(degrees);
@@ -82,6 +87,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &mut *transform };
         let mut t2d: Transform2D = (*t).into();
         t2d.set_rotation(rotation);
@@ -93,6 +99,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &mut *transform };
         let mut t2d: Transform2D = (*t).into();
         t2d.set_rotation_degrees(degrees);
@@ -104,6 +111,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return 0.0;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*transform).rotation }
     }
 
@@ -112,6 +120,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return 0.0;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         unsafe { (*transform).rotation.to_degrees() }
     }
 
@@ -120,6 +129,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &mut *transform };
         let mut t2d: Transform2D = (*t).into();
         t2d.look_at_target(Vec2::new(target_x, target_y));
@@ -131,6 +141,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &mut *transform };
         t.scale_x = scale_x;
         t.scale_y = scale_y;
@@ -141,6 +152,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &mut *transform };
         t.scale_x = scale;
         t.scale_y = scale;
@@ -151,6 +163,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return FfiVec2 { x: 1.0, y: 1.0 };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &*transform };
         FfiVec2 {
             x: t.scale_x,
@@ -163,6 +176,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return;
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &mut *transform };
         t.scale_x *= factor_x;
         t.scale_y *= factor_y;
@@ -173,6 +187,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return FfiVec2 { x: 1.0, y: 0.0 };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &*transform };
         let t2d: Transform2D = (*t).into();
         t2d.forward().into()
@@ -183,6 +198,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return FfiVec2 { x: 0.0, y: 1.0 };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &*transform };
         let t2d: Transform2D = (*t).into();
         t2d.right().into()
@@ -193,6 +209,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return FfiVec2 { x: -1.0, y: 0.0 };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &*transform };
         let t2d: Transform2D = (*t).into();
         t2d.backward().into()
@@ -203,6 +220,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return FfiVec2 { x: 0.0, y: -1.0 };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &*transform };
         let t2d: Transform2D = (*t).into();
         t2d.left().into()
@@ -215,6 +233,7 @@ impl Transform2DPtrOps {
                 m: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
             };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &*transform };
         let t2d: Transform2D = (*t).into();
         t2d.matrix().into()
@@ -227,6 +246,7 @@ impl Transform2DPtrOps {
                 m: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
             };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &*transform };
         let t2d: Transform2D = (*t).into();
         t2d.matrix_inverse().into()
@@ -244,6 +264,7 @@ impl Transform2DPtrOps {
                 y: point_y,
             };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &*transform };
         let t2d: Transform2D = (*t).into();
         t2d.transform_point(Vec2::new(point_x, point_y)).into()
@@ -258,6 +279,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return FfiVec2 { x: dir_x, y: dir_y };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &*transform };
         let t2d: Transform2D = (*t).into();
         t2d.transform_direction(Vec2::new(dir_x, dir_y)).into()
@@ -275,6 +297,7 @@ impl Transform2DPtrOps {
                 y: point_y,
             };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &*transform };
         let t2d: Transform2D = (*t).into();
         t2d.inverse_transform_point(Vec2::new(point_x, point_y))
@@ -290,6 +313,7 @@ impl Transform2DPtrOps {
         if transform.is_null() {
             return FfiVec2 { x: dir_x, y: dir_y };
         }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
         let t = unsafe { &*transform };
         let t2d: Transform2D = (*t).into();
         t2d.inverse_transform_direction(Vec2::new(dir_x, dir_y))

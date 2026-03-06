@@ -33,7 +33,7 @@ pub unsafe extern "C" fn goud_input_map_action_key(
     action_name: *const std::os::raw::c_char,
     key: GoudKeyCode,
 ) -> bool {
-    use crate::ecs::input_manager::InputBinding;
+    use crate::core::input_manager::InputBinding;
     use std::ffi::CStr;
 
     if context_id == GOUD_INVALID_CONTEXT_ID || action_name.is_null() {

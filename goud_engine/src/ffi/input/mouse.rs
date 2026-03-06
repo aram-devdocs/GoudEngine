@@ -108,6 +108,7 @@ pub unsafe extern "C" fn goud_input_get_mouse_position(
     // SAFETY: caller guarantees out_x and out_y are valid non-null pointers.
     with_input(context_id, |input| {
         let pos = input.mouse_position();
+        // SAFETY: out_x and out_y are non-null and valid, checked above.
         unsafe {
             *out_x = pos.x;
             *out_y = pos.y;
@@ -145,6 +146,7 @@ pub unsafe extern "C" fn goud_input_get_mouse_delta(
     // SAFETY: caller guarantees out_dx and out_dy are valid non-null pointers.
     with_input(context_id, |input| {
         let delta = input.mouse_delta();
+        // SAFETY: out_dx and out_dy are non-null and valid, checked above.
         unsafe {
             *out_dx = delta.x;
             *out_dy = delta.y;
@@ -182,6 +184,7 @@ pub unsafe extern "C" fn goud_input_get_scroll_delta(
     // SAFETY: caller guarantees out_dx and out_dy are valid non-null pointers.
     with_input(context_id, |input| {
         let delta = input.scroll_delta();
+        // SAFETY: out_dx and out_dy are non-null and valid, checked above.
         unsafe {
             *out_dx = delta.x;
             *out_dy = delta.y;

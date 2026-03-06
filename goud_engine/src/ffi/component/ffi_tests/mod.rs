@@ -32,12 +32,14 @@ impl Component for TestComponent {}
 pub(super) const TEST_TYPE_ID: u64 = 12345;
 
 pub(super) fn setup_test_context() -> GoudContextId {
+    // SAFETY: goud_context_create has no safety preconditions; it always returns a valid context.
     unsafe { goud_context_create() }
 }
 
 /// Registers `TestComponent` under `type_id` (silently ignores duplicate registration).
 pub(super) fn register_test_type(type_id: u64) {
     let name = b"TestComponent";
+    // SAFETY: name is a valid non-null pointer to a UTF-8 byte slice; size and align match the TestComponent type layout.
     unsafe {
         goud_component_register_type(
             type_id,

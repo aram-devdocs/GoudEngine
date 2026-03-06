@@ -2,7 +2,7 @@
 //!
 //! Small utility functions shared by single-entity and batch operations.
 
-use crate::core::context_registry::GoudContextId;
+use crate::context_registry::GoudContextId;
 use crate::core::types::GoudEntityId;
 use crate::ecs::Entity;
 

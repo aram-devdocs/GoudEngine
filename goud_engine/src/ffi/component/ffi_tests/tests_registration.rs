@@ -11,6 +11,7 @@ fn test_register_type_basic() {
     // Use a unique type ID to avoid conflicts with other tests
     const UNIQUE_TYPE_ID: u64 = TEST_TYPE_ID + 1000;
     let name = b"TestComponent";
+    // SAFETY: name is a valid non-null pointer to a byte slice; size and align match TestComponent.
     let _result = unsafe {
         goud_component_register_type(
             UNIQUE_TYPE_ID,
@@ -24,6 +25,7 @@ fn test_register_type_basic() {
     // This is fine - the registry is global across all tests
 
     // Second registration should return false
+    // SAFETY: name is a valid non-null pointer to a byte slice; size and align match TestComponent.
     let result2 = unsafe {
         goud_component_register_type(
             UNIQUE_TYPE_ID,
@@ -38,6 +40,7 @@ fn test_register_type_basic() {
 
 #[test]
 fn test_register_type_null_name() {
+    // SAFETY: Passing null for name is explicitly testing that the function handles null gracefully.
     let result = unsafe {
         goud_component_register_type(
             TEST_TYPE_ID + 1,

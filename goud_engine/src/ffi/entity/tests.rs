@@ -57,6 +57,7 @@ fn test_spawn_batch_basic() {
     let ctx = goud_context_create();
     let mut entities = vec![0u64; 10];
 
+    // SAFETY: entities has capacity for 10 u64 values.
     let count = unsafe { goud_entity_spawn_batch(ctx, 10, entities.as_mut_ptr()) };
 
     assert_eq!(count, 10);
@@ -73,6 +74,7 @@ fn test_spawn_batch_zero_count() {
     let ctx = goud_context_create();
     let mut entities = vec![0u64; 1];
 
+    // SAFETY: entities has capacity for 1 u64 value; count 0 means no writes occur.
     let count = unsafe { goud_entity_spawn_batch(ctx, 0, entities.as_mut_ptr()) };
 
     assert_eq!(count, 0);
@@ -83,6 +85,7 @@ fn test_spawn_batch_zero_count() {
 fn test_spawn_batch_invalid_context() {
     let mut entities = vec![0u64; 10];
 
+    // SAFETY: entities has capacity for 10 u64 values; the function handles invalid context gracefully.
     let count =
         unsafe { goud_entity_spawn_batch(GOUD_INVALID_CONTEXT_ID, 10, entities.as_mut_ptr()) };
 
@@ -93,6 +96,7 @@ fn test_spawn_batch_invalid_context() {
 fn test_spawn_batch_null_pointer() {
     let ctx = goud_context_create();
 
+    // SAFETY: Passing null pointer tests that the function handles null gracefully.
     let count = unsafe { goud_entity_spawn_batch(ctx, 10, std::ptr::null_mut()) };
 
     assert_eq!(count, 0);
@@ -104,6 +108,7 @@ fn test_spawn_batch_large() {
     let ctx = goud_context_create();
     let mut entities = vec![0u64; 1000];
 
+    // SAFETY: entities has capacity for 1000 u64 values.
     let count = unsafe { goud_entity_spawn_batch(ctx, 1000, entities.as_mut_ptr()) };
 
     assert_eq!(count, 1000);
@@ -168,10 +173,12 @@ fn test_despawn_batch_basic() {
     let ctx = goud_context_create();
     let mut entities = vec![0u64; 5];
 
+    // SAFETY: entities has capacity for 5 u64 values.
     unsafe {
         goud_entity_spawn_batch(ctx, 5, entities.as_mut_ptr());
     }
 
+    // SAFETY: entities is a valid slice of 5 u64 values.
     let count = unsafe { goud_entity_despawn_batch(ctx, entities.as_ptr(), 5) };
 
     assert_eq!(count, 5);
@@ -191,6 +198,7 @@ fn test_despawn_batch_partial_invalid() {
         goud_entity_spawn_empty(ctx),
     ];
 
+    // SAFETY: entities is a valid slice of 3 u64 values.
     let count = unsafe { goud_entity_despawn_batch(ctx, entities.as_ptr(), 3) };
 
     // Should despawn 2 valid entities, skip 1 invalid
@@ -204,6 +212,7 @@ fn test_despawn_batch_zero_count() {
     let ctx = goud_context_create();
     let entities = vec![0u64; 1];
 
+    // SAFETY: entities is a valid slice; count 0 means no elements are accessed.
     let count = unsafe { goud_entity_despawn_batch(ctx, entities.as_ptr(), 0) };
 
     assert_eq!(count, 0);
@@ -305,6 +314,7 @@ fn test_mixed_operations() {
 
     // Spawn some entities
     let mut entities = vec![0u64; 10];
+    // SAFETY: entities has capacity for 10 u64 values.
     unsafe {
         goud_entity_spawn_batch(ctx, 10, entities.as_mut_ptr());
     }
@@ -312,6 +322,7 @@ fn test_mixed_operations() {
     assert_eq!(goud_entity_count(ctx), 10);
 
     // Despawn half of them
+    // SAFETY: entities is a valid slice with at least 5 elements.
     unsafe {
         goud_entity_despawn_batch(ctx, entities.as_ptr(), 5);
     }
@@ -332,6 +343,7 @@ fn test_stress_spawn_despawn() {
 
     // Spawn 1000 entities
     let mut entities = vec![0u64; 1000];
+    // SAFETY: entities has capacity for 1000 u64 values.
     unsafe {
         goud_entity_spawn_batch(ctx, 1000, entities.as_mut_ptr());
     }
@@ -339,6 +351,7 @@ fn test_stress_spawn_despawn() {
     assert_eq!(goud_entity_count(ctx), 1000);
 
     // Despawn all
+    // SAFETY: entities is a valid slice with 1000 elements.
     unsafe {
         goud_entity_despawn_batch(ctx, entities.as_ptr(), 1000);
     }
@@ -346,6 +359,7 @@ fn test_stress_spawn_despawn() {
     assert_eq!(goud_entity_count(ctx), 0);
 
     // Spawn again
+    // SAFETY: entities has capacity for 1000 u64 values.
     unsafe {
         goud_entity_spawn_batch(ctx, 1000, entities.as_mut_ptr());
     }

@@ -48,6 +48,7 @@ impl SpriteBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         let s = unsafe { &mut (*builder).sprite };
         s.color_r = r;
         s.color_g = g;
@@ -61,6 +62,7 @@ impl SpriteBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         unsafe { (*builder).sprite.color_a = alpha };
         builder
     }
@@ -76,6 +78,7 @@ impl SpriteBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         let s = unsafe { &mut (*builder).sprite };
         s.source_rect_x = x;
         s.source_rect_y = y;
@@ -93,6 +96,7 @@ impl SpriteBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         unsafe { (*builder).sprite.flip_x = flip };
         builder
     }
@@ -105,6 +109,7 @@ impl SpriteBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         unsafe { (*builder).sprite.flip_y = flip };
         builder
     }
@@ -118,6 +123,7 @@ impl SpriteBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         let s = unsafe { &mut (*builder).sprite };
         s.flip_x = flip_x;
         s.flip_y = flip_y;
@@ -133,6 +139,7 @@ impl SpriteBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         let s = unsafe { &mut (*builder).sprite };
         s.anchor_x = x;
         s.anchor_y = y;
@@ -148,6 +155,7 @@ impl SpriteBuilderOps {
         if builder.is_null() {
             return builder;
         }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
         let s = unsafe { &mut (*builder).sprite };
         s.custom_size_x = width;
         s.custom_size_y = height;

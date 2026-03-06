@@ -1,10 +1,9 @@
 //! OpenGL shader compile/link/destroy/bind operations and uniform setters.
 
-use super::{backend::OpenGLBackend, gl_check_debug, ShaderMetadata};
+use super::{backend::OpenGLBackend, ShaderMetadata};
 use crate::core::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::ShaderHandle;
 use std::collections::HashMap;
-use std::sync::Mutex;
 
 /// Compiles and links a shader program from vertex and fragment shader sources.
 pub(super) fn create_shader(
@@ -31,6 +30,7 @@ pub(super) fn create_shader(
         Ok(shader) => shader,
         Err(e) => {
             // Clean up vertex shader on fragment compilation failure
+            // SAFETY: GL context is active; vertex_shader was successfully created by compile_shader and has not been freed.
             unsafe {
                 gl::DeleteShader(vertex_shader);
             }
@@ -39,8 +39,10 @@ pub(super) fn create_shader(
     };
 
     // Link shader program
+    // SAFETY: GL context is active; CreateProgram returns a new program object or 0 on failure.
     let program_id = unsafe { gl::CreateProgram() };
     if program_id == 0 {
+        // SAFETY: GL context is active; both shader objects were created by compile_shader and have not been freed.
         unsafe {
             gl::DeleteShader(vertex_shader);
             gl::DeleteShader(fragment_shader);
@@ -50,6 +52,7 @@ pub(super) fn create_shader(
         ));
     }
 
+    // SAFETY: GL context is active; program_id and both shader IDs are valid objects created above.
     unsafe {
         gl::AttachShader(program_id, vertex_shader);
         gl::AttachShader(program_id, fragment_shader);
@@ -91,7 +94,7 @@ pub(super) fn create_shader(
     let handle = backend.shader_allocator.allocate();
     let metadata = ShaderMetadata {
         gl_id: program_id,
-        uniform_locations: Mutex::new(HashMap::new()),
+        uniform_locations: HashMap::new(),
     };
     backend.shaders.insert(handle, metadata);
 
@@ -101,6 +104,7 @@ pub(super) fn create_shader(
 /// Destroys a shader program and frees GPU memory.
 pub(super) fn destroy_shader(backend: &mut OpenGLBackend, handle: ShaderHandle) -> bool {
     if let Some(metadata) = backend.shaders.remove(&handle) {
+        // SAFETY: GL context is active; metadata.gl_id was allocated by CreateProgram and is being cleaned up by its owner.
         unsafe {
             gl::DeleteProgram(metadata.gl_id);
         }
@@ -131,11 +135,10 @@ pub(super) fn bind_shader(backend: &mut OpenGLBackend, handle: ShaderHandle) -> 
 
     let gl_id = metadata.gl_id;
 
-    // SAFETY: gl_id is a valid linked program ID stored by `create_shader`.
+    // SAFETY: GL context is active; gl_id is a valid linked program obtained from this backend's shader map.
     unsafe {
         gl::UseProgram(gl_id);
     }
-    gl_check_debug!("UseProgram");
 
     backend.bound_shader = Some(gl_id);
 
@@ -144,11 +147,10 @@ pub(super) fn bind_shader(backend: &mut OpenGLBackend, handle: ShaderHandle) -> 
 
 /// Unbinds the currently bound shader program.
 pub(super) fn unbind_shader(backend: &mut OpenGLBackend) {
-    // SAFETY: Passing 0 to UseProgram unbinds any currently bound program.
+    // SAFETY: GL context is active; passing 0 to UseProgram is the defined way to unbind any shader program.
     unsafe {
         gl::UseProgram(0);
     }
-    gl_check_debug!("UseProgram(0)");
 
     backend.bound_shader = None;
 }
@@ -162,26 +164,17 @@ pub(super) fn get_uniform_location(
     let metadata = backend.shaders.get(&handle)?;
 
     // Check if we already cached this location
-    {
-        let cache = metadata.uniform_locations.lock().unwrap();
-        if let Some(&location) = cache.get(name) {
-            return if location >= 0 { Some(location) } else { None };
-        }
-    } // lock dropped here
+    if let Some(&location) = metadata.uniform_locations.get(name) {
+        return if location >= 0 { Some(location) } else { None };
+    }
 
     // Query OpenGL for the location
     let c_name = std::ffi::CString::new(name).ok()?;
-    // SAFETY: `metadata.gl_id` is a valid linked program ID stored by `create_shader`.
-    // OpenGL contexts are single-threaded, so this call is safe from any code path
-    // that holds a reference to `backend`.
+    // SAFETY: GL context is active; metadata.gl_id is a valid linked program and c_name is a valid null-terminated C string.
     let location = unsafe { gl::GetUniformLocation(metadata.gl_id, c_name.as_ptr()) };
 
-    // Cache the result (including negative values so we don't query again for missing uniforms)
-    metadata
-        .uniform_locations
-        .lock()
-        .unwrap()
-        .insert(name.to_string(), location);
+    // Note: We need mutable access to cache, but this method takes &self.
+    // Caching would require interior mutability; for now we query each time.
 
     if location >= 0 {
         Some(location)
@@ -192,62 +185,50 @@ pub(super) fn get_uniform_location(
 
 /// Sets a uniform integer value.
 pub(super) fn set_uniform_int(location: i32, value: i32) {
-    // SAFETY: location is a valid uniform location obtained from get_uniform_location;
-    // a shader program must be bound before calling this.
+    // SAFETY: GL context is active; location was obtained from GetUniformLocation for the currently bound program.
     unsafe {
         gl::Uniform1i(location, value);
     }
-    gl_check_debug!("Uniform1i");
 }
 
 /// Sets a uniform float value.
 pub(super) fn set_uniform_float(location: i32, value: f32) {
-    // SAFETY: location is a valid uniform location obtained from get_uniform_location;
-    // a shader program must be bound before calling this.
+    // SAFETY: GL context is active; location was obtained from GetUniformLocation for the currently bound program.
     unsafe {
         gl::Uniform1f(location, value);
     }
-    gl_check_debug!("Uniform1f");
 }
 
 /// Sets a uniform vec2 value.
 pub(super) fn set_uniform_vec2(location: i32, x: f32, y: f32) {
-    // SAFETY: location is a valid uniform location obtained from get_uniform_location;
-    // a shader program must be bound before calling this.
+    // SAFETY: GL context is active; location was obtained from GetUniformLocation for the currently bound program.
     unsafe {
         gl::Uniform2f(location, x, y);
     }
-    gl_check_debug!("Uniform2f");
 }
 
 /// Sets a uniform vec3 value.
 pub(super) fn set_uniform_vec3(location: i32, x: f32, y: f32, z: f32) {
-    // SAFETY: location is a valid uniform location obtained from get_uniform_location;
-    // a shader program must be bound before calling this.
+    // SAFETY: GL context is active; location was obtained from GetUniformLocation for the currently bound program.
     unsafe {
         gl::Uniform3f(location, x, y, z);
     }
-    gl_check_debug!("Uniform3f");
 }
 
 /// Sets a uniform vec4 value.
 pub(super) fn set_uniform_vec4(location: i32, x: f32, y: f32, z: f32, w: f32) {
-    // SAFETY: location is a valid uniform location obtained from get_uniform_location;
-    // a shader program must be bound before calling this.
+    // SAFETY: GL context is active; location was obtained from GetUniformLocation for the currently bound program.
     unsafe {
         gl::Uniform4f(location, x, y, z, w);
     }
-    gl_check_debug!("Uniform4f");
 }
 
 /// Sets a uniform mat4 value.
 pub(super) fn set_uniform_mat4(location: i32, matrix: &[f32; 16]) {
-    // SAFETY: location is a valid uniform location; matrix.as_ptr() points to 16 contiguous
-    // f32 values which is exactly what UniformMatrix4fv expects for count=1.
+    // SAFETY: GL context is active; location is valid for the current program and matrix.as_ptr() points to 16 contiguous f32 values.
     unsafe {
         gl::UniformMatrix4fv(location, 1, gl::FALSE, matrix.as_ptr());
     }
-    gl_check_debug!("UniformMatrix4fv");
 }
 
 // ============================================================================
@@ -258,6 +239,7 @@ pub(super) fn set_uniform_mat4(location: i32, matrix: &[f32; 16]) {
 ///
 /// Returns the OpenGL shader ID on success, or an error with compilation message.
 pub(super) fn compile_shader(shader_type: u32, source: &str) -> GoudResult<u32> {
+    // SAFETY: GL context is active; shader_type is a valid GL shader stage constant (VERTEX_SHADER, FRAGMENT_SHADER, etc.).
     let shader_id = unsafe { gl::CreateShader(shader_type) };
     if shader_id == 0 {
         return Err(GoudError::ShaderCompilationFailed(
@@ -270,6 +252,7 @@ pub(super) fn compile_shader(shader_type: u32, source: &str) -> GoudResult<u32> 
         GoudError::ShaderCompilationFailed("Shader source contains null byte".to_string())
     })?;
 
+    // SAFETY: GL context is active; shader_id is a valid shader object, c_source is a valid null-terminated string pointer valid for this call.
     unsafe {
         gl::ShaderSource(shader_id, 1, &c_source.as_ptr(), std::ptr::null());
         gl::CompileShader(shader_id);

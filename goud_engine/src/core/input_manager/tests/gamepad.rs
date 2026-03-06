@@ -1,7 +1,7 @@
 use glfw::GamepadAxis;
 
+use crate::core::input_manager::{InputBinding, InputManager};
 use crate::core::math::Vec2;
-use crate::ecs::input_manager::{InputBinding, InputManager};
 
 #[test]
 fn test_gamepad_button_pressed() {

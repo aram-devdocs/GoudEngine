@@ -7,9 +7,9 @@ use crate::core::math::{Color, Vec2};
 use crate::ecs::components::Mat3x3;
 use crate::ecs::Entity;
 use crate::libs::graphics::backend::opengl::OpenGLBackend;
-use crate::libs::graphics::sprite_batch::batch::SpriteBatch;
-use crate::libs::graphics::sprite_batch::config::SpriteBatchConfig;
-use crate::libs::graphics::sprite_batch::types::SpriteInstance;
+use crate::rendering::sprite_batch::batch::SpriteBatch;
+use crate::rendering::sprite_batch::config::SpriteBatchConfig;
+use crate::rendering::sprite_batch::types::SpriteInstance;
 
 // =========================================================================
 // Texture Batching
