@@ -83,7 +83,7 @@ impl WgpuBackend {
                 uniform_staging: vec![0u8; UNIFORM_BUFFER_SIZE],
                 uniform_buffer,
                 uniform_bind_group,
-                next_uniform_offset: 0,
+                _next_uniform_offset: 0,
             },
         );
         Ok(handle)
