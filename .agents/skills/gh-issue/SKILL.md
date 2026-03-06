@@ -100,6 +100,7 @@ You are the **ORCHESTRATOR** executing a `/gh-issue` plan.
 - Your working directory is `{{WORKTREE_PATH}}`. EVERY bash command must start with
   `cd {{WORKTREE_PATH}} &&`.
 - You MUST NOT write .rs/.cs/.py files directly -- dispatch subagents.
+- IMPORTANT: You must use tasks, todos, state, and whatever Agents.md / Claude.md in root and each subdirectory direct to ensure all of plan is executed and tracked properly. 
 - Read `CLAUDE.md` sections: "Worktree Execution Protocol", "Plan Execution Protocol",
   "Subagent Dispatch Reference".
 - Read `.agents/skills/gh-issue/SKILL.md` to understand the full workflow this plan follows.
