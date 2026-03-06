@@ -4,8 +4,8 @@
 //! and assets.  Multiple contexts can exist simultaneously (e.g. for multiple
 //! game instances or editor viewports).
 
-use crate::ecs::World;
 use crate::core::scene::{SceneId, SceneManager};
+use crate::ecs::World;
 
 /// A single engine context containing scene management and associated state.
 ///

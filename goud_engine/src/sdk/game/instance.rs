@@ -1,8 +1,8 @@
 //! [`GoudGame`] struct definition, construction, and core API.
 
 use crate::core::error::{GoudError, GoudResult};
-use crate::ecs::{Component, Entity, World};
 use crate::core::scene::{SceneId, SceneManager};
+use crate::ecs::{Component, Entity, World};
 
 #[cfg(feature = "native")]
 use crate::ecs::InputManager;
