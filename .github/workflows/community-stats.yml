@@ -54,7 +54,7 @@ jobs:
         |--|-------|-------|--------------|-------------|
         | **GitHub** | $(fmt $STARS) | $(fmt $FORKS) | $(fmt $CONTRIBUTORS) | $(fmt $OPEN_ISSUES) |
 
-        **Downloads**
+        ### Downloads
 
         | Registry | Downloads | Period |
         |----------|-----------|--------|

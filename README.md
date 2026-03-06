@@ -151,7 +151,7 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 |--|-------|-------|--------------|
 | **GitHub** | ![stars](https://img.shields.io/github/stars/aram-devdocs/GoudEngine) | ![forks](https://img.shields.io/github/forks/aram-devdocs/GoudEngine) | ![contributors](https://img.shields.io/github/contributors/aram-devdocs/GoudEngine) |
 
-**Downloads**
+### Downloads
 
 | Registry | | Downloads |
 |----------|-|-----------|
