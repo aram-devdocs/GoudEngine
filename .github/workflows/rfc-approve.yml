@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   approve-rfc:
@@ -30,12 +31,15 @@ jobs:
               echo "Updated: $file"
             fi
           done
-          if [ "$changed" = true ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add docs/rfcs/RFC-*.md
-            git commit -m "docs: auto-approve merged RFCs [skip ci]"
-            git push
-          else
+          if [ "$changed" = false ]; then
             echo "No RFCs to update"
           fi
+
+      - name: Create PR to update RFC status
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "docs: auto-approve merged RFCs [skip ci]"
+          branch: chore/rfc-auto-approve
+          title: "docs: auto-approve merged RFCs"
+          body: "Automatically updates RFC status from `proposed` to `accepted` after merge."
+          delete-branch: true
