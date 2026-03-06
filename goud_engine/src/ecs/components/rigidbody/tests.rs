@@ -161,18 +161,6 @@ fn test_rigidbody_with_damping() {
 }
 
 #[test]
-fn test_rigidbody_with_restitution() {
-    let body = RigidBody::dynamic().with_restitution(0.8);
-    assert_eq!(body.restitution, 0.8);
-}
-
-#[test]
-fn test_rigidbody_with_friction() {
-    let body = RigidBody::dynamic().with_friction(0.7);
-    assert_eq!(body.friction, 0.7);
-}
-
-#[test]
 fn test_rigidbody_with_gravity_scale() {
     let body = RigidBody::dynamic().with_gravity_scale(2.0);
     assert_eq!(body.gravity_scale, 2.0);
@@ -213,14 +201,10 @@ fn test_rigidbody_builder_chaining() {
     let body = RigidBody::dynamic()
         .with_velocity(Vec2::new(100.0, 50.0))
         .with_mass(2.0)
-        .with_restitution(0.8)
-        .with_friction(0.5)
         .with_gravity_scale(1.5);
 
     assert_eq!(body.linear_velocity, Vec2::new(100.0, 50.0));
     assert_eq!(body.mass, 2.0);
-    assert_eq!(body.restitution, 0.8);
-    assert_eq!(body.friction, 0.5);
     assert_eq!(body.gravity_scale, 1.5);
 }
 
