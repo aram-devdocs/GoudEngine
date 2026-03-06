@@ -6,9 +6,9 @@
 mod core;
 mod iter;
 mod ops;
-mod tick_tracking;
 #[cfg(test)]
 mod tests;
+mod tick_tracking;
 
 pub use core::SparseSet;
 pub use iter::{SparseSetIter, SparseSetIterMut};

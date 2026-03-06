@@ -455,7 +455,6 @@ impl<T> SparseSet<T> {
         self.added_ticks.reserve(additional);
         self.changed_ticks.reserve(additional);
     }
-
 }
 
 impl<T> Default for SparseSet<T> {
