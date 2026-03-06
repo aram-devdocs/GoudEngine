@@ -13,10 +13,10 @@ use crate::libs::providers::window::WindowProvider;
 ///
 /// # Event Polling
 ///
-/// The `WindowProvider::poll_events()` trait method calls GLFW event polling
-/// but cannot dispatch input events (the trait takes no parameters). Use
-/// [`poll_events_with_input`](GlfwWindowProvider::poll_events_with_input)
-/// for full input dispatch.
+/// The `WindowProvider::poll_events()` trait method only calls GLFW event
+/// polling without dispatching to an input manager. For full input dispatch,
+/// Layer 2 code (e.g., `GoudGame`) should call `platform_mut()` and
+/// invoke `PlatformBackend::poll_events()` with an `InputManager`.
 pub struct GlfwWindowProvider {
     platform: GlfwPlatform,
 }
@@ -27,20 +27,6 @@ impl GlfwWindowProvider {
         Self { platform }
     }
 
-    /// Polls events and dispatches input to the given `InputManager`.
-    ///
-    /// This is the full-featured poll that delegates to
-    /// [`PlatformBackend::poll_events`], which processes keyboard, mouse,
-    /// scroll, and window events and feeds them into the input manager.
-    ///
-    /// Returns delta time in seconds since the last call.
-    pub fn poll_events_with_input(
-        &mut self,
-        input: &mut crate::core::input_manager::InputManager,
-    ) -> f32 {
-        self.platform.poll_events(input)
-    }
-
     /// Returns a reference to the underlying platform.
     #[allow(dead_code)]
     pub(crate) fn platform(&self) -> &GlfwPlatform {
@@ -48,6 +34,9 @@ impl GlfwWindowProvider {
     }
 
     /// Returns a mutable reference to the underlying platform.
+    ///
+    /// Used by Layer 2 code to bridge platform event polling with input
+    /// managers and other Layer 2 systems.
     #[allow(dead_code)]
     pub(crate) fn platform_mut(&mut self) -> &mut GlfwPlatform {
         &mut self.platform
@@ -98,19 +87,23 @@ impl WindowProvider for GlfwWindowProvider {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     // GlfwWindowProvider requires a GLFW context and display server.
     // These tests can only run in an environment with a windowing system.
+    // They are skipped here since we cannot instantiate GlfwPlatform without
+    // a real display server. In integration tests or when running in a
+    // windowed environment, you can test this provider directly.
 
     #[test]
-    fn test_glfw_window_provider_type_check() {
-        // Compile-time check that GlfwWindowProvider is NOT Send.
-        // If this compiles, the type correctly omits Send.
-        fn assert_not_send<T>() {
-            // This function exists only for the negative trait bound test
-            // in the static_assertions below.
-        }
-        // GlfwWindowProvider wraps GlfwPlatform which contains GLFW types
-        // that are !Send, so this struct is automatically !Send.
-        let _ = assert_not_send::<()>;
+    fn test_glfw_window_provider_has_platform_methods() {
+        // Verify that the public methods for accessing the platform exist.
+        // This is a compile-time check encoded as a runtime test.
+        // If platform() and platform_mut() don't exist, this won't compile.
+
+        // We cannot instantiate GlfwWindowProvider without GLFW,
+        // so we just verify the type is well-formed by creating a reference.
+        let _: fn(&GlfwWindowProvider) -> &GlfwPlatform = GlfwWindowProvider::platform;
+        let _: fn(&mut GlfwWindowProvider) -> &mut GlfwPlatform = GlfwWindowProvider::platform_mut;
     }
 }

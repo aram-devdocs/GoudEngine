@@ -93,7 +93,7 @@ impl RenderProvider for OpenGLRenderProvider {
         self.backend.begin_frame()?;
         let id = self.frame_counter;
         self.frame_counter = self.frame_counter.wrapping_add(1);
-        Ok(FrameContext { id })
+        Ok(FrameContext { _id: id })
     }
 
     fn end_frame(&mut self, _frame: FrameContext) -> GoudResult<()> {

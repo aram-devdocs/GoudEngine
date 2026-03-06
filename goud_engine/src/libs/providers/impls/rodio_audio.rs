@@ -16,6 +16,29 @@ use crate::libs::providers::{Provider, ProviderLifecycle};
 
 use rodio::{DeviceSinkBuilder, MixerDeviceSink, Player};
 
+/// Tracks both a player and its individual volume for composition with master volume.
+struct PlayerState {
+    player: Player,
+    /// Individual volume (0.0 to 1.0) before master composition.
+    volume: f32,
+}
+
+impl PlayerState {
+    /// Creates a new player state with the given volume.
+    fn new(player: Player, volume: f32) -> Self {
+        Self {
+            player,
+            volume: volume.clamp(0.0, 1.0),
+        }
+    }
+
+    /// Applies the effective volume = master_volume * individual_volume.
+    fn apply_composed_volume(&self, master: f32) {
+        let composed = (master * self.volume).clamp(0.0, 1.0);
+        self.player.set_volume(composed);
+    }
+}
+
 /// Rodio-based audio provider for desktop platforms.
 ///
 /// Manages an audio output device and a collection of active playback
@@ -30,7 +53,7 @@ use rodio::{DeviceSinkBuilder, MixerDeviceSink, Player};
 pub struct RodioAudioProvider {
     device_sink: MixerDeviceSink,
     capabilities: AudioCapabilities,
-    players: HashMap<u64, Player>,
+    players: HashMap<u64, PlayerState>,
     next_id: u64,
     master_volume: f32,
     channel_volumes: HashMap<AudioChannel, f32>,
@@ -110,13 +133,13 @@ impl ProviderLifecycle for RodioAudioProvider {
 
     fn update(&mut self, _delta: f32) -> GoudResult<()> {
         // Clean up finished players to prevent unbounded growth.
-        self.players.retain(|_, player| !player.empty());
+        self.players.retain(|_, state| !state.player.empty());
         Ok(())
     }
 
     fn shutdown(&mut self) {
-        for player in self.players.values() {
-            player.stop();
+        for state in self.players.values() {
+            state.player.stop();
         }
         self.players.clear();
     }
@@ -128,7 +151,7 @@ impl AudioProvider for RodioAudioProvider {
     }
 
     fn audio_update(&mut self) -> GoudResult<()> {
-        self.players.retain(|_, player| !player.empty());
+        self.players.retain(|_, state| !state.player.empty());
         Ok(())
     }
 
@@ -143,27 +166,29 @@ impl AudioProvider for RodioAudioProvider {
         player.set_speed(config.speed.clamp(0.1, 10.0));
 
         let id = self.allocate_id();
-        self.players.insert(id, player);
+        // Store both the player and its individual volume for composition
+        let state = PlayerState::new(player, config.volume);
+        self.players.insert(id, state);
         Ok(PlaybackId(id))
     }
 
     fn stop(&mut self, id: PlaybackId) -> GoudResult<()> {
-        if let Some(player) = self.players.remove(&id.0) {
-            player.stop();
+        if let Some(state) = self.players.remove(&id.0) {
+            state.player.stop();
         }
         Ok(())
     }
 
     fn pause(&mut self, id: PlaybackId) -> GoudResult<()> {
-        if let Some(player) = self.players.get(&id.0) {
-            player.pause();
+        if let Some(state) = self.players.get(&id.0) {
+            state.player.pause();
         }
         Ok(())
     }
 
     fn resume(&mut self, id: PlaybackId) -> GoudResult<()> {
-        if let Some(player) = self.players.get(&id.0) {
-            player.play();
+        if let Some(state) = self.players.get(&id.0) {
+            state.player.play();
         }
         Ok(())
     }
@@ -171,22 +196,23 @@ impl AudioProvider for RodioAudioProvider {
     fn is_playing(&self, id: PlaybackId) -> bool {
         self.players
             .get(&id.0)
-            .map(|p| !p.is_paused() && !p.empty())
+            .map(|s| !s.player.is_paused() && !s.player.empty())
             .unwrap_or(false)
     }
 
     fn set_volume(&mut self, id: PlaybackId, volume: f32) -> GoudResult<()> {
-        if let Some(player) = self.players.get(&id.0) {
-            player.set_volume(volume.clamp(0.0, 1.0));
+        if let Some(state) = self.players.get_mut(&id.0) {
+            state.volume = volume.clamp(0.0, 1.0);
+            state.apply_composed_volume(self.master_volume);
         }
         Ok(())
     }
 
     fn set_master_volume(&mut self, volume: f32) {
         self.master_volume = volume.clamp(0.0, 1.0);
-        // Update all active players
-        for player in self.players.values() {
-            player.set_volume(self.master_volume);
+        // Update all active players with composed volume (master * individual)
+        for state in self.players.values() {
+            state.apply_composed_volume(self.master_volume);
         }
     }
 

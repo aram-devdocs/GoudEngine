@@ -58,9 +58,8 @@ pub struct PlaybackId(pub u64);
 /// The `id` field will be used by concrete provider implementations to track
 /// frame state.
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct FrameContext {
-    pub(crate) id: u64,
+    pub(crate) _id: u64,
 }
 
 /// Describes a texture to be created.

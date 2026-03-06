@@ -99,5 +99,7 @@ mod tests {
         let mut provider = NullWindowProvider::new();
         provider.poll_events();
         provider.swap_buffers();
+        // Verify that no-op operations don't change state
+        assert!(!provider.should_close());
     }
 }

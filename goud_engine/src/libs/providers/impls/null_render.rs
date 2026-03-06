@@ -68,7 +68,7 @@ impl RenderProvider for NullRenderProvider {
     }
 
     fn begin_frame(&mut self) -> GoudResult<FrameContext> {
-        Ok(FrameContext { id: 0 })
+        Ok(FrameContext { _id: 0 })
     }
 
     fn end_frame(&mut self, _frame: FrameContext) -> GoudResult<()> {
