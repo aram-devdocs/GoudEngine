@@ -330,5 +330,8 @@ fn test_font_loader_load_valid_ttf_success() {
     assert!(!font.is_empty());
     assert_eq!(font.size_bytes(), ttf_bytes.len());
     // Verify metadata was extracted
-    assert!(!font.family_name().is_empty(), "Font should have a family name");
+    assert!(
+        !font.family_name().is_empty(),
+        "Font should have a family name"
+    );
 }
