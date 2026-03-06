@@ -1,6 +1,6 @@
 //! Tests for core FFI-safe types.
 
-use crate::core::math::{Color, Rect, Vec2};
+use crate::core::math::{Color, Rect};
 use crate::core::types::{FfiColor, FfiRect, FfiTransform2D, GoudEntityId, GoudResult};
 
 // ========================================================================
