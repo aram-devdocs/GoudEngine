@@ -61,11 +61,7 @@ impl<Q: WorldQuery> WorldQuery for Option<Q> {
     }
 
     #[inline]
-    fn fetch<'w>(
-        state: &Self::State,
-        world: &'w World,
-        entity: Entity,
-    ) -> Option<Self::Item<'w>> {
+    fn fetch<'w>(state: &Self::State, world: &'w World, entity: Entity) -> Option<Self::Item<'w>> {
         // Always return Some. The inner Option indicates presence/absence.
         Some(Q::fetch(state, world, entity))
     }
