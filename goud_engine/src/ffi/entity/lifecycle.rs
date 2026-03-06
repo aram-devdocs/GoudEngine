@@ -172,24 +172,25 @@ pub extern "C" fn goud_entity_despawn(context_id: GoudContextId, entity_id: u64)
     use crate::ffi::GoudEntityId;
 
     if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return GoudResult::err(GoudError::InvalidContext.error_code());
+        return GoudResult::from_error(GoudError::InvalidContext);
     }
 
     if entity_id == GOUD_INVALID_ENTITY_ID {
-        set_last_error(GoudError::EntityNotFound);
-        return GoudResult::err(GoudError::EntityNotFound.error_code());
+        return GoudResult::from_error(GoudError::EntityNotFound);
     }
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return GoudResult::err(crate::core::error::ERR_INTERNAL_ERROR),
+        Err(_) => {
+            return GoudResult::from_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(guard) => guard,
         None => {
-            set_last_error(GoudError::InvalidContext);
-            return GoudResult::err(GoudError::InvalidContext.error_code());
+            return GoudResult::from_error(GoudError::InvalidContext);
         }
     };
 
@@ -199,8 +200,7 @@ pub extern "C" fn goud_entity_despawn(context_id: GoudContextId, entity_id: u64)
     if world.despawn(entity) {
         GoudResult::ok()
     } else {
-        set_last_error(GoudError::EntityNotFound);
-        GoudResult::err(GoudError::EntityNotFound.error_code())
+        GoudResult::from_error(GoudError::EntityNotFound)
     }
 }
 
