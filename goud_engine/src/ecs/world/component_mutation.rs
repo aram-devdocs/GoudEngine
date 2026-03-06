@@ -87,8 +87,9 @@ impl World {
 
         if has_component {
             // Entity already has this component - just replace in storage
+            let tick = self.change_tick;
             let storage = self.get_or_create_storage_mut::<T>();
-            storage.insert(entity, component)
+            storage.insert_with_tick(entity, component, tick)
         } else {
             // Entity doesn't have this component - need archetype transition
             // 1. Get the target archetype (with the new component)
@@ -110,8 +111,9 @@ impl World {
             self.entity_archetypes.insert(entity, target_archetype_id);
 
             // 5. Insert the component into storage
+            let tick = self.change_tick;
             let storage = self.get_or_create_storage_mut::<T>();
-            storage.insert(entity, component);
+            storage.insert_with_tick(entity, component, tick);
 
             // No old value to return
             None

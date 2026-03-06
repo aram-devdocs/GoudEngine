@@ -42,6 +42,7 @@
 //! 4. **Parallel Safety**: ReadOnlyWorldQuery enables safe concurrent reads
 
 mod access;
+mod change_filters;
 mod component_ref;
 mod filters;
 mod impls;
@@ -54,6 +55,7 @@ mod tests_mod;
 pub use access::{
     Access, AccessConflict, AccessType, ConflictInfo, NonSendConflictInfo, ResourceConflictInfo,
 };
+pub use change_filters::{Added, Changed};
 pub use component_ref::{MutState, WriteAccess};
 pub use filters::{With, Without};
 pub use traits::{QueryState, ReadOnlyWorldQuery, WorldQuery};

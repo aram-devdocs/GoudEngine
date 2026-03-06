@@ -66,6 +66,7 @@
 
 pub mod archetype;
 pub mod broad_phase;
+pub mod change_detection;
 pub mod collision;
 pub mod component;
 pub mod components;
