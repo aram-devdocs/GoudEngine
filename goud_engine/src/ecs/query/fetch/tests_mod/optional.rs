@@ -174,17 +174,21 @@ mod tests {
         use super::*;
 
         #[test]
-        fn test_option_component_access_is_empty() {
+        fn test_option_component_access_forwards_to_inner() {
             let state = <Option<&Position>>::init_state(&World::new());
             let access = <Option<&Position>>::component_access(&state);
-            assert!(access.is_empty());
+            // Forwards inner query access for correct conflict detection
+            let inner_state = <&Position as WorldQuery>::init_state(&World::new());
+            let inner_access = <&Position as WorldQuery>::component_access(&inner_state);
+            assert_eq!(access, inner_access);
         }
 
         #[test]
-        fn test_option_mut_component_access_is_empty() {
+        fn test_option_mut_component_access_forwards_to_inner() {
             let state = <Option<&mut Position>>::init_state(&World::new());
             let access = <Option<&mut Position>>::component_access(&state);
-            assert!(access.is_empty());
+            // Mutable optional correctly declares write access
+            assert!(!access.is_empty());
         }
     }
 
