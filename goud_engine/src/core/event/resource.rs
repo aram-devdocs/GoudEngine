@@ -347,6 +347,31 @@ impl<E: Event> Events<E> {
     pub fn read_len(&self) -> usize {
         self.queue.read_len()
     }
+
+    /// Returns a slice of events available for reading.
+    ///
+    /// This provides direct access to the read buffer, enabling cursor-based
+    /// reading patterns used by ECS system parameters.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use goud_engine::core::event::Events;
+    ///
+    /// struct Event { id: u32 }
+    ///
+    /// let mut events: Events<Event> = Events::new();
+    /// events.send(Event { id: 1 });
+    /// events.send(Event { id: 2 });
+    /// events.update();
+    ///
+    /// let buffer = events.read_buffer();
+    /// assert_eq!(buffer.len(), 2);
+    /// ```
+    #[must_use]
+    pub fn read_buffer(&self) -> &[E] {
+        self.queue.read_buffer()
+    }
 }
 
 impl<E: Event> Default for Events<E> {

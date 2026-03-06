@@ -169,8 +169,9 @@ pub use function_system::{FunctionSystem, SystemParamFunction};
 
 // Re-export system parameter types
 pub use system_param::{
-    ParamSet, ReadOnlySystemParam, ResMutState, ResState, StaticSystemParam,
-    StaticSystemParamState, SystemParam, SystemParamState,
+    EcsEventReader, EcsEventReaderState, EcsEventWriter, EcsEventWriterState, ParamSet,
+    ReadOnlySystemParam, ResMutState, ResState, StaticSystemParam, StaticSystemParamState,
+    SystemParam, SystemParamState,
 };
 
 // Re-export core system types
