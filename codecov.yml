@@ -71,6 +71,7 @@ ignore:
   - "**/NativeMethods.g.cs"
   - "**/build.rs"
   - "goud_engine/src/sdk.rs"  # FFI bindings
+  - "goud_engine/src/ffi/**"  # FFI layer (thin wrappers)
   
   # Ignore test files
   - "**/tests/**"
