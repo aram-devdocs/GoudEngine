@@ -46,3 +46,79 @@ pub unsafe extern "C" fn goud_last_error_message(buf: *mut u8, buf_len: usize) -
 pub extern "C" fn goud_clear_last_error() {
     clear_last_error();
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::error::{set_last_error, GoudError};
+
+    #[test]
+    fn test_goud_last_error_message_success_path() {
+        set_last_error(GoudError::NotInitialized);
+
+        let mut buf = [0u8; 256];
+        let result =
+            // SAFETY: buf is a valid buffer of 256 bytes
+            unsafe { goud_last_error_message(buf.as_mut_ptr(), buf.len()) };
+
+        assert!(result > 0, "expected positive byte count, got {result}");
+        let msg = std::str::from_utf8(&buf[..result as usize]).unwrap();
+        assert!(
+            msg.contains("not been initialized"),
+            "unexpected message: {msg}"
+        );
+    }
+
+    #[test]
+    fn test_goud_last_error_message_buffer_too_small() {
+        let long_msg = "A".repeat(100);
+        set_last_error(GoudError::InternalError(long_msg.clone()));
+
+        let mut buf = [0u8; 10]; // too small for 100-char message
+        let result =
+            // SAFETY: buf is a valid buffer of 10 bytes
+            unsafe { goud_last_error_message(buf.as_mut_ptr(), buf.len()) };
+
+        // The implementation truncates and returns copy_len (buf_len - 1 = 9)
+        assert_eq!(result, 9, "expected truncated copy of 9 bytes, got {result}");
+        assert_eq!(buf[9], 0, "expected null terminator at position 9");
+    }
+
+    #[test]
+    fn test_goud_last_error_message_null_buffer() {
+        set_last_error(GoudError::NotInitialized);
+
+        let result =
+            // SAFETY: passing null is explicitly handled by the function
+            unsafe { goud_last_error_message(std::ptr::null_mut(), 0) };
+
+        // Null buffer returns negative required size (-(len + 1))
+        assert!(result < 0, "expected negative required size, got {result}");
+    }
+
+    #[test]
+    fn test_goud_last_error_message_no_error() {
+        clear_last_error();
+
+        let mut buf = [0u8; 256];
+        let result =
+            // SAFETY: buf is a valid buffer of 256 bytes
+            unsafe { goud_last_error_message(buf.as_mut_ptr(), buf.len()) };
+
+        assert_eq!(result, 0, "expected 0 when no error is set, got {result}");
+    }
+
+    #[test]
+    fn test_goud_last_error_message_null_buffer_no_error() {
+        clear_last_error();
+
+        let result =
+            // SAFETY: passing null is explicitly handled by the function
+            unsafe { goud_last_error_message(std::ptr::null_mut(), 0) };
+
+        assert_eq!(
+            result, 0,
+            "expected 0 for null buffer with no error, got {result}"
+        );
+    }
+}
