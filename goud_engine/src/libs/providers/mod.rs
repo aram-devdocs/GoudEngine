@@ -15,6 +15,7 @@
 //! main-thread access.
 
 pub mod audio;
+pub mod impls;
 pub mod input;
 pub mod input_types;
 pub mod physics;
