@@ -48,9 +48,8 @@ pub struct FfiSpriteAnimator {
     pub frame_count: u32,
 }
 
-impl FfiSpriteAnimator {
-    /// Returns a default (empty, stopped) animator snapshot.
-    pub fn default_value() -> Self {
+impl Default for FfiSpriteAnimator {
+    fn default() -> Self {
         Self {
             current_frame: 0,
             elapsed: 0.0,

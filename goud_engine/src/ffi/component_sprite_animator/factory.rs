@@ -171,7 +171,7 @@ pub unsafe extern "C" fn goud_sprite_animator_from_clip(
     builder: *mut FfiAnimationClipBuilder,
 ) -> FfiSpriteAnimator {
     if builder.is_null() {
-        return FfiSpriteAnimator::default_value();
+        return FfiSpriteAnimator::default();
     }
     // SAFETY: builder is non-null and was allocated via Box::into_raw
     let boxed = Box::from_raw(builder);

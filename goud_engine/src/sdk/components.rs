@@ -70,6 +70,7 @@ pub use crate::ecs::components::Sprite;
 pub use crate::ecs::components::AnimationClip;
 pub use crate::ecs::components::PlaybackMode;
 pub use crate::ecs::components::SpriteAnimator;
+pub use crate::ecs::systems::update_sprite_animations;
 
 // =============================================================================
 // Audio
@@ -101,7 +102,6 @@ pub use crate::ecs::components::Parent;
 // =============================================================================
 
 pub use crate::ecs::components::propagation::{propagate_transforms, propagate_transforms_2d};
-pub use crate::ecs::systems::update_sprite_animations;
 
 // Note: Component trait and Vec2 are re-exported at the sdk level
 // to avoid duplicate exports. Use `use goud_engine::sdk::Component;`
