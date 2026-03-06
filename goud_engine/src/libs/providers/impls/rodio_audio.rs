@@ -243,86 +243,64 @@ impl std::fmt::Debug for RodioAudioProvider {
 mod tests {
     use super::*;
 
+    /// Single integration test to minimize audio device init/teardown cycles.
+    /// Multiple RodioAudioProvider instances can cause STATUS_ACCESS_VIOLATION
+    /// on Windows CI runners during concurrent Drop of cpal streams.
     #[test]
-    fn test_rodio_audio_construction() {
+    fn test_rodio_audio_provider() {
         // May fail in CI without an audio device. That is expected.
-        if let Ok(provider) = RodioAudioProvider::new() {
-            assert_eq!(provider.name(), "rodio");
-            assert_eq!(provider.version(), "1.0.0");
-        }
-    }
+        let Ok(mut provider) = RodioAudioProvider::new() else {
+            return;
+        };
 
-    #[test]
-    fn test_rodio_audio_capabilities() {
-        if let Ok(provider) = RodioAudioProvider::new() {
-            let caps = provider.audio_capabilities();
-            assert!(!caps.supports_spatial);
-            assert_eq!(caps.max_channels, 32);
-        }
-    }
+        // Construction
+        assert_eq!(provider.name(), "rodio");
+        assert_eq!(provider.version(), "1.0.0");
 
-    #[test]
-    fn test_rodio_audio_lifecycle() {
-        if let Ok(mut provider) = RodioAudioProvider::new() {
-            assert!(provider.init().is_ok());
-            assert!(provider.update(0.016).is_ok());
-            provider.shutdown();
-        }
-    }
+        // Capabilities
+        let caps = provider.audio_capabilities();
+        assert!(!caps.supports_spatial);
+        assert_eq!(caps.max_channels, 32);
 
-    #[test]
-    fn test_rodio_audio_master_volume() {
-        if let Ok(mut provider) = RodioAudioProvider::new() {
-            provider.set_master_volume(0.5);
-            assert_eq!(provider.master_volume, 0.5);
+        // Lifecycle
+        assert!(provider.init().is_ok());
+        assert!(provider.update(0.016).is_ok());
 
-            // Clamp to [0, 1]
-            provider.set_master_volume(2.0);
-            assert_eq!(provider.master_volume, 1.0);
+        // Master volume with clamping
+        provider.set_master_volume(0.5);
+        assert_eq!(provider.master_volume, 0.5);
+        provider.set_master_volume(2.0);
+        assert_eq!(provider.master_volume, 1.0);
+        provider.set_master_volume(-1.0);
+        assert_eq!(provider.master_volume, 0.0);
+        provider.set_master_volume(1.0); // Reset for further tests
 
-            provider.set_master_volume(-1.0);
-            assert_eq!(provider.master_volume, 0.0);
-        }
-    }
+        // Channel volume
+        provider.set_channel_volume(AudioChannel::Music, 0.7);
+        assert_eq!(
+            provider.channel_volumes.get(&AudioChannel::Music),
+            Some(&0.7)
+        );
 
-    #[test]
-    fn test_rodio_audio_channel_volume() {
-        if let Ok(mut provider) = RodioAudioProvider::new() {
-            provider.set_channel_volume(AudioChannel::Music, 0.7);
-            assert_eq!(
-                provider.channel_volumes.get(&AudioChannel::Music),
-                Some(&0.7)
-            );
-        }
-    }
+        // Spatial stubs
+        provider.set_listener_position([1.0, 2.0, 3.0]);
+        assert!(provider
+            .set_source_position(PlaybackId(0), [4.0, 5.0, 6.0])
+            .is_ok());
 
-    #[test]
-    fn test_rodio_audio_spatial_stubs() {
-        if let Ok(mut provider) = RodioAudioProvider::new() {
-            provider.set_listener_position([1.0, 2.0, 3.0]);
-            assert!(provider
-                .set_source_position(PlaybackId(0), [4.0, 5.0, 6.0])
-                .is_ok());
-        }
-    }
+        // Play creates player
+        let id = provider
+            .play(SoundHandle(1), &PlayConfig::default())
+            .unwrap();
+        assert_eq!(id, PlaybackId(0));
+        assert!(provider.stop(id).is_ok());
 
-    #[test]
-    fn test_rodio_audio_play_creates_player() {
-        if let Ok(mut provider) = RodioAudioProvider::new() {
-            let id = provider
-                .play(SoundHandle(1), &PlayConfig::default())
-                .unwrap();
-            assert_eq!(id, PlaybackId(0));
-            assert!(provider.stop(id).is_ok());
-        }
-    }
+        // Debug format
+        let debug = format!("{:?}", provider);
+        assert!(debug.contains("RodioAudioProvider"));
+        assert!(debug.contains("master_volume"));
 
-    #[test]
-    fn test_rodio_audio_debug_format() {
-        if let Ok(provider) = RodioAudioProvider::new() {
-            let debug = format!("{:?}", provider);
-            assert!(debug.contains("RodioAudioProvider"));
-            assert!(debug.contains("master_volume"));
-        }
+        // Explicit shutdown before drop
+        provider.shutdown();
     }
 }
