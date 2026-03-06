@@ -43,16 +43,19 @@ impl World {
     /// Registers built-in engine components as cloneable.
     ///
     /// This registers the following component types:
-    /// - `Transform2D`, `GlobalTransform2D`
+    /// - `Transform2D`, `GlobalTransform2D` (2D)
+    /// - `Transform`, `GlobalTransform` (3D)
     /// - `Parent`, `Children`, `Name`
     ///
     /// Call this method if you intend to use entity cloning with
     /// built-in components. This is opt-in to avoid overhead for
     /// applications that do not need cloning.
     pub fn register_builtin_cloneables(&mut self) {
-        use crate::ecs::components::{GlobalTransform2D, Name, Transform2D};
+        use crate::ecs::components::{GlobalTransform, GlobalTransform2D, Name, Transform, Transform2D};
         self.register_cloneable::<Transform2D>();
         self.register_cloneable::<GlobalTransform2D>();
+        self.register_cloneable::<Transform>();
+        self.register_cloneable::<GlobalTransform>();
         self.register_cloneable::<Parent>();
         self.register_cloneable::<Children>();
         self.register_cloneable::<Name>();
