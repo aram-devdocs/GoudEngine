@@ -4,6 +4,7 @@
 //! shaders, and audio files.
 
 pub mod audio;
+pub mod font;
 #[cfg(feature = "native")]
 mod rodio_integration;
 pub mod shader;
@@ -18,3 +19,5 @@ pub use shader::{
 };
 
 pub use audio::{AudioAsset, AudioFormat, AudioLoader, AudioSettings};
+
+pub use font::{FontAsset, FontFormat, FontLoader, FontSettings};
