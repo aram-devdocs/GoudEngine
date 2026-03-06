@@ -119,6 +119,8 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/input/actions.rs",
     // collision (not yet split)
     "src/ffi/collision.rs",
+    // error query module
+    "src/ffi/error.rs",
 ];
 
 /// A single extracted FFI function signature.
