@@ -21,15 +21,6 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        # Fetch GitHub stats
-        STARS=$(gh api repos/${{ github.repository }} --jq '.stargazers_count')
-        FORKS=$(gh api repos/${{ github.repository }} --jq '.forks_count')
-        OPEN_ISSUES=$(gh api repos/${{ github.repository }} --jq '.open_issues_count')
-        CONTRIBUTORS=$(gh api "repos/${{ github.repository }}/contributors?per_page=1&anon=true" -i | grep -i 'link:' | grep -oP '&page=\K[0-9]+(?=>; rel="last")' || echo "")
-        if [ -z "$CONTRIBUTORS" ]; then
-          CONTRIBUTORS=$(gh api "repos/${{ github.repository }}/contributors?per_page=100&anon=true" --jq 'length')
-        fi
-
         # Fetch registry download counts
         CRATES_DOWNLOADS=$(curl -sf https://crates.io/api/v1/crates/goud-engine | jq '.crate.downloads // 0')
         NUGET_DOWNLOADS=$(curl -sf "https://api.nuget.org/v3/registration5-gz-semver2/goudengine/index.json" | jq '[.items[].items[]?.catalogEntry.downloads // 0] | add // 0' 2>/dev/null || echo "0")
@@ -41,27 +32,22 @@ jobs:
           NUGET_DOWNLOADS=$(curl -sf "https://azuresearch-usnc.nuget.org/query?q=packageid:GoudEngine&prerelease=false" | jq '.data[0].totalDownloads // 0')
         fi
 
-        # Compute all-time total (crates.io + NuGet are all-time; PyPI + npm are monthly)
-        ALLTIME_TOTAL=$((CRATES_DOWNLOADS + NUGET_DOWNLOADS))
-
         # Format numbers with commas
         fmt() { printf "%'d" "$1" 2>/dev/null || echo "$1"; }
 
-        STATS_BLOCK="## Community
-
-        <!-- COMMUNITY-STATS:START -->
-        | | Stars | Forks | Contributors | Open Issues |
-        |--|-------|-------|--------------|-------------|
-        | **GitHub** | $(fmt $STARS) | $(fmt $FORKS) | $(fmt $CONTRIBUTORS) | $(fmt $OPEN_ISSUES) |
+        STATS_BLOCK="<!-- COMMUNITY-STATS:START -->
+        | | Stars | Forks | Contributors |
+        |--|-------|-------|--------------|
+        | **GitHub** | ![stars](https://img.shields.io/github/stars/aram-devdocs/GoudEngine) | ![forks](https://img.shields.io/github/forks/aram-devdocs/GoudEngine) | ![contributors](https://img.shields.io/github/contributors/aram-devdocs/GoudEngine) |
 
         ### Downloads
 
-        | Registry | Downloads | Period |
-        |----------|-----------|--------|
-        | crates.io | $(fmt $CRATES_DOWNLOADS) | total |
-        | NuGet | $(fmt $NUGET_DOWNLOADS) | total |
-        | PyPI | $(fmt $PYPI_MONTHLY) | /month |
-        | npm | $(fmt $NPM_MONTHLY) | /month |
+        | Registry | | Downloads |
+        |----------|-|-----------|
+        | crates.io | [![crates.io](https://img.shields.io/crates/d/goud-engine)](https://crates.io/crates/goud-engine) | $(fmt $CRATES_DOWNLOADS) total |
+        | NuGet | [![NuGet](https://img.shields.io/nuget/dt/GoudEngine)](https://www.nuget.org/packages/GoudEngine/) | $(fmt $NUGET_DOWNLOADS) total |
+        | PyPI | [![PyPI](https://img.shields.io/pypi/dm/goudengine)](https://pypi.org/project/goudengine/) | $(fmt $PYPI_MONTHLY) /month |
+        | npm | [![npm](https://img.shields.io/npm/dm/goudengine)](https://www.npmjs.com/package/goudengine) | $(fmt $NPM_MONTHLY) /month |
 
         [![Star History Chart](https://api.star-history.com/svg?repos=aram-devdocs/GoudEngine&type=Date)](https://star-history.com/#aram-devdocs/GoudEngine&Date)
 

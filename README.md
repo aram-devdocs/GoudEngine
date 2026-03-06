@@ -155,10 +155,10 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 
 | Registry | | Downloads |
 |----------|-|-----------|
-| crates.io | [![crates.io](https://img.shields.io/crates/d/goud-engine)](https://crates.io/crates/goud-engine) | total |
-| NuGet | [![NuGet](https://img.shields.io/nuget/dt/GoudEngine)](https://www.nuget.org/packages/GoudEngine/) | total |
-| PyPI | [![PyPI](https://img.shields.io/pypi/dm/goudengine)](https://pypi.org/project/goudengine/) | /month |
-| npm | [![npm](https://img.shields.io/npm/dm/goudengine)](https://www.npmjs.com/package/goudengine) | /month |
+| crates.io | [![crates.io](https://img.shields.io/crates/d/goud-engine)](https://crates.io/crates/goud-engine) | — total |
+| NuGet | [![NuGet](https://img.shields.io/nuget/dt/GoudEngine)](https://www.nuget.org/packages/GoudEngine/) | — total |
+| PyPI | [![PyPI](https://img.shields.io/pypi/dm/goudengine)](https://pypi.org/project/goudengine/) | — /month |
+| npm | [![npm](https://img.shields.io/npm/dm/goudengine)](https://www.npmjs.com/package/goudengine) | — /month |
 
 [![Star History Chart](https://api.star-history.com/svg?repos=aram-devdocs/GoudEngine&type=Date)](https://star-history.com/#aram-devdocs/GoudEngine&Date)
 
