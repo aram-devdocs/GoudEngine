@@ -3,7 +3,8 @@
 /// Font loading settings.
 #[derive(Clone, Debug)]
 pub struct FontSettings {
-    /// Default font size in pixels for rasterization.
+    /// Default font size in pixels. Reserved for future rasterization support;
+    /// not used during loading.
     pub default_size_px: f32,
     /// Index of the font within a font collection (TTC/OTC).
     pub collection_index: u32,

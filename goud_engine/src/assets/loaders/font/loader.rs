@@ -64,6 +64,7 @@ impl AssetLoader for FontLoader {
             format,
             units_per_em.round() as u16, // fontdue returns f32; standard values (1000, 2048) fit safely in u16
             glyph_count,
+            settings.collection_index,
         ))
     }
 }

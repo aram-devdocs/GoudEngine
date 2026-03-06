@@ -51,6 +51,7 @@ impl fmt::Display for FontStyle {
 ///     Default::default(),
 ///     1000,
 ///     95,
+///     0,
 /// );
 /// assert_eq!(font.family_name(), "Test");
 /// assert_eq!(font.glyph_count(), 95);
@@ -69,6 +70,8 @@ pub struct FontAsset {
     units_per_em: u16,
     /// Number of glyphs in the font.
     glyph_count: u16,
+    /// Index within a font collection (TTC/OTC). 0 for standalone fonts.
+    collection_index: u32,
 }
 
 impl FontAsset {
@@ -81,6 +84,7 @@ impl FontAsset {
     /// * `format` - Original file format
     /// * `units_per_em` - Design units per em square
     /// * `glyph_count` - Number of glyphs in the font
+    /// * `collection_index` - Index within a font collection (0 for standalone fonts)
     pub fn new(
         data: Vec<u8>,
         family_name: String,
@@ -88,6 +92,7 @@ impl FontAsset {
         format: FontFormat,
         units_per_em: u16,
         glyph_count: u16,
+        collection_index: u32,
     ) -> Self {
         Self {
             data,
@@ -96,6 +101,7 @@ impl FontAsset {
             format,
             units_per_em,
             glyph_count,
+            collection_index,
         }
     }
 
@@ -141,15 +147,24 @@ impl FontAsset {
         self.units_per_em
     }
 
+    /// Returns the collection index (0 for standalone fonts, >0 for TTC/OTC collections).
+    pub fn collection_index(&self) -> u32 {
+        self.collection_index
+    }
+
     /// Re-parses the stored bytes into a `fontdue::Font`.
     ///
-    /// This is useful when rasterization is needed after initial loading.
+    /// Uses the same `collection_index` from the original load to ensure the
+    /// correct face is selected from TTC/OTC font collections.
     ///
     /// # Errors
     /// Returns an error string if the font bytes cannot be parsed.
     pub fn parse(&self) -> Result<fontdue::Font, String> {
-        fontdue::Font::from_bytes(self.data.as_slice(), fontdue::FontSettings::default())
-            .map_err(|e| e.to_string())
+        let settings = fontdue::FontSettings {
+            collection_index: self.collection_index,
+            ..fontdue::FontSettings::default()
+        };
+        fontdue::Font::from_bytes(self.data.as_slice(), settings).map_err(|e| e.to_string())
     }
 }
 
