@@ -79,8 +79,18 @@ impl GoudContext {
     }
 
     /// Sets the scene targeted by `world()` / `world_mut()`.
-    pub fn set_current_scene(&mut self, id: SceneId) {
+    ///
+    /// # Errors
+    ///
+    /// Returns `GoudError::ResourceNotFound` if the scene does not exist.
+    pub fn set_current_scene(&mut self, id: SceneId) -> Result<(), crate::core::error::GoudError> {
+        if self.scene_manager.get_scene(id).is_none() {
+            return Err(crate::core::error::GoudError::ResourceNotFound(
+                format!("Scene id {} not found", id),
+            ));
+        }
         self.current_scene = id;
+        Ok(())
     }
 
     /// Returns the generation of this context.

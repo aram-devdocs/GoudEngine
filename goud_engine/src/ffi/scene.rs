@@ -344,16 +344,14 @@ pub extern "C" fn goud_scene_set_current(context_id: GoudContextId, scene_id: u3
         }
     };
 
-    // Verify the scene exists before setting it as current.
-    if context.scene_manager().get_scene(scene_id).is_none() {
-        let err = GoudError::ResourceNotFound(format!("Scene id {} not found", scene_id));
-        let code = err.error_code();
-        set_last_error(err);
-        return GoudResult::err(code);
+    match context.set_current_scene(scene_id) {
+        Ok(()) => GoudResult::ok(),
+        Err(err) => {
+            let code = err.error_code();
+            set_last_error(err);
+            GoudResult::err(code)
+        }
     }
-
-    context.set_current_scene(scene_id);
-    GoudResult::ok()
 }
 
 /// Returns the ID of the scene currently targeted by entity/component
