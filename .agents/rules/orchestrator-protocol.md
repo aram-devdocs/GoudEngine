@@ -118,3 +118,16 @@ When a team lead reports back:
 - Are there cross-team impacts not addressed?
 
 If a report is vague or uncritical, send the team lead back for specifics.
+
+## Post-Context-Clear Execution
+
+When a plan is accepted and context clears, the orchestrator operates from:
+1. **CLAUDE.md** (always loaded) -- contains execution primitives
+2. **The plan file** -- contains the specific execution steps
+
+The orchestrator MUST:
+- Read the plan's Metadata section to establish working directory and branch
+- Read the plan's "Execution Context" block for role reminders
+- Execute steps in order, checking off `- [ ]` items
+- Use literal subagent prompts from the plan (do not improvise)
+- Self-reference the skill that created the plan if additional context needed

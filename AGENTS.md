@@ -199,6 +199,62 @@ When testing graphics code:
 2. Use `test_helpers::init_test_context()` for tests needing GL
 3. Texture tests may need valid image files in `assets/`
 
+### Worktree Execution Protocol
+
+When working in a git worktree (created by `/gh-issue --worktree` or `git worktree add`):
+
+1. **Working directory**: The worktree path is in the plan's Metadata section. ALL
+   Bash commands MUST use `cd <worktree-path> &&` prefix -- cwd resets between calls.
+2. **Branch isolation**: The worktree has its own branch. Never checkout main inside a worktree.
+3. **Parallel safety**: Multiple worktrees run simultaneously. Never modify the main repo
+   working tree from a worktree session.
+4. **Subagent working directory**: When dispatching subagents, ALWAYS include the worktree
+   absolute path in the prompt. Subagents do not inherit your cwd.
+5. **Cleanup**: After PR creation, remove worktree from main repo:
+   `cd /path/to/main/repo && git worktree remove <worktree-path>`
+
+### Plan Execution Protocol
+
+When executing a plan from `.claude/plans/`:
+
+1. **Read Metadata first** -- it has your working directory, branch, issues, and mode.
+2. **You are the ORCHESTRATOR** -- you MUST NOT write .rs/.cs/.py files directly.
+   Dispatch subagents (engine-lead, integration-lead, quick-fix). The delegation-guard
+   hook WILL block direct writes.
+3. **Subagent dispatch steps** in the plan contain literal prompts. Use them verbatim.
+4. **Review gates are sequential** -- spec-reviewer MUST approve before code-quality-reviewer.
+   The review-gate-guard hook enforces this.
+5. **Check off `- [ ]` items** as you complete them. plan-completion-guard blocks session
+   end if unchecked items remain.
+6. **The plan references the skill that created it** -- read that skill's SKILL.md if you
+   need additional context about the workflow pattern.
+7. **PR creation uses `.github/pull_request_template.md`** -- read it and fill in all sections.
+8. **CI must pass** -- check with `gh pr checks <number>` before finishing.
+
+### Subagent Dispatch Reference
+
+| Role | Model | Dispatched By | Use For |
+|------|-------|---------------|---------|
+| engine-lead | opus | Orchestrator | Rust core, graphics, ECS, assets (manages implementers) |
+| integration-lead | opus | Orchestrator | FFI, SDKs, codegen (manages ffi/sdk-implementers) |
+| quality-lead | opus | Orchestrator | Reviews, testing, validation (manages reviewers) |
+| quick-fix | haiku | Any lead or orchestrator | Single-file trivial fixes |
+| implementer | sonnet | engine-lead | General Rust implementation |
+| test-first-implementer | sonnet | engine-lead | TDD red-green-refactor |
+| ffi-implementer | sonnet | integration-lead | FFI boundary changes |
+| sdk-implementer | sonnet | integration-lead | SDK wrapper development |
+| spec-reviewer | sonnet | quality-lead or orchestrator | Validates impl matches spec |
+| code-quality-reviewer | sonnet | quality-lead or orchestrator | Code quality, patterns |
+| architecture-validator | sonnet | quality-lead or orchestrator | Layer hierarchy check |
+| security-auditor | opus | quality-lead or orchestrator | FFI/unsafe audit (SEQUENTIAL ONLY) |
+| test-runner | sonnet | quality-lead or orchestrator | Run and analyze tests |
+
+When dispatching, ALWAYS include in the prompt:
+- Absolute working directory path (worktree or repo root)
+- Specific files to examine/modify
+- Verification commands to run (`cargo check`, `cargo test`, etc.)
+- What to report back (files changed, test results, verdict)
+
 ## Example Games
 
 Examples are organized by SDK language:

@@ -1,1 +1,0 @@
-../../.agents/rules/orchestrator-protocol.md
