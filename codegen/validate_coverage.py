@@ -92,6 +92,7 @@ _TYPE_ALIASES: dict[str, str] = {
     "GoudTextureHandle": "u64",
     "GoudKeyCode": "i32",
     "GoudMouseButton": "i32",
+    "GoudErrorCode": "i32",
 }
 
 
