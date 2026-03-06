@@ -51,7 +51,9 @@ impl World {
     /// built-in components. This is opt-in to avoid overhead for
     /// applications that do not need cloning.
     pub fn register_builtin_cloneables(&mut self) {
-        use crate::ecs::components::{GlobalTransform, GlobalTransform2D, Name, Transform, Transform2D};
+        use crate::ecs::components::{
+            GlobalTransform, GlobalTransform2D, Name, Transform, Transform2D,
+        };
         self.register_cloneable::<Transform2D>();
         self.register_cloneable::<GlobalTransform2D>();
         self.register_cloneable::<Transform>();
