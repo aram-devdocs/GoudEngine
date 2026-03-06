@@ -13,8 +13,8 @@
 //! - `conversions`: Engine-type-to-GL-constant helpers
 //! - `gl_tests`: Unit and integration tests
 
-use std::cell::RefCell;
 use std::collections::HashMap;
+use std::sync::Mutex;
 
 mod backend;
 mod buffer_ops;
@@ -71,17 +71,10 @@ struct ShaderMetadata {
     /// OpenGL shader program ID
     gl_id: u32,
     /// Cached uniform locations by name.
-    /// Uses `RefCell` for interior mutability so `get_uniform_location` can
+    /// Uses `Mutex` for interior mutability so `get_uniform_location` can
     /// populate the cache without requiring `&mut self` on the backend.
-    /// Safe because OpenGL contexts are always accessed on a single thread.
-    uniform_locations: RefCell<HashMap<String, i32>>,
+    uniform_locations: Mutex<HashMap<String, i32>>,
 }
-
-// SAFETY: `ShaderMetadata` is only ever accessed from the OpenGL rendering thread.
-// OpenGL contexts are inherently thread-local; no `ShaderMetadata` value crosses
-// thread boundaries at runtime. The `RefCell` inside does not implement `Sync`
-// automatically, but the single-thread access invariant makes this sound.
-unsafe impl Sync for ShaderMetadata {}
 
 // ============================================================================
 // Debug-only GL error checking macro
