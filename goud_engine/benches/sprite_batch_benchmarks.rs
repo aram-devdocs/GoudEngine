@@ -26,9 +26,7 @@ use goud_engine::libs::graphics::backend::types::{
     TextureFormat, TextureHandle, TextureWrap, VertexLayout,
 };
 use goud_engine::libs::graphics::backend::{BlendFactor, CullFace, RenderBackend};
-use goud_engine::rendering::sprite_batch::{
-    SpriteBatch, SpriteBatchConfig, SpriteInstance,
-};
+use goud_engine::rendering::sprite_batch::{SpriteBatch, SpriteBatchConfig, SpriteInstance};
 
 // ================================================================================================
 // NullBackend — minimal RenderBackend for CPU-only benchmarks
@@ -278,8 +276,7 @@ fn create_sprite_world(n: usize) -> World {
 
     for i in 0..n {
         let entity = world.spawn_empty();
-        let texture: AssetHandle<TextureAsset> =
-            AssetHandle::new((i % texture_count) as u32, 1);
+        let texture: AssetHandle<TextureAsset> = AssetHandle::new((i % texture_count) as u32, 1);
         world.insert(entity, Sprite::new(texture));
         world.insert(
             entity,
@@ -388,7 +385,9 @@ fn bench_vertex_generation(c: &mut Criterion) {
             b.iter(|| {
                 let mut batch = create_batch();
                 for sprite in &instances {
-                    batch.generate_sprite_vertices(sprite, texture_size).unwrap();
+                    batch
+                        .generate_sprite_vertices(sprite, texture_size)
+                        .unwrap();
                 }
                 black_box(batch.vertices.len());
             });
@@ -427,24 +426,17 @@ fn bench_full_cpu_pipeline(c: &mut Criterion) {
 // Criterion Configuration
 // ================================================================================================
 
-criterion_group!(
+criterion_group!(gather_benches, bench_gather_sprites,);
+
+criterion_group!(sort_benches, bench_sort_sprites,);
+
+criterion_group!(vertex_benches, bench_vertex_generation,);
+
+criterion_group!(pipeline_benches, bench_full_cpu_pipeline,);
+
+criterion_main!(
     gather_benches,
-    bench_gather_sprites,
-);
-
-criterion_group!(
     sort_benches,
-    bench_sort_sprites,
-);
-
-criterion_group!(
     vertex_benches,
-    bench_vertex_generation,
-);
-
-criterion_group!(
     pipeline_benches,
-    bench_full_cpu_pipeline,
 );
-
-criterion_main!(gather_benches, sort_benches, vertex_benches, pipeline_benches,);

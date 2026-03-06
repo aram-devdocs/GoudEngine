@@ -326,7 +326,7 @@ mod tests {
 
         // One more frame pushes over 1.0s
         overlay.update(0.016); // total ~0.976s... still under
-        // Need a bit more
+                               // Need a bit more
         overlay.update(0.04); // total now > 1.0s
         assert!(overlay.stats().current_fps > 0.0);
     }

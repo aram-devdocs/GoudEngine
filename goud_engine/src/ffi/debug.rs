@@ -127,10 +127,7 @@ pub extern "C" fn goud_debug_set_fps_update_interval(
 ///
 /// 0 on success, negative on error (including invalid corner value).
 #[no_mangle]
-pub extern "C" fn goud_debug_set_fps_overlay_corner(
-    context_id: GoudContextId,
-    corner: i32,
-) -> i32 {
+pub extern "C" fn goud_debug_set_fps_overlay_corner(context_id: GoudContextId, corner: i32) -> i32 {
     if context_id == GOUD_INVALID_CONTEXT_ID {
         set_last_error(GoudError::InvalidContext);
         return -1;
