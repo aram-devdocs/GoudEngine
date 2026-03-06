@@ -100,10 +100,10 @@ pub struct SparseSet<T> {
     pub(super) values: Vec<T>,
 
     /// Tick at which each component was added, parallel to `dense`/`values`.
-    added_ticks: Vec<u32>,
+    pub(super) added_ticks: Vec<u32>,
 
     /// Tick at which each component was last changed, parallel to `dense`/`values`.
-    changed_ticks: Vec<u32>,
+    pub(super) changed_ticks: Vec<u32>,
 }
 
 impl<T> SparseSet<T> {
@@ -189,46 +189,6 @@ impl<T> SparseSet<T> {
     /// ```
     pub fn insert(&mut self, entity: Entity, value: T) -> Option<T> {
         self.insert_with_tick(entity, value, 0)
-    }
-
-    /// Inserts a value for the given entity, recording the given `change_tick`.
-    ///
-    /// On a new insert both `added_tick` and `changed_tick` are set to
-    /// `change_tick`. On a replacement only `changed_tick` is updated.
-    ///
-    /// If the entity already has a value, the old value is returned.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `entity` is a placeholder.
-    pub fn insert_with_tick(&mut self, entity: Entity, value: T, change_tick: u32) -> Option<T> {
-        assert!(
-            !entity.is_placeholder(),
-            "Cannot insert with placeholder entity"
-        );
-
-        let index = entity.index() as usize;
-
-        // Grow sparse vec if needed
-        if index >= self.sparse.len() {
-            self.sparse.resize(index + 1, None);
-        }
-
-        if let Some(dense_index) = self.sparse[index] {
-            // Entity already has a value - replace it
-            let old_value = std::mem::replace(&mut self.values[dense_index], value);
-            self.changed_ticks[dense_index] = change_tick;
-            Some(old_value)
-        } else {
-            // New entity - add to dense arrays
-            let dense_index = self.dense.len();
-            self.sparse[index] = Some(dense_index);
-            self.dense.push(entity);
-            self.values.push(value);
-            self.added_ticks.push(change_tick);
-            self.changed_ticks.push(change_tick);
-            None
-        }
     }
 
     /// Removes the value for the given entity.
@@ -496,42 +456,6 @@ impl<T> SparseSet<T> {
         self.changed_ticks.reserve(additional);
     }
 
-    /// Returns the added tick for the given entity, if present.
-    #[inline]
-    pub fn get_added_tick(&self, entity: Entity) -> Option<u32> {
-        let dense_index = self.dense_index_of(entity)?;
-        Some(self.added_ticks[dense_index])
-    }
-
-    /// Returns the changed tick for the given entity, if present.
-    #[inline]
-    pub fn get_changed_tick(&self, entity: Entity) -> Option<u32> {
-        let dense_index = self.dense_index_of(entity)?;
-        Some(self.changed_ticks[dense_index])
-    }
-
-    /// Sets the changed tick for the given entity.
-    ///
-    /// Does nothing if the entity is not in the set.
-    #[inline]
-    pub fn set_changed_tick(&mut self, entity: Entity, tick: u32) {
-        if let Some(dense_index) = self.dense_index_of(entity) {
-            self.changed_ticks[dense_index] = tick;
-        }
-    }
-
-    /// Internal helper: returns the dense index for an entity, if present.
-    #[inline]
-    fn dense_index_of(&self, entity: Entity) -> Option<usize> {
-        if entity.is_placeholder() {
-            return None;
-        }
-        let index = entity.index() as usize;
-        if index >= self.sparse.len() {
-            return None;
-        }
-        self.sparse[index]
-    }
 }
 
 impl<T> Default for SparseSet<T> {
