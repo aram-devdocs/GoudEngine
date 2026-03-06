@@ -1,7 +1,7 @@
 //! Component write operations for the FFI layer.
 //!
 //! Provides `goud_component_register_type`, `goud_component_add`, and
-//! `goud_component_remove` — the functions that mutate component state.
+//! `goud_component_remove` -- the functions that mutate component state.
 //! Read-only queries (`has`, `get`, `get_mut`) live in `access.rs`.
 
 use std::collections::HashMap;
@@ -102,64 +102,66 @@ pub unsafe extern "C" fn goud_component_add(
 ) -> GoudResult {
     // Validate inputs
     if data_ptr.is_null() {
-        set_last_error(GoudError::InvalidState(
+        return GoudResult::from_error(GoudError::InvalidState(
             "Component data pointer is null".to_string(),
         ));
-        return GoudResult::err(902); // InternalError
     }
 
     // Look up type info
     let type_info = match get_component_type_info(type_id_hash) {
         Some(info) => info,
         None => {
-            set_last_error(GoudError::ResourceLoadFailed(format!(
+            return GoudResult::from_error(GoudError::ResourceLoadFailed(format!(
                 "Component type {} not registered",
                 type_id_hash
             )));
-            return GoudResult::err(101); // ResourceLoadFailed
         }
     };
 
     // Validate size
     if data_size != type_info.size {
-        set_last_error(GoudError::InvalidState(format!(
+        return GoudResult::from_error(GoudError::InvalidState(format!(
             "Component data size mismatch: expected {}, got {}",
             type_info.size, data_size
         )));
-        return GoudResult::err(902); // InternalError
     }
 
     // Validate context and entity
     if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return GoudResult::err(3); // InvalidContext
+        return GoudResult::from_error(GoudError::InvalidContext);
     }
 
     // Check entity is alive using context registry
     {
         let registry = match get_context_registry().lock() {
             Ok(r) => r,
-            Err(_) => return GoudResult::err(crate::core::error::ERR_INTERNAL_ERROR),
+            Err(_) => {
+                return GoudResult::from_error(GoudError::InternalError(
+                    "Failed to lock context registry".to_string(),
+                ));
+            }
         };
         let context = match registry.get(context_id) {
             Some(ctx) => ctx,
             None => {
-                set_last_error(GoudError::InvalidContext);
-                return GoudResult::err(3);
+                return GoudResult::from_error(GoudError::InvalidContext);
             }
         };
 
         let entity = entity_from_ffi(entity_id);
         if !context.world().is_alive(entity) {
-            set_last_error(GoudError::EntityNotFound);
-            return GoudResult::err(300); // EntityNotFound
+            return GoudResult::from_error(GoudError::EntityNotFound);
         }
     }
 
     // Get or create component storage for this context
     let mut storage_map = match get_context_storage_map() {
         Some(s) => s,
-        None => return GoudResult::err(crate::core::error::ERR_INTERNAL_ERROR),
+        None => {
+            return GoudResult::from_error(GoudError::InternalError(
+                "Failed to access component storage".to_string(),
+            ));
+        }
     };
     let map = storage_map.get_or_insert_with(HashMap::new);
 
@@ -172,10 +174,9 @@ pub unsafe extern "C" fn goud_component_add(
     if storage.insert(entity_id.bits(), data_ptr) {
         GoudResult::ok()
     } else {
-        set_last_error(GoudError::InternalError(
+        GoudResult::from_error(GoudError::InternalError(
             "Failed to allocate component storage".to_string(),
-        ));
-        GoudResult::err(900) // InternalError
+        ))
     }
 }
 
@@ -198,44 +199,48 @@ pub extern "C" fn goud_component_remove(
 ) -> GoudResult {
     // Look up type info to verify the type is registered
     if get_component_type_info(type_id_hash).is_none() {
-        set_last_error(GoudError::ResourceLoadFailed(format!(
+        return GoudResult::from_error(GoudError::ResourceLoadFailed(format!(
             "Component type {} not registered",
             type_id_hash
         )));
-        return GoudResult::err(101); // ResourceLoadFailed
     }
 
     // Validate context
     if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return GoudResult::err(3); // InvalidContext
+        return GoudResult::from_error(GoudError::InvalidContext);
     }
 
     // Check entity is alive using context registry
     {
         let registry = match get_context_registry().lock() {
             Ok(r) => r,
-            Err(_) => return GoudResult::err(crate::core::error::ERR_INTERNAL_ERROR),
+            Err(_) => {
+                return GoudResult::from_error(GoudError::InternalError(
+                    "Failed to lock context registry".to_string(),
+                ));
+            }
         };
         let context = match registry.get(context_id) {
             Some(ctx) => ctx,
             None => {
-                set_last_error(GoudError::InvalidContext);
-                return GoudResult::err(3);
+                return GoudResult::from_error(GoudError::InvalidContext);
             }
         };
 
         let entity = entity_from_ffi(entity_id);
         if !context.world().is_alive(entity) {
-            set_last_error(GoudError::EntityNotFound);
-            return GoudResult::err(300); // EntityNotFound
+            return GoudResult::from_error(GoudError::EntityNotFound);
         }
     }
 
     // Get component storage for this context
     let mut storage_map = match get_context_storage_map() {
         Some(s) => s,
-        None => return GoudResult::err(crate::core::error::ERR_INTERNAL_ERROR),
+        None => {
+            return GoudResult::from_error(GoudError::InternalError(
+                "Failed to access component storage".to_string(),
+            ));
+        }
     };
     let map = match storage_map.as_mut() {
         Some(m) => m,
