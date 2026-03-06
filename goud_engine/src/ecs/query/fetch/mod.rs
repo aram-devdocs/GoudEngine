@@ -45,6 +45,7 @@ mod access;
 mod component_ref;
 mod filters;
 mod impls;
+mod optional;
 mod traits;
 
 #[cfg(test)]
