@@ -121,7 +121,7 @@ fn poll_until_count(server: &mut AssetServer, expected: usize, max_iters: usize)
 // Async loading tests
 // =============================================================================
 
-#[cfg(feature = "native")]
+#[cfg(all(feature = "native", not(feature = "web")))]
 mod async_loading {
     use super::*;
     use std::fs;
