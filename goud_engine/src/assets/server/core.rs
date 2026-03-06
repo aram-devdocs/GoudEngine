@@ -1,9 +1,28 @@
 //! Core `AssetServer` type definition and construction helpers.
 
 use crate::assets::{AssetId, AssetStorage, ErasedAssetLoader};
+#[cfg(feature = "native")]
+use crate::assets::AssetLoadError;
 use std::collections::HashMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
+
+// =============================================================================
+// LoadResult (native-only)
+// =============================================================================
+
+/// Result of an async asset load, sent from a background thread to the main thread.
+#[cfg(feature = "native")]
+pub(super) struct LoadResult {
+    /// Index component of the asset handle.
+    pub(super) handle_index: u32,
+    /// Generation component of the asset handle.
+    pub(super) handle_generation: u32,
+    /// Type identifier for the asset.
+    pub(super) asset_id: AssetId,
+    /// The loaded asset data or an error.
+    pub(super) result: Result<Box<dyn std::any::Any + Send>, AssetLoadError>,
+}
 
 // =============================================================================
 // AssetServer
@@ -54,6 +73,14 @@ pub struct AssetServer {
 
     /// Loader registry by AssetId (for lookup without extension).
     pub(super) loader_by_type: HashMap<AssetId, Box<dyn ErasedAssetLoader>>,
+
+    /// Sender for background load results (native-only).
+    #[cfg(feature = "native")]
+    pub(super) load_sender: std::sync::mpsc::Sender<LoadResult>,
+
+    /// Receiver for background load results (native-only).
+    #[cfg(feature = "native")]
+    pub(super) load_receiver: std::sync::mpsc::Receiver<LoadResult>,
 }
 
 impl AssetServer {
@@ -84,11 +111,18 @@ impl AssetServer {
     /// let server = AssetServer::with_root("game_assets");
     /// ```
     pub fn with_root(root: impl AsRef<Path>) -> Self {
+        #[cfg(feature = "native")]
+        let (load_sender, load_receiver) = std::sync::mpsc::channel();
+
         Self {
             asset_root: root.as_ref().to_path_buf(),
             storage: AssetStorage::new(),
             loaders: HashMap::new(),
             loader_by_type: HashMap::new(),
+            #[cfg(feature = "native")]
+            load_sender,
+            #[cfg(feature = "native")]
+            load_receiver,
         }
     }
 

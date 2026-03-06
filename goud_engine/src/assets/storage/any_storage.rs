@@ -50,6 +50,22 @@ pub trait AnyAssetStorage: Send + Sync {
 
     /// Returns as mutable `Any` for downcasting.
     fn as_any_mut(&mut self) -> &mut dyn Any;
+
+    /// Sets a loaded asset from a type-erased boxed value.
+    ///
+    /// The `boxed` value must downcast to the correct asset type.
+    /// Returns `true` if the asset was successfully set.
+    fn set_loaded_raw(
+        &mut self,
+        index: u32,
+        generation: u32,
+        boxed: Box<dyn std::any::Any + Send>,
+    ) -> bool;
+
+    /// Marks an asset as failed with a type-erased error message.
+    ///
+    /// Returns `true` if the entry was found and updated.
+    fn set_failed_raw(&mut self, index: u32, generation: u32, error: String) -> bool;
 }
 
 // Implement AnyAssetStorage for TypedAssetStorage
@@ -116,5 +132,29 @@ impl<A: Asset> AnyAssetStorage for TypedAssetStorage<A> {
 
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
+    }
+
+    fn set_loaded_raw(
+        &mut self,
+        index: u32,
+        generation: u32,
+        boxed: Box<dyn std::any::Any + Send>,
+    ) -> bool {
+        let handle = AssetHandle::<A>::new(index, generation);
+        match boxed.downcast::<A>() {
+            Ok(asset) => self.set_loaded(&handle, *asset),
+            Err(_) => false,
+        }
+    }
+
+    fn set_failed_raw(&mut self, index: u32, generation: u32, error: String) -> bool {
+        let handle = AssetHandle::<A>::new(index, generation);
+        match self.get_entry_mut(&handle) {
+            Some(entry) => {
+                entry.set_failed(error);
+                true
+            }
+            None => false,
+        }
     }
 }
