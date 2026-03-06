@@ -3,8 +3,8 @@
 use super::{backend::OpenGLBackend, gl_check_debug, ShaderMetadata};
 use crate::core::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::ShaderHandle;
-use std::cell::RefCell;
 use std::collections::HashMap;
+use std::sync::Mutex;
 
 /// Compiles and links a shader program from vertex and fragment shader sources.
 pub(super) fn create_shader(
@@ -91,7 +91,7 @@ pub(super) fn create_shader(
     let handle = backend.shader_allocator.allocate();
     let metadata = ShaderMetadata {
         gl_id: program_id,
-        uniform_locations: RefCell::new(HashMap::new()),
+        uniform_locations: Mutex::new(HashMap::new()),
     };
     backend.shaders.insert(handle, metadata);
 
@@ -162,9 +162,12 @@ pub(super) fn get_uniform_location(
     let metadata = backend.shaders.get(&handle)?;
 
     // Check if we already cached this location
-    if let Some(&location) = metadata.uniform_locations.borrow().get(name) {
-        return if location >= 0 { Some(location) } else { None };
-    }
+    {
+        let cache = metadata.uniform_locations.lock().unwrap();
+        if let Some(&location) = cache.get(name) {
+            return if location >= 0 { Some(location) } else { None };
+        }
+    } // lock dropped here
 
     // Query OpenGL for the location
     let c_name = std::ffi::CString::new(name).ok()?;
@@ -176,7 +179,8 @@ pub(super) fn get_uniform_location(
     // Cache the result (including negative values so we don't query again for missing uniforms)
     metadata
         .uniform_locations
-        .borrow_mut()
+        .lock()
+        .unwrap()
         .insert(name.to_string(), location);
 
     if location >= 0 {
