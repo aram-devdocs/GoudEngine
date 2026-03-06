@@ -18,4 +18,7 @@ cargo clippy ${FMT_PACKAGES} -- -D warnings || exit 1
 echo "Checking layer dependencies..."
 cargo run -p lint-layers || exit 1
 
+echo "Checking .rs file line limits..."
+"$REPO_ROOT/scripts/check-rs-line-limit.sh" --error || exit 1
+
 echo "=== Pre-commit passed ==="
