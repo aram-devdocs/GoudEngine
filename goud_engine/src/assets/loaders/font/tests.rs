@@ -130,6 +130,7 @@ fn test_font_asset_new() {
         FontFormat::Ttf,
         1000,
         95,
+        0,
     );
 
     assert_eq!(asset.data(), &data);
@@ -151,6 +152,7 @@ fn test_font_asset_is_empty() {
         FontFormat::Unknown,
         0,
         0,
+        0,
     );
     assert!(empty.is_empty());
     assert_eq!(empty.size_bytes(), 0);
@@ -165,6 +167,7 @@ fn test_font_asset_size_bytes() {
         FontFormat::Ttf,
         1000,
         50,
+        0,
     );
     assert_eq!(asset.size_bytes(), 100);
 }
@@ -198,6 +201,7 @@ fn test_font_asset_clone() {
         FontFormat::Otf,
         2048,
         200,
+        0,
     );
     let a2 = a1.clone();
     assert_eq!(a1, a2);
@@ -210,6 +214,7 @@ fn test_font_asset_debug() {
         "Debug".to_string(),
         FontStyle::Regular,
         FontFormat::Ttf,
+        0,
         0,
         0,
     );

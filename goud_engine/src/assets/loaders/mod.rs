@@ -20,4 +20,4 @@ pub use shader::{
 
 pub use audio::{AudioAsset, AudioFormat, AudioLoader, AudioSettings};
 
-pub use font::{FontAsset, FontFormat, FontLoader, FontSettings};
+pub use font::{FontAsset, FontFormat, FontLoader, FontSettings, FontStyle};
