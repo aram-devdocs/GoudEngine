@@ -238,8 +238,7 @@ mod cache_filters {
         world.insert(e2, Position { x: 2.0, y: 0.0 });
 
         let uncached: Query<&Position, With<Player>> = Query::new(&world);
-        let cached: Query<&Position, With<Player>> =
-            Query::new(&world).with_cache(&world);
+        let cached: Query<&Position, With<Player>> = Query::new(&world).with_cache(&world);
 
         assert_eq!(uncached.iter(&world).count(), cached.iter(&world).count());
         assert_eq!(cached.iter(&world).count(), 1);
@@ -257,8 +256,7 @@ mod cache_filters {
         world.insert(e2, Position { x: 2.0, y: 0.0 });
 
         let uncached: Query<&Position, Without<Enemy>> = Query::new(&world);
-        let cached: Query<&Position, Without<Enemy>> =
-            Query::new(&world).with_cache(&world);
+        let cached: Query<&Position, Without<Enemy>> = Query::new(&world).with_cache(&world);
 
         assert_eq!(uncached.iter(&world).count(), cached.iter(&world).count());
         assert_eq!(cached.iter(&world).count(), 1);
@@ -272,8 +270,7 @@ mod cache_filters {
         world.insert(e1, Position { x: 1.0, y: 0.0 });
         world.insert(e1, Player);
 
-        let mut query: Query<&Position, With<Player>> =
-            Query::new(&world).with_cache(&world);
+        let mut query: Query<&Position, With<Player>> = Query::new(&world).with_cache(&world);
         assert_eq!(query.iter(&world).count(), 1);
 
         // New archetype: Position + Player + Health
@@ -382,8 +379,7 @@ mod cache_iter_mut {
         let e2 = world.spawn_empty();
         world.insert(e2, Position { x: 2.0, y: 0.0 });
 
-        let query: Query<&mut Position, With<Player>> =
-            Query::new(&world).with_cache(&world);
+        let query: Query<&mut Position, With<Player>> = Query::new(&world).with_cache(&world);
 
         for pos in query.iter_mut(&mut world) {
             pos.x = 99.0;

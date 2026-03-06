@@ -278,7 +278,9 @@ impl<Q: WorldQuery, F: WorldQuery> Query<Q, F> {
         let query_state = &self.query_state;
         let filter_state = &self.filter_state;
 
-        let cache = self.archetype_cache.get_or_insert_with(QueryArchetypeCache::new);
+        let cache = self
+            .archetype_cache
+            .get_or_insert_with(QueryArchetypeCache::new);
         cache.update(count, |id| {
             if let Some(archetype) = archetypes.get(id) {
                 Q::matches_archetype(query_state, archetype)

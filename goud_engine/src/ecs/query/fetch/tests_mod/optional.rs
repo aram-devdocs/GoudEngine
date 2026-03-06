@@ -87,8 +87,7 @@ mod tests {
             world.insert(entity, Position { x: 1.0, y: 2.0 });
 
             let state = <Option<&mut Position>>::init_state(&world);
-            let result =
-                <Option<&mut Position>>::fetch_mut(&state, &mut world, entity);
+            let result = <Option<&mut Position>>::fetch_mut(&state, &mut world, entity);
 
             assert!(result.is_some());
             let inner = result.unwrap();
@@ -105,8 +104,7 @@ mod tests {
             world.insert(entity, Velocity { x: 1.0, y: 2.0 });
 
             let state = <Option<&mut Position>>::init_state(&world);
-            let result =
-                <Option<&mut Position>>::fetch_mut(&state, &mut world, entity);
+            let result = <Option<&mut Position>>::fetch_mut(&state, &mut world, entity);
 
             assert!(result.is_some());
             let inner = result.unwrap();
@@ -120,8 +118,7 @@ mod tests {
             world.insert(entity, Position { x: 1.0, y: 2.0 });
 
             let state = <Option<&mut Position>>::init_state(&world);
-            if let Some(Some(pos)) =
-                <Option<&mut Position>>::fetch_mut(&state, &mut world, entity)
+            if let Some(Some(pos)) = <Option<&mut Position>>::fetch_mut(&state, &mut world, entity)
             {
                 pos.x += 10.0;
                 pos.y += 20.0;
@@ -147,20 +144,15 @@ mod tests {
             let archetype = Archetype::new(ArchetypeId::new(1), components);
 
             let state = <Option<&Position>>::init_state(&World::new());
-            assert!(<Option<&Position>>::matches_archetype(
-                &state, &archetype
-            ));
+            assert!(<Option<&Position>>::matches_archetype(&state, &archetype));
         }
 
         #[test]
         fn test_option_matches_empty_archetype() {
-            let archetype =
-                Archetype::new(ArchetypeId::EMPTY, BTreeSet::new());
+            let archetype = Archetype::new(ArchetypeId::EMPTY, BTreeSet::new());
 
             let state = <Option<&Position>>::init_state(&World::new());
-            assert!(<Option<&Position>>::matches_archetype(
-                &state, &archetype
-            ));
+            assert!(<Option<&Position>>::matches_archetype(&state, &archetype));
         }
 
         #[test]
@@ -170,9 +162,7 @@ mod tests {
             let archetype = Archetype::new(ArchetypeId::new(1), components);
 
             let state = <Option<&Position>>::init_state(&World::new());
-            assert!(<Option<&Position>>::matches_archetype(
-                &state, &archetype
-            ));
+            assert!(<Option<&Position>>::matches_archetype(&state, &archetype));
         }
     }
 
@@ -212,10 +202,8 @@ mod tests {
             world.insert(entity, Position { x: 1.0, y: 2.0 });
             world.insert(entity, Velocity { x: 3.0, y: 4.0 });
 
-            let state =
-                <(&Position, Option<&Velocity>)>::init_state(&world);
-            let result =
-                <(&Position, Option<&Velocity>)>::fetch(&state, &world, entity);
+            let state = <(&Position, Option<&Velocity>)>::init_state(&world);
+            let result = <(&Position, Option<&Velocity>)>::fetch(&state, &world, entity);
 
             assert!(result.is_some());
             let (pos, vel) = result.unwrap();
@@ -230,10 +218,8 @@ mod tests {
             world.insert(entity, Position { x: 1.0, y: 2.0 });
             // No Velocity component
 
-            let state =
-                <(&Position, Option<&Velocity>)>::init_state(&world);
-            let result =
-                <(&Position, Option<&Velocity>)>::fetch(&state, &world, entity);
+            let state = <(&Position, Option<&Velocity>)>::init_state(&world);
+            let result = <(&Position, Option<&Velocity>)>::fetch(&state, &world, entity);
 
             assert!(result.is_some());
             let (pos, vel) = result.unwrap();
@@ -248,10 +234,8 @@ mod tests {
             world.insert(entity, Velocity { x: 3.0, y: 4.0 });
             // No Position component (required)
 
-            let state =
-                <(&Position, Option<&Velocity>)>::init_state(&world);
-            let result =
-                <(&Position, Option<&Velocity>)>::fetch(&state, &world, entity);
+            let state = <(&Position, Option<&Velocity>)>::init_state(&world);
+            let result = <(&Position, Option<&Velocity>)>::fetch(&state, &world, entity);
 
             // Should be None because Position is required and missing
             assert!(result.is_none());
@@ -268,19 +252,16 @@ mod tests {
             world.insert(e2, Position { x: 3.0, y: 4.0 });
             // e2 has no Velocity
 
-            let state =
-                <(&Position, Option<&Velocity>)>::init_state(&world);
+            let state = <(&Position, Option<&Velocity>)>::init_state(&world);
 
             // Both entities should be fetchable
-            let r1 =
-                <(&Position, Option<&Velocity>)>::fetch(&state, &world, e1);
+            let r1 = <(&Position, Option<&Velocity>)>::fetch(&state, &world, e1);
             assert!(r1.is_some());
             let (pos1, vel1) = r1.unwrap();
             assert_eq!(pos1, &Position { x: 1.0, y: 2.0 });
             assert_eq!(vel1, Some(&Velocity { x: 10.0, y: 20.0 }));
 
-            let r2 =
-                <(&Position, Option<&Velocity>)>::fetch(&state, &world, e2);
+            let r2 = <(&Position, Option<&Velocity>)>::fetch(&state, &world, e2);
             assert!(r2.is_some());
             let (pos2, vel2) = r2.unwrap();
             assert_eq!(pos2, &Position { x: 3.0, y: 4.0 });
