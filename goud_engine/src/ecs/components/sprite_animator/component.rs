@@ -56,7 +56,6 @@ impl AnimationClip {
     /// Defaults to `PlaybackMode::Loop`.
     #[inline]
     pub fn new(frames: Vec<Rect>, frame_duration: f32) -> Self {
-        debug_assert!(frame_duration > 0.0, "frame_duration must be positive");
         Self {
             frames,
             frame_duration,
