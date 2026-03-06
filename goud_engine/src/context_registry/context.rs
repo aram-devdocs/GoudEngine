@@ -94,6 +94,24 @@ impl GoudContext {
         Ok(())
     }
 
+    /// Destroys a scene and resets the current scene to default if needed.
+    ///
+    /// If the destroyed scene was the current scene, the current scene is automatically
+    /// reset to the default scene to prevent dangling references.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the scene does not exist or if attempting to destroy
+    /// the default scene.
+    pub fn destroy_scene(&mut self, id: SceneId) -> Result<(), crate::core::error::GoudError> {
+        self.scene_manager.destroy_scene(id)?;
+        // If the destroyed scene was current, reset to default
+        if self.current_scene == id {
+            self.current_scene = self.scene_manager.default_scene();
+        }
+        Ok(())
+    }
+
     /// Returns the generation of this context.
     pub(crate) fn generation(&self) -> u32 {
         self.generation

@@ -238,3 +238,24 @@ fn test_get_current_invalid_context() {
         INVALID_SCENE_ID
     );
 }
+
+#[test]
+fn test_destroy_current_scene_resets_to_default() {
+    let ctx = setup_context();
+    let name = b"temp";
+    // SAFETY: name is a valid UTF-8 byte slice.
+    let scene_id = unsafe { goud_scene_create(ctx, name.as_ptr(), name.len() as u32) };
+    assert_ne!(scene_id, INVALID_SCENE_ID);
+
+    // Set as current
+    let result = goud_scene_set_current(ctx, scene_id);
+    assert!(result.is_ok());
+    assert_eq!(goud_scene_get_current(ctx), scene_id);
+
+    // Destroy it — current should reset to default (0)
+    let result = goud_scene_destroy(ctx, scene_id);
+    assert!(result.is_ok());
+    assert_eq!(goud_scene_get_current(ctx), 0); // default scene ID
+
+    teardown_context(ctx);
+}

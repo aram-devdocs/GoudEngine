@@ -117,7 +117,7 @@ pub extern "C" fn goud_scene_destroy(context_id: GoudContextId, scene_id: u32) -
         }
     };
 
-    match context.scene_manager_mut().destroy_scene(scene_id) {
+    match context.destroy_scene(scene_id) {
         Ok(()) => GoudResult::ok(),
         Err(err) => {
             let code = err.error_code();
