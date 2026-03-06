@@ -3,14 +3,16 @@
 //! Uses a rayon thread pool for background file I/O and parsing, with results
 //! communicated back to the main thread via `std::sync::mpsc` channels.
 
-#[cfg(feature = "native")]
-use super::core::{AssetServer, LoadResult};
-#[cfg(feature = "native")]
+#[cfg(all(feature = "native", not(feature = "web")))]
+use super::core::AssetServer;
+#[cfg(all(feature = "native", not(feature = "web")))]
+use super::core::LoadResult;
+#[cfg(all(feature = "native", not(feature = "web")))]
 use crate::assets::{Asset, AssetHandle, AssetId, AssetLoadError, AssetPath, LoadContext};
-#[cfg(feature = "native")]
+#[cfg(all(feature = "native", not(feature = "web")))]
 use std::path::Path;
 
-#[cfg(feature = "native")]
+#[cfg(all(feature = "native", not(feature = "web")))]
 impl AssetServer {
     /// Loads an asset asynchronously using a background thread.
     ///
@@ -99,7 +101,10 @@ impl AssetServer {
 
         handle
     }
+}
 
+#[cfg(feature = "native")]
+impl super::core::AssetServer {
     /// Drains completed async load results and applies them to asset storage.
     ///
     /// This must be called from the main thread (typically once per frame) to

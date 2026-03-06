@@ -74,8 +74,8 @@ pub struct AssetServer {
     /// Loader registry by AssetId (for lookup without extension).
     pub(super) loader_by_type: HashMap<AssetId, Box<dyn ErasedAssetLoader>>,
 
-    /// Sender for background load results (native-only).
-    #[cfg(feature = "native")]
+    /// Sender for background load results (used by native load_async).
+    #[cfg(all(feature = "native", not(feature = "web")))]
     pub(super) load_sender: std::sync::mpsc::Sender<LoadResult>,
 
     /// Receiver for background load results (native-only).
@@ -111,15 +111,17 @@ impl AssetServer {
     /// let server = AssetServer::with_root("game_assets");
     /// ```
     pub fn with_root(root: impl AsRef<Path>) -> Self {
-        #[cfg(feature = "native")]
+        #[cfg(all(feature = "native", not(feature = "web")))]
         let (load_sender, load_receiver) = std::sync::mpsc::channel();
+        #[cfg(all(feature = "native", feature = "web"))]
+        let (_load_sender, load_receiver) = std::sync::mpsc::channel::<LoadResult>();
 
         Self {
             asset_root: root.as_ref().to_path_buf(),
             storage: AssetStorage::new(),
             loaders: HashMap::new(),
             loader_by_type: HashMap::new(),
-            #[cfg(feature = "native")]
+            #[cfg(all(feature = "native", not(feature = "web")))]
             load_sender,
             #[cfg(feature = "native")]
             load_receiver,
