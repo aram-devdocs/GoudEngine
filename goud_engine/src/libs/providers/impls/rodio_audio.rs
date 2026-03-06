@@ -246,109 +246,83 @@ mod tests {
     #[test]
     fn test_rodio_audio_construction() {
         // May fail in CI without an audio device. That is expected.
-        match RodioAudioProvider::new() {
-            Ok(provider) => {
-                assert_eq!(provider.name(), "rodio");
-                assert_eq!(provider.version(), "1.0.0");
-            }
-            Err(_) => {
-                // No audio device available, skip test.
-            }
+        if let Ok(provider) = RodioAudioProvider::new() {
+            assert_eq!(provider.name(), "rodio");
+            assert_eq!(provider.version(), "1.0.0");
         }
     }
 
     #[test]
     fn test_rodio_audio_capabilities() {
-        match RodioAudioProvider::new() {
-            Ok(provider) => {
-                let caps = provider.audio_capabilities();
-                assert!(!caps.supports_spatial);
-                assert_eq!(caps.max_channels, 32);
-            }
-            Err(_) => {}
+        if let Ok(provider) = RodioAudioProvider::new() {
+            let caps = provider.audio_capabilities();
+            assert!(!caps.supports_spatial);
+            assert_eq!(caps.max_channels, 32);
         }
     }
 
     #[test]
     fn test_rodio_audio_lifecycle() {
-        match RodioAudioProvider::new() {
-            Ok(mut provider) => {
-                assert!(provider.init().is_ok());
-                assert!(provider.update(0.016).is_ok());
-                provider.shutdown();
-            }
-            Err(_) => {}
+        if let Ok(mut provider) = RodioAudioProvider::new() {
+            assert!(provider.init().is_ok());
+            assert!(provider.update(0.016).is_ok());
+            provider.shutdown();
         }
     }
 
     #[test]
     fn test_rodio_audio_master_volume() {
-        match RodioAudioProvider::new() {
-            Ok(mut provider) => {
-                provider.set_master_volume(0.5);
-                assert_eq!(provider.master_volume, 0.5);
+        if let Ok(mut provider) = RodioAudioProvider::new() {
+            provider.set_master_volume(0.5);
+            assert_eq!(provider.master_volume, 0.5);
 
-                // Clamp to [0, 1]
-                provider.set_master_volume(2.0);
-                assert_eq!(provider.master_volume, 1.0);
+            // Clamp to [0, 1]
+            provider.set_master_volume(2.0);
+            assert_eq!(provider.master_volume, 1.0);
 
-                provider.set_master_volume(-1.0);
-                assert_eq!(provider.master_volume, 0.0);
-            }
-            Err(_) => {}
+            provider.set_master_volume(-1.0);
+            assert_eq!(provider.master_volume, 0.0);
         }
     }
 
     #[test]
     fn test_rodio_audio_channel_volume() {
-        match RodioAudioProvider::new() {
-            Ok(mut provider) => {
-                provider.set_channel_volume(AudioChannel::Music, 0.7);
-                assert_eq!(
-                    provider.channel_volumes.get(&AudioChannel::Music),
-                    Some(&0.7)
-                );
-            }
-            Err(_) => {}
+        if let Ok(mut provider) = RodioAudioProvider::new() {
+            provider.set_channel_volume(AudioChannel::Music, 0.7);
+            assert_eq!(
+                provider.channel_volumes.get(&AudioChannel::Music),
+                Some(&0.7)
+            );
         }
     }
 
     #[test]
     fn test_rodio_audio_spatial_stubs() {
-        match RodioAudioProvider::new() {
-            Ok(mut provider) => {
-                provider.set_listener_position([1.0, 2.0, 3.0]);
-                assert!(provider
-                    .set_source_position(PlaybackId(0), [4.0, 5.0, 6.0])
-                    .is_ok());
-            }
-            Err(_) => {}
+        if let Ok(mut provider) = RodioAudioProvider::new() {
+            provider.set_listener_position([1.0, 2.0, 3.0]);
+            assert!(provider
+                .set_source_position(PlaybackId(0), [4.0, 5.0, 6.0])
+                .is_ok());
         }
     }
 
     #[test]
     fn test_rodio_audio_play_creates_player() {
-        match RodioAudioProvider::new() {
-            Ok(mut provider) => {
-                let id = provider
-                    .play(SoundHandle(1), &PlayConfig::default())
-                    .unwrap();
-                assert_eq!(id, PlaybackId(0));
-                assert!(provider.stop(id).is_ok());
-            }
-            Err(_) => {}
+        if let Ok(mut provider) = RodioAudioProvider::new() {
+            let id = provider
+                .play(SoundHandle(1), &PlayConfig::default())
+                .unwrap();
+            assert_eq!(id, PlaybackId(0));
+            assert!(provider.stop(id).is_ok());
         }
     }
 
     #[test]
     fn test_rodio_audio_debug_format() {
-        match RodioAudioProvider::new() {
-            Ok(provider) => {
-                let debug = format!("{:?}", provider);
-                assert!(debug.contains("RodioAudioProvider"));
-                assert!(debug.contains("master_volume"));
-            }
-            Err(_) => {}
+        if let Ok(provider) = RodioAudioProvider::new() {
+            let debug = format!("{:?}", provider);
+            assert!(debug.contains("RodioAudioProvider"));
+            assert!(debug.contains("master_volume"));
         }
     }
 }
