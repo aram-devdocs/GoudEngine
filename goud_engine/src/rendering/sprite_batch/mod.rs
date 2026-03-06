@@ -51,3 +51,4 @@ mod tests;
 
 pub use batch::SpriteBatch;
 pub use config::SpriteBatchConfig;
+pub use types::{SpriteBatchEntry, SpriteInstance, SpriteVertex};
