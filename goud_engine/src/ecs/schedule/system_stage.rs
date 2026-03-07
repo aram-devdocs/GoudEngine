@@ -154,6 +154,7 @@ impl SystemStage {
         self.systems.clear();
         self.system_indices.clear();
         self.orderings.clear();
+        self.named_sets = NamedSystemSets::new();
         self.initialized = false;
         self.order_dirty = false;
     }

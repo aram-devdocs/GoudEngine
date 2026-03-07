@@ -69,7 +69,7 @@ impl fmt::Display for DefaultSystemSet {
 
 impl SystemLabel for DefaultSystemSet {
     fn label_id(&self) -> TypeId {
-        // Use a per-variant discriminated type so each variant is unique.
+        // All variants share a type marker; equality is distinguished by name.
         TypeId::of::<(DefaultSystemSet, u8)>()
     }
 

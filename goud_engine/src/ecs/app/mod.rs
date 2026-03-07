@@ -201,6 +201,10 @@ impl App {
     {
         for (core_stage, system_stage) in &mut self.stages {
             if *core_stage == stage {
+                assert!(
+                    system_stage.get_set(set_name).is_some(),
+                    "System set '{set_name}' is not registered in stage {stage:?}"
+                );
                 let id = system_stage.add_system(system);
                 system_stage.add_system_to_set(set_name, id);
                 return self;

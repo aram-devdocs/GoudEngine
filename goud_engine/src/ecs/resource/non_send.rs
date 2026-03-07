@@ -173,11 +173,7 @@ impl NonSendResources {
     /// Records the current thread as the "main" thread for access validation.
     #[inline]
     pub fn new() -> Self {
-        Self {
-            data: HashMap::new(),
-            _marker: NonSendMarker::default(),
-            main_thread_id: std::thread::current().id(),
-        }
+        Self::default()
     }
 
     /// Returns the thread ID this container was created on.
