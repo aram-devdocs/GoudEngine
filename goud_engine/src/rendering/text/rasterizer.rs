@@ -10,7 +10,7 @@ pub struct GlyphMetrics {
     pub advance_width: f32,
     /// Horizontal bearing from the origin to the left edge of the glyph.
     pub bearing_x: f32,
-    /// Vertical bearing from the baseline to the top edge of the glyph.
+    /// Y-offset of the glyph bounding box minimum (fontdue ymin).
     pub bearing_y: f32,
     /// Rasterized glyph width in pixels.
     pub width: f32,

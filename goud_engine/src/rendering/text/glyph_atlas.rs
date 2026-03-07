@@ -88,7 +88,7 @@ impl GlyphAtlas {
                     });
                 }
                 None => {
-                    atlas_size = next_power_of_two(atlas_size + 1);
+                    atlas_size = (atlas_size + 1).next_power_of_two();
                 }
             }
         }
@@ -201,11 +201,6 @@ impl GlyphAtlas {
     }
 }
 
-/// Returns the next power-of-two >= `n`.
-fn next_power_of_two(n: u32) -> u32 {
-    n.next_power_of_two()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -316,11 +311,4 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_next_power_of_two_values() {
-        assert_eq!(next_power_of_two(1), 1);
-        assert_eq!(next_power_of_two(3), 4);
-        assert_eq!(next_power_of_two(256), 256);
-        assert_eq!(next_power_of_two(257), 512);
-    }
 }

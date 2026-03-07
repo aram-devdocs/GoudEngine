@@ -45,7 +45,7 @@ impl GlyphAtlasCache {
         font_handle: AssetHandle<FontAsset>,
         size_px: f32,
     ) -> Result<&GlyphAtlas, String> {
-        let size_key = size_px as u32;
+        let size_key = size_px.round() as u32;
         let key = (font_handle, size_key);
 
         if let Entry::Vacant(e) = self.cache.entry(key) {
@@ -54,7 +54,10 @@ impl GlyphAtlasCache {
             e.insert(atlas);
         }
 
-        Ok(self.cache.get(&key).expect("just inserted"))
+        // SAFETY: we just ensured the key exists above (either pre-existing or just inserted).
+        self.cache
+            .get(&key)
+            .ok_or_else(|| "internal error: cache entry missing after insertion".to_string())
     }
 
     /// Removes all cached atlases for the given font handle (all sizes).
