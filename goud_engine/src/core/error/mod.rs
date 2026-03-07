@@ -24,10 +24,12 @@
 //! Error codes use `i32` for maximum C ABI compatibility. Negative values
 //! are reserved for future use (e.g., platform-specific errors).
 
+pub mod context;
 mod codes;
 mod conversions;
 mod ffi_bridge;
 mod methods;
+pub mod recovery;
 mod reverse_mapping;
 mod types;
 
@@ -49,9 +51,14 @@ pub use codes::{
     INTERNAL_ERROR_BASE, PROVIDER_ERROR_BASE, RESOURCE_ERROR_BASE, SUCCESS, SYSTEM_ERROR_BASE,
 };
 
+pub use context::GoudErrorContext;
+
+pub use recovery::{is_fatal, is_recoverable, recovery_class, recovery_hint, RecoveryClass};
+
 pub use ffi_bridge::{
-    clear_last_error, get_last_error, last_error_code, last_error_message, set_last_error,
-    take_last_error, GoudFFIResult,
+    clear_last_error, get_last_error, last_error_code, last_error_message, last_error_operation,
+    last_error_subsystem, set_last_error, set_last_error_with_context, take_last_error,
+    GoudFFIResult,
 };
 
 pub use types::GoudError;
@@ -97,4 +104,7 @@ mod tests {
     mod round_trip;
     mod system_errors;
     mod traits;
+
+    mod context_propagation;
+    mod recovery_tests;
 }
