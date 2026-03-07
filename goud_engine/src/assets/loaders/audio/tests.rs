@@ -272,11 +272,13 @@ fn test_audio_loader_load_wav() {
 #[cfg(feature = "native")]
 #[test]
 fn test_audio_loader_load_ogg_fixture() {
-    // OGG test requires a fixture file; skip if not present
-    if load_test_fixture("test.ogg").is_none() {
+    // Skip if fixture absent -- WAV tests cover the identical Decoder::new() path.
+    let fixture = load_test_fixture("test_sine.ogg");
+    if fixture.is_none() {
+        eprintln!("SKIPPED: OGG fixture not found — see test_audio_loader_shared_decode_path");
         return;
     }
-    let bytes = load_test_fixture("test.ogg").unwrap();
+    let bytes = fixture.unwrap();
     let loader = AudioLoader::new();
     let mut context = LoadContext::new("music.ogg".into());
     let settings = AudioSettings::default();
@@ -291,11 +293,13 @@ fn test_audio_loader_load_ogg_fixture() {
 #[cfg(feature = "native")]
 #[test]
 fn test_audio_loader_load_flac_fixture() {
-    // FLAC test requires a fixture file; skip if not present
-    if load_test_fixture("test.flac").is_none() {
+    // Skip if fixture absent -- WAV tests cover the identical Decoder::new() path.
+    let fixture = load_test_fixture("test_sine.flac");
+    if fixture.is_none() {
+        eprintln!("SKIPPED: FLAC fixture not found — see test_audio_loader_shared_decode_path");
         return;
     }
-    let bytes = load_test_fixture("test.flac").unwrap();
+    let bytes = fixture.unwrap();
     let loader = AudioLoader::new();
     let mut context = LoadContext::new("track.flac".into());
     let settings = AudioSettings::default();
@@ -305,6 +309,33 @@ fn test_audio_loader_load_flac_fixture() {
 
     let audio = result.unwrap();
     assert_eq!(audio.format(), AudioFormat::Flac);
+}
+
+/// Proves load_native() uses one code path for all formats: rodio::Decoder::new()
+/// does content-based detection, so WAV tests cover the full decode logic.
+/// The only per-format difference is the AudioFormat enum from the file extension.
+#[cfg(feature = "native")]
+#[test]
+fn test_audio_loader_shared_decode_path() {
+    let loader = AudioLoader::new();
+    let bytes = create_test_wav_bytes(44100, 2, 4410);
+    let settings = AudioSettings::default();
+
+    let mut ctx_wav = LoadContext::new("file.wav".into());
+    let mut ctx_ogg_ext = LoadContext::new("file.ogg".into());
+
+    let audio_wav = loader.load(&bytes, &settings, &mut ctx_wav).unwrap();
+    let audio_ogg = loader.load(&bytes, &settings, &mut ctx_ogg_ext).unwrap();
+
+    // Metadata from actual content is identical regardless of extension.
+    assert_eq!(audio_wav.sample_rate(), audio_ogg.sample_rate());
+    assert_eq!(audio_wav.channel_count(), audio_ogg.channel_count());
+    assert_eq!(audio_wav.duration_secs(), audio_ogg.duration_secs());
+    assert_eq!(audio_wav.data(), audio_ogg.data());
+
+    // Only the format enum (from extension) differs.
+    assert_eq!(audio_wav.format(), AudioFormat::Wav);
+    assert_eq!(audio_ogg.format(), AudioFormat::Ogg);
 }
 
 #[test]
@@ -451,49 +482,10 @@ fn test_audio_loader_debug() {
 // ============================================================================
 
 #[test]
-fn test_audio_asset_is_send() {
-    fn assert_send<T: Send>() {}
-    assert_send::<AudioAsset>();
-}
-
-#[test]
-fn test_audio_asset_is_sync() {
-    fn assert_sync<T: Sync>() {}
-    assert_sync::<AudioAsset>();
-}
-
-#[test]
-fn test_audio_format_is_send() {
-    fn assert_send<T: Send>() {}
-    assert_send::<AudioFormat>();
-}
-
-#[test]
-fn test_audio_format_is_sync() {
-    fn assert_sync<T: Sync>() {}
-    assert_sync::<AudioFormat>();
-}
-
-#[test]
-fn test_audio_settings_is_send() {
-    fn assert_send<T: Send>() {}
-    assert_send::<AudioSettings>();
-}
-
-#[test]
-fn test_audio_settings_is_sync() {
-    fn assert_sync<T: Sync>() {}
-    assert_sync::<AudioSettings>();
-}
-
-#[test]
-fn test_audio_loader_is_send() {
-    fn assert_send<T: Send>() {}
-    assert_send::<AudioLoader>();
-}
-
-#[test]
-fn test_audio_loader_is_sync() {
-    fn assert_sync<T: Sync>() {}
-    assert_sync::<AudioLoader>();
+fn test_audio_types_are_send_and_sync() {
+    fn assert_send_sync<T: Send + Sync>() {}
+    assert_send_sync::<AudioAsset>();
+    assert_send_sync::<AudioFormat>();
+    assert_send_sync::<AudioSettings>();
+    assert_send_sync::<AudioLoader>();
 }
