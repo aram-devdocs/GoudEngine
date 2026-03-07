@@ -1,18 +1,32 @@
 //! OpenGL render state management: frame control, clear, viewport, depth, blending, culling.
+//! Also wires up sub-trait implementations that forward to submodule helpers.
 
 use super::{
-    super::{BackendInfo, BlendFactor, CullFace, RenderBackend},
+    super::{
+        BackendInfo, BlendFactor, BufferOps, ClearOps, CullFace, DrawOps, FrameOps, RenderBackend,
+        ShaderOps, StateOps, TextureOps,
+    },
     backend::OpenGLBackend,
     conversions, gl_check_debug,
 };
 use crate::libs::error::GoudResult;
 use crate::libs::graphics::backend::types::{DepthFunc, FrontFace};
 
+// ============================================================================
+// RenderBackend (supertrait -- lifecycle & info only)
+// ============================================================================
+
 impl RenderBackend for OpenGLBackend {
     fn info(&self) -> &BackendInfo {
         &self.info
     }
+}
 
+// ============================================================================
+// FrameOps
+// ============================================================================
+
+impl FrameOps for OpenGLBackend {
     fn begin_frame(&mut self) -> GoudResult<()> {
         // OpenGL doesn't need explicit frame begin
         Ok(())
@@ -23,7 +37,13 @@ impl RenderBackend for OpenGLBackend {
         // Swap buffers is handled by windowing system
         Ok(())
     }
+}
 
+// ============================================================================
+// ClearOps
+// ============================================================================
+
+impl ClearOps for OpenGLBackend {
     fn set_clear_color(&mut self, r: f32, g: f32, b: f32, a: f32) {
         self.clear_color = [r, g, b, a];
         // SAFETY: RGBA floats in [0.0, 1.0] are valid arguments for ClearColor.
@@ -48,7 +68,13 @@ impl RenderBackend for OpenGLBackend {
         }
         gl_check_debug!("clear_depth");
     }
+}
 
+// ============================================================================
+// StateOps
+// ============================================================================
+
+impl StateOps for OpenGLBackend {
     fn set_viewport(&mut self, x: i32, y: i32, width: u32, height: u32) {
         // SAFETY: x, y are signed integers and width/height are cast from valid u32 values.
         unsafe {
@@ -172,19 +198,13 @@ impl RenderBackend for OpenGLBackend {
         }
         gl_check_debug!("set_line_width");
     }
+}
 
-    // Buffer, texture, shader, draw-call and vertex-attribute methods are implemented
-    // in their respective submodules via separate `impl RenderBackend for OpenGLBackend`
-    // blocks in buffer_ops.rs, texture_ops.rs, shader_ops.rs, and draw_calls.rs.
-    //
-    // Rust allows splitting trait implementations across multiple files as long as
-    // the trait impl block is declared only once. We use a single impl block here
-    // and forward to helper functions defined in the other modules.
+// ============================================================================
+// BufferOps — forwarded to buffer_ops module
+// ============================================================================
 
-    // ============================================================================
-    // Buffer Operations — forwarded to buffer_ops
-    // ============================================================================
-
+impl BufferOps for OpenGLBackend {
     fn create_buffer(
         &mut self,
         buffer_type: crate::libs::graphics::backend::types::BufferType,
@@ -231,11 +251,13 @@ impl RenderBackend for OpenGLBackend {
     fn unbind_buffer(&mut self, buffer_type: crate::libs::graphics::backend::types::BufferType) {
         super::buffer_ops::unbind_buffer(self, buffer_type)
     }
+}
 
-    // ============================================================================
-    // Texture Operations — forwarded to texture_ops
-    // ============================================================================
+// ============================================================================
+// TextureOps — forwarded to texture_ops module
+// ============================================================================
 
+impl TextureOps for OpenGLBackend {
     fn create_texture(
         &mut self,
         width: u32,
@@ -292,11 +314,13 @@ impl RenderBackend for OpenGLBackend {
     fn unbind_texture(&mut self, unit: u32) {
         super::texture_ops::unbind_texture(self, unit)
     }
+}
 
-    // ============================================================================
-    // Shader Operations — forwarded to shader_ops
-    // ============================================================================
+// ============================================================================
+// ShaderOps — forwarded to shader_ops module
+// ============================================================================
 
+impl ShaderOps for OpenGLBackend {
     fn create_shader(
         &mut self,
         vertex_src: &str,
@@ -358,11 +382,13 @@ impl RenderBackend for OpenGLBackend {
     fn set_uniform_mat4(&mut self, location: i32, matrix: &[f32; 16]) {
         super::shader_ops::set_uniform_mat4(location, matrix)
     }
+}
 
-    // ============================================================================
-    // Vertex Array & Draw Calls — forwarded to draw_calls
-    // ============================================================================
+// ============================================================================
+// DrawOps — forwarded to draw_calls module
+// ============================================================================
 
+impl DrawOps for OpenGLBackend {
     fn set_vertex_attributes(
         &mut self,
         layout: &crate::libs::graphics::backend::types::VertexLayout,

@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from sdk_common import (
-    HEADER_COMMENT, SDKS_DIR, load_schema, load_ffi_mapping,
+    HEADER_COMMENT, SDKS_DIR, load_schema, load_ffi_mapping, load_errors,
     to_pascal, to_snake, write_generated, CSHARP_TYPES, CSHARP_FFI_TYPES,
 )
 
@@ -1222,6 +1222,197 @@ def gen_engine_config():
     write_generated(OUT / "Core" / "EngineConfig.g.cs", "\n".join(lines))
 
 
+def gen_errors():
+    categories, codes = load_errors(schema)
+    if not categories:
+        return
+
+    lines = [
+        f"// {HEADER_COMMENT}",
+        "",
+        "using System;",
+        "using System.Runtime.InteropServices;",
+        "using System.Text;",
+        "",
+        f"namespace {NS}",
+        "{",
+        "    /// <summary>",
+        "    /// Recovery classification for engine errors.",
+        "    /// Matches the Rust RecoveryClass enum values returned by",
+        "    /// goud_error_recovery_class.",
+        "    /// </summary>",
+        "    public enum RecoveryClass",
+        "    {",
+        "        Recoverable = 0,",
+        "        Fatal = 1,",
+        "        Degraded = 2,",
+        "    }",
+        "",
+        "    /// <summary>",
+        "    /// Base exception for all GoudEngine errors. Carries the numeric error",
+        "    /// code, human-readable category, subsystem/operation context, and",
+        "    /// recovery information retrieved from the Rust FFI layer.",
+        "    /// </summary>",
+        "    public class GoudException : Exception",
+        "    {",
+        "        public int ErrorCode { get; }",
+        "        public string Category { get; }",
+        "        public string Subsystem { get; }",
+        "        public string Operation { get; }",
+        "        public RecoveryClass Recovery { get; }",
+        "        public string RecoveryHint { get; }",
+        "",
+        "        public GoudException(",
+        "            int errorCode,",
+        "            string message,",
+        "            string category,",
+        "            string subsystem,",
+        "            string operation,",
+        "            RecoveryClass recovery,",
+        "            string recoveryHint",
+        "        ) : base(message)",
+        "        {",
+        "            ErrorCode = errorCode;",
+        "            Category = category;",
+        "            Subsystem = subsystem;",
+        "            Operation = operation;",
+        "            Recovery = recovery;",
+        "            RecoveryHint = recoveryHint;",
+        "        }",
+        "",
+        "        /// <summary>",
+        "        /// Queries all FFI error functions and constructs the appropriate",
+        "        /// typed exception subclass based on the error code range.",
+        "        /// Returns null if no error is set (code == 0).",
+        "        /// </summary>",
+        "        public static GoudException? FromLastError()",
+        "        {",
+        "            int code = NativeMethods.goud_last_error_code();",
+        "            if (code == 0)",
+        "                return null;",
+        "",
+        "            string message = ReadStringFromFfi(NativeMethods.goud_last_error_message);",
+        "            string subsystem = ReadStringFromFfi(NativeMethods.goud_last_error_subsystem);",
+        "            string operation = ReadStringFromFfi(NativeMethods.goud_last_error_operation);",
+        "",
+        "            int recoveryRaw = NativeMethods.goud_error_recovery_class(code);",
+        "            var recovery = recoveryRaw switch",
+        "            {",
+        "                1 => RecoveryClass.Fatal,",
+        "                2 => RecoveryClass.Degraded,",
+        "                _ => RecoveryClass.Recoverable,",
+        "            };",
+        "",
+        "            string hint = ReadHintFromFfi(code);",
+        "            string category = CategoryFromCode(code);",
+        "",
+        "            return CreateTyped(",
+        "                code, message, category, subsystem, operation, recovery, hint",
+        "            );",
+        "        }",
+        "",
+        "        private static string CategoryFromCode(int code)",
+        "        {",
+        "            return code switch",
+        "            {",
+    ]
+
+    # Build the switch arms from categories, sorted by range_start descending
+    sorted_cats = sorted(categories, key=lambda c: c["range_start"], reverse=True)
+    for cat in sorted_cats:
+        lines.append(f'                >= {cat["range_start"]} => "{cat["name"]}",')
+    lines += [
+        '                _ => "Unknown",',
+        "            };",
+        "        }",
+        "",
+        "        private static GoudException CreateTyped(",
+        "            int code,",
+        "            string message,",
+        "            string category,",
+        "            string subsystem,",
+        "            string operation,",
+        "            RecoveryClass recovery,",
+        "            string hint",
+        "        )",
+        "        {",
+        "            return category switch",
+        "            {",
+    ]
+
+    for cat in categories:
+        cls_name = cat["base_class"].replace("Error", "Exception")
+        lines.append(
+            f'                "{cat["name"]}" => new {cls_name}('
+        )
+        lines.append(
+            "                    code, message, subsystem, operation, recovery, hint),"
+        )
+
+    lines += [
+        "                _ => new GoudException(",
+        "                    code, message, category, subsystem, operation, recovery, hint),",
+        "            };",
+        "        }",
+        "",
+        "        // Delegate type matching goud_last_error_message / subsystem / operation",
+        "        private delegate int BufferFfiCall(IntPtr buf, nuint bufLen);",
+        "",
+        "        private static string ReadStringFromFfi(BufferFfiCall ffiCall)",
+        "        {",
+        "            var buf = new byte[256];",
+        "            unsafe",
+        "            {",
+        "                fixed (byte* ptr = buf)",
+        "                {",
+        "                    int written = ffiCall((IntPtr)ptr, (nuint)buf.Length);",
+        "                    if (written <= 0)",
+        "                        return string.Empty;",
+        "                    return Encoding.UTF8.GetString(buf, 0, written);",
+        "                }",
+        "            }",
+        "        }",
+        "",
+        "        // Delegate for goud_error_recovery_hint (takes code + buffer)",
+        "        private static string ReadHintFromFfi(int code)",
+        "        {",
+        "            var buf = new byte[256];",
+        "            unsafe",
+        "            {",
+        "                fixed (byte* ptr = buf)",
+        "                {",
+        "                    int written = NativeMethods.goud_error_recovery_hint(",
+        "                        code, (IntPtr)ptr, (nuint)buf.Length);",
+        "                    if (written <= 0)",
+        "                        return string.Empty;",
+        "                    return Encoding.UTF8.GetString(buf, 0, written);",
+        "                }",
+        "            }",
+        "        }",
+        "    }",
+        "",
+    ]
+
+    # Generate category subclasses
+    for cat in categories:
+        cls_name = cat["base_class"].replace("Error", "Exception")
+        lines += [
+            f'    public class {cls_name} : GoudException',
+            "    {",
+            f"        public {cls_name}(",
+            "            int code, string message, string subsystem,",
+            "            string operation, RecoveryClass recovery, string hint",
+            f'        ) : base(code, message, "{cat["name"]}", subsystem, operation, recovery, hint) {{ }}',
+            "    }",
+            "",
+        ]
+
+    lines.append("}")
+    lines.append("")
+
+    write_generated(OUT / "Core" / "Errors.g.cs", "\n".join(lines))
+
+
 if __name__ == "__main__":
     print("Generating C# SDK...")
     gen_native_methods()
@@ -1232,4 +1423,5 @@ if __name__ == "__main__":
     gen_game()
     gen_context()
     gen_engine_config()
+    gen_errors()
     print("C# SDK generation complete.")

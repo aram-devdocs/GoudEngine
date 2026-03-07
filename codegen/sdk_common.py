@@ -186,6 +186,17 @@ def map_type(schema_type: str, lang_map: dict) -> str:
     return mapped
 
 
+def load_errors(schema: dict) -> tuple[list[dict], list[dict]]:
+    """Extract error categories and codes from the schema.
+
+    Returns (categories, codes) where each is a list of dicts
+    as defined in the schema's ``errors`` section.  Returns empty
+    lists if the section is absent.
+    """
+    errors = schema.get("errors", {})
+    return errors.get("categories", []), errors.get("codes", [])
+
+
 def write_generated(path: Path, content: str):
     """Write a generated file, creating parent dirs as needed."""
     path.parent.mkdir(parents=True, exist_ok=True)

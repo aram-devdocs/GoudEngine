@@ -95,6 +95,7 @@
 //! - No type confusion (handles are strongly typed)
 //! - No data races (contexts are Send+Sync, errors are thread-local)
 
+pub mod animation;
 pub mod collision;
 pub mod component;
 pub mod component_sprite;
@@ -108,6 +109,9 @@ pub mod entity;
 pub mod error;
 #[cfg(feature = "native")]
 pub mod input;
+pub mod network;
+pub mod physics;
+pub mod plugin;
 #[cfg(feature = "native")]
 pub mod renderer;
 #[cfg(feature = "native")]

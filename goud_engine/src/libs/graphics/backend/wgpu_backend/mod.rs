@@ -16,7 +16,8 @@ use super::{
         BufferHandle, BufferMarker, BufferType, DepthFunc, FrontFace, PrimitiveTopology,
         ShaderHandle, ShaderMarker, TextureHandle, TextureMarker, VertexLayout,
     },
-    BackendCapabilities, BackendInfo, BlendFactor, CullFace, RenderBackend,
+    BackendCapabilities, BackendInfo, BlendFactor, BufferOps, ClearOps, CullFace, DrawOps,
+    FrameOps, RenderBackend, ShaderOps, StateOps, TextureOps,
 };
 use crate::core::handle::HandleAllocator;
 use std::collections::HashMap;

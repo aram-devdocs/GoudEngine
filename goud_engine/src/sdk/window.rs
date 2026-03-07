@@ -30,7 +30,7 @@
 use super::GoudGame;
 use crate::context_registry::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::core::error::{set_last_error, GoudError, GoudResult};
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::{ClearOps, StateOps};
 
 // =============================================================================
 // Window Lifecycle (static functions for FFI context creation/destruction)

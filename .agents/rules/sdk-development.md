@@ -46,3 +46,11 @@ After SDK changes, run both:
 - Uses `ctypes` for FFI bindings
 - `generated/_ffi.py` declares all ctypes signatures (`argtypes`, `restype`)
 - Handles library loading for macOS (`.dylib`) and Linux (`.so`)
+
+## Error Types
+
+Error types are generated from the `errors` section of `codegen/goud_sdk.schema.json`.
+Never hand-write error classes. The codegen generates:
+- C#: `generated/Core/Errors.g.cs`
+- Python: `generated/_errors.py`
+- TypeScript: `src/generated/errors.g.ts`

@@ -20,7 +20,7 @@ import {
   GoudProviderError,
   GoudInternalError,
   RecoveryClass,
-} from '../errors.js';
+} from '../dist/generated/errors.g.js';
 
 describe('Error class imports', () => {
   it('all error classes are defined', () => {

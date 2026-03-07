@@ -72,7 +72,7 @@ pub unsafe extern "C" fn goud_texture_load(
     // Create GPU texture
     let result = with_window_state(context_id, |state| {
         use crate::libs::graphics::backend::types::{TextureFilter, TextureFormat, TextureWrap};
-        use crate::libs::graphics::backend::RenderBackend;
+        use crate::libs::graphics::backend::TextureOps;
 
         match state.backend_mut().create_texture(
             width,
@@ -117,7 +117,7 @@ pub extern "C" fn goud_texture_destroy(
 
     with_window_state(context_id, |state| {
         use crate::libs::graphics::backend::types::TextureHandle;
-        use crate::libs::graphics::backend::RenderBackend;
+        use crate::libs::graphics::backend::TextureOps;
 
         // Unpack index and generation from the u64 handle
         let index = (texture & 0xFFFFFFFF) as u32;

@@ -182,7 +182,7 @@ pub unsafe extern "C" fn goud_engine_create(
     use crate::ffi::context::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
     use crate::ffi::window::{set_window_state, WindowState};
     use crate::libs::graphics::backend::opengl::OpenGLBackend;
-    use crate::libs::graphics::backend::RenderBackend;
+    use crate::libs::graphics::backend::StateOps;
     use crate::libs::platform::glfw_platform::GlfwPlatform;
     use crate::libs::platform::WindowConfig;
 

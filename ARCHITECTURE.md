@@ -40,25 +40,34 @@ Dependencies flow **down only**. A layer may import from layers below it. Upward
 
 ```mermaid
 flowchart TD
-    L5["Layer 5 — Apps\nexamples/"]
-    L4["Layer 4 — SDKs\nsdks/csharp  sdks/python  sdks/typescript  sdks/rust"]
-    L3["Layer 3 — FFI\ngoud_engine/src/ffi/"]
-    L2["Layer 2 — Engine\ngoud_engine/src/core  goud_engine/src/assets  goud_engine/src/sdk"]
-    L1["Layer 1 — Core\nlibs/graphics  libs/platform  libs/ecs  libs/logger"]
+    EXT["External — SDKs & Apps\nsdks/  examples/"]
+    L5["Layer 5 — FFI\nffi/  wasm/"]
+    L4["Layer 4 — Engine\nsdk/"]
+    L3["Layer 3 — Services\necs/  assets/"]
+    L2["Layer 2 — Libs\nlibs/graphics  libs/platform"]
+    L1["Layer 1 — Foundation\ncore/"]
 
+    EXT --> L5
     L5 --> L4
     L4 --> L3
     L3 --> L2
     L2 --> L1
 ```
 
-| Layer | Path | Responsibility |
-|-------|------|----------------|
-| 1 — Core | `libs/` | Graphics backend, platform windowing, ECS, logging |
-| 2 — Engine | `goud_engine/src/` | Asset system, native Rust SDK, context registry |
-| 3 — FFI | `goud_engine/src/ffi/` | C-ABI exports consumed by external SDKs |
-| 4 — SDKs | `sdks/` | Language-specific wrappers over FFI |
-| 5 — Apps | `examples/` | Example games using SDK APIs |
+| Layer | Name | Path | Responsibility |
+|-------|------|------|----------------|
+| 1 — Foundation | Foundation | `core/` | Error types, events, math, generational handles |
+| 2 — Libs | Libs | `libs/` | Graphics backend, platform windowing, logging |
+| 3 — Services | Services | `ecs/`, `assets/` | ECS world, components, systems, asset loading |
+| 4 — Engine | Engine | `sdk/` | Native Rust SDK, context registry |
+| 5 — FFI | FFI | `ffi/`, `wasm/` | C-ABI exports consumed by external SDKs |
+
+SDKs (`sdks/`) and Apps (`examples/`) sit outside the Rust crate and consume
+the FFI layer. They are not checked by `lint-layers` since they are separate
+projects.
+
+The layer names and boundaries match `tools/lint_layers.rs` exactly. Run
+`cargo run -p lint-layers` to validate.
 
 ---
 

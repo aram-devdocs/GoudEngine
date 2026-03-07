@@ -130,6 +130,17 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/error.rs",
     // engine config module
     "src/ffi/engine_config.rs",
+    // physics module
+    "src/ffi/physics/physics2d.rs",
+    "src/ffi/physics/physics3d.rs",
+    // animation module
+    "src/ffi/animation/controller.rs",
+    "src/ffi/animation/tween.rs",
+    "src/ffi/animation/skeletal.rs",
+    // network module
+    "src/ffi/network.rs",
+    // plugin module
+    "src/ffi/plugin.rs",
 ];
 
 /// A single extracted FFI function signature.

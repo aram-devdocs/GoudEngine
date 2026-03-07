@@ -8,7 +8,7 @@
 //! This module requires the `native` feature (desktop platform with OpenGL).
 
 use super::GoudGame;
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::TextureOps;
 
 /// Invalid texture handle sentinel value.
 const INVALID_TEXTURE: u64 = u64::MAX;

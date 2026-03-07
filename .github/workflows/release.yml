@@ -207,6 +207,17 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
+      - name: Upload napi loader (once)
+        if: matrix.name == 'darwin-arm64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: napi-loader
+          path: |
+            sdks/typescript/index.js
+            sdks/typescript/index.d.ts
+          if-no-files-found: error
+          retention-days: 3
+
   # ── Step 2c: Build WASM bundle ──
   build-wasm:
     name: WASM
@@ -309,6 +320,12 @@ jobs:
           pattern: napi-*
           path: sdks/typescript/
           merge-multiple: true
+
+      - name: Download napi loader
+        uses: actions/download-artifact@v8
+        with:
+          name: napi-loader
+          path: sdks/typescript/
 
       - name: Download WASM bundle
         uses: actions/download-artifact@v8

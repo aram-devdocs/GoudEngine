@@ -10,7 +10,9 @@
 
 use super::GoudGame;
 use crate::core::error::{GoudError, GoudResult};
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::{
+    ClearOps, DrawOps, FrameOps, ShaderOps, StateOps, TextureOps,
+};
 
 // Re-export rendering types for SDK users
 pub use crate::rendering::sprite_batch::SpriteBatchConfig;

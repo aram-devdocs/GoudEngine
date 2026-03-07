@@ -31,6 +31,74 @@
       "return_type": "*mut FfiAnimationClipBuilder",
       "is_unsafe": false
     },
+    "goud_animation_controller_add_state": {
+      "source_file": "ffi/animation/controller.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "state_name_ptr: *const u8",
+        "state_name_len: i32",
+        "clip_index: i32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_animation_controller_add_transition": {
+      "source_file": "ffi/animation/controller.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "from_ptr: *const u8",
+        "from_len: i32",
+        "to_ptr: *const u8",
+        "to_len: i32",
+        "trigger_ptr: *const u8",
+        "trigger_len: i32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_animation_controller_create": {
+      "source_file": "ffi/animation/controller.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_animation_controller_get_state": {
+      "source_file": "ffi/animation/controller.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "out_buf: *mut u8",
+        "buf_len: i32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_animation_controller_set_state": {
+      "source_file": "ffi/animation/controller.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "state_ptr: *const u8",
+        "state_len: i32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_animation_controller_update": {
+      "source_file": "ffi/animation/controller.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "dt: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_clear_last_error": {
       "source_file": "ffi/error.rs",
       "params": [],
@@ -748,6 +816,395 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_network_connect": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "protocol: i32",
+        "addr_ptr: *const u8",
+        "addr_len: i32",
+        "port: u16"
+      ],
+      "return_type": "i64",
+      "is_unsafe": true
+    },
+    "goud_network_disconnect": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_network_get_stats": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64",
+        "out_bytes_sent: *mut u64",
+        "out_bytes_recv: *mut u64",
+        "out_packets_sent: *mut u64",
+        "out_packets_recv: *mut u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_network_host": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "protocol: i32",
+        "port: u16"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
+    "goud_network_peer_count": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_network_poll": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_network_receive": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64",
+        "out_buf: *mut u8",
+        "buf_len: i32",
+        "out_peer_id: *mut u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_network_send": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64",
+        "peer_id: u64",
+        "data_ptr: *const u8",
+        "data_len: i32",
+        "channel: u8"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics3d_add_collider": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "body_handle: u64",
+        "shape_type: u32",
+        "hx: f32",
+        "hy: f32",
+        "hz: f32",
+        "radius: f32"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
+    "goud_physics3d_add_rigid_body": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "body_type: u32",
+        "x: f32",
+        "y: f32",
+        "z: f32"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
+    "goud_physics3d_apply_force": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "fx: f32",
+        "fy: f32",
+        "fz: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_apply_impulse": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "ix: f32",
+        "iy: f32",
+        "iz: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_create": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "gx: f32",
+        "gy: f32",
+        "gz: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_destroy": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_get_position": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_x: *mut f32",
+        "out_y: *mut f32",
+        "out_z: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics3d_remove_body": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_set_gravity": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "x: f32",
+        "y: f32",
+        "z: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_set_velocity": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "vx: f32",
+        "vy: f32",
+        "vz: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_step": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "dt: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_add_collider": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "body_handle: u64",
+        "shape_type: u32",
+        "width: f32",
+        "height: f32",
+        "radius: f32"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
+    "goud_physics_add_rigid_body": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "body_type: u32",
+        "x: f32",
+        "y: f32"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
+    "goud_physics_apply_force": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "fx: f32",
+        "fy: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_apply_impulse": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "ix: f32",
+        "iy: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_create": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "gx: f32",
+        "gy: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_destroy": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_get_position": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_x: *mut f32",
+        "out_y: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics_get_velocity": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_x: *mut f32",
+        "out_y: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics_raycast": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "ox: f32",
+        "oy: f32",
+        "dx: f32",
+        "dy: f32",
+        "max_dist: f32",
+        "out_hit_x: *mut f32",
+        "out_hit_y: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics_remove_body": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_set_gravity": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "x: f32",
+        "y: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_set_velocity": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "vx: f32",
+        "vy: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_step": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "dt: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_plugin_is_registered": {
+      "source_file": "ffi/plugin.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "plugin_id_ptr: *const u8",
+        "plugin_id_len: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_plugin_list": {
+      "source_file": "ffi/plugin.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out_buf: *mut u8",
+        "buf_len: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_plugin_register": {
+      "source_file": "ffi/plugin.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "plugin_id_ptr: *const u8",
+        "plugin_id_len: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_plugin_unregister": {
+      "source_file": "ffi/plugin.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "plugin_id_ptr: *const u8",
+        "plugin_id_len: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_renderer3d_add_light": {
       "source_file": "ffi/renderer3d/lighting.rs",
       "params": [
@@ -1188,6 +1645,55 @@
         "scene_id: u32"
       ],
       "return_type": "GoudResult",
+      "is_unsafe": false
+    },
+    "goud_skeleton_add_bone": {
+      "source_file": "ffi/animation/skeletal.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "bone_name_ptr: *const u8",
+        "bone_name_len: i32",
+        "parent_index: i32",
+        "x: f32",
+        "y: f32",
+        "rotation: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_skeleton_create": {
+      "source_file": "ffi/animation/skeletal.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_skeleton_play_clip": {
+      "source_file": "ffi/animation/skeletal.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "clip_name_ptr: *const u8",
+        "clip_name_len: i32",
+        "looping: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_skeleton_set_bone_transform": {
+      "source_file": "ffi/animation/skeletal.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "bone_index: i32",
+        "x: f32",
+        "y: f32",
+        "rotation: f32"
+      ],
+      "return_type": "i32",
       "is_unsafe": false
     },
     "goud_sprite_animator_from_clip": {
@@ -2091,6 +2597,56 @@
       "return_type": "()",
       "is_unsafe": true
     },
+    "goud_tween_create": {
+      "source_file": "ffi/animation/tween.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "start: f32",
+        "end: f32",
+        "duration: f32",
+        "easing_type: i32"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
+    "goud_tween_is_complete": {
+      "source_file": "ffi/animation/tween.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_tween_reset": {
+      "source_file": "ffi/animation/tween.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_tween_update": {
+      "source_file": "ffi/animation/tween.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64",
+        "dt: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_tween_value": {
+      "source_file": "ffi/animation/tween.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64",
+        "out_value: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_window_clear": {
       "source_file": "ffi/window/properties.rs",
       "params": [
@@ -2173,5 +2729,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 228
+  "total_count": 279
 }

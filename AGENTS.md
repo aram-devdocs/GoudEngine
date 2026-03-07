@@ -145,6 +145,8 @@ Agents MUST NOT introduce any of the following:
 14. Raw OpenGL calls outside `graphics/backend/` module
 15. Duplicating types between Rust and SDK (codegen only)
 16. Tests without assertions or with `#[ignore]`/`todo!()`
+17. Committing auto-generated files (napi loader `index.js`/`index.d.ts`, codegen `*.g.*` files)
+18. Hand-writing error classes instead of using codegen from `goud_sdk.schema.json` errors section
 
 ## SDK Development Workflow
 

@@ -2,7 +2,7 @@
 
 use crate::libs::graphics::backend::opengl::backend::OpenGLBackend;
 use crate::libs::graphics::backend::types::{TextureFilter, TextureFormat, TextureWrap};
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::TextureOps;
 
 #[test]
 #[ignore] // Requires OpenGL context

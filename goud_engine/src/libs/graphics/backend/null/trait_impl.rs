@@ -1,9 +1,11 @@
-//! `RenderBackend` trait implementation for `NullBackend`.
+//! Sub-trait and `RenderBackend` implementations for `NullBackend`.
 
 use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::blend::{BlendFactor, CullFace};
 use crate::libs::graphics::backend::capabilities::BackendInfo;
-use crate::libs::graphics::backend::render_backend::RenderBackend;
+use crate::libs::graphics::backend::render_backend::{
+    BufferOps, ClearOps, DrawOps, FrameOps, RenderBackend, ShaderOps, StateOps, TextureOps,
+};
 use crate::libs::graphics::backend::types::{
     BufferHandle, BufferType, BufferUsage, DepthFunc, FrontFace, PrimitiveTopology, ShaderHandle,
     TextureFilter, TextureFormat, TextureHandle, TextureWrap, VertexLayout,
@@ -12,19 +14,21 @@ use crate::libs::graphics::backend::types::{
 use super::backend::{NullBufferMeta, NullTextureMeta};
 use super::NullBackend;
 
-impl RenderBackend for NullBackend {
-    // ========================================================================
-    // Lifecycle & Information
-    // ========================================================================
+// ========================================================================
+// RenderBackend (supertrait)
+// ========================================================================
 
+impl RenderBackend for NullBackend {
     fn info(&self) -> &BackendInfo {
         &self.info
     }
+}
 
-    // ========================================================================
-    // Frame Management
-    // ========================================================================
+// ========================================================================
+// FrameOps
+// ========================================================================
 
+impl FrameOps for NullBackend {
     fn begin_frame(&mut self) -> GoudResult<()> {
         Ok(())
     }
@@ -32,11 +36,13 @@ impl RenderBackend for NullBackend {
     fn end_frame(&mut self) -> GoudResult<()> {
         Ok(())
     }
+}
 
-    // ========================================================================
-    // Clear Operations
-    // ========================================================================
+// ========================================================================
+// ClearOps
+// ========================================================================
 
+impl ClearOps for NullBackend {
     fn set_clear_color(&mut self, r: f32, g: f32, b: f32, a: f32) {
         self.clear_color = [r, g, b, a];
     }
@@ -48,11 +54,13 @@ impl RenderBackend for NullBackend {
     fn clear_depth(&mut self) {
         // no-op
     }
+}
 
-    // ========================================================================
-    // State Management
-    // ========================================================================
+// ========================================================================
+// StateOps
+// ========================================================================
 
+impl StateOps for NullBackend {
     fn set_viewport(&mut self, x: i32, y: i32, width: u32, height: u32) {
         self.viewport = (x, y, width, height);
     }
@@ -104,11 +112,13 @@ impl RenderBackend for NullBackend {
     fn set_line_width(&mut self, width: f32) {
         self.line_width = width;
     }
+}
 
-    // ========================================================================
-    // Buffer Operations
-    // ========================================================================
+// ========================================================================
+// BufferOps
+// ========================================================================
 
+impl BufferOps for NullBackend {
     fn create_buffer(
         &mut self,
         buffer_type: BufferType,
@@ -167,11 +177,13 @@ impl RenderBackend for NullBackend {
     fn unbind_buffer(&mut self, _buffer_type: BufferType) {
         // no-op
     }
+}
 
-    // ========================================================================
-    // Texture Operations
-    // ========================================================================
+// ========================================================================
+// TextureOps
+// ========================================================================
 
+impl TextureOps for NullBackend {
     fn create_texture(
         &mut self,
         width: u32,
@@ -231,11 +243,13 @@ impl RenderBackend for NullBackend {
     fn unbind_texture(&mut self, _unit: u32) {
         // no-op
     }
+}
 
-    // ========================================================================
-    // Shader Operations
-    // ========================================================================
+// ========================================================================
+// ShaderOps
+// ========================================================================
 
+impl ShaderOps for NullBackend {
     fn create_shader(
         &mut self,
         _vertex_src: &str,
@@ -296,18 +310,16 @@ impl RenderBackend for NullBackend {
     fn set_uniform_mat4(&mut self, _location: i32, _matrix: &[f32; 16]) {
         // no-op
     }
+}
 
-    // ========================================================================
-    // Vertex Array Setup
-    // ========================================================================
+// ========================================================================
+// DrawOps
+// ========================================================================
 
+impl DrawOps for NullBackend {
     fn set_vertex_attributes(&mut self, _layout: &VertexLayout) {
         // no-op
     }
-
-    // ========================================================================
-    // Draw Calls
-    // ========================================================================
 
     fn draw_arrays(
         &mut self,

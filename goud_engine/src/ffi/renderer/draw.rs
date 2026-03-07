@@ -5,7 +5,7 @@
 use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::{DrawOps, ShaderOps, TextureOps};
 
 use super::immediate::{
     ensure_immediate_state, model_matrix, ortho_matrix, ImmediateStateData, IMMEDIATE_STATE,

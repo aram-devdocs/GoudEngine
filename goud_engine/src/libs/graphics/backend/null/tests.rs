@@ -1,9 +1,11 @@
 //! Unit tests for the NullBackend.
 
 use super::NullBackend;
-use crate::libs::graphics::backend::render_backend::RenderBackend;
 use crate::libs::graphics::backend::types::{
     BufferType, BufferUsage, PrimitiveTopology, TextureFilter, TextureFormat, TextureWrap,
+};
+use crate::libs::graphics::backend::{
+    BufferOps, ClearOps, DrawOps, FrameOps, RenderBackend, ShaderOps, StateOps, TextureOps,
 };
 
 #[test]
