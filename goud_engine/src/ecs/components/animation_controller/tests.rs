@@ -92,4 +92,8 @@ fn test_animation_controller_is_component() {
     use crate::ecs::Component;
     fn assert_component<T: Component>() {}
     assert_component::<AnimationController>();
+
+    // Runtime assertion: create an instance and verify it's a valid component
+    let controller = AnimationController::new("test_state");
+    assert_eq!(controller.current_state_name(), "test_state");
 }

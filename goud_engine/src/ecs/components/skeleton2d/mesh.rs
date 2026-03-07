@@ -12,7 +12,7 @@ use crate::ecs::Component;
 #[derive(Debug, Clone, Copy)]
 pub struct BoneWeight {
     /// Index into [`Skeleton2D::bones`](super::Skeleton2D).
-    pub bone_id: usize,
+    pub bone_id: u32,
     /// Blend weight in `[0.0, 1.0]`. Weights for one vertex should sum to 1.
     pub weight: f32,
 }

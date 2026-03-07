@@ -146,10 +146,11 @@ pub fn deform_skeletal_meshes(world: &mut World) {
             let mut result = Vec2::zero();
 
             for bw in &vertex.weights {
-                if bw.bone_id >= bone_data.len() {
+                let bone_idx = bw.bone_id as usize;
+                if bone_idx >= bone_data.len() {
                     continue;
                 }
-                let (world_t, bind_inv) = &bone_data[bw.bone_id];
+                let (world_t, bind_inv) = &bone_data[bone_idx];
                 let skinning = BoneTransform::combine(world_t, bind_inv);
                 let deformed = transform_point(&skinning, rest);
                 result = result + deformed * bw.weight;
