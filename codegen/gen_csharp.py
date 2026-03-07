@@ -82,6 +82,7 @@ def _cs_ffi_param_type(raw: str) -> str:
         "*mut FfiSpriteBuilder": "IntPtr",
         "*mut FfiAnimationClipBuilder": "IntPtr",
         "*const FfiSpriteAnimator": "ref FfiSpriteAnimator",
+        "FfiPlaybackMode": "PlaybackMode",
         "*const u8": "IntPtr",
         "*mut u8": "IntPtr",
         "usize": "nuint",
@@ -172,8 +173,15 @@ def gen_native_methods():
             continue
         lines += ["    [StructLayout(LayoutKind.Sequential)]", f"    public struct {ffi_name}", "    {"]
         for f in sdk_type["fields"]:
-            cs = CSHARP_TYPES.get(f["type"], "float")
-            if f["type"] == "bool":
+            ft = f["type"]
+            cs = CSHARP_TYPES.get(ft)
+            if cs is None:
+                # Check if it's a schema enum type
+                if ft in schema.get("enums", {}):
+                    cs = to_pascal(ft)
+                else:
+                    cs = "float"
+            if ft == "bool":
                 lines.append("        [MarshalAs(UnmanagedType.U1)]")
             lines.append(f"        public {cs} {to_pascal(f['name'])};")
         lines += ["    }", ""]
