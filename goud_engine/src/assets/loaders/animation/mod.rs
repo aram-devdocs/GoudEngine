@@ -5,6 +5,8 @@
 //! (see [`crate::ecs::components::sprite_animator`]).
 
 pub mod asset;
+#[cfg(feature = "native")]
+pub mod gltf_parser;
 pub mod keyframe;
 pub mod loader;
 

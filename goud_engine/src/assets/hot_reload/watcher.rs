@@ -211,7 +211,7 @@ impl HotReloadWatcher {
     ///     // ... rest of game loop
     /// }
     /// ```
-    pub fn process_events(&mut self, _server: &mut AssetServer) -> usize {
+    pub fn process_events(&mut self, server: &mut AssetServer) -> usize {
         if !self.config.enabled {
             return 0;
         }
@@ -228,13 +228,23 @@ impl HotReloadWatcher {
             }
         }
 
-        // Compute cascade reloads for each changed asset
-        let mut reload_count = change_events.len();
+        // Reload changed assets and their dependents
+        let mut reload_count = 0;
         for event in &change_events {
             let path = event.path();
             if let Some(relative) = self.relative_path(path) {
-                let cascade = _server.get_cascade_order(&relative);
-                reload_count += cascade.len();
+                // Reload the changed asset itself
+                if server.reload_by_path(&relative) {
+                    reload_count += 1;
+                }
+
+                // Cascade reload dependents
+                let cascade = server.get_cascade_order(&relative);
+                for dependent_path in &cascade {
+                    if server.reload_by_path(dependent_path) {
+                        reload_count += 1;
+                    }
+                }
             }
         }
 

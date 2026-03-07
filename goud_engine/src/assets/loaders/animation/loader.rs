@@ -4,12 +4,13 @@ use crate::assets::{asset::Asset, AssetLoadError, AssetLoader, LoadContext};
 
 use super::asset::KeyframeAnimation;
 
-/// Animation asset loader for `.anim.json` files.
+/// Animation asset loader for `.anim.json`, `.gltf`, and `.glb` files.
 ///
-/// Parses JSON-encoded keyframe animation data into a [`KeyframeAnimation`] asset.
+/// Parses keyframe animation data into a [`KeyframeAnimation`] asset.
 ///
 /// # Supported Formats
 /// - Custom JSON (`.anim.json`)
+/// - GLTF/GLB (`.gltf`, `.glb`) — requires `native` feature
 ///
 /// # Example
 /// ```no_run
@@ -33,8 +34,20 @@ impl AssetLoader for AnimationLoader {
         &'a self,
         bytes: &'a [u8],
         _settings: &'a Self::Settings,
-        _context: &'a mut LoadContext,
+        context: &'a mut LoadContext,
     ) -> Result<Self::Asset, AssetLoadError> {
+        let ext = context.extension().unwrap_or("");
+
+        match ext {
+            #[cfg(feature = "native")]
+            "gltf" | "glb" => super::gltf_parser::parse_gltf_animation(bytes),
+            _ => self.load_json(bytes),
+        }
+    }
+}
+
+impl AnimationLoader {
+    fn load_json(&self, bytes: &[u8]) -> Result<KeyframeAnimation, AssetLoadError> {
         let text = std::str::from_utf8(bytes).map_err(|e| {
             AssetLoadError::decode_failed(format!("Animation file is not valid UTF-8: {e}"))
         })?;
@@ -76,7 +89,22 @@ mod tests {
     #[test]
     fn test_animation_loader_extensions() {
         let loader = AnimationLoader::default();
-        assert_eq!(loader.extensions(), &["anim.json"]);
+        let exts = loader.extensions();
+        assert!(exts.contains(&"anim.json"));
+        assert!(exts.contains(&"gltf"));
+        assert!(exts.contains(&"glb"));
+    }
+
+    #[cfg(feature = "native")]
+    #[test]
+    fn test_animation_loader_invalid_gltf() {
+        let loader = AnimationLoader::default();
+        let path = AssetPath::from_string("bad.glb".to_string());
+        let mut context = LoadContext::new(path);
+
+        let result = loader.load(b"not a glb file", &(), &mut context);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().is_decode_failed());
     }
 
     #[test]

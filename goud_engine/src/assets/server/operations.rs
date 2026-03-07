@@ -314,6 +314,48 @@ impl AssetServer {
         &mut self.dependency_graph
     }
 
+    /// Reloads an asset from disk by its path, using the type-erased loader.
+    ///
+    /// This is used by the hot-reload watcher to reload assets without knowing
+    /// their concrete type at compile time.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the asset was successfully reloaded, `false` if the path
+    /// has no registered loader or the reload failed.
+    #[cfg(feature = "native")]
+    pub fn reload_by_path(&mut self, path: &str) -> bool {
+        let asset_path = AssetPath::new(path);
+        let extension = match asset_path.extension() {
+            Some(ext) => ext.to_string(),
+            None => return false,
+        };
+
+        // Check if we have a loader for this extension
+        let loader = match self.loaders.get(&extension) {
+            Some(l) => l.clone_boxed(),
+            None => return false,
+        };
+
+        // Read file from disk
+        let full_path = self.asset_root.join(path);
+        let bytes = match std::fs::read(&full_path) {
+            Ok(b) => b,
+            Err(_) => return false,
+        };
+
+        // Parse using erased loader
+        let mut context = LoadContext::new(asset_path.into_owned());
+        match loader.load_erased(&bytes, &mut context) {
+            Ok(boxed_asset) => {
+                // Update in storage if the asset exists
+                self.storage.replace_erased(path, boxed_asset);
+                true
+            }
+            Err(_) => false,
+        }
+    }
+
     /// Returns the cascade reload order for a changed asset path.
     ///
     /// This delegates to [`DependencyGraph::get_cascade_order`] and

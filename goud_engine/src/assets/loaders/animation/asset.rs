@@ -98,7 +98,7 @@ impl Asset for KeyframeAnimation {
     }
 
     fn extensions() -> &'static [&'static str] {
-        &["anim.json"]
+        &["anim.json", "gltf", "glb"]
     }
 }
 
@@ -174,7 +174,8 @@ mod tests {
     fn test_keyframe_animation_asset_trait() {
         assert_eq!(KeyframeAnimation::asset_type_name(), "KeyframeAnimation");
         assert_eq!(KeyframeAnimation::asset_type(), AssetType::Animation);
-        assert_eq!(KeyframeAnimation::extensions(), &["anim.json"]);
+        assert!(KeyframeAnimation::extensions().contains(&"anim.json"));
+        assert!(KeyframeAnimation::extensions().contains(&"gltf"));
     }
 
     #[test]
