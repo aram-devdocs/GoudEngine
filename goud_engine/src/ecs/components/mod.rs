@@ -20,6 +20,15 @@
 //! - [`AnimationClip`]: Frame sequence and timing data for animations
 //! - [`PlaybackMode`]: Loop or OneShot playback control
 //!
+//! ## Skeletal Animation
+//!
+//! - [`Skeleton2D`]: Bone hierarchy with world-space transform cache
+//! - [`Bone2D`]: Single bone with parent link and bind pose
+//! - [`BoneTransform`]: Position + rotation + scale for a bone
+//! - [`SkeletalAnimation`]: Keyframe animation clip
+//! - [`SkeletalAnimator`]: Playback controller component
+//! - [`SkeletalMesh2D`]: Deformable mesh with bone weights
+//!
 //! ## Audio Components
 //!
 //! - [`AudioSource`]: Audio playback component with spatial audio support
@@ -150,6 +159,7 @@
 //! }
 //! ```
 
+pub mod animation_controller;
 pub mod audiosource;
 pub mod collider;
 pub mod global_transform;
@@ -157,17 +167,25 @@ pub mod global_transform2d;
 pub mod hierarchy;
 pub mod propagation;
 pub mod rigidbody;
+pub mod skeleton2d;
 pub mod sprite;
 pub mod sprite_animator;
 pub mod transform;
 pub mod transform2d;
 
+pub use animation_controller::{
+    AnimParam, AnimationController, AnimationState, AnimationTransition, TransitionCondition,
+};
 pub use audiosource::{AttenuationModel, AudioChannel, AudioSource};
 pub use collider::{Collider, ColliderShape};
 pub use global_transform::GlobalTransform;
 pub use global_transform2d::GlobalTransform2D;
 pub use hierarchy::{Children, Name, Parent};
 pub use rigidbody::{RigidBody, RigidBodyType};
+pub use skeleton2d::{
+    Bone2D, BoneKeyframe, BoneTrack, BoneTransform, BoneWeight, SkeletalAnimation,
+    SkeletalAnimator, SkeletalMesh2D, SkeletalVertex, Skeleton2D,
+};
 pub use sprite::Sprite;
 pub use sprite_animator::{AnimationClip, PlaybackMode, SpriteAnimator};
 pub use transform::Transform;
