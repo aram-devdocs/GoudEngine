@@ -2,6 +2,12 @@
   "version": "0.0.827",
   "generated_at": "build-time",
   "functions": {
+    "goud_clear_last_error": {
+      "source_file": "ffi/error.rs",
+      "params": [],
+      "return_type": "()",
+      "is_unsafe": false
+    },
     "goud_collision_aabb_aabb": {
       "source_file": "ffi/collision.rs",
       "params": [
@@ -530,6 +536,21 @@
       ],
       "return_type": "bool",
       "is_unsafe": false
+    },
+    "goud_last_error_code": {
+      "source_file": "ffi/error.rs",
+      "params": [],
+      "return_type": "GoudErrorCode",
+      "is_unsafe": false
+    },
+    "goud_last_error_message": {
+      "source_file": "ffi/error.rs",
+      "params": [
+        "buf: *mut u8",
+        "buf_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
     },
     "goud_renderer3d_add_light": {
       "source_file": "ffi/renderer3d/lighting.rs",
@@ -1924,5 +1945,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 199
+  "total_count": 202
 }
