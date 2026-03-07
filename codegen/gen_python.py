@@ -1271,9 +1271,16 @@ def _gen_tool_class(tool_name: str, lines: list):
                     f"        pass  # Unknown strategy: {strategy}"
                 )
         elif "returns_entity" in mmap:
-            lines.append(
-                f"        bits = self._lib.{mmap['ffi']}(self._ctx)"
-            )
+            if "entity_params" in mmap:
+                # Convert entity parameters to bits
+                entity_args = ", ".join(f"{p}._bits" for p in mmap["entity_params"])
+                lines.append(
+                    f"        bits = self._lib.{mmap['ffi']}(self._ctx, {entity_args})"
+                )
+            else:
+                lines.append(
+                    f"        bits = self._lib.{mmap['ffi']}(self._ctx)"
+                )
             lines.append("        return Entity(bits)")
         elif "entity_params" in mmap and "ffi" in mmap:
             lines.append(

@@ -155,6 +155,16 @@
           "ffi": "goud_entity_despawn",
           "entity_params": ["entity"]
         },
+        "cloneEntity": {
+          "ffi": "goud_entity_clone",
+          "entity_params": ["entity"],
+          "returns_entity": true
+        },
+        "cloneEntityRecursive": {
+          "ffi": "goud_entity_clone_recursive",
+          "entity_params": ["entity"],
+          "returns_entity": true
+        },
         "entityCount": {
           "ffi": "goud_entity_count"
         },
@@ -414,6 +424,8 @@
         "spawnBatch":       {"ffi": "goud_entity_spawn_batch", "batch_out": true},
         "despawn":          {"ffi": "goud_entity_despawn",     "entity_params": ["entity"]},
         "despawnBatch":     {"ffi": "goud_entity_despawn_batch", "batch_in": true},
+        "cloneEntity":      {"ffi": "goud_entity_clone",       "entity_params": ["entity"], "returns_entity": true},
+        "cloneEntityRecursive": {"ffi": "goud_entity_clone_recursive", "entity_params": ["entity"], "returns_entity": true},
         "isAlive":          {"ffi": "goud_entity_is_alive",    "entity_params": ["entity"]},
         "isAliveBatch":     {"ffi": "goud_entity_is_alive_batch", "batch_in": true, "batch_out_results": true},
         "entityCount":      {"ffi": "goud_entity_count"},
@@ -524,7 +536,9 @@
       "goud_entity_is_alive_batch": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_ids", "type": "*const u64"}, {"name": "count", "type": "u32"}, {"name": "out_results", "type": "*mut u8"}], "returns": "u32", "unsafe": true},
       "goud_entity_count":        {"params": [{"name": "ctx", "type": "GoudContextId"}],                                          "returns": "u32"},
       "goud_entity_spawn_batch":  {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "count", "type": "u32"}, {"name": "out_entities", "type": "*mut u64"}], "returns": "u32", "unsafe": true},
-      "goud_entity_despawn_batch":{"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_ids", "type": "*const u64"}, {"name": "count", "type": "u32"}], "returns": "u32", "unsafe": true}
+      "goud_entity_despawn_batch":{"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_ids", "type": "*const u64"}, {"name": "count", "type": "u32"}], "returns": "u32", "unsafe": true},
+      "goud_entity_clone":        {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_id", "type": "u64"}], "returns": "u64"},
+      "goud_entity_clone_recursive": {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_id", "type": "u64"}], "returns": "u64"}
     },
     "collision": {
       "goud_collision_aabb_aabb":        {"params": [{"name": "center_a_x", "type": "f32"}, {"name": "center_a_y", "type": "f32"}, {"name": "half_w_a", "type": "f32"}, {"name": "half_h_a", "type": "f32"}, {"name": "center_b_x", "type": "f32"}, {"name": "center_b_y", "type": "f32"}, {"name": "half_w_b", "type": "f32"}, {"name": "half_h_b", "type": "f32"}, {"name": "out_contact", "type": "*mut GoudContact"}], "returns": "bool", "unsafe": true},

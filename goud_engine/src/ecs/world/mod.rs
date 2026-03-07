@@ -46,6 +46,7 @@ use super::component::ComponentId;
 use super::entity::{Entity, EntityAllocator};
 use super::resource::{NonSendResources, Resources};
 
+mod clone_entity;
 mod component_access;
 mod component_mutation;
 mod entity_ops;
@@ -153,6 +154,9 @@ pub struct World {
     /// Non-send resources must only be accessed from the main thread.
     non_send_resources: NonSendResources,
 
+    /// Whether built-in components have been registered as cloneable.
+    builtins_registered: bool,
+
     /// Current change tick, incremented at system boundaries.
     change_tick: u32,
 
@@ -187,6 +191,7 @@ impl World {
             storages: HashMap::new(),
             resources: Resources::new(),
             non_send_resources: NonSendResources::new(),
+            builtins_registered: false,
             change_tick: 0,
             last_change_tick: 0,
         }
@@ -220,6 +225,7 @@ impl World {
             storages: HashMap::with_capacity(component_type_capacity),
             resources: Resources::new(),
             non_send_resources: NonSendResources::new(),
+            builtins_registered: false,
             change_tick: 0,
             last_change_tick: 0,
         }

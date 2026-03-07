@@ -838,7 +838,12 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                   "            }"]
         return
     if mm.get("returns_entity"):
-        L.append(f"            return new Entity(NativeMethods.{mm['ffi']}(_ctx));")
+        if "entity_params" in mm:
+            # Convert entity parameters to bits
+            entity_args = ", ".join(f"{p}.ToBits()" for p in mm["entity_params"])
+            L.append(f"            return new Entity(NativeMethods.{mm['ffi']}(_ctx, {entity_args}));")
+        else:
+            L.append(f"            return new Entity(NativeMethods.{mm['ffi']}(_ctx));")
         return
     if "entity_params" in mm and "ffi" in mm:
         ffi_fn = mm["ffi"]
