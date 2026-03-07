@@ -366,42 +366,46 @@ fn test_udp_debug_format() {
 
 #[test]
 fn test_udp_simulated_packet_loss_reliable_delivery() {
-    // Arrange: establish a connected host+client pair.
     let (mut host, mut client, conn_id) = setup_connected_pair();
 
-    // Act: client sends a reliable message on Channel(0).
+    // Client sends a reliable message on Channel(0).
     let payload = b"reliable after loss";
     client.send(conn_id, Channel(0), payload).unwrap();
+    assert!(
+        client.connections.get(&conn_id.0).unwrap().reliability.pending_count() > 0,
+        "Reliability layer must track the sent packet"
+    );
 
-    // Confirm that the client's reliability layer has the packet queued for retransmit.
+    // Simulate packet loss: host consumes the first datagram from the OS buffer
+    // by reading from its socket directly, discarding the bytes. This ensures
+    // the original packet is truly lost — not just delayed.
+    std::thread::sleep(std::time::Duration::from_millis(5));
     {
-        let conn = client.connections.get(&conn_id.0).unwrap();
-        assert!(
-            conn.reliability.pending_count() > 0,
-            "Reliability layer must track the sent packet"
-        );
+        let socket = host.socket.as_ref().unwrap();
+        let mut discard_buf = [0u8; 65536];
+        // Drain all pending datagrams (the original data packet).
+        while socket.recv_from(&mut discard_buf).is_ok() {}
     }
 
-    // Simulate packet loss: the host does NOT call update() here, so the first
-    // datagram that arrived in the OS receive buffer will never be consumed.
-    // We sleep beyond the 100 ms RTO so the client's ReliabilityLayer considers
-    // the packet unacknowledged and schedules a retransmission.
-    std::thread::sleep(std::time::Duration::from_millis(150));
+    // Verify host has no data events (the original packet was discarded).
+    host.update(0.0).unwrap();
+    let events = host.drain_events();
+    assert!(
+        !events.iter().any(|e| matches!(e, NetworkEvent::Received { .. })),
+        "Host should NOT have received data (packet was lost)"
+    );
 
-    // Trigger retransmission on the client side.
+    // Sleep past the 100ms RTO so the client's reliability layer retransmits.
+    std::thread::sleep(std::time::Duration::from_millis(150));
     client.update(0.0).unwrap();
 
-    // NOW let the host receive (the retransmitted packet is in the OS buffer).
+    // Now the host receives the retransmitted packet.
     let mut received_data: Option<Vec<u8>> = None;
     for _ in 0..20 {
         host.update(0.0).unwrap();
         for event in host.drain_events() {
             if let NetworkEvent::Received { data, channel, .. } = event {
-                assert_eq!(
-                    channel,
-                    Channel(0),
-                    "Data must arrive on the reliable channel"
-                );
+                assert_eq!(channel, Channel(0), "Data must arrive on reliable channel");
                 received_data = Some(data);
             }
         }
@@ -411,7 +415,6 @@ fn test_udp_simulated_packet_loss_reliable_delivery() {
         std::thread::sleep(std::time::Duration::from_millis(5));
     }
 
-    // Assert: the host received the correct payload despite the simulated loss.
     assert_eq!(
         received_data.as_deref(),
         Some(payload.as_slice()),
