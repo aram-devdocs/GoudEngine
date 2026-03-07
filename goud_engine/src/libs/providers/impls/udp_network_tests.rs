@@ -363,3 +363,61 @@ fn test_udp_debug_format() {
     assert!(debug.contains("UdpNetProvider"));
     assert!(debug.contains("is_host"));
 }
+
+#[test]
+fn test_udp_simulated_packet_loss_reliable_delivery() {
+    // Arrange: establish a connected host+client pair.
+    let (mut host, mut client, conn_id) = setup_connected_pair();
+
+    // Act: client sends a reliable message on Channel(0).
+    let payload = b"reliable after loss";
+    client.send(conn_id, Channel(0), payload).unwrap();
+
+    // Confirm that the client's reliability layer has the packet queued for retransmit.
+    {
+        let conn = client.connections.get(&conn_id.0).unwrap();
+        assert!(
+            conn.reliability.pending_count() > 0,
+            "Reliability layer must track the sent packet"
+        );
+    }
+
+    // Simulate packet loss: the host does NOT call update() here, so the first
+    // datagram that arrived in the OS receive buffer will never be consumed.
+    // We sleep beyond the 100 ms RTO so the client's ReliabilityLayer considers
+    // the packet unacknowledged and schedules a retransmission.
+    std::thread::sleep(std::time::Duration::from_millis(150));
+
+    // Trigger retransmission on the client side.
+    client.update(0.0).unwrap();
+
+    // NOW let the host receive (the retransmitted packet is in the OS buffer).
+    let mut received_data: Option<Vec<u8>> = None;
+    for _ in 0..20 {
+        host.update(0.0).unwrap();
+        for event in host.drain_events() {
+            if let NetworkEvent::Received { data, channel, .. } = event {
+                assert_eq!(
+                    channel,
+                    Channel(0),
+                    "Data must arrive on the reliable channel"
+                );
+                received_data = Some(data);
+            }
+        }
+        if received_data.is_some() {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+
+    // Assert: the host received the correct payload despite the simulated loss.
+    assert_eq!(
+        received_data.as_deref(),
+        Some(payload.as_slice()),
+        "Host must receive the retransmitted reliable payload"
+    );
+
+    host.shutdown();
+    client.shutdown();
+}
