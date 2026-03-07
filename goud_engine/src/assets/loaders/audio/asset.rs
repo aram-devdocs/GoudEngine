@@ -4,13 +4,12 @@ use crate::assets::{Asset, AssetType};
 
 use super::format::AudioFormat;
 
-/// Audio asset containing decoded audio data.
+/// Audio asset containing encoded audio data and pre-computed metadata.
 ///
-/// This is a stub implementation. In Phase 6, this will be expanded to include:
-/// - Decoded PCM audio data
-/// - Sample rate, channel count, bit depth
-/// - Audio format information
-/// - Integration with rodio audio backend
+/// The `data` field stores the original encoded file bytes (WAV, OGG, etc.),
+/// not decoded PCM. Decoding happens at playback time in `AudioManager::play()`.
+/// Metadata (sample rate, channels, duration) is extracted during loading so
+/// callers can query properties without decoding.
 ///
 /// # Example
 /// ```
@@ -23,7 +22,7 @@ use super::format::AudioFormat;
 /// ```
 #[derive(Clone, PartialEq, Debug)]
 pub struct AudioAsset {
-    /// Raw audio data (currently empty stub).
+    /// Encoded audio file bytes (not decoded PCM).
     data: Vec<u8>,
     /// Sample rate in Hz (e.g., 44100, 48000).
     sample_rate: u32,
@@ -31,6 +30,8 @@ pub struct AudioAsset {
     channel_count: u16,
     /// Original audio file format.
     format: AudioFormat,
+    /// Pre-computed duration in seconds.
+    duration_secs: f32,
 }
 
 impl AudioAsset {
@@ -49,22 +50,31 @@ impl AudioAsset {
             sample_rate: 44100,
             channel_count: 2,
             format: AudioFormat::Wav,
+            duration_secs: 0.0,
         }
     }
 
-    /// Creates a new audio asset with the given parameters (stub).
+    /// Creates a new audio asset with the given parameters.
     ///
     /// # Arguments
-    /// * `data` - Raw audio data bytes
+    /// * `data` - Encoded audio file bytes (not decoded PCM)
     /// * `sample_rate` - Sample rate in Hz
     /// * `channel_count` - Number of channels (1 or 2)
     /// * `format` - Original file format
-    pub fn new(data: Vec<u8>, sample_rate: u32, channel_count: u16, format: AudioFormat) -> Self {
+    /// * `duration_secs` - Pre-computed duration in seconds
+    pub fn new(
+        data: Vec<u8>,
+        sample_rate: u32,
+        channel_count: u16,
+        format: AudioFormat,
+        duration_secs: f32,
+    ) -> Self {
         Self {
             data,
             sample_rate,
             channel_count,
             format,
+            duration_secs,
         }
     }
 
@@ -98,11 +108,14 @@ impl AudioAsset {
         self.data.len()
     }
 
-    /// Returns the duration of the audio in seconds (stub - returns 0.0).
-    ///
-    /// TODO: Calculate actual duration based on sample_rate, channel_count, and bit depth.
+    /// Returns the pre-computed duration of the audio in seconds.
     pub fn duration_secs(&self) -> f32 {
-        0.0
+        self.duration_secs
+    }
+
+    /// Returns the bits per sample (rodio decodes to i16, so always 16).
+    pub fn bits_per_sample(&self) -> u16 {
+        16
     }
 
     /// Returns true if this is mono audio.
