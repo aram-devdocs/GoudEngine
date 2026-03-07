@@ -3,9 +3,12 @@
 //! This module contains loaders for common asset types like textures,
 //! shaders, and audio files.
 
+pub mod animation;
 pub mod audio;
 pub mod config;
 pub mod font;
+pub mod material;
+pub mod mesh;
 #[cfg(feature = "native")]
 mod rodio_integration;
 pub mod shader;
@@ -24,3 +27,9 @@ pub use audio::{AudioAsset, AudioFormat, AudioLoader, AudioSettings};
 pub use config::{ConfigAsset, ConfigFormat, ConfigLoader};
 
 pub use font::{FontAsset, FontFormat, FontLoader, FontSettings, FontStyle};
+
+pub use material::{MaterialAsset, MaterialLoader, UniformValue};
+
+pub use animation::{AnimationLoader, KeyframeAnimation};
+
+pub use mesh::{MeshAsset, MeshLoader, MeshVertex, SubMesh};
