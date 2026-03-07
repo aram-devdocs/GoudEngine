@@ -12,7 +12,7 @@ use super::glyph_atlas::GlyphAtlas;
 
 /// Cache for glyph atlases, keyed by `(font_handle, size_px_u32)`.
 ///
-/// The size is stored as a `u32` (truncated from `f32`) so that the key
+/// The size is stored as a `u32` (rounded to the nearest integer from `f32`) so that the key
 /// is `Hash + Eq`. Callers that need sub-pixel size variation should round
 /// to the nearest integer before querying.
 #[derive(Debug)]
@@ -34,7 +34,7 @@ impl GlyphAtlasCache {
     ///
     /// * `font`        - The loaded font asset (used to parse the font data).
     /// * `font_handle` - The asset handle identifying this font.
-    /// * `size_px`     - Desired pixel size (truncated to `u32` for cache key).
+    /// * `size_px`     - Desired pixel size (rounded to the nearest integer for cache key).
     ///
     /// # Errors
     ///
@@ -54,7 +54,7 @@ impl GlyphAtlasCache {
             e.insert(atlas);
         }
 
-        // SAFETY: we just ensured the key exists above (either pre-existing or just inserted).
+        // Invariant: we just ensured the key exists above (either pre-existing or just inserted).
         self.cache
             .get(&key)
             .ok_or_else(|| "internal error: cache entry missing after insertion".to_string())

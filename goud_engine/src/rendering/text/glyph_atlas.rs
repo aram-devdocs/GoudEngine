@@ -88,7 +88,7 @@ impl GlyphAtlas {
                     });
                 }
                 None => {
-                    atlas_size = (atlas_size + 1).next_power_of_two();
+                    atlas_size *= 2;
                 }
             }
         }

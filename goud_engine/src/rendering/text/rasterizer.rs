@@ -19,6 +19,10 @@ pub struct GlyphMetrics {
 }
 
 /// A single rasterized glyph with its grayscale bitmap and metrics.
+///
+/// Note: The `width` and `height` fields store the bitmap dimensions as `u32` for
+/// array indexing and bitmap operations. The same values are duplicated in
+/// `metrics.width` and `metrics.height` as `f32` for layout calculations.
 #[derive(Debug, Clone)]
 pub struct RasterizedGlyph {
     /// Grayscale coverage bitmap (one byte per pixel, 0..=255).
