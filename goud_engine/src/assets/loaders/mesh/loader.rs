@@ -66,15 +66,11 @@ impl AssetLoader for MeshLoader {
         _settings: &'a Self::Settings,
         context: &'a mut LoadContext,
     ) -> Result<Self::Asset, AssetLoadError> {
-        let format = context
-            .extension()
-            .and_then(MeshFormat::from_extension);
+        let format = context.extension().and_then(MeshFormat::from_extension);
 
         match format {
             #[cfg(feature = "native")]
-            Some(MeshFormat::Gltf | MeshFormat::Glb) => {
-                super::gltf_parser::parse_gltf(bytes)
-            }
+            Some(MeshFormat::Gltf | MeshFormat::Glb) => super::gltf_parser::parse_gltf(bytes),
             #[cfg(feature = "native")]
             Some(MeshFormat::Obj) => super::obj_parser::parse_obj(bytes),
             #[cfg(not(feature = "native"))]
@@ -83,10 +79,7 @@ impl AssetLoader for MeshLoader {
                 Err(AssetLoadError::unsupported_format(ext))
             }
             None => {
-                let ext = context
-                    .extension()
-                    .unwrap_or("unknown")
-                    .to_string();
+                let ext = context.extension().unwrap_or("unknown").to_string();
                 Err(AssetLoadError::unsupported_format(ext))
             }
         }

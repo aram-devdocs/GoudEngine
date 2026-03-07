@@ -75,8 +75,9 @@ impl AssetLoader for MaterialLoader {
         _settings: &'a Self::Settings,
         context: &'a mut LoadContext,
     ) -> Result<Self::Asset, AssetLoadError> {
-        let descriptor: MaterialDescriptor = serde_json::from_slice(bytes)
-            .map_err(|e| AssetLoadError::decode_failed(format!("Material JSON parse error: {e}")))?;
+        let descriptor: MaterialDescriptor = serde_json::from_slice(bytes).map_err(|e| {
+            AssetLoadError::decode_failed(format!("Material JSON parse error: {e}"))
+        })?;
 
         // Declare shader dependency.
         context.add_dependency(&descriptor.shader_path);

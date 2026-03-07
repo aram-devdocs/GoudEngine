@@ -212,10 +212,7 @@ mod tests {
 
     #[test]
     fn test_interpolate_ease_in_slower_at_start() {
-        let kfs = vec![
-            kf_eased(0.0, 0.0, EasingFunction::EaseIn),
-            kf(1.0, 10.0),
-        ];
+        let kfs = vec![kf_eased(0.0, 0.0, EasingFunction::EaseIn), kf(1.0, 10.0)];
         let v = interpolate(&kfs, 0.5);
         // EaseIn: t^2 at 0.5 => 0.25, value = 2.5
         assert!((v - 2.5).abs() < 0.001);
@@ -227,10 +224,7 @@ mod tests {
 
     #[test]
     fn test_interpolate_ease_out_faster_at_start() {
-        let kfs = vec![
-            kf_eased(0.0, 0.0, EasingFunction::EaseOut),
-            kf(1.0, 10.0),
-        ];
+        let kfs = vec![kf_eased(0.0, 0.0, EasingFunction::EaseOut), kf(1.0, 10.0)];
         let v = interpolate(&kfs, 0.5);
         // EaseOut: t*(2-t) at 0.5 => 0.75, value = 7.5
         assert!((v - 7.5).abs() < 0.001);
@@ -242,10 +236,7 @@ mod tests {
 
     #[test]
     fn test_interpolate_ease_in_out_midpoint() {
-        let kfs = vec![
-            kf_eased(0.0, 0.0, EasingFunction::EaseInOut),
-            kf(1.0, 10.0),
-        ];
+        let kfs = vec![kf_eased(0.0, 0.0, EasingFunction::EaseInOut), kf(1.0, 10.0)];
         let v = interpolate(&kfs, 0.5);
         // EaseInOut at t=0.5: 2*0.5*0.5 = 0.5, value = 5.0
         assert!((v - 5.0).abs() < 0.001);
@@ -253,10 +244,7 @@ mod tests {
 
     #[test]
     fn test_interpolate_ease_in_out_quarter() {
-        let kfs = vec![
-            kf_eased(0.0, 0.0, EasingFunction::EaseInOut),
-            kf(1.0, 10.0),
-        ];
+        let kfs = vec![kf_eased(0.0, 0.0, EasingFunction::EaseInOut), kf(1.0, 10.0)];
         let v = interpolate(&kfs, 0.25);
         // EaseInOut first half: 2*0.25*0.25 = 0.125, value = 1.25
         assert!((v - 1.25).abs() < 0.001);
@@ -268,10 +256,7 @@ mod tests {
 
     #[test]
     fn test_interpolate_step_holds_from_value() {
-        let kfs = vec![
-            kf_eased(0.0, 0.0, EasingFunction::Step),
-            kf(1.0, 10.0),
-        ];
+        let kfs = vec![kf_eased(0.0, 0.0, EasingFunction::Step), kf(1.0, 10.0)];
         // Step should hold from.value until reaching to.time
         assert!((interpolate(&kfs, 0.0) - 0.0).abs() < f32::EPSILON);
         assert!((interpolate(&kfs, 0.5) - 0.0).abs() < f32::EPSILON);

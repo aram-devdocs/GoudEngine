@@ -89,9 +89,7 @@ impl AssetLoader for ConfigLoader {
         _settings: &'a Self::Settings,
         context: &'a mut LoadContext,
     ) -> Result<Self::Asset, AssetLoadError> {
-        let format = context
-            .extension()
-            .and_then(ConfigFormat::from_extension);
+        let format = context.extension().and_then(ConfigFormat::from_extension);
 
         match format {
             Some(ConfigFormat::Json) => Self::load_json(bytes),

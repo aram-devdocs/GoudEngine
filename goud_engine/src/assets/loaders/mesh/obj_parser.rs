@@ -4,9 +4,9 @@
 //! into [`MeshAsset`] data.
 
 #[cfg(feature = "native")]
-use crate::assets::AssetLoadError;
-#[cfg(feature = "native")]
 use super::asset::{MeshAsset, MeshVertex, SubMesh};
+#[cfg(feature = "native")]
+use crate::assets::AssetLoadError;
 
 /// Parses an OBJ file from raw bytes into a [`MeshAsset`].
 ///

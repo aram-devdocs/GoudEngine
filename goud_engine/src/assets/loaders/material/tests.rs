@@ -80,7 +80,12 @@ mod uniform_value {
         for original in &values {
             let json = serde_json::to_string(original).expect("serialize");
             let restored: UniformValue = serde_json::from_str(&json).expect("deserialize");
-            assert_eq!(original, &restored, "roundtrip failed for {}", original.type_name());
+            assert_eq!(
+                original,
+                &restored,
+                "roundtrip failed for {}",
+                original.type_name()
+            );
         }
     }
 
@@ -114,7 +119,10 @@ mod material_asset {
 
     fn sample_asset() -> MaterialAsset {
         let mut uniforms = HashMap::new();
-        uniforms.insert("color".to_string(), UniformValue::Vec4([1.0, 0.0, 0.0, 1.0]));
+        uniforms.insert(
+            "color".to_string(),
+            UniformValue::Vec4([1.0, 0.0, 0.0, 1.0]),
+        );
         uniforms.insert("roughness".to_string(), UniformValue::Float(0.5));
 
         let mut textures = HashMap::new();
@@ -269,8 +277,14 @@ mod material_loader {
             Some(&UniformValue::Float(0.8))
         );
         assert_eq!(asset.texture_slots().len(), 2);
-        assert_eq!(asset.get_texture_slot("diffuse"), Some("textures/diffuse.png"));
-        assert_eq!(asset.get_texture_slot("normal"), Some("textures/normal.png"));
+        assert_eq!(
+            asset.get_texture_slot("diffuse"),
+            Some("textures/diffuse.png")
+        );
+        assert_eq!(
+            asset.get_texture_slot("normal"),
+            Some("textures/normal.png")
+        );
     }
 
     #[test]
@@ -331,7 +345,9 @@ mod material_loader {
         let path = AssetPath::from_string("materials/test.mat.json".to_string());
         let mut context = LoadContext::new(path);
 
-        loader.load(valid_material_json(), &(), &mut context).unwrap();
+        loader
+            .load(valid_material_json(), &(), &mut context)
+            .unwrap();
 
         let deps = context.dependencies();
         assert!(
@@ -346,7 +362,9 @@ mod material_loader {
         let path = AssetPath::from_string("materials/test.mat.json".to_string());
         let mut context = LoadContext::new(path);
 
-        loader.load(valid_material_json(), &(), &mut context).unwrap();
+        loader
+            .load(valid_material_json(), &(), &mut context)
+            .unwrap();
 
         let deps = context.dependencies();
         assert!(
@@ -365,7 +383,9 @@ mod material_loader {
         let path = AssetPath::from_string("materials/test.mat.json".to_string());
         let mut context = LoadContext::new(path);
 
-        loader.load(valid_material_json(), &(), &mut context).unwrap();
+        loader
+            .load(valid_material_json(), &(), &mut context)
+            .unwrap();
 
         // 1 shader + 2 textures = 3 dependencies
         assert_eq!(context.dependencies().len(), 3);
@@ -377,7 +397,9 @@ mod material_loader {
         let path = AssetPath::from_string("materials/minimal.mat.json".to_string());
         let mut context = LoadContext::new(path);
 
-        loader.load(minimal_material_json(), &(), &mut context).unwrap();
+        loader
+            .load(minimal_material_json(), &(), &mut context)
+            .unwrap();
 
         let deps = context.dependencies();
         assert_eq!(deps.len(), 1);
@@ -411,8 +433,14 @@ mod material_loader {
         let asset = loader.load(json, &(), &mut context).unwrap();
 
         assert_eq!(asset.get_uniform("f"), Some(&UniformValue::Float(1.5)));
-        assert_eq!(asset.get_uniform("v2"), Some(&UniformValue::Vec2([1.0, 2.0])));
-        assert_eq!(asset.get_uniform("v3"), Some(&UniformValue::Vec3([1.0, 2.0, 3.0])));
+        assert_eq!(
+            asset.get_uniform("v2"),
+            Some(&UniformValue::Vec2([1.0, 2.0]))
+        );
+        assert_eq!(
+            asset.get_uniform("v3"),
+            Some(&UniformValue::Vec3([1.0, 2.0, 3.0]))
+        );
         assert_eq!(
             asset.get_uniform("v4"),
             Some(&UniformValue::Vec4([1.0, 2.0, 3.0, 4.0]))

@@ -27,14 +27,26 @@ mod config_format {
 
     #[test]
     fn test_from_extension_json() {
-        assert_eq!(ConfigFormat::from_extension("json"), Some(ConfigFormat::Json));
-        assert_eq!(ConfigFormat::from_extension("JSON"), Some(ConfigFormat::Json));
+        assert_eq!(
+            ConfigFormat::from_extension("json"),
+            Some(ConfigFormat::Json)
+        );
+        assert_eq!(
+            ConfigFormat::from_extension("JSON"),
+            Some(ConfigFormat::Json)
+        );
     }
 
     #[test]
     fn test_from_extension_toml() {
-        assert_eq!(ConfigFormat::from_extension("toml"), Some(ConfigFormat::Toml));
-        assert_eq!(ConfigFormat::from_extension("TOML"), Some(ConfigFormat::Toml));
+        assert_eq!(
+            ConfigFormat::from_extension("toml"),
+            Some(ConfigFormat::Toml)
+        );
+        assert_eq!(
+            ConfigFormat::from_extension("TOML"),
+            Some(ConfigFormat::Toml)
+        );
     }
 
     #[test]

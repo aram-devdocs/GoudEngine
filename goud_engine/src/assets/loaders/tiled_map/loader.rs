@@ -77,7 +77,11 @@ impl TiledMapLoader {
                 let data = std::fs::read(path).map_err(|e| {
                     std::io::Error::new(
                         std::io::ErrorKind::NotFound,
-                        format!("Failed to read tileset resource '{}': {}", path.display(), e),
+                        format!(
+                            "Failed to read tileset resource '{}': {}",
+                            path.display(),
+                            e
+                        ),
                     )
                 })?;
                 Ok(Cursor::new(data))
@@ -241,8 +245,7 @@ mod tests {
     #[test]
     fn test_tiled_map_loader_invalid_bytes() {
         let loader = TiledMapLoader::new();
-        let path =
-            crate::assets::AssetPath::from_string("test_invalid.tmx".to_string());
+        let path = crate::assets::AssetPath::from_string("test_invalid.tmx".to_string());
         let mut ctx = LoadContext::new(path);
 
         let result = loader.load(b"not valid xml", &(), &mut ctx);

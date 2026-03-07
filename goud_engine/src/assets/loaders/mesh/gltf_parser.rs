@@ -4,9 +4,9 @@
 //! files into [`MeshAsset`] data using the `gltf` crate.
 
 #[cfg(feature = "native")]
-use crate::assets::AssetLoadError;
-#[cfg(feature = "native")]
 use super::asset::{MeshAsset, MeshVertex, SubMesh};
+#[cfg(feature = "native")]
+use crate::assets::AssetLoadError;
 
 /// Parses a GLTF or GLB file from raw bytes into a [`MeshAsset`].
 ///
@@ -31,7 +31,8 @@ pub(super) fn parse_gltf(bytes: &[u8]) -> Result<MeshAsset, AssetLoadError> {
 
     for mesh in document.meshes() {
         for primitive in mesh.primitives() {
-            let reader = primitive.reader(|buffer| buffers.get(buffer.index()).map(|d| d.as_slice()));
+            let reader =
+                primitive.reader(|buffer| buffers.get(buffer.index()).map(|d| d.as_slice()));
 
             let base_vertex = vertices.len() as u32;
             let start_index = indices.len() as u32;

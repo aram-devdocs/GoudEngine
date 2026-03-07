@@ -79,9 +79,7 @@ impl KeyframeAnimation {
 
     /// Finds a channel by target property name.
     pub fn channel_by_property(&self, property: &str) -> Option<&AnimationChannel> {
-        self.channels
-            .iter()
-            .find(|c| c.target_property == property)
+        self.channels.iter().find(|c| c.target_property == property)
     }
 
     /// Returns the total number of keyframes across all channels.
