@@ -2,7 +2,7 @@
 
 from .generated import *  # noqa: F401,F403
 
-from .errors import (  # noqa: F401
+from .generated._errors import (  # noqa: F401
     GoudError,
     GoudContextError,
     GoudResourceError,
