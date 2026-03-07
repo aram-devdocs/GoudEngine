@@ -163,7 +163,6 @@ impl ProviderLifecycle for Rapier2DPhysicsProvider {
     }
 
     fn update(&mut self, delta: f32) -> GoudResult<()> {
-        self.integration_parameters.dt = delta;
         self.step(delta)
     }
 

@@ -58,7 +58,8 @@ pub fn joint_from_desc(
                 desc.anchor_b[1] - desc.anchor_a[1],
                 desc.anchor_b[2] - desc.anchor_a[2]
             ])
-            .norm();
+            .norm()
+            .max(0.01);
             RopeJointBuilder::new(dist).build().into()
         }
     }

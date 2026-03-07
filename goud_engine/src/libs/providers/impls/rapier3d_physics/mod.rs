@@ -10,6 +10,7 @@ mod tests;
 
 use std::collections::HashMap;
 
+use crossbeam_channel::Receiver;
 use rapier3d::na::{Quaternion, UnitQuaternion};
 use rapier3d::prelude::*;
 
@@ -54,39 +55,23 @@ pub struct Rapier3DPhysicsProvider {
     collider_to_body: HashMap<RapierColliderHandle, RigidBodyHandle>,
     joint_map: HashMap<u64, ImpulseJointHandle>,
 
-    // Collision event buffer
+    // Collision event handling
     collision_events: Vec<EngineCollisionEvent>,
-    event_collector: CollisionEventCollector,
-}
-
-/// Collector that buffers collision events from rapier's event handler.
-struct CollisionEventCollector {
-    events: Vec<(
-        rapier3d::prelude::ColliderHandle,
-        rapier3d::prelude::ColliderHandle,
-        bool,
-    )>,
-}
-
-impl CollisionEventCollector {
-    fn new() -> Self {
-        Self { events: Vec::new() }
-    }
-
-    fn drain(
-        &mut self,
-    ) -> Vec<(
-        rapier3d::prelude::ColliderHandle,
-        rapier3d::prelude::ColliderHandle,
-        bool,
-    )> {
-        std::mem::take(&mut self.events)
-    }
+    collision_recv: Receiver<rapier3d::geometry::CollisionEvent>,
+    // Stored to keep the channel alive; contact force events are drained
+    // to prevent unbounded growth but processed via narrow_phase directly.
+    #[allow(dead_code)]
+    contact_recv: Receiver<ContactForceEvent>,
+    event_handler: ChannelEventCollector,
 }
 
 impl Rapier3DPhysicsProvider {
     /// Create a new Rapier3D physics provider with default gravity [0, -9.81, 0].
     pub fn new() -> Self {
+        let (collision_send, collision_recv) = crossbeam_channel::unbounded();
+        let (contact_send, contact_recv) = crossbeam_channel::unbounded();
+        let event_handler = ChannelEventCollector::new(collision_send, contact_send);
+
         Self {
             capabilities: PhysicsCapabilities3D {
                 supports_continuous_collision: true,
@@ -116,7 +101,9 @@ impl Rapier3DPhysicsProvider {
             joint_map: HashMap::new(),
 
             collision_events: Vec::new(),
-            event_collector: CollisionEventCollector::new(),
+            collision_recv,
+            contact_recv,
+            event_handler,
         }
     }
 
@@ -170,10 +157,6 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
     fn step(&mut self, delta: f32) -> GoudResult<()> {
         self.integration_params.dt = delta;
 
-        let (collision_send, collision_recv) = crossbeam_channel::unbounded();
-        let (contact_force_send, contact_force_recv) = crossbeam_channel::unbounded();
-        let event_handler = ChannelEventCollector::new(collision_send, contact_force_send);
-
         self.physics_pipeline.step(
             &self.gravity,
             &self.integration_params,
@@ -187,41 +170,33 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
             &mut self.ccd_solver,
             Some(&mut self.query_pipeline),
             &(),
-            &event_handler,
+            &self.event_handler,
         );
 
-        // Collect collision events
-        while let Ok(event) = collision_recv.try_recv() {
-            let started = event.started();
-            let (h1, h2) = match event {
-                rapier3d::geometry::CollisionEvent::Started(a, b, _) => (a, b),
-                rapier3d::geometry::CollisionEvent::Stopped(a, b, _) => (a, b),
+        // Drain collision events from the channel and convert to engine events
+        while let Ok(event) = self.collision_recv.try_recv() {
+            let (h1, h2, started) = match event {
+                rapier3d::geometry::CollisionEvent::Started(a, b, _) => (a, b, true),
+                rapier3d::geometry::CollisionEvent::Stopped(a, b, _) => (a, b, false),
             };
-            self.event_collector.events.push((h1, h2, started));
-        }
 
-        // Drain contact force events to avoid channel buildup
-        while contact_force_recv.try_recv().is_ok() {}
-
-        // Convert buffered rapier events to engine events
-        for (h1, h2, started) in self.event_collector.drain() {
             let body_a = self
                 .collider_to_body
                 .get(&h1)
                 .and_then(|rb| self.body_reverse.get(rb))
-                .copied()
-                .unwrap_or(0);
+                .copied();
             let body_b = self
                 .collider_to_body
                 .get(&h2)
                 .and_then(|rb| self.body_reverse.get(rb))
-                .copied()
-                .unwrap_or(0);
-            self.collision_events.push(EngineCollisionEvent {
-                body_a: BodyHandle(body_a),
-                body_b: BodyHandle(body_b),
-                started,
-            });
+                .copied();
+            if let (Some(a), Some(b)) = (body_a, body_b) {
+                self.collision_events.push(EngineCollisionEvent {
+                    body_a: BodyHandle(a),
+                    body_b: BodyHandle(b),
+                    started,
+                });
+            }
         }
 
         Ok(())
