@@ -850,6 +850,40 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint goud_component_has_batch(GoudContextId ctx, IntPtr entity_ids, uint count, ulong type_id_hash, IntPtr out_results);
 
+        // engine_config
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr goud_engine_config_create();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_engine_config_destroy(IntPtr handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_title(IntPtr handle, [MarshalAs(UnmanagedType.LPUTF8Str)] string title);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_size(IntPtr handle, uint width, uint height);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_vsync(IntPtr handle, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_fullscreen(IntPtr handle, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_target_fps(IntPtr handle, uint fps);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_fps_overlay(IntPtr handle, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern GoudContextId goud_engine_create(IntPtr handle);
+
         // error
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_last_error_code();

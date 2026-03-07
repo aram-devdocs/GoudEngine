@@ -24,6 +24,16 @@ namespace GoudEngine
             _frameCount = 0;
         }
 
+        /// <summary>Creates a GoudGame from a pre-existing context (used by EngineConfig.Build)</summary>
+        internal GoudGame(GoudContextId contextId)
+        {
+            _ctx = contextId;
+            _deltaTime = 0.0f;
+            _title = "GoudEngine";
+            _totalTime = 0.0;
+            _frameCount = 0;
+        }
+
         public float DeltaTime => _deltaTime;
 
         public float Fps => _deltaTime > 0 ? 1f / _deltaTime : 0f;

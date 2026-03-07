@@ -600,6 +600,34 @@ def _setup():
     _lib.goud_component_has_batch.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint64), ctypes.c_uint32, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8)]
     _lib.goud_component_has_batch.restype = ctypes.c_uint32
 
+    # engine_config
+    _lib.goud_engine_config_create.argtypes = []
+    _lib.goud_engine_config_create.restype = ctypes.c_void_p
+
+    _lib.goud_engine_config_destroy.argtypes = [ctypes.c_void_p]
+    _lib.goud_engine_config_destroy.restype = None
+
+    _lib.goud_engine_config_set_title.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+    _lib.goud_engine_config_set_title.restype = ctypes.c_bool
+
+    _lib.goud_engine_config_set_size.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_engine_config_set_size.restype = ctypes.c_bool
+
+    _lib.goud_engine_config_set_vsync.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+    _lib.goud_engine_config_set_vsync.restype = ctypes.c_bool
+
+    _lib.goud_engine_config_set_fullscreen.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+    _lib.goud_engine_config_set_fullscreen.restype = ctypes.c_bool
+
+    _lib.goud_engine_config_set_target_fps.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_target_fps.restype = ctypes.c_bool
+
+    _lib.goud_engine_config_set_fps_overlay.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+    _lib.goud_engine_config_set_fps_overlay.restype = ctypes.c_bool
+
+    _lib.goud_engine_create.argtypes = [ctypes.c_void_p]
+    _lib.goud_engine_create.restype = GoudContextId
+
     # error
     _lib.goud_last_error_code.argtypes = []
     _lib.goud_last_error_code.restype = ctypes.c_int32

@@ -415,3 +415,31 @@ export class GoudGame implements IGoudGame {
   setFpsUpdateInterval(_interval: number): void {}
   setFpsOverlayCorner(_corner: number): void {}
 }
+
+/**
+ * Builder for configuring and creating a GoudGame instance.
+ * Mirrors the Rust EngineConfig builder pattern.
+ */
+export class EngineConfig {
+  private _config: WebGameConfig = {};
+  private _vsync = true;
+  private _fullscreen = false;
+  private _targetFps = 60;
+  private _fpsOverlay = false;
+
+  withTitle(title: string): this { this._config.title = title; return this; }
+  withSize(width: number, height: number): this { this._config.width = width; this._config.height = height; return this; }
+  withCanvas(canvas: HTMLCanvasElement): this { this._config.canvas = canvas; return this; }
+  withWasmUrl(url: string): this { this._config.wasmUrl = url; return this; }
+  withVsync(_enabled: boolean): this { this._vsync = _enabled; return this; }
+  withFullscreen(_enabled: boolean): this { this._fullscreen = _enabled; return this; }
+  withTargetFps(fps: number): this { this._targetFps = fps; return this; }
+  withFpsOverlay(enabled: boolean): this { this._fpsOverlay = enabled; return this; }
+
+  /** Consumes this config and creates a GoudGame instance. */
+  async build(): Promise<GoudGame> {
+    const game = await GoudGame.create(this._config);
+    if (this._fpsOverlay) game.setFpsOverlayEnabled(true);
+    return game;
+  }
+}

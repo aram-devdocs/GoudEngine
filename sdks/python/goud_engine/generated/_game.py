@@ -2,7 +2,7 @@
 
 import ctypes
 from ._ffi import (get_lib, GoudContextId, FfiVec2, FfiTransform2D, FfiSprite,
-    GoudRenderStats, GoudContact)
+    GoudRenderStats, GoudContact, GoudFpsStats)
 from ._types import Entity, Vec2, Color, Transform2D, Sprite, RenderStats
 from ._keys import Key, MouseButton
 
@@ -10,13 +10,60 @@ from ._keys import Key, MouseButton
 _TYPEID_TRANSFORM2D = hash('Transform2D') & 0xFFFFFFFFFFFFFFFF
 _TYPEID_SPRITE = hash('Sprite') & 0xFFFFFFFFFFFFFFFF
 
+
+class EngineConfig:
+    """Builder for configuring and creating a GoudGame with provider selection."""
+
+    def __init__(self):
+        self._lib = get_lib()
+        self._handle = self._lib.goud_engine_config_create()
+
+    def with_title(self, title: str) -> "EngineConfig":
+        self._lib.goud_engine_config_set_title(self._handle, title.encode("utf-8"))
+        return self
+
+    def with_size(self, width: int, height: int) -> "EngineConfig":
+        self._lib.goud_engine_config_set_size(self._handle, width, height)
+        return self
+
+    def with_vsync(self, enabled: bool) -> "EngineConfig":
+        self._lib.goud_engine_config_set_vsync(self._handle, enabled)
+        return self
+
+    def with_fullscreen(self, enabled: bool) -> "EngineConfig":
+        self._lib.goud_engine_config_set_fullscreen(self._handle, enabled)
+        return self
+
+    def with_target_fps(self, fps: int) -> "EngineConfig":
+        self._lib.goud_engine_config_set_target_fps(self._handle, fps)
+        return self
+
+    def with_fps_overlay(self, enabled: bool) -> "EngineConfig":
+        self._lib.goud_engine_config_set_fps_overlay(self._handle, enabled)
+        return self
+
+    def build(self) -> "GoudGame":
+        """Consume this config and create a GoudGame. The handle is freed."""
+        ctx = self._lib.goud_engine_create(self._handle)
+        self._handle = None
+        return GoudGame(context_id=ctx)
+
+    def __del__(self):
+        if hasattr(self, '_handle') and self._handle is not None:
+            self._lib.goud_engine_config_destroy(self._handle)
+            self._handle = None
+
+
 class GoudGame:
     """Main game engine instance. Creates a window, manages rendering, input, and ECS."""
 
-    def __init__(self, width: int = 800, height: int = 600, title: str = 'GoudEngine'):
+    def __init__(self, width: int = 800, height: int = 600, title: str = 'GoudEngine', context_id=None):
         lib = get_lib()
         self._lib = lib
-        self._ctx = lib.goud_window_create(width, height, title.encode('utf-8'))
+        if context_id is not None:
+            self._ctx = context_id
+        else:
+            self._ctx = lib.goud_window_create(width, height, title.encode('utf-8'))
         self._delta_time = 0.0
         self._title = title
         self._frame_count = 0
