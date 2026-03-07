@@ -894,5 +894,17 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void goud_clear_last_error();
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_last_error_subsystem(IntPtr buf, nuint buf_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_last_error_operation(IntPtr buf, nuint buf_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_error_recovery_class(int code);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_error_recovery_hint(int code, IntPtr buf, nuint buf_len);
+
     }
 }

@@ -768,7 +768,11 @@
     "error": {
       "goud_last_error_code":    {"params": [],                                                                    "returns": "i32"},
       "goud_last_error_message": {"params": [{"name": "buf", "type": "*mut u8"}, {"name": "buf_len", "type": "usize"}], "returns": "i32", "unsafe": true},
-      "goud_clear_last_error":   {"params": [],                                                                    "returns": "void"}
+      "goud_clear_last_error":   {"params": [],                                                                    "returns": "void"},
+      "goud_last_error_subsystem": {"params": [{"name": "buf", "type": "*mut u8"}, {"name": "buf_len", "type": "usize"}], "returns": "i32", "unsafe": true},
+      "goud_last_error_operation": {"params": [{"name": "buf", "type": "*mut u8"}, {"name": "buf_len", "type": "usize"}], "returns": "i32", "unsafe": true},
+      "goud_error_recovery_class": {"params": [{"name": "code", "type": "i32"}], "returns": "i32"},
+      "goud_error_recovery_hint":  {"params": [{"name": "code", "type": "i32"}, {"name": "buf", "type": "*mut u8"}, {"name": "buf_len", "type": "usize"}], "returns": "i32", "unsafe": true}
     }
   },
 
