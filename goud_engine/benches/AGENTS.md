@@ -32,3 +32,4 @@ cargo bench -- asset     # Run asset benchmarks only
 2. Add to `Cargo.toml` under `[[bench]]`
 3. Use `criterion_group!` and `criterion_main!` macros
 4. Focus on operations that run per-frame or per-entity
+
