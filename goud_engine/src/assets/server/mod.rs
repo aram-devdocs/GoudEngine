@@ -43,10 +43,14 @@
 //! }
 //! ```
 
+mod async_operations;
 mod core;
 mod loader_registry;
 mod operations;
+mod web_operations;
 
+#[cfg(test)]
+mod async_tests;
 #[cfg(test)]
 mod tests;
 

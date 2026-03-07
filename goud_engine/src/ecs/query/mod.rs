@@ -86,15 +86,20 @@
 //! 3. **Flexibility**: Compose queries with tuples and filters
 //! 4. **Parallel Safety**: Read/write access tracked for safe parallelism
 
+pub mod cache;
 pub mod fetch;
 pub mod iter;
 pub mod param;
 pub mod query_type;
 
+// Re-export cache type
+pub use cache::QueryArchetypeCache;
+
 // Re-export fetch types
 pub use fetch::{
-    Access, AccessConflict, AccessType, ConflictInfo, MutState, NonSendConflictInfo, QueryState,
-    ReadOnlyWorldQuery, ResourceConflictInfo, With, Without, WorldQuery, WriteAccess,
+    Access, AccessConflict, AccessType, Added, Changed, ConflictInfo, MutState,
+    NonSendConflictInfo, QueryState, ReadOnlyWorldQuery, ResourceConflictInfo, With, Without,
+    WorldQuery, WriteAccess,
 };
 
 // Re-export the main Query type
@@ -110,3 +115,5 @@ pub use param::QuerySystemParamState;
 mod tests;
 #[cfg(test)]
 mod tests_advanced;
+#[cfg(test)]
+mod tests_cache;

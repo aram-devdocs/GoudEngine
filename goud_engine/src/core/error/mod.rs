@@ -26,6 +26,8 @@
 mod codes;
 mod conversions;
 mod ffi_bridge;
+mod methods;
+mod reverse_mapping;
 mod types;
 
 // Re-export everything so external code sees the same flat API as before.
@@ -90,6 +92,7 @@ mod tests {
     mod graphics_errors;
     mod internal_errors;
     mod resource_errors;
+    mod round_trip;
     mod system_errors;
     mod traits;
 }
