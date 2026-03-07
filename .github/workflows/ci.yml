@@ -105,6 +105,18 @@ jobs:
       if: matrix.rust == 'stable'
       run: cargo test --lib sdk --verbose -- --nocapture
 
+    # Headless backend tests (no GPU required)
+    - name: Run headless backend tests
+      run: cargo test --features headless --lib -- null --nocapture
+
+    # FFI safety tests (null pointers, invalid handles, lifecycle)
+    - name: Run FFI safety tests
+      run: cargo test --test ffi_safety -- --nocapture
+
+    # Cross-layer integration tests (ECS + FFI)
+    - name: Run integration tests
+      run: cargo test --test integration -- --nocapture
+
     # Only run on stable for coverage
     - name: Install cargo-tarpaulin
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
