@@ -1328,6 +1328,33 @@ def _gen_tool_class(tool_name: str, lines: list):
                 lines.append(
                     f"        self._lib.{ffi_fn}(self._ctx, {extra})"
                 )
+            elif any(p["type"] == "string" for p in params):
+                # String params need encoding to bytes ptr + len
+                for p in params:
+                    if p["type"] == "string":
+                        sn = to_snake(p["name"])
+                        lines.append(
+                            f"        _{sn}_bytes = {sn}.encode('utf-8')"
+                        )
+                ffi_parts = ["self._ctx"]
+                for p in params:
+                    sn = to_snake(p["name"])
+                    if p["type"] == "string":
+                        ffi_parts.append(
+                            f"ctypes.cast(ctypes.create_string_buffer(_{sn}_bytes, len(_{sn}_bytes)), ctypes.POINTER(ctypes.c_uint8))"
+                        )
+                        ffi_parts.append(f"len(_{sn}_bytes)")
+                    else:
+                        ffi_parts.append(sn)
+                args_str = ", ".join(ffi_parts)
+                if ret == "void":
+                    lines.append(
+                        f"        self._lib.{ffi_fn}({args_str})"
+                    )
+                else:
+                    lines.append(
+                        f"        return self._lib.{ffi_fn}({args_str})"
+                    )
             else:
                 ffi_args = [to_snake(p["name"]) for p in params]
                 args_str = ", ".join(["self._ctx"] + ffi_args)
