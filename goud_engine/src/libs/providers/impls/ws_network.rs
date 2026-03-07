@@ -8,7 +8,7 @@
 mod native {
     use std::collections::HashMap;
     use std::net::TcpListener;
-    use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+    use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
     use std::sync::{mpsc, Arc, Mutex};
     use std::thread::{self, JoinHandle};
     use std::time::Duration;
@@ -43,7 +43,12 @@ mod native {
 
     // InternalWsEvent is Send because all variants contain only Send types.
     // (ConnectionId, String, Vec<u8>, DisconnectReason, mpsc::Sender<Vec<u8>> are all Send.)
-    const _: () = { fn _assert_send<T: Send>() {} fn _check() { _assert_send::<InternalWsEvent>(); } };
+    const _: () = {
+        fn _assert_send<T: Send>() {}
+        fn _check() {
+            _assert_send::<InternalWsEvent>();
+        }
+    };
 
     struct WsConnection {
         id: ConnectionId,
@@ -127,6 +132,7 @@ mod native {
         send_txs: HashMap<u64, mpsc::Sender<Vec<u8>>>,
         stats: NetworkStats,
         next_id: Arc<AtomicU64>,
+        conn_count: Arc<AtomicU32>,
         threads: Mutex<Vec<JoinHandle<()>>>,
         running: Arc<AtomicBool>,
         is_hosting: bool,
@@ -159,6 +165,7 @@ mod native {
                 send_txs: HashMap::new(),
                 stats: NetworkStats::default(),
                 next_id: Arc::new(AtomicU64::new(1)),
+                conn_count: Arc::new(AtomicU32::new(0)),
                 threads: Mutex::new(Vec::new()),
                 running: Arc::new(AtomicBool::new(true)),
                 is_hosting: false,
@@ -211,10 +218,9 @@ mod native {
                             self.events.push(NetworkEvent::Connected { conn: id });
                         }
                         InternalWsEvent::Disconnected(id, reason) => {
-                            if let Some(c) = self.connections.get_mut(&id.0) {
-                                c.state = ConnectionState::Disconnected;
-                            }
+                            self.connections.remove(&id.0);
                             self.send_txs.remove(&id.0);
+                            self.conn_count.fetch_sub(1, Ordering::Relaxed);
                             self.events
                                 .push(NetworkEvent::Disconnected { conn: id, reason });
                         }
@@ -291,13 +297,13 @@ mod native {
             let event_tx = self.event_tx.clone();
             let next_id = self.next_id.clone();
             let max_conns = config.max_connections;
+            let conn_count = self.conn_count.clone();
 
             let h = thread::spawn(move || {
-                let mut count = 0u32;
                 while running.load(Ordering::Relaxed) {
                     match listener.accept() {
                         Ok((stream, _)) => {
-                            if count >= max_conns {
+                            if conn_count.load(Ordering::Relaxed) >= max_conns {
                                 continue;
                             }
                             if stream.set_nonblocking(false).is_err() {
@@ -307,7 +313,7 @@ mod native {
                                 Ok(ws) => {
                                     set_stream_timeout(ws.get_ref());
                                     let id = ConnectionId(next_id.fetch_add(1, Ordering::Relaxed));
-                                    count += 1;
+                                    conn_count.fetch_add(1, Ordering::Relaxed);
                                     let wtx =
                                         spawn_io_thread(id, ws, event_tx.clone(), running.clone());
                                     let _ = event_tx.send(InternalWsEvent::WriteTxReady(id, wtx));
@@ -372,9 +378,8 @@ mod native {
 
         fn disconnect(&mut self, conn_id: ConnectionId) -> GoudResult<()> {
             self.send_txs.remove(&conn_id.0);
-            if let Some(c) = self.connections.get_mut(&conn_id.0) {
-                c.state = ConnectionState::Disconnected;
-            }
+            self.connections.remove(&conn_id.0);
+            self.conn_count.fetch_sub(1, Ordering::Relaxed);
             self.events.push(NetworkEvent::Disconnected {
                 conn: conn_id,
                 reason: DisconnectReason::LocalClose,

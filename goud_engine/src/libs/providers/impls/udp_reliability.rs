@@ -27,20 +27,9 @@ pub const HEADER_SIZE: usize = 8;
 // PacketHeader
 // =============================================================================
 
-/// Fixed-size header prepended to every UDP packet.
+/// Fixed-size 8-byte header prepended to every UDP packet.
 ///
-/// Layout (8 bytes):
-/// - `sequence` (u16 BE): sender's packet sequence number
-/// - `ack` (u16 BE): latest received remote sequence number
-/// - `ack_bitfield` (u32 BE): bitmask of 32 prior acks relative to `ack`
-/// - Byte 6: `packet_type` (one of PACKET_* constants)
-/// - Byte 7: `channel` (0 = reliable-ordered, 1+ = unreliable)
-///
-/// Note: `packet_type` and `channel` are packed into the upper bytes of
-/// `ack_bitfield` would be wasteful; instead we use a clean 8-byte layout
-/// where sequence(2) + ack(2) + ack_bitfield(2, reduced) + type(1) + channel(1).
-/// For simplicity we use: seq(2) + ack(2) + type(1) + channel(1) + ack_bits(2).
-/// Actually, let's use the layout the spec requested: 8 bytes total.
+/// Layout: seq(2) + ack(2) + ack_bitfield(2) + type(1) + channel(1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PacketHeader {
     /// Sender's monotonically increasing sequence number.
