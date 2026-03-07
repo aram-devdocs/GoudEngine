@@ -512,6 +512,56 @@ def gen_web_wrapper():
     lines.append("}")
     lines.append("")
 
+    # EngineConfig stub for web (not fully supported in WASM)
+    if "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {}):
+        ec_tool = schema["tools"]["EngineConfig"]
+        emit_jsdoc(lines, ec_tool.get("doc"), "")
+        lines.append("export class EngineConfig {")
+        lines.append("  private _config: WebGameConfig;")
+        lines.append("")
+        lines.append("  constructor() {")
+        lines.append("    this._config = {};")
+        lines.append("  }")
+        lines.append("")
+        for method in ec_tool.get("methods", []):
+            mn = to_camel(method["name"])
+            params = method.get("params", [])
+            if mn in ("setVsync", "setFullscreen", "setTargetFps"):
+                # WASM target does not support vsync, fullscreen, or target FPS.
+                # These settings are silently ignored so we omit the setters entirely.
+                continue
+            emit_jsdoc(lines, method.get("doc"))
+            if mn == "build":
+                lines.append("  async build(): Promise<GoudGame> {")
+                lines.append("    return GoudGame.create(this._config);")
+                lines.append("  }")
+            elif mn == "destroy":
+                lines.append("  destroy(): void {}")
+            elif mn == "setTitle":
+                lines.append("  setTitle(title: string): EngineConfig {")
+                lines.append("    this._config.title = title;")
+                lines.append("    return this;")
+                lines.append("  }")
+            elif mn == "setSize":
+                lines.append("  setSize(width: number, height: number): EngineConfig {")
+                lines.append("    this._config.width = width;")
+                lines.append("    this._config.height = height;")
+                lines.append("    return this;")
+                lines.append("  }")
+            elif mn == "setFpsOverlay":
+                lines.append("  setFpsOverlay(_enabled: boolean): EngineConfig {")
+                lines.append("    // FPS overlay is not yet supported in WASM; accepted for API parity.")
+                lines.append("    return this;")
+                lines.append("  }")
+            else:
+                ps = ", ".join(f"_{to_camel(p['name'])}: {ts_type(p['type'])}" for p in params)
+                lines.append(f"  {mn}({ps}): EngineConfig {{")
+                lines.append("    return this;")
+                lines.append("  }")
+            lines.append("")
+        lines.append("}")
+        lines.append("")
+
     write_generated(GEN / "web" / "index.g.ts", "\n".join(lines))
 
 

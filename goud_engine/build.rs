@@ -128,6 +128,8 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/debug.rs",
     // error query module
     "src/ffi/error.rs",
+    // engine config module
+    "src/ffi/engine_config.rs",
 ];
 
 /// A single extracted FFI function signature.

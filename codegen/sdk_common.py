@@ -145,6 +145,8 @@ CTYPES_MAP = {
     "*const FfiSprite": "ctypes.POINTER(FfiSprite)",
     "*mut FfiTransform2DBuilder": "ctypes.c_void_p",
     "*mut FfiSpriteBuilder": "ctypes.c_void_p",
+    "*mut FfiAnimationClipBuilder": "ctypes.c_void_p",
+    "*mut c_void": "ctypes.c_void_p",
     "FfiTransform2D": "FfiTransform2D",
     "FfiVec2": "FfiVec2",
     "FfiColor": "FfiColor",
