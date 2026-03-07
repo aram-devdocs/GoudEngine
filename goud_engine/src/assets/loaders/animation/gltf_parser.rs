@@ -111,6 +111,8 @@ pub fn parse_gltf_animation(bytes: &[u8]) -> Result<KeyframeAnimation, AssetLoad
 /// Loads buffer data from GLTF, supporting both embedded (GLB) and data URIs.
 #[cfg(feature = "native")]
 fn load_buffers(gltf: &gltf::Gltf) -> Result<Vec<Vec<u8>>, AssetLoadError> {
+    use crate::assets::loaders::gltf_utils::decode_data_uri;
+
     let mut buffers = Vec::new();
 
     for buffer in gltf.buffers() {
@@ -121,15 +123,9 @@ fn load_buffers(gltf: &gltf::Gltf) -> Result<Vec<Vec<u8>>, AssetLoadError> {
                 .ok_or_else(|| AssetLoadError::decode_failed("GLB binary chunk missing"))?
                 .to_vec(),
             gltf::buffer::Source::Uri(uri) => {
-                if let Some(encoded) = uri.strip_prefix("data:application/octet-stream;base64,") {
-                    decode_base64(encoded)?
-                } else if let Some(encoded) =
-                    uri.strip_prefix("data:application/gltf-buffer;base64,")
-                {
-                    decode_base64(encoded)?
+                if uri.starts_with("data:") {
+                    decode_data_uri(uri)?
                 } else {
-                    // External file reference -- not supported in asset loader context
-                    // (we only have the primary file bytes)
                     return Err(AssetLoadError::decode_failed(format!(
                         "External buffer URI not supported in animation loader: {uri}"
                     )));
@@ -140,38 +136,4 @@ fn load_buffers(gltf: &gltf::Gltf) -> Result<Vec<Vec<u8>>, AssetLoadError> {
     }
 
     Ok(buffers)
-}
-
-/// Minimal base64 decoder.
-#[cfg(feature = "native")]
-fn decode_base64(input: &str) -> Result<Vec<u8>, AssetLoadError> {
-    let input = input.trim();
-    let mut output = Vec::with_capacity(input.len() * 3 / 4);
-    let mut buf: u32 = 0;
-    let mut bits: u32 = 0;
-
-    for c in input.bytes() {
-        let val = match c {
-            b'A'..=b'Z' => c - b'A',
-            b'a'..=b'z' => c - b'a' + 26,
-            b'0'..=b'9' => c - b'0' + 52,
-            b'+' => 62,
-            b'/' => 63,
-            b'=' | b'\n' | b'\r' | b' ' => continue,
-            _ => {
-                return Err(AssetLoadError::decode_failed(format!(
-                    "Invalid base64 character: {c}"
-                )))
-            }
-        };
-        buf = (buf << 6) | val as u32;
-        bits += 6;
-        if bits >= 8 {
-            bits -= 8;
-            output.push((buf >> bits) as u8);
-            buf &= (1 << bits) - 1;
-        }
-    }
-
-    Ok(output)
 }

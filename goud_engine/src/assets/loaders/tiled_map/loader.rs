@@ -68,6 +68,13 @@ impl TiledMapLoader {
 
         // Build a reader that serves the primary map bytes from memory
         // and delegates external resources (tilesets) to the filesystem.
+        //
+        // NOTE: The tiled crate resolves external tileset paths relative to
+        // the map file's parent directory. Since AssetServer loads the map
+        // bytes from `asset_root + asset_path`, external resources must also
+        // be accessible relative to the map's location on disk. This works
+        // correctly when the working directory is the asset root (typical for
+        // game engines), or when the map uses embedded tilesets.
         let bytes_owned = bytes.to_vec();
         let asset_path_clone = asset_path.clone();
         let reader = move |path: &Path| -> std::io::Result<Cursor<Vec<u8>>> {
@@ -113,12 +120,23 @@ impl TiledMapLoader {
         }
 
         // Collect tileset image paths and register as dependencies.
+        // The tiled crate resolves image paths relative to the map file.
+        // We prefix with the map's parent directory to get asset-root-relative paths.
+        let map_parent = Path::new(&asset_path)
+            .parent()
+            .and_then(|p| p.to_str())
+            .unwrap_or("");
         let mut tileset_paths = Vec::new();
         for tileset in map.tilesets() {
             if let Some(ref image) = tileset.image {
-                let path_str = image.source.display().to_string();
-                context.add_dependency(&path_str);
-                tileset_paths.push(path_str);
+                let raw_path = image.source.display().to_string();
+                let dep_path = if map_parent.is_empty() {
+                    raw_path
+                } else {
+                    format!("{}/{}", map_parent, raw_path)
+                };
+                context.add_dependency(&dep_path);
+                tileset_paths.push(dep_path);
             }
         }
 

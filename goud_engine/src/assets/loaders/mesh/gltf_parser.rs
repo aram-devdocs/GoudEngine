@@ -113,6 +113,8 @@ fn collect_buffer_data(
     document: &gltf::Document,
     blob: &mut Option<Vec<u8>>,
 ) -> Result<Vec<Vec<u8>>, AssetLoadError> {
+    use crate::assets::loaders::gltf_utils::decode_data_uri;
+
     let mut buffers = Vec::new();
     for buffer in document.buffers() {
         match buffer.source() {
@@ -123,8 +125,8 @@ fn collect_buffer_data(
                 buffers.push(data);
             }
             gltf::buffer::Source::Uri(uri) => {
-                if let Some(data) = decode_data_uri(uri) {
-                    buffers.push(data);
+                if uri.starts_with("data:") {
+                    buffers.push(decode_data_uri(uri)?);
                 } else {
                     return Err(AssetLoadError::decode_failed(format!(
                         "External GLTF buffer URIs are not supported: {uri}"
@@ -134,68 +136,4 @@ fn collect_buffer_data(
         }
     }
     Ok(buffers)
-}
-
-/// Decodes a `data:` URI into raw bytes.
-///
-/// Only base64-encoded data URIs are supported.
-/// Uses a minimal decoder to avoid pulling in the `base64` crate.
-#[cfg(feature = "native")]
-fn decode_data_uri(uri: &str) -> Option<Vec<u8>> {
-    let marker = ";base64,";
-    let pos = uri.find(marker)?;
-    let encoded = &uri[pos + marker.len()..];
-    decode_base64(encoded)
-}
-
-/// Minimal base64 decoder (standard alphabet, no padding required).
-#[cfg(feature = "native")]
-fn decode_base64(input: &str) -> Option<Vec<u8>> {
-    const TABLE: [u8; 128] = {
-        let mut t = [255u8; 128];
-        let mut i = 0u8;
-        while i < 26 {
-            t[(b'A' + i) as usize] = i;
-            t[(b'a' + i) as usize] = i + 26;
-            i += 1;
-        }
-        let mut d = 0u8;
-        while d < 10 {
-            t[(b'0' + d) as usize] = d + 52;
-            d += 1;
-        }
-        t[b'+' as usize] = 62;
-        t[b'/' as usize] = 63;
-        t
-    };
-
-    let bytes: Vec<u8> = input
-        .bytes()
-        .filter(|&b| b != b'=' && b != b'\n' && b != b'\r')
-        .collect();
-    let mut out = Vec::with_capacity(bytes.len() * 3 / 4);
-
-    for chunk in bytes.chunks(4) {
-        let mut buf = 0u32;
-        let len = chunk.len();
-        for (i, &b) in chunk.iter().enumerate() {
-            if b >= 128 {
-                return None;
-            }
-            let val = TABLE[b as usize];
-            if val == 255 {
-                return None;
-            }
-            buf |= (val as u32) << (6 * (3 - i));
-        }
-        out.push((buf >> 16) as u8);
-        if len > 2 {
-            out.push((buf >> 8) as u8);
-        }
-        if len > 3 {
-            out.push(buf as u8);
-        }
-    }
-
-    Some(out)
 }

@@ -7,6 +7,7 @@ pub mod animation;
 pub mod audio;
 pub mod config;
 pub mod font;
+pub(crate) mod gltf_utils;
 pub mod material;
 pub mod mesh;
 #[cfg(feature = "native")]

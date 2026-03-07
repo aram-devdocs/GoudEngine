@@ -29,9 +29,9 @@ impl AssetServer {
                 // Record dependencies in the graph
                 let asset_str = asset_path.as_str().to_string();
                 for dep in &dependencies {
-                    // Ignore cycle errors during load -- log would be better
-                    // but we silently skip to avoid blocking the load.
-                    let _ = self.dependency_graph.add_dependency(&asset_str, dep);
+                    if let Err(e) = self.dependency_graph.add_dependency(&asset_str, dep) {
+                        log::warn!("Dependency cycle detected loading '{}': {}", asset_str, e);
+                    }
                 }
             }
             Err(error) => {
@@ -148,7 +148,9 @@ impl AssetServer {
                 // Record dependencies in the graph
                 let asset_str = asset_path.as_str().to_string();
                 for dep in &dependencies {
-                    let _ = self.dependency_graph.add_dependency(&asset_str, dep);
+                    if let Err(e) = self.dependency_graph.add_dependency(&asset_str, dep) {
+                        log::warn!("Dependency cycle detected loading '{}': {}", asset_str, e);
+                    }
                 }
             }
             Err(error) => {
@@ -304,6 +306,21 @@ impl AssetServer {
             Ok(boxed_asset) => {
                 // Update in storage if the asset exists
                 self.storage.replace_erased(path, boxed_asset);
+
+                // Update dependency graph with new dependencies from reload
+                let new_deps = context.into_dependencies();
+                let path_str = path.to_string();
+                self.dependency_graph.remove_asset(&path_str);
+                for dep in &new_deps {
+                    if let Err(e) = self.dependency_graph.add_dependency(&path_str, dep) {
+                        log::warn!(
+                            "Dependency cycle detected during hot-reload of '{}': {}",
+                            path,
+                            e
+                        );
+                    }
+                }
+
                 true
             }
             Err(_) => false,
