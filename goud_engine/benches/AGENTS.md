@@ -8,6 +8,7 @@ Performance benchmarks using the `criterion` crate. Focus on hot paths.
 
 - `ecs_benchmarks.rs` — Entity creation, component iteration, system execution
 - `asset_benchmarks.rs` — Asset loading, caching, handle resolution
+- `sprite_batch_benchmarks.rs` — Sprite batch gather, sort, vertex generation, full CPU pipeline
 - `physics_benchmarks.rs.disabled` — Physics benchmarks (currently disabled)
 
 ## Running
@@ -31,3 +32,4 @@ cargo bench -- asset     # Run asset benchmarks only
 2. Add to `Cargo.toml` under `[[bench]]`
 3. Use `criterion_group!` and `criterion_main!` macros
 4. Focus on operations that run per-frame or per-entity
+

@@ -96,6 +96,10 @@ harness = false
 name = "asset_benchmarks"
 harness = false
 
+[[bench]]
+name = "sprite_batch_benchmarks"
+harness = false
+
 # [[bench]]
 # name = "physics_benchmarks"
 # harness = false

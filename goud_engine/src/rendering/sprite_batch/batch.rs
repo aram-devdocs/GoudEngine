@@ -26,27 +26,27 @@ use std::collections::HashMap;
 /// ```
 pub struct SpriteBatch<B: RenderBackend> {
     /// Graphics backend
-    pub(super) backend: B,
+    pub backend: B,
     /// Configuration
-    pub(super) config: SpriteBatchConfig,
+    pub config: SpriteBatchConfig,
     /// Vertex buffer handle
-    pub(super) vertex_buffer: Option<BufferHandle>,
+    pub vertex_buffer: Option<BufferHandle>,
     /// Index buffer handle (shared quad indices)
-    pub(super) index_buffer: Option<BufferHandle>,
+    pub index_buffer: Option<BufferHandle>,
     /// Current vertex buffer capacity (number of sprites)
-    pub(super) vertex_capacity: usize,
+    pub vertex_capacity: usize,
     /// Sprite shader program
-    pub(super) shader: Option<ShaderHandle>,
+    pub shader: Option<ShaderHandle>,
     /// Collected sprite instances this frame
-    pub(super) sprites: Vec<SpriteInstance>,
+    pub sprites: Vec<SpriteInstance>,
     /// CPU-side vertex buffer
-    pub(super) vertices: Vec<SpriteVertex>,
+    pub vertices: Vec<SpriteVertex>,
     /// Prepared batches for rendering
-    pub(super) batches: Vec<SpriteBatchEntry>,
+    pub batches: Vec<SpriteBatchEntry>,
     /// Texture handle cache (AssetHandle -> GPU TextureHandle)
-    pub(super) texture_cache: HashMap<AssetHandle<TextureAsset>, TextureHandle>,
+    pub texture_cache: HashMap<AssetHandle<TextureAsset>, TextureHandle>,
     /// Current frame number (for debugging)
-    pub(super) frame_count: u64,
+    pub frame_count: u64,
 }
 
 impl<B: RenderBackend> SpriteBatch<B> {
@@ -117,7 +117,7 @@ impl<B: RenderBackend> SpriteBatch<B> {
     // =========================================================================
 
     /// Gathers all sprites from the world into the internal sprite list.
-    pub(super) fn gather_sprites(&mut self, world: &World) -> GoudResult<()> {
+    pub fn gather_sprites(&mut self, world: &World) -> GoudResult<()> {
         self.sprites.clear();
 
         let query: Query<(Entity, &Sprite, &Transform2D)> = Query::new(world);
@@ -149,7 +149,7 @@ impl<B: RenderBackend> SpriteBatch<B> {
     // =========================================================================
 
     /// Sorts sprites by Z-layer (back to front) and texture (for batching).
-    pub(super) fn sort_sprites(&mut self) {
+    pub fn sort_sprites(&mut self) {
         if !self.config.enable_batching {
             self.sprites.sort_by(|a, b| {
                 a.z_layer
@@ -232,7 +232,7 @@ impl<B: RenderBackend> SpriteBatch<B> {
     }
 
     /// Generates 4 vertices for a single sprite quad.
-    fn generate_sprite_vertices(
+    pub fn generate_sprite_vertices(
         &mut self,
         sprite: &SpriteInstance,
         texture_size: Vec2,

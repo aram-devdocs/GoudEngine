@@ -15,6 +15,7 @@ use crate::libs::platform::PlatformBackend;
 #[cfg(feature = "native")]
 use crate::rendering::sprite_batch::SpriteBatch;
 
+use crate::sdk::debug_overlay::{DebugOverlay, FpsStats};
 use crate::sdk::entity_builder::EntityBuilder;
 use crate::sdk::game_config::{GameConfig, GameContext};
 
@@ -44,6 +45,9 @@ pub struct GoudGame {
 
     /// Whether the game has been initialized.
     pub(crate) initialized: bool,
+
+    /// Debug overlay for FPS stats tracking.
+    pub(crate) debug_overlay: DebugOverlay,
 
     // =========================================================================
     // Native-only fields (require windowing + OpenGL)
@@ -85,11 +89,14 @@ impl GoudGame {
     /// [`with_platform`](Self::with_platform) instead.
     pub fn new(config: GameConfig) -> GoudResult<Self> {
         let window_size = (config.width, config.height);
+        let mut debug_overlay = DebugOverlay::new(config.fps_update_interval);
+        debug_overlay.set_enabled(config.show_fps_overlay);
         Ok(Self {
             scene_manager: SceneManager::new(),
             config,
             context: GameContext::new(window_size),
             initialized: false,
+            debug_overlay,
             #[cfg(feature = "native")]
             platform: None,
             #[cfg(feature = "native")]
@@ -135,12 +142,15 @@ impl GoudGame {
 
         let platform = GlfwPlatform::new(&window_config)?;
         let window_size = (config.width, config.height);
+        let mut debug_overlay = DebugOverlay::new(config.fps_update_interval);
+        debug_overlay.set_enabled(config.show_fps_overlay);
 
         Ok(Self {
             scene_manager: SceneManager::new(),
             config,
             context: GameContext::new(window_size),
             initialized: false,
+            debug_overlay,
             platform: Some(Box::new(platform)),
             render_backend: None,
             input_manager: InputManager::default(),
@@ -329,6 +339,7 @@ impl GoudGame {
         // Real implementation would integrate with windowing system
         while self.context.is_running() {
             self.context.update(frame_time);
+            self.debug_overlay.update(frame_time);
 
             // Update all active scenes each frame.
             let active: Vec<SceneId> = self.scene_manager.active_scenes().to_vec();
@@ -351,6 +362,7 @@ impl GoudGame {
         F: FnMut(&mut GameContext, &mut World),
     {
         self.context.update(delta_time);
+        self.debug_overlay.update(delta_time);
 
         let active: Vec<SceneId> = self.scene_manager.active_scenes().to_vec();
         for scene_id in active {
@@ -358,6 +370,18 @@ impl GoudGame {
                 update(&mut self.context, world);
             }
         }
+    }
+
+    /// Returns the current FPS statistics from the debug overlay.
+    #[inline]
+    pub fn fps_stats(&self) -> FpsStats {
+        self.debug_overlay.stats()
+    }
+
+    /// Enables or disables the FPS stats overlay.
+    #[inline]
+    pub fn set_fps_overlay_enabled(&mut self, enabled: bool) {
+        self.debug_overlay.set_enabled(enabled);
     }
 
     /// Returns the current frame count.

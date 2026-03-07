@@ -29,6 +29,10 @@ export declare class GoudGame {
   clearDepth(): void
   disableBlending(): void
   getRenderStats(): NapiRenderStats
+  getFpsStats(): NapiFpsStats
+  setFpsOverlayEnabled(enabled: boolean): void
+  setFpsUpdateInterval(interval: number): void
+  setFpsOverlayCorner(corner: number): void
   isKeyPressed(key: number): boolean
   isKeyJustPressed(key: number): boolean
   isKeyJustReleased(key: number): boolean
@@ -147,6 +151,14 @@ export interface NapiContact {
   normalX: number
   normalY: number
   penetration: number
+}
+
+export interface NapiFpsStats {
+  currentFps: number
+  minFps: number
+  maxFps: number
+  avgFps: number
+  frameTimeMs: number
 }
 
 export interface NapiRenderStats {

@@ -1874,6 +1874,37 @@
           "returns": "u64"
         }
       ]
+    },
+    "FpsStats": {
+      "kind": "value",
+      "doc": "Frame timing statistics from the debug overlay rolling window",
+      "fields": [
+        {
+          "name": "currentFps",
+          "type": "f32",
+          "doc": "Current (most recent) frames per second"
+        },
+        {
+          "name": "minFps",
+          "type": "f32",
+          "doc": "Minimum FPS observed in the rolling window"
+        },
+        {
+          "name": "maxFps",
+          "type": "f32",
+          "doc": "Maximum FPS observed in the rolling window"
+        },
+        {
+          "name": "avgFps",
+          "type": "f32",
+          "doc": "Average FPS across the rolling window"
+        },
+        {
+          "name": "frameTimeMs",
+          "type": "f32",
+          "doc": "Most recent frame time in milliseconds"
+        }
+      ]
     }
   },
   "enums": {
@@ -2112,6 +2143,16 @@
       "values": {
         "Renderer2D": 0,
         "Renderer3D": 1
+      }
+    },
+    "OverlayCorner": {
+      "doc": "Screen corner where the debug overlay is displayed",
+      "underlying": "i32",
+      "values": {
+        "TopLeft": 0,
+        "TopRight": 1,
+        "BottomLeft": 2,
+        "BottomRight": 3
       }
     },
     "PlaybackMode": {
@@ -3580,6 +3621,48 @@
           "returns": "RenderStats",
           "wasm_name": "get_render_stats",
           "wasm_signature": "get_render_stats(): { draw_calls: number; triangles: number; texture_binds: number; shader_binds: number } | undefined"
+        },
+        {
+          "name": "getFpsStats",
+          "doc": "Returns FPS statistics from the debug overlay rolling window",
+          "params": [],
+          "returns": "FpsStats"
+        },
+        {
+          "name": "setFpsOverlayEnabled",
+          "doc": "Enables or disables the FPS debug overlay",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool",
+              "doc": "Whether to enable the overlay"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "setFpsUpdateInterval",
+          "doc": "Sets how often FPS statistics are recomputed",
+          "params": [
+            {
+              "name": "interval",
+              "type": "f32",
+              "doc": "Update interval in seconds"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "setFpsOverlayCorner",
+          "doc": "Sets the screen corner where the FPS overlay is displayed",
+          "params": [
+            {
+              "name": "corner",
+              "type": "OverlayCorner",
+              "doc": "Screen corner for the overlay"
+            }
+          ],
+          "returns": "void"
         },
         {
           "name": "mapActionKey",

@@ -14,18 +14,18 @@ use crate::libs::graphics::backend::types::{
 /// The vertex layout is optimized for cache coherency.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
-pub(super) struct SpriteVertex {
+pub struct SpriteVertex {
     /// World-space position (x, y)
-    pub(super) position: Vec2,
+    pub position: Vec2,
     /// Texture coordinates (u, v)
-    pub(super) tex_coords: Vec2,
+    pub tex_coords: Vec2,
     /// Vertex color (r, g, b, a)
-    pub(super) color: Color,
+    pub color: Color,
 }
 
 impl SpriteVertex {
     /// Returns the vertex layout descriptor for GPU.
-    pub(super) fn layout() -> VertexLayout {
+    pub fn layout() -> VertexLayout {
         VertexLayout::new(std::mem::size_of::<Self>() as u32)
             .with_attribute(VertexAttribute {
                 location: 0,
@@ -50,30 +50,31 @@ impl SpriteVertex {
 
 /// Internal representation of a sprite instance for batching.
 #[derive(Debug, Clone)]
-pub(super) struct SpriteInstance {
+pub struct SpriteInstance {
     /// Entity that owns this sprite — available in tests for assertion purposes.
     #[cfg(test)]
-    pub(super) entity: Entity,
+    pub entity: Entity,
     /// Texture handle
-    pub(super) texture: AssetHandle<TextureAsset>,
+    pub texture: AssetHandle<TextureAsset>,
     /// World transform matrix
-    pub(super) transform: Mat3x3,
+    pub transform: Mat3x3,
     /// Color tint
-    pub(super) color: Color,
+    pub color: Color,
     /// Source rectangle (UV coordinates)
-    pub(super) source_rect: Option<Rect>,
+    pub source_rect: Option<Rect>,
     /// Sprite size
-    pub(super) size: Vec2,
+    pub size: Vec2,
     /// Z-layer for sorting
-    pub(super) z_layer: f32,
-    /// Flip flags
-    pub(super) flip_x: bool,
-    pub(super) flip_y: bool,
+    pub z_layer: f32,
+    /// Flip horizontally
+    pub flip_x: bool,
+    /// Flip vertically
+    pub flip_y: bool,
 }
 
 impl SpriteInstance {
     /// Constructs a `SpriteInstance` from ECS components and a computed world transform.
-    pub(super) fn from_components(
+    pub fn from_components(
         #[cfg(test)] entity: Entity,
         #[cfg(not(test))] _entity: Entity,
         sprite: &Sprite,
@@ -98,13 +99,13 @@ impl SpriteInstance {
 
 /// A single draw batch for sprites sharing the same texture.
 #[derive(Debug)]
-pub(super) struct SpriteBatchEntry {
+pub struct SpriteBatchEntry {
     /// Texture used by this batch (will be passed to the draw call when the render stage is wired up)
-    pub(super) _texture_handle: AssetHandle<TextureAsset>,
+    pub _texture_handle: AssetHandle<TextureAsset>,
     /// GPU texture handle (resolved from asset handle)
-    pub(super) gpu_texture: Option<TextureHandle>,
+    pub gpu_texture: Option<TextureHandle>,
     /// Start index in vertex buffer
-    pub(super) vertex_start: usize,
+    pub vertex_start: usize,
     /// Number of vertices in this batch
-    pub(super) vertex_count: usize,
+    pub vertex_count: usize,
 }

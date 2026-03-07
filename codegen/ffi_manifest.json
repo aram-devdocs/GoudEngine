@@ -380,6 +380,42 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_debug_get_fps_stats": {
+      "source_file": "ffi/debug.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out_stats: *mut FpsStats"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_debug_set_fps_overlay_corner": {
+      "source_file": "ffi/debug.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "corner: i32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_debug_set_fps_overlay_enabled": {
+      "source_file": "ffi/debug.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_debug_set_fps_update_interval": {
+      "source_file": "ffi/debug.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "interval: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_entity_clone": {
       "source_file": "ffi/entity/lifecycle.rs",
       "params": [
@@ -2024,5 +2060,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 211
+  "total_count": 215
 }
