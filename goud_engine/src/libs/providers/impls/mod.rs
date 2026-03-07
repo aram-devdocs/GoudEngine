@@ -36,3 +36,12 @@ pub use glfw_window::GlfwWindowProvider;
 pub use opengl_render::OpenGLRenderProvider;
 #[cfg(feature = "native")]
 pub use rodio_audio::RodioAudioProvider;
+
+/// UDP reliability sub-module for packet sequencing and retransmission.
+#[cfg(feature = "net-udp")]
+pub mod udp_reliability;
+/// UDP transport provider implementing `NetworkProvider`.
+#[cfg(feature = "net-udp")]
+pub mod udp_network;
+#[cfg(feature = "net-udp")]
+pub use udp_network::UdpNetProvider;
