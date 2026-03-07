@@ -860,7 +860,6 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void goud_clear_last_error();
 
-        // error context & recovery (added for typed SDK errors)
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_last_error_subsystem(IntPtr buf, nuint buf_len);
 
