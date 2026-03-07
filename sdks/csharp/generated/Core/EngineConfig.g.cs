@@ -18,6 +18,7 @@ namespace GoudEngine
         /// <summary>Sets the window title</summary>
         public EngineConfig SetTitle(string title)
         {
+            if (_handle == IntPtr.Zero) throw new ObjectDisposedException("EngineConfig");
             NativeMethods.goud_engine_config_set_title(_handle, title);
             _title = title;
             return this;
@@ -26,6 +27,7 @@ namespace GoudEngine
         /// <summary>Sets the window size in pixels</summary>
         public EngineConfig SetSize(uint width, uint height)
         {
+            if (_handle == IntPtr.Zero) throw new ObjectDisposedException("EngineConfig");
             NativeMethods.goud_engine_config_set_size(_handle, width, height);
             return this;
         }
@@ -33,6 +35,7 @@ namespace GoudEngine
         /// <summary>Enables or disables vertical sync</summary>
         public EngineConfig SetVsync(bool enabled)
         {
+            if (_handle == IntPtr.Zero) throw new ObjectDisposedException("EngineConfig");
             NativeMethods.goud_engine_config_set_vsync(_handle, enabled);
             return this;
         }
@@ -40,6 +43,7 @@ namespace GoudEngine
         /// <summary>Enables or disables fullscreen mode</summary>
         public EngineConfig SetFullscreen(bool enabled)
         {
+            if (_handle == IntPtr.Zero) throw new ObjectDisposedException("EngineConfig");
             NativeMethods.goud_engine_config_set_fullscreen(_handle, enabled);
             return this;
         }
@@ -47,6 +51,7 @@ namespace GoudEngine
         /// <summary>Sets the target frames per second</summary>
         public EngineConfig SetTargetFps(uint fps)
         {
+            if (_handle == IntPtr.Zero) throw new ObjectDisposedException("EngineConfig");
             NativeMethods.goud_engine_config_set_target_fps(_handle, fps);
             return this;
         }
@@ -54,6 +59,7 @@ namespace GoudEngine
         /// <summary>Enables or disables the FPS debug overlay</summary>
         public EngineConfig SetFpsOverlay(bool enabled)
         {
+            if (_handle == IntPtr.Zero) throw new ObjectDisposedException("EngineConfig");
             NativeMethods.goud_engine_config_set_fps_overlay(_handle, enabled);
             return this;
         }

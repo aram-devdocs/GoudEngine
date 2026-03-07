@@ -1435,6 +1435,8 @@ def _gen_engine_config(lines: list):
             lines.append(f"    def {mname}(self, title):")
             if method.get("doc"):
                 lines.append(f'        """{method["doc"]}"""')
+            lines.append("        if not self._handle:")
+            lines.append("            raise RuntimeError('EngineConfig already consumed or destroyed')")
             lines.append(f"        self._lib.{ffi_fn}(self._handle, title.encode('utf-8'))")
             lines.append("        return self")
             lines.append("")
@@ -1444,6 +1446,8 @@ def _gen_engine_config(lines: list):
             lines.append(f"    def {mname}({sig}):")
             if method.get("doc"):
                 lines.append(f'        """{method["doc"]}"""')
+            lines.append("        if not self._handle:")
+            lines.append("            raise RuntimeError('EngineConfig already consumed or destroyed')")
             ffi_args = ", ".join(["self._handle"] + [to_snake(p["name"]) for p in params])
             lines.append(f"        self._lib.{ffi_fn}({ffi_args})")
             lines.append("        return self")

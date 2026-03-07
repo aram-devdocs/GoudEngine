@@ -711,31 +711,43 @@ class EngineConfig:
 
     def set_title(self, title):
         """Sets the window title"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
         self._lib.goud_engine_config_set_title(self._handle, title.encode('utf-8'))
         return self
 
     def set_size(self, width, height):
         """Sets the window size in pixels"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
         self._lib.goud_engine_config_set_size(self._handle, width, height)
         return self
 
     def set_vsync(self, enabled):
         """Enables or disables vertical sync"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
         self._lib.goud_engine_config_set_vsync(self._handle, enabled)
         return self
 
     def set_fullscreen(self, enabled):
         """Enables or disables fullscreen mode"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
         self._lib.goud_engine_config_set_fullscreen(self._handle, enabled)
         return self
 
     def set_target_fps(self, fps):
         """Sets the target frames per second"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
         self._lib.goud_engine_config_set_target_fps(self._handle, fps)
         return self
 
     def set_fps_overlay(self, enabled):
         """Enables or disables the FPS debug overlay"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
         self._lib.goud_engine_config_set_fps_overlay(self._handle, enabled)
         return self
 

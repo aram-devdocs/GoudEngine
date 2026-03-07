@@ -1708,6 +1708,7 @@ impl GoudGame {
 #[napi(js_name = "NativeEngineConfig")]
 pub struct NativeEngineConfig {
     handle: *mut std::ffi::c_void,
+    title: String,
 }
 
 #[napi]
@@ -1715,16 +1716,17 @@ impl NativeEngineConfig {
     #[napi(constructor)]
     pub fn new() -> Self {
         let handle = goud_engine::ffi::engine_config::goud_engine_config_create();
-        Self { handle }
+        Self { handle, title: String::new() }
     }
 
     #[napi]
-    pub fn set_title(&self, title: String) -> bool {
+    pub fn set_title(&mut self, title: String) -> bool {
         if self.handle.is_null() { return false; }
-        let c_title = match CString::new(title) {
+        let c_title = match CString::new(title.clone()) {
             Ok(s) => s,
             Err(_) => return false,
         };
+        self.title = title;
         // SAFETY: handle is valid, CString guarantees null-terminated.
         unsafe { goud_engine::ffi::engine_config::goud_engine_config_set_title(self.handle, c_title.as_ptr()) }
     }
@@ -1779,7 +1781,7 @@ impl NativeEngineConfig {
         Ok(GoudGame {
             context_id,
             last_delta_time: 0.0,
-            title: String::new(),
+            title: std::mem::take(&mut self.title),
             frame_count: 0,
             total_time: 0.0,
         })

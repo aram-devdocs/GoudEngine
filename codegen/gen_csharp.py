@@ -1197,6 +1197,7 @@ def gen_engine_config():
             lines += [
                 "        public EngineConfig SetTitle(string title)",
                 "        {",
+                "            if (_handle == IntPtr.Zero) throw new ObjectDisposedException(\"EngineConfig\");",
                 f"            NativeMethods.{ffi_fn}(_handle, title);",
                 "            _title = title;",
                 "            return this;",
@@ -1208,6 +1209,7 @@ def gen_engine_config():
             lines += [
                 f"        public EngineConfig {cs_mn}({cs_params})",
                 "        {",
+                "            if (_handle == IntPtr.Zero) throw new ObjectDisposedException(\"EngineConfig\");",
                 f"            NativeMethods.{ffi_fn}({ffi_args});",
                 "            return this;",
                 "        }", "",
