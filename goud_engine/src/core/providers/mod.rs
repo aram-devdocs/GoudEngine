@@ -19,6 +19,7 @@ pub mod impls;
 pub mod input;
 pub mod input_types;
 pub mod physics;
+pub mod physics3d;
 pub mod render;
 pub mod types;
 pub mod window;

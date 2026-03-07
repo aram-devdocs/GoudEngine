@@ -1,9 +1,13 @@
 //! Central registry holding all engine providers.
 
 use super::audio::AudioProvider;
-use super::impls::{NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullRenderProvider};
+use super::impls::{
+    NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullPhysicsProvider3D,
+    NullRenderProvider,
+};
 use super::input::InputProvider;
 use super::physics::PhysicsProvider;
+use super::physics3d::PhysicsProvider3D;
 use super::render::RenderProvider;
 
 /// Central registry holding all engine providers.
@@ -17,8 +21,10 @@ use super::render::RenderProvider;
 pub struct ProviderRegistry {
     /// The rendering backend (e.g., OpenGL, null).
     pub render: Box<dyn RenderProvider>,
-    /// The physics backend (e.g., Rapier2D, null).
+    /// The 2D physics backend (e.g., Rapier2D, null).
     pub physics: Box<dyn PhysicsProvider>,
+    /// The 3D physics backend (e.g., Rapier3D, null).
+    pub physics3d: Box<dyn PhysicsProvider3D>,
     /// The audio backend (e.g., Rodio, null).
     pub audio: Box<dyn AudioProvider>,
     /// The input backend (e.g., GLFW input, null).
@@ -30,6 +36,7 @@ impl Default for ProviderRegistry {
         Self {
             render: Box::new(NullRenderProvider::new()),
             physics: Box::new(NullPhysicsProvider::new()),
+            physics3d: Box::new(NullPhysicsProvider3D::new()),
             audio: Box::new(NullAudioProvider::new()),
             input: Box::new(NullInputProvider::new()),
         }
@@ -45,6 +52,7 @@ mod tests {
         let registry = ProviderRegistry::default();
         assert_eq!(registry.render.name(), "null");
         assert_eq!(registry.physics.name(), "null");
+        assert_eq!(registry.physics3d.name(), "null");
         assert_eq!(registry.audio.name(), "null");
         assert_eq!(registry.input.name(), "null");
     }
@@ -54,6 +62,7 @@ mod tests {
         let registry = ProviderRegistry::default();
         assert_eq!(registry.render.version(), "0.0.0");
         assert_eq!(registry.physics.version(), "0.0.0");
+        assert_eq!(registry.physics3d.version(), "0.0.0");
         assert_eq!(registry.audio.version(), "0.0.0");
         assert_eq!(registry.input.version(), "0.0.0");
     }
