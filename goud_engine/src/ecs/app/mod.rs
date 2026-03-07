@@ -23,16 +23,18 @@
 //! ```
 
 pub mod builtin_plugins;
+pub mod physics_plugins;
 pub mod plugin;
 
-pub use builtin_plugins::TransformPropagationPlugin;
+pub use builtin_plugins::{DefaultPlugins, TransformPropagationPlugin};
+pub use physics_plugins::{PhysicsPlugin2D, PhysicsPlugin3D};
 pub use plugin::{Plugin, PluginGroup};
 
 use std::any::TypeId;
 use std::collections::HashSet;
 
-use crate::ecs::resource::Resource;
-use crate::ecs::schedule::{CoreStage, Stage, SystemStage};
+use crate::ecs::resource::{NonSendResource, Resource};
+use crate::ecs::schedule::{CoreStage, Stage, SystemSetConfig, SystemStage};
 use crate::ecs::system::IntoSystem;
 use crate::ecs::World;
 
@@ -55,6 +57,13 @@ pub struct App {
 }
 
 impl App {
+    /// Creates a new App with default stages and all [`DefaultPlugins`] applied.
+    pub fn new_with_defaults() -> Self {
+        let mut app = Self::new();
+        app.add_plugin_group(DefaultPlugins);
+        app
+    }
+
     /// Creates a new App with default stages for each [`CoreStage`] variant.
     pub fn new() -> Self {
         let stages = CoreStage::all()
@@ -101,6 +110,18 @@ impl App {
 
         plugin.build(self);
         self.initialized_plugins.insert(plugin_type_id);
+        self
+    }
+
+    /// Adds a plugin group to the app.
+    pub fn add_plugin_group<G: PluginGroup>(&mut self, group: G) -> &mut Self {
+        group.build(self);
+        self
+    }
+
+    /// Inserts a non-send resource into the world.
+    pub fn insert_non_send_resource<T: NonSendResource>(&mut self, resource: T) -> &mut Self {
+        self.world.insert_non_send_resource(resource);
         self
     }
 
@@ -151,6 +172,64 @@ impl App {
     pub fn update(&mut self) {
         self.run_once();
     }
+
+    // =====================================================================
+    // Named System Sets API
+    // =====================================================================
+
+    /// Registers a named system set in the specified stage.
+    pub fn register_set(&mut self, stage: CoreStage, name: &str) -> &mut Self {
+        for (core_stage, system_stage) in &mut self.stages {
+            if *core_stage == stage {
+                system_stage.register_set(name);
+                return self;
+            }
+        }
+        self
+    }
+
+    /// Adds a system to a named set, returning its [`SystemId`].
+    ///
+    /// The system is added to the stage and simultaneously placed in the
+    /// named set.
+    pub fn add_system_to_set<S, Marker>(
+        &mut self,
+        stage: CoreStage,
+        set_name: &str,
+        system: S,
+    ) -> &mut Self
+    where
+        S: IntoSystem<Marker>,
+    {
+        for (core_stage, system_stage) in &mut self.stages {
+            if *core_stage == stage {
+                assert!(
+                    system_stage.get_set(set_name).is_some(),
+                    "System set '{set_name}' is not registered in stage {stage:?}"
+                );
+                let id = system_stage.add_system(system);
+                system_stage.add_system_to_set(set_name, id);
+                return self;
+            }
+        }
+        self
+    }
+
+    /// Configures ordering for a named set in the specified stage.
+    pub fn configure_set(
+        &mut self,
+        stage: CoreStage,
+        name: &str,
+        config: SystemSetConfig,
+    ) -> &mut Self {
+        for (core_stage, system_stage) in &mut self.stages {
+            if *core_stage == stage {
+                system_stage.configure_named_set(name, config);
+                return self;
+            }
+        }
+        self
+    }
 }
 
 impl Default for App {
@@ -173,3 +252,7 @@ impl std::fmt::Debug for App {
 #[cfg(test)]
 #[path = "tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "tests_extended.rs"]
+mod tests_extended;

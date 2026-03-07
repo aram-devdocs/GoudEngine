@@ -103,6 +103,7 @@ pub mod component_transform2d;
 pub mod context;
 #[cfg(feature = "native")]
 pub mod debug;
+pub mod engine_config;
 pub mod entity;
 pub mod error;
 #[cfg(feature = "native")]

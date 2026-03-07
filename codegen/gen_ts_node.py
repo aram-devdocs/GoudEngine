@@ -192,6 +192,29 @@ def gen_interface():
 
     lines.append("}")
     lines.append("")
+
+    # EngineConfig interface
+    if "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {}):
+        ec_tool = schema["tools"]["EngineConfig"]
+        if ec_tool.get("doc"):
+            lines.append(f"/** {ec_tool['doc']} */")
+        lines.append("export interface IEngineConfig {")
+        for method in ec_tool.get("methods", []):
+            mn = to_camel(method["name"])
+            params = method.get("params", [])
+            ret = method.get("returns", "void")
+            if method.get("doc"):
+                lines.append(f"  /** {method['doc']} */")
+            if mn == "build":
+                lines.append("  build(): IGoudGame;")
+            elif mn == "destroy":
+                lines.append("  destroy(): void;")
+            else:
+                ps = ", ".join(f"{to_camel(p['name'])}: {ts_iface_type(p['type'])}" for p in params)
+                lines.append(f"  {mn}({ps}): IEngineConfig;")
+        lines.append("}")
+        lines.append("")
+
     write_generated(GEN / "types" / "engine.g.ts", "\n".join(lines))
 
 
@@ -495,17 +518,65 @@ def gen_node_wrapper():
 
     lines.append("}")
     lines.append("")
+
+    # EngineConfig class
+    if "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {}):
+        ec_tool = schema["tools"]["EngineConfig"]
+        lines.append("import type { IEngineConfig } from '../types/engine.g.js';")
+        lines.append("")
+        if ec_tool.get("doc"):
+            lines.append(f"/** {ec_tool['doc']} */")
+        lines.append("export class EngineConfig implements IEngineConfig {")
+        lines.append("  private native: any;")
+        lines.append("")
+        lines.append("  constructor() {")
+        lines.append("    const { NativeEngineConfig } = require('../../../index');")
+        lines.append("    this.native = new NativeEngineConfig();")
+        lines.append("  }")
+        lines.append("")
+
+        for method in ec_tool.get("methods", []):
+            mn = to_camel(method["name"])
+            params = method.get("params", [])
+            if method.get("doc"):
+                lines.append(f"  /** {method['doc']} */")
+            if mn == "build":
+                lines.append("  build(): GoudGame {")
+                lines.append("    const ctx = this.native.build();")
+                lines.append("    const game = Object.create(GoudGame.prototype);")
+                lines.append("    game.native = ctx;")
+                lines.append("    return game;")
+                lines.append("  }")
+            elif mn == "destroy":
+                lines.append("  destroy(): void {")
+                lines.append("    this.native.destroy();")
+                lines.append("  }")
+            else:
+                ps = ", ".join(f"{to_camel(p['name'])}: {ts_iface_type(p['type'])}" for p in params)
+                lines.append(f"  {mn}({ps}): EngineConfig {{")
+                args = ", ".join(to_camel(p["name"]) for p in params)
+                lines.append(f"    this.native.{mn}({args});")
+                lines.append("    return this;")
+                lines.append("  }")
+            lines.append("")
+
+        lines.append("}")
+        lines.append("")
+
     write_generated(GEN / "node" / "index.g.ts", "\n".join(lines))
 
 
 # ---- index.g.ts (entry point) ---------------------------------------------
 
 def gen_entry():
+    has_engine_config = "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {})
+    ec_export = ", EngineConfig" if has_engine_config else ""
+    ec_type_export = ", IEngineConfig" if has_engine_config else ""
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "export { GoudGame, Color, Vec2, Vec3, Key, MouseButton } from './node/index.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from './types/engine.g.js';",
+        f"export {{ GoudGame{ec_export}, Color, Vec2, Vec3, Key, MouseButton }} from './node/index.g.js';",
+        f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats }} from './types/engine.g.js';",
         "export type { Rect } from './types/math.g.js';",
         "",
     ]
@@ -1628,6 +1699,102 @@ impl GoudGame {
     /// Returns the raw FFI delta time from the last poll_events call.
     #[napi(getter)]
     pub fn ffi_delta_time(&self) -> f64 { goud_window_get_delta_time(self.context_id) as f64 }
+}
+
+// =============================================================================
+// NativeEngineConfig -- Builder for GoudGame via FFI
+// =============================================================================
+
+#[napi(js_name = "NativeEngineConfig")]
+pub struct NativeEngineConfig {
+    handle: *mut std::ffi::c_void,
+    title: String,
+}
+
+#[napi]
+impl NativeEngineConfig {
+    #[napi(constructor)]
+    pub fn new() -> Self {
+        let handle = goud_engine::ffi::engine_config::goud_engine_config_create();
+        Self { handle, title: String::new() }
+    }
+
+    #[napi]
+    pub fn set_title(&mut self, title: String) -> bool {
+        if self.handle.is_null() { return false; }
+        let c_title = match CString::new(title.clone()) {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        self.title = title;
+        // SAFETY: handle is valid, CString guarantees null-terminated.
+        unsafe { goud_engine::ffi::engine_config::goud_engine_config_set_title(self.handle, c_title.as_ptr()) }
+    }
+
+    #[napi]
+    pub fn set_size(&self, width: u32, height: u32) -> bool {
+        if self.handle.is_null() { return false; }
+        // SAFETY: handle is valid.
+        unsafe { goud_engine::ffi::engine_config::goud_engine_config_set_size(self.handle, width, height) }
+    }
+
+    #[napi]
+    pub fn set_vsync(&self, enabled: bool) -> bool {
+        if self.handle.is_null() { return false; }
+        // SAFETY: handle is valid.
+        unsafe { goud_engine::ffi::engine_config::goud_engine_config_set_vsync(self.handle, enabled) }
+    }
+
+    #[napi]
+    pub fn set_fullscreen(&self, enabled: bool) -> bool {
+        if self.handle.is_null() { return false; }
+        // SAFETY: handle is valid.
+        unsafe { goud_engine::ffi::engine_config::goud_engine_config_set_fullscreen(self.handle, enabled) }
+    }
+
+    #[napi]
+    pub fn set_target_fps(&self, fps: u32) -> bool {
+        if self.handle.is_null() { return false; }
+        // SAFETY: handle is valid.
+        unsafe { goud_engine::ffi::engine_config::goud_engine_config_set_target_fps(self.handle, fps) }
+    }
+
+    #[napi]
+    pub fn set_fps_overlay(&self, enabled: bool) -> bool {
+        if self.handle.is_null() { return false; }
+        // SAFETY: handle is valid.
+        unsafe { goud_engine::ffi::engine_config::goud_engine_config_set_fps_overlay(self.handle, enabled) }
+    }
+
+    #[napi]
+    pub fn build(&mut self) -> Result<GoudGame> {
+        if self.handle.is_null() {
+            return Err(Error::from_reason("EngineConfig already consumed"));
+        }
+        let handle = self.handle;
+        self.handle = std::ptr::null_mut();
+        // SAFETY: handle is valid and we take ownership.
+        let context_id = unsafe { goud_engine::ffi::engine_config::goud_engine_create(handle) };
+        if context_id == GOUD_INVALID_CONTEXT_ID {
+            return Err(Error::from_reason("Failed to create engine from config"));
+        }
+        Ok(GoudGame {
+            context_id,
+            last_delta_time: 0.0,
+            title: std::mem::take(&mut self.title),
+            frame_count: 0,
+            total_time: 0.0,
+        })
+    }
+
+    #[napi]
+    pub fn destroy(&mut self) {
+        if !self.handle.is_null() {
+            // SAFETY: handle is valid and we own it.
+            unsafe { goud_engine::ffi::engine_config::goud_engine_config_destroy(self.handle) };
+            self.handle = std::ptr::null_mut();
+        }
+    }
 }
 """
 

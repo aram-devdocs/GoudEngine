@@ -9,6 +9,7 @@ pub use crate::core::providers::impls::null_audio;
 pub use crate::core::providers::impls::null_input;
 pub use crate::core::providers::impls::null_network;
 pub use crate::core::providers::impls::null_physics;
+pub use crate::core::providers::impls::null_physics3d;
 pub use crate::core::providers::impls::null_render;
 pub use crate::core::providers::impls::null_window;
 
@@ -16,6 +17,7 @@ pub use crate::core::providers::impls::NullAudioProvider;
 pub use crate::core::providers::impls::NullInputProvider;
 pub use crate::core::providers::impls::NullNetworkProvider;
 pub use crate::core::providers::impls::NullPhysicsProvider;
+pub use crate::core::providers::impls::NullPhysicsProvider3D;
 pub use crate::core::providers::impls::NullRenderProvider;
 pub use crate::core::providers::impls::NullWindowProvider;
 
@@ -36,6 +38,16 @@ pub use glfw_window::GlfwWindowProvider;
 pub use opengl_render::OpenGLRenderProvider;
 #[cfg(feature = "native")]
 pub use rodio_audio::RodioAudioProvider;
+
+#[cfg(feature = "rapier2d")]
+pub mod rapier2d_physics;
+#[cfg(feature = "rapier2d")]
+pub use rapier2d_physics::Rapier2DPhysicsProvider;
+
+#[cfg(feature = "rapier3d")]
+pub mod rapier3d_physics;
+#[cfg(feature = "rapier3d")]
+pub use rapier3d_physics::Rapier3DPhysicsProvider;
 
 /// UDP transport provider implementing `NetworkProvider`.
 #[cfg(feature = "net-udp")]

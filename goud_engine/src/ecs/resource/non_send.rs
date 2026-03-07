@@ -147,23 +147,52 @@ impl fmt::Debug for NonSendMarker {
 ///
 /// assert!(resources.contains::<RawPointerResource>());
 /// ```
-#[derive(Default)]
 pub struct NonSendResources {
     /// Type-erased non-send resource storage.
     /// Note: Uses `Box<dyn Any>` NOT `Box<dyn Any + Send + Sync>`.
     data: HashMap<NonSendResourceId, Box<dyn Any>>,
     /// Marker to make this type !Send and !Sync.
     _marker: NonSendMarker,
+    /// The thread this container was created on. All access is validated against this.
+    main_thread_id: std::thread::ThreadId,
+}
+
+impl Default for NonSendResources {
+    fn default() -> Self {
+        Self {
+            data: HashMap::new(),
+            _marker: NonSendMarker::default(),
+            main_thread_id: std::thread::current().id(),
+        }
+    }
 }
 
 impl NonSendResources {
     /// Creates an empty non-send resources container.
+    ///
+    /// Records the current thread as the "main" thread for access validation.
     #[inline]
     pub fn new() -> Self {
-        Self {
-            data: HashMap::new(),
-            _marker: NonSendMarker::default(),
-        }
+        Self::default()
+    }
+
+    /// Returns the thread ID this container was created on.
+    #[inline]
+    pub fn main_thread_id(&self) -> std::thread::ThreadId {
+        self.main_thread_id
+    }
+
+    /// Panics if the current thread is not the main thread.
+    #[inline]
+    fn validate_main_thread(&self) {
+        let current = std::thread::current().id();
+        assert!(
+            current == self.main_thread_id,
+            "Non-send resource accessed from thread {current:?}, \
+             but was created on thread {:?}. \
+             Non-send resources can only be accessed from the main thread.",
+            self.main_thread_id
+        );
     }
 
     /// Inserts a non-send resource into the container.
@@ -180,6 +209,7 @@ impl NonSendResources {
     /// `Some(T)` if a resource of this type was replaced, `None` otherwise.
     #[inline]
     pub fn insert<T: NonSendResource>(&mut self, resource: T) -> Option<T> {
+        self.validate_main_thread();
         let id = NonSendResourceId::of::<T>();
         let old = self.data.insert(id, Box::new(resource));
         old.and_then(|boxed| boxed.downcast::<T>().ok().map(|b| *b))
@@ -192,6 +222,7 @@ impl NonSendResources {
     /// `Some(T)` if the resource existed, `None` otherwise.
     #[inline]
     pub fn remove<T: NonSendResource>(&mut self) -> Option<T> {
+        self.validate_main_thread();
         let id = NonSendResourceId::of::<T>();
         self.data
             .remove(&id)
@@ -205,6 +236,7 @@ impl NonSendResources {
     /// `Some(&T)` if the resource exists, `None` otherwise.
     #[inline]
     pub fn get<T: NonSendResource>(&self) -> Option<&T> {
+        self.validate_main_thread();
         let id = NonSendResourceId::of::<T>();
         self.data.get(&id).and_then(|boxed| boxed.downcast_ref())
     }
@@ -216,6 +248,7 @@ impl NonSendResources {
     /// `Some(&mut T)` if the resource exists, `None` otherwise.
     #[inline]
     pub fn get_mut<T: NonSendResource>(&mut self) -> Option<&mut T> {
+        self.validate_main_thread();
         let id = NonSendResourceId::of::<T>();
         self.data
             .get_mut(&id)

@@ -4,6 +4,30 @@ use crate::assets::{asset::Asset, AssetLoader, AssetType, LoadContext};
 
 use super::{asset::AudioAsset, format::AudioFormat, loader::AudioLoader, settings::AudioSettings};
 
+/// Creates a valid WAV file in memory using hound.
+#[cfg(feature = "native")]
+fn create_test_wav_bytes(sample_rate: u32, channels: u16, num_samples: u32) -> Vec<u8> {
+    let spec = hound::WavSpec {
+        channels,
+        sample_rate,
+        bits_per_sample: 16,
+        sample_format: hound::SampleFormat::Int,
+    };
+    let mut cursor = std::io::Cursor::new(Vec::new());
+    {
+        let mut writer = hound::WavWriter::new(&mut cursor, spec).unwrap();
+        for i in 0..num_samples {
+            // Write a simple sine-ish pattern for each channel
+            let sample = ((i as f32 * 0.1).sin() * 16000.0) as i16;
+            for _ in 0..channels {
+                writer.write_sample(sample).unwrap();
+            }
+        }
+        writer.finalize().unwrap();
+    }
+    cursor.into_inner()
+}
+
 // ============================================================================
 // AudioAsset Tests
 // ============================================================================
@@ -16,12 +40,13 @@ fn test_audio_asset_empty() {
     assert_eq!(audio.channel_count(), 2);
     assert_eq!(audio.format(), AudioFormat::Wav);
     assert_eq!(audio.size_bytes(), 0);
+    assert_eq!(audio.duration_secs(), 0.0);
 }
 
 #[test]
 fn test_audio_asset_new() {
     let data = vec![1, 2, 3, 4];
-    let audio = AudioAsset::new(data.clone(), 48000, 1, AudioFormat::Mp3);
+    let audio = AudioAsset::new(data.clone(), 48000, 1, AudioFormat::Mp3, 2.5);
 
     assert_eq!(audio.data(), &data);
     assert_eq!(audio.sample_rate(), 48000);
@@ -29,12 +54,13 @@ fn test_audio_asset_new() {
     assert_eq!(audio.format(), AudioFormat::Mp3);
     assert_eq!(audio.size_bytes(), 4);
     assert!(!audio.is_empty());
+    assert_eq!(audio.duration_secs(), 2.5);
 }
 
 #[test]
 fn test_audio_asset_is_mono() {
-    let mono = AudioAsset::new(vec![], 44100, 1, AudioFormat::Wav);
-    let stereo = AudioAsset::new(vec![], 44100, 2, AudioFormat::Wav);
+    let mono = AudioAsset::new(vec![], 44100, 1, AudioFormat::Wav, 0.0);
+    let stereo = AudioAsset::new(vec![], 44100, 2, AudioFormat::Wav, 0.0);
 
     assert!(mono.is_mono());
     assert!(!mono.is_stereo());
@@ -44,14 +70,19 @@ fn test_audio_asset_is_mono() {
 
 #[test]
 fn test_audio_asset_duration_secs() {
-    // Stub always returns 0.0
-    let audio = AudioAsset::new(vec![1, 2, 3, 4], 44100, 2, AudioFormat::Wav);
-    assert_eq!(audio.duration_secs(), 0.0);
+    let audio = AudioAsset::new(vec![1, 2, 3, 4], 44100, 2, AudioFormat::Wav, 1.5);
+    assert_eq!(audio.duration_secs(), 1.5);
+}
+
+#[test]
+fn test_audio_asset_bits_per_sample() {
+    let audio = AudioAsset::empty();
+    assert_eq!(audio.bits_per_sample(), 16);
 }
 
 #[test]
 fn test_audio_asset_clone() {
-    let audio1 = AudioAsset::new(vec![1, 2, 3], 48000, 1, AudioFormat::Ogg);
+    let audio1 = AudioAsset::new(vec![1, 2, 3], 48000, 1, AudioFormat::Ogg, 0.5);
     let audio2 = audio1.clone();
 
     assert_eq!(audio1, audio2);
@@ -211,11 +242,12 @@ fn test_audio_loader_extensions() {
     assert_eq!(loader.extensions(), &["wav", "mp3", "ogg", "flac"]);
 }
 
+#[cfg(feature = "native")]
 #[test]
 fn test_audio_loader_load_wav() {
     let loader = AudioLoader::new();
     let mut context = LoadContext::new("test.wav".into());
-    let bytes = vec![1, 2, 3, 4];
+    let bytes = create_test_wav_bytes(44100, 2, 4410);
     let settings = AudioSettings::default();
 
     let result = loader.load(&bytes, &settings, &mut context);
@@ -224,54 +256,45 @@ fn test_audio_loader_load_wav() {
     let audio = result.unwrap();
     assert_eq!(audio.format(), AudioFormat::Wav);
     assert_eq!(audio.data(), &bytes);
+    assert_eq!(audio.sample_rate(), 44100);
+    assert_eq!(audio.channel_count(), 2);
 }
 
+/// Proves load_native() uses one code path for all formats: rodio::Decoder::new()
+/// does content-based detection, so WAV tests cover the full decode logic.
+/// The only per-format difference is the AudioFormat enum from the file extension.
+#[cfg(feature = "native")]
 #[test]
-fn test_audio_loader_load_mp3() {
+fn test_audio_loader_shared_decode_path() {
     let loader = AudioLoader::new();
-    let mut context = LoadContext::new("sound.mp3".into());
-    let bytes = vec![5, 6, 7, 8];
+    let bytes = create_test_wav_bytes(44100, 2, 4410);
     let settings = AudioSettings::default();
 
-    let result = loader.load(&bytes, &settings, &mut context);
-    assert!(result.is_ok());
+    let mut ctx_wav = LoadContext::new("file.wav".into());
+    let mut ctx_ogg_ext = LoadContext::new("file.ogg".into());
 
-    let audio = result.unwrap();
-    assert_eq!(audio.format(), AudioFormat::Mp3);
-}
+    let audio_wav = loader.load(&bytes, &settings, &mut ctx_wav).unwrap();
+    let audio_ogg = loader.load(&bytes, &settings, &mut ctx_ogg_ext).unwrap();
 
-#[test]
-fn test_audio_loader_load_ogg() {
-    let loader = AudioLoader::new();
-    let mut context = LoadContext::new("music.ogg".into());
-    let bytes = vec![9, 10, 11, 12];
-    let settings = AudioSettings::default();
+    // Metadata from actual content is identical regardless of extension.
+    assert_eq!(audio_wav.sample_rate(), audio_ogg.sample_rate());
+    assert_eq!(audio_wav.channel_count(), audio_ogg.channel_count());
+    assert_eq!(audio_wav.duration_secs(), audio_ogg.duration_secs());
+    assert_eq!(audio_wav.data(), audio_ogg.data());
 
-    let result = loader.load(&bytes, &settings, &mut context);
-    assert!(result.is_ok());
-
-    let audio = result.unwrap();
-    assert_eq!(audio.format(), AudioFormat::Ogg);
-}
-
-#[test]
-fn test_audio_loader_load_flac() {
-    let loader = AudioLoader::new();
-    let mut context = LoadContext::new("track.flac".into());
-    let bytes = vec![13, 14, 15, 16];
-    let settings = AudioSettings::default();
-
-    let result = loader.load(&bytes, &settings, &mut context);
-    assert!(result.is_ok());
-
-    let audio = result.unwrap();
-    assert_eq!(audio.format(), AudioFormat::Flac);
+    // Only the format enum (from extension) differs.
+    assert_eq!(audio_wav.format(), AudioFormat::Wav);
+    assert_eq!(audio_ogg.format(), AudioFormat::Ogg);
 }
 
 #[test]
 fn test_audio_loader_load_unknown_extension() {
     let loader = AudioLoader::new();
     let mut context = LoadContext::new("file.xyz".into());
+    // Use valid WAV bytes even for unknown extension (rodio still decodes)
+    #[cfg(feature = "native")]
+    let bytes = create_test_wav_bytes(44100, 1, 100);
+    #[cfg(not(feature = "native"))]
     let bytes = vec![1, 2, 3, 4];
     let settings = AudioSettings::default();
 
@@ -280,6 +303,72 @@ fn test_audio_loader_load_unknown_extension() {
 
     let audio = result.unwrap();
     assert_eq!(audio.format(), AudioFormat::Unknown);
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn test_audio_loader_invalid_bytes_returns_error() {
+    let loader = AudioLoader::new();
+    let mut context = LoadContext::new("bad.wav".into());
+    let bytes = vec![0xFF, 0xFE, 0x00, 0x01, 0x99];
+    let settings = AudioSettings::default();
+
+    let result = loader.load(&bytes, &settings, &mut context);
+    assert!(result.is_err());
+
+    let err = result.unwrap_err();
+    assert!(err.is_decode_failed());
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn test_audio_loader_empty_bytes_returns_error() {
+    let loader = AudioLoader::new();
+    let mut context = LoadContext::new("empty.wav".into());
+    let bytes: Vec<u8> = vec![];
+    let settings = AudioSettings::default();
+
+    let result = loader.load(&bytes, &settings, &mut context);
+    assert!(result.is_err());
+
+    let err = result.unwrap_err();
+    assert!(err.is_decode_failed());
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn test_audio_loader_extracts_wav_metadata() {
+    let loader = AudioLoader::new();
+    let mut context = LoadContext::new("meta.wav".into());
+    let bytes = create_test_wav_bytes(22050, 1, 2205);
+    let settings = AudioSettings::default();
+
+    let result = loader.load(&bytes, &settings, &mut context);
+    assert!(result.is_ok());
+
+    let audio = result.unwrap();
+    assert_eq!(audio.sample_rate(), 22050);
+    assert_eq!(audio.channel_count(), 1);
+    assert_eq!(audio.format(), AudioFormat::Wav);
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn test_audio_loader_duration_calculated() {
+    let loader = AudioLoader::new();
+    let mut context = LoadContext::new("dur.wav".into());
+    // 44100 samples at 44100 Hz mono = 1.0 second
+    let bytes = create_test_wav_bytes(44100, 1, 44100);
+    let settings = AudioSettings::default();
+
+    let result = loader.load(&bytes, &settings, &mut context);
+    assert!(result.is_ok());
+
+    let audio = result.unwrap();
+    assert!(audio.duration_secs() > 0.0, "duration should be positive");
+    // WAV total_duration() should give us ~1.0 second
+    let diff = (audio.duration_secs() - 1.0).abs();
+    assert!(diff < 0.05, "expected ~1.0s, got {}", audio.duration_secs());
 }
 
 #[test]
@@ -302,49 +391,10 @@ fn test_audio_loader_debug() {
 // ============================================================================
 
 #[test]
-fn test_audio_asset_is_send() {
-    fn assert_send<T: Send>() {}
-    assert_send::<AudioAsset>();
-}
-
-#[test]
-fn test_audio_asset_is_sync() {
-    fn assert_sync<T: Sync>() {}
-    assert_sync::<AudioAsset>();
-}
-
-#[test]
-fn test_audio_format_is_send() {
-    fn assert_send<T: Send>() {}
-    assert_send::<AudioFormat>();
-}
-
-#[test]
-fn test_audio_format_is_sync() {
-    fn assert_sync<T: Sync>() {}
-    assert_sync::<AudioFormat>();
-}
-
-#[test]
-fn test_audio_settings_is_send() {
-    fn assert_send<T: Send>() {}
-    assert_send::<AudioSettings>();
-}
-
-#[test]
-fn test_audio_settings_is_sync() {
-    fn assert_sync<T: Sync>() {}
-    assert_sync::<AudioSettings>();
-}
-
-#[test]
-fn test_audio_loader_is_send() {
-    fn assert_send<T: Send>() {}
-    assert_send::<AudioLoader>();
-}
-
-#[test]
-fn test_audio_loader_is_sync() {
-    fn assert_sync<T: Sync>() {}
-    assert_sync::<AudioLoader>();
+fn test_audio_types_are_send_and_sync() {
+    fn assert_send_sync<T: Send + Sync>() {}
+    assert_send_sync::<AudioAsset>();
+    assert_send_sync::<AudioFormat>();
+    assert_send_sync::<AudioSettings>();
+    assert_send_sync::<AudioLoader>();
 }

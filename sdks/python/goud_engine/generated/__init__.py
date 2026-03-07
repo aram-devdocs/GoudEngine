@@ -2,11 +2,12 @@
 
 from ._types import Color, Vec2, Rect, Transform2D, Sprite, Entity, Transform2DBuilder, SpriteBuilder
 from ._keys import Key, MouseButton
-from ._game import GoudGame, GoudContext
+from ._game import GoudGame, GoudContext, EngineConfig
 
 __all__ = [
     "GoudGame",
     "GoudContext",
+    "EngineConfig",
     "Entity",
     "Color", "Vec2", "Rect", "Transform2D", "Sprite",
     "Transform2DBuilder",

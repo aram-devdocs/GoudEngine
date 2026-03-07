@@ -22,6 +22,7 @@
 mod conflict_utils;
 mod core_stage;
 mod core_system_label;
+pub mod named_system_sets;
 mod parallel;
 mod parallel_conflicts;
 mod parallel_types;
@@ -39,6 +40,7 @@ mod topological_sort;
 // Re-export everything to preserve the public API.
 pub use core_stage::CoreStage;
 pub use core_system_label::CoreSystemLabel;
+pub use named_system_sets::{DefaultSystemSet, NamedSystemSets};
 pub use parallel::ParallelSystemStage;
 pub use parallel_types::{ParallelBatch, ParallelExecutionConfig, ParallelExecutionStats};
 pub use stage::Stage;

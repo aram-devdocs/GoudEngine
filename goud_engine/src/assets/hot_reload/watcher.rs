@@ -61,8 +61,7 @@ pub struct HotReloadWatcher {
     watched_paths: HashSet<PathBuf>,
 
     /// Asset root directory (for relative path calculation).
-    // Will be used in future when implementing actual reload logic
-    _asset_root: PathBuf,
+    asset_root: PathBuf,
 }
 
 impl HotReloadWatcher {
@@ -104,7 +103,7 @@ impl HotReloadWatcher {
             config,
             debounce_map: HashMap::new(),
             watched_paths: HashSet::new(),
-            _asset_root: asset_root,
+            asset_root,
         })
     }
 
@@ -212,7 +211,7 @@ impl HotReloadWatcher {
     ///     // ... rest of game loop
     /// }
     /// ```
-    pub fn process_events(&mut self, _server: &mut AssetServer) -> usize {
+    pub fn process_events(&mut self, server: &mut AssetServer) -> usize {
         if !self.config.enabled {
             return 0;
         }
@@ -229,9 +228,25 @@ impl HotReloadWatcher {
             }
         }
 
-        // TODO: Actually reload assets via AssetServer
-        // For now, just count the events
-        let reload_count = change_events.len();
+        // Reload changed assets and their dependents
+        let mut reload_count = 0;
+        for event in &change_events {
+            let path = event.path();
+            if let Some(relative) = self.relative_path(path) {
+                // Reload the changed asset itself
+                if server.reload_by_path(&relative) {
+                    reload_count += 1;
+                }
+
+                // Cascade reload dependents
+                let cascade = server.get_cascade_order(&relative);
+                for dependent_path in &cascade {
+                    if server.reload_by_path(dependent_path) {
+                        reload_count += 1;
+                    }
+                }
+            }
+        }
 
         // Clean up old debounce entries (keep last 1000)
         if self.debounce_map.len() > 1000 {
@@ -240,6 +255,16 @@ impl HotReloadWatcher {
         }
 
         reload_count
+    }
+
+    /// Converts an absolute file path to a path relative to the asset root.
+    ///
+    /// Returns `None` if the path is not inside the asset root.
+    fn relative_path(&self, path: &Path) -> Option<String> {
+        path.strip_prefix(&self.asset_root)
+            .ok()
+            .and_then(|p| p.to_str())
+            .map(|s| s.to_string())
     }
 
     /// Processes a single file system event.

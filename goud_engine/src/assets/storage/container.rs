@@ -267,6 +267,26 @@ impl AssetStorage {
             .unwrap_or(false)
     }
 
+    /// Replaces a loaded asset by path with a new type-erased value.
+    ///
+    /// Searches all storage types for an asset with the given path and
+    /// replaces it with the new value. Used for hot-reload.
+    pub fn replace_erased(&mut self, path: &str, boxed: Box<dyn std::any::Any + Send>) -> bool {
+        // First find which storage has this path
+        let target_id = self
+            .storages
+            .iter()
+            .find(|(_, s)| s.has_path_erased(path))
+            .map(|(id, _)| *id);
+
+        if let Some(id) = target_id {
+            if let Some(storage) = self.storages.get_mut(&id) {
+                return storage.replace_by_path(path, boxed);
+            }
+        }
+        false
+    }
+
     /// Marks an asset as failed using raw handle parts.
     ///
     /// Used by async loading to report errors on the main thread.
