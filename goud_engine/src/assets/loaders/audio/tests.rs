@@ -371,45 +371,6 @@ fn test_audio_loader_duration_calculated() {
     assert!(diff < 0.05, "expected ~1.0s, got {}", audio.duration_secs());
 }
 
-#[cfg(feature = "native")]
-#[test]
-fn test_audio_loader_settings_override_sample_rate() {
-    let loader = AudioLoader::new();
-    let mut context = LoadContext::new("override.wav".into());
-    let bytes = create_test_wav_bytes(44100, 2, 1000);
-    let settings = AudioSettings {
-        preload: true,
-        target_sample_rate: 22050,
-        target_channel_count: 0,
-    };
-
-    let result = loader.load(&bytes, &settings, &mut context);
-    assert!(result.is_ok());
-
-    let audio = result.unwrap();
-    assert_eq!(audio.sample_rate(), 22050);
-    assert_eq!(audio.channel_count(), 2); // unchanged
-}
-
-#[cfg(feature = "native")]
-#[test]
-fn test_audio_loader_settings_override_channels() {
-    let loader = AudioLoader::new();
-    let mut context = LoadContext::new("override_ch.wav".into());
-    let bytes = create_test_wav_bytes(44100, 2, 1000);
-    let settings = AudioSettings {
-        preload: true,
-        target_sample_rate: 0,
-        target_channel_count: 1,
-    };
-
-    let result = loader.load(&bytes, &settings, &mut context);
-    assert!(result.is_ok());
-
-    let audio = result.unwrap();
-    assert_eq!(audio.sample_rate(), 44100); // unchanged
-    assert_eq!(audio.channel_count(), 1);
-}
 
 #[test]
 fn test_audio_loader_clone() {

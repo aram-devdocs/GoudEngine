@@ -100,7 +100,7 @@ impl AudioLoader {
     fn load_native(
         &self,
         bytes: &[u8],
-        settings: &AudioSettings,
+        _settings: &AudioSettings,
         format: AudioFormat,
     ) -> Result<AudioAsset, AssetLoadError> {
         // Validate by attempting to decode
@@ -130,23 +130,10 @@ impl AudioLoader {
             }
         };
 
-        // Apply settings overrides
-        let sample_rate = if settings.target_sample_rate > 0 {
-            settings.target_sample_rate
-        } else {
-            detected_sample_rate
-        };
-
-        let channel_count = if settings.target_channel_count > 0 {
-            settings.target_channel_count
-        } else {
-            detected_channels
-        };
-
         Ok(AudioAsset::new(
             bytes.to_vec(),
-            sample_rate,
-            channel_count,
+            detected_sample_rate,
+            detected_channels,
             format,
             duration_secs,
         ))
