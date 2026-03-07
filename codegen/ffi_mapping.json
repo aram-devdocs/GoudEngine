@@ -9,7 +9,7 @@
     "Sprite":      {"ffi_name": "FfiSprite",       "fields": ["texture_handle", "color_r", "color_g", "color_b", "color_a", "source_rect_x", "source_rect_y", "source_rect_width", "source_rect_height", "has_source_rect", "flip_x", "flip_y", "anchor_x", "anchor_y", "custom_size_x", "custom_size_y", "has_custom_size"]},
     "Entity":      {"ffi_name": "u64", "sentinel": "0xFFFFFFFFFFFFFFFF"},
     "RenderStats": {"ffi_name": "GoudRenderStats", "fields": ["draw_calls", "triangles", "texture_binds", "shader_binds"]},
-    "FpsStats":    {"ffi_name": "FpsStats",         "fields": ["current_fps", "min_fps", "max_fps", "avg_fps", "frame_time_ms"]},
+    "FpsStats":    {"ffi_name": "GoudFpsStats",      "fields": ["current_fps", "min_fps", "max_fps", "avg_fps", "frame_time_ms"]},
     "Contact":     {"ffi_name": "GoudContact",     "fields": ["point_x", "point_y", "normal_x", "normal_y", "penetration"]},
     "Vec3":        {"ffi_name": "FfiVec3",          "fields": ["x", "y", "z"]},
     "Mat3x3":      {"ffi_name": "FfiMat3x3",        "fields": ["m"]}
@@ -25,7 +25,7 @@
   "ctypes_mappings": {
     "*mut GoudContact":    "ctypes.POINTER(GoudContact)",
     "*mut GoudRenderStats": "ctypes.POINTER(GoudRenderStats)",
-    "*mut FpsStats":        "ctypes.POINTER(FpsStats)",
+    "*mut FpsStats":        "ctypes.POINTER(GoudFpsStats)",
     "*const u64":          "ctypes.POINTER(ctypes.c_uint64)",
     "*mut u64":            "ctypes.POINTER(ctypes.c_uint64)",
     "*mut u8":             "ctypes.POINTER(ctypes.c_uint8)",
