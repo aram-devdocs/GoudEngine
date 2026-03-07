@@ -67,9 +67,15 @@ pub use crate::ecs::components::Sprite;
 // Animation
 // =============================================================================
 
+pub use crate::ecs::components::AnimParam;
 pub use crate::ecs::components::AnimationClip;
+pub use crate::ecs::components::AnimationController;
+pub use crate::ecs::components::AnimationState;
+pub use crate::ecs::components::AnimationTransition;
 pub use crate::ecs::components::PlaybackMode;
 pub use crate::ecs::components::SpriteAnimator;
+pub use crate::ecs::components::TransitionCondition;
+pub use crate::ecs::systems::update_animation_controllers;
 pub use crate::ecs::systems::update_sprite_animations;
 
 // =============================================================================

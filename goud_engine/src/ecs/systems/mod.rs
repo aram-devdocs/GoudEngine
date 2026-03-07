@@ -6,7 +6,9 @@
 //! - **Audio**: Spatial audio updates
 
 pub mod animation;
+pub mod animation_controller;
 pub mod transform;
 
 pub use animation::update_sprite_animations;
+pub use animation_controller::update_animation_controllers;
 pub use transform::TransformPropagationSystem;

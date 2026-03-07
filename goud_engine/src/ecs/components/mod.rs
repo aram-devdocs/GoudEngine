@@ -150,6 +150,7 @@
 //! }
 //! ```
 
+pub mod animation_controller;
 pub mod audiosource;
 pub mod collider;
 pub mod global_transform;
@@ -162,6 +163,9 @@ pub mod sprite_animator;
 pub mod transform;
 pub mod transform2d;
 
+pub use animation_controller::{
+    AnimParam, AnimationController, AnimationState, AnimationTransition, TransitionCondition,
+};
 pub use audiosource::{AttenuationModel, AudioChannel, AudioSource};
 pub use collider::{Collider, ColliderShape};
 pub use global_transform::GlobalTransform;
