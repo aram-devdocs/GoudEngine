@@ -745,6 +745,8 @@ class EngineConfig:
             raise RuntimeError('EngineConfig already consumed')
         ctx = self._lib.goud_engine_create(self._handle)
         self._handle = None
+        if ctx._bits == 0xFFFFFFFFFFFFFFFF:
+            raise RuntimeError('Failed to create engine context from EngineConfig')
         game = GoudGame.__new__(GoudGame)
         game._lib = self._lib
         game._ctx = ctx

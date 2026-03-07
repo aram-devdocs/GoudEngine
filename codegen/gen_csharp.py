@@ -1072,7 +1072,7 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
     # Internal constructor for EngineConfig.Build() to construct from pre-created context
     if is_windowed:
         lines += [
-            f"        internal {class_name}(GoudContextId ctx)", "        {",
+            f'        internal {class_name}(GoudContextId ctx, string title = "GoudEngine")', "        {",
             "            _ctx = ctx;",
             '            if (!_ctx.IsValid) throw new Exception("Invalid context ID");',
         ]
@@ -1081,8 +1081,11 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
             pm_init = tm.get("properties", {}).get(prop["name"], {})
             if pm_init.get("source") == "cached":
                 field = _to_cs_field(pm_init.get("field", f"_{to_snake(prop['name'])}"))
-                default_val = _cs_default_value(cs_type(prop["type"]))
-                lines.append(f"            {field} = {default_val};")
+                if field == "_title":
+                    lines.append(f"            {field} = title;")
+                else:
+                    default_val = _cs_default_value(cs_type(prop["type"]))
+                    lines.append(f"            {field} = {default_val};")
         lines += ["        }", ""]
 
     # Properties (windowed only)
@@ -1153,7 +1156,8 @@ def gen_engine_config():
         f"namespace {NS}", "{",
         f"    /// <summary>{tool.get('doc', 'EngineConfig')}</summary>",
         "    public class EngineConfig : IDisposable", "    {",
-        "        private IntPtr _handle;", "",
+        "        private IntPtr _handle;",
+        '        private string _title = "GoudEngine";', "",
         "        public EngineConfig()",
         "        {",
         f"            _handle = NativeMethods.{tm['constructor']['ffi']}();",
@@ -1179,7 +1183,7 @@ def gen_engine_config():
                 f"            var ctx = NativeMethods.{ffi_fn}(_handle);",
                 "            _handle = IntPtr.Zero;",
                 "            if (!ctx.IsValid) throw new Exception(\"Failed to create engine from config\");",
-                "            return new GoudGame(ctx);",
+                "            return new GoudGame(ctx, _title);",
                 "        }", "",
             ]
         elif mn == "destroy":
@@ -1194,6 +1198,7 @@ def gen_engine_config():
                 "        public EngineConfig SetTitle(string title)",
                 "        {",
                 f"            NativeMethods.{ffi_fn}(_handle, title);",
+                "            _title = title;",
                 "            return this;",
                 "        }", "",
             ]

@@ -8,6 +8,7 @@ namespace GoudEngine
     public class EngineConfig : IDisposable
     {
         private IntPtr _handle;
+        private string _title = "GoudEngine";
 
         public EngineConfig()
         {
@@ -18,6 +19,7 @@ namespace GoudEngine
         public EngineConfig SetTitle(string title)
         {
             NativeMethods.goud_engine_config_set_title(_handle, title);
+            _title = title;
             return this;
         }
 
@@ -63,7 +65,7 @@ namespace GoudEngine
             var ctx = NativeMethods.goud_engine_create(_handle);
             _handle = IntPtr.Zero;
             if (!ctx.IsValid) throw new Exception("Failed to create engine from config");
-            return new GoudGame(ctx);
+            return new GoudGame(ctx, _title);
         }
 
         /// <summary>Frees the config without building</summary>

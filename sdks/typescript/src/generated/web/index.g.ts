@@ -437,23 +437,9 @@ export class EngineConfig {
     return this;
   }
 
-  /** Enables or disables vertical sync */
-  setVsync(_enabled: boolean): EngineConfig {
-    return this;
-  }
-
-  /** Enables or disables fullscreen mode */
-  setFullscreen(_enabled: boolean): EngineConfig {
-    return this;
-  }
-
-  /** Sets the target frames per second */
-  setTargetFps(_fps: number): EngineConfig {
-    return this;
-  }
-
   /** Enables or disables the FPS debug overlay */
   setFpsOverlay(_enabled: boolean): EngineConfig {
+    // FPS overlay is not yet supported in WASM; accepted for API parity.
     return this;
   }
 

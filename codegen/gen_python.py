@@ -1420,6 +1420,8 @@ def _gen_engine_config(lines: list):
             lines.append("            raise RuntimeError('EngineConfig already consumed')")
             lines.append(f"        ctx = self._lib.{ffi_fn}(self._handle)")
             lines.append("        self._handle = None")
+            lines.append("        if ctx._bits == 0xFFFFFFFFFFFFFFFF:")
+            lines.append("            raise RuntimeError('Failed to create engine context from EngineConfig')")
             lines.append("        game = GoudGame.__new__(GoudGame)")
             lines.append("        game._lib = self._lib")
             lines.append("        game._ctx = ctx")

@@ -526,6 +526,10 @@ def gen_web_wrapper():
         for method in ec_tool.get("methods", []):
             mn = to_camel(method["name"])
             params = method.get("params", [])
+            if mn in ("setVsync", "setFullscreen", "setTargetFps"):
+                # WASM target does not support vsync, fullscreen, or target FPS.
+                # These settings are silently ignored so we omit the setters entirely.
+                continue
             emit_jsdoc(lines, method.get("doc"))
             if mn == "build":
                 lines.append("  async build(): Promise<GoudGame> {")
@@ -542,6 +546,11 @@ def gen_web_wrapper():
                 lines.append("  setSize(width: number, height: number): EngineConfig {")
                 lines.append("    this._config.width = width;")
                 lines.append("    this._config.height = height;")
+                lines.append("    return this;")
+                lines.append("  }")
+            elif mn == "setFpsOverlay":
+                lines.append("  setFpsOverlay(_enabled: boolean): EngineConfig {")
+                lines.append("    // FPS overlay is not yet supported in WASM; accepted for API parity.")
                 lines.append("    return this;")
                 lines.append("  }")
             else:
