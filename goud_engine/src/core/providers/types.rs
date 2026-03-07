@@ -369,6 +369,15 @@ pub use super::input_types::{
 };
 
 // =============================================================================
+// Network Types (re-exported from network_types module)
+// =============================================================================
+
+pub use super::network_types::{
+    Channel, ConnectionId, ConnectionState, ConnectionStats, DisconnectReason, HostConfig,
+    NetworkCapabilities, NetworkEvent, NetworkStats,
+};
+
+// =============================================================================
 // Capability Structs
 // =============================================================================
 

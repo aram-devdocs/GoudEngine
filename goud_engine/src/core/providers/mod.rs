@@ -18,6 +18,8 @@ pub mod audio;
 pub mod impls;
 pub mod input;
 pub mod input_types;
+pub mod network;
+pub mod network_types;
 pub mod physics;
 pub mod physics3d;
 pub mod render;
