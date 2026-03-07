@@ -4,7 +4,8 @@
 #[derive(Clone, Debug)]
 pub struct AudioSettings {
     /// Whether to load the entire audio file into memory.
-    /// If false, audio will be streamed from disk (not yet implemented).
+    /// Currently always true — streaming is not yet implemented.
+    /// Setting this to `false` has no effect.
     pub preload: bool,
     /// Target sample rate (0 = use original).
     pub target_sample_rate: u32,

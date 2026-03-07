@@ -28,15 +28,6 @@ fn create_test_wav_bytes(sample_rate: u32, channels: u16, num_samples: u32) -> V
     cursor.into_inner()
 }
 
-/// Loads a test fixture file from the fixtures directory, returning None if missing.
-#[cfg(feature = "native")]
-fn load_test_fixture(name: &str) -> Option<Vec<u8>> {
-    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures/audio")
-        .join(name);
-    std::fs::read(&path).ok()
-}
-
 // ============================================================================
 // AudioAsset Tests
 // ============================================================================
@@ -267,48 +258,6 @@ fn test_audio_loader_load_wav() {
     assert_eq!(audio.data(), &bytes);
     assert_eq!(audio.sample_rate(), 44100);
     assert_eq!(audio.channel_count(), 2);
-}
-
-#[cfg(feature = "native")]
-#[test]
-fn test_audio_loader_load_ogg_fixture() {
-    // Skip if fixture absent -- WAV tests cover the identical Decoder::new() path.
-    let fixture = load_test_fixture("test_sine.ogg");
-    if fixture.is_none() {
-        eprintln!("SKIPPED: OGG fixture not found — see test_audio_loader_shared_decode_path");
-        return;
-    }
-    let bytes = fixture.unwrap();
-    let loader = AudioLoader::new();
-    let mut context = LoadContext::new("music.ogg".into());
-    let settings = AudioSettings::default();
-
-    let result = loader.load(&bytes, &settings, &mut context);
-    assert!(result.is_ok());
-
-    let audio = result.unwrap();
-    assert_eq!(audio.format(), AudioFormat::Ogg);
-}
-
-#[cfg(feature = "native")]
-#[test]
-fn test_audio_loader_load_flac_fixture() {
-    // Skip if fixture absent -- WAV tests cover the identical Decoder::new() path.
-    let fixture = load_test_fixture("test_sine.flac");
-    if fixture.is_none() {
-        eprintln!("SKIPPED: FLAC fixture not found — see test_audio_loader_shared_decode_path");
-        return;
-    }
-    let bytes = fixture.unwrap();
-    let loader = AudioLoader::new();
-    let mut context = LoadContext::new("track.flac".into());
-    let settings = AudioSettings::default();
-
-    let result = loader.load(&bytes, &settings, &mut context);
-    assert!(result.is_ok());
-
-    let audio = result.unwrap();
-    assert_eq!(audio.format(), AudioFormat::Flac);
 }
 
 /// Proves load_native() uses one code path for all formats: rodio::Decoder::new()
