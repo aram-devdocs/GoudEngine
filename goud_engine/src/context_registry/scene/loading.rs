@@ -245,7 +245,10 @@ mod tests {
 
         // Verify entities were loaded
         let world = mgr.get_scene(id).unwrap();
-        assert!(world.entity_count() > 0, "loaded scene should have entities");
+        assert!(
+            world.entity_count() > 0,
+            "loaded scene should have entities"
+        );
 
         // Unload the scene
         SceneLoader::unload_scene(&mut mgr, "level").unwrap();
