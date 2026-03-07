@@ -371,7 +371,6 @@ fn test_audio_loader_duration_calculated() {
     assert!(diff < 0.05, "expected ~1.0s, got {}", audio.duration_secs());
 }
 
-
 #[test]
 fn test_audio_loader_clone() {
     let loader1 = AudioLoader::new();
