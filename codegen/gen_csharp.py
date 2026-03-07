@@ -85,6 +85,8 @@ def _cs_ffi_param_type(raw: str) -> str:
         "FfiPlaybackMode": "PlaybackMode",
         "*const u8": "IntPtr",
         "*mut u8": "IntPtr",
+        "*mut c_void": "IntPtr",
+        "*const c_char": "string",
         "usize": "nuint",
         "u8": "byte",
     }
@@ -101,6 +103,7 @@ def _cs_ffi_ret_type(raw: str) -> str:
         "*mut FfiAnimationClipBuilder": "IntPtr",
         "*const u8": "IntPtr",
         "*mut u8": "IntPtr",
+        "*mut c_void": "IntPtr",
         "usize": "nuint",
     }
     if raw in ret_map:
@@ -1066,6 +1069,22 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
         "        }", "",
     ]
 
+    # Internal constructor for EngineConfig.Build() to construct from pre-created context
+    if is_windowed:
+        lines += [
+            f"        internal {class_name}(GoudContextId ctx)", "        {",
+            "            _ctx = ctx;",
+            '            if (!_ctx.IsValid) throw new Exception("Invalid context ID");',
+        ]
+        # Initialize cached fields from windowed properties
+        for prop in tool.get("properties", []):
+            pm_init = tm.get("properties", {}).get(prop["name"], {})
+            if pm_init.get("source") == "cached":
+                field = _to_cs_field(pm_init.get("field", f"_{to_snake(prop['name'])}"))
+                default_val = _cs_default_value(cs_type(prop["type"]))
+                lines.append(f"            {field} = {default_val};")
+        lines += ["        }", ""]
+
     # Properties (windowed only)
     for prop in tool.get("properties", []):
         pn = to_pascal(prop["name"])
@@ -1123,6 +1142,79 @@ def gen_context():
     _gen_tool_class("GoudContext", mapping["tools"]["GoudContext"], OUT / "GoudContext.g.cs", is_windowed=False)
 
 
+def gen_engine_config():
+    """Generate EngineConfig builder class for C#."""
+    tool = schema["tools"]["EngineConfig"]
+    tm = mapping["tools"]["EngineConfig"]
+
+    lines = [
+        f"// {HEADER_COMMENT}",
+        "using System;", "using System.Runtime.InteropServices;", "",
+        f"namespace {NS}", "{",
+        f"    /// <summary>{tool.get('doc', 'EngineConfig')}</summary>",
+        "    public class EngineConfig : IDisposable", "    {",
+        "        private IntPtr _handle;", "",
+        "        public EngineConfig()",
+        "        {",
+        f"            _handle = NativeMethods.{tm['constructor']['ffi']}();",
+        "        }", "",
+    ]
+
+    for method in tool.get("methods", []):
+        mn = method["name"]
+        mm = tm.get("methods", {}).get(mn, {})
+        ffi_fn = mm.get("ffi", "")
+        params = method.get("params", [])
+        ret = method.get("returns", "void")
+        cs_mn = to_pascal(mn)
+
+        if method.get("doc"):
+            lines.append(f"        /// <summary>{method['doc']}</summary>")
+
+        if mn == "build":
+            lines += [
+                "        public GoudGame Build()",
+                "        {",
+                "            if (_handle == IntPtr.Zero) throw new ObjectDisposedException(\"EngineConfig\");",
+                f"            var ctx = NativeMethods.{ffi_fn}(_handle);",
+                "            _handle = IntPtr.Zero;",
+                "            if (!ctx.IsValid) throw new Exception(\"Failed to create engine from config\");",
+                "            return new GoudGame(ctx);",
+                "        }", "",
+            ]
+        elif mn == "destroy":
+            lines += [
+                "        public void Destroy()",
+                "        {",
+                f"            if (_handle != IntPtr.Zero) {{ NativeMethods.{ffi_fn}(_handle); _handle = IntPtr.Zero; }}",
+                "        }", "",
+            ]
+        elif mn == "setTitle":
+            lines += [
+                "        public EngineConfig SetTitle(string title)",
+                "        {",
+                f"            NativeMethods.{ffi_fn}(_handle, title);",
+                "            return this;",
+                "        }", "",
+            ]
+        else:
+            cs_params = ", ".join(f"{cs_type(p['type'])} {p['name']}" for p in params)
+            ffi_args = ", ".join(["_handle"] + [p["name"] for p in params])
+            lines += [
+                f"        public EngineConfig {cs_mn}({cs_params})",
+                "        {",
+                f"            NativeMethods.{ffi_fn}({ffi_args});",
+                "            return this;",
+                "        }", "",
+            ]
+
+    lines += [
+        "        public void Dispose() => Destroy();",
+        "    }", "}", "",
+    ]
+    write_generated(OUT / "Core" / "EngineConfig.g.cs", "\n".join(lines))
+
+
 if __name__ == "__main__":
     print("Generating C# SDK...")
     gen_native_methods()
@@ -1132,4 +1224,5 @@ if __name__ == "__main__":
     gen_entity()
     gen_game()
     gen_context()
+    gen_engine_config()
     print("C# SDK generation complete.")

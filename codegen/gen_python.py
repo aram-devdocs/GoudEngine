@@ -1380,6 +1380,74 @@ def _gen_tool_class(tool_name: str, lines: list):
         lines.append("")
 
 
+def _gen_engine_config(lines: list):
+    """Generate EngineConfig builder class for Python."""
+    tool = schema["tools"]["EngineConfig"]
+    tm = mapping["tools"]["EngineConfig"]
+
+    lines.append("class EngineConfig:")
+    lines.append(f'    """{tool["doc"]}"""')
+    lines.append("")
+    lines.append("    def __init__(self):")
+    lines.append("        lib = get_lib()")
+    lines.append("        self._lib = lib")
+    lines.append(f"        self._handle = lib.{tm['constructor']['ffi']}()")
+    lines.append("")
+    lines.append("    def __del__(self):")
+    lines.append("        self.destroy()")
+    lines.append("")
+
+    for method in tool.get("methods", []):
+        mn = method["name"]
+        mm = tm.get("methods", {}).get(mn, {})
+        ffi_fn = mm.get("ffi", "")
+        params = method.get("params", [])
+        mname = to_snake(mn)
+
+        if mname == "destroy":
+            lines.append("    def destroy(self):")
+            if method.get("doc"):
+                lines.append(f'        """{method["doc"]}"""')
+            lines.append("        if hasattr(self, '_handle') and self._handle:")
+            lines.append(f"            self._lib.{ffi_fn}(self._handle)")
+            lines.append("            self._handle = None")
+            lines.append("")
+        elif mname == "build":
+            lines.append("    def build(self):")
+            if method.get("doc"):
+                lines.append(f'        """{method["doc"]}"""')
+            lines.append("        if not self._handle:")
+            lines.append("            raise RuntimeError('EngineConfig already consumed')")
+            lines.append(f"        ctx = self._lib.{ffi_fn}(self._handle)")
+            lines.append("        self._handle = None")
+            lines.append("        game = GoudGame.__new__(GoudGame)")
+            lines.append("        game._lib = self._lib")
+            lines.append("        game._ctx = ctx")
+            lines.append("        game._delta_time = 0.0")
+            lines.append("        game._title = ''")
+            lines.append("        game._frame_count = 0")
+            lines.append("        game._total_time = 0.0")
+            lines.append("        return game")
+            lines.append("")
+        elif mname == "set_title":
+            lines.append(f"    def {mname}(self, title):")
+            if method.get("doc"):
+                lines.append(f'        """{method["doc"]}"""')
+            lines.append(f"        self._lib.{ffi_fn}(self._handle, title.encode('utf-8'))")
+            lines.append("        return self")
+            lines.append("")
+        else:
+            param_strs = ["self"] + [to_snake(p["name"]) for p in params]
+            sig = ", ".join(param_strs)
+            lines.append(f"    def {mname}({sig}):")
+            if method.get("doc"):
+                lines.append(f'        """{method["doc"]}"""')
+            ffi_args = ", ".join(["self._handle"] + [to_snake(p["name"]) for p in params])
+            lines.append(f"        self._lib.{ffi_fn}({ffi_args})")
+            lines.append("        return self")
+            lines.append("")
+
+
 def gen_game():
     lines = [
         f'"""{HEADER_COMMENT}"""',
@@ -1404,6 +1472,11 @@ def gen_game():
         lines.append("")
         _gen_tool_class("GoudContext", lines)
 
+    # Generate EngineConfig if present in both schema and mapping
+    if "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {}):
+        lines.append("")
+        _gen_engine_config(lines)
+
     write_generated(OUT / "_game.py", "\n".join(lines))
 
 
@@ -1411,6 +1484,7 @@ def gen_game():
 
 def gen_init():
     has_context = "GoudContext" in schema.get("tools", {}) and "GoudContext" in mapping.get("tools", {})
+    has_engine_config = "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {})
 
     type_imports = "Color, Vec2, Rect, Transform2D, Sprite, Entity"
     builder_imports = []
@@ -1424,6 +1498,8 @@ def gen_init():
     game_imports = ["GoudGame"]
     if has_context:
         game_imports.append("GoudContext")
+    if has_engine_config:
+        game_imports.append("EngineConfig")
 
     lines = [
         f'"""{HEADER_COMMENT}"""',

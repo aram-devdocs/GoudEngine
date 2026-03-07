@@ -4270,6 +4270,97 @@
         }
       ]
     },
+    "EngineConfig": {
+      "doc": "Builder for configuring and creating a GoudGame instance with provider selection.",
+      "handle_type": "opaque",
+      "constructor": {
+        "params": []
+      },
+      "methods": [
+        {
+          "name": "setTitle",
+          "doc": "Sets the window title",
+          "params": [
+            {
+              "name": "title",
+              "type": "string"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setSize",
+          "doc": "Sets the window size in pixels",
+          "params": [
+            {
+              "name": "width",
+              "type": "u32"
+            },
+            {
+              "name": "height",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setVsync",
+          "doc": "Enables or disables vertical sync",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setFullscreen",
+          "doc": "Enables or disables fullscreen mode",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setTargetFps",
+          "doc": "Sets the target frames per second",
+          "params": [
+            {
+              "name": "fps",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setFpsOverlay",
+          "doc": "Enables or disables the FPS debug overlay",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "build",
+          "doc": "Consumes the config and creates a windowed GoudGame instance",
+          "params": [],
+          "returns": "GoudGame"
+        },
+        {
+          "name": "destroy",
+          "doc": "Frees the config without building",
+          "params": [],
+          "returns": "void"
+        }
+      ]
+    },
     "GoudContext": {
       "doc": "Headless engine context for CI tests and non-windowed entity management.",
       "constructor": {

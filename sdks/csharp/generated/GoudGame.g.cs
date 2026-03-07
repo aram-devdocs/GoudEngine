@@ -24,12 +24,12 @@ namespace GoudEngine
             _frameCount = 0;
         }
 
-        /// <summary>Creates a GoudGame from a pre-existing context (used by EngineConfig.Build)</summary>
-        internal GoudGame(GoudContextId contextId)
+        internal GoudGame(GoudContextId ctx)
         {
-            _ctx = contextId;
+            _ctx = ctx;
+            if (!_ctx.IsValid) throw new Exception("Invalid context ID");
             _deltaTime = 0.0f;
-            _title = "GoudEngine";
+            _title = "";
             _totalTime = 0.0;
             _frameCount = 0;
         }

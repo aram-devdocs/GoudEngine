@@ -4,77 +4,74 @@ using System.Runtime.InteropServices;
 
 namespace GoudEngine
 {
-    /// <summary>
-    /// Builder for configuring and creating a GoudGame instance with provider selection.
-    /// </summary>
+    /// <summary>Builder for configuring and creating a GoudGame instance with provider selection.</summary>
     public class EngineConfig : IDisposable
     {
         private IntPtr _handle;
-        private bool _disposed;
 
         public EngineConfig()
         {
             _handle = NativeMethods.goud_engine_config_create();
         }
 
-        public EngineConfig WithTitle(string title)
+        /// <summary>Sets the window title</summary>
+        public EngineConfig SetTitle(string title)
         {
             NativeMethods.goud_engine_config_set_title(_handle, title);
             return this;
         }
 
-        public EngineConfig WithSize(uint width, uint height)
+        /// <summary>Sets the window size in pixels</summary>
+        public EngineConfig SetSize(uint width, uint height)
         {
             NativeMethods.goud_engine_config_set_size(_handle, width, height);
             return this;
         }
 
-        public EngineConfig WithVsync(bool enabled)
+        /// <summary>Enables or disables vertical sync</summary>
+        public EngineConfig SetVsync(bool enabled)
         {
             NativeMethods.goud_engine_config_set_vsync(_handle, enabled);
             return this;
         }
 
-        public EngineConfig WithFullscreen(bool enabled)
+        /// <summary>Enables or disables fullscreen mode</summary>
+        public EngineConfig SetFullscreen(bool enabled)
         {
             NativeMethods.goud_engine_config_set_fullscreen(_handle, enabled);
             return this;
         }
 
-        public EngineConfig WithTargetFps(uint fps)
+        /// <summary>Sets the target frames per second</summary>
+        public EngineConfig SetTargetFps(uint fps)
         {
             NativeMethods.goud_engine_config_set_target_fps(_handle, fps);
             return this;
         }
 
-        public EngineConfig WithFpsOverlay(bool enabled)
+        /// <summary>Enables or disables the FPS debug overlay</summary>
+        public EngineConfig SetFpsOverlay(bool enabled)
         {
             NativeMethods.goud_engine_config_set_fps_overlay(_handle, enabled);
             return this;
         }
 
-        /// <summary>
-        /// Consumes this config and creates a GoudGame instance.
-        /// The config handle is freed by the engine after this call.
-        /// </summary>
+        /// <summary>Consumes the config and creates a windowed GoudGame instance</summary>
         public GoudGame Build()
         {
-            if (_disposed) throw new ObjectDisposedException(nameof(EngineConfig));
+            if (_handle == IntPtr.Zero) throw new ObjectDisposedException("EngineConfig");
             var ctx = NativeMethods.goud_engine_create(_handle);
-            _disposed = true; // handle consumed by engine_create
             _handle = IntPtr.Zero;
-            if (!ctx.IsValid) throw new Exception("Failed to create engine context from EngineConfig");
+            if (!ctx.IsValid) throw new Exception("Failed to create engine from config");
             return new GoudGame(ctx);
         }
 
-        public void Dispose()
+        /// <summary>Frees the config without building</summary>
+        public void Destroy()
         {
-            if (!_disposed && _handle != IntPtr.Zero)
-            {
-                NativeMethods.goud_engine_config_destroy(_handle);
-                _handle = IntPtr.Zero;
-                _disposed = true;
-            }
+            if (_handle != IntPtr.Zero) { NativeMethods.goud_engine_config_destroy(_handle); _handle = IntPtr.Zero; }
         }
+
+        public void Dispose() => Destroy();
     }
 }

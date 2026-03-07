@@ -416,6 +416,83 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_engine_config_create": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [],
+      "return_type": "EngineConfigHandle",
+      "is_unsafe": false
+    },
+    "goud_engine_config_destroy": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_engine_config_set_fps_overlay": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "enabled: bool"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_engine_config_set_fullscreen": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "enabled: bool"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_engine_config_set_size": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "width: u32",
+        "height: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_engine_config_set_target_fps": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "fps: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_engine_config_set_title": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "title: *const c_char"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_engine_config_set_vsync": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "enabled: bool"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_engine_create": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle"
+      ],
+      "return_type": "crate::ffi::context::GoudContextId",
+      "is_unsafe": true
+    },
     "goud_entity_clone": {
       "source_file": "ffi/entity/lifecycle.rs",
       "params": [
@@ -2060,5 +2137,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 215
+  "total_count": 224
 }

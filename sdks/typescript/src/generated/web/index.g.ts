@@ -416,30 +416,53 @@ export class GoudGame implements IGoudGame {
   setFpsOverlayCorner(_corner: number): void {}
 }
 
-/**
- * Builder for configuring and creating a GoudGame instance.
- * Mirrors the Rust EngineConfig builder pattern.
- */
+/** Builder for configuring and creating a GoudGame instance with provider selection. */
 export class EngineConfig {
-  private _config: WebGameConfig = {};
-  private _vsync = true;
-  private _fullscreen = false;
-  private _targetFps = 60;
-  private _fpsOverlay = false;
+  private _config: WebGameConfig;
 
-  withTitle(title: string): this { this._config.title = title; return this; }
-  withSize(width: number, height: number): this { this._config.width = width; this._config.height = height; return this; }
-  withCanvas(canvas: HTMLCanvasElement): this { this._config.canvas = canvas; return this; }
-  withWasmUrl(url: string): this { this._config.wasmUrl = url; return this; }
-  withVsync(_enabled: boolean): this { this._vsync = _enabled; return this; }
-  withFullscreen(_enabled: boolean): this { this._fullscreen = _enabled; return this; }
-  withTargetFps(fps: number): this { this._targetFps = fps; return this; }
-  withFpsOverlay(enabled: boolean): this { this._fpsOverlay = enabled; return this; }
-
-  /** Consumes this config and creates a GoudGame instance. */
-  async build(): Promise<GoudGame> {
-    const game = await GoudGame.create(this._config);
-    if (this._fpsOverlay) game.setFpsOverlayEnabled(true);
-    return game;
+  constructor() {
+    this._config = {};
   }
+
+  /** Sets the window title */
+  setTitle(title: string): EngineConfig {
+    this._config.title = title;
+    return this;
+  }
+
+  /** Sets the window size in pixels */
+  setSize(width: number, height: number): EngineConfig {
+    this._config.width = width;
+    this._config.height = height;
+    return this;
+  }
+
+  /** Enables or disables vertical sync */
+  setVsync(_enabled: boolean): EngineConfig {
+    return this;
+  }
+
+  /** Enables or disables fullscreen mode */
+  setFullscreen(_enabled: boolean): EngineConfig {
+    return this;
+  }
+
+  /** Sets the target frames per second */
+  setTargetFps(_fps: number): EngineConfig {
+    return this;
+  }
+
+  /** Enables or disables the FPS debug overlay */
+  setFpsOverlay(_enabled: boolean): EngineConfig {
+    return this;
+  }
+
+  /** Consumes the config and creates a windowed GoudGame instance */
+  async build(): Promise<GoudGame> {
+    return GoudGame.create(this._config);
+  }
+
+  /** Frees the config without building */
+  destroy(): void {}
+
 }

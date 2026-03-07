@@ -22,7 +22,8 @@
     "GoudTextureHandle": {"type": "u64", "invalid": "u64::MAX"},
     "Transform2DBuilder": {"type": "*mut FfiTransform2DBuilder", "invalid": "null"},
     "SpriteBuilder":      {"type": "*mut FfiSpriteBuilder",      "invalid": "null"},
-    "AnimationClipBuilder": {"type": "*mut FfiAnimationClipBuilder", "invalid": "null"}
+    "AnimationClipBuilder": {"type": "*mut FfiAnimationClipBuilder", "invalid": "null"},
+    "EngineConfigHandle":    {"type": "*mut c_void", "invalid": "null"}
   },
 
   "ctypes_mappings": {
@@ -40,7 +41,9 @@
     "*mut FfiTransform2DBuilder": "ctypes.POINTER(FfiTransform2DBuilder)",
     "*mut FfiSpriteBuilder":      "ctypes.POINTER(FfiSpriteBuilder)",
     "*mut FfiAnimationClipBuilder": "ctypes.POINTER(FfiAnimationClipBuilder)",
-    "*const FfiSpriteAnimator": "ctypes.POINTER(FfiSpriteAnimator)"
+    "*const FfiSpriteAnimator": "ctypes.POINTER(FfiSpriteAnimator)",
+    "*mut c_void": "ctypes.c_void_p",
+    "*const c_char": "ctypes.c_char_p"
   },
 
   "tools": {
@@ -434,6 +437,25 @@
       }
     },
 
+    "EngineConfig": {
+      "handle": "EngineConfigHandle",
+      "handle_type": "opaque",
+      "constructor": {
+        "ffi": "goud_engine_config_create",
+        "params": []
+      },
+      "destructor": "goud_engine_config_destroy",
+      "methods": {
+        "setTitle":      {"ffi": "goud_engine_config_set_title",      "string_params": ["title"]},
+        "setSize":       {"ffi": "goud_engine_config_set_size"},
+        "setVsync":      {"ffi": "goud_engine_config_set_vsync"},
+        "setFullscreen": {"ffi": "goud_engine_config_set_fullscreen"},
+        "setTargetFps":  {"ffi": "goud_engine_config_set_target_fps"},
+        "setFpsOverlay": {"ffi": "goud_engine_config_set_fps_overlay"},
+        "build":         {"ffi": "goud_engine_create", "returns_context": true},
+        "destroy":       {"ffi": "goud_engine_config_destroy"}
+      }
+    },
     "GoudContext": {
       "handle": "GoudContextId",
       "constructor": {
@@ -490,6 +512,17 @@
 
   "ffi_functions": {
     "_comment": "Complete list of extern C functions used by the SDK. Generators use this to produce raw binding layers (P/Invoke, ctypes, etc.)",
+    "engine_config": {
+      "goud_engine_config_create":         {"params": [],                                                                                               "returns": "*mut c_void"},
+      "goud_engine_config_destroy":        {"params": [{"name": "handle", "type": "*mut c_void"}],                                                      "returns": "void", "unsafe": true},
+      "goud_engine_config_set_title":      {"params": [{"name": "handle", "type": "*mut c_void"}, {"name": "title", "type": "*const c_char"}],           "returns": "bool", "unsafe": true},
+      "goud_engine_config_set_size":       {"params": [{"name": "handle", "type": "*mut c_void"}, {"name": "width", "type": "u32"}, {"name": "height", "type": "u32"}], "returns": "bool", "unsafe": true},
+      "goud_engine_config_set_vsync":      {"params": [{"name": "handle", "type": "*mut c_void"}, {"name": "enabled", "type": "bool"}],                 "returns": "bool", "unsafe": true},
+      "goud_engine_config_set_fullscreen": {"params": [{"name": "handle", "type": "*mut c_void"}, {"name": "enabled", "type": "bool"}],                 "returns": "bool", "unsafe": true},
+      "goud_engine_config_set_target_fps": {"params": [{"name": "handle", "type": "*mut c_void"}, {"name": "fps", "type": "u32"}],                      "returns": "bool", "unsafe": true},
+      "goud_engine_config_set_fps_overlay":{"params": [{"name": "handle", "type": "*mut c_void"}, {"name": "enabled", "type": "bool"}],                 "returns": "bool", "unsafe": true},
+      "goud_engine_create":                {"params": [{"name": "handle", "type": "*mut c_void"}],                                                      "returns": "GoudContextId", "unsafe": true}
+    },
     "context": {
       "goud_context_create":   {"params": [],                                                 "returns": "GoudContextId"},
       "goud_context_destroy":  {"params": [{"name": "ctx", "type": "GoudContextId"}],         "returns": "bool"},

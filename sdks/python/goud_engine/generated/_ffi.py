@@ -146,6 +146,26 @@ class FfiSpriteAnimator(ctypes.Structure):
 # ── Function signatures ──
 
 def _setup():
+    # engine_config
+    _lib.goud_engine_config_create.argtypes = []
+    _lib.goud_engine_config_create.restype = ctypes.c_void_p
+    _lib.goud_engine_config_destroy.argtypes = [ctypes.c_void_p]
+    _lib.goud_engine_config_destroy.restype = None
+    _lib.goud_engine_config_set_title.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+    _lib.goud_engine_config_set_title.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_size.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_engine_config_set_size.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_vsync.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+    _lib.goud_engine_config_set_vsync.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_fullscreen.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+    _lib.goud_engine_config_set_fullscreen.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_target_fps.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_target_fps.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_fps_overlay.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+    _lib.goud_engine_config_set_fps_overlay.restype = ctypes.c_bool
+    _lib.goud_engine_create.argtypes = [ctypes.c_void_p]
+    _lib.goud_engine_create.restype = GoudContextId
+
     # context
     _lib.goud_context_create.argtypes = []
     _lib.goud_context_create.restype = GoudContextId
@@ -566,12 +586,12 @@ def _setup():
 
     # sprite_animator
     _lib.goud_animation_clip_builder_new.argtypes = [ctypes.c_float, ctypes.c_uint64]
-    _lib.goud_animation_clip_builder_new.restype = ctypes.c_uint64
-    _lib.goud_animation_clip_builder_add_frame.argtypes = [ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
-    _lib.goud_animation_clip_builder_add_frame.restype = ctypes.c_uint64
-    _lib.goud_animation_clip_builder_free.argtypes = [ctypes.c_uint64]
+    _lib.goud_animation_clip_builder_new.restype = ctypes.c_void_p
+    _lib.goud_animation_clip_builder_add_frame.argtypes = [ctypes.c_void_p, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_animation_clip_builder_add_frame.restype = ctypes.c_void_p
+    _lib.goud_animation_clip_builder_free.argtypes = [ctypes.c_void_p]
     _lib.goud_animation_clip_builder_free.restype = None
-    _lib.goud_sprite_animator_from_clip.argtypes = [ctypes.c_uint64]
+    _lib.goud_sprite_animator_from_clip.argtypes = [ctypes.c_void_p]
     _lib.goud_sprite_animator_from_clip.restype = ctypes.c_uint64
     _lib.goud_sprite_animator_get_current_frame.argtypes = [ctypes.c_uint64]
     _lib.goud_sprite_animator_get_current_frame.restype = ctypes.c_uint32
@@ -599,34 +619,6 @@ def _setup():
     _lib.goud_component_remove_batch.restype = ctypes.c_uint32
     _lib.goud_component_has_batch.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint64), ctypes.c_uint32, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8)]
     _lib.goud_component_has_batch.restype = ctypes.c_uint32
-
-    # engine_config
-    _lib.goud_engine_config_create.argtypes = []
-    _lib.goud_engine_config_create.restype = ctypes.c_void_p
-
-    _lib.goud_engine_config_destroy.argtypes = [ctypes.c_void_p]
-    _lib.goud_engine_config_destroy.restype = None
-
-    _lib.goud_engine_config_set_title.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
-    _lib.goud_engine_config_set_title.restype = ctypes.c_bool
-
-    _lib.goud_engine_config_set_size.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32]
-    _lib.goud_engine_config_set_size.restype = ctypes.c_bool
-
-    _lib.goud_engine_config_set_vsync.argtypes = [ctypes.c_void_p, ctypes.c_bool]
-    _lib.goud_engine_config_set_vsync.restype = ctypes.c_bool
-
-    _lib.goud_engine_config_set_fullscreen.argtypes = [ctypes.c_void_p, ctypes.c_bool]
-    _lib.goud_engine_config_set_fullscreen.restype = ctypes.c_bool
-
-    _lib.goud_engine_config_set_target_fps.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
-    _lib.goud_engine_config_set_target_fps.restype = ctypes.c_bool
-
-    _lib.goud_engine_config_set_fps_overlay.argtypes = [ctypes.c_void_p, ctypes.c_bool]
-    _lib.goud_engine_config_set_fps_overlay.restype = ctypes.c_bool
-
-    _lib.goud_engine_create.argtypes = [ctypes.c_void_p]
-    _lib.goud_engine_create.restype = GoudContextId
 
     # error
     _lib.goud_last_error_code.argtypes = []
