@@ -95,7 +95,10 @@ impl SceneLoader {
         let world = manager
             .get_scene(id)
             .ok_or_else(|| GoudError::ResourceNotFound(format!("Scene id {} not found", id)))?;
-        let scene_data = serialize_scene(world, "scene")?;
+        let name = manager
+            .get_scene_name(id)
+            .ok_or_else(|| GoudError::ResourceNotFound(format!("Scene id {} not found", id)))?;
+        let scene_data = serialize_scene(world, name)?;
         scene_to_json(&scene_data)
     }
 }
@@ -310,10 +313,20 @@ mod tests {
         let deferred = DeferredSceneLoad::new();
         deferred.request_load("deferred_level".to_string(), json);
 
-        // Give the background thread time to complete.
-        std::thread::sleep(std::time::Duration::from_millis(100));
+        // Busy-poll with timeout for deferred load completion.
+        let start = std::time::Instant::now();
+        let timeout = std::time::Duration::from_secs(5);
+        let results = loop {
+            let results = deferred.process_completed(&mut mgr);
+            if !results.is_empty() {
+                break results;
+            }
+            if start.elapsed() > timeout {
+                panic!("Deferred load did not complete within timeout");
+            }
+            std::thread::yield_now();
+        };
 
-        let results = deferred.process_completed(&mut mgr);
         assert_eq!(results.len(), 1);
         assert!(results[0].is_ok());
 
@@ -329,9 +342,20 @@ mod tests {
         let deferred = DeferredSceneLoad::new();
         deferred.request_load("bad".to_string(), "not valid json".to_string());
 
-        std::thread::sleep(std::time::Duration::from_millis(100));
+        // Busy-poll with timeout for deferred load completion.
+        let start = std::time::Instant::now();
+        let timeout = std::time::Duration::from_secs(5);
+        let results = loop {
+            let results = deferred.process_completed(&mut mgr);
+            if !results.is_empty() {
+                break results;
+            }
+            if start.elapsed() > timeout {
+                panic!("Deferred load did not complete within timeout");
+            }
+            std::thread::yield_now();
+        };
 
-        let results = deferred.process_completed(&mut mgr);
         assert_eq!(results.len(), 1);
         assert!(results[0].is_err());
     }
