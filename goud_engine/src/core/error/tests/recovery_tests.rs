@@ -173,10 +173,7 @@ fn test_specific_recovery_hints() {
 #[test]
 fn test_unknown_code_has_fallback_hint() {
     let hint = recovery_hint(999);
-    assert!(
-        !hint.is_empty(),
-        "unknown code should have a fallback hint"
-    );
+    assert!(!hint.is_empty(), "unknown code should have a fallback hint");
 }
 
 // =============================================================================

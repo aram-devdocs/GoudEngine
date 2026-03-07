@@ -41,8 +41,11 @@ pub enum RecoveryClass {
 pub const fn recovery_class(code: GoudErrorCode) -> RecoveryClass {
     match code {
         // Fatal: engine cannot continue
-        ERR_NOT_INITIALIZED | ERR_INVALID_CONTEXT | ERR_CONTEXT_DESTROYED
-        | ERR_INVALID_STATE | ERR_INTERNAL_ERROR => RecoveryClass::Fatal,
+        ERR_NOT_INITIALIZED
+        | ERR_INVALID_CONTEXT
+        | ERR_CONTEXT_DESTROYED
+        | ERR_INVALID_STATE
+        | ERR_INTERNAL_ERROR => RecoveryClass::Fatal,
 
         // Degraded: subsystem unavailable, engine can continue
         ERR_BACKEND_NOT_SUPPORTED | ERR_AUDIO_INIT_FAILED | ERR_PHYSICS_INIT_FAILED => {
@@ -74,19 +77,13 @@ pub const fn recovery_hint(code: GoudErrorCode) -> &'static str {
         // Context errors
         ERR_NOT_INITIALIZED => "Call the initialization function first",
         ERR_ALREADY_INITIALIZED => "Shut down the engine before re-initializing",
-        ERR_INVALID_CONTEXT => {
-            "Ensure the context was properly created and not corrupted"
-        }
+        ERR_INVALID_CONTEXT => "Ensure the context was properly created and not corrupted",
         ERR_CONTEXT_DESTROYED => "Re-initialize the engine to obtain a new context",
-        ERR_INITIALIZATION_FAILED => {
-            "Check the error message for details and verify dependencies"
-        }
+        ERR_INITIALIZATION_FAILED => "Check the error message for details and verify dependencies",
 
         // Resource errors
         ERR_RESOURCE_NOT_FOUND => "Verify the file path and check the working directory",
-        ERR_RESOURCE_LOAD_FAILED => {
-            "Check file permissions and ensure the file is not locked"
-        }
+        ERR_RESOURCE_LOAD_FAILED => "Check file permissions and ensure the file is not locked",
         ERR_RESOURCE_INVALID_FORMAT => {
             "Verify the file is not corrupted and uses a supported format"
         }
@@ -95,13 +92,9 @@ pub const fn recovery_hint(code: GoudErrorCode) -> &'static str {
         }
 
         // Handle errors
-        ERR_INVALID_HANDLE => {
-            "Ensure the handle was obtained from a valid creation call"
-        }
+        ERR_INVALID_HANDLE => "Ensure the handle was obtained from a valid creation call",
         ERR_HANDLE_EXPIRED => "Re-create the resource to get a new handle",
-        ERR_HANDLE_TYPE_MISMATCH => {
-            "Pass the correct handle type for the operation"
-        }
+        ERR_HANDLE_TYPE_MISMATCH => "Pass the correct handle type for the operation",
 
         // Graphics errors
         ERR_SHADER_COMPILATION_FAILED => {
@@ -113,23 +106,13 @@ pub const fn recovery_hint(code: GoudErrorCode) -> &'static str {
         ERR_TEXTURE_CREATION_FAILED => {
             "Check texture dimensions and format; reduce size or free GPU resources"
         }
-        ERR_BUFFER_CREATION_FAILED => {
-            "Reduce buffer size or free unused GPU buffers"
-        }
-        ERR_RENDER_TARGET_FAILED => {
-            "Verify attachment formats and dimensions are consistent"
-        }
-        ERR_BACKEND_NOT_SUPPORTED => {
-            "Update GPU drivers or select a different supported backend"
-        }
-        ERR_DRAW_CALL_FAILED => {
-            "Verify buffer bindings and shader state; try updating GPU drivers"
-        }
+        ERR_BUFFER_CREATION_FAILED => "Reduce buffer size or free unused GPU buffers",
+        ERR_RENDER_TARGET_FAILED => "Verify attachment formats and dimensions are consistent",
+        ERR_BACKEND_NOT_SUPPORTED => "Update GPU drivers or select a different supported backend",
+        ERR_DRAW_CALL_FAILED => "Verify buffer bindings and shader state; try updating GPU drivers",
 
         // Entity errors
-        ERR_ENTITY_NOT_FOUND => {
-            "Verify the entity ID is valid and has not been despawned"
-        }
+        ERR_ENTITY_NOT_FOUND => "Verify the entity ID is valid and has not been despawned",
         ERR_ENTITY_ALREADY_EXISTS => {
             "Use a different entity ID or remove the existing entity first"
         }
@@ -139,45 +122,29 @@ pub const fn recovery_hint(code: GoudErrorCode) -> &'static str {
         ERR_COMPONENT_ALREADY_EXISTS => {
             "Use replace/update instead of add, or remove the existing component first"
         }
-        ERR_QUERY_FAILED => {
-            "Check for conflicting mutable/immutable access on the same component"
-        }
+        ERR_QUERY_FAILED => "Check for conflicting mutable/immutable access on the same component",
 
         // Input errors
         ERR_INPUT_DEVICE_NOT_FOUND => {
             "Verify the input device is connected and recognized by the OS"
         }
-        ERR_INVALID_INPUT_ACTION => {
-            "Check the action name matches a registered input action"
-        }
+        ERR_INVALID_INPUT_ACTION => "Check the action name matches a registered input action",
 
         // System errors
         ERR_WINDOW_CREATION_FAILED => {
             "Verify display server is running and window parameters are valid"
         }
-        ERR_AUDIO_INIT_FAILED => {
-            "Check that an audio output device is available"
-        }
-        ERR_PHYSICS_INIT_FAILED => {
-            "Review physics configuration for invalid values"
-        }
-        ERR_PLATFORM_ERROR => {
-            "Check the error message for platform-specific details"
-        }
+        ERR_AUDIO_INIT_FAILED => "Check that an audio output device is available",
+        ERR_PHYSICS_INIT_FAILED => "Review physics configuration for invalid values",
+        ERR_PLATFORM_ERROR => "Check the error message for platform-specific details",
 
         // Provider errors
-        ERR_PROVIDER_INIT_FAILED => {
-            "Check provider configuration and dependencies"
-        }
+        ERR_PROVIDER_INIT_FAILED => "Check provider configuration and dependencies",
         ERR_PROVIDER_NOT_FOUND => "Register the provider before accessing it",
-        ERR_PROVIDER_OPERATION_FAILED => {
-            "Check the error message for operation-specific details"
-        }
+        ERR_PROVIDER_OPERATION_FAILED => "Check the error message for operation-specific details",
 
         // Internal errors
-        ERR_INTERNAL_ERROR => {
-            "Report the error with full details; this is likely an engine bug"
-        }
+        ERR_INTERNAL_ERROR => "Report the error with full details; this is likely an engine bug",
         ERR_NOT_IMPLEMENTED => {
             "Use an alternative approach or wait for the feature to be implemented"
         }

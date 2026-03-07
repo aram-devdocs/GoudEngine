@@ -166,10 +166,10 @@ pub unsafe extern "C" fn goud_error_recovery_hint(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::error::context::subsystems;
     use crate::core::error::{
         set_last_error, set_last_error_with_context, GoudError, GoudErrorContext,
     };
-    use crate::core::error::context::subsystems;
 
     #[test]
     fn test_goud_last_error_message_success_path() {
@@ -233,10 +233,7 @@ mod tests {
     #[test]
     fn test_goud_last_error_subsystem_with_context() {
         let ctx = GoudErrorContext::new(subsystems::GRAPHICS, "shader_compile");
-        set_last_error_with_context(
-            GoudError::ShaderCompilationFailed("test".to_string()),
-            ctx,
-        );
+        set_last_error_with_context(GoudError::ShaderCompilationFailed("test".to_string()), ctx);
 
         let mut buf = [0u8; 64];
         // SAFETY: buf is a valid buffer of 64 bytes
@@ -350,8 +347,9 @@ mod tests {
         use crate::core::error::ERR_RESOURCE_NOT_FOUND;
         let mut buf = [0u8; 256];
         // SAFETY: buf is a valid buffer
-        let result =
-            unsafe { goud_error_recovery_hint(ERR_RESOURCE_NOT_FOUND, buf.as_mut_ptr(), buf.len()) };
+        let result = unsafe {
+            goud_error_recovery_hint(ERR_RESOURCE_NOT_FOUND, buf.as_mut_ptr(), buf.len())
+        };
         assert!(result > 0);
         let hint = std::str::from_utf8(&buf[..result as usize]).unwrap();
         assert!(hint.contains("file path"));
@@ -361,7 +359,8 @@ mod tests {
     fn test_goud_error_recovery_hint_null_buffer() {
         use crate::core::error::ERR_NOT_INITIALIZED;
         // SAFETY: passing null is explicitly handled
-        let result = unsafe { goud_error_recovery_hint(ERR_NOT_INITIALIZED, std::ptr::null_mut(), 0) };
+        let result =
+            unsafe { goud_error_recovery_hint(ERR_NOT_INITIALIZED, std::ptr::null_mut(), 0) };
         assert!(result < 0, "expected negative required size, got {result}");
     }
 
@@ -369,7 +368,7 @@ mod tests {
     fn test_goud_error_recovery_hint_truncates() {
         use crate::core::error::ERR_NOT_INITIALIZED;
         let mut buf = [0u8; 5]; // too small
-        // SAFETY: buf is a valid buffer
+                                // SAFETY: buf is a valid buffer
         let result =
             unsafe { goud_error_recovery_hint(ERR_NOT_INITIALIZED, buf.as_mut_ptr(), buf.len()) };
         assert_eq!(result, 4); // 5 - 1 for null terminator

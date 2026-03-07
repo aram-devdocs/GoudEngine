@@ -1,10 +1,10 @@
 //! Tests for error context propagation.
 
+use crate::core::error::context::subsystems;
 use crate::core::error::{
     clear_last_error, last_error_operation, last_error_subsystem, set_last_error,
     set_last_error_with_context, take_last_error, GoudError, GoudErrorContext,
 };
-use crate::core::error::context::subsystems;
 
 #[test]
 fn test_set_last_error_with_context_populates_subsystem_and_operation() {
@@ -49,10 +49,7 @@ fn test_clear_last_error_clears_context() {
 #[test]
 fn test_take_last_error_clears_context() {
     let ctx = GoudErrorContext::new(subsystems::RESOURCE, "load_texture");
-    set_last_error_with_context(
-        GoudError::ResourceNotFound("missing.png".to_string()),
-        ctx,
-    );
+    set_last_error_with_context(GoudError::ResourceNotFound("missing.png".to_string()), ctx);
     assert_eq!(last_error_subsystem(), Some("resource"));
 
     let err = take_last_error();

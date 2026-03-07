@@ -24,8 +24,8 @@
 //! Error codes use `i32` for maximum C ABI compatibility. Negative values
 //! are reserved for future use (e.g., platform-specific errors).
 
-pub mod context;
 mod codes;
+pub mod context;
 mod conversions;
 mod ffi_bridge;
 mod methods;
