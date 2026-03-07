@@ -12,6 +12,9 @@ import math
 import importlib.util
 from pathlib import Path
 
+# errors.py lives directly in goud_engine/, not in generated/
+_ERRORS_PATH = Path(__file__).parent / "goud_engine" / "errors.py"
+
 # Ensure goud_engine package is importable
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -446,6 +449,168 @@ def test_enums():
     return True
 
 
+def test_errors():
+    """Test GoudError hierarchy: imports, attributes, subclassing, and category mapping."""
+    print("Testing errors module...")
+
+    errors_mod = _load_module("errors", _ERRORS_PATH)
+
+    # Verify all public classes can be imported
+    GoudError = errors_mod.GoudError
+    GoudContextError = errors_mod.GoudContextError
+    GoudResourceError = errors_mod.GoudResourceError
+    GoudGraphicsError = errors_mod.GoudGraphicsError
+    GoudEntityError = errors_mod.GoudEntityError
+    GoudInputError = errors_mod.GoudInputError
+    GoudSystemError = errors_mod.GoudSystemError
+    GoudProviderError = errors_mod.GoudProviderError
+    GoudInternalError = errors_mod.GoudInternalError
+    RecoveryClass = errors_mod.RecoveryClass
+    _category_from_code = errors_mod._category_from_code
+    _CATEGORY_CLASS_MAP = errors_mod._CATEGORY_CLASS_MAP
+
+    assert GoudError is not None, "GoudError failed to import"
+    assert GoudContextError is not None, "GoudContextError failed to import"
+    assert GoudResourceError is not None, "GoudResourceError failed to import"
+    assert GoudGraphicsError is not None, "GoudGraphicsError failed to import"
+    assert GoudEntityError is not None, "GoudEntityError failed to import"
+    assert GoudInputError is not None, "GoudInputError failed to import"
+    assert GoudSystemError is not None, "GoudSystemError failed to import"
+    assert GoudProviderError is not None, "GoudProviderError failed to import"
+    assert GoudInternalError is not None, "GoudInternalError failed to import"
+    assert RecoveryClass is not None, "RecoveryClass failed to import"
+
+    # Verify GoudError has expected attributes when constructed
+    err = GoudError(
+        error_code=1,
+        message="context not initialised",
+        category="Context",
+        subsystem="engine",
+        operation="init",
+        recovery=RecoveryClass.FATAL,
+        recovery_hint="Call the initialization function first",
+    )
+    assert err.error_code == 1, f"Expected error_code=1, got {err.error_code}"
+    assert err.category == "Context", f"Expected category='Context', got {err.category!r}"
+    assert err.subsystem == "engine", f"Expected subsystem='engine', got {err.subsystem!r}"
+    assert err.operation == "init", f"Expected operation='init', got {err.operation!r}"
+    assert err.recovery == RecoveryClass.FATAL, f"Expected recovery=FATAL, got {err.recovery}"
+    assert err.recovery_hint == "Call the initialization function first", \
+        f"recovery_hint mismatch: {err.recovery_hint!r}"
+    assert str(err) == "context not initialised", f"str(err) mismatch: {str(err)!r}"
+
+    # Verify RecoveryClass constants
+    assert RecoveryClass.RECOVERABLE == 0, "RECOVERABLE should be 0"
+    assert RecoveryClass.FATAL == 1, "FATAL should be 1"
+    assert RecoveryClass.DEGRADED == 2, "DEGRADED should be 2"
+
+    # Verify each subclass is a subclass of GoudError (isinstance check)
+    ctx_err = GoudContextError(
+        error_code=1, message="ctx", category="Context",
+        subsystem="", operation="", recovery=0, recovery_hint="",
+    )
+    assert isinstance(ctx_err, GoudError), "GoudContextError should be instance of GoudError"
+    assert isinstance(ctx_err, GoudContextError), "GoudContextError instance check failed"
+
+    res_err = GoudResourceError(
+        error_code=100, message="res", category="Resource",
+        subsystem="", operation="", recovery=0, recovery_hint="",
+    )
+    assert isinstance(res_err, GoudError), "GoudResourceError should be instance of GoudError"
+
+    gfx_err = GoudGraphicsError(
+        error_code=200, message="gfx", category="Graphics",
+        subsystem="", operation="", recovery=0, recovery_hint="",
+    )
+    assert isinstance(gfx_err, GoudError), "GoudGraphicsError should be instance of GoudError"
+
+    ent_err = GoudEntityError(
+        error_code=300, message="ent", category="Entity",
+        subsystem="", operation="", recovery=0, recovery_hint="",
+    )
+    assert isinstance(ent_err, GoudError), "GoudEntityError should be instance of GoudError"
+
+    inp_err = GoudInputError(
+        error_code=400, message="inp", category="Input",
+        subsystem="", operation="", recovery=0, recovery_hint="",
+    )
+    assert isinstance(inp_err, GoudError), "GoudInputError should be instance of GoudError"
+
+    sys_err = GoudSystemError(
+        error_code=500, message="sys", category="System",
+        subsystem="", operation="", recovery=0, recovery_hint="",
+    )
+    assert isinstance(sys_err, GoudError), "GoudSystemError should be instance of GoudError"
+
+    prv_err = GoudProviderError(
+        error_code=600, message="prv", category="Provider",
+        subsystem="", operation="", recovery=0, recovery_hint="",
+    )
+    assert isinstance(prv_err, GoudError), "GoudProviderError should be instance of GoudError"
+
+    int_err = GoudInternalError(
+        error_code=900, message="int", category="Internal",
+        subsystem="", operation="", recovery=0, recovery_hint="",
+    )
+    assert isinstance(int_err, GoudError), "GoudInternalError should be instance of GoudError"
+
+    # Verify each subclass maps to its expected category name
+    assert ctx_err.category == "Context", f"GoudContextError category should be 'Context'"
+    assert res_err.category == "Resource", f"GoudResourceError category should be 'Resource'"
+    assert gfx_err.category == "Graphics", f"GoudGraphicsError category should be 'Graphics'"
+    assert ent_err.category == "Entity", f"GoudEntityError category should be 'Entity'"
+    assert inp_err.category == "Input", f"GoudInputError category should be 'Input'"
+    assert sys_err.category == "System", f"GoudSystemError category should be 'System'"
+    assert prv_err.category == "Provider", f"GoudProviderError category should be 'Provider'"
+    assert int_err.category == "Internal", f"GoudInternalError category should be 'Internal'"
+
+    # Verify errors module is also exported from the package __init__
+    # We must avoid triggering FFI load, so load __init__ indirectly via importlib
+    init_path = Path(__file__).parent / "goud_engine" / "__init__.py"
+    init_src = init_path.read_text()
+    assert "from .errors import" in init_src, \
+        "__init__.py should re-export error classes from .errors"
+
+    # Test dispatch path: _category_from_code maps error codes to category strings
+    assert _category_from_code(1) == "Context", \
+        f"_category_from_code(1) should return 'Context', got {_category_from_code(1)!r}"
+    assert _category_from_code(100) == "Resource", \
+        f"_category_from_code(100) should return 'Resource', got {_category_from_code(100)!r}"
+    assert _category_from_code(200) == "Graphics", \
+        f"_category_from_code(200) should return 'Graphics', got {_category_from_code(200)!r}"
+    assert _category_from_code(300) == "Entity", \
+        f"_category_from_code(300) should return 'Entity', got {_category_from_code(300)!r}"
+    assert _category_from_code(400) == "Input", \
+        f"_category_from_code(400) should return 'Input', got {_category_from_code(400)!r}"
+    assert _category_from_code(500) == "System", \
+        f"_category_from_code(500) should return 'System', got {_category_from_code(500)!r}"
+    assert _category_from_code(600) == "Provider", \
+        f"_category_from_code(600) should return 'Provider', got {_category_from_code(600)!r}"
+    assert _category_from_code(900) == "Internal", \
+        f"_category_from_code(900) should return 'Internal', got {_category_from_code(900)!r}"
+
+    # Test dispatch path: _CATEGORY_CLASS_MAP maps category strings to exception classes
+    assert _CATEGORY_CLASS_MAP["Context"] is GoudContextError, \
+        f"_CATEGORY_CLASS_MAP['Context'] should map to GoudContextError"
+    assert _CATEGORY_CLASS_MAP["Resource"] is GoudResourceError, \
+        f"_CATEGORY_CLASS_MAP['Resource'] should map to GoudResourceError"
+    assert _CATEGORY_CLASS_MAP["Graphics"] is GoudGraphicsError, \
+        f"_CATEGORY_CLASS_MAP['Graphics'] should map to GoudGraphicsError"
+    assert _CATEGORY_CLASS_MAP["Entity"] is GoudEntityError, \
+        f"_CATEGORY_CLASS_MAP['Entity'] should map to GoudEntityError"
+    assert _CATEGORY_CLASS_MAP["Input"] is GoudInputError, \
+        f"_CATEGORY_CLASS_MAP['Input'] should map to GoudInputError"
+    assert _CATEGORY_CLASS_MAP["System"] is GoudSystemError, \
+        f"_CATEGORY_CLASS_MAP['System'] should map to GoudSystemError"
+    assert _CATEGORY_CLASS_MAP["Provider"] is GoudProviderError, \
+        f"_CATEGORY_CLASS_MAP['Provider'] should map to GoudProviderError"
+    assert _CATEGORY_CLASS_MAP["Internal"] is GoudInternalError, \
+        f"_CATEGORY_CLASS_MAP['Internal'] should map to GoudInternalError"
+
+    print("  Error tests passed")
+    return True
+
+
 def main():
     """Run all tests."""
     print("=" * 60)
@@ -461,6 +626,7 @@ def main():
         test_sprite,
         test_entity,
         test_enums,
+        test_errors,
     ]
 
     passed = 0
