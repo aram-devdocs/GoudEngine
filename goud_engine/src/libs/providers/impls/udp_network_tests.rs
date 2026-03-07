@@ -219,13 +219,15 @@ fn test_udp_disconnect() {
     let mut host_got_disconnect = false;
     for _ in 0..20 {
         host.update(0.0).unwrap();
-        if host.drain_events().iter().any(|e| matches!(
-            e,
-            NetworkEvent::Disconnected {
-                reason: crate::core::providers::network_types::DisconnectReason::RemoteClose,
-                ..
-            }
-        )) {
+        if host.drain_events().iter().any(|e| {
+            matches!(
+                e,
+                NetworkEvent::Disconnected {
+                    reason: crate::core::providers::network_types::DisconnectReason::RemoteClose,
+                    ..
+                }
+            )
+        }) {
             host_got_disconnect = true;
             break;
         }
@@ -288,10 +290,18 @@ fn test_udp_broadcast() {
     for _ in 0..20 {
         c1.update(0.0).unwrap();
         c2.update(0.0).unwrap();
-        if c1.drain_events().iter().any(|e| matches!(e, NetworkEvent::Received { .. })) {
+        if c1
+            .drain_events()
+            .iter()
+            .any(|e| matches!(e, NetworkEvent::Received { .. }))
+        {
             c1_got = true;
         }
-        if c2.drain_events().iter().any(|e| matches!(e, NetworkEvent::Received { .. })) {
+        if c2
+            .drain_events()
+            .iter()
+            .any(|e| matches!(e, NetworkEvent::Received { .. }))
+        {
             c2_got = true;
         }
         if c1_got && c2_got {

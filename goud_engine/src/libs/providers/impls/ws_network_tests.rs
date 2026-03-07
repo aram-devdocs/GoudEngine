@@ -1,8 +1,6 @@
 use super::*;
 use crate::core::providers::network::NetworkProvider;
-use crate::core::providers::network_types::{
-    Channel, ConnectionState, HostConfig, NetworkEvent,
-};
+use crate::core::providers::network_types::{Channel, ConnectionState, HostConfig, NetworkEvent};
 use crate::core::providers::{Provider, ProviderLifecycle};
 
 #[test]
@@ -83,10 +81,7 @@ fn test_ws_host_and_connect() {
     let client_events = client.drain_events();
     // Client may have already drained Connected event above or it may still be pending.
     // Just verify the state is correct.
-    assert_eq!(
-        client.connection_state(conn_id),
-        ConnectionState::Connected
-    );
+    assert_eq!(client.connection_state(conn_id), ConnectionState::Connected);
 
     host.shutdown();
     client.shutdown();
@@ -205,10 +200,7 @@ fn test_ws_disconnect() {
             break;
         }
     }
-    assert_eq!(
-        client.connection_state(conn_id),
-        ConnectionState::Connected
-    );
+    assert_eq!(client.connection_state(conn_id), ConnectionState::Connected);
 
     // Client disconnects.
     client.disconnect(conn_id).unwrap();

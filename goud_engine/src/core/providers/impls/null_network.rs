@@ -77,12 +77,7 @@ impl NetworkProvider for NullNetworkProvider {
         Ok(())
     }
 
-    fn send(
-        &mut self,
-        _conn: ConnectionId,
-        _channel: Channel,
-        _data: &[u8],
-    ) -> GoudResult<()> {
+    fn send(&mut self, _conn: ConnectionId, _channel: Channel, _data: &[u8]) -> GoudResult<()> {
         Ok(())
     }
 

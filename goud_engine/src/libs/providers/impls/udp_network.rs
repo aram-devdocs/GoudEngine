@@ -2,6 +2,10 @@ use std::collections::HashMap;
 use std::net::{SocketAddr, UdpSocket};
 use std::time::Instant;
 
+use super::udp_reliability::{
+    PacketHeader, ReliabilityLayer, HEADER_SIZE, PACKET_CONNECT, PACKET_CONNECT_ACK, PACKET_DATA,
+    PACKET_DISCONNECT, PACKET_HEARTBEAT,
+};
 use crate::core::providers::network::NetworkProvider;
 use crate::core::providers::network_types::{
     Channel, ConnectionId, ConnectionState, ConnectionStats, HostConfig, NetworkCapabilities,
@@ -9,16 +13,15 @@ use crate::core::providers::network_types::{
 };
 use crate::core::providers::{Provider, ProviderLifecycle};
 use crate::libs::error::{GoudError, GoudResult};
-use super::udp_reliability::{
-    PacketHeader, ReliabilityLayer, HEADER_SIZE, PACKET_CONNECT, PACKET_CONNECT_ACK, PACKET_DATA,
-    PACKET_DISCONNECT, PACKET_HEARTBEAT,
-};
 
 const CONNECTION_TIMEOUT_SECS: u64 = 10;
 const RECV_BUF_SIZE: usize = 65536;
 
 fn net_err(msg: String) -> GoudError {
-    GoudError::ProviderError { subsystem: "network", message: msg }
+    GoudError::ProviderError {
+        subsystem: "network",
+        message: msg,
+    }
 }
 
 #[derive(Debug)]
@@ -72,8 +75,13 @@ impl UdpNetProvider {
     }
 
     fn send_raw(&mut self, addr: SocketAddr, data: &[u8]) -> GoudResult<()> {
-        let socket = self.socket.as_ref().ok_or_else(|| net_err("Socket not bound".into()))?;
-        socket.send_to(data, addr).map_err(|e| net_err(format!("send_to failed: {}", e)))?;
+        let socket = self
+            .socket
+            .as_ref()
+            .ok_or_else(|| net_err("Socket not bound".into()))?;
+        socket
+            .send_to(data, addr)
+            .map_err(|e| net_err(format!("send_to failed: {}", e)))?;
         self.stats.packets_sent += 1;
         self.stats.bytes_sent += data.len() as u64;
         Ok(())
@@ -102,7 +110,6 @@ impl UdpNetProvider {
         if !self.is_host {
             return;
         }
-
         let id = if let Some(existing) = self.addr_to_id.get(&src) {
             *existing
         } else {
@@ -175,7 +182,6 @@ impl UdpNetProvider {
             });
         }
     }
-
     fn handle_disconnect_packet(&mut self, src: SocketAddr) {
         if let Some(id) = self.addr_to_id.remove(&src) {
             if let Some(mut conn) = self.connections.remove(&id.0) {
@@ -187,7 +193,6 @@ impl UdpNetProvider {
             }
         }
     }
-
     fn handle_heartbeat(&mut self, src: SocketAddr, header: &PacketHeader) {
         if let Some(&id) = self.addr_to_id.get(&src) {
             if let Some(conn) = self.connections.get_mut(&id.0) {
@@ -232,9 +237,7 @@ impl UdpNetProvider {
 
             for (_seq, data) in resend_list {
                 // Re-wrap with a fresh header (ack info updates).
-                let header = conn
-                    .reliability
-                    .prepare_outgoing_header(PACKET_DATA, 0);
+                let header = conn.reliability.prepare_outgoing_header(PACKET_DATA, 0);
                 let mut packet = Vec::with_capacity(HEADER_SIZE + data.len());
                 packet.extend_from_slice(&header.encode());
                 packet.extend_from_slice(&data);
@@ -254,31 +257,20 @@ impl UdpNetProvider {
     }
 }
 
+#[rustfmt::skip]
 impl Default for UdpNetProvider {
-    fn default() -> Self {
-        Self::new()
-    }
+    fn default() -> Self { Self::new() }
 }
-
+#[rustfmt::skip]
 impl Provider for UdpNetProvider {
-    fn name(&self) -> &str {
-        "udp"
-    }
-
-    fn version(&self) -> &str {
-        "0.1.0"
-    }
-
-    fn capabilities(&self) -> Box<dyn std::any::Any> {
-        Box::new(self.capabilities.clone())
-    }
+    fn name(&self) -> &str { "udp" }
+    fn version(&self) -> &str { "0.1.0" }
+    fn capabilities(&self) -> Box<dyn std::any::Any> { Box::new(self.capabilities.clone()) }
 }
 
 impl ProviderLifecycle for UdpNetProvider {
-    fn init(&mut self) -> GoudResult<()> {
-        Ok(())
-    }
-
+    #[rustfmt::skip]
+    fn init(&mut self) -> GoudResult<()> { Ok(()) }
     fn update(&mut self, _delta: f32) -> GoudResult<()> {
         if self.socket.is_none() {
             return Ok(());
@@ -337,7 +329,8 @@ impl NetworkProvider for UdpNetProvider {
             return Err(net_err("Already hosting or connected".into()));
         }
         let addr = format!("{}:{}", config.bind_address, config.port);
-        let socket = UdpSocket::bind(&addr).map_err(|e| net_err(format!("Failed to bind {}: {}", addr, e)))?;
+        let socket = UdpSocket::bind(&addr)
+            .map_err(|e| net_err(format!("Failed to bind {}: {}", addr, e)))?;
         socket
             .set_nonblocking(true)
             .map_err(|e| net_err(format!("Failed to set non-blocking: {}", e)))?;
@@ -348,15 +341,17 @@ impl NetworkProvider for UdpNetProvider {
 
     fn connect(&mut self, addr: &str) -> GoudResult<ConnectionId> {
         if self.socket.is_none() {
-            let socket =
-                UdpSocket::bind("0.0.0.0:0").map_err(|e| net_err(format!("Failed to bind ephemeral: {}", e)))?;
+            let socket = UdpSocket::bind("0.0.0.0:0")
+                .map_err(|e| net_err(format!("Failed to bind ephemeral: {}", e)))?;
             socket
                 .set_nonblocking(true)
                 .map_err(|e| net_err(format!("Failed to set non-blocking: {}", e)))?;
             self.socket = Some(socket);
         }
 
-        let remote: SocketAddr = addr.parse().map_err(|e| net_err(format!("Invalid address '{}': {}", addr, e)))?;
+        let remote: SocketAddr = addr
+            .parse()
+            .map_err(|e| net_err(format!("Invalid address '{}': {}", addr, e)))?;
 
         let id = self.allocate_id();
         let mut conn = UdpConnection {
@@ -369,15 +364,15 @@ impl NetworkProvider for UdpNetProvider {
         };
 
         // Send CONNECT packet.
-        let header = conn
-            .reliability
-            .prepare_outgoing_header(PACKET_CONNECT, 0);
+        let header = conn.reliability.prepare_outgoing_header(PACKET_CONNECT, 0);
         let bytes = header.encode();
         self.addr_to_id.insert(remote, id);
         self.connections.insert(id.0, conn);
 
         if let Some(ref socket) = self.socket {
-            socket.send_to(&bytes, remote).map_err(|e| net_err(format!("Failed to send CONNECT: {}", e)))?;
+            socket
+                .send_to(&bytes, remote)
+                .map_err(|e| net_err(format!("Failed to send CONNECT: {}", e)))?;
             self.stats.packets_sent += 1;
             self.stats.bytes_sent += bytes.len() as u64;
         }
@@ -421,12 +416,7 @@ impl NetworkProvider for UdpNetProvider {
         Ok(())
     }
 
-    fn send(
-        &mut self,
-        conn_id: ConnectionId,
-        channel: Channel,
-        data: &[u8],
-    ) -> GoudResult<()> {
+    fn send(&mut self, conn_id: ConnectionId, channel: Channel, data: &[u8]) -> GoudResult<()> {
         let conn = self
             .connections
             .get_mut(&conn_id.0)
@@ -469,16 +459,27 @@ impl NetworkProvider for UdpNetProvider {
         Ok(())
     }
 
-    fn drain_events(&mut self) -> Vec<NetworkEvent> { std::mem::take(&mut self.events) }
+    fn drain_events(&mut self) -> Vec<NetworkEvent> {
+        std::mem::take(&mut self.events)
+    }
     fn connections(&self) -> Vec<ConnectionId> {
         self.connections.keys().map(|k| ConnectionId(*k)).collect()
     }
     fn connection_state(&self, conn: ConnectionId) -> ConnectionState {
-        self.connections.get(&conn.0).map(|c| c.state).unwrap_or(ConnectionState::Disconnected)
+        self.connections
+            .get(&conn.0)
+            .map(|c| c.state)
+            .unwrap_or(ConnectionState::Disconnected)
     }
-    fn local_id(&self) -> Option<ConnectionId> { None }
-    fn network_capabilities(&self) -> &NetworkCapabilities { &self.capabilities }
-    fn stats(&self) -> NetworkStats { self.stats.clone() }
+    fn local_id(&self) -> Option<ConnectionId> {
+        None
+    }
+    fn network_capabilities(&self) -> &NetworkCapabilities {
+        &self.capabilities
+    }
+    fn stats(&self) -> NetworkStats {
+        self.stats.clone()
+    }
     fn connection_stats(&self, conn: ConnectionId) -> Option<ConnectionStats> {
         self.connections.get(&conn.0).map(|c| c.stats.clone())
     }

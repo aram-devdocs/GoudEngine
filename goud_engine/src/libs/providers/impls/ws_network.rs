@@ -17,9 +17,8 @@ mod native {
 
     use crate::core::providers::network::NetworkProvider;
     use crate::core::providers::network_types::{
-        Channel, ConnectionId, ConnectionState, ConnectionStats,
-        DisconnectReason, HostConfig, NetworkCapabilities, NetworkEvent,
-        NetworkStats,
+        Channel, ConnectionId, ConnectionState, ConnectionStats, DisconnectReason, HostConfig,
+        NetworkCapabilities, NetworkEvent, NetworkStats,
     };
     use crate::core::providers::{Provider, ProviderLifecycle};
     use crate::libs::error::{GoudError, GoudResult};
@@ -28,7 +27,10 @@ mod native {
     const READ_TIMEOUT: Duration = Duration::from_millis(10);
 
     fn net_err(msg: String) -> GoudError {
-        GoudError::ProviderError { subsystem: "network", message: msg }
+        GoudError::ProviderError {
+            subsystem: "network",
+            message: msg,
+        }
     }
 
     enum InternalWsEvent {
@@ -70,10 +72,14 @@ mod native {
                         let _ = event_tx.send(InternalWsEvent::Received(cid, d.to_vec()));
                     }
                     Ok(Message::Text(t)) => {
-                        let _ = event_tx.send(InternalWsEvent::Received(cid, t.as_bytes().to_vec()));
+                        let _ =
+                            event_tx.send(InternalWsEvent::Received(cid, t.as_bytes().to_vec()));
                     }
                     Ok(Message::Close(_)) | Err(tungstenite::Error::ConnectionClosed) => {
-                        let _ = event_tx.send(InternalWsEvent::Disconnected(cid, DisconnectReason::RemoteClose));
+                        let _ = event_tx.send(InternalWsEvent::Disconnected(
+                            cid,
+                            DisconnectReason::RemoteClose,
+                        ));
                         break;
                     }
                     Ok(Message::Ping(_) | Message::Pong(_) | Message::Frame(_)) => {}
@@ -85,7 +91,10 @@ mod native {
                     }
                     Err(e) => {
                         let _ = event_tx.send(InternalWsEvent::Error(cid, format!("read: {}", e)));
-                        let _ = event_tx.send(InternalWsEvent::Disconnected(cid, DisconnectReason::Error(e.to_string())));
+                        let _ = event_tx.send(InternalWsEvent::Disconnected(
+                            cid,
+                            DisconnectReason::Error(e.to_string()),
+                        ));
                         break;
                     }
                 }
@@ -94,7 +103,8 @@ mod native {
                     match write_rx.try_recv() {
                         Ok(data) => {
                             if let Err(e) = ws.send(Message::Binary(data.into())) {
-                                let _ = event_tx.send(InternalWsEvent::Error(cid, format!("write: {}", e)));
+                                let _ = event_tx
+                                    .send(InternalWsEvent::Error(cid, format!("write: {}", e)));
                                 return;
                             }
                         }
@@ -164,19 +174,27 @@ mod native {
     }
 
     impl Default for WsNetProvider {
-        fn default() -> Self { Self::new() }
+        fn default() -> Self {
+            Self::new()
+        }
     }
 
     impl Provider for WsNetProvider {
-        fn name(&self) -> &str { "websocket" }
-        fn version(&self) -> &str { "0.1.0" }
+        fn name(&self) -> &str {
+            "websocket"
+        }
+        fn version(&self) -> &str {
+            "0.1.0"
+        }
         fn capabilities(&self) -> Box<dyn std::any::Any> {
             Box::new(self.capabilities.clone())
         }
     }
 
     impl ProviderLifecycle for WsNetProvider {
-        fn init(&mut self) -> GoudResult<()> { Ok(()) }
+        fn init(&mut self) -> GoudResult<()> {
+            Ok(())
+        }
 
         fn update(&mut self, _delta: f32) -> GoudResult<()> {
             let guard = self.event_rx.lock().map_err(|e| net_err(e.to_string()))?;
@@ -194,7 +212,8 @@ mod native {
                                 c.state = ConnectionState::Disconnected;
                             }
                             self.send_txs.remove(&id.0);
-                            self.events.push(NetworkEvent::Disconnected { conn: id, reason });
+                            self.events
+                                .push(NetworkEvent::Disconnected { conn: id, reason });
                         }
                         InternalWsEvent::Received(id, data) => {
                             self.stats.bytes_received += data.len() as u64;
@@ -203,7 +222,9 @@ mod native {
                                 c.stats.bytes_received += data.len() as u64;
                             }
                             self.events.push(NetworkEvent::Received {
-                                conn: id, channel: Channel(0), data,
+                                conn: id,
+                                channel: Channel(0),
+                                data,
                             });
                         }
                         InternalWsEvent::Error(id, message) => {
@@ -214,10 +235,13 @@ mod native {
                         }
                         InternalWsEvent::WriteTxReady(id, write_tx) => {
                             self.send_txs.insert(id.0, write_tx);
-                            self.connections.entry(id.0).or_insert_with(|| WsConnection {
-                                id, state: ConnectionState::Connecting,
-                                stats: ConnectionStats::default(),
-                            });
+                            self.connections
+                                .entry(id.0)
+                                .or_insert_with(|| WsConnection {
+                                    id,
+                                    state: ConnectionState::Connecting,
+                                    stats: ConnectionStats::default(),
+                                });
                         }
                     }
                 }
@@ -229,9 +253,13 @@ mod native {
         fn shutdown(&mut self) {
             self.running.store(false, Ordering::Relaxed);
             self.send_txs.clear();
-            if let Ok(mut g) = self.event_rx.lock() { g.take(); }
+            if let Ok(mut g) = self.event_rx.lock() {
+                g.take();
+            }
             if let Ok(mut g) = self.threads.lock() {
-                for h in std::mem::take(&mut *g) { let _ = h.join(); }
+                for h in std::mem::take(&mut *g) {
+                    let _ = h.join();
+                }
             }
             self.connections.clear();
         }
@@ -244,14 +272,16 @@ mod native {
 
     impl NetworkProvider for WsNetProvider {
         fn host(&mut self, config: &HostConfig) -> GoudResult<()> {
-            if self.is_hosting { return Err(net_err("Already hosting".into())); }
+            if self.is_hosting {
+                return Err(net_err("Already hosting".into()));
+            }
             let bind = format!("{}:{}", config.bind_address, config.port);
-            let listener = TcpListener::bind(&bind)
-                .map_err(|e| net_err(format!("bind {}: {}", bind, e)))?;
-            self.local_addr = Some(
-                listener.local_addr().map_err(|e| net_err(e.to_string()))?,
-            );
-            listener.set_nonblocking(true).map_err(|e| net_err(e.to_string()))?;
+            let listener =
+                TcpListener::bind(&bind).map_err(|e| net_err(format!("bind {}: {}", bind, e)))?;
+            self.local_addr = Some(listener.local_addr().map_err(|e| net_err(e.to_string()))?);
+            listener
+                .set_nonblocking(true)
+                .map_err(|e| net_err(e.to_string()))?;
             self.is_hosting = true;
 
             let running = self.running.clone();
@@ -264,18 +294,19 @@ mod native {
                 while running.load(Ordering::Relaxed) {
                     match listener.accept() {
                         Ok((stream, _)) => {
-                            if count >= max_conns { continue; }
-                            if stream.set_nonblocking(false).is_err() { continue; }
+                            if count >= max_conns {
+                                continue;
+                            }
+                            if stream.set_nonblocking(false).is_err() {
+                                continue;
+                            }
                             match tungstenite::accept(stream) {
                                 Ok(ws) => {
                                     set_stream_timeout(ws.get_ref());
-                                    let id = ConnectionId(
-                                        next_id.fetch_add(1, Ordering::Relaxed),
-                                    );
+                                    let id = ConnectionId(next_id.fetch_add(1, Ordering::Relaxed));
                                     count += 1;
-                                    let wtx = spawn_io_thread(
-                                        id, ws, event_tx.clone(), running.clone(),
-                                    );
+                                    let wtx =
+                                        spawn_io_thread(id, ws, event_tx.clone(), running.clone());
                                     let _ = event_tx.send(InternalWsEvent::WriteTxReady(id, wtx));
                                     let _ = event_tx.send(InternalWsEvent::Connected(id));
                                 }
@@ -289,15 +320,22 @@ mod native {
                     }
                 }
             });
-            if let Ok(mut g) = self.threads.lock() { g.push(h); }
+            if let Ok(mut g) = self.threads.lock() {
+                g.push(h);
+            }
             Ok(())
         }
 
         fn connect(&mut self, addr: &str) -> GoudResult<ConnectionId> {
             let id = self.allocate_id();
-            self.connections.insert(id.0, WsConnection {
-                id, state: ConnectionState::Connecting, stats: ConnectionStats::default(),
-            });
+            self.connections.insert(
+                id.0,
+                WsConnection {
+                    id,
+                    state: ConnectionState::Connecting,
+                    stats: ConnectionStats::default(),
+                },
+            );
             let url = if addr.starts_with("ws://") || addr.starts_with("wss://") {
                 addr.to_string()
             } else {
@@ -306,27 +344,26 @@ mod native {
             let event_tx = self.event_tx.clone();
             let running = self.running.clone();
 
-            let h = thread::spawn(move || {
-                match tungstenite::connect(&url) {
-                    Ok((ws, _)) => {
-                        if let tungstenite::stream::MaybeTlsStream::Plain(s) = ws.get_ref() {
-                            let _ = s.set_read_timeout(Some(READ_TIMEOUT));
-                        }
-                        let wtx = spawn_io_thread(id, ws, event_tx.clone(), running);
-                        let _ = event_tx.send(InternalWsEvent::WriteTxReady(id, wtx));
-                        let _ = event_tx.send(InternalWsEvent::Connected(id));
+            let h = thread::spawn(move || match tungstenite::connect(&url) {
+                Ok((ws, _)) => {
+                    if let tungstenite::stream::MaybeTlsStream::Plain(s) = ws.get_ref() {
+                        let _ = s.set_read_timeout(Some(READ_TIMEOUT));
                     }
-                    Err(e) => {
-                        let _ = event_tx.send(InternalWsEvent::Error(
-                            id, format!("connect: {}", e),
-                        ));
-                        let _ = event_tx.send(InternalWsEvent::Disconnected(
-                            id, DisconnectReason::Error(e.to_string()),
-                        ));
-                    }
+                    let wtx = spawn_io_thread(id, ws, event_tx.clone(), running);
+                    let _ = event_tx.send(InternalWsEvent::WriteTxReady(id, wtx));
+                    let _ = event_tx.send(InternalWsEvent::Connected(id));
+                }
+                Err(e) => {
+                    let _ = event_tx.send(InternalWsEvent::Error(id, format!("connect: {}", e)));
+                    let _ = event_tx.send(InternalWsEvent::Disconnected(
+                        id,
+                        DisconnectReason::Error(e.to_string()),
+                    ));
                 }
             });
-            if let Ok(mut g) = self.threads.lock() { g.push(h); }
+            if let Ok(mut g) = self.threads.lock() {
+                g.push(h);
+            }
             Ok(id)
         }
 
@@ -336,27 +373,35 @@ mod native {
                 c.state = ConnectionState::Disconnected;
             }
             self.events.push(NetworkEvent::Disconnected {
-                conn: conn_id, reason: DisconnectReason::LocalClose,
+                conn: conn_id,
+                reason: DisconnectReason::LocalClose,
             });
             Ok(())
         }
 
         fn disconnect_all(&mut self) -> GoudResult<()> {
             let ids: Vec<_> = self.connections.keys().map(|k| ConnectionId(*k)).collect();
-            for id in ids { let _ = self.disconnect(id); }
+            for id in ids {
+                let _ = self.disconnect(id);
+            }
             Ok(())
         }
 
         fn send(&mut self, conn_id: ConnectionId, _ch: Channel, data: &[u8]) -> GoudResult<()> {
-            let conn = self.connections.get(&conn_id.0)
+            let conn = self
+                .connections
+                .get(&conn_id.0)
                 .ok_or_else(|| net_err(format!("Unknown connection {:?}", conn_id)))?;
             if conn.state != ConnectionState::Connected {
                 return Err(net_err("Connection not established".into()));
             }
-            let tx = self.send_txs.get(&conn_id.0)
+            let tx = self
+                .send_txs
+                .get(&conn_id.0)
                 .ok_or_else(|| net_err("No write channel".into()))?;
             let len = data.len();
-            tx.send(data.to_vec()).map_err(|e| net_err(format!("enqueue: {}", e)))?;
+            tx.send(data.to_vec())
+                .map_err(|e| net_err(format!("enqueue: {}", e)))?;
             self.stats.bytes_sent += len as u64;
             self.stats.packets_sent += 1;
             if let Some(c) = self.connections.get_mut(&conn_id.0) {
@@ -366,25 +411,42 @@ mod native {
         }
 
         fn broadcast(&mut self, ch: Channel, data: &[u8]) -> GoudResult<()> {
-            let ids: Vec<_> = self.connections.values()
-                .filter(|c| c.state == ConnectionState::Connected).map(|c| c.id).collect();
-            for id in ids { let _ = self.send(id, ch, data); }
+            let ids: Vec<_> = self
+                .connections
+                .values()
+                .filter(|c| c.state == ConnectionState::Connected)
+                .map(|c| c.id)
+                .collect();
+            for id in ids {
+                let _ = self.send(id, ch, data);
+            }
             Ok(())
         }
 
-        fn drain_events(&mut self) -> Vec<NetworkEvent> { std::mem::take(&mut self.events) }
+        fn drain_events(&mut self) -> Vec<NetworkEvent> {
+            std::mem::take(&mut self.events)
+        }
 
         fn connections(&self) -> Vec<ConnectionId> {
             self.connections.keys().map(|k| ConnectionId(*k)).collect()
         }
 
         fn connection_state(&self, conn: ConnectionId) -> ConnectionState {
-            self.connections.get(&conn.0).map(|c| c.state).unwrap_or(ConnectionState::Disconnected)
+            self.connections
+                .get(&conn.0)
+                .map(|c| c.state)
+                .unwrap_or(ConnectionState::Disconnected)
         }
 
-        fn local_id(&self) -> Option<ConnectionId> { None }
-        fn network_capabilities(&self) -> &NetworkCapabilities { &self.capabilities }
-        fn stats(&self) -> NetworkStats { self.stats.clone() }
+        fn local_id(&self) -> Option<ConnectionId> {
+            None
+        }
+        fn network_capabilities(&self) -> &NetworkCapabilities {
+            &self.capabilities
+        }
+        fn stats(&self) -> NetworkStats {
+            self.stats.clone()
+        }
 
         fn connection_stats(&self, conn: ConnectionId) -> Option<ConnectionStats> {
             self.connections.get(&conn.0).map(|c| c.stats.clone())
