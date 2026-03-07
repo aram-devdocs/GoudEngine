@@ -350,6 +350,68 @@ namespace GoudEngine
             }
         }
 
+        /// <summary>Creates a new named scene and returns its ID</summary>
+        public uint SceneCreate(string name)
+        {
+            unsafe
+            {
+                var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
+                fixed (byte* namePtr = nameBytes)
+                {
+                    return NativeMethods.goud_scene_create(_ctx, (IntPtr)namePtr, (uint)nameBytes.Length);
+                }
+            }
+        }
+
+        /// <summary>Destroys a scene by ID</summary>
+        public GoudResult SceneDestroy(uint sceneId)
+        {
+            return NativeMethods.goud_scene_destroy(_ctx, sceneId);
+        }
+
+        /// <summary>Looks up a scene ID by name</summary>
+        public uint SceneGetByName(string name)
+        {
+            unsafe
+            {
+                var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
+                fixed (byte* namePtr = nameBytes)
+                {
+                    return NativeMethods.goud_scene_get_by_name(_ctx, (IntPtr)namePtr, (uint)nameBytes.Length);
+                }
+            }
+        }
+
+        /// <summary>Sets whether a scene is active</summary>
+        public GoudResult SceneSetActive(uint sceneId, bool active)
+        {
+            return NativeMethods.goud_scene_set_active(_ctx, sceneId, active);
+        }
+
+        /// <summary>Checks if a scene is active</summary>
+        public bool SceneIsActive(uint sceneId)
+        {
+            return NativeMethods.goud_scene_is_active(_ctx, sceneId);
+        }
+
+        /// <summary>Returns the number of scenes</summary>
+        public uint SceneCount()
+        {
+            return NativeMethods.goud_scene_count(_ctx);
+        }
+
+        /// <summary>Sets which scene subsequent entity/component operations target</summary>
+        public GoudResult SceneSetCurrent(uint sceneId)
+        {
+            return NativeMethods.goud_scene_set_current(_ctx, sceneId);
+        }
+
+        /// <summary>Returns the currently targeted scene ID</summary>
+        public uint SceneGetCurrent()
+        {
+            return NativeMethods.goud_scene_get_current(_ctx);
+        }
+
         public void Dispose() => _ctx = GoudContextId.Invalid;
     }
 }

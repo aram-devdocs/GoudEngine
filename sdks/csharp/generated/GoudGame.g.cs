@@ -619,19 +619,40 @@ namespace GoudEngine
         /// <summary>Returns true if the action is currently pressed</summary>
         public bool IsActionPressed(string action)
         {
-            return NativeMethods.goud_input_action_pressed(_ctx, action);
+            unsafe
+            {
+                var actionBytes = System.Text.Encoding.UTF8.GetBytes(action);
+                fixed (byte* actionPtr = actionBytes)
+                {
+                    return NativeMethods.goud_input_action_pressed(_ctx, (IntPtr)actionPtr, (uint)actionBytes.Length);
+                }
+            }
         }
 
         /// <summary>Returns true if the action was pressed this frame</summary>
         public bool IsActionJustPressed(string action)
         {
-            return NativeMethods.goud_input_action_just_pressed(_ctx, action);
+            unsafe
+            {
+                var actionBytes = System.Text.Encoding.UTF8.GetBytes(action);
+                fixed (byte* actionPtr = actionBytes)
+                {
+                    return NativeMethods.goud_input_action_just_pressed(_ctx, (IntPtr)actionPtr, (uint)actionBytes.Length);
+                }
+            }
         }
 
         /// <summary>Returns true if the action was released this frame</summary>
         public bool IsActionJustReleased(string action)
         {
-            return NativeMethods.goud_input_action_just_released(_ctx, action);
+            unsafe
+            {
+                var actionBytes = System.Text.Encoding.UTF8.GetBytes(action);
+                fixed (byte* actionPtr = actionBytes)
+                {
+                    return NativeMethods.goud_input_action_just_released(_ctx, (IntPtr)actionPtr, (uint)actionBytes.Length);
+                }
+            }
         }
 
         /// <summary>AABB vs AABB collision test with contact</summary>

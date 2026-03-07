@@ -401,15 +401,18 @@ class GoudGame:
 
     def is_action_pressed(self, action):
         """Returns true if the action is currently pressed"""
-        return self._lib.goud_input_action_pressed(self._ctx, action)
+        _action_bytes = action.encode('utf-8')
+        return self._lib.goud_input_action_pressed(self._ctx, ctypes.cast(ctypes.create_string_buffer(_action_bytes, len(_action_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_action_bytes))
 
     def is_action_just_pressed(self, action):
         """Returns true if the action was pressed this frame"""
-        return self._lib.goud_input_action_just_pressed(self._ctx, action)
+        _action_bytes = action.encode('utf-8')
+        return self._lib.goud_input_action_just_pressed(self._ctx, ctypes.cast(ctypes.create_string_buffer(_action_bytes, len(_action_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_action_bytes))
 
     def is_action_just_released(self, action):
         """Returns true if the action was released this frame"""
-        return self._lib.goud_input_action_just_released(self._ctx, action)
+        _action_bytes = action.encode('utf-8')
+        return self._lib.goud_input_action_just_released(self._ctx, ctypes.cast(ctypes.create_string_buffer(_action_bytes, len(_action_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_action_bytes))
 
     def collision_aabb_aabb(self, center_ax, center_ay, half_wa, half_ha, center_bx, center_by, half_wb, half_hb):
         """AABB vs AABB collision test with contact"""
@@ -455,7 +458,8 @@ class GoudGame:
 
     def component_register_type(self, type_id_hash, name, size, align):
         """Registers a component type for generic operations"""
-        return self._lib.goud_component_register_type(self._ctx, type_id_hash, name, size, align)
+        _name_bytes = name.encode('utf-8')
+        return self._lib.goud_component_register_type(self._ctx, type_id_hash, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), size, align)
 
     def component_add(self, entity, type_id_hash, data_ptr, data_size):
         """Adds a generic component to an entity"""
@@ -627,7 +631,8 @@ class GoudContext:
 
     def component_register_type(self, type_id_hash, name, size, align):
         """Registers a component type for generic operations"""
-        return self._lib.goud_component_register_type(self._ctx, type_id_hash, name, size, align)
+        _name_bytes = name.encode('utf-8')
+        return self._lib.goud_component_register_type(self._ctx, type_id_hash, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), size, align)
 
     def component_add(self, entity, type_id_hash, data_ptr, data_size):
         """Adds a generic component to an entity"""
@@ -660,3 +665,37 @@ class GoudContext:
     def component_has_batch(self, entities, type_id_hash, out_results):
         """Checks if multiple entities have a generic component"""
         return self._lib.goud_component_has_batch(self._ctx, entities, type_id_hash, out_results)
+
+    def scene_create(self, name):
+        """Creates a new named scene and returns its ID"""
+        _name_bytes = name.encode('utf-8')
+        return self._lib.goud_scene_create(self._ctx, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
+
+    def scene_destroy(self, scene_id):
+        """Destroys a scene by ID"""
+        return self._lib.goud_scene_destroy(self._ctx, scene_id)
+
+    def scene_get_by_name(self, name):
+        """Looks up a scene ID by name"""
+        _name_bytes = name.encode('utf-8')
+        return self._lib.goud_scene_get_by_name(self._ctx, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
+
+    def scene_set_active(self, scene_id, active):
+        """Sets whether a scene is active"""
+        return self._lib.goud_scene_set_active(self._ctx, scene_id, active)
+
+    def scene_is_active(self, scene_id):
+        """Checks if a scene is active"""
+        return self._lib.goud_scene_is_active(self._ctx, scene_id)
+
+    def scene_count(self):
+        """Returns the number of scenes"""
+        return self._lib.goud_scene_count(self._ctx)
+
+    def scene_set_current(self, scene_id):
+        """Sets which scene subsequent entity/component operations target"""
+        return self._lib.goud_scene_set_current(self._ctx, scene_id)
+
+    def scene_get_current(self):
+        """Returns the currently targeted scene ID"""
+        return self._lib.goud_scene_get_current(self._ctx)
