@@ -2,6 +2,35 @@
   "version": "0.0.827",
   "generated_at": "build-time",
   "functions": {
+    "goud_animation_clip_builder_add_frame": {
+      "source_file": "ffi/component_sprite_animator/factory.rs",
+      "params": [
+        "builder: *mut FfiAnimationClipBuilder",
+        "x: f32",
+        "y: f32",
+        "w: f32",
+        "h: f32"
+      ],
+      "return_type": "*mut FfiAnimationClipBuilder",
+      "is_unsafe": true
+    },
+    "goud_animation_clip_builder_free": {
+      "source_file": "ffi/component_sprite_animator/factory.rs",
+      "params": [
+        "builder: *mut FfiAnimationClipBuilder"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_animation_clip_builder_new": {
+      "source_file": "ffi/component_sprite_animator/factory.rs",
+      "params": [
+        "frame_duration: f32",
+        "mode: FfiPlaybackMode"
+      ],
+      "return_type": "*mut FfiAnimationClipBuilder",
+      "is_unsafe": false
+    },
     "goud_clear_last_error": {
       "source_file": "ffi/error.rs",
       "params": [],
@@ -349,6 +378,24 @@
         "context_id: GoudContextId"
       ],
       "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_entity_clone": {
+      "source_file": "ffi/entity/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64"
+      ],
+      "return_type": "u64",
+      "is_unsafe": false
+    },
+    "goud_entity_clone_recursive": {
+      "source_file": "ffi/entity/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64"
+      ],
+      "return_type": "u64",
       "is_unsafe": false
     },
     "goud_entity_count": {
@@ -993,6 +1040,38 @@
       ],
       "return_type": "GoudResult",
       "is_unsafe": false
+    },
+    "goud_sprite_animator_from_clip": {
+      "source_file": "ffi/component_sprite_animator/factory.rs",
+      "params": [
+        "builder: *mut FfiAnimationClipBuilder"
+      ],
+      "return_type": "FfiSpriteAnimator",
+      "is_unsafe": true
+    },
+    "goud_sprite_animator_get_current_frame": {
+      "source_file": "ffi/component_sprite_animator/playback.rs",
+      "params": [
+        "animator: *const FfiSpriteAnimator"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_sprite_animator_is_finished": {
+      "source_file": "ffi/component_sprite_animator/playback.rs",
+      "params": [
+        "animator: *const FfiSpriteAnimator"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_sprite_animator_is_playing": {
+      "source_file": "ffi/component_sprite_animator/playback.rs",
+      "params": [
+        "animator: *const FfiSpriteAnimator"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
     },
     "goud_sprite_builder_build": {
       "source_file": "ffi/component_sprite/builder.rs",
@@ -1945,5 +2024,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 202
+  "total_count": 211
 }
