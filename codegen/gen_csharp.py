@@ -80,6 +80,8 @@ def _cs_ffi_param_type(raw: str) -> str:
         "*const FfiSprite": "ref FfiSprite",
         "*mut FfiTransform2DBuilder": "IntPtr",
         "*mut FfiSpriteBuilder": "IntPtr",
+        "*mut FfiAnimationClipBuilder": "IntPtr",
+        "*const FfiSpriteAnimator": "ref FfiSpriteAnimator",
         "*const u8": "IntPtr",
         "*mut u8": "IntPtr",
         "usize": "nuint",
@@ -95,6 +97,7 @@ def _cs_ffi_ret_type(raw: str) -> str:
     ret_map = {
         "*mut FfiTransform2DBuilder": "IntPtr",
         "*mut FfiSpriteBuilder": "IntPtr",
+        "*mut FfiAnimationClipBuilder": "IntPtr",
         "*const u8": "IntPtr",
         "*mut u8": "IntPtr",
         "usize": "nuint",
