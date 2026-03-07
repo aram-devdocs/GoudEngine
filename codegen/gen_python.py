@@ -1546,7 +1546,7 @@ def gen_init():
 
     # Include error types if the errors section exists in schema
     if "errors" in schema:
-        root_init.append("from .errors import (  # noqa: F401")
+        root_init.append("from .generated._errors import (  # noqa: F401")
         root_init.append("    GoudError,")
         for cat in schema["errors"].get("categories", []):
             cls = cat["base_class"]
