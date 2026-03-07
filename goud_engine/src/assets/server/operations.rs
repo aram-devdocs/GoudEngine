@@ -83,9 +83,9 @@ impl AssetServer {
             .extension()
             .ok_or_else(|| AssetLoadError::unsupported_format(""))?;
 
+        // Try compound extension first (e.g. "mat.json", "anim.json"), then simple
         let loader = self
-            .loaders
-            .get(extension)
+            .find_loader_for_path(path, extension)
             .ok_or_else(|| AssetLoadError::unsupported_format(extension))?;
 
         let mut context = LoadContext::new(path.clone().into_owned());
@@ -363,6 +363,30 @@ impl AssetServer {
     /// the correct order, when `changed_path` changes.
     pub fn get_cascade_order(&self, changed_path: &str) -> Vec<String> {
         self.dependency_graph.get_cascade_order(changed_path)
+    }
+
+    /// Finds a loader for a path, trying compound extensions first.
+    ///
+    /// For a path like `"brick.mat.json"`, tries `"mat.json"` first,
+    /// then falls back to `"json"`.
+    fn find_loader_for_path(
+        &self,
+        path: &AssetPath,
+        simple_ext: &str,
+    ) -> Option<&dyn crate::assets::ErasedAssetLoader> {
+        // Try compound extension (everything after first dot in filename)
+        if let Some(file_name) = path.file_name() {
+            if let Some(first_dot) = file_name.find('.') {
+                let compound_ext = &file_name[first_dot + 1..];
+                if compound_ext != simple_ext {
+                    if let Some(loader) = self.loaders.get(compound_ext) {
+                        return Some(loader.as_ref());
+                    }
+                }
+            }
+        }
+        // Fall back to simple extension
+        self.loaders.get(simple_ext).map(|b| b.as_ref())
     }
 
     /// Returns the number of loaded assets of a specific type.

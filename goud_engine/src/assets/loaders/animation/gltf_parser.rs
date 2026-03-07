@@ -17,7 +17,7 @@ pub fn parse_gltf_animation(bytes: &[u8]) -> Result<KeyframeAnimation, AssetLoad
     let gltf = gltf::Gltf::from_slice(bytes)
         .map_err(|e| AssetLoadError::decode_failed(format!("Failed to parse GLTF: {e}")))?;
 
-    let buffers = load_buffers(&gltf, bytes)?;
+    let buffers = load_buffers(&gltf)?;
 
     let gltf_anim = gltf
         .animations()
@@ -110,7 +110,7 @@ pub fn parse_gltf_animation(bytes: &[u8]) -> Result<KeyframeAnimation, AssetLoad
 
 /// Loads buffer data from GLTF, supporting both embedded (GLB) and data URIs.
 #[cfg(feature = "native")]
-fn load_buffers(gltf: &gltf::Gltf, original_bytes: &[u8]) -> Result<Vec<Vec<u8>>, AssetLoadError> {
+fn load_buffers(gltf: &gltf::Gltf) -> Result<Vec<Vec<u8>>, AssetLoadError> {
     let mut buffers = Vec::new();
 
     for buffer in gltf.buffers() {
@@ -136,7 +136,6 @@ fn load_buffers(gltf: &gltf::Gltf, original_bytes: &[u8]) -> Result<Vec<Vec<u8>>
                 }
             }
         };
-        let _ = original_bytes; // suppress unused warning
         buffers.push(data);
     }
 
