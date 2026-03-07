@@ -415,3 +415,40 @@ export class GoudGame implements IGoudGame {
   setFpsUpdateInterval(_interval: number): void {}
   setFpsOverlayCorner(_corner: number): void {}
 }
+
+/** Builder for configuring and creating a GoudGame instance with provider selection. */
+export class EngineConfig {
+  private _config: WebGameConfig;
+
+  constructor() {
+    this._config = {};
+  }
+
+  /** Sets the window title */
+  setTitle(title: string): EngineConfig {
+    this._config.title = title;
+    return this;
+  }
+
+  /** Sets the window size in pixels */
+  setSize(width: number, height: number): EngineConfig {
+    this._config.width = width;
+    this._config.height = height;
+    return this;
+  }
+
+  /** Enables or disables the FPS debug overlay */
+  setFpsOverlay(_enabled: boolean): EngineConfig {
+    // FPS overlay is not yet supported in WASM; accepted for API parity.
+    return this;
+  }
+
+  /** Consumes the config and creates a windowed GoudGame instance */
+  async build(): Promise<GoudGame> {
+    return GoudGame.create(this._config);
+  }
+
+  /** Frees the config without building */
+  destroy(): void {}
+
+}

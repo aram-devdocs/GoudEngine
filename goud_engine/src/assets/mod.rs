@@ -72,6 +72,7 @@
 mod asset;
 #[cfg(feature = "native")]
 mod audio_manager;
+pub mod dependency;
 mod handle;
 #[cfg(feature = "native")]
 mod hot_reload;

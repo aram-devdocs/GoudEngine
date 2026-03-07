@@ -87,7 +87,7 @@ pub mod world;
 // Re-export commonly used types
 #[cfg(feature = "native")]
 pub use crate::core::input_manager::{InputBinding, InputManager};
-pub use app::{App, Plugin};
+pub use app::{App, DefaultPlugins, Plugin};
 pub use archetype::{Archetype, ArchetypeGraph, ArchetypeId};
 pub use broad_phase::{SpatialHash, SpatialHashStats};
 pub use collision::{
@@ -101,7 +101,8 @@ pub use physics_world::PhysicsWorld;
 pub use query::{Query, QueryIter, QueryIterMut, QuerySystemParamState};
 pub use resource::{Res, ResMut, Resource, ResourceId, Resources};
 pub use schedule::{
-    CoreStage, Stage, StageLabel, StageLabelId, StageOrder, StagePosition, SystemStage,
+    CoreStage, DefaultSystemSet, NamedSystemSets, Stage, StageLabel, StageLabelId, StageOrder,
+    StagePosition, SystemStage,
 };
 pub use sparse_set::{SparseSet, SparseSetIter, SparseSetIterMut};
 pub use storage::{AnyComponentStorage, ComponentStorage};

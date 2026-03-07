@@ -34,7 +34,9 @@
 pub use cgmath::{Matrix3, Matrix4, Point3, Quaternion};
 
 mod color;
+mod easing;
 mod rect;
+mod tween;
 mod vec2;
 mod vec3;
 mod vec4;
@@ -43,7 +45,12 @@ mod vec4;
 mod tests;
 
 pub use color::Color;
+pub use easing::{
+    ease_in, ease_in_back, ease_in_out, ease_out, ease_out_bounce, linear, BezierEasing, Easing,
+    EasingFn,
+};
 pub use rect::Rect;
+pub use tween::{tween, Tweenable};
 pub use vec2::Vec2;
 pub use vec3::Vec3;
 pub use vec4::Vec4;

@@ -141,6 +141,40 @@ namespace GoudEngine
     {
         private const string DllName = "libgoud_engine";
 
+        // engine_config
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr goud_engine_config_create();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_engine_config_destroy(IntPtr handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_title(IntPtr handle, string title);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_size(IntPtr handle, uint width, uint height);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_vsync(IntPtr handle, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_fullscreen(IntPtr handle, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_target_fps(IntPtr handle, uint fps);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_fps_overlay(IntPtr handle, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern GoudContextId goud_engine_create(IntPtr handle);
+
         // context
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern GoudContextId goud_context_create();
@@ -181,7 +215,7 @@ namespace GoudEngine
 
         // window
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern GoudContextId goud_window_create(uint width, uint height, [MarshalAs(UnmanagedType.LPStr)] string title);
+        public static extern GoudContextId goud_window_create(uint width, uint height, string title);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
@@ -231,7 +265,7 @@ namespace GoudEngine
         public static extern bool goud_renderer_draw_quad(GoudContextId ctx, float x, float y, float width, float height, float r, float g, float b, float a);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern ulong goud_texture_load(GoudContextId ctx, [MarshalAs(UnmanagedType.LPStr)] string path);
+        public static extern ulong goud_texture_load(GoudContextId ctx, string path);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
@@ -389,19 +423,19 @@ namespace GoudEngine
         // input_actions
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
-        public static extern bool goud_input_map_action_key(GoudContextId ctx, [MarshalAs(UnmanagedType.LPStr)] string action_name, int key);
+        public static extern bool goud_input_map_action_key(GoudContextId ctx, string action_name, int key);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
-        public static extern bool goud_input_action_pressed(GoudContextId ctx, [MarshalAs(UnmanagedType.LPStr)] string action_name);
+        public static extern bool goud_input_action_pressed(GoudContextId ctx, string action_name);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
-        public static extern bool goud_input_action_just_pressed(GoudContextId ctx, [MarshalAs(UnmanagedType.LPStr)] string action_name);
+        public static extern bool goud_input_action_just_pressed(GoudContextId ctx, string action_name);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
-        public static extern bool goud_input_action_just_released(GoudContextId ctx, [MarshalAs(UnmanagedType.LPStr)] string action_name);
+        public static extern bool goud_input_action_just_released(GoudContextId ctx, string action_name);
 
         // entity
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
