@@ -30,21 +30,30 @@ use goud_engine::ffi::error::{
 fn test_transform2d_builder_free_null_is_noop() {
     // SAFETY: Passing null to a function documented to accept null.
     unsafe { goud_transform2d_builder_free(std::ptr::null_mut()) };
-    assert!(true, "goud_transform2d_builder_free(null) should not panic or crash");
+    assert!(
+        true,
+        "goud_transform2d_builder_free(null) should not panic or crash"
+    );
 }
 
 #[test]
 fn test_sprite_builder_free_null_is_noop() {
     // SAFETY: Passing null to a function documented to accept null.
     unsafe { goud_sprite_builder_free(std::ptr::null_mut()) };
-    assert!(true, "goud_sprite_builder_free(null) should not panic or crash");
+    assert!(
+        true,
+        "goud_sprite_builder_free(null) should not panic or crash"
+    );
 }
 
 #[test]
 fn test_animation_clip_builder_free_null_is_noop() {
     // SAFETY: Passing null to a function documented to accept null.
     unsafe { goud_animation_clip_builder_free(std::ptr::null_mut()) };
-    assert!(true, "goud_animation_clip_builder_free(null) should not panic or crash");
+    assert!(
+        true,
+        "goud_animation_clip_builder_free(null) should not panic or crash"
+    );
 }
 
 #[test]

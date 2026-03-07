@@ -171,7 +171,7 @@ The .NET SDK install may need a new shell session to take effect. Close and reop
 
 Tests that need an OpenGL context fail without a display server. There are two approaches:
 
-**Option 1: NullBackend (recommended for unit/integration tests)**
+#### Option 1: NullBackend (recommended for unit/integration tests)
 
 GoudEngine includes a headless `NullBackend` renderer that requires no GPU or display. Run tests that use it with:
 
@@ -183,7 +183,7 @@ cargo test --test integration
 
 Use `goud_engine::test_helpers::init_test_context()` in your own tests to get a `NullBackend` instance.
 
-**Option 2: Xvfb (for tests that require a real GL context)**
+#### Option 2: Xvfb (for tests that require a real GL context)
 
 On headless Linux (CI, WSL without WSLg, SSH sessions), use Xvfb:
 
