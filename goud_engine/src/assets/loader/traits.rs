@@ -89,6 +89,9 @@ pub trait ErasedAssetLoader: Send + Sync + 'static {
 
     /// Returns whether this loader can load assets with the given extension.
     fn supports_extension(&self, extension: &str) -> bool;
+
+    /// Returns a boxed clone of this loader for use across thread boundaries.
+    fn clone_boxed(&self) -> Box<dyn ErasedAssetLoader>;
 }
 
 /// Wrapper that implements ErasedAssetLoader for any AssetLoader.
@@ -144,5 +147,9 @@ impl<L: AssetLoader> ErasedAssetLoader for TypedAssetLoader<L> {
 
     fn supports_extension(&self, extension: &str) -> bool {
         self.loader.supports_extension(extension)
+    }
+
+    fn clone_boxed(&self) -> Box<dyn ErasedAssetLoader> {
+        Box::new(self.clone())
     }
 }

@@ -121,6 +121,8 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/collision.rs",
     // scene module
     "src/ffi/scene.rs",
+    // error query module
+    "src/ffi/error.rs",
 ];
 
 /// A single extracted FFI function signature.

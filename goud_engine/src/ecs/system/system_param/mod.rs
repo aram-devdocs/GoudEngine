@@ -42,6 +42,7 @@
 //! The scheduler uses this information to determine which systems can run in
 //! parallel.
 
+mod event_params;
 mod param_set;
 mod resource_params;
 mod static_param;
@@ -50,6 +51,7 @@ mod tests;
 mod traits;
 mod tuple_impl;
 
+pub use event_params::{EcsEventReader, EcsEventReaderState, EcsEventWriter, EcsEventWriterState};
 pub use param_set::ParamSet;
 pub use resource_params::{ResMutState, ResState};
 pub use static_param::{StaticSystemParam, StaticSystemParamState};
