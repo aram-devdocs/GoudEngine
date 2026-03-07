@@ -2,7 +2,7 @@
 //!
 //! Provides [`DebugOverlay`] for tracking frame timing statistics using a
 //! rolling window of recent frame times. Stats are cached and recomputed
-//! at a configurable interval to avoid per-frame overhead.
+//! at a configurable interval to minimize per-frame overhead.
 
 use std::collections::VecDeque;
 
