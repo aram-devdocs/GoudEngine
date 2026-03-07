@@ -14,7 +14,7 @@
 ///
 /// `#[repr(u8)]` ensures this enum has a stable ABI for FFI.
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum RigidBodyType {
     /// Dynamic bodies are fully simulated by the physics engine.
     ///

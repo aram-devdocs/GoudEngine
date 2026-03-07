@@ -78,7 +78,7 @@ impl RigidBodyFlags {
 /// [`Collider`]: crate::ecs::components::Collider
 /// [`Collider::with_restitution`]: crate::ecs::components::Collider::with_restitution
 /// [`Collider::with_friction`]: crate::ecs::components::Collider::with_friction
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct RigidBody {
     /// Physics behavior type (Dynamic, Kinematic, or Static).
     pub body_type: RigidBodyType,

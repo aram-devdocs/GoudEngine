@@ -41,7 +41,7 @@ use std::fmt;
 /// assert_eq!(children.len(), 2);
 /// assert!(children.contains(child1));
 /// ```
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Children {
     /// The list of child entities in order.
     pub(crate) children: Vec<Entity>,

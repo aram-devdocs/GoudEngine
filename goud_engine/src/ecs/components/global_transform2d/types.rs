@@ -33,7 +33,7 @@ use crate::ecs::components::transform2d::{Mat3x3, Transform2D};
 /// assert!((position - Vec2::new(100.0, 50.0)).length() < 0.001);
 /// ```
 #[repr(C)]
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct GlobalTransform2D {
     /// The computed world-space 3x3 transformation matrix.
     ///

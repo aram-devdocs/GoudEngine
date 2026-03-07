@@ -8,7 +8,7 @@ use std::ops::{Add, Div, Mul, Neg, Sub};
 /// with two consecutive f32 fields. Use this type for any 2D positions,
 /// velocities, or texture coordinates that cross FFI boundaries.
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Vec2 {
     /// The x-component of the vector.
     pub x: f32,

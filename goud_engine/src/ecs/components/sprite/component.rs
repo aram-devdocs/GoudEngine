@@ -68,9 +68,10 @@ use crate::ecs::Component;
 /// let sprite = Sprite::new(texture)
 ///     .with_source_rect(Rect::new(64.0, 32.0, 32.0, 32.0));
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Sprite {
     /// Handle to the texture asset to render.
+    #[serde(skip)]
     pub texture: AssetHandle<TextureAsset>,
 
     /// Color tint multiplied with texture pixels.

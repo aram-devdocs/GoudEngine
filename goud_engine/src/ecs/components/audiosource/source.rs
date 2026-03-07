@@ -30,9 +30,10 @@ use super::channel::AudioChannel;
 /// # Examples
 ///
 /// See module-level documentation for usage examples.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct AudioSource {
     /// Reference to the audio asset to play
+    #[serde(skip)]
     pub audio: AssetHandle<AudioAsset>,
     /// Whether the audio is currently playing
     pub playing: bool,
@@ -53,6 +54,7 @@ pub struct AudioSource {
     /// Distance-based volume falloff model
     pub attenuation: AttenuationModel,
     /// Internal audio sink ID (managed by audio system)
+    #[serde(skip)]
     pub(crate) sink_id: Option<u64>,
 }
 

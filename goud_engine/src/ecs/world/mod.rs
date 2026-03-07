@@ -53,6 +53,7 @@ mod entity_ops;
 mod entity_world_mut;
 mod non_send_resources;
 mod resources;
+mod serialize_entity;
 mod storage_entry;
 
 #[cfg(test)]
@@ -157,6 +158,12 @@ pub struct World {
     /// Whether built-in components have been registered as cloneable.
     builtins_registered: bool,
 
+    /// Whether built-in components have been registered as serializable.
+    builtins_serializable_registered: bool,
+
+    /// Reverse lookup: type name -> ComponentId for deserialization.
+    serializable_names: HashMap<String, ComponentId>,
+
     /// Current change tick, incremented at system boundaries.
     change_tick: u32,
 
@@ -192,6 +199,8 @@ impl World {
             resources: Resources::new(),
             non_send_resources: NonSendResources::new(),
             builtins_registered: false,
+            builtins_serializable_registered: false,
+            serializable_names: HashMap::new(),
             change_tick: 0,
             last_change_tick: 0,
         }
@@ -226,6 +235,8 @@ impl World {
             resources: Resources::new(),
             non_send_resources: NonSendResources::new(),
             builtins_registered: false,
+            builtins_serializable_registered: false,
+            serializable_names: HashMap::new(),
             change_tick: 0,
             last_change_tick: 0,
         }

@@ -7,7 +7,7 @@ use super::vec2::Vec2;
 /// Defined by position (x, y) and size (width, height).
 /// The position represents the top-left corner in screen space.
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Rect {
     /// The x-coordinate of the top-left corner of the rectangle.
     pub x: f32,

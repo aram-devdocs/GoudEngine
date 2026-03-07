@@ -32,7 +32,7 @@ use std::fmt;
 /// name.set("Boss");
 /// assert_eq!(name.as_str(), "Boss");
 /// ```
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Name {
     /// The name string.
     name: String,

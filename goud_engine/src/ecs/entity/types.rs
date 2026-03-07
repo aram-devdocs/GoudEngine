@@ -227,6 +227,28 @@ impl fmt::Display for Entity {
     }
 }
 
+impl serde::Serialize for Entity {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeStruct;
+        let mut state = serializer.serialize_struct("Entity", 2)?;
+        state.serialize_field("index", &self.index)?;
+        state.serialize_field("generation", &self.generation)?;
+        state.end()
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for Entity {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(serde::Deserialize)]
+        struct EntityData {
+            index: u32,
+            generation: u32,
+        }
+        let data = EntityData::deserialize(deserializer)?;
+        Ok(Entity::new(data.index, data.generation))
+    }
+}
+
 impl Default for Entity {
     /// Returns the placeholder entity.
     ///

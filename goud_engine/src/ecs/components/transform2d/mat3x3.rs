@@ -14,7 +14,7 @@ use crate::core::math::Vec2;
 /// | m[2] m[5] m[8] |   |   0        0      1 |
 /// ```
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Mat3x3 {
     /// Matrix elements in column-major order.
     pub m: [f32; 9],

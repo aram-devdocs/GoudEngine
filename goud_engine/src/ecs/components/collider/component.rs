@@ -32,7 +32,7 @@ use super::shape::ColliderShape;
 /// // Sensor (trigger)
 /// let trigger = Collider::circle(2.0).with_is_sensor(true);
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Collider {
     /// The geometric shape of the collider
     shape: ColliderShape,

@@ -12,7 +12,7 @@ use std::f32::consts::PI;
 ///
 /// The identity rotation is (0, 0, 0, 1).
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Quat {
     /// The x-component of the vector part.
     pub x: f32,
