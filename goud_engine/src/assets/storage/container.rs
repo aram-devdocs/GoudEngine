@@ -251,6 +251,38 @@ impl AssetStorage {
             .and_then(|s| s.as_any_mut().downcast_mut())
     }
 
+    /// Sets a loaded asset from a type-erased boxed value using raw handle parts.
+    ///
+    /// Used by async loading to finalize results on the main thread.
+    pub fn set_loaded_raw(
+        &mut self,
+        asset_id: AssetId,
+        index: u32,
+        generation: u32,
+        boxed: Box<dyn std::any::Any + Send>,
+    ) -> bool {
+        self.storages
+            .get_mut(&asset_id)
+            .map(|s| s.set_loaded_raw(index, generation, boxed))
+            .unwrap_or(false)
+    }
+
+    /// Marks an asset as failed using raw handle parts.
+    ///
+    /// Used by async loading to report errors on the main thread.
+    pub fn set_failed_raw(
+        &mut self,
+        asset_id: AssetId,
+        index: u32,
+        generation: u32,
+        error: String,
+    ) -> bool {
+        self.storages
+            .get_mut(&asset_id)
+            .map(|s| s.set_failed_raw(index, generation, error))
+            .unwrap_or(false)
+    }
+
     /// Gets or creates typed storage for an asset type.
     pub fn get_or_create_storage<A: Asset>(&mut self) -> &mut TypedAssetStorage<A> {
         let id = AssetId::of::<A>();
