@@ -422,3 +422,74 @@ fn test_component_type_count_tracks_registrations() {
         "Re-using Position on another entity should not increase type count"
     );
 }
+
+// ===========================================================================
+// System-Like Iteration and Modification Tests
+// ===========================================================================
+
+#[test]
+fn test_system_like_iteration_and_modification() {
+    let mut world = World::new();
+
+    // SETUP: Spawn entities with Position and Velocity components
+    let entities = world.spawn_batch(3);
+
+    // Populate initial positions and velocities
+    world.insert(entities[0], Position { x: 0.0, y: 0.0 });
+    world.insert(entities[0], Velocity { dx: 1.0, dy: 2.0 });
+
+    world.insert(entities[1], Position { x: 10.0, y: 20.0 });
+    world.insert(entities[1], Velocity { dx: -1.0, dy: -2.0 });
+
+    world.insert(entities[2], Position { x: 100.0, y: 200.0 });
+    world.insert(entities[2], Velocity { dx: 5.0, dy: -5.0 });
+
+    // PROCESS: Simulate a system that iterates entities and modifies positions based on velocity
+    for entity in &entities {
+        if let Some(vel) = world.get::<Velocity>(*entity) {
+            let vel_copy = *vel; // Copy to avoid borrow conflict
+            if let Some(pos) = world.get_mut::<Position>(*entity) {
+                pos.x += vel_copy.dx;
+                pos.y += vel_copy.dy;
+            }
+        }
+    }
+
+    // VERIFY: Check that modifications took effect
+    assert_eq!(
+        world.get::<Position>(entities[0]),
+        Some(&Position { x: 1.0, y: 2.0 }),
+        "Entity 0 position should be updated by velocity"
+    );
+
+    assert_eq!(
+        world.get::<Position>(entities[1]),
+        Some(&Position { x: 9.0, y: 18.0 }),
+        "Entity 1 position should be updated by negative velocity"
+    );
+
+    assert_eq!(
+        world.get::<Position>(entities[2]),
+        Some(&Position { x: 105.0, y: 195.0 }),
+        "Entity 2 position should be updated by velocity"
+    );
+
+    // Verify velocities are unchanged
+    assert_eq!(
+        world.get::<Velocity>(entities[0]),
+        Some(&Velocity { dx: 1.0, dy: 2.0 }),
+        "Velocity should not change during iteration"
+    );
+
+    assert_eq!(
+        world.get::<Velocity>(entities[1]),
+        Some(&Velocity { dx: -1.0, dy: -2.0 }),
+        "Velocity should not change during iteration"
+    );
+
+    assert_eq!(
+        world.get::<Velocity>(entities[2]),
+        Some(&Velocity { dx: 5.0, dy: -5.0 }),
+        "Velocity should not change during iteration"
+    );
+}
