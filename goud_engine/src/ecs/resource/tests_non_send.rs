@@ -321,10 +321,7 @@ mod tests {
             .join()
             .unwrap();
 
-            assert!(
-                result.is_err(),
-                "insert() from wrong thread should panic"
-            );
+            assert!(result.is_err(), "insert() from wrong thread should panic");
         }
     }
 

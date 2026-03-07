@@ -246,10 +246,7 @@ fn test_mixed_set_and_individual_ordering() {
     stage.register_set("Late");
     stage.add_system_to_set("Early", id_a);
     stage.add_system_to_set("Late", id_c);
-    stage.configure_named_set(
-        "Early",
-        SystemSetConfig::new().before(SetNameLabel("Late")),
-    );
+    stage.configure_named_set("Early", SystemSetConfig::new().before(SetNameLabel("Late")));
 
     // Individual ordering: B before C
     stage.add_ordering(id_b, id_c);

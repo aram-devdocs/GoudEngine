@@ -13,14 +13,22 @@ use crate::ecs::system::System;
 fn test_default_plugins_adds_transform_propagation() {
     let mut app = App::new();
     app.add_plugin_group(builtin_plugins::DefaultPlugins);
-    let post = app.stages.iter().find(|(s, _)| *s == CoreStage::PostUpdate).unwrap();
+    let post = app
+        .stages
+        .iter()
+        .find(|(s, _)| *s == CoreStage::PostUpdate)
+        .unwrap();
     assert_eq!(post.1.system_count(), 1);
 }
 
 #[test]
 fn test_new_with_defaults_has_transform_system() {
     let app = App::new_with_defaults();
-    let post = app.stages.iter().find(|(s, _)| *s == CoreStage::PostUpdate).unwrap();
+    let post = app
+        .stages
+        .iter()
+        .find(|(s, _)| *s == CoreStage::PostUpdate)
+        .unwrap();
     assert_eq!(post.1.system_count(), 1);
 }
 
@@ -49,7 +57,11 @@ fn test_default_plugins_idempotent() {
     let mut app = App::new();
     app.add_plugin_group(builtin_plugins::DefaultPlugins);
     app.add_plugin_group(builtin_plugins::DefaultPlugins);
-    let post = app.stages.iter().find(|(s, _)| *s == CoreStage::PostUpdate).unwrap();
+    let post = app
+        .stages
+        .iter()
+        .find(|(s, _)| *s == CoreStage::PostUpdate)
+        .unwrap();
     assert_eq!(post.1.system_count(), 1);
 }
 
@@ -67,7 +79,9 @@ fn test_add_plugin_group() {
         fn build(&self, app: &mut App) {
             struct Noop;
             impl System for Noop {
-                fn name(&self) -> &'static str { "NoopX" }
+                fn name(&self) -> &'static str {
+                    "NoopX"
+                }
                 fn run(&mut self, _world: &mut World) {}
             }
             app.add_system(CoreStage::Update, Noop);
@@ -75,11 +89,17 @@ fn test_add_plugin_group() {
     }
     struct TestGroup;
     impl plugin::PluginGroup for TestGroup {
-        fn build(self, app: &mut App) { app.add_plugin(PluginX); }
+        fn build(self, app: &mut App) {
+            app.add_plugin(PluginX);
+        }
     }
     let mut app = App::new();
     app.add_plugin_group(TestGroup);
-    let upd = app.stages.iter().find(|(s, _)| *s == CoreStage::Update).unwrap();
+    let upd = app
+        .stages
+        .iter()
+        .find(|(s, _)| *s == CoreStage::Update)
+        .unwrap();
     assert_eq!(upd.1.system_count(), 1);
 }
 
@@ -87,7 +107,9 @@ fn test_add_plugin_group() {
 fn test_app_insert_non_send_resource() {
     use crate::ecs::resource::NonSendResource;
     use std::rc::Rc;
-    struct GlContext { _id: Rc<u32> }
+    struct GlContext {
+        _id: Rc<u32>,
+    }
     impl NonSendResource for GlContext {}
     let mut app = App::new();
     app.insert_non_send_resource(GlContext { _id: Rc::new(1) });

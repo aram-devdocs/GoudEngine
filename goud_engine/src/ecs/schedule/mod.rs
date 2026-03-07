@@ -40,6 +40,7 @@ mod topological_sort;
 // Re-export everything to preserve the public API.
 pub use core_stage::CoreStage;
 pub use core_system_label::CoreSystemLabel;
+pub use named_system_sets::{DefaultSystemSet, NamedSystemSets};
 pub use parallel::ParallelSystemStage;
 pub use parallel_types::{ParallelBatch, ParallelExecutionConfig, ParallelExecutionStats};
 pub use stage::Stage;
@@ -52,7 +53,6 @@ pub use system_set::{
     chain, ChainedSystems, LabeledOrderingConstraint, SystemSet, SystemSetConfig,
 };
 pub use system_stage::SystemStage;
-pub use named_system_sets::{DefaultSystemSet, NamedSystemSets};
 pub use topological_sort::{OrderingCycleError, TopologicalSorter};
 
 #[cfg(test)]

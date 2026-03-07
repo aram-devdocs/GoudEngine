@@ -330,4 +330,3 @@ fn test_transform_repropagation_across_multiple_updates() {
         child_pos.x
     );
 }
-
