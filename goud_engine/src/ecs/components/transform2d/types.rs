@@ -36,7 +36,7 @@ use crate::ecs::Component;
 /// );
 /// ```
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Transform2D {
     /// Position in world space (or local space if entity has a parent).
     pub position: Vec2,

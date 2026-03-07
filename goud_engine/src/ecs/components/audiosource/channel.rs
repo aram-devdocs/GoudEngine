@@ -28,7 +28,7 @@
 /// assert_eq!(custom.id(), 8);
 /// ```
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum AudioChannel {
     /// Background music tracks (channel ID: 0)
     Music = 0,

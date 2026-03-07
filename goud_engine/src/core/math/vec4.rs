@@ -10,7 +10,7 @@ use super::vec3::Vec3;
 /// or RGBA colors. It is guaranteed to have the same memory layout as
 /// a C struct with four consecutive f32 fields.
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Vec4 {
     /// The x-component of the vector.
     pub x: f32,

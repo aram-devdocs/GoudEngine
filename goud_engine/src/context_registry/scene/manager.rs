@@ -168,6 +168,14 @@ impl SceneManager {
         self.name_to_id.get(name).copied()
     }
 
+    /// Returns the name of the scene with the given ID, if it exists.
+    pub fn get_scene_name(&self, id: SceneId) -> Option<&str> {
+        self.scenes.get(id as usize).and_then(|slot| match slot {
+            SceneSlot::Occupied { name, .. } => Some(name.as_str()),
+            SceneSlot::Free => None,
+        })
+    }
+
     // =========================================================================
     // Active Scene Management
     // =========================================================================

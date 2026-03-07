@@ -8,7 +8,7 @@ use std::ops::{Add, Div, Mul, Neg, Sub};
 /// with three consecutive f32 fields. Use this type for any 3D positions,
 /// directions, or colors that cross FFI boundaries.
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Vec3 {
     /// The x-component of the vector.
     pub x: f32,

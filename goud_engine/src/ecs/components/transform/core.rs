@@ -39,7 +39,7 @@ use cgmath::Quaternion;
 /// );
 /// ```
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Transform {
     /// Position in world space (or local space if entity has a parent).
     pub position: Vec3,

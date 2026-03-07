@@ -40,6 +40,22 @@ pub struct GlobalTransform {
     pub(super) matrix: Matrix4<f32>,
 }
 
+impl serde::Serialize for GlobalTransform {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.to_cols_array().serialize(serializer)
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for GlobalTransform {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let cols: [f32; 16] = serde::Deserialize::deserialize(deserializer)?;
+        Ok(GlobalTransform::from_matrix(Matrix4::new(
+            cols[0], cols[1], cols[2], cols[3], cols[4], cols[5], cols[6], cols[7], cols[8],
+            cols[9], cols[10], cols[11], cols[12], cols[13], cols[14], cols[15],
+        )))
+    }
+}
+
 impl GlobalTransform {
     /// Identity global transform (no transformation).
     pub const IDENTITY: GlobalTransform = GlobalTransform {

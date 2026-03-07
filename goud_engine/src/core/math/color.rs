@@ -8,7 +8,7 @@ use super::vec4::Vec4;
 /// Components are stored as f32 values, typically in the range [0.0, 1.0].
 /// Values outside this range are allowed for HDR rendering.
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Color {
     /// The red component of the color.
     pub r: f32,

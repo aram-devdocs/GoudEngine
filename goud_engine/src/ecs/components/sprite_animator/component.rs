@@ -8,7 +8,7 @@ use crate::ecs::Component;
 // =============================================================================
 
 /// Controls how an animation behaves when it reaches the last frame.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum PlaybackMode {
     /// Restart from frame 0 after the last frame.
     Loop,
@@ -40,7 +40,7 @@ pub enum PlaybackMode {
 /// let clip = AnimationClip::new(frames, 0.1);
 /// assert_eq!(clip.mode, PlaybackMode::Loop);
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct AnimationClip {
     /// Source rectangles for each frame (pixel coordinates).
     pub frames: Vec<Rect>,
@@ -107,7 +107,7 @@ impl AnimationClip {
 /// assert!(animator.playing);
 /// assert!(!animator.finished);
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct SpriteAnimator {
     /// The animation clip driving this animator.
     pub clip: AnimationClip,

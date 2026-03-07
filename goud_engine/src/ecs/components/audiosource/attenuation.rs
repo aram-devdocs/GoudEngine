@@ -26,7 +26,7 @@
 /// assert_eq!(linear.name(), "Linear");
 /// assert_eq!(inverse.name(), "InverseDistance");
 /// ```
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum AttenuationModel {
     /// Linear falloff: volume = max(0, 1 - distance/max_distance)
     Linear,

@@ -30,10 +30,19 @@ use super::channel::AudioChannel;
 /// # Examples
 ///
 /// See module-level documentation for usage examples.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct AudioSource {
     /// Reference to the audio asset to play
+    // TODO(#219): Resolve audio_path back to a handle on deserialization
+    #[serde(skip)]
     pub audio: AssetHandle<AudioAsset>,
+    /// Optional path to the audio asset for serialization.
+    ///
+    /// The handle cannot survive serialization, but this path string
+    /// can. A higher-level system resolves it back to an
+    /// [`AssetHandle`] after deserialization.
+    #[serde(default)]
+    pub audio_path: Option<String>,
     /// Whether the audio is currently playing
     pub playing: bool,
     /// Whether the audio should loop when it finishes
@@ -53,6 +62,7 @@ pub struct AudioSource {
     /// Distance-based volume falloff model
     pub attenuation: AttenuationModel,
     /// Internal audio sink ID (managed by audio system)
+    #[serde(skip)]
     pub(crate) sink_id: Option<u64>,
 }
 
@@ -93,6 +103,7 @@ impl AudioSource {
     pub fn new(audio: AssetHandle<AudioAsset>) -> Self {
         Self {
             audio,
+            audio_path: None,
             playing: false,
             looping: false,
             volume: 1.0,
@@ -157,6 +168,16 @@ impl AudioSource {
     /// Sets whether to start playing automatically when spawned.
     pub fn with_auto_play(mut self, auto_play: bool) -> Self {
         self.auto_play = auto_play;
+        self
+    }
+
+    /// Sets the audio asset path for serialization.
+    ///
+    /// The path is stored alongside the source so it survives
+    /// serialization. A higher-level system resolves it back to an
+    /// [`AssetHandle`] after deserialization.
+    pub fn with_audio_path(mut self, path: impl Into<String>) -> Self {
+        self.audio_path = Some(path.into());
         self
     }
 

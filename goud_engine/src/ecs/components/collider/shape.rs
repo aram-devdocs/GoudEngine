@@ -17,7 +17,7 @@ use crate::core::math::{Rect, Vec2};
 /// - **Box**: Axis-aligned (AABB) or oriented (OBB), good for walls and platforms
 /// - **Capsule**: Good for characters, combines efficiency with smooth edges
 /// - **Polygon**: Most flexible but slowest, use sparingly for complex shapes
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ColliderShape {
     /// Circle collider defined by radius.
     ///
