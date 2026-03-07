@@ -466,6 +466,8 @@ def test_errors():
     GoudProviderError = errors_mod.GoudProviderError
     GoudInternalError = errors_mod.GoudInternalError
     RecoveryClass = errors_mod.RecoveryClass
+    _category_from_code = errors_mod._category_from_code
+    _CATEGORY_CLASS_MAP = errors_mod._CATEGORY_CLASS_MAP
 
     assert GoudError is not None, "GoudError failed to import"
     assert GoudContextError is not None, "GoudContextError failed to import"
@@ -568,6 +570,42 @@ def test_errors():
     init_src = init_path.read_text()
     assert "from .errors import" in init_src, \
         "__init__.py should re-export error classes from .errors"
+
+    # Test dispatch path: _category_from_code maps error codes to category strings
+    assert _category_from_code(1) == "Context", \
+        f"_category_from_code(1) should return 'Context', got {_category_from_code(1)!r}"
+    assert _category_from_code(100) == "Resource", \
+        f"_category_from_code(100) should return 'Resource', got {_category_from_code(100)!r}"
+    assert _category_from_code(200) == "Graphics", \
+        f"_category_from_code(200) should return 'Graphics', got {_category_from_code(200)!r}"
+    assert _category_from_code(300) == "Entity", \
+        f"_category_from_code(300) should return 'Entity', got {_category_from_code(300)!r}"
+    assert _category_from_code(400) == "Input", \
+        f"_category_from_code(400) should return 'Input', got {_category_from_code(400)!r}"
+    assert _category_from_code(500) == "System", \
+        f"_category_from_code(500) should return 'System', got {_category_from_code(500)!r}"
+    assert _category_from_code(600) == "Provider", \
+        f"_category_from_code(600) should return 'Provider', got {_category_from_code(600)!r}"
+    assert _category_from_code(900) == "Internal", \
+        f"_category_from_code(900) should return 'Internal', got {_category_from_code(900)!r}"
+
+    # Test dispatch path: _CATEGORY_CLASS_MAP maps category strings to exception classes
+    assert _CATEGORY_CLASS_MAP["Context"] is GoudContextError, \
+        f"_CATEGORY_CLASS_MAP['Context'] should map to GoudContextError"
+    assert _CATEGORY_CLASS_MAP["Resource"] is GoudResourceError, \
+        f"_CATEGORY_CLASS_MAP['Resource'] should map to GoudResourceError"
+    assert _CATEGORY_CLASS_MAP["Graphics"] is GoudGraphicsError, \
+        f"_CATEGORY_CLASS_MAP['Graphics'] should map to GoudGraphicsError"
+    assert _CATEGORY_CLASS_MAP["Entity"] is GoudEntityError, \
+        f"_CATEGORY_CLASS_MAP['Entity'] should map to GoudEntityError"
+    assert _CATEGORY_CLASS_MAP["Input"] is GoudInputError, \
+        f"_CATEGORY_CLASS_MAP['Input'] should map to GoudInputError"
+    assert _CATEGORY_CLASS_MAP["System"] is GoudSystemError, \
+        f"_CATEGORY_CLASS_MAP['System'] should map to GoudSystemError"
+    assert _CATEGORY_CLASS_MAP["Provider"] is GoudProviderError, \
+        f"_CATEGORY_CLASS_MAP['Provider'] should map to GoudProviderError"
+    assert _CATEGORY_CLASS_MAP["Internal"] is GoudInternalError, \
+        f"_CATEGORY_CLASS_MAP['Internal'] should map to GoudInternalError"
 
     print("  Error tests passed")
     return True
