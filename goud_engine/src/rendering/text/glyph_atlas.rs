@@ -5,6 +5,11 @@
 
 use std::collections::HashMap;
 
+use crate::libs::graphics::backend::render_backend::RenderBackend;
+use crate::libs::graphics::backend::types::{
+    TextureFilter, TextureFormat, TextureHandle, TextureWrap,
+};
+
 use super::rasterizer::{rasterize_glyphs, GlyphMetrics};
 
 /// UV rectangle describing a glyph's position within the atlas texture.
@@ -40,6 +45,8 @@ pub struct GlyphAtlas {
     height: u32,
     /// Per-character glyph info (UV + metrics).
     glyphs: HashMap<char, GlyphInfo>,
+    /// Cached GPU texture handle, lazily uploaded via `ensure_gpu_texture`.
+    gpu_texture: Option<TextureHandle>,
 }
 
 /// The range of printable ASCII characters (space through tilde).
@@ -85,6 +92,7 @@ impl GlyphAtlas {
                         width: atlas_size,
                         height: atlas_size,
                         glyphs,
+                        gpu_texture: None,
                     });
                 }
                 None => {
@@ -199,6 +207,50 @@ impl GlyphAtlas {
     pub fn height(&self) -> u32 {
         self.height
     }
+
+    /// Returns the cached GPU texture handle, if one has been uploaded.
+    pub fn gpu_texture(&self) -> Option<TextureHandle> {
+        self.gpu_texture
+    }
+
+    /// Lazily uploads the atlas pixel data to the GPU and caches the handle.
+    ///
+    /// On the first call the texture is created via `backend.create_texture`.
+    /// Subsequent calls return the cached handle without re-uploading.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the backend fails to create the texture.
+    pub fn ensure_gpu_texture(
+        &mut self,
+        backend: &mut dyn RenderBackend,
+    ) -> Result<TextureHandle, String> {
+        if let Some(handle) = self.gpu_texture {
+            return Ok(handle);
+        }
+
+        let handle = backend
+            .create_texture(
+                self.width,
+                self.height,
+                TextureFormat::RGBA8,
+                TextureFilter::Linear,
+                TextureWrap::ClampToEdge,
+                &self.texture_data,
+            )
+            .map_err(|e| format!("failed to create GPU texture for glyph atlas: {e}"))?;
+
+        self.gpu_texture = Some(handle);
+        Ok(handle)
+    }
+
+    /// Takes the GPU texture handle out of this atlas, if present.
+    ///
+    /// After this call `gpu_texture()` returns `None`. The caller is
+    /// responsible for destroying the returned handle via the backend.
+    pub(crate) fn take_gpu_texture(&mut self) -> Option<TextureHandle> {
+        self.gpu_texture.take()
+    }
 }
 
 #[cfg(test)]
@@ -298,6 +350,17 @@ mod tests {
     }
 
     #[test]
+    fn test_gpu_texture_returns_none_before_upload() {
+        let font = test_font();
+        let atlas = GlyphAtlas::generate(&font, 16.0).expect("atlas generation");
+
+        assert!(
+            atlas.gpu_texture().is_none(),
+            "gpu_texture should be None before ensure_gpu_texture is called"
+        );
+    }
+
+    #[test]
     fn test_atlas_space_glyph_has_zero_uv_area() {
         let font = test_font();
         let atlas = GlyphAtlas::generate(&font, 16.0).expect("atlas generation");
@@ -310,5 +373,4 @@ mod tests {
             "space glyph should have zero UV area"
         );
     }
-
 }

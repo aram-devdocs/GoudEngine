@@ -7,6 +7,8 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 use crate::assets::{loaders::FontAsset, AssetHandle};
+use crate::libs::graphics::backend::render_backend::RenderBackend;
+use crate::libs::graphics::backend::types::TextureHandle;
 
 use super::glyph_atlas::GlyphAtlas;
 
@@ -18,6 +20,8 @@ use super::glyph_atlas::GlyphAtlas;
 #[derive(Debug)]
 pub struct GlyphAtlasCache {
     cache: HashMap<(AssetHandle<FontAsset>, u32), GlyphAtlas>,
+    /// GPU texture handles from invalidated atlases, pending destruction.
+    pending_destroy: Vec<TextureHandle>,
 }
 
 impl GlyphAtlasCache {
@@ -25,6 +29,7 @@ impl GlyphAtlasCache {
     pub fn new() -> Self {
         Self {
             cache: HashMap::new(),
+            pending_destroy: Vec::new(),
         }
     }
 
@@ -61,12 +66,56 @@ impl GlyphAtlasCache {
     }
 
     /// Removes all cached atlases for the given font handle (all sizes).
+    ///
+    /// Any GPU texture handles owned by the removed atlases are queued
+    /// for destruction. Call [`destroy_gpu_textures`](Self::destroy_gpu_textures)
+    /// to release them.
     pub fn invalidate_font(&mut self, font_handle: AssetHandle<FontAsset>) {
-        self.cache.retain(|&(h, _), _| h != font_handle);
+        self.cache.retain(|&(h, _), atlas| {
+            if h == font_handle {
+                if let Some(tex) = atlas.take_gpu_texture() {
+                    self.pending_destroy.push(tex);
+                }
+                false
+            } else {
+                true
+            }
+        });
+    }
+
+    /// Processes a batch of font hot-reloads by invalidating every font
+    /// in the provided slice.
+    ///
+    /// Returns the number of atlas entries that were removed.
+    pub fn process_reloads(&mut self, reloaded: &[AssetHandle<FontAsset>]) -> usize {
+        let before = self.cache.len();
+        for &handle in reloaded {
+            self.invalidate_font(handle);
+        }
+        before - self.cache.len()
+    }
+
+    /// Destroys all GPU textures that were queued by previous invalidations.
+    ///
+    /// This must be called with a valid render backend to release GPU memory.
+    pub fn destroy_gpu_textures(&mut self, backend: &mut dyn RenderBackend) {
+        for handle in self.pending_destroy.drain(..) {
+            backend.destroy_texture(handle);
+        }
+    }
+
+    /// Returns the number of GPU texture handles pending destruction.
+    pub fn pending_destroy_count(&self) -> usize {
+        self.pending_destroy.len()
     }
 
     /// Removes all cached atlases.
     pub fn clear(&mut self) {
+        for atlas in self.cache.values_mut() {
+            if let Some(tex) = atlas.take_gpu_texture() {
+                self.pending_destroy.push(tex);
+            }
+        }
         self.cache.clear();
     }
 
@@ -194,5 +243,52 @@ mod tests {
     fn test_default_creates_empty_cache() {
         let cache = GlyphAtlasCache::default();
         assert_eq!(cache.len(), 0);
+    }
+
+    #[test]
+    fn test_process_reloads_invalidates_multiple_fonts() {
+        let mut cache = GlyphAtlasCache::new();
+        let font = test_font_asset();
+
+        // Populate: handle_a at two sizes, handle_b at one size.
+        let _ = cache.get_or_create(&font, handle_a(), 16.0).unwrap();
+        let _ = cache.get_or_create(&font, handle_a(), 32.0).unwrap();
+        let _ = cache.get_or_create(&font, handle_b(), 16.0).unwrap();
+
+        assert_eq!(cache.len(), 3);
+
+        // Reload both fonts at once.
+        let invalidated = cache.process_reloads(&[handle_a(), handle_b()]);
+
+        assert_eq!(invalidated, 3, "all three atlases should be invalidated");
+        assert_eq!(cache.len(), 0);
+    }
+
+    #[test]
+    fn test_process_reloads_returns_zero_for_unknown_fonts() {
+        let mut cache = GlyphAtlasCache::new();
+        let font = test_font_asset();
+
+        let _ = cache.get_or_create(&font, handle_a(), 16.0).unwrap();
+
+        // Reload a font that is not in the cache.
+        let invalidated = cache.process_reloads(&[handle_b()]);
+
+        assert_eq!(invalidated, 0);
+        assert_eq!(cache.len(), 1, "existing entry should remain");
+    }
+
+    #[test]
+    fn test_process_reloads_partial_invalidation() {
+        let mut cache = GlyphAtlasCache::new();
+        let font = test_font_asset();
+
+        let _ = cache.get_or_create(&font, handle_a(), 16.0).unwrap();
+        let _ = cache.get_or_create(&font, handle_b(), 16.0).unwrap();
+
+        let invalidated = cache.process_reloads(&[handle_a()]);
+
+        assert_eq!(invalidated, 1);
+        assert_eq!(cache.len(), 1, "handle_b entry should remain");
     }
 }
