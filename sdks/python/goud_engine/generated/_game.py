@@ -401,18 +401,15 @@ class GoudGame:
 
     def is_action_pressed(self, action):
         """Returns true if the action is currently pressed"""
-        _action_bytes = action.encode('utf-8')
-        return self._lib.goud_input_action_pressed(self._ctx, ctypes.cast(ctypes.create_string_buffer(_action_bytes, len(_action_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_action_bytes))
+        return self._lib.goud_input_action_pressed(self._ctx, action)
 
     def is_action_just_pressed(self, action):
         """Returns true if the action was pressed this frame"""
-        _action_bytes = action.encode('utf-8')
-        return self._lib.goud_input_action_just_pressed(self._ctx, ctypes.cast(ctypes.create_string_buffer(_action_bytes, len(_action_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_action_bytes))
+        return self._lib.goud_input_action_just_pressed(self._ctx, action)
 
     def is_action_just_released(self, action):
         """Returns true if the action was released this frame"""
-        _action_bytes = action.encode('utf-8')
-        return self._lib.goud_input_action_just_released(self._ctx, ctypes.cast(ctypes.create_string_buffer(_action_bytes, len(_action_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_action_bytes))
+        return self._lib.goud_input_action_just_released(self._ctx, action)
 
     def collision_aabb_aabb(self, center_ax, center_ay, half_wa, half_ha, center_bx, center_by, half_wb, half_hb):
         """AABB vs AABB collision test with contact"""

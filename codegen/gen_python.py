@@ -199,6 +199,15 @@ def _get_ffi_func_def(ffi_name: str) -> dict | None:
     return None
 
 
+def _ffi_uses_ptr_len(ffi_name: str) -> bool:
+    """Check if the FFI function uses *const u8 ptr+len for string params."""
+    fdef = _get_ffi_func_def(ffi_name)
+    if not fdef:
+        return False
+    param_types = [p.get("type", "") for p in fdef.get("params", [])]
+    return "*const u8" in param_types
+
+
 def _ffi_to_sdk_return(ffi_returns: str, type_name: str) -> str:
     """Map an FFI return type to the SDK type string for annotations.
 
@@ -1330,8 +1339,8 @@ def _gen_tool_class(tool_name: str, lines: list):
                 lines.append(
                     f"        self._lib.{ffi_fn}(self._ctx, {extra})"
                 )
-            elif any(p["type"] == "string" for p in params):
-                # String params need encoding to bytes ptr + len
+            elif any(p["type"] == "string" for p in params) and _ffi_uses_ptr_len(ffi_fn):
+                # String params need encoding to bytes ptr + len (only for *const u8 FFI)
                 for p in params:
                     if p["type"] == "string":
                         sn = to_snake(p["name"])

@@ -124,6 +124,13 @@ def _ffi_fn_def(ffi_fn_name: str) -> dict:
     return {}
 
 
+def _ffi_uses_ptr_len(ffi_fn_name: str) -> bool:
+    """Check if the FFI function uses *const u8 ptr+len for string params."""
+    fdef = _ffi_fn_def(ffi_fn_name)
+    param_types = [p.get("type", "") for p in fdef.get("params", [])]
+    return "*const u8" in param_types
+
+
 def _enum_cs_name(key: str) -> str:
     if key == "Key":
         return "Keys"
@@ -916,8 +923,9 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                   "            }"]
             return
         # Generic string param marshalling: string -> UTF8 ptr + len
+        # Only applies when the FFI function uses *const u8 (ptr+len), not *const c_char
         string_params = [p for p in params if p["type"] == "string"]
-        if string_params:
+        if string_params and _ffi_uses_ptr_len(ffi_fn):
             non_string = [p for p in params if p["type"] != "string"]
             L.append("            unsafe")
             L.append("            {")
