@@ -72,6 +72,8 @@ pub mod rendering;
 ///     .build();
 /// ```
 pub mod sdk;
+/// Test helpers for GPU-free testing.
+pub mod test_helpers;
 /// WebAssembly bindings for browser-based game development.
 ///
 /// Exposes the engine's ECS, input, and timing through `wasm-bindgen`
