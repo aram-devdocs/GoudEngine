@@ -146,8 +146,11 @@ impl World {
             return None;
         }
 
-        // Get storage and lookup component
-        self.get_storage_option_mut::<T>()?.get_mut(entity)
+        // Mark the component's changed tick before returning a mutable ref
+        let tick = self.change_tick;
+        let storage = self.get_storage_option_mut::<T>()?;
+        storage.set_changed_tick(entity, tick);
+        storage.get_mut(entity)
     }
 
     /// Checks if an entity has a specific component type.
@@ -195,6 +198,26 @@ impl World {
         self.get_storage::<T>()
             .map(|storage| storage.contains(entity))
             .unwrap_or(false)
+    }
+
+    // =========================================================================
+    // Change Detection Tick Access
+    // =========================================================================
+
+    /// Returns the added tick for a component on an entity.
+    ///
+    /// Returns `None` if the entity does not have the component.
+    #[inline]
+    pub fn get_component_added_tick<T: Component>(&self, entity: Entity) -> Option<u32> {
+        self.get_storage::<T>()?.get_added_tick(entity)
+    }
+
+    /// Returns the changed tick for a component on an entity.
+    ///
+    /// Returns `None` if the entity does not have the component.
+    #[inline]
+    pub fn get_component_changed_tick<T: Component>(&self, entity: Entity) -> Option<u32> {
+        self.get_storage::<T>()?.get_changed_tick(entity)
     }
 
     // =========================================================================

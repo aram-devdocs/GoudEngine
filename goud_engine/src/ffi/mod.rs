@@ -102,6 +102,7 @@ pub mod component_sprite_animator;
 pub mod component_transform2d;
 pub mod context;
 pub mod entity;
+pub mod error;
 #[cfg(feature = "native")]
 pub mod input;
 #[cfg(feature = "native")]
