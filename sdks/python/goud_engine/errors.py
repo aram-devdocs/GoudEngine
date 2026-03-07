@@ -1,0 +1,162 @@
+"""Typed error classes for GoudEngine Python SDK.
+
+Maps FFI error codes to language-idiomatic exceptions with code,
+message, context, and recovery information. All recovery logic
+lives in Rust; these classes only marshal the data.
+"""
+
+import ctypes
+
+
+class RecoveryClass:
+    """Recovery classification matching Rust RecoveryClass enum."""
+    RECOVERABLE = 0
+    FATAL = 1
+    DEGRADED = 2
+
+    _NAMES = {0: "recoverable", 1: "fatal", 2: "degraded"}
+
+    @classmethod
+    def name(cls, value):
+        return cls._NAMES.get(value, "unknown")
+
+
+class GoudError(Exception):
+    """Base exception for all GoudEngine errors."""
+
+    def __init__(self, error_code, message, category, subsystem,
+                 operation, recovery, recovery_hint):
+        super().__init__(message)
+        self.error_code = error_code
+        self.category = category
+        self.subsystem = subsystem
+        self.operation = operation
+        self.recovery = recovery
+        self.recovery_hint = recovery_hint
+
+    def __repr__(self):
+        return (
+            f"{type(self).__name__}(code={self.error_code}, "
+            f"category={self.category!r}, "
+            f"recovery={RecoveryClass.name(self.recovery)})"
+        )
+
+    @classmethod
+    def from_last_error(cls, lib):
+        """Query FFI error state and build the correct typed exception.
+
+        Returns None if no error is set (code == 0).
+        """
+        code = lib.goud_last_error_code()
+        if code == 0:
+            return None
+
+        message = _read_string(lib.goud_last_error_message)
+        subsystem = _read_string(lib.goud_last_error_subsystem)
+        operation = _read_string(lib.goud_last_error_operation)
+
+        recovery = lib.goud_error_recovery_class(code)
+        hint = _read_hint(lib, code)
+
+        category = _category_from_code(code)
+        subclass = _CATEGORY_CLASS_MAP.get(category, GoudError)
+
+        return subclass(
+            error_code=code,
+            message=message,
+            category=category,
+            subsystem=subsystem,
+            operation=operation,
+            recovery=recovery,
+            recovery_hint=hint,
+        )
+
+
+class GoudContextError(GoudError):
+    """Engine context lifecycle errors (codes 1-99)."""
+    pass
+
+
+class GoudResourceError(GoudError):
+    """Asset/resource loading errors (codes 100-199)."""
+    pass
+
+
+class GoudGraphicsError(GoudError):
+    """Rendering and GPU errors (codes 200-299)."""
+    pass
+
+
+class GoudEntityError(GoudError):
+    """ECS entity/component errors (codes 300-399)."""
+    pass
+
+
+class GoudInputError(GoudError):
+    """Input device/action errors (codes 400-499)."""
+    pass
+
+
+class GoudSystemError(GoudError):
+    """Platform/system errors (codes 500-599)."""
+    pass
+
+
+class GoudProviderError(GoudError):
+    """Provider subsystem errors (codes 600-699)."""
+    pass
+
+
+class GoudInternalError(GoudError):
+    """Internal engine errors (codes 900-999)."""
+    pass
+
+
+_CATEGORY_CLASS_MAP = {
+    "Context": GoudContextError,
+    "Resource": GoudResourceError,
+    "Graphics": GoudGraphicsError,
+    "Entity": GoudEntityError,
+    "Input": GoudInputError,
+    "System": GoudSystemError,
+    "Provider": GoudProviderError,
+    "Internal": GoudInternalError,
+}
+
+
+def _category_from_code(code):
+    if code >= 900:
+        return "Internal"
+    if code >= 600:
+        return "Provider"
+    if code >= 500:
+        return "System"
+    if code >= 400:
+        return "Input"
+    if code >= 300:
+        return "Entity"
+    if code >= 200:
+        return "Graphics"
+    if code >= 100:
+        return "Resource"
+    if code >= 1:
+        return "Context"
+    return "Unknown"
+
+
+def _read_string(ffi_fn):
+    """Call a buffer-writing FFI function and return the string."""
+    buf = (ctypes.c_uint8 * 256)()
+    written = ffi_fn(buf, 256)
+    if written <= 0:
+        return ""
+    return bytes(buf[:written]).decode("utf-8", errors="replace")
+
+
+def _read_hint(lib, code):
+    """Call goud_error_recovery_hint and return the string."""
+    buf = (ctypes.c_uint8 * 256)()
+    written = lib.goud_error_recovery_hint(code, buf, 256)
+    if written <= 0:
+        return ""
+    return bytes(buf[:written]).decode("utf-8", errors="replace")

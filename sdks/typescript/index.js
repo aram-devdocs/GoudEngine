@@ -575,7 +575,18 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
+const _errors = require('./errors.js')
 module.exports = nativeBinding
+module.exports.RecoveryClass = _errors.RecoveryClass
+module.exports.GoudError = _errors.GoudError
+module.exports.GoudContextError = _errors.GoudContextError
+module.exports.GoudResourceError = _errors.GoudResourceError
+module.exports.GoudGraphicsError = _errors.GoudGraphicsError
+module.exports.GoudEntityError = _errors.GoudEntityError
+module.exports.GoudInputError = _errors.GoudInputError
+module.exports.GoudSystemError = _errors.GoudSystemError
+module.exports.GoudProviderError = _errors.GoudProviderError
+module.exports.GoudInternalError = _errors.GoudInternalError
 module.exports.Entity = nativeBinding.Entity
 module.exports.GoudGame = nativeBinding.GoudGame
 module.exports.colorBlack = nativeBinding.colorBlack
