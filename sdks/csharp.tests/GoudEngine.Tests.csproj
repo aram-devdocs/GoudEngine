@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../GoudEngine/GoudEngine.csproj" />
+    <ProjectReference Include="../csharp/GoudEngine.csproj" />
   </ItemGroup>
 
   <!-- Old tests reference deleted manual SDK types; exclude until rewritten for codegen API -->
