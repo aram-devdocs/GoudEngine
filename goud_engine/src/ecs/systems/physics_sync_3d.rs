@@ -138,7 +138,6 @@ mod tests {
 
     #[test]
     fn test_system_3d_provider_accessors() {
-        use crate::core::providers::Provider;
         let provider = NullPhysicsProvider3D::new();
         let mut system = PhysicsStepSystem3D::new(Box::new(provider));
         assert_eq!(system.provider().name(), "null");
