@@ -13,6 +13,7 @@ pub mod mesh;
 mod rodio_integration;
 pub mod shader;
 pub mod texture;
+pub mod tiled_map;
 
 pub use texture::{
     TextureAsset, TextureColorSpace, TextureFormat, TextureLoader, TextureSettings, TextureWrapMode,
@@ -33,3 +34,7 @@ pub use material::{MaterialAsset, MaterialLoader, UniformValue};
 pub use animation::{AnimationLoader, KeyframeAnimation};
 
 pub use mesh::{MeshAsset, MeshLoader, MeshVertex, SubMesh};
+
+pub use tiled_map::{
+    visible_tile_range, MapObject, ObjectLayer, TileLayer, TiledMapAsset, TiledMapLoader,
+};
