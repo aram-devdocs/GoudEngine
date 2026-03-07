@@ -53,7 +53,7 @@ namespace GoudEngine
         /// typed exception subclass based on the error code range.
         /// Returns null if no error is set (code == 0).
         /// </summary>
-        public static GoudException FromLastError()
+        public static GoudException? FromLastError()
         {
             int code = NativeMethods.goud_last_error_code();
             if (code == 0)
