@@ -7,8 +7,10 @@
 
 pub mod animation;
 pub mod animation_controller;
+pub mod skeletal_animation;
 pub mod transform;
 
 pub use animation::update_sprite_animations;
 pub use animation_controller::update_animation_controllers;
+pub use skeletal_animation::{deform_skeletal_meshes, update_skeletal_animations};
 pub use transform::TransformPropagationSystem;

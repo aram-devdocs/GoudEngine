@@ -20,6 +20,15 @@
 //! - [`AnimationClip`]: Frame sequence and timing data for animations
 //! - [`PlaybackMode`]: Loop or OneShot playback control
 //!
+//! ## Skeletal Animation
+//!
+//! - [`Skeleton2D`]: Bone hierarchy with world-space transform cache
+//! - [`Bone2D`]: Single bone with parent link and bind pose
+//! - [`BoneTransform`]: Position + rotation + scale for a bone
+//! - [`SkeletalAnimation`]: Keyframe animation clip
+//! - [`SkeletalAnimator`]: Playback controller component
+//! - [`SkeletalMesh2D`]: Deformable mesh with bone weights
+//!
 //! ## Audio Components
 //!
 //! - [`AudioSource`]: Audio playback component with spatial audio support
@@ -158,6 +167,7 @@ pub mod global_transform2d;
 pub mod hierarchy;
 pub mod propagation;
 pub mod rigidbody;
+pub mod skeleton2d;
 pub mod sprite;
 pub mod sprite_animator;
 pub mod transform;
@@ -175,4 +185,8 @@ pub use rigidbody::{RigidBody, RigidBodyType};
 pub use sprite::Sprite;
 pub use sprite_animator::{AnimationClip, PlaybackMode, SpriteAnimator};
 pub use transform::Transform;
+pub use skeleton2d::{
+    Bone2D, BoneKeyframe, BoneTrack, BoneTransform, BoneWeight, Skeleton2D, SkeletalAnimation,
+    SkeletalAnimator, SkeletalMesh2D, SkeletalVertex,
+};
 pub use transform2d::{Mat3x3, Transform2D};
