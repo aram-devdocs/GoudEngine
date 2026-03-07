@@ -20,6 +20,7 @@
 use std::cell::RefCell;
 
 use super::codes::{GoudErrorCode, SUCCESS};
+use super::context::GoudErrorContext;
 use super::types::GoudError;
 
 thread_local! {
@@ -28,6 +29,12 @@ thread_local! {
     /// Each thread has its own error storage, ensuring that errors from one
     /// thread do not affect another. This is critical for thread-safe FFI.
     static LAST_ERROR: RefCell<Option<GoudError>> = const { RefCell::new(None) };
+
+    /// Thread-local storage for error context (subsystem + operation metadata).
+    ///
+    /// Set alongside LAST_ERROR when `set_last_error_with_context` is used.
+    /// Cleared by `set_last_error`, `clear_last_error`, and `take_last_error`.
+    static LAST_ERROR_CONTEXT: RefCell<Option<GoudErrorContext>> = const { RefCell::new(None) };
 }
 
 /// Sets the last error for the current thread.
@@ -51,6 +58,27 @@ pub fn set_last_error(error: GoudError) {
     LAST_ERROR.with(|e| {
         *e.borrow_mut() = Some(error);
     });
+    LAST_ERROR_CONTEXT.with(|c| {
+        *c.borrow_mut() = None;
+    });
+}
+
+/// Sets the last error and its context for the current thread.
+///
+/// This function stores both the error and context metadata (subsystem, operation)
+/// in thread-local storage. Use `last_error_subsystem()` and `last_error_operation()`
+/// to retrieve the context.
+///
+/// # Thread Safety
+///
+/// Both values are stored in thread-local storage and will not affect other threads.
+pub fn set_last_error_with_context(error: GoudError, ctx: GoudErrorContext) {
+    LAST_ERROR.with(|e| {
+        *e.borrow_mut() = Some(error);
+    });
+    LAST_ERROR_CONTEXT.with(|c| {
+        *c.borrow_mut() = Some(ctx);
+    });
 }
 
 /// Takes the last error from the current thread, clearing it.
@@ -73,6 +101,9 @@ pub fn set_last_error(error: GoudError) {
 /// assert!(take_last_error().is_none()); // Cleared after take
 /// ```
 pub fn take_last_error() -> Option<GoudError> {
+    LAST_ERROR_CONTEXT.with(|c| {
+        *c.borrow_mut() = None;
+    });
     LAST_ERROR.with(|e| e.borrow_mut().take())
 }
 
@@ -171,6 +202,25 @@ pub fn clear_last_error() {
     LAST_ERROR.with(|e| {
         *e.borrow_mut() = None;
     });
+    LAST_ERROR_CONTEXT.with(|c| {
+        *c.borrow_mut() = None;
+    });
+}
+
+/// Returns the subsystem from the last error's context, if set.
+///
+/// Returns `None` if no error context has been set or if the error was
+/// set without context via `set_last_error()`.
+pub fn last_error_subsystem() -> Option<&'static str> {
+    LAST_ERROR_CONTEXT.with(|c| c.borrow().as_ref().map(|ctx| ctx.subsystem))
+}
+
+/// Returns the operation from the last error's context, if set.
+///
+/// Returns `None` if no error context has been set or if the error was
+/// set without context via `set_last_error()`.
+pub fn last_error_operation() -> Option<&'static str> {
+    LAST_ERROR_CONTEXT.with(|c| c.borrow().as_ref().map(|ctx| ctx.operation))
 }
 
 // =============================================================================

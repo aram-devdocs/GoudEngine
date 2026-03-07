@@ -499,6 +499,24 @@
       "return_type": "u64",
       "is_unsafe": false
     },
+    "goud_error_recovery_class": {
+      "source_file": "ffi/error.rs",
+      "params": [
+        "code: GoudErrorCode"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_error_recovery_hint": {
+      "source_file": "ffi/error.rs",
+      "params": [
+        "code: GoudErrorCode",
+        "buf: *mut u8",
+        "buf_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_input_action_just_pressed": {
       "source_file": "ffi/input/actions.rs",
       "params": [
@@ -627,6 +645,24 @@
       "is_unsafe": false
     },
     "goud_last_error_message": {
+      "source_file": "ffi/error.rs",
+      "params": [
+        "buf: *mut u8",
+        "buf_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_last_error_operation": {
+      "source_file": "ffi/error.rs",
+      "params": [
+        "buf: *mut u8",
+        "buf_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_last_error_subsystem": {
       "source_file": "ffi/error.rs",
       "params": [
         "buf: *mut u8",
@@ -2060,5 +2096,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 215
+  "total_count": 219
 }

@@ -23,6 +23,7 @@
 
 pub mod blend;
 pub mod capabilities;
+pub mod null;
 #[cfg(feature = "native")]
 pub mod opengl;
 pub mod render_backend;
