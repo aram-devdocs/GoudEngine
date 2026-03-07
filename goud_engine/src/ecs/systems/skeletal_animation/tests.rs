@@ -4,8 +4,8 @@ use super::interpolation::sample_track;
 use super::system::{deform_skeletal_meshes, update_skeletal_animations};
 use crate::core::math::Vec2;
 use crate::ecs::components::skeleton2d::{
-    Bone2D, BoneKeyframe, BoneTrack, BoneTransform, BoneWeight, Skeleton2D, SkeletalAnimation,
-    SkeletalAnimator, SkeletalMesh2D, SkeletalVertex,
+    Bone2D, BoneKeyframe, BoneTrack, BoneTransform, BoneWeight, SkeletalAnimation,
+    SkeletalAnimator, SkeletalMesh2D, SkeletalVertex, Skeleton2D,
 };
 use crate::ecs::World;
 use std::f32::consts::FRAC_PI_2;

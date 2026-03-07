@@ -182,11 +182,11 @@ pub use global_transform::GlobalTransform;
 pub use global_transform2d::GlobalTransform2D;
 pub use hierarchy::{Children, Name, Parent};
 pub use rigidbody::{RigidBody, RigidBodyType};
+pub use skeleton2d::{
+    Bone2D, BoneKeyframe, BoneTrack, BoneTransform, BoneWeight, SkeletalAnimation,
+    SkeletalAnimator, SkeletalMesh2D, SkeletalVertex, Skeleton2D,
+};
 pub use sprite::Sprite;
 pub use sprite_animator::{AnimationClip, PlaybackMode, SpriteAnimator};
 pub use transform::Transform;
-pub use skeleton2d::{
-    Bone2D, BoneKeyframe, BoneTrack, BoneTransform, BoneWeight, Skeleton2D, SkeletalAnimation,
-    SkeletalAnimator, SkeletalMesh2D, SkeletalVertex,
-};
 pub use transform2d::{Mat3x3, Transform2D};

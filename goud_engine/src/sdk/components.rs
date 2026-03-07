@@ -87,11 +87,11 @@ pub use crate::ecs::components::BoneKeyframe;
 pub use crate::ecs::components::BoneTrack;
 pub use crate::ecs::components::BoneTransform;
 pub use crate::ecs::components::BoneWeight;
-pub use crate::ecs::components::Skeleton2D;
 pub use crate::ecs::components::SkeletalAnimation;
 pub use crate::ecs::components::SkeletalAnimator;
 pub use crate::ecs::components::SkeletalMesh2D;
 pub use crate::ecs::components::SkeletalVertex;
+pub use crate::ecs::components::Skeleton2D;
 pub use crate::ecs::systems::deform_skeletal_meshes;
 pub use crate::ecs::systems::update_skeletal_animations;
 

@@ -10,7 +10,7 @@
 use super::interpolation::sample_track;
 use crate::core::math::Vec2;
 use crate::ecs::components::skeleton2d::{
-    BoneTransform, Skeleton2D, SkeletalAnimator, SkeletalMesh2D,
+    BoneTransform, SkeletalAnimator, SkeletalMesh2D, Skeleton2D,
 };
 use crate::ecs::World;
 
@@ -27,9 +27,7 @@ pub fn update_skeletal_animations(world: &mut World, dt: f32) {
         .archetypes()
         .iter()
         .flat_map(|archetype| archetype.entities().iter().copied())
-        .filter(|&entity| {
-            world.has::<SkeletalAnimator>(entity) && world.has::<Skeleton2D>(entity)
-        })
+        .filter(|&entity| world.has::<SkeletalAnimator>(entity) && world.has::<Skeleton2D>(entity))
         .collect();
 
     for entity in entities {
@@ -53,7 +51,9 @@ pub fn update_skeletal_animations(world: &mut World, dt: f32) {
                     animator.current_time += animator.animation.duration;
                 }
             } else {
-                animator.current_time = animator.current_time.clamp(0.0, animator.animation.duration);
+                animator.current_time = animator
+                    .current_time
+                    .clamp(0.0, animator.animation.duration);
             }
 
             let time = animator.current_time;
@@ -100,9 +100,7 @@ pub fn update_skeletal_animations(world: &mut World, dt: f32) {
             continue;
         };
 
-        for (i, (local, parent_id)) in
-            local_transforms.iter().zip(parent_ids.iter()).enumerate()
-        {
+        for (i, (local, parent_id)) in local_transforms.iter().zip(parent_ids.iter()).enumerate() {
             skel.world_transforms[i] = match parent_id {
                 Some(pid) => BoneTransform::combine(&skel.world_transforms[*pid], local),
                 None => *local,
@@ -123,9 +121,7 @@ pub fn deform_skeletal_meshes(world: &mut World) {
         .archetypes()
         .iter()
         .flat_map(|archetype| archetype.entities().iter().copied())
-        .filter(|&entity| {
-            world.has::<Skeleton2D>(entity) && world.has::<SkeletalMesh2D>(entity)
-        })
+        .filter(|&entity| world.has::<Skeleton2D>(entity) && world.has::<SkeletalMesh2D>(entity))
         .collect();
 
     for entity in entities {

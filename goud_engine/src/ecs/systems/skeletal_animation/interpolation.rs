@@ -27,9 +27,9 @@ pub fn sample_track(keyframes: &[BoneKeyframe], t: f32) -> BoneTransform {
 
     // Find the pair of keyframes surrounding `t`.
     // Binary search for the first keyframe with time > t.
-    let right = match keyframes.binary_search_by(|kf| {
-        kf.time.partial_cmp(&t).unwrap_or(std::cmp::Ordering::Equal)
-    }) {
+    let right = match keyframes
+        .binary_search_by(|kf| kf.time.partial_cmp(&t).unwrap_or(std::cmp::Ordering::Equal))
+    {
         Ok(i) => return keyframes[i].transform, // exact match
         Err(i) => i,
     };

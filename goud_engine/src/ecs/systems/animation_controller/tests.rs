@@ -2,9 +2,7 @@
 
 use super::update_animation_controllers;
 use crate::core::math::Rect;
-use crate::ecs::components::animation_controller::{
-    AnimationController, TransitionCondition,
-};
+use crate::ecs::components::animation_controller::{AnimationController, TransitionCondition};
 use crate::ecs::components::sprite_animator::{AnimationClip, SpriteAnimator};
 use crate::ecs::World;
 
@@ -229,8 +227,7 @@ fn test_multiple_conditions_all_must_match() {
     // Transition started
     let ctrl = world.get::<AnimationController>(entity).unwrap();
     assert!(
-        ctrl.transition_progress.is_some()
-            || ctrl.current_state_name() == "run",
+        ctrl.transition_progress.is_some() || ctrl.current_state_name() == "run",
         "Transition should have started or completed (duration=0)"
     );
 }
@@ -264,10 +261,7 @@ fn test_float_less_than_condition() {
     update_animation_controllers(&mut world, 0.01);
 
     let ctrl = world.get::<AnimationController>(entity).unwrap();
-    assert!(
-        ctrl.transition_progress.is_some()
-            || ctrl.current_state_name() == "idle"
-    );
+    assert!(ctrl.transition_progress.is_some() || ctrl.current_state_name() == "idle");
 }
 
 #[test]
