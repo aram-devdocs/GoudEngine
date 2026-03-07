@@ -1,6 +1,7 @@
 //! [`GoudGame`] struct definition, construction, and core API.
 
-use crate::core::error::GoudResult;
+use crate::context_registry::scene::{SceneId, SceneManager};
+use crate::core::error::{GoudError, GoudResult};
 use crate::ecs::{Component, Entity, World};
 
 #[cfg(feature = "native")]
@@ -33,8 +34,8 @@ use crate::sdk::game_config::{GameConfig, GameContext};
 ///     .build();
 /// ```
 pub struct GoudGame {
-    /// The ECS world containing all game state.
-    pub(crate) world: World,
+    /// Manages multiple isolated ECS worlds (scenes).
+    pub(crate) scene_manager: SceneManager,
 
     /// Game configuration.
     pub(crate) config: GameConfig,
@@ -91,7 +92,7 @@ impl GoudGame {
         let mut debug_overlay = DebugOverlay::new(config.fps_update_interval);
         debug_overlay.set_enabled(config.show_fps_overlay);
         Ok(Self {
-            world: World::new(),
+            scene_manager: SceneManager::new(),
             config,
             context: GameContext::new(window_size),
             initialized: false,
@@ -145,7 +146,7 @@ impl GoudGame {
         debug_overlay.set_enabled(config.show_fps_overlay);
 
         Ok(Self {
-            world: World::new(),
+            scene_manager: SceneManager::new(),
             config,
             context: GameContext::new(window_size),
             initialized: false,
@@ -160,82 +161,142 @@ impl GoudGame {
         })
     }
 
-    /// Returns a reference to the ECS world.
+    // =========================================================================
+    // Default-scene World Access (backward-compatible)
+    // =========================================================================
+
+    /// Returns a reference to the default scene's ECS world.
     #[inline]
     pub fn world(&self) -> &World {
-        &self.world
+        self.scene_manager
+            .get_scene(self.scene_manager.default_scene())
+            .expect("default scene must exist")
     }
 
-    /// Returns a mutable reference to the ECS world.
+    /// Returns a mutable reference to the default scene's ECS world.
     #[inline]
     pub fn world_mut(&mut self) -> &mut World {
-        &mut self.world
+        let default = self.scene_manager.default_scene();
+        self.scene_manager
+            .get_scene_mut(default)
+            .expect("default scene must exist")
     }
 
-    /// Creates an entity builder for fluent entity creation.
+    /// Creates an entity builder for fluent entity creation (default scene).
     #[inline]
     pub fn spawn(&mut self) -> EntityBuilder<'_> {
-        EntityBuilder::new(&mut self.world)
+        let default = self.scene_manager.default_scene();
+        let world = self
+            .scene_manager
+            .get_scene_mut(default)
+            .expect("default scene must exist");
+        EntityBuilder::new(world)
     }
 
-    /// Spawns an empty entity with no components.
+    /// Spawns an empty entity with no components (default scene).
     #[inline]
     pub fn spawn_empty(&mut self) -> Entity {
-        self.world.spawn_empty()
+        self.world_mut().spawn_empty()
     }
 
-    /// Spawns multiple empty entities at once.
+    /// Spawns multiple empty entities at once (default scene).
     #[inline]
     pub fn spawn_batch(&mut self, count: usize) -> Vec<Entity> {
-        self.world.spawn_batch(count)
+        self.world_mut().spawn_batch(count)
     }
 
-    /// Despawns an entity and removes all its components.
+    /// Despawns an entity and removes all its components (default scene).
     #[inline]
     pub fn despawn(&mut self, entity: Entity) -> bool {
-        self.world.despawn(entity)
+        self.world_mut().despawn(entity)
     }
 
-    /// Gets a reference to a component on an entity.
+    /// Gets a reference to a component on an entity (default scene).
     #[inline]
     pub fn get<T: Component>(&self, entity: Entity) -> Option<&T> {
-        self.world.get::<T>(entity)
+        self.world().get::<T>(entity)
     }
 
-    /// Gets a mutable reference to a component on an entity.
+    /// Gets a mutable reference to a component on an entity (default scene).
     #[inline]
     pub fn get_mut<T: Component>(&mut self, entity: Entity) -> Option<&mut T> {
-        self.world.get_mut::<T>(entity)
+        self.world_mut().get_mut::<T>(entity)
     }
 
-    /// Adds or replaces a component on an entity.
+    /// Adds or replaces a component on an entity (default scene).
     #[inline]
     pub fn insert<T: Component>(&mut self, entity: Entity, component: T) {
-        self.world.insert(entity, component);
+        self.world_mut().insert(entity, component);
     }
 
-    /// Removes a component from an entity.
+    /// Removes a component from an entity (default scene).
     #[inline]
     pub fn remove<T: Component>(&mut self, entity: Entity) -> Option<T> {
-        self.world.remove::<T>(entity)
+        self.world_mut().remove::<T>(entity)
     }
 
-    /// Checks if an entity has a specific component.
+    /// Checks if an entity has a specific component (default scene).
     #[inline]
     pub fn has<T: Component>(&self, entity: Entity) -> bool {
-        self.world.has::<T>(entity)
+        self.world().has::<T>(entity)
     }
 
-    /// Returns the number of entities in the world.
+    /// Returns the number of entities in the default scene.
     #[inline]
     pub fn entity_count(&self) -> usize {
-        self.world.entity_count()
+        self.world().entity_count()
     }
 
-    /// Checks if an entity is alive.
+    /// Checks if an entity is alive (default scene).
     #[inline]
     pub fn is_alive(&self, entity: Entity) -> bool {
-        self.world.is_alive(entity)
+        self.world().is_alive(entity)
+    }
+
+    // =========================================================================
+    // Scene Management
+    // =========================================================================
+
+    /// Creates a new scene with the given name.
+    pub fn create_scene(&mut self, name: &str) -> Result<SceneId, GoudError> {
+        self.scene_manager.create_scene(name)
+    }
+
+    /// Destroys a scene. Cannot destroy the default scene.
+    pub fn destroy_scene(&mut self, id: SceneId) -> Result<(), GoudError> {
+        self.scene_manager.destroy_scene(id)
+    }
+
+    /// Returns a reference to a scene's world.
+    pub fn scene(&self, id: SceneId) -> Option<&World> {
+        self.scene_manager.get_scene(id)
+    }
+
+    /// Returns a mutable reference to a scene's world.
+    pub fn scene_mut(&mut self, id: SceneId) -> Option<&mut World> {
+        self.scene_manager.get_scene_mut(id)
+    }
+
+    /// Looks up a scene by name.
+    pub fn scene_by_name(&self, name: &str) -> Option<SceneId> {
+        self.scene_manager.get_scene_by_name(name)
+    }
+
+    /// Sets whether a scene is active.
+    pub fn set_scene_active(&mut self, id: SceneId, active: bool) -> Result<(), GoudError> {
+        self.scene_manager.set_active(id, active)
+    }
+
+    /// Returns a reference to the scene manager.
+    #[inline]
+    pub fn scene_manager(&self) -> &SceneManager {
+        &self.scene_manager
+    }
+
+    /// Returns a mutable reference to the scene manager.
+    #[inline]
+    pub fn scene_manager_mut(&mut self) -> &mut SceneManager {
+        &mut self.scene_manager
     }
 
     /// Returns the game configuration.
@@ -257,6 +318,10 @@ impl GoudGame {
     }
 
     /// Runs the game loop with the given update callback.
+    ///
+    /// The callback receives the default scene's world for backward
+    /// compatibility. Use [`scene_manager_mut`](Self::scene_manager_mut)
+    /// inside the callback for multi-scene access.
     pub fn run<F>(&mut self, mut update: F)
     where
         F: FnMut(&mut GameContext, &mut World),
@@ -275,7 +340,14 @@ impl GoudGame {
         while self.context.is_running() {
             self.context.update(frame_time);
             self.debug_overlay.update(frame_time);
-            update(&mut self.context, &mut self.world);
+
+            // Update all active scenes each frame.
+            let active: Vec<SceneId> = self.scene_manager.active_scenes().to_vec();
+            for scene_id in active {
+                if let Some(world) = self.scene_manager.get_scene_mut(scene_id) {
+                    update(&mut self.context, world);
+                }
+            }
 
             // Safety: Limit iterations in tests/examples without actual window
             if self.context.frame_count() > 10000 {
@@ -284,14 +356,20 @@ impl GoudGame {
         }
     }
 
-    /// Runs a single frame update.
+    /// Runs a single frame update for all active scenes.
     pub fn update_frame<F>(&mut self, delta_time: f32, mut update: F)
     where
         F: FnMut(&mut GameContext, &mut World),
     {
         self.context.update(delta_time);
         self.debug_overlay.update(delta_time);
-        update(&mut self.context, &mut self.world);
+
+        let active: Vec<SceneId> = self.scene_manager.active_scenes().to_vec();
+        for scene_id in active {
+            if let Some(world) = self.scene_manager.get_scene_mut(scene_id) {
+                update(&mut self.context, world);
+            }
+        }
     }
 
     /// Returns the current FPS statistics from the debug overlay.
@@ -341,7 +419,7 @@ impl std::fmt::Debug for GoudGame {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("GoudGame")
             .field("config", &self.config)
-            .field("entity_count", &self.world.entity_count())
+            .field("entity_count", &self.entity_count())
             .field("initialized", &self.initialized)
             .finish()
     }

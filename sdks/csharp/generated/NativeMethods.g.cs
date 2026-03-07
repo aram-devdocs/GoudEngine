@@ -153,6 +153,32 @@ namespace GoudEngine
         [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_context_is_valid(GoudContextId ctx);
 
+        // scene
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_scene_create(GoudContextId ctx, IntPtr name_ptr, uint name_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern GoudResult goud_scene_destroy(GoudContextId ctx, uint scene_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_scene_get_by_name(GoudContextId ctx, IntPtr name_ptr, uint name_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern GoudResult goud_scene_set_active(GoudContextId ctx, uint scene_id, [MarshalAs(UnmanagedType.U1)] bool active);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_scene_is_active(GoudContextId ctx, uint scene_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_scene_count(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern GoudResult goud_scene_set_current(GoudContextId ctx, uint scene_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_scene_get_current(GoudContextId ctx);
+
         // window
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern GoudContextId goud_window_create(uint width, uint height, [MarshalAs(UnmanagedType.LPStr)] string title);

@@ -122,6 +122,8 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/input/actions.rs",
     // collision (not yet split)
     "src/ffi/collision.rs",
+    // scene module
+    "src/ffi/scene.rs",
     // debug overlay
     "src/ffi/debug.rs",
     // error query module

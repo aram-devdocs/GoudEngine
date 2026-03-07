@@ -4,21 +4,25 @@
 //! and assets.  Multiple contexts can exist simultaneously (e.g. for multiple
 //! game instances or editor viewports).
 
+use crate::context_registry::scene::{SceneId, SceneManager};
 use crate::ecs::World;
 
-/// A single engine context containing a World and associated state.
+/// A single engine context containing scene management and associated state.
 ///
-/// Each context is isolated - it has its own entities, components, resources,
-/// and assets. Multiple contexts can exist simultaneously (e.g., for multiple
-/// game instances or editor viewports).
+/// Each context is isolated - it has its own scenes (each with its own World),
+/// components, resources, and assets. Multiple contexts can exist simultaneously
+/// (e.g., for multiple game instances or editor viewports).
 ///
 /// # Thread Safety
 ///
 /// Contexts are NOT Send or Sync - they must be used from a single thread.
 /// The registry that holds contexts IS thread-safe.
 pub struct GoudContext {
-    /// The ECS world for this context.
-    world: World,
+    /// Scene manager holding one or more isolated worlds.
+    scene_manager: SceneManager,
+
+    /// The scene currently targeted by `world()` / `world_mut()`.
+    current_scene: SceneId,
 
     /// Generation counter for this context slot.
     ///
@@ -34,22 +38,78 @@ pub struct GoudContext {
 impl GoudContext {
     /// Creates a new context with the given generation.
     pub(crate) fn new(generation: u32) -> Self {
+        let scene_manager = SceneManager::new();
+        let current_scene = scene_manager.default_scene();
         Self {
-            world: World::new(),
+            scene_manager,
+            current_scene,
             generation,
             #[cfg(test)]
             owner_thread: std::thread::current().id(),
         }
     }
 
-    /// Returns a reference to the world.
+    /// Returns a reference to the current scene's world.
     pub fn world(&self) -> &World {
-        &self.world
+        self.scene_manager
+            .get_scene(self.current_scene)
+            .expect("current scene must exist")
     }
 
-    /// Returns a mutable reference to the world.
+    /// Returns a mutable reference to the current scene's world.
     pub fn world_mut(&mut self) -> &mut World {
-        &mut self.world
+        self.scene_manager
+            .get_scene_mut(self.current_scene)
+            .expect("current scene must exist")
+    }
+
+    /// Returns a reference to the scene manager.
+    pub fn scene_manager(&self) -> &SceneManager {
+        &self.scene_manager
+    }
+
+    /// Returns a mutable reference to the scene manager.
+    pub fn scene_manager_mut(&mut self) -> &mut SceneManager {
+        &mut self.scene_manager
+    }
+
+    /// Returns the currently targeted scene ID.
+    pub fn current_scene(&self) -> SceneId {
+        self.current_scene
+    }
+
+    /// Sets the scene targeted by `world()` / `world_mut()`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `GoudError::ResourceNotFound` if the scene does not exist.
+    pub fn set_current_scene(&mut self, id: SceneId) -> Result<(), crate::core::error::GoudError> {
+        if self.scene_manager.get_scene(id).is_none() {
+            return Err(crate::core::error::GoudError::ResourceNotFound(format!(
+                "Scene id {} not found",
+                id
+            )));
+        }
+        self.current_scene = id;
+        Ok(())
+    }
+
+    /// Destroys a scene and resets the current scene to default if needed.
+    ///
+    /// If the destroyed scene was the current scene, the current scene is automatically
+    /// reset to the default scene to prevent dangling references.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the scene does not exist or if attempting to destroy
+    /// the default scene.
+    pub fn destroy_scene(&mut self, id: SceneId) -> Result<(), crate::core::error::GoudError> {
+        self.scene_manager.destroy_scene(id)?;
+        // If the destroyed scene was current, reset to default
+        if self.current_scene == id {
+            self.current_scene = self.scene_manager.default_scene();
+        }
+        Ok(())
     }
 
     /// Returns the generation of this context.
@@ -76,7 +136,8 @@ impl GoudContext {
 impl std::fmt::Debug for GoudContext {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("GoudContext")
-            .field("world", &self.world)
+            .field("scene_manager", &self.scene_manager)
+            .field("current_scene", &self.current_scene)
             .field("generation", &self.generation)
             .finish()
     }
