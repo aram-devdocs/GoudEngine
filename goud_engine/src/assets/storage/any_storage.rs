@@ -51,6 +51,14 @@ pub trait AnyAssetStorage: Send + Sync {
     /// Returns as mutable `Any` for downcasting.
     fn as_any_mut(&mut self) -> &mut dyn Any;
 
+    /// Returns whether this storage contains an asset loaded from the given path.
+    fn has_path_erased(&self, path: &str) -> bool;
+
+    /// Replaces a loaded asset found by path with a new type-erased value.
+    ///
+    /// Returns `true` if the asset was found by path and successfully replaced.
+    fn replace_by_path(&mut self, path: &str, boxed: Box<dyn std::any::Any + Send>) -> bool;
+
     /// Sets a loaded asset from a type-erased boxed value.
     ///
     /// The `boxed` value must downcast to the correct asset type.
@@ -132,6 +140,21 @@ impl<A: Asset> AnyAssetStorage for TypedAssetStorage<A> {
 
     fn as_any_mut(&mut self) -> &mut dyn Any {
         self
+    }
+
+    fn has_path_erased(&self, path: &str) -> bool {
+        self.has_path(path)
+    }
+
+    fn replace_by_path(&mut self, path: &str, boxed: Box<dyn std::any::Any + Send>) -> bool {
+        if let Some(handle) = self.get_handle_by_path(path) {
+            match boxed.downcast::<A>() {
+                Ok(asset) => self.set_loaded(&handle, *asset),
+                Err(_) => false,
+            }
+        } else {
+            false
+        }
     }
 
     fn set_loaded_raw(

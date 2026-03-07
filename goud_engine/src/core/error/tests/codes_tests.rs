@@ -86,7 +86,7 @@ fn test_error_codes_within_category_bounds() {
 fn test_unknown_category_for_out_of_range() {
     assert_eq!(error_category(-1), "Unknown");
     assert_eq!(error_category(1000), "Unknown");
-    assert_eq!(error_category(700), "Unknown");
+    assert_eq!(error_category(800), "Unknown");
 }
 
 #[test]

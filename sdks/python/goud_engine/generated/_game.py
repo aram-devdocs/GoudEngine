@@ -696,3 +696,80 @@ class GoudContext:
     def scene_get_current(self):
         """Returns the currently targeted scene ID"""
         return self._lib.goud_scene_get_current(self._ctx)
+
+
+class EngineConfig:
+    """Builder for configuring and creating a GoudGame instance with provider selection."""
+
+    def __init__(self):
+        lib = get_lib()
+        self._lib = lib
+        self._handle = lib.goud_engine_config_create()
+
+    def __del__(self):
+        self.destroy()
+
+    def set_title(self, title):
+        """Sets the window title"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
+        self._lib.goud_engine_config_set_title(self._handle, title.encode('utf-8'))
+        return self
+
+    def set_size(self, width, height):
+        """Sets the window size in pixels"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
+        self._lib.goud_engine_config_set_size(self._handle, width, height)
+        return self
+
+    def set_vsync(self, enabled):
+        """Enables or disables vertical sync"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
+        self._lib.goud_engine_config_set_vsync(self._handle, enabled)
+        return self
+
+    def set_fullscreen(self, enabled):
+        """Enables or disables fullscreen mode"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
+        self._lib.goud_engine_config_set_fullscreen(self._handle, enabled)
+        return self
+
+    def set_target_fps(self, fps):
+        """Sets the target frames per second"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
+        self._lib.goud_engine_config_set_target_fps(self._handle, fps)
+        return self
+
+    def set_fps_overlay(self, enabled):
+        """Enables or disables the FPS debug overlay"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
+        self._lib.goud_engine_config_set_fps_overlay(self._handle, enabled)
+        return self
+
+    def build(self):
+        """Consumes the config and creates a windowed GoudGame instance"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed')
+        ctx = self._lib.goud_engine_create(self._handle)
+        self._handle = None
+        if ctx._bits == 0xFFFFFFFFFFFFFFFF:
+            raise RuntimeError('Failed to create engine context from EngineConfig')
+        game = GoudGame.__new__(GoudGame)
+        game._lib = self._lib
+        game._ctx = ctx
+        game._delta_time = 0.0
+        game._title = ''
+        game._frame_count = 0
+        game._total_time = 0.0
+        return game
+
+    def destroy(self):
+        """Frees the config without building"""
+        if hasattr(self, '_handle') and self._handle:
+            self._lib.goud_engine_config_destroy(self._handle)
+            self._handle = None

@@ -15,7 +15,9 @@ use crate::libs::platform::PlatformBackend;
 #[cfg(feature = "native")]
 use crate::rendering::sprite_batch::SpriteBatch;
 
+use crate::core::providers::ProviderRegistry;
 use crate::sdk::debug_overlay::{DebugOverlay, FpsStats};
+use crate::sdk::engine_config::EngineConfig;
 use crate::sdk::entity_builder::EntityBuilder;
 use crate::sdk::game_config::{GameConfig, GameContext};
 
@@ -48,6 +50,9 @@ pub struct GoudGame {
 
     /// Debug overlay for FPS stats tracking.
     pub(crate) debug_overlay: DebugOverlay,
+
+    /// Provider registry for subsystem backends (render, physics, audio, input).
+    pub(crate) providers: ProviderRegistry,
 
     // =========================================================================
     // Native-only fields (require windowing + OpenGL)
@@ -97,6 +102,7 @@ impl GoudGame {
             context: GameContext::new(window_size),
             initialized: false,
             debug_overlay,
+            providers: ProviderRegistry::default(),
             #[cfg(feature = "native")]
             platform: None,
             #[cfg(feature = "native")]
@@ -151,6 +157,7 @@ impl GoudGame {
             context: GameContext::new(window_size),
             initialized: false,
             debug_overlay,
+            providers: ProviderRegistry::default(),
             platform: Some(Box::new(platform)),
             render_backend: None,
             input_manager: InputManager::default(),
@@ -406,6 +413,29 @@ impl GoudGame {
     #[inline]
     pub fn is_initialized(&self) -> bool {
         self.initialized
+    }
+
+    /// Creates a headless game from an [`EngineConfig`] builder.
+    pub fn from_engine_config(config: EngineConfig) -> GoudResult<Self> {
+        let (game_config, providers) = config.build();
+        let mut game = Self::new(game_config)?;
+        game.providers = providers;
+        Ok(game)
+    }
+
+    /// Creates a windowed game from an [`EngineConfig`] builder.
+    #[cfg(feature = "native")]
+    pub fn from_engine_config_with_platform(config: EngineConfig) -> GoudResult<Self> {
+        let (game_config, providers) = config.build();
+        let mut game = Self::with_platform(game_config)?;
+        game.providers = providers;
+        Ok(game)
+    }
+
+    /// Returns a reference to the provider registry.
+    #[inline]
+    pub fn providers(&self) -> &ProviderRegistry {
+        &self.providers
     }
 }
 

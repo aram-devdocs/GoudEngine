@@ -215,6 +215,7 @@ pub const ERR_PROVIDER_OPERATION_FAILED: GoudErrorCode = 602;
 // 620-629: Audio provider errors
 // 630-639: Window provider errors
 // 640-649: Input provider errors
+// 700-709: Reserved for future use (network provider uses generic ProviderError)
 
 // -----------------------------------------------------------------------------
 // Internal Errors (900-999): Unexpected internal errors
