@@ -124,6 +124,13 @@ def _ffi_fn_def(ffi_fn_name: str) -> dict:
     return {}
 
 
+def _ffi_uses_ptr_len(ffi_fn_name: str) -> bool:
+    """Check if the FFI function uses *const u8 ptr+len for string params."""
+    fdef = _ffi_fn_def(ffi_fn_name)
+    param_types = [p.get("type", "") for p in fdef.get("params", [])]
+    return "*const u8" in param_types
+
+
 def _enum_cs_name(key: str) -> str:
     if key == "Key":
         return "Keys"
@@ -914,6 +921,34 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                   f"                    return NativeMethods.{ffi_fn}(typeIdHash, (IntPtr)np, (nuint)nameBytes.Length, size, align);",
                   "                }",
                   "            }"]
+            return
+        # Generic string param marshalling: string -> UTF8 ptr + len
+        # Only applies when the FFI function uses *const u8 (ptr+len), not *const c_char
+        string_params = [p for p in params if p["type"] == "string"]
+        if string_params and _ffi_uses_ptr_len(ffi_fn):
+            non_string = [p for p in params if p["type"] != "string"]
+            L.append("            unsafe")
+            L.append("            {")
+            byte_vars = []
+            fixed_lines = []
+            ffi_arg_parts = [] if no_ctx else ["_ctx"]
+            for p in params:
+                if p["type"] == "string":
+                    bvar = f"{p['name']}Bytes"
+                    pvar = f"{p['name']}Ptr"
+                    L.append(f"                var {bvar} = System.Text.Encoding.UTF8.GetBytes({p['name']});")
+                    fixed_lines.append(f"byte* {pvar} = {bvar}")
+                    ffi_arg_parts.append(f"(IntPtr){pvar}")
+                    ffi_arg_parts.append(f"(uint){bvar}.Length")
+                else:
+                    ffi_arg_parts.append(p["name"])
+            fixed_expr = "\n                ".join(f"fixed ({fl})" for fl in fixed_lines)
+            L.append(f"                {fixed_expr}")
+            L.append("                {")
+            call = f"NativeMethods.{ffi_fn}({', '.join(ffi_arg_parts)});"
+            L.append(f"                    {'return ' if ret != 'void' else ''}{call}")
+            L.append("                }")
+            L.append("            }")
             return
         ffi_args = ", ".join(p["name"] for p in params)
         all_args = ffi_args if no_ctx else (f"_ctx, {ffi_args}" if ffi_args else "_ctx")

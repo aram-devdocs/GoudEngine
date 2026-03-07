@@ -78,6 +78,7 @@ pub mod input;
 pub mod rendering;
 #[cfg(feature = "native")]
 pub mod rendering_3d;
+pub mod scene;
 #[cfg(feature = "native")]
 pub mod texture;
 #[cfg(feature = "native")]
@@ -92,6 +93,7 @@ pub use crate::ecs::{Component, Entity, EntityAllocator, SparseSet, World};
 pub use entity_builder::EntityBuilder;
 pub use game::GoudGame;
 pub use game_config::{GameConfig, GameContext};
+pub use scene::{SceneId, SceneManager};
 
 // Re-export components module contents at sdk level for convenience
 // Note: We explicitly re-export to avoid shadowing issues
@@ -139,7 +141,10 @@ pub mod prelude {
     pub use crate::ecs::{Component, Entity, World};
 
     // SDK types
-    pub use super::{EntityBuilder, GameConfig, GameContext, GoudError, GoudGame, GoudResult};
+    pub use super::{
+        EntityBuilder, GameConfig, GameContext, GoudError, GoudGame, GoudResult, SceneId,
+        SceneManager,
+    };
 
     // Components - explicitly list to avoid shadowing
     pub use super::components::{

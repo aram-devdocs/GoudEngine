@@ -146,6 +146,68 @@ fn test_goud_game_debug() {
 }
 
 // =========================================================================
+// Active Scene Update Tests
+// =========================================================================
+
+#[test]
+fn test_run_updates_all_active_scenes() {
+    let mut game = GoudGame::default();
+    let scene_b = game.create_scene("b").unwrap();
+    game.set_scene_active(scene_b, true).unwrap();
+
+    // Both default and scene_b are active.
+    assert_eq!(game.scene_manager().active_scenes().len(), 2);
+
+    // Each callback invocation spawns an entity in the world it receives.
+    game.run(|ctx, world| {
+        world.spawn_empty();
+        if ctx.frame_count() >= 1 {
+            ctx.quit();
+        }
+    });
+
+    // After 1 frame, both scenes should have 1 entity each.
+    let default_id = game.scene_manager().default_scene();
+    assert_eq!(game.scene(default_id).unwrap().entity_count(), 1);
+    assert_eq!(game.scene(scene_b).unwrap().entity_count(), 1);
+}
+
+#[test]
+fn test_inactive_scene_not_updated() {
+    let mut game = GoudGame::default();
+    let scene_b = game.create_scene("b").unwrap();
+    // scene_b is NOT activated -- only default is active.
+
+    game.update_frame(0.016, |_ctx, world| {
+        world.spawn_empty();
+    });
+
+    let default_id = game.scene_manager().default_scene();
+    assert_eq!(game.scene(default_id).unwrap().entity_count(), 1);
+    assert_eq!(game.scene(scene_b).unwrap().entity_count(), 0);
+}
+
+#[test]
+fn test_game_hud_simultaneous() {
+    let mut game = GoudGame::default();
+    let hud = game.create_scene("hud").unwrap();
+    game.set_scene_active(hud, true).unwrap();
+
+    // Run 3 frames, each spawns an entity per active world.
+    game.run(|ctx, world| {
+        world.spawn_empty();
+        if ctx.frame_count() >= 3 {
+            ctx.quit();
+        }
+    });
+
+    let default_id = game.scene_manager().default_scene();
+    // Each scene gets 3 entities (one per frame).
+    assert_eq!(game.scene(default_id).unwrap().entity_count(), 3);
+    assert_eq!(game.scene(hud).unwrap().entity_count(), 3);
+}
+
+// =========================================================================
 // Integration Tests
 // =========================================================================
 
