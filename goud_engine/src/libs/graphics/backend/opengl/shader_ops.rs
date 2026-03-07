@@ -1,7 +1,7 @@
 //! OpenGL shader compile/link/destroy/bind operations and uniform setters.
 
 use super::{backend::OpenGLBackend, gl_check_debug, ShaderMetadata};
-use crate::core::error::{GoudError, GoudResult};
+use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::ShaderHandle;
 use std::collections::HashMap;
 use std::sync::Mutex;

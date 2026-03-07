@@ -3,7 +3,8 @@
 use super::{
     super::BackendCapabilities, super::BackendInfo, BufferMetadata, ShaderMetadata, TextureMetadata,
 };
-use crate::core::{error::GoudError, error::GoudResult, handle::HandleAllocator};
+use crate::core::handle::HandleAllocator;
+use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::{
     BufferHandle, BufferMarker, ShaderHandle, ShaderMarker, TextureHandle, TextureMarker,
 };

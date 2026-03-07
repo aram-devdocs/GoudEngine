@@ -1,7 +1,7 @@
 //! Shader compilation, linking, and shader section of the RenderBackend impl.
 
 use super::{init::UNIFORM_BUFFER_SIZE, ShaderHandle, VertexLayout, WgpuBackend, WgpuShaderMeta};
-use crate::core::error::{GoudError, GoudResult};
+use crate::libs::error::{GoudError, GoudResult};
 use std::collections::HashMap;
 
 impl WgpuBackend {

@@ -5,7 +5,7 @@ use super::{
     conversions::{buffer_type_to_gl_target, buffer_usage_to_gl_usage},
     gl_check_debug, BufferMetadata,
 };
-use crate::core::error::{GoudError, GoudResult};
+use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::{BufferHandle, BufferType, BufferUsage};
 
 /// Creates a GPU buffer with the specified type, usage, and initial data.

@@ -4,7 +4,7 @@ use super::{
     init::UNIFORM_BUFFER_SIZE, DrawCommand, DrawType, PipelineKey, PrimitiveTopology,
     TextureHandle, WgpuBackend,
 };
-use crate::core::error::{GoudError, GoudResult};
+use crate::libs::error::{GoudError, GoudResult};
 
 impl WgpuBackend {
     /// Snapshots currently bound textures as `(unit, handle)` pairs.

@@ -7,7 +7,7 @@ use super::{
     },
     gl_check_debug, TextureMetadata,
 };
-use crate::core::error::{GoudError, GoudResult};
+use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::{
     TextureFilter, TextureFormat, TextureHandle, TextureWrap,
 };

@@ -17,6 +17,7 @@
 /// - **Entity**: ECS entity and component errors (codes 300-399)
 /// - **Input**: Input handling errors (codes 400-499)
 /// - **System**: Platform and system errors (codes 500-599)
+/// - **Provider**: Provider subsystem errors (codes 600-699)
 /// - **Internal**: Unexpected internal errors (codes 900-999)
 ///
 /// # FFI Compatibility
@@ -380,6 +381,21 @@ pub enum GoudError {
     ///
     /// Check the error message for platform-specific details and consult OS documentation.
     PlatformError(String),
+
+    // -------------------------------------------------------------------------
+    // Provider Errors (codes 600-699)
+    // -------------------------------------------------------------------------
+    /// Provider subsystem error.
+    ///
+    /// This error occurs when a provider operation fails. The `subsystem`
+    /// field identifies which provider category (e.g., "render", "physics",
+    /// "audio") encountered the error, enabling FFI error code routing.
+    ProviderError {
+        /// The provider subsystem that encountered the error.
+        subsystem: &'static str,
+        /// Details about the failure.
+        message: String,
+    },
 
     // -------------------------------------------------------------------------
     // Internal Errors (codes 900-999)
