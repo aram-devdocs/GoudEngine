@@ -5,7 +5,7 @@ use super::{
     backend::OpenGLBackend,
     conversions, gl_check_debug,
 };
-use crate::core::error::GoudResult;
+use crate::libs::error::GoudResult;
 use crate::libs::graphics::backend::types::{DepthFunc, FrontFace};
 
 impl RenderBackend for OpenGLBackend {

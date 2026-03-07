@@ -1,7 +1,7 @@
 //! OpenGL draw call dispatch and vertex attribute setup.
 
 use super::{backend::OpenGLBackend, conversions, gl_check_debug};
-use crate::core::error::{GoudError, GoudResult};
+use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::{PrimitiveTopology, VertexLayout};
 
 /// Sets up vertex attribute pointers for the currently bound vertex buffer.

@@ -32,8 +32,8 @@ mod tests_batch_alive;
 
 // Re-export all public FFI functions so existing callers see the same API.
 pub use lifecycle::{
-    goud_entity_despawn, goud_entity_despawn_batch, goud_entity_spawn_batch,
-    goud_entity_spawn_empty,
+    goud_entity_clone, goud_entity_clone_recursive, goud_entity_despawn, goud_entity_despawn_batch,
+    goud_entity_spawn_batch, goud_entity_spawn_empty,
 };
 pub use queries::{goud_entity_count, goud_entity_is_alive, goud_entity_is_alive_batch};
 

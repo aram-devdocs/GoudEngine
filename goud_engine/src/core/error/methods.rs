@@ -66,6 +66,9 @@ impl GoudError {
             GoudError::PhysicsInitFailed(_) => ERR_PHYSICS_INIT_FAILED,
             GoudError::PlatformError(_) => ERR_PLATFORM_ERROR,
 
+            // Provider errors (600-699)
+            GoudError::ProviderError { .. } => ERR_PROVIDER_OPERATION_FAILED,
+
             // Internal errors (900-999)
             GoudError::InternalError(_) => ERR_INTERNAL_ERROR,
             GoudError::NotImplemented(_) => ERR_NOT_IMPLEMENTED,
@@ -148,6 +151,9 @@ impl GoudError {
             GoudError::AudioInitFailed(msg) => msg,
             GoudError::PhysicsInitFailed(msg) => msg,
             GoudError::PlatformError(msg) => msg,
+
+            // Provider errors
+            GoudError::ProviderError { message, .. } => message,
 
             // Internal errors
             GoudError::InternalError(msg) => msg,

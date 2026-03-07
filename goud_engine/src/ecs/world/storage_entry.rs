@@ -10,6 +10,12 @@ use super::super::Component;
 /// component type at runtime.
 pub(super) type RemoveEntityFn = fn(storage: &mut dyn Any, entity: Entity) -> bool;
 
+/// Type-erased function pointer for cloning a component from one entity to another.
+///
+/// Returns `true` if the source entity had the component and it was cloned
+/// to the target entity.
+pub(super) type CloneToFn = fn(storage: &mut dyn Any, source: Entity, target: Entity) -> bool;
+
 /// Internal wrapper for type-erased component storage.
 ///
 /// This struct allows us to:
@@ -26,6 +32,11 @@ pub(super) struct ComponentStorageEntry {
     /// Function pointer to remove an entity from this storage.
     /// Returns true if a component was removed.
     remove_entity_fn: RemoveEntityFn,
+
+    /// Optional function pointer for cloning a component between entities.
+    /// Only set for component types registered as cloneable via
+    /// `World::register_cloneable`.
+    clone_to_fn: Option<CloneToFn>,
 }
 
 impl ComponentStorageEntry {
@@ -34,6 +45,7 @@ impl ComponentStorageEntry {
         Self {
             storage: Box::new(SparseSet::<T>::new()),
             remove_entity_fn: Self::remove_entity_impl::<T>,
+            clone_to_fn: None,
         }
     }
 
@@ -61,6 +73,43 @@ impl ComponentStorageEntry {
     /// Returns `true` if the entity had a component that was removed.
     pub(super) fn remove_entity(&mut self, entity: Entity) -> bool {
         (self.remove_entity_fn)(self.storage.as_mut(), entity)
+    }
+
+    /// Registers a clone function for component type `T`.
+    ///
+    /// After calling this, `clone_to` can copy components of type `T`
+    /// between entities without knowing the concrete type at the call site.
+    pub(super) fn set_clone_fn<T: Component + Clone>(&mut self) {
+        self.clone_to_fn = Some(Self::clone_to_impl::<T>);
+    }
+
+    /// Type-erased implementation of component cloning for `SparseSet<T>`.
+    fn clone_to_impl<T: Component + Clone>(
+        storage: &mut dyn Any,
+        source: Entity,
+        target: Entity,
+    ) -> bool {
+        if let Some(sparse_set) = storage.downcast_mut::<SparseSet<T>>() {
+            if let Some(component) = sparse_set.get(source).cloned() {
+                sparse_set.insert(target, component);
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Clones a component from `source` to `target` using the registered
+    /// clone function.
+    ///
+    /// Returns `true` if the component was cloned. Returns `false` if:
+    /// - No clone function has been registered for this storage
+    /// - The source entity does not have this component
+    pub(super) fn clone_to(&mut self, source: Entity, target: Entity) -> bool {
+        if let Some(clone_fn) = self.clone_to_fn {
+            (clone_fn)(self.storage.as_mut(), source, target)
+        } else {
+            false
+        }
     }
 }
 

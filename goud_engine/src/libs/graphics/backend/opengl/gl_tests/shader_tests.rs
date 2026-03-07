@@ -1,6 +1,6 @@
 //! Tests for OpenGL shader operations (require GL context).
 
-use crate::core::error::GoudError;
+use crate::libs::error::GoudError;
 use crate::libs::graphics::backend::opengl::backend::OpenGLBackend;
 use crate::libs::graphics::backend::types::ShaderHandle;
 use crate::libs::graphics::backend::RenderBackend;

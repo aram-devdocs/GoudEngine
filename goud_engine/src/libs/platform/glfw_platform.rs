@@ -9,9 +9,9 @@
 //! GLFW must be used from the main thread only. The [`GlfwPlatform`] is
 //! neither `Send` nor `Sync` by design.
 
-use crate::core::error::{GoudError, GoudResult};
 use crate::core::input_manager::InputManager;
 use crate::core::math::Vec2;
+use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::platform::{PlatformBackend, WindowConfig};
 
 use glfw::{Action, Context, Glfw, GlfwReceiver, PWindow, WindowEvent, WindowMode};

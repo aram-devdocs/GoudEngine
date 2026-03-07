@@ -94,6 +94,9 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/component_transform2d/scale.rs",
     "src/ffi/component_transform2d/direction.rs",
     "src/ffi/component_transform2d/matrix_ops.rs",
+    // component_sprite_animator module
+    "src/ffi/component_sprite_animator/factory.rs",
+    "src/ffi/component_sprite_animator/playback.rs",
     // component_sprite module
     "src/ffi/component_sprite/factory.rs",
     "src/ffi/component_sprite/builder.rs",

@@ -1,7 +1,7 @@
 //! Buffer operations: create, update, destroy, bind, unbind.
 
 use super::{super::types::BufferUsage, BufferHandle, BufferType, WgpuBackend, WgpuBufferMeta};
-use crate::core::error::{GoudError, GoudResult};
+use crate::libs::error::{GoudError, GoudResult};
 
 impl WgpuBackend {
     pub(super) fn create_buffer_impl(

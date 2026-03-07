@@ -4,7 +4,7 @@ use super::{
     super::types::{TextureFilter, TextureFormat, TextureWrap},
     TextureHandle, WgpuBackend, WgpuTextureMeta,
 };
-use crate::core::error::{GoudError, GoudResult};
+use crate::libs::error::{GoudError, GoudResult};
 
 impl WgpuBackend {
     pub(super) fn create_texture_impl(

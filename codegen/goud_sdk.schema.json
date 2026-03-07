@@ -1632,6 +1632,122 @@
         ]
       }
     },
+    "SpriteAnimator": {
+      "kind": "component",
+      "doc": "Sprite sheet animation component",
+      "fields": [
+        {
+          "name": "currentFrame",
+          "type": "u32",
+          "doc": "Index of the current frame"
+        },
+        {
+          "name": "elapsed",
+          "type": "f32",
+          "doc": "Accumulated time since last frame advance (seconds)"
+        },
+        {
+          "name": "playing",
+          "type": "bool",
+          "doc": "Whether the animation is currently playing"
+        },
+        {
+          "name": "finished",
+          "type": "bool",
+          "doc": "Whether a OneShot animation has completed"
+        },
+        {
+          "name": "frameDuration",
+          "type": "f32",
+          "doc": "Seconds per frame"
+        },
+        {
+          "name": "mode",
+          "type": "PlaybackMode",
+          "doc": "Playback mode (Loop or OneShot)"
+        },
+        {
+          "name": "frameCount",
+          "type": "u32",
+          "doc": "Total number of frames in the clip"
+        }
+      ],
+      "methods": [
+        {
+          "name": "getCurrentFrame",
+          "doc": "Returns the current frame index",
+          "params": [],
+          "returns": "u32"
+        },
+        {
+          "name": "isPlaying",
+          "doc": "Returns whether the animation is currently playing",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "isFinished",
+          "doc": "Returns whether the animation has finished (OneShot only)",
+          "params": [],
+          "returns": "bool"
+        }
+      ],
+      "builder": {
+        "doc": "Fluent builder for constructing SpriteAnimator instances via animation clips",
+        "methods": [
+          {
+            "name": "new",
+            "doc": "Creates a new animation clip builder",
+            "params": [
+              {
+                "name": "frameDuration",
+                "type": "f32"
+              },
+              {
+                "name": "mode",
+                "type": "PlaybackMode"
+              }
+            ],
+            "returns": "AnimationClipBuilder"
+          },
+          {
+            "name": "addFrame",
+            "doc": "Adds a source rectangle frame to the animation",
+            "params": [
+              {
+                "name": "x",
+                "type": "f32"
+              },
+              {
+                "name": "y",
+                "type": "f32"
+              },
+              {
+                "name": "w",
+                "type": "f32"
+              },
+              {
+                "name": "h",
+                "type": "f32"
+              }
+            ],
+            "returns": "AnimationClipBuilder"
+          },
+          {
+            "name": "build",
+            "doc": "Builds the SpriteAnimator and consumes the builder",
+            "params": [],
+            "returns": "SpriteAnimator"
+          },
+          {
+            "name": "free",
+            "doc": "Frees the builder without building",
+            "params": [],
+            "returns": "void"
+          }
+        ]
+      }
+    },
     "RenderStats": {
       "kind": "value",
       "doc": "Per-frame rendering statistics",
@@ -1997,6 +2113,14 @@
         "Renderer2D": 0,
         "Renderer3D": 1
       }
+    },
+    "PlaybackMode": {
+      "doc": "Animation playback mode",
+      "underlying": "i32",
+      "values": {
+        "Loop": 0,
+        "OneShot": 1
+      }
     }
   },
   "mixins": {
@@ -2242,6 +2366,32 @@
           "returns": "u32",
           "wasm_name": "despawn_batch",
           "wasm_signature": "despawn_batch(bits: BigUint64Array): number"
+        },
+        {
+          "name": "cloneEntity",
+          "doc": "Clones an entity, creating a new entity with copies of all cloneable components",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "Entity",
+          "wasm_name": "clone_entity",
+          "wasm_signature": "clone_entity(bits: bigint): bigint"
+        },
+        {
+          "name": "cloneEntityRecursive",
+          "doc": "Clones an entity and all its descendants recursively",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "Entity",
+          "wasm_name": "clone_entity_recursive",
+          "wasm_signature": "clone_entity_recursive(bits: bigint): bigint"
         },
         {
           "name": "entityCount",
@@ -2798,6 +2948,14 @@
         {
           "$ref": "EcsMethods",
           "name": "despawn"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "cloneEntity"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "cloneEntityRecursive"
         },
         {
           "$ref": "EcsMethods",
@@ -3884,6 +4042,12 @@
           "method": "despawnBatch"
         },
         {
+          "method": "cloneEntity"
+        },
+        {
+          "method": "cloneEntityRecursive"
+        },
+        {
           "method": "entityCount"
         },
         {
@@ -4054,6 +4218,14 @@
         {
           "$ref": "EcsMethods",
           "name": "despawnBatch"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "cloneEntity"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "cloneEntityRecursive"
         },
         {
           "$ref": "EcsMethods",

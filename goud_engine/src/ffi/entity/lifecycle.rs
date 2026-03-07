@@ -268,3 +268,129 @@ pub unsafe extern "C" fn goud_entity_despawn_batch(
     let world = context.world_mut();
     world.despawn_batch(&entities) as u32
 }
+
+// ============================================================================
+// Clone functions
+// ============================================================================
+
+/// Clones an entity, creating a new entity with copies of all cloneable components.
+///
+/// Components that have not been registered as cloneable (via
+/// `register_cloneable`) are silently skipped. Built-in engine components
+/// are automatically registered before cloning.
+///
+/// Hierarchy relationships (`Parent` / `Children`) are **not** preserved on
+/// the clone — use [`goud_entity_clone_recursive`] to clone an entire subtree.
+///
+/// # Arguments
+///
+/// * `context_id` - The context containing the entity
+/// * `entity_id` - The entity to clone
+///
+/// # Returns
+///
+/// The new entity ID on success, or `GOUD_INVALID_ENTITY_ID` on failure
+/// (e.g., invalid context, invalid entity, or the entity does not exist).
+///
+/// # Thread Safety
+///
+/// Must be called from the thread that owns the context.
+#[no_mangle]
+pub extern "C" fn goud_entity_clone(context_id: GoudContextId, entity_id: u64) -> u64 {
+    use crate::ffi::context::get_context_registry;
+    use crate::ffi::GoudEntityId;
+
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return GOUD_INVALID_ENTITY_ID;
+    }
+
+    if entity_id == GOUD_INVALID_ENTITY_ID {
+        set_last_error(GoudError::EntityNotFound);
+        return GOUD_INVALID_ENTITY_ID;
+    }
+
+    let mut registry = match get_context_registry().lock() {
+        Ok(r) => r,
+        Err(_) => return GOUD_INVALID_ENTITY_ID,
+    };
+    let context = match registry.get_mut(context_id) {
+        Some(guard) => guard,
+        None => {
+            set_last_error(GoudError::InvalidContext);
+            return GOUD_INVALID_ENTITY_ID;
+        }
+    };
+
+    let entity = Entity::from_bits(GoudEntityId::new(entity_id).bits());
+    let world = context.world_mut();
+    world.register_builtin_cloneables();
+
+    match world.clone_entity(entity) {
+        Some(cloned) => cloned.to_bits(),
+        None => {
+            set_last_error(GoudError::EntityNotFound);
+            GOUD_INVALID_ENTITY_ID
+        }
+    }
+}
+
+/// Clones an entity and all its descendants recursively.
+///
+/// Creates a deep copy of the entity and its entire hierarchy subtree.
+/// Each cloned child is re-parented under the corresponding cloned parent,
+/// preserving the tree structure. Built-in engine components are
+/// automatically registered as cloneable before cloning.
+///
+/// # Arguments
+///
+/// * `context_id` - The context containing the entity
+/// * `entity_id` - The root entity to clone recursively
+///
+/// # Returns
+///
+/// The new root entity ID on success, or `GOUD_INVALID_ENTITY_ID` on failure
+/// (e.g., invalid context, invalid entity, or the entity does not exist).
+///
+/// # Thread Safety
+///
+/// Must be called from the thread that owns the context.
+#[no_mangle]
+pub extern "C" fn goud_entity_clone_recursive(context_id: GoudContextId, entity_id: u64) -> u64 {
+    use crate::ffi::context::get_context_registry;
+    use crate::ffi::GoudEntityId;
+
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return GOUD_INVALID_ENTITY_ID;
+    }
+
+    if entity_id == GOUD_INVALID_ENTITY_ID {
+        set_last_error(GoudError::EntityNotFound);
+        return GOUD_INVALID_ENTITY_ID;
+    }
+
+    let mut registry = match get_context_registry().lock() {
+        Ok(r) => r,
+        Err(_) => return GOUD_INVALID_ENTITY_ID,
+    };
+    let context = match registry.get_mut(context_id) {
+        Some(guard) => guard,
+        None => {
+            set_last_error(GoudError::InvalidContext);
+            return GOUD_INVALID_ENTITY_ID;
+        }
+    };
+
+    let entity = Entity::from_bits(GoudEntityId::new(entity_id).bits());
+    let world = context.world_mut();
+    world.register_builtin_cloneables();
+
+    match world.clone_entity_recursive(entity) {
+        Some(cloned) => cloned.to_bits(),
+        None => {
+            set_last_error(GoudError::EntityNotFound);
+            GOUD_INVALID_ENTITY_ID
+        }
+    }
+}
