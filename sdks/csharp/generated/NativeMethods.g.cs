@@ -906,5 +906,168 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_error_recovery_hint(int code, IntPtr buf, nuint buf_len);
 
+        // physics2d
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_create(GoudContextId ctx, float gx, float gy);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_destroy(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_set_gravity(GoudContextId ctx, float x, float y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_physics_add_rigid_body(GoudContextId ctx, uint body_type, float x, float y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_physics_add_collider(GoudContextId ctx, ulong body_handle, uint shape_type, float width, float height, float radius);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_remove_body(GoudContextId ctx, ulong handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_step(GoudContextId ctx, float dt);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_get_position(GoudContextId ctx, ulong handle, ref float out_x, ref float out_y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_get_velocity(GoudContextId ctx, ulong handle, ref float out_x, ref float out_y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_set_velocity(GoudContextId ctx, ulong handle, float vx, float vy);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_apply_force(GoudContextId ctx, ulong handle, float fx, float fy);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_apply_impulse(GoudContextId ctx, ulong handle, float ix, float iy);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_raycast(GoudContextId ctx, float ox, float oy, float dx, float dy, float max_dist, ref float out_hit_x, ref float out_hit_y);
+
+        // physics3d
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_create(GoudContextId ctx, float gx, float gy, float gz);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_destroy(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_set_gravity(GoudContextId ctx, float x, float y, float z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_physics3d_add_rigid_body(GoudContextId ctx, uint body_type, float x, float y, float z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_physics3d_add_collider(GoudContextId ctx, ulong body_handle, uint shape_type, float hx, float hy, float hz, float radius);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_remove_body(GoudContextId ctx, ulong handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_step(GoudContextId ctx, float dt);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_get_position(GoudContextId ctx, ulong handle, ref float out_x, ref float out_y, ref float out_z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_set_velocity(GoudContextId ctx, ulong handle, float vx, float vy, float vz);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_apply_force(GoudContextId ctx, ulong handle, float fx, float fy, float fz);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_apply_impulse(GoudContextId ctx, ulong handle, float ix, float iy, float iz);
+
+        // animation_controller
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_controller_create(GoudContextId ctx, ulong entity_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_controller_add_state(GoudContextId ctx, ulong entity_id, IntPtr state_name_ptr, int state_name_len, int clip_index);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_controller_add_transition(GoudContextId ctx, ulong entity_id, IntPtr from_ptr, int from_len, IntPtr to_ptr, int to_len, IntPtr trigger_ptr, int trigger_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_controller_set_state(GoudContextId ctx, ulong entity_id, IntPtr state_ptr, int state_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_controller_get_state(GoudContextId ctx, ulong entity_id, IntPtr out_buf, int buf_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_controller_update(GoudContextId ctx, ulong entity_id, float dt);
+
+        // tween
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_tween_create(GoudContextId ctx, float start, float end, float duration, int easing_type);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_tween_update(GoudContextId ctx, long handle, float dt);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_tween_value(GoudContextId ctx, long handle, ref float out_value);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_tween_is_complete(GoudContextId ctx, long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_tween_reset(GoudContextId ctx, long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_tween_destroy(GoudContextId ctx, long handle);
+
+        // skeleton
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_skeleton_create(GoudContextId ctx, ulong entity_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_skeleton_add_bone(GoudContextId ctx, ulong entity_id, IntPtr bone_name_ptr, int bone_name_len, int parent_index, float x, float y, float rotation);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_skeleton_set_bone_transform(GoudContextId ctx, ulong entity_id, int bone_index, float x, float y, float rotation);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_skeleton_play_clip(GoudContextId ctx, ulong entity_id, IntPtr clip_name_ptr, int clip_name_len, [MarshalAs(UnmanagedType.U1)] bool looping);
+
+        // network
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_network_host(GoudContextId ctx, int protocol, u16 port);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_network_connect(GoudContextId ctx, int protocol, IntPtr addr_ptr, int addr_len, u16 port);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_network_disconnect(GoudContextId ctx, long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_network_send(GoudContextId ctx, long handle, ulong peer_id, IntPtr data_ptr, int data_len, byte channel);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_network_receive(GoudContextId ctx, long handle, IntPtr out_buf, int buf_len, ref ulong out_peer_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_network_poll(GoudContextId ctx, long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_network_get_stats(GoudContextId ctx, long handle, ref ulong out_bytes_sent, ref ulong out_bytes_recv, ref ulong out_packets_sent, ref ulong out_packets_recv);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_network_peer_count(GoudContextId ctx, long handle);
+
+        // plugin
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_plugin_register(GoudContextId ctx, IntPtr plugin_id_ptr, uint plugin_id_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_plugin_unregister(GoudContextId ctx, IntPtr plugin_id_ptr, uint plugin_id_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_plugin_is_registered(GoudContextId ctx, IntPtr plugin_id_ptr, uint plugin_id_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_plugin_list(GoudContextId ctx, IntPtr out_buf, uint buf_len);
+
     }
 }

@@ -134,3 +134,26 @@ class PlaybackMode:
     """Animation playback mode"""
     LOOP = 0
     ONE_SHOT = 1
+
+class BodyType:
+    """Type of rigid body"""
+    DYNAMIC = 0
+    STATIC = 1
+    KINEMATIC = 2
+
+class ShapeType:
+    """Collider shape type"""
+    BOX = 0
+    CIRCLE = 1
+
+class EasingType:
+    """Easing function for tweens"""
+    LINEAR = 0
+    EASE_IN_QUAD = 1
+    EASE_OUT_QUAD = 2
+    EASE_IN_OUT_QUAD = 3
+
+class NetworkProtocol:
+    """Network transport protocol"""
+    UDP = 0
+    WEB_SOCKET = 1
