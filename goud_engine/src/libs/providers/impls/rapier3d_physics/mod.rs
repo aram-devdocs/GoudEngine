@@ -4,6 +4,7 @@
 //! 3D rigid-body simulation, collision detection, raycasting, and joints.
 
 mod conversions;
+mod queries;
 #[cfg(test)]
 mod tests;
 
@@ -406,61 +407,11 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
     }
 
     fn raycast(&self, origin: [f32; 3], dir: [f32; 3], max_dist: f32) -> Option<RaycastHit3D> {
-        let ray = Ray::new(
-            point![origin[0], origin[1], origin[2]],
-            vector![dir[0], dir[1], dir[2]],
-        );
-        let filter = QueryFilter::default();
-
-        self.query_pipeline
-            .cast_ray_and_get_normal(
-                &self.rigid_body_set,
-                &self.collider_set,
-                &ray,
-                max_dist,
-                true,
-                filter,
-            )
-            .and_then(|(collider_handle, intersection)| {
-                let rb_handle = self.collider_to_body.get(&collider_handle)?;
-                let engine_id = self.body_reverse.get(rb_handle)?;
-                let hit_point = ray.point_at(intersection.time_of_impact);
-                Some(RaycastHit3D {
-                    body: BodyHandle(*engine_id),
-                    point: [hit_point.x, hit_point.y, hit_point.z],
-                    normal: [
-                        intersection.normal.x,
-                        intersection.normal.y,
-                        intersection.normal.z,
-                    ],
-                    distance: intersection.time_of_impact,
-                })
-            })
+        self.query_raycast(origin, dir, max_dist)
     }
 
     fn overlap_sphere(&self, center: [f32; 3], radius: f32) -> Vec<BodyHandle> {
-        let shape = SharedShape::ball(radius);
-        let pos = Isometry::translation(center[0], center[1], center[2]);
-        let filter = QueryFilter::default();
-        let mut results = Vec::new();
-
-        self.query_pipeline.intersections_with_shape(
-            &self.rigid_body_set,
-            &self.collider_set,
-            &pos,
-            shape.as_ref(),
-            filter,
-            |collider_handle| {
-                if let Some(rb_handle) = self.collider_to_body.get(&collider_handle) {
-                    if let Some(engine_id) = self.body_reverse.get(rb_handle) {
-                        results.push(BodyHandle(*engine_id));
-                    }
-                }
-                true // continue searching
-            },
-        );
-
-        results
+        self.query_overlap_sphere(center, radius)
     }
 
     fn drain_collision_events(&mut self) -> Vec<EngineCollisionEvent> {
@@ -468,43 +419,7 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
     }
 
     fn contact_pairs(&self) -> Vec<ContactPair3D> {
-        let mut pairs = Vec::new();
-        for pair in self.narrow_phase.contact_pairs() {
-            if pair.has_any_active_contact {
-                let body_a = self
-                    .collider_to_body
-                    .get(&pair.collider1)
-                    .and_then(|rb| self.body_reverse.get(rb))
-                    .copied()
-                    .unwrap_or(0);
-                let body_b = self
-                    .collider_to_body
-                    .get(&pair.collider2)
-                    .and_then(|rb| self.body_reverse.get(rb))
-                    .copied()
-                    .unwrap_or(0);
-
-                // Extract first contact manifold data
-                let (normal, depth) = pair
-                    .manifolds
-                    .iter()
-                    .find(|m| !m.points.is_empty())
-                    .map(|m| {
-                        let n = m.data.normal;
-                        let d = m.points[0].dist;
-                        ([n.x, n.y, n.z], d)
-                    })
-                    .unwrap_or(([0.0, 0.0, 1.0], 0.0));
-
-                pairs.push(ContactPair3D {
-                    body_a: BodyHandle(body_a),
-                    body_b: BodyHandle(body_b),
-                    normal,
-                    depth,
-                });
-            }
-        }
-        pairs
+        self.query_contact_pairs()
     }
 
     fn create_joint(&mut self, desc: &JointDesc3D) -> GoudResult<JointHandle> {
@@ -535,32 +450,6 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
     }
 
     fn debug_shapes(&self) -> Vec<DebugShape3D> {
-        let mut shapes = Vec::new();
-        for (handle, collider) in self.collider_set.iter() {
-            let pos = collider.position().translation;
-            let rot = collider.position().rotation;
-            let shape_ref = collider.shape();
-
-            let (shape_type, size) = if let Some(ball) = shape_ref.as_ball() {
-                let r = ball.radius;
-                (0, [r, r, r])
-            } else if let Some(cuboid) = shape_ref.as_cuboid() {
-                let he = cuboid.half_extents;
-                (1, [he.x, he.y, he.z])
-            } else {
-                (2, [0.1, 0.1, 0.1])
-            };
-
-            let _ = handle; // suppress unused warning
-
-            shapes.push(DebugShape3D {
-                shape_type,
-                position: [pos.x, pos.y, pos.z],
-                size,
-                rotation: [rot.i, rot.j, rot.k, rot.w],
-                color: [0.0, 1.0, 0.0, 0.5],
-            });
-        }
-        shapes
+        self.query_debug_shapes()
     }
 }
