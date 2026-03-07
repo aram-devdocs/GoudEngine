@@ -53,5 +53,7 @@ mod web_operations;
 mod async_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_dependency;
 
 pub use core::AssetServer;
