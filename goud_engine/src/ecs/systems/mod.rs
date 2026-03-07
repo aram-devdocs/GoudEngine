@@ -6,7 +6,11 @@
 //! - **Audio**: Spatial audio updates
 
 pub mod animation;
+pub mod physics_sync_2d;
+pub mod physics_sync_3d;
 pub mod transform;
 
 pub use animation::update_sprite_animations;
+pub use physics_sync_2d::{PhysicsHandleMap2D, PhysicsStepSystem2D};
+pub use physics_sync_3d::{PhysicsHandleMap3D, PhysicsStepSystem3D};
 pub use transform::TransformPropagationSystem;
