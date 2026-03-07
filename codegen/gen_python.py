@@ -1452,6 +1452,17 @@ def gen_init():
         "from .generated import *  # noqa: F401,F403",
         "",
     ]
+
+    # Include error types if the errors section exists in schema
+    if "errors" in schema:
+        root_init.append("from .errors import (  # noqa: F401")
+        root_init.append("    GoudError,")
+        for cat in schema["errors"].get("categories", []):
+            cls = cat["base_class"]
+            root_init.append(f"    {cls},")
+        root_init.append("    RecoveryClass,")
+        root_init.append(")")
+        root_init.append("")
     root = OUT.parent / "__init__.py"
     write_generated(root, "\n".join(root_init))
 

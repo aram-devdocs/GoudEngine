@@ -38,6 +38,7 @@ default = ["native"]
 native = ["dep:gl", "dep:glfw", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj"]
 wgpu-backend = ["dep:wgpu", "dep:winit", "dep:naga", "dep:pollster"]
 web = ["wgpu-backend", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:web-sys", "dep:js-sys"]
+headless = []
 
 # TODO: https://github.com/aram-devdocs/GoudEngine/issues/8
 [dependencies]
