@@ -38,8 +38,13 @@ impl AssetServer {
 
         match crate::assets::web_fetch::web_fetch(&url).await {
             Ok(bytes) => match self.parse_bytes::<A>(&asset_path, &bytes) {
-                Ok(asset) => {
+                Ok((asset, dependencies)) => {
                     self.storage.set_loaded(&handle, asset);
+                    // Record dependencies in the graph
+                    let asset_str = asset_path.as_str().to_string();
+                    for dep in &dependencies {
+                        let _ = self.dependency_graph.add_dependency(&asset_str, dep);
+                    }
                 }
                 Err(error) => {
                     if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {

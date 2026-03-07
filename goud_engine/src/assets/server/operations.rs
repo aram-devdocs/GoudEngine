@@ -50,8 +50,15 @@ impl AssetServer {
 
         // Load the asset synchronously
         match self.load_asset_sync::<A>(&asset_path) {
-            Ok(asset) => {
+            Ok((asset, dependencies)) => {
                 self.storage.set_loaded(&handle, asset);
+                // Record dependencies in the graph
+                let asset_str = asset_path.as_str().to_string();
+                for dep in &dependencies {
+                    // Ignore cycle errors during load -- log would be better
+                    // but we silently skip to avoid blocking the load.
+                    let _ = self.dependency_graph.add_dependency(&asset_str, dep);
+                }
             }
             Err(error) => {
                 // Mark as failed
@@ -65,11 +72,13 @@ impl AssetServer {
     }
 
     /// Runs raw bytes through the registered loader for the given asset path's extension.
+    ///
+    /// Returns the loaded asset and any dependencies declared by the loader.
     pub(super) fn parse_bytes<A: Asset>(
         &self,
         path: &AssetPath,
         bytes: &[u8],
-    ) -> Result<A, AssetLoadError> {
+    ) -> Result<(A, Vec<String>), AssetLoadError> {
         let extension = path
             .extension()
             .ok_or_else(|| AssetLoadError::unsupported_format(""))?;
@@ -82,14 +91,21 @@ impl AssetServer {
         let mut context = LoadContext::new(path.clone().into_owned());
         let boxed = loader.load_erased(bytes, &mut context)?;
 
-        boxed
+        let dependencies = context.into_dependencies();
+
+        let asset = boxed
             .downcast::<A>()
             .map(|boxed| *boxed)
-            .map_err(|_| AssetLoadError::custom("Type mismatch after loading"))
+            .map_err(|_| AssetLoadError::custom("Type mismatch after loading"))?;
+
+        Ok((asset, dependencies))
     }
 
     /// Reads a file from disk and parses it into an asset.
-    fn load_asset_sync<A: Asset>(&self, path: &AssetPath) -> Result<A, AssetLoadError> {
+    fn load_asset_sync<A: Asset>(
+        &self,
+        path: &AssetPath,
+    ) -> Result<(A, Vec<String>), AssetLoadError> {
         let full_path = self.asset_root.join(path.as_str());
         let bytes =
             std::fs::read(&full_path).map_err(|e| AssetLoadError::io_error(&full_path, e))?;
@@ -153,8 +169,13 @@ impl AssetServer {
         let handle = self.storage.reserve_with_path::<A>(asset_path.clone());
 
         match self.parse_bytes::<A>(&asset_path, bytes) {
-            Ok(asset) => {
+            Ok((asset, dependencies)) => {
                 self.storage.set_loaded(&handle, asset);
+                // Record dependencies in the graph
+                let asset_str = asset_path.as_str().to_string();
+                for dep in &dependencies {
+                    let _ = self.dependency_graph.add_dependency(&asset_str, dep);
+                }
             }
             Err(error) => {
                 if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
@@ -270,7 +291,36 @@ impl AssetServer {
     /// assert!(!server.is_loaded(&handle));
     /// ```
     pub fn unload<A: Asset>(&mut self, handle: &AssetHandle<A>) -> Option<A> {
+        // Clean up dependency graph for unloaded asset
+        if let Some(entry) = self.storage.get_entry(handle) {
+            if let Some(path) = entry.path() {
+                let path_str = path.as_str().to_string();
+                self.dependency_graph.remove_asset(&path_str);
+            }
+        }
         self.storage.remove(handle)
+    }
+
+    /// Returns a reference to the dependency graph.
+    ///
+    /// Useful for inspecting asset relationships or computing
+    /// cascade reload orders externally.
+    pub fn dependency_graph(&self) -> &crate::assets::dependency::DependencyGraph {
+        &self.dependency_graph
+    }
+
+    /// Returns a mutable reference to the dependency graph.
+    pub fn dependency_graph_mut(&mut self) -> &mut crate::assets::dependency::DependencyGraph {
+        &mut self.dependency_graph
+    }
+
+    /// Returns the cascade reload order for a changed asset path.
+    ///
+    /// This delegates to [`DependencyGraph::get_cascade_order`] and
+    /// returns the list of asset paths that should be reloaded, in
+    /// the correct order, when `changed_path` changes.
+    pub fn get_cascade_order(&self, changed_path: &str) -> Vec<String> {
+        self.dependency_graph.get_cascade_order(changed_path)
     }
 
     /// Returns the number of loaded assets of a specific type.

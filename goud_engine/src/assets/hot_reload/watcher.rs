@@ -61,8 +61,7 @@ pub struct HotReloadWatcher {
     watched_paths: HashSet<PathBuf>,
 
     /// Asset root directory (for relative path calculation).
-    // Will be used in future when implementing actual reload logic
-    _asset_root: PathBuf,
+    asset_root: PathBuf,
 }
 
 impl HotReloadWatcher {
@@ -104,7 +103,7 @@ impl HotReloadWatcher {
             config,
             debounce_map: HashMap::new(),
             watched_paths: HashSet::new(),
-            _asset_root: asset_root,
+            asset_root,
         })
     }
 
@@ -229,9 +228,15 @@ impl HotReloadWatcher {
             }
         }
 
-        // TODO: Actually reload assets via AssetServer
-        // For now, just count the events
-        let reload_count = change_events.len();
+        // Compute cascade reloads for each changed asset
+        let mut reload_count = change_events.len();
+        for event in &change_events {
+            let path = event.path();
+            if let Some(relative) = self.relative_path(path) {
+                let cascade = _server.get_cascade_order(&relative);
+                reload_count += cascade.len();
+            }
+        }
 
         // Clean up old debounce entries (keep last 1000)
         if self.debounce_map.len() > 1000 {
@@ -240,6 +245,16 @@ impl HotReloadWatcher {
         }
 
         reload_count
+    }
+
+    /// Converts an absolute file path to a path relative to the asset root.
+    ///
+    /// Returns `None` if the path is not inside the asset root.
+    fn relative_path(&self, path: &Path) -> Option<String> {
+        path.strip_prefix(&self.asset_root)
+            .ok()
+            .and_then(|p| p.to_str())
+            .map(|s| s.to_string())
     }
 
     /// Processes a single file system event.

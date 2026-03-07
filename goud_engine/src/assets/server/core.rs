@@ -2,6 +2,7 @@
 
 #[cfg(feature = "native")]
 use crate::assets::AssetLoadError;
+use crate::assets::dependency::DependencyGraph;
 use crate::assets::{AssetId, AssetStorage, ErasedAssetLoader};
 use std::collections::HashMap;
 use std::fmt;
@@ -74,6 +75,9 @@ pub struct AssetServer {
     /// Loader registry by AssetId (for lookup without extension).
     pub(super) loader_by_type: HashMap<AssetId, Box<dyn ErasedAssetLoader>>,
 
+    /// Dependency graph for cascade reloading.
+    pub(super) dependency_graph: DependencyGraph,
+
     /// Sender for background load results (used by native load_async).
     #[cfg(all(feature = "native", not(feature = "web")))]
     pub(super) load_sender: std::sync::mpsc::Sender<LoadResult>,
@@ -121,6 +125,7 @@ impl AssetServer {
             storage: AssetStorage::new(),
             loaders: HashMap::new(),
             loader_by_type: HashMap::new(),
+            dependency_graph: DependencyGraph::new(),
             #[cfg(all(feature = "native", not(feature = "web")))]
             load_sender,
             #[cfg(feature = "native")]
