@@ -235,24 +235,96 @@ mod tests {
 
         #[test]
         fn test_non_send_resources_is_not_send() {
-            // NonSendResources should NOT implement Send
-            fn check_not_send<T>() {
-                // This is a compile-time check - the test passes by compiling
-                // We can't easily test !Send at runtime
-            }
+            fn check_not_send<T>() {}
             check_not_send::<NonSendResources>();
-            // The actual !Send is enforced by the NonSendMarker containing *const ()
         }
 
         #[test]
         fn test_non_send_resources_is_not_sync() {
-            // NonSendResources should NOT implement Sync
-            fn check_not_sync<T>() {
-                // This is a compile-time check - the test passes by compiling
-                // We can't easily test !Sync at runtime
-            }
+            fn check_not_sync<T>() {}
             check_not_sync::<NonSendResources>();
-            // The actual !Sync is enforced by the NonSendMarker containing *const ()
+        }
+
+        #[test]
+        fn test_non_send_access_from_main_thread_succeeds() {
+            let mut resources = NonSendResources::new();
+            resources.insert(WindowHandle { id: Rc::new(42) });
+            let handle = resources.get::<WindowHandle>().unwrap();
+            assert_eq!(*handle.id, 42);
+            let handle = resources.get_mut::<WindowHandle>().unwrap();
+            assert_eq!(*handle.id, 42);
+            resources.remove::<WindowHandle>();
+        }
+
+        #[test]
+        fn test_main_thread_id_accessor() {
+            let resources = NonSendResources::new();
+            assert_eq!(resources.main_thread_id(), std::thread::current().id());
+        }
+
+        #[test]
+        fn test_non_send_get_from_wrong_thread_panics() {
+            let mut resources = NonSendResources::new();
+            resources.insert(WindowHandle { id: Rc::new(1) });
+            // SAFETY: We convert to usize to cross the thread boundary.
+            // The pointer remains valid because the main thread joins
+            // the spawned thread before dropping `resources`.
+            let addr = &resources as *const NonSendResources as usize;
+
+            let result = std::thread::spawn(move || {
+                let r = unsafe { &*(addr as *const NonSendResources) };
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    r.get::<WindowHandle>();
+                }))
+            })
+            .join()
+            .unwrap();
+
+            assert!(result.is_err(), "get() from wrong thread should panic");
+        }
+
+        #[test]
+        fn test_non_send_get_mut_from_wrong_thread_panics() {
+            let mut resources = NonSendResources::new();
+            resources.insert(WindowHandle { id: Rc::new(1) });
+            // SAFETY: We convert to usize to cross the thread boundary.
+            // The pointer is valid and exclusive; main thread joins before
+            // dropping.
+            let addr = &mut resources as *mut NonSendResources as usize;
+
+            let result = std::thread::spawn(move || {
+                let r = unsafe { &mut *(addr as *mut NonSendResources) };
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    r.get_mut::<WindowHandle>();
+                }))
+            })
+            .join()
+            .unwrap();
+
+            assert!(result.is_err(), "get_mut() from wrong thread should panic");
+        }
+
+        #[test]
+        fn test_non_send_insert_from_wrong_thread_panics() {
+            let mut resources = NonSendResources::new();
+            // SAFETY: We convert to usize to cross the thread boundary.
+            // The pointer is valid and exclusive; main thread joins before
+            // dropping.
+            let addr = &mut resources as *mut NonSendResources as usize;
+
+            let result = std::thread::spawn(move || {
+                let r = unsafe { &mut *(addr as *mut NonSendResources) };
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    r.insert(WindowHandle { id: Rc::new(99) });
+                }))
+            })
+            .join()
+            .unwrap();
+
+            assert!(
+                result.is_err(),
+                "insert() from wrong thread should panic"
+            );
         }
     }
 

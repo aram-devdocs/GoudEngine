@@ -25,13 +25,13 @@
 pub mod builtin_plugins;
 pub mod plugin;
 
-pub use builtin_plugins::TransformPropagationPlugin;
+pub use builtin_plugins::{DefaultPlugins, TransformPropagationPlugin};
 pub use plugin::{Plugin, PluginGroup};
 
 use std::any::TypeId;
 use std::collections::HashSet;
 
-use crate::ecs::resource::Resource;
+use crate::ecs::resource::{NonSendResource, Resource};
 use crate::ecs::schedule::{CoreStage, Stage, SystemStage};
 use crate::ecs::system::IntoSystem;
 use crate::ecs::World;
@@ -55,6 +55,13 @@ pub struct App {
 }
 
 impl App {
+    /// Creates a new App with default stages and all [`DefaultPlugins`] applied.
+    pub fn new_with_defaults() -> Self {
+        let mut app = Self::new();
+        app.add_plugin_group(DefaultPlugins);
+        app
+    }
+
     /// Creates a new App with default stages for each [`CoreStage`] variant.
     pub fn new() -> Self {
         let stages = CoreStage::all()
@@ -101,6 +108,18 @@ impl App {
 
         plugin.build(self);
         self.initialized_plugins.insert(plugin_type_id);
+        self
+    }
+
+    /// Adds a plugin group to the app.
+    pub fn add_plugin_group<G: PluginGroup>(&mut self, group: G) -> &mut Self {
+        group.build(self);
+        self
+    }
+
+    /// Inserts a non-send resource into the world.
+    pub fn insert_non_send_resource<T: NonSendResource>(&mut self, resource: T) -> &mut Self {
+        self.world.insert_non_send_resource(resource);
         self
     }
 

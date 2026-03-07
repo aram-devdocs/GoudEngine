@@ -87,7 +87,7 @@ pub mod world;
 // Re-export commonly used types
 #[cfg(feature = "native")]
 pub use crate::core::input_manager::{InputBinding, InputManager};
-pub use app::{App, Plugin};
+pub use app::{App, DefaultPlugins, Plugin};
 pub use archetype::{Archetype, ArchetypeGraph, ArchetypeId};
 pub use broad_phase::{SpatialHash, SpatialHashStats};
 pub use collision::{
