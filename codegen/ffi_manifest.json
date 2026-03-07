@@ -2609,6 +2609,15 @@
       "return_type": "i64",
       "is_unsafe": false
     },
+    "goud_tween_destroy": {
+      "source_file": "ffi/animation/tween.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_tween_is_complete": {
       "source_file": "ffi/animation/tween.rs",
       "params": [
@@ -2729,5 +2738,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 279
+  "total_count": 280
 }

@@ -5264,6 +5264,17 @@
             }
           ],
           "returns": "i32"
+        },
+        {
+          "name": "destroy",
+          "doc": "Destroys the tween and frees its storage",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
         }
       ]
     },
