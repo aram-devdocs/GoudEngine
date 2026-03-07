@@ -63,11 +63,11 @@ impl World {
         if self.builtins_serializable_registered {
             return;
         }
-        use crate::ecs::components::{
-            AudioSource, Collider, GlobalTransform, GlobalTransform2D, Name,
-            RigidBody, Sprite, SpriteAnimator, Transform, Transform2D,
-        };
         use crate::ecs::components::hierarchy::{Children, Parent};
+        use crate::ecs::components::{
+            AudioSource, Collider, GlobalTransform, GlobalTransform2D, Name, RigidBody, Sprite,
+            SpriteAnimator, Transform, Transform2D,
+        };
 
         self.register_serializable::<Transform2D>();
         self.register_serializable::<GlobalTransform2D>();
@@ -107,10 +107,7 @@ impl World {
     ///     }
     /// }
     /// ```
-    pub fn serialize_entity(
-        &self,
-        entity: Entity,
-    ) -> Option<serde_json::Value> {
+    pub fn serialize_entity(&self, entity: Entity) -> Option<serde_json::Value> {
         if !self.is_alive(entity) {
             return None;
         }
@@ -161,15 +158,13 @@ impl World {
             return 0;
         }
 
-        let components = match json.get("components").and_then(|v| v.as_object())
-        {
+        let components = match json.get("components").and_then(|v| v.as_object()) {
             Some(map) => map,
             None => return 0,
         };
 
         // Build lookup: type_name -> ComponentId from serializable_names
-        let name_to_id: HashMap<String, ComponentId> =
-            self.serializable_names.clone();
+        let name_to_id: HashMap<String, ComponentId> = self.serializable_names.clone();
 
         let mut count = 0;
 
@@ -195,23 +190,17 @@ impl World {
                 if entry.insert_any(entity, boxed) {
                     // Update archetype
                     let current_arch_id = self.entity_archetypes[&entity];
-                    let target_arch_id = self
-                        .archetypes
-                        .get_add_edge(current_arch_id, component_id);
+                    let target_arch_id =
+                        self.archetypes.get_add_edge(current_arch_id, component_id);
 
                     if current_arch_id != target_arch_id {
-                        if let Some(old) =
-                            self.archetypes.get_mut(current_arch_id)
-                        {
+                        if let Some(old) = self.archetypes.get_mut(current_arch_id) {
                             old.remove_entity(entity);
                         }
-                        if let Some(new) =
-                            self.archetypes.get_mut(target_arch_id)
-                        {
+                        if let Some(new) = self.archetypes.get_mut(target_arch_id) {
                             new.add_entity(entity);
                         }
-                        self.entity_archetypes
-                            .insert(entity, target_arch_id);
+                        self.entity_archetypes.insert(entity, target_arch_id);
                     }
 
                     count += 1;
@@ -228,18 +217,14 @@ mod tests {
     use super::super::super::Component;
     use super::super::World;
 
-    #[derive(
-        Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize,
-    )]
+    #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
     struct Position {
         x: f32,
         y: f32,
     }
     impl Component for Position {}
 
-    #[derive(
-        Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize,
-    )]
+    #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
     struct Velocity {
         vx: f32,
         vy: f32,
@@ -335,8 +320,7 @@ mod tests {
 
         // Deserialize onto a new entity
         let new_entity = world.spawn_empty();
-        let count =
-            world.deserialize_entity_components(new_entity, &json);
+        let count = world.deserialize_entity_components(new_entity, &json);
 
         assert_eq!(count, 2);
         assert_eq!(
@@ -345,10 +329,7 @@ mod tests {
         );
         assert_eq!(
             world.get::<Velocity>(new_entity),
-            Some(&Velocity {
-                vx: 1.5,
-                vy: -3.0
-            })
+            Some(&Velocity { vx: 1.5, vy: -3.0 })
         );
     }
 

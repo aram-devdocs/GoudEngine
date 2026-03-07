@@ -210,10 +210,7 @@ impl ComponentStorageEntry {
 
     /// Serializes a component for the given entity, if serialization is
     /// registered.
-    pub(super) fn serialize_component(
-        &self,
-        entity: Entity,
-    ) -> Option<serde_json::Value> {
+    pub(super) fn serialize_component(&self, entity: Entity) -> Option<serde_json::Value> {
         let serialize_fn = self.serialize_fn?;
         (serialize_fn)(self.storage.as_ref(), entity)
     }

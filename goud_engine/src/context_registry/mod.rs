@@ -29,6 +29,5 @@ pub use context::GoudContext;
 pub use context_id::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 pub use registry::{get_context_registry, GoudContextHandle, GoudContextRegistry};
 pub use scene::{
-    EntityData, EntityRemap, SceneData, SceneId, SceneManager, SerializedEntity,
-    DEFAULT_SCENE_NAME,
+    EntityData, EntityRemap, SceneData, SceneId, SceneManager, SerializedEntity, DEFAULT_SCENE_NAME,
 };

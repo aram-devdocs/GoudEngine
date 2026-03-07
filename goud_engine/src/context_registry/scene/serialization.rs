@@ -26,10 +26,7 @@ use super::data::{EntityData, EntityRemap, SceneData, SerializedEntity};
 ///
 /// Currently infallible in practice, but returns `Result` for forward
 /// compatibility (e.g., custom serialization errors).
-pub fn serialize_scene(
-    world: &World,
-    name: &str,
-) -> Result<SceneData, GoudError> {
+pub fn serialize_scene(world: &World, name: &str) -> Result<SceneData, GoudError> {
     let mut entities_data = Vec::new();
 
     // Collect all entities from all archetypes.
@@ -46,10 +43,7 @@ pub fn serialize_scene(
         };
 
         // Extract the components map from the JSON.
-        let components_map = match json
-            .get("components")
-            .and_then(|v| v.as_object())
-        {
+        let components_map = match json.get("components").and_then(|v| v.as_object()) {
             Some(m) => m,
             None => continue,
         };
@@ -91,10 +85,7 @@ pub fn serialize_scene(
 ///
 /// Returns an error if component deserialization fails critically (currently
 /// all failures are per-component and non-fatal).
-pub fn deserialize_scene(
-    data: &SceneData,
-    world: &mut World,
-) -> Result<EntityRemap, GoudError> {
+pub fn deserialize_scene(data: &SceneData, world: &mut World) -> Result<EntityRemap, GoudError> {
     let mut remap = HashMap::new();
 
     // First pass: spawn entities and deserialize components.
@@ -126,12 +117,8 @@ pub fn deserialize_scene(
 ///
 /// Returns [`GoudError::InternalError`] if serialization fails.
 pub fn scene_to_json(data: &SceneData) -> Result<String, GoudError> {
-    serde_json::to_string_pretty(data).map_err(|e| {
-        GoudError::InternalError(format!(
-            "Failed to serialize scene to JSON: {}",
-            e
-        ))
-    })
+    serde_json::to_string_pretty(data)
+        .map_err(|e| GoudError::InternalError(format!("Failed to serialize scene to JSON: {}", e)))
 }
 
 /// Parses a JSON string into a [`SceneData`].
@@ -142,10 +129,7 @@ pub fn scene_to_json(data: &SceneData) -> Result<String, GoudError> {
 /// match the expected schema.
 pub fn scene_from_json(json: &str) -> Result<SceneData, GoudError> {
     serde_json::from_str(json).map_err(|e| {
-        GoudError::InternalError(format!(
-            "Failed to deserialize scene from JSON: {}",
-            e
-        ))
+        GoudError::InternalError(format!("Failed to deserialize scene from JSON: {}", e))
     })
 }
 
@@ -161,10 +145,7 @@ pub fn scene_from_json(json: &str) -> Result<SceneData, GoudError> {
 ///   it with the corresponding new entity.
 /// - If it has a `Children` component, replace each child entity that matches
 ///   an old ID.
-fn remap_entity_references(
-    world: &mut World,
-    remap: &HashMap<SerializedEntity, Entity>,
-) {
+fn remap_entity_references(world: &mut World, remap: &HashMap<SerializedEntity, Entity>) {
     // Collect the new entities that need remapping.
     let new_entities: Vec<Entity> = remap.values().copied().collect();
 
@@ -172,8 +153,7 @@ fn remap_entity_references(
         // Remap Parent.
         if let Some(parent) = world.get::<Parent>(entity) {
             let old_parent = parent.get();
-            let serialized =
-                SerializedEntity::from_entity(old_parent);
+            let serialized = SerializedEntity::from_entity(old_parent);
             if let Some(&new_parent) = remap.get(&serialized) {
                 world.insert(entity, Parent::new(new_parent));
             }
@@ -181,8 +161,7 @@ fn remap_entity_references(
 
         // Remap Children.
         if let Some(children) = world.get::<Children>(entity) {
-            let old_children: Vec<Entity> =
-                children.as_slice().to_vec();
+            let old_children: Vec<Entity> = children.as_slice().to_vec();
             let mut remapped = Vec::with_capacity(old_children.len());
             let mut changed = false;
 
@@ -228,8 +207,7 @@ mod tests {
     fn test_serialize_empty_scene() {
         let world = test_world();
 
-        let scene_data =
-            serialize_scene(&world, "empty").unwrap();
+        let scene_data = serialize_scene(&world, "empty").unwrap();
 
         assert_eq!(scene_data.name, "empty");
         assert!(scene_data.entities.is_empty());
@@ -239,11 +217,9 @@ mod tests {
     fn test_roundtrip_empty_scene() {
         let world = test_world();
 
-        let scene_data =
-            serialize_scene(&world, "empty").unwrap();
+        let scene_data = serialize_scene(&world, "empty").unwrap();
         let mut world2 = test_world();
-        let remap =
-            deserialize_scene(&scene_data, &mut world2).unwrap();
+        let remap = deserialize_scene(&scene_data, &mut world2).unwrap();
 
         assert!(remap.0.is_empty());
         assert_eq!(world2.entity_count(), 0);
@@ -262,16 +238,14 @@ mod tests {
         );
         world.insert(entity, Name::new("player"));
 
-        let scene_data =
-            serialize_scene(&world, "test_scene").unwrap();
+        let scene_data = serialize_scene(&world, "test_scene").unwrap();
 
         assert_eq!(scene_data.entities.len(), 1);
         assert_eq!(scene_data.name, "test_scene");
 
         // Deserialize into a fresh world.
         let mut world2 = test_world();
-        let remap =
-            deserialize_scene(&scene_data, &mut world2).unwrap();
+        let remap = deserialize_scene(&scene_data, &mut world2).unwrap();
 
         assert_eq!(remap.0.len(), 1);
         assert_eq!(world2.entity_count(), 1);
@@ -281,8 +255,7 @@ mod tests {
         let name = world2.get::<Name>(new_entity).unwrap();
         assert_eq!(name.as_str(), "player");
 
-        let transform =
-            world2.get::<Transform2D>(new_entity).unwrap();
+        let transform = world2.get::<Transform2D>(new_entity).unwrap();
         assert!((transform.position.x - 10.0).abs() < f32::EPSILON);
         assert!((transform.position.y - 20.0).abs() < f32::EPSILON);
     }
@@ -304,48 +277,37 @@ mod tests {
         world.insert(child2, Name::new("child2"));
         world.insert(child2, Parent::new(parent));
 
-        world.insert(
-            parent,
-            Children::from_slice(&[child1, child2]),
-        );
+        world.insert(parent, Children::from_slice(&[child1, child2]));
 
-        let scene_data =
-            serialize_scene(&world, "hierarchy").unwrap();
+        let scene_data = serialize_scene(&world, "hierarchy").unwrap();
 
         assert_eq!(scene_data.entities.len(), 3);
 
         // Deserialize into a new world.
         let mut world2 = test_world();
-        let remap =
-            deserialize_scene(&scene_data, &mut world2).unwrap();
+        let remap = deserialize_scene(&scene_data, &mut world2).unwrap();
 
         assert_eq!(remap.0.len(), 3);
         assert_eq!(world2.entity_count(), 3);
 
         // Find the new parent entity.
-        let old_parent_key =
-            SerializedEntity::from_entity(parent);
+        let old_parent_key = SerializedEntity::from_entity(parent);
         let new_parent = remap.0[&old_parent_key];
 
         // The new parent should have a Children component pointing
         // to the new child entities.
-        let children =
-            world2.get::<Children>(new_parent).unwrap();
+        let children = world2.get::<Children>(new_parent).unwrap();
         assert_eq!(children.len(), 2);
 
         // Both children should have Parent pointing to new_parent.
-        let old_child1_key =
-            SerializedEntity::from_entity(child1);
+        let old_child1_key = SerializedEntity::from_entity(child1);
         let new_child1 = remap.0[&old_child1_key];
-        let parent_comp =
-            world2.get::<Parent>(new_child1).unwrap();
+        let parent_comp = world2.get::<Parent>(new_child1).unwrap();
         assert_eq!(parent_comp.get(), new_parent);
 
-        let old_child2_key =
-            SerializedEntity::from_entity(child2);
+        let old_child2_key = SerializedEntity::from_entity(child2);
         let new_child2 = remap.0[&old_child2_key];
-        let parent_comp2 =
-            world2.get::<Parent>(new_child2).unwrap();
+        let parent_comp2 = world2.get::<Parent>(new_child2).unwrap();
         assert_eq!(parent_comp2.get(), new_parent);
 
         // Verify that the children in the Children component match
@@ -367,8 +329,7 @@ mod tests {
             Transform2D::new(Vec2::new(5.0, 15.0), 0.0, Vec2::one()),
         );
 
-        let scene_data =
-            serialize_scene(&world, "json_test").unwrap();
+        let scene_data = serialize_scene(&world, "json_test").unwrap();
 
         let json = scene_to_json(&scene_data).unwrap();
 
@@ -398,19 +359,14 @@ mod tests {
 
         for i in 0..5 {
             let e = world.spawn_empty();
-            world.insert(
-                e,
-                Name::new(&format!("entity_{}", i)),
-            );
+            world.insert(e, Name::new(&format!("entity_{}", i)));
         }
 
-        let scene_data =
-            serialize_scene(&world, "multi").unwrap();
+        let scene_data = serialize_scene(&world, "multi").unwrap();
         assert_eq!(scene_data.entities.len(), 5);
 
         let mut world2 = test_world();
-        let remap =
-            deserialize_scene(&scene_data, &mut world2).unwrap();
+        let remap = deserialize_scene(&scene_data, &mut world2).unwrap();
 
         assert_eq!(remap.0.len(), 5);
         assert_eq!(world2.entity_count(), 5);

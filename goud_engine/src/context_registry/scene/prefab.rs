@@ -24,9 +24,7 @@ use super::serialization::deserialize_scene;
 /// When an entity carries this component, the prefab system can
 /// resolve it during instantiation to recursively spawn nested
 /// prefabs.
-#[derive(
-    Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize,
-)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct PrefabRef {
     /// The name of the referenced prefab.
     pub name: String,
@@ -69,11 +67,7 @@ impl PrefabData {
     /// # Errors
     ///
     /// Returns an error if the root entity cannot be serialized.
-    pub fn from_entity(
-        world: &World,
-        root: Entity,
-        name: &str,
-    ) -> Result<Self, GoudError> {
+    pub fn from_entity(world: &World, root: Entity, name: &str) -> Result<Self, GoudError> {
         let mut entities = Vec::new();
         Self::collect_entity(world, root, &mut entities)?;
 
@@ -91,10 +85,7 @@ impl PrefabData {
     /// # Errors
     ///
     /// Returns an error if deserialization fails.
-    pub fn instantiate(
-        &self,
-        world: &mut World,
-    ) -> Result<Entity, GoudError> {
+    pub fn instantiate(&self, world: &mut World) -> Result<Entity, GoudError> {
         let (root, _) = self.instantiate_with_entities(world)?;
         Ok(root)
     }
@@ -119,13 +110,11 @@ impl PrefabData {
         let remap = deserialize_scene(&scene_data, world)?;
 
         let root_key = self.entities[0].id;
-        let root =
-            remap.0.get(&root_key).copied().ok_or_else(|| {
-                GoudError::InternalError(
-                    "Root entity not found in remap after instantiation"
-                        .to_string(),
-                )
-            })?;
+        let root = remap.0.get(&root_key).copied().ok_or_else(|| {
+            GoudError::InternalError(
+                "Root entity not found in remap after instantiation".to_string(),
+            )
+        })?;
 
         let spawned: Vec<Entity> = remap.0.values().copied().collect();
         Ok((root, spawned))
@@ -137,12 +126,8 @@ impl PrefabData {
     ///
     /// Returns an error if the JSON is invalid.
     pub fn from_json(json: &str) -> Result<Self, GoudError> {
-        serde_json::from_str(json).map_err(|e| {
-            GoudError::InternalError(format!(
-                "Failed to parse prefab JSON: {}",
-                e
-            ))
-        })
+        serde_json::from_str(json)
+            .map_err(|e| GoudError::InternalError(format!("Failed to parse prefab JSON: {}", e)))
     }
 
     /// Serializes the prefab to a JSON string.
@@ -152,10 +137,7 @@ impl PrefabData {
     /// Returns an error if serialization fails.
     pub fn to_json(&self) -> Result<String, GoudError> {
         serde_json::to_string_pretty(self).map_err(|e| {
-            GoudError::InternalError(format!(
-                "Failed to serialize prefab to JSON: {}",
-                e
-            ))
+            GoudError::InternalError(format!("Failed to serialize prefab to JSON: {}", e))
         })
     }
 
@@ -166,10 +148,7 @@ impl PrefabData {
         out: &mut Vec<EntityData>,
     ) -> Result<(), GoudError> {
         let json = world.serialize_entity(entity).ok_or_else(|| {
-            GoudError::InternalError(format!(
-                "Failed to serialize entity {:?}",
-                entity
-            ))
+            GoudError::InternalError(format!("Failed to serialize entity {:?}", entity))
         })?;
 
         let components_map = json
@@ -189,8 +168,7 @@ impl PrefabData {
 
         // Recurse into children.
         if let Some(children) = world.get::<Children>(entity) {
-            let child_entities: Vec<Entity> =
-                children.as_slice().to_vec();
+            let child_entities: Vec<Entity> = children.as_slice().to_vec();
             for child in child_entities {
                 Self::collect_entity(world, child, out)?;
             }
@@ -247,11 +225,7 @@ fn instantiate_recursive(
     // Only check newly spawned entities for PrefabRef components.
     let prefab_refs: Vec<(Entity, String)> = spawned
         .iter()
-        .filter_map(|&e| {
-            world
-                .get::<PrefabRef>(e)
-                .map(|pr| (e, pr.name.clone()))
-        })
+        .filter_map(|&e| world.get::<PrefabRef>(e).map(|pr| (e, pr.name.clone())))
         .collect();
 
     for (entity, ref_name) in prefab_refs {
@@ -260,12 +234,7 @@ fn instantiate_recursive(
         world.remove::<PrefabRef>(entity);
 
         if let Some(child_prefab) = prefab_registry.get(&ref_name) {
-            instantiate_recursive(
-                child_prefab,
-                world,
-                prefab_registry,
-                visited,
-            )?;
+            instantiate_recursive(child_prefab, world, prefab_registry, visited)?;
         } else {
             return Err(GoudError::ResourceNotFound(format!(
                 "Referenced prefab '{}' not found in registry",
@@ -311,9 +280,7 @@ mod tests {
             Transform2D::new(Vec2::new(1.0, 2.0), 0.0, Vec2::one()),
         );
 
-        let prefab =
-            PrefabData::from_entity(&world, entity, "soldier_prefab")
-                .unwrap();
+        let prefab = PrefabData::from_entity(&world, entity, "soldier_prefab").unwrap();
 
         // Instantiate into same world.
         let new_root = prefab.instantiate(&mut world).unwrap();
@@ -322,11 +289,8 @@ mod tests {
         let name = world.get::<Name>(new_root).unwrap();
         assert_eq!(name.as_str(), "soldier");
 
-        let transform =
-            world.get::<Transform2D>(new_root).unwrap();
-        assert!(
-            (transform.position.x - 1.0).abs() < f32::EPSILON
-        );
+        let transform = world.get::<Transform2D>(new_root).unwrap();
+        assert!((transform.position.x - 1.0).abs() < f32::EPSILON);
     }
 
     // ----- instantiate 100 times ---------------------------------------------
@@ -338,9 +302,7 @@ mod tests {
         let entity = world.spawn_empty();
         world.insert(entity, Name::new("unit"));
 
-        let prefab =
-            PrefabData::from_entity(&world, entity, "unit_prefab")
-                .unwrap();
+        let prefab = PrefabData::from_entity(&world, entity, "unit_prefab").unwrap();
 
         let before = world.entity_count();
 
@@ -364,28 +326,20 @@ mod tests {
         // Build prefab B (a simple entity).
         let b_entity = world.spawn_empty();
         world.insert(b_entity, Name::new("turret"));
-        let prefab_b =
-            PrefabData::from_entity(&world, b_entity, "turret")
-                .unwrap();
+        let prefab_b = PrefabData::from_entity(&world, b_entity, "turret").unwrap();
 
         // Build prefab A that references B via PrefabRef.
         let a_entity = world.spawn_empty();
         world.insert(a_entity, Name::new("tank"));
         world.insert(a_entity, PrefabRef::new("turret"));
-        let prefab_a =
-            PrefabData::from_entity(&world, a_entity, "tank").unwrap();
+        let prefab_a = PrefabData::from_entity(&world, a_entity, "tank").unwrap();
 
         let mut registry = HashMap::new();
         registry.insert("turret".to_string(), prefab_b);
 
         let before = world.entity_count();
 
-        let root = instantiate_with_prefabs(
-            &prefab_a,
-            &mut world,
-            &registry,
-        )
-        .unwrap();
+        let root = instantiate_with_prefabs(&prefab_a, &mut world, &registry).unwrap();
 
         // We should have spawned at least 2 new entities (tank + turret).
         assert!(
@@ -407,25 +361,19 @@ mod tests {
         let a_entity = world.spawn_empty();
         world.insert(a_entity, Name::new("A"));
         world.insert(a_entity, PrefabRef::new("B"));
-        let prefab_a =
-            PrefabData::from_entity(&world, a_entity, "A").unwrap();
+        let prefab_a = PrefabData::from_entity(&world, a_entity, "A").unwrap();
 
         // Prefab B refs A.
         let b_entity = world.spawn_empty();
         world.insert(b_entity, Name::new("B"));
         world.insert(b_entity, PrefabRef::new("A"));
-        let prefab_b =
-            PrefabData::from_entity(&world, b_entity, "B").unwrap();
+        let prefab_b = PrefabData::from_entity(&world, b_entity, "B").unwrap();
 
         let mut registry = HashMap::new();
         registry.insert("A".to_string(), prefab_a.clone());
         registry.insert("B".to_string(), prefab_b);
 
-        let result = instantiate_with_prefabs(
-            &prefab_a,
-            &mut world,
-            &registry,
-        );
+        let result = instantiate_with_prefabs(&prefab_a, &mut world, &registry);
 
         assert!(result.is_err(), "should detect cycle");
         let err_msg = format!("{:?}", result.unwrap_err());
@@ -448,9 +396,7 @@ mod tests {
             Transform2D::new(Vec2::new(5.0, 10.0), 0.0, Vec2::one()),
         );
 
-        let prefab =
-            PrefabData::from_entity(&world, entity, "archer_prefab")
-                .unwrap();
+        let prefab = PrefabData::from_entity(&world, entity, "archer_prefab").unwrap();
 
         let json = prefab.to_json().unwrap();
         assert!(json.contains("archer_prefab"));

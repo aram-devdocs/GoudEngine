@@ -10,9 +10,7 @@ use crate::core::error::GoudError;
 
 use super::data::SceneData;
 use super::manager::{SceneId, SceneManager};
-use super::serialization::{
-    deserialize_scene, scene_from_json, scene_to_json, serialize_scene,
-};
+use super::serialization::{deserialize_scene, scene_from_json, scene_to_json, serialize_scene};
 
 // =============================================================================
 // SceneLoader
@@ -40,9 +38,7 @@ impl SceneLoader {
     ) -> Result<SceneId, GoudError> {
         let id = manager.create_scene(name)?;
         let world = manager.get_scene_mut(id).ok_or_else(|| {
-            GoudError::InternalError(
-                "Scene was created but not accessible".to_string(),
-            )
+            GoudError::InternalError("Scene was created but not accessible".to_string())
         })?;
         world.register_builtin_serializables();
         deserialize_scene(&data, world)?;
@@ -59,17 +55,10 @@ impl SceneLoader {
     /// Returns an error if:
     /// - No scene with the given name exists
     /// - The scene is the default scene (which cannot be destroyed)
-    pub fn unload_scene(
-        manager: &mut SceneManager,
-        name: &str,
-    ) -> Result<(), GoudError> {
-        let id =
-            manager.get_scene_by_name(name).ok_or_else(|| {
-                GoudError::ResourceNotFound(format!(
-                    "Scene '{}' not found",
-                    name
-                ))
-            })?;
+    pub fn unload_scene(manager: &mut SceneManager, name: &str) -> Result<(), GoudError> {
+        let id = manager
+            .get_scene_by_name(name)
+            .ok_or_else(|| GoudError::ResourceNotFound(format!("Scene '{}' not found", name)))?;
         manager.destroy_scene(id)
     }
 
@@ -102,16 +91,10 @@ impl SceneLoader {
     /// Returns an error if:
     /// - The scene ID does not exist
     /// - Serialization fails
-    pub fn save_scene_to_json(
-        manager: &SceneManager,
-        id: SceneId,
-    ) -> Result<String, GoudError> {
-        let world = manager.get_scene(id).ok_or_else(|| {
-            GoudError::ResourceNotFound(format!(
-                "Scene id {} not found",
-                id
-            ))
-        })?;
+    pub fn save_scene_to_json(manager: &SceneManager, id: SceneId) -> Result<String, GoudError> {
+        let world = manager
+            .get_scene(id)
+            .ok_or_else(|| GoudError::ResourceNotFound(format!("Scene id {} not found", id)))?;
         let scene_data = serialize_scene(world, "scene")?;
         scene_to_json(&scene_data)
     }
@@ -175,16 +158,11 @@ impl DeferredSceneLoad {
     /// For each completed parse, calls [`SceneLoader::load_scene`] to
     /// create the scene. Returns a vec of results (one per completed
     /// load).
-    pub fn process_completed(
-        &self,
-        manager: &mut SceneManager,
-    ) -> Vec<Result<SceneId, GoudError>> {
+    pub fn process_completed(&self, manager: &mut SceneManager) -> Vec<Result<SceneId, GoudError>> {
         let mut results = Vec::new();
         while let Ok(deferred) = self.receiver.try_recv() {
             let result = match deferred.data {
-                Ok(data) => {
-                    SceneLoader::load_scene(manager, &deferred.name, data)
-                }
+                Ok(data) => SceneLoader::load_scene(manager, &deferred.name, data),
                 Err(e) => Err(e),
             };
             results.push(result);
@@ -218,10 +196,7 @@ mod tests {
 
         let e = world.spawn_empty();
         world.insert(e, Name::new("hero"));
-        world.insert(
-            e,
-            Transform2D::new(Vec2::new(10.0, 20.0), 0.0, Vec2::one()),
-        );
+        world.insert(e, Transform2D::new(Vec2::new(10.0, 20.0), 0.0, Vec2::one()));
 
         serialize_scene(&world, "sample").unwrap()
     }
@@ -233,8 +208,7 @@ mod tests {
         let mut mgr = SceneManager::new();
         let data = sample_scene_data();
 
-        let id =
-            SceneLoader::load_scene(&mut mgr, "level", data).unwrap();
+        let id = SceneLoader::load_scene(&mut mgr, "level", data).unwrap();
 
         let world = mgr.get_scene(id).unwrap();
         assert!(
@@ -284,10 +258,7 @@ mod tests {
         let data = sample_scene_data();
         let json = scene_to_json(&data).unwrap();
 
-        let id = SceneLoader::load_scene_from_json(
-            &mut mgr, "json_level", &json,
-        )
-        .unwrap();
+        let id = SceneLoader::load_scene_from_json(&mut mgr, "json_level", &json).unwrap();
 
         let world = mgr.get_scene(id).unwrap();
         assert!(world.entity_count() > 0);
@@ -299,8 +270,7 @@ mod tests {
     fn test_save_scene_to_json() {
         let mut mgr = SceneManager::new();
         let data = sample_scene_data();
-        let id =
-            SceneLoader::load_scene(&mut mgr, "save_test", data).unwrap();
+        let id = SceneLoader::load_scene(&mut mgr, "save_test", data).unwrap();
 
         let json = SceneLoader::save_scene_to_json(&mgr, id).unwrap();
         assert!(json.contains("entities"));
@@ -353,10 +323,7 @@ mod tests {
         let mut mgr = SceneManager::new();
 
         let deferred = DeferredSceneLoad::new();
-        deferred.request_load(
-            "bad".to_string(),
-            "not valid json".to_string(),
-        );
+        deferred.request_load("bad".to_string(), "not valid json".to_string());
 
         std::thread::sleep(std::time::Duration::from_millis(100));
 

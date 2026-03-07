@@ -15,9 +15,7 @@ use crate::ecs::entity::Entity;
 ///
 /// Captures the index and generation of an [`Entity`] so it can be
 /// reconstructed or used as a key in a remap table.
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct SerializedEntity {
     /// The entity slot index.
     pub index: u32,
