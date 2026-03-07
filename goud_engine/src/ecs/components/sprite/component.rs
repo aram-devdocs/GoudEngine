@@ -71,6 +71,7 @@ use crate::ecs::Component;
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Sprite {
     /// Handle to the texture asset to render.
+    // TODO(#219): Serialize as asset path string for full scene round-trip
     #[serde(skip)]
     pub texture: AssetHandle<TextureAsset>,
 

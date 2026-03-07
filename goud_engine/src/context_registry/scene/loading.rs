@@ -236,17 +236,21 @@ mod tests {
     #[test]
     fn test_load_then_unload_entity_count_returns_to_zero() {
         let mut mgr = SceneManager::new();
-        let initial_count = mgr.scene_count();
 
         let data = sample_scene_data();
-        SceneLoader::load_scene(&mut mgr, "level", data).unwrap();
-        assert_eq!(mgr.scene_count(), initial_count + 1);
+        let id = SceneLoader::load_scene(&mut mgr, "level", data).unwrap();
 
+        // Verify entities were loaded
+        let world = mgr.get_scene(id).unwrap();
+        assert!(world.entity_count() > 0, "loaded scene should have entities");
+
+        // Unload the scene
         SceneLoader::unload_scene(&mut mgr, "level").unwrap();
-        assert_eq!(
-            mgr.scene_count(),
-            initial_count,
-            "scene count should return to initial after unload"
+
+        // Verify the scene is no longer accessible (World was dropped)
+        assert!(
+            mgr.get_scene(id).is_none(),
+            "scene should be gone after unload"
         );
     }
 

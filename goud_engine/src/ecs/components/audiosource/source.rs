@@ -33,6 +33,7 @@ use super::channel::AudioChannel;
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct AudioSource {
     /// Reference to the audio asset to play
+    // TODO(#219): Serialize as asset path string for full scene round-trip
     #[serde(skip)]
     pub audio: AssetHandle<AudioAsset>,
     /// Whether the audio is currently playing
