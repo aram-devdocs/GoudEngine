@@ -23,9 +23,11 @@
 //! ```
 
 pub mod builtin_plugins;
+pub mod physics_plugins;
 pub mod plugin;
 
 pub use builtin_plugins::{DefaultPlugins, TransformPropagationPlugin};
+pub use physics_plugins::{PhysicsPlugin2D, PhysicsPlugin3D};
 pub use plugin::{Plugin, PluginGroup};
 
 use std::any::TypeId;

@@ -7,11 +7,13 @@
 pub mod null_audio;
 pub mod null_input;
 pub mod null_physics;
+pub mod null_physics3d;
 pub mod null_render;
 pub mod null_window;
 
 pub use null_audio::NullAudioProvider;
 pub use null_input::NullInputProvider;
 pub use null_physics::NullPhysicsProvider;
+pub use null_physics3d::NullPhysicsProvider3D;
 pub use null_render::NullRenderProvider;
 pub use null_window::NullWindowProvider;

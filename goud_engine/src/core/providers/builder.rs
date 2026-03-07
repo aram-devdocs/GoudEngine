@@ -1,9 +1,13 @@
 //! Builder pattern for constructing a [`ProviderRegistry`].
 
 use super::audio::AudioProvider;
-use super::impls::{NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullRenderProvider};
+use super::impls::{
+    NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullPhysicsProvider3D,
+    NullRenderProvider,
+};
 use super::input::InputProvider;
 use super::physics::PhysicsProvider;
+use super::physics3d::PhysicsProvider3D;
 use super::registry::ProviderRegistry;
 use super::render::RenderProvider;
 
@@ -25,6 +29,7 @@ use super::render::RenderProvider;
 pub struct ProviderRegistryBuilder {
     render: Option<Box<dyn RenderProvider>>,
     physics: Option<Box<dyn PhysicsProvider>>,
+    physics3d: Option<Box<dyn PhysicsProvider3D>>,
     audio: Option<Box<dyn AudioProvider>>,
     input: Option<Box<dyn InputProvider>>,
 }
@@ -35,6 +40,7 @@ impl ProviderRegistryBuilder {
         Self {
             render: None,
             physics: None,
+            physics3d: None,
             audio: None,
             input: None,
         }
@@ -46,9 +52,15 @@ impl ProviderRegistryBuilder {
         self
     }
 
-    /// Set the physics provider.
+    /// Set the 2D physics provider.
     pub fn with_physics(mut self, physics: impl PhysicsProvider + 'static) -> Self {
         self.physics = Some(Box::new(physics));
+        self
+    }
+
+    /// Set the 3D physics provider.
+    pub fn with_physics3d(mut self, physics3d: impl PhysicsProvider3D + 'static) -> Self {
+        self.physics3d = Some(Box::new(physics3d));
         self
     }
 
@@ -74,6 +86,9 @@ impl ProviderRegistryBuilder {
             physics: self
                 .physics
                 .unwrap_or_else(|| Box::new(NullPhysicsProvider::new())),
+            physics3d: self
+                .physics3d
+                .unwrap_or_else(|| Box::new(NullPhysicsProvider3D::new())),
             audio: self
                 .audio
                 .unwrap_or_else(|| Box::new(NullAudioProvider::new())),
@@ -99,6 +114,7 @@ mod tests {
         let registry = ProviderRegistryBuilder::new().build();
         assert_eq!(registry.render.name(), "null");
         assert_eq!(registry.physics.name(), "null");
+        assert_eq!(registry.physics3d.name(), "null");
         assert_eq!(registry.audio.name(), "null");
         assert_eq!(registry.input.name(), "null");
     }
@@ -113,6 +129,7 @@ mod tests {
         assert_eq!(registry.render.name(), "null");
         // Other slots remain null
         assert_eq!(registry.physics.name(), "null");
+        assert_eq!(registry.physics3d.name(), "null");
         assert_eq!(registry.audio.name(), "null");
         assert_eq!(registry.input.name(), "null");
     }
