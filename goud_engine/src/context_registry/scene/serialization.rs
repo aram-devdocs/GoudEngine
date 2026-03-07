@@ -134,6 +134,43 @@ pub fn scene_from_json(json: &str) -> Result<SceneData, GoudError> {
 }
 
 // =============================================================================
+// Binary helpers
+// =============================================================================
+
+/// Converts a [`SceneData`] to a compact binary representation.
+///
+/// Internally serializes to JSON first (because component values are
+/// stored as [`serde_json::Value`] which does not support bincode
+/// directly), then encodes the JSON bytes with bincode for framing.
+/// This is still significantly more compact than pretty-printed JSON.
+///
+/// # Errors
+///
+/// Returns [`GoudError::InternalError`] if serialization fails.
+pub fn scene_to_binary(data: &SceneData) -> Result<Vec<u8>, GoudError> {
+    let json = serde_json::to_string(data)
+        .map_err(|e| GoudError::InternalError(format!("Failed to serialize scene to binary: {}", e)))?;
+    bincode::serialize(&json)
+        .map_err(|e| GoudError::InternalError(format!("Failed to serialize scene to binary: {}", e)))
+}
+
+/// Parses a binary blob (produced by [`scene_to_binary`]) back into a
+/// [`SceneData`].
+///
+/// # Errors
+///
+/// Returns [`GoudError::InternalError`] if the bytes are invalid or do not
+/// match the expected schema.
+pub fn scene_from_binary(bytes: &[u8]) -> Result<SceneData, GoudError> {
+    let json: String = bincode::deserialize(bytes).map_err(|e| {
+        GoudError::InternalError(format!("Failed to deserialize scene from binary: {}", e))
+    })?;
+    serde_json::from_str(&json).map_err(|e| {
+        GoudError::InternalError(format!("Failed to deserialize scene from binary: {}", e))
+    })
+}
+
+// =============================================================================
 // Entity reference remapping
 // =============================================================================
 
@@ -349,6 +386,59 @@ mod tests {
     fn test_scene_from_invalid_json_returns_error() {
         let result = scene_from_json("not valid json {{{");
         assert!(result.is_err());
+    }
+
+    // ----- binary round-trip -------------------------------------------------
+
+    #[test]
+    fn test_binary_roundtrip() {
+        let mut world = test_world();
+
+        let entity = world.spawn_empty();
+        world.insert(entity, Name::new("binary_hero"));
+        world.insert(
+            entity,
+            Transform2D::new(Vec2::new(42.0, 99.0), 0.0, Vec2::one()),
+        );
+
+        let scene_data = serialize_scene(&world, "binary_test").unwrap();
+        let bytes = scene_to_binary(&scene_data).unwrap();
+        let parsed = scene_from_binary(&bytes).unwrap();
+
+        assert_eq!(parsed.name, "binary_test");
+        assert_eq!(parsed.entities.len(), scene_data.entities.len());
+    }
+
+    #[test]
+    fn test_binary_from_invalid_bytes_returns_error() {
+        let result = scene_from_binary(&[0xFF, 0xFE, 0x00, 0x01]);
+        assert!(result.is_err());
+    }
+
+    // ----- sprite texture_path round-trip ------------------------------------
+
+    #[test]
+    fn test_sprite_texture_path_roundtrip() {
+        use crate::ecs::components::Sprite;
+
+        let mut world = test_world();
+
+        let entity = world.spawn_empty();
+        let sprite = Sprite::default().with_texture_path("player.png");
+        world.insert(entity, sprite);
+
+        let scene_data = serialize_scene(&world, "sprite_path").unwrap();
+        let json = scene_to_json(&scene_data).unwrap();
+
+        assert!(json.contains("player.png"), "JSON must contain the path");
+
+        let parsed = scene_from_json(&json).unwrap();
+        let mut world2 = test_world();
+        let remap = deserialize_scene(&parsed, &mut world2).unwrap();
+
+        let new_entity = *remap.0.values().next().unwrap();
+        let s = world2.get::<Sprite>(new_entity).unwrap();
+        assert_eq!(s.texture_path.as_deref(), Some("player.png"));
     }
 
     // ----- multiple entities, no hierarchy -----------------------------------

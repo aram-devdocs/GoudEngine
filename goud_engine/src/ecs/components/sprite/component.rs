@@ -71,9 +71,17 @@ use crate::ecs::Component;
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Sprite {
     /// Handle to the texture asset to render.
-    // TODO(#219): Serialize as asset path string for full scene round-trip
+    // TODO(#219): Resolve texture_path back to a handle on deserialization
     #[serde(skip)]
     pub texture: AssetHandle<TextureAsset>,
+
+    /// Optional path to the texture asset for serialization.
+    ///
+    /// When a scene is serialized the handle cannot be persisted, but
+    /// this path string can. At load time a higher-level system
+    /// resolves the path back to an [`AssetHandle`].
+    #[serde(default)]
+    pub texture_path: Option<String>,
 
     /// Color tint multiplied with texture pixels.
     ///
@@ -143,6 +151,7 @@ impl Sprite {
     pub fn new(texture: AssetHandle<TextureAsset>) -> Self {
         Self {
             texture,
+            texture_path: None,
             color: Color::WHITE,
             source_rect: None,
             flip_x: false,
@@ -150,6 +159,30 @@ impl Sprite {
             anchor: Vec2::new(0.5, 0.5),
             custom_size: None,
         }
+    }
+
+    /// Sets the texture asset path for serialization.
+    ///
+    /// The path is stored alongside the sprite so it survives
+    /// serialization. A higher-level system is responsible for
+    /// resolving it back to an [`AssetHandle`] after deserialization.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use goud_engine::ecs::components::Sprite;
+    /// # use goud_engine::assets::{AssetServer, loaders::TextureAsset};
+    /// # let mut asset_server = AssetServer::new();
+    /// # let texture = asset_server.load::<TextureAsset>("player.png");
+    ///
+    /// let sprite = Sprite::new(texture)
+    ///     .with_texture_path("player.png");
+    /// assert_eq!(sprite.texture_path.as_deref(), Some("player.png"));
+    /// ```
+    #[inline]
+    pub fn with_texture_path(mut self, path: impl Into<String>) -> Self {
+        self.texture_path = Some(path.into());
+        self
     }
 
     /// Sets the color tint for this sprite.
@@ -440,6 +473,7 @@ impl Default for Sprite {
     fn default() -> Self {
         Self {
             texture: AssetHandle::INVALID,
+            texture_path: None,
             color: Color::WHITE,
             source_rect: None,
             flip_x: false,

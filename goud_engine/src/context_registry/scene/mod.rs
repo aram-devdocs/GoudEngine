@@ -10,10 +10,12 @@ pub mod data;
 pub mod loading;
 mod manager;
 pub mod prefab;
+pub mod prefab_asset;
 pub mod serialization;
 
 pub use data::*;
 pub use loading::*;
 pub use manager::{SceneId, SceneManager, DEFAULT_SCENE_NAME};
 pub use prefab::*;
+pub use prefab_asset::*;
 pub use serialization::*;
