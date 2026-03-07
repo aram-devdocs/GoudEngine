@@ -98,6 +98,7 @@
 pub mod collision;
 pub mod component;
 pub mod component_sprite;
+pub mod component_sprite_animator;
 pub mod component_transform2d;
 pub mod context;
 #[cfg(feature = "native")]
@@ -126,4 +127,5 @@ pub use crate::core::error::{GoudError, GoudErrorCode, GoudResult as CoreResult}
 
 // Re-export component FFI types
 pub use component_sprite::{FfiColor, FfiRect, FfiSprite, FfiSpriteBuilder};
+pub use component_sprite_animator::{FfiAnimationClipBuilder, FfiPlaybackMode, FfiSpriteAnimator};
 pub use component_transform2d::{FfiMat3x3, FfiTransform2D, FfiTransform2DBuilder};

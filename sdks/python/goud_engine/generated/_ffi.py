@@ -132,6 +132,17 @@ class FfiMat3x3(ctypes.Structure):
         ("m", ctypes.c_float * 9)
     ]
 
+class FfiSpriteAnimator(ctypes.Structure):
+    _fields_ = [
+        ("current_frame", ctypes.c_uint32),
+        ("elapsed", ctypes.c_float),
+        ("playing", ctypes.c_bool),
+        ("finished", ctypes.c_bool),
+        ("frame_duration", ctypes.c_float),
+        ("mode", ctypes.c_float),
+        ("frame_count", ctypes.c_uint32)
+    ]
+
 # ── Function signatures ──
 
 def _setup():
@@ -290,6 +301,10 @@ def _setup():
     _lib.goud_entity_spawn_batch.restype = ctypes.c_uint32
     _lib.goud_entity_despawn_batch.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint64), ctypes.c_uint32]
     _lib.goud_entity_despawn_batch.restype = ctypes.c_uint32
+    _lib.goud_entity_clone.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_entity_clone.restype = ctypes.c_uint64
+    _lib.goud_entity_clone_recursive.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_entity_clone_recursive.restype = ctypes.c_uint64
 
     # collision
     _lib.goud_collision_aabb_aabb.argtypes = [ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.POINTER(GoudContact)]
@@ -530,6 +545,22 @@ def _setup():
     _lib.goud_color_lerp.restype = FfiColor
     _lib.goud_color_with_alpha.argtypes = [FfiColor, ctypes.c_float]
     _lib.goud_color_with_alpha.restype = FfiColor
+
+    # sprite_animator
+    _lib.goud_animation_clip_builder_new.argtypes = [ctypes.c_float, ctypes.c_uint64]
+    _lib.goud_animation_clip_builder_new.restype = ctypes.c_uint64
+    _lib.goud_animation_clip_builder_add_frame.argtypes = [ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_animation_clip_builder_add_frame.restype = ctypes.c_uint64
+    _lib.goud_animation_clip_builder_free.argtypes = [ctypes.c_uint64]
+    _lib.goud_animation_clip_builder_free.restype = None
+    _lib.goud_sprite_animator_from_clip.argtypes = [ctypes.c_uint64]
+    _lib.goud_sprite_animator_from_clip.restype = ctypes.c_uint64
+    _lib.goud_sprite_animator_get_current_frame.argtypes = [ctypes.c_uint64]
+    _lib.goud_sprite_animator_get_current_frame.restype = ctypes.c_uint32
+    _lib.goud_sprite_animator_is_playing.argtypes = [ctypes.c_uint64]
+    _lib.goud_sprite_animator_is_playing.restype = ctypes.c_bool
+    _lib.goud_sprite_animator_is_finished.argtypes = [ctypes.c_uint64]
+    _lib.goud_sprite_animator_is_finished.restype = ctypes.c_bool
 
     # component_generic
     _lib.goud_component_register_type.argtypes = [ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t, ctypes.c_size_t, ctypes.c_size_t]

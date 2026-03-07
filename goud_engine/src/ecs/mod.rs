@@ -64,6 +64,7 @@
 //! system.run(&mut world);
 //! ```
 
+pub mod app;
 pub mod archetype;
 pub mod broad_phase;
 pub mod change_detection;
@@ -86,6 +87,7 @@ pub mod world;
 // Re-export commonly used types
 #[cfg(feature = "native")]
 pub use crate::core::input_manager::{InputBinding, InputManager};
+pub use app::{App, Plugin};
 pub use archetype::{Archetype, ArchetypeGraph, ArchetypeId};
 pub use broad_phase::{SpatialHash, SpatialHashStats};
 pub use collision::{

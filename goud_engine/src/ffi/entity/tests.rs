@@ -3,8 +3,8 @@
 use crate::ffi::context::{goud_context_create, goud_context_destroy};
 use crate::ffi::entity::{
     lifecycle::{
-        goud_entity_despawn, goud_entity_despawn_batch, goud_entity_spawn_batch,
-        goud_entity_spawn_empty,
+        goud_entity_clone, goud_entity_clone_recursive, goud_entity_despawn,
+        goud_entity_despawn_batch, goud_entity_spawn_batch, goud_entity_spawn_empty,
     },
     queries::{goud_entity_count, goud_entity_is_alive},
     GOUD_INVALID_ENTITY_ID,
@@ -365,6 +365,69 @@ fn test_stress_spawn_despawn() {
     }
 
     assert_eq!(goud_entity_count(ctx), 1000);
+
+    goud_context_destroy(ctx);
+}
+
+// ============================================================================
+// Entity Clone Tests
+// ============================================================================
+
+#[test]
+fn test_clone_entity_invalid_context() {
+    let cloned = goud_entity_clone(GOUD_INVALID_CONTEXT_ID, 123);
+    assert_eq!(cloned, GOUD_INVALID_ENTITY_ID);
+}
+
+#[test]
+fn test_clone_entity_invalid_entity() {
+    let ctx = goud_context_create();
+    assert_ne!(ctx, GOUD_INVALID_CONTEXT_ID);
+
+    let cloned = goud_entity_clone(ctx, GOUD_INVALID_ENTITY_ID);
+    assert_eq!(cloned, GOUD_INVALID_ENTITY_ID);
+
+    goud_context_destroy(ctx);
+}
+
+#[test]
+fn test_clone_entity_success() {
+    let ctx = goud_context_create();
+    assert_ne!(ctx, GOUD_INVALID_CONTEXT_ID);
+
+    let original = goud_entity_spawn_empty(ctx);
+    assert_ne!(original, GOUD_INVALID_ENTITY_ID);
+    assert!(goud_entity_is_alive(ctx, original));
+
+    let cloned = goud_entity_clone(ctx, original);
+    assert_ne!(cloned, GOUD_INVALID_ENTITY_ID);
+    assert_ne!(cloned, original);
+    assert!(goud_entity_is_alive(ctx, cloned));
+    assert!(goud_entity_is_alive(ctx, original));
+
+    goud_context_destroy(ctx);
+}
+
+#[test]
+fn test_clone_entity_recursive_invalid_context() {
+    let cloned = goud_entity_clone_recursive(GOUD_INVALID_CONTEXT_ID, 123);
+    assert_eq!(cloned, GOUD_INVALID_ENTITY_ID);
+}
+
+#[test]
+fn test_clone_entity_recursive_success() {
+    let ctx = goud_context_create();
+    assert_ne!(ctx, GOUD_INVALID_CONTEXT_ID);
+
+    let original = goud_entity_spawn_empty(ctx);
+    assert_ne!(original, GOUD_INVALID_ENTITY_ID);
+    assert!(goud_entity_is_alive(ctx, original));
+
+    let cloned = goud_entity_clone_recursive(ctx, original);
+    assert_ne!(cloned, GOUD_INVALID_ENTITY_ID);
+    assert_ne!(cloned, original);
+    assert!(goud_entity_is_alive(ctx, cloned));
+    assert!(goud_entity_is_alive(ctx, original));
 
     goud_context_destroy(ctx);
 }

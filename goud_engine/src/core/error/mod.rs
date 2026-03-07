@@ -1,7 +1,7 @@
 //! Error handling infrastructure for GoudEngine.
 //!
-//! This module provides FFI-compatible error codes and error types that work
-//! consistently across Rust and all language bindings (C#, Python, etc.).
+//! This is the canonical Foundation layer location for error types.
+//! `libs/error/` re-exports from here so both import paths work identically.
 //!
 //! # Error Code Ranges
 //!
@@ -16,6 +16,7 @@
 //! | 300-399   | Entity     | ECS entity and component errors      |
 //! | 400-499   | Input      | Input handling errors                |
 //! | 500-599   | System     | Platform and system errors           |
+//! | 600-699   | Provider   | Provider subsystem errors            |
 //! | 900-999   | Internal   | Unexpected internal errors           |
 //!
 //! # FFI Compatibility
@@ -40,11 +41,12 @@ pub use codes::{
     ERR_HANDLE_EXPIRED, ERR_HANDLE_TYPE_MISMATCH, ERR_INITIALIZATION_FAILED,
     ERR_INPUT_DEVICE_NOT_FOUND, ERR_INTERNAL_ERROR, ERR_INVALID_CONTEXT, ERR_INVALID_HANDLE,
     ERR_INVALID_INPUT_ACTION, ERR_INVALID_STATE, ERR_NOT_IMPLEMENTED, ERR_NOT_INITIALIZED,
-    ERR_PHYSICS_INIT_FAILED, ERR_PLATFORM_ERROR, ERR_QUERY_FAILED, ERR_RENDER_TARGET_FAILED,
+    ERR_PHYSICS_INIT_FAILED, ERR_PLATFORM_ERROR, ERR_PROVIDER_INIT_FAILED, ERR_PROVIDER_NOT_FOUND,
+    ERR_PROVIDER_OPERATION_FAILED, ERR_QUERY_FAILED, ERR_RENDER_TARGET_FAILED,
     ERR_RESOURCE_ALREADY_EXISTS, ERR_RESOURCE_INVALID_FORMAT, ERR_RESOURCE_LOAD_FAILED,
     ERR_RESOURCE_NOT_FOUND, ERR_SHADER_COMPILATION_FAILED, ERR_SHADER_LINK_FAILED,
     ERR_TEXTURE_CREATION_FAILED, ERR_WINDOW_CREATION_FAILED, GRAPHICS_ERROR_BASE, INPUT_ERROR_BASE,
-    INTERNAL_ERROR_BASE, RESOURCE_ERROR_BASE, SUCCESS, SYSTEM_ERROR_BASE,
+    INTERNAL_ERROR_BASE, PROVIDER_ERROR_BASE, RESOURCE_ERROR_BASE, SUCCESS, SYSTEM_ERROR_BASE,
 };
 
 pub use ffi_bridge::{

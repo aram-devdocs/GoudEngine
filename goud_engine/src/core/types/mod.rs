@@ -7,6 +7,7 @@
 //! These types are the canonical definitions. The `ffi/` layer re-exports
 //! them to preserve backward compatibility with generated bindings.
 
+mod animation;
 mod entity;
 mod math_types;
 mod result;
@@ -16,6 +17,7 @@ mod transform;
 #[cfg(test)]
 mod tests;
 
+pub use animation::{FfiAnimationClipBuilder, FfiPlaybackMode, FfiSpriteAnimator};
 pub use entity::GoudEntityId;
 pub use math_types::{FfiColor, FfiRect, FfiVec2};
 pub use result::GoudResult;

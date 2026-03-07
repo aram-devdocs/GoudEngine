@@ -32,6 +32,8 @@ interface WasmGameHandle {
   spawn_batch(count: number): BigUint64Array;
   despawn(bits: bigint): boolean;
   despawn_batch(bits: BigUint64Array): number;
+  clone_entity(bits: bigint): bigint;
+  clone_entity_recursive(bits: bigint): bigint;
   entity_count(): number;
   is_alive(bits: bigint): boolean;
   add_transform2d(bits: bigint, px: number, py: number, r: number, sx: number, sy: number): void;
@@ -305,6 +307,10 @@ export class GoudGame implements IGoudGame {
   entityCount(): number { return this.handle.entity_count(); }
   /** Returns true if the entity still exists */
   isAlive(entity: IEntity): boolean { return this.handle.is_alive(entity.toBits()); }
+  /** Clones an entity, creating a new entity with copies of all cloneable components */
+  cloneEntity(entity: IEntity): IEntity { return new WebEntity(this.handle.clone_entity(entity.toBits())); }
+  /** Clones an entity and all its descendants recursively */
+  cloneEntityRecursive(entity: IEntity): IEntity { return new WebEntity(this.handle.clone_entity_recursive(entity.toBits())); }
 
   /** Attaches a Transform2D component to the entity */
   addTransform2d(entity: IEntity, t: ITransform2DData): void { this.handle.add_transform2d(entity.toBits(), t.positionX, t.positionY, t.rotation, t.scaleX, t.scaleY); }

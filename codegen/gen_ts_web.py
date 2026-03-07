@@ -393,6 +393,10 @@ def gen_web_wrapper():
     lines.append("  entityCount(): number { return this.handle.entity_count(); }")
     emit_jsdoc(lines, _method_docs.get("is_alive"))
     lines.append("  isAlive(entity: IEntity): boolean { return this.handle.is_alive(entity.toBits()); }")
+    emit_jsdoc(lines, _method_docs.get("clone_entity"))
+    lines.append("  cloneEntity(entity: IEntity): IEntity { return new WebEntity(this.handle.clone_entity(entity.toBits())); }")
+    emit_jsdoc(lines, _method_docs.get("clone_entity_recursive"))
+    lines.append("  cloneEntityRecursive(entity: IEntity): IEntity { return new WebEntity(this.handle.clone_entity_recursive(entity.toBits())); }")
     lines.append("")
 
     emit_jsdoc(lines, _method_docs.get("add_transform2d"))

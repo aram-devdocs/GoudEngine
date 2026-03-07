@@ -164,6 +164,16 @@ class GoudGame:
         """Destroys an entity and all its components"""
         return self._lib.goud_entity_despawn(self._ctx, entity._bits)
 
+    def clone_entity(self, entity):
+        """Clones an entity, creating a new entity with copies of all cloneable components"""
+        bits = self._lib.goud_entity_clone(self._ctx, entity._bits)
+        return Entity(bits)
+
+    def clone_entity_recursive(self, entity):
+        """Clones an entity and all its descendants recursively"""
+        bits = self._lib.goud_entity_clone_recursive(self._ctx, entity._bits)
+        return Entity(bits)
+
     def entity_count(self):
         """Returns the number of living entities"""
         return self._lib.goud_entity_count(self._ctx)
@@ -515,6 +525,16 @@ class GoudContext:
     def despawn_batch(self, entities):
         """Despawns multiple entities at once"""
         return self._lib.goud_entity_despawn_batch(self._ctx, entities)
+
+    def clone_entity(self, entity):
+        """Clones an entity, creating a new entity with copies of all cloneable components"""
+        bits = self._lib.goud_entity_clone(self._ctx, entity._bits)
+        return Entity(bits)
+
+    def clone_entity_recursive(self, entity):
+        """Clones an entity and all its descendants recursively"""
+        bits = self._lib.goud_entity_clone_recursive(self._ctx, entity._bits)
+        return Entity(bits)
 
     def is_alive(self, entity):
         """Returns true if the entity still exists"""

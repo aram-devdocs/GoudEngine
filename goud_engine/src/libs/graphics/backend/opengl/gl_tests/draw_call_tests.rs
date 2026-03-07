@@ -1,6 +1,6 @@
 //! Tests for OpenGL draw call operations (require GL context).
 
-use crate::core::error::GoudError;
+use crate::libs::error::GoudError;
 use crate::libs::graphics::backend::opengl::backend::OpenGLBackend;
 use crate::libs::graphics::backend::types::{
     BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType, VertexLayout,

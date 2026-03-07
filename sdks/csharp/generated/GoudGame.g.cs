@@ -200,6 +200,18 @@ namespace GoudEngine
             return NativeMethods.goud_entity_despawn(_ctx, entity.ToBits()).Success;
         }
 
+        /// <summary>Clones an entity, creating a new entity with copies of all cloneable components</summary>
+        public Entity CloneEntity(Entity entity)
+        {
+            return new Entity(NativeMethods.goud_entity_clone(_ctx, entity.ToBits()));
+        }
+
+        /// <summary>Clones an entity and all its descendants recursively</summary>
+        public Entity CloneEntityRecursive(Entity entity)
+        {
+            return new Entity(NativeMethods.goud_entity_clone_recursive(_ctx, entity.ToBits()));
+        }
+
         /// <summary>Returns the number of living entities</summary>
         public uint EntityCount()
         {
