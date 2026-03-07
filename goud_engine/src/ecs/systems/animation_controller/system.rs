@@ -111,14 +111,31 @@ pub fn update_animation_controllers(world: &mut World, dt: f32) {
                 }
             }
             Action::StartTransition {
-                from_state,
+                from_state: _,
                 to_state,
                 duration,
             } => {
-                if let Some(ctrl) = world.get_mut::<AnimationController>(entity) {
+                if duration <= 0.0 {
+                    // Zero-duration transition: complete immediately
+                    let new_clip = {
+                        let Some(ctrl) = world.get_mut::<AnimationController>(entity) else {
+                            continue;
+                        };
+                        ctrl.current_state = to_state;
+                        ctrl.transition_progress = None;
+                        ctrl.current_clip().cloned()
+                    };
+                    if let Some(clip) = new_clip {
+                        if let Some(animator) = world.get_mut::<SpriteAnimator>(entity) {
+                            animator.clip = clip;
+                            animator.current_frame = 0;
+                            animator.elapsed = 0.0;
+                        }
+                    }
+                } else if let Some(ctrl) = world.get_mut::<AnimationController>(entity) {
                     ctrl.transition_progress = Some(
                         crate::ecs::components::animation_controller::TransitionProgress {
-                            from_state,
+                            from_state: ctrl.current_state.clone(),
                             to_state,
                             elapsed: 0.0,
                             duration,

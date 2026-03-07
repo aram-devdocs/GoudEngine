@@ -63,19 +63,22 @@ impl BoneTransform {
 
     /// Composes parent and child transforms: `parent * child`.
     ///
-    /// Applies the parent's rotation/scale to the child's position, accumulates
-    /// rotations additively, and multiplies scales component-wise.
+    /// Applies TRS composition: scales child position by parent scale, then
+    /// rotates by parent rotation, then translates by parent position.
+    /// Rotations accumulate additively; scales multiply component-wise.
     pub fn combine(parent: &Self, child: &Self) -> Self {
         let (sin, cos) = parent.rotation.sin_cos();
+        // Scale child position by parent scale first, then rotate
+        let scaled = Vec2::new(
+            child.position.x * parent.scale.x,
+            child.position.y * parent.scale.y,
+        );
         let rotated = Vec2::new(
-            child.position.x * cos - child.position.y * sin,
-            child.position.x * sin + child.position.y * cos,
+            scaled.x * cos - scaled.y * sin,
+            scaled.x * sin + scaled.y * cos,
         );
         Self {
-            position: Vec2::new(
-                parent.position.x + rotated.x * parent.scale.x,
-                parent.position.y + rotated.y * parent.scale.y,
-            ),
+            position: Vec2::new(parent.position.x + rotated.x, parent.position.y + rotated.y),
             rotation: parent.rotation + child.rotation,
             scale: Vec2::new(
                 parent.scale.x * child.scale.x,
@@ -119,13 +122,15 @@ impl Skeleton2D {
     /// Creates a new skeleton and computes initial world transforms.
     ///
     /// Bones must be ordered so that every parent appears before its children.
+    /// Invalid `parent_id` values (out of range or forward references) are
+    /// treated as root bones.
     pub fn new(bones: Vec<Bone2D>) -> Self {
         let mut world_transforms = vec![BoneTransform::default(); bones.len()];
         for i in 0..bones.len() {
             let local = bones[i].local_transform;
             world_transforms[i] = match bones[i].parent_id {
-                Some(pid) => BoneTransform::combine(&world_transforms[pid], &local),
-                None => local,
+                Some(pid) if pid < i => BoneTransform::combine(&world_transforms[pid], &local),
+                _ => local,
             };
         }
         Self {
