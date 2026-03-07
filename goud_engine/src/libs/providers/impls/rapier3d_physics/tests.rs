@@ -1,7 +1,5 @@
 //! Unit tests for the Rapier3D physics provider.
 
-#![cfg(feature = "rapier3d")]
-
 use super::Rapier3DPhysicsProvider;
 use crate::core::providers::physics3d::PhysicsProvider3D;
 use crate::core::providers::types::{BodyDesc3D, ColliderDesc3D};

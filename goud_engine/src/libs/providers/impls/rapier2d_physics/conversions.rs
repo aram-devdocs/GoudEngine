@@ -1,7 +1,5 @@
 //! Type conversion helpers between engine types and Rapier2D types.
 
-#![cfg(feature = "rapier2d")]
-
 use rapier2d::prelude::*;
 
 use crate::core::providers::types::ColliderDesc;

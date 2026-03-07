@@ -1,7 +1,5 @@
 //! 3D type conversion helpers between engine types and rapier3d types.
 
-#![cfg(feature = "rapier3d")]
-
 use crate::core::providers::types::{ColliderDesc3D, JointDesc3D};
 use rapier3d::prelude::*;
 
