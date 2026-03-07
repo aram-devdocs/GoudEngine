@@ -246,11 +246,7 @@ impl RenderBackend for NullBackend {
     }
 
     fn destroy_shader(&mut self, handle: ShaderHandle) -> bool {
-        if self.shader_allocator.deallocate(handle) {
-            true
-        } else {
-            false
-        }
+        self.shader_allocator.deallocate(handle)
     }
 
     fn is_shader_valid(&self, handle: ShaderHandle) -> bool {
