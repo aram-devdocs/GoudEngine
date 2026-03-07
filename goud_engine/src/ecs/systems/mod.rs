@@ -5,6 +5,8 @@
 //! - **Physics**: Transform propagation, collision detection
 //! - **Audio**: Spatial audio updates
 
+pub mod animation;
 pub mod transform;
 
+pub use animation::update_sprite_animations;
 pub use transform::TransformPropagationSystem;

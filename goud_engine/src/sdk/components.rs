@@ -64,6 +64,15 @@ pub use crate::ecs::components::Transform2D;
 pub use crate::ecs::components::Sprite;
 
 // =============================================================================
+// Animation
+// =============================================================================
+
+pub use crate::ecs::components::AnimationClip;
+pub use crate::ecs::components::PlaybackMode;
+pub use crate::ecs::components::SpriteAnimator;
+pub use crate::ecs::systems::update_sprite_animations;
+
+// =============================================================================
 // Audio
 // =============================================================================
 
