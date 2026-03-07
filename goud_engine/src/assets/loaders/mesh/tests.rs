@@ -362,7 +362,7 @@ mod gltf_tests {
 
         let mut json_bytes = json_str.into_bytes();
         // Pad JSON to 4-byte alignment with spaces
-        while json_bytes.len() % 4 != 0 {
+        while !json_bytes.len().is_multiple_of(4) {
             json_bytes.push(b' ');
         }
 
@@ -449,7 +449,7 @@ mod gltf_tests {
         .to_string();
 
         let mut json_bytes = json_str.into_bytes();
-        while json_bytes.len() % 4 != 0 {
+        while !json_bytes.len().is_multiple_of(4) {
             json_bytes.push(b' ');
         }
 
