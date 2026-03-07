@@ -111,7 +111,6 @@ pub fn update_animation_controllers(world: &mut World, dt: f32) {
                 }
             }
             Action::StartTransition {
-                from_state: _,
                 to_state,
                 duration,
             } => {
@@ -180,7 +179,6 @@ enum Action {
         to_state: String,
     },
     StartTransition {
-        from_state: String,
         to_state: String,
         duration: f32,
     },
@@ -198,7 +196,6 @@ fn find_matching_transition(controller: &AnimationController) -> Action {
             .all(|c| evaluate_condition(c, controller));
         if all_met {
             return Action::StartTransition {
-                from_state: transition.from.clone(),
                 to_state: transition.to.clone(),
                 duration: transition.blend_duration,
             };
