@@ -572,12 +572,20 @@ def gen_entry():
     has_engine_config = "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {})
     ec_export = ", EngineConfig" if has_engine_config else ""
     ec_type_export = ", IEngineConfig" if has_engine_config else ""
+    # Build error re-export from schema categories
+    errors_section = schema.get("errors", {})
+    error_names = ["GoudError"]
+    for cat in errors_section.get("categories", []):
+        error_names.append(cat["base_class"])
+    error_names.append("RecoveryClass")
+
     lines = [
         f"// {HEADER_COMMENT}",
         "",
         f"export {{ GoudGame{ec_export}, Color, Vec2, Vec3, Key, MouseButton }} from './node/index.g.js';",
         f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats }} from './types/engine.g.js';",
         "export type { Rect } from './types/math.g.js';",
+        f"export {{ {', '.join(error_names)} }} from './errors.g.js';",
         "",
     ]
     write_generated(GEN / "index.g.ts", "\n".join(lines))

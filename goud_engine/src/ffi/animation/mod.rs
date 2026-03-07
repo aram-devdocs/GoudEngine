@@ -22,7 +22,7 @@ use crate::core::error::{set_last_error, GoudError, ERR_INVALID_STATE};
 /// # Safety
 ///
 /// Caller must ensure `ptr` points to valid memory of at least `len` bytes.
-pub(super) unsafe fn str_from_raw(ptr: *const u8, len: i32) -> Result<&'static str, i32> {
+pub(super) unsafe fn str_from_raw<'a>(ptr: *const u8, len: i32) -> Result<&'a str, i32> {
     if ptr.is_null() {
         set_last_error(GoudError::InvalidState("string pointer is null".into()));
         return Err(-ERR_INVALID_STATE);
@@ -50,6 +50,6 @@ pub use skeletal::{
     goud_skeleton_set_bone_transform,
 };
 pub use tween::{
-    goud_tween_create, goud_tween_is_complete, goud_tween_reset, goud_tween_update,
-    goud_tween_value,
+    goud_tween_create, goud_tween_destroy, goud_tween_is_complete, goud_tween_reset,
+    goud_tween_update, goud_tween_value,
 };

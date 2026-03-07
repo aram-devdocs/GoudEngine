@@ -25,7 +25,10 @@ use goud_engine::libs::graphics::backend::types::{
     BufferHandle, BufferType, BufferUsage, PrimitiveTopology, ShaderHandle, TextureFilter,
     TextureFormat, TextureHandle, TextureWrap, VertexLayout,
 };
-use goud_engine::libs::graphics::backend::{BlendFactor, CullFace, RenderBackend};
+use goud_engine::libs::graphics::backend::{
+    BlendFactor, BufferOps, ClearOps, CullFace, DrawOps, FrameOps, RenderBackend, ShaderOps,
+    StateOps, TextureOps,
+};
 use goud_engine::rendering::sprite_batch::{SpriteBatch, SpriteBatchConfig, SpriteInstance};
 
 // ================================================================================================
@@ -57,7 +60,9 @@ impl RenderBackend for NullBackend {
     fn info(&self) -> &BackendInfo {
         &self.info
     }
+}
 
+impl FrameOps for NullBackend {
     fn begin_frame(&mut self) -> GoudResult<()> {
         Ok(())
     }
@@ -65,13 +70,17 @@ impl RenderBackend for NullBackend {
     fn end_frame(&mut self) -> GoudResult<()> {
         Ok(())
     }
+}
 
+impl ClearOps for NullBackend {
     fn set_clear_color(&mut self, _r: f32, _g: f32, _b: f32, _a: f32) {}
 
     fn clear_color(&mut self) {}
 
     fn clear_depth(&mut self) {}
+}
 
+impl StateOps for NullBackend {
     fn set_viewport(&mut self, _x: i32, _y: i32, _width: u32, _height: u32) {}
 
     fn enable_depth_test(&mut self) {}
@@ -97,7 +106,9 @@ impl RenderBackend for NullBackend {
     fn set_depth_mask(&mut self, _enabled: bool) {}
 
     fn set_line_width(&mut self, _width: f32) {}
+}
 
+impl BufferOps for NullBackend {
     fn create_buffer(
         &mut self,
         _buffer_type: BufferType,
@@ -133,7 +144,9 @@ impl RenderBackend for NullBackend {
     }
 
     fn unbind_buffer(&mut self, _buffer_type: BufferType) {}
+}
 
+impl TextureOps for NullBackend {
     fn create_texture(
         &mut self,
         _width: u32,
@@ -175,7 +188,9 @@ impl RenderBackend for NullBackend {
     }
 
     fn unbind_texture(&mut self, _unit: u32) {}
+}
 
+impl ShaderOps for NullBackend {
     fn create_shader(
         &mut self,
         _vertex_src: &str,
@@ -213,7 +228,9 @@ impl RenderBackend for NullBackend {
     fn set_uniform_vec4(&mut self, _location: i32, _x: f32, _y: f32, _z: f32, _w: f32) {}
 
     fn set_uniform_mat4(&mut self, _location: i32, _matrix: &[f32; 16]) {}
+}
 
+impl DrawOps for NullBackend {
     fn set_vertex_attributes(&mut self, _layout: &VertexLayout) {}
 
     fn draw_arrays(

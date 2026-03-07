@@ -23,6 +23,10 @@ const INVALID_HANDLE: i64 = -1;
 ///
 /// Must be called before any other `goud_physics3d_*` function for this context.
 ///
+/// **Cleanup:** The caller MUST call `goud_physics3d_destroy` before destroying
+/// the context. Physics providers are stored in a global registry separate
+/// from `GoudContext` and are NOT automatically cleaned up on context destroy.
+///
 /// # Returns
 ///
 /// 0 on success, negative error code on failure.

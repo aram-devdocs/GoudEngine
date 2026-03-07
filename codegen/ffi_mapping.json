@@ -1327,6 +1327,9 @@
         },
         "reset": {
           "ffi": "goud_tween_reset"
+        },
+        "destroy": {
+          "ffi": "goud_tween_destroy"
         }
       }
     },
@@ -5786,6 +5789,19 @@
         "returns": "i32"
       },
       "goud_tween_reset": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "i64"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_tween_destroy": {
         "params": [
           {
             "name": "ctx",

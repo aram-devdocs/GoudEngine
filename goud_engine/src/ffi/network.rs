@@ -4,12 +4,14 @@
 //! connections using UDP or WebSocket transports. Network provider
 //! instances are stored in a global registry keyed by opaque handles.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::sync::Mutex;
 
 use crate::core::error::{set_last_error, GoudError, ERR_INTERNAL_ERROR, ERR_INVALID_STATE};
 use crate::core::providers::network::NetworkProvider;
 use crate::core::providers::network_types::{Channel, ConnectionId, HostConfig, NetworkEvent};
+#[cfg(any(feature = "net-udp", feature = "net-ws"))]
+use crate::core::providers::ProviderLifecycle;
 use crate::ffi::context::GoudContextId;
 #[cfg(feature = "net-udp")]
 use crate::libs::providers::impls::udp_network::UdpNetProvider;
@@ -31,7 +33,7 @@ const ERR_HANDLE: i64 = -1;
 struct NetInstance {
     provider: Box<dyn NetworkProvider>,
     /// Buffered received-data events from the last `poll`.
-    recv_queue: Vec<(u64, Vec<u8>)>, // (peer_id / conn_id, data)
+    recv_queue: VecDeque<(u64, Vec<u8>)>, // (peer_id / conn_id, data)
 }
 
 // SAFETY: NetInstance is only accessed through the global Mutex, so all
@@ -161,7 +163,7 @@ pub extern "C" fn goud_network_host(_context_id: GoudContextId, protocol: i32, p
 
     let mut inst = NetInstance {
         provider,
-        recv_queue: Vec::new(),
+        recv_queue: VecDeque::new(),
     };
 
     let config = HostConfig {
@@ -231,7 +233,7 @@ pub unsafe extern "C" fn goud_network_connect(
 
     let inst = NetInstance {
         provider,
-        recv_queue: Vec::new(),
+        recv_queue: VecDeque::new(),
     };
 
     with_registry(|reg| Ok(reg.insert(inst))).unwrap_or(ERR_HANDLE)
@@ -332,7 +334,7 @@ pub unsafe extern "C" fn goud_network_receive(
         if inst.recv_queue.is_empty() {
             return Ok(0);
         }
-        let (peer, data) = inst.recv_queue.remove(0);
+        let (peer, data) = inst.recv_queue.pop_front().unwrap();
 
         let copy_len = data.len().min(buf_len as usize);
         // SAFETY: Caller guarantees out_buf is valid for buf_len bytes,
@@ -361,7 +363,7 @@ pub extern "C" fn goud_network_poll(_context_id: GoudContextId, handle: i64) -> 
         let events = inst.provider.drain_events();
         for event in events {
             if let NetworkEvent::Received { conn, data, .. } = event {
-                inst.recv_queue.push((conn.0, data));
+                inst.recv_queue.push_back((conn.0, data));
             }
         }
         Ok(0)

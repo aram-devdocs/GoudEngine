@@ -21,7 +21,7 @@ use crate::ffi::context::{get_context_registry, GoudContextId, GOUD_INVALID_CONT
 ///
 /// # Returns
 ///
-/// `0` on success. A positive error code if the plugin is already registered
+/// `0` on success. A negative error code if the plugin is already registered
 /// or inputs are invalid. Call `goud_get_last_error_message()` for details.
 ///
 /// # Safety
@@ -37,12 +37,12 @@ pub unsafe extern "C" fn goud_plugin_register(
 ) -> i32 {
     if context_id == GOUD_INVALID_CONTEXT_ID {
         set_last_error(GoudError::InvalidContext);
-        return GoudError::InvalidContext.error_code();
+        return -(GoudError::InvalidContext.error_code());
     }
 
     if plugin_id_ptr.is_null() {
         set_last_error(GoudError::InvalidState("plugin_id_ptr is null".to_string()));
-        return ERR_INVALID_STATE;
+        return -ERR_INVALID_STATE;
     }
 
     // SAFETY: Caller guarantees plugin_id_ptr is valid for plugin_id_len bytes.
@@ -53,7 +53,7 @@ pub unsafe extern "C" fn goud_plugin_register(
             set_last_error(GoudError::InvalidState(
                 "plugin_id is not valid UTF-8".to_string(),
             ));
-            return ERR_INVALID_STATE;
+            return -ERR_INVALID_STATE;
         }
     };
 
@@ -63,14 +63,14 @@ pub unsafe extern "C" fn goud_plugin_register(
             set_last_error(GoudError::InternalError(
                 "Failed to lock context registry".to_string(),
             ));
-            return ERR_INTERNAL_ERROR;
+            return -ERR_INTERNAL_ERROR;
         }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,
         None => {
             set_last_error(GoudError::InvalidContext);
-            return GoudError::InvalidContext.error_code();
+            return -(GoudError::InvalidContext.error_code());
         }
     };
 
@@ -79,7 +79,7 @@ pub unsafe extern "C" fn goud_plugin_register(
             "Plugin '{}' is already registered",
             plugin_id
         )));
-        return GoudError::ResourceAlreadyExists(String::new()).error_code();
+        return -(GoudError::ResourceAlreadyExists(String::new()).error_code());
     }
 
     0 // SUCCESS
@@ -95,7 +95,7 @@ pub unsafe extern "C" fn goud_plugin_register(
 ///
 /// # Returns
 ///
-/// `0` on success. A positive error code if the plugin was not registered
+/// `0` on success. A negative error code if the plugin was not registered
 /// or inputs are invalid.
 ///
 /// # Safety
@@ -110,12 +110,12 @@ pub unsafe extern "C" fn goud_plugin_unregister(
 ) -> i32 {
     if context_id == GOUD_INVALID_CONTEXT_ID {
         set_last_error(GoudError::InvalidContext);
-        return GoudError::InvalidContext.error_code();
+        return -(GoudError::InvalidContext.error_code());
     }
 
     if plugin_id_ptr.is_null() {
         set_last_error(GoudError::InvalidState("plugin_id_ptr is null".to_string()));
-        return ERR_INVALID_STATE;
+        return -ERR_INVALID_STATE;
     }
 
     // SAFETY: Caller guarantees plugin_id_ptr is valid for plugin_id_len bytes.
@@ -126,7 +126,7 @@ pub unsafe extern "C" fn goud_plugin_unregister(
             set_last_error(GoudError::InvalidState(
                 "plugin_id is not valid UTF-8".to_string(),
             ));
-            return ERR_INVALID_STATE;
+            return -ERR_INVALID_STATE;
         }
     };
 
@@ -136,14 +136,14 @@ pub unsafe extern "C" fn goud_plugin_unregister(
             set_last_error(GoudError::InternalError(
                 "Failed to lock context registry".to_string(),
             ));
-            return ERR_INTERNAL_ERROR;
+            return -ERR_INTERNAL_ERROR;
         }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,
         None => {
             set_last_error(GoudError::InvalidContext);
-            return GoudError::InvalidContext.error_code();
+            return -(GoudError::InvalidContext.error_code());
         }
     };
 
@@ -152,7 +152,7 @@ pub unsafe extern "C" fn goud_plugin_unregister(
             "Plugin '{}' is not registered",
             plugin_id
         )));
-        return GoudError::ResourceNotFound(String::new()).error_code();
+        return -(GoudError::ResourceNotFound(String::new()).error_code());
     }
 
     0 // SUCCESS
@@ -345,7 +345,7 @@ mod tests {
             assert_eq!(r1, 0);
 
             let r2 = goud_plugin_register(ctx, id.as_ptr(), id.len() as u32);
-            assert_ne!(r2, 0); // Already exists
+            assert!(r2 < 0); // Already exists
         }
     }
 
@@ -372,7 +372,7 @@ mod tests {
         // SAFETY: Test-controlled valid pointer and length.
         unsafe {
             let result = goud_plugin_unregister(ctx, id.as_ptr(), id.len() as u32);
-            assert_ne!(result, 0);
+            assert!(result < 0);
         }
     }
 
@@ -438,7 +438,7 @@ mod tests {
         // SAFETY: Test-controlled valid pointer and length.
         unsafe {
             let r = goud_plugin_register(GOUD_INVALID_CONTEXT_ID, id.as_ptr(), id.len() as u32);
-            assert_ne!(r, 0);
+            assert!(r < 0);
 
             let r =
                 goud_plugin_is_registered(GOUD_INVALID_CONTEXT_ID, id.as_ptr(), id.len() as u32);
@@ -452,7 +452,7 @@ mod tests {
         // SAFETY: Deliberately testing null pointer handling.
         unsafe {
             let r = goud_plugin_register(ctx, std::ptr::null(), 5);
-            assert_ne!(r, 0);
+            assert!(r < 0);
 
             let r = goud_plugin_is_registered(ctx, std::ptr::null(), 5);
             assert!(r < 0);

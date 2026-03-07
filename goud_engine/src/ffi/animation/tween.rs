@@ -170,3 +170,18 @@ pub extern "C" fn goud_tween_reset(_context_id: GoudContextId, handle: i64) -> i
         }
     })
 }
+
+/// Destroys a tween handle, freeing its storage.
+/// Returns 0 on success, negative error code if handle not found.
+#[no_mangle]
+pub extern "C" fn goud_tween_destroy(_context_id: GoudContextId, handle: i64) -> i32 {
+    TWEEN_STORE.with(|store| {
+        let mut map = store.borrow_mut();
+        if map.remove(&handle).is_some() {
+            0
+        } else {
+            set_last_error(GoudError::InvalidState("tween handle not found".into()));
+            -ERR_INVALID_STATE
+        }
+    })
+}

@@ -288,8 +288,10 @@ pub unsafe extern "C" fn goud_animation_controller_get_state(
     copy_len as i32
 }
 
-/// Advances the animation controller system for a single entity by `dt`
-/// seconds. Delegates to the existing system logic.
+/// Advances the animation controller for a single entity by `dt` seconds.
+///
+/// Runs the same three-phase logic as the global system but scoped to one
+/// entity, so only the specified entity is affected.
 #[no_mangle]
 pub extern "C" fn goud_animation_controller_update(
     context_id: GoudContextId,
@@ -316,13 +318,157 @@ pub extern "C" fn goud_animation_controller_update(
     let entity = Entity::from_bits(entity_id);
     let world = context.world_mut();
 
-    if !world.has::<AnimationController>(entity) {
-        set_last_error(GoudError::ComponentNotFound);
-        return -ERR_COMPONENT_NOT_FOUND;
+    // Phase 1: Read controller state and decide action.
+    use crate::ecs::components::animation_controller::{
+        AnimParam, TransitionCondition, TransitionProgress,
+    };
+    use crate::ecs::components::sprite_animator::SpriteAnimator;
+
+    enum Action {
+        None,
+        AdvanceTransition { new_elapsed: f32 },
+        CompleteTransition { to_state: String },
+        StartTransition { to_state: String, duration: f32 },
     }
 
-    // Use the full system update (operates on all matching entities).
-    // A per-entity update could be added later for finer control.
-    crate::ecs::systems::update_animation_controllers(world, dt);
+    let action = {
+        let controller = match world.get::<AnimationController>(entity) {
+            Some(c) => c,
+            None => {
+                set_last_error(GoudError::ComponentNotFound);
+                return -ERR_COMPONENT_NOT_FOUND;
+            }
+        };
+
+        if let Some(ref progress) = controller.transition_progress {
+            let new_elapsed = progress.elapsed + dt;
+            if new_elapsed >= progress.duration {
+                Action::CompleteTransition {
+                    to_state: progress.to_state.clone(),
+                }
+            } else {
+                Action::AdvanceTransition { new_elapsed }
+            }
+        } else {
+            // Check for matching transitions from current state
+            let mut found = Action::None;
+            for transition in &controller.transitions {
+                if transition.from != controller.current_state {
+                    continue;
+                }
+                let all_met = transition.conditions.iter().all(|c| match c {
+                    TransitionCondition::BoolEquals { param, value } => {
+                        matches!(
+                            controller.parameters.get(param),
+                            Some(AnimParam::Bool(v)) if *v == *value
+                        )
+                    }
+                    TransitionCondition::FloatGreaterThan { param, threshold } => {
+                        matches!(
+                            controller.parameters.get(param),
+                            Some(AnimParam::Float(v)) if *v > *threshold
+                        )
+                    }
+                    TransitionCondition::FloatLessThan { param, threshold } => {
+                        matches!(
+                            controller.parameters.get(param),
+                            Some(AnimParam::Float(v)) if *v < *threshold
+                        )
+                    }
+                });
+                if all_met {
+                    found = Action::StartTransition {
+                        to_state: transition.to.clone(),
+                        duration: transition.blend_duration,
+                    };
+                    break;
+                }
+            }
+            found
+        }
+    };
+
+    // Phase 2: Apply the action.
+    match action {
+        Action::None => {}
+        Action::AdvanceTransition { new_elapsed } => {
+            if let Some(ctrl) = world.get_mut::<AnimationController>(entity) {
+                if let Some(ref mut progress) = ctrl.transition_progress {
+                    progress.elapsed = new_elapsed;
+                }
+            }
+        }
+        Action::CompleteTransition { to_state } => {
+            let new_clip = {
+                let ctrl = world.get_mut::<AnimationController>(entity);
+                if let Some(ctrl) = ctrl {
+                    ctrl.current_state = to_state;
+                    ctrl.transition_progress = None;
+                    ctrl.current_clip().cloned()
+                } else {
+                    None
+                }
+            };
+            if let Some(clip) = new_clip {
+                if let Some(animator) = world.get_mut::<SpriteAnimator>(entity) {
+                    animator.clip = clip;
+                    animator.current_frame = 0;
+                    animator.elapsed = 0.0;
+                }
+            }
+        }
+        Action::StartTransition { to_state, duration } => {
+            if duration <= 0.0 {
+                let new_clip = {
+                    let ctrl = world.get_mut::<AnimationController>(entity);
+                    if let Some(ctrl) = ctrl {
+                        ctrl.current_state = to_state;
+                        ctrl.transition_progress = None;
+                        ctrl.current_clip().cloned()
+                    } else {
+                        None
+                    }
+                };
+                if let Some(clip) = new_clip {
+                    if let Some(animator) = world.get_mut::<SpriteAnimator>(entity) {
+                        animator.clip = clip;
+                        animator.current_frame = 0;
+                        animator.elapsed = 0.0;
+                    }
+                }
+            } else if let Some(ctrl) = world.get_mut::<AnimationController>(entity) {
+                ctrl.transition_progress = Some(TransitionProgress {
+                    from_state: ctrl.current_state.clone(),
+                    to_state,
+                    elapsed: 0.0,
+                    duration,
+                });
+            }
+        }
+    }
+
+    // Phase 3: Sync animator clip with current state.
+    let current_clip = {
+        let ctrl = world.get::<AnimationController>(entity);
+        if let Some(ctrl) = ctrl {
+            if ctrl.transition_progress.is_some() {
+                None
+            } else {
+                ctrl.current_clip().cloned()
+            }
+        } else {
+            None
+        }
+    };
+    if let Some(clip) = current_clip {
+        if let Some(animator) = world.get_mut::<SpriteAnimator>(entity) {
+            if animator.clip != clip {
+                animator.clip = clip;
+                animator.current_frame = 0;
+                animator.elapsed = 0.0;
+            }
+        }
+    }
+
     0
 }

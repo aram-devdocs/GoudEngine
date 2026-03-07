@@ -191,9 +191,10 @@ pub extern "C" fn goud_skeleton_set_bone_transform(
     0
 }
 
-/// Plays a skeletal animation clip by name on the entity's
-/// `SkeletalAnimator`. If no animator exists, one is created with an
-/// empty animation. The `looping` flag controls whether the clip loops.
+/// Plays a skeletal animation clip by name on the entity. Always creates a
+/// new `SkeletalAnimator`, replacing any existing one. Previous animator
+/// state (loaded clips, playback position) is discarded.
+/// The `looping` flag controls whether the clip loops.
 ///
 /// # Safety
 ///
