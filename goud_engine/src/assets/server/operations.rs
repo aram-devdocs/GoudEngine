@@ -7,36 +7,10 @@ use crate::assets::{HotReloadConfig, HotReloadWatcher};
 use std::path::Path;
 
 impl AssetServer {
-    /// Loads an asset from a path, returning a handle immediately.
+    /// Loads an asset from a path (relative to asset root), returning a handle immediately.
     ///
-    /// The asset loads synchronously (blocking). Use [`AssetServer::load_async`] for
-    /// non-blocking loads that don't stall the main thread.
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - Path to the asset file (relative to asset root)
-    ///
-    /// # Returns
-    ///
-    /// A handle to the asset. The handle is valid even if loading fails.
-    /// Check the asset state with `get_load_state()`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::assets::{Asset, AssetServer};
-    ///
-    /// struct Texture { width: u32 }
-    /// impl Asset for Texture {}
-    ///
-    /// let mut server = AssetServer::new();
-    /// let handle = server.load::<Texture>("textures/player.png");
-    ///
-    /// // Check if loaded
-    /// if server.is_loaded(&handle) {
-    ///     println!("Texture loaded!");
-    /// }
-    /// ```
+    /// The asset loads synchronously (blocking). The handle is valid even if loading
+    /// fails — check with `get_load_state()`.
     pub fn load<A: Asset>(&mut self, path: impl AsRef<Path>) -> AssetHandle<A> {
         let asset_path = AssetPath::new(path.as_ref().to_str().unwrap_or_default());
 
@@ -241,27 +215,7 @@ impl AssetServer {
             .unwrap_or(false)
     }
 
-    /// Returns the loading state for a handle.
-    ///
-    /// Returns `None` if the handle is invalid or not tracked.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::assets::{Asset, AssetServer, AssetState};
-    ///
-    /// struct MyAsset;
-    /// impl Asset for MyAsset {}
-    ///
-    /// let server = AssetServer::new();
-    /// // let handle = server.load::<MyAsset>("data.json");
-    /// // match server.get_load_state(&handle) {
-    /// //     Some(AssetState::Loaded) => println!("Ready!"),
-    /// //     Some(AssetState::Loading { progress }) => println!("Loading: {}%", progress * 100.0),
-    /// //     Some(AssetState::Failed { error }) => println!("Error: {}", error),
-    /// //     _ => println!("Unknown state"),
-    /// // }
-    /// ```
+    /// Returns the loading state for a handle, or `None` if not tracked.
     #[inline]
     pub fn get_load_state<A: Asset>(&self, handle: &AssetHandle<A>) -> Option<AssetState> {
         self.storage.get_state(handle)
