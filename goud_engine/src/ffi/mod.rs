@@ -103,6 +103,7 @@ pub mod context;
 #[cfg(feature = "native")]
 pub mod debug;
 pub mod entity;
+pub mod error;
 #[cfg(feature = "native")]
 pub mod input;
 #[cfg(feature = "native")]

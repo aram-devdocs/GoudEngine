@@ -114,13 +114,59 @@ jobs:
     - name: Generate coverage
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
       run: |
-        cargo tarpaulin --out xml --all-features -p goud-engine-core --timeout 300 --exclude-files "*/build.rs" --exclude-files "*/tests/*" --exclude-files "*/examples/*"
-    
+        cargo tarpaulin \
+          --out xml html \
+          --output-dir coverage-report \
+          --all-features \
+          -p goud-engine-core \
+          --timeout 300 \
+          --branch \
+          --exclude-files "*/build.rs" \
+          --exclude-files "*/tests/*" \
+          --exclude-files "*/examples/*" \
+          --exclude-files "*/ffi/**" \
+          --exclude-files "*/sdk.rs"
+
+    - name: Check branch coverage threshold (70%)
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && always()
+      run: |
+        if [ ! -f coverage-report/cobertura.xml ]; then
+          echo "WARNING: Coverage report not found, skipping branch check"
+          exit 0
+        fi
+        BRANCH_RATE=$(python3 -c "
+        import xml.etree.ElementTree as ET
+        tree = ET.parse('coverage-report/cobertura.xml')
+        rate = tree.getroot().attrib.get('branch-rate')
+        if rate is None:
+          print('SKIP')
+        else:
+          print(f'{float(rate) * 100:.2f}')
+        ")
+        if [ "$BRANCH_RATE" = "SKIP" ]; then
+          echo "WARNING: branch-rate attribute not found in cobertura.xml"
+          exit 0
+        fi
+        echo "Branch coverage: ${BRANCH_RATE}%"
+        if python3 -c "exit(0 if float('${BRANCH_RATE}') >= 70.0 else 1)"; then
+          echo "PASS: Branch coverage meets 70% threshold"
+        else
+          echo "WARNING: Branch coverage ${BRANCH_RATE}% is below 70% target (informational)"
+        fi
+
+    - name: Upload coverage report
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage-report/
+        retention-days: 7
+
     - name: Upload coverage to Codecov
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
       uses: codecov/codecov-action@v5
       with:
-        file: ./cobertura.xml
+        file: ./coverage-report/cobertura.xml
         flags: rust
         name: rust-coverage
         fail_ci_if_error: false

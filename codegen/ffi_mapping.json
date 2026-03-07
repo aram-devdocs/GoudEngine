@@ -685,6 +685,11 @@
       "goud_component_add_batch":     {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_ids", "type": "*const u64"}, {"name": "count", "type": "u32"}, {"name": "type_id_hash", "type": "u64"}, {"name": "data_ptr", "type": "*const u8"}, {"name": "component_size", "type": "usize"}], "returns": "u32", "unsafe": true},
       "goud_component_remove_batch":  {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_ids", "type": "*const u64"}, {"name": "count", "type": "u32"}, {"name": "type_id_hash", "type": "u64"}], "returns": "u32", "unsafe": true},
       "goud_component_has_batch":     {"params": [{"name": "ctx", "type": "GoudContextId"}, {"name": "entity_ids", "type": "*const u64"}, {"name": "count", "type": "u32"}, {"name": "type_id_hash", "type": "u64"}, {"name": "out_results", "type": "*mut u8"}], "returns": "u32", "unsafe": true}
+    },
+    "error": {
+      "goud_last_error_code":    {"params": [],                                                                    "returns": "i32"},
+      "goud_last_error_message": {"params": [{"name": "buf", "type": "*mut u8"}, {"name": "buf_len", "type": "usize"}], "returns": "i32", "unsafe": true},
+      "goud_clear_last_error":   {"params": [],                                                                    "returns": "void"}
     }
   },
 
