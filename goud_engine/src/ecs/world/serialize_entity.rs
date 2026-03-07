@@ -4,8 +4,6 @@
 //! serializable components) to JSON and to deserialize components back
 //! onto entities.
 
-use std::collections::HashMap;
-
 use super::super::component::ComponentId;
 use super::super::entity::Entity;
 use super::super::Component;
@@ -19,6 +17,14 @@ impl World {
     /// and [`deserialize_entity_components`](Self::deserialize_entity_components).
     ///
     /// The component type must implement `Serialize` and `Deserialize`.
+    ///
+    /// # Type Name Fragility
+    ///
+    /// This method uses `std::any::type_name::<T>()` to key registered components.
+    /// The returned type name includes full module paths (e.g., `my_game::components::Health`).
+    /// Refactoring code structure or moving components to different modules will change
+    /// these paths, breaking deserialization of existing scene files that reference the
+    /// old type names. Plan component module stability accordingly.
     ///
     /// # Example
     ///
@@ -51,11 +57,19 @@ impl World {
     /// Registers built-in engine components as serializable.
     ///
     /// Registers all standard engine components for serialization:
-    /// - Transform2D, GlobalTransform2D, Transform, GlobalTransform
+    /// - Transform2D, Transform (local transforms only)
     /// - Parent, Children, Name
     /// - Sprite, SpriteAnimator
     /// - RigidBody, Collider
     /// - AudioSource
+    ///
+    /// # Global Transforms Excluded
+    ///
+    /// GlobalTransform2D and GlobalTransform are **not** registered because they are
+    /// system-computed values derived from local transforms and the hierarchy tree.
+    /// They must be re-derived by the transform propagation system after deserialization,
+    /// not loaded from scene files. Loading stale global transforms would violate
+    /// the invariant that global transforms match parent-to-child propagation.
     ///
     /// Call this if you intend to serialize/deserialize entities with
     /// built-in components. This is opt-in.
@@ -65,14 +79,12 @@ impl World {
         }
         use crate::ecs::components::hierarchy::{Children, Parent};
         use crate::ecs::components::{
-            AudioSource, Collider, GlobalTransform, GlobalTransform2D, Name, RigidBody, Sprite,
+            AudioSource, Collider, Name, RigidBody, Sprite,
             SpriteAnimator, Transform, Transform2D,
         };
 
         self.register_serializable::<Transform2D>();
-        self.register_serializable::<GlobalTransform2D>();
         self.register_serializable::<Transform>();
-        self.register_serializable::<GlobalTransform>();
         self.register_serializable::<Parent>();
         self.register_serializable::<Children>();
         self.register_serializable::<Name>();
@@ -163,10 +175,13 @@ impl World {
             None => return 0,
         };
 
-        // Build lookup: type_name -> ComponentId from serializable_names
-        let name_to_id: HashMap<String, ComponentId> = self.serializable_names.clone();
-
         let mut count = 0;
+
+        // Use split borrows to avoid cloning serializable_names
+        let name_to_id = &self.serializable_names;
+        let storages = &mut self.storages;
+        let archetypes = &mut self.archetypes;
+        let entity_archetypes = &mut self.entity_archetypes;
 
         for (type_name, value) in components {
             let component_id = match name_to_id.get(type_name) {
@@ -175,7 +190,7 @@ impl World {
             };
 
             // Deserialize the component
-            let boxed = match self.storages.get(&component_id) {
+            let boxed = match storages.get(&component_id) {
                 Some(entry) => entry.deserialize_component(value),
                 None => continue,
             };
@@ -186,21 +201,21 @@ impl World {
             };
 
             // Insert the component
-            if let Some(entry) = self.storages.get_mut(&component_id) {
+            if let Some(entry) = storages.get_mut(&component_id) {
                 if entry.insert_any(entity, boxed) {
                     // Update archetype
-                    let current_arch_id = self.entity_archetypes[&entity];
+                    let current_arch_id = entity_archetypes[&entity];
                     let target_arch_id =
-                        self.archetypes.get_add_edge(current_arch_id, component_id);
+                        archetypes.get_add_edge(current_arch_id, component_id);
 
                     if current_arch_id != target_arch_id {
-                        if let Some(old) = self.archetypes.get_mut(current_arch_id) {
+                        if let Some(old) = archetypes.get_mut(current_arch_id) {
                             old.remove_entity(entity);
                         }
-                        if let Some(new) = self.archetypes.get_mut(target_arch_id) {
+                        if let Some(new) = archetypes.get_mut(target_arch_id) {
                             new.add_entity(entity);
                         }
-                        self.entity_archetypes.insert(entity, target_arch_id);
+                        entity_archetypes.insert(entity, target_arch_id);
                     }
 
                     count += 1;

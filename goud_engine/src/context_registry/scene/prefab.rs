@@ -66,10 +66,13 @@ impl PrefabData {
     ///
     /// # Errors
     ///
-    /// Returns an error if the root entity cannot be serialized.
+    /// Returns an error if:
+    /// - The root entity cannot be serialized
+    /// - A cycle is detected in the hierarchy (malformed Children data)
     pub fn from_entity(world: &World, root: Entity, name: &str) -> Result<Self, GoudError> {
         let mut entities = Vec::new();
-        Self::collect_entity(world, root, &mut entities)?;
+        let mut visited = HashSet::new();
+        Self::collect_entity(world, root, &mut entities, &mut visited)?;
 
         Ok(Self {
             name: name.to_string(),
@@ -142,11 +145,25 @@ impl PrefabData {
     }
 
     /// Recursively collects entity data from a root entity.
+    ///
+    /// # Cycle Detection
+    ///
+    /// Detects cycles in the Children hierarchy. If an entity is visited twice,
+    /// returns an error. This guards against malformed hierarchy data where
+    /// a child incorrectly references an ancestor.
     fn collect_entity(
         world: &World,
         entity: Entity,
         out: &mut Vec<EntityData>,
+        visited: &mut HashSet<Entity>,
     ) -> Result<(), GoudError> {
+        if !visited.insert(entity) {
+            return Err(GoudError::InternalError(format!(
+                "Cycle detected in entity hierarchy: entity {:?} visited twice",
+                entity
+            )));
+        }
+
         let json = world.serialize_entity(entity).ok_or_else(|| {
             GoudError::InternalError(format!("Failed to serialize entity {:?}", entity))
         })?;
@@ -170,7 +187,7 @@ impl PrefabData {
         if let Some(children) = world.get::<Children>(entity) {
             let child_entities: Vec<Entity> = children.as_slice().to_vec();
             for child in child_entities {
-                Self::collect_entity(world, child, out)?;
+                Self::collect_entity(world, child, out, visited)?;
             }
         }
 
