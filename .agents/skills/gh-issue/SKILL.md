@@ -73,6 +73,7 @@ Derive `<short-slug>` from the primary issue title (2-3 word kebab-case). Use th
 - [ ] Explore the relevant codebase areas thoroughly (discovery-first protocol)
 - [ ] **Fill in the Execution Plan Template below -- EVERY `{{PLACEHOLDER}}`**. The template IS the plan. Do not create a different structure.
 - [ ] If any issue is ambiguous, comment questions on that issue and STOP until answered
+- [ ] Plan should use /find-skills, /subagent-driven-development, /humanizer, and any other skills, rules, hooks, and agents as needed
 
 **CRITICAL**: The plan file MUST use `- [ ]` checkbox syntax for every actionable step. The `plan-completion-guard.sh` hook blocks session end if unchecked items remain.
 
