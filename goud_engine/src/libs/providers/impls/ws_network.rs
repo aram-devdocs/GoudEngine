@@ -114,7 +114,11 @@ mod native {
                             }
                         }
                         Err(mpsc::TryRecvError::Empty) => break,
-                        Err(mpsc::TryRecvError::Disconnected) => return,
+                        Err(mpsc::TryRecvError::Disconnected) => {
+                            // Send graceful close frame before returning
+                            let _ = ws.send(Message::Close(None));
+                            return;
+                        }
                     }
                 }
             }

@@ -15,7 +15,6 @@
 //! | 400-499   | Input      | Input handling errors                |
 //! | 500-599   | System     | Platform and system errors           |
 //! | 600-699   | Provider   | Provider subsystem errors            |
-//! | 700-799   | Network    | Network provider errors              |
 //! | 900-999   | Internal   | Unexpected internal errors           |
 
 /// FFI-compatible error code type.
@@ -216,42 +215,7 @@ pub const ERR_PROVIDER_OPERATION_FAILED: GoudErrorCode = 602;
 // 620-629: Audio provider errors
 // 630-639: Window provider errors
 // 640-649: Input provider errors
-// 700-709: Network provider errors
-
-// -----------------------------------------------------------------------------
-// Network Errors (700-709): Network provider errors
-// -----------------------------------------------------------------------------
-
-/// Base code for network provider errors.
-pub const NETWORK_ERROR_BASE: GoudErrorCode = 700;
-
-/// Network bind (listen) failed.
-/// Recovery: check that the port is not already in use.
-pub const ERR_NETWORK_BIND_FAILED: GoudErrorCode = 700;
-
-/// Network connection attempt failed.
-/// Recovery: verify the remote address and that the host is reachable.
-pub const ERR_NETWORK_CONNECT_FAILED: GoudErrorCode = 701;
-
-/// Failed to send data over a network connection.
-/// Recovery: check that the connection is still active.
-pub const ERR_NETWORK_SEND_FAILED: GoudErrorCode = 702;
-
-/// The connection is disconnected.
-/// Recovery: reconnect before sending.
-pub const ERR_NETWORK_DISCONNECTED: GoudErrorCode = 703;
-
-/// Network operation timed out.
-/// Recovery: retry the operation or increase timeout settings.
-pub const ERR_NETWORK_TIMEOUT: GoudErrorCode = 704;
-
-/// The provided network address is invalid.
-/// Recovery: check address format (e.g., "host:port").
-pub const ERR_NETWORK_INVALID_ADDRESS: GoudErrorCode = 705;
-
-/// The specified connection ID was not found.
-/// Recovery: verify the connection ID is valid and has not been closed.
-pub const ERR_NETWORK_CONNECTION_NOT_FOUND: GoudErrorCode = 706;
+// 700-709: Reserved for future use (network provider uses generic ProviderError)
 
 // -----------------------------------------------------------------------------
 // Internal Errors (900-999): Unexpected internal errors
@@ -297,7 +261,6 @@ pub const fn error_category(code: GoudErrorCode) -> &'static str {
         400..=499 => "Input",
         500..=599 => "System",
         600..=699 => "Provider",
-        700..=799 => "Network",
         900..=999 => "Internal",
         _ => "Unknown",
     }
