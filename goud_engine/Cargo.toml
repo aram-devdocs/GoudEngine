@@ -37,6 +37,7 @@ rpath = false
 default = ["native"]
 native = ["dep:gl", "dep:glfw", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger"]
 net-udp = []
+net-ws = ["dep:tungstenite"]
 wgpu-backend = ["dep:wgpu", "dep:winit", "dep:naga", "dep:pollster"]
 web = ["wgpu-backend", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:web-sys", "dep:js-sys"]
 
@@ -57,6 +58,7 @@ tiled = { version = "0.15", optional = true }
 rayon = { version = "1.11", optional = true }
 notify = { version = "8", optional = true }
 rodio = { version = "0.22", optional = true }
+tungstenite = { version = "0.26", optional = true }
 bytemuck = "1.14"
 goud_engine_macros = { version = "=0.0.827", path = "../goud_engine_macros" } # x-release-please-version
 wgpu = { version = "28", optional = true }

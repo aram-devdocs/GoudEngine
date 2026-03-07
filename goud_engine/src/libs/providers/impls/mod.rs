@@ -45,3 +45,9 @@ pub mod udp_reliability;
 pub mod udp_network;
 #[cfg(feature = "net-udp")]
 pub use udp_network::UdpNetProvider;
+
+/// WebSocket transport provider implementing `NetworkProvider`.
+#[cfg(feature = "net-ws")]
+pub mod ws_network;
+#[cfg(feature = "net-ws")]
+pub use ws_network::WsNetProvider;
