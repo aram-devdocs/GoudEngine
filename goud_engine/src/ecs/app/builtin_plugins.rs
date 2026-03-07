@@ -2,7 +2,7 @@
 //!
 //! These plugins provide core engine functionality like transform propagation.
 
-use super::plugin::Plugin;
+use super::plugin::{Plugin, PluginGroup};
 use super::App;
 use crate::ecs::schedule::CoreStage;
 use crate::ecs::systems::TransformPropagationSystem;
@@ -32,5 +32,30 @@ impl Plugin for TransformPropagationPlugin {
 
     fn name(&self) -> &'static str {
         "TransformPropagationPlugin"
+    }
+}
+
+/// A plugin group that adds all default engine plugins.
+///
+/// Currently includes:
+/// - [`TransformPropagationPlugin`]: Automatic transform hierarchy propagation
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use goud_engine::ecs::app::App;
+/// use goud_engine::ecs::DefaultPlugins;
+///
+/// let mut app = App::new_with_defaults();
+/// // Or manually:
+/// let mut app = App::new();
+/// app.add_plugin_group(DefaultPlugins);
+/// ```
+#[derive(Debug, Default, Clone)]
+pub struct DefaultPlugins;
+
+impl PluginGroup for DefaultPlugins {
+    fn build(self, app: &mut App) {
+        app.add_plugin(TransformPropagationPlugin);
     }
 }
