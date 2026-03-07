@@ -148,10 +148,12 @@ pub fn scene_from_json(json: &str) -> Result<SceneData, GoudError> {
 ///
 /// Returns [`GoudError::InternalError`] if serialization fails.
 pub fn scene_to_binary(data: &SceneData) -> Result<Vec<u8>, GoudError> {
-    let json = serde_json::to_string(data)
-        .map_err(|e| GoudError::InternalError(format!("Failed to serialize scene to binary: {}", e)))?;
-    bincode::serialize(&json)
-        .map_err(|e| GoudError::InternalError(format!("Failed to serialize scene to binary: {}", e)))
+    let json = serde_json::to_string(data).map_err(|e| {
+        GoudError::InternalError(format!("Failed to serialize scene to binary: {}", e))
+    })?;
+    bincode::serialize(&json).map_err(|e| {
+        GoudError::InternalError(format!("Failed to serialize scene to binary: {}", e))
+    })
 }
 
 /// Parses a binary blob (produced by [`scene_to_binary`]) back into a

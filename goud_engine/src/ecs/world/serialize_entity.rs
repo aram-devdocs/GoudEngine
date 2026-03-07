@@ -79,8 +79,7 @@ impl World {
         }
         use crate::ecs::components::hierarchy::{Children, Parent};
         use crate::ecs::components::{
-            AudioSource, Collider, Name, RigidBody, Sprite,
-            SpriteAnimator, Transform, Transform2D,
+            AudioSource, Collider, Name, RigidBody, Sprite, SpriteAnimator, Transform, Transform2D,
         };
 
         self.register_serializable::<Transform2D>();
@@ -205,8 +204,7 @@ impl World {
                 if entry.insert_any(entity, boxed) {
                     // Update archetype
                     let current_arch_id = entity_archetypes[&entity];
-                    let target_arch_id =
-                        archetypes.get_add_edge(current_arch_id, component_id);
+                    let target_arch_id = archetypes.get_add_edge(current_arch_id, component_id);
 
                     if current_arch_id != target_arch_id {
                         if let Some(old) = archetypes.get_mut(current_arch_id) {

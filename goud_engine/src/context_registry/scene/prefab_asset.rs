@@ -53,10 +53,10 @@ impl AssetLoader for PrefabAssetLoader {
         _settings: &'a Self::Settings,
         _context: &'a mut LoadContext,
     ) -> Result<Self::Asset, AssetLoadError> {
-        let json = std::str::from_utf8(bytes)
-            .map_err(|e| AssetLoadError::DecodeFailed(e.to_string()))?;
-        let data: PrefabData = serde_json::from_str(json)
-            .map_err(|e| AssetLoadError::DecodeFailed(e.to_string()))?;
+        let json =
+            std::str::from_utf8(bytes).map_err(|e| AssetLoadError::DecodeFailed(e.to_string()))?;
+        let data: PrefabData =
+            serde_json::from_str(json).map_err(|e| AssetLoadError::DecodeFailed(e.to_string()))?;
         Ok(PrefabAsset { data })
     }
 }
@@ -84,10 +84,7 @@ mod tests {
                 },
                 components: {
                     let mut map = HashMap::new();
-                    map.insert(
-                        "Name".to_string(),
-                        serde_json::json!({"name": "hero"}),
-                    );
+                    map.insert("Name".to_string(), serde_json::json!({"name": "hero"}));
                     map
                 },
             }],
