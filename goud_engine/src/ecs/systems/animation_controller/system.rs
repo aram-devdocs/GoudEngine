@@ -110,10 +110,7 @@ pub fn update_animation_controllers(world: &mut World, dt: f32) {
                     }
                 }
             }
-            Action::StartTransition {
-                to_state,
-                duration,
-            } => {
+            Action::StartTransition { to_state, duration } => {
                 if duration <= 0.0 {
                     // Zero-duration transition: complete immediately
                     let new_clip = {
@@ -172,16 +169,9 @@ pub fn update_animation_controllers(world: &mut World, dt: f32) {
 /// Internal action enum to separate read and write phases.
 enum Action {
     None,
-    AdvanceTransition {
-        new_elapsed: f32,
-    },
-    CompleteTransition {
-        to_state: String,
-    },
-    StartTransition {
-        to_state: String,
-        duration: f32,
-    },
+    AdvanceTransition { new_elapsed: f32 },
+    CompleteTransition { to_state: String },
+    StartTransition { to_state: String, duration: f32 },
 }
 
 /// Finds the first transition whose conditions all match.
