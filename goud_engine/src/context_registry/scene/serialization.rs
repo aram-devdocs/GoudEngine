@@ -359,7 +359,7 @@ mod tests {
 
         for i in 0..5 {
             let e = world.spawn_empty();
-            world.insert(e, Name::new(&format!("entity_{}", i)));
+            world.insert(e, Name::new(format!("entity_{}", i)));
         }
 
         let scene_data = serialize_scene(&world, "multi").unwrap();
