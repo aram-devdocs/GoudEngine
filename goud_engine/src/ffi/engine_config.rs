@@ -60,8 +60,7 @@ pub unsafe extern "C" fn goud_engine_config_set_title(
     };
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.
     let config = &mut *(handle as *mut EngineConfig);
-    let old = std::ptr::read(config);
-    std::ptr::write(config, old.with_title(title_str));
+    config.game_config_mut().title = title_str.to_string();
     true
 }
 
@@ -80,8 +79,9 @@ pub unsafe extern "C" fn goud_engine_config_set_size(
     }
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.
     let config = &mut *(handle as *mut EngineConfig);
-    let old = std::ptr::read(config);
-    std::ptr::write(config, old.with_size(width, height));
+    let gc = config.game_config_mut();
+    gc.width = width;
+    gc.height = height;
     true
 }
 
@@ -99,8 +99,7 @@ pub unsafe extern "C" fn goud_engine_config_set_vsync(
     }
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.
     let config = &mut *(handle as *mut EngineConfig);
-    let old = std::ptr::read(config);
-    std::ptr::write(config, old.with_vsync(enabled));
+    config.game_config_mut().vsync = enabled;
     true
 }
 
@@ -118,8 +117,7 @@ pub unsafe extern "C" fn goud_engine_config_set_fullscreen(
     }
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.
     let config = &mut *(handle as *mut EngineConfig);
-    let old = std::ptr::read(config);
-    std::ptr::write(config, old.with_fullscreen(enabled));
+    config.game_config_mut().fullscreen = enabled;
     true
 }
 
@@ -137,8 +135,7 @@ pub unsafe extern "C" fn goud_engine_config_set_target_fps(
     }
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.
     let config = &mut *(handle as *mut EngineConfig);
-    let old = std::ptr::read(config);
-    std::ptr::write(config, old.with_target_fps(fps));
+    config.game_config_mut().target_fps = fps;
     true
 }
 
@@ -156,8 +153,7 @@ pub unsafe extern "C" fn goud_engine_config_set_fps_overlay(
     }
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.
     let config = &mut *(handle as *mut EngineConfig);
-    let old = std::ptr::read(config);
-    std::ptr::write(config, old.with_fps_overlay(enabled));
+    config.game_config_mut().show_fps_overlay = enabled;
     true
 }
 
