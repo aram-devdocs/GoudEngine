@@ -13,6 +13,11 @@ impl AnimationController {
     ///
     /// The controller starts with no states, transitions, or parameters.
     /// Use the builder methods to add them.
+    ///
+    /// **Precondition:** `initial_state` should name a state that will be
+    /// registered via [`with_state`](Self::with_state) before the controller
+    /// is used. If the state is never added, lookups such as
+    /// [`current_clip`](Self::current_clip) will return `None`.
     #[inline]
     pub fn new(initial_state: &str) -> Self {
         Self {
@@ -27,13 +32,8 @@ impl AnimationController {
     /// Adds an animation state with the given name and clip (builder pattern).
     #[inline]
     pub fn with_state(mut self, name: &str, clip: AnimationClip) -> Self {
-        self.states.insert(
-            name.to_string(),
-            AnimationState {
-                name: name.to_string(),
-                clip,
-            },
-        );
+        self.states
+            .insert(name.to_string(), AnimationState { clip });
         self
     }
 

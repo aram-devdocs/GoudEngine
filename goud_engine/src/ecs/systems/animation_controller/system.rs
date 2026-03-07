@@ -50,6 +50,9 @@ fn evaluate_condition(condition: &TransitionCondition, controller: &AnimationCon
 /// update_animation_controllers(&mut world, delta_time);
 /// ```
 pub fn update_animation_controllers(world: &mut World, dt: f32) {
+    // O(n) entity scan — matches the ECS query pattern used by other systems
+    // (e.g. skeletal_animation). A dedicated query index would speed this up
+    // but is not yet warranted by profiling data.
     let entities: Vec<_> = world
         .archetypes()
         .iter()

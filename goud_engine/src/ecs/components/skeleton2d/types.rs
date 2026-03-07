@@ -32,12 +32,15 @@ impl Default for BoneTransform {
 impl BoneTransform {
     /// Linearly interpolates between `self` and `other` by factor `t`.
     ///
-    /// Position and scale use [`Vec2::lerp`]; rotation uses scalar lerp.
-    /// For small angle differences, linear interpolation of the angle is adequate.
+    /// Position and scale use [`Vec2::lerp`]; rotation uses shortest-path
+    /// angle interpolation so that crossing the ±PI boundary works correctly.
     pub fn lerp(self, other: Self, t: f32) -> Self {
+        let diff = (other.rotation - self.rotation + std::f32::consts::PI)
+            .rem_euclid(std::f32::consts::TAU)
+            - std::f32::consts::PI;
         Self {
             position: self.position.lerp(other.position, t),
-            rotation: self.rotation + (other.rotation - self.rotation) * t,
+            rotation: self.rotation + diff * t,
             scale: self.scale.lerp(other.scale, t),
         }
     }

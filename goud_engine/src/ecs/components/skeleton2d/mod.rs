@@ -7,10 +7,10 @@
 //! - [`SkeletalMesh2D`] / [`SkeletalVertex`] / [`BoneWeight`]: Weighted mesh vertices
 //! - [`SkeletalAnimator`]: Playback controller component
 
-pub mod animation;
-pub mod mesh;
-pub mod playback;
-pub mod types;
+mod animation;
+mod mesh;
+mod playback;
+mod types;
 
 pub use animation::{BoneKeyframe, BoneTrack, SkeletalAnimation};
 pub use mesh::{BoneWeight, SkeletalMesh2D, SkeletalVertex};

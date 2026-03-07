@@ -7,7 +7,7 @@
 //! - [`deform_skeletal_meshes`]: Applies bone world transforms to mesh vertices
 //!   via linear blend skinning.
 
-pub mod interpolation;
+mod interpolation;
 mod system;
 
 #[cfg(test)]

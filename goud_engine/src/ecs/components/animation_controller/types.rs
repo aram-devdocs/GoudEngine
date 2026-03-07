@@ -9,11 +9,12 @@ use crate::ecs::Component;
 // AnimationState
 // =============================================================================
 
-/// A named animation state containing a clip to play.
+/// An animation state containing a clip to play.
+///
+/// The state's name is the key in the [`AnimationController::states`] map,
+/// so it is not duplicated here.
 #[derive(Debug, Clone)]
 pub struct AnimationState {
-    /// Unique name identifying this state.
-    pub name: String,
     /// The animation clip to play while in this state.
     pub clip: AnimationClip,
 }

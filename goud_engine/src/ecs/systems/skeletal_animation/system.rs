@@ -57,6 +57,8 @@ pub fn update_skeletal_animations(world: &mut World, dt: f32) {
             }
 
             let time = animator.current_time;
+            // PERF: tracks.clone() allocates per frame. An arena allocator or
+            // shared reference (e.g. Arc<Vec<BoneTrack>>) would avoid this.
             let tracks = animator.animation.tracks.clone();
             let bone_count = {
                 let Some(skel) = world.get::<Skeleton2D>(entity) else {

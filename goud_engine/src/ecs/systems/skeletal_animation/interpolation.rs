@@ -12,7 +12,7 @@ use crate::ecs::components::skeleton2d::{BoneKeyframe, BoneTransform};
 /// - If `t` is at or after the last keyframe, returns the last keyframe's transform.
 /// - Otherwise, linearly interpolates between the two surrounding keyframes.
 pub fn sample_track(keyframes: &[BoneKeyframe], t: f32) -> BoneTransform {
-    if keyframes.is_empty() {
+    if t.is_nan() || keyframes.is_empty() {
         return BoneTransform::default();
     }
 
