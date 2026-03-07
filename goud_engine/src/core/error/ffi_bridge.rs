@@ -312,6 +312,34 @@ impl GoudFFIResult {
     pub const fn is_error(&self) -> bool {
         !self.success
     }
+
+    // =========================================================================
+    // Compatibility aliases (used by GoudResult type alias and proc macros)
+    // =========================================================================
+
+    /// Alias for `success()` — creates a success result.
+    #[inline]
+    pub const fn ok() -> Self {
+        Self::success()
+    }
+
+    /// Alias for `from_code()` — creates an error result from a code.
+    #[inline]
+    pub const fn err(code: GoudErrorCode) -> Self {
+        Self::from_code(code)
+    }
+
+    /// Alias for `is_success()` — returns true if the result is ok.
+    #[inline]
+    pub const fn is_ok(&self) -> bool {
+        self.success
+    }
+
+    /// Alias for `is_error()` — returns true if the result is an error.
+    #[inline]
+    pub const fn is_err(&self) -> bool {
+        !self.success
+    }
 }
 
 impl Default for GoudFFIResult {
@@ -327,8 +355,28 @@ impl From<GoudError> for GoudFFIResult {
     }
 }
 
+impl From<GoudErrorCode> for GoudFFIResult {
+    fn from(code: GoudErrorCode) -> Self {
+        if code == SUCCESS {
+            Self::success()
+        } else {
+            Self::from_code(code)
+        }
+    }
+}
+
 impl<T> From<super::GoudResult<T>> for GoudFFIResult {
     fn from(result: super::GoudResult<T>) -> Self {
         Self::from_result(result)
+    }
+}
+
+impl std::fmt::Display for GoudFFIResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.success {
+            write!(f, "GoudResult::Success")
+        } else {
+            write!(f, "GoudResult::Error(code={})", self.code)
+        }
     }
 }
