@@ -32,6 +32,12 @@ jobs:
           NUGET_DOWNLOADS=$(curl -sf "https://azuresearch-usnc.nuget.org/query?q=packageid:GoudEngine&prerelease=false" | jq '.data[0].totalDownloads // 0')
         fi
 
+        # Ensure all counts default to 0 if API calls fail
+        CRATES_DOWNLOADS=${CRATES_DOWNLOADS:-0}
+        NUGET_DOWNLOADS=${NUGET_DOWNLOADS:-0}
+        PYPI_DOWNLOADS=${PYPI_DOWNLOADS:-0}
+        NPM_DOWNLOADS=${NPM_DOWNLOADS:-0}
+
         # Append to history
         DATE=$(date -u '+%Y-%m-%d')
         python3 -c "
