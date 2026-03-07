@@ -3,6 +3,7 @@
 use super::audio::AudioProvider;
 use super::impls::{NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullRenderProvider};
 use super::input::InputProvider;
+use super::network::NetworkProvider;
 use super::physics::PhysicsProvider;
 use super::registry::ProviderRegistry;
 use super::render::RenderProvider;
@@ -27,6 +28,7 @@ pub struct ProviderRegistryBuilder {
     physics: Option<Box<dyn PhysicsProvider>>,
     audio: Option<Box<dyn AudioProvider>>,
     input: Option<Box<dyn InputProvider>>,
+    network: Option<Box<dyn NetworkProvider>>,
 }
 
 impl ProviderRegistryBuilder {
@@ -37,6 +39,7 @@ impl ProviderRegistryBuilder {
             physics: None,
             audio: None,
             input: None,
+            network: None,
         }
     }
 
@@ -64,6 +67,13 @@ impl ProviderRegistryBuilder {
         self
     }
 
+    /// Set the network provider. If not called, `ProviderRegistry.network`
+    /// will be `None`.
+    pub fn with_network(mut self, network: impl NetworkProvider + 'static) -> Self {
+        self.network = Some(Box::new(network));
+        self
+    }
+
     /// Build the [`ProviderRegistry`], filling unconfigured slots with
     /// null providers.
     pub fn build(self) -> ProviderRegistry {
@@ -80,6 +90,7 @@ impl ProviderRegistryBuilder {
             input: self
                 .input
                 .unwrap_or_else(|| Box::new(NullInputProvider::new())),
+            network: self.network,
         }
     }
 }
@@ -150,5 +161,23 @@ mod tests {
         assert_eq!(registry.physics.name(), "null");
         assert_eq!(registry.audio.name(), "null");
         assert_eq!(registry.input.name(), "null");
+    }
+
+    #[test]
+    fn test_builder_network_defaults_to_none() {
+        let registry = ProviderRegistryBuilder::new().build();
+        assert!(registry.network.is_none());
+    }
+
+    #[test]
+    fn test_builder_with_network() {
+        use crate::core::providers::impls::NullNetworkProvider;
+
+        let registry = ProviderRegistryBuilder::new()
+            .with_network(NullNetworkProvider::new())
+            .build();
+        let net = registry.network.as_ref().expect("network should be Some");
+        assert_eq!(net.name(), "null");
+        assert_eq!(net.version(), "0.0.0");
     }
 }

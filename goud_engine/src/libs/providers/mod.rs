@@ -7,6 +7,8 @@
 pub use crate::core::providers::audio;
 pub use crate::core::providers::input;
 pub use crate::core::providers::input_types;
+pub use crate::core::providers::network;
+pub use crate::core::providers::network_types;
 pub use crate::core::providers::physics;
 pub use crate::core::providers::render;
 pub use crate::core::providers::types;

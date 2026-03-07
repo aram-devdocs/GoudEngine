@@ -7,12 +7,14 @@
 // Re-export null providers from core (Foundation layer)
 pub use crate::core::providers::impls::null_audio;
 pub use crate::core::providers::impls::null_input;
+pub use crate::core::providers::impls::null_network;
 pub use crate::core::providers::impls::null_physics;
 pub use crate::core::providers::impls::null_render;
 pub use crate::core::providers::impls::null_window;
 
 pub use crate::core::providers::impls::NullAudioProvider;
 pub use crate::core::providers::impls::NullInputProvider;
+pub use crate::core::providers::impls::NullNetworkProvider;
 pub use crate::core::providers::impls::NullPhysicsProvider;
 pub use crate::core::providers::impls::NullRenderProvider;
 pub use crate::core::providers::impls::NullWindowProvider;

@@ -3,6 +3,7 @@
 use super::audio::AudioProvider;
 use super::impls::{NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullRenderProvider};
 use super::input::InputProvider;
+use super::network::NetworkProvider;
 use super::physics::PhysicsProvider;
 use super::render::RenderProvider;
 
@@ -23,6 +24,9 @@ pub struct ProviderRegistry {
     pub audio: Box<dyn AudioProvider>,
     /// The input backend (e.g., GLFW input, null).
     pub input: Box<dyn InputProvider>,
+    /// The network backend (e.g., UDP, WebSocket, null). Optional because
+    /// most single-player games do not need networking.
+    pub network: Option<Box<dyn NetworkProvider>>,
 }
 
 impl Default for ProviderRegistry {
@@ -32,6 +36,7 @@ impl Default for ProviderRegistry {
             physics: Box::new(NullPhysicsProvider::new()),
             audio: Box::new(NullAudioProvider::new()),
             input: Box::new(NullInputProvider::new()),
+            network: None,
         }
     }
 }
@@ -47,6 +52,7 @@ mod tests {
         assert_eq!(registry.physics.name(), "null");
         assert_eq!(registry.audio.name(), "null");
         assert_eq!(registry.input.name(), "null");
+        assert!(registry.network.is_none());
     }
 
     #[test]
