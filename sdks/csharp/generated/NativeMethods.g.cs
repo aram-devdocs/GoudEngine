@@ -1033,10 +1033,10 @@ namespace GoudEngine
 
         // network
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern long goud_network_host(GoudContextId ctx, int protocol, u16 port);
+        public static extern long goud_network_host(GoudContextId ctx, int protocol, ushort port);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern long goud_network_connect(GoudContextId ctx, int protocol, IntPtr addr_ptr, int addr_len, u16 port);
+        public static extern long goud_network_connect(GoudContextId ctx, int protocol, IntPtr addr_ptr, int addr_len, ushort port);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_network_disconnect(GoudContextId ctx, long handle);

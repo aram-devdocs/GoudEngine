@@ -174,7 +174,7 @@ def load_mapping_functions(mapping: dict) -> set[str]:
     names: set[str] = set()
     for module_key, module_val in mapping.get("ffi_functions", {}).items():
         if module_key != "_comment" and isinstance(module_val, dict):
-            names.update(module_val.keys())
+            names.update(k for k in module_val.keys() if not k.startswith("_"))
     names |= collect_ffi_values(mapping.get("tools", {}))
     return names
 

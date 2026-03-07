@@ -5071,6 +5071,7 @@
       }
     },
     "physics2d": {
+      "_feature": "optional",
       "goud_physics_create": {
         "params": [
           {
@@ -5337,6 +5338,7 @@
       }
     },
     "physics3d": {
+      "_feature": "optional",
       "goud_physics3d_create": {
         "params": [
           {
@@ -5924,6 +5926,7 @@
       }
     },
     "network": {
+      "_feature": "optional",
       "goud_network_host": {
         "params": [
           {

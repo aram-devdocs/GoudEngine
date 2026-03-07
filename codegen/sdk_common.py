@@ -159,8 +159,8 @@ CTYPES_MAP = {
 
 CSHARP_FFI_TYPES = {
     "f32": "float", "f64": "double",
-    "u32": "uint", "u64": "ulong",
-    "i32": "int", "i64": "long",
+    "u8": "byte", "u16": "ushort", "u32": "uint", "u64": "ulong",
+    "i8": "sbyte", "i16": "short", "i32": "int", "i64": "long",
     "bool": "[MarshalAs(UnmanagedType.U1)] bool",
     "*const c_char": "[MarshalAs(UnmanagedType.LPStr)] string",
     "*mut f32": "ref float", "*mut u32": "ref uint",

@@ -129,8 +129,14 @@ def gen_ffi():
     for module, funcs in mapping["ffi_functions"].items():
         if not isinstance(funcs, dict):
             continue
+        optional = funcs.get("_feature") == "optional"
         lines.append(f"    # {module}")
+        if optional:
+            lines.append("    try:")
+        indent = "        " if optional else "    "
         for fname, fdef in funcs.items():
+            if fname.startswith("_"):
+                continue
             # Skip alias entries
             if fdef.get("alias_of"):
                 # Still declare it since it exists as a symbol
@@ -139,15 +145,18 @@ def gen_ffi():
                 ret = alias_fdef.get("returns", fdef.get("returns", "void"))
                 restype = _resolve_ffi_return(ret)
                 at_str = ", ".join(argtypes) if argtypes else ""
-                lines.append(f"    _lib.{fname}.argtypes = [{at_str}]")
-                lines.append(f"    _lib.{fname}.restype = {restype}")
+                lines.append(f"{indent}_lib.{fname}.argtypes = [{at_str}]")
+                lines.append(f"{indent}_lib.{fname}.restype = {restype}")
                 continue
 
             argtypes = [_resolve_ffi_param(p["type"]) for p in fdef["params"]]
             restype = _resolve_ffi_return(fdef["returns"])
             at_str = ", ".join(argtypes) if argtypes else ""
-            lines.append(f"    _lib.{fname}.argtypes = [{at_str}]")
-            lines.append(f"    _lib.{fname}.restype = {restype}")
+            lines.append(f"{indent}_lib.{fname}.argtypes = [{at_str}]")
+            lines.append(f"{indent}_lib.{fname}.restype = {restype}")
+        if optional:
+            lines.append("    except AttributeError:")
+            lines.append("        pass  # feature not compiled in")
         lines.append("")
 
     lines.append("_setup()")

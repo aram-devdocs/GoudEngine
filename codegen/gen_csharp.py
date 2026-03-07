@@ -212,6 +212,8 @@ def gen_native_methods():
             continue
         lines.append(f"        // {module}")
         for fname, fdef in funcs.items():
+            if fname.startswith("_") or not isinstance(fdef, dict):
+                continue
             params = [f"{_cs_ffi_param_type(p['type'])} {p['name']}" for p in fdef["params"]]
             raw_ret = fdef["returns"]
             ret = _cs_ffi_ret_type(raw_ret)
