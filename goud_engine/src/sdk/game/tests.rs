@@ -2,6 +2,7 @@
 
 use crate::core::math::Vec2;
 use crate::sdk::components::{GlobalTransform2D, Transform2D};
+use crate::sdk::engine_config::EngineConfig;
 use crate::sdk::game::GoudGame;
 use crate::sdk::game_config::GameConfig;
 
@@ -255,4 +256,59 @@ fn test_full_game_workflow() {
 
     assert!(player_moved);
     assert!(game.is_alive(player));
+}
+
+// =========================================================================
+// EngineConfig Integration Tests
+// =========================================================================
+
+#[test]
+fn test_goud_game_from_engine_config() {
+    let config = EngineConfig::new()
+        .with_title("Config Game")
+        .with_size(1024, 768);
+    let game = GoudGame::from_engine_config(config).unwrap();
+    assert_eq!(game.config().title, "Config Game");
+    assert_eq!(game.config().width, 1024);
+}
+
+#[test]
+fn test_goud_game_from_engine_config_preserves_settings() {
+    let config = EngineConfig::new()
+        .with_title("Settings Test")
+        .with_size(640, 480)
+        .with_vsync(false)
+        .with_fullscreen(true)
+        .with_target_fps(120);
+    let game = GoudGame::from_engine_config(config).unwrap();
+    assert_eq!(game.config().title, "Settings Test");
+    assert_eq!(game.window_size(), (640, 480));
+    assert!(!game.config().vsync);
+    assert!(game.config().fullscreen);
+    assert_eq!(game.config().target_fps, 120);
+}
+
+#[test]
+fn test_goud_game_providers_accessible() {
+    let game = GoudGame::from_engine_config(EngineConfig::new()).unwrap();
+    let providers = game.providers();
+    assert_eq!(providers.render.name(), "null");
+    assert_eq!(providers.physics.name(), "null");
+    assert_eq!(providers.audio.name(), "null");
+    assert_eq!(providers.input.name(), "null");
+}
+
+#[test]
+fn test_backward_compat_new() {
+    let game = GoudGame::new(GameConfig::default()).unwrap();
+    assert_eq!(game.config().title, "GoudEngine Game");
+    assert_eq!(game.providers().render.name(), "null");
+}
+
+#[test]
+fn test_backward_compat_default() {
+    let game = GoudGame::default();
+    assert_eq!(game.config().width, 800);
+    assert_eq!(game.config().height, 600);
+    assert_eq!(game.providers().render.name(), "null");
 }

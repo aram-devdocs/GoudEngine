@@ -69,6 +69,7 @@ pub mod components_sprite;
 pub mod components_transform2d;
 pub mod debug_overlay;
 pub mod entity;
+pub mod engine_config;
 pub mod entity_builder;
 pub mod game;
 pub mod game_config;
@@ -93,6 +94,7 @@ pub use crate::ecs::{Component, Entity, EntityAllocator, SparseSet, World};
 pub use entity_builder::EntityBuilder;
 pub use game::GoudGame;
 pub use game_config::{GameConfig, GameContext};
+pub use engine_config::EngineConfig;
 pub use scene::{SceneId, SceneManager};
 
 // Re-export components module contents at sdk level for convenience
@@ -142,8 +144,8 @@ pub mod prelude {
 
     // SDK types
     pub use super::{
-        EntityBuilder, GameConfig, GameContext, GoudError, GoudGame, GoudResult, SceneId,
-        SceneManager,
+        EngineConfig, EntityBuilder, GameConfig, GameContext, GoudError, GoudGame, GoudResult,
+        SceneId, SceneManager,
     };
 
     // Components - explicitly list to avoid shadowing
