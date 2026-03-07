@@ -246,3 +246,7 @@ impl std::fmt::Debug for App {
 #[cfg(test)]
 #[path = "tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "tests_extended.rs"]
+mod tests_extended;
