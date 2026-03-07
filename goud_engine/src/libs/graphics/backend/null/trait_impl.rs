@@ -242,13 +242,11 @@ impl RenderBackend for NullBackend {
         _fragment_src: &str,
     ) -> GoudResult<ShaderHandle> {
         let handle = self.shader_allocator.allocate();
-        self.shaders.insert(handle, ());
         Ok(handle)
     }
 
     fn destroy_shader(&mut self, handle: ShaderHandle) -> bool {
         if self.shader_allocator.deallocate(handle) {
-            self.shaders.remove(&handle);
             true
         } else {
             false

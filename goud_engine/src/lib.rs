@@ -73,6 +73,7 @@ pub mod rendering;
 /// ```
 pub mod sdk;
 /// Test helpers for GPU-free testing.
+#[cfg(any(test, feature = "headless"))]
 pub mod test_helpers;
 /// WebAssembly bindings for browser-based game development.
 ///

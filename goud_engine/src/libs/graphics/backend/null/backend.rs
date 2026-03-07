@@ -5,8 +5,7 @@ use std::collections::HashMap;
 use crate::core::handle::HandleAllocator;
 use crate::libs::graphics::backend::capabilities::{BackendCapabilities, BackendInfo};
 use crate::libs::graphics::backend::types::{
-    BufferHandle, BufferMarker, BufferType, ShaderHandle, ShaderMarker, TextureHandle,
-    TextureMarker,
+    BufferHandle, BufferMarker, BufferType, ShaderMarker, TextureHandle, TextureMarker,
 };
 
 /// Metadata stored for each null buffer.
@@ -51,7 +50,6 @@ pub struct NullBackend {
 
     // Shader management
     pub(super) shader_allocator: HandleAllocator<ShaderMarker>,
-    pub(super) shaders: HashMap<ShaderHandle, ()>,
 }
 
 // SAFETY: NullBackend contains only pure Rust data (no raw pointers,
@@ -97,7 +95,6 @@ impl NullBackend {
             texture_allocator: HandleAllocator::new(),
             textures: HashMap::new(),
             shader_allocator: HandleAllocator::new(),
-            shaders: HashMap::new(),
         }
     }
 }
