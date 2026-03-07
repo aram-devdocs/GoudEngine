@@ -863,7 +863,7 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         else:
             L.append(f"            {prefix}NativeMethods.{ffi_fn}(_ctx, (int){ek});")
         return
-    if "out_params" in mm and "returns_struct" in mm:
+    if "out_params" in mm and "returns_struct" in mm and any(op["type"] != "f32" for op in mm["out_params"]):
         struct_name = mm["returns_struct"]
         ffi_fn = mm["ffi"]
         ffi_type_name = mapping["ffi_types"][struct_name]["ffi_name"]

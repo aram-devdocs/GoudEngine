@@ -1280,7 +1280,7 @@ def _gen_tool_class(tool_name: str, lines: list):
                 f"        return self._lib.{mmap['ffi']}("
                 "self._ctx, entity._bits)"
             )
-        elif "out_params" in mmap and "returns_struct" in mmap:
+        elif "out_params" in mmap and "returns_struct" in mmap and any(op["type"] != "f32" for op in mmap["out_params"]):
             struct_name = mmap["returns_struct"]
             ffi_type_name = mapping["ffi_types"][struct_name]["ffi_name"]
             rs_fields = schema["types"][struct_name]["fields"]
