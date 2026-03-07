@@ -608,6 +608,16 @@ def _setup():
     _lib.goud_clear_last_error.argtypes = []
     _lib.goud_clear_last_error.restype = None
 
+    # error context & recovery (added for typed SDK errors)
+    _lib.goud_last_error_subsystem.argtypes = [ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_last_error_subsystem.restype = ctypes.c_int32
+    _lib.goud_last_error_operation.argtypes = [ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_last_error_operation.restype = ctypes.c_int32
+    _lib.goud_error_recovery_class.argtypes = [ctypes.c_int32]
+    _lib.goud_error_recovery_class.restype = ctypes.c_int32
+    _lib.goud_error_recovery_hint.argtypes = [ctypes.c_int32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_error_recovery_hint.restype = ctypes.c_int32
+
 _setup()
 
 def get_lib():
