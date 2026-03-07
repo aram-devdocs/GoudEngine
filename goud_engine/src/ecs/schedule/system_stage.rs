@@ -7,10 +7,11 @@ use crate::ecs::system::{BoxedSystem, IntoSystem, SystemId};
 use crate::ecs::World;
 
 use super::core_stage::CoreStage;
+use super::named_system_sets::NamedSystemSets;
 use super::stage::Stage;
 use super::stage_label::StageLabel;
 use super::system_ordering::SystemOrdering;
-use super::system_set::ChainedSystems;
+use super::system_set::{ChainedSystems, SystemSetConfig};
 use super::topological_sort::TopologicalSorter;
 
 /// A container that holds and runs systems sequentially.
@@ -31,6 +32,8 @@ pub struct SystemStage {
     orderings: Vec<SystemOrdering>,
     /// Whether the system order needs to be rebuilt.
     order_dirty: bool,
+    /// Named system sets with ordering configuration.
+    named_sets: NamedSystemSets,
 }
 
 impl SystemStage {
@@ -44,6 +47,7 @@ impl SystemStage {
             initialized: false,
             orderings: Vec::new(),
             order_dirty: false,
+            named_sets: NamedSystemSets::new(),
         }
     }
 
@@ -57,6 +61,7 @@ impl SystemStage {
             initialized: false,
             orderings: Vec::with_capacity(capacity),
             order_dirty: false,
+            named_sets: NamedSystemSets::new(),
         }
     }
 
@@ -323,6 +328,37 @@ impl SystemStage {
             .filter(|o| o.involves(system))
             .collect()
     }
+
+    // =====================================================================
+    // Named System Sets API
+    // =====================================================================
+
+    /// Registers a named system set. No-op if already registered.
+    pub fn register_set(&mut self, name: &str) {
+        self.named_sets.register_set(name);
+    }
+
+    /// Adds a system to a named set. Panics if set is not registered.
+    pub fn add_system_to_set(&mut self, name: &str, system_id: SystemId) {
+        self.named_sets.add_to_set(name, system_id);
+        self.order_dirty = true;
+    }
+
+    /// Configures ordering for a named set. Panics if set is not registered.
+    pub fn configure_named_set(&mut self, name: &str, config: SystemSetConfig) {
+        self.named_sets.configure_set(name, config);
+        self.order_dirty = true;
+    }
+
+    /// Returns a reference to a named set, if registered.
+    pub fn get_set(&self, name: &str) -> Option<&super::system_set::SystemSet> {
+        self.named_sets.get_set(name)
+    }
+
+    /// Returns the names of all registered sets.
+    pub fn set_names(&self) -> Vec<&str> {
+        self.named_sets.set_names()
+    }
 }
 
 impl Stage for SystemStage {
@@ -333,6 +369,16 @@ impl Stage for SystemStage {
 
     fn run(&mut self, world: &mut World) {
         if self.order_dirty {
+            // Merge named-set orderings into the stage's orderings.
+            for ordering in self.named_sets.resolve_orderings() {
+                let (first, second) = ordering.as_edge();
+                if self.contains_system(first)
+                    && self.contains_system(second)
+                    && !self.orderings.contains(&ordering)
+                {
+                    self.orderings.push(ordering);
+                }
+            }
             if let Err(err) = self.rebuild_order() {
                 log::warn!(
                     "SystemStage '{}': ordering cycle detected, systems may not run: {err}",

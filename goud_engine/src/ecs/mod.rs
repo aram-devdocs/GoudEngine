@@ -101,7 +101,8 @@ pub use physics_world::PhysicsWorld;
 pub use query::{Query, QueryIter, QueryIterMut, QuerySystemParamState};
 pub use resource::{Res, ResMut, Resource, ResourceId, Resources};
 pub use schedule::{
-    CoreStage, Stage, StageLabel, StageLabelId, StageOrder, StagePosition, SystemStage,
+    CoreStage, DefaultSystemSet, NamedSystemSets, Stage, StageLabel, StageLabelId, StageOrder,
+    StagePosition, SystemStage,
 };
 pub use sparse_set::{SparseSet, SparseSetIter, SparseSetIterMut};
 pub use storage::{AnyComponentStorage, ComponentStorage};

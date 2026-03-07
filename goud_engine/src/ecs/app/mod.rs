@@ -32,7 +32,7 @@ use std::any::TypeId;
 use std::collections::HashSet;
 
 use crate::ecs::resource::{NonSendResource, Resource};
-use crate::ecs::schedule::{CoreStage, Stage, SystemStage};
+use crate::ecs::schedule::{CoreStage, Stage, SystemSetConfig, SystemStage};
 use crate::ecs::system::IntoSystem;
 use crate::ecs::World;
 
@@ -169,6 +169,60 @@ impl App {
     /// this may include frame-specific logic such as delta time updates.
     pub fn update(&mut self) {
         self.run_once();
+    }
+
+    // =====================================================================
+    // Named System Sets API
+    // =====================================================================
+
+    /// Registers a named system set in the specified stage.
+    pub fn register_set(&mut self, stage: CoreStage, name: &str) -> &mut Self {
+        for (core_stage, system_stage) in &mut self.stages {
+            if *core_stage == stage {
+                system_stage.register_set(name);
+                return self;
+            }
+        }
+        self
+    }
+
+    /// Adds a system to a named set, returning its [`SystemId`].
+    ///
+    /// The system is added to the stage and simultaneously placed in the
+    /// named set.
+    pub fn add_system_to_set<S, Marker>(
+        &mut self,
+        stage: CoreStage,
+        set_name: &str,
+        system: S,
+    ) -> &mut Self
+    where
+        S: IntoSystem<Marker>,
+    {
+        for (core_stage, system_stage) in &mut self.stages {
+            if *core_stage == stage {
+                let id = system_stage.add_system(system);
+                system_stage.add_system_to_set(set_name, id);
+                return self;
+            }
+        }
+        self
+    }
+
+    /// Configures ordering for a named set in the specified stage.
+    pub fn configure_set(
+        &mut self,
+        stage: CoreStage,
+        name: &str,
+        config: SystemSetConfig,
+    ) -> &mut Self {
+        for (core_stage, system_stage) in &mut self.stages {
+            if *core_stage == stage {
+                system_stage.configure_named_set(name, config);
+                return self;
+            }
+        }
+        self
     }
 }
 

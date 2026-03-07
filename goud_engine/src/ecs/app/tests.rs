@@ -478,3 +478,71 @@ fn test_plugin_group() {
     assert_eq!(pre.1.system_count(), 1);
     assert_eq!(upd.1.system_count(), 1);
 }
+
+// =========================================================================
+// Named System Sets via App
+// =========================================================================
+
+#[test]
+fn test_app_register_set() {
+    let mut app = App::new();
+    app.register_set(CoreStage::Update, "Physics");
+
+    let stage = app
+        .stages
+        .iter()
+        .find(|(s, _)| *s == CoreStage::Update)
+        .unwrap();
+    assert!(stage.1.get_set("Physics").is_some());
+}
+
+#[test]
+fn test_app_add_system_to_set() {
+    struct Noop;
+    impl System for Noop {
+        fn name(&self) -> &'static str {
+            "Noop"
+        }
+        fn run(&mut self, _world: &mut World) {}
+    }
+
+    let mut app = App::new();
+    app.register_set(CoreStage::Update, "Logic");
+    app.add_system_to_set(CoreStage::Update, "Logic", Noop);
+
+    let stage = app
+        .stages
+        .iter()
+        .find(|(s, _)| *s == CoreStage::Update)
+        .unwrap();
+    let set = stage.1.get_set("Logic").unwrap();
+    assert_eq!(set.len(), 1);
+}
+
+#[test]
+fn test_app_configure_set() {
+    use crate::ecs::schedule::named_system_sets::SetNameLabel;
+    use crate::ecs::schedule::SystemSetConfig;
+
+    struct Noop;
+    impl System for Noop {
+        fn name(&self) -> &'static str {
+            "Noop"
+        }
+        fn run(&mut self, _world: &mut World) {}
+    }
+
+    let mut app = App::new();
+    app.register_set(CoreStage::Update, "A");
+    app.register_set(CoreStage::Update, "B");
+    app.add_system_to_set(CoreStage::Update, "A", Noop);
+    app.add_system_to_set(CoreStage::Update, "B", Noop);
+    app.configure_set(
+        CoreStage::Update,
+        "A",
+        SystemSetConfig::new().before(SetNameLabel("B")),
+    );
+
+    // Should run without panicking
+    app.run_once();
+}
