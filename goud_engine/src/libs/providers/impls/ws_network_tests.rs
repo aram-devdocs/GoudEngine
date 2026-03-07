@@ -78,9 +78,7 @@ fn test_ws_host_and_connect() {
     assert!(host_connected, "Host should have received Connected event");
     assert!(client_connected, "Client should be Connected");
 
-    let client_events = client.drain_events();
-    // Client may have already drained Connected event above or it may still be pending.
-    // Just verify the state is correct.
+    client.drain_events();
     assert_eq!(client.connection_state(conn_id), ConnectionState::Connected);
 
     host.shutdown();

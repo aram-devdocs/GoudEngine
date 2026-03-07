@@ -372,7 +372,13 @@ fn test_udp_simulated_packet_loss_reliable_delivery() {
     let payload = b"reliable after loss";
     client.send(conn_id, Channel(0), payload).unwrap();
     assert!(
-        client.connections.get(&conn_id.0).unwrap().reliability.pending_count() > 0,
+        client
+            .connections
+            .get(&conn_id.0)
+            .unwrap()
+            .reliability
+            .pending_count()
+            > 0,
         "Reliability layer must track the sent packet"
     );
 
@@ -391,7 +397,9 @@ fn test_udp_simulated_packet_loss_reliable_delivery() {
     host.update(0.0).unwrap();
     let events = host.drain_events();
     assert!(
-        !events.iter().any(|e| matches!(e, NetworkEvent::Received { .. })),
+        !events
+            .iter()
+            .any(|e| matches!(e, NetworkEvent::Received { .. })),
         "Host should NOT have received data (packet was lost)"
     );
 

@@ -41,9 +41,9 @@ mod native {
         WriteTxReady(ConnectionId, mpsc::Sender<Vec<u8>>),
     }
 
-    // SAFETY: Only sent across threads via mpsc (requires Send, not Sync).
-    // The Sender in WriteTxReady is consumed on the receiving main thread.
-    unsafe impl Send for InternalWsEvent {}
+    // InternalWsEvent is Send because all variants contain only Send types.
+    // (ConnectionId, String, Vec<u8>, DisconnectReason, mpsc::Sender<Vec<u8>> are all Send.)
+    const _: () = { fn _assert_send<T: Send>() {} fn _check() { _assert_send::<InternalWsEvent>(); } };
 
     struct WsConnection {
         id: ConnectionId,
@@ -133,9 +133,12 @@ mod native {
         local_addr: Option<std::net::SocketAddr>,
     }
 
-    // SAFETY: Only accessed via &mut self from the main game thread. Non-Sync
-    // fields (mpsc::Sender, HashMap<mpsc::Sender>) are never shared across
-    // threads. Mutex wrappers on event_rx and threads provide Sync.
+    // SAFETY: WsNetProvider is only accessed via &mut self from the main game
+    // thread through ProviderRegistry (which is held by GoudGame with no shared
+    // reference path). The non-Sync fields (send_txs HashMap, event_tx Sender)
+    // are only mutated via &mut self. Mutex-wrapped fields (event_rx, threads)
+    // are Sync. The Provider trait requires Sync, but no codepath creates &WsNetProvider
+    // shared across threads.
     unsafe impl Sync for WsNetProvider {}
 
     impl WsNetProvider {

@@ -272,14 +272,11 @@ impl ProviderLifecycle for UdpNetProvider {
     #[rustfmt::skip]
     fn init(&mut self) -> GoudResult<()> { Ok(()) }
     fn update(&mut self, _delta: f32) -> GoudResult<()> {
-        if self.socket.is_none() {
-            return Ok(());
-        }
-
-        // Collect incoming datagrams first to avoid borrow conflict.
         let mut incoming: Vec<(SocketAddr, Vec<u8>)> = Vec::new();
         {
-            let socket = self.socket.as_ref().unwrap();
+            let Some(socket) = self.socket.as_ref() else {
+                return Ok(());
+            };
             loop {
                 match socket.recv_from(self.recv_buf.as_mut()) {
                     Ok((len, src)) => {
