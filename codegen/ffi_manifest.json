@@ -2138,6 +2138,148 @@
       "return_type": "FfiSprite",
       "is_unsafe": false
     },
+    "goud_text_clear_max_width": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *mut FfiText"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_text_default": {
+      "source_file": "ffi/component_text/factory.rs",
+      "params": [],
+      "return_type": "FfiText",
+      "is_unsafe": false
+    },
+    "goud_text_get_alignment": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "u8",
+      "is_unsafe": true
+    },
+    "goud_text_get_color_a": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_get_color_b": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_get_color_g": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_get_color_r": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_get_font_size": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_get_line_spacing": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_get_max_width": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_has_max_width": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_text_new": {
+      "source_file": "ffi/component_text/factory.rs",
+      "params": [
+        "font_handle: u64"
+      ],
+      "return_type": "FfiText",
+      "is_unsafe": false
+    },
+    "goud_text_set_alignment": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *mut FfiText",
+        "alignment: u8"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_text_set_color": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *mut FfiText",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_text_set_font_size": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *mut FfiText",
+        "size: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_text_set_line_spacing": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *mut FfiText",
+        "spacing: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_text_set_max_width": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *mut FfiText",
+        "width: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
     "goud_texture_destroy": {
       "source_file": "ffi/renderer/texture.rs",
       "params": [
@@ -2738,5 +2880,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 280
+  "total_count": 297
 }

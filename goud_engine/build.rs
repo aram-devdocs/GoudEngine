@@ -97,6 +97,9 @@ const FFI_SOURCE_FILES: &[&str] = &[
     // component_sprite_animator module
     "src/ffi/component_sprite_animator/factory.rs",
     "src/ffi/component_sprite_animator/playback.rs",
+    // component_text module
+    "src/ffi/component_text/factory.rs",
+    "src/ffi/component_text/properties.rs",
     // component_sprite module
     "src/ffi/component_sprite/factory.rs",
     "src/ffi/component_sprite/builder.rs",

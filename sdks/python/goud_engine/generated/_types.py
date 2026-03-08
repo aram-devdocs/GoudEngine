@@ -966,6 +966,175 @@ class SpriteBuilder:
     def __repr__(self):
         return f"SpriteBuilder(ptr={self._ptr})"
 
+class Text:
+    """Text rendering component"""
+    def __init__(self, font_handle: int = 0, font_size: float = 0.0, color_r: float = 0.0, color_g: float = 0.0, color_b: float = 0.0, color_a: float = 0.0, alignment: float = 0.0, max_width: float = 0.0, has_max_width: bool = False, line_spacing: float = 0.0):
+        self.font_handle = font_handle
+        self.font_size = font_size
+        self.color_r = color_r
+        self.color_g = color_g
+        self.color_b = color_b
+        self.color_a = color_a
+        self.alignment = alignment
+        self.max_width = max_width
+        self.has_max_width = has_max_width
+        self.line_spacing = line_spacing
+        self._ffi = None
+
+    @classmethod
+    def _from_ffi(cls, ffi) -> 'Text':
+        obj = cls.__new__(cls)
+        obj.font_handle = ffi.font_handle
+        obj.font_size = ffi.font_size
+        obj.color_r = ffi.color_r
+        obj.color_g = ffi.color_g
+        obj.color_b = ffi.color_b
+        obj.color_a = ffi.color_a
+        obj.alignment = ffi.alignment
+        obj.max_width = ffi.max_width
+        obj.has_max_width = ffi.has_max_width
+        obj.line_spacing = ffi.line_spacing
+        obj._ffi = ffi
+        return obj
+
+    def _sync_to_ffi(self):
+        _ensure_ffi()
+        if self._ffi is None:
+            self._ffi = _ffi_module.FfiText()
+        self._ffi.font_handle = self.font_handle
+        self._ffi.font_size = self.font_size
+        self._ffi.color_r = self.color_r
+        self._ffi.color_g = self.color_g
+        self._ffi.color_b = self.color_b
+        self._ffi.color_a = self.color_a
+        self._ffi.alignment = self.alignment
+        self._ffi.max_width = self.max_width
+        self._ffi.has_max_width = self.has_max_width
+        self._ffi.line_spacing = self.line_spacing
+
+    def _sync_from_ffi(self):
+        self.font_handle = self._ffi.font_handle
+        self.font_size = self._ffi.font_size
+        self.color_r = self._ffi.color_r
+        self.color_g = self._ffi.color_g
+        self.color_b = self._ffi.color_b
+        self.color_a = self._ffi.color_a
+        self.alignment = self._ffi.alignment
+        self.max_width = self._ffi.max_width
+        self.has_max_width = self._ffi.has_max_width
+        self.line_spacing = self._ffi.line_spacing
+
+    @staticmethod
+    def new(font_handle: int) -> 'Text':
+        _ensure_ffi()
+        ffi = _lib.goud_text_new(font_handle)
+        return Text._from_ffi(ffi)
+
+    @staticmethod
+    def default() -> 'Text':
+        _ensure_ffi()
+        ffi = _lib.goud_text_default()
+        return Text._from_ffi(ffi)
+
+    def set_font_size(self, size: float) -> None:
+        """Sets the font size in pixels"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        _lib.goud_text_set_font_size(ctypes.byref(self._ffi), size)
+        self._sync_from_ffi()
+
+    def get_font_size(self) -> float:
+        """Gets the font size in pixels"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_font_size(ctypes.byref(self._ffi))
+
+    def set_color(self, r: float, g: float, b: float, a: float) -> None:
+        """Sets the RGBA text color"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        _lib.goud_text_set_color(ctypes.byref(self._ffi), r, g, b, a)
+        self._sync_from_ffi()
+
+    def get_color_r(self) -> float:
+        """Gets the red color component"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_color_r(ctypes.byref(self._ffi))
+
+    def get_color_g(self) -> float:
+        """Gets the green color component"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_color_g(ctypes.byref(self._ffi))
+
+    def get_color_b(self) -> float:
+        """Gets the blue color component"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_color_b(ctypes.byref(self._ffi))
+
+    def get_color_a(self) -> float:
+        """Gets the alpha color component"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_color_a(ctypes.byref(self._ffi))
+
+    def set_alignment(self, alignment: int) -> None:
+        """Sets the horizontal text alignment (0=Left, 1=Center, 2=Right)"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        _lib.goud_text_set_alignment(ctypes.byref(self._ffi), alignment)
+        self._sync_from_ffi()
+
+    def get_alignment(self) -> 'Text':
+        """Gets the horizontal text alignment"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_alignment(ctypes.byref(self._ffi))
+
+    def set_max_width(self, width: float) -> None:
+        """Sets the maximum width for word-wrapping"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        _lib.goud_text_set_max_width(ctypes.byref(self._ffi), width)
+        self._sync_from_ffi()
+
+    def clear_max_width(self) -> None:
+        """Clears the maximum width, disabling word-wrapping"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        _lib.goud_text_clear_max_width(ctypes.byref(self._ffi))
+        self._sync_from_ffi()
+
+    def get_max_width(self) -> float:
+        """Gets the maximum width for word-wrapping"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_max_width(ctypes.byref(self._ffi))
+
+    def has_max_width(self) -> bool:
+        """Returns whether the text has a max width set"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_has_max_width(ctypes.byref(self._ffi))
+
+    def set_line_spacing(self, spacing: float) -> None:
+        """Sets the line spacing multiplier"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        _lib.goud_text_set_line_spacing(ctypes.byref(self._ffi), spacing)
+        self._sync_from_ffi()
+
+    def get_line_spacing(self) -> float:
+        """Gets the line spacing multiplier"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_line_spacing(ctypes.byref(self._ffi))
+
+    def __repr__(self):
+        return f"Text(font_handle={self.font_handle}, font_size={self.font_size}, color_r={self.color_r}, color_g={self.color_g}, color_b={self.color_b}, color_a={self.color_a}, alignment={self.alignment}, max_width={self.max_width}, has_max_width={self.has_max_width}, line_spacing={self.line_spacing})"
+
 class SpriteAnimator:
     """Sprite sheet animation component"""
     def __init__(self, current_frame: int = 0, elapsed: float = 0.0, playing: bool = False, finished: bool = False, frame_duration: float = 0.0, mode: float = 0.0, frame_count: int = 0):

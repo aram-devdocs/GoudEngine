@@ -157,3 +157,9 @@ class NetworkProtocol:
     """Network transport protocol"""
     UDP = 0
     WEB_SOCKET = 1
+
+class TextAlignment:
+    """Horizontal text alignment"""
+    LEFT = 0
+    CENTER = 1
+    RIGHT = 2

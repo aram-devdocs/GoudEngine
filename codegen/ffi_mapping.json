@@ -123,6 +123,29 @@
         "mode",
         "frame_count"
       ]
+    },
+    "Text": {
+      "ffi_name": "FfiText",
+      "fields": [
+        "font_handle",
+        "font_size",
+        "color_r",
+        "color_g",
+        "color_b",
+        "color_a",
+        "alignment",
+        "max_width",
+        "has_max_width",
+        "line_spacing"
+      ]
+    },
+    "TextAlignment": {
+      "ffi_name": "u8",
+      "enum_values": {
+        "Left": 0,
+        "Center": 1,
+        "Right": 2
+      }
     }
   },
   "ffi_handles": {
@@ -4572,6 +4595,203 @@
         "unsafe": true
       }
     },
+    "component_text": {
+      "goud_text_new": {
+        "params": [
+          {
+            "name": "font_handle",
+            "type": "u64"
+          }
+        ],
+        "returns": "FfiText"
+      },
+      "goud_text_default": {
+        "params": [],
+        "returns": "FfiText"
+      },
+      "goud_text_set_font_size": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*mut FfiText"
+          },
+          {
+            "name": "size",
+            "type": "f32"
+          }
+        ],
+        "returns": "void",
+        "unsafe": true
+      },
+      "goud_text_get_font_size": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*const FfiText"
+          }
+        ],
+        "returns": "f32",
+        "unsafe": true
+      },
+      "goud_text_set_color": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*mut FfiText"
+          },
+          {
+            "name": "r",
+            "type": "f32"
+          },
+          {
+            "name": "g",
+            "type": "f32"
+          },
+          {
+            "name": "b",
+            "type": "f32"
+          },
+          {
+            "name": "a",
+            "type": "f32"
+          }
+        ],
+        "returns": "void",
+        "unsafe": true
+      },
+      "goud_text_get_color_r": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*const FfiText"
+          }
+        ],
+        "returns": "f32",
+        "unsafe": true
+      },
+      "goud_text_get_color_g": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*const FfiText"
+          }
+        ],
+        "returns": "f32",
+        "unsafe": true
+      },
+      "goud_text_get_color_b": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*const FfiText"
+          }
+        ],
+        "returns": "f32",
+        "unsafe": true
+      },
+      "goud_text_get_color_a": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*const FfiText"
+          }
+        ],
+        "returns": "f32",
+        "unsafe": true
+      },
+      "goud_text_set_alignment": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*mut FfiText"
+          },
+          {
+            "name": "alignment",
+            "type": "u8"
+          }
+        ],
+        "returns": "void",
+        "unsafe": true
+      },
+      "goud_text_get_alignment": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*const FfiText"
+          }
+        ],
+        "returns": "u8",
+        "unsafe": true
+      },
+      "goud_text_set_max_width": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*mut FfiText"
+          },
+          {
+            "name": "width",
+            "type": "f32"
+          }
+        ],
+        "returns": "void",
+        "unsafe": true
+      },
+      "goud_text_clear_max_width": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*mut FfiText"
+          }
+        ],
+        "returns": "void",
+        "unsafe": true
+      },
+      "goud_text_get_max_width": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*const FfiText"
+          }
+        ],
+        "returns": "f32",
+        "unsafe": true
+      },
+      "goud_text_has_max_width": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*const FfiText"
+          }
+        ],
+        "returns": "bool",
+        "unsafe": true
+      },
+      "goud_text_set_line_spacing": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*mut FfiText"
+          },
+          {
+            "name": "spacing",
+            "type": "f32"
+          }
+        ],
+        "returns": "void",
+        "unsafe": true
+      },
+      "goud_text_get_line_spacing": {
+        "params": [
+          {
+            "name": "text",
+            "type": "*const FfiText"
+          }
+        ],
+        "returns": "f32",
+        "unsafe": true
+      }
+    },
     "color": {
       "goud_color_white": {
         "params": [],
@@ -6597,6 +6817,78 @@
           "ffi": "goud_sprite_builder_free",
           "self_param": "*mut FfiSpriteBuilder",
           "consumes": true
+        }
+      }
+    },
+    "Text": {
+      "factories": {
+        "new": {
+          "ffi": "goud_text_new"
+        },
+        "default": {
+          "ffi": "goud_text_default"
+        }
+      },
+      "methods": {
+        "setFontSize": {
+          "ffi": "goud_text_set_font_size",
+          "self_param": "*mut FfiText"
+        },
+        "getFontSize": {
+          "ffi": "goud_text_get_font_size",
+          "self_param": "*const FfiText"
+        },
+        "setColor": {
+          "ffi": "goud_text_set_color",
+          "self_param": "*mut FfiText"
+        },
+        "getColorR": {
+          "ffi": "goud_text_get_color_r",
+          "self_param": "*const FfiText"
+        },
+        "getColorG": {
+          "ffi": "goud_text_get_color_g",
+          "self_param": "*const FfiText"
+        },
+        "getColorB": {
+          "ffi": "goud_text_get_color_b",
+          "self_param": "*const FfiText"
+        },
+        "getColorA": {
+          "ffi": "goud_text_get_color_a",
+          "self_param": "*const FfiText"
+        },
+        "setAlignment": {
+          "ffi": "goud_text_set_alignment",
+          "self_param": "*mut FfiText"
+        },
+        "getAlignment": {
+          "ffi": "goud_text_get_alignment",
+          "self_param": "*const FfiText"
+        },
+        "setMaxWidth": {
+          "ffi": "goud_text_set_max_width",
+          "self_param": "*mut FfiText"
+        },
+        "clearMaxWidth": {
+          "ffi": "goud_text_clear_max_width",
+          "self_param": "*mut FfiText"
+        },
+        "getMaxWidth": {
+          "ffi": "goud_text_get_max_width",
+          "self_param": "*const FfiText"
+        },
+        "hasMaxWidth": {
+          "ffi": "goud_text_has_max_width",
+          "self_param": "*const FfiText"
+        },
+        "setLineSpacing": {
+          "ffi": "goud_text_set_line_spacing",
+          "self_param": "*mut FfiText"
+        },
+        "getLineSpacing": {
+          "ffi": "goud_text_get_line_spacing",
+          "self_param": "*const FfiText"
         }
       }
     },

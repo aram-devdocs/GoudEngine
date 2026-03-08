@@ -132,6 +132,22 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FfiText
+    {
+        public ulong FontHandle;
+        public float FontSize;
+        public float ColorR;
+        public float ColorG;
+        public float ColorB;
+        public float ColorA;
+        public byte Alignment;
+        public float MaxWidth;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool HasMaxWidth;
+        public float LineSpacing;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct FfiMat3x3
     {
         public fixed float M[9];
@@ -789,6 +805,59 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void goud_sprite_builder_free(IntPtr builder);
+
+        // component_text
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern FfiText goud_text_new(ulong font_handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern FfiText goud_text_default();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_text_set_font_size(*mut FfiText text, float size);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_font_size(*const FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_text_set_color(*mut FfiText text, float r, float g, float b, float a);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_color_r(*const FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_color_g(*const FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_color_b(*const FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_color_a(*const FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_text_set_alignment(*mut FfiText text, byte alignment);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern byte goud_text_get_alignment(*const FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_text_set_max_width(*mut FfiText text, float width);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_text_clear_max_width(*mut FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_max_width(*const FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_text_has_max_width(*const FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_text_set_line_spacing(*mut FfiText text, float spacing);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_line_spacing(*const FfiText text);
 
         // color
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
