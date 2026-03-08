@@ -490,4 +490,52 @@ mod tests {
         // Second quad indices should be offset by 4.
         assert_eq!(&batch.indices[6..], &[4, 5, 6, 6, 7, 4]);
     }
+
+    #[test]
+    fn test_draw_text_with_world_and_null_backend_counts_glyphs() {
+        use crate::assets::loaders::FontLoader;
+        use crate::assets::AssetServer;
+        use crate::ecs::components::Transform2D;
+        use crate::ecs::World;
+        use crate::libs::graphics::backend::null::NullBackend;
+
+        // Set up a null render backend for headless testing.
+        let mut backend = NullBackend::new();
+
+        // Create an AssetServer with a FontLoader registered.
+        let mut asset_server = AssetServer::new();
+        asset_server.register_loader(FontLoader::default());
+
+        // Load the test font from embedded bytes.
+        let ttf_bytes = include_bytes!("../../../test_assets/fonts/test_font.ttf");
+        let font_handle = asset_server.load_from_bytes::<crate::assets::loaders::FontAsset>(
+            "test_font.ttf",
+            ttf_bytes,
+        );
+        assert!(
+            asset_server.is_loaded(&font_handle),
+            "font asset should be loaded"
+        );
+
+        // Create a World and spawn an entity with Text + Transform2D.
+        let mut world = World::new();
+        let text = crate::ecs::components::Text::new(font_handle, "Hello")
+            .with_font_size(16.0);
+        let transform = Transform2D::default();
+        let _entity = world.spawn().insert(text).insert(transform).id();
+
+        // Run the text batch pipeline.
+        let mut batch = TextBatch::new();
+        batch.begin();
+        batch
+            .draw_text(&world, &asset_server, &mut backend)
+            .expect("draw_text should succeed with null backend");
+
+        // "Hello" has 5 characters, so we expect 5 glyphs.
+        assert_eq!(
+            batch.stats().glyph_count,
+            5,
+            "expected 5 glyphs for 'Hello'"
+        );
+    }
 }
