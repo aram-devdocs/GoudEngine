@@ -1,9 +1,16 @@
 //! Tests for diagnostic mode.
 
 use crate::core::error::diagnostic;
+use std::sync::Mutex;
+
+/// Mutex to serialize all diagnostic tests that manipulate shared global state
+/// (`DIAGNOSTIC_ENABLED` AtomicBool and `GOUD_DIAGNOSTIC` env var),
+/// preventing parallel test races.
+static DIAG_MUTEX: Mutex<()> = Mutex::new(());
 
 #[test]
 fn test_enable_disable_toggle() {
+    let _lock = DIAG_MUTEX.lock().unwrap();
     diagnostic::set_diagnostic_enabled(false);
     assert!(!diagnostic::is_diagnostic_enabled());
 
@@ -16,6 +23,7 @@ fn test_enable_disable_toggle() {
 
 #[test]
 fn test_env_var_parsing_true() {
+    let _lock = DIAG_MUTEX.lock().unwrap();
     diagnostic::set_diagnostic_enabled(false);
     std::env::set_var("GOUD_DIAGNOSTIC", "true");
     diagnostic::init_diagnostic_from_env();
@@ -27,6 +35,7 @@ fn test_env_var_parsing_true() {
 
 #[test]
 fn test_env_var_parsing_one() {
+    let _lock = DIAG_MUTEX.lock().unwrap();
     diagnostic::set_diagnostic_enabled(false);
     std::env::set_var("GOUD_DIAGNOSTIC", "1");
     diagnostic::init_diagnostic_from_env();
@@ -38,6 +47,7 @@ fn test_env_var_parsing_one() {
 
 #[test]
 fn test_env_var_parsing_unset_does_not_enable() {
+    let _lock = DIAG_MUTEX.lock().unwrap();
     diagnostic::set_diagnostic_enabled(false);
     std::env::remove_var("GOUD_DIAGNOSTIC");
     diagnostic::init_diagnostic_from_env();
@@ -46,6 +56,7 @@ fn test_env_var_parsing_unset_does_not_enable() {
 
 #[test]
 fn test_env_var_parsing_false_does_not_enable() {
+    let _lock = DIAG_MUTEX.lock().unwrap();
     diagnostic::set_diagnostic_enabled(false);
     std::env::set_var("GOUD_DIAGNOSTIC", "false");
     diagnostic::init_diagnostic_from_env();
@@ -56,27 +67,21 @@ fn test_env_var_parsing_false_does_not_enable() {
 
 #[test]
 fn test_backtrace_captured_when_enabled_in_debug() {
-    // Test backtrace storage directly to avoid races with global AtomicBool
-    // toggle that other parallel tests may reset.
+    let _lock = DIAG_MUTEX.lock().unwrap();
     diagnostic::clear_backtrace();
 
     #[cfg(debug_assertions)]
     {
-        // Directly store a backtrace to verify storage works
         let bt = std::backtrace::Backtrace::force_capture().to_string();
         assert!(!bt.is_empty(), "backtrace should not be empty");
 
-        // Verify capture_backtrace_if_enabled stores when enabled
         diagnostic::set_diagnostic_enabled(true);
         diagnostic::capture_backtrace_if_enabled();
-        // Check atomically - if still enabled, backtrace should exist
-        if diagnostic::is_diagnostic_enabled() {
-            let stored = diagnostic::last_error_backtrace();
-            assert!(
-                stored.is_some(),
-                "backtrace should be captured in debug build"
-            );
-        }
+        let stored = diagnostic::last_error_backtrace();
+        assert!(
+            stored.is_some(),
+            "backtrace should be captured in debug build"
+        );
     }
 
     diagnostic::set_diagnostic_enabled(false);
@@ -85,9 +90,8 @@ fn test_backtrace_captured_when_enabled_in_debug() {
 
 #[test]
 fn test_backtrace_not_captured_when_disabled() {
-    // Verify that clear_backtrace + no direct store = None
-    // (We don't call capture_backtrace_if_enabled since the global toggle
-    // can race with other parallel tests.)
+    let _lock = DIAG_MUTEX.lock().unwrap();
+    diagnostic::set_diagnostic_enabled(false);
     diagnostic::clear_backtrace();
 
     assert!(
@@ -98,12 +102,11 @@ fn test_backtrace_not_captured_when_disabled() {
 
 #[test]
 fn test_clear_backtrace_clears() {
-    // Verify clear_backtrace removes stored data regardless of toggle state
+    let _lock = DIAG_MUTEX.lock().unwrap();
     diagnostic::clear_backtrace();
 
     #[cfg(debug_assertions)]
     {
-        // Force-store a backtrace directly via the public API
         diagnostic::set_diagnostic_enabled(true);
         diagnostic::capture_backtrace_if_enabled();
     }
@@ -118,19 +121,17 @@ fn test_clear_backtrace_clears() {
 fn test_ffi_bridge_integration_set_last_error_logs_and_captures() {
     use crate::core::error::{clear_last_error, set_last_error, GoudError};
 
+    let _lock = DIAG_MUTEX.lock().unwrap();
     diagnostic::set_diagnostic_enabled(true);
     diagnostic::clear_backtrace();
 
     set_last_error(GoudError::NotInitialized);
 
     if cfg!(debug_assertions) {
-        // Only assert if diagnostic is still enabled (parallel tests may race)
-        if diagnostic::is_diagnostic_enabled() {
-            assert!(
-                diagnostic::last_error_backtrace().is_some(),
-                "set_last_error should capture backtrace when diagnostic enabled"
-            );
-        }
+        assert!(
+            diagnostic::last_error_backtrace().is_some(),
+            "set_last_error should capture backtrace when diagnostic enabled"
+        );
     }
 
     clear_last_error();
