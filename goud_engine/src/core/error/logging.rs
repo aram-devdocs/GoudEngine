@@ -110,15 +110,28 @@ mod tests {
     }
 
     #[test]
-    fn test_log_error_does_not_panic() {
-        // Verify log_error runs without panicking for each recovery class.
+    fn test_log_error_selects_correct_level() {
         init_logger();
 
-        // Fatal
-        log_error(&GoudError::NotInitialized, None);
-        // Degraded
-        log_error(&GoudError::AudioInitFailed("no device".to_string()), None);
-        // Recoverable
-        log_error(&GoudError::ResourceNotFound("file.png".to_string()), None);
+        // Fatal -> error! (verified via recovery_class)
+        let fatal = GoudError::NotInitialized;
+        assert_eq!(recovery_class(fatal.error_code()), RecoveryClass::Fatal);
+        log_error(&fatal, None);
+
+        // Degraded -> warn!
+        let degraded = GoudError::AudioInitFailed("no device".to_string());
+        assert_eq!(
+            recovery_class(degraded.error_code()),
+            RecoveryClass::Degraded
+        );
+        log_error(&degraded, None);
+
+        // Recoverable -> warn!
+        let recoverable = GoudError::ResourceNotFound("file.png".to_string());
+        assert_eq!(
+            recovery_class(recoverable.error_code()),
+            RecoveryClass::Recoverable
+        );
+        log_error(&recoverable, None);
     }
 }
