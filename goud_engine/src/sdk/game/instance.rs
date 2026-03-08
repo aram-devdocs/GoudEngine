@@ -1,6 +1,5 @@
 //! [`GoudGame`] struct definition, construction, and core API.
 
-use crate::context_registry::scene::transition::{TransitionComplete, TransitionType};
 use crate::context_registry::scene::{SceneId, SceneManager};
 use crate::core::error::{GoudError, GoudResult};
 use crate::ecs::{Component, Entity, World};
@@ -57,7 +56,7 @@ pub struct GoudGame {
 
     /// Stores the result of the most recent transition completion, if any.
     /// Use [`take_transition_complete`](Self::take_transition_complete) to consume it.
-    last_transition_complete: Option<TransitionComplete>,
+    pub(crate) last_transition_complete: Option<crate::context_registry::scene::transition::TransitionComplete>,
 
     // =========================================================================
     // Native-only fields (require windowing + OpenGL)
@@ -299,39 +298,6 @@ impl GoudGame {
     /// Sets whether a scene is active.
     pub fn set_scene_active(&mut self, id: SceneId, active: bool) -> Result<(), GoudError> {
         self.scene_manager.set_active(id, active)
-    }
-
-    /// Starts a transition from one scene to another.
-    pub fn transition_to(
-        &mut self,
-        from: SceneId,
-        to: SceneId,
-        transition_type: TransitionType,
-        duration: f32,
-    ) -> Result<(), GoudError> {
-        self.scene_manager
-            .start_transition(from, to, transition_type, duration)
-    }
-
-    /// Returns `true` if a scene transition is currently in progress.
-    #[inline]
-    pub fn is_transitioning(&self) -> bool {
-        self.scene_manager.is_transitioning()
-    }
-
-    /// Returns the progress of the active transition in `[0.0, 1.0]`.
-    #[inline]
-    pub fn transition_progress(&self) -> Option<f32> {
-        self.scene_manager.transition_progress()
-    }
-
-    /// Takes the most recent transition completion result, if any.
-    ///
-    /// Returns `Some(TransitionComplete)` exactly once after a transition
-    /// finishes, then `None` until the next transition completes.
-    #[inline]
-    pub fn take_transition_complete(&mut self) -> Option<TransitionComplete> {
-        self.last_transition_complete.take()
     }
 
     /// Returns a reference to the scene manager.
