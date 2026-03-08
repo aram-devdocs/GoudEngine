@@ -243,6 +243,20 @@ impl TextureOps for NullBackend {
     fn unbind_texture(&mut self, _unit: u32) {
         // no-op
     }
+
+    fn create_compressed_texture(
+        &mut self,
+        width: u32,
+        height: u32,
+        _format: TextureFormat,
+        _data: &[u8],
+        _mip_levels: u32,
+    ) -> GoudResult<TextureHandle> {
+        let handle = self.texture_allocator.allocate();
+        self.textures
+            .insert(handle, NullTextureMeta { width, height });
+        Ok(handle)
+    }
 }
 
 // ========================================================================

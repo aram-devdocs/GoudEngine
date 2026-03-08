@@ -5,6 +5,7 @@
 
 pub mod animation;
 pub mod audio;
+pub mod bitmap_font;
 pub mod config;
 pub mod font;
 pub(crate) mod gltf_utils;
@@ -29,6 +30,8 @@ pub use audio::{AudioAsset, AudioFormat, AudioLoader, AudioSettings};
 pub use config::{ConfigAsset, ConfigFormat, ConfigLoader};
 
 pub use font::{FontAsset, FontFormat, FontLoader, FontSettings, FontStyle};
+
+pub use bitmap_font::{BitmapCharInfo, BitmapFontAsset, BitmapFontLoader};
 
 pub use material::{MaterialAsset, MaterialLoader, UniformValue};
 

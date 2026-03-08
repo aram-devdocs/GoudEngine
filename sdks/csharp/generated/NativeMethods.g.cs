@@ -118,6 +118,57 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FfiRenderCapabilities
+    {
+        public uint MaxTextureUnits;
+        public uint MaxTextureSize;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsInstancing;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsCompute;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsMsaa;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiPhysicsCapabilities
+    {
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsContinuousCollision;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsJoints;
+        public uint MaxBodies;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiAudioCapabilities
+    {
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsSpatial;
+        public uint MaxChannels;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiInputCapabilities
+    {
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsGamepad;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsTouch;
+        public uint MaxGamepads;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiNetworkCapabilities
+    {
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsHosting;
+        public uint MaxConnections;
+        public byte MaxChannels;
+        public uint MaxMessageSize;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct FfiSpriteAnimator
     {
         public uint CurrentFrame;
@@ -129,6 +180,22 @@ namespace GoudEngine
         public float FrameDuration;
         public PlaybackMode Mode;
         public uint FrameCount;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiText
+    {
+        public ulong FontHandle;
+        public float FontSize;
+        public float ColorR;
+        public float ColorG;
+        public float ColorB;
+        public float ColorA;
+        public byte Alignment;
+        public float MaxWidth;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool HasMaxWidth;
+        public float LineSpacing;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -803,6 +870,59 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void goud_sprite_builder_free(IntPtr builder);
 
+        // component_text
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern FfiText goud_text_new(ulong font_handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern FfiText goud_text_default();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_text_set_font_size(ref FfiText text, float size);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_font_size(ref FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_text_set_color(ref FfiText text, float r, float g, float b, float a);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_color_r(ref FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_color_g(ref FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_color_b(ref FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_color_a(ref FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_text_set_alignment(ref FfiText text, byte alignment);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern byte goud_text_get_alignment(ref FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_text_set_max_width(ref FfiText text, float width);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_text_clear_max_width(ref FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_max_width(ref FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_text_has_max_width(ref FfiText text);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_text_set_line_spacing(ref FfiText text, float spacing);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_text_get_line_spacing(ref FfiText text);
+
         // color
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern FfiColor goud_color_white();
@@ -919,6 +1039,17 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_error_recovery_hint(int code, IntPtr buf, nuint buf_len);
 
+        // diagnostic
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_diagnostic_set_enabled([MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_diagnostic_is_enabled();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_diagnostic_last_backtrace(IntPtr buf, nuint buf_len);
+
         // physics2d
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_create(GoudContextId ctx, float gx, float gy);
@@ -930,10 +1061,10 @@ namespace GoudEngine
         public static extern int goud_physics_set_gravity(GoudContextId ctx, float x, float y);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern long goud_physics_add_rigid_body(GoudContextId ctx, uint body_type, float x, float y);
+        public static extern long goud_physics_add_rigid_body(GoudContextId ctx, uint body_type, float x, float y, float gravity_scale);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern long goud_physics_add_collider(GoudContextId ctx, ulong body_handle, uint shape_type, float width, float height, float radius);
+        public static extern long goud_physics_add_collider(GoudContextId ctx, ulong body_handle, uint shape_type, float width, float height, float radius, float friction, float restitution);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_remove_body(GoudContextId ctx, ulong handle);
@@ -959,6 +1090,33 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_raycast(GoudContextId ctx, float ox, float oy, float dx, float dy, float max_dist, ref float out_hit_x, ref float out_hit_y);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_get_gravity(GoudContextId ctx, ref float out_x, ref float out_y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_set_body_gravity_scale(GoudContextId ctx, ulong handle, float scale);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_get_body_gravity_scale(GoudContextId ctx, ulong handle, ref float out_scale);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_set_collider_friction(GoudContextId ctx, ulong handle, float friction);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_get_collider_friction(GoudContextId ctx, ulong handle, ref float out_friction);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_set_collider_restitution(GoudContextId ctx, ulong handle, float restitution);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_get_collider_restitution(GoudContextId ctx, ulong handle, ref float out_restitution);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_set_timestep(GoudContextId ctx, float dt);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_get_timestep(GoudContextId ctx, ref float out_dt);
+
         // physics3d
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics3d_create(GoudContextId ctx, float gx, float gy, float gz);
@@ -970,10 +1128,10 @@ namespace GoudEngine
         public static extern int goud_physics3d_set_gravity(GoudContextId ctx, float x, float y, float z);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern long goud_physics3d_add_rigid_body(GoudContextId ctx, uint body_type, float x, float y, float z);
+        public static extern long goud_physics3d_add_rigid_body(GoudContextId ctx, uint body_type, float x, float y, float z, float gravity_scale);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern long goud_physics3d_add_collider(GoudContextId ctx, ulong body_handle, uint shape_type, float hx, float hy, float hz, float radius);
+        public static extern long goud_physics3d_add_collider(GoudContextId ctx, ulong body_handle, uint shape_type, float hx, float hy, float hz, float radius, float friction, float restitution);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics3d_remove_body(GoudContextId ctx, ulong handle);
@@ -993,6 +1151,33 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics3d_apply_impulse(GoudContextId ctx, ulong handle, float ix, float iy, float iz);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_get_gravity(GoudContextId ctx, ref float out_x, ref float out_y, ref float out_z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_set_body_gravity_scale(GoudContextId ctx, ulong handle, float scale);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_get_body_gravity_scale(GoudContextId ctx, ulong handle, ref float out_scale);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_set_collider_friction(GoudContextId ctx, ulong handle, float friction);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_get_collider_friction(GoudContextId ctx, ulong handle, ref float out_friction);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_set_collider_restitution(GoudContextId ctx, ulong handle, float restitution);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_get_collider_restitution(GoudContextId ctx, ulong handle, ref float out_restitution);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_set_timestep(GoudContextId ctx, float dt);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_get_timestep(GoudContextId ctx, ref float out_dt);
+
         // animation_controller
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_animation_controller_create(GoudContextId ctx, ulong entity_id);
@@ -1011,6 +1196,16 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_animation_controller_update(GoudContextId ctx, ulong entity_id, float dt);
+
+        // animation_events
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_clip_add_event(GoudContextId ctx, ulong entity_id, uint clip_event_frame, IntPtr name_ptr, uint name_len, uint payload_type, int payload_int, float payload_float, IntPtr payload_str_ptr, uint payload_str_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_events_count(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_events_read(GoudContextId ctx, uint index, ref ulong out_entity, ref IntPtr out_name_ptr, ref uint out_name_len, ref uint out_frame, ref uint out_payload_type, ref int out_payload_int, ref float out_payload_float, ref IntPtr out_payload_str_ptr, ref uint out_payload_str_len);
 
         // tween
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -1044,6 +1239,28 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_skeleton_play_clip(GoudContextId ctx, ulong entity_id, IntPtr clip_name_ptr, int clip_name_len, [MarshalAs(UnmanagedType.U1)] bool looping);
 
+        // animation_layer
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_layer_stack_create(GoudContextId ctx, ulong entity_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_layer_add(GoudContextId ctx, ulong entity_id, IntPtr name_ptr, uint name_len, uint blend_mode);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_layer_set_weight(GoudContextId ctx, ulong entity_id, uint layer_index, float weight);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_layer_play(GoudContextId ctx, ulong entity_id, uint layer_index);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_layer_set_clip(GoudContextId ctx, ulong entity_id, uint layer_index, uint frame_count, float frame_duration, uint mode);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_layer_add_frame(GoudContextId ctx, ulong entity_id, uint layer_index, float x, float y, float w, float h);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_layer_reset(GoudContextId ctx, ulong entity_id, uint layer_index);
+
         // network
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern long goud_network_host(GoudContextId ctx, int protocol, ushort port);
@@ -1069,6 +1286,28 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_network_peer_count(GoudContextId ctx, long handle);
 
+        // providers
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_render_capabilities(GoudContextId ctx, ref FfiRenderCapabilities out_caps);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_physics_capabilities(GoudContextId ctx, ref FfiPhysicsCapabilities out_caps);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_audio_capabilities(GoudContextId ctx, ref FfiAudioCapabilities out_caps);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_input_capabilities(GoudContextId ctx, ref FfiInputCapabilities out_caps);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_network_capabilities(GoudContextId ctx, ref FfiNetworkCapabilities out_caps);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_hot_swap_render(GoudContextId ctx, int provider_type);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_check_hot_swap_shortcut(GoudContextId ctx);
+
         // plugin
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_plugin_register(GoudContextId ctx, IntPtr plugin_id_ptr, uint plugin_id_len);
@@ -1081,6 +1320,40 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_plugin_list(GoudContextId ctx, IntPtr out_buf, uint buf_len);
+
+        // ui_manager
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr goud_ui_manager_create();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_ui_manager_destroy(IntPtr ptr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_ui_manager_update(IntPtr ptr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_ui_manager_render(IntPtr ptr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_ui_manager_node_count(IntPtr ptr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong goud_ui_create_node(IntPtr mgr, int component_type);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_ui_remove_node(IntPtr mgr, ulong node_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_ui_set_parent(IntPtr mgr, ulong child_id, ulong parent_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong goud_ui_get_parent(IntPtr mgr, ulong node_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_ui_get_child_count(IntPtr mgr, ulong node_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong goud_ui_get_child_at(IntPtr mgr, ulong node_id, uint index);
 
     }
 }

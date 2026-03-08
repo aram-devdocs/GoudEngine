@@ -5,6 +5,7 @@
 
 mod instance;
 mod instance_transitions;
+mod providers;
 
 #[cfg(test)]
 mod tests;

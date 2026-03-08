@@ -2,6 +2,7 @@
 //!
 //! Opaque handle types for shaders and buffers, rendering statistics.
 
+use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 
 // ============================================================================
@@ -61,7 +62,14 @@ pub unsafe extern "C" fn goud_renderer_get_stats(
     context_id: GoudContextId,
     out_stats: *mut GoudRenderStats,
 ) -> bool {
-    if context_id == GOUD_INVALID_CONTEXT_ID || out_stats.is_null() {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+    if out_stats.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
 

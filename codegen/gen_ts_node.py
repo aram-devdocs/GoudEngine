@@ -42,6 +42,11 @@ IFACE_TYPES = {
     "FpsStats": "IFpsStats",
     "Contact": "IContact",
     "Entity[]": "IEntity[]",
+    "RenderCapabilities": "IRenderCapabilities",
+    "PhysicsCapabilities": "IPhysicsCapabilities",
+    "AudioCapabilities": "IAudioCapabilities",
+    "InputCapabilities": "IInputCapabilities",
+    "NetworkCapabilities": "INetworkCapabilities",
 }
 
 
@@ -101,6 +106,23 @@ def gen_interface():
     if schema["types"]["FpsStats"].get("doc"):
         lines.append(f"/** {schema['types']['FpsStats']['doc']} */")
     lines.append(f"export interface IFpsStats {{ {fps_str}; }}")
+
+    # Capability interfaces
+    for cap_name in ["RenderCapabilities", "PhysicsCapabilities", "AudioCapabilities", "InputCapabilities", "NetworkCapabilities"]:
+        cap_type = schema["types"][cap_name]
+        cap_fields = []
+        for f in cap_type["fields"]:
+            ft = f["type"]
+            if ft == "bool":
+                ts_ft = "boolean"
+            else:
+                ts_ft = "number"
+            cap_fields.append(f"{to_camel(f['name'])}: {ts_ft}")
+        cap_str = "; ".join(cap_fields)
+        iface_name = IFACE_TYPES[cap_name]
+        if cap_type.get("doc"):
+            lines.append(f"/** {cap_type['doc']} */")
+        lines.append(f"export interface {iface_name} {{ {cap_str}; }}")
     lines.append("")
 
     if schema["types"].get("Entity", {}).get("doc"):
@@ -190,6 +212,37 @@ def gen_interface():
         else:
             lines.append(f"  {mn}({sig}): {ts_ret};")
 
+    # Animation Layer Stack & Events -- from separate tools
+    _anim_iface = [
+        ("animationLayerStackCreate", [("entity", "IEntity")], "number"),
+        ("animationLayerAdd", [("entity", "IEntity"), ("name", "string"), ("blendMode", "number")], "number"),
+        ("animationLayerSetWeight", [("entity", "IEntity"), ("layerIndex", "number"), ("weight", "number")], "number"),
+        ("animationLayerPlay", [("entity", "IEntity"), ("layerIndex", "number")], "number"),
+        ("animationLayerSetClip", [("entity", "IEntity"), ("layerIndex", "number"), ("frameCount", "number"), ("frameDuration", "number"), ("mode", "number")], "number"),
+        ("animationLayerAddFrame", [("entity", "IEntity"), ("layerIndex", "number"), ("x", "number"), ("y", "number"), ("w", "number"), ("h", "number")], "number"),
+        ("animationLayerReset", [("entity", "IEntity"), ("layerIndex", "number")], "number"),
+        ("animationClipAddEvent", [("entity", "IEntity"), ("frameIndex", "number"), ("name", "string"), ("payloadType", "number"), ("payloadInt", "number"), ("payloadFloat", "number"), ("payloadString?", "string | null")], "number"),
+        ("animationEventsCount", [], "number"),
+        ("animationEventsRead", [("index", "number")], "IAnimationEventData"),
+    ]
+    lines.append("  // Animation Layer Stack & Events")
+    for mn, params, ret in _anim_iface:
+        sig = ", ".join(f"{pn}: {pt}" for pn, pt in params)
+        lines.append(f"  {mn}({sig}): {ret};")
+
+    lines.append("}")
+    lines.append("")
+
+    # IAnimationEventData interface
+    lines.append("/** Data for a fired animation event */")
+    lines.append("export interface IAnimationEventData {")
+    lines.append("  entity: number;")
+    lines.append("  name: string;")
+    lines.append("  frameIndex: number;")
+    lines.append("  payloadType: number;")
+    lines.append("  payloadInt: number;")
+    lines.append("  payloadFloat: number;")
+    lines.append("  payloadString: string;")
     lines.append("}")
     lines.append("")
 
@@ -341,6 +394,9 @@ NATIVE_KNOWN_METHODS = {
     "render3D",
     "isAliveBatch", "despawnBatch",
     "windowWidth", "windowHeight",
+    "getRenderCapabilities", "getPhysicsCapabilities", "getAudioCapabilities",
+    "getInputCapabilities", "getNetworkCapabilities",
+    "checkHotSwapShortcut",
 }
 
 
@@ -357,11 +413,11 @@ def gen_node_wrapper():
         "  type GameConfig,",
         "} from '../../../index';",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton } from '../types/input.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "",
     ]
     if tool.get("doc"):
@@ -516,6 +572,26 @@ def gen_node_wrapper():
         lines.append("  }")
         lines.append("")
 
+    # Animation Layer Stack & Events wrapper methods
+    _anim_wrappers = [
+        ("animationLayerStackCreate", "entity: IEntity", "return (this.native as any).animationLayerStackCreate(entity as unknown as NativeEntity);", "number"),
+        ("animationLayerAdd", "entity: IEntity, name: string, blendMode: number", "return (this.native as any).animationLayerAdd(entity as unknown as NativeEntity, name, blendMode);", "number"),
+        ("animationLayerSetWeight", "entity: IEntity, layerIndex: number, weight: number", "return (this.native as any).animationLayerSetWeight(entity as unknown as NativeEntity, layerIndex, weight);", "number"),
+        ("animationLayerPlay", "entity: IEntity, layerIndex: number", "return (this.native as any).animationLayerPlay(entity as unknown as NativeEntity, layerIndex);", "number"),
+        ("animationLayerSetClip", "entity: IEntity, layerIndex: number, frameCount: number, frameDuration: number, mode: number", "return (this.native as any).animationLayerSetClip(entity as unknown as NativeEntity, layerIndex, frameCount, frameDuration, mode);", "number"),
+        ("animationLayerAddFrame", "entity: IEntity, layerIndex: number, x: number, y: number, w: number, h: number", "return (this.native as any).animationLayerAddFrame(entity as unknown as NativeEntity, layerIndex, x, y, w, h);", "number"),
+        ("animationLayerReset", "entity: IEntity, layerIndex: number", "return (this.native as any).animationLayerReset(entity as unknown as NativeEntity, layerIndex);", "number"),
+        ("animationClipAddEvent", "entity: IEntity, frameIndex: number, name: string, payloadType: number, payloadInt: number, payloadFloat: number, payloadString?: string | null", "return (this.native as any).animationClipAddEvent(entity as unknown as NativeEntity, frameIndex, name, payloadType, payloadInt, payloadFloat, payloadString ?? null);", "number"),
+        ("animationEventsCount", "", "return (this.native as any).animationEventsCount();", "number"),
+        ("animationEventsRead", "index: number", "return (this.native as any).animationEventsRead(index) as unknown as IAnimationEventData;", "IAnimationEventData"),
+    ]
+    lines.append("  // Animation Layer Stack & Events")
+    for mn, sig, body, ret in _anim_wrappers:
+        lines.append(f"  {mn}({sig}): {ret} {{")
+        lines.append(f"    {body}")
+        lines.append("  }")
+        lines.append("")
+
     lines.append("}")
     lines.append("")
 
@@ -579,15 +655,19 @@ def gen_entry():
         error_names.append(cat["base_class"])
     error_names.append("RecoveryClass")
 
+    has_diagnostic = "diagnostic" in schema
+
     lines = [
         f"// {HEADER_COMMENT}",
         "",
         f"export {{ GoudGame{ec_export}, Color, Vec2, Vec3, Key, MouseButton }} from './node/index.g.js';",
-        f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats }} from './types/engine.g.js';",
+        f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities }} from './types/engine.g.js';",
         "export type { Rect } from './types/math.g.js';",
         f"export {{ {', '.join(error_names)} }} from './errors.g.js';",
-        "",
     ]
+    if has_diagnostic:
+        lines.append("export { DiagnosticMode } from './diagnostic.g.js';")
+    lines.append("")
     write_generated(GEN / "index.g.ts", "\n".join(lines))
 
 
@@ -966,6 +1046,23 @@ use goud_engine::ffi::renderer3d::{
     goud_renderer3d_set_object_rotation, goud_renderer3d_set_object_scale,
     goud_renderer3d_update_light,
 };
+use goud_engine::ffi::animation::{
+    goud_animation_clip_add_event, goud_animation_events_count,
+    goud_animation_events_read, goud_animation_layer_add,
+    goud_animation_layer_add_frame, goud_animation_layer_play,
+    goud_animation_layer_reset, goud_animation_layer_set_clip,
+    goud_animation_layer_set_weight, goud_animation_layer_stack_create,
+};
+use goud_engine::ffi::providers::{
+    goud_provider_render_capabilities, goud_provider_physics_capabilities,
+    goud_provider_audio_capabilities, goud_provider_input_capabilities,
+    goud_provider_network_capabilities, goud_provider_check_hot_swap_shortcut,
+};
+use goud_engine::core::providers::types::{
+    RenderCapabilities, PhysicsCapabilities, AudioCapabilities,
+};
+use goud_engine::core::providers::input_types::InputCapabilities;
+use goud_engine::core::providers::network_types::NetworkCapabilities;
 use goud_engine::ffi::window::{
     goud_window_clear, goud_window_create, goud_window_destroy,
     goud_window_get_delta_time, goud_window_get_size, goud_window_poll_events,
@@ -1019,6 +1116,52 @@ pub struct NapiFpsStats {
     pub max_fps: f64,
     pub avg_fps: f64,
     pub frame_time_ms: f64,
+}
+
+// =============================================================================
+// Provider Capabilities napi objects
+// =============================================================================
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiRenderCapabilities {
+    pub max_texture_units: u32,
+    pub max_texture_size: u32,
+    pub supports_instancing: bool,
+    pub supports_compute: bool,
+    pub supports_msaa: bool,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiPhysicsCapabilities {
+    pub supports_continuous_collision: bool,
+    pub supports_joints: bool,
+    pub max_bodies: u32,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiAudioCapabilities {
+    pub supports_spatial: bool,
+    pub max_channels: u32,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiInputCapabilities {
+    pub supports_gamepad: bool,
+    pub supports_touch: bool,
+    pub max_gamepads: u32,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiNetworkCapabilities {
+    pub supports_hosting: bool,
+    pub max_connections: u32,
+    pub max_channels: u32,
+    pub max_message_size: u32,
 }
 
 // =============================================================================
@@ -1193,6 +1336,79 @@ impl GoudGame {
     #[napi]
     pub fn set_fps_overlay_corner(&self, corner: i32) {
         goud_debug_set_fps_overlay_corner(self.context_id, corner);
+    }
+
+    // =========================================================================
+    // Provider Capabilities
+    // =========================================================================
+
+    #[napi]
+    pub fn get_render_capabilities(&self) -> NapiRenderCapabilities {
+        let mut caps = RenderCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_render_capabilities(self.context_id, &mut caps) };
+        NapiRenderCapabilities {
+            max_texture_units: caps.max_texture_units,
+            max_texture_size: caps.max_texture_size,
+            supports_instancing: caps.supports_instancing,
+            supports_compute: caps.supports_compute,
+            supports_msaa: caps.supports_msaa,
+        }
+    }
+
+    #[napi]
+    pub fn get_physics_capabilities(&self) -> NapiPhysicsCapabilities {
+        let mut caps = PhysicsCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_physics_capabilities(self.context_id, &mut caps) };
+        NapiPhysicsCapabilities {
+            supports_continuous_collision: caps.supports_continuous_collision,
+            supports_joints: caps.supports_joints,
+            max_bodies: caps.max_bodies,
+        }
+    }
+
+    #[napi]
+    pub fn get_audio_capabilities(&self) -> NapiAudioCapabilities {
+        let mut caps = AudioCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_audio_capabilities(self.context_id, &mut caps) };
+        NapiAudioCapabilities {
+            supports_spatial: caps.supports_spatial,
+            max_channels: caps.max_channels,
+        }
+    }
+
+    #[napi]
+    pub fn get_input_capabilities(&self) -> NapiInputCapabilities {
+        let mut caps = InputCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_input_capabilities(self.context_id, &mut caps) };
+        NapiInputCapabilities {
+            supports_gamepad: caps.supports_gamepad,
+            supports_touch: caps.supports_touch,
+            max_gamepads: caps.max_gamepads,
+        }
+    }
+
+    #[napi]
+    pub fn get_network_capabilities(&self) -> NapiNetworkCapabilities {
+        let mut caps = NetworkCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_network_capabilities(self.context_id, &mut caps) };
+        NapiNetworkCapabilities {
+            supports_hosting: caps.supports_hosting,
+            max_connections: caps.max_connections,
+            max_channels: caps.max_channels as u32,
+            max_message_size: caps.max_message_size,
+        }
+    }
+
+    /// Checks if the hot-swap shortcut (F5) was pressed and cycles render provider. Debug builds only.
+    #[napi]
+    pub fn check_hot_swap_shortcut(&self) -> bool {
+        // SAFETY: context_id is a valid opaque handle obtained at construction.
+        goud_provider_check_hot_swap_shortcut(self.context_id) != 0
     }
 
     // =========================================================================
@@ -1707,6 +1923,120 @@ impl GoudGame {
     /// Returns the raw FFI delta time from the last poll_events call.
     #[napi(getter)]
     pub fn ffi_delta_time(&self) -> f64 { goud_window_get_delta_time(self.context_id) as f64 }
+
+    // =========================================================================
+    // Animation Layer Stack
+    // =========================================================================
+
+    #[napi]
+    pub fn animation_layer_stack_create(&self, entity: &Entity) -> i32 {
+        goud_animation_layer_stack_create(self.context_id, entity.bits)
+    }
+
+    #[napi]
+    pub fn animation_layer_add(&self, entity: &Entity, name: String, blend_mode: u32) -> Result<i32> {
+        let bytes = name.as_bytes();
+        // SAFETY: bytes pointer is valid for bytes.len() bytes (Rust String guarantee).
+        Ok(unsafe { goud_animation_layer_add(self.context_id, entity.bits, bytes.as_ptr(), bytes.len() as u32, blend_mode) })
+    }
+
+    #[napi]
+    pub fn animation_layer_set_weight(&self, entity: &Entity, layer_index: u32, weight: f64) -> i32 {
+        goud_animation_layer_set_weight(self.context_id, entity.bits, layer_index, weight as f32)
+    }
+
+    #[napi]
+    pub fn animation_layer_play(&self, entity: &Entity, layer_index: u32) -> i32 {
+        goud_animation_layer_play(self.context_id, entity.bits, layer_index)
+    }
+
+    #[napi]
+    pub fn animation_layer_set_clip(&self, entity: &Entity, layer_index: u32, frame_count: u32, frame_duration: f64, mode: u32) -> i32 {
+        goud_animation_layer_set_clip(self.context_id, entity.bits, layer_index, frame_count, frame_duration as f32, mode)
+    }
+
+    #[napi]
+    pub fn animation_layer_add_frame(&self, entity: &Entity, layer_index: u32, x: f64, y: f64, w: f64, h: f64) -> i32 {
+        goud_animation_layer_add_frame(self.context_id, entity.bits, layer_index, x as f32, y as f32, w as f32, h as f32)
+    }
+
+    #[napi]
+    pub fn animation_layer_reset(&self, entity: &Entity, layer_index: u32) -> i32 {
+        goud_animation_layer_reset(self.context_id, entity.bits, layer_index)
+    }
+
+    // =========================================================================
+    // Animation Events
+    // =========================================================================
+
+    #[napi]
+    pub fn animation_clip_add_event(&self, entity: &Entity, frame_index: u32, name: String,
+                                     payload_type: u32, payload_int: i32, payload_float: f64,
+                                     payload_string: Option<String>) -> Result<i32> {
+        let name_bytes = name.as_bytes();
+        let ps = payload_string.unwrap_or_default();
+        let ps_bytes = ps.as_bytes();
+        // SAFETY: String byte pointers are valid for their respective lengths.
+        Ok(unsafe { goud_animation_clip_add_event(
+            self.context_id, entity.bits, frame_index,
+            name_bytes.as_ptr(), name_bytes.len() as u32,
+            payload_type, payload_int, payload_float as f32,
+            ps_bytes.as_ptr(), ps_bytes.len() as u32,
+        ) })
+    }
+
+    #[napi]
+    pub fn animation_events_count(&self) -> i32 {
+        goud_animation_events_count(self.context_id)
+    }
+
+    #[napi]
+    pub fn animation_events_read(&self, index: u32) -> Result<NapiAnimationEventData> {
+        let mut entity: u64 = 0;
+        let mut name_ptr: *const u8 = std::ptr::null();
+        let mut name_len: u32 = 0;
+        let mut frame: u32 = 0;
+        let mut payload_type: u32 = 0;
+        let mut payload_int: i32 = 0;
+        let mut payload_float: f32 = 0.0;
+        let mut payload_str_ptr: *const u8 = std::ptr::null();
+        let mut payload_str_len: u32 = 0;
+        // SAFETY: All out-pointers point to valid stack-allocated memory.
+        let rc = unsafe { goud_animation_events_read(
+            self.context_id, index,
+            &mut entity, &mut name_ptr, &mut name_len, &mut frame,
+            &mut payload_type, &mut payload_int, &mut payload_float,
+            &mut payload_str_ptr, &mut payload_str_len,
+        ) };
+        if rc != 0 {
+            return Err(Error::from_reason(format!("animation_events_read failed: {}", rc)));
+        }
+        // SAFETY: FFI guarantees name_ptr is valid for name_len bytes on success.
+        let name = unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(name_ptr, name_len as usize)) }.to_string();
+        let payload_string = if payload_type == 3 && !payload_str_ptr.is_null() {
+            // SAFETY: FFI guarantees payload_str_ptr is valid for payload_str_len bytes when type==3.
+            unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(payload_str_ptr, payload_str_len as usize)) }.to_string()
+        } else {
+            String::new()
+        };
+        Ok(NapiAnimationEventData { entity: entity as i64, name, frame_index: frame, payload_type, payload_int, payload_float: payload_float as f64, payload_string })
+    }
+}
+
+// =============================================================================
+// NapiAnimationEventData
+// =============================================================================
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiAnimationEventData {
+    pub entity: i64,
+    pub name: String,
+    pub frame_index: u32,
+    pub payload_type: u32,
+    pub payload_int: i32,
+    pub payload_float: f64,
+    pub payload_string: String,
 }
 
 // =============================================================================
@@ -1957,6 +2287,81 @@ def gen_errors():
     write_generated(GEN / "errors.g.ts", "\n".join(lines))
 
 
+def gen_diagnostic():
+    if "diagnostic" not in schema:
+        return
+    diag = schema["diagnostic"]
+    cls = diag["class_name"]
+    lines = [
+        f"// {HEADER_COMMENT}",
+        "",
+        "/**",
+        f" * {diag['doc']}",
+        " *",
+        " * In web/WASM builds these are no-ops.",
+        " */",
+        f"export class {cls} {{",
+        "  private static _enabled = false;",
+        "",
+    ]
+    for method in diag["methods"]:
+        name = method["name"]
+        ffi = method["ffi"]
+        doc = method["doc"]
+
+        if method.get("buffer_protocol"):
+            lines += [
+                f"  /** {doc} */",
+                f"  static get {name}(): string {{",
+                "    try {",
+                "      const native = require('../node/index.g.js');",
+                f"      if (typeof native.{ffi} === 'function') {{",
+                f"        return native.{ffi}() ?? \"\";",
+                "      }",
+                "    } catch {",
+                "      // Web/WASM fallback",
+                "    }",
+                '    return "";',
+                "  }",
+            ]
+        elif method["returns"] == "void":
+            lines += [
+                f"  /** {doc} */",
+                f"  static {name}({method['params'][0]['name']}: boolean): void {{",
+                "    try {",
+                "      const native = require('../node/index.g.js');",
+                f"      if (typeof native.{ffi} === 'function') {{",
+                f"        native.{ffi}({method['params'][0]['name']});",
+                "      }",
+                "    } catch {",
+                "      // Web/WASM fallback",
+                "    }",
+                f"    {cls}._enabled = {method['params'][0]['name']};",
+                "  }",
+            ]
+        elif method["returns"] == "bool":
+            lines += [
+                f"  /** {doc} */",
+                f"  static get {name}(): boolean {{",
+                "    try {",
+                "      const native = require('../node/index.g.js');",
+                f"      if (typeof native.{ffi} === 'function') {{",
+                f"        return native.{ffi}();",
+                "      }",
+                "    } catch {",
+                "      // Web/WASM fallback",
+                "    }",
+                f"    return {cls}._enabled;",
+                "  }",
+            ]
+        lines.append("")
+
+    lines.append("}")
+    lines.append("")
+
+    write_generated(GEN / "diagnostic.g.ts", "\n".join(lines))
+
+
 if __name__ == "__main__":
     print("Generating TypeScript Node SDK...")
     gen_interface()
@@ -1966,4 +2371,5 @@ if __name__ == "__main__":
     gen_entry()
     gen_napi_rust()
     gen_errors()
+    gen_diagnostic()
     print("TypeScript Node SDK generation complete.")

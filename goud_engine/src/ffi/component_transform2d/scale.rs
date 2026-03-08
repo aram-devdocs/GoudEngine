@@ -1,5 +1,6 @@
 //! Scale-related FFI functions for Transform2D.
 
+use crate::core::error::{set_last_error, GoudError};
 use crate::core::types::FfiTransform2D;
 use crate::ffi::types::FfiVec2;
 
@@ -21,6 +22,9 @@ pub unsafe extern "C" fn goud_transform2d_set_scale(
     scale_y: f32,
 ) {
     if transform.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let t = &mut *transform;
@@ -44,6 +48,9 @@ pub unsafe extern "C" fn goud_transform2d_set_scale_uniform(
     scale: f32,
 ) {
     if transform.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let t = &mut *transform;
@@ -94,6 +101,9 @@ pub unsafe extern "C" fn goud_transform2d_scale_by(
     factor_y: f32,
 ) {
     if transform.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let t = &mut *transform;

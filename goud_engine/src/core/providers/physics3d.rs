@@ -34,6 +34,12 @@ pub trait PhysicsProvider3D: Provider + ProviderLifecycle {
     /// Get the current gravity vector as [x, y, z].
     fn gravity(&self) -> [f32; 3];
 
+    /// Set the timestep for the physics simulation.
+    fn set_timestep(&mut self, dt: f32);
+
+    /// Get the current timestep for the physics simulation.
+    fn timestep(&self) -> f32;
+
     // -------------------------------------------------------------------------
     // Body Management
     // -------------------------------------------------------------------------
@@ -68,6 +74,12 @@ pub trait PhysicsProvider3D: Provider + ProviderLifecycle {
     /// Apply an instantaneous impulse to a body.
     fn apply_impulse(&mut self, handle: BodyHandle, impulse: [f32; 3]) -> GoudResult<()>;
 
+    /// Get the gravity scale of a body (default 1.0).
+    fn body_gravity_scale(&self, handle: BodyHandle) -> GoudResult<f32>;
+
+    /// Set the gravity scale of a body.
+    fn set_body_gravity_scale(&mut self, handle: BodyHandle, scale: f32) -> GoudResult<()>;
+
     // -------------------------------------------------------------------------
     // Collider Management
     // -------------------------------------------------------------------------
@@ -81,6 +93,22 @@ pub trait PhysicsProvider3D: Provider + ProviderLifecycle {
 
     /// Destroy a previously created collider.
     fn destroy_collider(&mut self, handle: ColliderHandle);
+
+    /// Get the friction coefficient of a collider.
+    fn collider_friction(&self, handle: ColliderHandle) -> GoudResult<f32>;
+
+    /// Set the friction coefficient of a collider.
+    fn set_collider_friction(&mut self, handle: ColliderHandle, friction: f32) -> GoudResult<()>;
+
+    /// Get the restitution (bounciness) of a collider.
+    fn collider_restitution(&self, handle: ColliderHandle) -> GoudResult<f32>;
+
+    /// Set the restitution (bounciness) of a collider.
+    fn set_collider_restitution(
+        &mut self,
+        handle: ColliderHandle,
+        restitution: f32,
+    ) -> GoudResult<()>;
 
     // -------------------------------------------------------------------------
     // Queries

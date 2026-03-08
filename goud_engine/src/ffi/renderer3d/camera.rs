@@ -1,6 +1,7 @@
 //! FFI functions for the 3D camera.
 
 use super::state::{ensure_renderer3d_state, with_renderer};
+use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 
 // ============================================================================
@@ -16,10 +17,14 @@ pub extern "C" fn goud_renderer3d_set_camera_position(
     z: f32,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
     if ensure_renderer3d_state(context_id).is_err() {
+        set_last_error(GoudError::InternalError(
+            "Renderer state not found".to_string(),
+        ));
         return false;
     }
 
@@ -39,10 +44,14 @@ pub extern "C" fn goud_renderer3d_set_camera_rotation(
     roll: f32,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
     if ensure_renderer3d_state(context_id).is_err() {
+        set_last_error(GoudError::InternalError(
+            "Renderer state not found".to_string(),
+        ));
         return false;
     }
 

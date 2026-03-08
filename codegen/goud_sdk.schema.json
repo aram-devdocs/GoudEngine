@@ -1632,6 +1632,202 @@
         ]
       }
     },
+    "Text": {
+      "kind": "component",
+      "doc": "Text rendering component",
+      "fields": [
+        {
+          "name": "fontHandle",
+          "type": "u64"
+        },
+        {
+          "name": "fontSize",
+          "type": "f32"
+        },
+        {
+          "name": "colorR",
+          "type": "f32"
+        },
+        {
+          "name": "colorG",
+          "type": "f32"
+        },
+        {
+          "name": "colorB",
+          "type": "f32"
+        },
+        {
+          "name": "colorA",
+          "type": "f32"
+        },
+        {
+          "name": "alignment",
+          "type": "u8"
+        },
+        {
+          "name": "maxWidth",
+          "type": "f32"
+        },
+        {
+          "name": "hasMaxWidth",
+          "type": "bool"
+        },
+        {
+          "name": "lineSpacing",
+          "type": "f32"
+        }
+      ],
+      "factories": [
+        {
+          "name": "new",
+          "args": [
+            {
+              "name": "fontHandle",
+              "type": "u64"
+            }
+          ]
+        },
+        {
+          "name": "default",
+          "args": []
+        }
+      ],
+      "methods": [
+        {
+          "name": "setFontSize",
+          "doc": "Sets the font size in pixels",
+          "params": [
+            {
+              "name": "size",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getFontSize",
+          "doc": "Gets the font size in pixels",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "setColor",
+          "doc": "Sets the RGBA text color",
+          "params": [
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            },
+            {
+              "name": "a",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getColorR",
+          "doc": "Gets the red color component",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "getColorG",
+          "doc": "Gets the green color component",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "getColorB",
+          "doc": "Gets the blue color component",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "getColorA",
+          "doc": "Gets the alpha color component",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "setAlignment",
+          "doc": "Sets the horizontal text alignment (0=Left, 1=Center, 2=Right)",
+          "params": [
+            {
+              "name": "alignment",
+              "type": "u8"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getAlignment",
+          "doc": "Gets the horizontal text alignment",
+          "params": [],
+          "returns": "u8"
+        },
+        {
+          "name": "setMaxWidth",
+          "doc": "Sets the maximum width for word-wrapping",
+          "params": [
+            {
+              "name": "width",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "clearMaxWidth",
+          "doc": "Clears the maximum width, disabling word-wrapping",
+          "params": [],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getMaxWidth",
+          "doc": "Gets the maximum width for word-wrapping",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "hasMaxWidth",
+          "doc": "Returns whether the text has a max width set",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "setLineSpacing",
+          "doc": "Sets the line spacing multiplier",
+          "params": [
+            {
+              "name": "spacing",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getLineSpacing",
+          "doc": "Gets the line spacing multiplier",
+          "params": [],
+          "returns": "f32"
+        }
+      ]
+    },
     "SpriteAnimator": {
       "kind": "component",
       "doc": "Sprite sheet animation component",
@@ -1747,6 +1943,47 @@
           }
         ]
       }
+    },
+    "AnimationEventData": {
+      "kind": "value",
+      "doc": "Data for a fired animation event read from the event queue",
+      "fields": [
+        {
+          "name": "entity",
+          "type": "u64",
+          "doc": "Entity whose animation fired the event"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "doc": "Event name identifier"
+        },
+        {
+          "name": "frameIndex",
+          "type": "u32",
+          "doc": "Frame index that triggered the event"
+        },
+        {
+          "name": "payloadType",
+          "type": "u32",
+          "doc": "Payload discriminant (0=None, 1=Int, 2=Float, 3=String)"
+        },
+        {
+          "name": "payloadInt",
+          "type": "i32",
+          "doc": "Integer payload value (valid when payloadType==1)"
+        },
+        {
+          "name": "payloadFloat",
+          "type": "f32",
+          "doc": "Float payload value (valid when payloadType==2)"
+        },
+        {
+          "name": "payloadString",
+          "type": "string",
+          "doc": "String payload value (valid when payloadType==3)"
+        }
+      ]
     },
     "RenderStats": {
       "kind": "value",
@@ -1908,11 +2145,49 @@
     },
     "PhysicsWorld2D": {
       "kind": "handle",
-      "doc": "2D physics simulation world"
+      "doc": "2D physics simulation world",
+      "methods": [
+        {
+          "name": "setTimestep",
+          "doc": "Set the fixed physics timestep in seconds",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getTimestep",
+          "doc": "Get the current fixed physics timestep in seconds",
+          "params": [],
+          "returns": "f32"
+        }
+      ]
     },
     "PhysicsWorld3D": {
       "kind": "handle",
-      "doc": "3D physics simulation world"
+      "doc": "3D physics simulation world",
+      "methods": [
+        {
+          "name": "setTimestep",
+          "doc": "Set the fixed physics timestep in seconds",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getTimestep",
+          "doc": "Get the current fixed physics timestep in seconds",
+          "params": [],
+          "returns": "f32"
+        }
+      ]
     },
     "RigidBodyHandle": {
       "kind": "handle",
@@ -1929,6 +2204,53 @@
     "NetworkHandle": {
       "kind": "handle",
       "doc": "Handle to a network host or connection"
+    },
+    "RenderCapabilities": {
+      "kind": "value",
+      "doc": "Capabilities reported by the active render provider",
+      "fields": [
+        { "name": "maxTextureUnits", "type": "u32", "doc": "Maximum number of texture units available" },
+        { "name": "maxTextureSize", "type": "u32", "doc": "Maximum texture dimension (width or height)" },
+        { "name": "supportsInstancing", "type": "bool", "doc": "Whether hardware instancing is supported" },
+        { "name": "supportsCompute", "type": "bool", "doc": "Whether compute shaders are supported" },
+        { "name": "supportsMsaa", "type": "bool", "doc": "Whether multisample anti-aliasing is supported" }
+      ]
+    },
+    "PhysicsCapabilities": {
+      "kind": "value",
+      "doc": "Capabilities reported by the active physics provider",
+      "fields": [
+        { "name": "supportsContinuousCollision", "type": "bool", "doc": "Whether continuous collision detection is supported" },
+        { "name": "supportsJoints", "type": "bool", "doc": "Whether joints are supported" },
+        { "name": "maxBodies", "type": "u32", "doc": "Maximum number of physics bodies" }
+      ]
+    },
+    "AudioCapabilities": {
+      "kind": "value",
+      "doc": "Capabilities reported by the active audio provider",
+      "fields": [
+        { "name": "supportsSpatial", "type": "bool", "doc": "Whether spatial/3D audio is supported" },
+        { "name": "maxChannels", "type": "u32", "doc": "Maximum number of simultaneous audio channels" }
+      ]
+    },
+    "InputCapabilities": {
+      "kind": "value",
+      "doc": "Capabilities reported by the active input provider",
+      "fields": [
+        { "name": "supportsGamepad", "type": "bool", "doc": "Whether gamepad input is supported" },
+        { "name": "supportsTouch", "type": "bool", "doc": "Whether touch input is supported" },
+        { "name": "maxGamepads", "type": "u32", "doc": "Maximum number of simultaneous gamepads" }
+      ]
+    },
+    "NetworkCapabilities": {
+      "kind": "value",
+      "doc": "Capabilities reported by the active network provider",
+      "fields": [
+        { "name": "supportsHosting", "type": "bool", "doc": "Whether this provider can act as a host" },
+        { "name": "maxConnections", "type": "u32", "doc": "Maximum number of simultaneous connections" },
+        { "name": "maxChannels", "type": "u8", "doc": "Maximum number of channels supported" },
+        { "name": "maxMessageSize", "type": "u32", "doc": "Maximum size of a single message in bytes" }
+      ]
     }
   },
   "enums": {
@@ -2225,6 +2547,31 @@
         "Instant": 0,
         "Fade": 1,
         "Custom": 2
+      }
+    },
+    "TextAlignment": {
+      "doc": "Horizontal text alignment",
+      "underlying": "u8",
+      "values": {
+        "Left": 0,
+        "Center": 1,
+        "Right": 2
+      }
+    },
+    "BlendMode": {
+      "doc": "How an animation layer blends with layers below it",
+      "values": {
+        "Override": 0,
+        "Additive": 1
+      }
+    },
+    "EventPayloadType": {
+      "doc": "Discriminant for animation event payload data",
+      "values": {
+        "None": 0,
+        "Int": 1,
+        "Float": 2,
+        "String": 3
       }
     }
   },
@@ -4119,6 +4466,42 @@
         {
           "$ref": "EcsMethods",
           "name": "componentHasBatch"
+        },
+        {
+          "name": "getRenderCapabilities",
+          "doc": "Queries the render provider's capabilities",
+          "params": [],
+          "returns": "RenderCapabilities"
+        },
+        {
+          "name": "getPhysicsCapabilities",
+          "doc": "Queries the physics provider's capabilities",
+          "params": [],
+          "returns": "PhysicsCapabilities"
+        },
+        {
+          "name": "getAudioCapabilities",
+          "doc": "Queries the audio provider's capabilities",
+          "params": [],
+          "returns": "AudioCapabilities"
+        },
+        {
+          "name": "getInputCapabilities",
+          "doc": "Queries the input provider's capabilities",
+          "params": [],
+          "returns": "InputCapabilities"
+        },
+        {
+          "name": "getNetworkCapabilities",
+          "doc": "Queries the network provider's capabilities. Throws if no network provider is installed.",
+          "params": [],
+          "returns": "NetworkCapabilities"
+        },
+        {
+          "name": "checkHotSwapShortcut",
+          "doc": "Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred.",
+          "params": [],
+          "returns": "bool"
         }
       ],
       "wasm_interface": [
@@ -4765,6 +5148,10 @@
             {
               "name": "y",
               "type": "f32"
+            },
+            {
+              "name": "gravityScale",
+              "type": "f32"
             }
           ],
           "returns": "i64"
@@ -4791,6 +5178,14 @@
             },
             {
               "name": "radius",
+              "type": "f32"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            },
+            {
+              "name": "restitution",
               "type": "f32"
             }
           ],
@@ -4923,6 +5318,107 @@
             }
           ],
           "returns": "Vec2"
+        },
+        {
+          "name": "getGravity",
+          "doc": "Gets the current gravity vector",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "setBodyGravityScale",
+          "doc": "Sets the gravity scale for a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getBodyGravityScale",
+          "doc": "Gets the gravity scale for a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setColliderFriction",
+          "doc": "Sets the friction coefficient for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getColliderFriction",
+          "doc": "Gets the friction coefficient for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setColliderRestitution",
+          "doc": "Sets the restitution (bounciness) for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "restitution",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getColliderRestitution",
+          "doc": "Gets the restitution (bounciness) for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setTimestep",
+          "doc": "Set the fixed physics timestep in seconds",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getTimestep",
+          "doc": "Get the current fixed physics timestep in seconds",
+          "params": [],
+          "returns": "f32"
         }
       ]
     },
@@ -5008,6 +5504,10 @@
             {
               "name": "z",
               "type": "f32"
+            },
+            {
+              "name": "gravityScale",
+              "type": "f32"
             }
           ],
           "returns": "i64"
@@ -5038,6 +5538,14 @@
             },
             {
               "name": "radius",
+              "type": "f32"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            },
+            {
+              "name": "restitution",
               "type": "f32"
             }
           ],
@@ -5144,6 +5652,107 @@
             }
           ],
           "returns": "i32"
+        },
+        {
+          "name": "getGravity",
+          "doc": "Gets the current gravity vector",
+          "params": [],
+          "returns": "Vec3"
+        },
+        {
+          "name": "setBodyGravityScale",
+          "doc": "Sets the gravity scale for a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getBodyGravityScale",
+          "doc": "Gets the gravity scale for a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setColliderFriction",
+          "doc": "Sets the friction coefficient for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getColliderFriction",
+          "doc": "Gets the friction coefficient for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setColliderRestitution",
+          "doc": "Sets the restitution (bounciness) for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "restitution",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getColliderRestitution",
+          "doc": "Gets the restitution (bounciness) for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setTimestep",
+          "doc": "Set the fixed physics timestep in seconds",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getTimestep",
+          "doc": "Get the current fixed physics timestep in seconds",
+          "params": [],
+          "returns": "f32"
         }
       ]
     },
@@ -5426,6 +6035,205 @@
         }
       ]
     },
+    "AnimationEvents": {
+      "doc": "Animation keyframe event system for configuring and reading fired events",
+      "methods": [
+        {
+          "name": "addClipEvent",
+          "doc": "Adds an event to the clip of an entity's SpriteAnimator",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "frameIndex",
+              "type": "u32"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "payloadType",
+              "type": "u32"
+            },
+            {
+              "name": "payloadInt",
+              "type": "i32"
+            },
+            {
+              "name": "payloadFloat",
+              "type": "f32"
+            },
+            {
+              "name": "payloadString",
+              "type": "string"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "count",
+          "doc": "Returns the number of fired animation events available for reading",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "read",
+          "doc": "Reads a fired animation event by index",
+          "params": [
+            {
+              "name": "index",
+              "type": "u32"
+            }
+          ],
+          "returns": "AnimationEventData"
+        }
+      ]
+    },
+    "AnimationLayerStack": {
+      "doc": "Multi-layer animation blending system",
+      "methods": [
+        {
+          "name": "create",
+          "doc": "Creates an empty animation layer stack on the entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "addLayer",
+          "doc": "Adds a named animation layer to the stack",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "blendMode",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setLayerWeight",
+          "doc": "Sets the blend weight of a layer by index (clamped to 0.0-1.0)",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "layerIndex",
+              "type": "u32"
+            },
+            {
+              "name": "weight",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "play",
+          "doc": "Starts playback on a layer by index",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "layerIndex",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setClip",
+          "doc": "Sets the animation clip on a layer with empty frames, frame duration, and playback mode",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "layerIndex",
+              "type": "u32"
+            },
+            {
+              "name": "frameCount",
+              "type": "u32"
+            },
+            {
+              "name": "frameDuration",
+              "type": "f32"
+            },
+            {
+              "name": "mode",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "addFrame",
+          "doc": "Adds a source rectangle frame to a layer's animation clip",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "layerIndex",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "w",
+              "type": "f32"
+            },
+            {
+              "name": "h",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "resetLayer",
+          "doc": "Resets a finished or in-progress animation layer to its initial state",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "layerIndex",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        }
+      ]
+    },
     "Network": {
       "doc": "Networking transport layer supporting UDP and WebSocket",
       "methods": [
@@ -5584,6 +6392,107 @@
           "doc": "Lists all registered plugins",
           "params": [],
           "returns": "string"
+        }
+      ]
+    },
+    "UiManager": {
+      "doc": "Immediate-mode UI manager for creating and managing UI node trees",
+      "handle_type": "opaque",
+      "constructor": {
+        "params": []
+      },
+      "methods": [
+        {
+          "name": "update",
+          "doc": "Runs the UI layout update tick",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "render",
+          "doc": "Renders the UI tree",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "nodeCount",
+          "doc": "Returns the number of live nodes in the UI tree",
+          "params": [],
+          "returns": "u32"
+        },
+        {
+          "name": "createNode",
+          "doc": "Creates a new UI node with the given component type (0=Panel, -1=none)",
+          "params": [
+            {
+              "name": "componentType",
+              "type": "i32"
+            }
+          ],
+          "returns": "u64"
+        },
+        {
+          "name": "removeNode",
+          "doc": "Removes a UI node and its subtree",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setParent",
+          "doc": "Sets or clears the parent of a UI node (use u64.MAX to detach)",
+          "params": [
+            {
+              "name": "childId",
+              "type": "u64"
+            },
+            {
+              "name": "parentId",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getParent",
+          "doc": "Returns the parent node ID, or u64.MAX if none",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            }
+          ],
+          "returns": "u64"
+        },
+        {
+          "name": "getChildCount",
+          "doc": "Returns the number of children of a node",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "getChildAt",
+          "doc": "Returns the child node ID at a given index, or u64.MAX if out of bounds",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            },
+            {
+              "name": "index",
+              "type": "u32"
+            }
+          ],
+          "returns": "u64"
         }
       ]
     }
@@ -5891,6 +6800,41 @@
         "category": "Internal",
         "recovery": "fatal",
         "hint": "Check the sequence of API calls; the engine may need re-initialization"
+      }
+    ]
+  },
+  "diagnostic": {
+    "doc": "Diagnostic mode controls backtrace capture on errors (debug builds only).",
+    "class_name": "DiagnosticMode",
+    "static": true,
+    "methods": [
+      {
+        "name": "setEnabled",
+        "ffi": "goud_diagnostic_set_enabled",
+        "doc": "Enable or disable diagnostic mode.",
+        "params": [
+          {
+            "name": "enabled",
+            "type": "bool",
+            "doc": "Whether to enable diagnostic mode"
+          }
+        ],
+        "returns": "void"
+      },
+      {
+        "name": "isEnabled",
+        "ffi": "goud_diagnostic_is_enabled",
+        "doc": "Returns whether diagnostic mode is currently enabled.",
+        "params": [],
+        "returns": "bool"
+      },
+      {
+        "name": "lastBacktrace",
+        "ffi": "goud_diagnostic_last_backtrace",
+        "doc": "Returns the backtrace captured from the most recent error, or empty string if none.",
+        "params": [],
+        "returns": "string",
+        "buffer_protocol": true
       }
     ]
   }

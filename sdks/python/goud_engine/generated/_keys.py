@@ -163,3 +163,21 @@ class TransitionType:
     INSTANT = 0
     FADE = 1
     CUSTOM = 2
+
+class TextAlignment:
+    """Horizontal text alignment"""
+    LEFT = 0
+    CENTER = 1
+    RIGHT = 2
+
+class BlendMode:
+    """How an animation layer blends with layers below it"""
+    OVERRIDE = 0
+    ADDITIVE = 1
+
+class EventPayloadType:
+    """Discriminant for animation event payload data"""
+    NONE = 0
+    INT = 1
+    FLOAT = 2
+    STRING = 3

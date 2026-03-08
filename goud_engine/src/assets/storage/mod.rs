@@ -64,6 +64,7 @@
 mod any_storage;
 mod container;
 mod entry;
+pub(crate) mod ref_count;
 mod typed;
 
 #[cfg(test)]

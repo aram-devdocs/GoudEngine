@@ -4,14 +4,20 @@
 //! - **Animation Controller**: State machine component on entities
 //! - **Tween**: Standalone value interpolation with easing
 //! - **Skeleton2D**: Bone hierarchy and skeletal animation playback
+//! - **Animation Events**: Keyframe event configuration and reading
+//! - **Animation Layers**: Multi-layer blended animation stacks
 //!
 //! ## Module Layout
 //!
 //! - `controller` -- AnimationController component operations
 //! - `tween` -- Standalone tween interpolation with easing
 //! - `skeletal` -- Skeleton2D and SkeletalAnimator operations
+//! - `events` -- Animation event add/read operations
+//! - `layer` -- AnimationLayerStack component operations
 
 pub mod controller;
+pub mod events;
+pub mod layer;
 pub mod skeletal;
 pub mod tween;
 
@@ -44,6 +50,14 @@ pub use controller::{
     goud_animation_controller_add_state, goud_animation_controller_add_transition,
     goud_animation_controller_create, goud_animation_controller_get_state,
     goud_animation_controller_set_state, goud_animation_controller_update,
+};
+pub use events::{
+    goud_animation_clip_add_event, goud_animation_events_count, goud_animation_events_read,
+};
+pub use layer::{
+    goud_animation_layer_add, goud_animation_layer_add_frame, goud_animation_layer_play,
+    goud_animation_layer_reset, goud_animation_layer_set_clip, goud_animation_layer_set_weight,
+    goud_animation_layer_stack_create,
 };
 pub use skeletal::{
     goud_skeleton_add_bone, goud_skeleton_create, goud_skeleton_play_clip,

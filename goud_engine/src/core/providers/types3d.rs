@@ -115,6 +115,7 @@ pub struct DebugShape3D {
 
 /// Capabilities reported by a 3D physics provider.
 #[derive(Debug, Clone, Default)]
+#[repr(C)]
 pub struct PhysicsCapabilities3D {
     /// Whether continuous collision detection is supported.
     pub supports_continuous_collision: bool,
