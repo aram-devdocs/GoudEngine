@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.0.828](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.827...v0.0.828) (2026-03-08)
+
+
+### Features
+
+* 3D transform propagation, entity cloning, plugin system ([#440](https://github.com/aram-devdocs/GoudEngine/issues/440)) ([8a41896](https://github.com/aram-devdocs/GoudEngine/commit/8a41896567788e91845c6cd2896e157c9e380a50))
+* add animation controller, tween/easing library, and 2D skeletal animation ([#456](https://github.com/aram-devdocs/GoudEngine/issues/456)) ([b200ef1](https://github.com/aram-devdocs/GoudEngine/commit/b200ef17c27f41a2b3cb82aeb97e9a057d15943d))
+* add async asset loading with background thread pool ([ae959d3](https://github.com/aram-devdocs/GoudEngine/commit/ae959d33e5f3da6ded9da968a00de5c2d8b56ce7)), closes [#195](https://github.com/aram-devdocs/GoudEngine/issues/195)
+* add content pipeline asset types and dependency tracking ([#457](https://github.com/aram-devdocs/GoudEngine/issues/457)) ([ef4db6e](https://github.com/aram-devdocs/GoudEngine/commit/ef4db6ef6dd62b39f0b685b6c231f9cae2d4e81e))
+* add default systems, non-send thread safety, and system set ordering ([#454](https://github.com/aram-devdocs/GoudEngine/issues/454)) ([f38e643](https://github.com/aram-devdocs/GoudEngine/commit/f38e64306d65dff791c267482db47e06c38e0eda))
+* add EngineConfig builder with provider selection (F02-07) ([#453](https://github.com/aram-devdocs/GoudEngine/issues/453)) ([517de29](https://github.com/aram-devdocs/GoudEngine/commit/517de29e9d6aad8d43bb56089887f67ce8726f69))
+* add error context propagation, recovery classification, and SDK error types ([#455](https://github.com/aram-devdocs/GoudEngine/issues/455)) ([b33ad1c](https://github.com/aram-devdocs/GoudEngine/commit/b33ad1cd392ee4d5b510f81dd920f20d21ecbf3a))
+* add font asset loader for TTF and OTF files ([58f6e51](https://github.com/aram-devdocs/GoudEngine/commit/58f6e519235aca498d0f9c21fa82a2ae92ec1965)), closes [#150](https://github.com/aram-devdocs/GoudEngine/issues/150)
+* add FPS stats debug overlay and sprite batch benchmarks ([#444](https://github.com/aram-devdocs/GoudEngine/issues/444)) ([13c7f67](https://github.com/aram-devdocs/GoudEngine/commit/13c7f67fb86115b1182d3a61e0ec5f82c9824c0d))
+* add glyph atlas generation and caching ([#451](https://github.com/aram-devdocs/GoudEngine/issues/451)) ([9714a28](https://github.com/aram-devdocs/GoudEngine/commit/9714a28491351d47d468c49f52f8f4663c121e80))
+* add Rapier2D and Rapier3D physics providers ([#458](https://github.com/aram-devdocs/GoudEngine/issues/458)) ([9361d4a](https://github.com/aram-devdocs/GoudEngine/commit/9361d4af0486c47b3ba92f4845db121dceac2fc9))
+* add scene serialization, loading/unloading, and prefab system ([#459](https://github.com/aram-devdocs/GoudEngine/issues/459)) ([351652f](https://github.com/aram-devdocs/GoudEngine/commit/351652f0a1df63fcf49f4f2005772391d0ab2c34))
+* add SceneManager for multiple worlds/scenes support ([#442](https://github.com/aram-devdocs/GoudEngine/issues/442)) ([a4ad5ef](https://github.com/aram-devdocs/GoudEngine/commit/a4ad5ef54b0d5d5fb6d8dc31d8e369db1a7bb235))
+* add sprite sheet animation component and system ([#445](https://github.com/aram-devdocs/GoudEngine/issues/445)) ([b36448c](https://github.com/aram-devdocs/GoudEngine/commit/b36448c0aad1dc224a6209ef38ef50f6e40c4dbd))
+* add UDP and WebSocket transport layers ([#460](https://github.com/aram-devdocs/GoudEngine/issues/460)) ([2c0ec33](https://github.com/aram-devdocs/GoudEngine/commit/2c0ec33cb740954abf7dda71ae414e77a157905f))
+* **ecs:** implement change detection (Changed&lt;T&gt;, Added&lt;T&gt;) ([b04334c](https://github.com/aram-devdocs/GoudEngine/commit/b04334c9b5d478d8c8dac97cbaeb19d5b8d5b047)), closes [#164](https://github.com/aram-devdocs/GoudEngine/issues/164)
+* **ecs:** implement event system parameters (EventReader/EventWriter) ([378d595](https://github.com/aram-devdocs/GoudEngine/commit/378d595aa4247c0bf400f2dc4385995f8c672d0a)), closes [#165](https://github.com/aram-devdocs/GoudEngine/issues/165)
+* **ecs:** implement optional component queries (Option&lt;&T&gt;) ([e4e6b55](https://github.com/aram-devdocs/GoudEngine/commit/e4e6b558745165ac3b68983c02910f99adeaaa79))
+* **ecs:** implement query archetype caching ([d879835](https://github.com/aram-devdocs/GoudEngine/commit/d879835d0b6df4f81da61392f542ead7bcd5430c))
+* **error:** add from_error_code reverse mapping and recovery guidance docs ([507f090](https://github.com/aram-devdocs/GoudEngine/commit/507f09027195077a2267c7ef59a11422bb9e5529))
+* headless renderer, FFI safety tests, and integration test suite ([#452](https://github.com/aram-devdocs/GoudEngine/issues/452)) ([a92fd5d](https://github.com/aram-devdocs/GoudEngine/commit/a92fd5d334dda93a5a035b87860ab9c21949fa04))
+* implement audio asset loader with rodio decoding ([#450](https://github.com/aram-devdocs/GoudEngine/issues/450)) ([a4f3d10](https://github.com/aram-devdocs/GoudEngine/commit/a4f3d1099ef0823b56c09c6caf0e52fa1e7b747a))
+* implement provider traits for all engine subsystems (F02-02 through F02-06) ([#447](https://github.com/aram-devdocs/GoudEngine/issues/447)) ([021367e](https://github.com/aram-devdocs/GoudEngine/commit/021367e6ecc13d73a280ee6a66277c5d14b76707))
+* **sdk:** add error query function bindings to Python and C# SDKs ([a5ac1a1](https://github.com/aram-devdocs/GoudEngine/commit/a5ac1a1e97425552b957016209e23ddbe0b06b8b))
+
+
+### Bug Fixes
+
+* add workflow_dispatch trigger to RFC auto-approve ([2c407e9](https://github.com/aram-devdocs/GoudEngine/commit/2c407e9a2b3e4478fdc5c8b6ad75182ad518e798))
+* address Claude code review warnings ([83b0a4d](https://github.com/aram-devdocs/GoudEngine/commit/83b0a4de58d779628e16e3f50a2e21af96e71b6f))
+* address Claude Code Review warnings ([9460d09](https://github.com/aram-devdocs/GoudEngine/commit/9460d09ce49c576f16bc6a63d8aaceec355d3777))
+* address code quality review findings in font loader ([ac878c9](https://github.com/aram-devdocs/GoudEngine/commit/ac878c9ea6826bbb9b3112753721ee8c943a49f0))
+* **ci:** default empty API responses to 0 in community-stats workflow ([#448](https://github.com/aram-devdocs/GoudEngine/issues/448)) ([e69ada9](https://github.com/aram-devdocs/GoudEngine/commit/e69ada9a85d59f7f1261876bf9aab79b379fc204))
+* correct import ordering in core.rs for cargo fmt ([4fb2302](https://github.com/aram-devdocs/GoudEngine/commit/4fb230274966fe6b364601260646efba530046dd))
+* **ecs:** forward component_access in Option&lt;Q&gt; for conflict detection ([64350b3](https://github.com/aram-devdocs/GoudEngine/commit/64350b3b40a6efa06a0f8883b54d68e83f31e599))
+* **error:** add Input error variants and complete round-trip coverage ([299543e](https://github.com/aram-devdocs/GoudEngine/commit/299543efef55ff0086301c602328b44993503722))
+* resolve duplicate load_async when both native and web features enabled ([c517697](https://github.com/aram-devdocs/GoudEngine/commit/c517697cae43d04f1e7fc2e76bb9279ada19d222))
+* use create-pull-request in RFC auto-approve workflow ([04b44c5](https://github.com/aram-devdocs/GoudEngine/commit/04b44c5b84d3a00cf01ab6249ac6b8fadbcea09a))
+
+
+### Refactoring
+
+* extract GoudError methods to separate file and fix formatting ([3f8948e](https://github.com/aram-devdocs/GoudEngine/commit/3f8948edbf40e5cb426d539313f3c898328d4ca5))
+* extract sparse set tick tracking to separate file ([e00a53e](https://github.com/aram-devdocs/GoudEngine/commit/e00a53e612a58287ae30a756708961e08e6b5a69))
+* **ffi:** consolidate GoudResult/GoudFFIResult and add error query FFI exports ([8fc6442](https://github.com/aram-devdocs/GoudEngine/commit/8fc6442cf8d4ef910ac4d45db1fa8a4b1deda859))
+
 ## [0.0.827](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.826...v0.0.827) (2026-03-06)
 
 
