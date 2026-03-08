@@ -699,7 +699,7 @@ class GoudContext:
 
     def scene_transition_to(self, from_scene, to_scene, transition_type, duration_secs):
         """Starts a transition between two scenes"""
-        return self._lib.goud_scene_transition_to(self._ctx, from_scene, to_scene, transition_type, duration_secs)
+        return self._lib.goud_scene_transition_to(self._ctx, from_scene, to_scene, int(transition_type), duration_secs)
 
     def scene_transition_progress(self):
         """Returns the progress of the active transition (0.0-1.0, or -1.0 if none)"""

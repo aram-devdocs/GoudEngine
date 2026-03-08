@@ -122,12 +122,10 @@ impl SceneManager {
         // Prevent destroying scenes involved in an active transition.
         if let Some(ref transition) = self.active_transition {
             if transition.from_scene == id || transition.to_scene == id {
-                return Err(GoudError::InvalidState(
-                    format!(
-                        "Cannot destroy scene {} while it is part of an active transition",
-                        id
-                    ),
-                ));
+                return Err(GoudError::InvalidState(format!(
+                    "Cannot destroy scene {} while it is part of an active transition",
+                    id
+                )));
             }
         }
 
