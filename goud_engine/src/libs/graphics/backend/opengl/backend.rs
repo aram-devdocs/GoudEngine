@@ -131,6 +131,7 @@ impl OpenGLBackend {
             supports_tessellation: false,    // Requires GL 4.0+
             supports_multisampling: true,
             supports_anisotropic_filtering: true, // Common extension
+            supports_bc_compression: false,     // Requires EXT_texture_compression_s3tc
         };
 
         let info = BackendInfo {

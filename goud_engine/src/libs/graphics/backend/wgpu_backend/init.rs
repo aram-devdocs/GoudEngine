@@ -91,6 +91,7 @@ impl WgpuBackend {
                 supports_tessellation: false,
                 supports_multisampling: true,
                 supports_anisotropic_filtering: true,
+                supports_bc_compression: false,
             },
         };
 
