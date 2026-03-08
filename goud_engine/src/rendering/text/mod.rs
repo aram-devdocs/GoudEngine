@@ -14,8 +14,12 @@
 
 pub mod atlas_cache;
 pub mod glyph_atlas;
+pub mod layout;
 pub mod rasterizer;
 
 pub use atlas_cache::GlyphAtlasCache;
 pub use glyph_atlas::{GlyphAtlas, GlyphInfo, UvRect};
+pub use layout::{
+    layout_text, LayoutGlyph, TextAlignment, TextBoundingBox, TextLayoutConfig, TextLayoutResult,
+};
 pub use rasterizer::{GlyphMetrics, RasterizedGlyph};
