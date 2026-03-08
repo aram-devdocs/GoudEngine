@@ -1205,6 +1205,60 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_provider_audio_capabilities": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out: *mut AudioCapabilities"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_provider_hot_swap_render": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "_provider_type: i32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_provider_input_capabilities": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out: *mut InputCapabilities"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_provider_network_capabilities": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out: *mut NetworkCapabilities"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_provider_physics_capabilities": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out: *mut PhysicsCapabilities"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_provider_render_capabilities": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out: *mut RenderCapabilities"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_renderer3d_add_light": {
       "source_file": "ffi/renderer3d/lighting.rs",
       "params": [
@@ -2738,5 +2792,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 280
+  "total_count": 286
 }

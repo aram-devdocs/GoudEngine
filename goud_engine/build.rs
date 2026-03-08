@@ -139,6 +139,8 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/animation/skeletal.rs",
     // network module
     "src/ffi/network.rs",
+    // providers module
+    "src/ffi/providers.rs",
     // plugin module
     "src/ffi/plugin.rs",
 ];
