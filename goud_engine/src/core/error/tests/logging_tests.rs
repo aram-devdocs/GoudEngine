@@ -1,8 +1,8 @@
 //! Tests for error logging integration.
 
+use crate::core::error::logging::format_log_message;
 use crate::core::error::recovery::{recovery_class, RecoveryClass};
 use crate::core::error::*;
-use crate::core::error::logging::format_log_message;
 
 #[test]
 fn test_fatal_errors_map_to_fatal_class() {
