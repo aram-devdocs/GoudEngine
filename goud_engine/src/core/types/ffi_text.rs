@@ -1,8 +1,5 @@
 //! FFI-safe Text component type.
 
-use crate::ecs::components::text::Text;
-use crate::rendering::text::layout::TextAlignment;
-
 // =============================================================================
 // Text Type
 // =============================================================================
@@ -36,25 +33,4 @@ pub struct FfiText {
     pub has_max_width: bool,
     /// Line spacing multiplier (1.0 = default spacing).
     pub line_spacing: f32,
-}
-
-impl From<&Text> for FfiText {
-    fn from(text: &Text) -> Self {
-        Self {
-            font_handle: text.font_handle.to_u64(),
-            font_size: text.font_size,
-            color_r: text.color.r,
-            color_g: text.color.g,
-            color_b: text.color.b,
-            color_a: text.color.a,
-            alignment: match text.alignment {
-                TextAlignment::Left => 0,
-                TextAlignment::Center => 1,
-                TextAlignment::Right => 2,
-            },
-            max_width: text.max_width.unwrap_or(0.0),
-            has_max_width: text.max_width.is_some(),
-            line_spacing: text.line_spacing,
-        }
-    }
 }

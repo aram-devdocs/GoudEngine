@@ -4,7 +4,7 @@ use crate::assets::loaders::BitmapFontAsset;
 use crate::assets::{loaders::FontAsset, AssetHandle};
 use crate::core::math::Color;
 use crate::ecs::Component;
-use crate::rendering::text::layout::TextAlignment;
+use crate::core::types::TextAlignment;
 
 // =============================================================================
 // Text Component

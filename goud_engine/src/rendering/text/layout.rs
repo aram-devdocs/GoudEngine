@@ -8,17 +8,8 @@ use std::collections::HashMap;
 use super::glyph_atlas::UvRect;
 use super::glyph_provider::GlyphInfoProvider;
 
-/// Horizontal text alignment.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
-pub enum TextAlignment {
-    /// Align text to the left edge.
-    #[default]
-    Left,
-    /// Center text horizontally.
-    Center,
-    /// Align text to the right edge.
-    Right,
-}
+// Re-export TextAlignment from its canonical location in core::types.
+pub use crate::core::types::TextAlignment;
 
 /// Configuration for text layout.
 #[derive(Debug, Clone)]

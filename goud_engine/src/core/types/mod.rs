@@ -13,6 +13,7 @@ mod ffi_text;
 mod math_types;
 mod result;
 mod sprite;
+mod text_alignment;
 mod transform;
 
 #[cfg(test)]
@@ -24,4 +25,5 @@ pub use ffi_text::FfiText;
 pub use math_types::{FfiColor, FfiRect, FfiVec2};
 pub use result::GoudResult;
 pub use sprite::{FfiSprite, FfiSpriteBuilder, GoudContact};
+pub use text_alignment::TextAlignment;
 pub use transform::{FfiMat3x3, FfiTransform2D, FfiTransform2DBuilder};
