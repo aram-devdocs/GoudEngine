@@ -1195,6 +1195,72 @@
             }
           ],
           "returns_struct": "Vec2"
+        },
+        "getGravity": {
+          "ffi": "goud_physics_get_gravity",
+          "out_params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec2"
+        },
+        "setBodyGravityScale": {
+          "ffi": "goud_physics_set_body_gravity_scale"
+        },
+        "getBodyGravityScale": {
+          "ffi": "goud_physics_get_body_gravity_scale",
+          "out_params": [
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setColliderFriction": {
+          "ffi": "goud_physics_set_collider_friction"
+        },
+        "getColliderFriction": {
+          "ffi": "goud_physics_get_collider_friction",
+          "out_params": [
+            {
+              "name": "friction",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setColliderRestitution": {
+          "ffi": "goud_physics_set_collider_restitution"
+        },
+        "getColliderRestitution": {
+          "ffi": "goud_physics_get_collider_restitution",
+          "out_params": [
+            {
+              "name": "restitution",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setTimestep": {
+          "ffi": "goud_physics_set_timestep"
+        },
+        "getTimestep": {
+          "ffi": "goud_physics_get_timestep",
+          "out_params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
         }
       }
     },
@@ -1248,6 +1314,76 @@
         },
         "applyImpulse": {
           "ffi": "goud_physics3d_apply_impulse"
+        },
+        "getGravity": {
+          "ffi": "goud_physics3d_get_gravity",
+          "out_params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec3"
+        },
+        "setBodyGravityScale": {
+          "ffi": "goud_physics3d_set_body_gravity_scale"
+        },
+        "getBodyGravityScale": {
+          "ffi": "goud_physics3d_get_body_gravity_scale",
+          "out_params": [
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setColliderFriction": {
+          "ffi": "goud_physics3d_set_collider_friction"
+        },
+        "getColliderFriction": {
+          "ffi": "goud_physics3d_get_collider_friction",
+          "out_params": [
+            {
+              "name": "friction",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setColliderRestitution": {
+          "ffi": "goud_physics3d_set_collider_restitution"
+        },
+        "getColliderRestitution": {
+          "ffi": "goud_physics3d_get_collider_restitution",
+          "out_params": [
+            {
+              "name": "restitution",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setTimestep": {
+          "ffi": "goud_physics3d_set_timestep"
+        },
+        "getTimestep": {
+          "ffi": "goud_physics3d_get_timestep",
+          "out_params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
         }
       }
     },
@@ -5161,6 +5297,10 @@
           {
             "name": "y",
             "type": "f32"
+          },
+          {
+            "name": "gravity_scale",
+            "type": "f32"
           }
         ],
         "returns": "i64"
@@ -5189,6 +5329,14 @@
           },
           {
             "name": "radius",
+            "type": "f32"
+          },
+          {
+            "name": "friction",
+            "type": "f32"
+          },
+          {
+            "name": "restitution",
             "type": "f32"
           }
         ],
@@ -5364,6 +5512,156 @@
         ],
         "returns": "i32",
         "unsafe": true
+      },
+      "goud_physics_get_gravity": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "out_x",
+            "type": "*mut f32"
+          },
+          {
+            "name": "out_y",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics_set_body_gravity_scale": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "scale",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics_get_body_gravity_scale": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "out_scale",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics_set_collider_friction": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "friction",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics_get_collider_friction": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "out_friction",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics_set_collider_restitution": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "restitution",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics_get_collider_restitution": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "out_restitution",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics_set_timestep": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "dt",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics_get_timestep": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "out_dt",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
       }
     },
     "physics3d": {
@@ -5440,6 +5738,10 @@
           {
             "name": "z",
             "type": "f32"
+          },
+          {
+            "name": "gravity_scale",
+            "type": "f32"
           }
         ],
         "returns": "i64"
@@ -5472,6 +5774,14 @@
           },
           {
             "name": "radius",
+            "type": "f32"
+          },
+          {
+            "name": "friction",
+            "type": "f32"
+          },
+          {
+            "name": "restitution",
             "type": "f32"
           }
         ],
@@ -5603,6 +5913,160 @@
           }
         ],
         "returns": "i32"
+      },
+      "goud_physics3d_get_gravity": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "out_x",
+            "type": "*mut f32"
+          },
+          {
+            "name": "out_y",
+            "type": "*mut f32"
+          },
+          {
+            "name": "out_z",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics3d_set_body_gravity_scale": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "scale",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics3d_get_body_gravity_scale": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "out_scale",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics3d_set_collider_friction": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "friction",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics3d_get_collider_friction": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "out_friction",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics3d_set_collider_restitution": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "restitution",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics3d_get_collider_restitution": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "out_restitution",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics3d_set_timestep": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "dt",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics3d_get_timestep": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "out_dt",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
       }
     },
     "animation_controller": {

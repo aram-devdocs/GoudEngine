@@ -102,6 +102,7 @@ pub extern "C" fn goud_physics_set_gravity(ctx: GoudContextId, x: f32, y: f32) -
 /// * `ctx` - Context ID
 /// * `body_type` - 0 = static, 1 = dynamic, 2 = kinematic
 /// * `x`, `y` - Initial position
+/// * `gravity_scale` - Per-body gravity multiplier (1.0 = normal)
 ///
 /// # Returns
 ///
@@ -112,12 +113,13 @@ pub extern "C" fn goud_physics_add_rigid_body(
     body_type: u32,
     x: f32,
     y: f32,
+    gravity_scale: f32,
 ) -> i64 {
     with_provider_mut(ctx, |p| {
         let desc = BodyDesc {
             position: [x, y],
             body_type,
-            gravity_scale: 1.0,
+            gravity_scale,
             ..BodyDesc::default()
         };
         match p.create_body(&desc) {
@@ -156,6 +158,8 @@ pub extern "C" fn goud_physics_remove_body(ctx: GoudContextId, handle: u64) -> i
 /// * `shape_type` - 0 = circle, 1 = box, 2 = capsule
 /// * `width`, `height` - Half-extents for box shapes
 /// * `radius` - Radius for circle/capsule shapes
+/// * `friction` - Friction coefficient (e.g. 0.5)
+/// * `restitution` - Bounciness coefficient (e.g. 0.0)
 ///
 /// # Returns
 ///
@@ -168,14 +172,16 @@ pub extern "C" fn goud_physics_add_collider(
     width: f32,
     height: f32,
     radius: f32,
+    friction: f32,
+    restitution: f32,
 ) -> i64 {
     with_provider_mut(ctx, |p| {
         let desc = ColliderDesc {
             shape: shape_type,
             half_extents: [width, height],
             radius,
-            friction: 0.5,
-            restitution: 0.0,
+            friction,
+            restitution,
             is_sensor: false,
         };
         match p.create_collider(BodyHandle(body_handle), &desc) {
@@ -420,7 +426,7 @@ pub unsafe extern "C" fn goud_physics_raycast(
 /// Acquires a read lock on the 2D physics registry and calls `f` with the
 /// provider for the given context. Returns negative error code if the context
 /// has no provider.
-fn with_provider<F, R>(ctx: GoudContextId, f: F) -> R
+pub(super) fn with_provider<F, R>(ctx: GoudContextId, f: F) -> R
 where
     F: FnOnce(&dyn crate::core::providers::physics::PhysicsProvider) -> R,
     R: From<i32>,
@@ -451,7 +457,7 @@ where
 
 /// Acquires a write lock on the 2D physics registry and calls `f` with
 /// a mutable reference to the provider for the given context.
-fn with_provider_mut<F, R>(ctx: GoudContextId, f: F) -> R
+pub(super) fn with_provider_mut<F, R>(ctx: GoudContextId, f: F) -> R
 where
     F: FnOnce(&mut dyn crate::core::providers::physics::PhysicsProvider) -> R,
     R: From<i32>,

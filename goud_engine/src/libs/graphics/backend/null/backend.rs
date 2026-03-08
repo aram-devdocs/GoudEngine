@@ -71,6 +71,7 @@ impl NullBackend {
             supports_tessellation: false,
             supports_multisampling: false,
             supports_anisotropic_filtering: false,
+            supports_bc_compression: false,
         };
 
         let info = BackendInfo {

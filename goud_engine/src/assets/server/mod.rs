@@ -47,6 +47,7 @@ mod async_operations;
 mod core;
 mod loader_registry;
 mod operations;
+mod ref_counting;
 mod web_operations;
 
 #[cfg(test)]
@@ -55,5 +56,7 @@ mod async_tests;
 mod tests;
 #[cfg(test)]
 mod tests_dependency;
+#[cfg(test)]
+mod tests_pipeline;
 
 pub use core::AssetServer;

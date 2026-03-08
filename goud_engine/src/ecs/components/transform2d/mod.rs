@@ -48,6 +48,7 @@
 //!
 //! Transform2D is `#[repr(C)]` and can be safely passed across FFI boundaries.
 
+mod delta;
 pub(crate) mod mat3x3;
 pub(crate) mod ops;
 pub(crate) mod types;

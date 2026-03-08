@@ -652,9 +652,9 @@ def _setup():
         _lib.goud_physics_destroy.restype = ctypes.c_int32
         _lib.goud_physics_set_gravity.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float]
         _lib.goud_physics_set_gravity.restype = ctypes.c_int32
-        _lib.goud_physics_add_rigid_body.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics_add_rigid_body.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float]
         _lib.goud_physics_add_rigid_body.restype = ctypes.c_int64
-        _lib.goud_physics_add_collider.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics_add_collider.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
         _lib.goud_physics_add_collider.restype = ctypes.c_int64
         _lib.goud_physics_remove_body.argtypes = [GoudContextId, ctypes.c_uint64]
         _lib.goud_physics_remove_body.restype = ctypes.c_int32
@@ -672,6 +672,24 @@ def _setup():
         _lib.goud_physics_apply_impulse.restype = ctypes.c_int32
         _lib.goud_physics_raycast.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
         _lib.goud_physics_raycast.restype = ctypes.c_int32
+        _lib.goud_physics_get_gravity.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics_get_gravity.restype = ctypes.c_int32
+        _lib.goud_physics_set_body_gravity_scale.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]
+        _lib.goud_physics_set_body_gravity_scale.restype = ctypes.c_int32
+        _lib.goud_physics_get_body_gravity_scale.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics_get_body_gravity_scale.restype = ctypes.c_int32
+        _lib.goud_physics_set_collider_friction.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]
+        _lib.goud_physics_set_collider_friction.restype = ctypes.c_int32
+        _lib.goud_physics_get_collider_friction.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics_get_collider_friction.restype = ctypes.c_int32
+        _lib.goud_physics_set_collider_restitution.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]
+        _lib.goud_physics_set_collider_restitution.restype = ctypes.c_int32
+        _lib.goud_physics_get_collider_restitution.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics_get_collider_restitution.restype = ctypes.c_int32
+        _lib.goud_physics_set_timestep.argtypes = [GoudContextId, ctypes.c_float]
+        _lib.goud_physics_set_timestep.restype = ctypes.c_int32
+        _lib.goud_physics_get_timestep.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics_get_timestep.restype = ctypes.c_int32
     except AttributeError:
         pass  # feature not compiled in
 
@@ -683,9 +701,9 @@ def _setup():
         _lib.goud_physics3d_destroy.restype = ctypes.c_int32
         _lib.goud_physics3d_set_gravity.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float]
         _lib.goud_physics3d_set_gravity.restype = ctypes.c_int32
-        _lib.goud_physics3d_add_rigid_body.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics3d_add_rigid_body.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
         _lib.goud_physics3d_add_rigid_body.restype = ctypes.c_int64
-        _lib.goud_physics3d_add_collider.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics3d_add_collider.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
         _lib.goud_physics3d_add_collider.restype = ctypes.c_int64
         _lib.goud_physics3d_remove_body.argtypes = [GoudContextId, ctypes.c_uint64]
         _lib.goud_physics3d_remove_body.restype = ctypes.c_int32
@@ -699,6 +717,24 @@ def _setup():
         _lib.goud_physics3d_apply_force.restype = ctypes.c_int32
         _lib.goud_physics3d_apply_impulse.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float]
         _lib.goud_physics3d_apply_impulse.restype = ctypes.c_int32
+        _lib.goud_physics3d_get_gravity.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics3d_get_gravity.restype = ctypes.c_int32
+        _lib.goud_physics3d_set_body_gravity_scale.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]
+        _lib.goud_physics3d_set_body_gravity_scale.restype = ctypes.c_int32
+        _lib.goud_physics3d_get_body_gravity_scale.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics3d_get_body_gravity_scale.restype = ctypes.c_int32
+        _lib.goud_physics3d_set_collider_friction.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]
+        _lib.goud_physics3d_set_collider_friction.restype = ctypes.c_int32
+        _lib.goud_physics3d_get_collider_friction.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics3d_get_collider_friction.restype = ctypes.c_int32
+        _lib.goud_physics3d_set_collider_restitution.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]
+        _lib.goud_physics3d_set_collider_restitution.restype = ctypes.c_int32
+        _lib.goud_physics3d_get_collider_restitution.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics3d_get_collider_restitution.restype = ctypes.c_int32
+        _lib.goud_physics3d_set_timestep.argtypes = [GoudContextId, ctypes.c_float]
+        _lib.goud_physics3d_set_timestep.restype = ctypes.c_int32
+        _lib.goud_physics3d_get_timestep.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics3d_get_timestep.restype = ctypes.c_int32
     except AttributeError:
         pass  # feature not compiled in
 

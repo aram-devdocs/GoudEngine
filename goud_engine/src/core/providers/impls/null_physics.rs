@@ -13,6 +13,7 @@ use crate::core::providers::{Provider, ProviderLifecycle};
 pub struct NullPhysicsProvider {
     capabilities: PhysicsCapabilities,
     gravity: [f32; 2],
+    timestep: f32,
 }
 
 impl NullPhysicsProvider {
@@ -25,6 +26,7 @@ impl NullPhysicsProvider {
                 max_bodies: 0,
             },
             gravity: [0.0, 0.0],
+            timestep: 1.0 / 60.0,
         }
     }
 }
@@ -78,6 +80,14 @@ impl PhysicsProvider for NullPhysicsProvider {
         self.gravity
     }
 
+    fn set_timestep(&mut self, dt: f32) {
+        self.timestep = dt;
+    }
+
+    fn timestep(&self) -> f32 {
+        self.timestep
+    }
+
     fn create_body(&mut self, _desc: &BodyDesc) -> GoudResult<BodyHandle> {
         Ok(BodyHandle(0))
     }
@@ -108,6 +118,14 @@ impl PhysicsProvider for NullPhysicsProvider {
         Ok(())
     }
 
+    fn body_gravity_scale(&self, _handle: BodyHandle) -> GoudResult<f32> {
+        Ok(1.0)
+    }
+
+    fn set_body_gravity_scale(&mut self, _handle: BodyHandle, _scale: f32) -> GoudResult<()> {
+        Ok(())
+    }
+
     fn create_collider(
         &mut self,
         _body: BodyHandle,
@@ -117,6 +135,26 @@ impl PhysicsProvider for NullPhysicsProvider {
     }
 
     fn destroy_collider(&mut self, _handle: ColliderHandle) {}
+
+    fn collider_friction(&self, _handle: ColliderHandle) -> GoudResult<f32> {
+        Ok(0.5)
+    }
+
+    fn set_collider_friction(&mut self, _handle: ColliderHandle, _friction: f32) -> GoudResult<()> {
+        Ok(())
+    }
+
+    fn collider_restitution(&self, _handle: ColliderHandle) -> GoudResult<f32> {
+        Ok(0.0)
+    }
+
+    fn set_collider_restitution(
+        &mut self,
+        _handle: ColliderHandle,
+        _restitution: f32,
+    ) -> GoudResult<()> {
+        Ok(())
+    }
 
     fn raycast(&self, _origin: [f32; 2], _dir: [f32; 2], _max_dist: f32) -> Option<RaycastHit> {
         None
