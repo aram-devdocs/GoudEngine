@@ -191,7 +191,7 @@ def _setup():
     _lib.goud_scene_set_current.restype = GoudResult
     _lib.goud_scene_get_current.argtypes = [GoudContextId]
     _lib.goud_scene_get_current.restype = ctypes.c_uint32
-    _lib.goud_scene_transition_to.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint8, ctypes.c_float]
+    _lib.goud_scene_transition_to.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint64, ctypes.c_float]
     _lib.goud_scene_transition_to.restype = GoudResult
     _lib.goud_scene_transition_progress.argtypes = [GoudContextId]
     _lib.goud_scene_transition_progress.restype = ctypes.c_float

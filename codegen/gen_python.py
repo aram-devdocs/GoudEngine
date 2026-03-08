@@ -1516,22 +1516,29 @@ def gen_init():
     if has_engine_config:
         game_imports.append("EngineConfig")
 
+    # Collect all enum names from the schema
+    enum_imports = sorted(schema.get("enums", {}).keys())
+
     lines = [
         f'"""{HEADER_COMMENT}"""',
         "",
         f"from ._types import {type_imports}",
-        "from ._keys import Key, MouseButton",
+    ]
+    if enum_imports:
+        lines.append(f"from ._keys import {', '.join(enum_imports)}")
+    lines.extend([
         f"from ._game import {', '.join(game_imports)}",
         "",
         "__all__ = [",
-    ]
+    ])
     for gi in game_imports:
         lines.append(f'    "{gi}",')
     lines.append('    "Entity",')
     lines.append('    "Color", "Vec2", "Rect", "Transform2D", "Sprite",')
     for bi in builder_imports:
         lines.append(f'    "{bi}",')
-    lines.append('    "Key", "MouseButton",')
+    for ei in enum_imports:
+        lines.append(f'    "{ei}",')
     lines.append("]")
     lines.append("")
     write_generated(OUT / "__init__.py", "\n".join(lines))
