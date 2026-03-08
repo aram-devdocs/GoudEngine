@@ -2,6 +2,23 @@
   "version": "0.0.828",
   "generated_at": "build-time",
   "functions": {
+    "goud_animation_clip_add_event": {
+      "source_file": "ffi/animation/events.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "clip_event_frame: u32",
+        "name_ptr: *const u8",
+        "name_len: u32",
+        "payload_type: u32",
+        "payload_int: i32",
+        "payload_float: f32",
+        "payload_str_ptr: *const u8",
+        "payload_str_len: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_animation_clip_builder_add_frame": {
       "source_file": "ffi/component_sprite_animator/factory.rs",
       "params": [
@@ -95,6 +112,111 @@
         "context_id: GoudContextId",
         "entity_id: u64",
         "dt: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_animation_events_count": {
+      "source_file": "ffi/animation/events.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_animation_events_read": {
+      "source_file": "ffi/animation/events.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "index: u32",
+        "out_entity: *mut u64",
+        "out_name_ptr: *mut *const u8",
+        "out_name_len: *mut u32",
+        "out_frame: *mut u32",
+        "out_payload_type: *mut u32",
+        "out_payload_int: *mut i32",
+        "out_payload_float: *mut f32",
+        "out_payload_str_ptr: *mut *const u8",
+        "out_payload_str_len: *mut u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_animation_layer_add": {
+      "source_file": "ffi/animation/layer.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "name_ptr: *const u8",
+        "name_len: u32",
+        "blend_mode: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_animation_layer_add_frame": {
+      "source_file": "ffi/animation/layer.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "layer_index: u32",
+        "x: f32",
+        "y: f32",
+        "w: f32",
+        "h: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_animation_layer_play": {
+      "source_file": "ffi/animation/layer.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "layer_index: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_animation_layer_reset": {
+      "source_file": "ffi/animation/layer.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "layer_index: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_animation_layer_set_clip": {
+      "source_file": "ffi/animation/layer.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "layer_index: u32",
+        "frame_count: u32",
+        "frame_duration: f32",
+        "mode: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_animation_layer_set_weight": {
+      "source_file": "ffi/animation/layer.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "layer_index: u32",
+        "weight: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_animation_layer_stack_create": {
+      "source_file": "ffi/animation/layer.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -3100,5 +3222,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 319
+  "total_count": 329
 }

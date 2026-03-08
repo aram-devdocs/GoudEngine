@@ -1748,6 +1748,47 @@
         ]
       }
     },
+    "AnimationEventData": {
+      "kind": "value",
+      "doc": "Data for a fired animation event read from the event queue",
+      "fields": [
+        {
+          "name": "entity",
+          "type": "u64",
+          "doc": "Entity whose animation fired the event"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "doc": "Event name identifier"
+        },
+        {
+          "name": "frameIndex",
+          "type": "u32",
+          "doc": "Frame index that triggered the event"
+        },
+        {
+          "name": "payloadType",
+          "type": "u32",
+          "doc": "Payload discriminant (0=None, 1=Int, 2=Float, 3=String)"
+        },
+        {
+          "name": "payloadInt",
+          "type": "i32",
+          "doc": "Integer payload value (valid when payloadType==1)"
+        },
+        {
+          "name": "payloadFloat",
+          "type": "f32",
+          "doc": "Float payload value (valid when payloadType==2)"
+        },
+        {
+          "name": "payloadString",
+          "type": "string",
+          "doc": "String payload value (valid when payloadType==3)"
+        }
+      ]
+    },
     "RenderStats": {
       "kind": "value",
       "doc": "Per-frame rendering statistics",
@@ -2301,6 +2342,22 @@
       "values": {
         "UDP": 0,
         "WebSocket": 1
+      }
+    },
+    "BlendMode": {
+      "doc": "How an animation layer blends with layers below it",
+      "values": {
+        "Override": 0,
+        "Additive": 1
+      }
+    },
+    "EventPayloadType": {
+      "doc": "Discriminant for animation event payload data",
+      "values": {
+        "None": 0,
+        "Int": 1,
+        "Float": 2,
+        "String": 3
       }
     }
   },
@@ -5712,6 +5769,205 @@
             {
               "name": "looping",
               "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        }
+      ]
+    },
+    "AnimationEvents": {
+      "doc": "Animation keyframe event system for configuring and reading fired events",
+      "methods": [
+        {
+          "name": "addClipEvent",
+          "doc": "Adds an event to the clip of an entity's SpriteAnimator",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "frameIndex",
+              "type": "u32"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "payloadType",
+              "type": "u32"
+            },
+            {
+              "name": "payloadInt",
+              "type": "i32"
+            },
+            {
+              "name": "payloadFloat",
+              "type": "f32"
+            },
+            {
+              "name": "payloadString",
+              "type": "string"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "count",
+          "doc": "Returns the number of fired animation events available for reading",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "read",
+          "doc": "Reads a fired animation event by index",
+          "params": [
+            {
+              "name": "index",
+              "type": "u32"
+            }
+          ],
+          "returns": "AnimationEventData"
+        }
+      ]
+    },
+    "AnimationLayerStack": {
+      "doc": "Multi-layer animation blending system",
+      "methods": [
+        {
+          "name": "create",
+          "doc": "Creates an empty animation layer stack on the entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "addLayer",
+          "doc": "Adds a named animation layer to the stack",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "blendMode",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setLayerWeight",
+          "doc": "Sets the blend weight of a layer by index (clamped to 0.0-1.0)",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "layerIndex",
+              "type": "u32"
+            },
+            {
+              "name": "weight",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "play",
+          "doc": "Starts playback on a layer by index",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "layerIndex",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setClip",
+          "doc": "Sets the animation clip on a layer with empty frames, frame duration, and playback mode",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "layerIndex",
+              "type": "u32"
+            },
+            {
+              "name": "frameCount",
+              "type": "u32"
+            },
+            {
+              "name": "frameDuration",
+              "type": "f32"
+            },
+            {
+              "name": "mode",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "addFrame",
+          "doc": "Adds a source rectangle frame to a layer's animation clip",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "layerIndex",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "w",
+              "type": "f32"
+            },
+            {
+              "name": "h",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "resetLayer",
+          "doc": "Resets a finished or in-progress animation layer to its initial state",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "layerIndex",
+              "type": "u32"
             }
           ],
           "returns": "i32"

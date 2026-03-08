@@ -789,6 +789,14 @@ def _setup():
     _lib.goud_animation_controller_update.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]
     _lib.goud_animation_controller_update.restype = ctypes.c_int32
 
+    # animation_events
+    _lib.goud_animation_clip_add_event.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32, ctypes.c_uint32, ctypes.c_int32, ctypes.c_float, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
+    _lib.goud_animation_clip_add_event.restype = ctypes.c_int32
+    _lib.goud_animation_events_count.argtypes = [GoudContextId]
+    _lib.goud_animation_events_count.restype = ctypes.c_int32
+    _lib.goud_animation_events_read.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8)), ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8)), ctypes.POINTER(ctypes.c_uint32)]
+    _lib.goud_animation_events_read.restype = ctypes.c_int32
+
     # tween
     _lib.goud_tween_create.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_int32]
     _lib.goud_tween_create.restype = ctypes.c_int64
@@ -812,6 +820,22 @@ def _setup():
     _lib.goud_skeleton_set_bone_transform.restype = ctypes.c_int32
     _lib.goud_skeleton_play_clip.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_bool]
     _lib.goud_skeleton_play_clip.restype = ctypes.c_int32
+
+    # animation_layer
+    _lib.goud_animation_layer_stack_create.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_animation_layer_stack_create.restype = ctypes.c_int32
+    _lib.goud_animation_layer_add.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_animation_layer_add.restype = ctypes.c_int32
+    _lib.goud_animation_layer_set_weight.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_float]
+    _lib.goud_animation_layer_set_weight.restype = ctypes.c_int32
+    _lib.goud_animation_layer_play.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32]
+    _lib.goud_animation_layer_play.restype = ctypes.c_int32
+    _lib.goud_animation_layer_set_clip.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_float, ctypes.c_uint32]
+    _lib.goud_animation_layer_set_clip.restype = ctypes.c_int32
+    _lib.goud_animation_layer_add_frame.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_animation_layer_add_frame.restype = ctypes.c_int32
+    _lib.goud_animation_layer_reset.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32]
+    _lib.goud_animation_layer_reset.restype = ctypes.c_int32
 
     # network
     try:

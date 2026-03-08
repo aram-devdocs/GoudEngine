@@ -212,6 +212,37 @@ def gen_interface():
         else:
             lines.append(f"  {mn}({sig}): {ts_ret};")
 
+    # Animation Layer Stack & Events -- from separate tools
+    _anim_iface = [
+        ("animationLayerStackCreate", [("entity", "IEntity")], "number"),
+        ("animationLayerAdd", [("entity", "IEntity"), ("name", "string"), ("blendMode", "number")], "number"),
+        ("animationLayerSetWeight", [("entity", "IEntity"), ("layerIndex", "number"), ("weight", "number")], "number"),
+        ("animationLayerPlay", [("entity", "IEntity"), ("layerIndex", "number")], "number"),
+        ("animationLayerSetClip", [("entity", "IEntity"), ("layerIndex", "number"), ("frameCount", "number"), ("frameDuration", "number"), ("mode", "number")], "number"),
+        ("animationLayerAddFrame", [("entity", "IEntity"), ("layerIndex", "number"), ("x", "number"), ("y", "number"), ("w", "number"), ("h", "number")], "number"),
+        ("animationLayerReset", [("entity", "IEntity"), ("layerIndex", "number")], "number"),
+        ("animationClipAddEvent", [("entity", "IEntity"), ("frameIndex", "number"), ("name", "string"), ("payloadType", "number"), ("payloadInt", "number"), ("payloadFloat", "number"), ("payloadString?", "string | null")], "number"),
+        ("animationEventsCount", [], "number"),
+        ("animationEventsRead", [("index", "number")], "IAnimationEventData"),
+    ]
+    lines.append("  // Animation Layer Stack & Events")
+    for mn, params, ret in _anim_iface:
+        sig = ", ".join(f"{pn}: {pt}" for pn, pt in params)
+        lines.append(f"  {mn}({sig}): {ret};")
+
+    lines.append("}")
+    lines.append("")
+
+    # IAnimationEventData interface
+    lines.append("/** Data for a fired animation event */")
+    lines.append("export interface IAnimationEventData {")
+    lines.append("  entity: number;")
+    lines.append("  name: string;")
+    lines.append("  frameIndex: number;")
+    lines.append("  payloadType: number;")
+    lines.append("  payloadInt: number;")
+    lines.append("  payloadFloat: number;")
+    lines.append("  payloadString: string;")
     lines.append("}")
     lines.append("")
 
@@ -382,11 +413,11 @@ def gen_node_wrapper():
         "  type GameConfig,",
         "} from '../../../index';",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton } from '../types/input.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "",
     ]
     if tool.get("doc"):
@@ -541,6 +572,26 @@ def gen_node_wrapper():
         lines.append("  }")
         lines.append("")
 
+    # Animation Layer Stack & Events wrapper methods
+    _anim_wrappers = [
+        ("animationLayerStackCreate", "entity: IEntity", "return (this.native as any).animationLayerStackCreate(entity as unknown as NativeEntity);", "number"),
+        ("animationLayerAdd", "entity: IEntity, name: string, blendMode: number", "return (this.native as any).animationLayerAdd(entity as unknown as NativeEntity, name, blendMode);", "number"),
+        ("animationLayerSetWeight", "entity: IEntity, layerIndex: number, weight: number", "return (this.native as any).animationLayerSetWeight(entity as unknown as NativeEntity, layerIndex, weight);", "number"),
+        ("animationLayerPlay", "entity: IEntity, layerIndex: number", "return (this.native as any).animationLayerPlay(entity as unknown as NativeEntity, layerIndex);", "number"),
+        ("animationLayerSetClip", "entity: IEntity, layerIndex: number, frameCount: number, frameDuration: number, mode: number", "return (this.native as any).animationLayerSetClip(entity as unknown as NativeEntity, layerIndex, frameCount, frameDuration, mode);", "number"),
+        ("animationLayerAddFrame", "entity: IEntity, layerIndex: number, x: number, y: number, w: number, h: number", "return (this.native as any).animationLayerAddFrame(entity as unknown as NativeEntity, layerIndex, x, y, w, h);", "number"),
+        ("animationLayerReset", "entity: IEntity, layerIndex: number", "return (this.native as any).animationLayerReset(entity as unknown as NativeEntity, layerIndex);", "number"),
+        ("animationClipAddEvent", "entity: IEntity, frameIndex: number, name: string, payloadType: number, payloadInt: number, payloadFloat: number, payloadString?: string | null", "return (this.native as any).animationClipAddEvent(entity as unknown as NativeEntity, frameIndex, name, payloadType, payloadInt, payloadFloat, payloadString ?? null);", "number"),
+        ("animationEventsCount", "", "return (this.native as any).animationEventsCount();", "number"),
+        ("animationEventsRead", "index: number", "return (this.native as any).animationEventsRead(index) as unknown as IAnimationEventData;", "IAnimationEventData"),
+    ]
+    lines.append("  // Animation Layer Stack & Events")
+    for mn, sig, body, ret in _anim_wrappers:
+        lines.append(f"  {mn}({sig}): {ret} {{")
+        lines.append(f"    {body}")
+        lines.append("  }")
+        lines.append("")
+
     lines.append("}")
     lines.append("")
 
@@ -610,7 +661,7 @@ def gen_entry():
         f"// {HEADER_COMMENT}",
         "",
         f"export {{ GoudGame{ec_export}, Color, Vec2, Vec3, Key, MouseButton }} from './node/index.g.js';",
-        f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities }} from './types/engine.g.js';",
+        f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities }} from './types/engine.g.js';",
         "export type { Rect } from './types/math.g.js';",
         f"export {{ {', '.join(error_names)} }} from './errors.g.js';",
     ]
@@ -994,6 +1045,13 @@ use goud_engine::ffi::renderer3d::{
     goud_renderer3d_set_grid_enabled, goud_renderer3d_set_object_position,
     goud_renderer3d_set_object_rotation, goud_renderer3d_set_object_scale,
     goud_renderer3d_update_light,
+};
+use goud_engine::ffi::animation::{
+    goud_animation_clip_add_event, goud_animation_events_count,
+    goud_animation_events_read, goud_animation_layer_add,
+    goud_animation_layer_add_frame, goud_animation_layer_play,
+    goud_animation_layer_reset, goud_animation_layer_set_clip,
+    goud_animation_layer_set_weight, goud_animation_layer_stack_create,
 };
 use goud_engine::ffi::providers::{
     goud_provider_render_capabilities, goud_provider_physics_capabilities,
@@ -1865,6 +1923,120 @@ impl GoudGame {
     /// Returns the raw FFI delta time from the last poll_events call.
     #[napi(getter)]
     pub fn ffi_delta_time(&self) -> f64 { goud_window_get_delta_time(self.context_id) as f64 }
+
+    // =========================================================================
+    // Animation Layer Stack
+    // =========================================================================
+
+    #[napi]
+    pub fn animation_layer_stack_create(&self, entity: &Entity) -> i32 {
+        goud_animation_layer_stack_create(self.context_id, entity.bits)
+    }
+
+    #[napi]
+    pub fn animation_layer_add(&self, entity: &Entity, name: String, blend_mode: u32) -> Result<i32> {
+        let bytes = name.as_bytes();
+        // SAFETY: bytes pointer is valid for bytes.len() bytes (Rust String guarantee).
+        Ok(unsafe { goud_animation_layer_add(self.context_id, entity.bits, bytes.as_ptr(), bytes.len() as u32, blend_mode) })
+    }
+
+    #[napi]
+    pub fn animation_layer_set_weight(&self, entity: &Entity, layer_index: u32, weight: f64) -> i32 {
+        goud_animation_layer_set_weight(self.context_id, entity.bits, layer_index, weight as f32)
+    }
+
+    #[napi]
+    pub fn animation_layer_play(&self, entity: &Entity, layer_index: u32) -> i32 {
+        goud_animation_layer_play(self.context_id, entity.bits, layer_index)
+    }
+
+    #[napi]
+    pub fn animation_layer_set_clip(&self, entity: &Entity, layer_index: u32, frame_count: u32, frame_duration: f64, mode: u32) -> i32 {
+        goud_animation_layer_set_clip(self.context_id, entity.bits, layer_index, frame_count, frame_duration as f32, mode)
+    }
+
+    #[napi]
+    pub fn animation_layer_add_frame(&self, entity: &Entity, layer_index: u32, x: f64, y: f64, w: f64, h: f64) -> i32 {
+        goud_animation_layer_add_frame(self.context_id, entity.bits, layer_index, x as f32, y as f32, w as f32, h as f32)
+    }
+
+    #[napi]
+    pub fn animation_layer_reset(&self, entity: &Entity, layer_index: u32) -> i32 {
+        goud_animation_layer_reset(self.context_id, entity.bits, layer_index)
+    }
+
+    // =========================================================================
+    // Animation Events
+    // =========================================================================
+
+    #[napi]
+    pub fn animation_clip_add_event(&self, entity: &Entity, frame_index: u32, name: String,
+                                     payload_type: u32, payload_int: i32, payload_float: f64,
+                                     payload_string: Option<String>) -> Result<i32> {
+        let name_bytes = name.as_bytes();
+        let ps = payload_string.unwrap_or_default();
+        let ps_bytes = ps.as_bytes();
+        // SAFETY: String byte pointers are valid for their respective lengths.
+        Ok(unsafe { goud_animation_clip_add_event(
+            self.context_id, entity.bits, frame_index,
+            name_bytes.as_ptr(), name_bytes.len() as u32,
+            payload_type, payload_int, payload_float as f32,
+            ps_bytes.as_ptr(), ps_bytes.len() as u32,
+        ) })
+    }
+
+    #[napi]
+    pub fn animation_events_count(&self) -> i32 {
+        goud_animation_events_count(self.context_id)
+    }
+
+    #[napi]
+    pub fn animation_events_read(&self, index: u32) -> Result<NapiAnimationEventData> {
+        let mut entity: u64 = 0;
+        let mut name_ptr: *const u8 = std::ptr::null();
+        let mut name_len: u32 = 0;
+        let mut frame: u32 = 0;
+        let mut payload_type: u32 = 0;
+        let mut payload_int: i32 = 0;
+        let mut payload_float: f32 = 0.0;
+        let mut payload_str_ptr: *const u8 = std::ptr::null();
+        let mut payload_str_len: u32 = 0;
+        // SAFETY: All out-pointers point to valid stack-allocated memory.
+        let rc = unsafe { goud_animation_events_read(
+            self.context_id, index,
+            &mut entity, &mut name_ptr, &mut name_len, &mut frame,
+            &mut payload_type, &mut payload_int, &mut payload_float,
+            &mut payload_str_ptr, &mut payload_str_len,
+        ) };
+        if rc != 0 {
+            return Err(Error::from_reason(format!("animation_events_read failed: {}", rc)));
+        }
+        // SAFETY: FFI guarantees name_ptr is valid for name_len bytes on success.
+        let name = unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(name_ptr, name_len as usize)) }.to_string();
+        let payload_string = if payload_type == 3 && !payload_str_ptr.is_null() {
+            // SAFETY: FFI guarantees payload_str_ptr is valid for payload_str_len bytes when type==3.
+            unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(payload_str_ptr, payload_str_len as usize)) }.to_string()
+        } else {
+            String::new()
+        };
+        Ok(NapiAnimationEventData { entity: entity as i64, name, frame_index: frame, payload_type, payload_int, payload_float: payload_float as f64, payload_string })
+    }
+}
+
+// =============================================================================
+// NapiAnimationEventData
+// =============================================================================
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiAnimationEventData {
+    pub entity: i64,
+    pub name: String,
+    pub frame_index: u32,
+    pub payload_type: u32,
+    pub payload_int: i32,
+    pub payload_float: f64,
+    pub payload_string: String,
 }
 
 // =============================================================================

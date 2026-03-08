@@ -27,8 +27,10 @@
 //! ```
 
 mod component;
+pub mod events;
 
 #[cfg(test)]
 mod tests;
 
 pub use component::{AnimationClip, PlaybackMode, SpriteAnimator};
+pub use events::AnimationEventFired;

@@ -157,3 +157,15 @@ class NetworkProtocol:
     """Network transport protocol"""
     UDP = 0
     WEB_SOCKET = 1
+
+class BlendMode:
+    """How an animation layer blends with layers below it"""
+    OVERRIDE = 0
+    ADDITIVE = 1
+
+class EventPayloadType:
+    """Discriminant for animation event payload data"""
+    NONE = 0
+    INT = 1
+    FLOAT = 2
+    STRING = 3

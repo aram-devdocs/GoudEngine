@@ -1,8 +1,10 @@
 //! Tests for the animation controller system.
 
 use super::update_animation_controllers;
+use crate::assets::{loaders::TextureAsset, AssetServer};
 use crate::core::math::Rect;
 use crate::ecs::components::animation_controller::{AnimationController, TransitionCondition};
+use crate::ecs::components::sprite::Sprite;
 use crate::ecs::components::sprite_animator::{AnimationClip, SpriteAnimator};
 use crate::ecs::World;
 
@@ -279,4 +281,104 @@ fn test_entity_without_sprite_animator_is_skipped() {
 
     let ctrl = world.get::<AnimationController>(entity).unwrap();
     assert_eq!(ctrl.current_state_name(), "idle");
+}
+
+// =========================================================================
+// Crossfade blending tests
+// =========================================================================
+
+fn setup_world_with_sprite_and_controller() -> (World, crate::ecs::entity::Entity) {
+    let mut world = World::new();
+    let mut asset_server = AssetServer::new();
+    let texture = asset_server.load::<TextureAsset>("test.png");
+
+    let entity = world.spawn_empty();
+    world.insert(entity, Sprite::new(texture));
+    (world, entity)
+}
+
+#[test]
+fn test_crossfade_transition_blends_rect() {
+    let (mut world, entity) = setup_world_with_sprite_and_controller();
+
+    // idle: single frame at (0,0,32,32)
+    // run:  first frame at (32,0,32,32)
+    let mut ctrl = setup_controller();
+    ctrl.set_bool("running", true);
+    world.insert(entity, ctrl);
+    world.insert(entity, SpriteAnimator::new(idle_clip()));
+
+    // Tick 1: start transition (dt=0, no advance yet)
+    update_animation_controllers(&mut world, 0.0);
+
+    let ctrl = world.get::<AnimationController>(entity).unwrap();
+    assert!(ctrl.transition_progress.is_some());
+
+    // Tick 2: advance to 50% of 0.2s blend = 0.1s elapsed
+    update_animation_controllers(&mut world, 0.1);
+
+    // At 50% blend: lerp((0,0,32,32), (32,0,32,32), 0.5) = (16,0,32,32)
+    let sprite = world.get::<Sprite>(entity).unwrap();
+    let rect = sprite
+        .source_rect
+        .expect("should have blended rect during crossfade");
+    assert!(
+        (rect.x - 16.0).abs() < f32::EPSILON,
+        "x should be 16.0 at 50% blend, got {}",
+        rect.x
+    );
+    assert!(
+        (rect.y - 0.0).abs() < f32::EPSILON,
+        "y should be 0.0, got {}",
+        rect.y
+    );
+    assert!(
+        (rect.width - 32.0).abs() < f32::EPSILON,
+        "width should be 32.0, got {}",
+        rect.width
+    );
+}
+
+#[test]
+fn test_crossfade_frame_rate_independent() {
+    // Two different frame rates should produce the same blend at the same elapsed time.
+    let make_world = || -> (World, crate::ecs::entity::Entity) {
+        let (mut world, entity) = setup_world_with_sprite_and_controller();
+        let mut ctrl = setup_controller();
+        ctrl.set_bool("running", true);
+        world.insert(entity, ctrl);
+        world.insert(entity, SpriteAnimator::new(idle_clip()));
+        // Start transition
+        update_animation_controllers(&mut world, 0.0);
+        (world, entity)
+    };
+
+    // Scenario A: one big step of 0.1s
+    let (mut world_a, entity_a) = make_world();
+    update_animation_controllers(&mut world_a, 0.1);
+
+    // Scenario B: two small steps of 0.05s each
+    let (mut world_b, entity_b) = make_world();
+    update_animation_controllers(&mut world_b, 0.05);
+    update_animation_controllers(&mut world_b, 0.05);
+
+    let sprite_a = world_a.get::<Sprite>(entity_a).unwrap();
+    let sprite_b = world_b.get::<Sprite>(entity_b).unwrap();
+
+    let rect_a = sprite_a.source_rect.expect("A should have rect");
+    let rect_b = sprite_b.source_rect.expect("B should have rect");
+
+    // Both should be at 50% blend (0.1s out of 0.2s duration)
+    assert!(
+        (rect_a.x - rect_b.x).abs() < 0.01,
+        "x values should match: {} vs {}",
+        rect_a.x,
+        rect_b.x
+    );
+    assert!(
+        (rect_a.width - rect_b.width).abs() < 0.01,
+        "width values should match: {} vs {}",
+        rect_a.width,
+        rect_b.width
+    );
 }
