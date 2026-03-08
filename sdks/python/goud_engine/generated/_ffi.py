@@ -678,6 +678,10 @@ def _setup():
         _lib.goud_physics_set_collider_restitution.restype = ctypes.c_int32
         _lib.goud_physics_get_collider_restitution.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float)]
         _lib.goud_physics_get_collider_restitution.restype = ctypes.c_int32
+        _lib.goud_physics_set_timestep.argtypes = [GoudContextId, ctypes.c_float]
+        _lib.goud_physics_set_timestep.restype = ctypes.c_int32
+        _lib.goud_physics_get_timestep.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics_get_timestep.restype = ctypes.c_int32
     except AttributeError:
         pass  # feature not compiled in
 
@@ -719,6 +723,10 @@ def _setup():
         _lib.goud_physics3d_set_collider_restitution.restype = ctypes.c_int32
         _lib.goud_physics3d_get_collider_restitution.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float)]
         _lib.goud_physics3d_get_collider_restitution.restype = ctypes.c_int32
+        _lib.goud_physics3d_set_timestep.argtypes = [GoudContextId, ctypes.c_float]
+        _lib.goud_physics3d_set_timestep.restype = ctypes.c_int32
+        _lib.goud_physics3d_get_timestep.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics3d_get_timestep.restype = ctypes.c_int32
     except AttributeError:
         pass  # feature not compiled in
 

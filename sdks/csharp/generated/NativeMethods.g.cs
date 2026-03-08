@@ -967,6 +967,12 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_get_collider_restitution(GoudContextId ctx, ulong handle, ref float out_restitution);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_set_timestep(GoudContextId ctx, float dt);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_get_timestep(GoudContextId ctx, ref float out_dt);
+
         // physics3d
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics3d_create(GoudContextId ctx, float gx, float gy, float gz);
@@ -1021,6 +1027,12 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics3d_get_collider_restitution(GoudContextId ctx, ulong handle, ref float out_restitution);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_set_timestep(GoudContextId ctx, float dt);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_get_timestep(GoudContextId ctx, ref float out_dt);
 
         // animation_controller
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

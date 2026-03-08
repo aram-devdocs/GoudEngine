@@ -6,7 +6,9 @@
 use rapier3d::prelude::*;
 
 use crate::core::error::{GoudError, GoudResult};
-use crate::core::providers::types::{BodyHandle, ContactPair3D, DebugShape3D, RaycastHit3D, ColliderHandle as EngineColliderHandle};
+use crate::core::providers::types::{
+    BodyHandle, ColliderHandle as EngineColliderHandle, ContactPair3D, DebugShape3D, RaycastHit3D,
+};
 
 use super::Rapier3DPhysicsProvider;
 
@@ -155,7 +157,11 @@ impl Rapier3DPhysicsProvider {
     }
 
     /// Set the gravity scale of a body.
-    pub(crate) fn query_set_body_gravity_scale(&mut self, handle: BodyHandle, scale: f32) -> GoudResult<()> {
+    pub(crate) fn query_set_body_gravity_scale(
+        &mut self,
+        handle: BodyHandle,
+        scale: f32,
+    ) -> GoudResult<()> {
         let rb = self.resolve_body(handle)?;
         self.rigid_body_set
             .get_mut(rb)
@@ -189,7 +195,10 @@ impl Rapier3DPhysicsProvider {
     }
 
     /// Get the restitution of a collider.
-    pub(crate) fn query_collider_restitution(&self, handle: EngineColliderHandle) -> GoudResult<f32> {
+    pub(crate) fn query_collider_restitution(
+        &self,
+        handle: EngineColliderHandle,
+    ) -> GoudResult<f32> {
         let rh = self.resolve_collider(handle)?;
         Ok(self
             .collider_set
@@ -221,7 +230,10 @@ impl Rapier3DPhysicsProvider {
     }
 
     /// Helper method to resolve a collider handle.
-    fn resolve_collider(&self, handle: EngineColliderHandle) -> GoudResult<rapier3d::geometry::ColliderHandle> {
+    fn resolve_collider(
+        &self,
+        handle: EngineColliderHandle,
+    ) -> GoudResult<rapier3d::geometry::ColliderHandle> {
         self.collider_map
             .get(&handle.0)
             .copied()

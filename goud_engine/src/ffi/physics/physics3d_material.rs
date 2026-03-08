@@ -271,7 +271,9 @@ pub unsafe extern "C" fn goud_physics3d_get_timestep(ctx: GoudContextId, out_dt:
 
     with_provider(ctx, |p| {
         // SAFETY: Null check above guarantees out_dt is valid.
-        unsafe { *out_dt = p.timestep(); }
+        unsafe {
+            *out_dt = p.timestep();
+        }
         0
     })
 }
