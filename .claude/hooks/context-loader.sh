@@ -7,6 +7,38 @@ INPUT=$(cat)
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$REPO_ROOT"
 
+find_active_run_dir() {
+  local branch="$1"
+  local base="$REPO_ROOT/.agents/runs/gh-issue"
+  local fallback=""
+  [[ -d "$base" ]] || return 0
+
+  while IFS= read -r state_file; do
+    local state_branch
+    local phase
+    state_branch="$(jq -r '.branch // empty' "$state_file" 2>/dev/null || echo "")"
+    phase="$(jq -r '.phase // empty' "$state_file" 2>/dev/null || echo "")"
+    case "$phase" in
+      done|complete|cleanup-complete|abandoned)
+        continue
+        ;;
+    esac
+
+    if [[ -n "$branch" ]] && [[ "$branch" != "detached" ]] && [[ "$state_branch" == "$branch" ]]; then
+      dirname "$state_file"
+      return 0
+    fi
+
+    if [[ -z "$fallback" ]]; then
+      fallback="$(dirname "$state_file")"
+    fi
+  done < <(find "$base" -name state.json -type f 2>/dev/null | sort)
+
+  if [[ -z "$branch" || "$branch" == "detached" || "$branch" == "unknown" ]]; then
+    printf '%s\n' "$fallback"
+  fi
+}
+
 echo "=== GoudEngine Session Context ==="
 echo ""
 
@@ -31,8 +63,12 @@ fi
 
 echo "## Cargo Workspace"
 if [[ -f Cargo.toml ]]; then
-  VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
-  echo "Engine version: $VERSION"
+  VERSION=$(grep '^version' Cargo.toml 2>/dev/null | head -1 | sed 's/.*\"\(.*\)\"/\1/' || true)
+  if [[ -n "$VERSION" ]]; then
+    echo "Engine version: $VERSION"
+  else
+    echo "Engine version: (workspace root has no version field)"
+  fi
 fi
 echo ""
 
@@ -51,6 +87,24 @@ if [[ -d .claude/specs ]]; then
     done
     echo ""
   fi
+fi
+
+ACTIVE_RUN_DIR=$(find_active_run_dir "$BRANCH")
+if [[ -n "$ACTIVE_RUN_DIR" ]]; then
+  echo "## Active gh-issue Run"
+  echo "Run: $ACTIVE_RUN_DIR"
+  if [[ -f "$ACTIVE_RUN_DIR/plan.md" ]]; then
+    echo "Plan: $ACTIVE_RUN_DIR/plan.md"
+  fi
+  if [[ -f "$ACTIVE_RUN_DIR/state.json" ]]; then
+    PHASE=$(jq -r '.phase // "unknown"' "$ACTIVE_RUN_DIR/state.json" 2>/dev/null || echo "unknown")
+    NEXT_TODO=$(jq -r '.todos[] | select(.status != "done") | "\(.id): \(.title) [\(.owner)]"' "$ACTIVE_RUN_DIR/state.json" 2>/dev/null | head -1)
+    echo "Phase: $PHASE"
+    if [[ -n "$NEXT_TODO" ]]; then
+      echo "Next todo: $NEXT_TODO"
+    fi
+  fi
+  echo ""
 fi
 
 echo "=== End Context ==="

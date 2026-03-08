@@ -66,6 +66,23 @@ Derive `<short-slug>` from the primary issue title (2-3 word kebab-case). Use th
   ```
 - [ ] Record working directory: the absolute path to `../GoudEngine-issue-<PRIMARY>` (use `realpath`)
 
+**Bootstrap the canonical run** (after branch setup):
+- [ ] Create run directory: `.agents/runs/gh-issue/<PRIMARY>-<short-slug>/`
+- [ ] Use `scripts/gh_issue_run.py init-run` to generate `plan.md` + `state.json`:
+  ```bash
+  python3 .agents/skills/gh-issue/scripts/gh_issue_run.py init-run \
+    --primary <PRIMARY> --slug <short-slug> \
+    --branch agent/issue-<PRIMARY>-<short-slug> \
+    --mode <worktree|in-place> \
+    --working-dir <ABSOLUTE_PATH> \
+    --main-repo <MAIN_REPO_PATH> \
+    --issues <ISSUE_NUMBERS> \
+    --titles <ISSUE_TITLES> \
+    --summary "<ACCEPTANCE_SUMMARY>"
+  ```
+  Or create them manually following the Execution Plan Template below.
+- [ ] Update `state.json` phase to `bootstrapped`
+
 ## Phase 3: Planning (enter plan mode)
 
 - [ ] Read `CLAUDE.md` for project conventions and architecture
@@ -76,6 +93,18 @@ Derive `<short-slug>` from the primary issue title (2-3 word kebab-case). Use th
 - [ ] Plan should use /find-skills, /subagent-driven-development, /humanizer, and any other skills, rules, hooks, and agents as needed
 
 **CRITICAL**: The plan file MUST use `- [ ]` checkbox syntax for every actionable step. The `plan-completion-guard.sh` hook blocks session end if unchecked items remain.
+
+**Keep state.json in sync**: After each meaningful step, update `state.json` with:
+```bash
+python3 .agents/skills/gh-issue/scripts/gh_issue_run.py update-state --run-dir <RUN_DIR> --field phase --value <PHASE>
+```
+
+**Resume protocol** (on context clear or session restart):
+1. Read `plan.md` from the canonical run directory
+2. Read `state.json` from the canonical run directory
+3. Run `scripts/gh_issue_run.py validate-resume --run-dir <RUN_DIR> --cwd "$PWD" --branch "$(git branch --show-current)"`
+4. Resume from the first todo in `state.json` that is not `done`
+5. Stop and repair if: `plan.md` missing, `state.json` missing, branch mismatch, worktree outside recorded path, plan has stale `{{PLACEHOLDER}}`s, or run claims `done` while todos disagree
 
 ---
 
@@ -92,6 +121,7 @@ Copy the template below into the plan file. Replace every `{{PLACEHOLDER}}` with
 - **Working directory**: `{{WORKTREE_ABSPATH_OR_REPO_ROOT}}`
 - **Main repo path**: `{{MAIN_REPO_PATH}}` (worktree mode only)
 - **Mode**: {{worktree|in-place}}
+- **Canonical run directory**: `{{RUN_DIR}}`
 - **Created by skill**: `/gh-issue` (see `.agents/skills/gh-issue/SKILL.md`)
 - **Created**: {{TIMESTAMP}}
 
@@ -101,11 +131,26 @@ You are the **ORCHESTRATOR** executing a `/gh-issue` plan.
 - Your working directory is `{{WORKTREE_PATH}}`. EVERY bash command must start with
   `cd {{WORKTREE_PATH}} &&`.
 - You MUST NOT write .rs/.cs/.py files directly -- dispatch subagents.
-- IMPORTANT: You must use tasks, todos, state, and whatever Agents.md / Claude.md in root and each subdirectory direct to ensure all of plan is executed and tracked properly. 
+- IMPORTANT: You must use tasks, todos, state, and whatever Agents.md / Claude.md in root and each subdirectory direct to ensure all of plan is executed and tracked properly.
 - Read `CLAUDE.md` sections: "Worktree Execution Protocol", "Plan Execution Protocol",
   "Subagent Dispatch Reference".
 - Read `.agents/skills/gh-issue/SKILL.md` to understand the full workflow this plan follows.
 - Read `.agents/rules/orchestrator-protocol.md` for the three-tier agent hierarchy.
+- **On resume**: run `python3 .agents/skills/gh-issue/scripts/gh_issue_run.py validate-resume --run-dir {{RUN_DIR}} --cwd "$PWD" --branch "$(git branch --show-current)"` before any implementation work.
+
+## Non-Negotiables
+- [ ] Read this file before doing any work.
+- [ ] Read `state.json` before doing any work.
+- [ ] In worktree mode, every command starts with `cd {{WORKTREE_PATH}} &&`.
+- [ ] Do not implement non-trivial work directly. Dispatch team leads.
+- [ ] Run `spec-reviewer` before `code-quality-reviewer`.
+- [ ] Stay with the PR until checks pass and review feedback is handled.
+- [ ] Do related cleanup now unless it is already tracked elsewhere and out of scope.
+
+## Resume Protocol
+- [ ] Run `python3 .agents/skills/gh-issue/scripts/gh_issue_run.py validate-resume --run-dir {{RUN_DIR}} --cwd "$PWD" --branch "$(git branch --show-current)"`
+- [ ] Read the first todo in `state.json` that is not `done`
+- [ ] Confirm branch and working directory before implementation
 
 ## Issue Summary
 {{For each issue: number, title, key requirements, acceptance criteria}}
@@ -145,6 +190,7 @@ You are the **ORCHESTRATOR** executing a `/gh-issue` plan.
   - Any concerns or assumptions made
   ```
 - [ ] Review engine-lead report. Question gaps. Verify claims.
+- [ ] Update `state.json`: `python3 .agents/skills/gh-issue/scripts/gh_issue_run.py update-state --run-dir {{RUN_DIR}} --field phase --value implementing`
 
 ### Step 1.N: {{REPEAT for each independent task batch}}
 (parallel if independent files, sequential if dependent)
@@ -155,6 +201,7 @@ You are the **ORCHESTRATOR** executing a `/gh-issue` plan.
 - [ ] Run: `cd {{WORKTREE_PATH}} && cargo clippy -- -D warnings`
 - [ ] Run: `cd {{WORKTREE_PATH}} && cargo test`
 - [ ] All pass? If not, dispatch quick-fix or engine-lead to address failures.
+- [ ] Update `state.json`: `python3 .agents/skills/gh-issue/scripts/gh_issue_run.py update-state --run-dir {{RUN_DIR}} --field phase --value verifying`
 
 ## Phase 3: Review Gates (SEQUENTIAL -- hook-enforced)
 
@@ -227,6 +274,7 @@ You are the **ORCHESTRATOR** executing a `/gh-issue` plan.
   - Dispatch engine-lead/integration-lead to fix cited issues
   - Re-run the failed reviewer(s)
   - Max 2 fix-review iterations per gate
+- [ ] Update `state.json`: `python3 .agents/skills/gh-issue/scripts/gh_issue_run.py update-state --run-dir {{RUN_DIR}} --field phase --value reviewing`
 
 ## Phase 4: Create PR
 - [ ] Push branch:
@@ -247,12 +295,14 @@ You are the **ORCHESTRATOR** executing a `/gh-issue` plan.
   )" --base main
   ```
 - [ ] Record PR number: ________
+- [ ] Update `state.json`: `python3 .agents/skills/gh-issue/scripts/gh_issue_run.py update-state --run-dir {{RUN_DIR}} --field phase --value pr-open`
 
 ## Phase 5: CI Verification & Review Loop (max 3 iterations)
 - [ ] Wait 30s, then check CI:
   ```bash
   cd {{WORKTREE_PATH}} && gh pr checks {{PR_NUMBER}}
   ```
+  Or use: `python3 .agents/skills/gh-issue/scripts/gh_issue_run.py poll-pr --run-dir {{RUN_DIR}} --pr {{PR_NUMBER}}`
 - [ ] If CI fails: diagnose, dispatch quick-fix, push fix commit, re-check
 - [ ] Check for review comments:
   ```bash
@@ -260,6 +310,7 @@ You are the **ORCHESTRATOR** executing a `/gh-issue` plan.
   ```
 - [ ] If changes requested: fix, push, comment iteration count
 - [ ] CI green and reviews addressed? Mark complete.
+- [ ] Update `state.json`: `python3 .agents/skills/gh-issue/scripts/gh_issue_run.py update-state --run-dir {{RUN_DIR}} --field phase --value waiting-ci`
 
 ## Phase 6: Cleanup
 - [ ] Comment on each issue:
@@ -270,6 +321,7 @@ You are the **ORCHESTRATOR** executing a `/gh-issue` plan.
   ```bash
   cd {{MAIN_REPO_PATH}} && git worktree remove {{WORKTREE_PATH}}
   ```
+- [ ] Update `state.json`: `python3 .agents/skills/gh-issue/scripts/gh_issue_run.py update-state --run-dir {{RUN_DIR}} --field phase --value done`
 ````
 
 ---
@@ -284,6 +336,8 @@ You are the **ORCHESTRATOR** executing a `/gh-issue` plan.
 - If blocked after 3 attempts at the same problem, comment on the issue explaining the blocker and stop
 - Multiple issues = one branch, one plan, one PR (with `Closes #N` for each)
 - Every actionable step in the plan MUST be a `- [ ]` checkbox for hook enforcement
+- Run phase lifecycle: investigating -> planning -> bootstrapped -> implementing -> verifying -> reviewing -> pr-open -> waiting-ci -> waiting-review -> cleanup -> done
+- Keep `state.json` in sync with plan progress at every phase transition
 
 ## Hook Integration Summary
 
@@ -301,3 +355,21 @@ These hooks fire automatically and enforce governance. The plan checkboxes align
 | `governance-completion-check.sh` | Stop | Blocks if impl files changed without delegation/reviews |
 | `completion-check.sh` | Stop | Advisory warnings (cargo check, FFI/SDK parity, todo!()) |
 | `save-session.sh` | PreCompact | Saves session state for context recovery |
+
+## Scripts & Tools
+
+Use these scripts for deterministic behavior:
+
+- `scripts/gh_issue_run.py` -- run lifecycle (init-run, update-state, validate-resume, poll-pr, cleanup-worktree)
+- `scripts/gh_issue_workflow.py` -- compatibility wrapper
+- `scripts/validate_skill.py` -- skill package validation
+
+## References
+
+Supplementary docs (read when relevant, not required for normal execution):
+
+- `references/resume-contract.md` -- detailed resume protocol and failure cases
+- `references/workflow-contract.md` -- run phases, todo rules, orchestration rules
+- `references/evals.md` -- skill output validation and regression checks
+- `assets/plan-template.md` -- used by `gh_issue_run.py init-run` for rendering
+- `assets/state-template.json` -- state schema for `state.json`
