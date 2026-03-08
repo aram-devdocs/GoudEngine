@@ -1726,7 +1726,7 @@
           },
           {
             "name": "transition_type",
-            "type": "u8"
+            "type": "FfiTransitionType"
           },
           {
             "name": "duration_secs",

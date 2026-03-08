@@ -157,3 +157,9 @@ class NetworkProtocol:
     """Network transport protocol"""
     UDP = 0
     WEB_SOCKET = 1
+
+class TransitionType:
+    """Scene transition type"""
+    INSTANT = 0
+    FADE = 1
+    CUSTOM = 2

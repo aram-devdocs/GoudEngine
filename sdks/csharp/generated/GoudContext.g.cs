@@ -413,7 +413,7 @@ namespace GoudEngine
         }
 
         /// <summary>Starts a transition between two scenes</summary>
-        public GoudResult SceneTransitionTo(uint fromScene, uint toScene, byte transitionType, float durationSecs)
+        public GoudResult SceneTransitionTo(uint fromScene, uint toScene, TransitionType transitionType, float durationSecs)
         {
             return NativeMethods.goud_scene_transition_to(_ctx, fromScene, toScene, transitionType, durationSecs);
         }

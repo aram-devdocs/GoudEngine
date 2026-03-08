@@ -214,7 +214,7 @@ namespace GoudEngine
         public static extern uint goud_scene_get_current(GoudContextId ctx);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern GoudResult goud_scene_transition_to(GoudContextId ctx, uint from_scene, uint to_scene, byte transition_type, float duration_secs);
+        public static extern GoudResult goud_scene_transition_to(GoudContextId ctx, uint from_scene, uint to_scene, TransitionType transition_type, float duration_secs);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern float goud_scene_transition_progress(GoudContextId ctx);

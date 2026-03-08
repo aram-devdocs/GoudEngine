@@ -83,6 +83,7 @@ def _cs_ffi_param_type(raw: str) -> str:
         "*mut FfiAnimationClipBuilder": "IntPtr",
         "*const FfiSpriteAnimator": "ref FfiSpriteAnimator",
         "FfiPlaybackMode": "PlaybackMode",
+        "FfiTransitionType": "TransitionType",
         "*const u8": "IntPtr",
         "*mut u8": "IntPtr",
         "*mut c_void": "IntPtr",
