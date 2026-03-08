@@ -134,38 +134,47 @@ mod tests {
         assert!(!is_diagnostic_enabled());
     }
 
+    /// Tests env var parsing for diagnostic mode.
+    ///
+    /// Consolidated into a single test because `init_diagnostic_from_env()`
+    /// writes to a global `AtomicBool` and `std::env::set_var` is
+    /// process-global — both race with parallel tests.
     #[test]
-    fn test_init_diagnostic_from_env_true() {
+    fn test_init_diagnostic_from_env() {
+        // "true" enables
         set_diagnostic_enabled(false);
-
-        // Temporarily set env var.
         std::env::set_var("GOUD_DIAGNOSTIC", "true");
         init_diagnostic_from_env();
-        assert!(is_diagnostic_enabled());
+        let after_true = is_diagnostic_enabled();
+
+        // "1" enables
+        set_diagnostic_enabled(false);
+        std::env::set_var("GOUD_DIAGNOSTIC", "1");
+        init_diagnostic_from_env();
+        let after_one = is_diagnostic_enabled();
+
+        // unset disables
+        set_diagnostic_enabled(false);
+        std::env::remove_var("GOUD_DIAGNOSTIC");
+        init_diagnostic_from_env();
+        let after_unset = is_diagnostic_enabled();
 
         // Cleanup
         std::env::remove_var("GOUD_DIAGNOSTIC");
         set_diagnostic_enabled(false);
-    }
 
-    #[test]
-    fn test_init_diagnostic_from_env_one() {
-        set_diagnostic_enabled(false);
-
-        std::env::set_var("GOUD_DIAGNOSTIC", "1");
-        init_diagnostic_from_env();
-        assert!(is_diagnostic_enabled());
-
-        std::env::remove_var("GOUD_DIAGNOSTIC");
-        set_diagnostic_enabled(false);
-    }
-
-    #[test]
-    fn test_init_diagnostic_from_env_unset() {
-        set_diagnostic_enabled(false);
-        std::env::remove_var("GOUD_DIAGNOSTIC");
-        init_diagnostic_from_env();
-        assert!(!is_diagnostic_enabled());
+        // Assert after all mutations to minimize the race window.
+        // If another test toggled the AtomicBool between our set and
+        // our read, we only skip the affected assertion.
+        assert!(
+            after_true,
+            "GOUD_DIAGNOSTIC=true should enable diagnostic mode"
+        );
+        assert!(after_one, "GOUD_DIAGNOSTIC=1 should enable diagnostic mode");
+        assert!(
+            !after_unset,
+            "Unset GOUD_DIAGNOSTIC should leave diagnostic mode disabled"
+        );
     }
 
     #[test]
