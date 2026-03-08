@@ -85,6 +85,7 @@ def _cs_ffi_param_type(raw: str) -> str:
         "FfiPlaybackMode": "PlaybackMode",
         "*const u8": "IntPtr",
         "*mut u8": "IntPtr",
+        "*mut *const u8": "ref IntPtr",
         "*mut c_void": "IntPtr",
         "*const c_char": "string",
         "usize": "nuint",

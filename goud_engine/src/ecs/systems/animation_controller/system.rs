@@ -3,7 +3,9 @@
 use crate::ecs::components::animation_controller::{
     AnimParam, AnimationController, TransitionCondition,
 };
+use crate::ecs::components::sprite::Sprite;
 use crate::ecs::components::sprite_animator::SpriteAnimator;
+use crate::ecs::systems::animation::blend_rects;
 use crate::ecs::World;
 
 /// Evaluates whether a single transition condition is satisfied.
@@ -90,9 +92,46 @@ pub fn update_animation_controllers(world: &mut World, dt: f32) {
         match action {
             Action::None => {}
             Action::AdvanceTransition { new_elapsed } => {
+                // Read the from/to clips and compute blended rect for crossfade.
+                let blended_rect = {
+                    let Some(ctrl) = world.get::<AnimationController>(entity) else {
+                        continue;
+                    };
+                    let Some(ref progress) = ctrl.transition_progress else {
+                        continue;
+                    };
+                    let blend_weight = (new_elapsed / progress.duration).clamp(0.0, 1.0);
+                    let from_clip = ctrl.states.get(&progress.from_state).map(|s| &s.clip);
+                    let to_clip = ctrl.states.get(&progress.to_state).map(|s| &s.clip);
+
+                    match (from_clip, to_clip) {
+                        (Some(fc), Some(tc)) => {
+                            let from_frame = world
+                                .get::<SpriteAnimator>(entity)
+                                .map(|a| a.current_frame)
+                                .unwrap_or(0);
+                            let from_rect = fc.frames.get(from_frame).or(fc.frames.last());
+                            let to_rect = tc.frames.first();
+                            match (from_rect, to_rect) {
+                                (Some(&fr), Some(&tr)) => Some(blend_rects(fr, tr, blend_weight)),
+                                _ => None,
+                            }
+                        }
+                        _ => None,
+                    }
+                };
+
+                // Update elapsed on the transition progress.
                 if let Some(ctrl) = world.get_mut::<AnimationController>(entity) {
                     if let Some(ref mut progress) = ctrl.transition_progress {
                         progress.elapsed = new_elapsed;
+                    }
+                }
+
+                // Apply blended rect to sprite.
+                if let Some(rect) = blended_rect {
+                    if let Some(sprite) = world.get_mut::<Sprite>(entity) {
+                        sprite.source_rect = Some(rect);
                     }
                 }
             }

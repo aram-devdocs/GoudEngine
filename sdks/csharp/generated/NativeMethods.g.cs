@@ -999,6 +999,16 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_animation_controller_update(GoudContextId ctx, ulong entity_id, float dt);
 
+        // animation_events
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_clip_add_event(GoudContextId ctx, ulong entity_id, uint clip_event_frame, IntPtr name_ptr, uint name_len, uint payload_type, int payload_int, float payload_float, IntPtr payload_str_ptr, uint payload_str_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_events_count(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_events_read(GoudContextId ctx, uint index, ref ulong out_entity, ref IntPtr out_name_ptr, ref uint out_name_len, ref uint out_frame);
+
         // tween
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern long goud_tween_create(GoudContextId ctx, float start, float end, float duration, int easing_type);
@@ -1030,6 +1040,25 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_skeleton_play_clip(GoudContextId ctx, ulong entity_id, IntPtr clip_name_ptr, int clip_name_len, [MarshalAs(UnmanagedType.U1)] bool looping);
+
+        // animation_layer
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_layer_stack_create(GoudContextId ctx, ulong entity_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_layer_add(GoudContextId ctx, ulong entity_id, IntPtr name_ptr, uint name_len, uint blend_mode);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_layer_set_weight(GoudContextId ctx, ulong entity_id, uint layer_index, float weight);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_layer_play(GoudContextId ctx, ulong entity_id, uint layer_index);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_layer_set_clip(GoudContextId ctx, ulong entity_id, uint layer_index, uint frame_count, float frame_duration, uint mode);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_layer_add_frame(GoudContextId ctx, ulong entity_id, uint layer_index, float x, float y, float w, float h);
 
         // network
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

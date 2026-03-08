@@ -1075,6 +1075,16 @@ class SpriteAnimatorBuilder:
     def __repr__(self):
         return f"SpriteAnimatorBuilder(ptr={self._ptr})"
 
+class AnimationEventData:
+    """Data for a fired animation event read from the event queue"""
+    def __init__(self, entity: int = 0, name: float = 0.0, frame_index: int = 0):
+        self.entity = entity
+        self.name = name
+        self.frame_index = frame_index
+
+    def __repr__(self):
+        return f"AnimationEventData(entity={self.entity}, name={self.name}, frame_index={self.frame_index})"
+
 class RenderStats:
     """Per-frame rendering statistics"""
     def __init__(self, draw_calls: int = 0, triangles: int = 0, texture_binds: int = 0, shader_binds: int = 0):
