@@ -38,6 +38,8 @@ def main() -> int:
         if len(lines) > 500:
             errors.append({"SKILL.md": f"too long: {len(lines)} lines"})
         body = "\n".join(lines)
+
+        # Check references — accept both direct paths and ${CLAUDE_SKILL_DIR}/ prefixed paths
         for expected in [
             "references/workflow-contract.md",
             "references/resume-contract.md",
@@ -47,8 +49,13 @@ def main() -> int:
             "scripts/gh_issue_workflow.py",
             "scripts/validate_skill.py",
         ]:
-            if expected not in body:
+            # Match either "references/foo.md" or "${CLAUDE_SKILL_DIR}/references/foo.md"
+            if expected not in body and f"${{CLAUDE_SKILL_DIR}}/{expected}" not in body:
                 errors.append({"SKILL.md": f"missing reference: {expected}"})
+
+        # Check that SKILL.md uses ! preprocessing for critical content injection
+        if "!`cat ${CLAUDE_SKILL_DIR}/" not in body:
+            errors.append({"SKILL.md": "missing !`cat ${CLAUDE_SKILL_DIR}/` preprocessing directive"})
 
     state_template = skill_dir / "assets" / "state-template.json"
     if state_template.exists():
@@ -65,6 +72,11 @@ def main() -> int:
                 errors.append({"plan-template.md": f"missing section: {marker}"})
         if "## PR Loop" not in text and "## PR and Polling Loop" not in text:
             errors.append({"plan-template.md": "missing section: ## PR Loop"})
+        # Check expanded template sections
+        if "## Verification" not in text and "## Phase 2: Verification" not in text:
+            errors.append({"plan-template.md": "missing section: ## Verification"})
+        if "## Implementation" not in text:
+            errors.append({"plan-template.md": "missing section: ## Implementation"})
 
     payload = {
         "ok": not errors,

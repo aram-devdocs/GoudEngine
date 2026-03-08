@@ -9,38 +9,9 @@ disable-model-invocation: true
 
 Use this skill when the user wants an issue handled end to end: investigate, plan, implement, review, open the PR, stay on the PR until checks and reviews are clean, then clean up the worktree.
 
-## Load Order
+## Workflow Rules
 
-Read these files in order:
-
-1. `references/workflow-contract.md`
-2. `references/resume-contract.md`
-3. `references/evals.md` only when validating the skill output or running regression checks
-
-Use these bundled assets instead of inventing new structures:
-
-- `assets/plan-template.md`
-- `assets/state-template.json`
-- `assets/prompts/lead-dispatch.md`
-- `assets/prompts/review-dispatch.md`
-
-Use these scripts for deterministic behavior:
-
-- `scripts/gh_issue_run.py`
-- `scripts/gh_issue_workflow.py` (compatibility wrapper)
-- `scripts/validate_skill.py`
-
-## Core Rules
-
-- `--worktree` means isolated worktree execution. Do not work on `main` in that mode.
-- The canonical run directory is `.agents/runs/gh-issue/<primary>-<slug>/`.
-- Every run must create both `plan.md` and `state.json` before implementation starts.
-- `plan.md` is the durable contract for the next session. Keep it accurate and leave the non-negotiables in place.
-- `state.json` is the machine-readable source of truth for todos, review gates, PR status, and cleanup state.
-- Non-trivial work goes through team leads. Use `quick-fix` directly only for trivial single-file changes.
-- Review order is fixed: `spec-reviewer`, then `code-quality-reviewer`, with `architecture-validator` and `security-auditor` as required.
-- PR creation is not the end of the task. Stay with the PR until CI is green and review feedback is handled.
-- Do related cleanup now if it is needed to finish the ticket cleanly. Only defer work that is already tracked elsewhere and truly out of scope.
+!`cat ${CLAUDE_SKILL_DIR}/references/workflow-contract.md`
 
 ## Workflow
 
@@ -69,11 +40,13 @@ Use `scripts/gh_issue_run.py init-run` to create:
 
 Pass the real branch, mode, worktree path, repo path, issue titles, and acceptance summary. In worktree mode, create the worktree first and record its absolute path.
 
-### 4. Read the Generated Plan
+The generated `plan.md` MUST match the Plan Template below. `scripts/gh_issue_run.py init-run` renders this template with actual values.
+
+### 4. Execute the Plan
 
 - Read `plan.md` from the canonical run directory.
 - Follow the non-negotiables and resume protocol exactly.
-- Use the prompt fragments in `assets/prompts/` when dispatching leads and reviewers.
+- Use the dispatch prompts below when dispatching leads and reviewers.
 
 ### 5. Keep State Fresh
 
@@ -115,3 +88,36 @@ python3 .agents/skills/gh-issue/scripts/validate_skill.py
 ```
 
 If the `skills-ref` tool is available, run it too. The local validator is the required baseline.
+
+## Plan Template
+
+CRITICAL: Every `plan.md` must follow this exact structure. Do not invent a different structure. `scripts/gh_issue_run.py init-run` renders this template with actual values.
+
+!`cat ${CLAUDE_SKILL_DIR}/assets/plan-template.md`
+
+## Dispatch Prompts
+
+### Team Lead Dispatch
+
+!`cat ${CLAUDE_SKILL_DIR}/assets/prompts/lead-dispatch.md`
+
+### Review Dispatch
+
+!`cat ${CLAUDE_SKILL_DIR}/assets/prompts/review-dispatch.md`
+
+## Assets
+
+- `assets/state-template.json` — machine-readable state schema for `state.json`
+
+## Scripts
+
+Use these scripts for deterministic behavior:
+
+- `scripts/gh_issue_run.py` — run lifecycle (init-run, update-state, validate-resume, poll-pr)
+- `scripts/gh_issue_workflow.py` — compatibility wrapper
+- `scripts/validate_skill.py` — skill package validation
+
+## References
+
+- `references/resume-contract.md` — Read when resuming an interrupted run
+- `references/evals.md` — Read when validating skill output or running regression checks
