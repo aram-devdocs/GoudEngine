@@ -1766,6 +1766,26 @@
           "name": "frameIndex",
           "type": "u32",
           "doc": "Frame index that triggered the event"
+        },
+        {
+          "name": "payloadType",
+          "type": "u32",
+          "doc": "Payload discriminant (0=None, 1=Int, 2=Float, 3=String)"
+        },
+        {
+          "name": "payloadInt",
+          "type": "i32",
+          "doc": "Integer payload value (valid when payloadType==1)"
+        },
+        {
+          "name": "payloadFloat",
+          "type": "f32",
+          "doc": "Float payload value (valid when payloadType==2)"
+        },
+        {
+          "name": "payloadString",
+          "type": "string",
+          "doc": "String payload value (valid when payloadType==3)"
         }
       ]
     },
@@ -5586,6 +5606,21 @@
             {
               "name": "h",
               "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "resetLayer",
+          "doc": "Resets a finished or in-progress animation layer to its initial state",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "layerIndex",
+              "type": "u32"
             }
           ],
           "returns": "i32"

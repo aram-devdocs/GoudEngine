@@ -88,6 +88,11 @@ pub unsafe extern "C" fn goud_animation_layer_add(
     name_len: u32,
     blend_mode: u32,
 ) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -ERR_INVALID_CONTEXT;
+    }
+
     let name = match str_from_raw(name_ptr, name_len as i32) {
         Ok(s) => s,
         Err(code) => return code,
@@ -103,11 +108,6 @@ pub unsafe extern "C" fn goud_animation_layer_add(
             return -ERR_INVALID_STATE;
         }
     };
-
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return -ERR_INVALID_CONTEXT;
-    }
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
@@ -261,15 +261,17 @@ pub extern "C" fn goud_animation_layer_play(
 
 /// Sets the animation clip on a layer by index.
 ///
-/// Creates a new `AnimationClip` with `frame_count` empty `Rect` frames,
-/// the given `frame_duration`, and playback mode.
+/// Creates a new `AnimationClip` with zero frames (use `add_frame` to
+/// populate), the given `frame_duration`, and playback mode.
+/// `frame_count` is used as a capacity hint for the internal Vec but
+/// does **not** pre-fill frames.
 ///
 /// # Parameters
 ///
 /// - `context_id`: Engine context handle.
 /// - `entity_id`: Entity with an `AnimationLayerStack` component.
 /// - `layer_index`: Zero-based index of the layer to update.
-/// - `frame_count`: Number of empty frames to initialize the clip with.
+/// - `frame_count`: Capacity hint for the frame Vec (no frames are created).
 /// - `frame_duration`: Seconds per frame.
 /// - `mode`: `0` = Loop, `1` = OneShot.
 ///
@@ -333,7 +335,7 @@ pub extern "C" fn goud_animation_layer_set_clip(
         return -ERR_INVALID_STATE;
     }
 
-    let frames = vec![Rect::new(0.0, 0.0, 0.0, 0.0); frame_count as usize];
+    let frames = Vec::with_capacity(frame_count as usize);
     let clip = AnimationClip::new(frames, frame_duration).with_mode(playback_mode);
     stack.layers[idx].clip = clip;
 
@@ -403,6 +405,73 @@ pub extern "C" fn goud_animation_layer_add_frame(
     }
 
     stack.layers[idx].clip.frames.push(Rect::new(x, y, w, h));
+
+    0
+}
+
+/// Resets a finished (or in-progress) animation layer to its initial state.
+///
+/// Sets `current_frame = 0`, `elapsed = 0.0`, `playing = false`, and
+/// `finished = false` so the layer can be started again with
+/// `goud_animation_layer_play`.
+///
+/// # Parameters
+///
+/// - `context_id`: Engine context handle.
+/// - `entity_id`: Entity with an `AnimationLayerStack` component.
+/// - `layer_index`: Zero-based index of the layer to reset.
+///
+/// Returns `0` on success, or a negative error code.
+#[no_mangle]
+pub extern "C" fn goud_animation_layer_reset(
+    context_id: GoudContextId,
+    entity_id: u64,
+    layer_index: u32,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -ERR_INVALID_CONTEXT;
+    }
+
+    let mut registry = match get_context_registry().lock() {
+        Ok(r) => r,
+        Err(_) => return -ERR_INTERNAL_ERROR,
+    };
+    let context = match registry.get_mut(context_id) {
+        Some(ctx) => ctx,
+        None => {
+            set_last_error(GoudError::InvalidContext);
+            return -ERR_INVALID_CONTEXT;
+        }
+    };
+
+    let entity = Entity::from_bits(entity_id);
+    let world = context.world_mut();
+
+    if !world.is_alive(entity) {
+        set_last_error(GoudError::EntityNotFound);
+        return -ERR_ENTITY_NOT_FOUND;
+    }
+
+    let stack = match world.get_mut::<AnimationLayerStack>(entity) {
+        Some(s) => s,
+        None => {
+            set_last_error(GoudError::ComponentNotFound);
+            return -ERR_COMPONENT_NOT_FOUND;
+        }
+    };
+
+    let idx = layer_index as usize;
+    if idx >= stack.layers.len() {
+        set_last_error(GoudError::InvalidState("layer index out of range".into()));
+        return -ERR_INVALID_STATE;
+    }
+
+    let layer = &mut stack.layers[idx];
+    layer.current_frame = 0;
+    layer.elapsed = 0.0;
+    layer.playing = false;
+    layer.finished = false;
 
     0
 }

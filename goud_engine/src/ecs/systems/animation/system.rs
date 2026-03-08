@@ -59,7 +59,7 @@ pub fn update_sprite_animations(world: &mut World, dt: f32) {
                 continue;
             }
 
-            let prev_frame = animator.current_frame;
+            animator.previous_frame = animator.current_frame;
             animator.elapsed += dt;
             let mut frames_advanced: usize = 0;
 
@@ -87,7 +87,7 @@ pub fn update_sprite_animations(world: &mut World, dt: f32) {
             // Collect events for frames that were crossed.
             collect_animation_events(
                 entity,
-                prev_frame,
+                animator.previous_frame,
                 animator.current_frame,
                 frame_count,
                 frames_advanced,
@@ -95,7 +95,6 @@ pub fn update_sprite_animations(world: &mut World, dt: f32) {
                 &mut pending_events,
             );
 
-            animator.previous_frame = animator.current_frame;
             animator.current_rect()
         };
 

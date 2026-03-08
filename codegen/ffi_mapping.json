@@ -1338,6 +1338,26 @@
             {
               "name": "frame",
               "type": "u32"
+            },
+            {
+              "name": "payload_type",
+              "type": "u32"
+            },
+            {
+              "name": "payload_int",
+              "type": "i32"
+            },
+            {
+              "name": "payload_float",
+              "type": "f32"
+            },
+            {
+              "name": "payload_str_ptr",
+              "type": "*const u8"
+            },
+            {
+              "name": "payload_str_len",
+              "type": "u32"
             }
           ],
           "out_string": true,
@@ -1447,6 +1467,12 @@
         },
         "addFrame": {
           "ffi": "goud_animation_layer_add_frame",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "resetLayer": {
+          "ffi": "goud_animation_layer_reset",
           "entity_params": [
             "entity"
           ]
@@ -5882,6 +5908,26 @@
           {
             "name": "out_frame",
             "type": "*mut u32"
+          },
+          {
+            "name": "out_payload_type",
+            "type": "*mut u32"
+          },
+          {
+            "name": "out_payload_int",
+            "type": "*mut i32"
+          },
+          {
+            "name": "out_payload_float",
+            "type": "*mut f32"
+          },
+          {
+            "name": "out_payload_str_ptr",
+            "type": "*mut *const u8"
+          },
+          {
+            "name": "out_payload_str_len",
+            "type": "*mut u32"
           }
         ],
         "returns": "i32",
@@ -6233,6 +6279,23 @@
           {
             "name": "h",
             "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_animation_layer_reset": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "entity_id",
+            "type": "u64"
+          },
+          {
+            "name": "layer_index",
+            "type": "u32"
           }
         ],
         "returns": "i32"

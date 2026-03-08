@@ -56,7 +56,7 @@ pub use events::{
 };
 pub use layer::{
     goud_animation_layer_add, goud_animation_layer_add_frame, goud_animation_layer_play,
-    goud_animation_layer_set_clip, goud_animation_layer_set_weight,
+    goud_animation_layer_reset, goud_animation_layer_set_clip, goud_animation_layer_set_weight,
     goud_animation_layer_stack_create,
 };
 pub use skeletal::{

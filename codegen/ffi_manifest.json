@@ -132,7 +132,12 @@
         "out_entity: *mut u64",
         "out_name_ptr: *mut *const u8",
         "out_name_len: *mut u32",
-        "out_frame: *mut u32"
+        "out_frame: *mut u32",
+        "out_payload_type: *mut u32",
+        "out_payload_int: *mut i32",
+        "out_payload_float: *mut f32",
+        "out_payload_str_ptr: *mut *const u8",
+        "out_payload_str_len: *mut u32"
       ],
       "return_type": "i32",
       "is_unsafe": true
@@ -164,6 +169,16 @@
       "is_unsafe": false
     },
     "goud_animation_layer_play": {
+      "source_file": "ffi/animation/layer.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "layer_index: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_animation_layer_reset": {
       "source_file": "ffi/animation/layer.rs",
       "params": [
         "context_id: GoudContextId",
@@ -2845,5 +2860,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 289
+  "total_count": 290
 }

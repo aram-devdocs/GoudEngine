@@ -59,6 +59,11 @@ pub unsafe extern "C" fn goud_animation_clip_add_event(
     payload_str_ptr: *const u8,
     payload_str_len: u32,
 ) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -ERR_INVALID_CONTEXT;
+    }
+
     let name = match str_from_raw(name_ptr, name_len as i32) {
         Ok(s) => s,
         Err(code) => return code,
@@ -82,11 +87,6 @@ pub unsafe extern "C" fn goud_animation_clip_add_event(
             return -ERR_INVALID_STATE;
         }
     };
-
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return -ERR_INVALID_CONTEXT;
-    }
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
@@ -167,14 +167,22 @@ pub extern "C" fn goud_animation_events_count(context_id: GoudContextId) -> i32 
 ///   null-terminated). Valid until the next event system update.
 /// - `out_name_len`: Receives the byte length of the event name.
 /// - `out_frame`: Receives the frame index that triggered the event.
+/// - `out_payload_type`: Receives the payload discriminant (`0`=None,
+///   `1`=Int, `2`=Float, `3`=String).
+/// - `out_payload_int`: Receives the integer payload (valid when type==1).
+/// - `out_payload_float`: Receives the float payload (valid when type==2).
+/// - `out_payload_str_ptr`: Receives a pointer to the string payload
+///   (valid when type==3). Borrows from the event buffer.
+/// - `out_payload_str_len`: Receives the byte length of the string payload.
 ///
 /// Returns `0` on success, or a negative error code.
 ///
 /// # Safety
 ///
 /// All output pointers must be non-null and point to writable memory.
-/// The returned `out_name_ptr` borrows from the event buffer and is
-/// only valid until `Events<AnimationEventFired>::update()` is called.
+/// The returned `out_name_ptr` and `out_payload_str_ptr` borrow from
+/// the event buffer and are only valid until
+/// `Events<AnimationEventFired>::update()` is called.
 #[no_mangle]
 pub unsafe extern "C" fn goud_animation_events_read(
     context_id: GoudContextId,
@@ -183,6 +191,11 @@ pub unsafe extern "C" fn goud_animation_events_read(
     out_name_ptr: *mut *const u8,
     out_name_len: *mut u32,
     out_frame: *mut u32,
+    out_payload_type: *mut u32,
+    out_payload_int: *mut i32,
+    out_payload_float: *mut f32,
+    out_payload_str_ptr: *mut *const u8,
+    out_payload_str_len: *mut u32,
 ) -> i32 {
     // Null-check all output pointers.
     if out_entity.is_null() {
@@ -203,6 +216,36 @@ pub unsafe extern "C" fn goud_animation_events_read(
     }
     if out_frame.is_null() {
         set_last_error(GoudError::InvalidState("out_frame pointer is null".into()));
+        return -ERR_INVALID_STATE;
+    }
+    if out_payload_type.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "out_payload_type pointer is null".into(),
+        ));
+        return -ERR_INVALID_STATE;
+    }
+    if out_payload_int.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "out_payload_int pointer is null".into(),
+        ));
+        return -ERR_INVALID_STATE;
+    }
+    if out_payload_float.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "out_payload_float pointer is null".into(),
+        ));
+        return -ERR_INVALID_STATE;
+    }
+    if out_payload_str_ptr.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "out_payload_str_ptr pointer is null".into(),
+        ));
+        return -ERR_INVALID_STATE;
+    }
+    if out_payload_str_len.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "out_payload_str_len pointer is null".into(),
+        ));
         return -ERR_INVALID_STATE;
     }
 
@@ -249,6 +292,38 @@ pub unsafe extern "C" fn goud_animation_events_read(
     *out_name_ptr = event.event_name.as_ptr();
     *out_name_len = event.event_name.len() as u32;
     *out_frame = event.frame_index as u32;
+
+    // Write payload fields based on the variant.
+    match &event.payload {
+        EventPayload::None => {
+            *out_payload_type = PAYLOAD_NONE;
+            *out_payload_int = 0;
+            *out_payload_float = 0.0;
+            *out_payload_str_ptr = std::ptr::null();
+            *out_payload_str_len = 0;
+        }
+        EventPayload::Int(v) => {
+            *out_payload_type = PAYLOAD_INT;
+            *out_payload_int = *v;
+            *out_payload_float = 0.0;
+            *out_payload_str_ptr = std::ptr::null();
+            *out_payload_str_len = 0;
+        }
+        EventPayload::Float(v) => {
+            *out_payload_type = PAYLOAD_FLOAT;
+            *out_payload_int = 0;
+            *out_payload_float = *v;
+            *out_payload_str_ptr = std::ptr::null();
+            *out_payload_str_len = 0;
+        }
+        EventPayload::String(s) => {
+            *out_payload_type = PAYLOAD_STRING;
+            *out_payload_int = 0;
+            *out_payload_float = 0.0;
+            *out_payload_str_ptr = s.as_ptr();
+            *out_payload_str_len = s.len() as u32;
+        }
+    }
 
     0
 }
