@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "run_id": "",
+  "primary_issue": "",
+  "issues": [],
+  "issue_titles": [],
+  "mode": "",
+  "branch": "",
+  "run_dir": "",
+  "worktree_path": "",
+  "main_repo_path": "",
+  "phase": "planning",
+  "todos": [
+    {
+      "id": "investigation",
+      "title": "Confirm issue scope and related cleanup",
+      "owner": "orchestrator",
+      "status": "done"
+    },
+    {
+      "id": "bootstrap",
+      "title": "Create plan and state artifacts",
+      "owner": "orchestrator",
+      "status": "pending"
+    },
+    {
+      "id": "implementation",
+      "title": "Dispatch implementation work",
+      "owner": "orchestrator",
+      "status": "pending"
+    },
+    {
+      "id": "review",
+      "title": "Run review gates",
+      "owner": "quality-lead",
+      "status": "pending"
+    },
+    {
+      "id": "pr-loop",
+      "title": "Track PR until clean",
+      "owner": "orchestrator",
+      "status": "pending"
+    },
+    {
+      "id": "cleanup",
+      "title": "Remove worktree and close the run",
+      "owner": "orchestrator",
+      "status": "pending"
+    }
+  ],
+  "review_gates": {
+    "spec-reviewer": "pending",
+    "code-quality-reviewer": "pending",
+    "architecture-validator": "pending",
+    "security-auditor": "not_required"
+  },
+  "pr": {
+    "number": null,
+    "ci_state": "not_started",
+    "review_state": "not_started",
+    "last_poll": null
+  },
+  "cleanup": {
+    "worktree_removed": false,
+    "last_attempt": null
+  },
+  "deferred": []
+}

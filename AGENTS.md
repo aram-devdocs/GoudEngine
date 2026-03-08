@@ -205,33 +205,37 @@ When testing graphics code:
 
 When working in a git worktree (created by `/gh-issue --worktree` or `git worktree add`):
 
-1. **Working directory**: The worktree path is in the plan's Metadata section. ALL
+1. **Canonical run directory**: `/gh-issue` stores the shared contract in `.agents/runs/gh-issue/<primary>-<slug>/` with `plan.md` and `state.json`.
+2. **Working directory**: The worktree path is in the plan's Metadata section. ALL
    Bash commands MUST use `cd <worktree-path> &&` prefix -- cwd resets between calls.
-2. **Branch isolation**: The worktree has its own branch. Never checkout main inside a worktree.
-3. **Parallel safety**: Multiple worktrees run simultaneously. Never modify the main repo
+3. **Branch isolation**: The worktree has its own branch. Never checkout main inside a worktree.
+4. **Parallel safety**: Multiple worktrees run simultaneously. Never modify the main repo
    working tree from a worktree session.
-4. **Subagent working directory**: When dispatching subagents, ALWAYS include the worktree
+5. **Subagent working directory**: When dispatching subagents, ALWAYS include the worktree
    absolute path in the prompt. Subagents do not inherit your cwd.
-5. **Cleanup**: After PR creation, remove worktree from main repo:
+6. **Cleanup**: After PR creation and once the shared run is complete, remove the worktree from the main repo:
    `cd /path/to/main/repo && git worktree remove <worktree-path>`
 
 ### Plan Execution Protocol
 
-When executing a plan (from `.claude/plans/`, `.codex/plans/`, or any plan file):
+When executing a plan (from `.claude/plans/`, `.codex/plans/`, `.agents/runs/gh-issue/*/plan.md`, or any plan file):
 
 1. **Read Metadata first** -- it has your working directory, branch, issues, and mode.
-2. **You are the ORCHESTRATOR** -- you MUST NOT write .rs/.cs/.py files directly.
+2. **Shared gh-issue runs**: If `.agents/runs/gh-issue/<primary>-<slug>/plan.md` exists, treat that
+   plan and its sibling `state.json` as the canonical execution contract across Claude and Codex.
+   Runner-local state supplements it; it does not replace it.
+3. **You are the ORCHESTRATOR** -- you MUST NOT write .rs/.cs/.py files directly.
    Dispatch subagents (engine-lead, integration-lead, quick-fix). The delegation-guard
    hook WILL block direct writes.
-3. **Subagent dispatch steps** in the plan contain literal prompts. Use them verbatim.
-4. **Review gates are sequential** -- spec-reviewer MUST approve before code-quality-reviewer.
+4. **Subagent dispatch steps** in the plan contain literal prompts. Use them verbatim.
+5. **Review gates are sequential** -- spec-reviewer MUST approve before code-quality-reviewer.
    The review-gate-guard hook enforces this.
-5. **Check off `- [ ]` items** as you complete them. plan-completion-guard blocks session
+6. **Check off `- [ ]` items** as you complete them. plan-completion-guard blocks session
    end if unchecked items remain.
-6. **The plan references the skill that created it** -- read that skill's SKILL.md if you
+7. **The plan references the skill that created it** -- read that skill's SKILL.md if you
    need additional context about the workflow pattern.
-7. **PR creation uses `.github/pull_request_template.md`** -- read it and fill in all sections.
-8. **CI must pass** -- check with `gh pr checks <number>` before finishing.
+8. **PR creation uses `.github/pull_request_template.md`** -- read it and fill in all sections.
+9. **CI must pass** -- check with `gh pr checks <number>` before finishing.
 
 ### Subagent Dispatch Reference
 

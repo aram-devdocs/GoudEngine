@@ -1,0 +1,4 @@
+[
+  {"name": "build", "state": "SUCCESS"},
+  {"name": "test", "state": "PENDING"}
+]
