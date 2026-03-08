@@ -95,10 +95,14 @@ def gen_ffi():
     _FIELD_CTYPES = {
         "f32": "ctypes.c_float",
         "u8": "ctypes.c_uint8",
+        "u16": "ctypes.c_uint16",
         "u32": "ctypes.c_uint32",
         "u64": "ctypes.c_uint64",
         "bool": "ctypes.c_bool",
+        "i8": "ctypes.c_int8",
+        "i16": "ctypes.c_int16",
         "i32": "ctypes.c_int32",
+        "i64": "ctypes.c_int64",
     }
 
     for type_name, type_def in mapping["ffi_types"].items():

@@ -1632,6 +1632,202 @@
         ]
       }
     },
+    "Text": {
+      "kind": "component",
+      "doc": "Text rendering component",
+      "fields": [
+        {
+          "name": "fontHandle",
+          "type": "u64"
+        },
+        {
+          "name": "fontSize",
+          "type": "f32"
+        },
+        {
+          "name": "colorR",
+          "type": "f32"
+        },
+        {
+          "name": "colorG",
+          "type": "f32"
+        },
+        {
+          "name": "colorB",
+          "type": "f32"
+        },
+        {
+          "name": "colorA",
+          "type": "f32"
+        },
+        {
+          "name": "alignment",
+          "type": "u8"
+        },
+        {
+          "name": "maxWidth",
+          "type": "f32"
+        },
+        {
+          "name": "hasMaxWidth",
+          "type": "bool"
+        },
+        {
+          "name": "lineSpacing",
+          "type": "f32"
+        }
+      ],
+      "factories": [
+        {
+          "name": "new",
+          "args": [
+            {
+              "name": "fontHandle",
+              "type": "u64"
+            }
+          ]
+        },
+        {
+          "name": "default",
+          "args": []
+        }
+      ],
+      "methods": [
+        {
+          "name": "setFontSize",
+          "doc": "Sets the font size in pixels",
+          "params": [
+            {
+              "name": "size",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getFontSize",
+          "doc": "Gets the font size in pixels",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "setColor",
+          "doc": "Sets the RGBA text color",
+          "params": [
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            },
+            {
+              "name": "a",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getColorR",
+          "doc": "Gets the red color component",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "getColorG",
+          "doc": "Gets the green color component",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "getColorB",
+          "doc": "Gets the blue color component",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "getColorA",
+          "doc": "Gets the alpha color component",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "setAlignment",
+          "doc": "Sets the horizontal text alignment (0=Left, 1=Center, 2=Right)",
+          "params": [
+            {
+              "name": "alignment",
+              "type": "u8"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getAlignment",
+          "doc": "Gets the horizontal text alignment",
+          "params": [],
+          "returns": "u8"
+        },
+        {
+          "name": "setMaxWidth",
+          "doc": "Sets the maximum width for word-wrapping",
+          "params": [
+            {
+              "name": "width",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "clearMaxWidth",
+          "doc": "Clears the maximum width, disabling word-wrapping",
+          "params": [],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getMaxWidth",
+          "doc": "Gets the maximum width for word-wrapping",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "hasMaxWidth",
+          "doc": "Returns whether the text has a max width set",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "setLineSpacing",
+          "doc": "Sets the line spacing multiplier",
+          "params": [
+            {
+              "name": "spacing",
+              "type": "f32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getLineSpacing",
+          "doc": "Gets the line spacing multiplier",
+          "params": [],
+          "returns": "f32"
+        }
+      ]
+    },
     "SpriteAnimator": {
       "kind": "component",
       "doc": "Sprite sheet animation component",
@@ -2342,6 +2538,15 @@
       "values": {
         "UDP": 0,
         "WebSocket": 1
+      }
+    },
+    "TextAlignment": {
+      "doc": "Horizontal text alignment",
+      "underlying": "u8",
+      "values": {
+        "Left": 0,
+        "Center": 1,
+        "Right": 2
       }
     },
     "BlendMode": {

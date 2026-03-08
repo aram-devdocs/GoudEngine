@@ -65,6 +65,33 @@ impl GlyphAtlasCache {
             .ok_or_else(|| "internal error: cache entry missing after insertion".to_string())
     }
 
+    /// Mutable variant of [`get_or_create`](Self::get_or_create).
+    ///
+    /// Both methods share identical lookup-and-insert logic but Rust's borrow
+    /// checker requires separate implementations for shared (`&`) and exclusive
+    /// (`&mut`) access. The mutable variant is needed by
+    /// [`TextBatch::draw_text`](super::text_batch::TextBatch::draw_text) to
+    /// call [`GlyphAtlas::ensure_gpu_texture`], which takes `&mut self`.
+    pub fn get_or_create_mut(
+        &mut self,
+        font: &FontAsset,
+        font_handle: AssetHandle<FontAsset>,
+        size_px: f32,
+    ) -> Result<&mut GlyphAtlas, String> {
+        let size_key = size_px.round() as u32;
+        let key = (font_handle, size_key);
+
+        if let Entry::Vacant(e) = self.cache.entry(key) {
+            let parsed_font = font.parse()?;
+            let atlas = GlyphAtlas::generate(&parsed_font, size_px)?;
+            e.insert(atlas);
+        }
+
+        self.cache
+            .get_mut(&key)
+            .ok_or_else(|| "internal error: cache entry missing after insertion".to_string())
+    }
+
     /// Removes all cached atlases for the given font handle (all sizes).
     ///
     /// Any GPU texture handles owned by the removed atlases are queued

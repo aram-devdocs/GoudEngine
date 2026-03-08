@@ -158,6 +158,12 @@ class NetworkProtocol:
     UDP = 0
     WEB_SOCKET = 1
 
+class TextAlignment:
+    """Horizontal text alignment"""
+    LEFT = 0
+    CENTER = 1
+    RIGHT = 2
+
 class BlendMode:
     """How an animation layer blends with layers below it"""
     OVERRIDE = 0

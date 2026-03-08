@@ -171,6 +171,7 @@ pub mod rigidbody;
 pub mod skeleton2d;
 pub mod sprite;
 pub mod sprite_animator;
+pub mod text;
 pub mod transform;
 pub mod transform2d;
 
@@ -190,5 +191,6 @@ pub use skeleton2d::{
 };
 pub use sprite::Sprite;
 pub use sprite_animator::{AnimationClip, PlaybackMode, SpriteAnimator};
+pub use text::Text;
 pub use transform::Transform;
 pub use transform2d::{Mat3x3, Transform2D};

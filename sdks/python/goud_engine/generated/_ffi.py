@@ -180,6 +180,20 @@ class FfiSpriteAnimator(ctypes.Structure):
         ("frame_count", ctypes.c_uint32)
     ]
 
+class FfiText(ctypes.Structure):
+    _fields_ = [
+        ("font_handle", ctypes.c_uint64),
+        ("font_size", ctypes.c_float),
+        ("color_r", ctypes.c_float),
+        ("color_g", ctypes.c_float),
+        ("color_b", ctypes.c_float),
+        ("color_a", ctypes.c_float),
+        ("alignment", ctypes.c_uint8),
+        ("max_width", ctypes.c_float),
+        ("has_max_width", ctypes.c_bool),
+        ("line_spacing", ctypes.c_float)
+    ]
+
 # ── Function signatures ──
 
 def _setup():
@@ -592,6 +606,42 @@ def _setup():
     _lib.goud_sprite_builder_build.restype = FfiSprite
     _lib.goud_sprite_builder_free.argtypes = [ctypes.c_void_p]
     _lib.goud_sprite_builder_free.restype = None
+
+    # component_text
+    _lib.goud_text_new.argtypes = [ctypes.c_uint64]
+    _lib.goud_text_new.restype = FfiText
+    _lib.goud_text_default.argtypes = []
+    _lib.goud_text_default.restype = FfiText
+    _lib.goud_text_set_font_size.argtypes = [ctypes.POINTER(FfiText), ctypes.c_float]
+    _lib.goud_text_set_font_size.restype = None
+    _lib.goud_text_get_font_size.argtypes = [ctypes.POINTER(FfiText)]
+    _lib.goud_text_get_font_size.restype = ctypes.c_float
+    _lib.goud_text_set_color.argtypes = [ctypes.POINTER(FfiText), ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_text_set_color.restype = None
+    _lib.goud_text_get_color_r.argtypes = [ctypes.POINTER(FfiText)]
+    _lib.goud_text_get_color_r.restype = ctypes.c_float
+    _lib.goud_text_get_color_g.argtypes = [ctypes.POINTER(FfiText)]
+    _lib.goud_text_get_color_g.restype = ctypes.c_float
+    _lib.goud_text_get_color_b.argtypes = [ctypes.POINTER(FfiText)]
+    _lib.goud_text_get_color_b.restype = ctypes.c_float
+    _lib.goud_text_get_color_a.argtypes = [ctypes.POINTER(FfiText)]
+    _lib.goud_text_get_color_a.restype = ctypes.c_float
+    _lib.goud_text_set_alignment.argtypes = [ctypes.POINTER(FfiText), ctypes.c_uint8]
+    _lib.goud_text_set_alignment.restype = None
+    _lib.goud_text_get_alignment.argtypes = [ctypes.POINTER(FfiText)]
+    _lib.goud_text_get_alignment.restype = ctypes.c_uint8
+    _lib.goud_text_set_max_width.argtypes = [ctypes.POINTER(FfiText), ctypes.c_float]
+    _lib.goud_text_set_max_width.restype = None
+    _lib.goud_text_clear_max_width.argtypes = [ctypes.POINTER(FfiText)]
+    _lib.goud_text_clear_max_width.restype = None
+    _lib.goud_text_get_max_width.argtypes = [ctypes.POINTER(FfiText)]
+    _lib.goud_text_get_max_width.restype = ctypes.c_float
+    _lib.goud_text_has_max_width.argtypes = [ctypes.POINTER(FfiText)]
+    _lib.goud_text_has_max_width.restype = ctypes.c_bool
+    _lib.goud_text_set_line_spacing.argtypes = [ctypes.POINTER(FfiText), ctypes.c_float]
+    _lib.goud_text_set_line_spacing.restype = None
+    _lib.goud_text_get_line_spacing.argtypes = [ctypes.POINTER(FfiText)]
+    _lib.goud_text_get_line_spacing.restype = ctypes.c_float
 
     # color
     _lib.goud_color_white.argtypes = []
