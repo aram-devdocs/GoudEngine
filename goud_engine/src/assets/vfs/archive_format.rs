@@ -70,6 +70,8 @@ impl ArchiveWriter {
     /// Adds a file to the archive.
     ///
     /// The `path` should use forward slashes and be relative to the asset root.
+    /// Adding the same path twice is allowed but only the last entry will be
+    /// accessible via `ArchiveReader::read_entry`.
     pub fn add_file(&mut self, path: &str, data: &[u8]) {
         self.files.push((path.to_string(), data.to_vec()));
     }
@@ -169,6 +171,13 @@ impl ArchiveReader {
         }
 
         let toc = deserialize_toc(&data[8..toc_end])?;
+
+        if toc.version != ARCHIVE_VERSION {
+            return Err(AssetLoadError::decode_failed(format!(
+                "Archive version {} not supported; expected {}",
+                toc.version, ARCHIVE_VERSION
+            )));
+        }
 
         // Build index for O(1) lookups.
         let mut index = HashMap::with_capacity(toc.entries.len());

@@ -39,7 +39,18 @@ fn collect_files(
     let entries = std::fs::read_dir(dir).map_err(|e| AssetLoadError::io_error(dir, e))?;
 
     // Collect and sort for reproducibility
-    let mut sorted_entries: Vec<_> = entries.filter_map(|e| e.ok()).collect();
+    let mut sorted_entries: Vec<_> = entries
+        .filter_map(|e| match e {
+            Ok(entry) => Some(entry),
+            Err(err) => {
+                log::warn!(
+                    "Skipping unreadable directory entry in {}: {err}",
+                    dir.display()
+                );
+                None
+            }
+        })
+        .collect();
     sorted_entries.sort_by_key(|e| e.path());
 
     for entry in sorted_entries {

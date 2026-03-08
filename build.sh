@@ -10,6 +10,13 @@ if [[ "$1" == "--release" || "$1" == "--prod" ]]; then
     cargo build --release --workspace
     BUILD_MODE="release"
     TARGET_DIR="target/release"
+
+    # Package assets into a single archive for distribution.
+    # Games can also call goud_engine::assets::packager::package_directory() directly.
+    if [ -d "assets" ]; then
+        echo "Packaging assets..."
+        cargo run --release --example package_assets 2>/dev/null || echo "Note: Asset packager example not found, skipping asset bundling"
+    fi
 elif [[ "$1" == "--local" ]]; then
     echo "Building the project in local mode..."
     cargo build --workspace

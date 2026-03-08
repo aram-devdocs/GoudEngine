@@ -56,9 +56,12 @@ pub trait VirtualFs: Send + Sync {
     /// Returns `true` if a file exists at the given path.
     fn exists(&self, path: &str) -> bool;
 
-    /// Lists files in the given directory.
+    /// Lists files under the given directory prefix.
     ///
-    /// Returns relative paths from the filesystem root.
+    /// Returns relative paths from the filesystem root. Results are sorted
+    /// alphabetically. The depth of traversal is implementation-defined:
+    /// `OsFs` returns direct children only, while `ArchiveFs` returns all
+    /// entries matching the directory prefix (effectively recursive).
     ///
     /// # Errors
     ///

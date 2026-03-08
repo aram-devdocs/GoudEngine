@@ -1,6 +1,8 @@
 //! [`FallbackRegistry`]: stores default asset values for load-failure substitution.
 
-use crate::assets::loaders::{TextureAsset, TextureFormat};
+use crate::assets::loaders::{
+    AudioAsset, AudioFormat, MeshAsset, MeshVertex, SubMesh, TextureAsset, TextureFormat,
+};
 use crate::assets::{Asset, AssetId};
 use std::any::Any;
 use std::collections::HashMap;
@@ -58,6 +60,8 @@ impl FallbackRegistry {
     ///
     /// Currently registers:
     /// - [`TextureAsset`]: 1x1 magenta pixel (`[255, 0, 255, 255]`)
+    /// - [`AudioAsset`]: silent audio (empty data, 44100 Hz stereo)
+    /// - [`MeshAsset`]: unit triangle (3 vertices, facing +Z)
     pub fn with_defaults() -> Self {
         let mut registry = Self::new();
         registry.register_defaults();
@@ -114,7 +118,38 @@ impl FallbackRegistry {
             data: vec![255, 0, 255, 255],
             width: 1,
             height: 1,
-            format: TextureFormat::Png,
+            format: TextureFormat::Unknown,
+        });
+
+        // Silent audio -- 0 bytes, standard CD-quality settings.
+        self.register(AudioAsset::new(Vec::new(), 44100, 2, AudioFormat::Wav, 0.0));
+
+        // Unit triangle mesh -- a minimal visible placeholder.
+        self.register(MeshAsset {
+            vertices: vec![
+                MeshVertex {
+                    position: [0.0, 0.5, 0.0],
+                    normal: [0.0, 0.0, 1.0],
+                    uv: [0.5, 1.0],
+                },
+                MeshVertex {
+                    position: [-0.5, -0.5, 0.0],
+                    normal: [0.0, 0.0, 1.0],
+                    uv: [0.0, 0.0],
+                },
+                MeshVertex {
+                    position: [0.5, -0.5, 0.0],
+                    normal: [0.0, 0.0, 1.0],
+                    uv: [1.0, 0.0],
+                },
+            ],
+            indices: vec![0, 1, 2],
+            sub_meshes: vec![SubMesh {
+                name: "default".into(),
+                start_index: 0,
+                index_count: 3,
+                material_index: None,
+            }],
         });
     }
 }
