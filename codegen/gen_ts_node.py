@@ -42,6 +42,11 @@ IFACE_TYPES = {
     "FpsStats": "IFpsStats",
     "Contact": "IContact",
     "Entity[]": "IEntity[]",
+    "RenderCapabilities": "IRenderCapabilities",
+    "PhysicsCapabilities": "IPhysicsCapabilities",
+    "AudioCapabilities": "IAudioCapabilities",
+    "InputCapabilities": "IInputCapabilities",
+    "NetworkCapabilities": "INetworkCapabilities",
 }
 
 
@@ -101,6 +106,23 @@ def gen_interface():
     if schema["types"]["FpsStats"].get("doc"):
         lines.append(f"/** {schema['types']['FpsStats']['doc']} */")
     lines.append(f"export interface IFpsStats {{ {fps_str}; }}")
+
+    # Capability interfaces
+    for cap_name in ["RenderCapabilities", "PhysicsCapabilities", "AudioCapabilities", "InputCapabilities", "NetworkCapabilities"]:
+        cap_type = schema["types"][cap_name]
+        cap_fields = []
+        for f in cap_type["fields"]:
+            ft = f["type"]
+            if ft == "bool":
+                ts_ft = "boolean"
+            else:
+                ts_ft = "number"
+            cap_fields.append(f"{to_camel(f['name'])}: {ts_ft}")
+        cap_str = "; ".join(cap_fields)
+        iface_name = IFACE_TYPES[cap_name]
+        if cap_type.get("doc"):
+            lines.append(f"/** {cap_type['doc']} */")
+        lines.append(f"export interface {iface_name} {{ {cap_str}; }}")
     lines.append("")
 
     if schema["types"].get("Entity", {}).get("doc"):
@@ -359,11 +381,11 @@ def gen_node_wrapper():
         "  type GameConfig,",
         "} from '../../../index';",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton } from '../types/input.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "",
     ]
     if tool.get("doc"):
@@ -585,7 +607,7 @@ def gen_entry():
         f"// {HEADER_COMMENT}",
         "",
         f"export {{ GoudGame{ec_export}, Color, Vec2, Vec3, Key, MouseButton }} from './node/index.g.js';",
-        f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats }} from './types/engine.g.js';",
+        f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities }} from './types/engine.g.js';",
         "export type { Rect } from './types/math.g.js';",
         f"export {{ {', '.join(error_names)} }} from './errors.g.js';",
         "",
