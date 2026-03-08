@@ -341,6 +341,8 @@ NATIVE_KNOWN_METHODS = {
     "render3D",
     "isAliveBatch", "despawnBatch",
     "windowWidth", "windowHeight",
+    "getRenderCapabilities", "getPhysicsCapabilities", "getAudioCapabilities",
+    "getInputCapabilities", "getNetworkCapabilities",
 }
 
 
@@ -966,6 +968,16 @@ use goud_engine::ffi::renderer3d::{
     goud_renderer3d_set_object_rotation, goud_renderer3d_set_object_scale,
     goud_renderer3d_update_light,
 };
+use goud_engine::ffi::providers::{
+    goud_provider_render_capabilities, goud_provider_physics_capabilities,
+    goud_provider_audio_capabilities, goud_provider_input_capabilities,
+    goud_provider_network_capabilities,
+};
+use goud_engine::core::providers::types::{
+    RenderCapabilities, PhysicsCapabilities, AudioCapabilities,
+};
+use goud_engine::core::providers::input_types::InputCapabilities;
+use goud_engine::core::providers::network_types::NetworkCapabilities;
 use goud_engine::ffi::window::{
     goud_window_clear, goud_window_create, goud_window_destroy,
     goud_window_get_delta_time, goud_window_get_size, goud_window_poll_events,
@@ -1019,6 +1031,52 @@ pub struct NapiFpsStats {
     pub max_fps: f64,
     pub avg_fps: f64,
     pub frame_time_ms: f64,
+}
+
+// =============================================================================
+// Provider Capabilities napi objects
+// =============================================================================
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiRenderCapabilities {
+    pub max_texture_units: u32,
+    pub max_texture_size: u32,
+    pub supports_instancing: bool,
+    pub supports_compute: bool,
+    pub supports_msaa: bool,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiPhysicsCapabilities {
+    pub supports_continuous_collision: bool,
+    pub supports_joints: bool,
+    pub max_bodies: u32,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiAudioCapabilities {
+    pub supports_spatial: bool,
+    pub max_channels: u32,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiInputCapabilities {
+    pub supports_gamepad: bool,
+    pub supports_touch: bool,
+    pub max_gamepads: u32,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiNetworkCapabilities {
+    pub supports_hosting: bool,
+    pub max_connections: u32,
+    pub max_channels: u32,
+    pub max_message_size: u32,
 }
 
 // =============================================================================
@@ -1193,6 +1251,72 @@ impl GoudGame {
     #[napi]
     pub fn set_fps_overlay_corner(&self, corner: i32) {
         goud_debug_set_fps_overlay_corner(self.context_id, corner);
+    }
+
+    // =========================================================================
+    // Provider Capabilities
+    // =========================================================================
+
+    #[napi]
+    pub fn get_render_capabilities(&self) -> NapiRenderCapabilities {
+        let mut caps = RenderCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_render_capabilities(self.context_id, &mut caps) };
+        NapiRenderCapabilities {
+            max_texture_units: caps.max_texture_units,
+            max_texture_size: caps.max_texture_size,
+            supports_instancing: caps.supports_instancing,
+            supports_compute: caps.supports_compute,
+            supports_msaa: caps.supports_msaa,
+        }
+    }
+
+    #[napi]
+    pub fn get_physics_capabilities(&self) -> NapiPhysicsCapabilities {
+        let mut caps = PhysicsCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_physics_capabilities(self.context_id, &mut caps) };
+        NapiPhysicsCapabilities {
+            supports_continuous_collision: caps.supports_continuous_collision,
+            supports_joints: caps.supports_joints,
+            max_bodies: caps.max_bodies,
+        }
+    }
+
+    #[napi]
+    pub fn get_audio_capabilities(&self) -> NapiAudioCapabilities {
+        let mut caps = AudioCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_audio_capabilities(self.context_id, &mut caps) };
+        NapiAudioCapabilities {
+            supports_spatial: caps.supports_spatial,
+            max_channels: caps.max_channels,
+        }
+    }
+
+    #[napi]
+    pub fn get_input_capabilities(&self) -> NapiInputCapabilities {
+        let mut caps = InputCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_input_capabilities(self.context_id, &mut caps) };
+        NapiInputCapabilities {
+            supports_gamepad: caps.supports_gamepad,
+            supports_touch: caps.supports_touch,
+            max_gamepads: caps.max_gamepads,
+        }
+    }
+
+    #[napi]
+    pub fn get_network_capabilities(&self) -> NapiNetworkCapabilities {
+        let mut caps = NetworkCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_network_capabilities(self.context_id, &mut caps) };
+        NapiNetworkCapabilities {
+            supports_hosting: caps.supports_hosting,
+            max_connections: caps.max_connections,
+            max_channels: caps.max_channels as u32,
+            max_message_size: caps.max_message_size,
+        }
     }
 
     // =========================================================================

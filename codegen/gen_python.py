@@ -35,6 +35,10 @@ def _resolve_ffi_return(ret: str) -> str:
 
 def _resolve_ffi_param(ptype: str) -> str:
     """Map an FFI param type string to its ctypes argtype."""
+    # Handle ref types (out-pointers): "ref FfiRenderCapabilities" -> POINTER(FfiRenderCapabilities)
+    if ptype.startswith("ref "):
+        inner = ptype[4:]
+        return f"ctypes.POINTER({inner})"
     ct = CTYPES_MAP.get(ptype)
     if ct:
         return ct
@@ -90,6 +94,7 @@ def gen_ffi():
     # Map of ffi_type field names -> ctypes types for struct generation
     _FIELD_CTYPES = {
         "f32": "ctypes.c_float",
+        "u8": "ctypes.c_uint8",
         "u32": "ctypes.c_uint32",
         "u64": "ctypes.c_uint64",
         "bool": "ctypes.c_bool",
