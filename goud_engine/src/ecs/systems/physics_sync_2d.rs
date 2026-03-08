@@ -53,7 +53,8 @@ pub struct PhysicsHandleMap2D {
 /// System that steps the 2D physics simulation and writes positions back.
 ///
 /// Each frame this system:
-/// 1. Steps the physics provider by a fixed timestep (1/60 s).
+/// 1. Steps the physics provider using the `PhysicsWorld` accumulator when
+///    available, falling back to a single step at 1/60 s otherwise.
 /// 2. For each entity tracked in [`PhysicsHandleMap2D`], reads the body
 ///    position from the provider and updates the entity's `Transform2D`.
 ///

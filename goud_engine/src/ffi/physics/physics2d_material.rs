@@ -244,6 +244,12 @@ pub unsafe extern "C" fn goud_physics_get_collider_restitution(
 /// 0 on success, negative error code on failure.
 #[no_mangle]
 pub extern "C" fn goud_physics_set_timestep(ctx: GoudContextId, dt: f32) -> i32 {
+    if dt <= 0.0 || !dt.is_finite() {
+        set_last_error(GoudError::InvalidState(
+            "timestep must be positive and finite".to_string(),
+        ));
+        return GoudError::InvalidState(String::new()).error_code();
+    }
     with_provider_mut(ctx, |p| {
         p.set_timestep(dt);
         0
@@ -268,9 +274,7 @@ pub unsafe extern "C" fn goud_physics_get_timestep(ctx: GoudContextId, out_dt: *
 
     with_provider(ctx, |p| {
         // SAFETY: Null check above guarantees out_dt is valid.
-        unsafe {
-            *out_dt = p.timestep();
-        }
+        *out_dt = p.timestep();
         0
     })
 }
