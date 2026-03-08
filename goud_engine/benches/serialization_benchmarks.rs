@@ -147,34 +147,6 @@ fn bench_binary_encode(c: &mut Criterion) {
         b.iter(|| binary::encode(black_box(&v)).unwrap());
     });
 
-    // Batch encode 1000 Vec2s
-    group.bench_function("vec2_batch_1000", |b| {
-        let values: Vec<Vec2> = (0..1000)
-            .map(|i| Vec2::new(i as f32, i as f32 * 0.5))
-            .collect();
-        b.iter(|| {
-            for v in &values {
-                black_box(binary::encode(v).unwrap());
-            }
-        });
-    });
-
-    // Batch encode 1000 Transform2Ds
-    group.bench_function("transform2d_batch_1000", |b| {
-        let values: Vec<Transform2D> = (0..1000)
-            .map(|i| Transform2D {
-                position: Vec2::new(i as f32, i as f32),
-                rotation: i as f32 * 0.01,
-                scale: Vec2::new(1.0, 1.0),
-            })
-            .collect();
-        b.iter(|| {
-            for v in &values {
-                black_box(binary::encode(v).unwrap());
-            }
-        });
-    });
-
     group.finish();
 }
 
@@ -297,10 +269,7 @@ fn bench_json_vs_binary_size(c: &mut Criterion) {
                     let v = sample_transform2d();
                     b.iter(|| serde_json::to_vec(black_box(&v)).unwrap());
                 }
-                _ => {
-                    let v = sample_vec2();
-                    b.iter(|| serde_json::to_vec(black_box(&v)).unwrap());
-                }
+                _ => unreachable!(),
             },
         );
 
@@ -332,10 +301,7 @@ fn bench_json_vs_binary_size(c: &mut Criterion) {
                     let v = sample_transform2d();
                     b.iter(|| binary::encode(black_box(&v)).unwrap());
                 }
-                _ => {
-                    let v = sample_vec2();
-                    b.iter(|| binary::encode(black_box(&v)).unwrap());
-                }
+                _ => unreachable!(),
             },
         );
     }
