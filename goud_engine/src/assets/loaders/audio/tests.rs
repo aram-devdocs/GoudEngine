@@ -2,7 +2,12 @@
 
 use crate::assets::{asset::Asset, AssetLoader, AssetType, LoadContext};
 
-use super::{asset::AudioAsset, format::AudioFormat, loader::AudioLoader, settings::AudioSettings};
+use super::{
+    asset::{AudioAsset, AudioData},
+    format::AudioFormat,
+    loader::AudioLoader,
+    settings::AudioSettings,
+};
 
 /// Creates a valid WAV file in memory using hound.
 #[cfg(feature = "native")]
@@ -46,21 +51,29 @@ fn test_audio_asset_empty() {
 #[test]
 fn test_audio_asset_new() {
     let data = vec![1, 2, 3, 4];
-    let audio = AudioAsset::new(data.clone(), 48000, 1, AudioFormat::Mp3, 2.5);
+    let audio = AudioAsset::new(
+        AudioData::InMemory(data.clone()),
+        48000,
+        1,
+        AudioFormat::Mp3,
+        2.5,
+    );
 
-    assert_eq!(audio.data(), &data);
+    assert_eq!(audio.data(), Some(data.as_slice()));
     assert_eq!(audio.sample_rate(), 48000);
     assert_eq!(audio.channel_count(), 1);
     assert_eq!(audio.format(), AudioFormat::Mp3);
     assert_eq!(audio.size_bytes(), 4);
     assert!(!audio.is_empty());
+    assert!(!audio.is_streaming());
+    assert!(audio.file_path().is_none());
     assert_eq!(audio.duration_secs(), 2.5);
 }
 
 #[test]
 fn test_audio_asset_is_mono() {
-    let mono = AudioAsset::new(vec![], 44100, 1, AudioFormat::Wav, 0.0);
-    let stereo = AudioAsset::new(vec![], 44100, 2, AudioFormat::Wav, 0.0);
+    let mono = AudioAsset::new(AudioData::InMemory(vec![]), 44100, 1, AudioFormat::Wav, 0.0);
+    let stereo = AudioAsset::new(AudioData::InMemory(vec![]), 44100, 2, AudioFormat::Wav, 0.0);
 
     assert!(mono.is_mono());
     assert!(!mono.is_stereo());
@@ -70,7 +83,13 @@ fn test_audio_asset_is_mono() {
 
 #[test]
 fn test_audio_asset_duration_secs() {
-    let audio = AudioAsset::new(vec![1, 2, 3, 4], 44100, 2, AudioFormat::Wav, 1.5);
+    let audio = AudioAsset::new(
+        AudioData::InMemory(vec![1, 2, 3, 4]),
+        44100,
+        2,
+        AudioFormat::Wav,
+        1.5,
+    );
     assert_eq!(audio.duration_secs(), 1.5);
 }
 
@@ -82,7 +101,13 @@ fn test_audio_asset_bits_per_sample() {
 
 #[test]
 fn test_audio_asset_clone() {
-    let audio1 = AudioAsset::new(vec![1, 2, 3], 48000, 1, AudioFormat::Ogg, 0.5);
+    let audio1 = AudioAsset::new(
+        AudioData::InMemory(vec![1, 2, 3]),
+        48000,
+        1,
+        AudioFormat::Ogg,
+        0.5,
+    );
     let audio2 = audio1.clone();
 
     assert_eq!(audio1, audio2);
@@ -107,20 +132,16 @@ fn test_audio_asset_trait() {
 // ============================================================================
 
 #[test]
-fn test_audio_format_extension() {
+fn test_audio_format_extension_and_name() {
     assert_eq!(AudioFormat::Wav.extension(), "wav");
-    assert_eq!(AudioFormat::Mp3.extension(), "mp3");
-    assert_eq!(AudioFormat::Ogg.extension(), "ogg");
-    assert_eq!(AudioFormat::Flac.extension(), "flac");
-    assert_eq!(AudioFormat::Unknown.extension(), "");
-}
-
-#[test]
-fn test_audio_format_name() {
     assert_eq!(AudioFormat::Wav.name(), "WAV");
+    assert_eq!(AudioFormat::Mp3.extension(), "mp3");
     assert_eq!(AudioFormat::Mp3.name(), "MP3");
+    assert_eq!(AudioFormat::Ogg.extension(), "ogg");
     assert_eq!(AudioFormat::Ogg.name(), "OGG Vorbis");
+    assert_eq!(AudioFormat::Flac.extension(), "flac");
     assert_eq!(AudioFormat::Flac.name(), "FLAC");
+    assert_eq!(AudioFormat::Unknown.extension(), "");
     assert_eq!(AudioFormat::Unknown.name(), "Unknown");
 }
 
@@ -135,35 +156,14 @@ fn test_audio_format_from_extension() {
 }
 
 #[test]
-fn test_audio_format_default() {
+fn test_audio_format_traits() {
     assert_eq!(AudioFormat::default(), AudioFormat::Wav);
-}
-
-#[test]
-fn test_audio_format_display() {
     assert_eq!(format!("{}", AudioFormat::Wav), "WAV");
-    assert_eq!(format!("{}", AudioFormat::Mp3), "MP3");
     assert_eq!(format!("{}", AudioFormat::Ogg), "OGG Vorbis");
-}
-
-#[test]
-fn test_audio_format_clone() {
-    let format1 = AudioFormat::Mp3;
-    let format2 = format1;
-    assert_eq!(format1, format2);
-}
-
-#[test]
-fn test_audio_format_eq() {
-    assert_eq!(AudioFormat::Wav, AudioFormat::Wav);
+    let f = AudioFormat::Mp3;
+    assert_eq!(f, f);
     assert_ne!(AudioFormat::Wav, AudioFormat::Mp3);
-}
-
-#[test]
-fn test_audio_format_debug() {
-    let format = AudioFormat::Ogg;
-    let debug_str = format!("{:?}", format);
-    assert!(debug_str.contains("Ogg"));
+    assert!(format!("{:?}", AudioFormat::Ogg).contains("Ogg"));
 }
 
 // ============================================================================
@@ -176,6 +176,8 @@ fn test_audio_settings_default() {
     assert!(settings.preload);
     assert_eq!(settings.target_sample_rate, 0);
     assert_eq!(settings.target_channel_count, 0);
+    assert_eq!(settings.streaming_threshold, 1_048_576);
+    assert!(!settings.force_streaming);
 }
 
 #[test]
@@ -184,27 +186,24 @@ fn test_audio_settings_custom() {
         preload: false,
         target_sample_rate: 22050,
         target_channel_count: 1,
+        streaming_threshold: 512_000,
+        force_streaming: true,
     };
 
     assert!(!settings.preload);
     assert_eq!(settings.target_sample_rate, 22050);
     assert_eq!(settings.target_channel_count, 1);
+    assert_eq!(settings.streaming_threshold, 512_000);
+    assert!(settings.force_streaming);
 }
 
 #[test]
-fn test_audio_settings_clone() {
-    let settings1 = AudioSettings::default();
-    let settings2 = settings1.clone();
-
-    assert_eq!(settings1.preload, settings2.preload);
-    assert_eq!(settings1.target_sample_rate, settings2.target_sample_rate);
-}
-
-#[test]
-fn test_audio_settings_debug() {
-    let settings = AudioSettings::default();
-    let debug_str = format!("{:?}", settings);
-    assert!(debug_str.contains("AudioSettings"));
+fn test_audio_settings_traits() {
+    let s1 = AudioSettings::default();
+    let s2 = s1.clone();
+    assert_eq!(s1.preload, s2.preload);
+    assert_eq!(s1.target_sample_rate, s2.target_sample_rate);
+    assert!(format!("{:?}", s1).contains("AudioSettings"));
 }
 
 // ============================================================================
@@ -229,6 +228,7 @@ fn test_audio_loader_with_settings() {
         preload: false,
         target_sample_rate: 22050,
         target_channel_count: 1,
+        ..AudioSettings::default()
     };
 
     let loader = AudioLoader::with_settings(settings);
@@ -255,7 +255,7 @@ fn test_audio_loader_load_wav() {
 
     let audio = result.unwrap();
     assert_eq!(audio.format(), AudioFormat::Wav);
-    assert_eq!(audio.data(), &bytes);
+    assert_eq!(audio.data(), Some(bytes.as_slice()));
     assert_eq!(audio.sample_rate(), 44100);
     assert_eq!(audio.channel_count(), 2);
 }
@@ -280,7 +280,7 @@ fn test_audio_loader_shared_decode_path() {
     assert_eq!(audio_wav.sample_rate(), audio_ogg.sample_rate());
     assert_eq!(audio_wav.channel_count(), audio_ogg.channel_count());
     assert_eq!(audio_wav.duration_secs(), audio_ogg.duration_secs());
-    assert_eq!(audio_wav.data(), audio_ogg.data());
+    assert_eq!(audio_wav.data().unwrap(), audio_ogg.data().unwrap());
 
     // Only the format enum (from extension) differs.
     assert_eq!(audio_wav.format(), AudioFormat::Wav);
@@ -372,18 +372,117 @@ fn test_audio_loader_duration_calculated() {
 }
 
 #[test]
-fn test_audio_loader_clone() {
-    let loader1 = AudioLoader::new();
-    let loader2 = loader1.clone();
+fn test_audio_loader_traits() {
+    let l1 = AudioLoader::new();
+    let l2 = l1.clone();
+    assert_eq!(l1.settings.preload, l2.settings.preload);
+    assert!(format!("{:?}", l1).contains("AudioLoader"));
+}
 
-    assert_eq!(loader1.settings.preload, loader2.settings.preload);
+// ============================================================================
+// AudioData / Streaming Tests
+// ============================================================================
+
+#[test]
+fn test_audio_data_in_memory_variant() {
+    let data = AudioData::InMemory(vec![10, 20, 30]);
+    let asset = AudioAsset::new(data, 44100, 2, AudioFormat::Wav, 1.0);
+
+    assert!(!asset.is_streaming());
+    assert!(asset.file_path().is_none());
+    assert_eq!(asset.data(), Some([10u8, 20, 30].as_slice()));
+    assert_eq!(asset.size_bytes(), 3);
+    assert!(!asset.is_empty());
 }
 
 #[test]
-fn test_audio_loader_debug() {
-    let loader = AudioLoader::new();
-    let debug_str = format!("{:?}", loader);
-    assert!(debug_str.contains("AudioLoader"));
+fn test_audio_data_streaming_variant() {
+    let data = AudioData::Streaming {
+        path: std::path::PathBuf::from("music/track.ogg"),
+        size_bytes: 5_000_000,
+    };
+    let asset = AudioAsset::new(data, 44100, 2, AudioFormat::Ogg, 180.0);
+
+    assert!(asset.is_streaming());
+    assert_eq!(
+        asset.file_path(),
+        Some(std::path::Path::new("music/track.ogg"))
+    );
+    assert!(asset.data().is_none());
+    assert_eq!(asset.size_bytes(), 5_000_000);
+    assert!(!asset.is_empty());
+}
+
+#[test]
+fn test_audio_data_streaming_empty() {
+    let data = AudioData::Streaming {
+        path: std::path::PathBuf::from("empty.wav"),
+        size_bytes: 0,
+    };
+    let asset = AudioAsset::new(data, 44100, 2, AudioFormat::Wav, 0.0);
+
+    assert!(asset.is_empty());
+    assert_eq!(asset.size_bytes(), 0);
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn test_audio_loader_force_streaming() {
+    let settings = AudioSettings {
+        force_streaming: true,
+        ..AudioSettings::default()
+    };
+    let loader = AudioLoader::with_settings(settings.clone());
+    let bytes = create_test_wav_bytes(44100, 1, 100);
+    let mut context = LoadContext::new("sfx/click.wav".into());
+
+    let result = loader.load(&bytes, &settings, &mut context);
+    assert!(result.is_ok());
+
+    let audio = result.unwrap();
+    assert!(audio.is_streaming());
+    assert_eq!(
+        audio.file_path(),
+        Some(std::path::Path::new("sfx/click.wav"))
+    );
+    assert_eq!(audio.size_bytes(), bytes.len());
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn test_audio_loader_threshold_triggers_streaming() {
+    let settings = AudioSettings {
+        streaming_threshold: 10, // Very low threshold
+        ..AudioSettings::default()
+    };
+    let loader = AudioLoader::with_settings(settings.clone());
+    let bytes = create_test_wav_bytes(44100, 1, 100); // >10 bytes
+    let mut context = LoadContext::new("music/bg.wav".into());
+
+    let result = loader.load(&bytes, &settings, &mut context);
+    assert!(result.is_ok());
+
+    let audio = result.unwrap();
+    assert!(audio.is_streaming());
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn test_audio_loader_below_threshold_stays_in_memory() {
+    let settings = AudioSettings {
+        streaming_threshold: 100_000_000, // Very high threshold
+        ..AudioSettings::default()
+    };
+    let loader = AudioLoader::with_settings(settings.clone());
+    let bytes = create_test_wav_bytes(44100, 1, 100);
+    let mut context = LoadContext::new("sfx/small.wav".into());
+
+    let result = loader.load(&bytes, &settings, &mut context);
+    assert!(result.is_ok());
+
+    let audio = result.unwrap();
+    assert!(!audio.is_streaming());
+    assert_eq!(audio.data(), Some(bytes.as_slice()));
 }
 
 // ============================================================================

@@ -3,6 +3,7 @@
 //! FFI functions for creating and destroying windowed contexts:
 //! [`goud_window_create`] and [`goud_window_destroy`].
 
+use crate::assets::AudioManager;
 use crate::core::error::{set_last_error, GoudError};
 use crate::ecs::InputManager;
 use crate::ffi::context::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
@@ -115,6 +116,9 @@ pub unsafe extern "C" fn goud_window_create(
 
         if let Some(context) = registry.get_mut(context_id) {
             context.world_mut().insert_resource(InputManager::new());
+            if let Ok(am) = AudioManager::new() {
+                context.world_mut().insert_resource(am);
+            }
         }
     }
 

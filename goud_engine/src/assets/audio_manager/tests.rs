@@ -9,12 +9,9 @@ use crate::assets::audio_manager::{
 use crate::assets::loaders::AudioAsset;
 use crate::core::error::GoudError;
 use crate::core::math::Vec2;
+use crate::ecs::components::AudioChannel;
 
-// ============================================================================
-// AudioManager Tests
-// NOTE: Tests calling AudioManager::new() are #[ignore]d because they require
-// audio hardware (rodio crashes with STATUS_ACCESS_VIOLATION on Windows CI)
-// ============================================================================
+// AudioManager tests requiring audio hardware are #[ignore]d (CI has no device).
 
 #[test]
 #[ignore] // requires audio hardware
@@ -151,10 +148,6 @@ fn test_audio_manager_allocate_player_id() {
     }
 }
 
-// ============================================================================
-// Thread Safety Tests
-// ============================================================================
-
 #[test]
 fn test_audio_manager_is_send() {
     fn assert_send<T: Send>() {}
@@ -166,10 +159,6 @@ fn test_audio_manager_is_sync() {
     fn assert_sync<T: Sync>() {}
     assert_sync::<AudioManager>();
 }
-
-// ============================================================================
-// Audio Playback Tests (with real audio data)
-// ============================================================================
 
 #[test]
 #[ignore] // requires audio hardware
@@ -186,7 +175,13 @@ fn test_audio_manager_play_looped() {
 fn test_audio_manager_play_with_settings() {
     if let Ok(mut manager) = AudioManager::new() {
         let empty_asset = AudioAsset::empty();
-        let result = manager.play_with_settings(&empty_asset, 0.5, 1.0, false);
+        let result = manager.play_with_settings(
+            &empty_asset,
+            0.5,
+            1.0,
+            false,
+            crate::ecs::components::AudioChannel::SFX,
+        );
         assert!(result.is_err());
     }
 }
@@ -254,102 +249,60 @@ fn test_spatial_audio_update_volume_nonexistent() {
 }
 
 #[test]
-fn test_compute_attenuation_linear_zero_distance() {
-    let attenuation = compute_attenuation_linear(0.0, 100.0, 1.0);
-    assert!((attenuation - 1.0).abs() < 0.001);
+fn test_compute_attenuation_linear() {
+    // (distance, max_distance, rolloff, expected)
+    let cases: &[(f32, f32, f32, f32)] = &[
+        (0.0, 100.0, 1.0, 1.0),   // zero distance
+        (100.0, 100.0, 1.0, 0.0), // max distance
+        (50.0, 100.0, 1.0, 0.5),  // half distance
+        (150.0, 100.0, 1.0, 0.0), // beyond max
+        (50.0, 100.0, 2.0, 0.75), // quadratic rolloff: 1 - (0.5)^2
+        (100.0, 0.0, 1.0, 1.0),   // zero max distance
+    ];
+    for &(dist, max, rolloff, expected) in cases {
+        let att = compute_attenuation_linear(dist, max, rolloff);
+        assert!(
+            (att - expected).abs() < 0.001,
+            "linear({dist}, {max}, {rolloff}): expected {expected}, got {att}"
+        );
+    }
 }
 
 #[test]
-fn test_compute_attenuation_linear_max_distance() {
-    let attenuation = compute_attenuation_linear(100.0, 100.0, 1.0);
-    assert!((attenuation - 0.0).abs() < 0.001);
+fn test_compute_attenuation_inverse() {
+    // (distance, max_distance, rolloff, expected, tolerance)
+    let cases: &[(f32, f32, f32, f32, f32)] = &[
+        (0.0, 100.0, 1.0, 1.0, 0.001),   // zero distance
+        (100.0, 100.0, 1.0, 0.0, 0.001), // max distance
+        (10.0, 100.0, 1.0, 0.1, 0.01),   // 1/(1+1*(10-1)) = 0.1
+        (150.0, 100.0, 1.0, 0.0, 0.001), // beyond max
+    ];
+    for &(dist, max, rolloff, expected, tol) in cases {
+        let att = compute_attenuation_inverse(dist, max, rolloff);
+        assert!(
+            (att - expected).abs() < tol,
+            "inverse({dist}, {max}, {rolloff}): expected {expected}, got {att}"
+        );
+    }
 }
 
 #[test]
-fn test_compute_attenuation_linear_half_distance() {
-    let attenuation = compute_attenuation_linear(50.0, 100.0, 1.0);
-    assert!((attenuation - 0.5).abs() < 0.001);
-}
-
-#[test]
-fn test_compute_attenuation_linear_beyond_max() {
-    let attenuation = compute_attenuation_linear(150.0, 100.0, 1.0);
-    assert!((attenuation - 0.0).abs() < 0.001);
-}
-
-#[test]
-fn test_compute_attenuation_linear_quadratic_rolloff() {
-    let attenuation = compute_attenuation_linear(50.0, 100.0, 2.0);
-    // At half distance: 1 - (0.5)^2 = 1 - 0.25 = 0.75
-    assert!((attenuation - 0.75).abs() < 0.001);
-}
-
-#[test]
-fn test_compute_attenuation_linear_zero_max_distance() {
-    let attenuation = compute_attenuation_linear(100.0, 0.0, 1.0);
-    assert!((attenuation - 1.0).abs() < 0.001);
-}
-
-#[test]
-fn test_compute_attenuation_inverse_zero_distance() {
-    let attenuation = compute_attenuation_inverse(0.0, 100.0, 1.0);
-    assert!((attenuation - 1.0).abs() < 0.001);
-}
-
-#[test]
-fn test_compute_attenuation_inverse_max_distance() {
-    let attenuation = compute_attenuation_inverse(100.0, 100.0, 1.0);
-    assert!((attenuation - 0.0).abs() < 0.001);
-}
-
-#[test]
-fn test_compute_attenuation_inverse_realistic() {
-    let attenuation = compute_attenuation_inverse(10.0, 100.0, 1.0);
-    // Formula: 1 / (1 + rolloff * (distance - ref_distance))
-    // = 1 / (1 + 1 * (10 - 1)) = 1 / (1 + 9) = 1/10 = 0.1
-    assert!(
-        (attenuation - 0.1).abs() < 0.01,
-        "Expected ~0.1, got {}",
-        attenuation
-    );
-}
-
-#[test]
-fn test_compute_attenuation_inverse_beyond_max() {
-    let attenuation = compute_attenuation_inverse(150.0, 100.0, 1.0);
-    assert!((attenuation - 0.0).abs() < 0.001);
-}
-
-#[test]
-fn test_compute_attenuation_exponential_zero_distance() {
-    let attenuation = compute_attenuation_exponential(0.0, 100.0, 1.0);
-    assert!((attenuation - 1.0).abs() < 0.001);
-}
-
-#[test]
-fn test_compute_attenuation_exponential_max_distance() {
-    let attenuation = compute_attenuation_exponential(100.0, 100.0, 1.0);
-    assert!((attenuation - 0.0).abs() < 0.001);
-}
-
-#[test]
-fn test_compute_attenuation_exponential_half_distance() {
-    // With rolloff=1.0, at half distance: (1 - 0.5)^1 = 0.5
-    let attenuation = compute_attenuation_exponential(50.0, 100.0, 1.0);
-    assert!((attenuation - 0.5).abs() < 0.001);
-}
-
-#[test]
-fn test_compute_attenuation_exponential_dramatic_falloff() {
-    // With rolloff=3.0, falloff is dramatic: (1 - 0.5)^3 = 0.125
-    let attenuation = compute_attenuation_exponential(50.0, 100.0, 3.0);
-    assert!((attenuation - 0.125).abs() < 0.001);
-}
-
-#[test]
-fn test_compute_attenuation_exponential_beyond_max() {
-    let attenuation = compute_attenuation_exponential(150.0, 100.0, 1.0);
-    assert!((attenuation - 0.0).abs() < 0.001);
+fn test_compute_attenuation_exponential() {
+    // (distance, max_distance, rolloff, expected)
+    let cases: &[(f32, f32, f32, f32)] = &[
+        (0.0, 100.0, 1.0, 1.0),    // zero distance
+        (100.0, 100.0, 1.0, 0.0),  // max distance
+        (50.0, 100.0, 1.0, 0.5),   // half distance: (1-0.5)^1
+        (50.0, 100.0, 3.0, 0.125), // dramatic falloff: (1-0.5)^3
+        (150.0, 100.0, 1.0, 0.0),  // beyond max
+    ];
+    for &(dist, max, rolloff, expected) in cases {
+        let att = compute_attenuation_exponential(dist, max, rolloff);
+        assert!(
+            (att - expected).abs() < 0.001,
+            "exponential({dist}, {max}, {rolloff}): expected {expected}, got {att}"
+        );
+    }
 }
 
 #[test]
@@ -369,41 +322,159 @@ fn test_attenuation_comparison() {
 }
 
 #[test]
-fn test_spatial_audio_attenuation_at_source() {
-    let source_pos = Vec2::new(100.0, 50.0);
-    let listener_pos = Vec2::new(100.0, 50.0);
-    let distance = (source_pos - listener_pos).length();
+fn test_spatial_audio_attenuation_positions() {
+    // (source, listener, max_distance, expected, tolerance)
+    let cases: &[(Vec2, Vec2, f32, f32, f32)] = &[
+        (
+            Vec2::new(100.0, 50.0),
+            Vec2::new(100.0, 50.0),
+            200.0,
+            1.0,
+            0.001,
+        ), // at source
+        (
+            Vec2::new(100.0, 50.0),
+            Vec2::new(-100.0, 50.0),
+            200.0,
+            0.0,
+            0.001,
+        ), // at max
+        (
+            Vec2::new(100.0, 100.0),
+            Vec2::new(0.0, 0.0),
+            200.0,
+            0.293,
+            0.01,
+        ), // diagonal
+    ];
+    for &(source, listener, max_dist, expected, tol) in cases {
+        let distance = (source - listener).length();
+        let att = compute_attenuation_linear(distance, max_dist, 1.0);
+        assert!(
+            (att - expected).abs() < tol,
+            "spatial at dist {distance}: expected {expected}, got {att}"
+        );
+    }
+}
 
-    let attenuation = compute_attenuation_linear(distance, 200.0, 1.0);
-    assert!(
-        (attenuation - 1.0).abs() < 0.001,
-        "Attenuation at source should be 1.0"
-    );
+// ============================================================================
+// Pure Math Tests (no audio hardware needed)
+// ============================================================================
+
+/// Validates the effective_volume composition formula:
+/// effective = global * channel * individual.
+/// Covers identity, muted global/channel, and various combinations.
+#[test]
+fn test_effective_volume_math() {
+    let cases: &[(f32, f32, f32, f32)] = &[
+        (1.0, 1.0, 1.0, 1.0),  // identity
+        (0.8, 0.5, 0.5, 0.2),  // mixed composition
+        (0.0, 1.0, 1.0, 0.0),  // muted global
+        (1.0, 0.0, 0.75, 0.0), // muted channel
+        (1.0, 1.0, 0.5, 0.5),
+        (0.5, 1.0, 1.0, 0.5),
+        (0.5, 0.5, 0.5, 0.125),
+        (0.25, 0.4, 1.0, 0.1),
+    ];
+    for &(global, channel, individual, expected) in cases {
+        let effective = global * channel * individual;
+        assert!(
+            (effective - expected).abs() < 0.001,
+            "global={global}, channel={channel}, individual={individual}: \
+             expected {expected}, got {effective}"
+        );
+    }
+}
+
+// ============================================================================
+// Per-channel Volume Tests
+// ============================================================================
+
+#[test]
+#[ignore] // requires audio hardware
+fn test_channel_volume_defaults() {
+    if let Ok(manager) = AudioManager::new() {
+        assert_eq!(manager.get_channel_volume(AudioChannel::Music), 1.0);
+        assert_eq!(manager.get_channel_volume(AudioChannel::SFX), 1.0);
+        assert_eq!(manager.get_channel_volume(AudioChannel::Voice), 1.0);
+        assert_eq!(manager.get_channel_volume(AudioChannel::Ambience), 1.0);
+        assert_eq!(manager.get_channel_volume(AudioChannel::UI), 1.0);
+    }
 }
 
 #[test]
-fn test_spatial_audio_attenuation_at_max() {
-    let source_pos = Vec2::new(100.0, 50.0);
-    let listener_pos = Vec2::new(-100.0, 50.0); // 200 units away
-    let distance = (source_pos - listener_pos).length();
-
-    let attenuation = compute_attenuation_linear(distance, 200.0, 1.0);
-    assert!(
-        (attenuation - 0.0).abs() < 0.001,
-        "Attenuation at max distance should be 0.0"
-    );
+#[ignore] // requires audio hardware
+fn test_set_channel_volume() {
+    if let Ok(mut manager) = AudioManager::new() {
+        manager.set_channel_volume(AudioChannel::Music, 0.5);
+        assert_eq!(manager.get_channel_volume(AudioChannel::Music), 0.5);
+        // Other channels unchanged
+        assert_eq!(manager.get_channel_volume(AudioChannel::SFX), 1.0);
+    }
 }
 
 #[test]
-fn test_spatial_audio_attenuation_diagonal() {
-    let source_pos = Vec2::new(100.0, 100.0);
-    let listener_pos = Vec2::new(0.0, 0.0);
-    let distance = (source_pos - listener_pos).length(); // sqrt(100^2 + 100^2) = ~141.42
+#[ignore] // requires audio hardware
+fn test_channel_volume_clamping() {
+    if let Ok(mut manager) = AudioManager::new() {
+        manager.set_channel_volume(AudioChannel::Music, 1.5);
+        assert_eq!(manager.get_channel_volume(AudioChannel::Music), 1.0);
 
-    let attenuation = compute_attenuation_linear(distance, 200.0, 1.0);
-    // Expected: 1 - 141.42/200 = 1 - 0.707 = 0.293
-    assert!(
-        (attenuation - 0.293).abs() < 0.01,
-        "Attenuation for diagonal distance"
-    );
+        manager.set_channel_volume(AudioChannel::Music, -0.5);
+        assert_eq!(manager.get_channel_volume(AudioChannel::Music), 0.0);
+    }
+}
+
+#[test]
+#[ignore] // requires audio hardware
+fn test_effective_volume_composition() {
+    if let Ok(mut manager) = AudioManager::new() {
+        // global=0.8, channel=0.5, individual=0.5 => 0.2
+        manager.set_global_volume(0.8);
+        manager.set_channel_volume(AudioChannel::Music, 0.5);
+        let effective = manager.effective_volume(AudioChannel::Music, 0.5);
+        assert!((effective - 0.2).abs() < 0.001);
+    }
+}
+
+#[test]
+#[ignore] // requires audio hardware
+fn test_custom_channel_volume() {
+    if let Ok(mut manager) = AudioManager::new() {
+        let custom = AudioChannel::Custom(10);
+        // Defaults to 1.0 for unknown channels
+        assert_eq!(manager.get_channel_volume(custom), 1.0);
+
+        manager.set_channel_volume(custom, 0.3);
+        assert_eq!(manager.get_channel_volume(custom), 0.3);
+    }
+}
+
+#[test]
+#[ignore] // requires audio hardware
+fn test_play_on_channel_empty_asset() {
+    if let Ok(mut manager) = AudioManager::new() {
+        let empty_asset = AudioAsset::empty();
+        let result = manager.play_on_channel(&empty_asset, AudioChannel::Music);
+        assert!(result.is_err());
+    }
+}
+
+// ============================================================================
+// AudioChannel::from_id Tests
+// ============================================================================
+
+#[test]
+fn test_audio_channel_from_id() {
+    assert_eq!(AudioChannel::from_id(0), AudioChannel::Music);
+    assert_eq!(AudioChannel::from_id(1), AudioChannel::SFX);
+    assert_eq!(AudioChannel::from_id(2), AudioChannel::Voice);
+    assert_eq!(AudioChannel::from_id(3), AudioChannel::Ambience);
+    assert_eq!(AudioChannel::from_id(4), AudioChannel::UI);
+    assert_eq!(AudioChannel::from_id(5), AudioChannel::Custom(5));
+    assert_eq!(AudioChannel::from_id(255), AudioChannel::Custom(255));
+    // Roundtrip: from_id(id).id() == id
+    for id in 0..=10 {
+        assert_eq!(AudioChannel::from_id(id).id(), id);
+    }
 }

@@ -1813,6 +1813,53 @@
         }
       }
     },
+    "Audio": {
+      "handle": "GoudContextId",
+      "methods": {
+        "play": {
+          "ffi": "goud_audio_play"
+        },
+        "playOnChannel": {
+          "ffi": "goud_audio_play_on_channel"
+        },
+        "playWithSettings": {
+          "ffi": "goud_audio_play_with_settings"
+        },
+        "stop": {
+          "ffi": "goud_audio_stop"
+        },
+        "pause": {
+          "ffi": "goud_audio_pause"
+        },
+        "resume": {
+          "ffi": "goud_audio_resume"
+        },
+        "stopAll": {
+          "ffi": "goud_audio_stop_all"
+        },
+        "setGlobalVolume": {
+          "ffi": "goud_audio_set_global_volume"
+        },
+        "getGlobalVolume": {
+          "ffi": "goud_audio_get_global_volume"
+        },
+        "setChannelVolume": {
+          "ffi": "goud_audio_set_channel_volume"
+        },
+        "getChannelVolume": {
+          "ffi": "goud_audio_get_channel_volume"
+        },
+        "isPlaying": {
+          "ffi": "goud_audio_is_playing"
+        },
+        "activeCount": {
+          "ffi": "goud_audio_active_count"
+        },
+        "cleanupFinished": {
+          "ffi": "goud_audio_cleanup_finished"
+        }
+      }
+    },
     "UiManager": {
       "handle": "UiManagerHandle",
       "handle_type": "opaque",
@@ -7498,6 +7545,114 @@
         ],
         "returns": "i32",
         "unsafe": true
+      }
+    },
+    "audio": {
+      "goud_audio_play": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "asset_data", "type": "*const u8" },
+          { "name": "asset_len", "type": "usize" }
+        ],
+        "returns": "i64",
+        "unsafe": true
+      },
+      "goud_audio_play_on_channel": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "asset_data", "type": "*const u8" },
+          { "name": "asset_len", "type": "usize" },
+          { "name": "channel", "type": "u8" }
+        ],
+        "returns": "i64",
+        "unsafe": true
+      },
+      "goud_audio_play_with_settings": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "asset_data", "type": "*const u8" },
+          { "name": "asset_len", "type": "usize" },
+          { "name": "volume", "type": "f32" },
+          { "name": "speed", "type": "f32" },
+          { "name": "looping", "type": "bool" },
+          { "name": "channel", "type": "u8" }
+        ],
+        "returns": "i64",
+        "unsafe": true
+      },
+      "goud_audio_stop": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "player_id", "type": "u64" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_pause": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "player_id", "type": "u64" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_resume": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "player_id", "type": "u64" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_stop_all": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_set_global_volume": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "volume", "type": "f32" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_get_global_volume": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" }
+        ],
+        "returns": "f32"
+      },
+      "goud_audio_set_channel_volume": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "channel", "type": "u8" },
+          { "name": "volume", "type": "f32" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_get_channel_volume": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "channel", "type": "u8" }
+        ],
+        "returns": "f32"
+      },
+      "goud_audio_is_playing": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "player_id", "type": "u64" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_active_count": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_cleanup_finished": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" }
+        ],
+        "returns": "i32"
       }
     },
     "ui_manager": {

@@ -3399,7 +3399,138 @@
       ],
       "return_type": "()",
       "is_unsafe": false
+    },
+    "goud_audio_active_count": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_cleanup_finished": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_get_channel_volume": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "channel: u8"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_audio_get_global_volume": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_audio_is_playing": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_pause": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_play": {
+      "source_file": "ffi/audio/playback.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "asset_data: *const u8",
+        "asset_len: usize"
+      ],
+      "return_type": "i64",
+      "is_unsafe": true
+    },
+    "goud_audio_play_on_channel": {
+      "source_file": "ffi/audio/playback.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "asset_data: *const u8",
+        "asset_len: usize",
+        "channel: u8"
+      ],
+      "return_type": "i64",
+      "is_unsafe": true
+    },
+    "goud_audio_play_with_settings": {
+      "source_file": "ffi/audio/playback.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "asset_data: *const u8",
+        "asset_len: usize",
+        "volume: f32",
+        "speed: f32",
+        "looping: bool",
+        "channel: u8"
+      ],
+      "return_type": "i64",
+      "is_unsafe": true
+    },
+    "goud_audio_resume": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_set_channel_volume": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "channel: u8",
+        "volume: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_set_global_volume": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "volume: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_stop": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_stop_all": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
     }
   },
-  "total_count": 350
+  "total_count": 364
 }

@@ -45,6 +45,31 @@ pub enum AudioChannel {
 }
 
 impl AudioChannel {
+    /// Constructs an `AudioChannel` from a numeric ID.
+    ///
+    /// Maps well-known IDs (0-4) to their named variants, and all others
+    /// to `Custom(id)`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goud_engine::ecs::components::AudioChannel;
+    ///
+    /// assert_eq!(AudioChannel::from_id(0), AudioChannel::Music);
+    /// assert_eq!(AudioChannel::from_id(1), AudioChannel::SFX);
+    /// assert_eq!(AudioChannel::from_id(7), AudioChannel::Custom(7));
+    /// ```
+    pub fn from_id(id: u8) -> Self {
+        match id {
+            0 => AudioChannel::Music,
+            1 => AudioChannel::SFX,
+            2 => AudioChannel::Voice,
+            3 => AudioChannel::Ambience,
+            4 => AudioChannel::UI,
+            other => AudioChannel::Custom(other),
+        }
+    }
+
     /// Returns the numeric channel ID (0-31).
     ///
     /// # Examples

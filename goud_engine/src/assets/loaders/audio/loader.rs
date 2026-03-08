@@ -2,12 +2,18 @@
 
 use crate::assets::{asset::Asset, AssetLoadError, AssetLoader, LoadContext};
 
-use super::{asset::AudioAsset, format::AudioFormat, settings::AudioSettings};
+use super::{
+    asset::{AudioAsset, AudioData},
+    format::AudioFormat,
+    settings::AudioSettings,
+};
 
 #[cfg(feature = "native")]
 use rodio::{Decoder, Source};
 #[cfg(feature = "native")]
 use std::io::Cursor;
+#[cfg(feature = "native")]
+use std::path::PathBuf;
 
 /// Audio asset loader with rodio-based validation and metadata extraction.
 ///
@@ -84,13 +90,19 @@ impl AssetLoader for AudioLoader {
 
         #[cfg(feature = "native")]
         {
-            self.load_native(bytes, settings, format)
+            self.load_native(bytes, settings, format, context)
         }
 
         #[cfg(not(feature = "native"))]
         {
-            let _ = settings;
-            Ok(AudioAsset::new(bytes.to_vec(), 44100, 2, format, 0.0))
+            let _ = (settings, context);
+            Ok(AudioAsset::new(
+                AudioData::InMemory(bytes.to_vec()),
+                44100,
+                2,
+                format,
+                0.0,
+            ))
         }
     }
 }
@@ -100,8 +112,9 @@ impl AudioLoader {
     fn load_native(
         &self,
         bytes: &[u8],
-        _settings: &AudioSettings,
+        settings: &AudioSettings,
         format: AudioFormat,
+        context: &LoadContext,
     ) -> Result<AudioAsset, AssetLoadError> {
         // Validate by attempting to decode
         let cursor = Cursor::new(bytes.to_vec());
@@ -130,8 +143,21 @@ impl AudioLoader {
             }
         };
 
+        // Decide storage strategy: stream large files from disk
+        let should_stream =
+            settings.force_streaming || bytes.len() as u64 >= settings.streaming_threshold;
+
+        let audio_data = if should_stream {
+            AudioData::Streaming {
+                path: PathBuf::from(context.path_str()),
+                size_bytes: bytes.len() as u64,
+            }
+        } else {
+            AudioData::InMemory(bytes.to_vec())
+        };
+
         Ok(AudioAsset::new(
-            bytes.to_vec(),
+            audio_data,
             detected_sample_rate,
             detected_channels,
             format,

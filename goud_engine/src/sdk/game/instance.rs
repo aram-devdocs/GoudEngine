@@ -93,6 +93,10 @@ pub struct GoudGame {
     /// GPU resources for immediate-mode sprite/quad rendering.
     #[cfg(feature = "native")]
     pub(crate) immediate_state: Option<crate::sdk::rendering::ImmediateRenderState>,
+
+    /// Centralized audio playback manager.
+    #[cfg(feature = "native")]
+    pub(crate) audio_manager: Option<crate::assets::AudioManager>,
 }
 
 /// Initializes the logger, diagnostic mode from environment, and optionally
@@ -140,6 +144,8 @@ impl GoudGame {
             renderer_3d: None,
             #[cfg(feature = "native")]
             immediate_state: None,
+            #[cfg(feature = "native")]
+            audio_manager: None,
         })
     }
 
@@ -176,6 +182,8 @@ impl GoudGame {
         let mut debug_overlay = DebugOverlay::new(config.fps_update_interval);
         debug_overlay.set_enabled(config.show_fps_overlay);
 
+        let audio_manager = crate::assets::AudioManager::new().ok();
+
         Ok(Self {
             scene_manager: SceneManager::new(),
             config,
@@ -192,6 +200,7 @@ impl GoudGame {
             asset_server: None,
             renderer_3d: None,
             immediate_state: None,
+            audio_manager,
         })
     }
 
@@ -383,6 +392,12 @@ impl GoudGame {
                 }
             }
 
+            // Clean up finished audio players
+            #[cfg(feature = "native")]
+            if let Some(am) = &mut self.audio_manager {
+                am.cleanup_finished();
+            }
+
             // Advance any in-progress scene transition.
             if let Some(complete) = self.scene_manager.tick_transition(frame_time) {
                 self.last_transition_complete = Some(complete);
@@ -393,6 +408,7 @@ impl GoudGame {
 
             // Render UI manager after updates (before buffer swap).
             self.ui_manager.render();
+
 
             // Safety: Limit iterations in tests/examples without actual window
             if self.context.frame_count() > 10000 {
@@ -414,6 +430,12 @@ impl GoudGame {
             if let Some(world) = self.scene_manager.get_scene_mut(scene_id) {
                 update(&mut self.context, world);
             }
+        }
+
+        // Clean up finished audio players
+        #[cfg(feature = "native")]
+        if let Some(am) = &mut self.audio_manager {
+            am.cleanup_finished();
         }
 
         // Advance any in-progress scene transition.
@@ -485,6 +507,20 @@ impl GoudGame {
     #[inline]
     pub fn providers(&self) -> &ProviderRegistry {
         &self.providers
+    }
+
+    /// Returns a reference to the audio manager, if available.
+    #[cfg(feature = "native")]
+    #[inline]
+    pub fn audio_manager(&self) -> Option<&crate::assets::AudioManager> {
+        self.audio_manager.as_ref()
+    }
+
+    /// Returns a mutable reference to the audio manager, if available.
+    #[cfg(feature = "native")]
+    #[inline]
+    pub fn audio_manager_mut(&mut self) -> Option<&mut crate::assets::AudioManager> {
+        self.audio_manager.as_mut()
     }
 
     /// Returns a reference to the UI manager.
