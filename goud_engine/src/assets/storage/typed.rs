@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 use super::entry::AssetEntry;
+use super::ref_count::RefCountMap;
 
 // =============================================================================
 // TypedAssetStorage
@@ -12,15 +13,8 @@ use super::entry::AssetEntry;
 
 /// Storage container for assets of a single type.
 ///
-/// `TypedAssetStorage` manages a collection of assets with:
-/// - Generation-based handle allocation
-/// - Path-to-handle mapping for deduplication
-/// - State tracking for each asset
-///
-/// # Thread Safety
-///
-/// `TypedAssetStorage` is `Send + Sync` when the asset type `A` is `Send + Sync`,
-/// which is guaranteed by the `Asset` trait bounds.
+/// Manages assets with generation-based handles, path deduplication,
+/// state tracking, and external reference counting for deferred unloading.
 ///
 /// # Example
 ///
@@ -31,19 +25,9 @@ use super::entry::AssetEntry;
 /// impl Asset for Texture {}
 ///
 /// let mut storage: TypedAssetStorage<Texture> = TypedAssetStorage::new();
-///
-/// // Insert an asset
 /// let handle = storage.insert(Texture { width: 256 });
 /// assert!(storage.is_alive(&handle));
-///
-/// // Access the asset
-/// let tex = storage.get(&handle);
-/// assert_eq!(tex.unwrap().width, 256);
-///
-/// // Path-based lookup
-/// storage.set_path(&handle, AssetPath::new("textures/player.png"));
-/// let found = storage.get_handle_by_path("textures/player.png");
-/// assert!(found.is_some());
+/// assert_eq!(storage.get(&handle).unwrap().width, 256);
 /// ```
 pub struct TypedAssetStorage<A: Asset> {
     /// Handle allocator for this asset type.
@@ -54,6 +38,9 @@ pub struct TypedAssetStorage<A: Asset> {
 
     /// Mapping from path strings to handles for deduplication.
     path_index: HashMap<String, AssetHandle<A>>,
+
+    /// External reference counts keyed by (index, generation).
+    ref_counts: RefCountMap,
 }
 
 impl<A: Asset> TypedAssetStorage<A> {
@@ -64,6 +51,7 @@ impl<A: Asset> TypedAssetStorage<A> {
             allocator: AssetHandleAllocator::new(),
             entries: Vec::new(),
             path_index: HashMap::new(),
+            ref_counts: RefCountMap::new(),
         }
     }
 
@@ -74,25 +62,11 @@ impl<A: Asset> TypedAssetStorage<A> {
             allocator: AssetHandleAllocator::with_capacity(capacity),
             entries: Vec::with_capacity(capacity),
             path_index: HashMap::new(),
+            ref_counts: RefCountMap::new(),
         }
     }
 
-    /// Inserts an asset and returns its handle.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::assets::{Asset, TypedAssetStorage};
-    ///
-    /// struct Texture { width: u32 }
-    /// impl Asset for Texture {}
-    ///
-    /// let mut storage: TypedAssetStorage<Texture> = TypedAssetStorage::new();
-    /// let handle = storage.insert(Texture { width: 256 });
-    ///
-    /// assert!(handle.is_valid());
-    /// assert!(storage.is_alive(&handle));
-    /// ```
+    /// Inserts an asset and returns its handle (ref count starts at 1).
     pub fn insert(&mut self, asset: A) -> AssetHandle<A> {
         let handle = self.allocator.allocate();
         let index = handle.index() as usize;
@@ -103,6 +77,7 @@ impl<A: Asset> TypedAssetStorage<A> {
         }
 
         self.entries[index] = Some(AssetEntry::loaded(asset));
+        self.ref_counts.insert(handle.index(), handle.generation());
         handle
     }
 
@@ -132,6 +107,7 @@ impl<A: Asset> TypedAssetStorage<A> {
 
         self.entries[index] = Some(AssetEntry::with_path(asset, path.into_owned()));
         self.path_index.insert(path_string, handle);
+        self.ref_counts.insert(handle.index(), handle.generation());
 
         handle
     }
@@ -139,6 +115,7 @@ impl<A: Asset> TypedAssetStorage<A> {
     /// Reserves a handle for later use (e.g., async loading).
     ///
     /// Creates an empty entry that can be populated later via [`Self::set_loaded`].
+    /// The handle starts with a reference count of 1.
     pub fn reserve(&mut self) -> AssetHandle<A> {
         let handle = self.allocator.allocate();
         let index = handle.index() as usize;
@@ -148,6 +125,7 @@ impl<A: Asset> TypedAssetStorage<A> {
         }
 
         self.entries[index] = Some(AssetEntry::empty());
+        self.ref_counts.insert(handle.index(), handle.generation());
         handle
     }
 
@@ -174,6 +152,7 @@ impl<A: Asset> TypedAssetStorage<A> {
         entry.set_path(path.into_owned());
         self.entries[index] = Some(entry);
         self.path_index.insert(path_string, handle);
+        self.ref_counts.insert(handle.index(), handle.generation());
 
         handle
     }
@@ -195,25 +174,38 @@ impl<A: Asset> TypedAssetStorage<A> {
         }
     }
 
-    /// Removes an asset and returns it if present.
+    /// Removes an asset unconditionally, ignoring reference counts.
     ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::assets::{Asset, TypedAssetStorage};
-    ///
-    /// struct Texture { width: u32 }
-    /// impl Asset for Texture {}
-    ///
-    /// let mut storage: TypedAssetStorage<Texture> = TypedAssetStorage::new();
-    /// let handle = storage.insert(Texture { width: 256 });
-    ///
-    /// let removed = storage.remove(&handle);
-    /// assert!(removed.is_some());
-    /// assert_eq!(removed.unwrap().width, 256);
-    /// assert!(!storage.is_alive(&handle));
-    /// ```
+    /// For ref-count-aware removal, use [`Self::try_remove`].
     pub fn remove(&mut self, handle: &AssetHandle<A>) -> Option<A> {
+        self.ref_counts
+            .remove(handle.index(), handle.generation());
+        self.remove_inner(handle)
+    }
+
+    /// Removes an asset only if its reference count is zero.
+    ///
+    /// Returns `None` if the handle is invalid, stale, or still referenced.
+    pub fn try_remove(&mut self, handle: &AssetHandle<A>) -> Option<A> {
+        if !self.allocator.is_alive(*handle) {
+            return None;
+        }
+        let count = self.ref_counts.get(handle.index(), handle.generation());
+        if count > 0 {
+            return None;
+        }
+        self.ref_counts
+            .remove(handle.index(), handle.generation());
+        self.remove_inner(handle)
+    }
+
+    /// Unconditional removal (alias used by `unload`).
+    pub fn force_remove(&mut self, handle: &AssetHandle<A>) -> Option<A> {
+        self.remove(handle)
+    }
+
+    /// Shared removal logic.
+    fn remove_inner(&mut self, handle: &AssetHandle<A>) -> Option<A> {
         if !self.allocator.is_alive(*handle) {
             return None;
         }
@@ -232,6 +224,36 @@ impl<A: Asset> TypedAssetStorage<A> {
         self.allocator.deallocate(*handle);
 
         entry.and_then(|mut e| e.take_asset())
+    }
+
+    /// Increments the reference count for a handle.
+    ///
+    /// Returns the new count, or `None` if the handle is invalid.
+    pub fn retain(&mut self, handle: &AssetHandle<A>) -> Option<u32> {
+        if !self.allocator.is_alive(*handle) {
+            return None;
+        }
+        self.ref_counts
+            .increment(handle.index(), handle.generation())
+    }
+
+    /// Decrements the reference count for a handle.
+    ///
+    /// Returns the new count, or `None` if the handle is invalid.
+    pub fn release(&mut self, handle: &AssetHandle<A>) -> Option<u32> {
+        if !self.allocator.is_alive(*handle) {
+            return None;
+        }
+        self.ref_counts
+            .decrement(handle.index(), handle.generation())
+    }
+
+    /// Returns the current reference count for a handle.
+    pub fn ref_count(&self, handle: &AssetHandle<A>) -> u32 {
+        if !self.allocator.is_alive(*handle) {
+            return 0;
+        }
+        self.ref_counts.get(handle.index(), handle.generation())
     }
 
     /// Gets a reference to an asset.
@@ -393,6 +415,7 @@ impl<A: Asset> TypedAssetStorage<A> {
         self.allocator.clear();
         self.entries.clear();
         self.path_index.clear();
+        self.ref_counts.clear();
     }
 
     /// Returns an iterator over all valid (handle, asset) pairs.

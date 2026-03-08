@@ -89,6 +89,10 @@ pub struct AssetServer {
     /// Receiver for background load results (native-only).
     #[cfg(feature = "native")]
     pub(super) load_receiver: std::sync::mpsc::Receiver<LoadResult>,
+
+    /// Queue of assets whose ref count reached zero, awaiting deferred removal.
+    /// Each entry is `(AssetId, index, generation)`.
+    pub(super) pending_unloads: Vec<(AssetId, u32, u32)>,
 }
 
 impl AssetServer {
@@ -136,6 +140,7 @@ impl AssetServer {
             load_sender,
             #[cfg(feature = "native")]
             load_receiver,
+            pending_unloads: Vec::new(),
         }
     }
 
