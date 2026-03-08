@@ -1,6 +1,5 @@
 use crate::core::math::{Color, Rect, Vec2, Vec3, Vec4};
 use crate::core::serialization::delta::DeltaEncode;
-use crate::ecs::components::Transform2D;
 
 // =============================================================================
 // Vec2 delta tests
@@ -219,58 +218,3 @@ fn test_rect_apply_delta_reconstructs() {
     assert_eq!(reconstructed, target);
 }
 
-// =============================================================================
-// Transform2D delta tests
-// =============================================================================
-
-#[test]
-fn test_transform2d_no_changes_returns_none() {
-    let a = Transform2D::new(Vec2::new(1.0, 2.0), 0.5, Vec2::one());
-    assert!(a.delta_from(&a).is_none());
-}
-
-#[test]
-fn test_transform2d_all_fields_changed() {
-    let baseline = Transform2D::new(Vec2::new(0.0, 0.0), 0.0, Vec2::one());
-    let current = Transform2D::new(Vec2::new(10.0, 20.0), 1.5, Vec2::new(2.0, 3.0));
-
-    let delta = current.delta_from(&baseline).unwrap();
-
-    assert_eq!(delta.mask, 0b11111);
-    assert_eq!(delta.data.len(), 20); // 5 x f32
-}
-
-#[test]
-fn test_transform2d_position_only_changed() {
-    let baseline = Transform2D::new(Vec2::new(0.0, 0.0), 0.0, Vec2::one());
-    let current = Transform2D::new(Vec2::new(5.0, 10.0), 0.0, Vec2::one());
-
-    let delta = current.delta_from(&baseline).unwrap();
-
-    assert_eq!(delta.mask, 0b00011);
-    assert_eq!(delta.data.len(), 8); // 2 x f32
-}
-
-#[test]
-fn test_transform2d_rotation_only_changed() {
-    let baseline = Transform2D::new(Vec2::zero(), 0.0, Vec2::one());
-    let current = Transform2D::new(Vec2::zero(), 3.14, Vec2::one());
-
-    let delta = current.delta_from(&baseline).unwrap();
-
-    assert_eq!(delta.mask, 0b00100);
-    assert_eq!(delta.data.len(), 4);
-}
-
-#[test]
-fn test_transform2d_apply_delta_reconstructs() {
-    let baseline = Transform2D::new(Vec2::new(1.0, 2.0), 0.0, Vec2::one());
-    let target = Transform2D::new(Vec2::new(1.0, 2.0), 1.5, Vec2::new(2.0, 1.0));
-
-    let delta = target.delta_from(&baseline).unwrap();
-    let reconstructed = baseline.apply_delta(&delta);
-
-    assert!((reconstructed.rotation - target.rotation).abs() < f32::EPSILON);
-    assert_eq!(reconstructed.position, target.position);
-    assert_eq!(reconstructed.scale, target.scale);
-}

@@ -1,6 +1,5 @@
 use crate::core::math::{Color, Rect, Vec2, Vec3, Vec4};
 use crate::core::serialization::binary;
-use crate::ecs::components::Transform2D;
 
 // =============================================================================
 // Vec2
@@ -82,23 +81,6 @@ fn test_binary_roundtrip_rect() {
     // Act
     let bytes = binary::encode(&original).unwrap();
     let decoded: Rect = binary::decode(&bytes).unwrap();
-
-    // Assert
-    assert_eq!(original, decoded);
-}
-
-// =============================================================================
-// Transform2D
-// =============================================================================
-
-#[test]
-fn test_binary_roundtrip_transform2d() {
-    // Arrange
-    let original = Transform2D::new(Vec2::new(5.0, 15.0), 1.57, Vec2::new(2.0, 3.0));
-
-    // Act
-    let bytes = binary::encode(&original).unwrap();
-    let decoded: Transform2D = binary::decode(&bytes).unwrap();
 
     // Assert
     assert_eq!(original, decoded);

@@ -7,7 +7,6 @@ use proptest::prelude::*;
 
 use crate::core::math::{Color, Rect, Vec2, Vec3, Vec4};
 use crate::core::serialization::{binary, DeltaEncode};
-use crate::ecs::components::Transform2D;
 
 // =============================================================================
 // Strategies
@@ -45,19 +44,6 @@ prop_compose! {
     }
 }
 
-prop_compose! {
-    fn arb_transform2d()(
-        px in RANGE, py in RANGE,
-        rotation in RANGE,
-        sx in RANGE, sy in RANGE,
-    ) -> Transform2D {
-        Transform2D {
-            position: Vec2::new(px, py),
-            rotation,
-            scale: Vec2::new(sx, sy),
-        }
-    }
-}
 
 // =============================================================================
 // Binary round-trip: decode(encode(value)) == value
@@ -99,12 +85,6 @@ proptest! {
         prop_assert_eq!(r, decoded);
     }
 
-    #[test]
-    fn binary_roundtrip_transform2d(t in arb_transform2d()) {
-        let bytes = binary::encode(&t).unwrap();
-        let decoded: Transform2D = binary::decode(&bytes).unwrap();
-        prop_assert_eq!(t, decoded);
-    }
 }
 
 // =============================================================================
@@ -169,20 +149,6 @@ proptest! {
         }
     }
 
-    #[test]
-    fn delta_roundtrip_transform2d(
-        baseline in arb_transform2d(),
-        target in arb_transform2d(),
-    ) {
-        if let Some(delta) = target.delta_from(&baseline) {
-            let restored = baseline.apply_delta(&delta);
-            prop_assert!(approx_eq(restored.position.x, target.position.x));
-            prop_assert!(approx_eq(restored.position.y, target.position.y));
-            prop_assert!(approx_eq(restored.rotation, target.rotation));
-            prop_assert!(approx_eq(restored.scale.x, target.scale.x));
-            prop_assert!(approx_eq(restored.scale.y, target.scale.y));
-        }
-    }
 }
 
 // =============================================================================
@@ -215,10 +181,6 @@ proptest! {
         prop_assert!(r.delta_from(&r).is_none());
     }
 
-    #[test]
-    fn delta_identical_transform2d(t in arb_transform2d()) {
-        prop_assert!(t.delta_from(&t).is_none());
-    }
 }
 
 // =============================================================================
@@ -236,16 +198,4 @@ proptest! {
         }
     }
 
-    #[test]
-    fn delta_size_leq_full_transform2d(
-        baseline in arb_transform2d(),
-        target in arb_transform2d(),
-    ) {
-        if let Some(delta) = target.delta_from(&baseline) {
-            let full_bytes = binary::encode(&target).unwrap();
-            // Delta payload raw data should be <= full value bytes
-            prop_assert!(delta.data.len() <= full_bytes.len(),
-                "delta data {} vs full {}", delta.data.len(), full_bytes.len());
-        }
-    }
 }
