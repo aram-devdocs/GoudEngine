@@ -30,6 +30,12 @@ def _resolve_ffi_return(ret: str) -> str:
     ct = CTYPES_MAP.get(ret)
     if ct:
         return ct
+    # Check if it's an FFI enum type (e.g., FfiTransitionType -> TransitionType)
+    if ret.startswith("Ffi") and ret[3:] in schema.get("enums", {}):
+        enum_name = ret[3:]
+        enum_def = schema["enums"][enum_name]
+        underlying = enum_def.get("underlying", "i32")
+        return CTYPES_MAP.get(underlying, "ctypes.c_int32")
     return "ctypes.c_uint64"
 
 
@@ -38,6 +44,12 @@ def _resolve_ffi_param(ptype: str) -> str:
     ct = CTYPES_MAP.get(ptype)
     if ct:
         return ct
+    # Check if it's an FFI enum type (e.g., FfiTransitionType -> TransitionType)
+    if ptype.startswith("Ffi") and ptype[3:] in schema.get("enums", {}):
+        enum_name = ptype[3:]
+        enum_def = schema["enums"][enum_name]
+        underlying = enum_def.get("underlying", "i32")
+        return CTYPES_MAP.get(underlying, "ctypes.c_int32")
     return "ctypes.c_uint64"
 
 
