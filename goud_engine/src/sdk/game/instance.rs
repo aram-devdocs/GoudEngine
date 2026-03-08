@@ -56,7 +56,8 @@ pub struct GoudGame {
 
     /// Stores the result of the most recent transition completion, if any.
     /// Use [`take_transition_complete`](Self::take_transition_complete) to consume it.
-    pub(crate) last_transition_complete: Option<crate::context_registry::scene::transition::TransitionComplete>,
+    pub(crate) last_transition_complete:
+        Option<crate::context_registry::scene::transition::TransitionComplete>,
 
     // =========================================================================
     // Native-only fields (require windowing + OpenGL)
