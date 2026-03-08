@@ -406,6 +406,63 @@ mod tests {
     }
 
     #[test]
+    fn test_layout_produces_correct_glyph_count() {
+        let atlas = test_atlas();
+        let config = TextLayoutConfig::default();
+        let result = layout_text("Hello", &atlas, 16.0, &config);
+
+        assert_eq!(
+            result.glyphs.len(),
+            5,
+            "layout of 'Hello' should produce exactly 5 LayoutGlyphs"
+        );
+    }
+
+    #[test]
+    fn test_glyph_positions_advance_left_to_right() {
+        let atlas = test_atlas();
+        let config = TextLayoutConfig::default();
+        let result = layout_text("AB", &atlas, 16.0, &config);
+
+        assert_eq!(result.glyphs.len(), 2);
+        assert!(
+            result.glyphs[1].x > result.glyphs[0].x,
+            "glyph[1].x ({}) should be > glyph[0].x ({})",
+            result.glyphs[1].x,
+            result.glyphs[0].x
+        );
+    }
+
+    #[test]
+    fn test_layout_results_are_independent_per_call() {
+        let atlas = test_atlas();
+        let config = TextLayoutConfig::default();
+
+        let result_a = layout_text("Hi", &atlas, 16.0, &config);
+        let result_b = layout_text("World", &atlas, 16.0, &config);
+
+        assert_eq!(
+            result_a.glyphs.len(),
+            2,
+            "first layout_text('Hi') should produce 2 glyphs"
+        );
+        assert_eq!(
+            result_b.glyphs.len(),
+            5,
+            "second layout_text('World') should produce 5 glyphs"
+        );
+
+        // Verify results are truly independent: re-layout the first string
+        // and confirm the result is unchanged.
+        let result_a_again = layout_text("Hi", &atlas, 16.0, &config);
+        assert_eq!(
+            result_a.glyphs.len(),
+            result_a_again.glyphs.len(),
+            "repeated layout should produce identical glyph counts"
+        );
+    }
+
+    #[test]
     fn test_layout_line_spacing() {
         let atlas = test_atlas();
         let font_size = 16.0;
