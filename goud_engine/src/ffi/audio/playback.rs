@@ -50,7 +50,7 @@ pub unsafe extern "C" fn goud_audio_play(
 
     // SAFETY: Caller guarantees asset_data points to asset_len valid bytes.
     let bytes = std::slice::from_raw_parts(asset_data, asset_len).to_vec();
-    let asset = AudioAsset::new(AudioData::InMemory(bytes), 44100, 2, AudioFormat::Wav, 0.0);
+    let asset = AudioAsset::new(AudioData::InMemory(bytes), 0, 0, AudioFormat::Unknown, 0.0);
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
@@ -128,7 +128,7 @@ pub unsafe extern "C" fn goud_audio_play_on_channel(
 
     // SAFETY: Caller guarantees asset_data points to asset_len valid bytes.
     let bytes = std::slice::from_raw_parts(asset_data, asset_len).to_vec();
-    let asset = AudioAsset::new(AudioData::InMemory(bytes), 44100, 2, AudioFormat::Wav, 0.0);
+    let asset = AudioAsset::new(AudioData::InMemory(bytes), 0, 0, AudioFormat::Unknown, 0.0);
     let ch = AudioChannel::from_id(channel);
 
     let mut registry = match get_context_registry().lock() {
@@ -212,7 +212,7 @@ pub unsafe extern "C" fn goud_audio_play_with_settings(
 
     // SAFETY: Caller guarantees asset_data points to asset_len valid bytes.
     let bytes = std::slice::from_raw_parts(asset_data, asset_len).to_vec();
-    let asset = AudioAsset::new(AudioData::InMemory(bytes), 44100, 2, AudioFormat::Wav, 0.0);
+    let asset = AudioAsset::new(AudioData::InMemory(bytes), 0, 0, AudioFormat::Unknown, 0.0);
     let ch = AudioChannel::from_id(channel);
 
     let mut registry = match get_context_registry().lock() {

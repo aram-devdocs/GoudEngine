@@ -16,7 +16,10 @@ impl AudioManager {
     /// assert_eq!(audio_manager.global_volume(), 1.0);
     /// ```
     pub fn global_volume(&self) -> f32 {
-        *self.global_volume.lock().unwrap()
+        *self
+            .global_volume
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
     /// Sets the global volume (0.0 to 1.0).
@@ -39,11 +42,20 @@ impl AudioManager {
     /// ```
     pub fn set_global_volume(&mut self, volume: f32) {
         let clamped = volume.clamp(0.0, 1.0);
-        *self.global_volume.lock().unwrap() = clamped;
+        *self
+            .global_volume
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = clamped;
 
         // Reapply composed volume to all active players
-        let channel_volumes = self.channel_volumes.lock().unwrap();
-        let players = self.players.lock().unwrap();
+        let channel_volumes = self
+            .channel_volumes
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let players = self
+            .players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         for entry in players.values() {
             let ch_vol = channel_volumes.get(&entry.channel).copied().unwrap_or(1.0);
             entry
@@ -66,7 +78,10 @@ impl AudioManager {
     ///
     /// `true` if the sink was found and volume set, `false` otherwise.
     pub fn set_sink_volume(&self, sink_id: u64, volume: f32) -> bool {
-        let mut players = self.players.lock().unwrap();
+        let mut players = self
+            .players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if let Some(entry) = players.get_mut(&sink_id) {
             let clamped = volume.clamp(0.0, 1.0);
             entry.individual_volume = clamped;
@@ -89,7 +104,10 @@ impl AudioManager {
     ///
     /// `true` if the sink was found and speed set, `false` otherwise.
     pub fn set_sink_speed(&self, sink_id: u64, speed: f32) -> bool {
-        let players = self.players.lock().unwrap();
+        let players = self
+            .players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if let Some(entry) = players.get(&sink_id) {
             let clamped = speed.clamp(0.1, 10.0);
             entry.player.set_speed(clamped);
@@ -110,7 +128,10 @@ impl AudioManager {
     /// `true` if the sink exists but has no more audio to play,
     /// `false` if the sink does not exist or is still playing.
     pub fn is_finished(&self, sink_id: u64) -> bool {
-        let players = self.players.lock().unwrap();
+        let players = self
+            .players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if let Some(entry) = players.get(&sink_id) {
             entry.player.empty()
         } else {
@@ -120,7 +141,10 @@ impl AudioManager {
 
     /// Allocates a new unique player ID.
     pub(super) fn allocate_player_id(&self) -> u64 {
-        let mut next_id = self.next_player_id.lock().unwrap();
+        let mut next_id = self
+            .next_player_id
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let id = *next_id;
         *next_id = next_id.wrapping_add(1);
         id
@@ -143,12 +167,15 @@ impl AudioManager {
         let clamped = volume.clamp(0.0, 1.0);
         self.channel_volumes
             .lock()
-            .unwrap()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
             .insert(channel, clamped);
 
         // Reapply volume to all players on this channel
         let global = self.global_volume();
-        let players = self.players.lock().unwrap();
+        let players = self
+            .players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         for entry in players.values() {
             if entry.channel == channel {
                 entry
@@ -164,7 +191,7 @@ impl AudioManager {
     pub fn get_channel_volume(&self, channel: AudioChannel) -> f32 {
         self.channel_volumes
             .lock()
-            .unwrap()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
             .get(&channel)
             .copied()
             .unwrap_or(1.0)

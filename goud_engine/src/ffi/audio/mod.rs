@@ -9,8 +9,8 @@
 //! - `playback`: play, play_on_channel, play_with_settings
 //! - `controls`: stop, pause, resume, stop_all, volume, queries
 
-mod controls;
-mod playback;
+pub mod controls;
+pub mod playback;
 
 /// Error sentinel for functions returning `i64` player IDs.
 const ERR_AUDIO: i64 = -1;

@@ -87,14 +87,17 @@ impl AudioManager {
         }
 
         let player_id = self.allocate_player_id();
-        self.players.lock().unwrap().insert(
-            player_id,
-            PlayerEntry {
-                player,
-                channel,
-                individual_volume: 1.0,
-            },
-        );
+        self.players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(
+                player_id,
+                PlayerEntry {
+                    player,
+                    channel,
+                    individual_volume: 1.0,
+                },
+            );
 
         Ok(player_id)
     }
@@ -132,14 +135,17 @@ impl AudioManager {
         }
 
         let player_id = self.allocate_player_id();
-        self.players.lock().unwrap().insert(
-            player_id,
-            PlayerEntry {
-                player,
-                channel,
-                individual_volume: 1.0,
-            },
-        );
+        self.players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(
+                player_id,
+                PlayerEntry {
+                    player,
+                    channel,
+                    individual_volume: 1.0,
+                },
+            );
 
         Ok(player_id)
     }
@@ -197,14 +203,17 @@ impl AudioManager {
         }
 
         let player_id = self.allocate_player_id();
-        self.players.lock().unwrap().insert(
-            player_id,
-            PlayerEntry {
-                player,
-                channel,
-                individual_volume: clamped_volume,
-            },
-        );
+        self.players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(
+                player_id,
+                PlayerEntry {
+                    player,
+                    channel,
+                    individual_volume: clamped_volume,
+                },
+            );
 
         Ok(player_id)
     }
@@ -219,7 +228,10 @@ impl AudioManager {
     ///
     /// `true` if the sink was found and paused, `false` otherwise.
     pub fn pause(&self, sink_id: u64) -> bool {
-        let players = self.players.lock().unwrap();
+        let players = self
+            .players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if let Some(entry) = players.get(&sink_id) {
             entry.player.pause();
             true
@@ -238,7 +250,10 @@ impl AudioManager {
     ///
     /// `true` if the sink was found and resumed, `false` otherwise.
     pub fn resume(&self, sink_id: u64) -> bool {
-        let players = self.players.lock().unwrap();
+        let players = self
+            .players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if let Some(entry) = players.get(&sink_id) {
             entry.player.play();
             true
@@ -257,7 +272,10 @@ impl AudioManager {
     ///
     /// `true` if the sink was found and stopped, `false` otherwise.
     pub fn stop(&mut self, sink_id: u64) -> bool {
-        let mut players = self.players.lock().unwrap();
+        let mut players = self
+            .players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if let Some(entry) = players.remove(&sink_id) {
             entry.player.stop();
             true
@@ -276,7 +294,10 @@ impl AudioManager {
     ///
     /// `true` if the sink exists and is not paused, `false` otherwise.
     pub fn is_playing(&self, sink_id: u64) -> bool {
-        let players = self.players.lock().unwrap();
+        let players = self
+            .players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if let Some(entry) = players.get(&sink_id) {
             !entry.player.is_paused()
         } else {
@@ -286,12 +307,18 @@ impl AudioManager {
 
     /// Returns the number of active audio players.
     pub fn active_count(&self) -> usize {
-        self.players.lock().unwrap().len()
+        self.players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .len()
     }
 
     /// Stops all currently playing audio.
     pub fn stop_all(&mut self) {
-        let mut players = self.players.lock().unwrap();
+        let mut players = self
+            .players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         for entry in players.values() {
             entry.player.stop();
         }
@@ -303,7 +330,10 @@ impl AudioManager {
     /// Removes players that have finished playing from the internal collection.
     /// This should be called periodically to prevent memory leaks.
     pub fn cleanup_finished(&mut self) {
-        let mut players = self.players.lock().unwrap();
+        let mut players = self
+            .players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         players.retain(|_, entry| !entry.player.empty());
     }
 }

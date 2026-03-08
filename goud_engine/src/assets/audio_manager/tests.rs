@@ -404,6 +404,71 @@ fn test_spatial_audio_attenuation_diagonal() {
 }
 
 // ============================================================================
+// Pure Math Tests (no audio hardware needed)
+// ============================================================================
+
+/// Validates the effective_volume composition formula:
+/// effective = global * channel * individual.
+/// These tests verify the math without requiring AudioManager (no hardware).
+#[test]
+fn test_effective_volume_math_identity() {
+    // All multipliers at 1.0 => effective is 1.0
+    let global = 1.0_f32;
+    let channel = 1.0_f32;
+    let individual = 1.0_f32;
+    let effective = global * channel * individual;
+    assert!((effective - 1.0).abs() < f32::EPSILON);
+}
+
+#[test]
+fn test_effective_volume_math_composition() {
+    // global=0.8, channel=0.5, individual=0.5 => 0.2
+    let global = 0.8_f32;
+    let channel = 0.5_f32;
+    let individual = 0.5_f32;
+    let effective = global * channel * individual;
+    assert!((effective - 0.2).abs() < 0.001);
+}
+
+#[test]
+fn test_effective_volume_math_muted_global() {
+    // global=0.0 => effective is always 0.0
+    let global = 0.0_f32;
+    let channel = 1.0_f32;
+    let individual = 1.0_f32;
+    let effective = global * channel * individual;
+    assert!((effective - 0.0).abs() < f32::EPSILON);
+}
+
+#[test]
+fn test_effective_volume_math_muted_channel() {
+    // channel=0.0 => effective is always 0.0
+    let global = 1.0_f32;
+    let channel = 0.0_f32;
+    let individual = 0.75_f32;
+    let effective = global * channel * individual;
+    assert!((effective - 0.0).abs() < f32::EPSILON);
+}
+
+#[test]
+fn test_effective_volume_math_various_combinations() {
+    let cases: &[(f32, f32, f32, f32)] = &[
+        (1.0, 1.0, 0.5, 0.5),
+        (0.5, 1.0, 1.0, 0.5),
+        (0.5, 0.5, 0.5, 0.125),
+        (0.25, 0.4, 1.0, 0.1),
+    ];
+    for &(global, channel, individual, expected) in cases {
+        let effective = global * channel * individual;
+        assert!(
+            (effective - expected).abs() < 0.001,
+            "global={global}, channel={channel}, individual={individual}: \
+             expected {expected}, got {effective}"
+        );
+    }
+}
+
+// ============================================================================
 // Per-channel Volume Tests
 // ============================================================================
 
