@@ -2217,6 +2217,15 @@
         "UDP": 0,
         "WebSocket": 1
       }
+    },
+    "TransitionType": {
+      "doc": "Scene transition type",
+      "underlying": "u8",
+      "values": {
+        "Instant": 0,
+        "Fade": 1,
+        "Custom": 2
+      }
     }
   },
   "mixins": {
@@ -4656,7 +4665,7 @@
             },
             {
               "name": "transitionType",
-              "type": "u8"
+              "type": "TransitionType"
             },
             {
               "name": "durationSecs",
