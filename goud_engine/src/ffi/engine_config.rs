@@ -222,7 +222,7 @@ pub unsafe extern "C" fn goud_engine_create(
 
     // SAFETY: Caller guarantees handle is valid. We take ownership here.
     let engine_config = *Box::from_raw(handle as *mut EngineConfig);
-    let (game_config, _providers) = engine_config.build();
+    let (game_config, providers) = engine_config.build();
 
     let window_config = WindowConfig {
         width: game_config.width,
@@ -284,6 +284,17 @@ pub unsafe extern "C" fn goud_engine_create(
         if let Some(context) = registry.get_mut(context_id) {
             context.world_mut().insert_resource(InputManager::new());
         }
+    }
+
+    // Store the provider registry so capability queries can access it via FFI.
+    if !crate::ffi::providers::provider_registry_store(context_id, providers) {
+        if let Ok(mut registry) = get_context_registry().lock() {
+            let _ = registry.destroy(context_id);
+        }
+        set_last_error(GoudError::InternalError(
+            "Failed to store provider registry".to_string(),
+        ));
+        return GOUD_INVALID_CONTEXT_ID;
     }
 
     let window_state = WindowState::new(platform, backend);

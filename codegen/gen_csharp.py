@@ -957,8 +957,12 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
             return
         ffi_args = ", ".join(p["name"] for p in params)
         all_args = ffi_args if no_ctx else (f"_ctx, {ffi_args}" if ffi_args else "_ctx")
-        stmt = f"NativeMethods.{ffi_fn}({all_args});"
-        L.append(f"            {'return ' if ret != 'void' else ''}{stmt}")
+        call_expr = f"NativeMethods.{ffi_fn}({all_args})"
+        if mm.get("returns_bool_from_i32"):
+            L.append(f"            return {call_expr} != 0;")
+        else:
+            stmt = f"{call_expr};"
+            L.append(f"            {'return ' if ret != 'void' else ''}{stmt}")
         return
     L.append("            // TODO: implement")
 

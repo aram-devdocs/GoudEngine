@@ -99,6 +99,48 @@
         "z"
       ]
     },
+    "RenderCapabilities": {
+      "ffi_name": "FfiRenderCapabilities",
+      "fields": [
+        "max_texture_units",
+        "max_texture_size",
+        "supports_instancing",
+        "supports_compute",
+        "supports_msaa"
+      ]
+    },
+    "PhysicsCapabilities": {
+      "ffi_name": "FfiPhysicsCapabilities",
+      "fields": [
+        "supports_continuous_collision",
+        "supports_joints",
+        "max_bodies"
+      ]
+    },
+    "AudioCapabilities": {
+      "ffi_name": "FfiAudioCapabilities",
+      "fields": [
+        "supports_spatial",
+        "max_channels"
+      ]
+    },
+    "InputCapabilities": {
+      "ffi_name": "FfiInputCapabilities",
+      "fields": [
+        "supports_gamepad",
+        "supports_touch",
+        "max_gamepads"
+      ]
+    },
+    "NetworkCapabilities": {
+      "ffi_name": "FfiNetworkCapabilities",
+      "fields": [
+        "supports_hosting",
+        "max_connections",
+        "max_channels",
+        "max_message_size"
+      ]
+    },
     "Mat3x3": {
       "ffi_name": "FfiMat3x3",
       "fields": [
@@ -803,6 +845,45 @@
           "ffi": "goud_component_has_batch",
           "batch_in": true,
           "batch_out_results": true
+        },
+        "getRenderCapabilities": {
+          "ffi": "goud_provider_render_capabilities",
+          "out_params": [
+            { "name": "out", "type": "RenderCapabilities" }
+          ],
+          "returns_struct": "RenderCapabilities"
+        },
+        "getPhysicsCapabilities": {
+          "ffi": "goud_provider_physics_capabilities",
+          "out_params": [
+            { "name": "out", "type": "PhysicsCapabilities" }
+          ],
+          "returns_struct": "PhysicsCapabilities"
+        },
+        "getAudioCapabilities": {
+          "ffi": "goud_provider_audio_capabilities",
+          "out_params": [
+            { "name": "out", "type": "AudioCapabilities" }
+          ],
+          "returns_struct": "AudioCapabilities"
+        },
+        "getInputCapabilities": {
+          "ffi": "goud_provider_input_capabilities",
+          "out_params": [
+            { "name": "out", "type": "InputCapabilities" }
+          ],
+          "returns_struct": "InputCapabilities"
+        },
+        "getNetworkCapabilities": {
+          "ffi": "goud_provider_network_capabilities",
+          "out_params": [
+            { "name": "out", "type": "NetworkCapabilities" }
+          ],
+          "returns_struct": "NetworkCapabilities"
+        },
+        "checkHotSwapShortcut": {
+          "ffi": "goud_provider_check_hot_swap_shortcut",
+          "returns_bool_from_i32": true
         }
       },
       "properties": {
@@ -6627,6 +6708,56 @@
             "name": "handle",
             "type": "i64"
           }
+        ],
+        "returns": "i32"
+      }
+    },
+    "providers": {
+      "goud_provider_render_capabilities": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "out_caps", "type": "ref FfiRenderCapabilities" }
+        ],
+        "returns": "i32"
+      },
+      "goud_provider_physics_capabilities": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "out_caps", "type": "ref FfiPhysicsCapabilities" }
+        ],
+        "returns": "i32"
+      },
+      "goud_provider_audio_capabilities": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "out_caps", "type": "ref FfiAudioCapabilities" }
+        ],
+        "returns": "i32"
+      },
+      "goud_provider_input_capabilities": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "out_caps", "type": "ref FfiInputCapabilities" }
+        ],
+        "returns": "i32"
+      },
+      "goud_provider_network_capabilities": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "out_caps", "type": "ref FfiNetworkCapabilities" }
+        ],
+        "returns": "i32"
+      },
+      "goud_provider_hot_swap_render": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "provider_type", "type": "i32" }
+        ],
+        "returns": "i32"
+      },
+      "goud_provider_check_hot_swap_shortcut": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" }
         ],
         "returns": "i32"
       }

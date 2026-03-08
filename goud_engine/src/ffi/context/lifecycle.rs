@@ -74,6 +74,9 @@ pub extern "C" fn goud_context_destroy(context_id: GoudContextId) -> bool {
         }
     };
 
+    // Clean up provider registry before destroying the context.
+    crate::ffi::providers::provider_registry_remove(context_id);
+
     match registry.destroy(context_id) {
         Ok(()) => true,
         Err(err) => {

@@ -127,6 +127,43 @@ class FfiVec3(ctypes.Structure):
         ("z", ctypes.c_float)
     ]
 
+class FfiRenderCapabilities(ctypes.Structure):
+    _fields_ = [
+        ("max_texture_units", ctypes.c_uint32),
+        ("max_texture_size", ctypes.c_uint32),
+        ("supports_instancing", ctypes.c_bool),
+        ("supports_compute", ctypes.c_bool),
+        ("supports_msaa", ctypes.c_bool)
+    ]
+
+class FfiPhysicsCapabilities(ctypes.Structure):
+    _fields_ = [
+        ("supports_continuous_collision", ctypes.c_bool),
+        ("supports_joints", ctypes.c_bool),
+        ("max_bodies", ctypes.c_uint32)
+    ]
+
+class FfiAudioCapabilities(ctypes.Structure):
+    _fields_ = [
+        ("supports_spatial", ctypes.c_bool),
+        ("max_channels", ctypes.c_uint32)
+    ]
+
+class FfiInputCapabilities(ctypes.Structure):
+    _fields_ = [
+        ("supports_gamepad", ctypes.c_bool),
+        ("supports_touch", ctypes.c_bool),
+        ("max_gamepads", ctypes.c_uint32)
+    ]
+
+class FfiNetworkCapabilities(ctypes.Structure):
+    _fields_ = [
+        ("supports_hosting", ctypes.c_bool),
+        ("max_connections", ctypes.c_uint32),
+        ("max_channels", ctypes.c_uint8),
+        ("max_message_size", ctypes.c_uint32)
+    ]
+
 class FfiMat3x3(ctypes.Structure):
     _fields_ = [
         ("m", ctypes.c_float * 9)
@@ -796,6 +833,22 @@ def _setup():
         _lib.goud_network_peer_count.restype = ctypes.c_int32
     except AttributeError:
         pass  # feature not compiled in
+
+    # providers
+    _lib.goud_provider_render_capabilities.argtypes = [GoudContextId, ctypes.POINTER(FfiRenderCapabilities)]
+    _lib.goud_provider_render_capabilities.restype = ctypes.c_int32
+    _lib.goud_provider_physics_capabilities.argtypes = [GoudContextId, ctypes.POINTER(FfiPhysicsCapabilities)]
+    _lib.goud_provider_physics_capabilities.restype = ctypes.c_int32
+    _lib.goud_provider_audio_capabilities.argtypes = [GoudContextId, ctypes.POINTER(FfiAudioCapabilities)]
+    _lib.goud_provider_audio_capabilities.restype = ctypes.c_int32
+    _lib.goud_provider_input_capabilities.argtypes = [GoudContextId, ctypes.POINTER(FfiInputCapabilities)]
+    _lib.goud_provider_input_capabilities.restype = ctypes.c_int32
+    _lib.goud_provider_network_capabilities.argtypes = [GoudContextId, ctypes.POINTER(FfiNetworkCapabilities)]
+    _lib.goud_provider_network_capabilities.restype = ctypes.c_int32
+    _lib.goud_provider_hot_swap_render.argtypes = [GoudContextId, ctypes.c_int32]
+    _lib.goud_provider_hot_swap_render.restype = ctypes.c_int32
+    _lib.goud_provider_check_hot_swap_shortcut.argtypes = [GoudContextId]
+    _lib.goud_provider_check_hot_swap_shortcut.restype = ctypes.c_int32
 
     # plugin
     _lib.goud_plugin_register.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]

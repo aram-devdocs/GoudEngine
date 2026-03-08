@@ -1205,3 +1205,55 @@ class NetworkHandle:
 
     def __repr__(self):
         return f"Entity({self.index}v{self.generation})"
+
+class RenderCapabilities:
+    """Capabilities reported by the active render provider"""
+    def __init__(self, max_texture_units: int = 0, max_texture_size: int = 0, supports_instancing: bool = False, supports_compute: bool = False, supports_msaa: bool = False):
+        self.max_texture_units = max_texture_units
+        self.max_texture_size = max_texture_size
+        self.supports_instancing = supports_instancing
+        self.supports_compute = supports_compute
+        self.supports_msaa = supports_msaa
+
+    def __repr__(self):
+        return f"RenderCapabilities(max_texture_units={self.max_texture_units}, max_texture_size={self.max_texture_size}, supports_instancing={self.supports_instancing}, supports_compute={self.supports_compute}, supports_msaa={self.supports_msaa})"
+
+class PhysicsCapabilities:
+    """Capabilities reported by the active physics provider"""
+    def __init__(self, supports_continuous_collision: bool = False, supports_joints: bool = False, max_bodies: int = 0):
+        self.supports_continuous_collision = supports_continuous_collision
+        self.supports_joints = supports_joints
+        self.max_bodies = max_bodies
+
+    def __repr__(self):
+        return f"PhysicsCapabilities(supports_continuous_collision={self.supports_continuous_collision}, supports_joints={self.supports_joints}, max_bodies={self.max_bodies})"
+
+class AudioCapabilities:
+    """Capabilities reported by the active audio provider"""
+    def __init__(self, supports_spatial: bool = False, max_channels: int = 0):
+        self.supports_spatial = supports_spatial
+        self.max_channels = max_channels
+
+    def __repr__(self):
+        return f"AudioCapabilities(supports_spatial={self.supports_spatial}, max_channels={self.max_channels})"
+
+class InputCapabilities:
+    """Capabilities reported by the active input provider"""
+    def __init__(self, supports_gamepad: bool = False, supports_touch: bool = False, max_gamepads: int = 0):
+        self.supports_gamepad = supports_gamepad
+        self.supports_touch = supports_touch
+        self.max_gamepads = max_gamepads
+
+    def __repr__(self):
+        return f"InputCapabilities(supports_gamepad={self.supports_gamepad}, supports_touch={self.supports_touch}, max_gamepads={self.max_gamepads})"
+
+class NetworkCapabilities:
+    """Capabilities reported by the active network provider"""
+    def __init__(self, supports_hosting: bool = False, max_connections: int = 0, max_channels: float = 0.0, max_message_size: int = 0):
+        self.supports_hosting = supports_hosting
+        self.max_connections = max_connections
+        self.max_channels = max_channels
+        self.max_message_size = max_message_size
+
+    def __repr__(self):
+        return f"NetworkCapabilities(supports_hosting={self.supports_hosting}, max_connections={self.max_connections}, max_channels={self.max_channels}, max_message_size={self.max_message_size})"
