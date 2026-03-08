@@ -65,6 +65,30 @@ impl GlyphAtlasCache {
             .ok_or_else(|| "internal error: cache entry missing after insertion".to_string())
     }
 
+    /// Returns a cached atlas (mutable) or generates (and caches) a new one.
+    ///
+    /// Identical to [`get_or_create`](Self::get_or_create) but returns a
+    /// mutable reference, needed when calling [`GlyphAtlas::ensure_gpu_texture`].
+    pub fn get_or_create_mut(
+        &mut self,
+        font: &FontAsset,
+        font_handle: AssetHandle<FontAsset>,
+        size_px: f32,
+    ) -> Result<&mut GlyphAtlas, String> {
+        let size_key = size_px.round() as u32;
+        let key = (font_handle, size_key);
+
+        if let Entry::Vacant(e) = self.cache.entry(key) {
+            let parsed_font = font.parse()?;
+            let atlas = GlyphAtlas::generate(&parsed_font, size_px)?;
+            e.insert(atlas);
+        }
+
+        self.cache
+            .get_mut(&key)
+            .ok_or_else(|| "internal error: cache entry missing after insertion".to_string())
+    }
+
     /// Removes all cached atlases for the given font handle (all sizes).
     ///
     /// Any GPU texture handles owned by the removed atlases are queued

@@ -8,3 +8,4 @@ pub mod sprite_batch;
 pub mod text;
 
 pub use render_system::SpriteRenderSystem;
+pub use text::TextRenderSystem;
