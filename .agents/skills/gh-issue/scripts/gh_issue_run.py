@@ -159,6 +159,7 @@ def command_init_run(args: argparse.Namespace) -> int:
             "RUN_DIR": str(run_dir),
             "CREATED_AT": utc_now(),
             "ISSUE_SUMMARY": render_issue_summary(issue_titles),
+            "PRIMARY_ISSUE": args.primary,
         },
     )
     plan_path = run_dir / "plan.md"
