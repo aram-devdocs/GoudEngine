@@ -220,23 +220,4 @@ impl Rapier3DPhysicsProvider {
             .set_restitution(restitution);
         Ok(())
     }
-
-    /// Helper method to resolve a body handle.
-    fn resolve_body(&self, handle: BodyHandle) -> GoudResult<rapier3d::dynamics::RigidBodyHandle> {
-        self.body_map
-            .get(&handle.0)
-            .copied()
-            .ok_or(GoudError::InvalidHandle)
-    }
-
-    /// Helper method to resolve a collider handle.
-    fn resolve_collider(
-        &self,
-        handle: EngineColliderHandle,
-    ) -> GoudResult<rapier3d::geometry::ColliderHandle> {
-        self.collider_map
-            .get(&handle.0)
-            .copied()
-            .ok_or(GoudError::InvalidHandle)
-    }
 }
