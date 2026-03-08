@@ -63,8 +63,12 @@ fi
 
 echo "## Cargo Workspace"
 if [[ -f Cargo.toml ]]; then
-  VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
-  echo "Engine version: $VERSION"
+  VERSION=$(grep '^version' Cargo.toml 2>/dev/null | head -1 | sed 's/.*\"\(.*\)\"/\1/' || true)
+  if [[ -n "$VERSION" ]]; then
+    echo "Engine version: $VERSION"
+  else
+    echo "Engine version: (workspace root has no version field)"
+  fi
 fi
 echo ""
 
