@@ -106,10 +106,8 @@ fn test_draw_text_with_world_and_null_backend_counts_glyphs() {
 
     // Load the test font from embedded bytes.
     let ttf_bytes = include_bytes!("../../../test_assets/fonts/test_font.ttf");
-    let font_handle = asset_server.load_from_bytes::<crate::assets::loaders::FontAsset>(
-        "test_font.ttf",
-        ttf_bytes,
-    );
+    let font_handle = asset_server
+        .load_from_bytes::<crate::assets::loaders::FontAsset>("test_font.ttf", ttf_bytes);
     assert!(
         asset_server.is_loaded(&font_handle),
         "font asset should be loaded"
@@ -117,8 +115,7 @@ fn test_draw_text_with_world_and_null_backend_counts_glyphs() {
 
     // Create a World and spawn an entity with Text + Transform2D.
     let mut world = World::new();
-    let text = crate::ecs::components::Text::new(font_handle, "Hello")
-        .with_font_size(16.0);
+    let text = crate::ecs::components::Text::new(font_handle, "Hello").with_font_size(16.0);
     let transform = Transform2D::default();
     let _entity = world.spawn().insert(text).insert(transform).id();
 

@@ -179,9 +179,7 @@ impl TextBatch {
     ) -> Result<(super::layout::TextLayoutResult, TextureHandle), String> {
         let bitmap_font = asset_server
             .get::<BitmapFontAsset>(bitmap_handle)
-            .ok_or_else(|| {
-                format!("bitmap font asset not found for handle {:?}", bitmap_handle)
-            })?;
+            .ok_or_else(|| format!("bitmap font asset not found for handle {:?}", bitmap_handle))?;
 
         let cache_key = bitmap_handle.index();
         let atlas = self.bitmap_atlas_cache.entry(cache_key).or_insert_with(|| {
@@ -224,9 +222,9 @@ impl TextBatch {
             .get::<FontAsset>(font_handle)
             .ok_or_else(|| format!("font asset not found for handle {:?}", font_handle))?;
 
-        let atlas =
-            self.atlas_cache
-                .get_or_create_mut(font_asset, *font_handle, font_size)?;
+        let atlas = self
+            .atlas_cache
+            .get_or_create_mut(font_asset, *font_handle, font_size)?;
 
         let layout = layout_text(content, atlas, font_size, config, None);
         let tex = atlas.ensure_gpu_texture(backend)?;
