@@ -123,7 +123,13 @@ impl FallbackRegistry {
         });
 
         // Silent audio -- 0 bytes, standard CD-quality settings.
-        self.register(AudioAsset::new(AudioData::InMemory(Vec::new()), 44100, 2, AudioFormat::Wav, 0.0));
+        self.register(AudioAsset::new(
+            AudioData::InMemory(Vec::new()),
+            44100,
+            2,
+            AudioFormat::Wav,
+            0.0,
+        ));
 
         // Unit triangle mesh -- a minimal visible placeholder.
         self.register(MeshAsset {

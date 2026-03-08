@@ -409,7 +409,6 @@ impl GoudGame {
             // Render UI manager after updates (before buffer swap).
             self.ui_manager.render();
 
-
             // Safety: Limit iterations in tests/examples without actual window
             if self.context.frame_count() > 10000 {
                 break;
