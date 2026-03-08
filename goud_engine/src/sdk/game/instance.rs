@@ -3,6 +3,7 @@
 use crate::context_registry::scene::{SceneId, SceneManager};
 use crate::core::error::{GoudError, GoudResult};
 use crate::ecs::{Component, Entity, World};
+use crate::ui::UiManager;
 
 #[cfg(feature = "native")]
 use crate::ecs::InputManager;
@@ -54,6 +55,9 @@ pub struct GoudGame {
     /// Provider registry for subsystem backends (render, physics, audio, input).
     pub(crate) providers: ProviderRegistry,
 
+    /// UI manager for immediate-mode UI widgets.
+    pub(crate) ui_manager: UiManager,
+
     // =========================================================================
     // Native-only fields (require windowing + OpenGL)
     // =========================================================================
@@ -103,6 +107,7 @@ impl GoudGame {
             initialized: false,
             debug_overlay,
             providers: ProviderRegistry::default(),
+            ui_manager: UiManager::new(),
             #[cfg(feature = "native")]
             platform: None,
             #[cfg(feature = "native")]
@@ -158,6 +163,7 @@ impl GoudGame {
             initialized: false,
             debug_overlay,
             providers: ProviderRegistry::default(),
+            ui_manager: UiManager::new(),
             platform: Some(Box::new(platform)),
             render_backend: None,
             input_manager: InputManager::default(),
@@ -356,6 +362,12 @@ impl GoudGame {
                 }
             }
 
+            // Update UI manager after scene updates.
+            self.ui_manager.update();
+
+            // Render UI manager after updates (before buffer swap).
+            self.ui_manager.render();
+
             // Safety: Limit iterations in tests/examples without actual window
             if self.context.frame_count() > 10000 {
                 break;
@@ -377,6 +389,12 @@ impl GoudGame {
                 update(&mut self.context, world);
             }
         }
+
+        // Update UI manager after scene updates.
+        self.ui_manager.update();
+
+        // Render UI manager after updates (before buffer swap).
+        self.ui_manager.render();
     }
 
     /// Returns the current FPS statistics from the debug overlay.
@@ -436,6 +454,18 @@ impl GoudGame {
     #[inline]
     pub fn providers(&self) -> &ProviderRegistry {
         &self.providers
+    }
+
+    /// Returns a reference to the UI manager.
+    #[inline]
+    pub fn ui_manager(&self) -> &UiManager {
+        &self.ui_manager
+    }
+
+    /// Returns a mutable reference to the UI manager.
+    #[inline]
+    pub fn ui_manager_mut(&mut self) -> &mut UiManager {
+        &mut self.ui_manager
     }
 }
 

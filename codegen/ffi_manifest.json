@@ -1,5 +1,5 @@
 {
-  "version": "0.0.827",
+  "version": "0.0.828",
   "generated_at": "build-time",
   "functions": {
     "goud_animation_clip_builder_add_frame": {
@@ -2656,6 +2656,100 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_ui_create_node": {
+      "source_file": "ffi/ui/node.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "component_type: i32"
+      ],
+      "return_type": "u64",
+      "is_unsafe": true
+    },
+    "goud_ui_get_child_at": {
+      "source_file": "ffi/ui/node.rs",
+      "params": [
+        "mgr: *const UiManager",
+        "node_id: u64",
+        "index: u32"
+      ],
+      "return_type": "u64",
+      "is_unsafe": true
+    },
+    "goud_ui_get_child_count": {
+      "source_file": "ffi/ui/node.rs",
+      "params": [
+        "mgr: *const UiManager",
+        "node_id: u64"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_ui_get_parent": {
+      "source_file": "ffi/ui/node.rs",
+      "params": [
+        "mgr: *const UiManager",
+        "node_id: u64"
+      ],
+      "return_type": "u64",
+      "is_unsafe": true
+    },
+    "goud_ui_manager_create": {
+      "source_file": "ffi/ui/manager.rs",
+      "params": [],
+      "return_type": "*mut UiManager",
+      "is_unsafe": false
+    },
+    "goud_ui_manager_destroy": {
+      "source_file": "ffi/ui/manager.rs",
+      "params": [
+        "ptr: *mut UiManager"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_ui_manager_node_count": {
+      "source_file": "ffi/ui/manager.rs",
+      "params": [
+        "ptr: *const UiManager"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_ui_manager_render": {
+      "source_file": "ffi/ui/manager.rs",
+      "params": [
+        "ptr: *const UiManager"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_ui_manager_update": {
+      "source_file": "ffi/ui/manager.rs",
+      "params": [
+        "ptr: *mut UiManager"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_ui_remove_node": {
+      "source_file": "ffi/ui/node.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "node_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_ui_set_parent": {
+      "source_file": "ffi/ui/node.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "child_id: u64",
+        "parent_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_window_clear": {
       "source_file": "ffi/window/properties.rs",
       "params": [
@@ -2738,5 +2832,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 280
+  "total_count": 291
 }

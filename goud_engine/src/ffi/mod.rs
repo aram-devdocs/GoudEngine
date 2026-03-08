@@ -118,6 +118,7 @@ pub mod renderer;
 pub mod renderer3d;
 pub mod scene;
 pub mod types;
+pub mod ui;
 #[cfg(feature = "native")]
 pub mod window;
 

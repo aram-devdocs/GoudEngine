@@ -5531,6 +5531,107 @@
           "returns": "string"
         }
       ]
+    },
+    "UiManager": {
+      "doc": "Immediate-mode UI manager for creating and managing UI node trees",
+      "handle_type": "opaque",
+      "constructor": {
+        "params": []
+      },
+      "methods": [
+        {
+          "name": "update",
+          "doc": "Runs the UI layout update tick",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "render",
+          "doc": "Renders the UI tree",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "nodeCount",
+          "doc": "Returns the number of live nodes in the UI tree",
+          "params": [],
+          "returns": "u32"
+        },
+        {
+          "name": "createNode",
+          "doc": "Creates a new UI node with the given component type (0=Panel, -1=none)",
+          "params": [
+            {
+              "name": "componentType",
+              "type": "i32"
+            }
+          ],
+          "returns": "u64"
+        },
+        {
+          "name": "removeNode",
+          "doc": "Removes a UI node and its subtree",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setParent",
+          "doc": "Sets or clears the parent of a UI node (use u64.MAX to detach)",
+          "params": [
+            {
+              "name": "childId",
+              "type": "u64"
+            },
+            {
+              "name": "parentId",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getParent",
+          "doc": "Returns the parent node ID, or u64.MAX if none",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            }
+          ],
+          "returns": "u64"
+        },
+        {
+          "name": "getChildCount",
+          "doc": "Returns the number of children of a node",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "getChildAt",
+          "doc": "Returns the child node ID at a given index, or u64.MAX if out of bounds",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            },
+            {
+              "name": "index",
+              "type": "u32"
+            }
+          ],
+          "returns": "u64"
+        }
+      ]
     }
   },
   "errors": {
