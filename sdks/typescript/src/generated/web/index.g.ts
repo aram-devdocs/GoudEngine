@@ -421,6 +421,9 @@ export class GoudGame implements IGoudGame {
   getAudioCapabilities(): IAudioCapabilities { throw new Error('Not supported in WASM mode'); }
   getInputCapabilities(): IInputCapabilities { throw new Error('Not supported in WASM mode'); }
   getNetworkCapabilities(): INetworkCapabilities { throw new Error('Not supported in WASM mode'); }
+
+  /** Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred. */
+  checkHotSwapShortcut(): boolean { throw new Error('Not supported in WASM mode'); }
 }
 
 /** Builder for configuring and creating a GoudGame instance with provider selection. */

@@ -365,6 +365,7 @@ NATIVE_KNOWN_METHODS = {
     "windowWidth", "windowHeight",
     "getRenderCapabilities", "getPhysicsCapabilities", "getAudioCapabilities",
     "getInputCapabilities", "getNetworkCapabilities",
+    "checkHotSwapShortcut",
 }
 
 
@@ -993,7 +994,7 @@ use goud_engine::ffi::renderer3d::{
 use goud_engine::ffi::providers::{
     goud_provider_render_capabilities, goud_provider_physics_capabilities,
     goud_provider_audio_capabilities, goud_provider_input_capabilities,
-    goud_provider_network_capabilities,
+    goud_provider_network_capabilities, goud_provider_check_hot_swap_shortcut,
 };
 use goud_engine::core::providers::types::{
     RenderCapabilities, PhysicsCapabilities, AudioCapabilities,
@@ -1339,6 +1340,13 @@ impl GoudGame {
             max_channels: caps.max_channels as u32,
             max_message_size: caps.max_message_size,
         }
+    }
+
+    /// Checks if the hot-swap shortcut (F5) was pressed and cycles render provider. Debug builds only.
+    #[napi]
+    pub fn check_hot_swap_shortcut(&self) -> bool {
+        // SAFETY: context_id is a valid opaque handle obtained at construction.
+        goud_provider_check_hot_swap_shortcut(self.context_id) != 0
     }
 
     // =========================================================================

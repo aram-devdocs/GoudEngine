@@ -516,6 +516,9 @@ def gen_web_wrapper():
     lines.append("  getAudioCapabilities(): IAudioCapabilities { throw new Error('Not supported in WASM mode'); }")
     lines.append("  getInputCapabilities(): IInputCapabilities { throw new Error('Not supported in WASM mode'); }")
     lines.append("  getNetworkCapabilities(): INetworkCapabilities { throw new Error('Not supported in WASM mode'); }")
+    lines.append("")
+    emit_jsdoc(lines, _method_docs.get("check_hot_swap_shortcut"))
+    lines.append("  checkHotSwapShortcut(): boolean { throw new Error('Not supported in WASM mode'); }")
     lines.append("}")
     lines.append("")
 

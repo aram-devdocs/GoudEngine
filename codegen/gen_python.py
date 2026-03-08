@@ -1387,6 +1387,10 @@ def _gen_tool_class(tool_name: str, lines: list):
                     lines.append(
                         f"        self._lib.{ffi_fn}({args_str})"
                     )
+                elif mmap.get("returns_bool_from_i32"):
+                    lines.append(
+                        f"        return self._lib.{ffi_fn}({args_str}) != 0"
+                    )
                 else:
                     lines.append(
                         f"        return self._lib.{ffi_fn}({args_str})"

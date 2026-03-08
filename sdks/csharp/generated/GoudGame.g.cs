@@ -833,7 +833,7 @@ namespace GoudEngine
         /// <summary>Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred.</summary>
         public bool CheckHotSwapShortcut()
         {
-            return NativeMethods.goud_provider_check_hot_swap_shortcut(_ctx);
+            return NativeMethods.goud_provider_check_hot_swap_shortcut(_ctx) != 0;
         }
 
         public void Dispose() => Destroy();

@@ -522,7 +522,7 @@ class GoudGame:
 
     def check_hot_swap_shortcut(self):
         """Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred."""
-        return self._lib.goud_provider_check_hot_swap_shortcut(self._ctx)
+        return self._lib.goud_provider_check_hot_swap_shortcut(self._ctx) != 0
 
 
 class GoudContext:
