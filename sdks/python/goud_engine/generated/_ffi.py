@@ -763,6 +763,34 @@ def _setup():
     _lib.goud_plugin_list.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
     _lib.goud_plugin_list.restype = ctypes.c_int32
 
+    # audio
+    _lib.goud_audio_play.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_audio_play.restype = ctypes.c_int64
+    _lib.goud_audio_play_on_channel.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t, ctypes.c_uint8]
+    _lib.goud_audio_play_on_channel.restype = ctypes.c_int64
+    _lib.goud_audio_play_with_settings.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t, ctypes.c_float, ctypes.c_float, ctypes.c_bool, ctypes.c_uint8]
+    _lib.goud_audio_play_with_settings.restype = ctypes.c_int64
+    _lib.goud_audio_stop.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_audio_stop.restype = ctypes.c_int32
+    _lib.goud_audio_pause.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_audio_pause.restype = ctypes.c_int32
+    _lib.goud_audio_resume.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_audio_resume.restype = ctypes.c_int32
+    _lib.goud_audio_stop_all.argtypes = [GoudContextId]
+    _lib.goud_audio_stop_all.restype = ctypes.c_int32
+    _lib.goud_audio_set_global_volume.argtypes = [GoudContextId, ctypes.c_float]
+    _lib.goud_audio_set_global_volume.restype = ctypes.c_int32
+    _lib.goud_audio_get_global_volume.argtypes = [GoudContextId]
+    _lib.goud_audio_get_global_volume.restype = ctypes.c_float
+    _lib.goud_audio_set_channel_volume.argtypes = [GoudContextId, ctypes.c_uint8, ctypes.c_float]
+    _lib.goud_audio_set_channel_volume.restype = ctypes.c_int32
+    _lib.goud_audio_get_channel_volume.argtypes = [GoudContextId, ctypes.c_uint8]
+    _lib.goud_audio_get_channel_volume.restype = ctypes.c_float
+    _lib.goud_audio_is_playing.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_audio_is_playing.restype = ctypes.c_int32
+    _lib.goud_audio_active_count.argtypes = [GoudContextId]
+    _lib.goud_audio_active_count.restype = ctypes.c_int32
+
 _setup()
 
 def get_lib():

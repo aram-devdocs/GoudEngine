@@ -3,6 +3,7 @@
 use crate::assets::loaders::AudioAsset;
 use crate::core::error::GoudResult;
 use crate::core::math::Vec2;
+use crate::ecs::components::AudioChannel;
 
 use super::{spatial::spatial_attenuation, AudioManager};
 
@@ -50,7 +51,7 @@ impl AudioManager {
     ) -> GoudResult<u64> {
         let attenuation =
             spatial_attenuation(source_position, listener_position, max_distance, rolloff);
-        self.play_with_settings(asset, attenuation, 1.0, false)
+        self.play_with_settings(asset, attenuation, 1.0, false, AudioChannel::SFX)
     }
 
     /// Updates spatial audio volume for an existing sink.

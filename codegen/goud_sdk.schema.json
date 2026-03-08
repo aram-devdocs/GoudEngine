@@ -5531,6 +5531,179 @@
           "returns": "string"
         }
       ]
+    },
+    "Audio": {
+      "doc": "Audio playback and volume control. Audio data is passed as raw file bytes (WAV/OGG/MP3/FLAC) and decoded at playback time.",
+      "methods": [
+        {
+          "name": "play",
+          "doc": "Plays audio from raw bytes on the default SFX channel",
+          "params": [
+            {
+              "name": "data",
+              "type": "bytes",
+              "doc": "Encoded audio file bytes"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "playOnChannel",
+          "doc": "Plays audio on a specific channel",
+          "params": [
+            {
+              "name": "data",
+              "type": "bytes",
+              "doc": "Encoded audio file bytes"
+            },
+            {
+              "name": "channel",
+              "type": "u8",
+              "doc": "Audio channel ID (0=Music, 1=SFX, 2=Voice, 3=Ambience, 4=UI, 5+=Custom)"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "playWithSettings",
+          "doc": "Plays audio with full control over volume, speed, looping, and channel",
+          "params": [
+            {
+              "name": "data",
+              "type": "bytes",
+              "doc": "Encoded audio file bytes"
+            },
+            {
+              "name": "volume",
+              "type": "f32",
+              "doc": "Volume multiplier (0.0-1.0)"
+            },
+            {
+              "name": "speed",
+              "type": "f32",
+              "doc": "Playback speed (0.1-10.0, affects pitch)"
+            },
+            {
+              "name": "looping",
+              "type": "bool",
+              "doc": "Whether to loop indefinitely"
+            },
+            {
+              "name": "channel",
+              "type": "u8",
+              "doc": "Audio channel ID"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "stop",
+          "doc": "Stops playback for a player",
+          "params": [
+            {
+              "name": "playerId",
+              "type": "u64",
+              "doc": "Player ID from a play call"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "pause",
+          "doc": "Pauses playback for a player",
+          "params": [
+            {
+              "name": "playerId",
+              "type": "u64",
+              "doc": "Player ID from a play call"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "resume",
+          "doc": "Resumes playback for a player",
+          "params": [
+            {
+              "name": "playerId",
+              "type": "u64",
+              "doc": "Player ID from a play call"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "stopAll",
+          "doc": "Stops all currently playing audio",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "setGlobalVolume",
+          "doc": "Sets the global audio volume",
+          "params": [
+            {
+              "name": "volume",
+              "type": "f32",
+              "doc": "Volume level (0.0-1.0)"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getGlobalVolume",
+          "doc": "Returns the current global audio volume",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "setChannelVolume",
+          "doc": "Sets the volume for a specific audio channel",
+          "params": [
+            {
+              "name": "channel",
+              "type": "u8",
+              "doc": "Audio channel ID"
+            },
+            {
+              "name": "volume",
+              "type": "f32",
+              "doc": "Volume level (0.0-1.0)"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getChannelVolume",
+          "doc": "Returns the current volume for a specific audio channel",
+          "params": [
+            {
+              "name": "channel",
+              "type": "u8",
+              "doc": "Audio channel ID"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "isPlaying",
+          "doc": "Checks whether a specific player is currently playing",
+          "params": [
+            {
+              "name": "playerId",
+              "type": "u64",
+              "doc": "Player ID from a play call"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "activeCount",
+          "doc": "Returns the number of active audio players",
+          "params": [],
+          "returns": "i32"
+        }
+      ]
     }
   },
   "errors": {

@@ -96,6 +96,8 @@
 //! - No data races (contexts are Send+Sync, errors are thread-local)
 
 pub mod animation;
+#[cfg(feature = "native")]
+pub mod audio;
 pub mod collision;
 pub mod component;
 pub mod component_sprite;

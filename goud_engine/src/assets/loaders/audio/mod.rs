@@ -11,7 +11,7 @@ pub mod settings;
 #[cfg(test)]
 mod tests;
 
-pub use asset::AudioAsset;
+pub use asset::{AudioAsset, AudioData};
 pub use format::AudioFormat;
 pub use loader::AudioLoader;
 pub use settings::AudioSettings;

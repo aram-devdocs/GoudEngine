@@ -256,6 +256,10 @@ pub unsafe extern "C" fn goud_engine_create(
 
         if let Some(context) = registry.get_mut(context_id) {
             context.world_mut().insert_resource(InputManager::new());
+
+            if let Ok(am) = crate::assets::AudioManager::new() {
+                context.world_mut().insert_resource(am);
+            }
         }
     }
 

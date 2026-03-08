@@ -1,15 +1,34 @@
 //! [`AudioAsset`] definition and implementation.
 
 use crate::assets::{Asset, AssetType};
+use std::path::{Path, PathBuf};
 
 use super::format::AudioFormat;
 
+/// Storage strategy for audio data.
+///
+/// Small files are kept fully in memory for low-latency playback.
+/// Large files store only a path and stream from disk during playback,
+/// avoiding high memory usage for music tracks.
+#[derive(Clone, PartialEq, Debug)]
+pub enum AudioData {
+    /// Encoded audio bytes held entirely in memory.
+    InMemory(Vec<u8>),
+    /// Reference to an on-disk file for streaming playback.
+    Streaming {
+        /// Filesystem path to the audio file.
+        path: PathBuf,
+        /// Size of the file in bytes (cached at load time).
+        size_bytes: u64,
+    },
+}
+
 /// Audio asset containing encoded audio data and pre-computed metadata.
 ///
-/// The `data` field stores the original encoded file bytes (WAV, OGG, etc.),
-/// not decoded PCM. Decoding happens at playback time in `AudioManager::play()`.
-/// Metadata (sample rate, channels, duration) is extracted during loading so
-/// callers can query properties without decoding.
+/// The `data` field stores either the original encoded file bytes or a path
+/// for streaming from disk. Decoding happens at playback time in
+/// `AudioManager::play()`. Metadata (sample rate, channels, duration) is
+/// extracted during loading so callers can query properties without decoding.
 ///
 /// # Example
 /// ```
@@ -22,8 +41,8 @@ use super::format::AudioFormat;
 /// ```
 #[derive(Clone, PartialEq, Debug)]
 pub struct AudioAsset {
-    /// Encoded audio file bytes (not decoded PCM).
-    data: Vec<u8>,
+    /// Audio data storage (in-memory or streaming reference).
+    data: AudioData,
     /// Sample rate in Hz (e.g., 44100, 48000).
     sample_rate: u32,
     /// Number of audio channels (1 = mono, 2 = stereo).
@@ -46,7 +65,7 @@ impl AudioAsset {
     /// ```
     pub fn empty() -> Self {
         Self {
-            data: Vec::new(),
+            data: AudioData::InMemory(Vec::new()),
             sample_rate: 44100,
             channel_count: 2,
             format: AudioFormat::Wav,
@@ -57,13 +76,13 @@ impl AudioAsset {
     /// Creates a new audio asset with the given parameters.
     ///
     /// # Arguments
-    /// * `data` - Encoded audio file bytes (not decoded PCM)
+    /// * `data` - Audio data storage (in-memory bytes or streaming path)
     /// * `sample_rate` - Sample rate in Hz
     /// * `channel_count` - Number of channels (1 or 2)
     /// * `format` - Original file format
     /// * `duration_secs` - Pre-computed duration in seconds
     pub fn new(
-        data: Vec<u8>,
+        data: AudioData,
         sample_rate: u32,
         channel_count: u16,
         format: AudioFormat,
@@ -78,9 +97,30 @@ impl AudioAsset {
         }
     }
 
-    /// Returns the raw audio data.
-    pub fn data(&self) -> &[u8] {
+    /// Returns the raw audio data bytes, or `None` for streaming assets.
+    pub fn data(&self) -> Option<&[u8]> {
+        match &self.data {
+            AudioData::InMemory(bytes) => Some(bytes),
+            AudioData::Streaming { .. } => None,
+        }
+    }
+
+    /// Returns a reference to the underlying [`AudioData`] storage.
+    pub(crate) fn audio_data(&self) -> &AudioData {
         &self.data
+    }
+
+    /// Returns `true` if this asset streams from disk instead of memory.
+    pub fn is_streaming(&self) -> bool {
+        matches!(&self.data, AudioData::Streaming { .. })
+    }
+
+    /// Returns the file path for streaming assets, or `None` for in-memory.
+    pub fn file_path(&self) -> Option<&Path> {
+        match &self.data {
+            AudioData::Streaming { path, .. } => Some(path),
+            AudioData::InMemory(_) => None,
+        }
     }
 
     /// Returns the sample rate in Hz.
@@ -100,12 +140,18 @@ impl AudioAsset {
 
     /// Returns true if the audio data is empty.
     pub fn is_empty(&self) -> bool {
-        self.data.is_empty()
+        match &self.data {
+            AudioData::InMemory(bytes) => bytes.is_empty(),
+            AudioData::Streaming { size_bytes, .. } => *size_bytes == 0,
+        }
     }
 
     /// Returns the size of the audio data in bytes.
     pub fn size_bytes(&self) -> usize {
-        self.data.len()
+        match &self.data {
+            AudioData::InMemory(bytes) => bytes.len(),
+            AudioData::Streaming { size_bytes, .. } => *size_bytes as usize,
+        }
     }
 
     /// Returns the pre-computed duration of the audio in seconds.

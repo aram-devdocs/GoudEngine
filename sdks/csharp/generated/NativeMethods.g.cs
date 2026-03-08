@@ -1069,5 +1069,45 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_plugin_list(GoudContextId ctx, IntPtr out_buf, uint buf_len);
 
+        // audio
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_audio_play(GoudContextId ctx, IntPtr asset_data, nuint asset_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_audio_play_on_channel(GoudContextId ctx, IntPtr asset_data, nuint asset_len, byte channel);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_audio_play_with_settings(GoudContextId ctx, IntPtr asset_data, nuint asset_len, float volume, float speed, [MarshalAs(UnmanagedType.U1)] bool looping, byte channel);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_stop(GoudContextId ctx, ulong player_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_pause(GoudContextId ctx, ulong player_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_resume(GoudContextId ctx, ulong player_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_stop_all(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_set_global_volume(GoudContextId ctx, float volume);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_audio_get_global_volume(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_set_channel_volume(GoudContextId ctx, byte channel, float volume);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_audio_get_channel_volume(GoudContextId ctx, byte channel);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_is_playing(GoudContextId ctx, ulong player_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_active_count(GoudContextId ctx);
+
     }
 }

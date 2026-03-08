@@ -9,12 +9,9 @@ use crate::assets::audio_manager::{
 use crate::assets::loaders::AudioAsset;
 use crate::core::error::GoudError;
 use crate::core::math::Vec2;
+use crate::ecs::components::AudioChannel;
 
-// ============================================================================
-// AudioManager Tests
-// NOTE: Tests calling AudioManager::new() are #[ignore]d because they require
-// audio hardware (rodio crashes with STATUS_ACCESS_VIOLATION on Windows CI)
-// ============================================================================
+// AudioManager tests requiring audio hardware are #[ignore]d (CI has no device).
 
 #[test]
 #[ignore] // requires audio hardware
@@ -151,10 +148,6 @@ fn test_audio_manager_allocate_player_id() {
     }
 }
 
-// ============================================================================
-// Thread Safety Tests
-// ============================================================================
-
 #[test]
 fn test_audio_manager_is_send() {
     fn assert_send<T: Send>() {}
@@ -166,10 +159,6 @@ fn test_audio_manager_is_sync() {
     fn assert_sync<T: Sync>() {}
     assert_sync::<AudioManager>();
 }
-
-// ============================================================================
-// Audio Playback Tests (with real audio data)
-// ============================================================================
 
 #[test]
 #[ignore] // requires audio hardware
@@ -186,7 +175,13 @@ fn test_audio_manager_play_looped() {
 fn test_audio_manager_play_with_settings() {
     if let Ok(mut manager) = AudioManager::new() {
         let empty_asset = AudioAsset::empty();
-        let result = manager.play_with_settings(&empty_asset, 0.5, 1.0, false);
+        let result = manager.play_with_settings(
+            &empty_asset,
+            0.5,
+            1.0,
+            false,
+            crate::ecs::components::AudioChannel::SFX,
+        );
         assert!(result.is_err());
     }
 }
@@ -406,4 +401,97 @@ fn test_spatial_audio_attenuation_diagonal() {
         (attenuation - 0.293).abs() < 0.01,
         "Attenuation for diagonal distance"
     );
+}
+
+// ============================================================================
+// Per-channel Volume Tests
+// ============================================================================
+
+#[test]
+#[ignore] // requires audio hardware
+fn test_channel_volume_defaults() {
+    if let Ok(manager) = AudioManager::new() {
+        assert_eq!(manager.get_channel_volume(AudioChannel::Music), 1.0);
+        assert_eq!(manager.get_channel_volume(AudioChannel::SFX), 1.0);
+        assert_eq!(manager.get_channel_volume(AudioChannel::Voice), 1.0);
+        assert_eq!(manager.get_channel_volume(AudioChannel::Ambience), 1.0);
+        assert_eq!(manager.get_channel_volume(AudioChannel::UI), 1.0);
+    }
+}
+
+#[test]
+#[ignore] // requires audio hardware
+fn test_set_channel_volume() {
+    if let Ok(mut manager) = AudioManager::new() {
+        manager.set_channel_volume(AudioChannel::Music, 0.5);
+        assert_eq!(manager.get_channel_volume(AudioChannel::Music), 0.5);
+        // Other channels unchanged
+        assert_eq!(manager.get_channel_volume(AudioChannel::SFX), 1.0);
+    }
+}
+
+#[test]
+#[ignore] // requires audio hardware
+fn test_channel_volume_clamping() {
+    if let Ok(mut manager) = AudioManager::new() {
+        manager.set_channel_volume(AudioChannel::Music, 1.5);
+        assert_eq!(manager.get_channel_volume(AudioChannel::Music), 1.0);
+
+        manager.set_channel_volume(AudioChannel::Music, -0.5);
+        assert_eq!(manager.get_channel_volume(AudioChannel::Music), 0.0);
+    }
+}
+
+#[test]
+#[ignore] // requires audio hardware
+fn test_effective_volume_composition() {
+    if let Ok(mut manager) = AudioManager::new() {
+        // global=0.8, channel=0.5, individual=0.5 => 0.2
+        manager.set_global_volume(0.8);
+        manager.set_channel_volume(AudioChannel::Music, 0.5);
+        let effective = manager.effective_volume(AudioChannel::Music, 0.5);
+        assert!((effective - 0.2).abs() < 0.001);
+    }
+}
+
+#[test]
+#[ignore] // requires audio hardware
+fn test_custom_channel_volume() {
+    if let Ok(mut manager) = AudioManager::new() {
+        let custom = AudioChannel::Custom(10);
+        // Defaults to 1.0 for unknown channels
+        assert_eq!(manager.get_channel_volume(custom), 1.0);
+
+        manager.set_channel_volume(custom, 0.3);
+        assert_eq!(manager.get_channel_volume(custom), 0.3);
+    }
+}
+
+#[test]
+#[ignore] // requires audio hardware
+fn test_play_on_channel_empty_asset() {
+    if let Ok(mut manager) = AudioManager::new() {
+        let empty_asset = AudioAsset::empty();
+        let result = manager.play_on_channel(&empty_asset, AudioChannel::Music);
+        assert!(result.is_err());
+    }
+}
+
+// ============================================================================
+// AudioChannel::from_id Tests
+// ============================================================================
+
+#[test]
+fn test_audio_channel_from_id() {
+    assert_eq!(AudioChannel::from_id(0), AudioChannel::Music);
+    assert_eq!(AudioChannel::from_id(1), AudioChannel::SFX);
+    assert_eq!(AudioChannel::from_id(2), AudioChannel::Voice);
+    assert_eq!(AudioChannel::from_id(3), AudioChannel::Ambience);
+    assert_eq!(AudioChannel::from_id(4), AudioChannel::UI);
+    assert_eq!(AudioChannel::from_id(5), AudioChannel::Custom(5));
+    assert_eq!(AudioChannel::from_id(255), AudioChannel::Custom(255));
+    // Roundtrip: from_id(id).id() == id
+    for id in 0..=10 {
+        assert_eq!(AudioChannel::from_id(id).id(), id);
+    }
 }

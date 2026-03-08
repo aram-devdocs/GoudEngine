@@ -38,9 +38,17 @@ mod spatial_playback;
 mod tests;
 
 use crate::core::error::{GoudError, GoudResult};
+use crate::ecs::components::AudioChannel;
 use rodio::{DeviceSinkBuilder, MixerDeviceSink, Player};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+
+/// Wraps a rodio `Player` with its associated channel and individual volume.
+pub(crate) struct PlayerEntry {
+    pub(crate) player: Player,
+    pub(crate) channel: AudioChannel,
+    pub(crate) individual_volume: f32,
+}
 
 /// Central audio playback manager resource.
 ///
@@ -74,11 +82,14 @@ pub struct AudioManager {
     /// Global volume (0.0 to 1.0).
     pub(super) global_volume: Arc<Mutex<f32>>,
 
-    /// Active audio players (for controlling playback).
-    pub(super) players: Arc<Mutex<HashMap<u64, Player>>>,
+    /// Active audio players with channel and volume metadata.
+    pub(super) players: Arc<Mutex<HashMap<u64, PlayerEntry>>>,
 
     /// Next player ID for tracking.
     pub(super) next_player_id: Arc<Mutex<u64>>,
+
+    /// Per-channel volume multipliers (0.0 to 1.0).
+    pub(super) channel_volumes: Arc<Mutex<HashMap<AudioChannel, f32>>>,
 }
 
 impl AudioManager {
@@ -105,11 +116,19 @@ impl AudioManager {
         // Suppress the log message rodio prints when the device sink is dropped.
         device_sink.log_on_drop(false);
 
+        let mut channel_volumes = HashMap::new();
+        channel_volumes.insert(AudioChannel::Music, 1.0);
+        channel_volumes.insert(AudioChannel::SFX, 1.0);
+        channel_volumes.insert(AudioChannel::Voice, 1.0);
+        channel_volumes.insert(AudioChannel::Ambience, 1.0);
+        channel_volumes.insert(AudioChannel::UI, 1.0);
+
         Ok(Self {
             device_sink,
             global_volume: Arc::new(Mutex::new(1.0)),
             players: Arc::new(Mutex::new(HashMap::new())),
             next_player_id: Arc::new(Mutex::new(0)),
+            channel_volumes: Arc::new(Mutex::new(channel_volumes)),
         })
     }
 }
