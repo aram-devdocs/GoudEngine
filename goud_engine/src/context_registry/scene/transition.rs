@@ -13,7 +13,7 @@ pub enum TransitionType {
     Instant = 0,
     /// Scene fades out then fades in over the given duration.
     Fade = 1,
-    /// A user-defined transition effect.
+    /// A user-defined transition effect. The engine tracks progress; SDKs query it to render custom visuals.
     Custom = 2,
 }
 

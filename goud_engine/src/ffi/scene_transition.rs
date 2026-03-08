@@ -14,6 +14,10 @@ use crate::ffi::types::GoudResult;
 
 /// Starts a transition between two scenes.
 ///
+/// For custom transitions (type 2), the engine tracks progress via
+/// [`goud_scene_transition_progress`]; SDKs query this to render custom
+/// transition visuals.
+///
 /// # Arguments
 ///
 /// * `context_id` - The context containing both scenes

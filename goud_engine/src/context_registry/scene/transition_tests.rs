@@ -49,8 +49,8 @@ fn test_fade_transition_completes_in_correct_frames_at_60fps() {
     let from = mgr.default_scene();
     let to = mgr.create_scene("next").unwrap();
 
-    // A 0.5 second fade at 60 FPS takes exactly 30 frames because
-    // 30 * (1/60) = 0.5 with no floating-point remainder.
+    // A 0.5 second fade at 60 FPS should complete in 30 frames.
+    // (30 * 1/60 ≈ 0.5; f32 accumulation reaches >= 0.5 at frame 30.)
     let duration = 0.5_f32;
     let dt = 1.0 / 60.0; // 60 FPS
     let expected_frames: u32 = 30;
