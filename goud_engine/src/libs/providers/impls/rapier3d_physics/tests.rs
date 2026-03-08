@@ -2,7 +2,7 @@
 
 use super::Rapier3DPhysicsProvider;
 use crate::core::providers::physics3d::PhysicsProvider3D;
-use crate::core::providers::types::{BodyDesc3D, ColliderDesc3D};
+use crate::core::providers::types::{BodyDesc3D, BodyHandle, ColliderDesc3D};
 use crate::core::providers::{Provider, ProviderLifecycle};
 
 #[test]
@@ -374,9 +374,7 @@ fn test_body_gravity_scale_get_set() {
     assert!((scale - 2.0).abs() < f32::EPSILON, "updated scale={scale}");
 
     // Invalid handle should error
-    assert!(provider
-        .body_gravity_scale(BodyHandle(9999))
-        .is_err());
+    assert!(provider.body_gravity_scale(BodyHandle(9999)).is_err());
     assert!(provider
         .set_body_gravity_scale(BodyHandle(9999), 1.0)
         .is_err());
@@ -384,8 +382,6 @@ fn test_body_gravity_scale_get_set() {
 
 #[test]
 fn test_collider_friction_get_set() {
-    use crate::core::providers::types::ColliderDesc3D;
-
     let mut provider = Rapier3DPhysicsProvider::new();
     let body = provider
         .create_body(&BodyDesc3D {
@@ -423,8 +419,6 @@ fn test_collider_friction_get_set() {
 
 #[test]
 fn test_collider_restitution_get_set() {
-    use crate::core::providers::types::ColliderDesc3D;
-
     let mut provider = Rapier3DPhysicsProvider::new();
     let body = provider
         .create_body(&BodyDesc3D {

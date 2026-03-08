@@ -4710,6 +4710,10 @@
             {
               "name": "y",
               "type": "f32"
+            },
+            {
+              "name": "gravityScale",
+              "type": "f32"
             }
           ],
           "returns": "i64"
@@ -4736,6 +4740,14 @@
             },
             {
               "name": "radius",
+              "type": "f32"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            },
+            {
+              "name": "restitution",
               "type": "f32"
             }
           ],
@@ -4868,6 +4880,90 @@
             }
           ],
           "returns": "Vec2"
+        },
+        {
+          "name": "getGravity",
+          "doc": "Gets the current gravity vector",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "setBodyGravityScale",
+          "doc": "Sets the gravity scale for a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getBodyGravityScale",
+          "doc": "Gets the gravity scale for a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setColliderFriction",
+          "doc": "Sets the friction coefficient for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getColliderFriction",
+          "doc": "Gets the friction coefficient for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setColliderRestitution",
+          "doc": "Sets the restitution (bounciness) for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "restitution",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getColliderRestitution",
+          "doc": "Gets the restitution (bounciness) for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
         }
       ]
     },
@@ -4953,6 +5049,10 @@
             {
               "name": "z",
               "type": "f32"
+            },
+            {
+              "name": "gravityScale",
+              "type": "f32"
             }
           ],
           "returns": "i64"
@@ -4983,6 +5083,14 @@
             },
             {
               "name": "radius",
+              "type": "f32"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            },
+            {
+              "name": "restitution",
               "type": "f32"
             }
           ],
@@ -5089,6 +5197,90 @@
             }
           ],
           "returns": "i32"
+        },
+        {
+          "name": "getGravity",
+          "doc": "Gets the current gravity vector",
+          "params": [],
+          "returns": "Vec3"
+        },
+        {
+          "name": "setBodyGravityScale",
+          "doc": "Sets the gravity scale for a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getBodyGravityScale",
+          "doc": "Gets the gravity scale for a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setColliderFriction",
+          "doc": "Sets the friction coefficient for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getColliderFriction",
+          "doc": "Gets the friction coefficient for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setColliderRestitution",
+          "doc": "Sets the restitution (bounciness) for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "restitution",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getColliderRestitution",
+          "doc": "Gets the restitution (bounciness) for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
         }
       ]
     },

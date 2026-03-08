@@ -363,7 +363,9 @@ fn test_body_gravity_scale_get_set() {
 
     // Invalid handle should error
     assert!(provider.body_gravity_scale(BodyHandle(9999)).is_err());
-    assert!(provider.set_body_gravity_scale(BodyHandle(9999), 1.0).is_err());
+    assert!(provider
+        .set_body_gravity_scale(BodyHandle(9999), 1.0)
+        .is_err());
 }
 
 #[test]
@@ -439,3 +441,6 @@ fn test_collider_restitution_get_set() {
         "updated restitution={restitution}"
     );
 }
+
+#[path = "tests_collision_response.rs"]
+mod collision_response;

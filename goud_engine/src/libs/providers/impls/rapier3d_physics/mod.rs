@@ -118,7 +118,10 @@ impl Rapier3DPhysicsProvider {
 
     /// Look up the rapier collider handle, returning an error if not found.
     fn resolve_collider(&self, handle: EngineColliderHandle) -> GoudResult<RapierColliderHandle> {
-        self.collider_map.get(&handle.0).copied().ok_or(GoudError::InvalidHandle)
+        self.collider_map
+            .get(&handle.0)
+            .copied()
+            .ok_or(GoudError::InvalidHandle)
     }
 }
 
