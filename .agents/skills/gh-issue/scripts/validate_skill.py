@@ -39,6 +39,22 @@ def main() -> int:
             errors.append({"SKILL.md": f"too long: {len(lines)} lines"})
         body = "\n".join(lines)
 
+        # Check that the inline template is present
+        if "### Execution Plan Template" not in body:
+            errors.append({"SKILL.md": "missing inline template marker: ### Execution Plan Template"})
+
+        # Check key template sections are inline
+        for section in [
+            "## Metadata",
+            "## Phase 1: Implementation",
+            "## Phase 2: Verification",
+            "## Phase 3: Review Gates",
+            "## Phase 4: Create PR",
+            "## Phase 6: Cleanup",
+        ]:
+            if section not in body:
+                errors.append({"SKILL.md": f"missing inline template section: {section}"})
+
         # Check references — accept both direct paths and ${CLAUDE_SKILL_DIR}/ prefixed paths
         for expected in [
             "references/workflow-contract.md",
@@ -52,10 +68,6 @@ def main() -> int:
             # Match either "references/foo.md" or "${CLAUDE_SKILL_DIR}/references/foo.md"
             if expected not in body and f"${{CLAUDE_SKILL_DIR}}/{expected}" not in body:
                 errors.append({"SKILL.md": f"missing reference: {expected}"})
-
-        # Check that SKILL.md uses ! preprocessing for critical content injection
-        if "!`cat ${CLAUDE_SKILL_DIR}/" not in body:
-            errors.append({"SKILL.md": "missing !`cat ${CLAUDE_SKILL_DIR}/` preprocessing directive"})
 
     state_template = skill_dir / "assets" / "state-template.json"
     if state_template.exists():
