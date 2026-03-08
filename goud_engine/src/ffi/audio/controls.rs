@@ -434,3 +434,49 @@ pub extern "C" fn goud_audio_active_count(context_id: GoudContextId) -> i32 {
 
     audio.active_count() as i32
 }
+
+/// Cleans up finished audio players.
+///
+/// # Arguments
+///
+/// * `context_id` - Engine context handle
+///
+/// # Returns
+///
+/// `0` on success, `-1` on error.
+#[no_mangle]
+pub extern "C" fn goud_audio_cleanup_finished(context_id: GoudContextId) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return ERR_I32;
+    }
+
+    let mut registry = match get_context_registry().lock() {
+        Ok(r) => r,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return ERR_I32;
+        }
+    };
+    let context = match registry.get_mut(context_id) {
+        Some(ctx) => ctx,
+        None => {
+            set_last_error(GoudError::InvalidContext);
+            return ERR_I32;
+        }
+    };
+    match context.world_mut().get_resource_mut::<AudioManager>() {
+        Some(am) => {
+            am.cleanup_finished();
+            0
+        }
+        None => {
+            set_last_error(GoudError::InvalidState(
+                "AudioManager resource not found".to_string(),
+            ));
+            ERR_I32
+        }
+    }
+}
