@@ -807,6 +807,30 @@ def _setup():
     _lib.goud_plugin_list.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
     _lib.goud_plugin_list.restype = ctypes.c_int32
 
+    # ui_manager
+    _lib.goud_ui_manager_create.argtypes = []
+    _lib.goud_ui_manager_create.restype = ctypes.c_void_p
+    _lib.goud_ui_manager_destroy.argtypes = [ctypes.c_void_p]
+    _lib.goud_ui_manager_destroy.restype = None
+    _lib.goud_ui_manager_update.argtypes = [ctypes.c_void_p]
+    _lib.goud_ui_manager_update.restype = None
+    _lib.goud_ui_manager_render.argtypes = [ctypes.c_void_p]
+    _lib.goud_ui_manager_render.restype = None
+    _lib.goud_ui_manager_node_count.argtypes = [ctypes.c_void_p]
+    _lib.goud_ui_manager_node_count.restype = ctypes.c_uint32
+    _lib.goud_ui_create_node.argtypes = [ctypes.c_void_p, ctypes.c_int32]
+    _lib.goud_ui_create_node.restype = ctypes.c_uint64
+    _lib.goud_ui_remove_node.argtypes = [ctypes.c_void_p, ctypes.c_uint64]
+    _lib.goud_ui_remove_node.restype = ctypes.c_int32
+    _lib.goud_ui_set_parent.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_uint64]
+    _lib.goud_ui_set_parent.restype = ctypes.c_int32
+    _lib.goud_ui_get_parent.argtypes = [ctypes.c_void_p, ctypes.c_uint64]
+    _lib.goud_ui_get_parent.restype = ctypes.c_uint64
+    _lib.goud_ui_get_child_count.argtypes = [ctypes.c_void_p, ctypes.c_uint64]
+    _lib.goud_ui_get_child_count.restype = ctypes.c_uint32
+    _lib.goud_ui_get_child_at.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_uint32]
+    _lib.goud_ui_get_child_at.restype = ctypes.c_uint64
+
 _setup()
 
 def get_lib():
