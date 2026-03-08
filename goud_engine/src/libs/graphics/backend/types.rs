@@ -77,6 +77,14 @@ pub enum TextureFormat {
     Depth = 6,
     /// Depth + stencil combined
     DepthStencil = 7,
+    /// BC1 (DXT1) block compression: 4:1 ratio, 1-bit alpha
+    BC1 = 8,
+    /// BC3 (DXT5) block compression: 4:1 ratio, full alpha
+    BC3 = 9,
+    /// BC5 (ATI2/3Dc) block compression: two-channel (normal maps)
+    BC5 = 10,
+    /// BC7 block compression: high-quality RGBA
+    BC7 = 11,
 }
 
 /// Texture filtering mode.

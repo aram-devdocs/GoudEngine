@@ -74,6 +74,12 @@ pub trait AnyAssetStorage: Send + Sync {
     ///
     /// Returns `true` if the entry was found and updated.
     fn set_failed_raw(&mut self, index: u32, generation: u32, error: String) -> bool;
+
+    /// Returns the reference count for a raw handle.
+    fn ref_count_raw(&self, index: u32, generation: u32) -> u32;
+
+    /// Force-removes an asset by raw handle parts, ignoring ref counts.
+    fn force_remove_raw(&mut self, index: u32, generation: u32) -> bool;
 }
 
 // Implement AnyAssetStorage for TypedAssetStorage
@@ -183,5 +189,15 @@ impl<A: Asset> AnyAssetStorage for TypedAssetStorage<A> {
             }
             None => false,
         }
+    }
+
+    fn ref_count_raw(&self, index: u32, generation: u32) -> u32 {
+        let handle = AssetHandle::<A>::new(index, generation);
+        self.ref_count(&handle)
+    }
+
+    fn force_remove_raw(&mut self, index: u32, generation: u32) -> bool {
+        let handle = AssetHandle::<A>::new(index, generation);
+        self.force_remove(&handle).is_some()
     }
 }

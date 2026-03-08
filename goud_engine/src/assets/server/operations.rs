@@ -10,7 +10,7 @@ impl AssetServer {
     /// Loads an asset from a path (relative to asset root), returning a handle immediately.
     ///
     /// The asset loads synchronously (blocking). The handle is valid even if loading
-    /// fails — check with `get_load_state()`.
+    /// fails -- check with `get_load_state()`.
     pub fn load<A: Asset>(&mut self, path: impl AsRef<Path>) -> AssetHandle<A> {
         let asset_path = AssetPath::new(path.as_ref().to_str().unwrap_or_default());
 
@@ -35,8 +35,14 @@ impl AssetServer {
                 }
             }
             Err(error) => {
-                // Mark as failed
-                if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
+                log::warn!("Failed to load asset '{}': {}", asset_path.as_str(), error);
+                // Attempt fallback substitution
+                if let Some(fallback) = self.fallbacks.get_cloned::<A>() {
+                    if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
+                        entry.set_loaded(fallback);
+                        entry.set_fallback(true);
+                    }
+                } else if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
                     entry.set_failed(error.to_string());
                 }
             }
@@ -75,14 +81,12 @@ impl AssetServer {
         Ok((asset, dependencies))
     }
 
-    /// Reads a file from disk and parses it into an asset.
+    /// Reads a file via the virtual filesystem and parses it into an asset.
     fn load_asset_sync<A: Asset>(
         &self,
         path: &AssetPath,
     ) -> Result<(A, Vec<String>), AssetLoadError> {
-        let full_path = self.asset_root.join(path.as_str());
-        let bytes =
-            std::fs::read(&full_path).map_err(|e| AssetLoadError::io_error(&full_path, e))?;
+        let bytes = self.vfs.read(path.as_str())?;
         self.parse_bytes::<A>(path, &bytes)
     }
 
@@ -154,7 +158,17 @@ impl AssetServer {
                 }
             }
             Err(error) => {
-                if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
+                log::warn!(
+                    "Failed to load asset from bytes '{}': {}",
+                    asset_path.as_str(),
+                    error
+                );
+                if let Some(fallback) = self.fallbacks.get_cloned::<A>() {
+                    if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
+                        entry.set_loaded(fallback);
+                        entry.set_fallback(true);
+                    }
+                } else if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
                     entry.set_failed(error.to_string());
                 }
             }
@@ -254,7 +268,7 @@ impl AssetServer {
                 self.dependency_graph.remove_asset(&path_str);
             }
         }
-        self.storage.remove(handle)
+        self.storage.force_remove(handle)
     }
 
     /// Returns a reference to the dependency graph.
@@ -270,7 +284,7 @@ impl AssetServer {
         &mut self.dependency_graph
     }
 
-    /// Reloads an asset from disk by its path, using the type-erased loader.
+    /// Reloads an asset by its path, using the type-erased loader.
     ///
     /// This is used by the hot-reload watcher to reload assets without knowing
     /// their concrete type at compile time.
@@ -293,9 +307,8 @@ impl AssetServer {
             None => return false,
         };
 
-        // Read file from disk
-        let full_path = self.asset_root.join(path);
-        let bytes = match std::fs::read(&full_path) {
+        // Read file via virtual filesystem
+        let bytes = match self.vfs.read(path) {
             Ok(b) => b,
             Err(_) => return false,
         };

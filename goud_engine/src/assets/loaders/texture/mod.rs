@@ -14,6 +14,8 @@
 /// let handle = server.load::<TextureAsset>("textures/player.png");
 /// ```
 mod asset;
+pub mod compressed;
+pub mod dds;
 mod format;
 mod loader;
 mod settings;
@@ -24,6 +26,8 @@ mod tests;
 mod tests_integration;
 
 pub use asset::TextureAsset;
+pub use compressed::{CompressedTextureAsset, CompressedTextureLoader};
+pub use dds::CompressedFormat;
 pub use format::TextureFormat;
 pub use loader::TextureLoader;
 pub use settings::{TextureColorSpace, TextureSettings, TextureWrapMode};
