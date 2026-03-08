@@ -217,4 +217,3 @@ fn test_rect_apply_delta_reconstructs() {
 
     assert_eq!(reconstructed, target);
 }
-
