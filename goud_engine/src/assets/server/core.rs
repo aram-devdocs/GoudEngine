@@ -2,9 +2,9 @@
 
 use crate::assets::dependency::DependencyGraph;
 use crate::assets::fallback::FallbackRegistry;
+use crate::assets::vfs::{OsFs, VirtualFs};
 #[cfg(feature = "native")]
 use crate::assets::AssetLoadError;
-use crate::assets::vfs::{OsFs, VirtualFs};
 use crate::assets::{AssetId, AssetStorage, ErasedAssetLoader};
 use std::collections::HashMap;
 use std::fmt;

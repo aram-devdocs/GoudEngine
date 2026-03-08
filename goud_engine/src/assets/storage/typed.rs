@@ -178,8 +178,7 @@ impl<A: Asset> TypedAssetStorage<A> {
     ///
     /// For ref-count-aware removal, use [`Self::try_remove`].
     pub fn remove(&mut self, handle: &AssetHandle<A>) -> Option<A> {
-        self.ref_counts
-            .remove(handle.index(), handle.generation());
+        self.ref_counts.remove(handle.index(), handle.generation());
         self.remove_inner(handle)
     }
 
@@ -194,8 +193,7 @@ impl<A: Asset> TypedAssetStorage<A> {
         if count > 0 {
             return None;
         }
-        self.ref_counts
-            .remove(handle.index(), handle.generation());
+        self.ref_counts.remove(handle.index(), handle.generation());
         self.remove_inner(handle)
     }
 

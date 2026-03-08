@@ -64,7 +64,7 @@ pub(super) fn texture_format_to_gl(format: TextureFormat) -> (u32, u32, u32) {
             gl::UNSIGNED_INT_24_8,
         ),
         // GL extension constants for compressed texture formats
-        TextureFormat::BC1 => (0x83F0, gl::RGB, gl::UNSIGNED_BYTE),  // GL_COMPRESSED_RGB_S3TC_DXT1_EXT
+        TextureFormat::BC1 => (0x83F0, gl::RGB, gl::UNSIGNED_BYTE), // GL_COMPRESSED_RGB_S3TC_DXT1_EXT
         TextureFormat::BC3 => (0x83F3, gl::RGBA, gl::UNSIGNED_BYTE), // GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
         TextureFormat::BC5 => (0x8DBD, gl::RG, gl::UNSIGNED_BYTE),   // GL_COMPRESSED_RG_RGTC2
         TextureFormat::BC7 => (0x8E8C, gl::RGBA, gl::UNSIGNED_BYTE), // GL_COMPRESSED_RGBA_BPTC_UNORM

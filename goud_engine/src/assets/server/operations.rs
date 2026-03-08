@@ -35,11 +35,7 @@ impl AssetServer {
                 }
             }
             Err(error) => {
-                log::warn!(
-                    "Failed to load asset '{}': {}",
-                    asset_path.as_str(),
-                    error
-                );
+                log::warn!("Failed to load asset '{}': {}", asset_path.as_str(), error);
                 // Attempt fallback substitution
                 if let Some(fallback) = self.fallbacks.get_cloned::<A>() {
                     if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {

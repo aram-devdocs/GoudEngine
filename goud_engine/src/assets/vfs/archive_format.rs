@@ -155,8 +155,7 @@ impl ArchiveReader {
         }
 
         // Read TOC size.
-        let toc_size =
-            u32::from_le_bytes(data[4..8].try_into().expect("4-byte slice")) as usize;
+        let toc_size = u32::from_le_bytes(data[4..8].try_into().expect("4-byte slice")) as usize;
 
         let toc_end = 8 + toc_size;
         if data.len() < toc_end {
@@ -181,14 +180,11 @@ impl ArchiveReader {
     }
 
     /// Reads the data for the entry at `path` from the source buffer.
-    pub fn read_entry<'a>(
-        &self,
-        path: &str,
-        source: &'a [u8],
-    ) -> Result<&'a [u8], AssetLoadError> {
-        let idx = self.index.get(path).ok_or_else(|| {
-            AssetLoadError::not_found(path)
-        })?;
+    pub fn read_entry<'a>(&self, path: &str, source: &'a [u8]) -> Result<&'a [u8], AssetLoadError> {
+        let idx = self
+            .index
+            .get(path)
+            .ok_or_else(|| AssetLoadError::not_found(path))?;
         let entry = &self.toc.entries[*idx];
         let start = self.data_start + entry.offset as usize;
         let end = start + entry.size as usize;
@@ -265,26 +261,22 @@ fn deserialize_toc(data: &[u8]) -> Result<ArchiveToc, AssetLoadError> {
 
 fn read_u32(data: &[u8], cursor: &mut usize) -> Result<u32, AssetLoadError> {
     if *cursor + 4 > data.len() {
-        return Err(AssetLoadError::decode_failed("Unexpected end of data reading u32"));
+        return Err(AssetLoadError::decode_failed(
+            "Unexpected end of data reading u32",
+        ));
     }
-    let val = u32::from_le_bytes(
-        data[*cursor..*cursor + 4]
-            .try_into()
-            .expect("4-byte slice"),
-    );
+    let val = u32::from_le_bytes(data[*cursor..*cursor + 4].try_into().expect("4-byte slice"));
     *cursor += 4;
     Ok(val)
 }
 
 fn read_u64(data: &[u8], cursor: &mut usize) -> Result<u64, AssetLoadError> {
     if *cursor + 8 > data.len() {
-        return Err(AssetLoadError::decode_failed("Unexpected end of data reading u64"));
+        return Err(AssetLoadError::decode_failed(
+            "Unexpected end of data reading u64",
+        ));
     }
-    let val = u64::from_le_bytes(
-        data[*cursor..*cursor + 8]
-            .try_into()
-            .expect("8-byte slice"),
-    );
+    let val = u64::from_le_bytes(data[*cursor..*cursor + 8].try_into().expect("8-byte slice"));
     *cursor += 8;
     Ok(val)
 }
@@ -339,7 +331,10 @@ mod tests {
 
         assert_eq!(reader.read_entry("a.txt", &buf).unwrap(), b"AAA");
         assert_eq!(reader.read_entry("b.txt", &buf).unwrap(), b"BBB");
-        assert_eq!(reader.read_entry("c/nested.bin", &buf).unwrap(), &[1, 2, 3, 4]);
+        assert_eq!(
+            reader.read_entry("c/nested.bin", &buf).unwrap(),
+            &[1, 2, 3, 4]
+        );
     }
 
     #[test]
@@ -392,7 +387,10 @@ mod tests {
         writer1.write_to(&mut buf1).unwrap();
         writer2.write_to(&mut buf2).unwrap();
 
-        assert_eq!(buf1, buf2, "Archives with same content must be byte-identical");
+        assert_eq!(
+            buf1, buf2,
+            "Archives with same content must be byte-identical"
+        );
     }
 
     #[test]

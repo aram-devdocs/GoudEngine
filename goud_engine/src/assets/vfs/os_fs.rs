@@ -56,8 +56,8 @@ impl VirtualFs for OsFs {
 
     fn list(&self, directory: &str) -> Result<Vec<String>, AssetLoadError> {
         let full_path = self.root.join(directory);
-        let entries = std::fs::read_dir(&full_path)
-            .map_err(|e| AssetLoadError::io_error(&full_path, e))?;
+        let entries =
+            std::fs::read_dir(&full_path).map_err(|e| AssetLoadError::io_error(&full_path, e))?;
 
         let mut result = Vec::new();
         for entry in entries {

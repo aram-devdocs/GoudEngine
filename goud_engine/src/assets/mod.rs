@@ -73,11 +73,11 @@ mod asset;
 #[cfg(feature = "native")]
 mod audio_manager;
 pub mod dependency;
+pub mod fallback;
 mod handle;
 #[cfg(feature = "native")]
 mod hot_reload;
 mod loader;
-pub mod fallback;
 pub mod packager;
 mod server;
 mod storage;

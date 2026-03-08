@@ -1,7 +1,7 @@
 //! Tests for the virtual filesystem implementations.
 
-use super::{ArchiveFs, OsFs, VirtualFs};
 use super::archive_format::ArchiveWriter;
+use super::{ArchiveFs, OsFs, VirtualFs};
 
 // ---------------------------------------------------------------------------
 // OsFs tests

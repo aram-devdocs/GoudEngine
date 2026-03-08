@@ -134,7 +134,10 @@ mod tests {
 
     #[test]
     fn test_compressed_texture_asset_trait() {
-        assert_eq!(CompressedTextureAsset::asset_type_name(), "CompressedTexture");
+        assert_eq!(
+            CompressedTextureAsset::asset_type_name(),
+            "CompressedTexture"
+        );
         assert_eq!(CompressedTextureAsset::asset_type(), AssetType::Texture);
         assert!(CompressedTextureAsset::extensions().contains(&"dds"));
     }
