@@ -3,6 +3,7 @@
 from ._types import Color, Vec2, Rect, Transform2D, Sprite, Entity, Transform2DBuilder, SpriteBuilder
 from ._keys import Key, MouseButton
 from ._game import GoudGame, GoudContext, EngineConfig
+from ._diagnostic import DiagnosticMode
 
 __all__ = [
     "GoudGame",
@@ -13,4 +14,5 @@ __all__ = [
     "Transform2DBuilder",
     "SpriteBuilder",
     "Key", "MouseButton",
+    "DiagnosticMode",
 ]

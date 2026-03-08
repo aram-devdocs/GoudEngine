@@ -67,7 +67,12 @@ pub extern "C" fn goud_physics3d_destroy(ctx: GoudContextId) -> i32 {
 
     let mut registry = match get_physics_registry_3d().lock() {
         Ok(r) => r,
-        Err(_) => return ERR_INTERNAL_ERROR,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock 3D physics registry".to_string(),
+            ));
+            return ERR_INTERNAL_ERROR;
+        }
     };
     registry.providers.remove(&ctx);
     0

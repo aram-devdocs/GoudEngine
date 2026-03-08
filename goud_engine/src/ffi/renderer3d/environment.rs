@@ -19,10 +19,14 @@ pub extern "C" fn goud_renderer3d_configure_grid(
     divisions: u32,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
     if ensure_renderer3d_state(context_id).is_err() {
+        set_last_error(GoudError::InternalError(
+            "Renderer state not found".to_string(),
+        ));
         return false;
     }
 
@@ -46,6 +50,7 @@ pub extern "C" fn goud_renderer3d_set_grid_enabled(
     enabled: bool,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
@@ -71,10 +76,14 @@ pub extern "C" fn goud_renderer3d_configure_skybox(
     a: f32,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
     if ensure_renderer3d_state(context_id).is_err() {
+        set_last_error(GoudError::InternalError(
+            "Renderer state not found".to_string(),
+        ));
         return false;
     }
 
@@ -103,10 +112,14 @@ pub extern "C" fn goud_renderer3d_configure_fog(
     density: f32,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
     if ensure_renderer3d_state(context_id).is_err() {
+        set_last_error(GoudError::InternalError(
+            "Renderer state not found".to_string(),
+        ));
         return false;
     }
 
@@ -128,6 +141,7 @@ pub extern "C" fn goud_renderer3d_set_fog_enabled(
     enabled: bool,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 

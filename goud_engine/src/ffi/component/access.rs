@@ -51,7 +51,12 @@ pub extern "C" fn goud_component_has(
     {
         let registry = match get_context_registry().lock() {
             Ok(r) => r,
-            Err(_) => return false,
+            Err(_) => {
+                set_last_error(GoudError::InternalError(
+                    "Failed to lock context registry".to_string(),
+                ));
+                return false;
+            }
         };
         let context = match registry.get(context_id) {
             Some(ctx) => ctx,
@@ -63,6 +68,7 @@ pub extern "C" fn goud_component_has(
 
         let entity = entity_from_ffi(entity_id);
         if !context.world().is_alive(entity) {
+            set_last_error(GoudError::EntityNotFound);
             return false;
         }
     }
@@ -70,11 +76,21 @@ pub extern "C" fn goud_component_has(
     // Get component storage for this context
     let storage_map = match get_context_storage_map() {
         Some(s) => s,
-        None => return false,
+        None => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock component storage".to_string(),
+            ));
+            return false;
+        }
     };
     let map = match storage_map.as_ref() {
         Some(m) => m,
-        None => return false, // No storage exists
+        None => {
+            set_last_error(GoudError::InternalError(
+                "Component storage not initialized".to_string(),
+            ));
+            return false;
+        }
     };
 
     let key = context_key(context_id);
@@ -139,7 +155,12 @@ pub extern "C" fn goud_component_get(
     {
         let registry = match get_context_registry().lock() {
             Ok(r) => r,
-            Err(_) => return std::ptr::null(),
+            Err(_) => {
+                set_last_error(GoudError::InternalError(
+                    "Failed to lock context registry".to_string(),
+                ));
+                return std::ptr::null();
+            }
         };
         let context = match registry.get(context_id) {
             Some(ctx) => ctx,
@@ -228,7 +249,12 @@ pub extern "C" fn goud_component_get_mut(
     {
         let registry = match get_context_registry().lock() {
             Ok(r) => r,
-            Err(_) => return std::ptr::null_mut(),
+            Err(_) => {
+                set_last_error(GoudError::InternalError(
+                    "Failed to lock context registry".to_string(),
+                ));
+                return std::ptr::null_mut();
+            }
         };
         let context = match registry.get(context_id) {
             Some(ctx) => ctx,

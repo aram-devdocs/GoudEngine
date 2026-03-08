@@ -579,6 +579,8 @@ def gen_entry():
         error_names.append(cat["base_class"])
     error_names.append("RecoveryClass")
 
+    has_diagnostic = "diagnostic" in schema
+
     lines = [
         f"// {HEADER_COMMENT}",
         "",
@@ -586,8 +588,10 @@ def gen_entry():
         f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats }} from './types/engine.g.js';",
         "export type { Rect } from './types/math.g.js';",
         f"export {{ {', '.join(error_names)} }} from './errors.g.js';",
-        "",
     ]
+    if has_diagnostic:
+        lines.append("export { DiagnosticMode } from './diagnostic.g.js';")
+    lines.append("")
     write_generated(GEN / "index.g.ts", "\n".join(lines))
 
 
@@ -1957,6 +1961,81 @@ def gen_errors():
     write_generated(GEN / "errors.g.ts", "\n".join(lines))
 
 
+def gen_diagnostic():
+    if "diagnostic" not in schema:
+        return
+    diag = schema["diagnostic"]
+    cls = diag["class_name"]
+    lines = [
+        f"// {HEADER_COMMENT}",
+        "",
+        "/**",
+        f" * {diag['doc']}",
+        " *",
+        " * In web/WASM builds these are no-ops.",
+        " */",
+        f"export class {cls} {{",
+        "  private static _enabled = false;",
+        "",
+    ]
+    for method in diag["methods"]:
+        name = method["name"]
+        ffi = method["ffi"]
+        doc = method["doc"]
+
+        if method.get("buffer_protocol"):
+            lines += [
+                f"  /** {doc} */",
+                f"  static get {name}(): string {{",
+                "    try {",
+                "      const native = require('../node/index.g.js');",
+                f"      if (typeof native.{ffi} === 'function') {{",
+                f"        return native.{ffi}() ?? \"\";",
+                "      }",
+                "    } catch {",
+                "      // Web/WASM fallback",
+                "    }",
+                '    return "";',
+                "  }",
+            ]
+        elif method["returns"] == "void":
+            lines += [
+                f"  /** {doc} */",
+                f"  static {name}({method['params'][0]['name']}: boolean): void {{",
+                "    try {",
+                "      const native = require('../node/index.g.js');",
+                f"      if (typeof native.{ffi} === 'function') {{",
+                f"        native.{ffi}({method['params'][0]['name']});",
+                "      }",
+                "    } catch {",
+                "      // Web/WASM fallback",
+                "    }",
+                f"    {cls}._enabled = {method['params'][0]['name']};",
+                "  }",
+            ]
+        elif method["returns"] == "bool":
+            lines += [
+                f"  /** {doc} */",
+                f"  static get {name}(): boolean {{",
+                "    try {",
+                "      const native = require('../node/index.g.js');",
+                f"      if (typeof native.{ffi} === 'function') {{",
+                f"        return native.{ffi}();",
+                "      }",
+                "    } catch {",
+                "      // Web/WASM fallback",
+                "    }",
+                f"    return {cls}._enabled;",
+                "  }",
+            ]
+        lines.append("")
+
+    lines.append("}")
+    lines.append("")
+
+    write_generated(GEN / "diagnostic.g.ts", "\n".join(lines))
+
+
 if __name__ == "__main__":
     print("Generating TypeScript Node SDK...")
     gen_interface()
@@ -1966,4 +2045,5 @@ if __name__ == "__main__":
     gen_entry()
     gen_napi_rust()
     gen_errors()
+    gen_diagnostic()
     print("TypeScript Node SDK generation complete.")

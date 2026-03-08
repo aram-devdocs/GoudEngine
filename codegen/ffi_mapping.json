@@ -5206,6 +5206,35 @@
         "unsafe": true
       }
     },
+    "diagnostic": {
+      "goud_diagnostic_set_enabled": {
+        "params": [
+          {
+            "name": "enabled",
+            "type": "bool"
+          }
+        ],
+        "returns": "void"
+      },
+      "goud_diagnostic_is_enabled": {
+        "params": [],
+        "returns": "bool"
+      },
+      "goud_diagnostic_last_backtrace": {
+        "params": [
+          {
+            "name": "buf",
+            "type": "*mut u8"
+          },
+          {
+            "name": "buf_len",
+            "type": "usize"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      }
+    },
     "physics2d": {
       "_feature": "optional",
       "goud_physics_create": {

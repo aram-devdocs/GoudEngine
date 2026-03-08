@@ -906,6 +906,17 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_error_recovery_hint(int code, IntPtr buf, nuint buf_len);
 
+        // diagnostic
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_diagnostic_set_enabled([MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_diagnostic_is_enabled();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_diagnostic_last_backtrace(IntPtr buf, nuint buf_len);
+
         // physics2d
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_create(GoudContextId ctx, float gx, float gy);

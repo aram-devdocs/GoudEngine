@@ -484,6 +484,29 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_diagnostic_is_enabled": {
+      "source_file": "ffi/debug.rs",
+      "params": [],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_diagnostic_last_backtrace": {
+      "source_file": "ffi/debug.rs",
+      "params": [
+        "buf: *mut u8",
+        "buf_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_diagnostic_set_enabled": {
+      "source_file": "ffi/debug.rs",
+      "params": [
+        "enabled: bool"
+      ],
+      "return_type": "()",
+      "is_unsafe": false
+    },
     "goud_engine_config_create": {
       "source_file": "ffi/engine_config.rs",
       "params": [],
@@ -2921,5 +2944,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 298
+  "total_count": 301
 }

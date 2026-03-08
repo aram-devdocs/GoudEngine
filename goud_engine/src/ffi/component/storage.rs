@@ -8,6 +8,7 @@ use std::alloc::{alloc, dealloc, Layout};
 use std::collections::HashMap;
 use std::sync::Mutex;
 
+use crate::core::error::{set_last_error, GoudError};
 use crate::ecs::Entity;
 use crate::ffi::GoudContextId;
 
@@ -107,6 +108,9 @@ impl RawComponentStorage {
             let layout = self.layout();
             let new_ptr = alloc(layout);
             if new_ptr.is_null() {
+                set_last_error(GoudError::InternalError(
+                    "Failed to allocate component storage".to_string(),
+                ));
                 return false;
             }
 
@@ -130,6 +134,7 @@ impl RawComponentStorage {
         let index = entity.index() as usize;
 
         if index >= self.sparse.len() {
+            set_last_error(GoudError::EntityNotFound);
             return false;
         }
 
@@ -206,6 +211,7 @@ impl RawComponentStorage {
         let index = entity.index() as usize;
 
         if index >= self.sparse.len() {
+            set_last_error(GoudError::EntityNotFound);
             return false;
         }
 

@@ -85,6 +85,7 @@ pub extern "C" fn goud_renderer3d_update_light(
     spot_angle: f32,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
@@ -112,6 +113,7 @@ pub extern "C" fn goud_renderer3d_update_light(
 #[no_mangle]
 pub extern "C" fn goud_renderer3d_remove_light(context_id: GoudContextId, light_id: u32) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 

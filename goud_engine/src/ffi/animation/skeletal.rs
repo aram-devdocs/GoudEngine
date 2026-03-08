@@ -26,7 +26,12 @@ pub extern "C" fn goud_skeleton_create(context_id: GoudContextId, entity_id: u64
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return -ERR_INTERNAL_ERROR,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return -ERR_INTERNAL_ERROR;
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,
@@ -80,7 +85,12 @@ pub unsafe extern "C" fn goud_skeleton_add_bone(
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return -ERR_INTERNAL_ERROR,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return -ERR_INTERNAL_ERROR;
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,
@@ -153,7 +163,12 @@ pub extern "C" fn goud_skeleton_set_bone_transform(
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return -ERR_INTERNAL_ERROR,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return -ERR_INTERNAL_ERROR;
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,
@@ -219,7 +234,12 @@ pub unsafe extern "C" fn goud_skeleton_play_clip(
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return -ERR_INTERNAL_ERROR,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return -ERR_INTERNAL_ERROR;
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,
