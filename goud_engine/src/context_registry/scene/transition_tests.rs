@@ -158,6 +158,19 @@ fn test_tick_transition_noop_when_none() {
 }
 
 #[test]
+fn test_destroy_scene_during_transition_fails() {
+    let mut mgr = SceneManager::new();
+    let from = mgr.default_scene();
+    let to = mgr.create_scene("next").unwrap();
+    mgr.start_transition(from, to, TransitionType::Fade, 1.0)
+        .unwrap();
+
+    // Cannot destroy either scene during transition.
+    assert!(mgr.destroy_scene(from).is_err());
+    assert!(mgr.destroy_scene(to).is_err());
+}
+
+#[test]
 fn test_start_transition_negative_duration_fails() {
     let mut mgr = SceneManager::new();
     let from = mgr.default_scene();

@@ -1,6 +1,6 @@
 //! [`GoudGame`] struct definition, construction, and core API.
 
-use crate::context_registry::scene::transition::TransitionType;
+use crate::context_registry::scene::transition::{TransitionComplete, TransitionType};
 use crate::context_registry::scene::{SceneId, SceneManager};
 use crate::core::error::{GoudError, GoudResult};
 use crate::ecs::{Component, Entity, World};
@@ -55,6 +55,10 @@ pub struct GoudGame {
     /// Provider registry for subsystem backends (render, physics, audio, input).
     pub(crate) providers: ProviderRegistry,
 
+    /// Stores the result of the most recent transition completion, if any.
+    /// Use [`take_transition_complete`](Self::take_transition_complete) to consume it.
+    last_transition_complete: Option<TransitionComplete>,
+
     // =========================================================================
     // Native-only fields (require windowing + OpenGL)
     // =========================================================================
@@ -104,6 +108,7 @@ impl GoudGame {
             initialized: false,
             debug_overlay,
             providers: ProviderRegistry::default(),
+            last_transition_complete: None,
             #[cfg(feature = "native")]
             platform: None,
             #[cfg(feature = "native")]
@@ -159,6 +164,7 @@ impl GoudGame {
             initialized: false,
             debug_overlay,
             providers: ProviderRegistry::default(),
+            last_transition_complete: None,
             platform: Some(Box::new(platform)),
             render_backend: None,
             input_manager: InputManager::default(),
@@ -319,6 +325,15 @@ impl GoudGame {
         self.scene_manager.transition_progress()
     }
 
+    /// Takes the most recent transition completion result, if any.
+    ///
+    /// Returns `Some(TransitionComplete)` exactly once after a transition
+    /// finishes, then `None` until the next transition completes.
+    #[inline]
+    pub fn take_transition_complete(&mut self) -> Option<TransitionComplete> {
+        self.last_transition_complete.take()
+    }
+
     /// Returns a reference to the scene manager.
     #[inline]
     pub fn scene_manager(&self) -> &SceneManager {
@@ -382,7 +397,9 @@ impl GoudGame {
             }
 
             // Advance any in-progress scene transition.
-            self.scene_manager.tick_transition(frame_time);
+            if let Some(complete) = self.scene_manager.tick_transition(frame_time) {
+                self.last_transition_complete = Some(complete);
+            }
 
             // Safety: Limit iterations in tests/examples without actual window
             if self.context.frame_count() > 10000 {
@@ -407,7 +424,9 @@ impl GoudGame {
         }
 
         // Advance any in-progress scene transition.
-        self.scene_manager.tick_transition(delta_time);
+        if let Some(complete) = self.scene_manager.tick_transition(delta_time) {
+            self.last_transition_complete = Some(complete);
+        }
     }
 
     /// Returns the current FPS statistics from the debug overlay.

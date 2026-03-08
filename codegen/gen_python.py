@@ -1388,7 +1388,12 @@ def _gen_tool_class(tool_name: str, lines: list):
                         f"        return self._lib.{ffi_fn}({args_str})"
                     )
             else:
-                ffi_args = [to_snake(p["name"]) for p in params]
+                ffi_args = [
+                    f"int({to_snake(p['name'])})"
+                    if p["type"] in schema.get("enums", {})
+                    else to_snake(p["name"])
+                    for p in params
+                ]
                 args_str = ", ".join(["self._ctx"] + ffi_args)
                 if ret == "void":
                     lines.append(
