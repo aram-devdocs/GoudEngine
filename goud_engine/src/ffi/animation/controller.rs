@@ -28,7 +28,12 @@ pub extern "C" fn goud_animation_controller_create(
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return -ERR_INTERNAL_ERROR,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return -ERR_INTERNAL_ERROR;
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,
@@ -77,7 +82,12 @@ pub unsafe extern "C" fn goud_animation_controller_add_state(
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return -ERR_INTERNAL_ERROR,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return -ERR_INTERNAL_ERROR;
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,
@@ -146,7 +156,12 @@ pub unsafe extern "C" fn goud_animation_controller_add_transition(
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return -ERR_INTERNAL_ERROR,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return -ERR_INTERNAL_ERROR;
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,
@@ -205,7 +220,12 @@ pub unsafe extern "C" fn goud_animation_controller_set_state(
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return -ERR_INTERNAL_ERROR,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return -ERR_INTERNAL_ERROR;
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,
@@ -260,7 +280,12 @@ pub unsafe extern "C" fn goud_animation_controller_get_state(
 
     let registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return -ERR_INTERNAL_ERROR,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return -ERR_INTERNAL_ERROR;
+        }
     };
     let context = match registry.get(context_id) {
         Some(ctx) => ctx,
@@ -305,7 +330,12 @@ pub extern "C" fn goud_animation_controller_update(
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return -ERR_INTERNAL_ERROR,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return -ERR_INTERNAL_ERROR;
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,

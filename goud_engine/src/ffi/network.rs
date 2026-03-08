@@ -158,7 +158,12 @@ fn create_ws_provider() -> Result<Box<dyn NetworkProvider>, i32> {
 pub extern "C" fn goud_network_host(_context_id: GoudContextId, protocol: i32, port: u16) -> i64 {
     let provider = match create_provider(protocol) {
         Ok(p) => p,
-        Err(_) => return ERR_HANDLE,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to create network provider".to_string(),
+            ));
+            return ERR_HANDLE;
+        }
     };
 
     let mut inst = NetInstance {
@@ -223,7 +228,12 @@ pub unsafe extern "C" fn goud_network_connect(
 
     let mut provider = match create_provider(protocol) {
         Ok(p) => p,
-        Err(_) => return ERR_HANDLE,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to create network provider".to_string(),
+            ));
+            return ERR_HANDLE;
+        }
     };
 
     if let Err(e) = provider.connect(&full_addr) {

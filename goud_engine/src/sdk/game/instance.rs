@@ -93,6 +93,10 @@ impl GoudGame {
     /// non-graphical use. For a windowed game with rendering, use
     /// [`with_platform`](Self::with_platform) instead.
     pub fn new(config: GameConfig) -> GoudResult<Self> {
+        if config.diagnostic_mode {
+            crate::core::error::set_diagnostic_enabled(true);
+        }
+
         let window_size = (config.width, config.height);
         let mut debug_overlay = DebugOverlay::new(config.fps_update_interval);
         debug_overlay.set_enabled(config.show_fps_overlay);
@@ -135,6 +139,10 @@ impl GoudGame {
     /// Returns an error if GLFW initialization or window creation fails.
     #[cfg(feature = "native")]
     pub fn with_platform(config: GameConfig) -> GoudResult<Self> {
+        if config.diagnostic_mode {
+            crate::core::error::set_diagnostic_enabled(true);
+        }
+
         use crate::libs::platform::glfw_platform::GlfwPlatform;
         use crate::libs::platform::WindowConfig;
 

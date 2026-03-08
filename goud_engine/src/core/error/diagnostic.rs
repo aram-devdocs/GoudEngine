@@ -1,11 +1,46 @@
 //! Diagnostic mode for GoudEngine error infrastructure.
 //!
-//! When diagnostic mode is enabled, the engine captures backtraces on every
-//! error (debug builds only) and logs them at `debug!` level. This is useful
-//! for tracking down where errors originate without attaching a debugger.
+//! When diagnostic mode is enabled, the engine captures Rust backtraces on
+//! every error (debug builds only) and logs them at `debug!` level. This is
+//! useful for tracking down where errors originate without attaching a debugger.
 //!
-//! Diagnostic mode can be enabled programmatically or via the `GOUD_DIAGNOSTIC`
-//! environment variable (set to `"1"` or `"true"`).
+//! # Enabling Diagnostic Mode
+//!
+//! There are three ways to enable diagnostic mode:
+//!
+//! 1. **Environment variable** (recommended for development):
+//!    ```sh
+//!    GOUD_DIAGNOSTIC=1 ./my_game
+//!    # or
+//!    GOUD_DIAGNOSTIC=true ./my_game
+//!    ```
+//!    The variable is read automatically when the engine context is created.
+//!
+//! 2. **Game configuration** (at startup):
+//!    ```rust,ignore
+//!    let config = GameConfig::default().with_diagnostic_mode(true);
+//!    let game = GoudGame::new(config).unwrap();
+//!    ```
+//!
+//! 3. **Runtime toggle** (programmatic):
+//!    ```rust
+//!    use goud_engine::core::error::set_diagnostic_enabled;
+//!    set_diagnostic_enabled(true);
+//!    ```
+//!
+//! # Debug vs Release Builds
+//!
+//! - **Debug builds** (`cfg(debug_assertions)`): backtraces are captured via
+//!   `std::backtrace::Backtrace::force_capture()` and logged at `debug!` level.
+//! - **Release builds**: all backtrace code is compiled away. The toggle still
+//!   exists but `capture_backtrace_if_enabled()` is a no-op, giving zero overhead.
+//!
+//! # Retrieving Backtraces
+//!
+//! After an error occurs with diagnostic mode enabled (debug build), retrieve
+//! the backtrace with [`last_error_backtrace()`]. The backtrace is cleared when
+//! [`clear_last_error()`](super::clear_last_error) or
+//! [`take_last_error()`](super::take_last_error) is called.
 
 use std::cell::RefCell;
 use std::sync::atomic::{AtomicBool, Ordering};
