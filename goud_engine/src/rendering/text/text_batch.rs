@@ -132,95 +132,146 @@ impl TextBatch {
                 alignment: text.alignment,
             };
 
-            // Determine the font source: bitmap font takes priority over TTF.
             let (layout, gpu_texture) =
                 if let Some(bitmap_handle) = text.bitmap_font_handle.as_ref() {
-                    let bitmap_font = asset_server
-                        .get::<BitmapFontAsset>(bitmap_handle)
-                        .ok_or_else(|| {
-                            format!("bitmap font asset not found for handle {:?}", bitmap_handle)
-                        })?;
-
-                    let cache_key = bitmap_handle.index();
-                    let atlas = self.bitmap_atlas_cache.entry(cache_key).or_insert_with(|| {
-                        // Create a new bitmap atlas with placeholder texture
-                        // data. The actual texture is loaded externally.
-                        BitmapGlyphAtlas::new(bitmap_font, 256, 256, vec![0u8; 256 * 256 * 4])
-                    });
-
-                    let kerning_map = &bitmap_font.kernings;
-                    let kerning = if kerning_map.is_empty() {
-                        None
-                    } else {
-                        Some(kerning_map)
-                    };
-
-                    let layout_result =
-                        layout_text(&text.content, atlas, text.font_size, &config, kerning);
-                    let tex = atlas.ensure_gpu_texture(backend)?;
-                    (layout_result, tex)
-                } else {
-                    if !text.font_handle.is_valid() {
-                        continue;
-                    }
-
-                    let font_asset = asset_server
-                        .get::<FontAsset>(&text.font_handle)
-                        .ok_or_else(|| {
-                            format!("font asset not found for handle {:?}", text.font_handle)
-                        })?;
-
-                    let atlas = self.atlas_cache.get_or_create_mut(
-                        font_asset,
-                        text.font_handle,
+                    self.resolve_bitmap_font(
+                        &text.content,
                         text.font_size,
-                    )?;
-
-                    let layout_result =
-                        layout_text(&text.content, atlas, text.font_size, &config, None);
-                    let tex = atlas.ensure_gpu_texture(backend)?;
-                    (layout_result, tex)
+                        &config,
+                        bitmap_handle,
+                        asset_server,
+                        backend,
+                    )?
+                } else {
+                    match self.resolve_truetype_font(
+                        &text.content,
+                        text.font_size,
+                        &config,
+                        &text.font_handle,
+                        asset_server,
+                        backend,
+                    )? {
+                        Some(result) => result,
+                        None => continue,
+                    }
                 };
 
             if layout.glyphs.is_empty() {
                 continue;
             }
 
-            let batch_index_start = self.indices.len() as u32;
-            let matrix = transform.matrix();
-
-            for glyph in &layout.glyphs {
-                self.emit_glyph_quad(
-                    glyph.x,
-                    glyph.y,
-                    glyph.size_x,
-                    glyph.size_y,
-                    &glyph.uv_rect,
-                    text.color,
-                    &matrix,
-                );
-            }
-
-            let batch_index_count = self.indices.len() as u32 - batch_index_start;
-
-            self.stats.glyph_count += layout.glyphs.len();
-
-            // Merge with the previous batch if the texture matches.
-            if let Some(last) = self.batches.last_mut() {
-                if last.gpu_texture == gpu_texture {
-                    last.index_count += batch_index_count;
-                    continue;
-                }
-            }
-
-            self.batches.push(TextDrawBatch {
-                gpu_texture,
-                index_start: batch_index_start,
-                index_count: batch_index_count,
-            });
+            self.append_glyph_batch(&layout, text.color, transform, gpu_texture);
         }
 
         Ok(())
+    }
+
+    /// Resolves a bitmap font, builds/caches its atlas, and returns layout
+    /// and GPU texture handle.
+    fn resolve_bitmap_font(
+        &mut self,
+        content: &str,
+        font_size: f32,
+        config: &TextLayoutConfig,
+        bitmap_handle: &crate::assets::AssetHandle<BitmapFontAsset>,
+        asset_server: &AssetServer,
+        backend: &mut dyn RenderBackend,
+    ) -> Result<(super::layout::TextLayoutResult, TextureHandle), String> {
+        let bitmap_font = asset_server
+            .get::<BitmapFontAsset>(bitmap_handle)
+            .ok_or_else(|| {
+                format!("bitmap font asset not found for handle {:?}", bitmap_handle)
+            })?;
+
+        let cache_key = bitmap_handle.index();
+        let atlas = self.bitmap_atlas_cache.entry(cache_key).or_insert_with(|| {
+            let w = bitmap_font.scale_w;
+            let h = bitmap_font.scale_h;
+            let data = bitmap_font
+                .texture_data
+                .clone()
+                .unwrap_or_else(|| vec![0u8; (w * h * 4) as usize]);
+            BitmapGlyphAtlas::new(bitmap_font, w, h, data)
+        });
+
+        let kerning = if bitmap_font.kernings.is_empty() {
+            None
+        } else {
+            Some(&bitmap_font.kernings)
+        };
+
+        let layout = layout_text(content, atlas, font_size, config, kerning);
+        let tex = atlas.ensure_gpu_texture(backend)?;
+        Ok((layout, tex))
+    }
+
+    /// Resolves a TrueType font, builds/caches its atlas, and returns layout
+    /// and GPU texture handle. Returns `None` if the font handle is invalid.
+    fn resolve_truetype_font(
+        &mut self,
+        content: &str,
+        font_size: f32,
+        config: &TextLayoutConfig,
+        font_handle: &crate::assets::AssetHandle<FontAsset>,
+        asset_server: &AssetServer,
+        backend: &mut dyn RenderBackend,
+    ) -> Result<Option<(super::layout::TextLayoutResult, TextureHandle)>, String> {
+        if !font_handle.is_valid() {
+            return Ok(None);
+        }
+
+        let font_asset = asset_server
+            .get::<FontAsset>(font_handle)
+            .ok_or_else(|| format!("font asset not found for handle {:?}", font_handle))?;
+
+        let atlas =
+            self.atlas_cache
+                .get_or_create_mut(font_asset, *font_handle, font_size)?;
+
+        let layout = layout_text(content, atlas, font_size, config, None);
+        let tex = atlas.ensure_gpu_texture(backend)?;
+        Ok(Some((layout, tex)))
+    }
+
+    /// Emits glyph quads for a layout and appends or merges a draw batch.
+    fn append_glyph_batch(
+        &mut self,
+        layout: &super::layout::TextLayoutResult,
+        color: Color,
+        transform: &Transform2D,
+        gpu_texture: TextureHandle,
+    ) {
+        let batch_index_start = self.indices.len() as u32;
+        let matrix = transform.matrix();
+
+        for glyph in &layout.glyphs {
+            self.emit_glyph_quad(
+                glyph.x,
+                glyph.y,
+                glyph.size_x,
+                glyph.size_y,
+                &glyph.uv_rect,
+                color,
+                &matrix,
+            );
+        }
+
+        let batch_index_count = self.indices.len() as u32 - batch_index_start;
+        self.stats.glyph_count += layout.glyphs.len();
+
+        // Merge with the previous batch if the texture matches.
+        if let Some(last) = self.batches.last_mut() {
+            if last.gpu_texture == gpu_texture {
+                last.index_count += batch_index_count;
+                return;
+            }
+        }
+
+        self.batches.push(TextDrawBatch {
+            gpu_texture,
+            index_start: batch_index_start,
+            index_count: batch_index_count,
+        });
     }
 
     /// Uploads geometry to the GPU and issues draw calls.

@@ -18,6 +18,8 @@ pub fn parse_bmfont(content: &str) -> Result<BitmapFontAsset, String> {
     let mut texture_path = String::new();
     let mut line_height: f32 = 0.0;
     let mut base: f32 = 0.0;
+    let mut scale_w: u32 = 256;
+    let mut scale_h: u32 = 256;
 
     for line in content.lines() {
         let line = line.trim();
@@ -28,6 +30,8 @@ pub fn parse_bmfont(content: &str) -> Result<BitmapFontAsset, String> {
         if line.starts_with("common ") {
             line_height = parse_value(line, "lineHeight")?;
             base = parse_value(line, "base")?;
+            scale_w = parse_value(line, "scaleW")?;
+            scale_h = parse_value(line, "scaleH")?;
         } else if line.starts_with("page ") {
             texture_path = parse_string_value(line, "file")?;
         } else if line.starts_with("char ") {
@@ -78,6 +82,9 @@ pub fn parse_bmfont(content: &str) -> Result<BitmapFontAsset, String> {
         line_height,
         base,
         kernings,
+        scale_w,
+        scale_h,
+        texture_data: None,
     })
 }
 

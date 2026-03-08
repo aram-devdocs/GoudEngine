@@ -190,6 +190,9 @@ mod tests {
             line_height: 20.0,
             base: 16.0,
             kernings: HashMap::new(),
+            scale_w: 64,
+            scale_h: 64,
+            texture_data: None,
         }
     }
 

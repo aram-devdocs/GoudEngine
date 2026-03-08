@@ -39,6 +39,15 @@ pub struct BitmapFontAsset {
     pub base: f32,
     /// Kerning adjustments for character pairs.
     pub kernings: HashMap<(char, char), f32>,
+    /// Atlas texture width in pixels (from BMFont `scaleW`).
+    pub scale_w: u32,
+    /// Atlas texture height in pixels (from BMFont `scaleH`).
+    pub scale_h: u32,
+    /// Pre-loaded RGBA8 texture data, if available.
+    ///
+    /// Populated when the bitmap font texture is loaded alongside the
+    /// `.fnt` file. When `None`, a transparent placeholder is used.
+    pub texture_data: Option<Vec<u8>>,
 }
 
 impl BitmapFontAsset {
