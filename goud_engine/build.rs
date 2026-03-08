@@ -124,6 +124,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/collision.rs",
     // scene module
     "src/ffi/scene.rs",
+    "src/ffi/scene_transition.rs",
     // debug overlay
     "src/ffi/debug.rs",
     // error query module

@@ -697,6 +697,22 @@ class GoudContext:
         """Returns the currently targeted scene ID"""
         return self._lib.goud_scene_get_current(self._ctx)
 
+    def scene_transition_to(self, from_scene, to_scene, transition_type, duration_secs):
+        """Starts a transition between two scenes"""
+        return self._lib.goud_scene_transition_to(self._ctx, from_scene, to_scene, transition_type, duration_secs)
+
+    def scene_transition_progress(self):
+        """Returns the progress of the active transition (0.0-1.0, or -1.0 if none)"""
+        return self._lib.goud_scene_transition_progress(self._ctx)
+
+    def scene_transition_is_active(self):
+        """Returns whether a scene transition is currently active"""
+        return self._lib.goud_scene_transition_is_active(self._ctx)
+
+    def scene_transition_tick(self, delta_time):
+        """Advances the active transition by delta time"""
+        return self._lib.goud_scene_transition_tick(self._ctx, delta_time)
+
 
 class EngineConfig:
     """Builder for configuring and creating a GoudGame instance with provider selection."""
