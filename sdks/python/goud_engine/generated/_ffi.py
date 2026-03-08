@@ -713,7 +713,7 @@ def _setup():
     _lib.goud_animation_clip_add_event.restype = ctypes.c_int32
     _lib.goud_animation_events_count.argtypes = [GoudContextId]
     _lib.goud_animation_events_count.restype = ctypes.c_int32
-    _lib.goud_animation_events_read.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8)), ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32)]
+    _lib.goud_animation_events_read.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8)), ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_int32), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8)), ctypes.POINTER(ctypes.c_uint32)]
     _lib.goud_animation_events_read.restype = ctypes.c_int32
 
     # tween
@@ -753,6 +753,8 @@ def _setup():
     _lib.goud_animation_layer_set_clip.restype = ctypes.c_int32
     _lib.goud_animation_layer_add_frame.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
     _lib.goud_animation_layer_add_frame.restype = ctypes.c_int32
+    _lib.goud_animation_layer_reset.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32]
+    _lib.goud_animation_layer_reset.restype = ctypes.c_int32
 
     # network
     try:

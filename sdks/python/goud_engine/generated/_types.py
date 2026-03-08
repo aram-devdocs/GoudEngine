@@ -1077,13 +1077,17 @@ class SpriteAnimatorBuilder:
 
 class AnimationEventData:
     """Data for a fired animation event read from the event queue"""
-    def __init__(self, entity: int = 0, name: float = 0.0, frame_index: int = 0):
+    def __init__(self, entity: int = 0, name: float = 0.0, frame_index: int = 0, payload_type: int = 0, payload_int: int = 0, payload_float: float = 0.0, payload_string: float = 0.0):
         self.entity = entity
         self.name = name
         self.frame_index = frame_index
+        self.payload_type = payload_type
+        self.payload_int = payload_int
+        self.payload_float = payload_float
+        self.payload_string = payload_string
 
     def __repr__(self):
-        return f"AnimationEventData(entity={self.entity}, name={self.name}, frame_index={self.frame_index})"
+        return f"AnimationEventData(entity={self.entity}, name={self.name}, frame_index={self.frame_index}, payload_type={self.payload_type}, payload_int={self.payload_int}, payload_float={self.payload_float}, payload_string={self.payload_string})"
 
 class RenderStats:
     """Per-frame rendering statistics"""
