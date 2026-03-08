@@ -141,6 +141,9 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/network.rs",
     // plugin module
     "src/ffi/plugin.rs",
+    // ui module
+    "src/ffi/ui/manager.rs",
+    "src/ffi/ui/node.rs",
 ];
 
 /// A single extracted FFI function signature.

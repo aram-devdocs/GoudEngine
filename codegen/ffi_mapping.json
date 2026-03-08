@@ -149,6 +149,10 @@
     "EngineConfigHandle": {
       "type": "*mut c_void",
       "invalid": "null"
+    },
+    "UiManagerHandle": {
+      "type": "*mut c_void",
+      "invalid": "null"
     }
   },
   "ctypes_mappings": {
@@ -1443,6 +1447,44 @@
         "list": {
           "ffi": "goud_plugin_list",
           "out_string": true
+        }
+      }
+    },
+    "UiManager": {
+      "handle": "UiManagerHandle",
+      "handle_type": "opaque",
+      "constructor": {
+        "ffi": "goud_ui_manager_create",
+        "params": []
+      },
+      "destructor": "goud_ui_manager_destroy",
+      "methods": {
+        "update": {
+          "ffi": "goud_ui_manager_update"
+        },
+        "render": {
+          "ffi": "goud_ui_manager_render"
+        },
+        "nodeCount": {
+          "ffi": "goud_ui_manager_node_count"
+        },
+        "createNode": {
+          "ffi": "goud_ui_create_node"
+        },
+        "removeNode": {
+          "ffi": "goud_ui_remove_node"
+        },
+        "setParent": {
+          "ffi": "goud_ui_set_parent"
+        },
+        "getParent": {
+          "ffi": "goud_ui_get_parent"
+        },
+        "getChildCount": {
+          "ffi": "goud_ui_get_child_count"
+        },
+        "getChildAt": {
+          "ffi": "goud_ui_get_child_at"
         }
       }
     }
@@ -6167,6 +6209,144 @@
           }
         ],
         "returns": "i32",
+        "unsafe": true
+      }
+    },
+    "ui_manager": {
+      "goud_ui_manager_create": {
+        "params": [],
+        "returns": "*mut c_void"
+      },
+      "goud_ui_manager_destroy": {
+        "params": [
+          {
+            "name": "ptr",
+            "type": "*mut c_void"
+          }
+        ],
+        "returns": "void",
+        "unsafe": true
+      },
+      "goud_ui_manager_update": {
+        "params": [
+          {
+            "name": "ptr",
+            "type": "*mut c_void"
+          }
+        ],
+        "returns": "void",
+        "unsafe": true
+      },
+      "goud_ui_manager_render": {
+        "params": [
+          {
+            "name": "ptr",
+            "type": "*mut c_void"
+          }
+        ],
+        "returns": "void",
+        "unsafe": true
+      },
+      "goud_ui_manager_node_count": {
+        "params": [
+          {
+            "name": "ptr",
+            "type": "*mut c_void"
+          }
+        ],
+        "returns": "u32",
+        "unsafe": true
+      },
+      "goud_ui_create_node": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "component_type",
+            "type": "i32"
+          }
+        ],
+        "returns": "u64",
+        "unsafe": true
+      },
+      "goud_ui_remove_node": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_ui_set_parent": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "child_id",
+            "type": "u64"
+          },
+          {
+            "name": "parent_id",
+            "type": "u64"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_ui_get_parent": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          }
+        ],
+        "returns": "u64",
+        "unsafe": true
+      },
+      "goud_ui_get_child_count": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          }
+        ],
+        "returns": "u32",
+        "unsafe": true
+      },
+      "goud_ui_get_child_at": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          },
+          {
+            "name": "index",
+            "type": "u32"
+          }
+        ],
+        "returns": "u64",
         "unsafe": true
       }
     }
