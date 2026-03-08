@@ -17,9 +17,10 @@ use std::path::Path;
 /// # Example
 ///
 /// ```no_run
+/// use std::path::Path;
 /// use goud_engine::assets::packager;
 ///
-/// packager::package_directory("assets", "game.goud").unwrap();
+/// packager::package_directory(Path::new("assets"), Path::new("game.goud")).unwrap();
 /// ```
 pub fn package_directory(input_dir: &Path, output_path: &Path) -> Result<(), AssetLoadError> {
     let mut writer = ArchiveWriter::new();
