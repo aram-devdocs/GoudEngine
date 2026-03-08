@@ -1,5 +1,6 @@
 //! [`FallbackRegistry`]: stores default asset values for load-failure substitution.
 
+use crate::assets::loaders::audio::AudioData;
 use crate::assets::loaders::{
     AudioAsset, AudioFormat, MeshAsset, MeshVertex, SubMesh, TextureAsset, TextureFormat,
 };
@@ -122,7 +123,7 @@ impl FallbackRegistry {
         });
 
         // Silent audio -- 0 bytes, standard CD-quality settings.
-        self.register(AudioAsset::new(Vec::new(), 44100, 2, AudioFormat::Wav, 0.0));
+        self.register(AudioAsset::new(AudioData::InMemory(Vec::new()), 44100, 2, AudioFormat::Wav, 0.0));
 
         // Unit triangle mesh -- a minimal visible placeholder.
         self.register(MeshAsset {
