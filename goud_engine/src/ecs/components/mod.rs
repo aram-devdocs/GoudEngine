@@ -160,6 +160,7 @@
 //! ```
 
 pub mod animation_controller;
+pub mod animation_layer;
 pub mod audiosource;
 pub mod collider;
 pub mod global_transform;
@@ -177,6 +178,7 @@ pub mod transform2d;
 pub use animation_controller::{
     AnimParam, AnimationController, AnimationState, AnimationTransition, TransitionCondition,
 };
+pub use animation_layer::{AnimationLayer, AnimationLayerStack};
 pub use audiosource::{AttenuationModel, AudioChannel, AudioSource};
 pub use collider::{Collider, ColliderShape};
 pub use global_transform::GlobalTransform;

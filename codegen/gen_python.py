@@ -35,6 +35,10 @@ def _resolve_ffi_return(ret: str) -> str:
 
 def _resolve_ffi_param(ptype: str) -> str:
     """Map an FFI param type string to its ctypes argtype."""
+    # Handle ref types (out-pointers): "ref FfiRenderCapabilities" -> POINTER(FfiRenderCapabilities)
+    if ptype.startswith("ref "):
+        inner = ptype[4:]
+        return f"ctypes.POINTER({inner})"
     ct = CTYPES_MAP.get(ptype)
     if ct:
         return ct
@@ -1387,6 +1391,10 @@ def _gen_tool_class(tool_name: str, lines: list):
                     lines.append(
                         f"        self._lib.{ffi_fn}({args_str})"
                     )
+                elif mmap.get("returns_bool_from_i32"):
+                    lines.append(
+                        f"        return self._lib.{ffi_fn}({args_str}) != 0"
+                    )
                 else:
                     lines.append(
                         f"        return self._lib.{ffi_fn}({args_str})"
@@ -1521,12 +1529,18 @@ def gen_init():
     if has_engine_config:
         game_imports.append("EngineConfig")
 
+    has_diagnostic = "diagnostic" in schema
+
     lines = [
         f'"""{HEADER_COMMENT}"""',
         "",
         f"from ._types import {type_imports}",
         "from ._keys import Key, MouseButton",
         f"from ._game import {', '.join(game_imports)}",
+    ]
+    if has_diagnostic:
+        lines.append("from ._diagnostic import DiagnosticMode")
+    lines += [
         "",
         "__all__ = [",
     ]
@@ -1537,6 +1551,8 @@ def gen_init():
     for bi in builder_imports:
         lines.append(f'    "{bi}",')
     lines.append('    "Key", "MouseButton",')
+    if has_diagnostic:
+        lines.append('    "DiagnosticMode",')
     lines.append("]")
     lines.append("")
     write_generated(OUT / "__init__.py", "\n".join(lines))
@@ -1701,6 +1717,54 @@ def gen_errors():
     write_generated(OUT / "_errors.py", "\n".join(lines))
 
 
+def gen_diagnostic():
+    if "diagnostic" not in schema:
+        return
+    diag = schema["diagnostic"]
+    lines = [
+        f'"""{HEADER_COMMENT}"""',
+        "",
+        "import ctypes",
+        "",
+        "from ._ffi import _lib",
+        "",
+        "",
+        f"class {diag['class_name']}:",
+        f'    """{diag["doc"]}"""',
+        "",
+    ]
+    for method in diag["methods"]:
+        py_name = to_snake(method["name"])
+        ffi_name = method["ffi"]
+        params = method.get("params", [])
+        ret = method["returns"]
+
+        param_sig = ", ".join(f"{p['name']}: {PYTHON_TYPES.get(p['type'], p['type'])}" for p in params)
+        call_args = ", ".join(p["name"] for p in params)
+
+        lines.append("    @staticmethod")
+        lines.append(f"    def {py_name}({param_sig}) -> {PYTHON_TYPES.get(ret, ret)}:")
+        lines.append(f'        """{method["doc"]}"""')
+
+        if method.get("buffer_protocol"):
+            lines += [
+                "        buf = (ctypes.c_uint8 * 4096)()",
+                f"        written = _lib.{ffi_name}(buf, 4096)",
+                "        if written <= 0:",
+                '            return ""',
+                '        return bytes(buf[:written]).decode("utf-8", errors="replace")',
+            ]
+        elif ret == "void":
+            lines.append(f"        _lib.{ffi_name}({call_args})")
+        elif ret == "bool":
+            lines.append(f"        return bool(_lib.{ffi_name}({call_args}))")
+        else:
+            lines.append(f"        return _lib.{ffi_name}({call_args})")
+        lines.append("")
+
+    write_generated(OUT / "_diagnostic.py", "\n".join(lines))
+
+
 if __name__ == "__main__":
     print("Generating Python SDK...")
     gen_ffi()
@@ -1708,5 +1772,6 @@ if __name__ == "__main__":
     gen_types()
     gen_game()
     gen_errors()
+    gen_diagnostic()
     gen_init()
     print("Python SDK generation complete.")

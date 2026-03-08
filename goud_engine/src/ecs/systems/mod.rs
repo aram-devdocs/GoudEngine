@@ -12,7 +12,7 @@ pub mod physics_sync_3d;
 pub mod skeletal_animation;
 pub mod transform;
 
-pub use animation::update_sprite_animations;
+pub use animation::{blend_rects, compute_blended_rect, update_sprite_animations, BlendMode};
 pub use animation_controller::update_animation_controllers;
 pub use physics_sync_2d::{PhysicsHandleMap2D, PhysicsStepSystem2D};
 pub use physics_sync_3d::{PhysicsHandleMap3D, PhysicsStepSystem3D};

@@ -19,6 +19,7 @@ pub mod math;
 pub mod types;
 
 pub mod providers;
+pub mod serialization;
 
 #[cfg(feature = "native")]
 pub mod input_manager;

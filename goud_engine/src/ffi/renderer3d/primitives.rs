@@ -1,7 +1,7 @@
 //! FFI functions for primitive creation and object manipulation.
 
 use super::state::{ensure_renderer3d_state, with_renderer};
-use crate::core::error::set_last_error;
+use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::libs::graphics::renderer3d::{PrimitiveCreateInfo, PrimitiveType};
 
@@ -183,6 +183,7 @@ pub extern "C" fn goud_renderer3d_set_object_position(
     z: f32,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
@@ -202,6 +203,7 @@ pub extern "C" fn goud_renderer3d_set_object_rotation(
     z: f32,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
@@ -221,6 +223,7 @@ pub extern "C" fn goud_renderer3d_set_object_scale(
     z: f32,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
@@ -237,6 +240,7 @@ pub extern "C" fn goud_renderer3d_destroy_object(
     object_id: u32,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 

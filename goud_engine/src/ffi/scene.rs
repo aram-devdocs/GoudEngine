@@ -107,7 +107,12 @@ pub extern "C" fn goud_scene_destroy(context_id: GoudContextId, scene_id: u32) -
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return GoudResult::err(ERR_INTERNAL_ERROR),
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return GoudResult::err(ERR_INTERNAL_ERROR);
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,
@@ -228,7 +233,12 @@ pub extern "C" fn goud_scene_set_active(
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return GoudResult::err(ERR_INTERNAL_ERROR),
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return GoudResult::err(ERR_INTERNAL_ERROR);
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,
@@ -261,16 +271,25 @@ pub extern "C" fn goud_scene_set_active(
 #[no_mangle]
 pub extern "C" fn goud_scene_is_active(context_id: GoudContextId, scene_id: u32) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
     let registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return false,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return false;
+        }
     };
     let context = match registry.get(context_id) {
         Some(ctx) => ctx,
-        None => return false,
+        None => {
+            set_last_error(GoudError::InvalidContext);
+            return false;
+        }
     };
 
     context.scene_manager().is_active(scene_id)
@@ -292,16 +311,25 @@ pub extern "C" fn goud_scene_is_active(context_id: GoudContextId, scene_id: u32)
 #[no_mangle]
 pub extern "C" fn goud_scene_count(context_id: GoudContextId) -> u32 {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return 0;
     }
 
     let registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return 0,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return 0;
+        }
     };
     let context = match registry.get(context_id) {
         Some(ctx) => ctx,
-        None => return 0,
+        None => {
+            set_last_error(GoudError::InvalidContext);
+            return 0;
+        }
     };
 
     context.scene_manager().scene_count() as u32
@@ -334,7 +362,12 @@ pub extern "C" fn goud_scene_set_current(context_id: GoudContextId, scene_id: u3
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return GoudResult::err(ERR_INTERNAL_ERROR),
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return GoudResult::err(ERR_INTERNAL_ERROR);
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(ctx) => ctx,
@@ -367,16 +400,25 @@ pub extern "C" fn goud_scene_set_current(context_id: GoudContextId, scene_id: u3
 #[no_mangle]
 pub extern "C" fn goud_scene_get_current(context_id: GoudContextId) -> u32 {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return INVALID_SCENE_ID;
     }
 
     let registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return INVALID_SCENE_ID,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return INVALID_SCENE_ID;
+        }
     };
     let context = match registry.get(context_id) {
         Some(ctx) => ctx,
-        None => return INVALID_SCENE_ID,
+        None => {
+            set_last_error(GoudError::InvalidContext);
+            return INVALID_SCENE_ID;
+        }
     };
 
     context.current_scene()

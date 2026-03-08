@@ -97,7 +97,7 @@ pub use collision::{
 };
 pub use component::{Component, ComponentId, ComponentInfo};
 pub use entity::{Entity, EntityAllocator};
-pub use physics_world::PhysicsWorld;
+pub use physics_world::{PhysicsInterpolation, PhysicsWorld};
 pub use query::{Query, QueryIter, QueryIterMut, QuerySystemParamState};
 pub use resource::{Res, ResMut, Resource, ResourceId, Resources};
 pub use schedule::{

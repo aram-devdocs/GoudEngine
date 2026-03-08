@@ -55,12 +55,14 @@ thread_local! {
 /// assert_eq!(last_error_code(), ERR_NOT_INITIALIZED);
 /// ```
 pub fn set_last_error(error: GoudError) {
+    super::logging::log_error(&error, None);
     LAST_ERROR.with(|e| {
         *e.borrow_mut() = Some(error);
     });
     LAST_ERROR_CONTEXT.with(|c| {
         *c.borrow_mut() = None;
     });
+    super::diagnostic::capture_backtrace_if_enabled();
 }
 
 /// Sets the last error and its context for the current thread.
@@ -73,12 +75,14 @@ pub fn set_last_error(error: GoudError) {
 ///
 /// Both values are stored in thread-local storage and will not affect other threads.
 pub fn set_last_error_with_context(error: GoudError, ctx: GoudErrorContext) {
+    super::logging::log_error(&error, Some(&ctx));
     LAST_ERROR.with(|e| {
         *e.borrow_mut() = Some(error);
     });
     LAST_ERROR_CONTEXT.with(|c| {
         *c.borrow_mut() = Some(ctx);
     });
+    super::diagnostic::capture_backtrace_if_enabled();
 }
 
 /// Takes the last error from the current thread, clearing it.
@@ -101,6 +105,7 @@ pub fn set_last_error_with_context(error: GoudError, ctx: GoudErrorContext) {
 /// assert!(take_last_error().is_none()); // Cleared after take
 /// ```
 pub fn take_last_error() -> Option<GoudError> {
+    super::diagnostic::clear_backtrace();
     LAST_ERROR_CONTEXT.with(|c| {
         *c.borrow_mut() = None;
     });
@@ -199,6 +204,7 @@ pub fn last_error_message() -> Option<String> {
 /// assert_eq!(last_error_code(), SUCCESS);
 /// ```
 pub fn clear_last_error() {
+    super::diagnostic::clear_backtrace();
     LAST_ERROR.with(|e| {
         *e.borrow_mut() = None;
     });

@@ -3,6 +3,8 @@
 use crate::core::math::Rect;
 use crate::ecs::Component;
 
+use super::events::{AnimationEvent, EventPayload};
+
 // =============================================================================
 // PlaybackMode
 // =============================================================================
@@ -48,6 +50,9 @@ pub struct AnimationClip {
     pub frame_duration: f32,
     /// Playback mode (Loop or OneShot).
     pub mode: PlaybackMode,
+    /// Events configured to fire at specific frames.
+    #[serde(default)]
+    pub events: Vec<AnimationEvent>,
 }
 
 impl AnimationClip {
@@ -60,6 +65,7 @@ impl AnimationClip {
             frames,
             frame_duration,
             mode: PlaybackMode::Loop,
+            events: Vec::new(),
         }
     }
 
@@ -67,6 +73,19 @@ impl AnimationClip {
     #[inline]
     pub fn with_mode(mut self, mode: PlaybackMode) -> Self {
         self.mode = mode;
+        self
+    }
+
+    /// Adds an event at a specific frame index (builder pattern).
+    #[inline]
+    pub fn with_event(
+        mut self,
+        frame_index: usize,
+        name: impl Into<String>,
+        payload: EventPayload,
+    ) -> Self {
+        self.events
+            .push(AnimationEvent::new(frame_index, name, payload));
         self
     }
 
@@ -113,6 +132,8 @@ pub struct SpriteAnimator {
     pub clip: AnimationClip,
     /// Index of the current frame in `clip.frames`.
     pub current_frame: usize,
+    /// Index of the frame before the last update (used for event detection).
+    pub previous_frame: usize,
     /// Accumulated time since the last frame advance.
     pub elapsed: f32,
     /// Whether the animation is currently playing.
@@ -128,6 +149,7 @@ impl SpriteAnimator {
         Self {
             clip,
             current_frame: 0,
+            previous_frame: 0,
             elapsed: 0.0,
             playing: true,
             finished: false,
@@ -138,6 +160,7 @@ impl SpriteAnimator {
     #[inline]
     pub fn play(&mut self) {
         self.current_frame = 0;
+        self.previous_frame = 0;
         self.elapsed = 0.0;
         self.playing = true;
         self.finished = false;
@@ -161,6 +184,7 @@ impl SpriteAnimator {
     #[inline]
     pub fn reset(&mut self) {
         self.current_frame = 0;
+        self.previous_frame = 0;
         self.elapsed = 0.0;
         self.playing = false;
         self.finished = false;
