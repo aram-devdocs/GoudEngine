@@ -107,6 +107,15 @@ impl AssetLoader for CompressedTextureLoader {
         CompressedTextureAsset::extensions()
     }
 
+    /// Parses DDS bytes into a [`CompressedTextureAsset`] (CPU-side data).
+    ///
+    /// This loader only produces the compressed data structure; it does **not**
+    /// upload to the GPU. The renderer is responsible for checking
+    /// `BackendCapabilities::supports_bc_compression` before calling
+    /// `TextureOps::create_compressed_texture()`. If BC compression is
+    /// unsupported, the default `TextureOps` implementation returns an error,
+    /// giving the renderer a chance to decompress on the CPU and fall back to
+    /// an uncompressed upload instead.
     fn load<'a>(
         &'a self,
         bytes: &'a [u8],
