@@ -4,7 +4,7 @@
 //! text layout engine, and renders them as textured quads grouped by
 //! atlas texture to minimise draw calls.
 
-use crate::assets::{loaders::FontAsset, AssetServer};
+use crate::assets::{loaders::BitmapFontAsset, loaders::FontAsset, AssetServer};
 use crate::core::math::{Color, Vec2};
 use crate::ecs::components::{Text, Transform2D};
 use crate::ecs::query::Query;
@@ -16,12 +16,9 @@ use crate::libs::graphics::backend::types::{
 use crate::rendering::sprite_batch::types::SpriteVertex;
 
 use super::atlas_cache::GlyphAtlasCache;
+use super::bitmap_atlas::BitmapGlyphAtlas;
 use super::glyph_atlas::UvRect;
 use super::layout::{layout_text, TextLayoutConfig};
-
-// =============================================================================
-// Types
-// =============================================================================
 
 /// A single draw batch for glyphs sharing the same atlas texture.
 #[derive(Debug)]
@@ -43,10 +40,6 @@ pub struct TextRenderStats {
     pub draw_calls: usize,
 }
 
-// =============================================================================
-// TextBatch
-// =============================================================================
-
 /// High-performance text batch renderer.
 ///
 /// Follows the same begin/draw/end lifecycle as [`SpriteBatch`](crate::rendering::sprite_batch::SpriteBatch):
@@ -57,8 +50,10 @@ pub struct TextRenderStats {
 /// batch.end(&mut backend)?;
 /// ```
 pub struct TextBatch {
-    /// Cached glyph atlases keyed by (font_handle, size).
+    /// Cached TrueType glyph atlases keyed by (font_handle, size).
     atlas_cache: GlyphAtlasCache,
+    /// Cached bitmap font atlases keyed by asset handle index.
+    bitmap_atlas_cache: std::collections::HashMap<u32, BitmapGlyphAtlas>,
     /// CPU-side vertex buffer (4 vertices per glyph quad).
     vertices: Vec<SpriteVertex>,
     /// CPU-side index buffer (6 indices per glyph quad).
@@ -80,6 +75,7 @@ impl TextBatch {
     pub fn new() -> Self {
         Self {
             atlas_cache: GlyphAtlasCache::new(),
+            bitmap_atlas_cache: std::collections::HashMap::new(),
             vertices: Vec::with_capacity(1024),
             indices: Vec::with_capacity(1536),
             batches: Vec::with_capacity(16),
@@ -126,19 +122,9 @@ impl TextBatch {
             .collect();
 
         for (text, transform) in &entities {
-            if text.content.is_empty() || !text.font_handle.is_valid() {
+            if text.content.is_empty() {
                 continue;
             }
-
-            let font_asset = asset_server
-                .get::<FontAsset>(&text.font_handle)
-                .ok_or_else(|| format!("font asset not found for handle {:?}", text.font_handle))?;
-
-            let atlas =
-                self.atlas_cache
-                    .get_or_create_mut(font_asset, text.font_handle, text.font_size)?;
-
-            let gpu_texture = atlas.ensure_gpu_texture(backend)?;
 
             let config = TextLayoutConfig {
                 max_width: text.max_width,
@@ -146,7 +132,55 @@ impl TextBatch {
                 alignment: text.alignment,
             };
 
-            let layout = layout_text(&text.content, atlas, text.font_size, &config);
+            // Determine the font source: bitmap font takes priority over TTF.
+            let (layout, gpu_texture) =
+                if let Some(bitmap_handle) = text.bitmap_font_handle.as_ref() {
+                    let bitmap_font = asset_server
+                        .get::<BitmapFontAsset>(bitmap_handle)
+                        .ok_or_else(|| {
+                            format!("bitmap font asset not found for handle {:?}", bitmap_handle)
+                        })?;
+
+                    let cache_key = bitmap_handle.index();
+                    let atlas = self.bitmap_atlas_cache.entry(cache_key).or_insert_with(|| {
+                        // Create a new bitmap atlas with placeholder texture
+                        // data. The actual texture is loaded externally.
+                        BitmapGlyphAtlas::new(bitmap_font, 256, 256, vec![0u8; 256 * 256 * 4])
+                    });
+
+                    let kerning_map = &bitmap_font.kernings;
+                    let kerning = if kerning_map.is_empty() {
+                        None
+                    } else {
+                        Some(kerning_map)
+                    };
+
+                    let layout_result =
+                        layout_text(&text.content, atlas, text.font_size, &config, kerning);
+                    let tex = atlas.ensure_gpu_texture(backend)?;
+                    (layout_result, tex)
+                } else {
+                    if !text.font_handle.is_valid() {
+                        continue;
+                    }
+
+                    let font_asset = asset_server
+                        .get::<FontAsset>(&text.font_handle)
+                        .ok_or_else(|| {
+                            format!("font asset not found for handle {:?}", text.font_handle)
+                        })?;
+
+                    let atlas = self.atlas_cache.get_or_create_mut(
+                        font_asset,
+                        text.font_handle,
+                        text.font_size,
+                    )?;
+
+                    let layout_result =
+                        layout_text(&text.content, atlas, text.font_size, &config, None);
+                    let tex = atlas.ensure_gpu_texture(backend)?;
+                    (layout_result, tex)
+                };
 
             if layout.glyphs.is_empty() {
                 continue;
@@ -256,10 +290,6 @@ impl TextBatch {
         &self.atlas_cache
     }
 
-    // =========================================================================
-    // Internal helpers
-    // =========================================================================
-
     /// Emits a single glyph quad (4 vertices + 6 indices).
     fn emit_glyph_quad(
         &mut self,
@@ -356,24 +386,16 @@ impl std::fmt::Debug for TextBatch {
     }
 }
 
-// =============================================================================
-// Byte-slice helpers
-// =============================================================================
-
 /// Reinterprets a `&[SpriteVertex]` as `&[u8]` for GPU upload.
 fn vertex_slice_as_bytes(vertices: &[SpriteVertex]) -> &[u8] {
-    let len = std::mem::size_of_val(vertices);
-    // SAFETY: `SpriteVertex` is `#[repr(C)]` with no padding-dependent
-    // invariants. The slice lifetime is bounded by the borrow of `vertices`.
-    unsafe { std::slice::from_raw_parts(vertices.as_ptr() as *const u8, len) }
+    // SAFETY: SpriteVertex is #[repr(C)] with no padding invariants.
+    unsafe { std::slice::from_raw_parts(vertices.as_ptr().cast(), std::mem::size_of_val(vertices)) }
 }
 
 /// Reinterprets a `&[u32]` as `&[u8]` for GPU upload.
 fn index_slice_as_bytes(indices: &[u32]) -> &[u8] {
-    let len = std::mem::size_of_val(indices);
-    // SAFETY: `u32` has no alignment or validity invariants beyond its
-    // size. The slice lifetime is bounded by the borrow of `indices`.
-    unsafe { std::slice::from_raw_parts(indices.as_ptr() as *const u8, len) }
+    // SAFETY: u32 has no alignment/validity invariants beyond its size.
+    unsafe { std::slice::from_raw_parts(indices.as_ptr().cast(), std::mem::size_of_val(indices)) }
 }
 
 #[cfg(test)]

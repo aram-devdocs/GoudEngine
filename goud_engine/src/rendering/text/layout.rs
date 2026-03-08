@@ -3,7 +3,10 @@
 //! Computes glyph positions, word-wrapping, alignment, and bounding boxes
 //! from a string of text and a [`GlyphAtlas`].
 
-use super::glyph_atlas::{GlyphAtlas, UvRect};
+use std::collections::HashMap;
+
+use super::glyph_atlas::UvRect;
+use super::glyph_provider::GlyphInfoProvider;
 
 /// Horizontal text alignment.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
@@ -75,16 +78,16 @@ pub struct TextLayoutResult {
     pub line_count: usize,
 }
 
-/// Lays out text into positioned glyphs using metrics from a [`GlyphAtlas`].
+/// Lays out text into positioned glyphs, optionally applying kerning.
 ///
-/// Handles word-wrapping at `config.max_width`, explicit newlines, and
-/// horizontal alignment. Returns positioned glyphs with UV coordinates
-/// for rendering.
+/// When `kerning` is `Some`, each `(prev, cur)` pair's value is added to
+/// `cursor_x` before positioning the glyph.
 pub fn layout_text(
     content: &str,
-    atlas: &GlyphAtlas,
+    atlas: &impl GlyphInfoProvider,
     font_size: f32,
     config: &TextLayoutConfig,
+    kerning: Option<&HashMap<(char, char), f32>>,
 ) -> TextLayoutResult {
     if content.is_empty() {
         return TextLayoutResult {
@@ -105,12 +108,14 @@ pub fn layout_text(
     let mut cursor_x: f32 = 0.0;
     let mut last_space_idx: Option<usize> = None;
     let mut cursor_x_at_last_space: f32 = 0.0;
+    let mut prev_char: Option<char> = None;
 
     for ch in content.chars() {
         if ch == '\n' {
             lines.push(std::mem::take(&mut current_line));
             cursor_x = 0.0;
             last_space_idx = None;
+            prev_char = None;
             continue;
         }
 
@@ -118,6 +123,13 @@ pub fn layout_text(
             Some(info) => info,
             None => continue,
         };
+
+        // Apply kerning adjustment from the previous character, if available.
+        if let (Some(kern_map), Some(prev)) = (kerning, prev_char) {
+            if let Some(&kern_value) = kern_map.get(&(prev, ch)) {
+                cursor_x += kern_value;
+            }
+        }
 
         let glyph_x = cursor_x + info.metrics.bearing_x;
         let glyph_y = -info.metrics.bearing_y;
@@ -137,6 +149,7 @@ pub fn layout_text(
         }
 
         cursor_x += info.metrics.advance_width;
+        prev_char = Some(ch);
 
         // Check word-wrap.
         if let Some(max_w) = config.max_width {
@@ -242,6 +255,7 @@ pub fn layout_text(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::rendering::text::glyph_atlas::GlyphAtlas;
 
     fn test_font() -> fontdue::Font {
         let bytes = include_bytes!("../../../test_assets/fonts/test_font.ttf");
@@ -258,7 +272,7 @@ mod tests {
     fn test_layout_empty_string() {
         let atlas = test_atlas();
         let config = TextLayoutConfig::default();
-        let result = layout_text("", &atlas, 16.0, &config);
+        let result = layout_text("", &atlas, 16.0, &config, None);
 
         assert_eq!(result.glyphs.len(), 0);
         assert_eq!(result.line_count, 0);
@@ -266,25 +280,19 @@ mod tests {
         assert_eq!(result.bounding_box.height, 0.0);
     }
 
+    /// Also serves as a pipeline integration test: validates glyph count
+    /// without requiring a GL context (which TextBatch would need).
     #[test]
     fn test_layout_single_line() {
         let atlas = test_atlas();
         let config = TextLayoutConfig::default();
-        let result = layout_text("Hello", &atlas, 16.0, &config);
-
+        let result = layout_text("Hello", &atlas, 16.0, &config, None);
         assert_eq!(result.glyphs.len(), 5);
         assert_eq!(result.line_count, 1);
         assert!(result.bounding_box.width > 0.0);
         assert!(result.bounding_box.height > 0.0);
-
-        // Glyphs should be ordered left to right.
         for i in 1..result.glyphs.len() {
-            assert!(
-                result.glyphs[i].x >= result.glyphs[i - 1].x,
-                "glyph {} should be right of glyph {}",
-                i,
-                i - 1
-            );
+            assert!(result.glyphs[i].x >= result.glyphs[i - 1].x);
         }
     }
 
@@ -292,20 +300,13 @@ mod tests {
     fn test_layout_explicit_newline() {
         let atlas = test_atlas();
         let config = TextLayoutConfig::default();
-        let result = layout_text("AB\nCD", &atlas, 16.0, &config);
-
+        let result = layout_text("AB\nCD", &atlas, 16.0, &config, None);
         assert_eq!(result.line_count, 2);
-        // Should have 4 visible glyphs (newline is not rendered).
         assert_eq!(result.glyphs.len(), 4);
-
-        // Second line glyphs should have larger y than first line glyphs.
-        let first_line_y = result.glyphs[0].y;
-        let second_line_y = result.glyphs[2].y;
+        let (first_y, second_y) = (result.glyphs[0].y, result.glyphs[2].y);
         assert!(
-            second_line_y > first_line_y,
-            "second line y ({}) should be > first line y ({})",
-            second_line_y,
-            first_line_y
+            second_y > first_y,
+            "line 2 y ({second_y}) <= line 1 y ({first_y})"
         );
     }
 
@@ -316,53 +317,30 @@ mod tests {
             alignment: TextAlignment::Center,
             ..Default::default()
         };
-
-        // Two lines of different lengths.
-        let result = layout_text("ABCDEF\nAB", &atlas, 16.0, &config);
+        let result = layout_text("ABCDEF\nAB", &atlas, 16.0, &config, None);
         assert_eq!(result.line_count, 2);
-
-        // The shorter line should be offset to center.
-        // First glyph of the shorter line should have x > 0.
-        let short_line_first_x = result.glyphs[6].x; // 'A' of "AB"
-        assert!(
-            short_line_first_x > 0.0,
-            "center-aligned short line should be offset (got {})",
-            short_line_first_x
-        );
+        // Shorter line's first glyph should be offset to center.
+        assert!(result.glyphs[6].x > 0.0);
     }
 
     #[test]
     fn test_layout_right_alignment() {
         let atlas = test_atlas();
-        let config = TextLayoutConfig {
+        let right_cfg = TextLayoutConfig {
             alignment: TextAlignment::Right,
             ..Default::default()
         };
-
-        let result = layout_text("ABCDEF\nAB", &atlas, 16.0, &config);
+        let result = layout_text("ABCDEF\nAB", &atlas, 16.0, &right_cfg, None);
         assert_eq!(result.line_count, 2);
-
-        // The shorter line should be right-aligned.
-        let short_line_first_x = result.glyphs[6].x;
-        assert!(
-            short_line_first_x > 0.0,
-            "right-aligned short line should be offset (got {})",
-            short_line_first_x
-        );
-
-        // Right-aligned short line's offset should be greater than center offset.
-        let center_config = TextLayoutConfig {
+        let right_x = result.glyphs[6].x;
+        assert!(right_x > 0.0);
+        // Right offset should exceed center offset.
+        let center_cfg = TextLayoutConfig {
             alignment: TextAlignment::Center,
             ..Default::default()
         };
-        let center_result = layout_text("ABCDEF\nAB", &atlas, 16.0, &center_config);
-        let center_x = center_result.glyphs[6].x;
-        assert!(
-            short_line_first_x > center_x,
-            "right offset ({}) should be > center offset ({})",
-            short_line_first_x,
-            center_x
-        );
+        let center_result = layout_text("ABCDEF\nAB", &atlas, 16.0, &center_cfg, None);
+        assert!(right_x > center_result.glyphs[6].x);
     }
 
     #[test]
@@ -373,7 +351,7 @@ mod tests {
             ..Default::default()
         };
 
-        let result = layout_text("Hello World Test", &atlas, 16.0, &config);
+        let result = layout_text("Hello World Test", &atlas, 16.0, &config, None);
 
         // With a narrow max_width, text should wrap to multiple lines.
         assert!(
@@ -387,7 +365,7 @@ mod tests {
     fn test_layout_bounding_box() {
         let atlas = test_atlas();
         let config = TextLayoutConfig::default();
-        let result = layout_text("Test", &atlas, 16.0, &config);
+        let result = layout_text("Test", &atlas, 16.0, &config, None);
 
         assert!(result.bounding_box.width > 0.0);
         assert!(result.bounding_box.height > 0.0);
@@ -406,23 +384,10 @@ mod tests {
     }
 
     #[test]
-    fn test_layout_produces_correct_glyph_count() {
-        let atlas = test_atlas();
-        let config = TextLayoutConfig::default();
-        let result = layout_text("Hello", &atlas, 16.0, &config);
-
-        assert_eq!(
-            result.glyphs.len(),
-            5,
-            "layout of 'Hello' should produce exactly 5 LayoutGlyphs"
-        );
-    }
-
-    #[test]
     fn test_glyph_positions_advance_left_to_right() {
         let atlas = test_atlas();
         let config = TextLayoutConfig::default();
-        let result = layout_text("AB", &atlas, 16.0, &config);
+        let result = layout_text("AB", &atlas, 16.0, &config, None);
 
         assert_eq!(result.glyphs.len(), 2);
         assert!(
@@ -438,8 +403,8 @@ mod tests {
         let atlas = test_atlas();
         let config = TextLayoutConfig::default();
 
-        let result_a = layout_text("Hi", &atlas, 16.0, &config);
-        let result_b = layout_text("World", &atlas, 16.0, &config);
+        let result_a = layout_text("Hi", &atlas, 16.0, &config, None);
+        let result_b = layout_text("World", &atlas, 16.0, &config, None);
 
         assert_eq!(
             result_a.glyphs.len(),
@@ -454,7 +419,7 @@ mod tests {
 
         // Verify results are truly independent: re-layout the first string
         // and confirm the result is unchanged.
-        let result_a_again = layout_text("Hi", &atlas, 16.0, &config);
+        let result_a_again = layout_text("Hi", &atlas, 16.0, &config, None);
         assert_eq!(
             result_a.glyphs.len(),
             result_a_again.glyphs.len(),
@@ -471,13 +436,13 @@ mod tests {
             line_spacing: 1.0,
             ..Default::default()
         };
-        let result_1x = layout_text("A\nB", &atlas, font_size, &config_1x);
+        let result_1x = layout_text("A\nB", &atlas, font_size, &config_1x, None);
 
         let config_2x = TextLayoutConfig {
             line_spacing: 2.0,
             ..Default::default()
         };
-        let result_2x = layout_text("A\nB", &atlas, font_size, &config_2x);
+        let result_2x = layout_text("A\nB", &atlas, font_size, &config_2x, None);
 
         // With 2x line spacing, the second line should be further down.
         let y_diff_1x = result_1x.glyphs[1].y - result_1x.glyphs[0].y;
@@ -488,6 +453,32 @@ mod tests {
             "2x spacing y_diff ({}) should be ~2x of 1x spacing y_diff ({})",
             y_diff_2x,
             y_diff_1x
+        );
+    }
+
+    #[test]
+    fn test_kerning_adjusts_glyph_positions() {
+        let atlas = test_atlas();
+        let config = TextLayoutConfig::default();
+
+        // Layout without kerning.
+        let result_no_kern = layout_text("AV", &atlas, 16.0, &config, None);
+        assert_eq!(result_no_kern.glyphs.len(), 2);
+
+        // Layout with negative kerning between A and V (tightens spacing).
+        let mut kerning = HashMap::new();
+        kerning.insert(('A', 'V'), -3.0);
+        let result_with_kern = layout_text("AV", &atlas, 16.0, &config, Some(&kerning));
+        assert_eq!(result_with_kern.glyphs.len(), 2);
+
+        // The V glyph should be 3 pixels closer with kerning.
+        let v_x_no_kern = result_no_kern.glyphs[1].x;
+        let v_x_with_kern = result_with_kern.glyphs[1].x;
+        assert!(
+            (v_x_no_kern - v_x_with_kern - 3.0).abs() < 0.01,
+            "kerning should shift V left by 3px: no_kern={}, with_kern={}",
+            v_x_no_kern,
+            v_x_with_kern
         );
     }
 }

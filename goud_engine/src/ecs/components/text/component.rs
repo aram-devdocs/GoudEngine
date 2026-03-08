@@ -1,5 +1,6 @@
 //! Core [`Text`] component type and its builder methods.
 
+use crate::assets::loaders::BitmapFontAsset;
 use crate::assets::{loaders::FontAsset, AssetHandle};
 use crate::core::math::Color;
 use crate::ecs::Component;
@@ -25,14 +26,22 @@ use crate::rendering::text::layout::TextAlignment;
 /// - `alignment`: Horizontal text alignment (default: Left)
 /// - `max_width`: Optional max width for word-wrapping
 /// - `line_spacing`: Line spacing multiplier (default: 1.0)
+/// - `bitmap_font_handle`: Optional handle for bitmap (.fnt) fonts
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Text {
     /// The text string to render.
     pub content: String,
 
-    /// Handle to the font asset.
+    /// Handle to the TrueType font asset.
     #[serde(skip)]
     pub font_handle: AssetHandle<FontAsset>,
+
+    /// Optional handle to a bitmap font asset (.fnt).
+    ///
+    /// When set, the text pipeline uses the bitmap font path instead of
+    /// the TrueType path. Takes precedence over `font_handle`.
+    #[serde(skip)]
+    pub bitmap_font_handle: Option<AssetHandle<BitmapFontAsset>>,
 
     /// Optional path to the font asset for serialization.
     #[serde(default)]
@@ -68,6 +77,7 @@ impl Text {
         Self {
             content: content.into(),
             font_handle,
+            bitmap_font_handle: None,
             font_path: None,
             font_size: 16.0,
             color: Color::WHITE,
@@ -112,6 +122,16 @@ impl Text {
         self
     }
 
+    /// Sets the bitmap font handle for rendering with a bitmap (.fnt) font.
+    ///
+    /// When set, the text pipeline uses the bitmap font instead of the
+    /// TrueType font referenced by `font_handle`.
+    #[inline]
+    pub fn with_bitmap_font(mut self, handle: AssetHandle<BitmapFontAsset>) -> Self {
+        self.bitmap_font_handle = Some(handle);
+        self
+    }
+
     /// Sets the font asset path for serialization.
     #[inline]
     pub fn with_font_path(mut self, path: impl Into<String>) -> Self {
@@ -137,6 +157,7 @@ impl Default for Text {
         Self {
             content: String::new(),
             font_handle: AssetHandle::INVALID,
+            bitmap_font_handle: None,
             font_path: None,
             font_size: 16.0,
             color: Color::WHITE,
