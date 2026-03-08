@@ -790,6 +790,46 @@ namespace GoudEngine
             }
         }
 
+        /// <summary>Queries the render provider's capabilities</summary>
+        public RenderCapabilities GetRenderCapabilities()
+        {
+            var stats = new FfiRenderCapabilities();
+            NativeMethods.goud_provider_render_capabilities(_ctx, ref stats);
+            return new RenderCapabilities(stats.MaxTextureUnits, stats.MaxTextureSize, stats.SupportsInstancing, stats.SupportsCompute, stats.SupportsMsaa);
+        }
+
+        /// <summary>Queries the physics provider's capabilities</summary>
+        public PhysicsCapabilities GetPhysicsCapabilities()
+        {
+            var stats = new FfiPhysicsCapabilities();
+            NativeMethods.goud_provider_physics_capabilities(_ctx, ref stats);
+            return new PhysicsCapabilities(stats.SupportsContinuousCollision, stats.SupportsJoints, stats.MaxBodies);
+        }
+
+        /// <summary>Queries the audio provider's capabilities</summary>
+        public AudioCapabilities GetAudioCapabilities()
+        {
+            var stats = new FfiAudioCapabilities();
+            NativeMethods.goud_provider_audio_capabilities(_ctx, ref stats);
+            return new AudioCapabilities(stats.SupportsSpatial, stats.MaxChannels);
+        }
+
+        /// <summary>Queries the input provider's capabilities</summary>
+        public InputCapabilities GetInputCapabilities()
+        {
+            var stats = new FfiInputCapabilities();
+            NativeMethods.goud_provider_input_capabilities(_ctx, ref stats);
+            return new InputCapabilities(stats.SupportsGamepad, stats.SupportsTouch, stats.MaxGamepads);
+        }
+
+        /// <summary>Queries the network provider's capabilities. Throws if no network provider is installed.</summary>
+        public NetworkCapabilities GetNetworkCapabilities()
+        {
+            var stats = new FfiNetworkCapabilities();
+            NativeMethods.goud_provider_network_capabilities(_ctx, ref stats);
+            return new NetworkCapabilities(stats.SupportsHosting, stats.MaxConnections, stats.MaxChannels, stats.MaxMessageSize);
+        }
+
         public void Dispose() => Destroy();
     }
 }

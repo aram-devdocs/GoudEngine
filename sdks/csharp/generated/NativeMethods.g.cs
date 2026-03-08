@@ -118,6 +118,57 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FfiRenderCapabilities
+    {
+        public uint MaxTextureUnits;
+        public uint MaxTextureSize;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsInstancing;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsCompute;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsMsaa;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiPhysicsCapabilities
+    {
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsContinuousCollision;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsJoints;
+        public uint MaxBodies;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiAudioCapabilities
+    {
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsSpatial;
+        public uint MaxChannels;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiInputCapabilities
+    {
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsGamepad;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsTouch;
+        public uint MaxGamepads;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiNetworkCapabilities
+    {
+        [MarshalAs(UnmanagedType.U1)]
+        public bool SupportsHosting;
+        public uint MaxConnections;
+        public byte MaxChannels;
+        public uint MaxMessageSize;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct FfiSpriteAnimator
     {
         public uint CurrentFrame;
@@ -1055,6 +1106,25 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_network_peer_count(GoudContextId ctx, long handle);
+
+        // providers
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_render_capabilities(GoudContextId ctx, ref FfiRenderCapabilities out_caps);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_physics_capabilities(GoudContextId ctx, ref FfiPhysicsCapabilities out_caps);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_audio_capabilities(GoudContextId ctx, ref FfiAudioCapabilities out_caps);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_input_capabilities(GoudContextId ctx, ref FfiInputCapabilities out_caps);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_network_capabilities(GoudContextId ctx, ref FfiNetworkCapabilities out_caps);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_hot_swap_render(GoudContextId ctx, int provider_type);
 
         // plugin
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

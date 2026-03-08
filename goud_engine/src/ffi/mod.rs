@@ -112,6 +112,7 @@ pub mod input;
 pub mod network;
 pub mod physics;
 pub mod plugin;
+pub mod providers;
 #[cfg(feature = "native")]
 pub mod renderer;
 #[cfg(feature = "native")]

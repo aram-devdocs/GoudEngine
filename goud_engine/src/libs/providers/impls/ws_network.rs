@@ -160,7 +160,7 @@ mod native {
                     supports_hosting: true,
                     max_connections: 64,
                     max_channels: 1,
-                    max_message_size: 16_777_216,
+                    max_message_size: 16_777_216_u32,
                 },
                 connections: HashMap::new(),
                 event_tx,

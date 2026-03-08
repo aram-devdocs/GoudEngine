@@ -15,6 +15,14 @@ use crate::libs::platform::PlatformBackend;
 #[cfg(feature = "native")]
 use crate::rendering::sprite_batch::SpriteBatch;
 
+use crate::core::providers::audio::AudioProvider;
+use crate::core::providers::input::InputProvider;
+use crate::core::providers::physics::PhysicsProvider;
+use crate::core::providers::render::RenderProvider;
+use crate::core::providers::types::{
+    AudioCapabilities, InputCapabilities, NetworkCapabilities, PhysicsCapabilities,
+    RenderCapabilities,
+};
 use crate::core::providers::ProviderRegistry;
 use crate::sdk::debug_overlay::{DebugOverlay, FpsStats};
 use crate::sdk::engine_config::EngineConfig;
@@ -436,6 +444,80 @@ impl GoudGame {
     #[inline]
     pub fn providers(&self) -> &ProviderRegistry {
         &self.providers
+    }
+
+    // =========================================================================
+    // Capability Queries
+    // =========================================================================
+
+    /// Returns the render provider's capabilities.
+    #[inline]
+    pub fn render_capabilities(&self) -> &RenderCapabilities {
+        self.providers.render_capabilities()
+    }
+
+    /// Returns the physics provider's capabilities.
+    #[inline]
+    pub fn physics_capabilities(&self) -> &PhysicsCapabilities {
+        self.providers.physics_capabilities()
+    }
+
+    /// Returns the audio provider's capabilities.
+    #[inline]
+    pub fn audio_capabilities(&self) -> &AudioCapabilities {
+        self.providers.audio_capabilities()
+    }
+
+    /// Returns the input provider's capabilities.
+    #[inline]
+    pub fn input_capabilities(&self) -> &InputCapabilities {
+        self.providers.input_capabilities()
+    }
+
+    /// Returns the network provider's capabilities, if installed.
+    #[inline]
+    pub fn network_capabilities(&self) -> Option<&NetworkCapabilities> {
+        self.providers.network_capabilities()
+    }
+
+    // =========================================================================
+    // Hot-Swap (debug builds only)
+    // =========================================================================
+
+    /// Swap the render provider at runtime (debug builds only).
+    #[cfg(debug_assertions)]
+    pub fn hot_swap_render_provider(
+        &mut self,
+        new: Box<dyn RenderProvider>,
+    ) -> GoudResult<Box<dyn RenderProvider>> {
+        self.providers.swap_render(new)
+    }
+
+    /// Swap the physics provider at runtime (debug builds only).
+    #[cfg(debug_assertions)]
+    pub fn hot_swap_physics_provider(
+        &mut self,
+        new: Box<dyn PhysicsProvider>,
+    ) -> GoudResult<Box<dyn PhysicsProvider>> {
+        self.providers.swap_physics(new)
+    }
+
+    /// Swap the audio provider at runtime (debug builds only).
+    #[cfg(debug_assertions)]
+    pub fn hot_swap_audio_provider(
+        &mut self,
+        new: Box<dyn AudioProvider>,
+    ) -> GoudResult<Box<dyn AudioProvider>> {
+        self.providers.swap_audio(new)
+    }
+
+    /// Swap the input provider at runtime (debug builds only).
+    #[cfg(debug_assertions)]
+    pub fn hot_swap_input_provider(
+        &mut self,
+        new: Box<dyn InputProvider>,
+    ) -> GoudResult<Box<dyn InputProvider>> {
+        self.providers.swap_input(new)
     }
 }
 

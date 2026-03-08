@@ -1929,6 +1929,53 @@
     "NetworkHandle": {
       "kind": "handle",
       "doc": "Handle to a network host or connection"
+    },
+    "RenderCapabilities": {
+      "kind": "value",
+      "doc": "Capabilities reported by the active render provider",
+      "fields": [
+        { "name": "maxTextureUnits", "type": "u32", "doc": "Maximum number of texture units available" },
+        { "name": "maxTextureSize", "type": "u32", "doc": "Maximum texture dimension (width or height)" },
+        { "name": "supportsInstancing", "type": "bool", "doc": "Whether hardware instancing is supported" },
+        { "name": "supportsCompute", "type": "bool", "doc": "Whether compute shaders are supported" },
+        { "name": "supportsMsaa", "type": "bool", "doc": "Whether multisample anti-aliasing is supported" }
+      ]
+    },
+    "PhysicsCapabilities": {
+      "kind": "value",
+      "doc": "Capabilities reported by the active physics provider",
+      "fields": [
+        { "name": "supportsContinuousCollision", "type": "bool", "doc": "Whether continuous collision detection is supported" },
+        { "name": "supportsJoints", "type": "bool", "doc": "Whether joints are supported" },
+        { "name": "maxBodies", "type": "u32", "doc": "Maximum number of physics bodies" }
+      ]
+    },
+    "AudioCapabilities": {
+      "kind": "value",
+      "doc": "Capabilities reported by the active audio provider",
+      "fields": [
+        { "name": "supportsSpatial", "type": "bool", "doc": "Whether spatial/3D audio is supported" },
+        { "name": "maxChannels", "type": "u32", "doc": "Maximum number of simultaneous audio channels" }
+      ]
+    },
+    "InputCapabilities": {
+      "kind": "value",
+      "doc": "Capabilities reported by the active input provider",
+      "fields": [
+        { "name": "supportsGamepad", "type": "bool", "doc": "Whether gamepad input is supported" },
+        { "name": "supportsTouch", "type": "bool", "doc": "Whether touch input is supported" },
+        { "name": "maxGamepads", "type": "u32", "doc": "Maximum number of simultaneous gamepads" }
+      ]
+    },
+    "NetworkCapabilities": {
+      "kind": "value",
+      "doc": "Capabilities reported by the active network provider",
+      "fields": [
+        { "name": "supportsHosting", "type": "bool", "doc": "Whether this provider can act as a host" },
+        { "name": "maxConnections", "type": "u32", "doc": "Maximum number of simultaneous connections" },
+        { "name": "maxChannels", "type": "u8", "doc": "Maximum number of channels supported" },
+        { "name": "maxMessageSize", "type": "u32", "doc": "Maximum size of a single message in bytes" }
+      ]
     }
   },
   "enums": {
@@ -4110,6 +4157,36 @@
         {
           "$ref": "EcsMethods",
           "name": "componentHasBatch"
+        },
+        {
+          "name": "getRenderCapabilities",
+          "doc": "Queries the render provider's capabilities",
+          "params": [],
+          "returns": "RenderCapabilities"
+        },
+        {
+          "name": "getPhysicsCapabilities",
+          "doc": "Queries the physics provider's capabilities",
+          "params": [],
+          "returns": "PhysicsCapabilities"
+        },
+        {
+          "name": "getAudioCapabilities",
+          "doc": "Queries the audio provider's capabilities",
+          "params": [],
+          "returns": "AudioCapabilities"
+        },
+        {
+          "name": "getInputCapabilities",
+          "doc": "Queries the input provider's capabilities",
+          "params": [],
+          "returns": "InputCapabilities"
+        },
+        {
+          "name": "getNetworkCapabilities",
+          "doc": "Queries the network provider's capabilities. Throws if no network provider is installed.",
+          "params": [],
+          "returns": "NetworkCapabilities"
         }
       ],
       "wasm_interface": [
