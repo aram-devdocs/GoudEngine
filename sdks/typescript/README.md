@@ -40,6 +40,21 @@ const game = await GoudGame.create(800, 600, "My Game");
 // same API as Node
 ```
 
+## Features
+
+- 2D and 3D rendering with runtime renderer selection
+- Entity Component System (ECS) with Transform2D, Sprite, and more
+- Physics simulation (Rapier2D/3D): rigid bodies, colliders, raycasting, collision events
+- Audio playback with per-channel volume (Music, SFX, Ambience, UI, Voice) and spatial audio
+- Text rendering with TrueType/bitmap fonts, alignment, and word-wrapping
+- Sprite animation with state machine controller, multi-layer blending, and tweening
+- Scene management with transitions (instant, fade, custom)
+- UI component system with hierarchical node tree
+- Tiled map support for 2D worlds
+- Input handling (keyboard, mouse)
+- Dual targets: Node.js desktop (napi-rs) and web browser (wasm-bindgen)
+- Structured error diagnostics with error codes and recovery hints
+
 ## Flappy Bird Example
 
 A condensed Node.js version showing the core patterns — game loop, physics, sprite rendering,

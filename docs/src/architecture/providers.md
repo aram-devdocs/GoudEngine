@@ -160,9 +160,9 @@ Key methods:
 
 | Implementation | Feature | Notes |
 |---|---|---|
+| `Rapier2DPhysicsProvider` | `physics` | Wraps rapier2d for 2D rigid body simulation |
+| `Rapier3DPhysicsProvider` | `physics` | Wraps rapier3d for 3D rigid body simulation |
 | `NullPhysicsProvider` | always | No simulation; all queries return defaults |
-
-No native physics implementation exists yet. `Rapier2DPhysicsProvider` is planned (RFC-0001, F02-04).
 
 Key methods:
 
@@ -316,7 +316,7 @@ pub struct ProviderRegistry {
 
 `WindowProvider` is not in `ProviderRegistry`. It is stored directly in `GoudGame` because it is `!Send + !Sync`.
 
-**FFI SDK users** select providers by enum at engine initialization rather than through the builder. Custom provider implementations require the Rust SDK. This is planned for F02-09; the enum types are defined in RFC-0001 §3.5.
+**FFI SDK users** select providers by enum at engine initialization rather than through the builder. Custom provider implementations require the Rust SDK. The capability query API in `ffi/providers.rs` handles provider selection for SDK consumers.
 
 ---
 
@@ -351,7 +351,7 @@ Layer 2 — Libs (libs/)
                                  GlfwWindowProvider, GlfwInputProvider)
 
 Layer 5 — FFI (ffi/)
-  ffi/providers.rs           -- enum selection for SDK initialization (planned)
+  ffi/providers.rs           -- enum selection for SDK initialization
 
 External — SDKs (sdks/)
   generated from goud_sdk.schema.json  -- C#, Python, TypeScript wrappers
@@ -371,7 +371,7 @@ The provider system was designed in RFC-0001 and extended for networking in RFC-
 
 **Provider-owned resources.** Providers own their GPU and OS resources. There is no shared resource pool across providers. Handles from one provider are invalid with another.
 
-**No hot-swap in v1.** Providers cannot be swapped at runtime in a shipping build. Hot-swap (dev-mode only) is planned for F02-08 using generational handle invalidation. The constraint: the replacement must pass `init()` before the old provider is dropped, and all existing handles must produce errors (not UB) after the swap.
+**No hot-swap in release builds.** Providers cannot be swapped at runtime in a shipping build. In dev mode, hot-swap is supported using generational handle invalidation. The constraint: the replacement must pass `init()` before the old provider is dropped, and all existing handles must produce errors (not UB) after the swap.
 
 **Vec2 as `[f32; 2]`.** Physics and audio traits use `[f32; 2]` and `[f32; 3]` instead of a named vector type. This avoids a dependency on any particular math library in the trait definitions. Concrete implementations convert to their internal types at the boundary.
 

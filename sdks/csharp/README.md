@@ -124,6 +124,13 @@ game.Run();
 - Audio playback (WAV, OGG)
 - Input handling (keyboard, mouse)
 - Asset hot-reloading during development
+- Physics simulation (Rapier2D/3D): rigid bodies, colliders, raycasting, collision events
+- Per-channel audio mixing (Music, SFX, Ambience, UI, Voice) with spatial positioning
+- Text rendering with TrueType/bitmap fonts, alignment, and word-wrapping
+- Sprite animation with state machine controller, blending, and tweening
+- Scene management with transitions (instant, fade, custom)
+- UI component system with hierarchical node tree
+- Structured error diagnostics with error codes and recovery hints
 
 ## Platform support
 

@@ -275,9 +275,13 @@ The ECS uses two complementary storage strategies:
 | `Transform2D` | Local 2D spatial transform: position, rotation, scale |
 | `GlobalTransform2D` | World-space 2D transform; written by the propagation system |
 | `Sprite` | Texture handle, color tint, flip flags |
-| `RigidBody` | Physics body parameters |
-| `Collider` | Collision shape definition |
-| `AudioSource` | Audio clip handle and playback state |
+| `RigidBody` | Physics body: type (dynamic/kinematic/static), velocity, mass, gravity scale, damping |
+| `Collider` | Collision shape (circle, box, capsule, polygon), friction, restitution, sensor flag, layer/mask filtering |
+| `AudioSource` | Audio clip handle, playback state, volume, pitch, channel (Music/SFX/Ambience/UI/Voice), spatial positioning |
+| `Text` | Text content, font handle, font size, color, alignment, word-wrapping |
+| `SpriteAnimator` | Sprite sheet animation clip, frame timing, playback mode (loop/one-shot), frame events |
+| `AnimationController` | State machine with parametric transitions, blend duration, bool/float parameters |
+| `AnimationLayerStack` | Multi-layer animation blending with per-layer weight and blend mode (override/additive) |
 | `Parent` | Reference to this entity's parent |
 | `Children` | List of child entity IDs |
 
@@ -398,6 +402,132 @@ Null implementations in `providers/impls/` enable headless testing without a rea
 window, GPU, or audio device.
 
 See `docs/src/architecture/providers.md` for the full provider API reference.
+
+---
+
+## Phase 2 Subsystems
+
+### Physics
+
+The engine supports 2D physics via Rapier2D and 3D physics via Rapier3D. Both backends
+run through a `PhysicsWorld` resource attached to the context. The simulation advances
+on a fixed timestep accumulator defaulting to 1/60 s; the remainder carries forward to
+the next frame.
+
+Key behaviors:
+
+- Bodies that have not moved for several frames enter a sleep state and stop consuming
+  simulation time. They wake automatically when a force is applied or a collision occurs.
+- Gravity scale is set per `RigidBody` — a value of 0.0 makes a body float freely
+  without disabling collision response.
+- Layer-based collision filtering uses a bitmask on `Collider`: a body's `layer` is
+  compared against the other body's `mask`. If the bitwise AND is zero, the pair is
+  skipped entirely before narrow-phase.
+
+FFI exports for physics are grouped under `ffi/physics/`.
+
+### Audio
+
+`RodioAudioProvider` wraps the rodio crate directly and exposes five named channels:
+Music, SFX, Ambience, UI, and Voice. Each channel has an independent volume multiplier
+combined with a master volume at the provider level.
+
+Spatial audio uses two attenuation modes:
+
+- **Inverse-distance** — gain falls off as 1/distance from the listener.
+- **Linear-distance** — gain decreases linearly between a reference distance and a
+  maximum distance cutoff.
+
+Volume is controllable at three granularities: per-instance on `AudioSource`, per-channel
+via the provider API, and globally via the master volume setting.
+
+### Animation
+
+Three systems handle different levels of animation complexity:
+
+**SpriteAnimator** drives frame-by-frame sprite sheet animation. It reads an animation
+clip (start frame, end frame, frame duration) from the component and advances the
+`Sprite` texture region each tick. Frame events fire user callbacks at specified frame
+indices.
+
+**AnimationController** implements a state machine on top of `SpriteAnimator`. States
+are named clips; transitions are edges with conditions evaluated against bool or float
+parameters set at runtime. Blend duration controls how long a cross-fade lasts when
+entering a new state.
+
+**AnimationLayerStack** composes multiple `AnimationController` outputs by weight.
+Each layer specifies a blend mode:
+
+- **Override** — the layer replaces lower layers for the bones it controls.
+- **Additive** — the layer's pose is added on top of the lower result, scaled by weight.
+
+Standalone tweens (not attached to an animator) apply easing functions to arbitrary
+scalar or Vec2 values: Linear, EaseIn, EaseOut, EaseInOut, EaseInBack, EaseOutBounce.
+
+### Text Rendering
+
+TrueType fonts load as `FontAsset` via the standard asset server pipeline. Bitmap fonts
+use `BitmapFontAsset` with a pre-built glyph atlas texture and metrics file. Both types
+produce glyphs that are cached into a shared atlas; repeated text with the same font
+and size costs one texture lookup instead of re-rasterizing.
+
+`Text` component options:
+
+- Alignment: left, center, right
+- Word-wrapping: enabled by setting `max_width`; disabled when `max_width` is zero
+- Line spacing: multiplier applied to the font's natural line height
+
+### Scene Management
+
+`SceneManager` is a per-context service that owns a collection of named scenes. Each
+scene contains an isolated ECS `World`; entities and components in one scene are not
+visible to queries in another.
+
+Scene transitions use one of three modes:
+
+- **Instant** — the old scene is deactivated and the new one activates on the same frame.
+- **Fade** — the engine renders a fade-out over the outgoing scene, then a fade-in over
+  the incoming scene.
+- **Custom** — a user-supplied callback controls the transition render.
+
+Scene ID 0 is the default scene. It is created automatically with the context and cannot
+be destroyed.
+
+### UI System
+
+`UiManager` maintains a hierarchical node tree. Each node is identified by a
+`UiNodeId` — a generational handle that detects use-after-free without unsafe code.
+Widgets are components attached to nodes; the tree structure determines layout
+propagation and event routing.
+
+Cycle detection runs on every `set_parent` call. Attempting to create a circular
+hierarchy returns an error immediately; it does not silently corrupt the tree.
+
+### Error Diagnostics
+
+Error codes are grouped into numeric ranges by category:
+
+| Range | Category |
+|-------|----------|
+| 0–99 | Context lifecycle |
+| 100–199 | Resource management |
+| 200–299 | Rendering |
+| 300–399 | Physics |
+| 400–499 | Audio |
+| 500–599 | Animation |
+| 600–699 | UI |
+| 700–799 | Scene management |
+
+Errors carry structured metadata: subsystem name, operation name, and a recovery hint
+string. Thread-local error state stores the most recent error so FFI callers can
+retrieve the full message after inspecting the `GoudResult` return code.
+
+In diagnostic mode (enabled via a compile feature or runtime flag), errors capture a
+backtrace at the point they are created. `ErrorSeverity` classifies each error:
+
+- **Fatal** — engine cannot continue; context should be destroyed.
+- **Recoverable** — the operation failed but the engine remains in a valid state.
+- **Warning** — the operation succeeded but something unexpected occurred.
 
 ---
 

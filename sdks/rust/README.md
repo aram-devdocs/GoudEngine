@@ -113,6 +113,22 @@ pub fn update(&mut self, engine: &Engine, dt: f32) -> bool {
 
 Controls: Space / Left Click to flap, R to restart, Escape to quit.
 
+## Features
+
+- 2D and 3D rendering with runtime renderer selection
+- Entity Component System (ECS) with Transform2D, Sprite, and more
+- Physics simulation (Rapier2D/3D): rigid bodies, colliders, raycasting, collision events
+- Audio playback with per-channel volume (Music, SFX, Ambience, UI, Voice) and spatial audio
+- Text rendering with TrueType/bitmap fonts, alignment, and word-wrapping
+- Sprite animation with state machine controller, multi-layer blending, and tweening
+- Scene management with transitions (instant, fade, custom)
+- UI component system with hierarchical node tree
+- Tiled map support for 2D worlds
+- Input handling (keyboard, mouse)
+- Asset hot-reloading during development
+- Zero FFI overhead — links directly to the Rust engine
+- Structured error diagnostics with error codes and recovery hints
+
 ## Why a Separate Crate
 
 This crate re-exports `goud_engine::sdk::*` from the internal engine. A standalone crate lets you depend on `goud-engine` without pulling in FFI exports, codegen build scripts, or napi dependencies. It also provides a clean versioned package for crates.io.

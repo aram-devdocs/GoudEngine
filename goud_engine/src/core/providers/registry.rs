@@ -14,6 +14,7 @@ use super::types::InputCapabilities;
 use super::types::{
     AudioCapabilities, NetworkCapabilities, PhysicsCapabilities, RenderCapabilities,
 };
+#[cfg(any(debug_assertions, test))]
 use crate::core::error::GoudResult;
 
 /// Central registry holding all engine providers.

@@ -23,6 +23,16 @@
 - [Provider System](architecture/providers.md)
 - [Adding a New Language](architecture/adding-a-language.md)
 
+# Features
+
+- [Physics](features/physics.md)
+- [Audio](features/audio.md)
+- [Text Rendering](features/text-rendering.md)
+- [Animation](features/animation.md)
+- [Scene Management](features/scenes.md)
+- [UI System](features/ui.md)
+- [Error Handling](features/error-handling.md)
+
 # RFCs
 
 - [RFC Process](../rfcs/README.md)
