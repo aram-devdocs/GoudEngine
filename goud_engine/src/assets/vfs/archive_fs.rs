@@ -1,40 +1,70 @@
-//! Stub archive filesystem — placeholder for future archive-based asset loading.
+//! Archive-backed virtual filesystem.
 //!
-//! All methods return [`AssetLoadError::NotFound`] until a real archive
-//! format is integrated.
+//! [`ArchiveFs`] loads assets from a GOUD archive created by
+//! [`ArchiveWriter`](super::archive_format::ArchiveWriter). It owns the raw
+//! bytes and delegates lookups to [`ArchiveReader`](super::archive_format::ArchiveReader).
 
+use super::archive_format::ArchiveReader;
 use super::VirtualFs;
 use crate::assets::AssetLoadError;
 
-/// A virtual filesystem backed by an archive file (e.g., ZIP, PAK).
+/// A virtual filesystem backed by an in-memory GOUD archive.
 ///
-/// This is currently a stub. All operations return `NotFound`. A real
-/// implementation will be added by issue #220.
+/// Construct via [`from_archive`](Self::from_archive), passing the raw archive
+/// bytes (typically loaded from disk or embedded into the binary).
 #[derive(Debug)]
 pub struct ArchiveFs {
-    /// Path to the archive file (stored for future use).
-    _archive_path: String,
+    /// Raw archive bytes (header + TOC + data).
+    data: Vec<u8>,
+    /// Parsed reader for TOC lookups.
+    reader: ArchiveReader,
 }
 
 impl ArchiveFs {
-    /// Creates a new `ArchiveFs` pointing at the given archive file.
-    pub fn new(archive_path: impl Into<String>) -> Self {
-        Self {
-            _archive_path: archive_path.into(),
-        }
+    /// Creates an `ArchiveFs` from raw archive bytes.
+    ///
+    /// Parses the header and table of contents. Returns an error if the bytes
+    /// are not a valid GOUD archive.
+    pub fn from_archive(data: Vec<u8>) -> Result<Self, AssetLoadError> {
+        let reader = ArchiveReader::from_bytes(&data)?;
+        Ok(Self { data, reader })
     }
 }
 
 impl VirtualFs for ArchiveFs {
     fn read(&self, path: &str) -> Result<Vec<u8>, AssetLoadError> {
-        Err(AssetLoadError::not_found(path))
+        let slice = self.reader.read_entry(path, &self.data)?;
+        Ok(slice.to_vec())
     }
 
-    fn exists(&self, _path: &str) -> bool {
-        false
+    fn exists(&self, path: &str) -> bool {
+        self.reader.entry_exists(path)
     }
 
     fn list(&self, directory: &str) -> Result<Vec<String>, AssetLoadError> {
-        Err(AssetLoadError::not_found(directory))
+        let prefix = if directory.is_empty() {
+            String::new()
+        } else if directory.ends_with('/') {
+            directory.to_string()
+        } else {
+            format!("{directory}/")
+        };
+
+        let mut result: Vec<String> = self
+            .reader
+            .entries()
+            .iter()
+            .filter(|e| {
+                if prefix.is_empty() {
+                    true
+                } else {
+                    e.path.starts_with(&prefix)
+                }
+            })
+            .map(|e| e.path.clone())
+            .collect();
+
+        result.sort();
+        Ok(result)
     }
 }

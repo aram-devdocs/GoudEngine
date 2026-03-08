@@ -4,6 +4,7 @@
 //! [`AssetServer`](super::AssetServer) can load assets from different
 //! storage backends (OS filesystem, archives, embedded resources).
 
+pub mod archive_format;
 mod archive_fs;
 mod os_fs;
 mod trait_def;
@@ -11,6 +12,7 @@ mod trait_def;
 #[cfg(test)]
 mod tests;
 
+pub use archive_format::{ArchiveEntry, ArchiveReader, ArchiveWriter, ArchiveToc};
 pub use archive_fs::ArchiveFs;
 pub use os_fs::OsFs;
 pub use trait_def::VirtualFs;

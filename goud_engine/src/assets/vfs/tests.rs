@@ -1,6 +1,7 @@
 //! Tests for the virtual filesystem implementations.
 
 use super::{ArchiveFs, OsFs, VirtualFs};
+use super::archive_format::ArchiveWriter;
 
 // ---------------------------------------------------------------------------
 // OsFs tests
@@ -80,27 +81,51 @@ fn os_fs_root_accessor() {
 }
 
 // ---------------------------------------------------------------------------
-// ArchiveFs stub tests
+// ArchiveFs tests
 // ---------------------------------------------------------------------------
 
 #[test]
 fn archive_fs_read_returns_not_found() {
-    let fs = ArchiveFs::new("test.pak");
+    let writer = ArchiveWriter::new();
+    let mut buf = Vec::new();
+    writer.write_to(&mut buf).unwrap();
+
+    let fs = ArchiveFs::from_archive(buf).unwrap();
     let err = fs.read("any/file.txt").unwrap_err();
     assert!(err.is_not_found());
 }
 
 #[test]
 fn archive_fs_exists_returns_false() {
-    let fs = ArchiveFs::new("test.pak");
+    let writer = ArchiveWriter::new();
+    let mut buf = Vec::new();
+    writer.write_to(&mut buf).unwrap();
+
+    let fs = ArchiveFs::from_archive(buf).unwrap();
     assert!(!fs.exists("any/file.txt"));
 }
 
 #[test]
-fn archive_fs_list_returns_not_found() {
-    let fs = ArchiveFs::new("test.pak");
-    let err = fs.list("any").unwrap_err();
-    assert!(err.is_not_found());
+fn archive_fs_list_returns_empty() {
+    let writer = ArchiveWriter::new();
+    let mut buf = Vec::new();
+    writer.write_to(&mut buf).unwrap();
+
+    let fs = ArchiveFs::from_archive(buf).unwrap();
+    let result = fs.list("any").unwrap();
+    assert!(result.is_empty());
+}
+
+#[test]
+fn archive_fs_read_file_succeeds() {
+    let mut writer = ArchiveWriter::new();
+    writer.add_file("test/file.txt", b"archive data");
+    let mut buf = Vec::new();
+    writer.write_to(&mut buf).unwrap();
+
+    let fs = ArchiveFs::from_archive(buf).unwrap();
+    let data = fs.read("test/file.txt").unwrap();
+    assert_eq!(data, b"archive data");
 }
 
 // ---------------------------------------------------------------------------
@@ -126,6 +151,12 @@ fn virtual_fs_can_swap_implementations() {
     let os: Box<dyn VirtualFs> = Box::new(OsFs::new(dir.path()));
     assert!(os.exists("file.txt"));
 
-    let archive: Box<dyn VirtualFs> = Box::new(ArchiveFs::new("dummy.pak"));
+    let mut writer = ArchiveWriter::new();
+    writer.add_file("archive_file.txt", b"archive data");
+    let mut buf = Vec::new();
+    writer.write_to(&mut buf).unwrap();
+
+    let archive: Box<dyn VirtualFs> = Box::new(ArchiveFs::from_archive(buf).unwrap());
+    assert!(archive.exists("archive_file.txt"));
     assert!(!archive.exists("file.txt"));
 }
