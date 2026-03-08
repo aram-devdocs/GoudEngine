@@ -1109,5 +1109,8 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_audio_active_count(GoudContextId ctx);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_cleanup_finished(GoudContextId ctx);
+
     }
 }

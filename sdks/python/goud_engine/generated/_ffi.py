@@ -790,6 +790,8 @@ def _setup():
     _lib.goud_audio_is_playing.restype = ctypes.c_int32
     _lib.goud_audio_active_count.argtypes = [GoudContextId]
     _lib.goud_audio_active_count.restype = ctypes.c_int32
+    _lib.goud_audio_cleanup_finished.argtypes = [GoudContextId]
+    _lib.goud_audio_cleanup_finished.restype = ctypes.c_int32
 
 _setup()
 
