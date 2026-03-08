@@ -99,6 +99,48 @@
         "z"
       ]
     },
+    "RenderCapabilities": {
+      "ffi_name": "FfiRenderCapabilities",
+      "fields": [
+        "max_texture_units",
+        "max_texture_size",
+        "supports_instancing",
+        "supports_compute",
+        "supports_msaa"
+      ]
+    },
+    "PhysicsCapabilities": {
+      "ffi_name": "FfiPhysicsCapabilities",
+      "fields": [
+        "supports_continuous_collision",
+        "supports_joints",
+        "max_bodies"
+      ]
+    },
+    "AudioCapabilities": {
+      "ffi_name": "FfiAudioCapabilities",
+      "fields": [
+        "supports_spatial",
+        "max_channels"
+      ]
+    },
+    "InputCapabilities": {
+      "ffi_name": "FfiInputCapabilities",
+      "fields": [
+        "supports_gamepad",
+        "supports_touch",
+        "max_gamepads"
+      ]
+    },
+    "NetworkCapabilities": {
+      "ffi_name": "FfiNetworkCapabilities",
+      "fields": [
+        "supports_hosting",
+        "max_connections",
+        "max_channels",
+        "max_message_size"
+      ]
+    },
     "Mat3x3": {
       "ffi_name": "FfiMat3x3",
       "fields": [
@@ -147,6 +189,10 @@
       "invalid": "null"
     },
     "EngineConfigHandle": {
+      "type": "*mut c_void",
+      "invalid": "null"
+    },
+    "UiManagerHandle": {
       "type": "*mut c_void",
       "invalid": "null"
     }
@@ -799,6 +845,45 @@
           "ffi": "goud_component_has_batch",
           "batch_in": true,
           "batch_out_results": true
+        },
+        "getRenderCapabilities": {
+          "ffi": "goud_provider_render_capabilities",
+          "out_params": [
+            { "name": "out", "type": "RenderCapabilities" }
+          ],
+          "returns_struct": "RenderCapabilities"
+        },
+        "getPhysicsCapabilities": {
+          "ffi": "goud_provider_physics_capabilities",
+          "out_params": [
+            { "name": "out", "type": "PhysicsCapabilities" }
+          ],
+          "returns_struct": "PhysicsCapabilities"
+        },
+        "getAudioCapabilities": {
+          "ffi": "goud_provider_audio_capabilities",
+          "out_params": [
+            { "name": "out", "type": "AudioCapabilities" }
+          ],
+          "returns_struct": "AudioCapabilities"
+        },
+        "getInputCapabilities": {
+          "ffi": "goud_provider_input_capabilities",
+          "out_params": [
+            { "name": "out", "type": "InputCapabilities" }
+          ],
+          "returns_struct": "InputCapabilities"
+        },
+        "getNetworkCapabilities": {
+          "ffi": "goud_provider_network_capabilities",
+          "out_params": [
+            { "name": "out", "type": "NetworkCapabilities" }
+          ],
+          "returns_struct": "NetworkCapabilities"
+        },
+        "checkHotSwapShortcut": {
+          "ffi": "goud_provider_check_hot_swap_shortcut",
+          "returns_bool_from_i32": true
         }
       },
       "properties": {
@@ -1195,6 +1280,72 @@
             }
           ],
           "returns_struct": "Vec2"
+        },
+        "getGravity": {
+          "ffi": "goud_physics_get_gravity",
+          "out_params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec2"
+        },
+        "setBodyGravityScale": {
+          "ffi": "goud_physics_set_body_gravity_scale"
+        },
+        "getBodyGravityScale": {
+          "ffi": "goud_physics_get_body_gravity_scale",
+          "out_params": [
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setColliderFriction": {
+          "ffi": "goud_physics_set_collider_friction"
+        },
+        "getColliderFriction": {
+          "ffi": "goud_physics_get_collider_friction",
+          "out_params": [
+            {
+              "name": "friction",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setColliderRestitution": {
+          "ffi": "goud_physics_set_collider_restitution"
+        },
+        "getColliderRestitution": {
+          "ffi": "goud_physics_get_collider_restitution",
+          "out_params": [
+            {
+              "name": "restitution",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setTimestep": {
+          "ffi": "goud_physics_set_timestep"
+        },
+        "getTimestep": {
+          "ffi": "goud_physics_get_timestep",
+          "out_params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
         }
       }
     },
@@ -1248,6 +1399,76 @@
         },
         "applyImpulse": {
           "ffi": "goud_physics3d_apply_impulse"
+        },
+        "getGravity": {
+          "ffi": "goud_physics3d_get_gravity",
+          "out_params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec3"
+        },
+        "setBodyGravityScale": {
+          "ffi": "goud_physics3d_set_body_gravity_scale"
+        },
+        "getBodyGravityScale": {
+          "ffi": "goud_physics3d_get_body_gravity_scale",
+          "out_params": [
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setColliderFriction": {
+          "ffi": "goud_physics3d_set_collider_friction"
+        },
+        "getColliderFriction": {
+          "ffi": "goud_physics3d_get_collider_friction",
+          "out_params": [
+            {
+              "name": "friction",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setColliderRestitution": {
+          "ffi": "goud_physics3d_set_collider_restitution"
+        },
+        "getColliderRestitution": {
+          "ffi": "goud_physics3d_get_collider_restitution",
+          "out_params": [
+            {
+              "name": "restitution",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setTimestep": {
+          "ffi": "goud_physics3d_set_timestep"
+        },
+        "getTimestep": {
+          "ffi": "goud_physics3d_get_timestep",
+          "out_params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
         }
       }
     },
@@ -1554,6 +1775,44 @@
         "list": {
           "ffi": "goud_plugin_list",
           "out_string": true
+        }
+      }
+    },
+    "UiManager": {
+      "handle": "UiManagerHandle",
+      "handle_type": "opaque",
+      "constructor": {
+        "ffi": "goud_ui_manager_create",
+        "params": []
+      },
+      "destructor": "goud_ui_manager_destroy",
+      "methods": {
+        "update": {
+          "ffi": "goud_ui_manager_update"
+        },
+        "render": {
+          "ffi": "goud_ui_manager_render"
+        },
+        "nodeCount": {
+          "ffi": "goud_ui_manager_node_count"
+        },
+        "createNode": {
+          "ffi": "goud_ui_create_node"
+        },
+        "removeNode": {
+          "ffi": "goud_ui_remove_node"
+        },
+        "setParent": {
+          "ffi": "goud_ui_set_parent"
+        },
+        "getParent": {
+          "ffi": "goud_ui_get_parent"
+        },
+        "getChildCount": {
+          "ffi": "goud_ui_get_child_count"
+        },
+        "getChildAt": {
+          "ffi": "goud_ui_get_child_at"
         }
       }
     }
@@ -5181,6 +5440,35 @@
         "unsafe": true
       }
     },
+    "diagnostic": {
+      "goud_diagnostic_set_enabled": {
+        "params": [
+          {
+            "name": "enabled",
+            "type": "bool"
+          }
+        ],
+        "returns": "void"
+      },
+      "goud_diagnostic_is_enabled": {
+        "params": [],
+        "returns": "bool"
+      },
+      "goud_diagnostic_last_backtrace": {
+        "params": [
+          {
+            "name": "buf",
+            "type": "*mut u8"
+          },
+          {
+            "name": "buf_len",
+            "type": "usize"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      }
+    },
     "physics2d": {
       "_feature": "optional",
       "goud_physics_create": {
@@ -5243,6 +5531,10 @@
           {
             "name": "y",
             "type": "f32"
+          },
+          {
+            "name": "gravity_scale",
+            "type": "f32"
           }
         ],
         "returns": "i64"
@@ -5271,6 +5563,14 @@
           },
           {
             "name": "radius",
+            "type": "f32"
+          },
+          {
+            "name": "friction",
+            "type": "f32"
+          },
+          {
+            "name": "restitution",
             "type": "f32"
           }
         ],
@@ -5446,6 +5746,156 @@
         ],
         "returns": "i32",
         "unsafe": true
+      },
+      "goud_physics_get_gravity": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "out_x",
+            "type": "*mut f32"
+          },
+          {
+            "name": "out_y",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics_set_body_gravity_scale": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "scale",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics_get_body_gravity_scale": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "out_scale",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics_set_collider_friction": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "friction",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics_get_collider_friction": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "out_friction",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics_set_collider_restitution": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "restitution",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics_get_collider_restitution": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "out_restitution",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics_set_timestep": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "dt",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics_get_timestep": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "out_dt",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
       }
     },
     "physics3d": {
@@ -5522,6 +5972,10 @@
           {
             "name": "z",
             "type": "f32"
+          },
+          {
+            "name": "gravity_scale",
+            "type": "f32"
           }
         ],
         "returns": "i64"
@@ -5554,6 +6008,14 @@
           },
           {
             "name": "radius",
+            "type": "f32"
+          },
+          {
+            "name": "friction",
+            "type": "f32"
+          },
+          {
+            "name": "restitution",
             "type": "f32"
           }
         ],
@@ -5685,6 +6147,160 @@
           }
         ],
         "returns": "i32"
+      },
+      "goud_physics3d_get_gravity": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "out_x",
+            "type": "*mut f32"
+          },
+          {
+            "name": "out_y",
+            "type": "*mut f32"
+          },
+          {
+            "name": "out_z",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics3d_set_body_gravity_scale": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "scale",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics3d_get_body_gravity_scale": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "out_scale",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics3d_set_collider_friction": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "friction",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics3d_get_collider_friction": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "out_friction",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics3d_set_collider_restitution": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "restitution",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics3d_get_collider_restitution": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          },
+          {
+            "name": "out_restitution",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics3d_set_timestep": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "dt",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics3d_get_timestep": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "out_dt",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
       }
     },
     "animation_controller": {
@@ -6472,6 +7088,56 @@
         "returns": "i32"
       }
     },
+    "providers": {
+      "goud_provider_render_capabilities": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "out_caps", "type": "ref FfiRenderCapabilities" }
+        ],
+        "returns": "i32"
+      },
+      "goud_provider_physics_capabilities": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "out_caps", "type": "ref FfiPhysicsCapabilities" }
+        ],
+        "returns": "i32"
+      },
+      "goud_provider_audio_capabilities": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "out_caps", "type": "ref FfiAudioCapabilities" }
+        ],
+        "returns": "i32"
+      },
+      "goud_provider_input_capabilities": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "out_caps", "type": "ref FfiInputCapabilities" }
+        ],
+        "returns": "i32"
+      },
+      "goud_provider_network_capabilities": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "out_caps", "type": "ref FfiNetworkCapabilities" }
+        ],
+        "returns": "i32"
+      },
+      "goud_provider_hot_swap_render": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "provider_type", "type": "i32" }
+        ],
+        "returns": "i32"
+      },
+      "goud_provider_check_hot_swap_shortcut": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" }
+        ],
+        "returns": "i32"
+      }
+    },
     "plugin": {
       "goud_plugin_register": {
         "params": [
@@ -6543,6 +7209,144 @@
           }
         ],
         "returns": "i32",
+        "unsafe": true
+      }
+    },
+    "ui_manager": {
+      "goud_ui_manager_create": {
+        "params": [],
+        "returns": "*mut c_void"
+      },
+      "goud_ui_manager_destroy": {
+        "params": [
+          {
+            "name": "ptr",
+            "type": "*mut c_void"
+          }
+        ],
+        "returns": "void",
+        "unsafe": true
+      },
+      "goud_ui_manager_update": {
+        "params": [
+          {
+            "name": "ptr",
+            "type": "*mut c_void"
+          }
+        ],
+        "returns": "void",
+        "unsafe": true
+      },
+      "goud_ui_manager_render": {
+        "params": [
+          {
+            "name": "ptr",
+            "type": "*mut c_void"
+          }
+        ],
+        "returns": "void",
+        "unsafe": true
+      },
+      "goud_ui_manager_node_count": {
+        "params": [
+          {
+            "name": "ptr",
+            "type": "*mut c_void"
+          }
+        ],
+        "returns": "u32",
+        "unsafe": true
+      },
+      "goud_ui_create_node": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "component_type",
+            "type": "i32"
+          }
+        ],
+        "returns": "u64",
+        "unsafe": true
+      },
+      "goud_ui_remove_node": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_ui_set_parent": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "child_id",
+            "type": "u64"
+          },
+          {
+            "name": "parent_id",
+            "type": "u64"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_ui_get_parent": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          }
+        ],
+        "returns": "u64",
+        "unsafe": true
+      },
+      "goud_ui_get_child_count": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          }
+        ],
+        "returns": "u32",
+        "unsafe": true
+      },
+      "goud_ui_get_child_at": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          },
+          {
+            "name": "index",
+            "type": "u32"
+          }
+        ],
+        "returns": "u64",
         "unsafe": true
       }
     }

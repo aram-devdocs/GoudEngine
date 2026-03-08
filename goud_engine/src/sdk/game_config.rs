@@ -56,6 +56,9 @@ pub struct GameConfig {
 
     /// How often (in seconds) the FPS overlay recomputes statistics.
     pub fps_update_interval: f32,
+
+    /// Enable diagnostic mode for detailed engine telemetry and error reporting.
+    pub diagnostic_mode: bool,
 }
 
 impl Default for GameConfig {
@@ -71,6 +74,7 @@ impl Default for GameConfig {
             debug_rendering: false,
             show_fps_overlay: false,
             fps_update_interval: 0.5,
+            diagnostic_mode: false,
         }
     }
 }
@@ -134,6 +138,12 @@ impl GameConfig {
     /// Sets how often (in seconds) the FPS overlay recomputes statistics.
     pub fn with_fps_update_interval(mut self, interval: f32) -> Self {
         self.fps_update_interval = interval;
+        self
+    }
+
+    /// Enables or disables diagnostic mode for detailed engine telemetry.
+    pub fn with_diagnostic_mode(mut self, enabled: bool) -> Self {
+        self.diagnostic_mode = enabled;
         self
     }
 }

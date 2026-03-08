@@ -115,6 +115,14 @@ impl Rapier3DPhysicsProvider {
             .copied()
             .ok_or(GoudError::InvalidHandle)
     }
+
+    /// Look up the rapier collider handle, returning an error if not found.
+    fn resolve_collider(&self, handle: EngineColliderHandle) -> GoudResult<RapierColliderHandle> {
+        self.collider_map
+            .get(&handle.0)
+            .copied()
+            .ok_or(GoudError::InvalidHandle)
+    }
 }
 
 impl Default for Rapier3DPhysicsProvider {
@@ -208,6 +216,14 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
 
     fn gravity(&self) -> [f32; 3] {
         [self.gravity.x, self.gravity.y, self.gravity.z]
+    }
+
+    fn set_timestep(&mut self, dt: f32) {
+        self.integration_params.dt = dt;
+    }
+
+    fn timestep(&self) -> f32 {
+        self.integration_params.dt
     }
 
     fn create_body(&mut self, desc: &BodyDesc3D) -> GoudResult<BodyHandle> {
@@ -344,6 +360,14 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
         Ok(())
     }
 
+    fn body_gravity_scale(&self, handle: BodyHandle) -> GoudResult<f32> {
+        self.query_body_gravity_scale(handle)
+    }
+
+    fn set_body_gravity_scale(&mut self, handle: BodyHandle, scale: f32) -> GoudResult<()> {
+        self.query_set_body_gravity_scale(handle, scale)
+    }
+
     fn create_collider(
         &mut self,
         body: BodyHandle,
@@ -379,6 +403,30 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
                 true,
             );
         }
+    }
+
+    fn collider_friction(&self, handle: EngineColliderHandle) -> GoudResult<f32> {
+        self.query_collider_friction(handle)
+    }
+
+    fn set_collider_friction(
+        &mut self,
+        handle: EngineColliderHandle,
+        friction: f32,
+    ) -> GoudResult<()> {
+        self.query_set_collider_friction(handle, friction)
+    }
+
+    fn collider_restitution(&self, handle: EngineColliderHandle) -> GoudResult<f32> {
+        self.query_collider_restitution(handle)
+    }
+
+    fn set_collider_restitution(
+        &mut self,
+        handle: EngineColliderHandle,
+        restitution: f32,
+    ) -> GoudResult<()> {
+        self.query_set_collider_restitution(handle, restitution)
     }
 
     fn raycast(&self, origin: [f32; 3], dir: [f32; 3], max_dist: f32) -> Option<RaycastHit3D> {

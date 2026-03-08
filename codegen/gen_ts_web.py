@@ -114,14 +114,14 @@ def gen_web_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData } from '../types/engine.g.js';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "import { attachInputHandlers } from './input.g.js';",
         "",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton } from '../types/input.g.js';",
         "export { Rect } from '../types/math.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData } from '../types/engine.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "",
     ]
 
@@ -521,6 +521,15 @@ def gen_web_wrapper():
     lines.append("  animationClipAddEvent(_entity: IEntity, _frameIndex: number, _name: string, _payloadType: number, _payloadInt: number, _payloadFloat: number, _payloadString?: string | null): number { return 0; }")
     lines.append("  animationEventsCount(): number { return 0; }")
     lines.append("  animationEventsRead(_index: number): IAnimationEventData { return { entity: 0, name: '', frameIndex: 0, payloadType: 0, payloadInt: 0, payloadFloat: 0, payloadString: '' }; }")
+    lines.append("  // Provider capability queries -- not available in WASM mode")
+    lines.append("  getRenderCapabilities(): IRenderCapabilities { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  getPhysicsCapabilities(): IPhysicsCapabilities { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  getAudioCapabilities(): IAudioCapabilities { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  getInputCapabilities(): IInputCapabilities { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  getNetworkCapabilities(): INetworkCapabilities { throw new Error('Not supported in WASM mode'); }")
+    lines.append("")
+    emit_jsdoc(lines, _method_docs.get("check_hot_swap_shortcut"))
+    lines.append("  checkHotSwapShortcut(): boolean { throw new Error('Not supported in WASM mode'); }")
     lines.append("}")
     lines.append("")
 

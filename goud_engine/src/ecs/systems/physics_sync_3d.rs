@@ -21,10 +21,13 @@
 //! ```
 
 use std::collections::HashMap;
+use std::time::Instant;
 
 use crate::core::providers::physics3d::PhysicsProvider3D;
 use crate::core::providers::types::BodyHandle;
 use crate::ecs::entity::Entity;
+use crate::ecs::physics_world::interpolation::PhysicsInterpolation;
+use crate::ecs::physics_world::PhysicsWorld;
 use crate::ecs::query::Access;
 use crate::ecs::system::System;
 use crate::ecs::World;
@@ -45,12 +48,16 @@ pub struct PhysicsHandleMap3D {
 ///    `Transform`.
 pub struct PhysicsStepSystem3D {
     provider: Box<dyn PhysicsProvider3D>,
+    last_step: Option<Instant>,
 }
 
 impl PhysicsStepSystem3D {
     /// Creates a new 3D physics step system with the given provider.
     pub fn new(provider: Box<dyn PhysicsProvider3D>) -> Self {
-        Self { provider }
+        Self {
+            provider,
+            last_step: None,
+        }
     }
 
     /// Returns a reference to the underlying physics provider.
@@ -74,10 +81,34 @@ impl System for PhysicsStepSystem3D {
     }
 
     fn run(&mut self, world: &mut World) {
-        const FIXED_DT: f32 = 1.0 / 60.0;
-        if let Err(e) = self.provider.step(FIXED_DT) {
-            log::error!("PhysicsStepSystem3D: step failed: {e}");
-            return;
+        // Compute frame delta from wall clock.
+        let now = Instant::now();
+        let delta = match self.last_step {
+            Some(prev) => now.duration_since(prev).as_secs_f32(),
+            None => 1.0 / 60.0,
+        };
+        self.last_step = Some(now);
+
+        // Use PhysicsWorld accumulator if present, otherwise fall back to a
+        // single step at 1/60.
+        if let Some(physics_world) = world.get_resource_mut::<PhysicsWorld>() {
+            physics_world.advance(delta);
+            let timestep = physics_world.timestep();
+            while physics_world.should_step() {
+                physics_world.step();
+                if let Err(e) = self.provider.step(timestep) {
+                    log::error!("PhysicsStepSystem3D: step failed: {e}");
+                    return;
+                }
+            }
+            let alpha = physics_world.interpolation_alpha();
+            world.insert_resource(PhysicsInterpolation { alpha });
+        } else {
+            const FIXED_DT: f32 = 1.0 / 60.0;
+            if let Err(e) = self.provider.step(FIXED_DT) {
+                log::error!("PhysicsStepSystem3D: step failed: {e}");
+                return;
+            }
         }
 
         let handle_map = match world.get_resource_mut::<PhysicsHandleMap3D>() {
@@ -150,5 +181,30 @@ mod tests {
         let system = PhysicsStepSystem3D::new(Box::new(provider));
         let world = World::new();
         assert!(system.should_run(&world));
+    }
+
+    #[test]
+    fn test_system_3d_with_physics_world_produces_interpolation() {
+        let provider = NullPhysicsProvider3D::new();
+        let mut system = PhysicsStepSystem3D::new(Box::new(provider));
+        let mut world = World::new();
+        world.insert_resource(PhysicsHandleMap3D::default());
+        world.insert_resource(PhysicsWorld::new());
+
+        system.run(&mut world);
+
+        assert!(world.contains_resource::<PhysicsInterpolation>());
+    }
+
+    #[test]
+    fn test_system_3d_fallback_without_physics_world() {
+        let provider = NullPhysicsProvider3D::new();
+        let mut system = PhysicsStepSystem3D::new(Box::new(provider));
+        let mut world = World::new();
+        world.insert_resource(PhysicsHandleMap3D::default());
+
+        system.run(&mut world);
+
+        assert!(!world.contains_resource::<PhysicsInterpolation>());
     }
 }

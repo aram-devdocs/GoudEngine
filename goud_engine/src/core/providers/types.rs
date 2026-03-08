@@ -383,6 +383,7 @@ pub use super::network_types::{
 
 /// Capabilities reported by a render provider.
 #[derive(Debug, Clone, Default)]
+#[repr(C)]
 pub struct RenderCapabilities {
     /// Maximum number of texture units available.
     pub max_texture_units: u32,
@@ -398,6 +399,7 @@ pub struct RenderCapabilities {
 
 /// Capabilities reported by a physics provider.
 #[derive(Debug, Clone, Default)]
+#[repr(C)]
 pub struct PhysicsCapabilities {
     /// Whether continuous collision detection is supported.
     pub supports_continuous_collision: bool,
@@ -409,6 +411,7 @@ pub struct PhysicsCapabilities {
 
 /// Capabilities reported by an audio provider.
 #[derive(Debug, Clone, Default)]
+#[repr(C)]
 pub struct AudioCapabilities {
     /// Whether spatial/3D audio is supported.
     pub supports_spatial: bool,

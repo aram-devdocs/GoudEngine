@@ -4,6 +4,7 @@
 //! These operate on pointers to stack- or heap-allocated `FfiSpriteAnimator`
 //! structs and return safe default values when given null pointers.
 
+use crate::core::error::{set_last_error, GoudError};
 use crate::core::types::FfiSpriteAnimator;
 
 /// Returns the current frame index of the animator.
@@ -24,6 +25,9 @@ pub unsafe extern "C" fn goud_sprite_animator_get_current_frame(
     animator: *const FfiSpriteAnimator,
 ) -> u32 {
     if animator.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return 0;
     }
     // SAFETY: animator is non-null and points to a valid FfiSpriteAnimator
@@ -48,6 +52,9 @@ pub unsafe extern "C" fn goud_sprite_animator_is_playing(
     animator: *const FfiSpriteAnimator,
 ) -> bool {
     if animator.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     // SAFETY: animator is non-null and points to a valid FfiSpriteAnimator
@@ -72,6 +79,9 @@ pub unsafe extern "C" fn goud_sprite_animator_is_finished(
     animator: *const FfiSpriteAnimator,
 ) -> bool {
     if animator.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     // SAFETY: animator is non-null and points to a valid FfiSpriteAnimator

@@ -22,7 +22,7 @@ fn test_udp_capabilities() {
     assert!(caps.supports_hosting);
     assert_eq!(caps.max_connections, 32);
     assert_eq!(caps.max_channels, 2);
-    assert_eq!(caps.max_message_size, RECV_BUF_SIZE - HEADER_SIZE);
+    assert_eq!(caps.max_message_size, (RECV_BUF_SIZE - HEADER_SIZE) as u32);
 }
 
 #[test]

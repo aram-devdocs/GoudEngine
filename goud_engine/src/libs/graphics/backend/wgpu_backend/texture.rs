@@ -24,6 +24,10 @@ impl WgpuBackend {
             TextureFormat::RGBA32F => wgpu::TextureFormat::Rgba32Float,
             TextureFormat::Depth => wgpu::TextureFormat::Depth32Float,
             TextureFormat::DepthStencil => wgpu::TextureFormat::Depth24PlusStencil8,
+            TextureFormat::BC1 => wgpu::TextureFormat::Bc1RgbaUnorm,
+            TextureFormat::BC3 => wgpu::TextureFormat::Bc3RgbaUnorm,
+            TextureFormat::BC5 => wgpu::TextureFormat::Bc5RgUnorm,
+            TextureFormat::BC7 => wgpu::TextureFormat::Bc7RgbaUnorm,
         };
 
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
