@@ -93,7 +93,10 @@ pub unsafe extern "C" fn goud_texture_load(
         }
     });
 
-    result.unwrap_or(GOUD_INVALID_TEXTURE)
+    result.unwrap_or_else(|| {
+        set_last_error(GoudError::InvalidContext);
+        GOUD_INVALID_TEXTURE
+    })
 }
 
 /// Destroys a texture and releases its GPU resources.
@@ -111,7 +114,12 @@ pub extern "C" fn goud_texture_destroy(
     context_id: GoudContextId,
     texture: GoudTextureHandle,
 ) -> bool {
-    if context_id == GOUD_INVALID_CONTEXT_ID || texture == GOUD_INVALID_TEXTURE {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+    if texture == GOUD_INVALID_TEXTURE {
+        set_last_error(GoudError::InvalidHandle);
         return false;
     }
 

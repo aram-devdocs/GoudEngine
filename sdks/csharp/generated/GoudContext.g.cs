@@ -412,6 +412,30 @@ namespace GoudEngine
             return NativeMethods.goud_scene_get_current(_ctx);
         }
 
+        /// <summary>Starts a transition between two scenes</summary>
+        public GoudResult SceneTransitionTo(uint fromScene, uint toScene, TransitionType transitionType, float durationSecs)
+        {
+            return NativeMethods.goud_scene_transition_to(_ctx, fromScene, toScene, transitionType, durationSecs);
+        }
+
+        /// <summary>Returns the progress of the active transition (0.0-1.0, or -1.0 if none)</summary>
+        public float SceneTransitionProgress()
+        {
+            return NativeMethods.goud_scene_transition_progress(_ctx);
+        }
+
+        /// <summary>Returns whether a scene transition is currently active</summary>
+        public bool SceneTransitionIsActive()
+        {
+            return NativeMethods.goud_scene_transition_is_active(_ctx);
+        }
+
+        /// <summary>Advances the active transition by delta time</summary>
+        public GoudResult SceneTransitionTick(float deltaTime)
+        {
+            return NativeMethods.goud_scene_transition_tick(_ctx, deltaTime);
+        }
+
         public void Dispose() => _ctx = GoudContextId.Invalid;
     }
 }

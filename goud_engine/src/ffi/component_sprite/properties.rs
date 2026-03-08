@@ -4,6 +4,7 @@
 //! source rectangle, flip flags, anchor point, custom size, texture handle,
 //! and the utility `goud_sprite_size_or_rect` function.
 
+use crate::core::error::{set_last_error, GoudError};
 use crate::core::types::{FfiRect, FfiSprite};
 use crate::ffi::types::FfiVec2;
 
@@ -36,6 +37,9 @@ pub unsafe extern "C" fn goud_sprite_set_source_rect(
     height: f32,
 ) {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let s = &mut *sprite;
@@ -58,6 +62,9 @@ pub unsafe extern "C" fn goud_sprite_set_source_rect(
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_clear_source_rect(sprite: *mut FfiSprite) {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     (*sprite).has_source_rect = false;
@@ -83,6 +90,9 @@ pub unsafe extern "C" fn goud_sprite_get_source_rect(
     out_rect: *mut FfiRect,
 ) -> bool {
     if sprite.is_null() || out_rect.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     let s = &*sprite;
@@ -107,6 +117,9 @@ pub unsafe extern "C" fn goud_sprite_get_source_rect(
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_has_source_rect(sprite: *const FfiSprite) -> bool {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     (*sprite).has_source_rect
@@ -161,6 +174,9 @@ pub extern "C" fn goud_sprite_with_source_rect(
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_set_flip_x(sprite: *mut FfiSprite, flip: bool) {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     (*sprite).flip_x = flip;
@@ -174,6 +190,9 @@ pub unsafe extern "C" fn goud_sprite_set_flip_x(sprite: *mut FfiSprite, flip: bo
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_get_flip_x(sprite: *const FfiSprite) -> bool {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     (*sprite).flip_x
@@ -194,6 +213,9 @@ pub unsafe extern "C" fn goud_sprite_get_flip_x(sprite: *const FfiSprite) -> boo
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_set_flip_y(sprite: *mut FfiSprite, flip: bool) {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     (*sprite).flip_y = flip;
@@ -207,6 +229,9 @@ pub unsafe extern "C" fn goud_sprite_set_flip_y(sprite: *mut FfiSprite, flip: bo
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_get_flip_y(sprite: *const FfiSprite) -> bool {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     (*sprite).flip_y
@@ -226,6 +251,9 @@ pub unsafe extern "C" fn goud_sprite_get_flip_y(sprite: *const FfiSprite) -> boo
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_set_flip(sprite: *mut FfiSprite, flip_x: bool, flip_y: bool) {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let s = &mut *sprite;
@@ -270,6 +298,9 @@ pub extern "C" fn goud_sprite_with_flip(
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_is_flipped(sprite: *const FfiSprite) -> bool {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     let s = &*sprite;
@@ -299,6 +330,9 @@ pub unsafe extern "C" fn goud_sprite_is_flipped(sprite: *const FfiSprite) -> boo
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_set_anchor(sprite: *mut FfiSprite, x: f32, y: f32) {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let s = &mut *sprite;
@@ -314,6 +348,9 @@ pub unsafe extern "C" fn goud_sprite_set_anchor(sprite: *mut FfiSprite, x: f32, 
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_get_anchor(sprite: *const FfiSprite) -> FfiVec2 {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return FfiVec2 { x: 0.5, y: 0.5 };
     }
     let s = &*sprite;
@@ -357,6 +394,9 @@ pub unsafe extern "C" fn goud_sprite_set_custom_size(
     height: f32,
 ) {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let s = &mut *sprite;
@@ -373,6 +413,9 @@ pub unsafe extern "C" fn goud_sprite_set_custom_size(
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_clear_custom_size(sprite: *mut FfiSprite) {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     (*sprite).has_custom_size = false;
@@ -398,6 +441,9 @@ pub unsafe extern "C" fn goud_sprite_get_custom_size(
     out_size: *mut FfiVec2,
 ) -> bool {
     if sprite.is_null() || out_size.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     let s = &*sprite;
@@ -420,6 +466,9 @@ pub unsafe extern "C" fn goud_sprite_get_custom_size(
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_has_custom_size(sprite: *const FfiSprite) -> bool {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     (*sprite).has_custom_size

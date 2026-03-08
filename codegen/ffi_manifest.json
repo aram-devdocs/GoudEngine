@@ -2,6 +2,23 @@
   "version": "0.0.828",
   "generated_at": "build-time",
   "functions": {
+    "goud_animation_clip_add_event": {
+      "source_file": "ffi/animation/events.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "clip_event_frame: u32",
+        "name_ptr: *const u8",
+        "name_len: u32",
+        "payload_type: u32",
+        "payload_int: i32",
+        "payload_float: f32",
+        "payload_str_ptr: *const u8",
+        "payload_str_len: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_animation_clip_builder_add_frame": {
       "source_file": "ffi/component_sprite_animator/factory.rs",
       "params": [
@@ -99,133 +116,107 @@
       "return_type": "i32",
       "is_unsafe": false
     },
-    "goud_audio_active_count": {
-      "source_file": "ffi/audio/controls.rs",
+    "goud_animation_events_count": {
+      "source_file": "ffi/animation/events.rs",
       "params": [
         "context_id: GoudContextId"
       ],
       "return_type": "i32",
       "is_unsafe": false
     },
-    "goud_audio_cleanup_finished": {
-      "source_file": "ffi/audio/controls.rs",
+    "goud_animation_events_read": {
+      "source_file": "ffi/animation/events.rs",
       "params": [
-        "context_id: GoudContextId"
+        "context_id: GoudContextId",
+        "index: u32",
+        "out_entity: *mut u64",
+        "out_name_ptr: *mut *const u8",
+        "out_name_len: *mut u32",
+        "out_frame: *mut u32",
+        "out_payload_type: *mut u32",
+        "out_payload_int: *mut i32",
+        "out_payload_float: *mut f32",
+        "out_payload_str_ptr: *mut *const u8",
+        "out_payload_str_len: *mut u32"
       ],
       "return_type": "i32",
-      "is_unsafe": false
-    },
-    "goud_audio_get_channel_volume": {
-      "source_file": "ffi/audio/controls.rs",
-      "params": [
-        "context_id: GoudContextId",
-        "channel: u8"
-      ],
-      "return_type": "f32",
-      "is_unsafe": false
-    },
-    "goud_audio_get_global_volume": {
-      "source_file": "ffi/audio/controls.rs",
-      "params": [
-        "context_id: GoudContextId"
-      ],
-      "return_type": "f32",
-      "is_unsafe": false
-    },
-    "goud_audio_is_playing": {
-      "source_file": "ffi/audio/controls.rs",
-      "params": [
-        "context_id: GoudContextId",
-        "player_id: u64"
-      ],
-      "return_type": "i32",
-      "is_unsafe": false
-    },
-    "goud_audio_pause": {
-      "source_file": "ffi/audio/controls.rs",
-      "params": [
-        "context_id: GoudContextId",
-        "player_id: u64"
-      ],
-      "return_type": "i32",
-      "is_unsafe": false
-    },
-    "goud_audio_play": {
-      "source_file": "ffi/audio/playback.rs",
-      "params": [
-        "context_id: GoudContextId",
-        "asset_data: *const u8",
-        "asset_len: usize"
-      ],
-      "return_type": "i64",
       "is_unsafe": true
     },
-    "goud_audio_play_on_channel": {
-      "source_file": "ffi/audio/playback.rs",
+    "goud_animation_layer_add": {
+      "source_file": "ffi/animation/layer.rs",
       "params": [
         "context_id: GoudContextId",
-        "asset_data: *const u8",
-        "asset_len: usize",
-        "channel: u8"
+        "entity_id: u64",
+        "name_ptr: *const u8",
+        "name_len: u32",
+        "blend_mode: u32"
       ],
-      "return_type": "i64",
+      "return_type": "i32",
       "is_unsafe": true
     },
-    "goud_audio_play_with_settings": {
-      "source_file": "ffi/audio/playback.rs",
+    "goud_animation_layer_add_frame": {
+      "source_file": "ffi/animation/layer.rs",
       "params": [
         "context_id: GoudContextId",
-        "asset_data: *const u8",
-        "asset_len: usize",
-        "volume: f32",
-        "speed: f32",
-        "looping: bool",
-        "channel: u8"
-      ],
-      "return_type": "i64",
-      "is_unsafe": true
-    },
-    "goud_audio_resume": {
-      "source_file": "ffi/audio/controls.rs",
-      "params": [
-        "context_id: GoudContextId",
-        "player_id: u64"
+        "entity_id: u64",
+        "layer_index: u32",
+        "x: f32",
+        "y: f32",
+        "w: f32",
+        "h: f32"
       ],
       "return_type": "i32",
       "is_unsafe": false
     },
-    "goud_audio_set_channel_volume": {
-      "source_file": "ffi/audio/controls.rs",
+    "goud_animation_layer_play": {
+      "source_file": "ffi/animation/layer.rs",
       "params": [
         "context_id: GoudContextId",
-        "channel: u8",
-        "volume: f32"
+        "entity_id: u64",
+        "layer_index: u32"
       ],
       "return_type": "i32",
       "is_unsafe": false
     },
-    "goud_audio_set_global_volume": {
-      "source_file": "ffi/audio/controls.rs",
+    "goud_animation_layer_reset": {
+      "source_file": "ffi/animation/layer.rs",
       "params": [
         "context_id: GoudContextId",
-        "volume: f32"
+        "entity_id: u64",
+        "layer_index: u32"
       ],
       "return_type": "i32",
       "is_unsafe": false
     },
-    "goud_audio_stop": {
-      "source_file": "ffi/audio/controls.rs",
+    "goud_animation_layer_set_clip": {
+      "source_file": "ffi/animation/layer.rs",
       "params": [
         "context_id: GoudContextId",
-        "player_id: u64"
+        "entity_id: u64",
+        "layer_index: u32",
+        "frame_count: u32",
+        "frame_duration: f32",
+        "mode: u32"
       ],
       "return_type": "i32",
       "is_unsafe": false
     },
-    "goud_audio_stop_all": {
-      "source_file": "ffi/audio/controls.rs",
+    "goud_animation_layer_set_weight": {
+      "source_file": "ffi/animation/layer.rs",
       "params": [
-        "context_id: GoudContextId"
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "layer_index: u32",
+        "weight: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_animation_layer_stack_create": {
+      "source_file": "ffi/animation/layer.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -613,6 +604,29 @@
         "interval: f32"
       ],
       "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_diagnostic_is_enabled": {
+      "source_file": "ffi/debug.rs",
+      "params": [],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_diagnostic_last_backtrace": {
+      "source_file": "ffi/debug.rs",
+      "params": [
+        "buf: *mut u8",
+        "buf_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_diagnostic_set_enabled": {
+      "source_file": "ffi/debug.rs",
+      "params": [
+        "enabled: bool"
+      ],
+      "return_type": "()",
       "is_unsafe": false
     },
     "goud_engine_config_create": {
@@ -1043,7 +1057,9 @@
         "hx: f32",
         "hy: f32",
         "hz: f32",
-        "radius: f32"
+        "radius: f32",
+        "friction: f32",
+        "restitution: f32"
       ],
       "return_type": "i64",
       "is_unsafe": false
@@ -1055,7 +1071,8 @@
         "body_type: u32",
         "x: f32",
         "y: f32",
-        "z: f32"
+        "z: f32",
+        "gravity_scale: f32"
       ],
       "return_type": "i64",
       "is_unsafe": false
@@ -1103,6 +1120,47 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_physics3d_get_body_gravity_scale": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_scale: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics3d_get_collider_friction": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_friction: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics3d_get_collider_restitution": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_restitution: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics3d_get_gravity": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "out_x: *mut f32",
+        "out_y: *mut f32",
+        "out_z: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_physics3d_get_position": {
       "source_file": "ffi/physics/physics3d.rs",
       "params": [
@@ -1111,6 +1169,15 @@
         "out_x: *mut f32",
         "out_y: *mut f32",
         "out_z: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics3d_get_timestep": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "out_dt: *mut f32"
       ],
       "return_type": "i32",
       "is_unsafe": true
@@ -1124,6 +1191,36 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_physics3d_set_body_gravity_scale": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "scale: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_set_collider_friction": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "friction: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_set_collider_restitution": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "restitution: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_physics3d_set_gravity": {
       "source_file": "ffi/physics/physics3d.rs",
       "params": [
@@ -1131,6 +1228,15 @@
         "x: f32",
         "y: f32",
         "z: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_set_timestep": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "dt: f32"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -1164,7 +1270,9 @@
         "shape_type: u32",
         "width: f32",
         "height: f32",
-        "radius: f32"
+        "radius: f32",
+        "friction: f32",
+        "restitution: f32"
       ],
       "return_type": "i64",
       "is_unsafe": false
@@ -1175,7 +1283,8 @@
         "ctx: GoudContextId",
         "body_type: u32",
         "x: f32",
-        "y: f32"
+        "y: f32",
+        "gravity_scale: f32"
       ],
       "return_type": "i64",
       "is_unsafe": false
@@ -1220,6 +1329,46 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_physics_get_body_gravity_scale": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_scale: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics_get_collider_friction": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_friction: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics_get_collider_restitution": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_restitution: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics_get_gravity": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "out_x: *mut f32",
+        "out_y: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_physics_get_position": {
       "source_file": "ffi/physics/physics2d.rs",
       "params": [
@@ -1227,6 +1376,15 @@
         "handle: u64",
         "out_x: *mut f32",
         "out_y: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics_get_timestep": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "out_dt: *mut f32"
       ],
       "return_type": "i32",
       "is_unsafe": true
@@ -1266,12 +1424,51 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_physics_set_body_gravity_scale": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "scale: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_set_collider_friction": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "friction: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_set_collider_restitution": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "restitution: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_physics_set_gravity": {
       "source_file": "ffi/physics/physics2d.rs",
       "params": [
         "ctx: GoudContextId",
         "x: f32",
         "y: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_set_timestep": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "dt: f32"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -1332,6 +1529,68 @@
         "context_id: GoudContextId",
         "plugin_id_ptr: *const u8",
         "plugin_id_len: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_provider_audio_capabilities": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out: *mut AudioCapabilities"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_provider_check_hot_swap_shortcut": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "_context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_provider_hot_swap_render": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "_provider_type: i32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_provider_input_capabilities": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out: *mut InputCapabilities"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_provider_network_capabilities": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out: *mut NetworkCapabilities"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_provider_physics_capabilities": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out: *mut PhysicsCapabilities"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_provider_render_capabilities": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out: *mut RenderCapabilities"
       ],
       "return_type": "i32",
       "is_unsafe": true
@@ -1774,6 +2033,43 @@
       "params": [
         "context_id: GoudContextId",
         "scene_id: u32"
+      ],
+      "return_type": "GoudResult",
+      "is_unsafe": false
+    },
+    "goud_scene_transition_is_active": {
+      "source_file": "ffi/scene_transition.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_scene_transition_progress": {
+      "source_file": "ffi/scene_transition.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_scene_transition_tick": {
+      "source_file": "ffi/scene_transition.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "delta_time: f32"
+      ],
+      "return_type": "GoudResult",
+      "is_unsafe": false
+    },
+    "goud_scene_transition_to": {
+      "source_file": "ffi/scene_transition.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "from_scene: u32",
+        "to_scene: u32",
+        "transition_type: u8",
+        "duration_secs: f32"
       ],
       "return_type": "GoudResult",
       "is_unsafe": false
@@ -2268,6 +2564,148 @@
       ],
       "return_type": "FfiSprite",
       "is_unsafe": false
+    },
+    "goud_text_clear_max_width": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *mut FfiText"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_text_default": {
+      "source_file": "ffi/component_text/factory.rs",
+      "params": [],
+      "return_type": "FfiText",
+      "is_unsafe": false
+    },
+    "goud_text_get_alignment": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "u8",
+      "is_unsafe": true
+    },
+    "goud_text_get_color_a": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_get_color_b": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_get_color_g": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_get_color_r": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_get_font_size": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_get_line_spacing": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_get_max_width": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "f32",
+      "is_unsafe": true
+    },
+    "goud_text_has_max_width": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *const FfiText"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_text_new": {
+      "source_file": "ffi/component_text/factory.rs",
+      "params": [
+        "font_handle: u64"
+      ],
+      "return_type": "FfiText",
+      "is_unsafe": false
+    },
+    "goud_text_set_alignment": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *mut FfiText",
+        "alignment: u8"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_text_set_color": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *mut FfiText",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_text_set_font_size": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *mut FfiText",
+        "size: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_text_set_line_spacing": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *mut FfiText",
+        "spacing: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_text_set_max_width": {
+      "source_file": "ffi/component_text/properties.rs",
+      "params": [
+        "text: *mut FfiText",
+        "width: f32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
     },
     "goud_texture_destroy": {
       "source_file": "ffi/renderer/texture.rs",
@@ -2787,6 +3225,100 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_ui_create_node": {
+      "source_file": "ffi/ui/node.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "component_type: i32"
+      ],
+      "return_type": "u64",
+      "is_unsafe": true
+    },
+    "goud_ui_get_child_at": {
+      "source_file": "ffi/ui/node.rs",
+      "params": [
+        "mgr: *const UiManager",
+        "node_id: u64",
+        "index: u32"
+      ],
+      "return_type": "u64",
+      "is_unsafe": true
+    },
+    "goud_ui_get_child_count": {
+      "source_file": "ffi/ui/node.rs",
+      "params": [
+        "mgr: *const UiManager",
+        "node_id: u64"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_ui_get_parent": {
+      "source_file": "ffi/ui/node.rs",
+      "params": [
+        "mgr: *const UiManager",
+        "node_id: u64"
+      ],
+      "return_type": "u64",
+      "is_unsafe": true
+    },
+    "goud_ui_manager_create": {
+      "source_file": "ffi/ui/manager.rs",
+      "params": [],
+      "return_type": "*mut UiManager",
+      "is_unsafe": false
+    },
+    "goud_ui_manager_destroy": {
+      "source_file": "ffi/ui/manager.rs",
+      "params": [
+        "ptr: *mut UiManager"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_ui_manager_node_count": {
+      "source_file": "ffi/ui/manager.rs",
+      "params": [
+        "ptr: *const UiManager"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_ui_manager_render": {
+      "source_file": "ffi/ui/manager.rs",
+      "params": [
+        "ptr: *const UiManager"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_ui_manager_update": {
+      "source_file": "ffi/ui/manager.rs",
+      "params": [
+        "ptr: *mut UiManager"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
+    "goud_ui_remove_node": {
+      "source_file": "ffi/ui/node.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "node_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_ui_set_parent": {
+      "source_file": "ffi/ui/node.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "child_id: u64",
+        "parent_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_window_clear": {
       "source_file": "ffi/window/properties.rs",
       "params": [
@@ -2867,7 +3399,138 @@
       ],
       "return_type": "()",
       "is_unsafe": false
+    },
+    "goud_audio_active_count": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_cleanup_finished": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_get_channel_volume": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "channel: u8"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_audio_get_global_volume": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_audio_is_playing": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_pause": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_play": {
+      "source_file": "ffi/audio/playback.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "asset_data: *const u8",
+        "asset_len: usize"
+      ],
+      "return_type": "i64",
+      "is_unsafe": true
+    },
+    "goud_audio_play_on_channel": {
+      "source_file": "ffi/audio/playback.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "asset_data: *const u8",
+        "asset_len: usize",
+        "channel: u8"
+      ],
+      "return_type": "i64",
+      "is_unsafe": true
+    },
+    "goud_audio_play_with_settings": {
+      "source_file": "ffi/audio/playback.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "asset_data: *const u8",
+        "asset_len: usize",
+        "volume: f32",
+        "speed: f32",
+        "looping: bool",
+        "channel: u8"
+      ],
+      "return_type": "i64",
+      "is_unsafe": true
+    },
+    "goud_audio_resume": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_set_channel_volume": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "channel: u8",
+        "volume: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_set_global_volume": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "volume: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_stop": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_stop_all": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
     }
   },
-  "total_count": 294
+  "total_count": 364
 }

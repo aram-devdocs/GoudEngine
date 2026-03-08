@@ -148,6 +148,7 @@ pub enum GamepadButton {
 
 /// Capabilities reported by an input provider.
 #[derive(Debug, Clone, Default)]
+#[repr(C)]
 pub struct InputCapabilities {
     /// Whether gamepad input is supported.
     pub supports_gamepad: bool,

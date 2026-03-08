@@ -42,6 +42,11 @@ IFACE_TYPES = {
     "FpsStats": "IFpsStats",
     "Contact": "IContact",
     "Entity[]": "IEntity[]",
+    "RenderCapabilities": "IRenderCapabilities",
+    "PhysicsCapabilities": "IPhysicsCapabilities",
+    "AudioCapabilities": "IAudioCapabilities",
+    "InputCapabilities": "IInputCapabilities",
+    "NetworkCapabilities": "INetworkCapabilities",
 }
 
 
@@ -101,6 +106,23 @@ def gen_interface():
     if schema["types"]["FpsStats"].get("doc"):
         lines.append(f"/** {schema['types']['FpsStats']['doc']} */")
     lines.append(f"export interface IFpsStats {{ {fps_str}; }}")
+
+    # Capability interfaces
+    for cap_name in ["RenderCapabilities", "PhysicsCapabilities", "AudioCapabilities", "InputCapabilities", "NetworkCapabilities"]:
+        cap_type = schema["types"][cap_name]
+        cap_fields = []
+        for f in cap_type["fields"]:
+            ft = f["type"]
+            if ft == "bool":
+                ts_ft = "boolean"
+            else:
+                ts_ft = "number"
+            cap_fields.append(f"{to_camel(f['name'])}: {ts_ft}")
+        cap_str = "; ".join(cap_fields)
+        iface_name = IFACE_TYPES[cap_name]
+        if cap_type.get("doc"):
+            lines.append(f"/** {cap_type['doc']} */")
+        lines.append(f"export interface {iface_name} {{ {cap_str}; }}")
     lines.append("")
 
     if schema["types"].get("Entity", {}).get("doc"):
@@ -190,33 +212,37 @@ def gen_interface():
         else:
             lines.append(f"  {mn}({sig}): {ts_ret};")
 
-    # Audio interface methods
-    if "Audio" in schema.get("tools", {}):
-        audio_tool = schema["tools"]["Audio"]
-        for method in audio_tool.get("methods", []):
-            raw_name = method["name"]
-            prefixed = "audio" + raw_name[0].upper() + raw_name[1:]
-            params = method.get("params", [])
-            ret = method.get("returns", "void")
-            ts_ret = ts_iface_type(ret)
+    # Animation Layer Stack & Events -- from separate tools
+    _anim_iface = [
+        ("animationLayerStackCreate", [("entity", "IEntity")], "number"),
+        ("animationLayerAdd", [("entity", "IEntity"), ("name", "string"), ("blendMode", "number")], "number"),
+        ("animationLayerSetWeight", [("entity", "IEntity"), ("layerIndex", "number"), ("weight", "number")], "number"),
+        ("animationLayerPlay", [("entity", "IEntity"), ("layerIndex", "number")], "number"),
+        ("animationLayerSetClip", [("entity", "IEntity"), ("layerIndex", "number"), ("frameCount", "number"), ("frameDuration", "number"), ("mode", "number")], "number"),
+        ("animationLayerAddFrame", [("entity", "IEntity"), ("layerIndex", "number"), ("x", "number"), ("y", "number"), ("w", "number"), ("h", "number")], "number"),
+        ("animationLayerReset", [("entity", "IEntity"), ("layerIndex", "number")], "number"),
+        ("animationClipAddEvent", [("entity", "IEntity"), ("frameIndex", "number"), ("name", "string"), ("payloadType", "number"), ("payloadInt", "number"), ("payloadFloat", "number"), ("payloadString?", "string | null")], "number"),
+        ("animationEventsCount", [], "number"),
+        ("animationEventsRead", [("index", "number")], "IAnimationEventData"),
+    ]
+    lines.append("  // Animation Layer Stack & Events")
+    for mn, params, ret in _anim_iface:
+        sig = ", ".join(f"{pn}: {pt}" for pn, pt in params)
+        lines.append(f"  {mn}({sig}): {ret};")
 
-            param_strs = []
-            for p in params:
-                pn = to_camel(p["name"])
-                pt = p["type"]
-                if pt == "bytes":
-                    param_strs.append(f"{pn}: Buffer")
-                elif pt in ("u8", "u64"):
-                    param_strs.append(f"{pn}: number")
-                else:
-                    ts_t = ts_iface_type(pt)
-                    param_strs.append(f"{pn}: {ts_t}")
+    lines.append("}")
+    lines.append("")
 
-            sig = ", ".join(param_strs)
-            if method.get("doc"):
-                lines.append(f"  /** {method['doc']} */")
-            lines.append(f"  {prefixed}({sig}): {ts_ret};")
-
+    # IAnimationEventData interface
+    lines.append("/** Data for a fired animation event */")
+    lines.append("export interface IAnimationEventData {")
+    lines.append("  entity: number;")
+    lines.append("  name: string;")
+    lines.append("  frameIndex: number;")
+    lines.append("  payloadType: number;")
+    lines.append("  payloadInt: number;")
+    lines.append("  payloadFloat: number;")
+    lines.append("  payloadString: string;")
     lines.append("}")
     lines.append("")
 
@@ -368,11 +394,9 @@ NATIVE_KNOWN_METHODS = {
     "render3D",
     "isAliveBatch", "despawnBatch",
     "windowWidth", "windowHeight",
-    "audioPlay", "audioPlayOnChannel", "audioPlayWithSettings",
-    "audioStop", "audioPause", "audioResume", "audioStopAll",
-    "audioSetGlobalVolume", "audioGetGlobalVolume",
-    "audioSetChannelVolume", "audioGetChannelVolume",
-    "audioIsPlaying", "audioActiveCount", "audioCleanupFinished",
+    "getRenderCapabilities", "getPhysicsCapabilities", "getAudioCapabilities",
+    "getInputCapabilities", "getNetworkCapabilities",
+    "checkHotSwapShortcut",
 }
 
 
@@ -389,11 +413,11 @@ def gen_node_wrapper():
         "  type GameConfig,",
         "} from '../../../index';",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton } from '../types/input.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "",
     ]
     if tool.get("doc"):
@@ -548,53 +572,25 @@ def gen_node_wrapper():
         lines.append("  }")
         lines.append("")
 
-    # --- Audio methods (from schema tools.Audio) ---
-    if "Audio" in schema.get("tools", {}):
-        audio_tool = schema["tools"]["Audio"]
-        audio_mapping = mapping.get("tools", {}).get("Audio", {}).get("methods", {})
-        lines.append("  // =========================================================================")
-        lines.append("  // Audio")
-        lines.append("  // =========================================================================")
+    # Animation Layer Stack & Events wrapper methods
+    _anim_wrappers = [
+        ("animationLayerStackCreate", "entity: IEntity", "return (this.native as any).animationLayerStackCreate(entity as unknown as NativeEntity);", "number"),
+        ("animationLayerAdd", "entity: IEntity, name: string, blendMode: number", "return (this.native as any).animationLayerAdd(entity as unknown as NativeEntity, name, blendMode);", "number"),
+        ("animationLayerSetWeight", "entity: IEntity, layerIndex: number, weight: number", "return (this.native as any).animationLayerSetWeight(entity as unknown as NativeEntity, layerIndex, weight);", "number"),
+        ("animationLayerPlay", "entity: IEntity, layerIndex: number", "return (this.native as any).animationLayerPlay(entity as unknown as NativeEntity, layerIndex);", "number"),
+        ("animationLayerSetClip", "entity: IEntity, layerIndex: number, frameCount: number, frameDuration: number, mode: number", "return (this.native as any).animationLayerSetClip(entity as unknown as NativeEntity, layerIndex, frameCount, frameDuration, mode);", "number"),
+        ("animationLayerAddFrame", "entity: IEntity, layerIndex: number, x: number, y: number, w: number, h: number", "return (this.native as any).animationLayerAddFrame(entity as unknown as NativeEntity, layerIndex, x, y, w, h);", "number"),
+        ("animationLayerReset", "entity: IEntity, layerIndex: number", "return (this.native as any).animationLayerReset(entity as unknown as NativeEntity, layerIndex);", "number"),
+        ("animationClipAddEvent", "entity: IEntity, frameIndex: number, name: string, payloadType: number, payloadInt: number, payloadFloat: number, payloadString?: string | null", "return (this.native as any).animationClipAddEvent(entity as unknown as NativeEntity, frameIndex, name, payloadType, payloadInt, payloadFloat, payloadString ?? null);", "number"),
+        ("animationEventsCount", "", "return (this.native as any).animationEventsCount();", "number"),
+        ("animationEventsRead", "index: number", "return (this.native as any).animationEventsRead(index) as unknown as IAnimationEventData;", "IAnimationEventData"),
+    ]
+    lines.append("  // Animation Layer Stack & Events")
+    for mn, sig, body, ret in _anim_wrappers:
+        lines.append(f"  {mn}({sig}): {ret} {{")
+        lines.append(f"    {body}")
+        lines.append("  }")
         lines.append("")
-        for method in audio_tool.get("methods", []):
-            raw_name = method["name"]
-            # Prefix with "audio" to avoid name clashes, e.g. play -> audioPlay
-            prefixed = "audio" + raw_name[0].upper() + raw_name[1:]
-            params = method.get("params", [])
-            ret = method.get("returns", "void")
-            ts_ret = ts_iface_type(ret)
-
-            param_strs = []
-            call_args = []
-            for p in params:
-                pn = to_camel(p["name"])
-                pt = p["type"]
-                if pt == "bytes":
-                    param_strs.append(f"{pn}: Buffer")
-                    call_args.append(pn)
-                elif pt == "u8":
-                    param_strs.append(f"{pn}: number")
-                    call_args.append(pn)
-                elif pt == "u64":
-                    param_strs.append(f"{pn}: number")
-                    call_args.append(pn)
-                else:
-                    ts_t = ts_iface_type(pt)
-                    param_strs.append(f"{pn}: {ts_t}")
-                    call_args.append(pn)
-
-            sig = ", ".join(param_strs)
-            native_call = ", ".join(call_args)
-
-            if method.get("doc"):
-                lines.append(f"  /** {method['doc']} */")
-            lines.append(f"  {prefixed}({sig}): {ts_ret} {{")
-            if ret == "void":
-                lines.append(f"    this.native.{prefixed}({native_call});")
-            else:
-                lines.append(f"    return this.native.{prefixed}({native_call});")
-            lines.append("  }")
-            lines.append("")
 
     lines.append("}")
     lines.append("")
@@ -659,15 +655,19 @@ def gen_entry():
         error_names.append(cat["base_class"])
     error_names.append("RecoveryClass")
 
+    has_diagnostic = "diagnostic" in schema
+
     lines = [
         f"// {HEADER_COMMENT}",
         "",
         f"export {{ GoudGame{ec_export}, Color, Vec2, Vec3, Key, MouseButton }} from './node/index.g.js';",
-        f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats }} from './types/engine.g.js';",
+        f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities }} from './types/engine.g.js';",
         "export type { Rect } from './types/math.g.js';",
         f"export {{ {', '.join(error_names)} }} from './errors.g.js';",
-        "",
     ]
+    if has_diagnostic:
+        lines.append("export { DiagnosticMode } from './diagnostic.g.js';")
+    lines.append("")
     write_generated(GEN / "index.g.ts", "\n".join(lines))
 
 
@@ -1046,6 +1046,23 @@ use goud_engine::ffi::renderer3d::{
     goud_renderer3d_set_object_rotation, goud_renderer3d_set_object_scale,
     goud_renderer3d_update_light,
 };
+use goud_engine::ffi::animation::{
+    goud_animation_clip_add_event, goud_animation_events_count,
+    goud_animation_events_read, goud_animation_layer_add,
+    goud_animation_layer_add_frame, goud_animation_layer_play,
+    goud_animation_layer_reset, goud_animation_layer_set_clip,
+    goud_animation_layer_set_weight, goud_animation_layer_stack_create,
+};
+use goud_engine::ffi::providers::{
+    goud_provider_render_capabilities, goud_provider_physics_capabilities,
+    goud_provider_audio_capabilities, goud_provider_input_capabilities,
+    goud_provider_network_capabilities, goud_provider_check_hot_swap_shortcut,
+};
+use goud_engine::core::providers::types::{
+    RenderCapabilities, PhysicsCapabilities, AudioCapabilities,
+};
+use goud_engine::core::providers::input_types::InputCapabilities;
+use goud_engine::core::providers::network_types::NetworkCapabilities;
 use goud_engine::ffi::window::{
     goud_window_clear, goud_window_create, goud_window_destroy,
     goud_window_get_delta_time, goud_window_get_size, goud_window_poll_events,
@@ -1102,16 +1119,62 @@ pub struct NapiFpsStats {
 }
 
 // =============================================================================
+// Provider Capabilities napi objects
+// =============================================================================
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiRenderCapabilities {
+    pub max_texture_units: u32,
+    pub max_texture_size: u32,
+    pub supports_instancing: bool,
+    pub supports_compute: bool,
+    pub supports_msaa: bool,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiPhysicsCapabilities {
+    pub supports_continuous_collision: bool,
+    pub supports_joints: bool,
+    pub max_bodies: u32,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiAudioCapabilities {
+    pub supports_spatial: bool,
+    pub max_channels: u32,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiInputCapabilities {
+    pub supports_gamepad: bool,
+    pub supports_touch: bool,
+    pub max_gamepads: u32,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiNetworkCapabilities {
+    pub supports_hosting: bool,
+    pub max_connections: u32,
+    pub max_channels: u32,
+    pub max_message_size: u32,
+}
+
+// =============================================================================
 // GoudGame -- FFI-only, no Rust SDK access
 // =============================================================================
 
 #[napi]
 pub struct GoudGame {
-    pub(crate) context_id: GoudContextId,
-    pub(crate) last_delta_time: f32,
-    pub(crate) title: String,
-    pub(crate) frame_count: u64,
-    pub(crate) total_time: f64,
+    context_id: GoudContextId,
+    last_delta_time: f32,
+    title: String,
+    frame_count: u64,
+    total_time: f64,
 }
 
 #[napi]
@@ -1273,6 +1336,79 @@ impl GoudGame {
     #[napi]
     pub fn set_fps_overlay_corner(&self, corner: i32) {
         goud_debug_set_fps_overlay_corner(self.context_id, corner);
+    }
+
+    // =========================================================================
+    // Provider Capabilities
+    // =========================================================================
+
+    #[napi]
+    pub fn get_render_capabilities(&self) -> NapiRenderCapabilities {
+        let mut caps = RenderCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_render_capabilities(self.context_id, &mut caps) };
+        NapiRenderCapabilities {
+            max_texture_units: caps.max_texture_units,
+            max_texture_size: caps.max_texture_size,
+            supports_instancing: caps.supports_instancing,
+            supports_compute: caps.supports_compute,
+            supports_msaa: caps.supports_msaa,
+        }
+    }
+
+    #[napi]
+    pub fn get_physics_capabilities(&self) -> NapiPhysicsCapabilities {
+        let mut caps = PhysicsCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_physics_capabilities(self.context_id, &mut caps) };
+        NapiPhysicsCapabilities {
+            supports_continuous_collision: caps.supports_continuous_collision,
+            supports_joints: caps.supports_joints,
+            max_bodies: caps.max_bodies,
+        }
+    }
+
+    #[napi]
+    pub fn get_audio_capabilities(&self) -> NapiAudioCapabilities {
+        let mut caps = AudioCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_audio_capabilities(self.context_id, &mut caps) };
+        NapiAudioCapabilities {
+            supports_spatial: caps.supports_spatial,
+            max_channels: caps.max_channels,
+        }
+    }
+
+    #[napi]
+    pub fn get_input_capabilities(&self) -> NapiInputCapabilities {
+        let mut caps = InputCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_input_capabilities(self.context_id, &mut caps) };
+        NapiInputCapabilities {
+            supports_gamepad: caps.supports_gamepad,
+            supports_touch: caps.supports_touch,
+            max_gamepads: caps.max_gamepads,
+        }
+    }
+
+    #[napi]
+    pub fn get_network_capabilities(&self) -> NapiNetworkCapabilities {
+        let mut caps = NetworkCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_network_capabilities(self.context_id, &mut caps) };
+        NapiNetworkCapabilities {
+            supports_hosting: caps.supports_hosting,
+            max_connections: caps.max_connections,
+            max_channels: caps.max_channels as u32,
+            max_message_size: caps.max_message_size,
+        }
+    }
+
+    /// Checks if the hot-swap shortcut (F5) was pressed and cycles render provider. Debug builds only.
+    #[napi]
+    pub fn check_hot_swap_shortcut(&self) -> bool {
+        // SAFETY: context_id is a valid opaque handle obtained at construction.
+        goud_provider_check_hot_swap_shortcut(self.context_id) != 0
     }
 
     // =========================================================================
@@ -1787,6 +1923,120 @@ impl GoudGame {
     /// Returns the raw FFI delta time from the last poll_events call.
     #[napi(getter)]
     pub fn ffi_delta_time(&self) -> f64 { goud_window_get_delta_time(self.context_id) as f64 }
+
+    // =========================================================================
+    // Animation Layer Stack
+    // =========================================================================
+
+    #[napi]
+    pub fn animation_layer_stack_create(&self, entity: &Entity) -> i32 {
+        goud_animation_layer_stack_create(self.context_id, entity.bits)
+    }
+
+    #[napi]
+    pub fn animation_layer_add(&self, entity: &Entity, name: String, blend_mode: u32) -> Result<i32> {
+        let bytes = name.as_bytes();
+        // SAFETY: bytes pointer is valid for bytes.len() bytes (Rust String guarantee).
+        Ok(unsafe { goud_animation_layer_add(self.context_id, entity.bits, bytes.as_ptr(), bytes.len() as u32, blend_mode) })
+    }
+
+    #[napi]
+    pub fn animation_layer_set_weight(&self, entity: &Entity, layer_index: u32, weight: f64) -> i32 {
+        goud_animation_layer_set_weight(self.context_id, entity.bits, layer_index, weight as f32)
+    }
+
+    #[napi]
+    pub fn animation_layer_play(&self, entity: &Entity, layer_index: u32) -> i32 {
+        goud_animation_layer_play(self.context_id, entity.bits, layer_index)
+    }
+
+    #[napi]
+    pub fn animation_layer_set_clip(&self, entity: &Entity, layer_index: u32, frame_count: u32, frame_duration: f64, mode: u32) -> i32 {
+        goud_animation_layer_set_clip(self.context_id, entity.bits, layer_index, frame_count, frame_duration as f32, mode)
+    }
+
+    #[napi]
+    pub fn animation_layer_add_frame(&self, entity: &Entity, layer_index: u32, x: f64, y: f64, w: f64, h: f64) -> i32 {
+        goud_animation_layer_add_frame(self.context_id, entity.bits, layer_index, x as f32, y as f32, w as f32, h as f32)
+    }
+
+    #[napi]
+    pub fn animation_layer_reset(&self, entity: &Entity, layer_index: u32) -> i32 {
+        goud_animation_layer_reset(self.context_id, entity.bits, layer_index)
+    }
+
+    // =========================================================================
+    // Animation Events
+    // =========================================================================
+
+    #[napi]
+    pub fn animation_clip_add_event(&self, entity: &Entity, frame_index: u32, name: String,
+                                     payload_type: u32, payload_int: i32, payload_float: f64,
+                                     payload_string: Option<String>) -> Result<i32> {
+        let name_bytes = name.as_bytes();
+        let ps = payload_string.unwrap_or_default();
+        let ps_bytes = ps.as_bytes();
+        // SAFETY: String byte pointers are valid for their respective lengths.
+        Ok(unsafe { goud_animation_clip_add_event(
+            self.context_id, entity.bits, frame_index,
+            name_bytes.as_ptr(), name_bytes.len() as u32,
+            payload_type, payload_int, payload_float as f32,
+            ps_bytes.as_ptr(), ps_bytes.len() as u32,
+        ) })
+    }
+
+    #[napi]
+    pub fn animation_events_count(&self) -> i32 {
+        goud_animation_events_count(self.context_id)
+    }
+
+    #[napi]
+    pub fn animation_events_read(&self, index: u32) -> Result<NapiAnimationEventData> {
+        let mut entity: u64 = 0;
+        let mut name_ptr: *const u8 = std::ptr::null();
+        let mut name_len: u32 = 0;
+        let mut frame: u32 = 0;
+        let mut payload_type: u32 = 0;
+        let mut payload_int: i32 = 0;
+        let mut payload_float: f32 = 0.0;
+        let mut payload_str_ptr: *const u8 = std::ptr::null();
+        let mut payload_str_len: u32 = 0;
+        // SAFETY: All out-pointers point to valid stack-allocated memory.
+        let rc = unsafe { goud_animation_events_read(
+            self.context_id, index,
+            &mut entity, &mut name_ptr, &mut name_len, &mut frame,
+            &mut payload_type, &mut payload_int, &mut payload_float,
+            &mut payload_str_ptr, &mut payload_str_len,
+        ) };
+        if rc != 0 {
+            return Err(Error::from_reason(format!("animation_events_read failed: {}", rc)));
+        }
+        // SAFETY: FFI guarantees name_ptr is valid for name_len bytes on success.
+        let name = unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(name_ptr, name_len as usize)) }.to_string();
+        let payload_string = if payload_type == 3 && !payload_str_ptr.is_null() {
+            // SAFETY: FFI guarantees payload_str_ptr is valid for payload_str_len bytes when type==3.
+            unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(payload_str_ptr, payload_str_len as usize)) }.to_string()
+        } else {
+            String::new()
+        };
+        Ok(NapiAnimationEventData { entity: entity as i64, name, frame_index: frame, payload_type, payload_int, payload_float: payload_float as f64, payload_string })
+    }
+}
+
+// =============================================================================
+// NapiAnimationEventData
+// =============================================================================
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiAnimationEventData {
+    pub entity: i64,
+    pub name: String,
+    pub frame_index: u32,
+    pub payload_type: u32,
+    pub payload_int: i32,
+    pub payload_float: f64,
+    pub payload_string: String,
 }
 
 // =============================================================================
@@ -1887,148 +2137,11 @@ impl NativeEngineConfig {
 """
 
 
-def gen_napi_rust_audio():
-    """Generate sdks/typescript/native/src/audio.g.rs.
-
-    Audio napi methods on GoudGame, split out from game.g.rs to keep files
-    under the 500-line limit.
-    """
-    write_generated(NATIVE_SRC / "audio.g.rs", _audio_rs_content())
-
-
-def _audio_rs_content():
-    return RUST_HEADER + r"""
-use crate::game::GoudGame;
-use goud_engine::ffi::audio::controls::{
-    goud_audio_stop, goud_audio_pause, goud_audio_resume, goud_audio_stop_all,
-    goud_audio_set_global_volume, goud_audio_get_global_volume,
-    goud_audio_set_channel_volume, goud_audio_get_channel_volume,
-    goud_audio_is_playing, goud_audio_active_count, goud_audio_cleanup_finished,
-};
-use goud_engine::ffi::audio::playback::{
-    goud_audio_play, goud_audio_play_on_channel, goud_audio_play_with_settings,
-};
-use napi::bindgen_prelude::*;
-use napi_derive::napi;
-
-// =============================================================================
-// Audio methods on GoudGame
-// =============================================================================
-
-#[napi]
-impl GoudGame {
-    /// Plays audio from raw bytes on the default SFX channel.
-    /// Returns a positive player ID on success, or a negative value on error.
-    #[napi]
-    pub fn audio_play(&self, data: Buffer) -> f64 {
-        // SAFETY: Buffer provides valid pointer and length from napi.
-        unsafe { goud_audio_play(self.context_id, data.as_ptr(), data.len()) as f64 }
-    }
-
-    /// Plays audio on a specific channel.
-    /// Returns a positive player ID on success, or a negative value on error.
-    #[napi]
-    pub fn audio_play_on_channel(&self, data: Buffer, channel: u32) -> f64 {
-        // SAFETY: Buffer provides valid pointer and length from napi.
-        unsafe {
-            goud_audio_play_on_channel(
-                self.context_id, data.as_ptr(), data.len(), channel as u8,
-            ) as f64
-        }
-    }
-
-    /// Plays audio with full control over volume, speed, looping, and channel.
-    /// Returns a positive player ID on success, or a negative value on error.
-    #[napi]
-    pub fn audio_play_with_settings(
-        &self, data: Buffer, volume: f64, speed: f64, looping: bool, channel: u32,
-    ) -> f64 {
-        // SAFETY: Buffer provides valid pointer and length from napi.
-        unsafe {
-            goud_audio_play_with_settings(
-                self.context_id, data.as_ptr(), data.len(),
-                volume as f32, speed as f32, looping, channel as u8,
-            ) as f64
-        }
-    }
-
-    /// Stops audio playback for the given player ID.
-    #[napi]
-    pub fn audio_stop(&self, player_id: f64) -> i32 {
-        goud_audio_stop(self.context_id, player_id as u64)
-    }
-
-    /// Pauses audio playback for the given player ID.
-    #[napi]
-    pub fn audio_pause(&self, player_id: f64) -> i32 {
-        goud_audio_pause(self.context_id, player_id as u64)
-    }
-
-    /// Resumes audio playback for the given player ID.
-    #[napi]
-    pub fn audio_resume(&self, player_id: f64) -> i32 {
-        goud_audio_resume(self.context_id, player_id as u64)
-    }
-
-    /// Stops all currently playing audio.
-    #[napi]
-    pub fn audio_stop_all(&self) -> i32 {
-        goud_audio_stop_all(self.context_id)
-    }
-
-    /// Sets the global audio volume (0.0 to 1.0).
-    #[napi]
-    pub fn audio_set_global_volume(&self, volume: f64) -> i32 {
-        goud_audio_set_global_volume(self.context_id, volume as f32)
-    }
-
-    /// Returns the current global audio volume.
-    #[napi]
-    pub fn audio_get_global_volume(&self) -> f64 {
-        goud_audio_get_global_volume(self.context_id) as f64
-    }
-
-    /// Sets the volume for a specific audio channel.
-    #[napi]
-    pub fn audio_set_channel_volume(&self, channel: u32, volume: f64) -> i32 {
-        goud_audio_set_channel_volume(self.context_id, channel as u8, volume as f32)
-    }
-
-    /// Returns the current volume for a specific audio channel.
-    #[napi]
-    pub fn audio_get_channel_volume(&self, channel: u32) -> f64 {
-        goud_audio_get_channel_volume(self.context_id, channel as u8) as f64
-    }
-
-    /// Checks whether a specific player is currently playing.
-    /// Returns 1 if playing, 0 if not, -1 on error.
-    #[napi]
-    pub fn audio_is_playing(&self, player_id: f64) -> i32 {
-        goud_audio_is_playing(self.context_id, player_id as u64)
-    }
-
-    /// Returns the number of active audio players.
-    #[napi]
-    pub fn audio_active_count(&self) -> i32 {
-        goud_audio_active_count(self.context_id)
-    }
-
-    /// Removes finished audio players from the manager.
-    #[napi]
-    pub fn audio_cleanup_finished(&self) -> i32 {
-        goud_audio_cleanup_finished(self.context_id)
-    }
-}
-"""
-
-
 def gen_napi_rust_lib():
     """Generate lib.rs."""
     lines = [
         RUST_HEADER,
         "#[allow(dead_code)]",
-        '#[path = "audio.g.rs"]',
-        "mod audio;",
         '#[path = "components.g.rs"]',
         "mod components;",
         '#[path = "entity.g.rs"]',
@@ -2048,7 +2161,6 @@ def gen_napi_rust():
     gen_napi_rust_entity()
     gen_napi_rust_components()
     gen_napi_rust_game()
-    gen_napi_rust_audio()
     gen_napi_rust_lib()
 
 
@@ -2175,6 +2287,81 @@ def gen_errors():
     write_generated(GEN / "errors.g.ts", "\n".join(lines))
 
 
+def gen_diagnostic():
+    if "diagnostic" not in schema:
+        return
+    diag = schema["diagnostic"]
+    cls = diag["class_name"]
+    lines = [
+        f"// {HEADER_COMMENT}",
+        "",
+        "/**",
+        f" * {diag['doc']}",
+        " *",
+        " * In web/WASM builds these are no-ops.",
+        " */",
+        f"export class {cls} {{",
+        "  private static _enabled = false;",
+        "",
+    ]
+    for method in diag["methods"]:
+        name = method["name"]
+        ffi = method["ffi"]
+        doc = method["doc"]
+
+        if method.get("buffer_protocol"):
+            lines += [
+                f"  /** {doc} */",
+                f"  static get {name}(): string {{",
+                "    try {",
+                "      const native = require('../node/index.g.js');",
+                f"      if (typeof native.{ffi} === 'function') {{",
+                f"        return native.{ffi}() ?? \"\";",
+                "      }",
+                "    } catch {",
+                "      // Web/WASM fallback",
+                "    }",
+                '    return "";',
+                "  }",
+            ]
+        elif method["returns"] == "void":
+            lines += [
+                f"  /** {doc} */",
+                f"  static {name}({method['params'][0]['name']}: boolean): void {{",
+                "    try {",
+                "      const native = require('../node/index.g.js');",
+                f"      if (typeof native.{ffi} === 'function') {{",
+                f"        native.{ffi}({method['params'][0]['name']});",
+                "      }",
+                "    } catch {",
+                "      // Web/WASM fallback",
+                "    }",
+                f"    {cls}._enabled = {method['params'][0]['name']};",
+                "  }",
+            ]
+        elif method["returns"] == "bool":
+            lines += [
+                f"  /** {doc} */",
+                f"  static get {name}(): boolean {{",
+                "    try {",
+                "      const native = require('../node/index.g.js');",
+                f"      if (typeof native.{ffi} === 'function') {{",
+                f"        return native.{ffi}();",
+                "      }",
+                "    } catch {",
+                "      // Web/WASM fallback",
+                "    }",
+                f"    return {cls}._enabled;",
+                "  }",
+            ]
+        lines.append("")
+
+    lines.append("}")
+    lines.append("")
+
+    write_generated(GEN / "diagnostic.g.ts", "\n".join(lines))
+
+
 if __name__ == "__main__":
     print("Generating TypeScript Node SDK...")
     gen_interface()
@@ -2184,4 +2371,5 @@ if __name__ == "__main__":
     gen_entry()
     gen_napi_rust()
     gen_errors()
+    gen_diagnostic()
     print("TypeScript Node SDK generation complete.")

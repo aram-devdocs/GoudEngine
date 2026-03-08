@@ -966,6 +966,175 @@ class SpriteBuilder:
     def __repr__(self):
         return f"SpriteBuilder(ptr={self._ptr})"
 
+class Text:
+    """Text rendering component"""
+    def __init__(self, font_handle: int = 0, font_size: float = 0.0, color_r: float = 0.0, color_g: float = 0.0, color_b: float = 0.0, color_a: float = 0.0, alignment: float = 0.0, max_width: float = 0.0, has_max_width: bool = False, line_spacing: float = 0.0):
+        self.font_handle = font_handle
+        self.font_size = font_size
+        self.color_r = color_r
+        self.color_g = color_g
+        self.color_b = color_b
+        self.color_a = color_a
+        self.alignment = alignment
+        self.max_width = max_width
+        self.has_max_width = has_max_width
+        self.line_spacing = line_spacing
+        self._ffi = None
+
+    @classmethod
+    def _from_ffi(cls, ffi) -> 'Text':
+        obj = cls.__new__(cls)
+        obj.font_handle = ffi.font_handle
+        obj.font_size = ffi.font_size
+        obj.color_r = ffi.color_r
+        obj.color_g = ffi.color_g
+        obj.color_b = ffi.color_b
+        obj.color_a = ffi.color_a
+        obj.alignment = ffi.alignment
+        obj.max_width = ffi.max_width
+        obj.has_max_width = ffi.has_max_width
+        obj.line_spacing = ffi.line_spacing
+        obj._ffi = ffi
+        return obj
+
+    def _sync_to_ffi(self):
+        _ensure_ffi()
+        if self._ffi is None:
+            self._ffi = _ffi_module.FfiText()
+        self._ffi.font_handle = self.font_handle
+        self._ffi.font_size = self.font_size
+        self._ffi.color_r = self.color_r
+        self._ffi.color_g = self.color_g
+        self._ffi.color_b = self.color_b
+        self._ffi.color_a = self.color_a
+        self._ffi.alignment = self.alignment
+        self._ffi.max_width = self.max_width
+        self._ffi.has_max_width = self.has_max_width
+        self._ffi.line_spacing = self.line_spacing
+
+    def _sync_from_ffi(self):
+        self.font_handle = self._ffi.font_handle
+        self.font_size = self._ffi.font_size
+        self.color_r = self._ffi.color_r
+        self.color_g = self._ffi.color_g
+        self.color_b = self._ffi.color_b
+        self.color_a = self._ffi.color_a
+        self.alignment = self._ffi.alignment
+        self.max_width = self._ffi.max_width
+        self.has_max_width = self._ffi.has_max_width
+        self.line_spacing = self._ffi.line_spacing
+
+    @staticmethod
+    def new(font_handle: int) -> 'Text':
+        _ensure_ffi()
+        ffi = _lib.goud_text_new(font_handle)
+        return Text._from_ffi(ffi)
+
+    @staticmethod
+    def default() -> 'Text':
+        _ensure_ffi()
+        ffi = _lib.goud_text_default()
+        return Text._from_ffi(ffi)
+
+    def set_font_size(self, size: float) -> None:
+        """Sets the font size in pixels"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        _lib.goud_text_set_font_size(ctypes.byref(self._ffi), size)
+        self._sync_from_ffi()
+
+    def get_font_size(self) -> float:
+        """Gets the font size in pixels"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_font_size(ctypes.byref(self._ffi))
+
+    def set_color(self, r: float, g: float, b: float, a: float) -> None:
+        """Sets the RGBA text color"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        _lib.goud_text_set_color(ctypes.byref(self._ffi), r, g, b, a)
+        self._sync_from_ffi()
+
+    def get_color_r(self) -> float:
+        """Gets the red color component"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_color_r(ctypes.byref(self._ffi))
+
+    def get_color_g(self) -> float:
+        """Gets the green color component"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_color_g(ctypes.byref(self._ffi))
+
+    def get_color_b(self) -> float:
+        """Gets the blue color component"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_color_b(ctypes.byref(self._ffi))
+
+    def get_color_a(self) -> float:
+        """Gets the alpha color component"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_color_a(ctypes.byref(self._ffi))
+
+    def set_alignment(self, alignment: int) -> None:
+        """Sets the horizontal text alignment (0=Left, 1=Center, 2=Right)"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        _lib.goud_text_set_alignment(ctypes.byref(self._ffi), alignment)
+        self._sync_from_ffi()
+
+    def get_alignment(self) -> 'Text':
+        """Gets the horizontal text alignment"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_alignment(ctypes.byref(self._ffi))
+
+    def set_max_width(self, width: float) -> None:
+        """Sets the maximum width for word-wrapping"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        _lib.goud_text_set_max_width(ctypes.byref(self._ffi), width)
+        self._sync_from_ffi()
+
+    def clear_max_width(self) -> None:
+        """Clears the maximum width, disabling word-wrapping"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        _lib.goud_text_clear_max_width(ctypes.byref(self._ffi))
+        self._sync_from_ffi()
+
+    def get_max_width(self) -> float:
+        """Gets the maximum width for word-wrapping"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_max_width(ctypes.byref(self._ffi))
+
+    def has_max_width(self) -> bool:
+        """Returns whether the text has a max width set"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_has_max_width(ctypes.byref(self._ffi))
+
+    def set_line_spacing(self, spacing: float) -> None:
+        """Sets the line spacing multiplier"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        _lib.goud_text_set_line_spacing(ctypes.byref(self._ffi), spacing)
+        self._sync_from_ffi()
+
+    def get_line_spacing(self) -> float:
+        """Gets the line spacing multiplier"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_text_get_line_spacing(ctypes.byref(self._ffi))
+
+    def __repr__(self):
+        return f"Text(font_handle={self.font_handle}, font_size={self.font_size}, color_r={self.color_r}, color_g={self.color_g}, color_b={self.color_b}, color_a={self.color_a}, alignment={self.alignment}, max_width={self.max_width}, has_max_width={self.has_max_width}, line_spacing={self.line_spacing})"
+
 class SpriteAnimator:
     """Sprite sheet animation component"""
     def __init__(self, current_frame: int = 0, elapsed: float = 0.0, playing: bool = False, finished: bool = False, frame_duration: float = 0.0, mode: float = 0.0, frame_count: int = 0):
@@ -1074,6 +1243,20 @@ class SpriteAnimatorBuilder:
 
     def __repr__(self):
         return f"SpriteAnimatorBuilder(ptr={self._ptr})"
+
+class AnimationEventData:
+    """Data for a fired animation event read from the event queue"""
+    def __init__(self, entity: int = 0, name: float = 0.0, frame_index: int = 0, payload_type: int = 0, payload_int: int = 0, payload_float: float = 0.0, payload_string: float = 0.0):
+        self.entity = entity
+        self.name = name
+        self.frame_index = frame_index
+        self.payload_type = payload_type
+        self.payload_int = payload_int
+        self.payload_float = payload_float
+        self.payload_string = payload_string
+
+    def __repr__(self):
+        return f"AnimationEventData(entity={self.entity}, name={self.name}, frame_index={self.frame_index}, payload_type={self.payload_type}, payload_int={self.payload_int}, payload_float={self.payload_float}, payload_string={self.payload_string})"
 
 class RenderStats:
     """Per-frame rendering statistics"""
@@ -1205,3 +1388,55 @@ class NetworkHandle:
 
     def __repr__(self):
         return f"Entity({self.index}v{self.generation})"
+
+class RenderCapabilities:
+    """Capabilities reported by the active render provider"""
+    def __init__(self, max_texture_units: int = 0, max_texture_size: int = 0, supports_instancing: bool = False, supports_compute: bool = False, supports_msaa: bool = False):
+        self.max_texture_units = max_texture_units
+        self.max_texture_size = max_texture_size
+        self.supports_instancing = supports_instancing
+        self.supports_compute = supports_compute
+        self.supports_msaa = supports_msaa
+
+    def __repr__(self):
+        return f"RenderCapabilities(max_texture_units={self.max_texture_units}, max_texture_size={self.max_texture_size}, supports_instancing={self.supports_instancing}, supports_compute={self.supports_compute}, supports_msaa={self.supports_msaa})"
+
+class PhysicsCapabilities:
+    """Capabilities reported by the active physics provider"""
+    def __init__(self, supports_continuous_collision: bool = False, supports_joints: bool = False, max_bodies: int = 0):
+        self.supports_continuous_collision = supports_continuous_collision
+        self.supports_joints = supports_joints
+        self.max_bodies = max_bodies
+
+    def __repr__(self):
+        return f"PhysicsCapabilities(supports_continuous_collision={self.supports_continuous_collision}, supports_joints={self.supports_joints}, max_bodies={self.max_bodies})"
+
+class AudioCapabilities:
+    """Capabilities reported by the active audio provider"""
+    def __init__(self, supports_spatial: bool = False, max_channels: int = 0):
+        self.supports_spatial = supports_spatial
+        self.max_channels = max_channels
+
+    def __repr__(self):
+        return f"AudioCapabilities(supports_spatial={self.supports_spatial}, max_channels={self.max_channels})"
+
+class InputCapabilities:
+    """Capabilities reported by the active input provider"""
+    def __init__(self, supports_gamepad: bool = False, supports_touch: bool = False, max_gamepads: int = 0):
+        self.supports_gamepad = supports_gamepad
+        self.supports_touch = supports_touch
+        self.max_gamepads = max_gamepads
+
+    def __repr__(self):
+        return f"InputCapabilities(supports_gamepad={self.supports_gamepad}, supports_touch={self.supports_touch}, max_gamepads={self.max_gamepads})"
+
+class NetworkCapabilities:
+    """Capabilities reported by the active network provider"""
+    def __init__(self, supports_hosting: bool = False, max_connections: int = 0, max_channels: float = 0.0, max_message_size: int = 0):
+        self.supports_hosting = supports_hosting
+        self.max_connections = max_connections
+        self.max_channels = max_channels
+        self.max_message_size = max_message_size
+
+    def __repr__(self):
+        return f"NetworkCapabilities(supports_hosting={self.supports_hosting}, max_connections={self.max_connections}, max_channels={self.max_channels}, max_message_size={self.max_message_size})"

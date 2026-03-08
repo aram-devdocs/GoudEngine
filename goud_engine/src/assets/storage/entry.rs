@@ -41,6 +41,9 @@ pub struct AssetEntry<A: Asset> {
 
     /// Optional path this asset was loaded from.
     path: Option<AssetPath<'static>>,
+
+    /// `true` when the entry holds a fallback asset substituted after a load failure.
+    is_fallback: bool,
 }
 
 impl<A: Asset> AssetEntry<A> {
@@ -53,6 +56,7 @@ impl<A: Asset> AssetEntry<A> {
             asset: None,
             state: AssetState::NotLoaded,
             path: None,
+            is_fallback: false,
         }
     }
 
@@ -67,6 +71,7 @@ impl<A: Asset> AssetEntry<A> {
             asset: None,
             state: AssetState::Loading { progress },
             path: None,
+            is_fallback: false,
         }
     }
 
@@ -77,6 +82,7 @@ impl<A: Asset> AssetEntry<A> {
             asset: Some(asset),
             state: AssetState::Loaded,
             path: None,
+            is_fallback: false,
         }
     }
 
@@ -86,6 +92,7 @@ impl<A: Asset> AssetEntry<A> {
             asset: Some(asset),
             state: AssetState::Loaded,
             path: Some(path),
+            is_fallback: false,
         }
     }
 
@@ -98,6 +105,7 @@ impl<A: Asset> AssetEntry<A> {
                 error: error.into(),
             },
             path: None,
+            is_fallback: false,
         }
     }
 
@@ -188,6 +196,19 @@ impl<A: Asset> AssetEntry<A> {
     pub fn set_unloaded(&mut self) {
         self.asset = None;
         self.state = AssetState::Unloaded;
+    }
+
+    /// Returns `true` if this entry holds a fallback asset substituted after
+    /// a load failure.
+    #[inline]
+    pub fn is_fallback(&self) -> bool {
+        self.is_fallback
+    }
+
+    /// Sets the fallback flag on this entry.
+    #[inline]
+    pub fn set_fallback(&mut self, val: bool) {
+        self.is_fallback = val;
     }
 }
 

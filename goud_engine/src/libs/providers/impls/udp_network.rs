@@ -59,7 +59,7 @@ impl UdpNetProvider {
                 supports_hosting: true,
                 max_connections: 32,
                 max_channels: 2,
-                max_message_size: RECV_BUF_SIZE - HEADER_SIZE,
+                max_message_size: (RECV_BUF_SIZE - HEADER_SIZE) as u32,
             },
             events: Vec::new(),
             stats: NetworkStats::default(),

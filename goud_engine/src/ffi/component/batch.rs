@@ -105,7 +105,12 @@ pub unsafe extern "C" fn goud_component_add_batch(
     let type_info = {
         let type_registry = match get_type_registry() {
             Some(r) => r,
-            None => return 0,
+            None => {
+                set_last_error(GoudError::InternalError(
+                    "Failed to access component registry".to_string(),
+                ));
+                return 0;
+            }
         };
         let registry_map = match type_registry.as_ref() {
             Some(map) => map,
@@ -141,7 +146,12 @@ pub unsafe extern "C" fn goud_component_add_batch(
     // Get component storage for this context
     let mut storage_map = match get_context_storage_map() {
         Some(s) => s,
-        None => return 0,
+        None => {
+            set_last_error(GoudError::InternalError(
+                "Failed to access component registry".to_string(),
+            ));
+            return 0;
+        }
     };
     let map = storage_map.get_or_insert_with(HashMap::new);
 
@@ -228,7 +238,12 @@ pub unsafe extern "C" fn goud_component_remove_batch(
     {
         let type_registry = match get_type_registry() {
             Some(r) => r,
-            None => return 0,
+            None => {
+                set_last_error(GoudError::InternalError(
+                    "Failed to access component registry".to_string(),
+                ));
+                return 0;
+            }
         };
         let registry_map = match type_registry.as_ref() {
             Some(map) => map,
@@ -252,11 +267,21 @@ pub unsafe extern "C" fn goud_component_remove_batch(
     // Get component storage for this context
     let mut storage_map = match get_context_storage_map() {
         Some(s) => s,
-        None => return 0,
+        None => {
+            set_last_error(GoudError::InternalError(
+                "Failed to access component registry".to_string(),
+            ));
+            return 0;
+        }
     };
     let map = match storage_map.as_mut() {
         Some(m) => m,
-        None => return 0, // No storage exists
+        None => {
+            set_last_error(GoudError::InternalError(
+                "Failed to access component registry".to_string(),
+            ));
+            return 0;
+        }
     };
 
     let key = context_key(context_id);
@@ -264,13 +289,23 @@ pub unsafe extern "C" fn goud_component_remove_batch(
     // Get context storage
     let context_storage = match map.get_mut(&key) {
         Some(s) => s,
-        None => return 0, // No storage for this context
+        None => {
+            set_last_error(GoudError::InternalError(
+                "Failed to access component registry".to_string(),
+            ));
+            return 0;
+        }
     };
 
     // Get storage for this component type
     let storage = match context_storage.get_storage_mut(type_id_hash) {
         Some(s) => s,
-        None => return 0, // No storage for this type
+        None => {
+            set_last_error(GoudError::InternalError(
+                "Failed to access component registry".to_string(),
+            ));
+            return 0;
+        }
     };
 
     // Remove components from each entity
@@ -366,7 +401,12 @@ pub unsafe extern "C" fn goud_component_has_batch(
     {
         let type_registry = match get_type_registry() {
             Some(r) => r,
-            None => return 0,
+            None => {
+                set_last_error(GoudError::InternalError(
+                    "Failed to access component registry".to_string(),
+                ));
+                return 0;
+            }
         };
         let registry_map = match type_registry.as_ref() {
             Some(map) => map,
@@ -390,7 +430,12 @@ pub unsafe extern "C" fn goud_component_has_batch(
     // Get component storage for this context
     let storage_map = match get_context_storage_map() {
         Some(s) => s,
-        None => return 0,
+        None => {
+            set_last_error(GoudError::InternalError(
+                "Failed to access component registry".to_string(),
+            ));
+            return 0;
+        }
     };
 
     let entity_slice = std::slice::from_raw_parts(entity_ids, count as usize);

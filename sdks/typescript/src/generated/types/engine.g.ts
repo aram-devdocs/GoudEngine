@@ -14,6 +14,16 @@ export interface IRenderStats { drawCalls: number; triangles: number; textureBin
 export interface IContact { pointX: number; pointY: number; normalX: number; normalY: number; penetration: number; }
 /** Frame timing statistics from the debug overlay rolling window */
 export interface IFpsStats { currentFps: number; minFps: number; maxFps: number; avgFps: number; frameTimeMs: number; }
+/** Capabilities reported by the active render provider */
+export interface IRenderCapabilities { maxTextureUnits: number; maxTextureSize: number; supportsInstancing: boolean; supportsCompute: boolean; supportsMsaa: boolean; }
+/** Capabilities reported by the active physics provider */
+export interface IPhysicsCapabilities { supportsContinuousCollision: boolean; supportsJoints: boolean; maxBodies: number; }
+/** Capabilities reported by the active audio provider */
+export interface IAudioCapabilities { supportsSpatial: boolean; maxChannels: number; }
+/** Capabilities reported by the active input provider */
+export interface IInputCapabilities { supportsGamepad: boolean; supportsTouch: boolean; maxGamepads: number; }
+/** Capabilities reported by the active network provider */
+export interface INetworkCapabilities { supportsHosting: boolean; maxConnections: number; maxChannels: number; maxMessageSize: number; }
 
 /** Opaque handle to an ECS entity */
 export interface IEntity {
@@ -237,34 +247,40 @@ export interface IGoudGame {
   distance(x1: number, y1: number, x2: number, y2: number): number;
   /** Squared distance between two points */
   distanceSquared(x1: number, y1: number, x2: number, y2: number): number;
-  /** Plays audio from raw bytes on the default SFX channel */
-  audioPlay(data: Buffer): number;
-  /** Plays audio on a specific channel */
-  audioPlayOnChannel(data: Buffer, channel: number): number;
-  /** Plays audio with full control over volume, speed, looping, and channel */
-  audioPlayWithSettings(data: Buffer, volume: number, speed: number, looping: boolean, channel: number): number;
-  /** Stops playback for a player */
-  audioStop(playerId: number): number;
-  /** Pauses playback for a player */
-  audioPause(playerId: number): number;
-  /** Resumes playback for a player */
-  audioResume(playerId: number): number;
-  /** Stops all currently playing audio */
-  audioStopAll(): number;
-  /** Sets the global audio volume */
-  audioSetGlobalVolume(volume: number): number;
-  /** Returns the current global audio volume */
-  audioGetGlobalVolume(): number;
-  /** Sets the volume for a specific audio channel */
-  audioSetChannelVolume(channel: number, volume: number): number;
-  /** Returns the current volume for a specific audio channel */
-  audioGetChannelVolume(channel: number): number;
-  /** Checks whether a specific player is currently playing */
-  audioIsPlaying(playerId: number): number;
-  /** Returns the number of active audio players */
-  audioActiveCount(): number;
-  /** Removes finished audio players from the manager */
-  audioCleanupFinished(): number;
+  /** Queries the render provider's capabilities */
+  getRenderCapabilities(): IRenderCapabilities;
+  /** Queries the physics provider's capabilities */
+  getPhysicsCapabilities(): IPhysicsCapabilities;
+  /** Queries the audio provider's capabilities */
+  getAudioCapabilities(): IAudioCapabilities;
+  /** Queries the input provider's capabilities */
+  getInputCapabilities(): IInputCapabilities;
+  /** Queries the network provider's capabilities. Throws if no network provider is installed. */
+  getNetworkCapabilities(): INetworkCapabilities;
+  /** Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred. */
+  checkHotSwapShortcut(): boolean;
+  // Animation Layer Stack & Events
+  animationLayerStackCreate(entity: IEntity): number;
+  animationLayerAdd(entity: IEntity, name: string, blendMode: number): number;
+  animationLayerSetWeight(entity: IEntity, layerIndex: number, weight: number): number;
+  animationLayerPlay(entity: IEntity, layerIndex: number): number;
+  animationLayerSetClip(entity: IEntity, layerIndex: number, frameCount: number, frameDuration: number, mode: number): number;
+  animationLayerAddFrame(entity: IEntity, layerIndex: number, x: number, y: number, w: number, h: number): number;
+  animationLayerReset(entity: IEntity, layerIndex: number): number;
+  animationClipAddEvent(entity: IEntity, frameIndex: number, name: string, payloadType: number, payloadInt: number, payloadFloat: number, payloadString?: string | null): number;
+  animationEventsCount(): number;
+  animationEventsRead(index: number): IAnimationEventData;
+}
+
+/** Data for a fired animation event */
+export interface IAnimationEventData {
+  entity: number;
+  name: string;
+  frameIndex: number;
+  payloadType: number;
+  payloadInt: number;
+  payloadFloat: number;
+  payloadString: string;
 }
 
 /** Builder for configuring and creating a GoudGame instance with provider selection. */

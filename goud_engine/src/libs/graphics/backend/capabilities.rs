@@ -39,6 +39,9 @@ pub struct BackendCapabilities {
 
     /// Whether anisotropic filtering is supported
     pub supports_anisotropic_filtering: bool,
+
+    /// Whether BC (Block Compression) texture formats are supported (BC1/BC3/BC5/BC7)
+    pub supports_bc_compression: bool,
 }
 
 impl Default for BackendCapabilities {
@@ -55,6 +58,7 @@ impl Default for BackendCapabilities {
             supports_tessellation: false,
             supports_multisampling: true,
             supports_anisotropic_filtering: false,
+            supports_bc_compression: false,
         }
     }
 }

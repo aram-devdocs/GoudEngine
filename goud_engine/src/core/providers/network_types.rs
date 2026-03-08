@@ -120,6 +120,7 @@ pub struct HostConfig {
 
 /// Static capability flags for a network provider.
 #[derive(Debug, Clone, Default)]
+#[repr(C)]
 pub struct NetworkCapabilities {
     /// Whether this provider can act as a host (accept connections).
     pub supports_hosting: bool,
@@ -128,7 +129,7 @@ pub struct NetworkCapabilities {
     /// Maximum number of channels supported.
     pub max_channels: u8,
     /// Maximum size of a single message in bytes.
-    pub max_message_size: usize,
+    pub max_message_size: u32,
 }
 
 /// Aggregate network statistics for the provider.

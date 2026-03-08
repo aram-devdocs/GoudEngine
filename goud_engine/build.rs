@@ -97,6 +97,9 @@ const FFI_SOURCE_FILES: &[&str] = &[
     // component_sprite_animator module
     "src/ffi/component_sprite_animator/factory.rs",
     "src/ffi/component_sprite_animator/playback.rs",
+    // component_text module
+    "src/ffi/component_text/factory.rs",
+    "src/ffi/component_text/properties.rs",
     // component_sprite module
     "src/ffi/component_sprite/factory.rs",
     "src/ffi/component_sprite/builder.rs",
@@ -124,6 +127,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/collision.rs",
     // scene module
     "src/ffi/scene.rs",
+    "src/ffi/scene_transition.rs",
     // debug overlay
     "src/ffi/debug.rs",
     // error query module
@@ -132,18 +136,27 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/engine_config.rs",
     // physics module
     "src/ffi/physics/physics2d.rs",
+    "src/ffi/physics/physics2d_material.rs",
     "src/ffi/physics/physics3d.rs",
+    "src/ffi/physics/physics3d_material.rs",
     // animation module
     "src/ffi/animation/controller.rs",
     "src/ffi/animation/tween.rs",
     "src/ffi/animation/skeletal.rs",
+    "src/ffi/animation/events.rs",
+    "src/ffi/animation/layer.rs",
     // network module
     "src/ffi/network.rs",
+    // providers module
+    "src/ffi/providers.rs",
     // plugin module
     "src/ffi/plugin.rs",
     // audio module
     "src/ffi/audio/playback.rs",
     "src/ffi/audio/controls.rs",
+    // ui module
+    "src/ffi/ui/manager.rs",
+    "src/ffi/ui/node.rs",
 ];
 
 /// A single extracted FFI function signature.

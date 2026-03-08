@@ -6,11 +6,11 @@ import {
   type GameConfig,
 } from '../../../index';
 
-import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';
+import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';
 import { Color, Vec2, Vec3 } from '../types/math.g.js';
 export { Color, Vec2, Vec3 } from '../types/math.g.js';
 export { Key, MouseButton } from '../types/input.g.js';
-export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';
+export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';
 
 /** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
 export class GoudGame implements IGoudGame {
@@ -472,78 +472,75 @@ export class GoudGame implements IGoudGame {
     return this.native.distanceSquared(x1, y1, x2, y2);
   }
 
-  // =========================================================================
-  // Audio
-  // =========================================================================
-
-  /** Plays audio from raw bytes on the default SFX channel */
-  audioPlay(data: Buffer): number {
-    return this.native.audioPlay(data);
+  /** Queries the render provider's capabilities */
+  getRenderCapabilities(): IRenderCapabilities {
+    return this.native.getRenderCapabilities();
   }
 
-  /** Plays audio on a specific channel */
-  audioPlayOnChannel(data: Buffer, channel: number): number {
-    return this.native.audioPlayOnChannel(data, channel);
+  /** Queries the physics provider's capabilities */
+  getPhysicsCapabilities(): IPhysicsCapabilities {
+    return this.native.getPhysicsCapabilities();
   }
 
-  /** Plays audio with full control over volume, speed, looping, and channel */
-  audioPlayWithSettings(data: Buffer, volume: number, speed: number, looping: boolean, channel: number): number {
-    return this.native.audioPlayWithSettings(data, volume, speed, looping, channel);
+  /** Queries the audio provider's capabilities */
+  getAudioCapabilities(): IAudioCapabilities {
+    return this.native.getAudioCapabilities();
   }
 
-  /** Stops playback for a player */
-  audioStop(playerId: number): number {
-    return this.native.audioStop(playerId);
+  /** Queries the input provider's capabilities */
+  getInputCapabilities(): IInputCapabilities {
+    return this.native.getInputCapabilities();
   }
 
-  /** Pauses playback for a player */
-  audioPause(playerId: number): number {
-    return this.native.audioPause(playerId);
+  /** Queries the network provider's capabilities. Throws if no network provider is installed. */
+  getNetworkCapabilities(): INetworkCapabilities {
+    return this.native.getNetworkCapabilities();
   }
 
-  /** Resumes playback for a player */
-  audioResume(playerId: number): number {
-    return this.native.audioResume(playerId);
+  /** Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred. */
+  checkHotSwapShortcut(): boolean {
+    return this.native.checkHotSwapShortcut();
   }
 
-  /** Stops all currently playing audio */
-  audioStopAll(): number {
-    return this.native.audioStopAll();
+  // Animation Layer Stack & Events
+  animationLayerStackCreate(entity: IEntity): number {
+    return (this.native as any).animationLayerStackCreate(entity as unknown as NativeEntity);
   }
 
-  /** Sets the global audio volume */
-  audioSetGlobalVolume(volume: number): number {
-    return this.native.audioSetGlobalVolume(volume);
+  animationLayerAdd(entity: IEntity, name: string, blendMode: number): number {
+    return (this.native as any).animationLayerAdd(entity as unknown as NativeEntity, name, blendMode);
   }
 
-  /** Returns the current global audio volume */
-  audioGetGlobalVolume(): number {
-    return this.native.audioGetGlobalVolume();
+  animationLayerSetWeight(entity: IEntity, layerIndex: number, weight: number): number {
+    return (this.native as any).animationLayerSetWeight(entity as unknown as NativeEntity, layerIndex, weight);
   }
 
-  /** Sets the volume for a specific audio channel */
-  audioSetChannelVolume(channel: number, volume: number): number {
-    return this.native.audioSetChannelVolume(channel, volume);
+  animationLayerPlay(entity: IEntity, layerIndex: number): number {
+    return (this.native as any).animationLayerPlay(entity as unknown as NativeEntity, layerIndex);
   }
 
-  /** Returns the current volume for a specific audio channel */
-  audioGetChannelVolume(channel: number): number {
-    return this.native.audioGetChannelVolume(channel);
+  animationLayerSetClip(entity: IEntity, layerIndex: number, frameCount: number, frameDuration: number, mode: number): number {
+    return (this.native as any).animationLayerSetClip(entity as unknown as NativeEntity, layerIndex, frameCount, frameDuration, mode);
   }
 
-  /** Checks whether a specific player is currently playing */
-  audioIsPlaying(playerId: number): number {
-    return this.native.audioIsPlaying(playerId);
+  animationLayerAddFrame(entity: IEntity, layerIndex: number, x: number, y: number, w: number, h: number): number {
+    return (this.native as any).animationLayerAddFrame(entity as unknown as NativeEntity, layerIndex, x, y, w, h);
   }
 
-  /** Returns the number of active audio players */
-  audioActiveCount(): number {
-    return this.native.audioActiveCount();
+  animationLayerReset(entity: IEntity, layerIndex: number): number {
+    return (this.native as any).animationLayerReset(entity as unknown as NativeEntity, layerIndex);
   }
 
-  /** Removes finished audio players from the manager */
-  audioCleanupFinished(): number {
-    return this.native.audioCleanupFinished();
+  animationClipAddEvent(entity: IEntity, frameIndex: number, name: string, payloadType: number, payloadInt: number, payloadFloat: number, payloadString?: string | null): number {
+    return (this.native as any).animationClipAddEvent(entity as unknown as NativeEntity, frameIndex, name, payloadType, payloadInt, payloadFloat, payloadString ?? null);
+  }
+
+  animationEventsCount(): number {
+    return (this.native as any).animationEventsCount();
+  }
+
+  animationEventsRead(index: number): IAnimationEventData {
+    return (this.native as any).animationEventsRead(index) as unknown as IAnimationEventData;
   }
 
 }

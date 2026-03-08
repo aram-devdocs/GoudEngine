@@ -3,6 +3,7 @@
 use crate::context_registry::scene::{SceneId, SceneManager};
 use crate::core::error::{GoudError, GoudResult};
 use crate::ecs::{Component, Entity, World};
+use crate::ui::UiManager;
 
 #[cfg(feature = "native")]
 use crate::ecs::InputManager;
@@ -54,6 +55,14 @@ pub struct GoudGame {
     /// Provider registry for subsystem backends (render, physics, audio, input).
     pub(crate) providers: ProviderRegistry,
 
+    /// Stores the result of the most recent transition completion, if any.
+    /// Use [`take_transition_complete`](Self::take_transition_complete) to consume it.
+    pub(crate) last_transition_complete:
+        Option<crate::context_registry::scene::transition::TransitionComplete>,
+
+    /// UI manager for immediate-mode UI widgets.
+    pub(crate) ui_manager: UiManager,
+
     // =========================================================================
     // Native-only fields (require windowing + OpenGL)
     // =========================================================================
@@ -90,6 +99,16 @@ pub struct GoudGame {
     pub(crate) audio_manager: Option<crate::assets::AudioManager>,
 }
 
+/// Initializes the logger, diagnostic mode from environment, and optionally
+/// enables diagnostic mode based on the game configuration.
+fn init_engine_diagnostics(config: &GameConfig) {
+    crate::core::error::init_logger();
+    crate::core::error::init_diagnostic_from_env();
+    if config.diagnostic_mode {
+        crate::core::error::set_diagnostic_enabled(true);
+    }
+}
+
 impl GoudGame {
     /// Creates a new game instance with the given configuration.
     ///
@@ -97,6 +116,8 @@ impl GoudGame {
     /// non-graphical use. For a windowed game with rendering, use
     /// [`with_platform`](Self::with_platform) instead.
     pub fn new(config: GameConfig) -> GoudResult<Self> {
+        init_engine_diagnostics(&config);
+
         let window_size = (config.width, config.height);
         let mut debug_overlay = DebugOverlay::new(config.fps_update_interval);
         debug_overlay.set_enabled(config.show_fps_overlay);
@@ -107,6 +128,8 @@ impl GoudGame {
             initialized: false,
             debug_overlay,
             providers: ProviderRegistry::default(),
+            last_transition_complete: None,
+            ui_manager: UiManager::new(),
             #[cfg(feature = "native")]
             platform: None,
             #[cfg(feature = "native")]
@@ -141,6 +164,8 @@ impl GoudGame {
     /// Returns an error if GLFW initialization or window creation fails.
     #[cfg(feature = "native")]
     pub fn with_platform(config: GameConfig) -> GoudResult<Self> {
+        init_engine_diagnostics(&config);
+
         use crate::libs::platform::glfw_platform::GlfwPlatform;
         use crate::libs::platform::WindowConfig;
 
@@ -166,6 +191,8 @@ impl GoudGame {
             initialized: false,
             debug_overlay,
             providers: ProviderRegistry::default(),
+            last_transition_complete: None,
+            ui_manager: UiManager::new(),
             platform: Some(Box::new(platform)),
             render_backend: None,
             input_manager: InputManager::default(),
@@ -371,6 +398,18 @@ impl GoudGame {
                 am.cleanup_finished();
             }
 
+            // Advance any in-progress scene transition.
+            if let Some(complete) = self.scene_manager.tick_transition(frame_time) {
+                self.last_transition_complete = Some(complete);
+            }
+
+            // Update UI manager after scene updates.
+            self.ui_manager.update();
+
+            // Render UI manager after updates (before buffer swap).
+            self.ui_manager.render();
+
+
             // Safety: Limit iterations in tests/examples without actual window
             if self.context.frame_count() > 10000 {
                 break;
@@ -398,6 +437,17 @@ impl GoudGame {
         if let Some(am) = &mut self.audio_manager {
             am.cleanup_finished();
         }
+
+        // Advance any in-progress scene transition.
+        if let Some(complete) = self.scene_manager.tick_transition(delta_time) {
+            self.last_transition_complete = Some(complete);
+        }
+
+        // Update UI manager after scene updates.
+        self.ui_manager.update();
+
+        // Render UI manager after updates (before buffer swap).
+        self.ui_manager.render();
     }
 
     /// Returns the current FPS statistics from the debug overlay.
@@ -471,6 +521,18 @@ impl GoudGame {
     #[inline]
     pub fn audio_manager_mut(&mut self) -> Option<&mut crate::assets::AudioManager> {
         self.audio_manager.as_mut()
+    }
+
+    /// Returns a reference to the UI manager.
+    #[inline]
+    pub fn ui_manager(&self) -> &UiManager {
+        &self.ui_manager
+    }
+
+    /// Returns a mutable reference to the UI manager.
+    #[inline]
+    pub fn ui_manager_mut(&mut self) -> &mut UiManager {
+        &mut self.ui_manager
     }
 }
 
