@@ -1214,6 +1214,14 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_provider_check_hot_swap_shortcut": {
+      "source_file": "ffi/providers.rs",
+      "params": [
+        "_context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_provider_hot_swap_render": {
       "source_file": "ffi/providers.rs",
       "params": [
@@ -2792,5 +2800,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 286
+  "total_count": 287
 }

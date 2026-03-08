@@ -876,6 +876,10 @@
             { "name": "out", "type": "NetworkCapabilities" }
           ],
           "returns_struct": "NetworkCapabilities"
+        },
+        "checkHotSwapShortcut": {
+          "ffi": "goud_provider_check_hot_swap_shortcut",
+          "returns_bool_from_i32": true
         }
       },
       "properties": {
@@ -6213,6 +6217,12 @@
         "params": [
           { "name": "ctx", "type": "GoudContextId" },
           { "name": "provider_type", "type": "i32" }
+        ],
+        "returns": "i32"
+      },
+      "goud_provider_check_hot_swap_shortcut": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" }
         ],
         "returns": "i32"
       }

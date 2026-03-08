@@ -283,6 +283,39 @@ pub extern "C" fn goud_provider_hot_swap_render(
     ERR_INVALID_STATE
 }
 
+/// Checks if the hot-swap keyboard shortcut (F5) was pressed and
+/// cycles the render provider to null. Debug builds only.
+///
+/// Returns 1 if a swap occurred, 0 if no key press, negative on error.
+#[cfg(debug_assertions)]
+#[no_mangle]
+pub extern "C" fn goud_provider_check_hot_swap_shortcut(
+    context_id: GoudContextId,
+) -> i32 {
+    use crate::ffi::input::{goud_input_key_just_pressed, KEY_F5};
+
+    if !goud_input_key_just_pressed(context_id, KEY_F5) {
+        return 0;
+    }
+
+    let result = goud_provider_hot_swap_render(context_id, 0);
+    if result == SUCCESS {
+        1
+    } else {
+        result
+    }
+}
+
+/// Stub for release builds -- hot-swap shortcut is not available.
+/// Always returns 0.
+#[cfg(not(debug_assertions))]
+#[no_mangle]
+pub extern "C" fn goud_provider_check_hot_swap_shortcut(
+    _context_id: GoudContextId,
+) -> i32 {
+    0
+}
+
 // ============================================================================
 // Tests
 // ============================================================================
@@ -423,6 +456,19 @@ mod tests {
 
         let result = goud_provider_hot_swap_render(ctx_id, 99);
         assert_eq!(result, ERR_INVALID_STATE);
+
+        provider_registry_remove(ctx_id);
+    }
+
+    #[cfg(debug_assertions)]
+    #[test]
+    fn test_check_hot_swap_shortcut_returns_zero_when_no_key() {
+        let ctx_id = test_ctx(9990);
+        provider_registry_store(ctx_id, ProviderRegistry::default());
+
+        // No input state set up, so F5 is not pressed -- should return 0.
+        let result = goud_provider_check_hot_swap_shortcut(ctx_id);
+        assert_eq!(result, 0);
 
         provider_registry_remove(ctx_id);
     }

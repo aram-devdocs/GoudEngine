@@ -4187,6 +4187,12 @@
           "doc": "Queries the network provider's capabilities. Throws if no network provider is installed.",
           "params": [],
           "returns": "NetworkCapabilities"
+        },
+        {
+          "name": "checkHotSwapShortcut",
+          "doc": "Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred.",
+          "params": [],
+          "returns": "bool"
         }
       ],
       "wasm_interface": [

@@ -1126,6 +1126,9 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_provider_hot_swap_render(GoudContextId ctx, int provider_type);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_provider_check_hot_swap_shortcut(GoudContextId ctx);
+
         // plugin
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_plugin_register(GoudContextId ctx, IntPtr plugin_id_ptr, uint plugin_id_len);

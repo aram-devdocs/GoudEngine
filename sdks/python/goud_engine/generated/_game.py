@@ -520,6 +520,10 @@ class GoudGame:
         self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_stats))
         return NetworkCapabilities(_stats.supports_hosting, _stats.max_connections, _stats.max_channels, _stats.max_message_size)
 
+    def check_hot_swap_shortcut(self):
+        """Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred."""
+        return self._lib.goud_provider_check_hot_swap_shortcut(self._ctx)
+
 
 class GoudContext:
     """Headless engine context for CI tests and non-windowed entity management."""

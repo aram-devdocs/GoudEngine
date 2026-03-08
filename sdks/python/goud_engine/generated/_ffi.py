@@ -803,6 +803,8 @@ def _setup():
     _lib.goud_provider_network_capabilities.restype = ctypes.c_int32
     _lib.goud_provider_hot_swap_render.argtypes = [GoudContextId, ctypes.c_int32]
     _lib.goud_provider_hot_swap_render.restype = ctypes.c_int32
+    _lib.goud_provider_check_hot_swap_shortcut.argtypes = [GoudContextId]
+    _lib.goud_provider_check_hot_swap_shortcut.restype = ctypes.c_int32
 
     # plugin
     _lib.goud_plugin_register.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]

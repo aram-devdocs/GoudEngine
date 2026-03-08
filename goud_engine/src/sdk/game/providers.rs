@@ -90,4 +90,22 @@ impl GoudGame {
     ) -> GoudResult<Box<dyn InputProvider>> {
         self.providers.swap_input(new)
     }
+
+    /// Checks for the hot-swap keyboard shortcut (F5) and cycles the
+    /// render provider to null. Debug builds only, native feature required.
+    ///
+    /// Returns `true` if a swap occurred, `false` if F5 was not pressed.
+    #[cfg(all(debug_assertions, feature = "native"))]
+    pub fn check_hot_swap_shortcut(&mut self) -> bool {
+        use crate::core::providers::impls::NullRenderProvider;
+        use glfw::Key;
+
+        if !self.input_manager.key_just_pressed(Key::F5) {
+            return false;
+        }
+
+        self.providers
+            .swap_render(Box::new(NullRenderProvider::new()))
+            .is_ok()
+    }
 }
