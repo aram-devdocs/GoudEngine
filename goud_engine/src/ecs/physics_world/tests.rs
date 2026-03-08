@@ -352,3 +352,58 @@ fn test_slow_motion() {
     // Should be around 3 steps (allow for floating point precision)
     assert!(actual_steps >= 2 && actual_steps <= 4);
 }
+
+// =========================================================================
+// Spiral of Death Clamping Tests
+// =========================================================================
+
+#[test]
+fn test_advance_spiral_of_death_clamping() {
+    let mut physics = PhysicsWorld::new(); // default max_steps_per_frame = 8
+    assert_eq!(physics.max_steps_per_frame(), 8);
+
+    // Advance by 1.0s -- without clamping this would be 60 steps at 60 Hz.
+    // With default max of 8, it should clamp to 8.
+    let steps = physics.advance(1.0);
+    assert_eq!(steps, 8);
+
+    // Verify we can only step 8 times
+    let mut actual_steps = 0;
+    while physics.should_step() {
+        physics.step();
+        actual_steps += 1;
+    }
+    assert_eq!(actual_steps, 8);
+}
+
+#[test]
+fn test_advance_with_custom_max_steps() {
+    let mut physics = PhysicsWorld::new().with_max_steps_per_frame(4);
+    assert_eq!(physics.max_steps_per_frame(), 4);
+
+    // Advance by 1.0s -- should clamp to 4 steps
+    let steps = physics.advance(1.0);
+    assert_eq!(steps, 4);
+
+    let mut actual_steps = 0;
+    while physics.should_step() {
+        physics.step();
+        actual_steps += 1;
+    }
+    assert_eq!(actual_steps, 4);
+}
+
+#[test]
+#[should_panic(expected = "max_steps_per_frame must be at least 1")]
+fn test_with_max_steps_zero_panics() {
+    let _ = PhysicsWorld::new().with_max_steps_per_frame(0);
+}
+
+#[test]
+fn test_advance_under_max_steps_not_clamped() {
+    let mut physics = PhysicsWorld::new().with_max_steps_per_frame(8);
+
+    // Advance by 2 timesteps -- should NOT be clamped since 2 < 8
+    let steps = physics.advance(2.0 / 60.0);
+    assert_eq!(steps, 2);
+}
