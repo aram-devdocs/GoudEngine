@@ -414,6 +414,22 @@ export class GoudGame implements IGoudGame {
   setFpsOverlayEnabled(_enabled: boolean): void {}
   setFpsUpdateInterval(_interval: number): void {}
   setFpsOverlayCorner(_corner: number): void {}
+
+  // Audio stubs -- native audio not available in WASM build
+  audioPlay(_data: Buffer): number { return -1; }
+  audioPlayOnChannel(_data: Buffer, _channel: number): number { return -1; }
+  audioPlayWithSettings(_data: Buffer, _volume: number, _speed: number, _looping: boolean, _channel: number): number { return -1; }
+  audioStop(_playerId: number): number { return -1; }
+  audioPause(_playerId: number): number { return -1; }
+  audioResume(_playerId: number): number { return -1; }
+  audioStopAll(): number { return -1; }
+  audioSetGlobalVolume(_volume: number): number { return -1; }
+  audioGetGlobalVolume(): number { return -1; }
+  audioSetChannelVolume(_channel: number, _volume: number): number { return -1; }
+  audioGetChannelVolume(_channel: number): number { return -1; }
+  audioIsPlaying(_playerId: number): number { return -1; }
+  audioActiveCount(): number { return -1; }
+  audioCleanupFinished(): number { return -1; }
 }
 
 /** Builder for configuring and creating a GoudGame instance with provider selection. */

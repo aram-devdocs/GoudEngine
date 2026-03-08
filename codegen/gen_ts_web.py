@@ -509,6 +509,30 @@ def gen_web_wrapper():
     lines.append("  setFpsOverlayEnabled(_enabled: boolean): void {}")
     lines.append("  setFpsUpdateInterval(_interval: number): void {}")
     lines.append("  setFpsOverlayCorner(_corner: number): void {}")
+    lines.append("")
+
+    # Audio methods - stub implementations for wasm (audio not available in wasm build)
+    if "Audio" in schema.get("tools", {}):
+        lines.append("  // Audio stubs -- native audio not available in WASM build")
+        for method in schema["tools"]["Audio"].get("methods", []):
+            mn = "audio" + to_pascal(method["name"])
+            params = method.get("params", [])
+            ret = method.get("returns", "void")
+            ts_ret = ts_type(ret)
+            param_strs = []
+            for p in params:
+                pt = ts_type(p["type"])
+                param_strs.append(f"_{to_camel(p['name'])}: {pt}")
+            param_str = ", ".join(param_strs)
+            if ts_ret == "void":
+                lines.append(f"  {mn}({param_str}): void {{}}")
+            elif ts_ret == "number":
+                lines.append(f"  {mn}({param_str}): number {{ return -1; }}")
+            elif ts_ret == "boolean":
+                lines.append(f"  {mn}({param_str}): boolean {{ return false; }}")
+            else:
+                lines.append(f"  {mn}({param_str}): {ts_ret} {{ return -1 as any; }}")
+
     lines.append("}")
     lines.append("")
 

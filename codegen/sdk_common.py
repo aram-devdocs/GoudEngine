@@ -118,7 +118,7 @@ TYPESCRIPT_TYPES = {
     "i8": "number", "i16": "number", "i32": "number", "i64": "number",
     "usize": "number", "ptr": "number",
     "bool": "boolean", "string": "string", "void": "void",
-    "u8[]": "Uint8Array",
+    "u8[]": "Uint8Array", "bytes": "Buffer",
 }
 
 CTYPES_MAP = {
