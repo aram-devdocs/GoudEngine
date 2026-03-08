@@ -289,9 +289,7 @@ pub extern "C" fn goud_provider_hot_swap_render(
 /// Returns 1 if a swap occurred, 0 if no key press, negative on error.
 #[cfg(debug_assertions)]
 #[no_mangle]
-pub extern "C" fn goud_provider_check_hot_swap_shortcut(
-    context_id: GoudContextId,
-) -> i32 {
+pub extern "C" fn goud_provider_check_hot_swap_shortcut(context_id: GoudContextId) -> i32 {
     use crate::ffi::input::{goud_input_key_just_pressed, KEY_F5};
 
     if !goud_input_key_just_pressed(context_id, KEY_F5) {
@@ -310,9 +308,7 @@ pub extern "C" fn goud_provider_check_hot_swap_shortcut(
 /// Always returns 0.
 #[cfg(not(debug_assertions))]
 #[no_mangle]
-pub extern "C" fn goud_provider_check_hot_swap_shortcut(
-    _context_id: GoudContextId,
-) -> i32 {
+pub extern "C" fn goud_provider_check_hot_swap_shortcut(_context_id: GoudContextId) -> i32 {
     0
 }
 
