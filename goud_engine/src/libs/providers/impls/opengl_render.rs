@@ -2,7 +2,9 @@
 
 use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::opengl::OpenGLBackend;
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::{
+    BufferOps, ClearOps, FrameOps, RenderBackend, ShaderOps, StateOps, TextureOps,
+};
 use crate::libs::providers::render::RenderProvider;
 use crate::libs::providers::types::{
     BufferDesc, BufferHandle, CameraData, DrawCommand, FrameContext, MeshDrawCommand,

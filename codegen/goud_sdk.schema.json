@@ -1905,6 +1905,30 @@
           "doc": "Most recent frame time in milliseconds"
         }
       ]
+    },
+    "PhysicsWorld2D": {
+      "kind": "handle",
+      "doc": "2D physics simulation world"
+    },
+    "PhysicsWorld3D": {
+      "kind": "handle",
+      "doc": "3D physics simulation world"
+    },
+    "RigidBodyHandle": {
+      "kind": "handle",
+      "doc": "Handle to a rigid body in the physics simulation"
+    },
+    "ColliderHandle": {
+      "kind": "handle",
+      "doc": "Handle to a collider shape attached to a rigid body"
+    },
+    "TweenHandle": {
+      "kind": "handle",
+      "doc": "Handle to a running tween animation"
+    },
+    "NetworkHandle": {
+      "kind": "handle",
+      "doc": "Handle to a network host or connection"
     }
   },
   "enums": {
@@ -2161,6 +2185,37 @@
       "values": {
         "Loop": 0,
         "OneShot": 1
+      }
+    },
+    "BodyType": {
+      "doc": "Type of rigid body",
+      "values": {
+        "Dynamic": 0,
+        "Static": 1,
+        "Kinematic": 2
+      }
+    },
+    "ShapeType": {
+      "doc": "Collider shape type",
+      "values": {
+        "Box": 0,
+        "Circle": 1
+      }
+    },
+    "EasingType": {
+      "doc": "Easing function for tweens",
+      "values": {
+        "Linear": 0,
+        "EaseInQuad": 1,
+        "EaseOutQuad": 2,
+        "EaseInOutQuad": 3
+      }
+    },
+    "NetworkProtocol": {
+      "doc": "Network transport protocol",
+      "values": {
+        "UDP": 0,
+        "WebSocket": 1
       }
     }
   },
@@ -4588,56 +4643,1200 @@
           "returns": "u32"
         }
       ]
+    },
+    "PhysicsWorld2D": {
+      "doc": "2D physics simulation powered by Rapier2D",
+      "constructor": {
+        "params": [
+          {
+            "name": "gravityX",
+            "type": "f32"
+          },
+          {
+            "name": "gravityY",
+            "type": "f32"
+          }
+        ]
+      },
+      "methods": [
+        {
+          "name": "create",
+          "doc": "Creates a 2D physics world with given gravity",
+          "params": [
+            {
+              "name": "gravityX",
+              "type": "f32"
+            },
+            {
+              "name": "gravityY",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "destroy",
+          "doc": "Destroys the 2D physics world",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "setGravity",
+          "doc": "Sets the gravity vector",
+          "params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "addRigidBody",
+          "doc": "Adds a rigid body and returns its handle",
+          "params": [
+            {
+              "name": "bodyType",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "addCollider",
+          "doc": "Adds a collider to a rigid body",
+          "params": [
+            {
+              "name": "bodyHandle",
+              "type": "u64"
+            },
+            {
+              "name": "shapeType",
+              "type": "u32"
+            },
+            {
+              "name": "width",
+              "type": "f32"
+            },
+            {
+              "name": "height",
+              "type": "f32"
+            },
+            {
+              "name": "radius",
+              "type": "f32"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "removeBody",
+          "doc": "Removes a rigid body from the simulation",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "step",
+          "doc": "Steps the physics simulation",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getPosition",
+          "doc": "Gets the position of a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "Vec2"
+        },
+        {
+          "name": "getVelocity",
+          "doc": "Gets the velocity of a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "Vec2"
+        },
+        {
+          "name": "setVelocity",
+          "doc": "Sets the velocity of a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "vx",
+              "type": "f32"
+            },
+            {
+              "name": "vy",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "applyForce",
+          "doc": "Applies a force to a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "fx",
+              "type": "f32"
+            },
+            {
+              "name": "fy",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "applyImpulse",
+          "doc": "Applies an impulse to a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "ix",
+              "type": "f32"
+            },
+            {
+              "name": "iy",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "raycast",
+          "doc": "Casts a ray and returns the hit point",
+          "params": [
+            {
+              "name": "originX",
+              "type": "f32"
+            },
+            {
+              "name": "originY",
+              "type": "f32"
+            },
+            {
+              "name": "dirX",
+              "type": "f32"
+            },
+            {
+              "name": "dirY",
+              "type": "f32"
+            },
+            {
+              "name": "maxDist",
+              "type": "f32"
+            }
+          ],
+          "returns": "Vec2"
+        }
+      ]
+    },
+    "PhysicsWorld3D": {
+      "doc": "3D physics simulation powered by Rapier3D",
+      "constructor": {
+        "params": [
+          {
+            "name": "gravityX",
+            "type": "f32"
+          },
+          {
+            "name": "gravityY",
+            "type": "f32"
+          },
+          {
+            "name": "gravityZ",
+            "type": "f32"
+          }
+        ]
+      },
+      "methods": [
+        {
+          "name": "create",
+          "doc": "Creates a 3D physics world with given gravity",
+          "params": [
+            {
+              "name": "gravityX",
+              "type": "f32"
+            },
+            {
+              "name": "gravityY",
+              "type": "f32"
+            },
+            {
+              "name": "gravityZ",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "destroy",
+          "doc": "Destroys the 3D physics world",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "setGravity",
+          "doc": "Sets the gravity vector",
+          "params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "addRigidBody",
+          "doc": "Adds a rigid body and returns its handle",
+          "params": [
+            {
+              "name": "bodyType",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "addCollider",
+          "doc": "Adds a collider to a rigid body",
+          "params": [
+            {
+              "name": "bodyHandle",
+              "type": "u64"
+            },
+            {
+              "name": "shapeType",
+              "type": "u32"
+            },
+            {
+              "name": "hx",
+              "type": "f32"
+            },
+            {
+              "name": "hy",
+              "type": "f32"
+            },
+            {
+              "name": "hz",
+              "type": "f32"
+            },
+            {
+              "name": "radius",
+              "type": "f32"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "removeBody",
+          "doc": "Removes a rigid body from the simulation",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "step",
+          "doc": "Steps the physics simulation",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getPosition",
+          "doc": "Gets the position of a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "Vec3"
+        },
+        {
+          "name": "setVelocity",
+          "doc": "Sets the velocity of a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "vx",
+              "type": "f32"
+            },
+            {
+              "name": "vy",
+              "type": "f32"
+            },
+            {
+              "name": "vz",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "applyForce",
+          "doc": "Applies a force to a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "fx",
+              "type": "f32"
+            },
+            {
+              "name": "fy",
+              "type": "f32"
+            },
+            {
+              "name": "fz",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "applyImpulse",
+          "doc": "Applies an impulse to a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "ix",
+              "type": "f32"
+            },
+            {
+              "name": "iy",
+              "type": "f32"
+            },
+            {
+              "name": "iz",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        }
+      ]
+    },
+    "AnimationController": {
+      "doc": "State machine controller for entity animations",
+      "methods": [
+        {
+          "name": "create",
+          "doc": "Creates an animation controller for an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "addState",
+          "doc": "Adds a named animation state",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "stateName",
+              "type": "string"
+            },
+            {
+              "name": "clipIndex",
+              "type": "i32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "addTransition",
+          "doc": "Adds a transition between two states",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "from",
+              "type": "string"
+            },
+            {
+              "name": "to",
+              "type": "string"
+            },
+            {
+              "name": "trigger",
+              "type": "string"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setState",
+          "doc": "Sets the current animation state",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "stateName",
+              "type": "string"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getState",
+          "doc": "Gets the current animation state name",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            }
+          ],
+          "returns": "string"
+        },
+        {
+          "name": "update",
+          "doc": "Updates the animation controller",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        }
+      ]
+    },
+    "Tween": {
+      "doc": "Interpolation animation between two values with easing",
+      "methods": [
+        {
+          "name": "create",
+          "doc": "Creates a new tween and returns its handle",
+          "params": [
+            {
+              "name": "start",
+              "type": "f32"
+            },
+            {
+              "name": "end",
+              "type": "f32"
+            },
+            {
+              "name": "duration",
+              "type": "f32"
+            },
+            {
+              "name": "easingType",
+              "type": "i32"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "update",
+          "doc": "Updates the tween by delta time",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "value",
+          "doc": "Gets the current interpolated value",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "isComplete",
+          "doc": "Returns whether the tween has finished",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "reset",
+          "doc": "Resets the tween to its initial state",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "destroy",
+          "doc": "Destroys the tween and frees its storage",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        }
+      ]
+    },
+    "Skeleton": {
+      "doc": "2D skeletal animation system",
+      "methods": [
+        {
+          "name": "create",
+          "doc": "Creates a skeleton for an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "addBone",
+          "doc": "Adds a bone to the skeleton",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "boneName",
+              "type": "string"
+            },
+            {
+              "name": "parentIndex",
+              "type": "i32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "rotation",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setBoneTransform",
+          "doc": "Sets the transform of a bone by index",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "boneIndex",
+              "type": "i32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "rotation",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "playClip",
+          "doc": "Plays a named animation clip",
+          "params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "clipName",
+              "type": "string"
+            },
+            {
+              "name": "looping",
+              "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        }
+      ]
+    },
+    "Network": {
+      "doc": "Networking transport layer supporting UDP and WebSocket",
+      "methods": [
+        {
+          "name": "host",
+          "doc": "Starts hosting on a port",
+          "params": [
+            {
+              "name": "protocol",
+              "type": "i32"
+            },
+            {
+              "name": "port",
+              "type": "u16"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "connect",
+          "doc": "Connects to a remote host",
+          "params": [
+            {
+              "name": "protocol",
+              "type": "i32"
+            },
+            {
+              "name": "address",
+              "type": "string"
+            },
+            {
+              "name": "port",
+              "type": "u16"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "disconnect",
+          "doc": "Disconnects a network handle",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "send",
+          "doc": "Sends data to a peer",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "peerId",
+              "type": "u64"
+            },
+            {
+              "name": "data",
+              "type": "bytes"
+            },
+            {
+              "name": "channel",
+              "type": "u8"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "receive",
+          "doc": "Receives data from a peer",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "bytes"
+        },
+        {
+          "name": "poll",
+          "doc": "Polls the network for events",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getStats",
+          "doc": "Gets network statistics",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "object"
+        },
+        {
+          "name": "peerCount",
+          "doc": "Returns the number of connected peers",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        }
+      ]
+    },
+    "Plugin": {
+      "doc": "Plugin registration and management system",
+      "methods": [
+        {
+          "name": "register",
+          "doc": "Registers a plugin by ID",
+          "params": [
+            {
+              "name": "pluginId",
+              "type": "string"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "unregister",
+          "doc": "Unregisters a plugin by ID",
+          "params": [
+            {
+              "name": "pluginId",
+              "type": "string"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "isRegistered",
+          "doc": "Checks if a plugin is registered",
+          "params": [
+            {
+              "name": "pluginId",
+              "type": "string"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "list",
+          "doc": "Lists all registered plugins",
+          "params": [],
+          "returns": "string"
+        }
+      ]
     }
   },
   "errors": {
     "categories": [
-      {"name": "Context", "base_class": "GoudContextError", "range_start": 1, "range_end": 99},
-      {"name": "Resource", "base_class": "GoudResourceError", "range_start": 100, "range_end": 199},
-      {"name": "Graphics", "base_class": "GoudGraphicsError", "range_start": 200, "range_end": 299},
-      {"name": "Entity", "base_class": "GoudEntityError", "range_start": 300, "range_end": 399},
-      {"name": "Input", "base_class": "GoudInputError", "range_start": 400, "range_end": 499},
-      {"name": "System", "base_class": "GoudSystemError", "range_start": 500, "range_end": 599},
-      {"name": "Provider", "base_class": "GoudProviderError", "range_start": 600, "range_end": 699},
-      {"name": "Internal", "base_class": "GoudInternalError", "range_start": 900, "range_end": 999}
+      {
+        "name": "Context",
+        "base_class": "GoudContextError",
+        "range_start": 1,
+        "range_end": 99
+      },
+      {
+        "name": "Resource",
+        "base_class": "GoudResourceError",
+        "range_start": 100,
+        "range_end": 199
+      },
+      {
+        "name": "Graphics",
+        "base_class": "GoudGraphicsError",
+        "range_start": 200,
+        "range_end": 299
+      },
+      {
+        "name": "Entity",
+        "base_class": "GoudEntityError",
+        "range_start": 300,
+        "range_end": 399
+      },
+      {
+        "name": "Input",
+        "base_class": "GoudInputError",
+        "range_start": 400,
+        "range_end": 499
+      },
+      {
+        "name": "System",
+        "base_class": "GoudSystemError",
+        "range_start": 500,
+        "range_end": 599
+      },
+      {
+        "name": "Provider",
+        "base_class": "GoudProviderError",
+        "range_start": 600,
+        "range_end": 699
+      },
+      {
+        "name": "Internal",
+        "base_class": "GoudInternalError",
+        "range_start": 900,
+        "range_end": 999
+      }
     ],
     "codes": [
-      {"name": "NotInitialized", "code": 1, "category": "Context", "recovery": "fatal", "hint": "Call the initialization function first"},
-      {"name": "AlreadyInitialized", "code": 2, "category": "Context", "recovery": "recoverable", "hint": "Shut down the engine before re-initializing"},
-      {"name": "InvalidContext", "code": 3, "category": "Context", "recovery": "fatal", "hint": "Ensure the context was properly created and not corrupted"},
-      {"name": "ContextDestroyed", "code": 4, "category": "Context", "recovery": "fatal", "hint": "Re-initialize the engine to obtain a new context"},
-      {"name": "InitializationFailed", "code": 10, "category": "Context", "recovery": "recoverable", "hint": "Check the error message for details and verify dependencies"},
-      {"name": "ResourceNotFound", "code": 100, "category": "Resource", "recovery": "recoverable", "hint": "Verify the file path and check the working directory"},
-      {"name": "ResourceLoadFailed", "code": 101, "category": "Resource", "recovery": "recoverable", "hint": "Check file permissions and ensure the file is not locked"},
-      {"name": "ResourceInvalidFormat", "code": 102, "category": "Resource", "recovery": "recoverable", "hint": "Verify the file is not corrupted and uses a supported format"},
-      {"name": "ResourceAlreadyExists", "code": 103, "category": "Resource", "recovery": "recoverable", "hint": "Use a unique identifier or remove the existing resource first"},
-      {"name": "InvalidHandle", "code": 110, "category": "Resource", "recovery": "recoverable", "hint": "Ensure the handle was obtained from a valid creation call"},
-      {"name": "HandleExpired", "code": 111, "category": "Resource", "recovery": "recoverable", "hint": "Re-create the resource to get a new handle"},
-      {"name": "HandleTypeMismatch", "code": 112, "category": "Resource", "recovery": "recoverable", "hint": "Pass the correct handle type for the operation"},
-      {"name": "ShaderCompilationFailed", "code": 200, "category": "Graphics", "recovery": "recoverable", "hint": "Review shader source; the error message contains GPU compiler output"},
-      {"name": "ShaderLinkFailed", "code": 201, "category": "Graphics", "recovery": "recoverable", "hint": "Verify shader stage inputs/outputs match and uniforms are declared"},
-      {"name": "TextureCreationFailed", "code": 210, "category": "Graphics", "recovery": "recoverable", "hint": "Check texture dimensions and format; reduce size or free GPU resources"},
-      {"name": "BufferCreationFailed", "code": 211, "category": "Graphics", "recovery": "recoverable", "hint": "Reduce buffer size or free unused GPU buffers"},
-      {"name": "RenderTargetFailed", "code": 220, "category": "Graphics", "recovery": "recoverable", "hint": "Verify attachment formats and dimensions are consistent"},
-      {"name": "BackendNotSupported", "code": 230, "category": "Graphics", "recovery": "degraded", "hint": "Update GPU drivers or select a different supported backend"},
-      {"name": "DrawCallFailed", "code": 240, "category": "Graphics", "recovery": "recoverable", "hint": "Verify buffer bindings and shader state; try updating GPU drivers"},
-      {"name": "EntityNotFound", "code": 300, "category": "Entity", "recovery": "recoverable", "hint": "Verify the entity ID is valid and has not been despawned"},
-      {"name": "EntityAlreadyExists", "code": 301, "category": "Entity", "recovery": "recoverable", "hint": "Use a different entity ID or remove the existing entity first"},
-      {"name": "ComponentNotFound", "code": 310, "category": "Entity", "recovery": "recoverable", "hint": "Attach the component before accessing it, or check with a has-component query"},
-      {"name": "ComponentAlreadyExists", "code": 311, "category": "Entity", "recovery": "recoverable", "hint": "Use replace/update instead of add, or remove the existing component first"},
-      {"name": "QueryFailed", "code": 320, "category": "Entity", "recovery": "recoverable", "hint": "Check for conflicting mutable/immutable access on the same component"},
-      {"name": "InputDeviceNotFound", "code": 400, "category": "Input", "recovery": "recoverable", "hint": "Verify the input device is connected and recognized by the OS"},
-      {"name": "InvalidInputAction", "code": 401, "category": "Input", "recovery": "recoverable", "hint": "Check the action name matches a registered input action"},
-      {"name": "WindowCreationFailed", "code": 500, "category": "System", "recovery": "recoverable", "hint": "Verify display server is running and window parameters are valid"},
-      {"name": "AudioInitFailed", "code": 510, "category": "System", "recovery": "degraded", "hint": "Check that an audio output device is available"},
-      {"name": "PhysicsInitFailed", "code": 520, "category": "System", "recovery": "degraded", "hint": "Review physics configuration for invalid values"},
-      {"name": "PlatformError", "code": 530, "category": "System", "recovery": "recoverable", "hint": "Check the error message for platform-specific details"},
-      {"name": "ProviderInitFailed", "code": 600, "category": "Provider", "recovery": "recoverable", "hint": "Check provider configuration and dependencies"},
-      {"name": "ProviderNotFound", "code": 601, "category": "Provider", "recovery": "recoverable", "hint": "Register the provider before accessing it"},
-      {"name": "ProviderOperationFailed", "code": 602, "category": "Provider", "recovery": "recoverable", "hint": "Check the error message for operation-specific details"},
-      {"name": "InternalError", "code": 900, "category": "Internal", "recovery": "fatal", "hint": "Report the error with full details; this is likely an engine bug"},
-      {"name": "NotImplemented", "code": 901, "category": "Internal", "recovery": "recoverable", "hint": "Use an alternative approach or wait for the feature to be implemented"},
-      {"name": "InvalidState", "code": 902, "category": "Internal", "recovery": "fatal", "hint": "Check the sequence of API calls; the engine may need re-initialization"}
+      {
+        "name": "NotInitialized",
+        "code": 1,
+        "category": "Context",
+        "recovery": "fatal",
+        "hint": "Call the initialization function first"
+      },
+      {
+        "name": "AlreadyInitialized",
+        "code": 2,
+        "category": "Context",
+        "recovery": "recoverable",
+        "hint": "Shut down the engine before re-initializing"
+      },
+      {
+        "name": "InvalidContext",
+        "code": 3,
+        "category": "Context",
+        "recovery": "fatal",
+        "hint": "Ensure the context was properly created and not corrupted"
+      },
+      {
+        "name": "ContextDestroyed",
+        "code": 4,
+        "category": "Context",
+        "recovery": "fatal",
+        "hint": "Re-initialize the engine to obtain a new context"
+      },
+      {
+        "name": "InitializationFailed",
+        "code": 10,
+        "category": "Context",
+        "recovery": "recoverable",
+        "hint": "Check the error message for details and verify dependencies"
+      },
+      {
+        "name": "ResourceNotFound",
+        "code": 100,
+        "category": "Resource",
+        "recovery": "recoverable",
+        "hint": "Verify the file path and check the working directory"
+      },
+      {
+        "name": "ResourceLoadFailed",
+        "code": 101,
+        "category": "Resource",
+        "recovery": "recoverable",
+        "hint": "Check file permissions and ensure the file is not locked"
+      },
+      {
+        "name": "ResourceInvalidFormat",
+        "code": 102,
+        "category": "Resource",
+        "recovery": "recoverable",
+        "hint": "Verify the file is not corrupted and uses a supported format"
+      },
+      {
+        "name": "ResourceAlreadyExists",
+        "code": 103,
+        "category": "Resource",
+        "recovery": "recoverable",
+        "hint": "Use a unique identifier or remove the existing resource first"
+      },
+      {
+        "name": "InvalidHandle",
+        "code": 110,
+        "category": "Resource",
+        "recovery": "recoverable",
+        "hint": "Ensure the handle was obtained from a valid creation call"
+      },
+      {
+        "name": "HandleExpired",
+        "code": 111,
+        "category": "Resource",
+        "recovery": "recoverable",
+        "hint": "Re-create the resource to get a new handle"
+      },
+      {
+        "name": "HandleTypeMismatch",
+        "code": 112,
+        "category": "Resource",
+        "recovery": "recoverable",
+        "hint": "Pass the correct handle type for the operation"
+      },
+      {
+        "name": "ShaderCompilationFailed",
+        "code": 200,
+        "category": "Graphics",
+        "recovery": "recoverable",
+        "hint": "Review shader source; the error message contains GPU compiler output"
+      },
+      {
+        "name": "ShaderLinkFailed",
+        "code": 201,
+        "category": "Graphics",
+        "recovery": "recoverable",
+        "hint": "Verify shader stage inputs/outputs match and uniforms are declared"
+      },
+      {
+        "name": "TextureCreationFailed",
+        "code": 210,
+        "category": "Graphics",
+        "recovery": "recoverable",
+        "hint": "Check texture dimensions and format; reduce size or free GPU resources"
+      },
+      {
+        "name": "BufferCreationFailed",
+        "code": 211,
+        "category": "Graphics",
+        "recovery": "recoverable",
+        "hint": "Reduce buffer size or free unused GPU buffers"
+      },
+      {
+        "name": "RenderTargetFailed",
+        "code": 220,
+        "category": "Graphics",
+        "recovery": "recoverable",
+        "hint": "Verify attachment formats and dimensions are consistent"
+      },
+      {
+        "name": "BackendNotSupported",
+        "code": 230,
+        "category": "Graphics",
+        "recovery": "degraded",
+        "hint": "Update GPU drivers or select a different supported backend"
+      },
+      {
+        "name": "DrawCallFailed",
+        "code": 240,
+        "category": "Graphics",
+        "recovery": "recoverable",
+        "hint": "Verify buffer bindings and shader state; try updating GPU drivers"
+      },
+      {
+        "name": "EntityNotFound",
+        "code": 300,
+        "category": "Entity",
+        "recovery": "recoverable",
+        "hint": "Verify the entity ID is valid and has not been despawned"
+      },
+      {
+        "name": "EntityAlreadyExists",
+        "code": 301,
+        "category": "Entity",
+        "recovery": "recoverable",
+        "hint": "Use a different entity ID or remove the existing entity first"
+      },
+      {
+        "name": "ComponentNotFound",
+        "code": 310,
+        "category": "Entity",
+        "recovery": "recoverable",
+        "hint": "Attach the component before accessing it, or check with a has-component query"
+      },
+      {
+        "name": "ComponentAlreadyExists",
+        "code": 311,
+        "category": "Entity",
+        "recovery": "recoverable",
+        "hint": "Use replace/update instead of add, or remove the existing component first"
+      },
+      {
+        "name": "QueryFailed",
+        "code": 320,
+        "category": "Entity",
+        "recovery": "recoverable",
+        "hint": "Check for conflicting mutable/immutable access on the same component"
+      },
+      {
+        "name": "InputDeviceNotFound",
+        "code": 400,
+        "category": "Input",
+        "recovery": "recoverable",
+        "hint": "Verify the input device is connected and recognized by the OS"
+      },
+      {
+        "name": "InvalidInputAction",
+        "code": 401,
+        "category": "Input",
+        "recovery": "recoverable",
+        "hint": "Check the action name matches a registered input action"
+      },
+      {
+        "name": "WindowCreationFailed",
+        "code": 500,
+        "category": "System",
+        "recovery": "recoverable",
+        "hint": "Verify display server is running and window parameters are valid"
+      },
+      {
+        "name": "AudioInitFailed",
+        "code": 510,
+        "category": "System",
+        "recovery": "degraded",
+        "hint": "Check that an audio output device is available"
+      },
+      {
+        "name": "PhysicsInitFailed",
+        "code": 520,
+        "category": "System",
+        "recovery": "degraded",
+        "hint": "Review physics configuration for invalid values"
+      },
+      {
+        "name": "PlatformError",
+        "code": 530,
+        "category": "System",
+        "recovery": "recoverable",
+        "hint": "Check the error message for platform-specific details"
+      },
+      {
+        "name": "ProviderInitFailed",
+        "code": 600,
+        "category": "Provider",
+        "recovery": "recoverable",
+        "hint": "Check provider configuration and dependencies"
+      },
+      {
+        "name": "ProviderNotFound",
+        "code": 601,
+        "category": "Provider",
+        "recovery": "recoverable",
+        "hint": "Register the provider before accessing it"
+      },
+      {
+        "name": "ProviderOperationFailed",
+        "code": 602,
+        "category": "Provider",
+        "recovery": "recoverable",
+        "hint": "Check the error message for operation-specific details"
+      },
+      {
+        "name": "InternalError",
+        "code": 900,
+        "category": "Internal",
+        "recovery": "fatal",
+        "hint": "Report the error with full details; this is likely an engine bug"
+      },
+      {
+        "name": "NotImplemented",
+        "code": 901,
+        "category": "Internal",
+        "recovery": "recoverable",
+        "hint": "Use an alternative approach or wait for the feature to be implemented"
+      },
+      {
+        "name": "InvalidState",
+        "code": 902,
+        "category": "Internal",
+        "recovery": "fatal",
+        "hint": "Check the sequence of API calls; the engine may need re-initialization"
+      }
     ]
   }
 }

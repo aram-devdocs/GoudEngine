@@ -2,7 +2,7 @@
 
 use crate::libs::graphics::backend::opengl::backend::OpenGLBackend;
 use crate::libs::graphics::backend::types::{BufferHandle, BufferType, BufferUsage};
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::{BufferOps, RenderBackend};
 
 #[test]
 #[ignore] // Requires OpenGL context

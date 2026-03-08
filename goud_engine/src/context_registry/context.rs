@@ -4,6 +4,8 @@
 //! and assets.  Multiple contexts can exist simultaneously (e.g. for multiple
 //! game instances or editor viewports).
 
+use std::collections::HashSet;
+
 use crate::context_registry::scene::{SceneId, SceneManager};
 use crate::ecs::World;
 
@@ -30,6 +32,13 @@ pub struct GoudContext {
     /// use-after-free when old IDs are used.
     generation: u32,
 
+    /// Runtime plugin registry tracking registered plugin IDs by name.
+    ///
+    /// This is a string-based registry for FFI consumers to register and
+    /// query plugins at runtime. It is separate from the Rust-level `Plugin`
+    /// trait system which operates at compile time.
+    registered_plugins: HashSet<String>,
+
     /// Thread ID that created this context (for validation in test builds).
     #[cfg(test)]
     owner_thread: std::thread::ThreadId,
@@ -44,6 +53,7 @@ impl GoudContext {
             scene_manager,
             current_scene,
             generation,
+            registered_plugins: HashSet::new(),
             #[cfg(test)]
             owner_thread: std::thread::current().id(),
         }
@@ -110,6 +120,34 @@ impl GoudContext {
             self.current_scene = self.scene_manager.default_scene();
         }
         Ok(())
+    }
+
+    // =========================================================================
+    // Plugin Registry
+    // =========================================================================
+
+    /// Registers a plugin by ID. Returns `true` if newly registered,
+    /// `false` if already present.
+    pub fn register_plugin(&mut self, plugin_id: &str) -> bool {
+        self.registered_plugins.insert(plugin_id.to_string())
+    }
+
+    /// Unregisters a plugin by ID. Returns `true` if it was registered,
+    /// `false` if it was not present.
+    pub fn unregister_plugin(&mut self, plugin_id: &str) -> bool {
+        self.registered_plugins.remove(plugin_id)
+    }
+
+    /// Returns whether a plugin with the given ID is registered.
+    pub fn is_plugin_registered(&self, plugin_id: &str) -> bool {
+        self.registered_plugins.contains(plugin_id)
+    }
+
+    /// Returns a sorted list of registered plugin IDs.
+    pub fn registered_plugins(&self) -> Vec<&str> {
+        let mut plugins: Vec<&str> = self.registered_plugins.iter().map(|s| s.as_str()).collect();
+        plugins.sort_unstable();
+        plugins
     }
 
     /// Returns the generation of this context.

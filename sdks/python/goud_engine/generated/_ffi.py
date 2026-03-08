@@ -636,6 +636,133 @@ def _setup():
     _lib.goud_error_recovery_hint.argtypes = [ctypes.c_int32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
     _lib.goud_error_recovery_hint.restype = ctypes.c_int32
 
+    # physics2d
+    try:
+        _lib.goud_physics_create.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics_create.restype = ctypes.c_int32
+        _lib.goud_physics_destroy.argtypes = [GoudContextId]
+        _lib.goud_physics_destroy.restype = ctypes.c_int32
+        _lib.goud_physics_set_gravity.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics_set_gravity.restype = ctypes.c_int32
+        _lib.goud_physics_add_rigid_body.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics_add_rigid_body.restype = ctypes.c_int64
+        _lib.goud_physics_add_collider.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics_add_collider.restype = ctypes.c_int64
+        _lib.goud_physics_remove_body.argtypes = [GoudContextId, ctypes.c_uint64]
+        _lib.goud_physics_remove_body.restype = ctypes.c_int32
+        _lib.goud_physics_step.argtypes = [GoudContextId, ctypes.c_float]
+        _lib.goud_physics_step.restype = ctypes.c_int32
+        _lib.goud_physics_get_position.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics_get_position.restype = ctypes.c_int32
+        _lib.goud_physics_get_velocity.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics_get_velocity.restype = ctypes.c_int32
+        _lib.goud_physics_set_velocity.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics_set_velocity.restype = ctypes.c_int32
+        _lib.goud_physics_apply_force.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics_apply_force.restype = ctypes.c_int32
+        _lib.goud_physics_apply_impulse.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics_apply_impulse.restype = ctypes.c_int32
+        _lib.goud_physics_raycast.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics_raycast.restype = ctypes.c_int32
+    except AttributeError:
+        pass  # feature not compiled in
+
+    # physics3d
+    try:
+        _lib.goud_physics3d_create.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics3d_create.restype = ctypes.c_int32
+        _lib.goud_physics3d_destroy.argtypes = [GoudContextId]
+        _lib.goud_physics3d_destroy.restype = ctypes.c_int32
+        _lib.goud_physics3d_set_gravity.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics3d_set_gravity.restype = ctypes.c_int32
+        _lib.goud_physics3d_add_rigid_body.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics3d_add_rigid_body.restype = ctypes.c_int64
+        _lib.goud_physics3d_add_collider.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics3d_add_collider.restype = ctypes.c_int64
+        _lib.goud_physics3d_remove_body.argtypes = [GoudContextId, ctypes.c_uint64]
+        _lib.goud_physics3d_remove_body.restype = ctypes.c_int32
+        _lib.goud_physics3d_step.argtypes = [GoudContextId, ctypes.c_float]
+        _lib.goud_physics3d_step.restype = ctypes.c_int32
+        _lib.goud_physics3d_get_position.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics3d_get_position.restype = ctypes.c_int32
+        _lib.goud_physics3d_set_velocity.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics3d_set_velocity.restype = ctypes.c_int32
+        _lib.goud_physics3d_apply_force.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics3d_apply_force.restype = ctypes.c_int32
+        _lib.goud_physics3d_apply_impulse.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        _lib.goud_physics3d_apply_impulse.restype = ctypes.c_int32
+    except AttributeError:
+        pass  # feature not compiled in
+
+    # animation_controller
+    _lib.goud_animation_controller_create.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_animation_controller_create.restype = ctypes.c_int32
+    _lib.goud_animation_controller_add_state.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_int32]
+    _lib.goud_animation_controller_add_state.restype = ctypes.c_int32
+    _lib.goud_animation_controller_add_transition.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32]
+    _lib.goud_animation_controller_add_transition.restype = ctypes.c_int32
+    _lib.goud_animation_controller_set_state.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32]
+    _lib.goud_animation_controller_set_state.restype = ctypes.c_int32
+    _lib.goud_animation_controller_get_state.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32]
+    _lib.goud_animation_controller_get_state.restype = ctypes.c_int32
+    _lib.goud_animation_controller_update.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]
+    _lib.goud_animation_controller_update.restype = ctypes.c_int32
+
+    # tween
+    _lib.goud_tween_create.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_int32]
+    _lib.goud_tween_create.restype = ctypes.c_int64
+    _lib.goud_tween_update.argtypes = [GoudContextId, ctypes.c_int64, ctypes.c_float]
+    _lib.goud_tween_update.restype = ctypes.c_int32
+    _lib.goud_tween_value.argtypes = [GoudContextId, ctypes.c_int64, ctypes.POINTER(ctypes.c_float)]
+    _lib.goud_tween_value.restype = ctypes.c_int32
+    _lib.goud_tween_is_complete.argtypes = [GoudContextId, ctypes.c_int64]
+    _lib.goud_tween_is_complete.restype = ctypes.c_int32
+    _lib.goud_tween_reset.argtypes = [GoudContextId, ctypes.c_int64]
+    _lib.goud_tween_reset.restype = ctypes.c_int32
+    _lib.goud_tween_destroy.argtypes = [GoudContextId, ctypes.c_int64]
+    _lib.goud_tween_destroy.restype = ctypes.c_int32
+
+    # skeleton
+    _lib.goud_skeleton_create.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_skeleton_create.restype = ctypes.c_int32
+    _lib.goud_skeleton_add_bone.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_int32, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_skeleton_add_bone.restype = ctypes.c_int32
+    _lib.goud_skeleton_set_bone_transform.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_int32, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_skeleton_set_bone_transform.restype = ctypes.c_int32
+    _lib.goud_skeleton_play_clip.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_bool]
+    _lib.goud_skeleton_play_clip.restype = ctypes.c_int32
+
+    # network
+    try:
+        _lib.goud_network_host.argtypes = [GoudContextId, ctypes.c_int32, ctypes.c_uint16]
+        _lib.goud_network_host.restype = ctypes.c_int64
+        _lib.goud_network_connect.argtypes = [GoudContextId, ctypes.c_int32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_uint16]
+        _lib.goud_network_connect.restype = ctypes.c_int64
+        _lib.goud_network_disconnect.argtypes = [GoudContextId, ctypes.c_int64]
+        _lib.goud_network_disconnect.restype = ctypes.c_int32
+        _lib.goud_network_send.argtypes = [GoudContextId, ctypes.c_int64, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_uint8]
+        _lib.goud_network_send.restype = ctypes.c_int32
+        _lib.goud_network_receive.argtypes = [GoudContextId, ctypes.c_int64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.POINTER(ctypes.c_uint64)]
+        _lib.goud_network_receive.restype = ctypes.c_int32
+        _lib.goud_network_poll.argtypes = [GoudContextId, ctypes.c_int64]
+        _lib.goud_network_poll.restype = ctypes.c_int32
+        _lib.goud_network_get_stats.argtypes = [GoudContextId, ctypes.c_int64, ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint64)]
+        _lib.goud_network_get_stats.restype = ctypes.c_int32
+        _lib.goud_network_peer_count.argtypes = [GoudContextId, ctypes.c_int64]
+        _lib.goud_network_peer_count.restype = ctypes.c_int32
+    except AttributeError:
+        pass  # feature not compiled in
+
+    # plugin
+    _lib.goud_plugin_register.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
+    _lib.goud_plugin_register.restype = ctypes.c_int32
+    _lib.goud_plugin_unregister.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
+    _lib.goud_plugin_unregister.restype = ctypes.c_int32
+    _lib.goud_plugin_is_registered.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
+    _lib.goud_plugin_is_registered.restype = ctypes.c_int32
+    _lib.goud_plugin_list.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
+    _lib.goud_plugin_list.restype = ctypes.c_int32
+
 _setup()
 
 def get_lib():

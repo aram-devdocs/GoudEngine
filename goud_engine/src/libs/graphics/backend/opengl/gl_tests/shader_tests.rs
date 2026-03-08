@@ -3,7 +3,7 @@
 use crate::libs::error::GoudError;
 use crate::libs::graphics::backend::opengl::backend::OpenGLBackend;
 use crate::libs::graphics::backend::types::ShaderHandle;
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::ShaderOps;
 
 const VERTEX_SRC: &str = r#"
     #version 330 core

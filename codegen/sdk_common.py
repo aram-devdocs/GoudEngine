@@ -159,8 +159,8 @@ CTYPES_MAP = {
 
 CSHARP_FFI_TYPES = {
     "f32": "float", "f64": "double",
-    "u32": "uint", "u64": "ulong",
-    "i32": "int", "i64": "long",
+    "u8": "byte", "u16": "ushort", "u32": "uint", "u64": "ulong",
+    "i8": "sbyte", "i16": "short", "i32": "int", "i64": "long",
     "bool": "[MarshalAs(UnmanagedType.U1)] bool",
     "*const c_char": "[MarshalAs(UnmanagedType.LPStr)] string",
     "*mut f32": "ref float", "*mut u32": "ref uint",
@@ -184,6 +184,17 @@ def map_type(schema_type: str, lang_map: dict) -> str:
     if nullable and lang_map is CSHARP_TYPES:
         return f"{mapped}?"
     return mapped
+
+
+def load_errors(schema: dict) -> tuple[list[dict], list[dict]]:
+    """Extract error categories and codes from the schema.
+
+    Returns (categories, codes) where each is a list of dicts
+    as defined in the schema's ``errors`` section.  Returns empty
+    lists if the section is absent.
+    """
+    errors = schema.get("errors", {})
+    return errors.get("categories", []), errors.get("codes", [])
 
 
 def write_generated(path: Path, content: str):

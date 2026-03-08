@@ -5,7 +5,7 @@ use crate::libs::graphics::backend::opengl::backend::OpenGLBackend;
 use crate::libs::graphics::backend::types::{
     BufferType, BufferUsage, PrimitiveTopology, VertexAttribute, VertexAttributeType, VertexLayout,
 };
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::{BufferOps, DrawOps, RenderBackend, ShaderOps};
 
 const VERTEX_SRC: &str = r#"
     #version 330 core

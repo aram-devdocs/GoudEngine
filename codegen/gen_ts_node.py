@@ -19,7 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from sdk_common import (
-    HEADER_COMMENT, SDKS_DIR, load_schema, load_ffi_mapping,
+    HEADER_COMMENT, SDKS_DIR, load_schema, load_ffi_mapping, load_errors,
     to_pascal, to_snake, to_camel, write_generated, TYPESCRIPT_TYPES,
 )
 
@@ -572,12 +572,20 @@ def gen_entry():
     has_engine_config = "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {})
     ec_export = ", EngineConfig" if has_engine_config else ""
     ec_type_export = ", IEngineConfig" if has_engine_config else ""
+    # Build error re-export from schema categories
+    errors_section = schema.get("errors", {})
+    error_names = ["GoudError"]
+    for cat in errors_section.get("categories", []):
+        error_names.append(cat["base_class"])
+    error_names.append("RecoveryClass")
+
     lines = [
         f"// {HEADER_COMMENT}",
         "",
         f"export {{ GoudGame{ec_export}, Color, Vec2, Vec3, Key, MouseButton }} from './node/index.g.js';",
         f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats }} from './types/engine.g.js';",
         "export type { Rect } from './types/math.g.js';",
+        f"export {{ {', '.join(error_names)} }} from './errors.g.js';",
         "",
     ]
     write_generated(GEN / "index.g.ts", "\n".join(lines))
@@ -1826,6 +1834,129 @@ def gen_napi_rust():
     gen_napi_rust_lib()
 
 
+def gen_errors():
+    categories, codes = load_errors(schema)
+    if not categories:
+        return
+
+    lines = [
+        f"// {HEADER_COMMENT}",
+        "",
+        "export enum RecoveryClass {",
+        "  Recoverable = 0,",
+        "  Fatal = 1,",
+        "  Degraded = 2,",
+        "}",
+        "",
+        "/** Base error for all GoudEngine errors. */",
+        "export class GoudError extends Error {",
+        "  public readonly code: number;",
+        "  public readonly category: string;",
+        "  public readonly subsystem: string;",
+        "  public readonly operation: string;",
+        "  public readonly recovery: RecoveryClass;",
+        "  public readonly recoveryHint: string;",
+        "",
+        "  constructor(",
+        "    code: number,",
+        "    message: string,",
+        "    category: string,",
+        "    subsystem: string,",
+        "    operation: string,",
+        "    recovery: RecoveryClass,",
+        "    recoveryHint: string,",
+        "  ) {",
+        "    super(message);",
+        "    this.name = new.target.name;",
+        "    this.code = code;",
+        "    this.category = category;",
+        "    this.subsystem = subsystem;",
+        "    this.operation = operation;",
+        "    this.recovery = recovery;",
+        "    this.recoveryHint = recoveryHint;",
+        "",
+        "    // Maintain proper prototype chain for instanceof checks",
+        "    Object.setPrototypeOf(this, new.target.prototype);",
+        "  }",
+        "",
+        "  /**",
+        "   * Build the correct typed error subclass from a code and message.",
+        "   * Subsystem and operation are optional context strings.",
+        "   */",
+        "  static fromCode(",
+        "    code: number,",
+        "    message: string,",
+        '    subsystem: string = "",',
+        '    operation: string = "",',
+        "  ): GoudError {",
+        "    const category = categoryFromCode(code);",
+        "    const recovery = recoveryFromCategory(category);",
+        "    const hint = hintFromCode(code);",
+        "    const Subclass = CATEGORY_CLASS_MAP[category] ?? GoudError;",
+        "",
+        "    return new Subclass(",
+        "      code, message, category, subsystem, operation, recovery, hint,",
+        "    );",
+        "  }",
+        "}",
+        "",
+    ]
+
+    # Category subclasses
+    for cat in categories:
+        cls = cat["base_class"]
+        lines.append(f"export class {cls} extends GoudError {{}}")
+    lines.append("")
+
+    # CATEGORY_CLASS_MAP
+    lines.append("const CATEGORY_CLASS_MAP: Record<string, typeof GoudError> = {")
+    for cat in categories:
+        lines.append(f"  {cat['name']}: {cat['base_class']},")
+    lines += ["};", ""]
+
+    # categoryFromCode
+    lines.append("function categoryFromCode(code: number): string {")
+    sorted_cats = sorted(categories, key=lambda c: c["range_start"], reverse=True)
+    for cat in sorted_cats:
+        lines.append(f'  if (code >= {cat["range_start"]}) return "{cat["name"]}";')
+    lines += ['  return "Unknown";', "}", ""]
+
+    # recoveryFromCategory - derive default recovery from category
+    # Look at codes to find which categories are fatal by default
+    fatal_cats = set()
+    for c in codes:
+        if c["recovery"] == "fatal":
+            fatal_cats.add(c["category"])
+    lines.append("/**")
+    lines.append(" * Default recovery class derived from code range. This is a fallback")
+    lines.append(" * for environments where the native FFI is not available (e.g., web).")
+    lines.append(" * Desktop environments should prefer the value from")
+    lines.append(" * goud_error_recovery_class.")
+    lines.append(" */")
+    lines.append("function recoveryFromCategory(category: string): RecoveryClass {")
+    lines.append("  switch (category) {")
+    for cat_name in sorted(fatal_cats):
+        lines.append(f'    case "{cat_name}":')
+    lines.append("      return RecoveryClass.Fatal;")
+    lines.append("    default:")
+    lines.append("      return RecoveryClass.Recoverable;")
+    lines += ["  }", "}", ""]
+
+    # hintFromCode
+    lines.append("/** Static hint lookup matching the codegen schema. */")
+    lines.append("function hintFromCode(code: number): string {")
+    lines.append('  return HINTS[code] ?? "";')
+    lines += ["}", ""]
+
+    # HINTS map
+    lines.append("const HINTS: Record<number, string> = {")
+    for c in codes:
+        lines.append(f'  {c["code"]}: "{c["hint"]}",')
+    lines += ["};", ""]
+
+    write_generated(GEN / "errors.g.ts", "\n".join(lines))
+
+
 if __name__ == "__main__":
     print("Generating TypeScript Node SDK...")
     gen_interface()
@@ -1834,4 +1965,5 @@ if __name__ == "__main__":
     gen_node_wrapper()
     gen_entry()
     gen_napi_rust()
+    gen_errors()
     print("TypeScript Node SDK generation complete.")

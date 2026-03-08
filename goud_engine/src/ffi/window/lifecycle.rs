@@ -7,7 +7,7 @@ use crate::core::error::{set_last_error, GoudError};
 use crate::ecs::InputManager;
 use crate::ffi::context::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::libs::graphics::backend::opengl::OpenGLBackend;
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::StateOps;
 use crate::libs::platform::glfw_platform::GlfwPlatform;
 use crate::libs::platform::WindowConfig;
 use std::ffi::CStr;

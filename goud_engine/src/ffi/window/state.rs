@@ -8,7 +8,7 @@ use crate::core::error::GoudError;
 use crate::ecs::InputManager;
 use crate::ffi::context::GoudContextId;
 use crate::libs::graphics::backend::opengl::OpenGLBackend;
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::StateOps;
 use crate::libs::platform::glfw_platform::GlfwPlatform;
 use crate::libs::platform::PlatformBackend;
 use crate::sdk::debug_overlay::DebugOverlay;

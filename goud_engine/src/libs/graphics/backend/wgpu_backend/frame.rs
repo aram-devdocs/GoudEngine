@@ -1,25 +1,32 @@
-//! RenderBackend implementation for WgpuBackend.
+//! Sub-trait and RenderBackend implementations for WgpuBackend.
 //!
 //! Covers frame lifecycle, render state management, draw call dispatch,
 //! and uniform setters. Pipeline building lives in `pipeline.rs`.
 
 use super::{
     super::types::{BufferUsage, TextureFilter, TextureFormat, TextureWrap},
-    BackendInfo, BlendFactor, BufferHandle, BufferType, CullFace, DepthFunc, DrawType, FrameState,
-    FrontFace, PipelineKey, PrimitiveTopology, RenderBackend, ShaderHandle, TextureHandle,
-    VertexLayout, WgpuBackend,
+    BackendInfo, BlendFactor, BufferHandle, BufferOps, BufferType, ClearOps, CullFace, DepthFunc,
+    DrawOps, DrawType, FrameOps, FrameState, FrontFace, PipelineKey, PrimitiveTopology,
+    RenderBackend, ShaderHandle, ShaderOps, StateOps, TextureHandle, TextureOps, VertexLayout,
+    WgpuBackend,
 };
 use crate::libs::error::{GoudError, GoudResult};
+
+// ========================================================================
+// RenderBackend (supertrait)
+// ========================================================================
 
 impl RenderBackend for WgpuBackend {
     fn info(&self) -> &BackendInfo {
         &self.info
     }
+}
 
-    // ========================================================================
-    // Frame Management
-    // ========================================================================
+// ========================================================================
+// FrameOps
+// ========================================================================
 
+impl FrameOps for WgpuBackend {
     fn begin_frame(&mut self) -> GoudResult<()> {
         let surface_texture = self
             .surface
@@ -179,11 +186,13 @@ impl RenderBackend for WgpuBackend {
         self.draw_commands.clear();
         Ok(())
     }
+}
 
-    // ========================================================================
-    // Clear Operations
-    // ========================================================================
+// ========================================================================
+// ClearOps
+// ========================================================================
 
+impl ClearOps for WgpuBackend {
     fn set_clear_color(&mut self, r: f32, g: f32, b: f32, a: f32) {
         self.clear_color = wgpu::Color {
             r: r as f64,
@@ -200,11 +209,13 @@ impl RenderBackend for WgpuBackend {
     fn clear_depth(&mut self) {
         self.needs_clear = true;
     }
+}
 
-    // ========================================================================
-    // State Management
-    // ========================================================================
+// ========================================================================
+// StateOps
+// ========================================================================
 
+impl StateOps for WgpuBackend {
     fn set_viewport(&mut self, _x: i32, _y: i32, _width: u32, _height: u32) {
         // wgpu viewport is set per render pass; tracked state is applied in end_frame
     }
@@ -248,11 +259,13 @@ impl RenderBackend for WgpuBackend {
     fn set_line_width(&mut self, _width: f32) {
         // wgpu does not support variable line width (WebGPU spec limitation)
     }
+}
 
-    // ========================================================================
-    // Buffer Operations (delegated to buffer.rs)
-    // ========================================================================
+// ========================================================================
+// BufferOps (delegated to buffer.rs)
+// ========================================================================
 
+impl BufferOps for WgpuBackend {
     fn create_buffer(
         &mut self,
         buffer_type: BufferType,
@@ -290,11 +303,13 @@ impl RenderBackend for WgpuBackend {
     fn unbind_buffer(&mut self, buffer_type: BufferType) {
         self.unbind_buffer_impl(buffer_type);
     }
+}
 
-    // ========================================================================
-    // Texture Operations (delegated to texture.rs)
-    // ========================================================================
+// ========================================================================
+// TextureOps (delegated to texture.rs)
+// ========================================================================
 
+impl TextureOps for WgpuBackend {
     fn create_texture(
         &mut self,
         width: u32,
@@ -338,11 +353,13 @@ impl RenderBackend for WgpuBackend {
     fn unbind_texture(&mut self, unit: u32) {
         self.unbind_texture_impl(unit);
     }
+}
 
-    // ========================================================================
-    // Shader Operations (delegated to shader.rs)
-    // ========================================================================
+// ========================================================================
+// ShaderOps (delegated to shader.rs)
+// ========================================================================
 
+impl ShaderOps for WgpuBackend {
     fn create_shader(&mut self, vertex_src: &str, fragment_src: &str) -> GoudResult<ShaderHandle> {
         self.create_shader_impl(vertex_src, fragment_src)
     }
@@ -402,14 +419,16 @@ impl RenderBackend for WgpuBackend {
     fn set_uniform_mat4(&mut self, location: i32, matrix: &[f32; 16]) {
         self.write_uniform(location, bytemuck::cast_slice(matrix));
     }
+}
 
+// ========================================================================
+// DrawOps
+// ========================================================================
+
+impl DrawOps for WgpuBackend {
     fn set_vertex_attributes(&mut self, layout: &VertexLayout) {
         self.set_vertex_attributes_impl(layout);
     }
-
-    // ========================================================================
-    // Draw Calls
-    // ========================================================================
 
     fn draw_arrays(
         &mut self,

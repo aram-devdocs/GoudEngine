@@ -1151,3 +1151,57 @@ class FpsStats:
 
     def __repr__(self):
         return f"FpsStats(current_fps={self.current_fps}, min_fps={self.min_fps}, max_fps={self.max_fps}, avg_fps={self.avg_fps}, frame_time_ms={self.frame_time_ms})"
+
+class PhysicsWorld2D:
+    """2D physics simulation world"""
+    def __init__(self, bits: int):
+        self._bits = bits
+
+
+    def __repr__(self):
+        return f"Entity({self.index}v{self.generation})"
+
+class PhysicsWorld3D:
+    """3D physics simulation world"""
+    def __init__(self, bits: int):
+        self._bits = bits
+
+
+    def __repr__(self):
+        return f"Entity({self.index}v{self.generation})"
+
+class RigidBodyHandle:
+    """Handle to a rigid body in the physics simulation"""
+    def __init__(self, bits: int):
+        self._bits = bits
+
+
+    def __repr__(self):
+        return f"Entity({self.index}v{self.generation})"
+
+class ColliderHandle:
+    """Handle to a collider shape attached to a rigid body"""
+    def __init__(self, bits: int):
+        self._bits = bits
+
+
+    def __repr__(self):
+        return f"Entity({self.index}v{self.generation})"
+
+class TweenHandle:
+    """Handle to a running tween animation"""
+    def __init__(self, bits: int):
+        self._bits = bits
+
+
+    def __repr__(self):
+        return f"Entity({self.index}v{self.generation})"
+
+class NetworkHandle:
+    """Handle to a network host or connection"""
+    def __init__(self, bits: int):
+        self._bits = bits
+
+
+    def __repr__(self):
+        return f"Entity({self.index}v{self.generation})"
