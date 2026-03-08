@@ -55,6 +55,11 @@ pub struct GoudGame {
     /// Provider registry for subsystem backends (render, physics, audio, input).
     pub(crate) providers: ProviderRegistry,
 
+    /// Stores the result of the most recent transition completion, if any.
+    /// Use [`take_transition_complete`](Self::take_transition_complete) to consume it.
+    pub(crate) last_transition_complete:
+        Option<crate::context_registry::scene::transition::TransitionComplete>,
+
     /// UI manager for immediate-mode UI widgets.
     pub(crate) ui_manager: UiManager,
 
@@ -119,6 +124,7 @@ impl GoudGame {
             initialized: false,
             debug_overlay,
             providers: ProviderRegistry::default(),
+            last_transition_complete: None,
             ui_manager: UiManager::new(),
             #[cfg(feature = "native")]
             platform: None,
@@ -177,6 +183,7 @@ impl GoudGame {
             initialized: false,
             debug_overlay,
             providers: ProviderRegistry::default(),
+            last_transition_complete: None,
             ui_manager: UiManager::new(),
             platform: Some(Box::new(platform)),
             render_backend: None,
@@ -376,6 +383,11 @@ impl GoudGame {
                 }
             }
 
+            // Advance any in-progress scene transition.
+            if let Some(complete) = self.scene_manager.tick_transition(frame_time) {
+                self.last_transition_complete = Some(complete);
+            }
+
             // Update UI manager after scene updates.
             self.ui_manager.update();
 
@@ -402,6 +414,11 @@ impl GoudGame {
             if let Some(world) = self.scene_manager.get_scene_mut(scene_id) {
                 update(&mut self.context, world);
             }
+        }
+
+        // Advance any in-progress scene transition.
+        if let Some(complete) = self.scene_manager.tick_transition(delta_time) {
+            self.last_transition_complete = Some(complete);
         }
 
         // Update UI manager after scene updates.

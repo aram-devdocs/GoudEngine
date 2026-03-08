@@ -30,6 +30,12 @@ def _resolve_ffi_return(ret: str) -> str:
     ct = CTYPES_MAP.get(ret)
     if ct:
         return ct
+    # Check if it's an FFI enum type (e.g., FfiTransitionType -> TransitionType)
+    if ret.startswith("Ffi") and ret[3:] in schema.get("enums", {}):
+        enum_name = ret[3:]
+        enum_def = schema["enums"][enum_name]
+        underlying = enum_def.get("underlying", "i32")
+        return CTYPES_MAP.get(underlying, "ctypes.c_int32")
     return "ctypes.c_uint64"
 
 
@@ -42,6 +48,12 @@ def _resolve_ffi_param(ptype: str) -> str:
     ct = CTYPES_MAP.get(ptype)
     if ct:
         return ct
+    # Check if it's an FFI enum type (e.g., FfiTransitionType -> TransitionType)
+    if ptype.startswith("Ffi") and ptype[3:] in schema.get("enums", {}):
+        enum_name = ptype[3:]
+        enum_def = schema["enums"][enum_name]
+        underlying = enum_def.get("underlying", "i32")
+        return CTYPES_MAP.get(underlying, "ctypes.c_int32")
     return "ctypes.c_uint64"
 
 
@@ -1385,7 +1397,12 @@ def _gen_tool_class(tool_name: str, lines: list):
                         f"        return self._lib.{ffi_fn}({args_str})"
                     )
             else:
-                ffi_args = [to_snake(p["name"]) for p in params]
+                ffi_args = [
+                    f"int({to_snake(p['name'])})"
+                    if p["type"] in schema.get("enums", {})
+                    else to_snake(p["name"])
+                    for p in params
+                ]
                 args_str = ", ".join(["self._ctx"] + ffi_args)
                 if ret == "void":
                     lines.append(
@@ -1529,13 +1546,19 @@ def gen_init():
     if has_engine_config:
         game_imports.append("EngineConfig")
 
+    # Collect all enum names from the schema
+    enum_imports = sorted(schema.get("enums", {}).keys())
+
     has_diagnostic = "diagnostic" in schema
 
     lines = [
         f'"""{HEADER_COMMENT}"""',
         "",
         f"from ._types import {type_imports}",
-        "from ._keys import Key, MouseButton",
+    ]
+    if enum_imports:
+        lines.append(f"from ._keys import {', '.join(enum_imports)}")
+    lines.extend([
         f"from ._game import {', '.join(game_imports)}",
     ]
     if has_diagnostic:
@@ -1543,16 +1566,18 @@ def gen_init():
     lines += [
         "",
         "__all__ = [",
-    ]
+    ])
     for gi in game_imports:
         lines.append(f'    "{gi}",')
     lines.append('    "Entity",')
     lines.append('    "Color", "Vec2", "Rect", "Transform2D", "Sprite",')
     for bi in builder_imports:
         lines.append(f'    "{bi}",')
-    lines.append('    "Key", "MouseButton",')
+    for ei in enum_imports:
+        lines.append(f'    "{ei}",')
     if has_diagnostic:
         lines.append('    "DiagnosticMode",')
+
     lines.append("]")
     lines.append("")
     write_generated(OUT / "__init__.py", "\n".join(lines))

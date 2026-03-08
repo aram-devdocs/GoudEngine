@@ -2037,6 +2037,43 @@
       "return_type": "GoudResult",
       "is_unsafe": false
     },
+    "goud_scene_transition_is_active": {
+      "source_file": "ffi/scene_transition.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_scene_transition_progress": {
+      "source_file": "ffi/scene_transition.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_scene_transition_tick": {
+      "source_file": "ffi/scene_transition.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "delta_time: f32"
+      ],
+      "return_type": "GoudResult",
+      "is_unsafe": false
+    },
+    "goud_scene_transition_to": {
+      "source_file": "ffi/scene_transition.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "from_scene: u32",
+        "to_scene: u32",
+        "transition_type: u8",
+        "duration_secs: f32"
+      ],
+      "return_type": "GoudResult",
+      "is_unsafe": false
+    },
     "goud_skeleton_add_bone": {
       "source_file": "ffi/animation/skeletal.rs",
       "params": [
@@ -3364,5 +3401,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 346
+  "total_count": 350
 }

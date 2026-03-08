@@ -280,6 +280,19 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint goud_scene_get_current(GoudContextId ctx);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern GoudResult goud_scene_transition_to(GoudContextId ctx, uint from_scene, uint to_scene, TransitionType transition_type, float duration_secs);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_scene_transition_progress(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_scene_transition_is_active(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern GoudResult goud_scene_transition_tick(GoudContextId ctx, float delta_time);
+
         // window
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern GoudContextId goud_window_create(uint width, uint height, string title);

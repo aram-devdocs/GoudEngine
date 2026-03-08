@@ -158,6 +158,12 @@ class NetworkProtocol:
     UDP = 0
     WEB_SOCKET = 1
 
+class TransitionType:
+    """Scene transition type"""
+    INSTANT = 0
+    FADE = 1
+    CUSTOM = 2
+
 class TextAlignment:
     """Horizontal text alignment"""
     LEFT = 0

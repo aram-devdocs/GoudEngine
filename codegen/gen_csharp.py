@@ -85,6 +85,7 @@ def _cs_ffi_param_type(raw: str) -> str:
         "*mut FfiText": "ref FfiText",
         "*const FfiText": "ref FfiText",
         "FfiPlaybackMode": "PlaybackMode",
+        "FfiTransitionType": "TransitionType",
         "*const u8": "IntPtr",
         "*mut u8": "IntPtr",
         "*mut *const u8": "ref IntPtr",
@@ -242,8 +243,12 @@ def gen_native_methods():
 def gen_enums():
     for enum_name, enum_def in schema["enums"].items():
         pascal_name = _enum_cs_name(enum_name)
+        underlying = enum_def.get("underlying")
+        cs_underlying = CSHARP_TYPES.get(underlying, "") if underlying else ""
+        # Omit suffix for int (C# enum default) to avoid unnecessary churn
+        suffix = f" : {cs_underlying}" if cs_underlying and cs_underlying != "int" else ""
         lines = [f"// {HEADER_COMMENT}", f"namespace {NS}", "{",
-                 f"    public enum {pascal_name}", "    {"]
+                 f"    public enum {pascal_name}{suffix}", "    {"]
         for vname, vval in enum_def["values"].items():
             lines.append(f"        {vname} = {vval},")
         lines += ["    }", "}", ""]

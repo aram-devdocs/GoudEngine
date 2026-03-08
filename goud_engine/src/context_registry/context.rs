@@ -6,6 +6,7 @@
 
 use std::collections::HashSet;
 
+use crate::context_registry::scene::transition::{TransitionComplete, TransitionType};
 use crate::context_registry::scene::{SceneId, SceneManager};
 use crate::ecs::World;
 
@@ -120,6 +121,37 @@ impl GoudContext {
             self.current_scene = self.scene_manager.default_scene();
         }
         Ok(())
+    }
+
+    // =========================================================================
+    // Scene Transitions
+    // =========================================================================
+
+    /// Starts a transition between two scenes.
+    pub fn start_transition(
+        &mut self,
+        from: SceneId,
+        to: SceneId,
+        transition_type: TransitionType,
+        duration: f32,
+    ) -> Result<(), crate::core::error::GoudError> {
+        self.scene_manager
+            .start_transition(from, to, transition_type, duration)
+    }
+
+    /// Advances the active transition by `delta_time` seconds.
+    pub fn tick_transition(&mut self, delta_time: f32) -> Option<TransitionComplete> {
+        self.scene_manager.tick_transition(delta_time)
+    }
+
+    /// Returns the progress of the active transition in `[0.0, 1.0]`.
+    pub fn transition_progress(&self) -> Option<f32> {
+        self.scene_manager.transition_progress()
+    }
+
+    /// Returns `true` if a transition is currently in progress.
+    pub fn is_transitioning(&self) -> bool {
+        self.scene_manager.is_transitioning()
     }
 
     // =========================================================================
