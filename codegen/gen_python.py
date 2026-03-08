@@ -1560,13 +1560,13 @@ def gen_init():
         lines.append(f"from ._keys import {', '.join(enum_imports)}")
     lines.extend([
         f"from ._game import {', '.join(game_imports)}",
-    ]
+    ])
     if has_diagnostic:
         lines.append("from ._diagnostic import DiagnosticMode")
     lines += [
         "",
         "__all__ = [",
-    ])
+    ]
     for gi in game_imports:
         lines.append(f'    "{gi}",')
     lines.append('    "Entity",')
