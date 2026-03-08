@@ -223,6 +223,14 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
         [self.gravity.x, self.gravity.y]
     }
 
+    fn set_timestep(&mut self, dt: f32) {
+        self.integration_parameters.dt = dt;
+    }
+
+    fn timestep(&self) -> f32 {
+        self.integration_parameters.dt
+    }
+
     fn create_body(&mut self, desc: &BodyDesc) -> GoudResult<BodyHandle> {
         let body_type = conversions::body_type_from_u32(desc.body_type);
         let rb = RigidBodyBuilder::new(body_type)

@@ -1248,6 +1248,19 @@
             }
           ],
           "returns_scalar": "f32"
+        },
+        "setTimestep": {
+          "ffi": "goud_physics_set_timestep"
+        },
+        "getTimestep": {
+          "ffi": "goud_physics_get_timestep",
+          "out_params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
         }
       }
     },
@@ -1354,6 +1367,19 @@
           "out_params": [
             {
               "name": "restitution",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setTimestep": {
+          "ffi": "goud_physics3d_set_timestep"
+        },
+        "getTimestep": {
+          "ffi": "goud_physics3d_get_timestep",
+          "out_params": [
+            {
+              "name": "dt",
               "type": "f32"
             }
           ],
@@ -5580,6 +5606,33 @@
         ],
         "returns": "i32",
         "unsafe": true
+      },
+      "goud_physics_set_timestep": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "dt",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics_get_timestep": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "out_dt",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
       }
     },
     "physics3d": {
@@ -5953,6 +6006,33 @@
           },
           {
             "name": "out_restitution",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics3d_set_timestep": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "dt",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics3d_get_timestep": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "out_dt",
             "type": "*mut f32"
           }
         ],

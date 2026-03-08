@@ -218,6 +218,14 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
         [self.gravity.x, self.gravity.y, self.gravity.z]
     }
 
+    fn set_timestep(&mut self, dt: f32) {
+        self.integration_params.dt = dt;
+    }
+
+    fn timestep(&self) -> f32 {
+        self.integration_params.dt
+    }
+
     fn create_body(&mut self, desc: &BodyDesc3D) -> GoudResult<BodyHandle> {
         let rotation = UnitQuaternion::from_quaternion(Quaternion::new(
             desc.rotation[3],

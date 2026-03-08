@@ -34,6 +34,12 @@ pub trait PhysicsProvider3D: Provider + ProviderLifecycle {
     /// Get the current gravity vector as [x, y, z].
     fn gravity(&self) -> [f32; 3];
 
+    /// Set the timestep for the physics simulation.
+    fn set_timestep(&mut self, dt: f32);
+
+    /// Get the current timestep for the physics simulation.
+    fn timestep(&self) -> f32;
+
     // -------------------------------------------------------------------------
     // Body Management
     // -------------------------------------------------------------------------

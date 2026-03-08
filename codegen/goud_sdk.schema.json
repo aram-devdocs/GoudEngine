@@ -1908,11 +1908,49 @@
     },
     "PhysicsWorld2D": {
       "kind": "handle",
-      "doc": "2D physics simulation world"
+      "doc": "2D physics simulation world",
+      "methods": [
+        {
+          "name": "setTimestep",
+          "doc": "Set the fixed physics timestep in seconds",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getTimestep",
+          "doc": "Get the current fixed physics timestep in seconds",
+          "params": [],
+          "returns": "f32"
+        }
+      ]
     },
     "PhysicsWorld3D": {
       "kind": "handle",
-      "doc": "3D physics simulation world"
+      "doc": "3D physics simulation world",
+      "methods": [
+        {
+          "name": "setTimestep",
+          "doc": "Set the fixed physics timestep in seconds",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getTimestep",
+          "doc": "Get the current fixed physics timestep in seconds",
+          "params": [],
+          "returns": "f32"
+        }
+      ]
     },
     "RigidBodyHandle": {
       "kind": "handle",
@@ -4964,6 +5002,23 @@
             }
           ],
           "returns": "f32"
+        },
+        {
+          "name": "setTimestep",
+          "doc": "Set the fixed physics timestep in seconds",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getTimestep",
+          "doc": "Get the current fixed physics timestep in seconds",
+          "params": [],
+          "returns": "f32"
         }
       ]
     },
@@ -5280,6 +5335,23 @@
               "type": "u64"
             }
           ],
+          "returns": "f32"
+        },
+        {
+          "name": "setTimestep",
+          "doc": "Set the fixed physics timestep in seconds",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getTimestep",
+          "doc": "Get the current fixed physics timestep in seconds",
+          "params": [],
           "returns": "f32"
         }
       ]

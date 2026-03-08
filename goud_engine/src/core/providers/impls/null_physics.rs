@@ -13,6 +13,7 @@ use crate::core::providers::{Provider, ProviderLifecycle};
 pub struct NullPhysicsProvider {
     capabilities: PhysicsCapabilities,
     gravity: [f32; 2],
+    timestep: f32,
 }
 
 impl NullPhysicsProvider {
@@ -25,6 +26,7 @@ impl NullPhysicsProvider {
                 max_bodies: 0,
             },
             gravity: [0.0, 0.0],
+            timestep: 1.0 / 60.0,
         }
     }
 }
@@ -76,6 +78,14 @@ impl PhysicsProvider for NullPhysicsProvider {
 
     fn gravity(&self) -> [f32; 2] {
         self.gravity
+    }
+
+    fn set_timestep(&mut self, dt: f32) {
+        self.timestep = dt;
+    }
+
+    fn timestep(&self) -> f32 {
+        self.timestep
     }
 
     fn create_body(&mut self, _desc: &BodyDesc) -> GoudResult<BodyHandle> {

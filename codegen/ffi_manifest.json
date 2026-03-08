@@ -1028,6 +1028,15 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_physics3d_get_timestep": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "out_dt: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_physics3d_remove_body": {
       "source_file": "ffi/physics/physics3d.rs",
       "params": [
@@ -1074,6 +1083,15 @@
         "x: f32",
         "y: f32",
         "z: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_set_timestep": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "dt: f32"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -1217,6 +1235,15 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_physics_get_timestep": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "out_dt: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_physics_get_velocity": {
       "source_file": "ffi/physics/physics2d.rs",
       "params": [
@@ -1288,6 +1315,15 @@
         "ctx: GoudContextId",
         "x: f32",
         "y: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_set_timestep": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "dt: f32"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -2885,5 +2921,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 294
+  "total_count": 298
 }

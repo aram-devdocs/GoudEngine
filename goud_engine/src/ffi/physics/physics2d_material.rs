@@ -232,3 +232,43 @@ pub unsafe extern "C" fn goud_physics_get_collider_restitution(
         }
     })
 }
+
+// =============================================================================
+// Timestep Configuration
+// =============================================================================
+
+/// Sets the fixed timestep for the 2D physics simulation.
+///
+/// # Returns
+///
+/// 0 on success, negative error code on failure.
+#[no_mangle]
+pub extern "C" fn goud_physics_set_timestep(ctx: GoudContextId, dt: f32) -> i32 {
+    with_provider_mut(ctx, |p| {
+        p.set_timestep(dt);
+        0
+    })
+}
+
+/// Gets the current fixed timestep for the 2D physics simulation.
+///
+/// # Safety
+///
+/// `out_dt` must be a valid, non-null pointer to writable `f32`.
+///
+/// # Returns
+///
+/// 0 on success, negative error code on failure.
+#[no_mangle]
+pub unsafe extern "C" fn goud_physics_get_timestep(ctx: GoudContextId, out_dt: *mut f32) -> i32 {
+    if out_dt.is_null() {
+        set_last_error(GoudError::InvalidState("out_dt is null".to_string()));
+        return GoudError::InvalidState(String::new()).error_code();
+    }
+
+    with_provider(ctx, |p| {
+        // SAFETY: Null check above guarantees out_dt is valid.
+        unsafe { *out_dt = p.timestep(); }
+        0
+    })
+}
