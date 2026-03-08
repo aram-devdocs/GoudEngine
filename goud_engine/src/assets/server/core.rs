@@ -3,6 +3,7 @@
 use crate::assets::dependency::DependencyGraph;
 #[cfg(feature = "native")]
 use crate::assets::AssetLoadError;
+use crate::assets::vfs::{OsFs, VirtualFs};
 use crate::assets::{AssetId, AssetStorage, ErasedAssetLoader};
 use std::collections::HashMap;
 use std::fmt;
@@ -66,6 +67,9 @@ pub struct AssetServer {
     /// Base directory for asset files (e.g., "assets/").
     pub(super) asset_root: PathBuf,
 
+    /// Virtual filesystem for reading asset bytes.
+    pub(super) vfs: Box<dyn VirtualFs>,
+
     /// Asset storage (cache).
     pub(super) storage: AssetStorage,
 
@@ -120,8 +124,10 @@ impl AssetServer {
         #[cfg(all(feature = "native", feature = "web"))]
         let (_load_sender, load_receiver) = std::sync::mpsc::channel::<LoadResult>();
 
+        let root_path = root.as_ref().to_path_buf();
         Self {
-            asset_root: root.as_ref().to_path_buf(),
+            vfs: Box::new(OsFs::new(root_path.clone())),
+            asset_root: root_path,
             storage: AssetStorage::new(),
             loaders: HashMap::new(),
             loader_by_type: HashMap::new(),
@@ -150,11 +156,34 @@ impl AssetServer {
 
     /// Sets the asset root directory.
     ///
+    /// Also updates the default VFS to use the new root. If a custom VFS
+    /// was set via [`set_vfs`](Self::set_vfs), it will be replaced with
+    /// an [`OsFs`] rooted at the new path.
+    ///
     /// # Arguments
     ///
     /// * `root` - New base directory for asset files
     pub fn set_asset_root(&mut self, root: impl AsRef<Path>) {
-        self.asset_root = root.as_ref().to_path_buf();
+        let root_path = root.as_ref().to_path_buf();
+        self.vfs = Box::new(OsFs::new(root_path.clone()));
+        self.asset_root = root_path;
+    }
+
+    /// Replaces the virtual filesystem used for asset I/O.
+    ///
+    /// This allows the asset server to read from archives, embedded
+    /// resources, or custom I/O layers instead of the OS filesystem.
+    ///
+    /// # Arguments
+    ///
+    /// * `vfs` - The new virtual filesystem implementation
+    pub fn set_vfs(&mut self, vfs: Box<dyn VirtualFs>) {
+        self.vfs = vfs;
+    }
+
+    /// Returns a reference to the current virtual filesystem.
+    pub fn vfs(&self) -> &dyn VirtualFs {
+        self.vfs.as_ref()
     }
 }
 

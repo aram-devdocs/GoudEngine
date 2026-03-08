@@ -10,7 +10,7 @@ impl AssetServer {
     /// Loads an asset from a path (relative to asset root), returning a handle immediately.
     ///
     /// The asset loads synchronously (blocking). The handle is valid even if loading
-    /// fails — check with `get_load_state()`.
+    /// fails -- check with `get_load_state()`.
     pub fn load<A: Asset>(&mut self, path: impl AsRef<Path>) -> AssetHandle<A> {
         let asset_path = AssetPath::new(path.as_ref().to_str().unwrap_or_default());
 
@@ -75,14 +75,12 @@ impl AssetServer {
         Ok((asset, dependencies))
     }
 
-    /// Reads a file from disk and parses it into an asset.
+    /// Reads a file via the virtual filesystem and parses it into an asset.
     fn load_asset_sync<A: Asset>(
         &self,
         path: &AssetPath,
     ) -> Result<(A, Vec<String>), AssetLoadError> {
-        let full_path = self.asset_root.join(path.as_str());
-        let bytes =
-            std::fs::read(&full_path).map_err(|e| AssetLoadError::io_error(&full_path, e))?;
+        let bytes = self.vfs.read(path.as_str())?;
         self.parse_bytes::<A>(path, &bytes)
     }
 
@@ -270,7 +268,7 @@ impl AssetServer {
         &mut self.dependency_graph
     }
 
-    /// Reloads an asset from disk by its path, using the type-erased loader.
+    /// Reloads an asset by its path, using the type-erased loader.
     ///
     /// This is used by the hot-reload watcher to reload assets without knowing
     /// their concrete type at compile time.
@@ -293,9 +291,8 @@ impl AssetServer {
             None => return false,
         };
 
-        // Read file from disk
-        let full_path = self.asset_root.join(path);
-        let bytes = match std::fs::read(&full_path) {
+        // Read file via virtual filesystem
+        let bytes = match self.vfs.read(path) {
             Ok(b) => b,
             Err(_) => return false,
         };

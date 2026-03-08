@@ -79,6 +79,7 @@ mod hot_reload;
 mod loader;
 mod server;
 mod storage;
+pub mod vfs;
 #[cfg(feature = "web")]
 pub mod web_fetch;
 
@@ -110,6 +111,9 @@ pub use hot_reload::{AssetChangeEvent, HotReloadConfig, HotReloadWatcher};
 // Re-export audio manager
 #[cfg(feature = "native")]
 pub use audio_manager::AudioManager;
+
+// Re-export virtual filesystem types
+pub use vfs::{ArchiveFs, OsFs, VirtualFs};
 
 // Re-export web fetch
 #[cfg(feature = "web")]
