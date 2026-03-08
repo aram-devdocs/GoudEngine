@@ -1118,6 +1118,18 @@
         },
         "sceneGetCurrent": {
           "ffi": "goud_scene_get_current"
+        },
+        "sceneTransitionTo": {
+          "ffi": "goud_scene_transition_to"
+        },
+        "sceneTransitionProgress": {
+          "ffi": "goud_scene_transition_progress"
+        },
+        "sceneTransitionIsActive": {
+          "ffi": "goud_scene_transition_is_active"
+        },
+        "sceneTransitionTick": {
+          "ffi": "goud_scene_transition_tick"
         }
       }
     },
@@ -1697,6 +1709,62 @@
           }
         ],
         "returns": "u32"
+      },
+      "goud_scene_transition_to": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "from_scene",
+            "type": "u32"
+          },
+          {
+            "name": "to_scene",
+            "type": "u32"
+          },
+          {
+            "name": "transition_type",
+            "type": "u8"
+          },
+          {
+            "name": "duration_secs",
+            "type": "f32"
+          }
+        ],
+        "returns": "GoudResult"
+      },
+      "goud_scene_transition_progress": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          }
+        ],
+        "returns": "f32"
+      },
+      "goud_scene_transition_is_active": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          }
+        ],
+        "returns": "bool"
+      },
+      "goud_scene_transition_tick": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "delta_time",
+            "type": "f32"
+          }
+        ],
+        "returns": "GoudResult"
       }
     },
     "window": {

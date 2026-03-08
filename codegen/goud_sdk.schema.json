@@ -4641,6 +4641,52 @@
           "doc": "Returns the currently targeted scene ID",
           "params": [],
           "returns": "u32"
+        },
+        {
+          "name": "sceneTransitionTo",
+          "doc": "Starts a transition between two scenes",
+          "params": [
+            {
+              "name": "fromScene",
+              "type": "u32"
+            },
+            {
+              "name": "toScene",
+              "type": "u32"
+            },
+            {
+              "name": "transitionType",
+              "type": "u8"
+            },
+            {
+              "name": "durationSecs",
+              "type": "f32"
+            }
+          ],
+          "returns": "GoudResult"
+        },
+        {
+          "name": "sceneTransitionProgress",
+          "doc": "Returns the progress of the active transition (0.0-1.0, or -1.0 if none)",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "sceneTransitionIsActive",
+          "doc": "Returns whether a scene transition is currently active",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "sceneTransitionTick",
+          "doc": "Advances the active transition by delta time",
+          "params": [
+            {
+              "name": "deltaTime",
+              "type": "f32"
+            }
+          ],
+          "returns": "GoudResult"
         }
       ]
     },
