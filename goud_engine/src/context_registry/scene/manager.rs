@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use crate::context_registry::scene::transition::TransitionState;
 use crate::core::error::GoudError;
 use crate::ecs::World;
 
@@ -47,9 +48,11 @@ pub struct SceneManager {
     /// Maps scene names to their IDs for lookup-by-name.
     name_to_id: HashMap<String, SceneId>,
     /// List of currently active scene IDs (order-preserving).
-    active_scenes: Vec<SceneId>,
+    pub(crate) active_scenes: Vec<SceneId>,
     /// ID of the default scene (always 0).
     default_scene: SceneId,
+    /// In-progress scene transition, if any.
+    pub(crate) active_transition: Option<TransitionState>,
 }
 
 impl SceneManager {
@@ -61,6 +64,7 @@ impl SceneManager {
             name_to_id: HashMap::new(),
             active_scenes: Vec::new(),
             default_scene: 0,
+            active_transition: None,
         };
         // Create the default scene. This cannot fail because no scenes exist yet.
         let id = manager
@@ -244,7 +248,7 @@ impl SceneManager {
     }
 
     /// Returns `true` if the given scene ID refers to an occupied slot.
-    fn scene_exists(&self, id: SceneId) -> bool {
+    pub(crate) fn scene_exists(&self, id: SceneId) -> bool {
         self.scenes
             .get(id as usize)
             .is_some_and(|s| matches!(s, SceneSlot::Occupied { .. }))
@@ -462,3 +466,7 @@ mod tests {
         assert!(!mgr.is_active(b));
     }
 }
+
+#[cfg(test)]
+#[path = "transition_tests.rs"]
+mod transition_tests;

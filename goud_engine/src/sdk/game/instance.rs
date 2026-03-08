@@ -1,5 +1,6 @@
 //! [`GoudGame`] struct definition, construction, and core API.
 
+use crate::context_registry::scene::transition::TransitionType;
 use crate::context_registry::scene::{SceneId, SceneManager};
 use crate::core::error::{GoudError, GoudResult};
 use crate::ecs::{Component, Entity, World};
@@ -294,6 +295,30 @@ impl GoudGame {
         self.scene_manager.set_active(id, active)
     }
 
+    /// Starts a transition from one scene to another.
+    pub fn transition_to(
+        &mut self,
+        from: SceneId,
+        to: SceneId,
+        transition_type: TransitionType,
+        duration: f32,
+    ) -> Result<(), GoudError> {
+        self.scene_manager
+            .start_transition(from, to, transition_type, duration)
+    }
+
+    /// Returns `true` if a scene transition is currently in progress.
+    #[inline]
+    pub fn is_transitioning(&self) -> bool {
+        self.scene_manager.is_transitioning()
+    }
+
+    /// Returns the progress of the active transition in `[0.0, 1.0]`.
+    #[inline]
+    pub fn transition_progress(&self) -> Option<f32> {
+        self.scene_manager.transition_progress()
+    }
+
     /// Returns a reference to the scene manager.
     #[inline]
     pub fn scene_manager(&self) -> &SceneManager {
@@ -356,6 +381,9 @@ impl GoudGame {
                 }
             }
 
+            // Advance any in-progress scene transition.
+            self.scene_manager.tick_transition(frame_time);
+
             // Safety: Limit iterations in tests/examples without actual window
             if self.context.frame_count() > 10000 {
                 break;
@@ -377,6 +405,9 @@ impl GoudGame {
                 update(&mut self.context, world);
             }
         }
+
+        // Advance any in-progress scene transition.
+        self.scene_manager.tick_transition(delta_time);
     }
 
     /// Returns the current FPS statistics from the debug overlay.
