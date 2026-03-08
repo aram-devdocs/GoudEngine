@@ -1,6 +1,8 @@
 //! Tests for the fallback asset registry.
 
 use super::FallbackRegistry;
+use crate::assets::loaders::audio::AudioAsset;
+use crate::assets::loaders::mesh::MeshAsset;
 use crate::assets::loaders::{TextureAsset, TextureFormat};
 use crate::assets::Asset;
 
@@ -35,7 +37,7 @@ fn test_with_defaults_registers_texture() {
     let registry = FallbackRegistry::with_defaults();
 
     assert!(registry.has::<TextureAsset>());
-    assert!(!registry.is_empty());
+    assert_eq!(registry.len(), 3); // texture + audio + mesh
 }
 
 #[test]
@@ -46,6 +48,27 @@ fn test_default_texture_is_magenta_1x1() {
     assert_eq!(tex.width, 1);
     assert_eq!(tex.height, 1);
     assert_eq!(tex.data, vec![255, 0, 255, 255]);
+}
+
+#[test]
+fn test_with_defaults_registers_audio() {
+    let registry = FallbackRegistry::with_defaults();
+
+    assert!(registry.has::<AudioAsset>());
+    let audio = registry.get_cloned::<AudioAsset>().unwrap();
+    assert!(audio.is_empty());
+    assert_eq!(audio.sample_rate(), 44100);
+    assert_eq!(audio.channel_count(), 2);
+}
+
+#[test]
+fn test_with_defaults_registers_mesh() {
+    let registry = FallbackRegistry::with_defaults();
+
+    assert!(registry.has::<MeshAsset>());
+    let mesh = registry.get_cloned::<MeshAsset>().unwrap();
+    assert_eq!(mesh.vertex_count(), 3);
+    assert_eq!(mesh.triangle_count(), 1);
 }
 
 // ---- register / get_cloned --------------------------------------------------
@@ -104,6 +127,8 @@ fn test_default_trait_includes_defaults() {
     let registry = FallbackRegistry::default();
 
     assert!(registry.has::<TextureAsset>());
+    assert!(registry.has::<AudioAsset>());
+    assert!(registry.has::<MeshAsset>());
 }
 
 // ---- len / is_empty ---------------------------------------------------------
