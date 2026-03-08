@@ -114,14 +114,14 @@ def gen_web_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "import { attachInputHandlers } from './input.g.js';",
         "",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton } from '../types/input.g.js';",
         "export { Rect } from '../types/math.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats } from '../types/engine.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData } from '../types/engine.g.js';",
         "",
     ]
 
@@ -509,6 +509,18 @@ def gen_web_wrapper():
     lines.append("  setFpsOverlayEnabled(_enabled: boolean): void {}")
     lines.append("  setFpsUpdateInterval(_interval: number): void {}")
     lines.append("  setFpsOverlayCorner(_corner: number): void {}")
+    lines.append("")
+    lines.append("  // TODO: wasm animation -- these stub methods satisfy the IGoudGame interface")
+    lines.append("  animationLayerStackCreate(_entity: IEntity): number { return 0; }")
+    lines.append("  animationLayerAdd(_entity: IEntity, _name: string, _blendMode: number): number { return 0; }")
+    lines.append("  animationLayerSetWeight(_entity: IEntity, _layerIndex: number, _weight: number): number { return 0; }")
+    lines.append("  animationLayerPlay(_entity: IEntity, _layerIndex: number): number { return 0; }")
+    lines.append("  animationLayerSetClip(_entity: IEntity, _layerIndex: number, _frameCount: number, _frameDuration: number, _mode: number): number { return 0; }")
+    lines.append("  animationLayerAddFrame(_entity: IEntity, _layerIndex: number, _x: number, _y: number, _w: number, _h: number): number { return 0; }")
+    lines.append("  animationLayerReset(_entity: IEntity, _layerIndex: number): number { return 0; }")
+    lines.append("  animationClipAddEvent(_entity: IEntity, _frameIndex: number, _name: string, _payloadType: number, _payloadInt: number, _payloadFloat: number, _payloadString?: string | null): number { return 0; }")
+    lines.append("  animationEventsCount(): number { return 0; }")
+    lines.append("  animationEventsRead(_index: number): IAnimationEventData { return { entity: 0, name: '', frameIndex: 0, payloadType: 0, payloadInt: 0, payloadFloat: 0, payloadString: '' }; }")
     lines.append("}")
     lines.append("")
 

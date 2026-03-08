@@ -1861,7 +1861,7 @@ impl GoudGame {
         } else {
             String::new()
         };
-        Ok(NapiAnimationEventData { entity, name, frame_index: frame, payload_type, payload_int, payload_float: payload_float as f64, payload_string })
+        Ok(NapiAnimationEventData { entity: entity as i64, name, frame_index: frame, payload_type, payload_int, payload_float: payload_float as f64, payload_string })
     }
 }
 
@@ -1872,7 +1872,7 @@ impl GoudGame {
 #[napi(object)]
 #[derive(Clone, Debug)]
 pub struct NapiAnimationEventData {
-    pub entity: u64,
+    pub entity: i64,
     pub name: String,
     pub frame_index: u32,
     pub payload_type: u32,
