@@ -133,9 +133,11 @@ impl AudioManager {
     }
 }
 
-// SAFETY: AudioManager is Send + Sync because all internal state is protected by Mutex.
-// MixerDeviceSink contains a cpal::Stream which is Send but not Sync by default.
-// We ensure thread safety by only accessing it through our Mutex-protected methods.
+// SAFETY: AudioManager is Send because all fields are Send (Arc, Mutex, MixerDeviceSink).
+// AudioManager is Sync because:
+// - global_volume, players, next_player_id, channel_volumes are Arc<Mutex<_>> (inherently Sync)
+// - device_sink (MixerDeviceSink/cpal::Stream) is NOT Sync, but is only accessed through
+//   &mut self methods, which guarantees exclusive access and prevents concurrent use.
 unsafe impl Send for AudioManager {}
 unsafe impl Sync for AudioManager {}
 
