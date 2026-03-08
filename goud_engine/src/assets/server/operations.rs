@@ -35,8 +35,18 @@ impl AssetServer {
                 }
             }
             Err(error) => {
-                // Mark as failed
-                if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
+                log::warn!(
+                    "Failed to load asset '{}': {}",
+                    asset_path.as_str(),
+                    error
+                );
+                // Attempt fallback substitution
+                if let Some(fallback) = self.fallbacks.get_cloned::<A>() {
+                    if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
+                        entry.set_loaded(fallback);
+                        entry.set_fallback(true);
+                    }
+                } else if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
                     entry.set_failed(error.to_string());
                 }
             }
@@ -152,7 +162,17 @@ impl AssetServer {
                 }
             }
             Err(error) => {
-                if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
+                log::warn!(
+                    "Failed to load asset from bytes '{}': {}",
+                    asset_path.as_str(),
+                    error
+                );
+                if let Some(fallback) = self.fallbacks.get_cloned::<A>() {
+                    if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
+                        entry.set_loaded(fallback);
+                        entry.set_fallback(true);
+                    }
+                } else if let Some(entry) = self.storage.get_entry_mut::<A>(&handle) {
                     entry.set_failed(error.to_string());
                 }
             }

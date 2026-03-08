@@ -77,6 +77,8 @@ mod handle;
 #[cfg(feature = "native")]
 mod hot_reload;
 mod loader;
+pub mod fallback;
+pub mod packager;
 mod server;
 mod storage;
 pub mod vfs;
@@ -97,6 +99,9 @@ pub use handle::{
 
 // Re-export asset loader types
 pub use loader::{AssetLoadError, AssetLoader, ErasedAssetLoader, LoadContext, TypedAssetLoader};
+
+// Re-export fallback registry
+pub use fallback::FallbackRegistry;
 
 // Re-export asset server
 pub use server::AssetServer;
