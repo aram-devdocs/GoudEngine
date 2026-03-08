@@ -1487,6 +1487,9 @@
         },
         "activeCount": {
           "ffi": "goud_audio_active_count"
+        },
+        "cleanupFinished": {
+          "ffi": "goud_audio_cleanup_finished"
         }
       }
     }
@@ -6310,6 +6313,12 @@
         "returns": "i32"
       },
       "goud_audio_active_count": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_cleanup_finished": {
         "params": [
           { "name": "ctx", "type": "GoudContextId" }
         ],

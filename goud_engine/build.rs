@@ -141,6 +141,9 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/network.rs",
     // plugin module
     "src/ffi/plugin.rs",
+    // audio module
+    "src/ffi/audio/playback.rs",
+    "src/ffi/audio/controls.rs",
 ];
 
 /// A single extracted FFI function signature.

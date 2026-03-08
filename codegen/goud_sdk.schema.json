@@ -5702,6 +5702,12 @@
           "doc": "Returns the number of active audio players",
           "params": [],
           "returns": "i32"
+        },
+        {
+          "name": "cleanupFinished",
+          "doc": "Removes finished audio players from the manager",
+          "params": [],
+          "returns": "i32"
         }
       ]
     }
