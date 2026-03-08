@@ -63,7 +63,7 @@ pub fn log_error(error: &GoudError, context: Option<&GoudErrorContext>) {
 ///
 /// Debug builds produce `[GOUD-{code}] {subsystem}/{operation}: {message}`.
 /// Release builds produce `[GOUD-{code}] {category}`.
-fn format_log_message(
+pub(crate) fn format_log_message(
     error: &GoudError,
     code: GoudErrorCode,
     context: Option<&GoudErrorContext>,
