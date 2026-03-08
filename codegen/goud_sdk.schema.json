@@ -5838,5 +5838,40 @@
         "hint": "Check the sequence of API calls; the engine may need re-initialization"
       }
     ]
+  },
+  "diagnostic": {
+    "doc": "Diagnostic mode controls backtrace capture on errors (debug builds only).",
+    "class_name": "DiagnosticMode",
+    "static": true,
+    "methods": [
+      {
+        "name": "setEnabled",
+        "ffi": "goud_diagnostic_set_enabled",
+        "doc": "Enable or disable diagnostic mode.",
+        "params": [
+          {
+            "name": "enabled",
+            "type": "bool",
+            "doc": "Whether to enable diagnostic mode"
+          }
+        ],
+        "returns": "void"
+      },
+      {
+        "name": "isEnabled",
+        "ffi": "goud_diagnostic_is_enabled",
+        "doc": "Returns whether diagnostic mode is currently enabled.",
+        "params": [],
+        "returns": "bool"
+      },
+      {
+        "name": "lastBacktrace",
+        "ffi": "goud_diagnostic_last_backtrace",
+        "doc": "Returns the backtrace captured from the most recent error, or empty string if none.",
+        "params": [],
+        "returns": "string",
+        "buffer_protocol": true
+      }
+    ]
   }
 }

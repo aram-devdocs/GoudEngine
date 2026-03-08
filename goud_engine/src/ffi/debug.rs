@@ -2,7 +2,9 @@
 //!
 //! FFI functions for querying FPS statistics and controlling the debug overlay.
 
-use crate::core::error::{set_last_error, GoudError};
+use crate::core::error::{
+    is_diagnostic_enabled, last_error_backtrace, set_diagnostic_enabled, set_last_error, GoudError,
+};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
 use crate::sdk::debug_overlay::{FpsStats, OverlayCorner};
@@ -154,4 +156,75 @@ pub extern "C" fn goud_debug_set_fps_overlay_corner(context_id: GoudContextId, c
         set_last_error(GoudError::InvalidContext);
         -1
     })
+}
+
+// ============================================================================
+// Diagnostic Mode FFI Functions
+// ============================================================================
+
+/// Enables or disables diagnostic mode.
+///
+/// When enabled in debug builds, backtraces are captured on every error
+/// and logged at `debug!` level.
+///
+/// # Arguments
+///
+/// * `enabled` - Whether to enable diagnostic mode
+#[no_mangle]
+pub extern "C" fn goud_diagnostic_set_enabled(enabled: bool) {
+    set_diagnostic_enabled(enabled);
+}
+
+/// Returns whether diagnostic mode is currently enabled.
+///
+/// # Returns
+///
+/// `true` if diagnostic mode is enabled, `false` otherwise.
+#[no_mangle]
+pub extern "C" fn goud_diagnostic_is_enabled() -> bool {
+    is_diagnostic_enabled()
+}
+
+/// Writes the last captured diagnostic backtrace into a caller-provided buffer.
+///
+/// Follows the same buffer protocol as `goud_last_error_message`:
+/// - If `buf` is null or `buf_len` is 0, returns the negative required size
+///   (including null terminator), e.g. `-256` means 256 bytes are needed.
+/// - Otherwise copies the backtrace string into `buf`, null-terminates it,
+///   and returns the number of bytes written (excluding null terminator).
+/// - Returns 0 if no backtrace is available.
+///
+/// # Arguments
+///
+/// * `buf` - Pointer to a caller-owned buffer, or null to query the required size.
+///   Caller allocates and frees this buffer.
+/// * `buf_len` - Length of the buffer in bytes
+///
+/// # Returns
+///
+/// Bytes written (positive), negative required size, or 0 if no backtrace.
+///
+/// # Safety
+///
+/// `buf` must point to a valid buffer of at least `buf_len` bytes, or be null.
+#[no_mangle]
+pub unsafe extern "C" fn goud_diagnostic_last_backtrace(buf: *mut u8, buf_len: usize) -> i32 {
+    if buf.is_null() || buf_len == 0 {
+        return match last_error_backtrace() {
+            Some(bt) => -(bt.len() as i32 + 1),
+            None => 0,
+        };
+    }
+
+    match last_error_backtrace() {
+        Some(bt) => {
+            let bytes = bt.as_bytes();
+            let copy_len = bytes.len().min(buf_len - 1);
+            // SAFETY: buf is valid for buf_len bytes per caller contract, copy_len < buf_len
+            std::ptr::copy_nonoverlapping(bytes.as_ptr(), buf, copy_len);
+            *buf.add(copy_len) = 0; // null terminator
+            copy_len as i32
+        }
+        None => 0,
+    }
 }

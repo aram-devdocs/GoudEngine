@@ -27,7 +27,9 @@
 mod codes;
 pub mod context;
 mod conversions;
+pub mod diagnostic;
 mod ffi_bridge;
+mod logging;
 mod methods;
 pub mod recovery;
 mod reverse_mapping;
@@ -60,6 +62,12 @@ pub use ffi_bridge::{
     last_error_subsystem, set_last_error, set_last_error_with_context, take_last_error,
     GoudFFIResult,
 };
+
+pub use diagnostic::{
+    init_diagnostic_from_env, is_diagnostic_enabled, last_error_backtrace, set_diagnostic_enabled,
+};
+
+pub use logging::init_logger;
 
 pub use types::GoudError;
 
@@ -106,5 +114,7 @@ mod tests {
     mod traits;
 
     mod context_propagation;
+    mod diagnostic_tests;
+    mod logging_tests;
     mod recovery_tests;
 }

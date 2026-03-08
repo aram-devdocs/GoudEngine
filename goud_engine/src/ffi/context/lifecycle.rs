@@ -106,7 +106,13 @@ pub extern "C" fn goud_context_is_valid(context_id: GoudContextId) -> bool {
 
     let registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return false,
+        Err(_) => {
+            use crate::core::error::set_last_error;
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return false;
+        }
     };
 
     registry.is_valid(context_id)

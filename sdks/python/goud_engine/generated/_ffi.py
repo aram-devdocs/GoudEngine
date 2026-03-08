@@ -636,6 +636,14 @@ def _setup():
     _lib.goud_error_recovery_hint.argtypes = [ctypes.c_int32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
     _lib.goud_error_recovery_hint.restype = ctypes.c_int32
 
+    # diagnostic
+    _lib.goud_diagnostic_set_enabled.argtypes = [ctypes.c_bool]
+    _lib.goud_diagnostic_set_enabled.restype = None
+    _lib.goud_diagnostic_is_enabled.argtypes = []
+    _lib.goud_diagnostic_is_enabled.restype = ctypes.c_bool
+    _lib.goud_diagnostic_last_backtrace.argtypes = [ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_diagnostic_last_backtrace.restype = ctypes.c_int32
+
     # physics2d
     try:
         _lib.goud_physics_create.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float]

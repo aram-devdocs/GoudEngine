@@ -25,7 +25,12 @@ macro_rules! with_context_mut_entity {
 
         let mut registry = match get_context_registry().lock() {
             Ok(r) => r,
-            Err(_) => return GOUD_INVALID_ENTITY_ID,
+            Err(_) => {
+                set_last_error(GoudError::InternalError(
+                    "Failed to lock context registry".to_string(),
+                ));
+                return GOUD_INVALID_ENTITY_ID;
+            }
         };
         let context = match registry.get_mut($context_id) {
             Some(ctx) => ctx,
@@ -122,7 +127,12 @@ pub unsafe extern "C" fn goud_entity_spawn_batch(
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return 0,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return 0;
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(guard) => guard,
@@ -248,7 +258,12 @@ pub unsafe extern "C" fn goud_entity_despawn_batch(
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return 0,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return 0;
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(guard) => guard,
@@ -312,7 +327,12 @@ pub extern "C" fn goud_entity_clone(context_id: GoudContextId, entity_id: u64) -
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return GOUD_INVALID_ENTITY_ID,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return GOUD_INVALID_ENTITY_ID;
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(guard) => guard,
@@ -372,7 +392,12 @@ pub extern "C" fn goud_entity_clone_recursive(context_id: GoudContextId, entity_
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return GOUD_INVALID_ENTITY_ID,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return GOUD_INVALID_ENTITY_ID;
+        }
     };
     let context = match registry.get_mut(context_id) {
         Some(guard) => guard,

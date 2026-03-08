@@ -6,6 +6,7 @@
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
+use crate::core::error::{set_last_error, GoudError};
 use crate::sdk::engine_config::EngineConfig;
 
 /// Opaque handle to an `EngineConfig` on the heap.
@@ -55,7 +56,12 @@ pub unsafe extern "C" fn goud_engine_config_set_title(
     } else {
         match CStr::from_ptr(title).to_str() {
             Ok(s) => s,
-            Err(_) => return false,
+            Err(_) => {
+                set_last_error(GoudError::InvalidState(
+                    "title is not valid UTF-8".to_string(),
+                ));
+                return false;
+            }
         }
     };
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.
