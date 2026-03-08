@@ -116,6 +116,14 @@ impl PhysicsProvider3D for NullPhysicsProvider3D {
         Ok(())
     }
 
+    fn body_gravity_scale(&self, _handle: BodyHandle) -> GoudResult<f32> {
+        Ok(1.0)
+    }
+
+    fn set_body_gravity_scale(&mut self, _handle: BodyHandle, _scale: f32) -> GoudResult<()> {
+        Ok(())
+    }
+
     fn create_collider(
         &mut self,
         _body: BodyHandle,
@@ -125,6 +133,26 @@ impl PhysicsProvider3D for NullPhysicsProvider3D {
     }
 
     fn destroy_collider(&mut self, _handle: ColliderHandle) {}
+
+    fn collider_friction(&self, _handle: ColliderHandle) -> GoudResult<f32> {
+        Ok(0.5)
+    }
+
+    fn set_collider_friction(&mut self, _handle: ColliderHandle, _friction: f32) -> GoudResult<()> {
+        Ok(())
+    }
+
+    fn collider_restitution(&self, _handle: ColliderHandle) -> GoudResult<f32> {
+        Ok(0.0)
+    }
+
+    fn set_collider_restitution(
+        &mut self,
+        _handle: ColliderHandle,
+        _restitution: f32,
+    ) -> GoudResult<()> {
+        Ok(())
+    }
 
     fn raycast(&self, _origin: [f32; 3], _dir: [f32; 3], _max_dist: f32) -> Option<RaycastHit3D> {
         None

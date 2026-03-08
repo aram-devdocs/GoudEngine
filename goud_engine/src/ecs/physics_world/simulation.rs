@@ -88,6 +88,12 @@ impl PhysicsWorld {
         self.sleep_time_threshold
     }
 
+    /// Returns the maximum number of physics steps allowed per frame.
+    #[inline]
+    pub fn max_steps_per_frame(&self) -> u32 {
+        self.max_steps_per_frame
+    }
+
     // =========================================================================
     // Mutators
     // =========================================================================
@@ -194,6 +200,12 @@ impl PhysicsWorld {
 
         // Accumulate time
         self.time_accumulator += scaled_delta;
+
+        // Clamp accumulator to prevent spiral of death: if the frame was very
+        // slow, limit the number of catch-up steps to max_steps_per_frame.
+        self.time_accumulator = self
+            .time_accumulator
+            .min(self.timestep * self.max_steps_per_frame as f32);
 
         // Calculate number of steps to execute
         (self.time_accumulator / self.timestep) as u32

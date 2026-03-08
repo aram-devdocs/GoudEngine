@@ -20,10 +20,13 @@
 //! ```
 
 use std::collections::HashMap;
+use std::time::Instant;
 
 use crate::core::providers::physics::PhysicsProvider;
 use crate::core::providers::types::BodyHandle;
 use crate::ecs::entity::Entity;
+use crate::ecs::physics_world::interpolation::PhysicsInterpolation;
+use crate::ecs::physics_world::PhysicsWorld;
 use crate::ecs::query::Access;
 use crate::ecs::system::System;
 use crate::ecs::World;
@@ -58,12 +61,16 @@ pub struct PhysicsHandleMap2D {
 /// directly and register the entity-to-handle mapping in `PhysicsHandleMap2D`.
 pub struct PhysicsStepSystem2D {
     provider: Box<dyn PhysicsProvider>,
+    last_step: Option<Instant>,
 }
 
 impl PhysicsStepSystem2D {
     /// Creates a new 2D physics step system with the given provider.
     pub fn new(provider: Box<dyn PhysicsProvider>) -> Self {
-        Self { provider }
+        Self {
+            provider,
+            last_step: None,
+        }
     }
 
     /// Returns a reference to the underlying physics provider.
@@ -90,11 +97,35 @@ impl System for PhysicsStepSystem2D {
     }
 
     fn run(&mut self, world: &mut World) {
-        // Step the physics simulation at a fixed 60 Hz timestep.
-        const FIXED_DT: f32 = 1.0 / 60.0;
-        if let Err(e) = self.provider.step(FIXED_DT) {
-            log::error!("PhysicsStepSystem2D: step failed: {e}");
-            return;
+        // Compute frame delta from wall clock.
+        let now = Instant::now();
+        let delta = match self.last_step {
+            Some(prev) => now.duration_since(prev).as_secs_f32(),
+            None => 1.0 / 60.0, // Assume 60 FPS on first frame
+        };
+        self.last_step = Some(now);
+
+        // Use PhysicsWorld accumulator if present, otherwise fall back to a
+        // single step at 1/60.
+        if let Some(physics_world) = world.get_resource_mut::<PhysicsWorld>() {
+            physics_world.advance(delta);
+            let timestep = physics_world.timestep();
+            while physics_world.should_step() {
+                physics_world.step();
+                if let Err(e) = self.provider.step(timestep) {
+                    log::error!("PhysicsStepSystem2D: step failed: {e}");
+                    return;
+                }
+            }
+            let alpha = physics_world.interpolation_alpha();
+            world.insert_resource(PhysicsInterpolation { alpha });
+        } else {
+            // Fallback: single step at default 60 Hz
+            const FIXED_DT: f32 = 1.0 / 60.0;
+            if let Err(e) = self.provider.step(FIXED_DT) {
+                log::error!("PhysicsStepSystem2D: step failed: {e}");
+                return;
+            }
         }
 
         // Read back positions from the physics provider into Transform2D.
@@ -185,5 +216,34 @@ mod tests {
         let provider = NullPhysicsProvider::new();
         let system = PhysicsStepSystem2D::new(Box::new(provider));
         assert!(system.component_access().is_empty());
+    }
+
+    #[test]
+    fn test_system_run_with_physics_world_produces_interpolation() {
+        let provider = NullPhysicsProvider::new();
+        let mut system = PhysicsStepSystem2D::new(Box::new(provider));
+        let mut world = World::new();
+        world.insert_resource(PhysicsHandleMap2D::default());
+        world.insert_resource(PhysicsWorld::new());
+
+        system.run(&mut world);
+
+        // After running with a PhysicsWorld, a PhysicsInterpolation resource
+        // should be inserted.
+        assert!(world.contains_resource::<PhysicsInterpolation>());
+    }
+
+    #[test]
+    fn test_system_fallback_without_physics_world() {
+        let provider = NullPhysicsProvider::new();
+        let mut system = PhysicsStepSystem2D::new(Box::new(provider));
+        let mut world = World::new();
+        world.insert_resource(PhysicsHandleMap2D::default());
+
+        // No PhysicsWorld -- should still run without panic, using fallback.
+        system.run(&mut world);
+
+        // No PhysicsInterpolation since we used fallback path.
+        assert!(!world.contains_resource::<PhysicsInterpolation>());
     }
 }
