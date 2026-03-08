@@ -3,8 +3,8 @@
 use crate::assets::loaders::BitmapFontAsset;
 use crate::assets::{loaders::FontAsset, AssetHandle};
 use crate::core::math::Color;
-use crate::ecs::Component;
 use crate::core::types::TextAlignment;
+use crate::ecs::Component;
 
 // =============================================================================
 // Text Component
