@@ -41,7 +41,7 @@ fn test_vec2_apply_delta_reconstructs() {
     let target = Vec2::new(5.0, 2.0);
 
     let delta = target.delta_from(&baseline).unwrap();
-    let reconstructed = baseline.apply_delta(&delta);
+    let reconstructed = baseline.apply_delta(&delta).unwrap();
 
     assert_eq!(reconstructed, target);
 }
@@ -84,7 +84,7 @@ fn test_vec3_apply_delta_reconstructs() {
     let target = Vec3::new(1.0, 5.0, 3.0);
 
     let delta = target.delta_from(&baseline).unwrap();
-    let reconstructed = baseline.apply_delta(&delta);
+    let reconstructed = baseline.apply_delta(&delta).unwrap();
 
     assert_eq!(reconstructed, target);
 }
@@ -127,7 +127,7 @@ fn test_vec4_apply_delta_reconstructs() {
     let target = Vec4::new(1.0, 2.0, 9.0, 4.0);
 
     let delta = target.delta_from(&baseline).unwrap();
-    let reconstructed = baseline.apply_delta(&delta);
+    let reconstructed = baseline.apply_delta(&delta).unwrap();
 
     assert_eq!(reconstructed, target);
 }
@@ -170,7 +170,7 @@ fn test_color_apply_delta_reconstructs() {
     let target = Color::rgba(0.1, 0.9, 0.3, 1.0);
 
     let delta = target.delta_from(&baseline).unwrap();
-    let reconstructed = baseline.apply_delta(&delta);
+    let reconstructed = baseline.apply_delta(&delta).unwrap();
 
     assert_eq!(reconstructed, target);
 }
@@ -213,7 +213,7 @@ fn test_rect_apply_delta_reconstructs() {
     let target = Rect::new(5.0, 0.0, 100.0, 75.0);
 
     let delta = target.delta_from(&baseline).unwrap();
-    let reconstructed = baseline.apply_delta(&delta);
+    let reconstructed = baseline.apply_delta(&delta).unwrap();
 
     assert_eq!(reconstructed, target);
 }

@@ -13,5 +13,5 @@ pub mod message;
 mod tests;
 
 pub use binary::{decode, encode};
-pub use delta::{f32_changed, read_f32, DeltaEncode, DeltaPayload};
+pub use delta::{DeltaEncode, DeltaPayload};
 pub use message::{MessageKind, NetworkMessage};

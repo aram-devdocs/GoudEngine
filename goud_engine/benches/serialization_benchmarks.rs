@@ -359,37 +359,37 @@ fn bench_delta_decode(c: &mut Criterion) {
     let (base, target) = delta_pair_vec2();
     let delta = target.delta_from(&base).unwrap();
     group.bench_function("vec2", |b| {
-        b.iter(|| black_box(&base).apply_delta(black_box(&delta)));
+        b.iter(|| black_box(&base).apply_delta(black_box(&delta)).unwrap());
     });
 
     let (base, target) = delta_pair_vec3();
     let delta = target.delta_from(&base).unwrap();
     group.bench_function("vec3", |b| {
-        b.iter(|| black_box(&base).apply_delta(black_box(&delta)));
+        b.iter(|| black_box(&base).apply_delta(black_box(&delta)).unwrap());
     });
 
     let (base, target) = delta_pair_vec4();
     let delta = target.delta_from(&base).unwrap();
     group.bench_function("vec4", |b| {
-        b.iter(|| black_box(&base).apply_delta(black_box(&delta)));
+        b.iter(|| black_box(&base).apply_delta(black_box(&delta)).unwrap());
     });
 
     let (base, target) = delta_pair_color();
     let delta = target.delta_from(&base).unwrap();
     group.bench_function("color", |b| {
-        b.iter(|| black_box(&base).apply_delta(black_box(&delta)));
+        b.iter(|| black_box(&base).apply_delta(black_box(&delta)).unwrap());
     });
 
     let (base, target) = delta_pair_rect();
     let delta = target.delta_from(&base).unwrap();
     group.bench_function("rect", |b| {
-        b.iter(|| black_box(&base).apply_delta(black_box(&delta)));
+        b.iter(|| black_box(&base).apply_delta(black_box(&delta)).unwrap());
     });
 
     let (base, target) = delta_pair_transform2d();
     let delta = target.delta_from(&base).unwrap();
     group.bench_function("transform2d", |b| {
-        b.iter(|| black_box(&base).apply_delta(black_box(&delta)));
+        b.iter(|| black_box(&base).apply_delta(black_box(&delta)).unwrap());
     });
 
     group.finish();

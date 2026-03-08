@@ -22,6 +22,10 @@ pub enum MessageKind {
 /// The envelope carries metadata (kind, sequence number) alongside the raw
 /// payload bytes. Use [`NetworkMessage::encode`] and [`NetworkMessage::decode`]
 /// for wire-format conversion.
+///
+/// **Known limitation**: This envelope does not include entity or component type routing.
+/// Consumers must provide out-of-band framing to identify what the payload applies to.
+/// A `component_type_id` or entity field may be added in a future iteration.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct NetworkMessage {
     /// Whether this message is a full snapshot or a delta update.

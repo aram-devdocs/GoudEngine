@@ -4,6 +4,7 @@
 //! `Transform2D` is an ECS component. The `DeltaEncode` trait and helpers are
 //! imported from the core serialization module.
 
+use crate::core::error::GoudError;
 use crate::core::serialization::delta::{f32_changed, read_f32, DeltaEncode, DeltaPayload};
 
 use super::Transform2D;
@@ -43,37 +44,36 @@ impl DeltaEncode for Transform2D {
         }
     }
 
-    fn apply_delta(&self, delta: &DeltaPayload<u8>) -> Self {
+    fn apply_delta(&self, delta: &DeltaPayload<u8>) -> Result<Self, GoudError> {
         let mut result = *self;
         let mut offset = 0;
 
+        let read = |data: &[u8], off: &mut usize, field: &str, bit: u8| -> Result<f32, GoudError> {
+            read_f32(data, off).ok_or_else(|| {
+                GoudError::InternalError(format!(
+                    "truncated delta payload for Transform2D: missing field '{}' at bit {}",
+                    field, bit,
+                ))
+            })
+        };
+
         if delta.mask & (1 << 0) != 0 {
-            if let Some(v) = read_f32(&delta.data, &mut offset) {
-                result.position.x = v;
-            }
+            result.position.x = read(&delta.data, &mut offset, "position.x", 0)?;
         }
         if delta.mask & (1 << 1) != 0 {
-            if let Some(v) = read_f32(&delta.data, &mut offset) {
-                result.position.y = v;
-            }
+            result.position.y = read(&delta.data, &mut offset, "position.y", 1)?;
         }
         if delta.mask & (1 << 2) != 0 {
-            if let Some(v) = read_f32(&delta.data, &mut offset) {
-                result.rotation = v;
-            }
+            result.rotation = read(&delta.data, &mut offset, "rotation", 2)?;
         }
         if delta.mask & (1 << 3) != 0 {
-            if let Some(v) = read_f32(&delta.data, &mut offset) {
-                result.scale.x = v;
-            }
+            result.scale.x = read(&delta.data, &mut offset, "scale.x", 3)?;
         }
         if delta.mask & (1 << 4) != 0 {
-            if let Some(v) = read_f32(&delta.data, &mut offset) {
-                result.scale.y = v;
-            }
+            result.scale.y = read(&delta.data, &mut offset, "scale.y", 4)?;
         }
 
-        result
+        Ok(result)
     }
 }
 
@@ -86,9 +86,9 @@ mod tests {
 
     use super::*;
 
-    // =============================================================================
+    // =========================================================================
     // Binary serialization tests
-    // =============================================================================
+    // =========================================================================
 
     #[test]
     fn test_binary_roundtrip_transform2d() {
@@ -100,9 +100,9 @@ mod tests {
         assert_eq!(original, decoded);
     }
 
-    // =============================================================================
+    // =========================================================================
     // Delta encoding tests
-    // =============================================================================
+    // =========================================================================
 
     #[test]
     fn test_transform2d_no_changes_returns_none() {
@@ -149,16 +149,28 @@ mod tests {
         let target = Transform2D::new(Vec2::new(1.0, 2.0), 1.5, Vec2::new(2.0, 1.0));
 
         let delta = target.delta_from(&baseline).unwrap();
-        let reconstructed = baseline.apply_delta(&delta);
+        let reconstructed = baseline.apply_delta(&delta).unwrap();
 
         assert!((reconstructed.rotation - target.rotation).abs() < f32::EPSILON);
         assert_eq!(reconstructed.position, target.position);
         assert_eq!(reconstructed.scale, target.scale);
     }
 
-    // =============================================================================
+    #[test]
+    fn test_transform2d_apply_delta_truncated_payload_returns_error() {
+        let baseline = Transform2D::new(Vec2::zero(), 0.0, Vec2::one());
+        let delta = DeltaPayload {
+            mask: 0b00011,             // claims position.x and position.y changed
+            data: vec![0, 0, 128, 63], // only 4 bytes (one f32), not enough for two
+        };
+
+        let result = baseline.apply_delta(&delta);
+        assert!(result.is_err());
+    }
+
+    // =========================================================================
     // Property-based tests
-    // =============================================================================
+    // =========================================================================
 
     const RANGE: std::ops::Range<f32> = -1e6_f32..1e6_f32;
 
@@ -194,7 +206,7 @@ mod tests {
             target in arb_transform2d(),
         ) {
             if let Some(delta) = target.delta_from(&baseline) {
-                let restored = baseline.apply_delta(&delta);
+                let restored = baseline.apply_delta(&delta).unwrap();
                 prop_assert!(approx_eq(restored.position.x, target.position.x));
                 prop_assert!(approx_eq(restored.position.y, target.position.y));
                 prop_assert!(approx_eq(restored.rotation, target.rotation));

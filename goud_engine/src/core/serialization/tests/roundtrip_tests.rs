@@ -99,7 +99,7 @@ proptest! {
     #[test]
     fn delta_roundtrip_vec2(baseline in arb_vec2(), target in arb_vec2()) {
         if let Some(delta) = target.delta_from(&baseline) {
-            let restored = baseline.apply_delta(&delta);
+            let restored = baseline.apply_delta(&delta).unwrap();
             prop_assert!(approx_eq(restored.x, target.x), "x mismatch");
             prop_assert!(approx_eq(restored.y, target.y), "y mismatch");
         }
@@ -108,7 +108,7 @@ proptest! {
     #[test]
     fn delta_roundtrip_vec3(baseline in arb_vec3(), target in arb_vec3()) {
         if let Some(delta) = target.delta_from(&baseline) {
-            let restored = baseline.apply_delta(&delta);
+            let restored = baseline.apply_delta(&delta).unwrap();
             prop_assert!(approx_eq(restored.x, target.x), "x mismatch");
             prop_assert!(approx_eq(restored.y, target.y), "y mismatch");
             prop_assert!(approx_eq(restored.z, target.z), "z mismatch");
@@ -118,7 +118,7 @@ proptest! {
     #[test]
     fn delta_roundtrip_vec4(baseline in arb_vec4(), target in arb_vec4()) {
         if let Some(delta) = target.delta_from(&baseline) {
-            let restored = baseline.apply_delta(&delta);
+            let restored = baseline.apply_delta(&delta).unwrap();
             prop_assert!(approx_eq(restored.x, target.x), "x mismatch");
             prop_assert!(approx_eq(restored.y, target.y), "y mismatch");
             prop_assert!(approx_eq(restored.z, target.z), "z mismatch");
@@ -129,7 +129,7 @@ proptest! {
     #[test]
     fn delta_roundtrip_color(baseline in arb_color(), target in arb_color()) {
         if let Some(delta) = target.delta_from(&baseline) {
-            let restored = baseline.apply_delta(&delta);
+            let restored = baseline.apply_delta(&delta).unwrap();
             prop_assert!(approx_eq(restored.r, target.r), "r mismatch");
             prop_assert!(approx_eq(restored.g, target.g), "g mismatch");
             prop_assert!(approx_eq(restored.b, target.b), "b mismatch");
@@ -140,7 +140,7 @@ proptest! {
     #[test]
     fn delta_roundtrip_rect(baseline in arb_rect(), target in arb_rect()) {
         if let Some(delta) = target.delta_from(&baseline) {
-            let restored = baseline.apply_delta(&delta);
+            let restored = baseline.apply_delta(&delta).unwrap();
             prop_assert!(approx_eq(restored.x, target.x), "x mismatch");
             prop_assert!(approx_eq(restored.y, target.y), "y mismatch");
             prop_assert!(approx_eq(restored.width, target.width), "width mismatch");
@@ -192,8 +192,9 @@ proptest! {
         if let Some(delta) = target.delta_from(&baseline) {
             let delta_bytes = binary::encode(&delta).unwrap();
             let full_bytes = binary::encode(&target).unwrap();
-            prop_assert!(delta_bytes.len() <= full_bytes.len() + 16,
-                "delta {} vs full {}", delta_bytes.len(), full_bytes.len());
+            prop_assert!(delta_bytes.len() <= full_bytes.len() + 12,
+                "delta {} vs full {} (overhead: 8-byte bincode len + 1 mask + ~3 data-len prefix)",
+                delta_bytes.len(), full_bytes.len());
         }
     }
 
