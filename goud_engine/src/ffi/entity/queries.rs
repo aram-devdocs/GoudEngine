@@ -29,7 +29,12 @@ macro_rules! with_context_bool {
 
         let registry = match get_context_registry().lock() {
             Ok(r) => r,
-            Err(_) => return false,
+            Err(_) => {
+                set_last_error(GoudError::InternalError(
+                    "Failed to lock context registry".to_string(),
+                ));
+                return false;
+            }
         };
         let context = match registry.get($context_id) {
             Some(ctx) => ctx,
@@ -96,7 +101,12 @@ pub extern "C" fn goud_entity_count(context_id: GoudContextId) -> u32 {
 
     let registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return 0,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return 0;
+        }
     };
     let context = match registry.get(context_id) {
         Some(ctx) => ctx,
@@ -171,7 +181,12 @@ pub unsafe extern "C" fn goud_entity_is_alive_batch(
 
     let registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return 0,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return 0;
+        }
     };
     let context = match registry.get(context_id) {
         Some(guard) => guard,

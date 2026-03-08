@@ -9,8 +9,12 @@
 
 #[cfg(feature = "rapier2d")]
 mod physics2d;
+#[cfg(feature = "rapier2d")]
+mod physics2d_material;
 #[cfg(feature = "rapier3d")]
 mod physics3d;
+#[cfg(feature = "rapier3d")]
+mod physics3d_material;
 
 // =============================================================================
 // Global Physics Provider Registries (2D)

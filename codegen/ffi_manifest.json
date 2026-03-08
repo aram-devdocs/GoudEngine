@@ -484,6 +484,29 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_diagnostic_is_enabled": {
+      "source_file": "ffi/debug.rs",
+      "params": [],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_diagnostic_last_backtrace": {
+      "source_file": "ffi/debug.rs",
+      "params": [
+        "buf: *mut u8",
+        "buf_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_diagnostic_set_enabled": {
+      "source_file": "ffi/debug.rs",
+      "params": [
+        "enabled: bool"
+      ],
+      "return_type": "()",
+      "is_unsafe": false
+    },
     "goud_engine_config_create": {
       "source_file": "ffi/engine_config.rs",
       "params": [],
@@ -912,7 +935,9 @@
         "hx: f32",
         "hy: f32",
         "hz: f32",
-        "radius: f32"
+        "radius: f32",
+        "friction: f32",
+        "restitution: f32"
       ],
       "return_type": "i64",
       "is_unsafe": false
@@ -924,7 +949,8 @@
         "body_type: u32",
         "x: f32",
         "y: f32",
-        "z: f32"
+        "z: f32",
+        "gravity_scale: f32"
       ],
       "return_type": "i64",
       "is_unsafe": false
@@ -972,6 +998,47 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_physics3d_get_body_gravity_scale": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_scale: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics3d_get_collider_friction": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_friction: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics3d_get_collider_restitution": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_restitution: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics3d_get_gravity": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "out_x: *mut f32",
+        "out_y: *mut f32",
+        "out_z: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_physics3d_get_position": {
       "source_file": "ffi/physics/physics3d.rs",
       "params": [
@@ -980,6 +1047,15 @@
         "out_x: *mut f32",
         "out_y: *mut f32",
         "out_z: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics3d_get_timestep": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "out_dt: *mut f32"
       ],
       "return_type": "i32",
       "is_unsafe": true
@@ -993,6 +1069,36 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_physics3d_set_body_gravity_scale": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "scale: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_set_collider_friction": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "friction: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_set_collider_restitution": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "restitution: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_physics3d_set_gravity": {
       "source_file": "ffi/physics/physics3d.rs",
       "params": [
@@ -1000,6 +1106,15 @@
         "x: f32",
         "y: f32",
         "z: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_set_timestep": {
+      "source_file": "ffi/physics/physics3d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "dt: f32"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -1033,7 +1148,9 @@
         "shape_type: u32",
         "width: f32",
         "height: f32",
-        "radius: f32"
+        "radius: f32",
+        "friction: f32",
+        "restitution: f32"
       ],
       "return_type": "i64",
       "is_unsafe": false
@@ -1044,7 +1161,8 @@
         "ctx: GoudContextId",
         "body_type: u32",
         "x: f32",
-        "y: f32"
+        "y: f32",
+        "gravity_scale: f32"
       ],
       "return_type": "i64",
       "is_unsafe": false
@@ -1089,6 +1207,46 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_physics_get_body_gravity_scale": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_scale: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics_get_collider_friction": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_friction: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics_get_collider_restitution": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "out_restitution: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics_get_gravity": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "out_x: *mut f32",
+        "out_y: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_physics_get_position": {
       "source_file": "ffi/physics/physics2d.rs",
       "params": [
@@ -1096,6 +1254,15 @@
         "handle: u64",
         "out_x: *mut f32",
         "out_y: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics_get_timestep": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "out_dt: *mut f32"
       ],
       "return_type": "i32",
       "is_unsafe": true
@@ -1135,12 +1302,51 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_physics_set_body_gravity_scale": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "scale: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_set_collider_friction": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "friction: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_set_collider_restitution": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64",
+        "restitution: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_physics_set_gravity": {
       "source_file": "ffi/physics/physics2d.rs",
       "params": [
         "ctx: GoudContextId",
         "x: f32",
         "y: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_set_timestep": {
+      "source_file": "ffi/physics/physics2d_material.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "dt: f32"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -2832,5 +3038,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 291
+  "total_count": 312
 }

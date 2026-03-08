@@ -1,6 +1,6 @@
 //! Texture operations sub-trait for `RenderBackend`.
 
-use crate::libs::error::GoudResult;
+use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::{
     TextureFilter, TextureFormat, TextureHandle, TextureWrap,
 };
@@ -71,4 +71,34 @@ pub trait TextureOps {
 
     /// Unbinds any texture from the specified texture unit.
     fn unbind_texture(&mut self, unit: u32);
+
+    /// Creates a GPU texture from block-compressed data (BC1/BC3/BC5/BC7).
+    ///
+    /// # Arguments
+    /// * `width` - Texture width in pixels (must be > 0)
+    /// * `height` - Texture height in pixels (must be > 0)
+    /// * `format` - Compressed pixel format (BC1, BC3, BC5, or BC7)
+    /// * `data` - Block-compressed texture data
+    /// * `mip_levels` - Number of mipmap levels in the data
+    ///
+    /// # Returns
+    /// A handle to the created texture, or an error if the backend
+    /// does not support compressed textures.
+    ///
+    /// # Default
+    /// Returns `GoudError::BackendNotSupported` -- backends that support
+    /// compressed textures should override this method.
+    fn create_compressed_texture(
+        &mut self,
+        width: u32,
+        height: u32,
+        format: TextureFormat,
+        data: &[u8],
+        mip_levels: u32,
+    ) -> GoudResult<TextureHandle> {
+        let _ = (width, height, format, data, mip_levels);
+        Err(GoudError::BackendNotSupported(
+            "Compressed textures not supported by this backend".to_string(),
+        ))
+    }
 }

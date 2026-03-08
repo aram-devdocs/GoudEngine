@@ -140,6 +140,12 @@ pub struct PhysicsWorld {
 
     /// Time a body must be below thresholds before sleeping (seconds).
     pub(super) sleep_time_threshold: f32,
+
+    /// Maximum number of physics steps allowed per frame.
+    /// Prevents the "spiral of death" where a slow frame causes many physics
+    /// steps, which makes the next frame even slower, and so on.
+    /// Default: 8 steps per frame.
+    pub(super) max_steps_per_frame: u32,
 }
 
 impl Default for PhysicsWorld {
@@ -189,6 +195,7 @@ impl PhysicsWorld {
             sleep_linear_threshold: 5.0,
             sleep_angular_threshold: 0.1,
             sleep_time_threshold: 0.5,
+            max_steps_per_frame: 8,
         }
     }
 
@@ -349,6 +356,34 @@ impl PhysicsWorld {
         self.sleep_linear_threshold = linear_threshold;
         self.sleep_angular_threshold = angular_threshold;
         self.sleep_time_threshold = time_threshold;
+        self
+    }
+
+    /// Sets the maximum number of physics steps allowed per frame.
+    ///
+    /// This prevents the "spiral of death" where a slow frame causes many
+    /// physics steps, making the next frame even slower, and so on.
+    ///
+    /// # Arguments
+    ///
+    /// * `max_steps` - Maximum steps per frame (must be >= 1)
+    ///
+    /// # Panics
+    ///
+    /// Panics if `max_steps` is 0.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goud_engine::ecs::physics_world::PhysicsWorld;
+    ///
+    /// let physics = PhysicsWorld::new()
+    ///     .with_max_steps_per_frame(4);  // Limit to 4 steps per frame
+    /// assert_eq!(physics.max_steps_per_frame(), 4);
+    /// ```
+    pub fn with_max_steps_per_frame(mut self, max_steps: u32) -> Self {
+        assert!(max_steps >= 1, "max_steps_per_frame must be at least 1");
+        self.max_steps_per_frame = max_steps;
         self
     }
 }

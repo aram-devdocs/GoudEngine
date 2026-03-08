@@ -90,6 +90,16 @@ pub struct GoudGame {
     pub(crate) immediate_state: Option<crate::sdk::rendering::ImmediateRenderState>,
 }
 
+/// Initializes the logger, diagnostic mode from environment, and optionally
+/// enables diagnostic mode based on the game configuration.
+fn init_engine_diagnostics(config: &GameConfig) {
+    crate::core::error::init_logger();
+    crate::core::error::init_diagnostic_from_env();
+    if config.diagnostic_mode {
+        crate::core::error::set_diagnostic_enabled(true);
+    }
+}
+
 impl GoudGame {
     /// Creates a new game instance with the given configuration.
     ///
@@ -97,6 +107,8 @@ impl GoudGame {
     /// non-graphical use. For a windowed game with rendering, use
     /// [`with_platform`](Self::with_platform) instead.
     pub fn new(config: GameConfig) -> GoudResult<Self> {
+        init_engine_diagnostics(&config);
+
         let window_size = (config.width, config.height);
         let mut debug_overlay = DebugOverlay::new(config.fps_update_interval);
         debug_overlay.set_enabled(config.show_fps_overlay);
@@ -140,6 +152,8 @@ impl GoudGame {
     /// Returns an error if GLFW initialization or window creation fails.
     #[cfg(feature = "native")]
     pub fn with_platform(config: GameConfig) -> GoudResult<Self> {
+        init_engine_diagnostics(&config);
+
         use crate::libs::platform::glfw_platform::GlfwPlatform;
         use crate::libs::platform::WindowConfig;
 
