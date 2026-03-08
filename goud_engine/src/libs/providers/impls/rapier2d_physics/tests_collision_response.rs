@@ -156,3 +156,74 @@ fn test_friction_effect() {
         vel_high[0].abs()
     );
 }
+
+#[test]
+fn test_dynamic_dynamic_collision_response() {
+    let mut provider = Rapier2DPhysicsProvider::new([0.0, 0.0]);
+
+    // Body A: moving right
+    let body_a = provider
+        .create_body(&BodyDesc {
+            position: [-5.0, 0.0],
+            body_type: 1,
+            gravity_scale: 0.0,
+            ..Default::default()
+        })
+        .unwrap();
+    provider
+        .create_collider(
+            body_a,
+            &ColliderDesc {
+                shape: 0,
+                radius: 1.0,
+                restitution: 1.0,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    provider.set_body_velocity(body_a, [10.0, 0.0]).unwrap();
+
+    // Body B: moving left
+    let body_b = provider
+        .create_body(&BodyDesc {
+            position: [5.0, 0.0],
+            body_type: 1,
+            gravity_scale: 0.0,
+            ..Default::default()
+        })
+        .unwrap();
+    provider
+        .create_collider(
+            body_b,
+            &ColliderDesc {
+                shape: 0,
+                radius: 1.0,
+                restitution: 1.0,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    provider.set_body_velocity(body_b, [-10.0, 0.0]).unwrap();
+
+    // Step 120 times at 1/60 second
+    for _ in 0..120 {
+        provider.step(1.0 / 60.0).unwrap();
+    }
+
+    let pos_a = provider.body_position(body_a).unwrap();
+    let pos_b = provider.body_position(body_b).unwrap();
+
+    // After collision, Body A should bounce back to the left
+    assert!(
+        pos_a[0] < 0.0,
+        "Body A should bounce back left: x={}",
+        pos_a[0]
+    );
+
+    // After collision, Body B should bounce back to the right
+    assert!(
+        pos_b[0] > 0.0,
+        "Body B should bounce back right: x={}",
+        pos_b[0]
+    );
+}
