@@ -3,6 +3,7 @@
 //! Provides FFI functions for reading and writing the sprite's texture handle,
 //! and a utility function for querying effective sprite size.
 
+use crate::core::error::{set_last_error, GoudError};
 use crate::core::types::FfiSprite;
 use crate::ffi::types::FfiVec2;
 
@@ -23,6 +24,9 @@ use crate::ffi::types::FfiVec2;
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_set_texture(sprite: *mut FfiSprite, handle: u64) {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     (*sprite).texture_handle = handle;

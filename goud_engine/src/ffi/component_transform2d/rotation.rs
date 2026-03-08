@@ -1,5 +1,6 @@
 //! Rotation-related FFI functions for Transform2D.
 
+use crate::core::error::{set_last_error, GoudError};
 use crate::core::math::Vec2;
 use crate::core::types::FfiTransform2D;
 use crate::ecs::components::Transform2D;
@@ -19,6 +20,9 @@ use crate::ecs::components::Transform2D;
 #[no_mangle]
 pub unsafe extern "C" fn goud_transform2d_rotate(transform: *mut FfiTransform2D, angle: f32) {
     if transform.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let t = &mut *transform;
@@ -43,6 +47,9 @@ pub unsafe extern "C" fn goud_transform2d_rotate_degrees(
     degrees: f32,
 ) {
     if transform.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let t = &mut *transform;
@@ -69,6 +76,9 @@ pub unsafe extern "C" fn goud_transform2d_set_rotation(
     rotation: f32,
 ) {
     if transform.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let t = &mut *transform;
@@ -93,6 +103,9 @@ pub unsafe extern "C" fn goud_transform2d_set_rotation_degrees(
     degrees: f32,
 ) {
     if transform.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let t = &mut *transform;
@@ -117,6 +130,9 @@ pub unsafe extern "C" fn goud_transform2d_set_rotation_degrees(
 #[no_mangle]
 pub unsafe extern "C" fn goud_transform2d_get_rotation(transform: *const FfiTransform2D) -> f32 {
     if transform.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return 0.0;
     }
     (*transform).rotation
@@ -140,6 +156,9 @@ pub unsafe extern "C" fn goud_transform2d_get_rotation_degrees(
     transform: *const FfiTransform2D,
 ) -> f32 {
     if transform.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return 0.0;
     }
     (*transform).rotation.to_degrees()
@@ -163,6 +182,9 @@ pub unsafe extern "C" fn goud_transform2d_look_at_target(
     target_y: f32,
 ) {
     if transform.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let t = &mut *transform;

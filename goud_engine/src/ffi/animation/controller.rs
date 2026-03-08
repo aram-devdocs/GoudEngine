@@ -59,11 +59,8 @@ pub extern "C" fn goud_animation_controller_create(
     0
 }
 
-/// Adds a named animation state backed by a clip with `clip_index` frames
-/// of zero-size (placeholder). SDKs should configure the clip separately.
-///
+/// Adds a named animation state backed by a clip with `clip_index` placeholder frames.
 /// # Safety
-///
 /// `state_name_ptr` must point to valid UTF-8 of `state_name_len` bytes.
 #[no_mangle]
 pub unsafe extern "C" fn goud_animation_controller_add_state(
@@ -117,11 +114,8 @@ pub unsafe extern "C" fn goud_animation_controller_add_state(
     0
 }
 
-/// Adds a transition from one state to another with a trigger name stored
-/// as a boolean condition parameter.
-///
+/// Adds a transition from one state to another with a boolean trigger condition.
 /// # Safety
-///
 /// All string pointers must be valid UTF-8 of the given lengths.
 #[no_mangle]
 pub unsafe extern "C" fn goud_animation_controller_add_transition(
@@ -190,9 +184,7 @@ pub unsafe extern "C" fn goud_animation_controller_add_transition(
 }
 
 /// Sets the current state of the animation controller.
-///
 /// # Safety
-///
 /// `state_ptr` must point to valid UTF-8 of `state_len` bytes.
 #[no_mangle]
 pub unsafe extern "C" fn goud_animation_controller_set_state(
@@ -239,13 +231,9 @@ pub unsafe extern "C" fn goud_animation_controller_set_state(
     0
 }
 
-/// Copies the current state name into `out_buf`. Returns the number of
-/// bytes written on success, or a negative error code.
-///
-/// If `buf_len` is too small the name is truncated.
-///
+/// Copies the current state name into `out_buf` (truncated if `buf_len` is too small).
+/// Returns bytes written on success, or a negative error code.
 /// # Safety
-///
 /// `out_buf` must point to writable memory of at least `buf_len` bytes.
 #[no_mangle]
 pub unsafe extern "C" fn goud_animation_controller_get_state(
@@ -296,10 +284,8 @@ pub unsafe extern "C" fn goud_animation_controller_get_state(
     copy_len as i32
 }
 
-/// Advances the animation controller for a single entity by `dt` seconds.
-///
-/// Runs the same three-phase logic as the global system but scoped to one
-/// entity, so only the specified entity is affected.
+/// Advances the animation controller for a single entity by `dt` seconds,
+/// running the same three-phase logic as the global system.
 #[no_mangle]
 pub extern "C" fn goud_animation_controller_update(
     context_id: GoudContextId,

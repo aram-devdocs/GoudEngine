@@ -31,6 +31,9 @@ pub extern "C" fn goud_engine_config_create() -> EngineConfigHandle {
 #[no_mangle]
 pub unsafe extern "C" fn goud_engine_config_destroy(handle: EngineConfigHandle) {
     if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     // SAFETY: Caller guarantees handle is valid and not previously freed.
@@ -48,6 +51,9 @@ pub unsafe extern "C" fn goud_engine_config_set_title(
     title: *const c_char,
 ) -> bool {
     if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     // SAFETY: Caller guarantees title is a valid C string or null.
@@ -81,6 +87,9 @@ pub unsafe extern "C" fn goud_engine_config_set_size(
     height: u32,
 ) -> bool {
     if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.
@@ -101,6 +110,9 @@ pub unsafe extern "C" fn goud_engine_config_set_vsync(
     enabled: bool,
 ) -> bool {
     if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.
@@ -119,6 +131,9 @@ pub unsafe extern "C" fn goud_engine_config_set_fullscreen(
     enabled: bool,
 ) -> bool {
     if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.
@@ -137,6 +152,9 @@ pub unsafe extern "C" fn goud_engine_config_set_target_fps(
     fps: u32,
 ) -> bool {
     if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.
@@ -155,6 +173,9 @@ pub unsafe extern "C" fn goud_engine_config_set_fps_overlay(
     enabled: bool,
 ) -> bool {
     if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.

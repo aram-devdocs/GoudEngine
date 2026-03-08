@@ -1,5 +1,6 @@
 //! Keyboard input FFI functions.
 
+use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 
 use super::codes::GoudKeyCode;
@@ -18,6 +19,7 @@ use super::helpers::{key_from_code, with_input};
 #[no_mangle]
 pub extern "C" fn goud_input_key_pressed(context_id: GoudContextId, key: GoudKeyCode) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
@@ -39,6 +41,7 @@ pub extern "C" fn goud_input_key_pressed(context_id: GoudContextId, key: GoudKey
 #[no_mangle]
 pub extern "C" fn goud_input_key_just_pressed(context_id: GoudContextId, key: GoudKeyCode) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
@@ -66,6 +69,7 @@ pub extern "C" fn goud_input_key_just_released(
     key: GoudKeyCode,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 

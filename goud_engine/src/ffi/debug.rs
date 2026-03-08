@@ -194,6 +194,10 @@ pub extern "C" fn goud_diagnostic_is_enabled() -> bool {
 ///   and returns the number of bytes written (excluding null terminator).
 /// - Returns 0 if no backtrace is available.
 ///
+/// **Note:** Backtraces are stored in thread-local storage. This function
+/// must be called from the same thread that triggered the error; calling
+/// from a different thread will always return 0 (no backtrace).
+///
 /// # Arguments
 ///
 /// * `buf` - Pointer to a caller-owned buffer, or null to query the required size.
@@ -211,7 +215,9 @@ pub extern "C" fn goud_diagnostic_is_enabled() -> bool {
 pub unsafe extern "C" fn goud_diagnostic_last_backtrace(buf: *mut u8, buf_len: usize) -> i32 {
     if buf.is_null() || buf_len == 0 {
         return match last_error_backtrace() {
-            Some(bt) => -(bt.len() as i32 + 1),
+            Some(bt) => i32::try_from(bt.len().saturating_add(1))
+                .map(|n| -n)
+                .unwrap_or(i32::MIN),
             None => 0,
         };
     }
