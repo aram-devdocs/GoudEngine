@@ -73,12 +73,15 @@ mod asset;
 #[cfg(feature = "native")]
 mod audio_manager;
 pub mod dependency;
+pub mod fallback;
 mod handle;
 #[cfg(feature = "native")]
 mod hot_reload;
 mod loader;
+pub mod packager;
 mod server;
 mod storage;
+pub mod vfs;
 #[cfg(feature = "web")]
 pub mod web_fetch;
 
@@ -97,6 +100,9 @@ pub use handle::{
 // Re-export asset loader types
 pub use loader::{AssetLoadError, AssetLoader, ErasedAssetLoader, LoadContext, TypedAssetLoader};
 
+// Re-export fallback registry
+pub use fallback::FallbackRegistry;
+
 // Re-export asset server
 pub use server::AssetServer;
 
@@ -110,6 +116,9 @@ pub use hot_reload::{AssetChangeEvent, HotReloadConfig, HotReloadWatcher};
 // Re-export audio manager
 #[cfg(feature = "native")]
 pub use audio_manager::AudioManager;
+
+// Re-export virtual filesystem types
+pub use vfs::{ArchiveFs, OsFs, VirtualFs};
 
 // Re-export web fetch
 #[cfg(feature = "web")]

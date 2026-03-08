@@ -1,6 +1,8 @@
 //! Core `AssetServer` type definition and construction helpers.
 
 use crate::assets::dependency::DependencyGraph;
+use crate::assets::fallback::FallbackRegistry;
+use crate::assets::vfs::{OsFs, VirtualFs};
 #[cfg(feature = "native")]
 use crate::assets::AssetLoadError;
 use crate::assets::{AssetId, AssetStorage, ErasedAssetLoader};
@@ -66,6 +68,9 @@ pub struct AssetServer {
     /// Base directory for asset files (e.g., "assets/").
     pub(super) asset_root: PathBuf,
 
+    /// Virtual filesystem for reading asset bytes.
+    pub(super) vfs: Box<dyn VirtualFs>,
+
     /// Asset storage (cache).
     pub(super) storage: AssetStorage,
 
@@ -85,6 +90,13 @@ pub struct AssetServer {
     /// Receiver for background load results (native-only).
     #[cfg(feature = "native")]
     pub(super) load_receiver: std::sync::mpsc::Receiver<LoadResult>,
+
+    /// Queue of assets whose ref count reached zero, awaiting deferred removal.
+    /// Each entry is `(AssetId, index, generation)`.
+    pub(super) pending_unloads: Vec<(AssetId, u32, u32)>,
+
+    /// Registry of fallback assets substituted on load failure.
+    pub(super) fallbacks: FallbackRegistry,
 }
 
 impl AssetServer {
@@ -120,8 +132,10 @@ impl AssetServer {
         #[cfg(all(feature = "native", feature = "web"))]
         let (_load_sender, load_receiver) = std::sync::mpsc::channel::<LoadResult>();
 
+        let root_path = root.as_ref().to_path_buf();
         Self {
-            asset_root: root.as_ref().to_path_buf(),
+            vfs: Box::new(OsFs::new(root_path.clone())),
+            asset_root: root_path,
             storage: AssetStorage::new(),
             loaders: HashMap::new(),
             loader_by_type: HashMap::new(),
@@ -130,7 +144,52 @@ impl AssetServer {
             load_sender,
             #[cfg(feature = "native")]
             load_receiver,
+            pending_unloads: Vec::new(),
+            fallbacks: FallbackRegistry::with_defaults(),
         }
+    }
+
+    /// Creates an asset server that reads from an in-memory archive.
+    ///
+    /// Use this for release builds where assets have been packaged into
+    /// a single archive file via [`packager::package_directory`](crate::assets::packager::package_directory).
+    ///
+    /// # Arguments
+    ///
+    /// * `archive_data` - Raw bytes of a GOUD archive file
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use goud_engine::assets::AssetServer;
+    ///
+    /// let archive_bytes = std::fs::read("game.goud").unwrap();
+    /// let server = AssetServer::with_archive(archive_bytes).unwrap();
+    /// ```
+    pub fn with_archive(archive_data: Vec<u8>) -> Result<Self, crate::assets::AssetLoadError> {
+        use crate::assets::vfs::ArchiveFs;
+
+        let archive_fs = ArchiveFs::from_archive(archive_data)?;
+
+        #[cfg(all(feature = "native", not(feature = "web")))]
+        let (load_sender, load_receiver) = std::sync::mpsc::channel();
+        #[cfg(all(feature = "native", feature = "web"))]
+        let (_load_sender, load_receiver) = std::sync::mpsc::channel::<LoadResult>();
+
+        Ok(Self {
+            vfs: Box::new(archive_fs),
+            asset_root: PathBuf::new(),
+            storage: AssetStorage::new(),
+            loaders: HashMap::new(),
+            loader_by_type: HashMap::new(),
+            dependency_graph: DependencyGraph::new(),
+            #[cfg(all(feature = "native", not(feature = "web")))]
+            load_sender,
+            #[cfg(feature = "native")]
+            load_receiver,
+            pending_unloads: Vec::new(),
+            fallbacks: FallbackRegistry::with_defaults(),
+        })
     }
 
     /// Returns the asset root directory.
@@ -150,11 +209,53 @@ impl AssetServer {
 
     /// Sets the asset root directory.
     ///
+    /// Also updates the default VFS to use the new root. If a custom VFS
+    /// was set via [`set_vfs`](Self::set_vfs), it will be replaced with
+    /// an [`OsFs`] rooted at the new path.
+    ///
     /// # Arguments
     ///
     /// * `root` - New base directory for asset files
     pub fn set_asset_root(&mut self, root: impl AsRef<Path>) {
-        self.asset_root = root.as_ref().to_path_buf();
+        let root_path = root.as_ref().to_path_buf();
+        self.vfs = Box::new(OsFs::new(root_path.clone()));
+        self.asset_root = root_path;
+    }
+
+    /// Replaces the virtual filesystem used for asset I/O.
+    ///
+    /// This allows the asset server to read from archives, embedded
+    /// resources, or custom I/O layers instead of the OS filesystem.
+    ///
+    /// # Arguments
+    ///
+    /// * `vfs` - The new virtual filesystem implementation
+    pub fn set_vfs(&mut self, vfs: Box<dyn VirtualFs>) {
+        self.vfs = vfs;
+    }
+
+    /// Returns a reference to the current virtual filesystem.
+    pub fn vfs(&self) -> &dyn VirtualFs {
+        self.vfs.as_ref()
+    }
+
+    /// Registers a custom fallback asset for type `A`.
+    ///
+    /// When loading an asset of type `A` fails, the fallback will be cloned
+    /// into the entry so the handle points to usable data. The entry is
+    /// marked with `is_fallback = true` so callers can distinguish real
+    /// assets from substituted defaults.
+    ///
+    /// # Arguments
+    ///
+    /// * `asset` - The default asset value to use as a fallback
+    pub fn register_fallback<A: crate::assets::Asset + Clone>(&mut self, asset: A) {
+        self.fallbacks.register(asset);
+    }
+
+    /// Returns a reference to the fallback registry.
+    pub fn fallbacks(&self) -> &FallbackRegistry {
+        &self.fallbacks
     }
 }
 

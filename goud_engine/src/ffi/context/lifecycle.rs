@@ -4,7 +4,7 @@
 //! and validity checking.
 
 use crate::context_registry::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
-use crate::core::error::GoudError;
+use crate::core::error::{set_last_error, GoudError};
 
 /// Creates a new engine context.
 ///
@@ -22,8 +22,6 @@ use crate::core::error::GoudError;
 ///   create context
 #[no_mangle]
 pub extern "C" fn goud_context_create() -> GoudContextId {
-    use crate::core::error::set_last_error;
-
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
         Err(_) => {
@@ -61,8 +59,6 @@ pub extern "C" fn goud_context_create() -> GoudContextId {
 /// This function is thread-safe and can be called from any thread.
 #[no_mangle]
 pub extern "C" fn goud_context_destroy(context_id: GoudContextId) -> bool {
-    use crate::core::error::set_last_error;
-
     if context_id == GOUD_INVALID_CONTEXT_ID {
         set_last_error(GoudError::InvalidContext);
         return false;
@@ -104,12 +100,18 @@ pub extern "C" fn goud_context_destroy(context_id: GoudContextId) -> bool {
 #[no_mangle]
 pub extern "C" fn goud_context_is_valid(context_id: GoudContextId) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
     let registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return false,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return false;
+        }
     };
 
     registry.is_valid(context_id)

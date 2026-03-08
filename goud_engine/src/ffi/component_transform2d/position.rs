@@ -1,5 +1,6 @@
 //! Position-related FFI functions for Transform2D.
 
+use crate::core::error::{set_last_error, GoudError};
 use crate::core::math::Vec2;
 use crate::core::types::FfiTransform2D;
 use crate::ecs::components::Transform2D;
@@ -24,6 +25,9 @@ pub unsafe extern "C" fn goud_transform2d_translate(
     dy: f32,
 ) {
     if transform.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let t = &mut *transform;
@@ -52,6 +56,9 @@ pub unsafe extern "C" fn goud_transform2d_translate_local(
     dy: f32,
 ) {
     if transform.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let t = &mut *transform;
@@ -78,6 +85,9 @@ pub unsafe extern "C" fn goud_transform2d_set_position(
     y: f32,
 ) {
     if transform.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let t = &mut *transform;

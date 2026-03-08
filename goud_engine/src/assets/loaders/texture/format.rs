@@ -27,6 +27,8 @@ pub enum TextureFormat {
     Ico = 6,
     /// TIFF - Tagged Image File Format
     Tiff = 7,
+    /// DDS - DirectDraw Surface (compressed textures)
+    Dds = 8,
     /// Unknown or custom format
     Unknown = 255,
 }
@@ -43,6 +45,7 @@ impl TextureFormat {
             Self::WebP => "webp",
             Self::Ico => "ico",
             Self::Tiff => "tiff",
+            Self::Dds => "dds",
             Self::Unknown => "",
         }
     }
@@ -58,6 +61,7 @@ impl TextureFormat {
             Self::WebP => "WebP",
             Self::Ico => "ICO",
             Self::Tiff => "TIFF",
+            Self::Dds => "DDS",
             Self::Unknown => "Unknown",
         }
     }
@@ -73,6 +77,7 @@ impl TextureFormat {
             "webp" => Self::WebP,
             "ico" => Self::Ico,
             "tif" | "tiff" => Self::Tiff,
+            "dds" => Self::Dds,
             _ => Self::Unknown,
         }
     }
@@ -88,7 +93,7 @@ impl TextureFormat {
             Self::WebP => Some(ImageFormat::WebP),
             Self::Ico => Some(ImageFormat::Ico),
             Self::Tiff => Some(ImageFormat::Tiff),
-            Self::Unknown => None,
+            Self::Dds | Self::Unknown => None,
         }
     }
 }

@@ -13,6 +13,7 @@ use crate::core::providers::{Provider, ProviderLifecycle};
 pub struct NullPhysicsProvider3D {
     capabilities: PhysicsCapabilities3D,
     gravity: [f32; 3],
+    timestep: f32,
 }
 
 impl NullPhysicsProvider3D {
@@ -25,6 +26,7 @@ impl NullPhysicsProvider3D {
                 max_bodies: 0,
             },
             gravity: [0.0, 0.0, 0.0],
+            timestep: 1.0 / 60.0,
         }
     }
 }
@@ -78,6 +80,14 @@ impl PhysicsProvider3D for NullPhysicsProvider3D {
         self.gravity
     }
 
+    fn set_timestep(&mut self, dt: f32) {
+        self.timestep = dt;
+    }
+
+    fn timestep(&self) -> f32 {
+        self.timestep
+    }
+
     fn create_body(&mut self, _desc: &BodyDesc3D) -> GoudResult<BodyHandle> {
         Ok(BodyHandle(0))
     }
@@ -116,6 +126,14 @@ impl PhysicsProvider3D for NullPhysicsProvider3D {
         Ok(())
     }
 
+    fn body_gravity_scale(&self, _handle: BodyHandle) -> GoudResult<f32> {
+        Ok(1.0)
+    }
+
+    fn set_body_gravity_scale(&mut self, _handle: BodyHandle, _scale: f32) -> GoudResult<()> {
+        Ok(())
+    }
+
     fn create_collider(
         &mut self,
         _body: BodyHandle,
@@ -125,6 +143,26 @@ impl PhysicsProvider3D for NullPhysicsProvider3D {
     }
 
     fn destroy_collider(&mut self, _handle: ColliderHandle) {}
+
+    fn collider_friction(&self, _handle: ColliderHandle) -> GoudResult<f32> {
+        Ok(0.5)
+    }
+
+    fn set_collider_friction(&mut self, _handle: ColliderHandle, _friction: f32) -> GoudResult<()> {
+        Ok(())
+    }
+
+    fn collider_restitution(&self, _handle: ColliderHandle) -> GoudResult<f32> {
+        Ok(0.0)
+    }
+
+    fn set_collider_restitution(
+        &mut self,
+        _handle: ColliderHandle,
+        _restitution: f32,
+    ) -> GoudResult<()> {
+        Ok(())
+    }
 
     fn raycast(&self, _origin: [f32; 3], _dir: [f32; 3], _max_dist: f32) -> Option<RaycastHit3D> {
         None

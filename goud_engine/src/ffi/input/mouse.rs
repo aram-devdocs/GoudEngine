@@ -1,5 +1,6 @@
 //! Mouse input FFI functions (buttons, position, delta, scroll).
 
+use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 
 use super::codes::GoudMouseButton;
@@ -21,6 +22,7 @@ pub extern "C" fn goud_input_mouse_button_pressed(
     button: GoudMouseButton,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
@@ -46,6 +48,7 @@ pub extern "C" fn goud_input_mouse_button_just_pressed(
     button: GoudMouseButton,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
@@ -71,6 +74,7 @@ pub extern "C" fn goud_input_mouse_button_just_released(
     button: GoudMouseButton,
 ) -> bool {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return false;
     }
 
@@ -101,7 +105,14 @@ pub unsafe extern "C" fn goud_input_get_mouse_position(
     out_x: *mut f32,
     out_y: *mut f32,
 ) -> bool {
-    if context_id == GOUD_INVALID_CONTEXT_ID || out_x.is_null() || out_y.is_null() {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+    if out_x.is_null() || out_y.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
 
@@ -139,7 +150,14 @@ pub unsafe extern "C" fn goud_input_get_mouse_delta(
     out_dx: *mut f32,
     out_dy: *mut f32,
 ) -> bool {
-    if context_id == GOUD_INVALID_CONTEXT_ID || out_dx.is_null() || out_dy.is_null() {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+    if out_dx.is_null() || out_dy.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
 
@@ -177,7 +195,14 @@ pub unsafe extern "C" fn goud_input_get_scroll_delta(
     out_dx: *mut f32,
     out_dy: *mut f32,
 ) -> bool {
-    if context_id == GOUD_INVALID_CONTEXT_ID || out_dx.is_null() || out_dy.is_null() {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+    if out_dx.is_null() || out_dy.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
 

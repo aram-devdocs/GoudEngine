@@ -141,7 +141,7 @@ pub fn scene_from_json(json: &str) -> Result<SceneData, GoudError> {
 ///
 /// Internally serializes to JSON first (because component values are
 /// stored as [`serde_json::Value`] which does not support bincode
-/// directly), then encodes the JSON bytes with bincode for framing.
+/// directly), then encodes the JSON string with bincode for framing.
 /// This is still significantly more compact than pretty-printed JSON.
 ///
 /// # Errors
@@ -151,9 +151,7 @@ pub fn scene_to_binary(data: &SceneData) -> Result<Vec<u8>, GoudError> {
     let json = serde_json::to_string(data).map_err(|e| {
         GoudError::InternalError(format!("Failed to serialize scene to binary: {}", e))
     })?;
-    bincode::serialize(&json).map_err(|e| {
-        GoudError::InternalError(format!("Failed to serialize scene to binary: {}", e))
-    })
+    crate::core::serialization::binary::encode(&json)
 }
 
 /// Parses a binary blob (produced by [`scene_to_binary`]) back into a
@@ -164,9 +162,7 @@ pub fn scene_to_binary(data: &SceneData) -> Result<Vec<u8>, GoudError> {
 /// Returns [`GoudError::InternalError`] if the bytes are invalid or do not
 /// match the expected schema.
 pub fn scene_from_binary(bytes: &[u8]) -> Result<SceneData, GoudError> {
-    let json: String = bincode::deserialize(bytes).map_err(|e| {
-        GoudError::InternalError(format!("Failed to deserialize scene from binary: {}", e))
-    })?;
+    let json: String = crate::core::serialization::binary::decode(bytes)?;
     serde_json::from_str(&json).map_err(|e| {
         GoudError::InternalError(format!("Failed to deserialize scene from binary: {}", e))
     })

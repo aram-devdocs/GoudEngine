@@ -4,3 +4,4 @@ export { GoudGame, EngineConfig, Color, Vec2, Vec3, Key, MouseButton } from './n
 export type { IGoudGame, IEngineConfig, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from './types/engine.g.js';
 export type { Rect } from './types/math.g.js';
 export { GoudError, GoudContextError, GoudResourceError, GoudGraphicsError, GoudEntityError, GoudInputError, GoudSystemError, GoudProviderError, GoudInternalError, RecoveryClass } from './errors.g.js';
+export { DiagnosticMode } from './diagnostic.g.js';

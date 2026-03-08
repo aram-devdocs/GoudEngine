@@ -3,6 +3,7 @@
 //! Actions provide a semantic layer over raw input, allowing the same
 //! action to be triggered by multiple inputs.
 
+use crate::core::error::{set_last_error, GoudError};
 use crate::ecs::InputManager;
 use crate::ffi::context::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
 
@@ -37,28 +38,49 @@ pub unsafe extern "C" fn goud_input_map_action_key(
     use std::ffi::CStr;
 
     if context_id == GOUD_INVALID_CONTEXT_ID || action_name.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "Invalid context or null action_name".to_string(),
+        ));
         return false;
     }
 
     // SAFETY: caller guarantees action_name is a valid null-terminated C string.
     let name = match unsafe { CStr::from_ptr(action_name) }.to_str() {
         Ok(s) => s.to_string(),
-        Err(_) => return false,
+        Err(_) => {
+            set_last_error(GoudError::InvalidState(
+                "action_name is not valid UTF-8".to_string(),
+            ));
+            return false;
+        }
     };
 
     let mut registry = match get_context_registry().lock() {
         Ok(r) => r,
-        Err(_) => return false,
+        Err(_) => {
+            set_last_error(GoudError::InternalError(
+                "Failed to lock context registry".to_string(),
+            ));
+            return false;
+        }
     };
 
     let context = match registry.get_mut(context_id) {
         Some(c) => c,
-        None => return false,
+        None => {
+            set_last_error(GoudError::InvalidContext);
+            return false;
+        }
     };
 
     let input = match context.world_mut().resource_mut::<InputManager>() {
         Some(i) => i,
-        None => return false,
+        None => {
+            set_last_error(GoudError::InvalidState(
+                "InputManager resource not found".to_string(),
+            ));
+            return false;
+        }
     };
 
     input
@@ -91,13 +113,21 @@ pub unsafe extern "C" fn goud_input_action_pressed(
     use std::ffi::CStr;
 
     if context_id == GOUD_INVALID_CONTEXT_ID || action_name.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "Invalid context or null action_name".to_string(),
+        ));
         return false;
     }
 
     // SAFETY: caller guarantees action_name is a valid null-terminated C string.
     let name = match unsafe { CStr::from_ptr(action_name) }.to_str() {
         Ok(s) => s,
-        Err(_) => return false,
+        Err(_) => {
+            set_last_error(GoudError::InvalidState(
+                "action_name is not valid UTF-8".to_string(),
+            ));
+            return false;
+        }
     };
 
     with_input(context_id, |input| input.action_pressed(name)).unwrap_or(false)
@@ -125,13 +155,21 @@ pub unsafe extern "C" fn goud_input_action_just_pressed(
     use std::ffi::CStr;
 
     if context_id == GOUD_INVALID_CONTEXT_ID || action_name.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "Invalid context or null action_name".to_string(),
+        ));
         return false;
     }
 
     // SAFETY: caller guarantees action_name is a valid null-terminated C string.
     let name = match unsafe { CStr::from_ptr(action_name) }.to_str() {
         Ok(s) => s,
-        Err(_) => return false,
+        Err(_) => {
+            set_last_error(GoudError::InvalidState(
+                "action_name is not valid UTF-8".to_string(),
+            ));
+            return false;
+        }
     };
 
     with_input(context_id, |input| input.action_just_pressed(name)).unwrap_or(false)
@@ -159,13 +197,21 @@ pub unsafe extern "C" fn goud_input_action_just_released(
     use std::ffi::CStr;
 
     if context_id == GOUD_INVALID_CONTEXT_ID || action_name.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "Invalid context or null action_name".to_string(),
+        ));
         return false;
     }
 
     // SAFETY: caller guarantees action_name is a valid null-terminated C string.
     let name = match unsafe { CStr::from_ptr(action_name) }.to_str() {
         Ok(s) => s,
-        Err(_) => return false,
+        Err(_) => {
+            set_last_error(GoudError::InvalidState(
+                "action_name is not valid UTF-8".to_string(),
+            ));
+            return false;
+        }
     };
 
     with_input(context_id, |input| input.action_just_released(name)).unwrap_or(false)

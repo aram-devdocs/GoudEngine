@@ -1908,11 +1908,49 @@
     },
     "PhysicsWorld2D": {
       "kind": "handle",
-      "doc": "2D physics simulation world"
+      "doc": "2D physics simulation world",
+      "methods": [
+        {
+          "name": "setTimestep",
+          "doc": "Set the fixed physics timestep in seconds",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getTimestep",
+          "doc": "Get the current fixed physics timestep in seconds",
+          "params": [],
+          "returns": "f32"
+        }
+      ]
     },
     "PhysicsWorld3D": {
       "kind": "handle",
-      "doc": "3D physics simulation world"
+      "doc": "3D physics simulation world",
+      "methods": [
+        {
+          "name": "setTimestep",
+          "doc": "Set the fixed physics timestep in seconds",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getTimestep",
+          "doc": "Get the current fixed physics timestep in seconds",
+          "params": [],
+          "returns": "f32"
+        }
+      ]
     },
     "RigidBodyHandle": {
       "kind": "handle",
@@ -4793,6 +4831,10 @@
             {
               "name": "y",
               "type": "f32"
+            },
+            {
+              "name": "gravityScale",
+              "type": "f32"
             }
           ],
           "returns": "i64"
@@ -4819,6 +4861,14 @@
             },
             {
               "name": "radius",
+              "type": "f32"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            },
+            {
+              "name": "restitution",
               "type": "f32"
             }
           ],
@@ -4951,6 +5001,107 @@
             }
           ],
           "returns": "Vec2"
+        },
+        {
+          "name": "getGravity",
+          "doc": "Gets the current gravity vector",
+          "params": [],
+          "returns": "Vec2"
+        },
+        {
+          "name": "setBodyGravityScale",
+          "doc": "Sets the gravity scale for a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getBodyGravityScale",
+          "doc": "Gets the gravity scale for a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setColliderFriction",
+          "doc": "Sets the friction coefficient for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getColliderFriction",
+          "doc": "Gets the friction coefficient for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setColliderRestitution",
+          "doc": "Sets the restitution (bounciness) for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "restitution",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getColliderRestitution",
+          "doc": "Gets the restitution (bounciness) for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setTimestep",
+          "doc": "Set the fixed physics timestep in seconds",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getTimestep",
+          "doc": "Get the current fixed physics timestep in seconds",
+          "params": [],
+          "returns": "f32"
         }
       ]
     },
@@ -5036,6 +5187,10 @@
             {
               "name": "z",
               "type": "f32"
+            },
+            {
+              "name": "gravityScale",
+              "type": "f32"
             }
           ],
           "returns": "i64"
@@ -5066,6 +5221,14 @@
             },
             {
               "name": "radius",
+              "type": "f32"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            },
+            {
+              "name": "restitution",
               "type": "f32"
             }
           ],
@@ -5172,6 +5335,107 @@
             }
           ],
           "returns": "i32"
+        },
+        {
+          "name": "getGravity",
+          "doc": "Gets the current gravity vector",
+          "params": [],
+          "returns": "Vec3"
+        },
+        {
+          "name": "setBodyGravityScale",
+          "doc": "Sets the gravity scale for a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getBodyGravityScale",
+          "doc": "Gets the gravity scale for a rigid body",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setColliderFriction",
+          "doc": "Sets the friction coefficient for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getColliderFriction",
+          "doc": "Gets the friction coefficient for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setColliderRestitution",
+          "doc": "Sets the restitution (bounciness) for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            },
+            {
+              "name": "restitution",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getColliderRestitution",
+          "doc": "Gets the restitution (bounciness) for a collider",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "setTimestep",
+          "doc": "Set the fixed physics timestep in seconds",
+          "params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getTimestep",
+          "doc": "Get the current fixed physics timestep in seconds",
+          "params": [],
+          "returns": "f32"
         }
       ]
     },
@@ -5614,6 +5878,107 @@
           "returns": "string"
         }
       ]
+    },
+    "UiManager": {
+      "doc": "Immediate-mode UI manager for creating and managing UI node trees",
+      "handle_type": "opaque",
+      "constructor": {
+        "params": []
+      },
+      "methods": [
+        {
+          "name": "update",
+          "doc": "Runs the UI layout update tick",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "render",
+          "doc": "Renders the UI tree",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "nodeCount",
+          "doc": "Returns the number of live nodes in the UI tree",
+          "params": [],
+          "returns": "u32"
+        },
+        {
+          "name": "createNode",
+          "doc": "Creates a new UI node with the given component type (0=Panel, -1=none)",
+          "params": [
+            {
+              "name": "componentType",
+              "type": "i32"
+            }
+          ],
+          "returns": "u64"
+        },
+        {
+          "name": "removeNode",
+          "doc": "Removes a UI node and its subtree",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setParent",
+          "doc": "Sets or clears the parent of a UI node (use u64.MAX to detach)",
+          "params": [
+            {
+              "name": "childId",
+              "type": "u64"
+            },
+            {
+              "name": "parentId",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getParent",
+          "doc": "Returns the parent node ID, or u64.MAX if none",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            }
+          ],
+          "returns": "u64"
+        },
+        {
+          "name": "getChildCount",
+          "doc": "Returns the number of children of a node",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "getChildAt",
+          "doc": "Returns the child node ID at a given index, or u64.MAX if out of bounds",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            },
+            {
+              "name": "index",
+              "type": "u32"
+            }
+          ],
+          "returns": "u64"
+        }
+      ]
     }
   },
   "errors": {
@@ -5919,6 +6284,41 @@
         "category": "Internal",
         "recovery": "fatal",
         "hint": "Check the sequence of API calls; the engine may need re-initialization"
+      }
+    ]
+  },
+  "diagnostic": {
+    "doc": "Diagnostic mode controls backtrace capture on errors (debug builds only).",
+    "class_name": "DiagnosticMode",
+    "static": true,
+    "methods": [
+      {
+        "name": "setEnabled",
+        "ffi": "goud_diagnostic_set_enabled",
+        "doc": "Enable or disable diagnostic mode.",
+        "params": [
+          {
+            "name": "enabled",
+            "type": "bool",
+            "doc": "Whether to enable diagnostic mode"
+          }
+        ],
+        "returns": "void"
+      },
+      {
+        "name": "isEnabled",
+        "ffi": "goud_diagnostic_is_enabled",
+        "doc": "Returns whether diagnostic mode is currently enabled.",
+        "params": [],
+        "returns": "bool"
+      },
+      {
+        "name": "lastBacktrace",
+        "ffi": "goud_diagnostic_last_backtrace",
+        "doc": "Returns the backtrace captured from the most recent error, or empty string if none.",
+        "params": [],
+        "returns": "string",
+        "buffer_protocol": true
       }
     ]
   }

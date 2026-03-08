@@ -120,6 +120,7 @@ pub extern "C" fn goud_renderer_set_viewport(
     height: u32,
 ) {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return;
     }
 
@@ -136,6 +137,7 @@ pub extern "C" fn goud_renderer_set_viewport(
 #[no_mangle]
 pub extern "C" fn goud_renderer_enable_blending(context_id: GoudContextId) {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return;
     }
 
@@ -152,6 +154,7 @@ pub extern "C" fn goud_renderer_enable_blending(context_id: GoudContextId) {
 #[no_mangle]
 pub extern "C" fn goud_renderer_disable_blending(context_id: GoudContextId) {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return;
     }
 
@@ -168,6 +171,7 @@ pub extern "C" fn goud_renderer_disable_blending(context_id: GoudContextId) {
 #[no_mangle]
 pub extern "C" fn goud_renderer_enable_depth_test(context_id: GoudContextId) {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return;
     }
 
@@ -184,6 +188,7 @@ pub extern "C" fn goud_renderer_enable_depth_test(context_id: GoudContextId) {
 #[no_mangle]
 pub extern "C" fn goud_renderer_disable_depth_test(context_id: GoudContextId) {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return;
     }
 
@@ -200,6 +205,7 @@ pub extern "C" fn goud_renderer_disable_depth_test(context_id: GoudContextId) {
 #[no_mangle]
 pub extern "C" fn goud_renderer_clear_depth(context_id: GoudContextId) {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return;
     }
 

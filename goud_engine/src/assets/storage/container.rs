@@ -319,6 +319,54 @@ impl AssetStorage {
         self.get_storage::<A>().into_iter().flat_map(|s| s.iter())
     }
 
+    // =========================================================================
+    // Reference counting
+    // =========================================================================
+
+    /// Increments the reference count for a handle.
+    pub fn retain<A: Asset>(&mut self, handle: &AssetHandle<A>) -> Option<u32> {
+        self.get_storage_mut::<A>().and_then(|s| s.retain(handle))
+    }
+
+    /// Decrements the reference count for a handle.
+    pub fn release<A: Asset>(&mut self, handle: &AssetHandle<A>) -> Option<u32> {
+        self.get_storage_mut::<A>().and_then(|s| s.release(handle))
+    }
+
+    /// Returns the reference count for a handle.
+    pub fn ref_count<A: Asset>(&self, handle: &AssetHandle<A>) -> u32 {
+        self.get_storage::<A>()
+            .map(|s| s.ref_count(handle))
+            .unwrap_or(0)
+    }
+
+    /// Returns the reference count via raw handle parts (type-erased).
+    pub fn ref_count_raw(&self, asset_id: AssetId, index: u32, generation: u32) -> u32 {
+        self.storages
+            .get(&asset_id)
+            .map(|s| s.ref_count_raw(index, generation))
+            .unwrap_or(0)
+    }
+
+    /// Force-removes an asset, ignoring reference counts.
+    pub fn force_remove<A: Asset>(&mut self, handle: &AssetHandle<A>) -> Option<A> {
+        self.get_storage_mut::<A>()
+            .and_then(|s| s.force_remove(handle))
+    }
+
+    /// Force-removes an asset by raw handle parts (type-erased).
+    pub fn remove_raw(&mut self, asset_id: AssetId, index: u32, generation: u32) -> bool {
+        self.storages
+            .get_mut(&asset_id)
+            .map(|s| s.force_remove_raw(index, generation))
+            .unwrap_or(false)
+    }
+
+    /// Returns a reference to the type-erased storage for an asset id.
+    pub fn get_any_storage(&self, asset_id: AssetId) -> Option<&dyn AnyAssetStorage> {
+        self.storages.get(&asset_id).map(|s| s.as_ref())
+    }
+
     /// Returns handles for all assets of a specific type.
     pub fn handles<A: Asset>(&self) -> impl Iterator<Item = AssetHandle<A>> + '_ {
         self.get_storage::<A>()

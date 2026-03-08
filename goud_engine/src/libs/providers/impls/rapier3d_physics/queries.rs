@@ -1,11 +1,14 @@
-//! Query and debug methods extracted from `Rapier3DPhysicsProvider`.
+//! Query, debug, and property accessor methods extracted from `Rapier3DPhysicsProvider`.
 //!
 //! These are inherent methods called by the `PhysicsProvider3D` trait impl
 //! in `mod.rs` to keep that file under 500 lines.
 
 use rapier3d::prelude::*;
 
-use crate::core::providers::types::{BodyHandle, ContactPair3D, DebugShape3D, RaycastHit3D};
+use crate::core::error::{GoudError, GoudResult};
+use crate::core::providers::types::{
+    BodyHandle, ColliderHandle as EngineColliderHandle, ContactPair3D, DebugShape3D, RaycastHit3D,
+};
 
 use super::Rapier3DPhysicsProvider;
 
@@ -141,5 +144,80 @@ impl Rapier3DPhysicsProvider {
             });
         }
         shapes
+    }
+
+    /// Get the gravity scale of a body.
+    pub(crate) fn query_body_gravity_scale(&self, handle: BodyHandle) -> GoudResult<f32> {
+        let rb = self.resolve_body(handle)?;
+        Ok(self
+            .rigid_body_set
+            .get(rb)
+            .ok_or(GoudError::InvalidHandle)?
+            .gravity_scale())
+    }
+
+    /// Set the gravity scale of a body.
+    pub(crate) fn query_set_body_gravity_scale(
+        &mut self,
+        handle: BodyHandle,
+        scale: f32,
+    ) -> GoudResult<()> {
+        let rb = self.resolve_body(handle)?;
+        self.rigid_body_set
+            .get_mut(rb)
+            .ok_or(GoudError::InvalidHandle)?
+            .set_gravity_scale(scale, true);
+        Ok(())
+    }
+
+    /// Get the friction of a collider.
+    pub(crate) fn query_collider_friction(&self, handle: EngineColliderHandle) -> GoudResult<f32> {
+        let rh = self.resolve_collider(handle)?;
+        Ok(self
+            .collider_set
+            .get(rh)
+            .ok_or(GoudError::InvalidHandle)?
+            .friction())
+    }
+
+    /// Set the friction of a collider.
+    pub(crate) fn query_set_collider_friction(
+        &mut self,
+        handle: EngineColliderHandle,
+        friction: f32,
+    ) -> GoudResult<()> {
+        let rh = self.resolve_collider(handle)?;
+        self.collider_set
+            .get_mut(rh)
+            .ok_or(GoudError::InvalidHandle)?
+            .set_friction(friction);
+        Ok(())
+    }
+
+    /// Get the restitution of a collider.
+    pub(crate) fn query_collider_restitution(
+        &self,
+        handle: EngineColliderHandle,
+    ) -> GoudResult<f32> {
+        let rh = self.resolve_collider(handle)?;
+        Ok(self
+            .collider_set
+            .get(rh)
+            .ok_or(GoudError::InvalidHandle)?
+            .restitution())
+    }
+
+    /// Set the restitution of a collider.
+    pub(crate) fn query_set_collider_restitution(
+        &mut self,
+        handle: EngineColliderHandle,
+        restitution: f32,
+    ) -> GoudResult<()> {
+        let rh = self.resolve_collider(handle)?;
+        self.collider_set
+            .get_mut(rh)
+            .ok_or(GoudError::InvalidHandle)?
+            .set_restitution(restitution);
+        Ok(())
     }
 }

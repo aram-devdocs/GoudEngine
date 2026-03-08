@@ -128,6 +128,7 @@ pub extern "C" fn goud_window_poll_events(context_id: GoudContextId) -> f32 {
 #[no_mangle]
 pub extern "C" fn goud_window_swap_buffers(context_id: GoudContextId) {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return;
     }
 
@@ -161,7 +162,14 @@ pub unsafe extern "C" fn goud_window_get_size(
     out_width: *mut u32,
     out_height: *mut u32,
 ) -> bool {
-    if context_id == GOUD_INVALID_CONTEXT_ID || out_width.is_null() || out_height.is_null() {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+    if out_width.is_null() || out_height.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return false;
     }
 
@@ -189,6 +197,7 @@ pub unsafe extern "C" fn goud_window_get_size(
 #[no_mangle]
 pub extern "C" fn goud_window_set_should_close(context_id: GoudContextId, should_close: bool) {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return;
     }
 
@@ -213,6 +222,7 @@ pub extern "C" fn goud_window_set_should_close(context_id: GoudContextId, should
 #[no_mangle]
 pub extern "C" fn goud_window_get_delta_time(context_id: GoudContextId) -> f32 {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return 0.0;
     }
 
@@ -239,6 +249,7 @@ pub extern "C" fn goud_window_get_delta_time(context_id: GoudContextId) -> f32 {
 #[no_mangle]
 pub extern "C" fn goud_window_clear(context_id: GoudContextId, r: f32, g: f32, b: f32, a: f32) {
     if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
         return;
     }
 

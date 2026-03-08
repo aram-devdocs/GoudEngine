@@ -141,6 +141,17 @@ impl Rapier2DPhysicsProvider {
             .copied()
             .ok_or(GoudError::InvalidHandle)
     }
+
+    /// Look up a rapier collider handle from an engine handle, returning an error if not found.
+    fn get_rapier_collider(
+        &self,
+        handle: EngineColliderHandle,
+    ) -> GoudResult<RapierColliderHandle> {
+        self.collider_handles
+            .get(&handle.0)
+            .copied()
+            .ok_or(GoudError::InvalidHandle)
+    }
 }
 
 impl Provider for Rapier2DPhysicsProvider {
@@ -210,6 +221,14 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
 
     fn gravity(&self) -> [f32; 2] {
         [self.gravity.x, self.gravity.y]
+    }
+
+    fn set_timestep(&mut self, dt: f32) {
+        self.integration_parameters.dt = dt;
+    }
+
+    fn timestep(&self) -> f32 {
+        self.integration_parameters.dt
     }
 
     fn create_body(&mut self, desc: &BodyDesc) -> GoudResult<BodyHandle> {
@@ -304,6 +323,24 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
         Ok(())
     }
 
+    fn body_gravity_scale(&self, handle: BodyHandle) -> GoudResult<f32> {
+        let rh = self.get_rapier_body(handle)?;
+        Ok(self
+            .rigid_body_set
+            .get(rh)
+            .ok_or(GoudError::InvalidHandle)?
+            .gravity_scale())
+    }
+
+    fn set_body_gravity_scale(&mut self, handle: BodyHandle, scale: f32) -> GoudResult<()> {
+        let rh = self.get_rapier_body(handle)?;
+        self.rigid_body_set
+            .get_mut(rh)
+            .ok_or(GoudError::InvalidHandle)?
+            .set_gravity_scale(scale, true);
+        Ok(())
+    }
+
     fn create_collider(
         &mut self,
         body: BodyHandle,
@@ -340,6 +377,50 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
                 true,
             );
         }
+    }
+
+    fn collider_friction(&self, handle: EngineColliderHandle) -> GoudResult<f32> {
+        let rh = self.get_rapier_collider(handle)?;
+        Ok(self
+            .collider_set
+            .get(rh)
+            .ok_or(GoudError::InvalidHandle)?
+            .friction())
+    }
+
+    fn set_collider_friction(
+        &mut self,
+        handle: EngineColliderHandle,
+        friction: f32,
+    ) -> GoudResult<()> {
+        let rh = self.get_rapier_collider(handle)?;
+        self.collider_set
+            .get_mut(rh)
+            .ok_or(GoudError::InvalidHandle)?
+            .set_friction(friction);
+        Ok(())
+    }
+
+    fn collider_restitution(&self, handle: EngineColliderHandle) -> GoudResult<f32> {
+        let rh = self.get_rapier_collider(handle)?;
+        Ok(self
+            .collider_set
+            .get(rh)
+            .ok_or(GoudError::InvalidHandle)?
+            .restitution())
+    }
+
+    fn set_collider_restitution(
+        &mut self,
+        handle: EngineColliderHandle,
+        restitution: f32,
+    ) -> GoudResult<()> {
+        let rh = self.get_rapier_collider(handle)?;
+        self.collider_set
+            .get_mut(rh)
+            .ok_or(GoudError::InvalidHandle)?
+            .set_restitution(restitution);
+        Ok(())
     }
 
     fn raycast(&self, origin: [f32; 2], dir: [f32; 2], max_dist: f32) -> Option<RaycastHit> {

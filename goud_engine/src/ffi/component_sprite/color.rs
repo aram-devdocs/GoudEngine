@@ -3,6 +3,7 @@
 //! Provides FFI functions for reading and writing sprite color tints,
 //! as well as color constant constructors and utility functions.
 
+use crate::core::error::{set_last_error, GoudError};
 use crate::core::math::Color;
 use crate::core::types::{FfiColor, FfiSprite};
 
@@ -35,6 +36,9 @@ pub unsafe extern "C" fn goud_sprite_set_color(
     a: f32,
 ) {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     let s = &mut *sprite;
@@ -118,6 +122,9 @@ pub extern "C" fn goud_sprite_with_color(
 #[no_mangle]
 pub unsafe extern "C" fn goud_sprite_set_alpha(sprite: *mut FfiSprite, alpha: f32) {
     if sprite.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
         return;
     }
     (*sprite).color_a = alpha;

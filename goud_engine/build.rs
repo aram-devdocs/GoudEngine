@@ -132,7 +132,9 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/engine_config.rs",
     // physics module
     "src/ffi/physics/physics2d.rs",
+    "src/ffi/physics/physics2d_material.rs",
     "src/ffi/physics/physics3d.rs",
+    "src/ffi/physics/physics3d_material.rs",
     // animation module
     "src/ffi/animation/controller.rs",
     "src/ffi/animation/tween.rs",
@@ -143,6 +145,9 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/providers.rs",
     // plugin module
     "src/ffi/plugin.rs",
+    // ui module
+    "src/ffi/ui/manager.rs",
+    "src/ffi/ui/node.rs",
 ];
 
 /// A single extracted FFI function signature.
