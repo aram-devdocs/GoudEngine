@@ -16,11 +16,15 @@ use super::{pack_node_id, unpack_node_id, INVALID_NODE_U64};
 ///
 /// * `0` -> `Some(UiComponent::Panel)`
 /// * `-1` -> `None` (no component)
-/// * anything else -> `None` (treated as no component)
+/// * anything else -> `None` (no component, logs a warning)
 fn component_from_ffi(component_type: i32) -> Option<UiComponent> {
     match component_type {
         0 => Some(UiComponent::Panel),
-        _ => None,
+        -1 => None,
+        _ => {
+            log::warn!("Unknown component type: {}", component_type);
+            None
+        }
     }
 }
 

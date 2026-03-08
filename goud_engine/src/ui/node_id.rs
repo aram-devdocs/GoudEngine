@@ -38,10 +38,10 @@ pub struct UiNodeId {
 impl UiNodeId {
     /// Sentinel value representing "no node".
     ///
-    /// Uses `u32::MAX` for the index, which the allocator will never produce.
+    /// Uses `u32::MAX` for both index and generation, which the allocator will never produce.
     pub const INVALID: UiNodeId = UiNodeId {
         index: u32::MAX,
-        generation: 0,
+        generation: u32::MAX,
     };
 
     /// Creates a new `UiNodeId` with the given index and generation.
@@ -67,7 +67,7 @@ impl UiNodeId {
     /// Returns `true` if this is the [`INVALID`](Self::INVALID) sentinel.
     #[inline]
     pub const fn is_invalid(&self) -> bool {
-        self.index == u32::MAX && self.generation == 0
+        self.index == u32::MAX && self.generation == u32::MAX
     }
 }
 
@@ -135,7 +135,7 @@ mod tests {
         let invalid = UiNodeId::INVALID;
         assert!(invalid.is_invalid());
         assert_eq!(invalid.index(), u32::MAX);
-        assert_eq!(invalid.generation(), 0);
+        assert_eq!(invalid.generation(), u32::MAX);
 
         let valid = UiNodeId::new(0, 1);
         assert!(!valid.is_invalid());

@@ -20,6 +20,12 @@ use crate::ui::UiManager;
 ///
 /// Ownership is transferred to the caller. The caller MUST eventually call
 /// [`goud_ui_manager_destroy`] to free the memory.
+///
+/// # Note
+///
+/// `GoudGame` already contains an embedded `UiManager` that is updated
+/// each frame. This function creates an *additional*, independent manager. Most
+/// SDK users should access the game's built-in UI manager instead.
 #[no_mangle]
 pub extern "C" fn goud_ui_manager_create() -> *mut UiManager {
     let mgr = Box::new(UiManager::new());

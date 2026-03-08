@@ -79,4 +79,10 @@ mod tests {
         let max_id = UiNodeId::new(u32::MAX, u32::MAX);
         assert_eq!(pack_node_id(max_id), INVALID_NODE_U64);
     }
+
+    #[test]
+    fn test_invalid_sentinel_roundtrip() {
+        let unpacked = unpack_node_id(INVALID_NODE_U64);
+        assert!(unpacked.is_invalid());
+    }
 }

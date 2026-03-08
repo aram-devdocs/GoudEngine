@@ -91,6 +91,11 @@ impl UiNodeAllocator {
     }
 
     /// Returns the number of currently alive nodes.
+    ///
+    /// # Underflow Safety
+    ///
+    /// This subtraction cannot underflow due to the invariant that `free_list.len() <= generations.len()`.
+    /// The free list only contains indices that were previously allocated from `generations`.
     #[inline]
     pub fn len(&self) -> usize {
         self.generations.len() - self.free_list.len()
