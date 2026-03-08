@@ -65,10 +65,13 @@ impl GlyphAtlasCache {
             .ok_or_else(|| "internal error: cache entry missing after insertion".to_string())
     }
 
-    /// Returns a cached atlas (mutable) or generates (and caches) a new one.
+    /// Mutable variant of [`get_or_create`](Self::get_or_create).
     ///
-    /// Identical to [`get_or_create`](Self::get_or_create) but returns a
-    /// mutable reference, needed when calling [`GlyphAtlas::ensure_gpu_texture`].
+    /// Both methods share identical lookup-and-insert logic but Rust's borrow
+    /// checker requires separate implementations for shared (`&`) and exclusive
+    /// (`&mut`) access. The mutable variant is needed by
+    /// [`TextBatch::draw_text`](super::text_batch::TextBatch::draw_text) to
+    /// call [`GlyphAtlas::ensure_gpu_texture`], which takes `&mut self`.
     pub fn get_or_create_mut(
         &mut self,
         font: &FontAsset,

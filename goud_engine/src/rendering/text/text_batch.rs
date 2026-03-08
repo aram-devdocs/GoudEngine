@@ -53,6 +53,12 @@ pub struct TextBatch {
     /// Cached TrueType glyph atlases keyed by (font_handle, size).
     atlas_cache: GlyphAtlasCache,
     /// Cached bitmap font atlases keyed by asset handle index.
+    ///
+    /// Unlike `atlas_cache` (TrueType), bitmap atlases do not yet support
+    /// hot-reload invalidation. When bitmap font hot-reload is implemented,
+    /// add `invalidate_font` / `process_reloads` methods mirroring
+    /// [`GlyphAtlasCache`].  For now, use [`clear_bitmap_atlas_cache`](Self::clear_bitmap_atlas_cache)
+    /// to manually purge entries.
     bitmap_atlas_cache: std::collections::HashMap<u32, BitmapGlyphAtlas>,
     /// CPU-side vertex buffer (4 vertices per glyph quad).
     vertices: Vec<SpriteVertex>,
@@ -185,10 +191,13 @@ impl TextBatch {
         let atlas = self.bitmap_atlas_cache.entry(cache_key).or_insert_with(|| {
             let w = bitmap_font.scale_w;
             let h = bitmap_font.scale_h;
-            let data = bitmap_font
-                .texture_data
-                .clone()
-                .unwrap_or_else(|| vec![0u8; (w * h * 4) as usize]);
+            let data = bitmap_font.texture_data.clone().unwrap_or_else(|| {
+                log::warn!(
+                    "Bitmap font texture data not loaded for font at cache key {cache_key}; \
+                     rendering will be transparent"
+                );
+                vec![0u8; (w * h * 4) as usize]
+            });
             BitmapGlyphAtlas::new(bitmap_font, w, h, data)
         });
 
@@ -337,6 +346,15 @@ impl TextBatch {
     /// Returns a reference to the underlying atlas cache.
     pub fn atlas_cache(&self) -> &GlyphAtlasCache {
         &self.atlas_cache
+    }
+
+    /// Removes all cached bitmap font atlases.
+    ///
+    /// This is the manual invalidation path for bitmap fonts. Unlike the
+    /// TrueType [`GlyphAtlasCache`] which supports per-font invalidation
+    /// and hot-reload, bitmap atlases currently require a full cache clear.
+    pub fn clear_bitmap_atlas_cache(&mut self) {
+        self.bitmap_atlas_cache.clear();
     }
 
     /// Emits a single glyph quad (4 vertices + 6 indices).
