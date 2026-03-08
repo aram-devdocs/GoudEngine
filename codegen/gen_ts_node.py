@@ -1046,15 +1046,6 @@ use goud_engine::ffi::renderer3d::{
     goud_renderer3d_set_object_rotation, goud_renderer3d_set_object_scale,
     goud_renderer3d_update_light,
 };
-use goud_engine::ffi::audio::controls::{
-    goud_audio_stop, goud_audio_pause, goud_audio_resume, goud_audio_stop_all,
-    goud_audio_set_global_volume, goud_audio_get_global_volume,
-    goud_audio_set_channel_volume, goud_audio_get_channel_volume,
-    goud_audio_is_playing, goud_audio_active_count, goud_audio_cleanup_finished,
-};
-use goud_engine::ffi::audio::playback::{
-    goud_audio_play, goud_audio_play_on_channel, goud_audio_play_with_settings,
-};
 use goud_engine::ffi::window::{
     goud_window_clear, goud_window_create, goud_window_destroy,
     goud_window_get_delta_time, goud_window_get_size, goud_window_poll_events,
@@ -1116,11 +1107,11 @@ pub struct NapiFpsStats {
 
 #[napi]
 pub struct GoudGame {
-    context_id: GoudContextId,
-    last_delta_time: f32,
-    title: String,
-    frame_count: u64,
-    total_time: f64,
+    pub(crate) context_id: GoudContextId,
+    pub(crate) last_delta_time: f32,
+    pub(crate) title: String,
+    pub(crate) frame_count: u64,
+    pub(crate) total_time: f64,
 }
 
 #[napi]
@@ -1796,101 +1787,6 @@ impl GoudGame {
     /// Returns the raw FFI delta time from the last poll_events call.
     #[napi(getter)]
     pub fn ffi_delta_time(&self) -> f64 { goud_window_get_delta_time(self.context_id) as f64 }
-
-    // =========================================================================
-    // Audio
-    // =========================================================================
-
-    /// Plays audio from raw bytes on the default SFX channel.
-    /// Returns a positive player ID on success, or a negative value on error.
-    #[napi]
-    pub fn audio_play(&self, data: Buffer) -> f64 {
-        // SAFETY: Buffer provides valid pointer and length from napi.
-        unsafe { goud_audio_play(self.context_id, data.as_ptr(), data.len()) as f64 }
-    }
-
-    /// Plays audio on a specific channel.
-    /// Returns a positive player ID on success, or a negative value on error.
-    #[napi]
-    pub fn audio_play_on_channel(&self, data: Buffer, channel: u32) -> f64 {
-        // SAFETY: Buffer provides valid pointer and length from napi.
-        unsafe { goud_audio_play_on_channel(self.context_id, data.as_ptr(), data.len(), channel as u8) as f64 }
-    }
-
-    /// Plays audio with full control over volume, speed, looping, and channel.
-    /// Returns a positive player ID on success, or a negative value on error.
-    #[napi]
-    pub fn audio_play_with_settings(&self, data: Buffer, volume: f64, speed: f64, looping: bool, channel: u32) -> f64 {
-        // SAFETY: Buffer provides valid pointer and length from napi.
-        unsafe { goud_audio_play_with_settings(self.context_id, data.as_ptr(), data.len(), volume as f32, speed as f32, looping, channel as u8) as f64 }
-    }
-
-    /// Stops audio playback for the given player ID.
-    #[napi]
-    pub fn audio_stop(&self, player_id: f64) -> i32 {
-        goud_audio_stop(self.context_id, player_id as u64)
-    }
-
-    /// Pauses audio playback for the given player ID.
-    #[napi]
-    pub fn audio_pause(&self, player_id: f64) -> i32 {
-        goud_audio_pause(self.context_id, player_id as u64)
-    }
-
-    /// Resumes audio playback for the given player ID.
-    #[napi]
-    pub fn audio_resume(&self, player_id: f64) -> i32 {
-        goud_audio_resume(self.context_id, player_id as u64)
-    }
-
-    /// Stops all currently playing audio.
-    #[napi]
-    pub fn audio_stop_all(&self) -> i32 {
-        goud_audio_stop_all(self.context_id)
-    }
-
-    /// Sets the global audio volume (0.0 to 1.0).
-    #[napi]
-    pub fn audio_set_global_volume(&self, volume: f64) -> i32 {
-        goud_audio_set_global_volume(self.context_id, volume as f32)
-    }
-
-    /// Returns the current global audio volume.
-    #[napi]
-    pub fn audio_get_global_volume(&self) -> f64 {
-        goud_audio_get_global_volume(self.context_id) as f64
-    }
-
-    /// Sets the volume for a specific audio channel.
-    #[napi]
-    pub fn audio_set_channel_volume(&self, channel: u32, volume: f64) -> i32 {
-        goud_audio_set_channel_volume(self.context_id, channel as u8, volume as f32)
-    }
-
-    /// Returns the current volume for a specific audio channel.
-    #[napi]
-    pub fn audio_get_channel_volume(&self, channel: u32) -> f64 {
-        goud_audio_get_channel_volume(self.context_id, channel as u8) as f64
-    }
-
-    /// Checks whether a specific player is currently playing.
-    /// Returns 1 if playing, 0 if not, -1 on error.
-    #[napi]
-    pub fn audio_is_playing(&self, player_id: f64) -> i32 {
-        goud_audio_is_playing(self.context_id, player_id as u64)
-    }
-
-    /// Returns the number of active audio players.
-    #[napi]
-    pub fn audio_active_count(&self) -> i32 {
-        goud_audio_active_count(self.context_id)
-    }
-
-    /// Removes finished audio players from the manager.
-    #[napi]
-    pub fn audio_cleanup_finished(&self) -> i32 {
-        goud_audio_cleanup_finished(self.context_id)
-    }
 }
 
 // =============================================================================
@@ -1991,11 +1887,148 @@ impl NativeEngineConfig {
 """
 
 
+def gen_napi_rust_audio():
+    """Generate sdks/typescript/native/src/audio.g.rs.
+
+    Audio napi methods on GoudGame, split out from game.g.rs to keep files
+    under the 500-line limit.
+    """
+    write_generated(NATIVE_SRC / "audio.g.rs", _audio_rs_content())
+
+
+def _audio_rs_content():
+    return RUST_HEADER + r"""
+use crate::game::GoudGame;
+use goud_engine::ffi::audio::controls::{
+    goud_audio_stop, goud_audio_pause, goud_audio_resume, goud_audio_stop_all,
+    goud_audio_set_global_volume, goud_audio_get_global_volume,
+    goud_audio_set_channel_volume, goud_audio_get_channel_volume,
+    goud_audio_is_playing, goud_audio_active_count, goud_audio_cleanup_finished,
+};
+use goud_engine::ffi::audio::playback::{
+    goud_audio_play, goud_audio_play_on_channel, goud_audio_play_with_settings,
+};
+use napi::bindgen_prelude::*;
+use napi_derive::napi;
+
+// =============================================================================
+// Audio methods on GoudGame
+// =============================================================================
+
+#[napi]
+impl GoudGame {
+    /// Plays audio from raw bytes on the default SFX channel.
+    /// Returns a positive player ID on success, or a negative value on error.
+    #[napi]
+    pub fn audio_play(&self, data: Buffer) -> f64 {
+        // SAFETY: Buffer provides valid pointer and length from napi.
+        unsafe { goud_audio_play(self.context_id, data.as_ptr(), data.len()) as f64 }
+    }
+
+    /// Plays audio on a specific channel.
+    /// Returns a positive player ID on success, or a negative value on error.
+    #[napi]
+    pub fn audio_play_on_channel(&self, data: Buffer, channel: u32) -> f64 {
+        // SAFETY: Buffer provides valid pointer and length from napi.
+        unsafe {
+            goud_audio_play_on_channel(
+                self.context_id, data.as_ptr(), data.len(), channel as u8,
+            ) as f64
+        }
+    }
+
+    /// Plays audio with full control over volume, speed, looping, and channel.
+    /// Returns a positive player ID on success, or a negative value on error.
+    #[napi]
+    pub fn audio_play_with_settings(
+        &self, data: Buffer, volume: f64, speed: f64, looping: bool, channel: u32,
+    ) -> f64 {
+        // SAFETY: Buffer provides valid pointer and length from napi.
+        unsafe {
+            goud_audio_play_with_settings(
+                self.context_id, data.as_ptr(), data.len(),
+                volume as f32, speed as f32, looping, channel as u8,
+            ) as f64
+        }
+    }
+
+    /// Stops audio playback for the given player ID.
+    #[napi]
+    pub fn audio_stop(&self, player_id: f64) -> i32 {
+        goud_audio_stop(self.context_id, player_id as u64)
+    }
+
+    /// Pauses audio playback for the given player ID.
+    #[napi]
+    pub fn audio_pause(&self, player_id: f64) -> i32 {
+        goud_audio_pause(self.context_id, player_id as u64)
+    }
+
+    /// Resumes audio playback for the given player ID.
+    #[napi]
+    pub fn audio_resume(&self, player_id: f64) -> i32 {
+        goud_audio_resume(self.context_id, player_id as u64)
+    }
+
+    /// Stops all currently playing audio.
+    #[napi]
+    pub fn audio_stop_all(&self) -> i32 {
+        goud_audio_stop_all(self.context_id)
+    }
+
+    /// Sets the global audio volume (0.0 to 1.0).
+    #[napi]
+    pub fn audio_set_global_volume(&self, volume: f64) -> i32 {
+        goud_audio_set_global_volume(self.context_id, volume as f32)
+    }
+
+    /// Returns the current global audio volume.
+    #[napi]
+    pub fn audio_get_global_volume(&self) -> f64 {
+        goud_audio_get_global_volume(self.context_id) as f64
+    }
+
+    /// Sets the volume for a specific audio channel.
+    #[napi]
+    pub fn audio_set_channel_volume(&self, channel: u32, volume: f64) -> i32 {
+        goud_audio_set_channel_volume(self.context_id, channel as u8, volume as f32)
+    }
+
+    /// Returns the current volume for a specific audio channel.
+    #[napi]
+    pub fn audio_get_channel_volume(&self, channel: u32) -> f64 {
+        goud_audio_get_channel_volume(self.context_id, channel as u8) as f64
+    }
+
+    /// Checks whether a specific player is currently playing.
+    /// Returns 1 if playing, 0 if not, -1 on error.
+    #[napi]
+    pub fn audio_is_playing(&self, player_id: f64) -> i32 {
+        goud_audio_is_playing(self.context_id, player_id as u64)
+    }
+
+    /// Returns the number of active audio players.
+    #[napi]
+    pub fn audio_active_count(&self) -> i32 {
+        goud_audio_active_count(self.context_id)
+    }
+
+    /// Removes finished audio players from the manager.
+    #[napi]
+    pub fn audio_cleanup_finished(&self) -> i32 {
+        goud_audio_cleanup_finished(self.context_id)
+    }
+}
+"""
+
+
 def gen_napi_rust_lib():
     """Generate lib.rs."""
     lines = [
         RUST_HEADER,
         "#[allow(dead_code)]",
+        '#[path = "audio.g.rs"]',
+        "mod audio;",
         '#[path = "components.g.rs"]',
         "mod components;",
         '#[path = "entity.g.rs"]',
@@ -2015,6 +2048,7 @@ def gen_napi_rust():
     gen_napi_rust_entity()
     gen_napi_rust_components()
     gen_napi_rust_game()
+    gen_napi_rust_audio()
     gen_napi_rust_lib()
 
 
