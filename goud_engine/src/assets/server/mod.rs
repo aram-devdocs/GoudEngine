@@ -47,6 +47,7 @@ mod async_operations;
 mod core;
 mod loader_registry;
 mod operations;
+mod ref_counting;
 mod web_operations;
 
 #[cfg(test)]

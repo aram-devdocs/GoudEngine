@@ -155,7 +155,11 @@ impl ArchiveReader {
         }
 
         // Read TOC size.
-        let toc_size = u32::from_le_bytes(data[4..8].try_into().expect("4-byte slice")) as usize;
+        let toc_size = u32::from_le_bytes(
+            data[4..8]
+                .try_into()
+                .map_err(|_| AssetLoadError::decode_failed("Invalid TOC size bytes"))?,
+        ) as usize;
 
         let toc_end = 8 + toc_size;
         if data.len() < toc_end {
@@ -265,7 +269,11 @@ fn read_u32(data: &[u8], cursor: &mut usize) -> Result<u32, AssetLoadError> {
             "Unexpected end of data reading u32",
         ));
     }
-    let val = u32::from_le_bytes(data[*cursor..*cursor + 4].try_into().expect("4-byte slice"));
+    let val = u32::from_le_bytes(
+        data[*cursor..*cursor + 4]
+            .try_into()
+            .map_err(|_| AssetLoadError::decode_failed("Invalid u32 slice"))?,
+    );
     *cursor += 4;
     Ok(val)
 }
@@ -276,7 +284,11 @@ fn read_u64(data: &[u8], cursor: &mut usize) -> Result<u64, AssetLoadError> {
             "Unexpected end of data reading u64",
         ));
     }
-    let val = u64::from_le_bytes(data[*cursor..*cursor + 8].try_into().expect("8-byte slice"));
+    let val = u64::from_le_bytes(
+        data[*cursor..*cursor + 8]
+            .try_into()
+            .map_err(|_| AssetLoadError::decode_failed("Invalid u64 slice"))?,
+    );
     *cursor += 8;
     Ok(val)
 }
