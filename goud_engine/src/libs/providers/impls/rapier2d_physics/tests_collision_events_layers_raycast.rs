@@ -272,6 +272,41 @@ fn test_raycast_hit_payload_should_include_surface_point_normal_and_distance() {
 }
 
 #[test]
+fn test_raycast_with_multiple_hits_should_return_nearest_collider() {
+    let mut provider = Rapier2DPhysicsProvider::new([0.0, 0.0]);
+    let (near_body, near_collider) = add_circle(&mut provider, 0, [3.0, 0.0], 1.0, false);
+    let (far_body, far_collider) = add_circle(&mut provider, 0, [7.0, 0.0], 1.0, false);
+
+    provider.step(0.0).unwrap();
+
+    let hit = provider
+        .raycast([0.0, 0.0], [1.0, 0.0], 100.0)
+        .expect("raycast should hit at least one collider");
+
+    assert_eq!(
+        hit.body, near_body,
+        "raycast should return the nearest body when multiple colliders are hit"
+    );
+    assert_eq!(
+        hit.collider, near_collider,
+        "raycast should return the nearest collider when multiple colliders are hit"
+    );
+    assert_ne!(
+        hit.body, far_body,
+        "raycast should not skip nearest hit in favor of farther body"
+    );
+    assert_ne!(
+        hit.collider, far_collider,
+        "raycast should not skip nearest hit in favor of farther collider"
+    );
+    assert!(
+        approx_eq(hit.distance, 2.0, 0.02),
+        "expected nearest hit distance near 2.0, got {}",
+        hit.distance
+    );
+}
+
+#[test]
 fn test_raycast_should_honor_layer_mask_filtering() {
     let mut provider = Rapier2DPhysicsProvider::new([0.0, 0.0]);
 
