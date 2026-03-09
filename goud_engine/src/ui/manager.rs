@@ -3,6 +3,7 @@
 //! [`UiManager`] owns UI nodes, computes deterministic layout, and processes UI
 //! input semantics (hover, focus, and button activation/click dispatch).
 
+#[cfg(feature = "native")]
 mod input;
 mod layout;
 
