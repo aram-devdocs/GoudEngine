@@ -760,6 +760,27 @@
       "return_type": "()",
       "is_unsafe": false
     },
+    "goud_draw_text": {
+      "source_file": "ffi/renderer/text.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "font_handle: GoudFontHandle",
+        "text: *const c_char",
+        "x: f32",
+        "y: f32",
+        "font_size: f32",
+        "alignment: u8",
+        "max_width: f32",
+        "line_spacing: f32",
+        "direction: u8",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
     "goud_engine_config_create": {
       "source_file": "ffi/engine_config.rs",
       "params": [],
@@ -936,6 +957,24 @@
         "buf_len: usize"
       ],
       "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_font_destroy": {
+      "source_file": "ffi/renderer/text.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "font_handle: GoudFontHandle"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_font_load": {
+      "source_file": "ffi/renderer/text.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "path: *const c_char"
+      ],
+      "return_type": "GoudFontHandle",
       "is_unsafe": true
     },
     "goud_input_action_just_pressed": {
@@ -2049,6 +2088,27 @@
       ],
       "return_type": "bool",
       "is_unsafe": false
+    },
+    "goud_renderer_draw_text": {
+      "source_file": "ffi/renderer/text.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "font_handle: GoudFontHandle",
+        "text: *const c_char",
+        "x: f32",
+        "y: f32",
+        "font_size: f32",
+        "alignment: u8",
+        "max_width: f32",
+        "line_spacing: f32",
+        "direction: u8",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
     },
     "goud_renderer_enable_blending": {
       "source_file": "ffi/renderer/lifecycle.rs",
@@ -3532,5 +3592,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 364
+  "total_count": 368
 }

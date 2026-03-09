@@ -188,6 +188,14 @@
         "Center": 1,
         "Right": 2
       }
+    },
+    "TextDirection": {
+      "ffi_name": "u8",
+      "enum_values": {
+        "Auto": 0,
+        "Ltr": 1,
+        "Rtl": 2
+      }
     }
   },
   "ffi_handles": {
@@ -320,6 +328,49 @@
         },
         "destroyTexture": {
           "ffi": "goud_texture_destroy"
+        },
+        "loadFont": {
+          "ffi": "goud_font_load",
+          "string_params": [
+            "path"
+          ],
+          "return_cast": "u64"
+        },
+        "destroyFont": {
+          "ffi": "goud_font_destroy"
+        },
+        "drawText": {
+          "ffi": "goud_renderer_draw_text",
+          "param_order": [
+            "fontHandle",
+            "text",
+            "x",
+            "y",
+            "fontSize",
+            "alignment",
+            "maxWidth",
+            "lineSpacing",
+            "direction"
+          ],
+          "string_params": [
+            "text"
+          ],
+          "expand_params": {
+            "color": {
+              "fields": [
+                "r",
+                "g",
+                "b",
+                "a"
+              ],
+              "defaults": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ]
+            }
+          }
         },
         "drawSprite": {
           "ffi": "goud_renderer_draw_sprite",
@@ -2472,6 +2523,158 @@
           }
         ],
         "returns": "bool"
+      },
+      "goud_font_load": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "path",
+            "type": "*const c_char"
+          }
+        ],
+        "returns": "u64",
+        "unsafe": true
+      },
+      "goud_font_destroy": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "font_handle",
+            "type": "u64"
+          }
+        ],
+        "returns": "bool"
+      },
+      "goud_renderer_draw_text": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "font_handle",
+            "type": "u64"
+          },
+          {
+            "name": "text",
+            "type": "*const c_char"
+          },
+          {
+            "name": "x",
+            "type": "f32"
+          },
+          {
+            "name": "y",
+            "type": "f32"
+          },
+          {
+            "name": "font_size",
+            "type": "f32"
+          },
+          {
+            "name": "alignment",
+            "type": "u8"
+          },
+          {
+            "name": "max_width",
+            "type": "f32"
+          },
+          {
+            "name": "line_spacing",
+            "type": "f32"
+          },
+          {
+            "name": "direction",
+            "type": "u8"
+          },
+          {
+            "name": "r",
+            "type": "f32"
+          },
+          {
+            "name": "g",
+            "type": "f32"
+          },
+          {
+            "name": "b",
+            "type": "f32"
+          },
+          {
+            "name": "a",
+            "type": "f32"
+          }
+        ],
+        "returns": "bool",
+        "unsafe": true
+      },
+      "goud_draw_text": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "font_handle",
+            "type": "u64"
+          },
+          {
+            "name": "text",
+            "type": "*const c_char"
+          },
+          {
+            "name": "x",
+            "type": "f32"
+          },
+          {
+            "name": "y",
+            "type": "f32"
+          },
+          {
+            "name": "font_size",
+            "type": "f32"
+          },
+          {
+            "name": "alignment",
+            "type": "u8"
+          },
+          {
+            "name": "max_width",
+            "type": "f32"
+          },
+          {
+            "name": "line_spacing",
+            "type": "f32"
+          },
+          {
+            "name": "direction",
+            "type": "u8"
+          },
+          {
+            "name": "r",
+            "type": "f32"
+          },
+          {
+            "name": "g",
+            "type": "f32"
+          },
+          {
+            "name": "b",
+            "type": "f32"
+          },
+          {
+            "name": "a",
+            "type": "f32"
+          }
+        ],
+        "returns": "bool",
+        "unsafe": true,
+        "alias_of": "goud_renderer_draw_text"
       },
       "goud_renderer_draw_sprite_rect": {
         "params": [

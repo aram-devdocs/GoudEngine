@@ -1,16 +1,16 @@
-//! Glyph atlas generation.
+//! Glyph atlas generation and dynamic expansion.
 //!
-//! Rasterizes printable ASCII glyphs and packs them into a single RGBA8
-//! texture atlas using row-based bin packing.
+//! The atlas starts with printable ASCII by default, then can grow to include
+//! new glyph indices discovered at runtime (Unicode/CJK/RTL shaping paths).
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 
 use crate::libs::graphics::backend::render_backend::RenderBackend;
 use crate::libs::graphics::backend::types::{
     TextureFilter, TextureFormat, TextureHandle, TextureWrap,
 };
 
-use super::rasterizer::{rasterize_glyphs, GlyphMetrics};
+use super::rasterizer::{rasterize_glyph_indices, GlyphMetrics, RasterizedGlyph};
 
 /// UV rectangle describing a glyph's position within the atlas texture.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -43,10 +43,22 @@ pub struct GlyphAtlas {
     width: u32,
     /// Atlas texture height in pixels.
     height: u32,
-    /// Per-character glyph info (UV + metrics).
-    glyphs: HashMap<char, GlyphInfo>,
+    /// Font size used to rasterize this atlas.
+    size_px: f32,
+    /// Per-character glyph info (compat path for bitmap-like lookup).
+    glyphs_by_char: HashMap<char, GlyphInfo>,
+    /// Per-glyph-index info used by shaped text layout.
+    glyphs_by_index: HashMap<u16, GlyphInfo>,
+    /// Character to glyph-index lookup cache.
+    char_to_index: HashMap<char, u16>,
+    /// Cached rasterized bitmaps for all known glyph indices.
+    rasterized_glyphs: HashMap<u16, RasterizedGlyph>,
     /// Cached GPU texture handle, lazily uploaded via `ensure_gpu_texture`.
     gpu_texture: Option<TextureHandle>,
+    /// True when CPU atlas data changed and GPU texture must be synced.
+    dirty: bool,
+    /// Incremented whenever packed atlas pixels are rebuilt.
+    version: u64,
 }
 
 /// The range of printable ASCII characters (space through tilde).
@@ -56,28 +68,45 @@ const PRINTABLE_ASCII_END: u8 = 126;
 /// 1-pixel padding between glyphs to avoid texture bleeding.
 const GLYPH_PADDING: u32 = 1;
 
+/// Starting atlas dimension.
+const INITIAL_ATLAS_SIZE: u32 = 256;
+
 /// Maximum atlas dimension to prevent runaway allocation.
 const MAX_ATLAS_SIZE: u32 = 4096;
 
 impl GlyphAtlas {
     /// Generates an atlas for printable ASCII (32..=126) at the given size.
-    ///
-    /// The atlas is RGBA8 (white RGB + alpha from glyph coverage).
-    /// Dimensions start at 256x256 and grow to the next power-of-two as needed.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the glyphs cannot fit within the maximum atlas size.
     pub fn generate(font: &fontdue::Font, size_px: f32) -> Result<Self, String> {
         let chars: Vec<char> = (PRINTABLE_ASCII_START..=PRINTABLE_ASCII_END)
             .map(|b| b as char)
             .collect();
+        Self::generate_for_chars(font, size_px, &chars)
+    }
 
-        let rasterized = rasterize_glyphs(font, size_px, &chars);
+    /// Generates an atlas containing only the provided characters.
+    pub fn generate_for_chars(
+        font: &fontdue::Font,
+        size_px: f32,
+        chars: &[char],
+    ) -> Result<Self, String> {
+        let mut char_to_index = HashMap::new();
+        for &ch in chars {
+            char_to_index.insert(ch, font.lookup_glyph_index(ch));
+        }
 
-        // Try increasing atlas sizes until all glyphs fit.
-        let mut atlas_size: u32 = 256;
-        loop {
+        let unique_indices: Vec<u16> = char_to_index
+            .values()
+            .copied()
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect();
+        let rasterized_glyphs: HashMap<u16, RasterizedGlyph> =
+            rasterize_glyph_indices(font, size_px, &unique_indices)
+                .into_iter()
+                .collect();
+
+        let mut atlas_size = INITIAL_ATLAS_SIZE;
+        let (texture_data, glyphs_by_index, final_size) = loop {
             if atlas_size > MAX_ATLAS_SIZE {
                 return Err(format!(
                     "Glyphs do not fit in maximum atlas size ({0}x{0})",
@@ -85,19 +114,226 @@ impl GlyphAtlas {
                 ));
             }
 
-            match Self::try_pack(&rasterized, atlas_size, atlas_size) {
-                Some((texture_data, glyphs)) => {
-                    return Ok(Self {
-                        texture_data,
-                        width: atlas_size,
-                        height: atlas_size,
-                        glyphs,
-                        gpu_texture: None,
-                    });
-                }
-                None => {
-                    atlas_size *= 2;
-                }
+            if let Some((pixels, glyphs)) =
+                Self::try_pack(&rasterized_glyphs, atlas_size, atlas_size)
+            {
+                break (pixels, glyphs, atlas_size);
+            }
+            atlas_size *= 2;
+        };
+
+        let mut atlas = Self {
+            texture_data,
+            width: final_size,
+            height: final_size,
+            size_px,
+            glyphs_by_char: HashMap::new(),
+            glyphs_by_index,
+            char_to_index,
+            rasterized_glyphs,
+            gpu_texture: None,
+            dirty: true,
+            version: 1,
+        };
+        atlas.rebuild_char_cache();
+        Ok(atlas)
+    }
+
+    /// Ensures all provided characters are present in the atlas.
+    ///
+    /// Returns `true` if new character mappings or glyphs were added.
+    pub fn ensure_chars<I>(&mut self, font: &fontdue::Font, chars: I) -> Result<bool, String>
+    where
+        I: IntoIterator<Item = char>,
+    {
+        let mut changed = false;
+        let mut new_indices = BTreeSet::new();
+
+        for ch in chars {
+            if self.char_to_index.contains_key(&ch) {
+                continue;
+            }
+            let index = font.lookup_glyph_index(ch);
+            self.char_to_index.insert(ch, index);
+            changed = true;
+            if !self.rasterized_glyphs.contains_key(&index) {
+                new_indices.insert(index);
+            }
+        }
+
+        if !new_indices.is_empty() {
+            self.add_glyph_indices(font, new_indices.into_iter().collect())?;
+        } else if changed {
+            self.rebuild_char_cache();
+        }
+
+        Ok(changed)
+    }
+
+    /// Ensures all provided glyph indices are present in the atlas.
+    ///
+    /// Returns `true` when the atlas pixel data was rebuilt.
+    pub fn ensure_glyph_indices<I>(
+        &mut self,
+        font: &fontdue::Font,
+        glyph_indices: I,
+    ) -> Result<bool, String>
+    where
+        I: IntoIterator<Item = u16>,
+    {
+        let new_indices: Vec<u16> = glyph_indices
+            .into_iter()
+            .filter(|idx| !self.rasterized_glyphs.contains_key(idx))
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect();
+
+        if new_indices.is_empty() {
+            return Ok(false);
+        }
+
+        self.add_glyph_indices(font, new_indices)?;
+        Ok(true)
+    }
+
+    /// Returns glyph info (UV + metrics) for the given character, if present.
+    pub fn glyph_info(&self, ch: char) -> Option<&GlyphInfo> {
+        self.glyphs_by_char.get(&ch)
+    }
+
+    /// Returns glyph info (UV + metrics) for the given glyph index, if present.
+    pub fn glyph_info_indexed(&self, glyph_id: u16) -> Option<&GlyphInfo> {
+        self.glyphs_by_index.get(&glyph_id)
+    }
+
+    /// Returns the raw RGBA8 texture data.
+    pub fn texture_data(&self) -> &[u8] {
+        &self.texture_data
+    }
+
+    /// Returns the atlas texture width in pixels.
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    /// Returns the atlas texture height in pixels.
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    /// Returns the atlas content version.
+    pub fn version(&self) -> u64 {
+        self.version
+    }
+
+    /// Returns true when CPU-side texture data changed since last GPU sync.
+    pub fn is_dirty(&self) -> bool {
+        self.dirty
+    }
+
+    /// Marks the atlas as clean after an external GPU sync path (WASM).
+    pub fn mark_clean(&mut self) {
+        self.dirty = false;
+    }
+
+    /// Returns the cached GPU texture handle, if one has been uploaded.
+    pub fn gpu_texture(&self) -> Option<TextureHandle> {
+        self.gpu_texture
+    }
+
+    /// Lazily uploads (or updates) the atlas pixel data on GPU.
+    ///
+    /// If the atlas grew, the old texture is destroyed and recreated.
+    pub fn ensure_gpu_texture(
+        &mut self,
+        backend: &mut dyn RenderBackend,
+    ) -> Result<TextureHandle, String> {
+        if let Some(handle) = self.gpu_texture {
+            if !self.dirty {
+                return Ok(handle);
+            }
+
+            if backend.texture_size(handle) == Some((self.width, self.height)) {
+                backend
+                    .update_texture(handle, 0, 0, self.width, self.height, &self.texture_data)
+                    .map_err(|e| format!("failed to update glyph atlas texture: {e}"))?;
+                self.dirty = false;
+                return Ok(handle);
+            }
+
+            backend.destroy_texture(handle);
+            self.gpu_texture = None;
+        }
+
+        let handle = backend
+            .create_texture(
+                self.width,
+                self.height,
+                TextureFormat::RGBA8,
+                TextureFilter::Linear,
+                TextureWrap::ClampToEdge,
+                &self.texture_data,
+            )
+            .map_err(|e| format!("failed to create GPU texture for glyph atlas: {e}"))?;
+
+        self.gpu_texture = Some(handle);
+        self.dirty = false;
+        Ok(handle)
+    }
+
+    /// Takes the GPU texture handle out of this atlas, if present.
+    ///
+    /// After this call `gpu_texture()` returns `None`. The caller is
+    /// responsible for destroying the returned handle via the backend.
+    pub(crate) fn take_gpu_texture(&mut self) -> Option<TextureHandle> {
+        self.gpu_texture.take()
+    }
+
+    fn add_glyph_indices(
+        &mut self,
+        font: &fontdue::Font,
+        new_indices: Vec<u16>,
+    ) -> Result<(), String> {
+        let newly_rasterized = rasterize_glyph_indices(font, self.size_px, &new_indices);
+        for (index, glyph) in newly_rasterized {
+            self.rasterized_glyphs.insert(index, glyph);
+        }
+        self.repack_all()
+    }
+
+    fn repack_all(&mut self) -> Result<(), String> {
+        let mut atlas_size = self.width.max(INITIAL_ATLAS_SIZE);
+        let (texture_data, glyphs_by_index, final_size) = loop {
+            if atlas_size > MAX_ATLAS_SIZE {
+                return Err(format!(
+                    "Glyphs do not fit in maximum atlas size ({0}x{0})",
+                    MAX_ATLAS_SIZE
+                ));
+            }
+
+            if let Some((pixels, glyphs)) =
+                Self::try_pack(&self.rasterized_glyphs, atlas_size, atlas_size)
+            {
+                break (pixels, glyphs, atlas_size);
+            }
+            atlas_size *= 2;
+        };
+
+        self.texture_data = texture_data;
+        self.width = final_size;
+        self.height = final_size;
+        self.glyphs_by_index = glyphs_by_index;
+        self.rebuild_char_cache();
+        self.dirty = true;
+        self.version = self.version.saturating_add(1);
+        Ok(())
+    }
+
+    fn rebuild_char_cache(&mut self) {
+        self.glyphs_by_char.clear();
+        for (ch, idx) in &self.char_to_index {
+            if let Some(info) = self.glyphs_by_index.get(idx) {
+                self.glyphs_by_char.insert(*ch, *info);
             }
         }
     }
@@ -105,10 +341,10 @@ impl GlyphAtlas {
     /// Attempts row-based bin packing of rasterized glyphs into an atlas of
     /// the given dimensions. Returns `None` if the glyphs don't fit.
     fn try_pack(
-        rasterized: &[(char, super::rasterizer::RasterizedGlyph)],
+        rasterized: &HashMap<u16, RasterizedGlyph>,
         atlas_w: u32,
         atlas_h: u32,
-    ) -> Option<(Vec<u8>, HashMap<char, GlyphInfo>)> {
+    ) -> Option<(Vec<u8>, HashMap<u16, GlyphInfo>)> {
         let mut texture_data = vec![0u8; (atlas_w * atlas_h * 4) as usize];
         let mut glyphs = HashMap::new();
 
@@ -116,11 +352,16 @@ impl GlyphAtlas {
         let mut cursor_y: u32 = GLYPH_PADDING;
         let mut row_height: u32 = 0;
 
-        for (ch, glyph) in rasterized {
-            // Zero-size glyphs (e.g., space) get a degenerate UV rect.
+        let mut glyph_indices: Vec<u16> = rasterized.keys().copied().collect();
+        glyph_indices.sort_unstable();
+
+        for glyph_id in glyph_indices {
+            let glyph = rasterized.get(&glyph_id)?;
+
+            // Zero-size glyphs (e.g., spaces) get a degenerate UV rect.
             if glyph.width == 0 || glyph.height == 0 {
                 glyphs.insert(
-                    *ch,
+                    glyph_id,
                     GlyphInfo {
                         uv_rect: UvRect {
                             u_min: 0.0,
@@ -169,7 +410,7 @@ impl GlyphAtlas {
             let v_max = (cursor_y + glyph.height) as f32 / atlas_h as f32;
 
             glyphs.insert(
-                *ch,
+                glyph_id,
                 GlyphInfo {
                     uv_rect: UvRect {
                         u_min,
@@ -187,190 +428,8 @@ impl GlyphAtlas {
 
         Some((texture_data, glyphs))
     }
-
-    /// Returns glyph info (UV + metrics) for the given character, if present.
-    pub fn glyph_info(&self, ch: char) -> Option<&GlyphInfo> {
-        self.glyphs.get(&ch)
-    }
-
-    /// Returns the raw RGBA8 texture data.
-    pub fn texture_data(&self) -> &[u8] {
-        &self.texture_data
-    }
-
-    /// Returns the atlas texture width in pixels.
-    pub fn width(&self) -> u32 {
-        self.width
-    }
-
-    /// Returns the atlas texture height in pixels.
-    pub fn height(&self) -> u32 {
-        self.height
-    }
-
-    /// Returns the cached GPU texture handle, if one has been uploaded.
-    pub fn gpu_texture(&self) -> Option<TextureHandle> {
-        self.gpu_texture
-    }
-
-    /// Lazily uploads the atlas pixel data to the GPU and caches the handle.
-    ///
-    /// On the first call the texture is created via `backend.create_texture`.
-    /// Subsequent calls return the cached handle without re-uploading.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the backend fails to create the texture.
-    pub fn ensure_gpu_texture(
-        &mut self,
-        backend: &mut dyn RenderBackend,
-    ) -> Result<TextureHandle, String> {
-        if let Some(handle) = self.gpu_texture {
-            return Ok(handle);
-        }
-
-        let handle = backend
-            .create_texture(
-                self.width,
-                self.height,
-                TextureFormat::RGBA8,
-                TextureFilter::Linear,
-                TextureWrap::ClampToEdge,
-                &self.texture_data,
-            )
-            .map_err(|e| format!("failed to create GPU texture for glyph atlas: {e}"))?;
-
-        self.gpu_texture = Some(handle);
-        Ok(handle)
-    }
-
-    /// Takes the GPU texture handle out of this atlas, if present.
-    ///
-    /// After this call `gpu_texture()` returns `None`. The caller is
-    /// responsible for destroying the returned handle via the backend.
-    pub(crate) fn take_gpu_texture(&mut self) -> Option<TextureHandle> {
-        self.gpu_texture.take()
-    }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn test_font() -> fontdue::Font {
-        let bytes = include_bytes!("../../../test_assets/fonts/test_font.ttf");
-        fontdue::Font::from_bytes(bytes as &[u8], fontdue::FontSettings::default())
-            .expect("test_font.ttf should parse")
-    }
-
-    #[test]
-    fn test_atlas_contains_all_printable_ascii() {
-        let font = test_font();
-        let atlas = GlyphAtlas::generate(&font, 16.0).expect("atlas generation");
-
-        for code in PRINTABLE_ASCII_START..=PRINTABLE_ASCII_END {
-            let ch = code as char;
-            assert!(
-                atlas.glyph_info(ch).is_some(),
-                "atlas missing char '{}' ({})",
-                ch,
-                code
-            );
-        }
-    }
-
-    #[test]
-    fn test_atlas_dimensions_are_power_of_two() {
-        let font = test_font();
-        let atlas = GlyphAtlas::generate(&font, 16.0).expect("atlas generation");
-
-        assert!(atlas.width().is_power_of_two(), "width not pow2");
-        assert!(atlas.height().is_power_of_two(), "height not pow2");
-    }
-
-    #[test]
-    fn test_atlas_texture_data_length_matches_dimensions() {
-        let font = test_font();
-        let atlas = GlyphAtlas::generate(&font, 16.0).expect("atlas generation");
-
-        let expected = (atlas.width() * atlas.height() * 4) as usize;
-        assert_eq!(atlas.texture_data().len(), expected);
-    }
-
-    #[test]
-    fn test_atlas_no_uv_overlap_for_visible_glyphs() {
-        let font = test_font();
-        let atlas = GlyphAtlas::generate(&font, 16.0).expect("atlas generation");
-
-        // Collect visible glyph UV rects (skip zero-area ones like space).
-        let rects: Vec<(char, UvRect)> = (PRINTABLE_ASCII_START..=PRINTABLE_ASCII_END)
-            .filter_map(|code| {
-                let ch = code as char;
-                let info = atlas.glyph_info(ch)?;
-                let uv = &info.uv_rect;
-                if (uv.u_max - uv.u_min).abs() < f32::EPSILON {
-                    return None;
-                }
-                Some((ch, *uv))
-            })
-            .collect();
-
-        // Check all pairs for overlap.
-        for i in 0..rects.len() {
-            for j in (i + 1)..rects.len() {
-                let (ch_a, a) = &rects[i];
-                let (ch_b, b) = &rects[j];
-                let overlaps = a.u_min < b.u_max
-                    && a.u_max > b.u_min
-                    && a.v_min < b.v_max
-                    && a.v_max > b.v_min;
-                assert!(!overlaps, "UV overlap between '{}' and '{}'", ch_a, ch_b);
-            }
-        }
-    }
-
-    #[test]
-    fn test_atlas_glyph_info_returns_none_for_missing_char() {
-        let font = test_font();
-        let atlas = GlyphAtlas::generate(&font, 16.0).expect("atlas generation");
-
-        // A non-ASCII char should not be in the atlas.
-        assert!(atlas.glyph_info('\u{1F600}').is_none());
-    }
-
-    #[test]
-    fn test_atlas_visible_glyph_has_nonzero_uv_area() {
-        let font = test_font();
-        let atlas = GlyphAtlas::generate(&font, 24.0).expect("atlas generation");
-
-        let info = atlas.glyph_info('A').expect("'A' should be in atlas");
-        let area =
-            (info.uv_rect.u_max - info.uv_rect.u_min) * (info.uv_rect.v_max - info.uv_rect.v_min);
-        assert!(area > 0.0, "visible glyph should have nonzero UV area");
-    }
-
-    #[test]
-    fn test_gpu_texture_returns_none_before_upload() {
-        let font = test_font();
-        let atlas = GlyphAtlas::generate(&font, 16.0).expect("atlas generation");
-
-        assert!(
-            atlas.gpu_texture().is_none(),
-            "gpu_texture should be None before ensure_gpu_texture is called"
-        );
-    }
-
-    #[test]
-    fn test_atlas_space_glyph_has_zero_uv_area() {
-        let font = test_font();
-        let atlas = GlyphAtlas::generate(&font, 16.0).expect("atlas generation");
-
-        let info = atlas.glyph_info(' ').expect("space should be in atlas");
-        let area =
-            (info.uv_rect.u_max - info.uv_rect.u_min) * (info.uv_rect.v_max - info.uv_rect.v_min);
-        assert!(
-            area.abs() < f32::EPSILON,
-            "space glyph should have zero UV area"
-        );
-    }
-}
+#[path = "glyph_atlas_tests.rs"]
+mod tests;
