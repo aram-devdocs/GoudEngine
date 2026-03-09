@@ -383,6 +383,7 @@ impl GoudGame {
         while self.context.is_running() {
             self.context.update(frame_time);
             self.debug_overlay.update(frame_time);
+            self.process_ui_frame();
 
             // Update all active scenes each frame.
             let active: Vec<SceneId> = self.scene_manager.active_scenes().to_vec();
@@ -403,9 +404,6 @@ impl GoudGame {
                 self.last_transition_complete = Some(complete);
             }
 
-            // Update UI manager after scene updates.
-            self.ui_manager.update();
-
             // Render UI manager after updates (before buffer swap).
             self.ui_manager.render();
 
@@ -423,6 +421,7 @@ impl GoudGame {
     {
         self.context.update(delta_time);
         self.debug_overlay.update(delta_time);
+        self.process_ui_frame();
 
         let active: Vec<SceneId> = self.scene_manager.active_scenes().to_vec();
         for scene_id in active {
@@ -441,9 +440,6 @@ impl GoudGame {
         if let Some(complete) = self.scene_manager.tick_transition(delta_time) {
             self.last_transition_complete = Some(complete);
         }
-
-        // Update UI manager after scene updates.
-        self.ui_manager.update();
 
         // Render UI manager after updates (before buffer swap).
         self.ui_manager.render();

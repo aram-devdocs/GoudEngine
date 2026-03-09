@@ -19,6 +19,8 @@ pub struct InputManager {
     // Current frame state
     pub(super) keys_current: HashSet<Key>,
     pub(super) mouse_buttons_current: HashSet<MouseButton>,
+    pub(super) consumed_keys: HashSet<Key>,
+    pub(super) consumed_mouse_buttons: HashSet<MouseButton>,
     /// Deprecated — use `gamepads` for new code.
     pub(super) gamepad_buttons_current: Vec<HashSet<u32>>,
     pub(super) mouse_position: Vec2,
@@ -67,6 +69,8 @@ impl InputManager {
         Self {
             keys_current: HashSet::new(),
             mouse_buttons_current: HashSet::new(),
+            consumed_keys: HashSet::new(),
+            consumed_mouse_buttons: HashSet::new(),
             gamepad_buttons_current: vec![HashSet::new(); 4], // Deprecated, for backward compat
             mouse_position: Vec2::zero(),
             mouse_delta: Vec2::zero(),
@@ -96,6 +100,7 @@ impl InputManager {
         self.mouse_buttons_previous = self.mouse_buttons_current.clone();
         self.gamepad_buttons_previous = self.gamepad_buttons_current.clone();
         self.gamepads_previous = self.gamepads.clone();
+        self.clear_consumed_inputs();
 
         // Reset deltas
         self.mouse_delta = Vec2::zero();
@@ -126,21 +131,25 @@ impl InputManager {
 
     /// Returns true if the key is currently pressed.
     pub fn key_pressed(&self, key: Key) -> bool {
-        self.keys_current.contains(&key)
+        self.keys_current.contains(&key) && !self.consumed_keys.contains(&key)
     }
 
     /// Returns true if the key was just pressed this frame.
     ///
     /// True only on the first frame the key is pressed.
     pub fn key_just_pressed(&self, key: Key) -> bool {
-        self.keys_current.contains(&key) && !self.keys_previous.contains(&key)
+        self.keys_current.contains(&key)
+            && !self.keys_previous.contains(&key)
+            && !self.consumed_keys.contains(&key)
     }
 
     /// Returns true if the key was just released this frame.
     ///
     /// True only on the first frame the key is released.
     pub fn key_just_released(&self, key: Key) -> bool {
-        !self.keys_current.contains(&key) && self.keys_previous.contains(&key)
+        !self.keys_current.contains(&key)
+            && self.keys_previous.contains(&key)
+            && !self.consumed_keys.contains(&key)
     }
 
     /// Returns an iterator over all currently pressed keys.
@@ -167,18 +176,21 @@ impl InputManager {
     /// Returns true if the mouse button is currently pressed.
     pub fn mouse_button_pressed(&self, button: MouseButton) -> bool {
         self.mouse_buttons_current.contains(&button)
+            && !self.consumed_mouse_buttons.contains(&button)
     }
 
     /// Returns true if the mouse button was just pressed this frame.
     pub fn mouse_button_just_pressed(&self, button: MouseButton) -> bool {
         self.mouse_buttons_current.contains(&button)
             && !self.mouse_buttons_previous.contains(&button)
+            && !self.consumed_mouse_buttons.contains(&button)
     }
 
     /// Returns true if the mouse button was just released this frame.
     pub fn mouse_button_just_released(&self, button: MouseButton) -> bool {
         !self.mouse_buttons_current.contains(&button)
             && self.mouse_buttons_previous.contains(&button)
+            && !self.consumed_mouse_buttons.contains(&button)
     }
 
     /// Returns an iterator over all currently pressed mouse buttons.
@@ -220,8 +232,10 @@ impl InputManager {
     pub fn clear(&mut self) {
         self.keys_current.clear();
         self.keys_previous.clear();
+        self.consumed_keys.clear();
         self.mouse_buttons_current.clear();
         self.mouse_buttons_previous.clear();
+        self.consumed_mouse_buttons.clear();
         for buttons in &mut self.gamepad_buttons_current {
             buttons.clear();
         }
@@ -252,6 +266,28 @@ impl InputManager {
         while self.input_buffer.len() > 32 {
             self.input_buffer.pop_front();
         }
+    }
+
+    /// Consumes a key for the current frame.
+    ///
+    /// Once consumed, key query methods return `false` for this key until the
+    /// next frame (or until consumption is manually cleared).
+    pub fn consume_key(&mut self, key: Key) {
+        self.consumed_keys.insert(key);
+    }
+
+    /// Consumes a mouse button for the current frame.
+    ///
+    /// Once consumed, mouse button query methods return `false` for this button
+    /// until the next frame (or until consumption is manually cleared).
+    pub fn consume_mouse_button(&mut self, button: MouseButton) {
+        self.consumed_mouse_buttons.insert(button);
+    }
+
+    /// Clears all per-frame consumed input masks.
+    pub fn clear_consumed_inputs(&mut self) {
+        self.consumed_keys.clear();
+        self.consumed_mouse_buttons.clear();
     }
 }
 

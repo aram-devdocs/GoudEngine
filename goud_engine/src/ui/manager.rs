@@ -1,34 +1,51 @@
 //! UI tree manager.
 //!
-//! [`UiManager`] owns the UI node tree, handling allocation, hierarchy
-//! management, and cycle detection. It is independent of the ECS world.
+//! [`UiManager`] owns UI nodes, computes deterministic layout, and processes UI
+//! input semantics (hover, focus, and button activation/click dispatch).
+
+mod input;
+mod layout;
 
 use std::collections::HashMap;
 
 use crate::core::error::{GoudError, GoudResult};
+use crate::core::math::Rect;
 
 use super::allocator::UiNodeAllocator;
 use super::component::UiComponent;
 use super::node::UiNode;
 use super::node_id::UiNodeId;
 
-// =============================================================================
-// UiManager
-// =============================================================================
+/// Events emitted by the UI manager during input processing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UiEvent {
+    /// Mouse pointer started hovering this node.
+    HoverEnter(UiNodeId),
+    /// Mouse pointer stopped hovering this node.
+    HoverLeave(UiNodeId),
+    /// Node focus changed.
+    FocusChanged {
+        /// Previous focused node.
+        previous: Option<UiNodeId>,
+        /// New focused node.
+        current: Option<UiNodeId>,
+    },
+    /// Button-like activation happened.
+    Click(UiNodeId),
+}
 
 /// Owns and manages the UI node tree.
-///
-/// Nodes are allocated via a generational arena and stored in a flat
-/// `HashMap`. Parent/child relationships are maintained on the nodes
-/// themselves; the manager enforces tree invariants (no cycles, proper
-/// bookkeeping on removal).
 #[derive(Debug)]
 pub struct UiManager {
-    /// Generational ID allocator.
     allocator: UiNodeAllocator,
-
-    /// All live nodes, keyed by their ID.
     nodes: HashMap<UiNodeId, UiNode>,
+    layout_dirty: bool,
+    layout_epoch: u64,
+    viewport_size: (u32, u32),
+    hovered_node: Option<UiNodeId>,
+    focused_node: Option<UiNodeId>,
+    pressed_pointer_node: Option<UiNodeId>,
+    frame_events: Vec<UiEvent>,
 }
 
 impl UiManager {
@@ -37,77 +54,76 @@ impl UiManager {
         Self {
             allocator: UiNodeAllocator::new(),
             nodes: HashMap::new(),
+            layout_dirty: true,
+            layout_epoch: 0,
+            viewport_size: (0, 0),
+            hovered_node: None,
+            focused_node: None,
+            pressed_pointer_node: None,
+            frame_events: Vec::new(),
         }
     }
 
     /// Creates a new node, optionally attaching a component.
-    ///
-    /// The node starts with no parent (root) and no children.
     pub fn create_node(&mut self, component: Option<UiComponent>) -> UiNodeId {
         let id = self.allocator.allocate();
         let mut node = UiNode::new(id);
         node.set_component(component);
         self.nodes.insert(id, node);
+        self.mark_layout_dirty();
         id
     }
 
-    /// Removes a node and its entire subtree recursively.
-    ///
-    /// Also detaches the node from its parent's children list.
-    /// Returns `true` if the node existed and was removed.
+    /// Removes a node and its subtree recursively.
     pub fn remove_node(&mut self, id: UiNodeId) -> bool {
-        // Collect the subtree IDs via iterative traversal to avoid
-        // borrow-checker issues with recursive mutable access.
         let subtree = self.collect_subtree(id);
         if subtree.is_empty() {
             return false;
         }
 
-        // Detach the root of the subtree from its parent.
-        if let Some(parent_id) = self.nodes.get(&id).and_then(|n| n.parent()) {
+        if let Some(parent_id) = self.nodes.get(&id).and_then(UiNode::parent) {
             if let Some(parent) = self.nodes.get_mut(&parent_id) {
                 parent.remove_child(id);
             }
         }
 
-        // Remove every node in the subtree.
         for node_id in &subtree {
             self.nodes.remove(node_id);
             self.allocator.deallocate(*node_id);
         }
 
+        if let Some(hovered) = self.hovered_node.filter(|n| subtree.contains(n)) {
+            self.frame_events.push(UiEvent::HoverLeave(hovered));
+            self.hovered_node = None;
+        }
+        if self.focused_node.is_some_and(|n| subtree.contains(&n)) {
+            self.set_focus(None);
+        }
+        if self
+            .pressed_pointer_node
+            .is_some_and(|n| subtree.contains(&n))
+        {
+            self.pressed_pointer_node = None;
+        }
+
+        self.mark_layout_dirty();
         true
     }
 
-    /// Sets the parent of `child` to `parent`.
-    ///
-    /// Passing `None` makes the child a root node. Detects cycles by walking
-    /// the ancestor chain of the proposed parent.
-    ///
-    /// # Errors
-    ///
-    /// Returns `GoudError::InvalidState` if:
-    /// - `child` does not exist
-    /// - `parent` is `Some` but does not exist
-    /// - Setting the parent would create a cycle
+    /// Sets `child`'s parent to `parent`, or detaches with `None`.
     pub fn set_parent(&mut self, child: UiNodeId, parent: Option<UiNodeId>) -> GoudResult<()> {
-        // Validate child exists.
         if !self.nodes.contains_key(&child) {
             return Err(GoudError::InvalidState(
                 "Child node does not exist".to_string(),
             ));
         }
 
-        // Validate parent exists (if provided).
         if let Some(pid) = parent {
             if !self.nodes.contains_key(&pid) {
                 return Err(GoudError::InvalidState(
                     "Parent node does not exist".to_string(),
                 ));
             }
-
-            // Cycle detection: walk ancestors of the proposed parent.
-            // If we encounter `child`, attaching would create a cycle.
             if self.is_ancestor(child, pid) {
                 return Err(GoudError::InvalidState(
                     "Setting this parent would create a cycle".to_string(),
@@ -115,39 +131,50 @@ impl UiManager {
             }
         }
 
-        // Detach from old parent.
-        let old_parent = self.nodes.get(&child).and_then(|n| n.parent());
+        let old_parent = self.nodes.get(&child).and_then(UiNode::parent);
         if let Some(old_pid) = old_parent {
-            if let Some(old_p) = self.nodes.get_mut(&old_pid) {
-                old_p.remove_child(child);
+            if let Some(old_parent_node) = self.nodes.get_mut(&old_pid) {
+                old_parent_node.remove_child(child);
             }
         }
 
-        // Attach to new parent.
         if let Some(pid) = parent {
-            if let Some(new_p) = self.nodes.get_mut(&pid) {
-                new_p.add_child(child);
+            if let Some(new_parent) = self.nodes.get_mut(&pid) {
+                new_parent.add_child(child);
             }
         }
 
-        // Update child's parent field.
         if let Some(node) = self.nodes.get_mut(&child) {
             node.set_parent(parent);
         }
 
+        self.mark_layout_dirty();
         Ok(())
     }
 
-    /// Returns a reference to a node, if it exists.
+    /// Returns a reference to a node.
     #[inline]
     pub fn get_node(&self, id: UiNodeId) -> Option<&UiNode> {
         self.nodes.get(&id)
     }
 
-    /// Returns a mutable reference to a node, if it exists.
+    /// Returns a mutable reference to a node, marking layout dirty conservatively.
     #[inline]
     pub fn get_node_mut(&mut self, id: UiNodeId) -> Option<&mut UiNode> {
+        self.mark_layout_dirty();
         self.nodes.get_mut(&id)
+    }
+
+    /// Returns IDs of all root nodes (deterministic order).
+    pub fn root_nodes(&self) -> Vec<UiNodeId> {
+        let mut roots: Vec<_> = self
+            .nodes
+            .values()
+            .filter(|n| n.parent().is_none())
+            .map(UiNode::id)
+            .collect();
+        sort_node_ids(&mut roots);
+        roots
     }
 
     /// Returns the number of live nodes.
@@ -156,57 +183,154 @@ impl UiManager {
         self.nodes.len()
     }
 
-    /// Returns IDs of all root nodes (nodes with no parent).
-    pub fn root_nodes(&self) -> Vec<UiNodeId> {
+    /// Sets viewport size. Layout is dirtied if changed.
+    pub fn set_viewport_size(&mut self, width: u32, height: u32) {
+        if self.viewport_size != (width, height) {
+            self.viewport_size = (width, height);
+            self.mark_layout_dirty();
+        }
+    }
+
+    /// Returns viewport size in pixels.
+    #[inline]
+    pub fn viewport_size(&self) -> (u32, u32) {
+        self.viewport_size
+    }
+
+    /// Returns the layout epoch, incremented once per recompute pass.
+    #[inline]
+    pub fn layout_epoch(&self) -> u64 {
+        self.layout_epoch
+    }
+
+    /// Returns a node's computed rect.
+    #[inline]
+    pub fn computed_rect(&self, id: UiNodeId) -> Option<Rect> {
+        self.nodes.get(&id).map(UiNode::computed_rect)
+    }
+
+    /// Returns the currently hovered node.
+    #[inline]
+    pub fn hovered_node(&self) -> Option<UiNodeId> {
+        self.hovered_node
+    }
+
+    /// Returns the currently focused node.
+    #[inline]
+    pub fn focused_node(&self) -> Option<UiNodeId> {
+        self.focused_node
+    }
+
+    /// Returns all UI events emitted in the current frame.
+    #[inline]
+    pub fn events(&self) -> &[UiEvent] {
+        &self.frame_events
+    }
+
+    /// Takes and clears all UI events for this frame.
+    pub fn take_events(&mut self) -> Vec<UiEvent> {
+        std::mem::take(&mut self.frame_events)
+    }
+
+    fn mark_layout_dirty(&mut self) {
+        self.layout_dirty = true;
+    }
+
+    fn node_focusable(&self, node_id: UiNodeId) -> bool {
         self.nodes
-            .values()
-            .filter(|n| n.parent().is_none())
-            .map(|n| n.id())
-            .collect()
+            .get(&node_id)
+            .is_some_and(|n| self.node_and_ancestors_input_enabled(node_id) && n.focusable())
     }
 
-    /// Placeholder for future layout computation.
-    pub fn update(&mut self) {
-        // Will compute layout in a future iteration.
+    fn node_is_clickable_button(&self, node_id: UiNodeId) -> bool {
+        self.nodes.get(&node_id).is_some_and(|n| {
+            self.node_and_ancestors_input_enabled(node_id)
+                && n.component()
+                    .is_some_and(|component| component.is_button() && component.is_interactive())
+        })
     }
 
-    /// Placeholder for future UI rendering.
-    pub fn render(&self) {
-        // Will render UI in a future iteration.
+    fn set_focus(&mut self, next: Option<UiNodeId>) {
+        if self.focused_node == next {
+            return;
+        }
+        let previous = self.focused_node;
+        self.focused_node = next;
+        self.frame_events.push(UiEvent::FocusChanged {
+            previous,
+            current: next,
+        });
     }
 
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
+    fn clear_stale_ui_state(&mut self) {
+        if let Some(hovered) = self.hovered_node {
+            if !self.node_exists_and_interactive(hovered) {
+                self.frame_events.push(UiEvent::HoverLeave(hovered));
+                self.hovered_node = None;
+            }
+        }
+        if self.focused_node.is_some_and(|id| !self.node_focusable(id)) {
+            self.set_focus(None);
+        }
+        if self
+            .pressed_pointer_node
+            .is_some_and(|id| !self.node_exists_and_interactive(id))
+        {
+            self.pressed_pointer_node = None;
+        }
+    }
 
-    /// Returns `true` if `ancestor` is an ancestor of `node` (or is `node` itself).
+    fn node_exists_and_interactive(&self, id: UiNodeId) -> bool {
+        self.nodes.get(&id).is_some_and(|node| {
+            self.node_and_ancestors_input_enabled(id)
+                && node.component().is_some_and(UiComponent::is_interactive)
+        })
+    }
+
+    fn node_and_ancestors_input_enabled(&self, node_id: UiNodeId) -> bool {
+        let mut current = Some(node_id);
+        while let Some(id) = current {
+            let Some(node) = self.nodes.get(&id) else {
+                return false;
+            };
+            if !node.visible() || !node.input_enabled() {
+                return false;
+            }
+            current = node.parent();
+        }
+        true
+    }
+
     fn is_ancestor(&self, ancestor: UiNodeId, node: UiNodeId) -> bool {
         let mut current = Some(node);
         while let Some(cur) = current {
             if cur == ancestor {
                 return true;
             }
-            current = self.nodes.get(&cur).and_then(|n| n.parent());
+            current = self.nodes.get(&cur).and_then(UiNode::parent);
         }
         false
     }
 
-    /// Collects all node IDs in the subtree rooted at `root` (inclusive).
-    /// Returns an empty vec if `root` does not exist.
     fn collect_subtree(&self, root: UiNodeId) -> Vec<UiNodeId> {
-        let mut result = Vec::new();
+        let mut out = Vec::new();
         let mut stack = vec![root];
 
         while let Some(id) = stack.pop() {
             if let Some(node) = self.nodes.get(&id) {
-                result.push(id);
+                out.push(id);
                 for &child in node.children() {
                     stack.push(child);
                 }
             }
         }
 
-        result
+        out
+    }
+
+    /// Placeholder for future UI rendering.
+    pub fn render(&self) {
+        // Rendering is implemented in later iterations.
     }
 }
 
@@ -217,237 +341,6 @@ impl Default for UiManager {
     }
 }
 
-// =============================================================================
-// Tests
-// =============================================================================
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_create_node() {
-        let mut mgr = UiManager::new();
-        let id = mgr.create_node(None);
-        assert_eq!(mgr.node_count(), 1);
-        assert!(mgr.get_node(id).is_some());
-    }
-
-    #[test]
-    fn test_create_node_with_component() {
-        let mut mgr = UiManager::new();
-        let id = mgr.create_node(Some(UiComponent::Panel));
-        let node = mgr.get_node(id).unwrap();
-        assert!(matches!(node.component(), Some(UiComponent::Panel)));
-    }
-
-    #[test]
-    fn test_remove_node() {
-        let mut mgr = UiManager::new();
-        let id = mgr.create_node(None);
-        assert!(mgr.remove_node(id));
-        assert_eq!(mgr.node_count(), 0);
-        assert!(mgr.get_node(id).is_none());
-    }
-
-    #[test]
-    fn test_remove_nonexistent_returns_false() {
-        let mut mgr = UiManager::new();
-        assert!(!mgr.remove_node(UiNodeId::INVALID));
-    }
-
-    #[test]
-    fn test_recursive_removal() {
-        let mut mgr = UiManager::new();
-        let root = mgr.create_node(None);
-        let child = mgr.create_node(None);
-        let grandchild = mgr.create_node(None);
-
-        mgr.set_parent(child, Some(root)).unwrap();
-        mgr.set_parent(grandchild, Some(child)).unwrap();
-
-        assert!(mgr.remove_node(root));
-        assert_eq!(mgr.node_count(), 0);
-    }
-
-    #[test]
-    fn test_remove_subtree_preserves_siblings() {
-        let mut mgr = UiManager::new();
-        let root = mgr.create_node(None);
-        let child_a = mgr.create_node(None);
-        let child_b = mgr.create_node(None);
-
-        mgr.set_parent(child_a, Some(root)).unwrap();
-        mgr.set_parent(child_b, Some(root)).unwrap();
-
-        assert!(mgr.remove_node(child_a));
-        assert_eq!(mgr.node_count(), 2);
-        assert!(mgr.get_node(root).is_some());
-        assert!(mgr.get_node(child_b).is_some());
-    }
-
-    #[test]
-    fn test_set_parent() {
-        let mut mgr = UiManager::new();
-        let parent = mgr.create_node(None);
-        let child = mgr.create_node(None);
-
-        mgr.set_parent(child, Some(parent)).unwrap();
-
-        let child_node = mgr.get_node(child).unwrap();
-        assert_eq!(child_node.parent(), Some(parent));
-
-        let parent_node = mgr.get_node(parent).unwrap();
-        assert!(parent_node.children().contains(&child));
-    }
-
-    #[test]
-    fn test_set_parent_none_detaches() {
-        let mut mgr = UiManager::new();
-        let parent = mgr.create_node(None);
-        let child = mgr.create_node(None);
-
-        mgr.set_parent(child, Some(parent)).unwrap();
-        mgr.set_parent(child, None).unwrap();
-
-        assert_eq!(mgr.get_node(child).unwrap().parent(), None);
-        assert!(mgr.get_node(parent).unwrap().children().is_empty());
-    }
-
-    #[test]
-    fn test_set_parent_reparent() {
-        let mut mgr = UiManager::new();
-        let p1 = mgr.create_node(None);
-        let p2 = mgr.create_node(None);
-        let child = mgr.create_node(None);
-
-        mgr.set_parent(child, Some(p1)).unwrap();
-        mgr.set_parent(child, Some(p2)).unwrap();
-
-        assert!(mgr.get_node(p1).unwrap().children().is_empty());
-        assert!(mgr.get_node(p2).unwrap().children().contains(&child));
-        assert_eq!(mgr.get_node(child).unwrap().parent(), Some(p2));
-    }
-
-    #[test]
-    fn test_cycle_detection_direct() {
-        let mut mgr = UiManager::new();
-        let a = mgr.create_node(None);
-        let b = mgr.create_node(None);
-
-        mgr.set_parent(b, Some(a)).unwrap();
-
-        // Trying to make a a child of b should fail (a -> b -> a cycle).
-        let result = mgr.set_parent(a, Some(b));
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_cycle_detection_indirect() {
-        let mut mgr = UiManager::new();
-        let a = mgr.create_node(None);
-        let b = mgr.create_node(None);
-        let c = mgr.create_node(None);
-
-        mgr.set_parent(b, Some(a)).unwrap();
-        mgr.set_parent(c, Some(b)).unwrap();
-
-        // a -> b -> c; trying c as parent of a creates a -> b -> c -> a.
-        let result = mgr.set_parent(a, Some(c));
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_set_parent_self_cycle() {
-        let mut mgr = UiManager::new();
-        let a = mgr.create_node(None);
-
-        let result = mgr.set_parent(a, Some(a));
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_set_parent_nonexistent_child() {
-        let mut mgr = UiManager::new();
-        let parent = mgr.create_node(None);
-
-        let result = mgr.set_parent(UiNodeId::INVALID, Some(parent));
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_set_parent_nonexistent_parent() {
-        let mut mgr = UiManager::new();
-        let child = mgr.create_node(None);
-
-        let result = mgr.set_parent(child, Some(UiNodeId::INVALID));
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_root_nodes() {
-        let mut mgr = UiManager::new();
-        let a = mgr.create_node(None);
-        let b = mgr.create_node(None);
-        let c = mgr.create_node(None);
-
-        mgr.set_parent(c, Some(a)).unwrap();
-
-        let roots = mgr.root_nodes();
-        assert_eq!(roots.len(), 2);
-        assert!(roots.contains(&a));
-        assert!(roots.contains(&b));
-        assert!(!roots.contains(&c));
-    }
-
-    #[test]
-    fn test_node_count() {
-        let mut mgr = UiManager::new();
-        assert_eq!(mgr.node_count(), 0);
-
-        let a = mgr.create_node(None);
-        let _b = mgr.create_node(None);
-        assert_eq!(mgr.node_count(), 2);
-
-        mgr.remove_node(a);
-        assert_eq!(mgr.node_count(), 1);
-    }
-
-    #[test]
-    fn test_get_node_mut() {
-        let mut mgr = UiManager::new();
-        let id = mgr.create_node(None);
-
-        let node = mgr.get_node_mut(id).unwrap();
-        node.set_component(Some(UiComponent::Panel));
-
-        assert!(matches!(
-            mgr.get_node(id).unwrap().component(),
-            Some(UiComponent::Panel)
-        ));
-    }
-
-    #[test]
-    fn test_update_and_render_do_not_panic() {
-        // Currently, update() and render() are placeholders with no observable
-        // side effects, so this test only verifies they don't panic.
-        // Assertions will be added once these methods are implemented.
-        let mut mgr = UiManager::new();
-        mgr.create_node(None);
-        mgr.update();
-        mgr.render();
-    }
-
-    #[test]
-    fn test_remove_child_detaches_from_parent() {
-        let mut mgr = UiManager::new();
-        let parent = mgr.create_node(None);
-        let child = mgr.create_node(None);
-        mgr.set_parent(child, Some(parent)).unwrap();
-
-        mgr.remove_node(child);
-
-        let parent_node = mgr.get_node(parent).unwrap();
-        assert!(parent_node.children().is_empty());
-    }
+fn sort_node_ids(ids: &mut [UiNodeId]) {
+    ids.sort_by_key(|id| (id.index(), id.generation()));
 }

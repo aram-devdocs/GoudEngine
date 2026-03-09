@@ -6,6 +6,7 @@
 mod instance;
 mod instance_transitions;
 mod providers;
+mod ui_frame;
 
 #[cfg(test)]
 mod tests;
