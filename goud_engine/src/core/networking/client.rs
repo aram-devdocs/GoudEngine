@@ -73,6 +73,11 @@ impl SessionClient {
         let connection = self.server_connection.ok_or_else(|| {
             GoudError::InvalidState("Client has no active server connection".to_string())
         })?;
+        if !self.joined {
+            return Err(GoudError::InvalidState(
+                "Client must complete join handshake before sending state commands".to_string(),
+            ));
+        }
         let message = ProtocolMessage::StateCommand { payload };
         let encoded = encode_message(&message)?;
         self.provider
@@ -176,11 +181,13 @@ impl SessionClient {
         match message {
             ProtocolMessage::JoinAccepted { snapshot } => {
                 if self.server_connection == Some(connection) {
-                    self.joined = true;
-                    events.push(ClientEvent::Joined {
-                        connection,
-                        snapshot,
-                    });
+                    if !self.joined {
+                        self.joined = true;
+                        events.push(ClientEvent::Joined {
+                            connection,
+                            snapshot,
+                        });
+                    }
                 } else {
                     events.push(ClientEvent::ProtocolError {
                         reason: "Received JoinAccepted on unknown connection".to_string(),

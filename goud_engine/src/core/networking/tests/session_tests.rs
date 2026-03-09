@@ -6,8 +6,12 @@ use crate::core::networking::authority::{
 use crate::core::networking::discovery::{
     DirectoryDiscoveryProvider, DiscoveredSession, DiscoveryError, DiscoveryMode, DiscoveryService,
 };
-use crate::core::networking::types::{ClientEvent, ServerEvent, SessionDescriptor};
+use crate::core::networking::protocol::{encode_message, ProtocolMessage};
+use crate::core::networking::types::{
+    ClientEvent, ServerEvent, SessionChannels, SessionDescriptor,
+};
 use crate::core::networking::{SessionClient, SessionServer};
+use crate::core::providers::network::NetworkProvider;
 
 use super::mock_provider::{create_server_config, pump, MockNetworkHub};
 
@@ -230,4 +234,98 @@ fn mid_session_join_and_leave_are_handled_gracefully() {
             } if *recipients == 1 && payload == &vec![0x02]
         )
     }));
+}
+
+#[test]
+fn non_joined_client_command_is_not_accepted_or_broadcast() {
+    let hub = MockNetworkHub::default();
+
+    let mut server =
+        SessionServer::with_policy(Box::new(hub.provider()), BuiltInAuthorityPolicy::AllowAll);
+    server
+        .host(create_server_config(
+            7106,
+            "session-non-joined-command",
+            false,
+        ))
+        .unwrap();
+
+    let mut rogue_client = hub.provider();
+    let connection = rogue_client.connect("127.0.0.1:7106").unwrap();
+    let payload = vec![0xCC, 0xDD];
+    let encoded = encode_message(&ProtocolMessage::StateCommand {
+        payload: payload.clone(),
+    })
+    .unwrap();
+    rogue_client
+        .send(connection, SessionChannels::default().command, &encoded)
+        .unwrap();
+
+    let server_events = server.tick().unwrap();
+
+    assert!(!server_events
+        .iter()
+        .any(|event| matches!(event, ServerEvent::CommandAccepted { .. })));
+    assert!(!server_events
+        .iter()
+        .any(|event| matches!(event, ServerEvent::StateBroadcast { .. })));
+    assert!(server_events.iter().any(|event| {
+        matches!(
+            event,
+            ServerEvent::CommandRejected {
+                payload: rejected_payload,
+                ..
+            } if rejected_payload == &payload
+        )
+    }));
+    assert_eq!(server.state_sequence(), 0);
+    assert!(server.authoritative_state().is_empty());
+}
+
+#[test]
+fn duplicate_join_accepted_does_not_emit_duplicate_joined_event() {
+    let hub = MockNetworkHub::default();
+
+    let mut server =
+        SessionServer::with_policy(Box::new(hub.provider()), BuiltInAuthorityPolicy::AllowAll);
+    server
+        .host(create_server_config(
+            7107,
+            "session-duplicate-join-accepted",
+            false,
+        ))
+        .unwrap();
+
+    let client_provider = hub.provider();
+    let client_endpoint = client_provider.endpoint_id();
+    let mut client = SessionClient::new(Box::new(client_provider));
+    let connection = client.join_direct("127.0.0.1:7107").unwrap();
+
+    let (_server_events, client_events) = pump(&mut server, &mut [&mut client], 3);
+    let initial_joined_count = client_events[0]
+        .iter()
+        .filter(|event| matches!(event, ClientEvent::Joined { .. }))
+        .count();
+    assert_eq!(initial_joined_count, 1);
+    assert!(client.is_joined());
+
+    let duplicate_join_accepted = encode_message(&ProtocolMessage::JoinAccepted {
+        snapshot: Vec::new(),
+    })
+    .unwrap();
+    hub.enqueue_received(
+        client_endpoint,
+        connection,
+        SessionChannels::default().control,
+        duplicate_join_accepted,
+    )
+    .unwrap();
+
+    let duplicate_events = client.tick().unwrap();
+    let duplicate_joined_count = duplicate_events
+        .iter()
+        .filter(|event| matches!(event, ClientEvent::Joined { .. }))
+        .count();
+    assert_eq!(duplicate_joined_count, 0);
+    assert!(client.is_joined());
 }

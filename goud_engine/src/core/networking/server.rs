@@ -18,7 +18,8 @@ use super::types::{ServerConfig, ServerEvent};
 pub struct SessionServer {
     provider: Box<dyn NetworkProvider>,
     authority: Box<dyn AuthorityPolicy>,
-    clients: HashSet<ConnectionId>,
+    connected_clients: HashSet<ConnectionId>,
+    joined_clients: HashSet<ConnectionId>,
     authoritative_state: Vec<u8>,
     state_sequence: u64,
     config: Option<ServerConfig>,
@@ -28,7 +29,8 @@ pub struct SessionServer {
 impl std::fmt::Debug for SessionServer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SessionServer")
-            .field("clients", &self.clients.len())
+            .field("connected_clients", &self.connected_clients.len())
+            .field("joined_clients", &self.joined_clients.len())
             .field("state_sequence", &self.state_sequence)
             .finish()
     }
@@ -40,7 +42,8 @@ impl SessionServer {
         Self {
             provider,
             authority,
-            clients: HashSet::new(),
+            connected_clients: HashSet::new(),
+            joined_clients: HashSet::new(),
             authoritative_state: Vec::new(),
             state_sequence: 0,
             config: None,
@@ -68,9 +71,9 @@ impl SessionServer {
         Ok(())
     }
 
-    /// Returns the number of currently connected clients.
+    /// Returns the number of clients that completed join handshake.
     pub fn client_count(&self) -> usize {
-        self.clients.len()
+        self.joined_clients.len()
     }
 
     /// Returns the latest authoritative state bytes.
@@ -91,20 +94,15 @@ impl SessionServer {
         for network_event in self.provider.drain_events() {
             match network_event {
                 NetworkEvent::Connected { conn } => {
-                    self.clients.insert(conn);
-                    self.sync_lan_population()?;
-                    self.send_protocol(
-                        conn,
-                        &ProtocolMessage::JoinAccepted {
-                            snapshot: self.authoritative_state.clone(),
-                        },
-                    )?;
-                    events.push(ServerEvent::ClientJoined { connection: conn });
+                    self.connected_clients.insert(conn);
                 }
                 NetworkEvent::Disconnected { conn, reason } => {
-                    self.clients.remove(&conn);
+                    self.connected_clients.remove(&conn);
+                    let was_joined = self.joined_clients.remove(&conn);
                     self.authority.on_client_disconnected(conn);
-                    self.sync_lan_population()?;
+                    if was_joined {
+                        self.sync_lan_population()?;
+                    }
                     events.push(ServerEvent::ClientLeft {
                         connection: conn,
                         reason,
@@ -143,7 +141,7 @@ impl SessionServer {
             payload: payload.clone(),
         };
         let bytes = encode_message(&message)?;
-        let targets: Vec<ConnectionId> = self.clients.iter().copied().collect();
+        let targets: Vec<ConnectionId> = self.joined_clients.iter().copied().collect();
 
         for connection in &targets {
             self.provider
@@ -165,14 +163,44 @@ impl SessionServer {
     ) -> GoudResult<()> {
         match message {
             ProtocolMessage::JoinRequest => {
+                if !self.connected_clients.contains(&connection) {
+                    events.push(ServerEvent::ProtocolError {
+                        connection,
+                        reason: "JoinRequest received from unknown connection".to_string(),
+                    });
+                    return Ok(());
+                }
+
+                let newly_joined = self.joined_clients.insert(connection);
                 self.send_protocol(
                     connection,
                     &ProtocolMessage::JoinAccepted {
                         snapshot: self.authoritative_state.clone(),
                     },
                 )?;
+                if newly_joined {
+                    self.sync_lan_population()?;
+                    events.push(ServerEvent::ClientJoined { connection });
+                }
             }
             ProtocolMessage::StateCommand { payload } => {
+                if !self.joined_clients.contains(&connection) {
+                    let reason = "Client must join before sending state commands".to_string();
+                    self.send_protocol(
+                        connection,
+                        &ProtocolMessage::ValidationRejected {
+                            reason: reason.clone(),
+                            payload: payload.clone(),
+                        },
+                    )?;
+                    events.push(ServerEvent::CommandRejected {
+                        connection,
+                        payload,
+                        reason,
+                    });
+                    return Ok(());
+                }
+
                 let decision = self
                     .authority
                     .validate(&super::authority::ValidationContext {
@@ -250,7 +278,7 @@ impl SessionServer {
             return Ok(());
         };
 
-        config.session.current_clients = self.clients.len() as u32;
+        config.session.current_clients = self.joined_clients.len() as u32;
         if config.advertise_on_lan {
             update_native_lan_population(&config.session.id, config.session.current_clients)
                 .map_err(|error| {

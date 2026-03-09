@@ -57,6 +57,29 @@ impl MockNetworkHub {
             .insert(endpoint_id, EndpointState::default());
         MockNetworkProvider::new(self.state.clone(), endpoint_id)
     }
+
+    pub(super) fn enqueue_received(
+        &self,
+        endpoint_id: u64,
+        conn: ConnectionId,
+        channel: Channel,
+        data: Vec<u8>,
+    ) -> GoudResult<()> {
+        let mut state = self
+            .state
+            .lock()
+            .map_err(|e| network_error(format!("Hub lock poisoned: {e}")))?;
+        let endpoint = state
+            .endpoints
+            .get_mut(&endpoint_id)
+            .ok_or_else(|| network_error(format!("Unknown endpoint {endpoint_id}")))?;
+        endpoint.events.push_back(NetworkEvent::Received {
+            conn,
+            channel,
+            data,
+        });
+        Ok(())
+    }
 }
 
 pub(super) struct MockNetworkProvider {
@@ -77,6 +100,10 @@ impl MockNetworkProvider {
                 max_message_size: 16_384,
             },
         }
+    }
+
+    pub(super) fn endpoint_id(&self) -> u64 {
+        self.endpoint_id
     }
 
     fn allocate_connection(endpoint: &mut EndpointState) -> ConnectionId {
