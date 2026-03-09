@@ -1,10 +1,13 @@
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use crate::core::networking::authority::{
-    BuiltInAuthorityPolicy, RateLimitConfig, SchemaBoundsConfig,
+    AuthorityDecision, AuthorityPolicy, BuiltInAuthorityPolicy, RateLimitConfig,
+    SchemaBoundsConfig, ValidationContext,
 };
 use crate::core::networking::discovery::{
-    DirectoryDiscoveryProvider, DiscoveredSession, DiscoveryError, DiscoveryMode, DiscoveryService,
+    unregister_native_lan_session, DirectoryDiscoveryProvider, DiscoveredSession, DiscoveryError,
+    DiscoveryMode, DiscoveryService,
 };
 use crate::core::networking::protocol::{encode_message, ProtocolMessage};
 use crate::core::networking::types::{
@@ -12,6 +15,7 @@ use crate::core::networking::types::{
 };
 use crate::core::networking::{SessionClient, SessionServer};
 use crate::core::providers::network::NetworkProvider;
+use crate::core::providers::network_types::{ConnectionId, DisconnectReason};
 
 use super::mock_provider::{create_server_config, pump, MockNetworkHub};
 
@@ -23,6 +27,33 @@ struct StubDirectoryProvider {
 impl DirectoryDiscoveryProvider for StubDirectoryProvider {
     fn discover_sessions(&self) -> Result<Vec<DiscoveredSession>, DiscoveryError> {
         Ok(self.sessions.clone())
+    }
+}
+
+#[derive(Clone, Default)]
+struct TrackingAuthority {
+    disconnected: Arc<Mutex<Vec<ConnectionId>>>,
+}
+
+impl TrackingAuthority {
+    fn disconnected_connections(&self) -> Vec<ConnectionId> {
+        self.disconnected
+            .lock()
+            .expect("tracking authority lock should work")
+            .clone()
+    }
+}
+
+impl AuthorityPolicy for TrackingAuthority {
+    fn validate(&mut self, _context: &ValidationContext<'_>) -> AuthorityDecision {
+        AuthorityDecision::Accept
+    }
+
+    fn on_client_disconnected(&mut self, connection: ConnectionId) {
+        self.disconnected
+            .lock()
+            .expect("tracking authority lock should work")
+            .push(connection);
     }
 }
 
@@ -328,4 +359,273 @@ fn duplicate_join_accepted_does_not_emit_duplicate_joined_event() {
         .count();
     assert_eq!(duplicate_joined_count, 0);
     assert!(client.is_joined());
+}
+
+#[test]
+fn server_error_event_cleans_membership_authority_and_lan_population() {
+    let hub = MockNetworkHub::default();
+    let server_provider = hub.provider();
+    let server_endpoint = server_provider.endpoint_id();
+
+    let authority = TrackingAuthority::default();
+    let authority_observer = authority.clone();
+    let mut server = SessionServer::new(Box::new(server_provider), Box::new(authority));
+
+    let session_id = "session-error-cleanup-lan";
+    let _ = unregister_native_lan_session(session_id);
+    server
+        .host(create_server_config(7108, session_id, true))
+        .unwrap();
+
+    let mut client = SessionClient::new(Box::new(hub.provider()));
+    client.join_direct("127.0.0.1:7108").unwrap();
+    let (server_events, _client_events) = pump(&mut server, &mut [&mut client], 3);
+
+    let joined_connection = server_events
+        .iter()
+        .find_map(|event| match event {
+            ServerEvent::ClientJoined { connection } => Some(*connection),
+            _ => None,
+        })
+        .expect("joined connection should be emitted");
+    assert_eq!(server.client_count(), 1);
+
+    let lan_before_error = DiscoveryService::new()
+        .discover(DiscoveryMode::Lan)
+        .unwrap();
+    let before_entry = lan_before_error
+        .iter()
+        .find(|entry| entry.session.id == session_id)
+        .expect("session should be advertised before error");
+    assert_eq!(before_entry.session.current_clients, 1);
+
+    hub.enqueue_error(
+        server_endpoint,
+        joined_connection,
+        "simulated transport error",
+    )
+    .unwrap();
+    let server_events_after_error = server.tick().unwrap();
+
+    assert!(server_events_after_error.iter().any(|event| {
+        matches!(
+            event,
+            ServerEvent::ProtocolError { connection, reason }
+                if *connection == joined_connection && reason == "simulated transport error"
+        )
+    }));
+    assert_eq!(server.client_count(), 0);
+    assert_eq!(
+        authority_observer.disconnected_connections(),
+        vec![joined_connection]
+    );
+
+    let lan_after_error = DiscoveryService::new()
+        .discover(DiscoveryMode::Lan)
+        .unwrap();
+    let after_entry = lan_after_error
+        .iter()
+        .find(|entry| entry.session.id == session_id)
+        .expect("session should remain advertised after transport error");
+    assert_eq!(after_entry.session.current_clients, 0);
+
+    let _ = unregister_native_lan_session(session_id);
+}
+
+#[test]
+fn client_rejects_state_messages_from_non_server_connections() {
+    let hub = MockNetworkHub::default();
+
+    let mut server =
+        SessionServer::with_policy(Box::new(hub.provider()), BuiltInAuthorityPolicy::AllowAll);
+    server
+        .host(create_server_config(
+            7109,
+            "session-client-source-validation",
+            false,
+        ))
+        .unwrap();
+
+    let client_provider = hub.provider();
+    let client_endpoint = client_provider.endpoint_id();
+    let mut client = SessionClient::new(Box::new(client_provider));
+    let server_connection = client.join_direct("127.0.0.1:7109").unwrap();
+    let _ = pump(&mut server, &mut [&mut client], 3);
+
+    let rogue_connection = ConnectionId(server_connection.0.wrapping_add(9_999));
+    let rogue_update_payload = vec![0xD0, 0x01];
+    let rogue_rejected_payload = vec![0xD0, 0x02];
+    let rogue_state_update = encode_message(&ProtocolMessage::StateUpdate {
+        sequence: 44,
+        payload: rogue_update_payload.clone(),
+    })
+    .unwrap();
+    let rogue_validation_rejected = encode_message(&ProtocolMessage::ValidationRejected {
+        reason: "rogue".to_string(),
+        payload: rogue_rejected_payload.clone(),
+    })
+    .unwrap();
+
+    hub.enqueue_received(
+        client_endpoint,
+        rogue_connection,
+        SessionChannels::default().state,
+        rogue_state_update,
+    )
+    .unwrap();
+    hub.enqueue_received(
+        client_endpoint,
+        rogue_connection,
+        SessionChannels::default().control,
+        rogue_validation_rejected,
+    )
+    .unwrap();
+
+    let events = client.tick().unwrap();
+
+    let protocol_errors = events
+        .iter()
+        .filter(|event| matches!(event, ClientEvent::ProtocolError { .. }))
+        .count();
+    assert_eq!(protocol_errors, 2);
+    assert!(events.iter().any(|event| {
+        matches!(
+            event,
+            ClientEvent::ProtocolError { reason }
+                if reason == "Received StateUpdate from non-server connection"
+        )
+    }));
+    assert!(events.iter().any(|event| {
+        matches!(
+            event,
+            ClientEvent::ProtocolError { reason }
+                if reason == "Received ValidationRejected from non-server connection"
+        )
+    }));
+    assert!(!events.iter().any(|event| {
+        matches!(
+            event,
+            ClientEvent::StateUpdated { payload, .. } if payload == &rogue_update_payload
+        )
+    }));
+    assert!(!events.iter().any(|event| {
+        matches!(
+            event,
+            ClientEvent::ValidationRejected { payload, .. } if payload == &rogue_rejected_payload
+        )
+    }));
+}
+
+#[test]
+fn rehost_unregisters_old_lan_advertisement_entries() {
+    let hub = MockNetworkHub::default();
+
+    let mut server =
+        SessionServer::with_policy(Box::new(hub.provider()), BuiltInAuthorityPolicy::AllowAll);
+
+    let first_id = "session-rehost-lan-first";
+    let second_id = "session-rehost-lan-second";
+    let third_id = "session-rehost-lan-disabled";
+    let _ = unregister_native_lan_session(first_id);
+    let _ = unregister_native_lan_session(second_id);
+    let _ = unregister_native_lan_session(third_id);
+
+    server
+        .host(create_server_config(7110, first_id, true))
+        .unwrap();
+    let lan_after_first_host = DiscoveryService::new()
+        .discover(DiscoveryMode::Lan)
+        .unwrap();
+    assert!(lan_after_first_host
+        .iter()
+        .any(|entry| entry.session.id == first_id));
+
+    server
+        .host(create_server_config(7111, second_id, true))
+        .unwrap();
+    let lan_after_second_host = DiscoveryService::new()
+        .discover(DiscoveryMode::Lan)
+        .unwrap();
+    assert!(!lan_after_second_host
+        .iter()
+        .any(|entry| entry.session.id == first_id));
+    assert!(lan_after_second_host
+        .iter()
+        .any(|entry| entry.session.id == second_id));
+
+    server
+        .host(create_server_config(7112, third_id, false))
+        .unwrap();
+    let lan_after_advertise_disabled = DiscoveryService::new()
+        .discover(DiscoveryMode::Lan)
+        .unwrap();
+    assert!(!lan_after_advertise_disabled
+        .iter()
+        .any(|entry| entry.session.id == first_id));
+    assert!(!lan_after_advertise_disabled
+        .iter()
+        .any(|entry| entry.session.id == second_id));
+    assert!(!lan_after_advertise_disabled
+        .iter()
+        .any(|entry| entry.session.id == third_id));
+
+    let _ = unregister_native_lan_session(first_id);
+    let _ = unregister_native_lan_session(second_id);
+    let _ = unregister_native_lan_session(third_id);
+}
+
+#[test]
+fn leave_notice_maps_to_remote_close_instead_of_error() {
+    let hub = MockNetworkHub::default();
+
+    let mut server =
+        SessionServer::with_policy(Box::new(hub.provider()), BuiltInAuthorityPolicy::AllowAll);
+    server
+        .host(create_server_config(
+            7113,
+            "session-graceful-leave-mapping",
+            false,
+        ))
+        .unwrap();
+
+    let client_provider = hub.provider();
+    let client_endpoint = client_provider.endpoint_id();
+    let mut client = SessionClient::new(Box::new(client_provider));
+    let connection = client.join_direct("127.0.0.1:7113").unwrap();
+    let _ = pump(&mut server, &mut [&mut client], 3);
+    assert!(client.is_joined());
+
+    let leave_notice = encode_message(&ProtocolMessage::LeaveNotice {
+        reason: "server shutdown".to_string(),
+    })
+    .unwrap();
+    hub.enqueue_received(
+        client_endpoint,
+        connection,
+        SessionChannels::default().control,
+        leave_notice,
+    )
+    .unwrap();
+
+    let events = client.tick().unwrap();
+    assert!(events.iter().any(|event| {
+        matches!(
+            event,
+            ClientEvent::Left {
+                connection: left_connection,
+                reason: DisconnectReason::RemoteClose,
+            } if *left_connection == connection
+        )
+    }));
+    assert!(!events.iter().any(|event| {
+        matches!(
+            event,
+            ClientEvent::Left {
+                reason: DisconnectReason::Error(_),
+                ..
+            }
+        )
+    }));
+    assert!(!client.is_joined());
+    assert_eq!(client.server_connection(), None);
 }

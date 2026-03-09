@@ -80,6 +80,27 @@ impl MockNetworkHub {
         });
         Ok(())
     }
+
+    pub(super) fn enqueue_error(
+        &self,
+        endpoint_id: u64,
+        conn: ConnectionId,
+        message: impl Into<String>,
+    ) -> GoudResult<()> {
+        let mut state = self
+            .state
+            .lock()
+            .map_err(|e| network_error(format!("Hub lock poisoned: {e}")))?;
+        let endpoint = state
+            .endpoints
+            .get_mut(&endpoint_id)
+            .ok_or_else(|| network_error(format!("Unknown endpoint {endpoint_id}")))?;
+        endpoint.events.push_back(NetworkEvent::Error {
+            conn,
+            message: message.into(),
+        });
+        Ok(())
+    }
 }
 
 pub(super) struct MockNetworkProvider {

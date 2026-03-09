@@ -59,6 +59,21 @@ impl SessionServer {
     /// Starts hosting a session.
     pub fn host(&mut self, config: ServerConfig) -> GoudResult<()> {
         self.provider.host(&config.host)?;
+
+        let should_unregister_previous =
+            self.advertised_session_id
+                .as_deref()
+                .is_some_and(|previous_id| {
+                    !config.advertise_on_lan || previous_id != config.session.id.as_str()
+                });
+        if should_unregister_previous {
+            if let Some(previous_id) = self.advertised_session_id.as_deref() {
+                unregister_native_lan_session(previous_id).map_err(|error| {
+                    network_error(format!("Failed to unregister LAN session: {error:?}"))
+                })?;
+            }
+        }
+
         if config.advertise_on_lan {
             register_native_lan_session(config.session.clone()).map_err(|error| {
                 network_error(format!("Failed to register LAN session: {error:?}"))
@@ -97,12 +112,7 @@ impl SessionServer {
                     self.connected_clients.insert(conn);
                 }
                 NetworkEvent::Disconnected { conn, reason } => {
-                    self.connected_clients.remove(&conn);
-                    let was_joined = self.joined_clients.remove(&conn);
-                    self.authority.on_client_disconnected(conn);
-                    if was_joined {
-                        self.sync_lan_population()?;
-                    }
+                    self.cleanup_connection_state(conn)?;
                     events.push(ServerEvent::ClientLeft {
                         connection: conn,
                         reason,
@@ -120,6 +130,7 @@ impl SessionServer {
                     }),
                 },
                 NetworkEvent::Error { conn, message } => {
+                    self.cleanup_connection_state(conn)?;
                     events.push(ServerEvent::ProtocolError {
                         connection: conn,
                         reason: message,
@@ -271,6 +282,16 @@ impl SessionServer {
             .as_ref()
             .map(|config| config.channels)
             .unwrap_or_default()
+    }
+
+    fn cleanup_connection_state(&mut self, connection: ConnectionId) -> GoudResult<()> {
+        self.connected_clients.remove(&connection);
+        let was_joined = self.joined_clients.remove(&connection);
+        self.authority.on_client_disconnected(connection);
+        if was_joined {
+            self.sync_lan_population()?;
+        }
+        Ok(())
     }
 
     fn sync_lan_population(&mut self) -> GoudResult<()> {

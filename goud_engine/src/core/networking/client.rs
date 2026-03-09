@@ -195,19 +195,34 @@ impl SessionClient {
                 }
             }
             ProtocolMessage::StateUpdate { sequence, payload } => {
-                events.push(ClientEvent::StateUpdated { sequence, payload });
+                if self.server_connection == Some(connection) {
+                    events.push(ClientEvent::StateUpdated { sequence, payload });
+                } else {
+                    events.push(ClientEvent::ProtocolError {
+                        reason: "Received StateUpdate from non-server connection".to_string(),
+                    });
+                }
             }
             ProtocolMessage::ValidationRejected { reason, payload } => {
-                events.push(ClientEvent::ValidationRejected { payload, reason });
+                if self.server_connection == Some(connection) {
+                    events.push(ClientEvent::ValidationRejected { payload, reason });
+                } else {
+                    events.push(ClientEvent::ProtocolError {
+                        reason: "Received ValidationRejected from non-server connection"
+                            .to_string(),
+                    });
+                }
             }
-            ProtocolMessage::LeaveNotice { reason } => {
+            ProtocolMessage::LeaveNotice { reason: _reason } => {
                 if self.server_connection == Some(connection) {
                     self.joined = false;
                     self.server_connection = None;
                 }
+                // `DisconnectReason` has no graceful reason variant, so treat protocol leave notices
+                // as non-error remote closes and preserve graceful semantics at the event level.
                 events.push(ClientEvent::Left {
                     connection,
-                    reason: DisconnectReason::Error(reason),
+                    reason: DisconnectReason::RemoteClose,
                 });
             }
             ProtocolMessage::JoinRequest | ProtocolMessage::StateCommand { .. } => {
