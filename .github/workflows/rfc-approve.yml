@@ -42,7 +42,7 @@ jobs:
           fi
 
       - name: Create PR to update RFC status
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "docs: auto-approve merged RFCs [skip ci]"
           branch: chore/rfc-auto-approve
