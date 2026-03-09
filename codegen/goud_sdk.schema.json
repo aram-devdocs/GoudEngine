@@ -5054,6 +5054,47 @@
           "returns": "u32"
         },
         {
+          "name": "loadScene",
+          "doc": "Loads a scene from JSON data and returns its ID",
+          "params": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "json",
+              "type": "string"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "unloadScene",
+          "doc": "Unloads a scene by name",
+          "params": [
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ],
+          "returns": "GoudResult"
+        },
+        {
+          "name": "setActiveScene",
+          "doc": "Sets whether a scene is active",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            },
+            {
+              "name": "active",
+              "type": "bool"
+            }
+          ],
+          "returns": "GoudResult"
+        },
+        {
           "name": "sceneSetActive",
           "doc": "Sets whether a scene is active",
           "params": [

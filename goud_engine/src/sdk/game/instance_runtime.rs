@@ -1,11 +1,14 @@
-//! Runtime loop and frame/timing accessors for [`GoudGame`](super::GoudGame).
-
-use crate::context_registry::scene::SceneId;
-use crate::ecs::World;
-use crate::sdk::debug_overlay::FpsStats;
-use crate::sdk::game_config::GameContext;
+//! Runtime loop and diagnostic methods for [`GoudGame`].
 
 use super::GoudGame;
+use crate::context_registry::scene::SceneId;
+use crate::core::error::GoudResult;
+use crate::core::providers::ProviderRegistry;
+use crate::ecs::World;
+use crate::sdk::debug_overlay::FpsStats;
+use crate::sdk::engine_config::EngineConfig;
+use crate::sdk::game_config::GameContext;
+use crate::ui::UiManager;
 
 impl GoudGame {
     /// Runs the game loop with the given update callback.
@@ -127,5 +130,54 @@ impl GoudGame {
     #[inline]
     pub fn is_initialized(&self) -> bool {
         self.initialized
+    }
+
+    /// Creates a headless game from an [`EngineConfig`] builder.
+    pub fn from_engine_config(config: EngineConfig) -> GoudResult<Self> {
+        let (game_config, providers) = config.build();
+        let mut game = Self::new(game_config)?;
+        game.providers = providers;
+        Ok(game)
+    }
+
+    /// Creates a windowed game from an [`EngineConfig`] builder.
+    #[cfg(feature = "native")]
+    pub fn from_engine_config_with_platform(config: EngineConfig) -> GoudResult<Self> {
+        let (game_config, providers) = config.build();
+        let mut game = Self::with_platform(game_config)?;
+        game.providers = providers;
+        Ok(game)
+    }
+
+    /// Returns a reference to the provider registry.
+    #[inline]
+    pub fn providers(&self) -> &ProviderRegistry {
+        &self.providers
+    }
+
+    /// Returns a reference to the audio manager, if available.
+    #[cfg(feature = "native")]
+    #[inline]
+    pub fn audio_manager(&self) -> Option<&crate::assets::AudioManager> {
+        self.audio_manager.as_ref()
+    }
+
+    /// Returns a mutable reference to the audio manager, if available.
+    #[cfg(feature = "native")]
+    #[inline]
+    pub fn audio_manager_mut(&mut self) -> Option<&mut crate::assets::AudioManager> {
+        self.audio_manager.as_mut()
+    }
+
+    /// Returns a reference to the UI manager.
+    #[inline]
+    pub fn ui_manager(&self) -> &UiManager {
+        &self.ui_manager
+    }
+
+    /// Returns a mutable reference to the UI manager.
+    #[inline]
+    pub fn ui_manager_mut(&mut self) -> &mut UiManager {
+        &mut self.ui_manager
     }
 }

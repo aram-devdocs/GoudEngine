@@ -232,6 +232,10 @@ def _setup():
     _lib.goud_scene_destroy.restype = GoudResult
     _lib.goud_scene_get_by_name.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
     _lib.goud_scene_get_by_name.restype = ctypes.c_uint32
+    _lib.goud_scene_load.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
+    _lib.goud_scene_load.restype = ctypes.c_uint32
+    _lib.goud_scene_unload.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
+    _lib.goud_scene_unload.restype = GoudResult
     _lib.goud_scene_set_active.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_bool]
     _lib.goud_scene_set_active.restype = GoudResult
     _lib.goud_scene_is_active.argtypes = [GoudContextId, ctypes.c_uint32]

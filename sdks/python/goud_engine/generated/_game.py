@@ -711,6 +711,21 @@ class GoudContext:
         _name_bytes = name.encode('utf-8')
         return self._lib.goud_scene_get_by_name(self._ctx, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
 
+    def load_scene(self, name, json):
+        """Loads a scene from JSON data and returns its ID"""
+        _name_bytes = name.encode('utf-8')
+        _json_bytes = json.encode('utf-8')
+        return self._lib.goud_scene_load(self._ctx, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), ctypes.cast(ctypes.create_string_buffer(_json_bytes, len(_json_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_json_bytes))
+
+    def unload_scene(self, name):
+        """Unloads a scene by name"""
+        _name_bytes = name.encode('utf-8')
+        return self._lib.goud_scene_unload(self._ctx, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
+
+    def set_active_scene(self, scene_id, active):
+        """Sets whether a scene is active"""
+        return self._lib.goud_scene_set_active(self._ctx, scene_id, active)
+
     def scene_set_active(self, scene_id, active):
         """Sets whether a scene is active"""
         return self._lib.goud_scene_set_active(self._ctx, scene_id, active)
