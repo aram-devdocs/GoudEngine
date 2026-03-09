@@ -675,6 +675,45 @@
           "ffi": "goud_entity_despawn_batch",
           "batch_in": true
         },
+        "play": {
+          "ffi": "goud_animation_play",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "stop": {
+          "ffi": "goud_animation_stop",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "setState": {
+          "ffi": "goud_animation_set_state",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "stateName"
+          ]
+        },
+        "setParameterBool": {
+          "ffi": "goud_animation_set_parameter_bool",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "name"
+          ]
+        },
+        "setParameterFloat": {
+          "ffi": "goud_animation_set_parameter_float",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "name"
+          ]
+        },
         "createCube": {
           "ffi": "goud_renderer3d_create_cube"
         },
@@ -7814,6 +7853,108 @@
           }
         ],
         "returns": "i32"
+      }
+    },
+    "animation_control": {
+      "goud_animation_play": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "entity_id",
+            "type": "u64"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_animation_stop": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "entity_id",
+            "type": "u64"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_animation_set_state": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "entity_id",
+            "type": "u64"
+          },
+          {
+            "name": "state_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "state_len",
+            "type": "i32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_animation_set_parameter_bool": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "entity_id",
+            "type": "u64"
+          },
+          {
+            "name": "name_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "name_len",
+            "type": "i32"
+          },
+          {
+            "name": "value",
+            "type": "bool"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_animation_set_parameter_float": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "entity_id",
+            "type": "u64"
+          },
+          {
+            "name": "name_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "name_len",
+            "type": "i32"
+          },
+          {
+            "name": "value",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
       }
     },
     "network": {

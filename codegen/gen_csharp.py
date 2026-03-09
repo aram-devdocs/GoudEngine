@@ -138,6 +138,32 @@ def _ffi_uses_ptr_len(ffi_fn_name: str) -> bool:
     return "*const u8" in param_types
 
 
+def _ffi_param_type_at(ffi_fn_name: str, index: int) -> str:
+    """Return the raw ffi_mapping type for a function parameter index."""
+    fdef = _ffi_fn_def(ffi_fn_name)
+    params = fdef.get("params", [])
+    if 0 <= index < len(params):
+        return params[index].get("type", "")
+    return ""
+
+
+def _cs_len_cast_expr(ffi_param_type: str, expr: str) -> str:
+    """Cast a managed byte-length expression to the expected FFI integer type."""
+    cast_map = {
+        "i8": "sbyte",
+        "u8": "byte",
+        "i16": "short",
+        "u16": "ushort",
+        "i32": "int",
+        "u32": "uint",
+        "i64": "long",
+        "u64": "ulong",
+        "usize": "nuint",
+    }
+    cast = cast_map.get(ffi_param_type, "uint")
+    return f"({cast}){expr}"
+
+
 def _enum_cs_name(key: str) -> str:
     if key == "Key":
         return "Keys"
@@ -882,16 +908,61 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         return
     if "entity_params" in mm and "ffi" in mm:
         ffi_fn = mm["ffi"]
+        no_ctx = mm.get("no_context", False)
         ffi_ret = _ffi_return_type(ffi_fn)
         suffix = ".Success" if ret == "bool" and ffi_ret == "GoudResult" else ""
-        # Collect non-entity params
         entity_set = set(mm["entity_params"])
-        extra_params = [p for p in params if p["name"] not in entity_set]
-        if extra_params:
-            extra_args = ", ".join(p["name"] for p in extra_params)
-            L.append(f"            return NativeMethods.{ffi_fn}(_ctx, entity.ToBits(), {extra_args}){suffix};")
+        string_set = set(mm.get("string_params", []))
+        uses_ptr_len = _ffi_uses_ptr_len(ffi_fn)
+        has_marshaled_string = any(
+            p["type"] == "string" and p["name"] in string_set for p in params
+        ) and uses_ptr_len
+
+        if has_marshaled_string:
+            L.append("            unsafe")
+            L.append("            {")
+            fixed_lines = []
+            ffi_arg_parts = [] if no_ctx else ["_ctx"]
+            ffi_param_index = 0 if no_ctx else 1
+            for p in params:
+                pname = p["name"]
+                if pname in entity_set:
+                    ffi_arg_parts.append(f"{pname}.ToBits()")
+                    ffi_param_index += 1
+                elif p["type"] == "string" and pname in string_set:
+                    bvar = f"{pname}Bytes"
+                    pvar = f"{pname}Ptr"
+                    L.append(f"                var {bvar} = System.Text.Encoding.UTF8.GetBytes({pname});")
+                    fixed_lines.append(f"byte* {pvar} = {bvar}")
+                    ffi_arg_parts.append(f"(IntPtr){pvar}")
+                    len_type = _ffi_param_type_at(ffi_fn, ffi_param_index + 1)
+                    ffi_arg_parts.append(_cs_len_cast_expr(len_type, f"{bvar}.Length"))
+                    ffi_param_index += 2
+                else:
+                    ffi_arg_parts.append(pname)
+                    ffi_param_index += 1
+            fixed_expr = "\n                ".join(f"fixed ({fl})" for fl in fixed_lines)
+            L.append(f"                {fixed_expr}")
+            L.append("                {")
+            call = f"NativeMethods.{ffi_fn}({', '.join(ffi_arg_parts)}){suffix};"
+            if ret != "void":
+                L.append(f"                    return {call}")
+            else:
+                L.append(f"                    {call}")
+            L.append("                }")
+            L.append("            }")
         else:
-            L.append(f"            return NativeMethods.{ffi_fn}(_ctx, entity.ToBits()){suffix};")
+            ffi_parts = [] if no_ctx else ["_ctx"]
+            for p in params:
+                if p["name"] in entity_set:
+                    ffi_parts.append(f"{p['name']}.ToBits()")
+                else:
+                    ffi_parts.append(p["name"])
+            call = f"NativeMethods.{ffi_fn}({', '.join(ffi_parts)}){suffix};"
+            if ret != "void":
+                L.append(f"            return {call}")
+            else:
+                L.append(f"            {call}")
         return
     if "enum_params" in mm and mm.get("ffi"):
         ek = list(mm["enum_params"].keys())[0]
@@ -943,12 +1014,11 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         # Only applies when the FFI function uses *const u8 (ptr+len), not *const c_char
         string_params = [p for p in params if p["type"] == "string"]
         if string_params and _ffi_uses_ptr_len(ffi_fn):
-            non_string = [p for p in params if p["type"] != "string"]
             L.append("            unsafe")
             L.append("            {")
-            byte_vars = []
             fixed_lines = []
             ffi_arg_parts = [] if no_ctx else ["_ctx"]
+            ffi_param_index = 0 if no_ctx else 1
             for p in params:
                 if p["type"] == "string":
                     bvar = f"{p['name']}Bytes"
@@ -956,9 +1026,12 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                     L.append(f"                var {bvar} = System.Text.Encoding.UTF8.GetBytes({p['name']});")
                     fixed_lines.append(f"byte* {pvar} = {bvar}")
                     ffi_arg_parts.append(f"(IntPtr){pvar}")
-                    ffi_arg_parts.append(f"(uint){bvar}.Length")
+                    len_type = _ffi_param_type_at(ffi_fn, ffi_param_index + 1)
+                    ffi_arg_parts.append(_cs_len_cast_expr(len_type, f"{bvar}.Length"))
+                    ffi_param_index += 2
                 else:
                     ffi_arg_parts.append(p["name"])
+                    ffi_param_index += 1
             fixed_expr = "\n                ".join(f"fixed ({fl})" for fl in fixed_lines)
             L.append(f"                {fixed_expr}")
             L.append("                {")

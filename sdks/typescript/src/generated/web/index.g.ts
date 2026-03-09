@@ -201,7 +201,10 @@ export class GoudGame implements IGoudGame {
     this._startLoop(update);
   }
 
-  stop(): void {
+  stop(): void;
+  stop(_entity: IEntity): number;
+  stop(entity?: IEntity): void | number {
+    if (entity !== undefined) return 0;
     this.running = false;
     if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = 0; }
     if (this.detachInput) { this.detachInput(); this.detachInput = null; }
@@ -443,6 +446,10 @@ export class GoudGame implements IGoudGame {
   setFpsOverlayCorner(_corner: number): void {}
 
   // TODO: wasm animation -- these stub methods satisfy the IGoudGame interface
+  play(_entity: IEntity): number { return 0; }
+  setState(_entity: IEntity, _stateName: string): number { return 0; }
+  setParameterBool(_entity: IEntity, _name: string, _value: boolean): number { return 0; }
+  setParameterFloat(_entity: IEntity, _name: string, _value: number): number { return 0; }
   animationLayerStackCreate(_entity: IEntity): number { return 0; }
   animationLayerAdd(_entity: IEntity, _name: string, _blendMode: number): number { return 0; }
   animationLayerSetWeight(_entity: IEntity, _layerIndex: number, _weight: number): number { return 0; }

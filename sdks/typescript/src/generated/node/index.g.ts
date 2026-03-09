@@ -272,6 +272,31 @@ export class GoudGame implements IGoudGame {
     return (this.native as any).despawnBatch(entities as unknown as NativeEntity[]);
   }
 
+  /** Starts animation playback for an entity */
+  play(entity: IEntity): number {
+    return (this.native as any).play(entity);
+  }
+
+  /** Stops animation playback for an entity */
+  stop(entity: IEntity): number {
+    return (this.native as any).stop(entity);
+  }
+
+  /** Sets the active animation state for an entity */
+  setState(entity: IEntity, stateName: string): number {
+    return (this.native as any).setState(entity, stateName);
+  }
+
+  /** Sets a boolean animation parameter for an entity */
+  setParameterBool(entity: IEntity, name: string, value: boolean): number {
+    return (this.native as any).setParameterBool(entity, name, value);
+  }
+
+  /** Sets a float animation parameter for an entity */
+  setParameterFloat(entity: IEntity, name: string, value: number): number {
+    return (this.native as any).setParameterFloat(entity, name, value);
+  }
+
   /** Creates a 3D cube */
   createCube(textureId: number, width: number, height: number, depth: number): number {
     return this.native.createCube(textureId, width, height, depth);

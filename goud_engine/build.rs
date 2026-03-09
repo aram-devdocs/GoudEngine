@@ -144,6 +144,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/physics/physics3d.rs",
     "src/ffi/physics/physics3d_material.rs",
     // animation module
+    "src/ffi/animation/control.rs",
     "src/ffi/animation/controller.rs",
     "src/ffi/animation/tween.rs",
     "src/ffi/animation/skeletal.rs",

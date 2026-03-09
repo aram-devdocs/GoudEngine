@@ -284,6 +284,32 @@ class GoudGame:
         """Despawns multiple entities at once"""
         return self._lib.goud_entity_despawn_batch(self._ctx, entities)
 
+    def play(self, entity):
+        """Starts animation playback for an entity"""
+        return self._lib.goud_animation_play(self._ctx, entity._bits)
+
+    def stop(self, entity):
+        """Stops animation playback for an entity"""
+        return self._lib.goud_animation_stop(self._ctx, entity._bits)
+
+    def set_state(self, entity, state_name):
+        """Sets the active animation state for an entity"""
+        _state_name_bytes = state_name.encode('utf-8')
+        _state_name_buf = ctypes.create_string_buffer(_state_name_bytes, len(_state_name_bytes))
+        return self._lib.goud_animation_set_state(self._ctx, entity._bits, ctypes.cast(_state_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_state_name_bytes))
+
+    def set_parameter_bool(self, entity, name, value):
+        """Sets a boolean animation parameter for an entity"""
+        _name_bytes = name.encode('utf-8')
+        _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
+        return self._lib.goud_animation_set_parameter_bool(self._ctx, entity._bits, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), value)
+
+    def set_parameter_float(self, entity, name, value):
+        """Sets a float animation parameter for an entity"""
+        _name_bytes = name.encode('utf-8')
+        _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
+        return self._lib.goud_animation_set_parameter_float(self._ctx, entity._bits, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), value)
+
     def create_cube(self, texture_id, width, height, depth):
         """Creates a 3D cube"""
         return self._lib.goud_renderer3d_create_cube(self._ctx, texture_id, width, height, depth)
@@ -473,23 +499,23 @@ class GoudGame:
 
     def component_add(self, entity, type_id_hash, data_ptr, data_size):
         """Adds a generic component to an entity"""
-        return self._lib.goud_component_add(self._ctx, entity._bits)
+        return self._lib.goud_component_add(self._ctx, entity._bits, type_id_hash, data_ptr, data_size)
 
     def component_remove(self, entity, type_id_hash):
         """Removes a generic component from an entity"""
-        return self._lib.goud_component_remove(self._ctx, entity._bits)
+        return self._lib.goud_component_remove(self._ctx, entity._bits, type_id_hash)
 
     def component_has(self, entity, type_id_hash):
         """Checks if an entity has a generic component"""
-        return self._lib.goud_component_has(self._ctx, entity._bits)
+        return self._lib.goud_component_has(self._ctx, entity._bits, type_id_hash)
 
     def component_get(self, entity, type_id_hash):
         """Gets a read-only pointer to a generic component"""
-        return self._lib.goud_component_get(self._ctx, entity._bits)
+        return self._lib.goud_component_get(self._ctx, entity._bits, type_id_hash)
 
     def component_get_mut(self, entity, type_id_hash):
         """Gets a mutable pointer to a generic component"""
-        return self._lib.goud_component_get_mut(self._ctx, entity._bits)
+        return self._lib.goud_component_get_mut(self._ctx, entity._bits, type_id_hash)
 
     def component_add_batch(self, entities, type_id_hash, data_ptr, component_size):
         """Adds a generic component to multiple entities"""
@@ -680,23 +706,23 @@ class GoudContext:
 
     def component_add(self, entity, type_id_hash, data_ptr, data_size):
         """Adds a generic component to an entity"""
-        return self._lib.goud_component_add(self._ctx, entity._bits)
+        return self._lib.goud_component_add(self._ctx, entity._bits, type_id_hash, data_ptr, data_size)
 
     def component_remove(self, entity, type_id_hash):
         """Removes a generic component from an entity"""
-        return self._lib.goud_component_remove(self._ctx, entity._bits)
+        return self._lib.goud_component_remove(self._ctx, entity._bits, type_id_hash)
 
     def component_has(self, entity, type_id_hash):
         """Checks if an entity has a generic component"""
-        return self._lib.goud_component_has(self._ctx, entity._bits)
+        return self._lib.goud_component_has(self._ctx, entity._bits, type_id_hash)
 
     def component_get(self, entity, type_id_hash):
         """Gets a read-only pointer to a generic component"""
-        return self._lib.goud_component_get(self._ctx, entity._bits)
+        return self._lib.goud_component_get(self._ctx, entity._bits, type_id_hash)
 
     def component_get_mut(self, entity, type_id_hash):
         """Gets a mutable pointer to a generic component"""
-        return self._lib.goud_component_get_mut(self._ctx, entity._bits)
+        return self._lib.goud_component_get_mut(self._ctx, entity._bits, type_id_hash)
 
     def component_add_batch(self, entities, type_id_hash, data_ptr, component_size):
         """Adds a generic component to multiple entities"""
