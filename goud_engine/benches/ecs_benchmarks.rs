@@ -17,9 +17,9 @@
 //! - System execution: <1μs overhead
 //! - Batch spawn (10K): <500μs total
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use goud_engine::ecs::*;
-use std::hint::black_box as std_black_box;
+use std::hint::black_box;
 
 // ================================================================================================
 // Component Definitions
@@ -407,7 +407,7 @@ fn movement_system(world: &mut World) {
 
     // Benchmark overhead: in a real system this would use iter_mut
     // For now we just verify the query iteration works
-    std_black_box(updates.len());
+    black_box(updates.len());
 }
 
 fn bench_system_execution(c: &mut Criterion) {

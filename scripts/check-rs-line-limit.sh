@@ -35,6 +35,11 @@ VIOLATIONS=""
 COUNT=0
 
 for file in $(git ls-files '*.rs'); do
+    # Skip paths removed in the working tree (e.g., moved/split modules).
+    if [ ! -f "$file" ]; then
+        continue
+    fi
+
     if is_exempt "$file"; then
         continue
     fi

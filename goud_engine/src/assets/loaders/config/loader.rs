@@ -42,8 +42,7 @@ impl ConfigLoader {
     fn load_toml(bytes: &[u8]) -> Result<ConfigAsset, AssetLoadError> {
         let text = std::str::from_utf8(bytes)
             .map_err(|e| AssetLoadError::decode_failed(format!("TOML is not valid UTF-8: {e}")))?;
-        let toml_value: toml::Value = text
-            .parse()
+        let toml_value: toml::Value = toml::from_str(text)
             .map_err(|e| AssetLoadError::decode_failed(format!("TOML parse error: {e}")))?;
         let json_value = toml_value_to_json(toml_value);
         Ok(ConfigAsset::new(json_value, ConfigFormat::Toml))

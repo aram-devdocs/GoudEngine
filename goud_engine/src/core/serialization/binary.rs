@@ -26,7 +26,7 @@ use crate::core::error::GoudError;
 /// assert_eq!(v, decoded);
 /// ```
 pub fn encode<T: serde::Serialize>(value: &T) -> Result<Vec<u8>, GoudError> {
-    bincode::serialize(value)
+    bincode::serde::encode_to_vec(value, bincode::config::standard())
         .map_err(|e| GoudError::InternalError(format!("Binary encode failed: {e}")))
 }
 
@@ -49,6 +49,13 @@ pub fn encode<T: serde::Serialize>(value: &T) -> Result<Vec<u8>, GoudError> {
 /// assert_eq!(v, decoded);
 /// ```
 pub fn decode<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> Result<T, GoudError> {
-    bincode::deserialize(bytes)
-        .map_err(|e| GoudError::InternalError(format!("Binary decode failed: {e}")))
+    let (value, consumed) =
+        bincode::serde::decode_from_slice(bytes, bincode::config::standard())
+            .map_err(|e| GoudError::InternalError(format!("Binary decode failed: {e}")))?;
+    if consumed != bytes.len() {
+        return Err(GoudError::InternalError(
+            "Binary decode failed: trailing bytes present".to_string(),
+        ));
+    }
+    Ok(value)
 }

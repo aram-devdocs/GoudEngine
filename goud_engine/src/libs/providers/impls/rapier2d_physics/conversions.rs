@@ -53,21 +53,21 @@ pub fn joint_from_desc(
 ) -> (GenericJoint, RigidBodyHandle, RigidBodyHandle) {
     let joint: GenericJoint = match desc.joint_type {
         0 => RevoluteJointBuilder::new()
-            .local_anchor1(point![desc.anchor_a[0], desc.anchor_a[1]])
-            .local_anchor2(point![desc.anchor_b[0], desc.anchor_b[1]])
+            .local_anchor1(Vector::new(desc.anchor_a[0], desc.anchor_a[1]))
+            .local_anchor2(Vector::new(desc.anchor_b[0], desc.anchor_b[1]))
             .build()
             .into(),
-        1 => PrismaticJointBuilder::new(UnitVector::new_normalize(vector![1.0, 0.0]))
-            .local_anchor1(point![desc.anchor_a[0], desc.anchor_a[1]])
-            .local_anchor2(point![desc.anchor_b[0], desc.anchor_b[1]])
+        1 => PrismaticJointBuilder::new(Vector::new(1.0, 0.0))
+            .local_anchor1(Vector::new(desc.anchor_a[0], desc.anchor_a[1]))
+            .local_anchor2(Vector::new(desc.anchor_b[0], desc.anchor_b[1]))
             .build()
             .into(),
         _ => {
-            let diff = vector![
+            let diff = Vector::new(
                 desc.anchor_b[0] - desc.anchor_a[0],
-                desc.anchor_b[1] - desc.anchor_a[1]
-            ];
-            let max_dist = diff.norm().max(0.01);
+                desc.anchor_b[1] - desc.anchor_a[1],
+            );
+            let max_dist = diff.length().max(0.01);
             RopeJointBuilder::new(max_dist).build().into()
         }
     };
