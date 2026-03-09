@@ -4,14 +4,17 @@
 //! collider attachment, forces, impulses, simulation stepping, and raycasting.
 
 use crate::core::error::{set_last_error, GoudError, ERR_INTERNAL_ERROR};
-use crate::core::providers::types::{BodyDesc, BodyHandle, ColliderDesc};
+use crate::core::providers::types::{BodyDesc, BodyHandle};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::libs::providers::impls::rapier2d_physics::Rapier2DPhysicsProvider;
 
 use super::get_physics_registry_2d;
-
-/// Error sentinel for handle-returning functions.
-const INVALID_HANDLE: i64 = -1;
+use super::physics2d_common::{with_provider, with_provider_mut, INVALID_HANDLE};
+use super::physics2d_events::step_and_dispatch_collision_events;
+use super::physics2d_ex::{
+    add_collider_with_filter, DEFAULT_COLLISION_LAYER, DEFAULT_COLLISION_MASK,
+};
+use super::physics2d_state::{clear_context, remove_body as remove_body_state};
 
 // =============================================================================
 // Provider Lifecycle
@@ -71,6 +74,7 @@ pub extern "C" fn goud_physics_destroy(ctx: GoudContextId) -> i32 {
         }
     };
     registry.providers.remove(&ctx);
+    clear_context(ctx);
     0
 }
 
@@ -141,6 +145,7 @@ pub extern "C" fn goud_physics_add_rigid_body(
 pub extern "C" fn goud_physics_remove_body(ctx: GoudContextId, handle: u64) -> i32 {
     with_provider_mut(ctx, |p| {
         p.destroy_body(BodyHandle(handle));
+        remove_body_state(ctx, handle);
         0
     })
 }
@@ -175,23 +180,19 @@ pub extern "C" fn goud_physics_add_collider(
     friction: f32,
     restitution: f32,
 ) -> i64 {
-    with_provider_mut(ctx, |p| {
-        let desc = ColliderDesc {
-            shape: shape_type,
-            half_extents: [width, height],
-            radius,
-            friction,
-            restitution,
-            is_sensor: false,
-        };
-        match p.create_collider(BodyHandle(body_handle), &desc) {
-            Ok(handle) => handle.0 as i64,
-            Err(e) => {
-                set_last_error(e);
-                INVALID_HANDLE
-            }
-        }
-    })
+    add_collider_with_filter(
+        ctx,
+        body_handle,
+        shape_type,
+        width,
+        height,
+        radius,
+        friction,
+        restitution,
+        false,
+        DEFAULT_COLLISION_LAYER,
+        DEFAULT_COLLISION_MASK,
+    )
 }
 
 // =============================================================================
@@ -205,14 +206,7 @@ pub extern "C" fn goud_physics_add_collider(
 /// 0 on success, negative error code on failure.
 #[no_mangle]
 pub extern "C" fn goud_physics_step(ctx: GoudContextId, dt: f32) -> i32 {
-    with_provider_mut(ctx, |p| match p.step(dt) {
-        Ok(()) => 0,
-        Err(e) => {
-            let code = e.error_code();
-            set_last_error(e);
-            code
-        }
-    })
+    step_and_dispatch_collision_events(ctx, dt)
 }
 
 // =============================================================================
@@ -417,71 +411,4 @@ pub unsafe extern "C" fn goud_physics_raycast(
             None => 0,
         }
     })
-}
-
-// =============================================================================
-// Internal Helpers
-// =============================================================================
-
-/// Acquires a read lock on the 2D physics registry and calls `f` with the
-/// provider for the given context. Returns negative error code if the context
-/// has no provider.
-pub(super) fn with_provider<F, R>(ctx: GoudContextId, f: F) -> R
-where
-    F: FnOnce(&dyn crate::core::providers::physics::PhysicsProvider) -> R,
-    R: From<i32>,
-{
-    if ctx == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return R::from(GoudError::InvalidContext.error_code());
-    }
-
-    let registry = match get_physics_registry_2d().lock() {
-        Ok(r) => r,
-        Err(_) => {
-            set_last_error(GoudError::InternalError(
-                "Failed to lock physics registry".to_string(),
-            ));
-            return R::from(ERR_INTERNAL_ERROR);
-        }
-    };
-
-    match registry.providers.get(&ctx) {
-        Some(provider) => f(provider.as_ref()),
-        None => {
-            set_last_error(GoudError::NotInitialized);
-            R::from(GoudError::NotInitialized.error_code())
-        }
-    }
-}
-
-/// Acquires a write lock on the 2D physics registry and calls `f` with
-/// a mutable reference to the provider for the given context.
-pub(super) fn with_provider_mut<F, R>(ctx: GoudContextId, f: F) -> R
-where
-    F: FnOnce(&mut dyn crate::core::providers::physics::PhysicsProvider) -> R,
-    R: From<i32>,
-{
-    if ctx == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return R::from(GoudError::InvalidContext.error_code());
-    }
-
-    let mut registry = match get_physics_registry_2d().lock() {
-        Ok(r) => r,
-        Err(_) => {
-            set_last_error(GoudError::InternalError(
-                "Failed to lock physics registry".to_string(),
-            ));
-            return R::from(ERR_INTERNAL_ERROR);
-        }
-    };
-
-    match registry.providers.get_mut(&ctx) {
-        Some(provider) => f(provider.as_mut()),
-        None => {
-            set_last_error(GoudError::NotInitialized);
-            R::from(GoudError::NotInitialized.error_code())
-        }
-    }
 }

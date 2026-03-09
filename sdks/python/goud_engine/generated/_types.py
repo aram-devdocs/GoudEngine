@@ -1281,6 +1281,30 @@ class Contact:
     def __repr__(self):
         return f"Contact(point_x={self.point_x}, point_y={self.point_y}, normal_x={self.normal_x}, normal_y={self.normal_y}, penetration={self.penetration})"
 
+class PhysicsRaycastHit2D:
+    """Detailed payload for a 2D physics raycast hit"""
+    def __init__(self, body_handle: int = 0, collider_handle: int = 0, point_x: float = 0.0, point_y: float = 0.0, normal_x: float = 0.0, normal_y: float = 0.0, distance: float = 0.0):
+        self.body_handle = body_handle
+        self.collider_handle = collider_handle
+        self.point_x = point_x
+        self.point_y = point_y
+        self.normal_x = normal_x
+        self.normal_y = normal_y
+        self.distance = distance
+
+    def __repr__(self):
+        return f"PhysicsRaycastHit2D(body_handle={self.body_handle}, collider_handle={self.collider_handle}, point_x={self.point_x}, point_y={self.point_y}, normal_x={self.normal_x}, normal_y={self.normal_y}, distance={self.distance})"
+
+class PhysicsCollisionEvent2D:
+    """2D collision event payload from the physics event queue"""
+    def __init__(self, body_a: int = 0, body_b: int = 0, kind: int = 0):
+        self.body_a = body_a
+        self.body_b = body_b
+        self.kind = kind
+
+    def __repr__(self):
+        return f"PhysicsCollisionEvent2D(body_a={self.body_a}, body_b={self.body_b}, kind={self.kind})"
+
 class Vec3:
     """3D floating-point vector"""
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0):

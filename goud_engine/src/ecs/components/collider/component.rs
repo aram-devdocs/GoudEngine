@@ -91,8 +91,8 @@ impl Collider {
             restitution: 0.3,
             friction: 0.5,
             density: None,
-            layer: 0xFFFFFFFF, // Default: all layers
-            mask: 0xFFFFFFFF,  // Default: collide with all layers
+            layer: 0b0001,    // Default: layer 1
+            mask: 0xFFFFFFFF, // Default: collide with all layers
             is_sensor: false,
             enabled: true,
         }
@@ -115,7 +115,7 @@ impl Collider {
             restitution: 0.3,
             friction: 0.5,
             density: None,
-            layer: 0xFFFFFFFF,
+            layer: 0b0001,
             mask: 0xFFFFFFFF,
             is_sensor: false,
             enabled: true,
@@ -131,7 +131,7 @@ impl Collider {
             restitution: 0.3,
             friction: 0.5,
             density: None,
-            layer: 0xFFFFFFFF,
+            layer: 0b0001,
             mask: 0xFFFFFFFF,
             is_sensor: false,
             enabled: true,
@@ -159,7 +159,7 @@ impl Collider {
             restitution: 0.3,
             friction: 0.5,
             density: None,
-            layer: 0xFFFFFFFF,
+            layer: 0b0001,
             mask: 0xFFFFFFFF,
             is_sensor: false,
             enabled: true,
@@ -183,7 +183,7 @@ impl Collider {
             restitution: 0.3,
             friction: 0.5,
             density: None,
-            layer: 0xFFFFFFFF,
+            layer: 0b0001,
             mask: 0xFFFFFFFF,
             is_sensor: false,
             enabled: true,

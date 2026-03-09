@@ -19,8 +19,8 @@ use crate::core::providers::physics3d::PhysicsProvider3D;
 use crate::core::providers::types::ColliderHandle as EngineColliderHandle;
 use crate::core::providers::types::CollisionEvent as EngineCollisionEvent;
 use crate::core::providers::types::{
-    BodyDesc3D, ColliderDesc3D, ContactPair3D, DebugShape3D, JointDesc3D, PhysicsCapabilities3D,
-    RaycastHit3D,
+    BodyDesc3D, ColliderDesc3D, CollisionEventKind, ContactPair3D, DebugShape3D, JointDesc3D,
+    PhysicsCapabilities3D, RaycastHit3D,
 };
 use crate::core::providers::types::{BodyHandle, JointHandle};
 use crate::core::providers::{Provider, ProviderLifecycle};
@@ -183,9 +183,13 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
 
         // Drain collision events from the channel and convert to engine events
         while let Ok(event) = self.collision_recv.try_recv() {
-            let (h1, h2, started) = match event {
-                rapier3d::geometry::CollisionEvent::Started(a, b, _) => (a, b, true),
-                rapier3d::geometry::CollisionEvent::Stopped(a, b, _) => (a, b, false),
+            let (h1, h2, kind) = match event {
+                rapier3d::geometry::CollisionEvent::Started(a, b, _) => {
+                    (a, b, CollisionEventKind::Enter)
+                }
+                rapier3d::geometry::CollisionEvent::Stopped(a, b, _) => {
+                    (a, b, CollisionEventKind::Exit)
+                }
             };
 
             let body_a = self
@@ -202,7 +206,7 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
                 self.collision_events.push(EngineCollisionEvent {
                     body_a: BodyHandle(a),
                     body_b: BodyHandle(b),
-                    started,
+                    kind,
                 });
             }
         }
