@@ -518,6 +518,18 @@ export class GoudGame implements IGoudGame {
     return this.native.checkHotSwapShortcut();
   }
 
+  loadScene(name: string, json: string): number {
+    return (this.native as any).loadScene(name, json);
+  }
+
+  unloadScene(name: string): boolean {
+    return (this.native as any).unloadScene(name);
+  }
+
+  setActiveScene(sceneId: number, active: boolean): boolean {
+    return (this.native as any).setActiveScene(sceneId, active);
+  }
+
   // Animation Layer Stack & Events
   animationLayerStackCreate(entity: IEntity): number {
     return (this.native as any).animationLayerStackCreate(entity as unknown as NativeEntity);

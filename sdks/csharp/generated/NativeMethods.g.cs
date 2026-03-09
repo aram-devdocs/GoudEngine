@@ -110,6 +110,26 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FfiPhysicsRaycastHit2D
+    {
+        public ulong BodyHandle;
+        public ulong ColliderHandle;
+        public float PointX;
+        public float PointY;
+        public float NormalX;
+        public float NormalY;
+        public float Distance;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiPhysicsCollisionEvent2D
+    {
+        public ulong BodyA;
+        public ulong BodyB;
+        public uint Kind;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct FfiVec3
     {
         public float X;
@@ -263,6 +283,12 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint goud_scene_get_by_name(GoudContextId ctx, IntPtr name_ptr, uint name_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_scene_load(GoudContextId ctx, IntPtr name_ptr, uint name_len, IntPtr json_ptr, uint json_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern GoudResult goud_scene_unload(GoudContextId ctx, IntPtr name_ptr, uint name_len);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern GoudResult goud_scene_set_active(GoudContextId ctx, uint scene_id, [MarshalAs(UnmanagedType.U1)] bool active);
@@ -1082,6 +1108,9 @@ namespace GoudEngine
         public static extern long goud_physics_add_collider(GoudContextId ctx, ulong body_handle, uint shape_type, float width, float height, float radius, float friction, float restitution);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_physics_add_collider_ex(GoudContextId ctx, ulong body_handle, uint shape_type, float width, float height, float radius, float friction, float restitution, [MarshalAs(UnmanagedType.U1)] bool is_sensor, uint layer, uint mask);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_remove_body(GoudContextId ctx, ulong handle);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -1104,6 +1133,24 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_raycast(GoudContextId ctx, float ox, float oy, float dx, float dy, float max_dist, ref float out_hit_x, ref float out_hit_y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_raycast_ex(GoudContextId ctx, float ox, float oy, float dx, float dy, float max_dist, uint layer_mask, ref ulong out_body_handle, ref ulong out_collider_handle, ref float out_hit_x, ref float out_hit_y, ref float out_normal_x, ref float out_normal_y, ref float out_distance);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_collision_events_count(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_collision_event_count(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_collision_events_read(GoudContextId ctx, uint index, ref ulong out_body_a, ref ulong out_body_b, ref uint out_kind);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_collision_event_read(GoudContextId ctx, uint index, ref ulong out_body_a, ref ulong out_body_b, ref uint out_kind);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_set_collision_callback(GoudContextId ctx, IntPtr callback, IntPtr user_data);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_get_gravity(GoudContextId ctx, ref float out_x, ref float out_y);

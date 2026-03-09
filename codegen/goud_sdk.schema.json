@@ -2037,6 +2037,68 @@
         }
       ]
     },
+    "PhysicsRaycastHit2D": {
+      "kind": "value",
+      "doc": "Detailed payload for a 2D physics raycast hit",
+      "fields": [
+        {
+          "name": "bodyHandle",
+          "type": "u64",
+          "doc": "Rigid body handle hit by the ray"
+        },
+        {
+          "name": "colliderHandle",
+          "type": "u64",
+          "doc": "Collider handle hit by the ray"
+        },
+        {
+          "name": "pointX",
+          "type": "f32",
+          "doc": "Hit point X coordinate in world space"
+        },
+        {
+          "name": "pointY",
+          "type": "f32",
+          "doc": "Hit point Y coordinate in world space"
+        },
+        {
+          "name": "normalX",
+          "type": "f32",
+          "doc": "Surface normal X component at hit point"
+        },
+        {
+          "name": "normalY",
+          "type": "f32",
+          "doc": "Surface normal Y component at hit point"
+        },
+        {
+          "name": "distance",
+          "type": "f32",
+          "doc": "Distance from ray origin to hit point"
+        }
+      ]
+    },
+    "PhysicsCollisionEvent2D": {
+      "kind": "value",
+      "doc": "2D collision event payload from the physics event queue",
+      "fields": [
+        {
+          "name": "bodyA",
+          "type": "u64",
+          "doc": "First body handle in the collision pair"
+        },
+        {
+          "name": "bodyB",
+          "type": "u64",
+          "doc": "Second body handle in the collision pair"
+        },
+        {
+          "name": "kind",
+          "type": "u32",
+          "doc": "Collision lifecycle kind: 0 = Enter, 1 = Stay, 2 = Exit"
+        }
+      ]
+    },
     "Vec3": {
       "kind": "value",
       "doc": "3D floating-point vector",
@@ -5157,6 +5219,47 @@
           "returns": "u32"
         },
         {
+          "name": "loadScene",
+          "doc": "Loads a scene from JSON data and returns its ID",
+          "params": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "json",
+              "type": "string"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "unloadScene",
+          "doc": "Unloads a scene by name",
+          "params": [
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ],
+          "returns": "GoudResult"
+        },
+        {
+          "name": "setActiveScene",
+          "doc": "Sets whether a scene is active",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            },
+            {
+              "name": "active",
+              "type": "bool"
+            }
+          ],
+          "returns": "GoudResult"
+        },
+        {
           "name": "sceneSetActive",
           "doc": "Sets whether a scene is active",
           "params": [
@@ -5363,6 +5466,53 @@
           "returns": "i64"
         },
         {
+          "name": "addColliderEx",
+          "doc": "Adds a collider with sensor and collision-layer configuration (FFI: goud_physics_add_collider_ex)",
+          "params": [
+            {
+              "name": "bodyHandle",
+              "type": "u64"
+            },
+            {
+              "name": "shapeType",
+              "type": "u32"
+            },
+            {
+              "name": "width",
+              "type": "f32"
+            },
+            {
+              "name": "height",
+              "type": "f32"
+            },
+            {
+              "name": "radius",
+              "type": "f32"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            },
+            {
+              "name": "restitution",
+              "type": "f32"
+            },
+            {
+              "name": "isSensor",
+              "type": "bool"
+            },
+            {
+              "name": "layer",
+              "type": "u32"
+            },
+            {
+              "name": "mask",
+              "type": "u32"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
           "name": "removeBody",
           "doc": "Removes a rigid body from the simulation",
           "params": [
@@ -5489,6 +5639,88 @@
             }
           ],
           "returns": "Vec2"
+        },
+        {
+          "name": "raycastEx",
+          "doc": "Casts a ray and returns the full raycast hit payload (FFI: goud_physics_raycast_ex)",
+          "params": [
+            {
+              "name": "originX",
+              "type": "f32"
+            },
+            {
+              "name": "originY",
+              "type": "f32"
+            },
+            {
+              "name": "dirX",
+              "type": "f32"
+            },
+            {
+              "name": "dirY",
+              "type": "f32"
+            },
+            {
+              "name": "maxDist",
+              "type": "f32"
+            },
+            {
+              "name": "layerMask",
+              "type": "u32"
+            }
+          ],
+          "returns": "PhysicsRaycastHit2D"
+        },
+        {
+          "name": "collisionEventsCount",
+          "doc": "Returns the number of queued collision events available to read (FFI: goud_physics_collision_events_count)",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "collisionEventsRead",
+          "doc": "Reads one queued collision event by index; kind is 0 = Enter, 1 = Stay, 2 = Exit (FFI: goud_physics_collision_events_read)",
+          "params": [
+            {
+              "name": "index",
+              "type": "u32"
+            }
+          ],
+          "returns": "PhysicsCollisionEvent2D"
+        },
+        {
+          "name": "collisionEventCount",
+          "doc": "Backward-compatible alias for collisionEventsCount (FFI: goud_physics_collision_event_count)",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "collisionEventRead",
+          "doc": "Backward-compatible alias for collisionEventsRead (FFI: goud_physics_collision_event_read)",
+          "params": [
+            {
+              "name": "index",
+              "type": "u32"
+            }
+          ],
+          "returns": "PhysicsCollisionEvent2D"
+        },
+        {
+          "name": "setCollisionCallback",
+          "doc": "Registers or clears a collision callback function pointer. Pass 0 for callbackPtr to clear (FFI: goud_physics_set_collision_callback)",
+          "params": [
+            {
+              "name": "callbackPtr",
+              "type": "ptr",
+              "doc": "Function pointer with signature extern C fn(ctx, bodyA, bodyB, kind, userData), where kind is 0 = Enter, 1 = Stay, 2 = Exit"
+            },
+            {
+              "name": "userData",
+              "type": "ptr",
+              "doc": "Opaque pointer forwarded unchanged to callbackPtr"
+            }
+          ],
+          "returns": "i32"
         },
         {
           "name": "getGravity",

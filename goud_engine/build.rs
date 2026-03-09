@@ -128,6 +128,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/collision.rs",
     // scene module
     "src/ffi/scene.rs",
+    "src/ffi/scene_loading.rs",
     "src/ffi/scene_transition.rs",
     // debug overlay
     "src/ffi/debug.rs",
@@ -137,6 +138,8 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/engine_config.rs",
     // physics module
     "src/ffi/physics/physics2d.rs",
+    "src/ffi/physics/physics2d_ex.rs",
+    "src/ffi/physics/physics2d_events.rs",
     "src/ffi/physics/physics2d_material.rs",
     "src/ffi/physics/physics3d.rs",
     "src/ffi/physics/physics3d_material.rs",

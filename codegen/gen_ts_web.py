@@ -455,6 +455,19 @@ def gen_web_wrapper():
     lines.append("  removeName(entity: IEntity): boolean { return this.handle.remove_name(entity.toBits()); }")
     lines.append("")
 
+    # Scene management wrappers are exposed for API parity with Node/native SDKs.
+    # Current WASM bridge does not yet expose scene loader exports.
+    lines.append("  loadScene(_name: string, _json: string): number {")
+    lines.append("    throw new Error('Not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  unloadScene(_name: string): boolean {")
+    lines.append("    throw new Error('Not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  setActiveScene(_sceneId: number, _active: boolean): boolean {")
+    lines.append("    throw new Error('Not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("")
+
     # Collision methods
     emit_jsdoc(lines, _method_docs.get("collision_aabb_aabb"))
     lines.append("  collisionAabbAabb(centerAx: number, centerAy: number, halfWa: number, halfHa: number, centerBx: number, centerBy: number, halfWb: number, halfHb: number): IContact | null {")

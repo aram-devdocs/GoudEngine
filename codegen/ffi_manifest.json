@@ -1447,6 +1447,24 @@
       "return_type": "i64",
       "is_unsafe": false
     },
+    "goud_physics_add_collider_ex": {
+      "source_file": "ffi/physics/physics2d_ex.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "body_handle: u64",
+        "shape_type: u32",
+        "width: f32",
+        "height: f32",
+        "radius: f32",
+        "friction: f32",
+        "restitution: f32",
+        "is_sensor: bool",
+        "layer: u32",
+        "mask: u32"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
     "goud_physics_add_rigid_body": {
       "source_file": "ffi/physics/physics2d.rs",
       "params": [
@@ -1480,6 +1498,46 @@
       ],
       "return_type": "i32",
       "is_unsafe": false
+    },
+    "goud_physics_collision_event_count": {
+      "source_file": "ffi/physics/physics2d_events.rs",
+      "params": [
+        "ctx: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_collision_event_read": {
+      "source_file": "ffi/physics/physics2d_events.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "index: u32",
+        "out_body_a: *mut u64",
+        "out_body_b: *mut u64",
+        "out_kind: *mut u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics_collision_events_count": {
+      "source_file": "ffi/physics/physics2d_events.rs",
+      "params": [
+        "ctx: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_collision_events_read": {
+      "source_file": "ffi/physics/physics2d_events.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "index: u32",
+        "out_body_a: *mut u64",
+        "out_body_b: *mut u64",
+        "out_kind: *mut u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
     },
     "goud_physics_create": {
       "source_file": "ffi/physics/physics2d.rs",
@@ -1585,6 +1643,27 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_physics_raycast_ex": {
+      "source_file": "ffi/physics/physics2d_ex.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "ox: f32",
+        "oy: f32",
+        "dx: f32",
+        "dy: f32",
+        "max_dist: f32",
+        "layer_mask: u32",
+        "out_body_handle: *mut u64",
+        "out_collider_handle: *mut u64",
+        "out_hit_x: *mut f32",
+        "out_hit_y: *mut f32",
+        "out_normal_x: *mut f32",
+        "out_normal_y: *mut f32",
+        "out_distance: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_physics_remove_body": {
       "source_file": "ffi/physics/physics2d.rs",
       "params": [
@@ -1620,6 +1699,16 @@
         "ctx: GoudContextId",
         "handle: u64",
         "restitution: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_set_collision_callback": {
+      "source_file": "ffi/physics/physics2d_events.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "callback: Option<CollisionCallback>",
+        "user_data: *mut c_void"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -2209,6 +2298,18 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_scene_load": {
+      "source_file": "ffi/scene_loading.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "name_ptr: *const u8",
+        "name_len: u32",
+        "json_ptr: *const u8",
+        "json_len: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
     "goud_scene_set_active": {
       "source_file": "ffi/scene.rs",
       "params": [
@@ -2264,6 +2365,16 @@
       ],
       "return_type": "GoudResult",
       "is_unsafe": false
+    },
+    "goud_scene_unload": {
+      "source_file": "ffi/scene_loading.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "name_ptr: *const u8",
+        "name_len: u32"
+      ],
+      "return_type": "GoudResult",
+      "is_unsafe": true
     },
     "goud_skeleton_add_bone": {
       "source_file": "ffi/animation/skeletal.rs",
@@ -3592,5 +3703,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 368
+  "total_count": 377
 }

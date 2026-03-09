@@ -1,10 +1,8 @@
-//! Runtime loop methods for [`GoudGame`].
-
+use super::GoudGame;
 use crate::context_registry::scene::SceneId;
 use crate::ecs::World;
+use crate::sdk::debug_overlay::FpsStats;
 use crate::sdk::game_config::GameContext;
-
-use super::GoudGame;
 
 impl GoudGame {
     /// Runs the game loop with the given update callback.
@@ -94,5 +92,35 @@ impl GoudGame {
 
         // Render UI manager after updates (before buffer swap).
         self.ui_manager.render();
+    }
+
+    /// Returns the current FPS statistics from the debug overlay.
+    #[inline]
+    pub fn fps_stats(&self) -> FpsStats {
+        self.debug_overlay.stats()
+    }
+
+    /// Enables or disables the FPS stats overlay.
+    #[inline]
+    pub fn set_fps_overlay_enabled(&mut self, enabled: bool) {
+        self.debug_overlay.set_enabled(enabled);
+    }
+
+    /// Returns the current frame count.
+    #[inline]
+    pub fn frame_count(&self) -> u64 {
+        self.context.frame_count()
+    }
+
+    /// Returns the total time elapsed since game start.
+    #[inline]
+    pub fn total_time(&self) -> f32 {
+        self.context.total_time()
+    }
+
+    /// Returns the current FPS.
+    #[inline]
+    pub fn fps(&self) -> f32 {
+        self.context.fps()
     }
 }

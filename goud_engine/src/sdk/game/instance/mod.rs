@@ -1,10 +1,12 @@
 //! [`GoudGame`] struct definition, construction, and core API.
 
-mod accessors;
-mod runtime;
+mod ecs_scene;
 
 use crate::context_registry::scene::SceneManager;
 use crate::core::error::GoudResult;
+use crate::core::providers::ProviderRegistry;
+use crate::sdk::debug_overlay::DebugOverlay;
+use crate::sdk::game_config::{GameConfig, GameContext};
 use crate::ui::UiManager;
 
 #[cfg(feature = "native")]
@@ -18,23 +20,17 @@ use crate::libs::platform::PlatformBackend;
 #[cfg(feature = "native")]
 use crate::rendering::sprite_batch::SpriteBatch;
 
-use crate::core::providers::ProviderRegistry;
-use crate::sdk::debug_overlay::DebugOverlay;
-use crate::sdk::engine_config::EngineConfig;
-use crate::sdk::game_config::{GameConfig, GameContext};
-
 /// The main game instance managing the ECS world and game loop.
 ///
 /// # Example
 ///
 /// ```rust
-/// use goud_engine::core::math::Vec2;
+/// use goud_engine::sdk::{GoudGame, GameConfig};
 /// use goud_engine::sdk::components::Transform2D;
-/// use goud_engine::sdk::{GameConfig, GoudGame};
+/// use goud_engine::core::math::Vec2;
 ///
 /// let mut game = GoudGame::new(GameConfig::default()).unwrap();
-/// let player = game
-///     .spawn()
+/// let player = game.spawn()
 ///     .with(Transform2D::from_position(Vec2::new(400.0, 300.0)))
 ///     .build();
 /// ```
@@ -206,21 +202,22 @@ impl GoudGame {
         })
     }
 
-    /// Creates a headless game from an [`EngineConfig`] builder.
-    pub fn from_engine_config(config: EngineConfig) -> GoudResult<Self> {
-        let (game_config, providers) = config.build();
-        let mut game = Self::new(game_config)?;
-        game.providers = providers;
-        Ok(game)
+    /// Returns the game configuration.
+    #[inline]
+    pub fn config(&self) -> &GameConfig {
+        &self.config
     }
 
-    /// Creates a windowed game from an [`EngineConfig`] builder.
-    #[cfg(feature = "native")]
-    pub fn from_engine_config_with_platform(config: EngineConfig) -> GoudResult<Self> {
-        let (game_config, providers) = config.build();
-        let mut game = Self::with_platform(game_config)?;
-        game.providers = providers;
-        Ok(game)
+    /// Returns the window title.
+    #[inline]
+    pub fn title(&self) -> &str {
+        &self.config.title
+    }
+
+    /// Returns the window dimensions.
+    #[inline]
+    pub fn window_size(&self) -> (u32, u32) {
+        (self.config.width, self.config.height)
     }
 }
 

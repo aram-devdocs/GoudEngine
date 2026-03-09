@@ -150,3 +150,18 @@ fn test_input_binding_hash() {
 
     assert_eq!(set.len(), 2); // Duplicate not added
 }
+
+#[test]
+fn test_consumed_key_is_masked_for_queries() {
+    let mut input = InputManager::new();
+    input.press_key(Key::Tab);
+    assert!(input.key_pressed(Key::Tab));
+    assert!(input.key_just_pressed(Key::Tab));
+
+    input.consume_key(Key::Tab);
+    assert!(!input.key_pressed(Key::Tab));
+    assert!(!input.key_just_pressed(Key::Tab));
+
+    input.update();
+    assert!(input.key_pressed(Key::Tab));
+}

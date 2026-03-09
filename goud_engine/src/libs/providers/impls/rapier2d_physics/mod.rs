@@ -4,21 +4,22 @@
 //! translating between engine handle types and Rapier's internal handles.
 
 pub mod conversions;
+mod helpers;
 mod queries;
 #[cfg(test)]
 mod tests;
 
 use crossbeam_channel::{unbounded, Receiver};
 use rapier2d::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::core::error::{GoudError, GoudResult};
 use crate::core::providers::physics::PhysicsProvider;
 use crate::core::providers::types::ColliderHandle as EngineColliderHandle;
 use crate::core::providers::types::CollisionEvent as EngineCollisionEvent;
 use crate::core::providers::types::{
-    BodyDesc, BodyHandle, ColliderDesc, ContactPair, DebugShape, JointDesc, JointHandle,
-    PhysicsCapabilities, RaycastHit,
+    BodyDesc, BodyHandle, ColliderDesc, CollisionEventKind, ContactPair, DebugShape, JointDesc,
+    JointHandle, PhysicsCapabilities, RaycastHit,
 };
 use crate::core::providers::{Provider, ProviderLifecycle};
 
@@ -50,6 +51,9 @@ pub struct Rapier2DPhysicsProvider {
 
     // Collision event handling
     collision_events: Vec<EngineCollisionEvent>,
+    active_collision_pairs: HashSet<(u64, u64)>,
+    active_collision_collider_pairs:
+        HashMap<(u64, u64), HashSet<(RapierColliderHandle, RapierColliderHandle)>>,
     collision_recv: Receiver<rapier2d::prelude::CollisionEvent>,
     // Stored to keep the channel alive; contact force events are drained
     // to prevent unbounded growth but processed via narrow_phase directly.
@@ -88,6 +92,8 @@ impl Rapier2DPhysicsProvider {
             joint_handles_rev: HashMap::new(),
             next_id: 1,
             collision_events: Vec::new(),
+            active_collision_pairs: HashSet::new(),
+            active_collision_collider_pairs: HashMap::new(),
             collision_recv,
             contact_recv,
             event_handler,
@@ -97,60 +103,6 @@ impl Rapier2DPhysicsProvider {
                 max_bodies: u32::MAX,
             },
         }
-    }
-
-    /// Allocate the next engine handle ID.
-    fn next_handle_id(&mut self) -> u64 {
-        let id = self.next_id;
-        self.next_id += 1;
-        id
-    }
-
-    /// Drain rapier collision events from the channel and convert to engine events.
-    fn drain_rapier_collision_events(&mut self) {
-        while let Ok(event) = self.collision_recv.try_recv() {
-            let (h1, h2, started) = match event {
-                rapier2d::prelude::CollisionEvent::Started(h1, h2, _) => (h1, h2, true),
-                rapier2d::prelude::CollisionEvent::Stopped(h1, h2, _) => (h1, h2, false),
-            };
-
-            // Map collider handles back to body handles
-            let body_a = self.collider_body_handle(h1);
-            let body_b = self.collider_body_handle(h2);
-
-            if let (Some(a), Some(b)) = (body_a, body_b) {
-                self.collision_events.push(EngineCollisionEvent {
-                    body_a: BodyHandle(a),
-                    body_b: BodyHandle(b),
-                    started,
-                });
-            }
-        }
-    }
-
-    /// Look up the engine body handle for a rapier collider handle.
-    fn collider_body_handle(&self, collider: RapierColliderHandle) -> Option<u64> {
-        let parent = self.collider_set.get(collider)?.parent()?;
-        self.body_handles_rev.get(&parent).copied()
-    }
-
-    /// Look up a rapier body handle from an engine handle, returning an error if not found.
-    fn get_rapier_body(&self, handle: BodyHandle) -> GoudResult<RigidBodyHandle> {
-        self.body_handles
-            .get(&handle.0)
-            .copied()
-            .ok_or(GoudError::InvalidHandle)
-    }
-
-    /// Look up a rapier collider handle from an engine handle, returning an error if not found.
-    fn get_rapier_collider(
-        &self,
-        handle: EngineColliderHandle,
-    ) -> GoudResult<RapierColliderHandle> {
-        self.collider_handles
-            .get(&handle.0)
-            .copied()
-            .ok_or(GoudError::InvalidHandle)
     }
 }
 
@@ -188,8 +140,8 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
     fn step(&mut self, delta: f32) -> GoudResult<()> {
         self.integration_parameters.dt = delta;
 
-        // Drain any events from the previous step
-        self.drain_rapier_collision_events();
+        // Drain any pending events from prior steps before advancing.
+        let mut entered_this_step = self.drain_rapier_collision_events();
 
         self.physics_pipeline.step(
             &self.gravity,
@@ -207,8 +159,21 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
             &self.event_handler,
         );
 
-        // Drain events produced by this step
-        self.drain_rapier_collision_events();
+        // Drain transition events produced by this step.
+        entered_this_step.extend(self.drain_rapier_collision_events());
+
+        // Emit one Stay event per currently overlapping pair each step
+        // (excluding pairs that just entered this step).
+        for &(a, b) in &self.active_collision_pairs {
+            if entered_this_step.contains(&(a, b)) {
+                continue;
+            }
+            self.collision_events.push(EngineCollisionEvent {
+                body_a: BodyHandle(a),
+                body_b: BodyHandle(b),
+                kind: CollisionEventKind::Stay,
+            });
+        }
 
         self.query_pipeline.update(&self.collider_set);
 
@@ -256,6 +221,10 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
     fn destroy_body(&mut self, handle: BodyHandle) {
         if let Some(rapier_handle) = self.body_handles.remove(&handle.0) {
             self.body_handles_rev.remove(&rapier_handle);
+            self.active_collision_pairs
+                .retain(|(a, b)| *a != handle.0 && *b != handle.0);
+            self.active_collision_collider_pairs
+                .retain(|(a, b), _| *a != handle.0 && *b != handle.0);
             self.rigid_body_set.remove(
                 rapier_handle,
                 &mut self.island_manager,
@@ -354,6 +323,7 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
             .restitution(desc.restitution)
             .sensor(desc.is_sensor)
             .active_events(ActiveEvents::COLLISION_EVENTS)
+            .collision_groups(conversions::collision_groups_from_desc(desc))
             .build();
 
         let rapier_handle =
@@ -427,12 +397,22 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
         self.query_raycast(origin, dir, max_dist)
     }
 
+    fn raycast_with_mask(
+        &self,
+        origin: [f32; 2],
+        dir: [f32; 2],
+        max_dist: f32,
+        layer_mask: u32,
+    ) -> Option<RaycastHit> {
+        self.query_raycast_with_mask(origin, dir, max_dist, layer_mask)
+    }
+
     fn overlap_circle(&self, center: [f32; 2], radius: f32) -> Vec<BodyHandle> {
         self.query_overlap_circle(center, radius)
     }
 
     fn drain_collision_events(&mut self) -> Vec<EngineCollisionEvent> {
-        self.drain_rapier_collision_events();
+        let _ = self.drain_rapier_collision_events();
         std::mem::take(&mut self.collision_events)
     }
 
