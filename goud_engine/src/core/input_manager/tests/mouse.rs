@@ -161,3 +161,18 @@ fn test_clear() {
     assert_eq!(input.scroll_delta(), Vec2::zero());
     assert!(!input.gamepad_button_pressed(0, 5));
 }
+
+#[test]
+fn test_consumed_mouse_button_is_masked_for_queries() {
+    let mut input = InputManager::new();
+    input.press_mouse_button(MouseButton::Button1);
+    assert!(input.mouse_button_pressed(MouseButton::Button1));
+    assert!(input.mouse_button_just_pressed(MouseButton::Button1));
+
+    input.consume_mouse_button(MouseButton::Button1);
+    assert!(!input.mouse_button_pressed(MouseButton::Button1));
+    assert!(!input.mouse_button_just_pressed(MouseButton::Button1));
+
+    input.clear_consumed_inputs();
+    assert!(input.mouse_button_pressed(MouseButton::Button1));
+}

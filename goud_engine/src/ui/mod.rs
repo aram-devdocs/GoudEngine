@@ -14,12 +14,16 @@
 
 mod allocator;
 mod component;
+mod layout;
 mod manager;
 mod node;
 mod node_id;
+#[cfg(test)]
+mod tests;
 
 pub use allocator::UiNodeAllocator;
-pub use component::UiComponent;
-pub use manager::UiManager;
+pub use component::{UiButton, UiComponent};
+pub use layout::{UiAlign, UiAnchor, UiEdges, UiFlexDirection, UiFlexLayout, UiJustify, UiLayout};
+pub use manager::{UiEvent, UiManager};
 pub use node::UiNode;
 pub use node_id::UiNodeId;
