@@ -358,7 +358,7 @@ namespace GoudEngine
                 var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
                 fixed (byte* namePtr = nameBytes)
                 {
-                    return NativeMethods.goud_scene_create(_ctx, (IntPtr)namePtr, (uint)nameBytes.Length);
+                    return NativeMethods.goud_scene_create(_ctx, nameBytes.Length == 0 ? IntPtr.Zero : (IntPtr)namePtr, (uint)nameBytes.Length);
                 }
             }
         }
@@ -377,7 +377,7 @@ namespace GoudEngine
                 var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
                 fixed (byte* namePtr = nameBytes)
                 {
-                    return NativeMethods.goud_scene_get_by_name(_ctx, (IntPtr)namePtr, (uint)nameBytes.Length);
+                    return NativeMethods.goud_scene_get_by_name(_ctx, nameBytes.Length == 0 ? IntPtr.Zero : (IntPtr)namePtr, (uint)nameBytes.Length);
                 }
             }
         }
@@ -392,7 +392,7 @@ namespace GoudEngine
                 fixed (byte* namePtr = nameBytes)
                 fixed (byte* jsonPtr = jsonBytes)
                 {
-                    return NativeMethods.goud_scene_load(_ctx, (IntPtr)namePtr, (uint)nameBytes.Length, (IntPtr)jsonPtr, (uint)jsonBytes.Length);
+                    return NativeMethods.goud_scene_load(_ctx, nameBytes.Length == 0 ? IntPtr.Zero : (IntPtr)namePtr, (uint)nameBytes.Length, jsonBytes.Length == 0 ? IntPtr.Zero : (IntPtr)jsonPtr, (uint)jsonBytes.Length);
                 }
             }
         }
@@ -405,7 +405,7 @@ namespace GoudEngine
                 var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
                 fixed (byte* namePtr = nameBytes)
                 {
-                    return NativeMethods.goud_scene_unload(_ctx, (IntPtr)namePtr, (uint)nameBytes.Length);
+                    return NativeMethods.goud_scene_unload(_ctx, nameBytes.Length == 0 ? IntPtr.Zero : (IntPtr)namePtr, (uint)nameBytes.Length);
                 }
             }
         }

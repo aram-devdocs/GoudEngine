@@ -903,19 +903,40 @@ namespace GoudEngine
         /// <summary>Plays audio from raw bytes on the default channel</summary>
         public long AudioPlay(byte[] data)
         {
-            return NativeMethods.goud_audio_play(_ctx, data);
+            unsafe
+            {
+                var dataBytes = data ?? Array.Empty<byte>();
+                fixed (byte* dataPtr = dataBytes)
+                {
+                    return NativeMethods.goud_audio_play(_ctx, dataBytes.Length == 0 ? IntPtr.Zero : (IntPtr)dataPtr, (nuint)dataBytes.Length);
+                }
+            }
         }
 
         /// <summary>Plays audio from raw bytes on the given channel</summary>
         public long AudioPlayOnChannel(byte[] data, byte channel)
         {
-            return NativeMethods.goud_audio_play_on_channel(_ctx, data, channel);
+            unsafe
+            {
+                var dataBytes = data ?? Array.Empty<byte>();
+                fixed (byte* dataPtr = dataBytes)
+                {
+                    return NativeMethods.goud_audio_play_on_channel(_ctx, dataBytes.Length == 0 ? IntPtr.Zero : (IntPtr)dataPtr, (nuint)dataBytes.Length, channel);
+                }
+            }
         }
 
         /// <summary>Plays audio with explicit volume, speed, looping, and channel settings</summary>
         public long AudioPlayWithSettings(byte[] data, float volume, float speed, bool looping, byte channel)
         {
-            return NativeMethods.goud_audio_play_with_settings(_ctx, data, volume, speed, looping, channel);
+            unsafe
+            {
+                var dataBytes = data ?? Array.Empty<byte>();
+                fixed (byte* dataPtr = dataBytes)
+                {
+                    return NativeMethods.goud_audio_play_with_settings(_ctx, dataBytes.Length == 0 ? IntPtr.Zero : (IntPtr)dataPtr, (nuint)dataBytes.Length, volume, speed, looping, channel);
+                }
+            }
         }
 
         /// <summary>Stops a playing audio player</summary>
@@ -987,7 +1008,14 @@ namespace GoudEngine
         /// <summary>Plays audio with 3D spatial attenuation</summary>
         public long AudioPlaySpatial3d(byte[] data, float sourceX, float sourceY, float sourceZ, float listenerX, float listenerY, float listenerZ, float maxDistance, float rolloff)
         {
-            return NativeMethods.goud_audio_play_spatial_3d(_ctx, data, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff);
+            unsafe
+            {
+                var dataBytes = data ?? Array.Empty<byte>();
+                fixed (byte* dataPtr = dataBytes)
+                {
+                    return NativeMethods.goud_audio_play_spatial_3d(_ctx, dataBytes.Length == 0 ? IntPtr.Zero : (IntPtr)dataPtr, (nuint)dataBytes.Length, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff);
+                }
+            }
         }
 
         /// <summary>Updates 3D spatial attenuation for an active player</summary>
@@ -1029,13 +1057,27 @@ namespace GoudEngine
         /// <summary>Starts a timed crossfade from one player to a new audio asset</summary>
         public long AudioCrossfadeTo(ulong fromPlayerId, byte[] data, float durationSec, byte channel)
         {
-            return NativeMethods.goud_audio_crossfade_to(_ctx, fromPlayerId, data, durationSec, channel);
+            unsafe
+            {
+                var dataBytes = data ?? Array.Empty<byte>();
+                fixed (byte* dataPtr = dataBytes)
+                {
+                    return NativeMethods.goud_audio_crossfade_to(_ctx, fromPlayerId, dataBytes.Length == 0 ? IntPtr.Zero : (IntPtr)dataPtr, (nuint)dataBytes.Length, durationSec, channel);
+                }
+            }
         }
 
         /// <summary>Mixes a secondary audio asset with a primary player</summary>
         public long AudioMixWith(ulong primaryPlayerId, byte[] data, float secondaryVolume, byte secondaryChannel)
         {
-            return NativeMethods.goud_audio_mix_with(_ctx, primaryPlayerId, data, secondaryVolume, secondaryChannel);
+            unsafe
+            {
+                var dataBytes = data ?? Array.Empty<byte>();
+                fixed (byte* dataPtr = dataBytes)
+                {
+                    return NativeMethods.goud_audio_mix_with(_ctx, primaryPlayerId, dataBytes.Length == 0 ? IntPtr.Zero : (IntPtr)dataPtr, (nuint)dataBytes.Length, secondaryVolume, secondaryChannel);
+                }
+            }
         }
 
         /// <summary>Advances all active timed crossfades</summary>

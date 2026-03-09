@@ -1010,22 +1010,25 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                   "                }",
                   "            }"]
             return
-        # Generic string param marshalling: string -> UTF8 ptr + len
-        # Only applies when the FFI function uses *const u8 (ptr+len), not *const c_char
-        string_params = [p for p in params if p["type"] == "string"]
-        if string_params and _ffi_uses_ptr_len(ffi_fn):
+        # Generic ptr+len marshalling for UTF-8 strings and raw bytes.
+        # Applies when the FFI function uses *const u8 (ptr+len), not *const c_char.
+        buffer_params = [p for p in params if p["type"] in ("string", "bytes", "u8[]")]
+        if buffer_params and _ffi_uses_ptr_len(ffi_fn):
             L.append("            unsafe")
             L.append("            {")
             fixed_lines = []
             ffi_arg_parts = [] if no_ctx else ["_ctx"]
             ffi_param_index = 0 if no_ctx else 1
             for p in params:
-                if p["type"] == "string":
+                if p["type"] in ("string", "bytes", "u8[]"):
                     bvar = f"{p['name']}Bytes"
                     pvar = f"{p['name']}Ptr"
-                    L.append(f"                var {bvar} = System.Text.Encoding.UTF8.GetBytes({p['name']});")
+                    if p["type"] == "string":
+                        L.append(f"                var {bvar} = System.Text.Encoding.UTF8.GetBytes({p['name']});")
+                    else:
+                        L.append(f"                var {bvar} = {p['name']} ?? Array.Empty<byte>();")
                     fixed_lines.append(f"byte* {pvar} = {bvar}")
-                    ffi_arg_parts.append(f"(IntPtr){pvar}")
+                    ffi_arg_parts.append(f"{bvar}.Length == 0 ? IntPtr.Zero : (IntPtr){pvar}")
                     len_type = _ffi_param_type_at(ffi_fn, ffi_param_index + 1)
                     ffi_arg_parts.append(_cs_len_cast_expr(len_type, f"{bvar}.Length"))
                     ffi_param_index += 2
