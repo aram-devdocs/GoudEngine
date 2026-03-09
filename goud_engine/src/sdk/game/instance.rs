@@ -358,7 +358,6 @@ impl GoudGame {
     pub fn window_size(&self) -> (u32, u32) {
         (self.config.width, self.config.height)
     }
-
 }
 
 impl Default for GoudGame {
