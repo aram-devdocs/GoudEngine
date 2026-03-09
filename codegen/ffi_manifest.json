@@ -1668,7 +1668,7 @@
       "source_file": "ffi/physics/physics2d_events.rs",
       "params": [
         "ctx: GoudContextId",
-        "callback: *mut c_void",
+        "callback: Option<CollisionCallback>",
         "user_data: *mut c_void"
       ],
       "return_type": "i32",

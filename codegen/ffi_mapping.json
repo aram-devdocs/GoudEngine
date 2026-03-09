@@ -257,6 +257,7 @@
     "*mut FfiAnimationClipBuilder": "ctypes.POINTER(FfiAnimationClipBuilder)",
     "*const FfiSpriteAnimator": "ctypes.POINTER(FfiSpriteAnimator)",
     "*mut c_void": "ctypes.c_void_p",
+    "Option<CollisionCallback>": "ctypes.c_void_p",
     "*const c_char": "ctypes.c_char_p"
   },
   "tools": {
@@ -6373,7 +6374,7 @@
           },
           {
             "name": "callback",
-            "type": "*mut c_void"
+            "type": "Option<CollisionCallback>"
           },
           {
             "name": "user_data",

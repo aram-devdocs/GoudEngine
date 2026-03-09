@@ -5563,7 +5563,7 @@
         },
         {
           "name": "setCollisionCallback",
-          "doc": "Registers or clears a collision callback via raw pointers. Pass 0 for callbackPtr to clear (FFI: goud_physics_set_collision_callback)",
+          "doc": "Registers or clears a collision callback function pointer. Pass 0 for callbackPtr to clear (FFI: goud_physics_set_collision_callback)",
           "params": [
             {
               "name": "callbackPtr",

@@ -62,7 +62,7 @@ pub(super) fn step_and_dispatch_collision_events(ctx: GoudContextId, dt: f32) ->
 
 /// Registers or clears a per-context collision callback.
 ///
-/// Pass a null `callback` pointer to clear the callback.
+/// Pass a null `callback` to clear the callback.
 ///
 /// Callback signature: `extern "C" fn(ctx, body_a, body_b, kind, user_data)`,
 /// where kind is `0 = Enter`, `1 = Stay`, `2 = Exit`.
@@ -72,7 +72,7 @@ pub(super) fn step_and_dispatch_collision_events(ctx: GoudContextId, dt: f32) ->
 #[no_mangle]
 pub extern "C" fn goud_physics_set_collision_callback(
     ctx: GoudContextId,
-    callback: *mut c_void,
+    callback: Option<CollisionCallback>,
     user_data: *mut c_void,
 ) -> i32 {
     if ctx == GOUD_INVALID_CONTEXT_ID {
@@ -80,15 +80,7 @@ pub extern "C" fn goud_physics_set_collision_callback(
         return GoudError::InvalidContext.error_code();
     }
 
-    let callback_fn = if callback.is_null() {
-        None
-    } else {
-        // SAFETY: The caller must provide a valid function pointer with the
-        // `CollisionCallback` ABI and signature.
-        Some(unsafe { std::mem::transmute::<*mut c_void, CollisionCallback>(callback) })
-    };
-
-    set_collision_callback(ctx, callback_fn, user_data);
+    set_collision_callback(ctx, callback, user_data);
     0
 }
 
@@ -245,6 +237,67 @@ mod tests {
         (event.body_a == a && event.body_b == b) || (event.body_a == b && event.body_b == a)
     }
 
+    fn create_sensor_and_dynamic_pair(ctx: GoudContextId) -> (u64, u64) {
+        let sensor_body = goud_physics_add_rigid_body(ctx, 0, 0.0, 0.0, 0.0);
+        assert!(
+            sensor_body > 0,
+            "expected sensor body creation to succeed, got {sensor_body}"
+        );
+        let sensor_body = sensor_body as u64;
+
+        let sensor_collider = goud_physics_add_collider_ex(
+            ctx,
+            sensor_body,
+            0,
+            0.0,
+            0.0,
+            2.0,
+            0.5,
+            0.0,
+            true,
+            0b0001,
+            u32::MAX,
+        );
+        assert!(
+            sensor_collider > 0,
+            "expected sensor collider creation to succeed, got {sensor_collider}"
+        );
+
+        let dynamic_body = goud_physics_add_rigid_body(ctx, 1, 0.0, 0.0, 0.0);
+        assert!(
+            dynamic_body > 0,
+            "expected dynamic body creation to succeed, got {dynamic_body}"
+        );
+        let dynamic_body = dynamic_body as u64;
+
+        let dynamic_collider = goud_physics_add_collider_ex(
+            ctx,
+            dynamic_body,
+            0,
+            0.0,
+            0.0,
+            0.5,
+            0.5,
+            0.0,
+            false,
+            0b0001,
+            u32::MAX,
+        );
+        assert!(
+            dynamic_collider > 0,
+            "expected dynamic collider creation to succeed, got {dynamic_collider}"
+        );
+
+        (sensor_body, dynamic_body)
+    }
+
+    fn drive_collision_lifecycle(ctx: GoudContextId, dynamic_body: u64) {
+        assert_eq!(goud_physics_step(ctx, 1.0 / 60.0), 0);
+        assert_eq!(goud_physics_step(ctx, 1.0 / 60.0), 0);
+        assert_eq!(goud_physics_set_velocity(ctx, dynamic_body, 300.0, 0.0), 0);
+        assert_eq!(goud_physics_step(ctx, 1.0 / 60.0), 0);
+    }
+
     #[allow(clippy::not_unsafe_ptr_arg_deref)]
     extern "C" fn record_collision_event(
         ctx: GoudContextId,
@@ -275,67 +328,20 @@ mod tests {
         assert_eq!(goud_physics_create(guard.ctx, 0.0, 0.0), 0);
         guard.has_physics = true;
 
-        let sensor_body = goud_physics_add_rigid_body(guard.ctx, 0, 0.0, 0.0, 0.0);
-        assert!(
-            sensor_body > 0,
-            "expected sensor body creation to succeed, got {sensor_body}"
-        );
-        let sensor_collider = goud_physics_add_collider_ex(
-            guard.ctx,
-            sensor_body as u64,
-            0,
-            0.0,
-            0.0,
-            2.0,
-            0.5,
-            0.0,
-            true,
-            0b0001,
-            u32::MAX,
-        );
-        assert!(
-            sensor_collider > 0,
-            "expected sensor collider creation to succeed, got {sensor_collider}"
-        );
-
-        let dynamic_body = goud_physics_add_rigid_body(guard.ctx, 1, 0.0, 0.0, 0.0);
-        assert!(
-            dynamic_body > 0,
-            "expected dynamic body creation to succeed, got {dynamic_body}"
-        );
-        let dynamic_collider = goud_physics_add_collider_ex(
-            guard.ctx,
-            dynamic_body as u64,
-            0,
-            0.0,
-            0.0,
-            0.5,
-            0.5,
-            0.0,
-            false,
-            0b0001,
-            u32::MAX,
-        );
-        assert!(
-            dynamic_collider > 0,
-            "expected dynamic collider creation to succeed, got {dynamic_collider}"
-        );
+        let (sensor_body, dynamic_body) = create_sensor_and_dynamic_pair(guard.ctx);
 
         let mut callback_events: Vec<CallbackEvent> = Vec::new();
-        let callback_fn_ptr = record_collision_event as *const () as *mut c_void;
         let user_data_ptr = &mut callback_events as *mut Vec<CallbackEvent> as *mut c_void;
         assert_eq!(
-            goud_physics_set_collision_callback(guard.ctx, callback_fn_ptr, user_data_ptr),
+            goud_physics_set_collision_callback(
+                guard.ctx,
+                Some(record_collision_event),
+                user_data_ptr
+            ),
             0
         );
 
-        assert_eq!(goud_physics_step(guard.ctx, 1.0 / 60.0), 0);
-        assert_eq!(goud_physics_step(guard.ctx, 1.0 / 60.0), 0);
-        assert_eq!(
-            goud_physics_set_velocity(guard.ctx, dynamic_body as u64, 300.0, 0.0),
-            0
-        );
-        assert_eq!(goud_physics_step(guard.ctx, 1.0 / 60.0), 0);
+        drive_collision_lifecycle(guard.ctx, dynamic_body);
 
         assert_eq!(
             callback_events.len(),
@@ -353,13 +359,44 @@ mod tests {
         assert!(
             callback_events
                 .iter()
-                .all(|event| event.ctx == guard.ctx && body_pair_matches(event, sensor_body as u64, dynamic_body as u64)),
+                .all(|event| event.ctx == guard.ctx && body_pair_matches(event, sensor_body, dynamic_body)),
             "all callback events should belong to the expected context and body pair, got {callback_events:?}"
         );
 
         assert_eq!(
-            goud_physics_set_collision_callback(guard.ctx, null_mut(), null_mut()),
+            goud_physics_set_collision_callback(guard.ctx, None, null_mut()),
             0
+        );
+    }
+
+    #[test]
+    fn test_collision_callback_clear_by_null_disables_dispatch() {
+        let mut guard = Physics2DContextGuard::new();
+        assert_ne!(guard.ctx, GOUD_INVALID_CONTEXT_ID);
+        assert_eq!(goud_physics_create(guard.ctx, 0.0, 0.0), 0);
+        guard.has_physics = true;
+
+        let (_, dynamic_body) = create_sensor_and_dynamic_pair(guard.ctx);
+
+        let mut callback_events: Vec<CallbackEvent> = Vec::new();
+        let user_data_ptr = &mut callback_events as *mut Vec<CallbackEvent> as *mut c_void;
+        assert_eq!(
+            goud_physics_set_collision_callback(
+                guard.ctx,
+                Some(record_collision_event),
+                user_data_ptr
+            ),
+            0
+        );
+        assert_eq!(
+            goud_physics_set_collision_callback(guard.ctx, None, null_mut()),
+            0
+        );
+
+        drive_collision_lifecycle(guard.ctx, dynamic_body);
+        assert!(
+            callback_events.is_empty(),
+            "callback should not receive events after clear-by-null registration"
         );
     }
 }
