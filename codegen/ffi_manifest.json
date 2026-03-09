@@ -2149,6 +2149,18 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_scene_load": {
+      "source_file": "ffi/scene_loading.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "name_ptr: *const u8",
+        "name_len: u32",
+        "json_ptr: *const u8",
+        "json_len: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
     "goud_scene_set_active": {
       "source_file": "ffi/scene.rs",
       "params": [
@@ -2204,6 +2216,16 @@
       ],
       "return_type": "GoudResult",
       "is_unsafe": false
+    },
+    "goud_scene_unload": {
+      "source_file": "ffi/scene_loading.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "name_ptr: *const u8",
+        "name_len: u32"
+      ],
+      "return_type": "GoudResult",
+      "is_unsafe": true
     },
     "goud_skeleton_add_bone": {
       "source_file": "ffi/animation/skeletal.rs",
@@ -3532,5 +3554,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 364
+  "total_count": 366
 }

@@ -351,6 +351,16 @@ export class GoudGame implements IGoudGame {
   /** Removes the Name from the entity */
   removeName(entity: IEntity): boolean { return this.handle.remove_name(entity.toBits()); }
 
+  loadScene(_name: string, _json: string): number {
+    throw new Error('Not supported in WASM mode');
+  }
+  unloadScene(_name: string): boolean {
+    throw new Error('Not supported in WASM mode');
+  }
+  setActiveScene(_sceneId: number, _active: boolean): boolean {
+    throw new Error('Not supported in WASM mode');
+  }
+
   /** AABB vs AABB collision test with contact */
   collisionAabbAabb(centerAx: number, centerAy: number, halfWa: number, halfHa: number, centerBx: number, centerBy: number, halfWb: number, halfHb: number): IContact | null {
     const c = this.handle.collision_aabb_aabb(centerAx, centerAy, halfWa, halfHa, centerBx, centerBy, halfWb, halfHb);

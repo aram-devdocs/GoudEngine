@@ -56,6 +56,8 @@ use goud_engine::ffi::renderer3d::{
     goud_renderer3d_set_object_rotation, goud_renderer3d_set_object_scale,
     goud_renderer3d_update_light,
 };
+use goud_engine::ffi::scene::goud_scene_set_active;
+use goud_engine::ffi::scene_loading::{goud_scene_load, goud_scene_unload};
 use goud_engine::ffi::window::{
     goud_window_clear, goud_window_create, goud_window_destroy, goud_window_get_delta_time,
     goud_window_get_size, goud_window_poll_events, goud_window_set_should_close,
@@ -612,6 +614,45 @@ impl GoudGame {
     #[napi]
     pub fn is_alive(&self, entity: &Entity) -> bool {
         goud_entity_is_alive(self.context_id, entity.bits)
+    }
+
+    // =========================================================================
+    // Scene Management Wrappers
+    // =========================================================================
+
+    #[napi]
+    pub fn load_scene(&self, name: String, json: String) -> u32 {
+        let name_bytes = name.as_bytes();
+        let json_bytes = json.as_bytes();
+        // SAFETY: String byte pointers are valid for their respective lengths.
+        unsafe {
+            goud_scene_load(
+                self.context_id,
+                name_bytes.as_ptr(),
+                name_bytes.len() as u32,
+                json_bytes.as_ptr(),
+                json_bytes.len() as u32,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn unload_scene(&self, name: String) -> bool {
+        let name_bytes = name.as_bytes();
+        // SAFETY: name_bytes pointer is valid for name_bytes.len() bytes.
+        unsafe {
+            goud_scene_unload(
+                self.context_id,
+                name_bytes.as_ptr(),
+                name_bytes.len() as u32,
+            )
+            .success
+        }
+    }
+
+    #[napi]
+    pub fn set_active_scene(&self, scene_id: u32, active: bool) -> bool {
+        goud_scene_set_active(self.context_id, scene_id, active).success
     }
 
     // =========================================================================
