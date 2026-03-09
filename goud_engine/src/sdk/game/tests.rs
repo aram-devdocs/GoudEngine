@@ -5,6 +5,8 @@ use crate::sdk::components::{GlobalTransform2D, Transform2D};
 use crate::sdk::engine_config::EngineConfig;
 use crate::sdk::game::GoudGame;
 use crate::sdk::game_config::GameConfig;
+use crate::ui::{UiAnchor, UiButton, UiComponent};
+use glfw::{Key, MouseButton};
 
 #[test]
 fn test_goud_game_new() {
@@ -311,4 +313,60 @@ fn test_backward_compat_default() {
     assert_eq!(game.config().width, 800);
     assert_eq!(game.config().height, 600);
     assert_eq!(game.providers().render.name(), "null");
+}
+
+#[test]
+fn test_update_frame_ui_consumes_mouse_event_before_game_queries() {
+    let mut game = GoudGame::default();
+    let button = game
+        .ui_manager_mut()
+        .create_node(Some(UiComponent::Button(UiButton::default())));
+
+    {
+        let node = game.ui_manager_mut().get_node_mut(button).unwrap();
+        node.set_anchor(UiAnchor::TopLeft);
+        node.set_size(Vec2::new(100.0, 40.0));
+    }
+
+    game.input_mut().set_mouse_position(Vec2::new(10.0, 10.0));
+    game.input_mut().press_mouse_button(MouseButton::Button1);
+
+    game.update_frame(0.016, |_ctx, _world| {});
+
+    assert!(!game.is_mouse_button_just_pressed(MouseButton::Button1));
+    assert!(!game.is_mouse_button_pressed(MouseButton::Button1));
+}
+
+#[test]
+fn test_update_frame_ui_consumes_tab_and_enter_activation() {
+    let mut game = GoudGame::default();
+    let button = game
+        .ui_manager_mut()
+        .create_node(Some(UiComponent::Button(UiButton::default())));
+
+    {
+        let node = game.ui_manager_mut().get_node_mut(button).unwrap();
+        node.set_anchor(UiAnchor::TopLeft);
+        node.set_size(Vec2::new(100.0, 40.0));
+    }
+
+    game.input_mut().press_key(Key::Tab);
+    game.update_frame(0.016, |_ctx, _world| {});
+    assert!(!game.is_key_just_pressed(Key::Tab));
+    game.ui_manager_mut().take_events();
+
+    game.input_mut().update();
+    game.input_mut().release_key(Key::Tab);
+    game.update_frame(0.016, |_ctx, _world| {});
+    game.ui_manager_mut().take_events();
+
+    game.input_mut().update();
+    game.input_mut().press_key(Key::Enter);
+    game.update_frame(0.016, |_ctx, _world| {});
+
+    assert!(!game.is_key_just_pressed(Key::Enter));
+    let events = game.ui_manager_mut().take_events();
+    assert!(events
+        .iter()
+        .any(|event| matches!(event, crate::ui::UiEvent::Click(id) if *id == button)));
 }

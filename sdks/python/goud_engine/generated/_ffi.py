@@ -120,6 +120,24 @@ class GoudContact(ctypes.Structure):
         ("penetration", ctypes.c_float)
     ]
 
+class FfiPhysicsRaycastHit2D(ctypes.Structure):
+    _fields_ = [
+        ("body_handle", ctypes.c_uint64),
+        ("collider_handle", ctypes.c_uint64),
+        ("point_x", ctypes.c_float),
+        ("point_y", ctypes.c_float),
+        ("normal_x", ctypes.c_float),
+        ("normal_y", ctypes.c_float),
+        ("distance", ctypes.c_float)
+    ]
+
+class FfiPhysicsCollisionEvent2D(ctypes.Structure):
+    _fields_ = [
+        ("body_a", ctypes.c_uint64),
+        ("body_b", ctypes.c_uint64),
+        ("kind", ctypes.c_uint32)
+    ]
+
 class FfiVec3(ctypes.Structure):
     _fields_ = [
         ("x", ctypes.c_float),
@@ -232,6 +250,10 @@ def _setup():
     _lib.goud_scene_destroy.restype = GoudResult
     _lib.goud_scene_get_by_name.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
     _lib.goud_scene_get_by_name.restype = ctypes.c_uint32
+    _lib.goud_scene_load.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
+    _lib.goud_scene_load.restype = ctypes.c_uint32
+    _lib.goud_scene_unload.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
+    _lib.goud_scene_unload.restype = GoudResult
     _lib.goud_scene_set_active.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_bool]
     _lib.goud_scene_set_active.restype = GoudResult
     _lib.goud_scene_is_active.argtypes = [GoudContextId, ctypes.c_uint32]
@@ -286,6 +308,14 @@ def _setup():
     _lib.goud_texture_load.restype = ctypes.c_uint64
     _lib.goud_texture_destroy.argtypes = [GoudContextId, ctypes.c_uint64]
     _lib.goud_texture_destroy.restype = ctypes.c_bool
+    _lib.goud_font_load.argtypes = [GoudContextId, ctypes.c_char_p]
+    _lib.goud_font_load.restype = ctypes.c_uint64
+    _lib.goud_font_destroy.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_font_destroy.restype = ctypes.c_bool
+    _lib.goud_renderer_draw_text.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_char_p, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_uint8, ctypes.c_float, ctypes.c_float, ctypes.c_uint8, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_renderer_draw_text.restype = ctypes.c_bool
+    _lib.goud_draw_text.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_char_p, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_uint8, ctypes.c_float, ctypes.c_float, ctypes.c_uint8, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_draw_text.restype = ctypes.c_bool
     _lib.goud_renderer_draw_sprite_rect.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
     _lib.goud_renderer_draw_sprite_rect.restype = ctypes.c_bool
     _lib.goud_renderer_set_viewport.argtypes = [GoudContextId, ctypes.c_int32, ctypes.c_int32, ctypes.c_uint32, ctypes.c_uint32]
@@ -751,6 +781,8 @@ def _setup():
         _lib.goud_physics_add_rigid_body.restype = ctypes.c_int64
         _lib.goud_physics_add_collider.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
         _lib.goud_physics_add_collider.restype = ctypes.c_int64
+        _lib.goud_physics_add_collider_ex.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_bool, ctypes.c_uint32, ctypes.c_uint32]
+        _lib.goud_physics_add_collider_ex.restype = ctypes.c_int64
         _lib.goud_physics_remove_body.argtypes = [GoudContextId, ctypes.c_uint64]
         _lib.goud_physics_remove_body.restype = ctypes.c_int32
         _lib.goud_physics_step.argtypes = [GoudContextId, ctypes.c_float]
@@ -767,6 +799,18 @@ def _setup():
         _lib.goud_physics_apply_impulse.restype = ctypes.c_int32
         _lib.goud_physics_raycast.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
         _lib.goud_physics_raycast.restype = ctypes.c_int32
+        _lib.goud_physics_raycast_ex.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics_raycast_ex.restype = ctypes.c_int32
+        _lib.goud_physics_collision_events_count.argtypes = [GoudContextId]
+        _lib.goud_physics_collision_events_count.restype = ctypes.c_int32
+        _lib.goud_physics_collision_event_count.argtypes = [GoudContextId]
+        _lib.goud_physics_collision_event_count.restype = ctypes.c_int32
+        _lib.goud_physics_collision_events_read.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint32)]
+        _lib.goud_physics_collision_events_read.restype = ctypes.c_int32
+        _lib.goud_physics_collision_event_read.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint32)]
+        _lib.goud_physics_collision_event_read.restype = ctypes.c_int32
+        _lib.goud_physics_set_collision_callback.argtypes = [GoudContextId, ctypes.c_void_p, ctypes.c_void_p]
+        _lib.goud_physics_set_collision_callback.restype = ctypes.c_int32
         _lib.goud_physics_get_gravity.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
         _lib.goud_physics_get_gravity.restype = ctypes.c_int32
         _lib.goud_physics_set_body_gravity_scale.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]
@@ -895,6 +939,18 @@ def _setup():
     _lib.goud_animation_layer_reset.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32]
     _lib.goud_animation_layer_reset.restype = ctypes.c_int32
 
+    # animation_control
+    _lib.goud_animation_play.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_animation_play.restype = ctypes.c_int32
+    _lib.goud_animation_stop.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_animation_stop.restype = ctypes.c_int32
+    _lib.goud_animation_set_state.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32]
+    _lib.goud_animation_set_state.restype = ctypes.c_int32
+    _lib.goud_animation_set_parameter_bool.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_bool]
+    _lib.goud_animation_set_parameter_bool.restype = ctypes.c_int32
+    _lib.goud_animation_set_parameter_float.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_float]
+    _lib.goud_animation_set_parameter_float.restype = ctypes.c_int32
+
     # network
     try:
         _lib.goud_network_host.argtypes = [GoudContextId, ctypes.c_int32, ctypes.c_uint16]
@@ -971,6 +1027,36 @@ def _setup():
     _lib.goud_audio_active_count.restype = ctypes.c_int32
     _lib.goud_audio_cleanup_finished.argtypes = [GoudContextId]
     _lib.goud_audio_cleanup_finished.restype = ctypes.c_int32
+    _lib.goud_audio_play_spatial.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_play_spatial.restype = ctypes.c_int64
+    _lib.goud_audio_play_spatial_3d.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_play_spatial_3d.restype = ctypes.c_int64
+    _lib.goud_audio_update_spatial_volume.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_update_spatial_volume.restype = ctypes.c_int32
+    _lib.goud_audio_update_spatial_volume_3d.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_update_spatial_volume_3d.restype = ctypes.c_int32
+    _lib.goud_audio_set_listener_position.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_set_listener_position.restype = ctypes.c_int32
+    _lib.goud_audio_set_listener_position_3d.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_set_listener_position_3d.restype = ctypes.c_int32
+    _lib.goud_audio_set_source_position.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_set_source_position.restype = ctypes.c_int32
+    _lib.goud_audio_set_source_position_3d.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_set_source_position_3d.restype = ctypes.c_int32
+    _lib.goud_audio_set_player_volume.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]
+    _lib.goud_audio_set_player_volume.restype = ctypes.c_int32
+    _lib.goud_audio_set_player_speed.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]
+    _lib.goud_audio_set_player_speed.restype = ctypes.c_int32
+    _lib.goud_audio_crossfade.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_float]
+    _lib.goud_audio_crossfade.restype = ctypes.c_int32
+    _lib.goud_audio_crossfade_to.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t, ctypes.c_float, ctypes.c_uint8]
+    _lib.goud_audio_crossfade_to.restype = ctypes.c_int64
+    _lib.goud_audio_mix_with.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t, ctypes.c_float, ctypes.c_uint8]
+    _lib.goud_audio_mix_with.restype = ctypes.c_int64
+    _lib.goud_audio_update_crossfades.argtypes = [GoudContextId, ctypes.c_float]
+    _lib.goud_audio_update_crossfades.restype = ctypes.c_int32
+    _lib.goud_audio_active_crossfade_count.argtypes = [GoudContextId]
+    _lib.goud_audio_active_crossfade_count.restype = ctypes.c_int32
 
     # ui_manager
     _lib.goud_ui_manager_create.argtypes = []

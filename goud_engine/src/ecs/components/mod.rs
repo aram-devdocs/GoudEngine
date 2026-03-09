@@ -32,6 +32,8 @@
 //! ## Audio Components
 //!
 //! - [`AudioSource`]: Audio playback component with spatial audio support
+//! - [`AudioListener`]: Marks an entity as the active spatial listener
+//! - [`AudioEmitter`]: Spatial attenuation settings for an emitting entity
 //! - [`AudioChannel`]: Audio channel enumeration for mixing and grouping
 //! - [`AttenuationModel`]: Distance-based volume falloff models
 //!
@@ -179,7 +181,7 @@ pub use animation_controller::{
     AnimParam, AnimationController, AnimationState, AnimationTransition, TransitionCondition,
 };
 pub use animation_layer::{AnimationLayer, AnimationLayerStack};
-pub use audiosource::{AttenuationModel, AudioChannel, AudioSource};
+pub use audiosource::{AttenuationModel, AudioChannel, AudioEmitter, AudioListener, AudioSource};
 pub use collider::{Collider, ColliderShape};
 pub use global_transform::GlobalTransform;
 pub use global_transform2d::GlobalTransform2D;

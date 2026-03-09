@@ -56,6 +56,7 @@
 pub mod attenuation;
 pub mod channel;
 pub mod source;
+pub mod spatial;
 
 #[cfg(test)]
 mod tests;
@@ -63,3 +64,4 @@ mod tests;
 pub use attenuation::AttenuationModel;
 pub use channel::AudioChannel;
 pub use source::AudioSource;
+pub use spatial::{AudioEmitter, AudioListener};

@@ -12,6 +12,7 @@
 //!    canvas)
 //! ```
 
+mod audio;
 mod collision;
 mod ecs_ops;
 mod input;
@@ -29,6 +30,7 @@ use std::collections::{HashMap, HashSet};
 use wasm_bindgen::prelude::*;
 
 use crate::ecs::World;
+use crate::rendering::text::GlyphAtlas;
 
 use sprite_renderer::{TextureEntry, WgpuSpriteRenderer};
 
@@ -97,6 +99,18 @@ struct WgpuRenderState {
     current_view: Option<wgpu::TextureView>,
 }
 
+struct WasmFontAtlas {
+    atlas: GlyphAtlas,
+    texture_handle: Option<u32>,
+    synced_version: u64,
+}
+
+struct WasmFontEntry {
+    font: fontdue::Font,
+    bytes: Vec<u8>,
+    atlases: HashMap<u32, WasmFontAtlas>,
+}
+
 // ---------------------------------------------------------------------------
 // Main game handle exposed to JavaScript
 // ---------------------------------------------------------------------------
@@ -142,8 +156,14 @@ pub struct WasmGame {
     // Action map: action name → list of bound key codes
     action_map: HashMap<String, Vec<u32>>,
 
+    // Loaded runtime fonts (1-based handles for JS API).
+    fonts: Vec<Option<WasmFontEntry>>,
+
     // Optional wgpu renderer (None for ECS-only / headless mode)
     render_state: Option<WgpuRenderState>,
+
+    // WebAudio runtime state.
+    audio_state: audio::WasmAudioState,
 }
 
 #[wasm_bindgen]
@@ -183,7 +203,9 @@ impl WasmGame {
             frame_mouse_just_pressed: HashSet::new(),
             frame_mouse_just_released: HashSet::new(),
             action_map: HashMap::new(),
+            fonts: Vec::new(),
             render_state: None,
+            audio_state: audio::WasmAudioState::new(),
         }
     }
 
@@ -282,7 +304,9 @@ impl WasmGame {
             frame_mouse_just_pressed: HashSet::new(),
             frame_mouse_just_released: HashSet::new(),
             action_map: HashMap::new(),
+            fonts: Vec::new(),
             render_state: Some(render_state),
+            audio_state: audio::WasmAudioState::new(),
         })
     }
 

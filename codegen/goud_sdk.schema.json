@@ -2037,6 +2037,68 @@
         }
       ]
     },
+    "PhysicsRaycastHit2D": {
+      "kind": "value",
+      "doc": "Detailed payload for a 2D physics raycast hit",
+      "fields": [
+        {
+          "name": "bodyHandle",
+          "type": "u64",
+          "doc": "Rigid body handle hit by the ray"
+        },
+        {
+          "name": "colliderHandle",
+          "type": "u64",
+          "doc": "Collider handle hit by the ray"
+        },
+        {
+          "name": "pointX",
+          "type": "f32",
+          "doc": "Hit point X coordinate in world space"
+        },
+        {
+          "name": "pointY",
+          "type": "f32",
+          "doc": "Hit point Y coordinate in world space"
+        },
+        {
+          "name": "normalX",
+          "type": "f32",
+          "doc": "Surface normal X component at hit point"
+        },
+        {
+          "name": "normalY",
+          "type": "f32",
+          "doc": "Surface normal Y component at hit point"
+        },
+        {
+          "name": "distance",
+          "type": "f32",
+          "doc": "Distance from ray origin to hit point"
+        }
+      ]
+    },
+    "PhysicsCollisionEvent2D": {
+      "kind": "value",
+      "doc": "2D collision event payload from the physics event queue",
+      "fields": [
+        {
+          "name": "bodyA",
+          "type": "u64",
+          "doc": "First body handle in the collision pair"
+        },
+        {
+          "name": "bodyB",
+          "type": "u64",
+          "doc": "Second body handle in the collision pair"
+        },
+        {
+          "name": "kind",
+          "type": "u32",
+          "doc": "Collision lifecycle kind: 0 = Enter, 1 = Stay, 2 = Exit"
+        }
+      ]
+    },
     "Vec3": {
       "kind": "value",
       "doc": "3D floating-point vector",
@@ -2624,6 +2686,15 @@
         "Left": 0,
         "Center": 1,
         "Right": 2
+      }
+    },
+    "TextDirection": {
+      "doc": "Text flow direction",
+      "underlying": "u8",
+      "values": {
+        "Auto": 0,
+        "Ltr": 1,
+        "Rtl": 2
       }
     },
     "BlendMode": {
@@ -3293,6 +3364,91 @@
           "wasm_signature": "destroy_texture(handle: number): void"
         },
         {
+          "name": "loadFont",
+          "doc": "Loads a font from a file path and returns its handle",
+          "params": [
+            {
+              "name": "path",
+              "type": "string",
+              "doc": "Path to the font file"
+            }
+          ],
+          "returns": "u64",
+          "async": true,
+          "wasm_name": "register_font_from_bytes",
+          "wasm_signature": "register_font_from_bytes(data: Uint8Array): number"
+        },
+        {
+          "name": "destroyFont",
+          "doc": "Destroys a previously loaded font",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "destroy_font",
+          "wasm_signature": "destroy_font(handle: number): boolean"
+        },
+        {
+          "name": "drawText",
+          "doc": "Draws text using a loaded font",
+          "params": [
+            {
+              "name": "fontHandle",
+              "type": "u64",
+              "doc": "Font handle from loadFont"
+            },
+            {
+              "name": "text",
+              "type": "string",
+              "doc": "UTF-8 text to render"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "fontSize",
+              "type": "f32",
+              "default": 16
+            },
+            {
+              "name": "alignment",
+              "type": "TextAlignment",
+              "default": 0
+            },
+            {
+              "name": "maxWidth",
+              "type": "f32",
+              "default": 0
+            },
+            {
+              "name": "lineSpacing",
+              "type": "f32",
+              "default": 1
+            },
+            {
+              "name": "direction",
+              "type": "TextDirection",
+              "default": 0
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "default": "Color.white()"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "draw_text",
+          "wasm_signature": "draw_text(font_handle: number, text: string, x: number, y: number, font_size: number, alignment: number, max_width: number, line_spacing: number, direction: number, r: number, g: number, b: number, a: number): boolean"
+        },
+        {
           "name": "drawSprite",
           "doc": "Draws a textured sprite",
           "params": [
@@ -3552,6 +3708,81 @@
         {
           "$ref": "EcsMethods",
           "name": "despawnBatch"
+        },
+        {
+          "name": "play",
+          "doc": "Starts animation playback for an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "stop",
+          "doc": "Stops animation playback for an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setState",
+          "doc": "Sets the active animation state for an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "stateName",
+              "type": "string"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setParameterBool",
+          "doc": "Sets a boolean animation parameter for an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "value",
+              "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setParameterFloat",
+          "doc": "Sets a float animation parameter for an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "value",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
         },
         {
           "name": "createCube",
@@ -4566,6 +4797,470 @@
           "returns": "NetworkCapabilities"
         },
         {
+          "name": "audioPlay",
+          "doc": "Plays audio from raw bytes on the default channel",
+          "params": [
+            {
+              "name": "data",
+              "type": "bytes"
+            }
+          ],
+          "returns": "i64",
+          "wasm_name": "audio_play",
+          "wasm_signature": "audio_play(data: Uint8Array): number"
+        },
+        {
+          "name": "audioPlayOnChannel",
+          "doc": "Plays audio from raw bytes on the given channel",
+          "params": [
+            {
+              "name": "data",
+              "type": "bytes"
+            },
+            {
+              "name": "channel",
+              "type": "u8"
+            }
+          ],
+          "returns": "i64",
+          "wasm_name": "audio_play_on_channel",
+          "wasm_signature": "audio_play_on_channel(data: Uint8Array, channel: number): number"
+        },
+        {
+          "name": "audioPlayWithSettings",
+          "doc": "Plays audio with explicit volume, speed, looping, and channel settings",
+          "params": [
+            {
+              "name": "data",
+              "type": "bytes"
+            },
+            {
+              "name": "volume",
+              "type": "f32"
+            },
+            {
+              "name": "speed",
+              "type": "f32"
+            },
+            {
+              "name": "looping",
+              "type": "bool"
+            },
+            {
+              "name": "channel",
+              "type": "u8"
+            }
+          ],
+          "returns": "i64",
+          "wasm_name": "audio_play_with_settings",
+          "wasm_signature": "audio_play_with_settings(data: Uint8Array, volume: number, speed: number, looping: boolean, channel: number): number"
+        },
+        {
+          "name": "audioStop",
+          "doc": "Stops a playing audio player",
+          "params": [
+            {
+              "name": "playerId",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32",
+          "wasm_name": "audio_stop",
+          "wasm_signature": "audio_stop(player_id: number): number"
+        },
+        {
+          "name": "audioPause",
+          "doc": "Pauses a playing audio player",
+          "params": [
+            {
+              "name": "playerId",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32",
+          "wasm_name": "audio_pause",
+          "wasm_signature": "audio_pause(player_id: number): number"
+        },
+        {
+          "name": "audioResume",
+          "doc": "Resumes a paused audio player",
+          "params": [
+            {
+              "name": "playerId",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32",
+          "wasm_name": "audio_resume",
+          "wasm_signature": "audio_resume(player_id: number): number"
+        },
+        {
+          "name": "audioStopAll",
+          "doc": "Stops all active audio players",
+          "params": [],
+          "returns": "i32",
+          "wasm_name": "audio_stop_all",
+          "wasm_signature": "audio_stop_all(): number"
+        },
+        {
+          "name": "audioSetGlobalVolume",
+          "doc": "Sets the global audio volume",
+          "params": [
+            {
+              "name": "volume",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32",
+          "wasm_name": "audio_set_global_volume",
+          "wasm_signature": "audio_set_global_volume(volume: number): number"
+        },
+        {
+          "name": "audioGetGlobalVolume",
+          "doc": "Gets the global audio volume",
+          "params": [],
+          "returns": "f32",
+          "wasm_name": "audio_get_global_volume",
+          "wasm_signature": "audio_get_global_volume(): number"
+        },
+        {
+          "name": "audioSetChannelVolume",
+          "doc": "Sets the volume for a specific channel",
+          "params": [
+            {
+              "name": "channel",
+              "type": "u8"
+            },
+            {
+              "name": "volume",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32",
+          "wasm_name": "audio_set_channel_volume",
+          "wasm_signature": "audio_set_channel_volume(channel: number, volume: number): number"
+        },
+        {
+          "name": "audioGetChannelVolume",
+          "doc": "Gets the volume for a specific channel",
+          "params": [
+            {
+              "name": "channel",
+              "type": "u8"
+            }
+          ],
+          "returns": "f32",
+          "wasm_name": "audio_get_channel_volume",
+          "wasm_signature": "audio_get_channel_volume(channel: number): number"
+        },
+        {
+          "name": "audioIsPlaying",
+          "doc": "Returns non-zero when the player is still playing",
+          "params": [
+            {
+              "name": "playerId",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32",
+          "wasm_name": "audio_is_playing",
+          "wasm_signature": "audio_is_playing(player_id: number): number"
+        },
+        {
+          "name": "audioActiveCount",
+          "doc": "Returns the number of active audio players",
+          "params": [],
+          "returns": "i32",
+          "wasm_name": "audio_active_count",
+          "wasm_signature": "audio_active_count(): number"
+        },
+        {
+          "name": "audioCleanupFinished",
+          "doc": "Cleans up finished audio players",
+          "params": [],
+          "returns": "i32",
+          "wasm_name": "audio_cleanup_finished",
+          "wasm_signature": "audio_cleanup_finished(): number"
+        },
+        {
+          "name": "audioPlaySpatial3d",
+          "doc": "Plays audio with 3D spatial attenuation",
+          "params": [
+            {
+              "name": "data",
+              "type": "bytes"
+            },
+            {
+              "name": "sourceX",
+              "type": "f32"
+            },
+            {
+              "name": "sourceY",
+              "type": "f32"
+            },
+            {
+              "name": "sourceZ",
+              "type": "f32"
+            },
+            {
+              "name": "listenerX",
+              "type": "f32"
+            },
+            {
+              "name": "listenerY",
+              "type": "f32"
+            },
+            {
+              "name": "listenerZ",
+              "type": "f32"
+            },
+            {
+              "name": "maxDistance",
+              "type": "f32"
+            },
+            {
+              "name": "rolloff",
+              "type": "f32"
+            }
+          ],
+          "returns": "i64",
+          "wasm_name": "audio_play_spatial_3d",
+          "wasm_signature": "audio_play_spatial_3d(data: Uint8Array, source_x: number, source_y: number, source_z: number, listener_x: number, listener_y: number, listener_z: number, max_distance: number, rolloff: number): number"
+        },
+        {
+          "name": "audioUpdateSpatial3d",
+          "doc": "Updates 3D spatial attenuation for an active player",
+          "params": [
+            {
+              "name": "playerId",
+              "type": "u64"
+            },
+            {
+              "name": "sourceX",
+              "type": "f32"
+            },
+            {
+              "name": "sourceY",
+              "type": "f32"
+            },
+            {
+              "name": "sourceZ",
+              "type": "f32"
+            },
+            {
+              "name": "listenerX",
+              "type": "f32"
+            },
+            {
+              "name": "listenerY",
+              "type": "f32"
+            },
+            {
+              "name": "listenerZ",
+              "type": "f32"
+            },
+            {
+              "name": "maxDistance",
+              "type": "f32"
+            },
+            {
+              "name": "rolloff",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32",
+          "wasm_name": "audio_update_spatial_volume_3d",
+          "wasm_signature": "audio_update_spatial_volume_3d(player_id: number, source_x: number, source_y: number, source_z: number, listener_x: number, listener_y: number, listener_z: number, max_distance: number, rolloff: number): number"
+        },
+        {
+          "name": "audioSetListenerPosition3d",
+          "doc": "Sets the 3D listener position",
+          "params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32",
+          "wasm_name": "audio_set_listener_position_3d",
+          "wasm_signature": "audio_set_listener_position_3d(x: number, y: number, z: number): number"
+        },
+        {
+          "name": "audioSetSourcePosition3d",
+          "doc": "Sets the 3D source position for an active player",
+          "params": [
+            {
+              "name": "playerId",
+              "type": "u64"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            },
+            {
+              "name": "maxDistance",
+              "type": "f32"
+            },
+            {
+              "name": "rolloff",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32",
+          "wasm_name": "audio_set_source_position_3d",
+          "wasm_signature": "audio_set_source_position_3d(player_id: number, x: number, y: number, z: number, max_distance: number, rolloff: number): number"
+        },
+        {
+          "name": "audioSetPlayerVolume",
+          "doc": "Sets the volume for an active player",
+          "params": [
+            {
+              "name": "playerId",
+              "type": "u64"
+            },
+            {
+              "name": "volume",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32",
+          "wasm_name": "audio_set_player_volume",
+          "wasm_signature": "audio_set_player_volume(player_id: number, volume: number): number"
+        },
+        {
+          "name": "audioSetPlayerSpeed",
+          "doc": "Sets the playback speed for an active player",
+          "params": [
+            {
+              "name": "playerId",
+              "type": "u64"
+            },
+            {
+              "name": "speed",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32",
+          "wasm_name": "audio_set_player_speed",
+          "wasm_signature": "audio_set_player_speed(player_id: number, speed: number): number"
+        },
+        {
+          "name": "audioCrossfade",
+          "doc": "Applies an immediate crossfade mix between two active players",
+          "params": [
+            {
+              "name": "fromPlayerId",
+              "type": "u64"
+            },
+            {
+              "name": "toPlayerId",
+              "type": "u64"
+            },
+            {
+              "name": "mix",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32",
+          "wasm_name": "audio_crossfade",
+          "wasm_signature": "audio_crossfade(from_player_id: number, to_player_id: number, mix: number): number"
+        },
+        {
+          "name": "audioCrossfadeTo",
+          "doc": "Starts a timed crossfade from one player to a new audio asset",
+          "params": [
+            {
+              "name": "fromPlayerId",
+              "type": "u64"
+            },
+            {
+              "name": "data",
+              "type": "bytes"
+            },
+            {
+              "name": "durationSec",
+              "type": "f32"
+            },
+            {
+              "name": "channel",
+              "type": "u8"
+            }
+          ],
+          "returns": "i64",
+          "wasm_name": "audio_crossfade_to",
+          "wasm_signature": "audio_crossfade_to(from_player_id: number, data: Uint8Array, duration_sec: number, channel: number): number"
+        },
+        {
+          "name": "audioMixWith",
+          "doc": "Mixes a secondary audio asset with a primary player",
+          "params": [
+            {
+              "name": "primaryPlayerId",
+              "type": "u64"
+            },
+            {
+              "name": "data",
+              "type": "bytes"
+            },
+            {
+              "name": "secondaryVolume",
+              "type": "f32"
+            },
+            {
+              "name": "secondaryChannel",
+              "type": "u8"
+            }
+          ],
+          "returns": "i64",
+          "wasm_name": "audio_mix_with",
+          "wasm_signature": "audio_mix_with(primary_player_id: number, data: Uint8Array, secondary_volume: number, secondary_channel: number): number"
+        },
+        {
+          "name": "audioUpdateCrossfades",
+          "doc": "Advances all active timed crossfades",
+          "params": [
+            {
+              "name": "deltaSec",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32",
+          "wasm_name": "audio_update_crossfades",
+          "wasm_signature": "audio_update_crossfades(delta_sec: number): number"
+        },
+        {
+          "name": "audioActiveCrossfadeCount",
+          "doc": "Returns the number of active timed crossfades",
+          "params": [],
+          "returns": "i32",
+          "wasm_name": "audio_active_crossfade_count",
+          "wasm_signature": "audio_active_crossfade_count(): number"
+        },
+        {
+          "name": "audioActivate",
+          "doc": "Activates audio playback on platforms that require user gesture initialization",
+          "params": [],
+          "returns": "i32",
+          "wasm_name": "audio_activate",
+          "wasm_signature": "audio_activate(): number"
+        },
+        {
           "name": "checkHotSwapShortcut",
           "doc": "Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred.",
           "params": [],
@@ -4616,7 +5311,16 @@
           "sig": "register_texture_from_bytes(data: Uint8Array): number"
         },
         {
+          "sig": "register_font_from_bytes(data: Uint8Array): number"
+        },
+        {
           "method": "destroyTexture"
+        },
+        {
+          "method": "destroyFont"
+        },
+        {
+          "method": "drawText"
         },
         {
           "method": "drawSprite"
@@ -4782,6 +5486,84 @@
         },
         {
           "method": "distanceSquared"
+        },
+        {
+          "method": "audioPlay"
+        },
+        {
+          "method": "audioPlayOnChannel"
+        },
+        {
+          "method": "audioPlayWithSettings"
+        },
+        {
+          "method": "audioStop"
+        },
+        {
+          "method": "audioPause"
+        },
+        {
+          "method": "audioResume"
+        },
+        {
+          "method": "audioStopAll"
+        },
+        {
+          "method": "audioSetGlobalVolume"
+        },
+        {
+          "method": "audioGetGlobalVolume"
+        },
+        {
+          "method": "audioSetChannelVolume"
+        },
+        {
+          "method": "audioGetChannelVolume"
+        },
+        {
+          "method": "audioIsPlaying"
+        },
+        {
+          "method": "audioActiveCount"
+        },
+        {
+          "method": "audioCleanupFinished"
+        },
+        {
+          "method": "audioPlaySpatial3d"
+        },
+        {
+          "method": "audioUpdateSpatial3d"
+        },
+        {
+          "method": "audioSetListenerPosition3d"
+        },
+        {
+          "method": "audioSetSourcePosition3d"
+        },
+        {
+          "method": "audioSetPlayerVolume"
+        },
+        {
+          "method": "audioSetPlayerSpeed"
+        },
+        {
+          "method": "audioCrossfade"
+        },
+        {
+          "method": "audioCrossfadeTo"
+        },
+        {
+          "method": "audioMixWith"
+        },
+        {
+          "method": "audioUpdateCrossfades"
+        },
+        {
+          "method": "audioActiveCrossfadeCount"
+        },
+        {
+          "method": "audioActivate"
         }
       ]
     },
@@ -5054,6 +5836,47 @@
           "returns": "u32"
         },
         {
+          "name": "loadScene",
+          "doc": "Loads a scene from JSON data and returns its ID",
+          "params": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "json",
+              "type": "string"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "unloadScene",
+          "doc": "Unloads a scene by name",
+          "params": [
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ],
+          "returns": "GoudResult"
+        },
+        {
+          "name": "setActiveScene",
+          "doc": "Sets whether a scene is active",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            },
+            {
+              "name": "active",
+              "type": "bool"
+            }
+          ],
+          "returns": "GoudResult"
+        },
+        {
           "name": "sceneSetActive",
           "doc": "Sets whether a scene is active",
           "params": [
@@ -5260,6 +6083,53 @@
           "returns": "i64"
         },
         {
+          "name": "addColliderEx",
+          "doc": "Adds a collider with sensor and collision-layer configuration (FFI: goud_physics_add_collider_ex)",
+          "params": [
+            {
+              "name": "bodyHandle",
+              "type": "u64"
+            },
+            {
+              "name": "shapeType",
+              "type": "u32"
+            },
+            {
+              "name": "width",
+              "type": "f32"
+            },
+            {
+              "name": "height",
+              "type": "f32"
+            },
+            {
+              "name": "radius",
+              "type": "f32"
+            },
+            {
+              "name": "friction",
+              "type": "f32"
+            },
+            {
+              "name": "restitution",
+              "type": "f32"
+            },
+            {
+              "name": "isSensor",
+              "type": "bool"
+            },
+            {
+              "name": "layer",
+              "type": "u32"
+            },
+            {
+              "name": "mask",
+              "type": "u32"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
           "name": "removeBody",
           "doc": "Removes a rigid body from the simulation",
           "params": [
@@ -5386,6 +6256,88 @@
             }
           ],
           "returns": "Vec2"
+        },
+        {
+          "name": "raycastEx",
+          "doc": "Casts a ray and returns the full raycast hit payload (FFI: goud_physics_raycast_ex)",
+          "params": [
+            {
+              "name": "originX",
+              "type": "f32"
+            },
+            {
+              "name": "originY",
+              "type": "f32"
+            },
+            {
+              "name": "dirX",
+              "type": "f32"
+            },
+            {
+              "name": "dirY",
+              "type": "f32"
+            },
+            {
+              "name": "maxDist",
+              "type": "f32"
+            },
+            {
+              "name": "layerMask",
+              "type": "u32"
+            }
+          ],
+          "returns": "PhysicsRaycastHit2D"
+        },
+        {
+          "name": "collisionEventsCount",
+          "doc": "Returns the number of queued collision events available to read (FFI: goud_physics_collision_events_count)",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "collisionEventsRead",
+          "doc": "Reads one queued collision event by index; kind is 0 = Enter, 1 = Stay, 2 = Exit (FFI: goud_physics_collision_events_read)",
+          "params": [
+            {
+              "name": "index",
+              "type": "u32"
+            }
+          ],
+          "returns": "PhysicsCollisionEvent2D"
+        },
+        {
+          "name": "collisionEventCount",
+          "doc": "Backward-compatible alias for collisionEventsCount (FFI: goud_physics_collision_event_count)",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "collisionEventRead",
+          "doc": "Backward-compatible alias for collisionEventsRead (FFI: goud_physics_collision_event_read)",
+          "params": [
+            {
+              "name": "index",
+              "type": "u32"
+            }
+          ],
+          "returns": "PhysicsCollisionEvent2D"
+        },
+        {
+          "name": "setCollisionCallback",
+          "doc": "Registers or clears a collision callback function pointer. Pass 0 for callbackPtr to clear (FFI: goud_physics_set_collision_callback)",
+          "params": [
+            {
+              "name": "callbackPtr",
+              "type": "ptr",
+              "doc": "Function pointer with signature extern C fn(ctx, bodyA, bodyB, kind, userData), where kind is 0 = Enter, 1 = Stay, 2 = Exit"
+            },
+            {
+              "name": "userData",
+              "type": "ptr",
+              "doc": "Opaque pointer forwarded unchanged to callbackPtr"
+            }
+          ],
+          "returns": "i32"
         },
         {
           "name": "getGravity",

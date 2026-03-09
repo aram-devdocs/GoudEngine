@@ -1,46 +1,137 @@
 //! Spatial audio playback: distance-based attenuation for positioned audio sources.
 
+use std::collections::HashSet;
+
 use crate::assets::loaders::AudioAsset;
 use crate::core::error::GoudResult;
 use crate::core::math::Vec2;
 use crate::ecs::components::AudioChannel;
 
-use super::{spatial::spatial_attenuation, AudioManager};
+use super::spatial::spatial_attenuation_3d;
+use super::{AudioManager, SpatialSourceState};
 
 impl AudioManager {
+    /// Returns the current 3D listener position.
+    pub fn listener_position(&self) -> [f32; 3] {
+        *self
+            .listener_position
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    /// Sets the current 3D listener position.
+    pub fn set_listener_position(&self, position: [f32; 3]) {
+        *self
+            .listener_position
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = position;
+        self.refresh_spatial_sources();
+    }
+
+    /// Registers or updates a spatial source for an active sink.
+    ///
+    /// Returns `true` if the sink exists and the source was tracked.
+    pub fn register_spatial_source(
+        &self,
+        sink_id: u64,
+        source_position: [f32; 3],
+        max_distance: f32,
+        rolloff: f32,
+        base_volume: f32,
+    ) -> bool {
+        if !self.has_sink(sink_id) {
+            return false;
+        }
+
+        let state = SpatialSourceState {
+            source_position,
+            max_distance: max_distance.max(0.1),
+            rolloff: rolloff.max(0.01),
+            base_volume: base_volume.clamp(0.0, 1.0),
+        };
+
+        self.spatial_sources
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(sink_id, state);
+
+        self.refresh_spatial_sources();
+        true
+    }
+
+    /// Updates the position of a tracked spatial source.
+    ///
+    /// Returns `true` if the source exists and was updated.
+    pub fn set_source_position(&self, sink_id: u64, source_position: [f32; 3]) -> bool {
+        let mut spatial = self
+            .spatial_sources
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+        if let Some(state) = spatial.get_mut(&sink_id) {
+            state.source_position = source_position;
+            drop(spatial);
+            self.refresh_spatial_sources();
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Retains only spatial sources whose sink IDs are listed in `active_sink_ids`.
+    pub fn retain_spatial_sources(&self, active_sink_ids: &[u64]) {
+        let active: HashSet<u64> = active_sink_ids.iter().copied().collect();
+        self.spatial_sources
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .retain(|sink_id, _| active.contains(sink_id));
+        self.refresh_spatial_sources();
+    }
+
+    /// Re-applies attenuation to all tracked spatial sinks.
+    pub fn refresh_spatial_sources(&self) {
+        let listener = self.listener_position();
+        let global = self.global_volume();
+        let channel_volumes = self
+            .channel_volumes
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+
+        let mut players = self
+            .players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+        self.spatial_sources
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .retain(|sink_id, state| {
+                let Some(entry) = players.get_mut(sink_id) else {
+                    return false;
+                };
+
+                let attenuation = spatial_attenuation_3d(
+                    state.source_position,
+                    listener,
+                    state.max_distance,
+                    state.rolloff,
+                );
+                let individual = (state.base_volume * attenuation).clamp(0.0, 1.0);
+                entry.individual_volume = individual;
+
+                let channel_volume = channel_volumes.get(&entry.channel).copied().unwrap_or(1.0);
+                entry
+                    .player
+                    .set_volume(global * channel_volume * entry.individual_volume);
+                true
+            });
+    }
+
     /// Plays audio with spatial positioning (2D).
     ///
-    /// Applies distance-based attenuation using the given parameters.
-    /// Volume is calculated as: base_volume * attenuation_factor
-    ///
-    /// # Arguments
-    ///
-    /// * `asset` - Reference to the audio asset to play
-    /// * `source_position` - Position of the audio source in world space
-    /// * `listener_position` - Position of the listener (typically camera or player)
-    /// * `max_distance` - Maximum distance for audio (0 volume beyond this)
-    /// * `rolloff` - Rolloff factor for attenuation (1.0 = linear, 2.0 = quadratic)
-    ///
-    /// # Returns
-    ///
-    /// A unique ID for this audio playback instance, or an error if playback fails.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use goud_engine::assets::AudioManager;
-    /// use goud_engine::core::math::Vec2;
-    ///
-    /// let mut audio_manager = AudioManager::new().unwrap();
-    /// // let audio_asset = ...; // Loaded AudioAsset
-    /// // let sink_id = audio_manager.play_spatial(
-    /// //     &audio_asset,
-    /// //     Vec2::new(100.0, 50.0),  // Sound source position
-    /// //     Vec2::new(0.0, 0.0),      // Listener position
-    /// //     200.0,                    // Max distance
-    /// //     1.0                       // Linear rolloff
-    /// // ).unwrap();
-    /// ```
+    /// The sink is tracked so future listener/source movement can update its
+    /// attenuation without replaying the sound.
     pub fn play_spatial(
         &mut self,
         asset: &AudioAsset,
@@ -49,44 +140,15 @@ impl AudioManager {
         max_distance: f32,
         rolloff: f32,
     ) -> GoudResult<u64> {
-        let attenuation =
-            spatial_attenuation(source_position, listener_position, max_distance, rolloff);
-        self.play_with_settings(asset, attenuation, 1.0, false, AudioChannel::SFX)
+        let sink_id = self.play_with_settings(asset, 1.0, 1.0, false, AudioChannel::SFX)?;
+        let listener = [listener_position.x, listener_position.y, 0.0];
+        let source = [source_position.x, source_position.y, 0.0];
+        self.set_listener_position(listener);
+        let _ = self.register_spatial_source(sink_id, source, max_distance, rolloff, 1.0);
+        Ok(sink_id)
     }
 
-    /// Updates spatial audio volume for an existing sink.
-    ///
-    /// Recalculates attenuation based on new positions and updates the sink volume.
-    /// This should be called when either the source or listener moves.
-    ///
-    /// # Arguments
-    ///
-    /// * `sink_id` - ID returned from `play_spatial()`
-    /// * `source_position` - Current position of the audio source
-    /// * `listener_position` - Current position of the listener
-    /// * `max_distance` - Maximum distance for audio
-    /// * `rolloff` - Rolloff factor for attenuation
-    ///
-    /// # Returns
-    ///
-    /// `true` if the sink was found and volume updated, `false` otherwise.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use goud_engine::assets::AudioManager;
-    /// use goud_engine::core::math::Vec2;
-    ///
-    /// let mut audio_manager = AudioManager::new().unwrap();
-    /// // let sink_id = ...; // From play_spatial()
-    /// // audio_manager.update_spatial_volume(
-    /// //     sink_id,
-    /// //     Vec2::new(150.0, 75.0),  // New source position
-    /// //     Vec2::new(50.0, 25.0),   // New listener position
-    /// //     200.0,
-    /// //     1.0
-    /// // );
-    /// ```
+    /// Updates spatial audio volume for an existing sink (2D convenience API).
     pub fn update_spatial_volume(
         &self,
         sink_id: u64,
@@ -95,8 +157,22 @@ impl AudioManager {
         max_distance: f32,
         rolloff: f32,
     ) -> bool {
-        let attenuation =
-            spatial_attenuation(source_position, listener_position, max_distance, rolloff);
-        self.set_sink_volume(sink_id, attenuation)
+        if !self.has_sink(sink_id) {
+            return false;
+        }
+
+        self.set_listener_position([listener_position.x, listener_position.y, 0.0]);
+
+        if !self.set_source_position(sink_id, [source_position.x, source_position.y, 0.0]) {
+            return self.register_spatial_source(
+                sink_id,
+                [source_position.x, source_position.y, 0.0],
+                max_distance,
+                rolloff,
+                1.0,
+            );
+        }
+
+        true
     }
 }

@@ -4,8 +4,10 @@
 //! game loop, and convenient methods for entity and component operations.
 
 mod instance;
+mod instance_runtime;
 mod instance_transitions;
 mod providers;
+mod ui_frame;
 
 #[cfg(test)]
 mod tests;

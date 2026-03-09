@@ -10,7 +10,15 @@
 #[cfg(feature = "rapier2d")]
 mod physics2d;
 #[cfg(feature = "rapier2d")]
+mod physics2d_common;
+#[cfg(feature = "rapier2d")]
+mod physics2d_events;
+#[cfg(feature = "rapier2d")]
+mod physics2d_ex;
+#[cfg(feature = "rapier2d")]
 mod physics2d_material;
+#[cfg(feature = "rapier2d")]
+mod physics2d_state;
 #[cfg(feature = "rapier3d")]
 mod physics3d;
 #[cfg(feature = "rapier3d")]

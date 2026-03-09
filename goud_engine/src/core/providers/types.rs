@@ -218,7 +218,7 @@ pub struct BodyDesc {
 }
 
 /// Describes a physics collider to be attached to a body.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct ColliderDesc {
     /// Collider shape (0 = circle, 1 = box, 2 = capsule).
     pub shape: u32,
@@ -232,6 +232,30 @@ pub struct ColliderDesc {
     pub restitution: f32,
     /// Whether this collider is a sensor (triggers events, no physical response).
     pub is_sensor: bool,
+    /// Collision layer membership bitmask.
+    ///
+    /// Defaults to layer 1 (`0b0001`).
+    pub layer: u32,
+    /// Collision mask bitmask.
+    ///
+    /// A collider interacts when its layer overlaps the other collider's mask,
+    /// and vice-versa.
+    pub mask: u32,
+}
+
+impl Default for ColliderDesc {
+    fn default() -> Self {
+        Self {
+            shape: 0,
+            half_extents: [0.0, 0.0],
+            radius: 0.0,
+            friction: 0.0,
+            restitution: 0.0,
+            is_sensor: false,
+            layer: 0b0001,
+            mask: u32::MAX,
+        }
+    }
 }
 
 /// Describes a physics joint connecting two bodies.
@@ -254,10 +278,12 @@ pub struct JointDesc {
 // =============================================================================
 
 /// Result of a physics raycast query.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RaycastHit {
     /// The body that was hit.
     pub body: BodyHandle,
+    /// The collider that was hit.
+    pub collider: ColliderHandle,
     /// The hit point in world space as [x, y].
     pub point: [f32; 2],
     /// The surface normal at the hit point as [x, y].
@@ -266,15 +292,26 @@ pub struct RaycastHit {
     pub distance: f32,
 }
 
+/// Collision event kind.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum CollisionEventKind {
+    /// Two bodies started overlapping this step.
+    Enter,
+    /// Two bodies continued overlapping this step.
+    Stay,
+    /// Two bodies stopped overlapping this step.
+    Exit,
+}
+
 /// A collision event between two bodies.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct CollisionEvent {
     /// First body involved in the collision.
     pub body_a: BodyHandle,
     /// Second body involved in the collision.
     pub body_b: BodyHandle,
-    /// Whether the collision started (true) or ended (false).
-    pub started: bool,
+    /// Collision lifecycle kind.
+    pub kind: CollisionEventKind,
 }
 
 /// A contact pair with contact point information.

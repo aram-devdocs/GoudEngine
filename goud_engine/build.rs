@@ -114,6 +114,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/renderer/draw.rs",
     "src/ffi/renderer/texture.rs",
     "src/ffi/renderer/handles.rs",
+    "src/ffi/renderer/text.rs",
     // renderer3d module
     "src/ffi/renderer3d/camera.rs",
     "src/ffi/renderer3d/environment.rs",
@@ -127,6 +128,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/collision.rs",
     // scene module
     "src/ffi/scene.rs",
+    "src/ffi/scene_loading.rs",
     "src/ffi/scene_transition.rs",
     // debug overlay
     "src/ffi/debug.rs",
@@ -136,10 +138,13 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/engine_config.rs",
     // physics module
     "src/ffi/physics/physics2d.rs",
+    "src/ffi/physics/physics2d_ex.rs",
+    "src/ffi/physics/physics2d_events.rs",
     "src/ffi/physics/physics2d_material.rs",
     "src/ffi/physics/physics3d.rs",
     "src/ffi/physics/physics3d_material.rs",
     // animation module
+    "src/ffi/animation/control.rs",
     "src/ffi/animation/controller.rs",
     "src/ffi/animation/tween.rs",
     "src/ffi/animation/skeletal.rs",
@@ -154,6 +159,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     // audio module
     "src/ffi/audio/playback.rs",
     "src/ffi/audio/controls.rs",
+    "src/ffi/audio/spatial.rs",
     // ui module
     "src/ffi/ui/manager.rs",
     "src/ffi/ui/node.rs",

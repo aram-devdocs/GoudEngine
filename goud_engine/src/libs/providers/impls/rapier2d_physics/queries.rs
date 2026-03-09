@@ -5,7 +5,9 @@
 
 use rapier2d::prelude::*;
 
-use crate::core::providers::types::{BodyHandle, ContactPair, DebugShape, RaycastHit};
+use crate::core::providers::types::{
+    BodyHandle, ColliderHandle, ContactPair, DebugShape, RaycastHit,
+};
 
 use super::Rapier2DPhysicsProvider;
 
@@ -17,51 +19,65 @@ impl Rapier2DPhysicsProvider {
         dir: [f32; 2],
         max_dist: f32,
     ) -> Option<RaycastHit> {
-        let ray = Ray::new(
-            Vector::new(origin[0], origin[1]),
-            Vector::new(dir[0], dir[1]),
-        );
-        let query_pipeline = self.broad_phase.as_query_pipeline(
-            self.narrow_phase.query_dispatcher(),
+        self.query_raycast_with_mask(origin, dir, max_dist, u32::MAX)
+    }
+
+    /// Cast a ray and return the first hit filtered by layer mask.
+    pub(crate) fn query_raycast_with_mask(
+        &self,
+        origin: [f32; 2],
+        dir: [f32; 2],
+        max_dist: f32,
+        layer_mask: u32,
+    ) -> Option<RaycastHit> {
+        let ray = Ray::new(point![origin[0], origin[1]], vector![dir[0], dir[1]]);
+
+        let (collider_handle, hit) = self.query_pipeline.cast_ray_and_get_normal(
             &self.rigid_body_set,
             &self.collider_set,
-            QueryFilter::default(),
-        );
-        let (collider_handle, intersection) =
-            query_pipeline.cast_ray_and_get_normal(&ray, max_dist, true)?;
+            &ray,
+            max_dist,
+            true,
+            super::conversions::raycast_query_filter(layer_mask),
+        )?;
 
         let collider = self.collider_set.get(collider_handle)?;
-        let engine_id = self.body_handles_rev.get(&collider.parent()?)?;
-        let hit_point = ray.point_at(intersection.time_of_impact);
+        let body_engine_id = self.body_handles_rev.get(&collider.parent()?)?;
+        let collider_engine_id = self.collider_handles_rev.get(&collider_handle)?;
+        let hit_point = ray.point_at(hit.time_of_impact);
+
         Some(RaycastHit {
-            body: BodyHandle(*engine_id),
+            body: BodyHandle(*body_engine_id),
+            collider: ColliderHandle(*collider_engine_id),
             point: [hit_point.x, hit_point.y],
-            normal: [intersection.normal.x, intersection.normal.y],
-            distance: intersection.time_of_impact,
+            normal: [hit.normal.x, hit.normal.y],
+            distance: hit.time_of_impact,
         })
     }
 
     /// Find all bodies whose colliders overlap a circle.
     pub(crate) fn query_overlap_circle(&self, center: [f32; 2], radius: f32) -> Vec<BodyHandle> {
         let shape = Ball::new(radius);
-        let shape_pos = Pose::translation(center[0], center[1]);
+        let shape_pos = Isometry::translation(center[0], center[1]);
         let mut results = Vec::new();
-        let query_pipeline = self.broad_phase.as_query_pipeline(
-            self.narrow_phase.query_dispatcher(),
+
+        self.query_pipeline.intersections_with_shape(
             &self.rigid_body_set,
             &self.collider_set,
+            &shape_pos,
+            &shape,
             QueryFilter::default(),
-        );
-
-        for (collider_handle, _) in query_pipeline.intersect_shape(shape_pos, &shape) {
-            if let Some(collider) = self.collider_set.get(collider_handle) {
-                if let Some(parent) = collider.parent() {
-                    if let Some(&engine_id) = self.body_handles_rev.get(&parent) {
-                        results.push(BodyHandle(engine_id));
+            |collider_handle| {
+                if let Some(collider) = self.collider_set.get(collider_handle) {
+                    if let Some(parent) = collider.parent() {
+                        if let Some(&engine_id) = self.body_handles_rev.get(&parent) {
+                            results.push(BodyHandle(engine_id));
+                        }
                     }
                 }
-            }
-        }
+                true // continue searching
+            },
+        );
 
         results
     }
@@ -70,7 +86,7 @@ impl Rapier2DPhysicsProvider {
     pub(crate) fn query_contact_pairs(&self) -> Vec<ContactPair> {
         let mut pairs = Vec::new();
         for pair in self.narrow_phase.contact_pairs() {
-            if !pair.has_any_active_contact() {
+            if !pair.has_any_active_contact {
                 continue;
             }
             let body_a = self

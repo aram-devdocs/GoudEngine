@@ -110,6 +110,26 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FfiPhysicsRaycastHit2D
+    {
+        public ulong BodyHandle;
+        public ulong ColliderHandle;
+        public float PointX;
+        public float PointY;
+        public float NormalX;
+        public float NormalY;
+        public float Distance;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiPhysicsCollisionEvent2D
+    {
+        public ulong BodyA;
+        public ulong BodyB;
+        public uint Kind;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct FfiVec3
     {
         public float X;
@@ -265,6 +285,12 @@ namespace GoudEngine
         public static extern uint goud_scene_get_by_name(GoudContextId ctx, IntPtr name_ptr, uint name_len);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_scene_load(GoudContextId ctx, IntPtr name_ptr, uint name_len, IntPtr json_ptr, uint json_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern GoudResult goud_scene_unload(GoudContextId ctx, IntPtr name_ptr, uint name_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern GoudResult goud_scene_set_active(GoudContextId ctx, uint scene_id, [MarshalAs(UnmanagedType.U1)] bool active);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -350,6 +376,21 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_texture_destroy(GoudContextId ctx, ulong texture);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong goud_font_load(GoudContextId ctx, string path);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_font_destroy(GoudContextId ctx, ulong font_handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer_draw_text(GoudContextId ctx, ulong font_handle, string text, float x, float y, float font_size, byte alignment, float max_width, float line_spacing, byte direction, float r, float g, float b, float a);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_draw_text(GoudContextId ctx, ulong font_handle, string text, float x, float y, float font_size, byte alignment, float max_width, float line_spacing, byte direction, float r, float g, float b, float a);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
@@ -1067,6 +1108,9 @@ namespace GoudEngine
         public static extern long goud_physics_add_collider(GoudContextId ctx, ulong body_handle, uint shape_type, float width, float height, float radius, float friction, float restitution);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_physics_add_collider_ex(GoudContextId ctx, ulong body_handle, uint shape_type, float width, float height, float radius, float friction, float restitution, [MarshalAs(UnmanagedType.U1)] bool is_sensor, uint layer, uint mask);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_remove_body(GoudContextId ctx, ulong handle);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -1089,6 +1133,24 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_raycast(GoudContextId ctx, float ox, float oy, float dx, float dy, float max_dist, ref float out_hit_x, ref float out_hit_y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_raycast_ex(GoudContextId ctx, float ox, float oy, float dx, float dy, float max_dist, uint layer_mask, ref ulong out_body_handle, ref ulong out_collider_handle, ref float out_hit_x, ref float out_hit_y, ref float out_normal_x, ref float out_normal_y, ref float out_distance);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_collision_events_count(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_collision_event_count(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_collision_events_read(GoudContextId ctx, uint index, ref ulong out_body_a, ref ulong out_body_b, ref uint out_kind);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_collision_event_read(GoudContextId ctx, uint index, ref ulong out_body_a, ref ulong out_body_b, ref uint out_kind);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_set_collision_callback(GoudContextId ctx, IntPtr callback, IntPtr user_data);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_get_gravity(GoudContextId ctx, ref float out_x, ref float out_y);
@@ -1261,6 +1323,22 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_animation_layer_reset(GoudContextId ctx, ulong entity_id, uint layer_index);
 
+        // animation_control
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_play(GoudContextId ctx, ulong entity_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_stop(GoudContextId ctx, ulong entity_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_set_state(GoudContextId ctx, ulong entity_id, IntPtr state_ptr, int state_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_set_parameter_bool(GoudContextId ctx, ulong entity_id, IntPtr name_ptr, int name_len, [MarshalAs(UnmanagedType.U1)] bool value);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_set_parameter_float(GoudContextId ctx, ulong entity_id, IntPtr name_ptr, int name_len, float value);
+
         // network
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern long goud_network_host(GoudContextId ctx, int protocol, ushort port);
@@ -1363,6 +1441,51 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_audio_cleanup_finished(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_audio_play_spatial(GoudContextId ctx, IntPtr asset_data, nuint asset_len, float source_x, float source_y, float listener_x, float listener_y, float max_distance, float rolloff);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_audio_play_spatial_3d(GoudContextId ctx, IntPtr asset_data, nuint asset_len, float source_x, float source_y, float source_z, float listener_x, float listener_y, float listener_z, float max_distance, float rolloff);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_update_spatial_volume(GoudContextId ctx, ulong player_id, float source_x, float source_y, float listener_x, float listener_y, float max_distance, float rolloff);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_update_spatial_volume_3d(GoudContextId ctx, ulong player_id, float source_x, float source_y, float source_z, float listener_x, float listener_y, float listener_z, float max_distance, float rolloff);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_set_listener_position(GoudContextId ctx, float x, float y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_set_listener_position_3d(GoudContextId ctx, float x, float y, float z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_set_source_position(GoudContextId ctx, ulong player_id, float x, float y, float max_distance, float rolloff);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_set_source_position_3d(GoudContextId ctx, ulong player_id, float x, float y, float z, float max_distance, float rolloff);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_set_player_volume(GoudContextId ctx, ulong player_id, float volume);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_set_player_speed(GoudContextId ctx, ulong player_id, float speed);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_crossfade(GoudContextId ctx, ulong from_player_id, ulong to_player_id, float mix);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_audio_crossfade_to(GoudContextId ctx, ulong from_player_id, IntPtr asset_data, nuint asset_len, float duration_sec, byte channel);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_audio_mix_with(GoudContextId ctx, ulong primary_player_id, IntPtr asset_data, nuint asset_len, float secondary_volume, byte secondary_channel);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_update_crossfades(GoudContextId ctx, float delta_sec);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_active_crossfade_count(GoudContextId ctx);
 
         // ui_manager
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

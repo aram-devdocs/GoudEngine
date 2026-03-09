@@ -31,6 +31,17 @@ pub fn shape_from_desc(desc: &ColliderDesc) -> SharedShape {
     }
 }
 
+/// Convert an engine `ColliderDesc` layer/mask to Rapier interaction groups.
+pub fn collision_groups_from_desc(desc: &ColliderDesc) -> InteractionGroups {
+    InteractionGroups::new(Group::from(desc.layer), Group::from(desc.mask))
+}
+
+/// Build a raycast query filter that selects colliders by layer mask.
+pub fn raycast_query_filter(layer_mask: u32) -> QueryFilter<'static> {
+    let query_groups = InteractionGroups::new(Group::ALL, Group::from(layer_mask));
+    QueryFilter::default().groups(query_groups)
+}
+
 /// Convert an engine `JointDesc` to a Rapier `GenericJoint`.
 ///
 /// Mapping: 0 = revolute, 1 = prismatic, 2 = rope/distance.
@@ -123,5 +134,17 @@ mod tests {
         };
         let shape = shape_from_desc(&desc);
         assert!(shape.as_ball().is_some());
+    }
+
+    #[test]
+    fn test_collision_groups_from_desc_maps_layer_and_mask() {
+        let desc = ColliderDesc {
+            layer: 0b0010,
+            mask: 0b1010,
+            ..Default::default()
+        };
+        let groups = collision_groups_from_desc(&desc);
+        assert_eq!(groups.memberships.bits(), 0b0010);
+        assert_eq!(groups.filter.bits(), 0b1010);
     }
 }

@@ -1278,6 +1278,26 @@ def _gen_tool_class(tool_name: str, lines: list):
                 "        self._lib.goud_texture_destroy("
                 "self._ctx, handle)"
             )
+        elif mname == "load_font":
+            lines.append(
+                "        return self._lib.goud_font_load("
+                "self._ctx, path.encode('utf-8'))"
+            )
+        elif mname == "destroy_font":
+            lines.append(
+                "        return self._lib.goud_font_destroy("
+                "self._ctx, handle)"
+            )
+        elif mname == "draw_text":
+            lines.append(
+                "        if color is None: color = Color.white()"
+            )
+            lines.append(
+                "        return self._lib.goud_renderer_draw_text("
+                "self._ctx, font_handle, text.encode('utf-8'), x, y, font_size, "
+                "int(alignment), max_width, line_spacing, int(direction), "
+                "color.r, color.g, color.b, color.a)"
+            )
         elif "ffi_strategy" in mmap:
             strategy = mmap["ffi_strategy"]
             comp_type = mmap.get("component_type", "")
@@ -1322,10 +1342,38 @@ def _gen_tool_class(tool_name: str, lines: list):
                 )
             lines.append("        return Entity(bits)")
         elif "entity_params" in mmap and "ffi" in mmap:
-            lines.append(
-                f"        return self._lib.{mmap['ffi']}("
-                "self._ctx, entity._bits)"
-            )
+            ffi_fn = mmap["ffi"]
+            no_ctx = mmap.get("no_context", False)
+            entity_set = set(mmap["entity_params"])
+            string_set = set(mmap.get("string_params", []))
+            uses_ptr_len = _ffi_uses_ptr_len(ffi_fn)
+
+            ffi_parts = [] if no_ctx else ["self._ctx"]
+            for p in params:
+                pn = p["name"]
+                sn = to_snake(pn)
+                if pn in entity_set:
+                    ffi_parts.append(f"{sn}._bits")
+                elif p["type"] == "string" and pn in string_set and uses_ptr_len:
+                    lines.append(f"        _{sn}_bytes = {sn}.encode('utf-8')")
+                    lines.append(
+                        f"        _{sn}_buf = ctypes.create_string_buffer("
+                        f"_{sn}_bytes, len(_{sn}_bytes))"
+                    )
+                    ffi_parts.append(
+                        f"ctypes.cast(_{sn}_buf, ctypes.POINTER(ctypes.c_uint8))"
+                    )
+                    ffi_parts.append(f"len(_{sn}_bytes)")
+                elif p["type"] in schema.get("enums", {}):
+                    ffi_parts.append(f"int({sn})")
+                else:
+                    ffi_parts.append(sn)
+
+            args_str = ", ".join(ffi_parts)
+            if ret == "void":
+                lines.append(f"        self._lib.{ffi_fn}({args_str})")
+            else:
+                lines.append(f"        return self._lib.{ffi_fn}({args_str})")
         elif "out_params" in mmap and "returns_struct" in mmap and any(op["type"] != "f32" for op in mmap["out_params"]):
             struct_name = mmap["returns_struct"]
             ffi_type_name = mapping["ffi_types"][struct_name]["ffi_name"]
@@ -1369,28 +1417,44 @@ def _gen_tool_class(tool_name: str, lines: list):
                 lines.append(
                     f"        self._lib.{ffi_fn}(self._ctx, {extra})"
                 )
-            elif any(p["type"] == "string" for p in params) and _ffi_uses_ptr_len(ffi_fn):
-                # String params need encoding to bytes ptr + len (only for *const u8 FFI)
+            elif _ffi_uses_ptr_len(ffi_fn) and any(p["type"] in ("string", "bytes") for p in params):
+                # String/bytes params need ptr+len marshalling for *const u8 FFI.
                 for p in params:
+                    sn = to_snake(p["name"])
                     if p["type"] == "string":
-                        sn = to_snake(p["name"])
+                        lines.append(f"        _{sn}_bytes = {sn}.encode('utf-8')")
                         lines.append(
-                            f"        _{sn}_bytes = {sn}.encode('utf-8')"
+                            f"        _{sn}_buf = ctypes.create_string_buffer(_{sn}_bytes, len(_{sn}_bytes))"
+                        )
+                    elif p["type"] == "bytes":
+                        lines.append(
+                            f"        _{sn}_buf = (ctypes.c_uint8 * len({sn})).from_buffer_copy({sn})"
                         )
                 ffi_parts = ["self._ctx"]
                 for p in params:
                     sn = to_snake(p["name"])
                     if p["type"] == "string":
                         ffi_parts.append(
-                            f"ctypes.cast(ctypes.create_string_buffer(_{sn}_bytes, len(_{sn}_bytes)), ctypes.POINTER(ctypes.c_uint8))"
+                            f"ctypes.cast(_{sn}_buf, ctypes.POINTER(ctypes.c_uint8))"
                         )
                         ffi_parts.append(f"len(_{sn}_bytes)")
+                    elif p["type"] == "bytes":
+                        ffi_parts.append(
+                            f"ctypes.cast(_{sn}_buf, ctypes.POINTER(ctypes.c_uint8))"
+                        )
+                        ffi_parts.append(f"len({sn})")
+                    elif p["type"] in schema.get("enums", {}):
+                        ffi_parts.append(f"int({sn})")
                     else:
                         ffi_parts.append(sn)
                 args_str = ", ".join(ffi_parts)
                 if ret == "void":
                     lines.append(
                         f"        self._lib.{ffi_fn}({args_str})"
+                    )
+                elif mmap.get("returns_bool_from_i32"):
+                    lines.append(
+                        f"        return self._lib.{ffi_fn}({args_str}) != 0"
                     )
                 else:
                     lines.append(

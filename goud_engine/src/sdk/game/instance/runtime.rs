@@ -1,9 +1,8 @@
+use super::GoudGame;
 use crate::context_registry::scene::SceneId;
 use crate::ecs::World;
 use crate::sdk::debug_overlay::FpsStats;
 use crate::sdk::game_config::GameContext;
-
-use super::GoudGame;
 
 impl GoudGame {
     /// Runs the game loop with the given update callback.
@@ -123,11 +122,5 @@ impl GoudGame {
     #[inline]
     pub fn fps(&self) -> f32 {
         self.context.fps()
-    }
-
-    /// Returns true if the game has been initialized.
-    #[inline]
-    pub fn is_initialized(&self) -> bool {
-        self.initialized
     }
 }
