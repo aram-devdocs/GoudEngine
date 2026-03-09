@@ -153,6 +153,8 @@ pub extern "C" fn goud_window_destroy(context_id: GoudContextId) -> bool {
         return false;
     }
 
+    crate::ffi::renderer::cleanup_text_state(context_id);
+
     remove_window_state(context_id);
 
     let mut registry = match get_context_registry().lock() {

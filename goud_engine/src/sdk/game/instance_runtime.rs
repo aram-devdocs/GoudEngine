@@ -1,13 +1,14 @@
-//! Runtime loop and lifecycle methods for [`GoudGame`].
+//! Runtime loop and diagnostic methods for [`GoudGame`].
 
+use super::GoudGame;
 use crate::context_registry::scene::SceneId;
 use crate::core::error::GoudResult;
+use crate::core::providers::ProviderRegistry;
 use crate::ecs::World;
 use crate::sdk::debug_overlay::FpsStats;
 use crate::sdk::engine_config::EngineConfig;
-use crate::sdk::game_config::{GameConfig, GameContext};
-
-use super::GoudGame;
+use crate::sdk::game_config::GameContext;
+use crate::ui::UiManager;
 
 impl GoudGame {
     /// Runs the game loop with the given update callback.
@@ -33,6 +34,7 @@ impl GoudGame {
         while self.context.is_running() {
             self.context.update(frame_time);
             self.debug_overlay.update(frame_time);
+            self.process_ui_frame();
 
             // Update all active scenes each frame.
             let active: Vec<SceneId> = self.scene_manager.active_scenes().to_vec();
@@ -53,9 +55,6 @@ impl GoudGame {
                 self.last_transition_complete = Some(complete);
             }
 
-            // Update UI manager after scene updates.
-            self.ui_manager.update();
-
             // Render UI manager after updates (before buffer swap).
             self.ui_manager.render();
 
@@ -73,6 +72,7 @@ impl GoudGame {
     {
         self.context.update(delta_time);
         self.debug_overlay.update(delta_time);
+        self.process_ui_frame();
 
         let active: Vec<SceneId> = self.scene_manager.active_scenes().to_vec();
         for scene_id in active {
@@ -91,9 +91,6 @@ impl GoudGame {
         if let Some(complete) = self.scene_manager.tick_transition(delta_time) {
             self.last_transition_complete = Some(complete);
         }
-
-        // Update UI manager after scene updates.
-        self.ui_manager.update();
 
         // Render UI manager after updates (before buffer swap).
         self.ui_manager.render();
@@ -151,20 +148,36 @@ impl GoudGame {
         game.providers = providers;
         Ok(game)
     }
-}
 
-impl Default for GoudGame {
-    fn default() -> Self {
-        Self::new(GameConfig::default()).expect("Failed to create default GoudGame")
+    /// Returns a reference to the provider registry.
+    #[inline]
+    pub fn providers(&self) -> &ProviderRegistry {
+        &self.providers
     }
-}
 
-impl std::fmt::Debug for GoudGame {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GoudGame")
-            .field("config", &self.config)
-            .field("entity_count", &self.entity_count())
-            .field("initialized", &self.initialized)
-            .finish()
+    /// Returns a reference to the audio manager, if available.
+    #[cfg(feature = "native")]
+    #[inline]
+    pub fn audio_manager(&self) -> Option<&crate::assets::AudioManager> {
+        self.audio_manager.as_ref()
+    }
+
+    /// Returns a mutable reference to the audio manager, if available.
+    #[cfg(feature = "native")]
+    #[inline]
+    pub fn audio_manager_mut(&mut self) -> Option<&mut crate::assets::AudioManager> {
+        self.audio_manager.as_mut()
+    }
+
+    /// Returns a reference to the UI manager.
+    #[inline]
+    pub fn ui_manager(&self) -> &UiManager {
+        &self.ui_manager
+    }
+
+    /// Returns a mutable reference to the UI manager.
+    #[inline]
+    pub fn ui_manager_mut(&mut self) -> &mut UiManager {
+        &mut self.ui_manager
     }
 }

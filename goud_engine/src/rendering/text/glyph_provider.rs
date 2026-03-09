@@ -11,11 +11,23 @@ use super::glyph_atlas::{GlyphAtlas, GlyphInfo};
 pub trait GlyphInfoProvider {
     /// Returns glyph info for the given character, if present.
     fn glyph_info(&self, ch: char) -> Option<&GlyphInfo>;
+
+    /// Returns glyph info for a font glyph index, if present.
+    ///
+    /// Default implementation returns `None` for providers that are only
+    /// character-indexed (for example bitmap fonts).
+    fn glyph_info_indexed(&self, _glyph_id: u16) -> Option<&GlyphInfo> {
+        None
+    }
 }
 
 impl GlyphInfoProvider for GlyphAtlas {
     fn glyph_info(&self, ch: char) -> Option<&GlyphInfo> {
         self.glyph_info(ch)
+    }
+
+    fn glyph_info_indexed(&self, glyph_id: u16) -> Option<&GlyphInfo> {
+        self.glyph_info_indexed(glyph_id)
     }
 }
 

@@ -100,6 +100,19 @@ class GoudGame:
         """Destroys a previously loaded texture"""
         self._lib.goud_texture_destroy(self._ctx, handle)
 
+    def load_font(self, path):
+        """Loads a font from a file path and returns its handle"""
+        return self._lib.goud_font_load(self._ctx, path.encode('utf-8'))
+
+    def destroy_font(self, handle):
+        """Destroys a previously loaded font"""
+        return self._lib.goud_font_destroy(self._ctx, handle)
+
+    def draw_text(self, font_handle, text, x, y, font_size = 16, alignment = 0, max_width = 0, line_spacing = 1, direction = 0, color = None):
+        """Draws text using a loaded font"""
+        if color is None: color = Color.white()
+        return self._lib.goud_renderer_draw_text(self._ctx, font_handle, text.encode('utf-8'), x, y, font_size, int(alignment), max_width, line_spacing, int(direction), color.r, color.g, color.b, color.a)
+
     def draw_sprite(self, texture, x, y, width, height, rotation = 0, color = None):
         """Draws a textured sprite"""
         if color is None: color = Color.white()
@@ -736,6 +749,21 @@ class GoudContext:
         """Looks up a scene ID by name"""
         _name_bytes = name.encode('utf-8')
         return self._lib.goud_scene_get_by_name(self._ctx, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
+
+    def load_scene(self, name, json):
+        """Loads a scene from JSON data and returns its ID"""
+        _name_bytes = name.encode('utf-8')
+        _json_bytes = json.encode('utf-8')
+        return self._lib.goud_scene_load(self._ctx, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), ctypes.cast(ctypes.create_string_buffer(_json_bytes, len(_json_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_json_bytes))
+
+    def unload_scene(self, name):
+        """Unloads a scene by name"""
+        _name_bytes = name.encode('utf-8')
+        return self._lib.goud_scene_unload(self._ctx, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
+
+    def set_active_scene(self, scene_id, active):
+        """Sets whether a scene is active"""
+        return self._lib.goud_scene_set_active(self._ctx, scene_id, active)
 
     def scene_set_active(self, scene_id, active):
         """Sets whether a scene is active"""

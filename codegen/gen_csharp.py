@@ -820,6 +820,10 @@ _WINDOWED_BODIES: dict = {
                        f"{_I}NativeMethods.goud_renderer_draw_quad(_ctx, x, y, width, height, c.R, c.G, c.B, c.A);"],
     "LoadTexture":    [f"{_I}return NativeMethods.goud_texture_load(_ctx, path);"],
     "DestroyTexture": [f"{_I}NativeMethods.goud_texture_destroy(_ctx, handle);"],
+    "LoadFont":       [f"{_I}return NativeMethods.goud_font_load(_ctx, path);"],
+    "DestroyFont":    [f"{_I}return NativeMethods.goud_font_destroy(_ctx, handle);"],
+    "DrawText":       [f"{_I}var c = color ?? Color.White();",
+                       f"{_I}return NativeMethods.goud_renderer_draw_text(_ctx, fontHandle, text, x, y, fontSize, (byte)alignment, maxWidth, lineSpacing, (byte)direction, c.R, c.G, c.B, c.A);"],
     "Close":          [f"{_I}NativeMethods.goud_window_set_should_close(_ctx, true);"],
     "ShouldClose":    [f"{_I}return NativeMethods.goud_window_should_close(_ctx);"],
     "UpdateFrame":    [f"{_I}_deltaTime = (float)dt;",
@@ -1050,6 +1054,26 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
 
 # ── Param string building ─────────────────────────────────────────────
 
+def _cs_enum_default(enum_key: str, default) -> str:
+    """Render a C# enum default from schema default values."""
+    enum_name = _enum_cs_name(enum_key)
+    enum_values = schema.get("enums", {}).get(enum_key, {}).get("values", {})
+
+    if isinstance(default, str):
+        if default in enum_values:
+            return f"{enum_name}.{default}"
+        if default.lstrip("-").isdigit():
+            default = int(default)
+    elif isinstance(default, float) and default.is_integer():
+        default = int(default)
+
+    for member, value in enum_values.items():
+        if value == default:
+            return f"{enum_name}.{member}"
+
+    return f"({enum_name}){default}"
+
+
 def _build_param_strs(params: list) -> list:
     result = []
     for p in params:
@@ -1063,7 +1087,11 @@ def _build_param_strs(params: list) -> list:
         elif pt in schema["types"]:
             result.append(f"{to_pascal(pt)}? {name} = null" if default else f"{to_pascal(pt)} {name}")
         elif pt in schema["enums"]:
-            result.append(f"{_enum_cs_name(pt)} {name}")
+            enum_name = _enum_cs_name(pt)
+            if default is not None:
+                result.append(f"{enum_name} {name} = {_cs_enum_default(pt, default)}")
+            else:
+                result.append(f"{enum_name} {name}")
         else:
             ct = cs_type(pt)
             if default is not None:

@@ -382,6 +382,40 @@ namespace GoudEngine
             }
         }
 
+        /// <summary>Loads a scene from JSON data and returns its ID</summary>
+        public uint LoadScene(string name, string json)
+        {
+            unsafe
+            {
+                var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
+                var jsonBytes = System.Text.Encoding.UTF8.GetBytes(json);
+                fixed (byte* namePtr = nameBytes)
+                fixed (byte* jsonPtr = jsonBytes)
+                {
+                    return NativeMethods.goud_scene_load(_ctx, (IntPtr)namePtr, (uint)nameBytes.Length, (IntPtr)jsonPtr, (uint)jsonBytes.Length);
+                }
+            }
+        }
+
+        /// <summary>Unloads a scene by name</summary>
+        public GoudResult UnloadScene(string name)
+        {
+            unsafe
+            {
+                var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
+                fixed (byte* namePtr = nameBytes)
+                {
+                    return NativeMethods.goud_scene_unload(_ctx, (IntPtr)namePtr, (uint)nameBytes.Length);
+                }
+            }
+        }
+
+        /// <summary>Sets whether a scene is active</summary>
+        public GoudResult SetActiveScene(uint sceneId, bool active)
+        {
+            return NativeMethods.goud_scene_set_active(_ctx, sceneId, active);
+        }
+
         /// <summary>Sets whether a scene is active</summary>
         public GoudResult SceneSetActive(uint sceneId, bool active)
         {
