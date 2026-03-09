@@ -895,6 +895,18 @@ def _setup():
     _lib.goud_animation_layer_reset.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32]
     _lib.goud_animation_layer_reset.restype = ctypes.c_int32
 
+    # animation_control
+    _lib.goud_animation_play.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_animation_play.restype = ctypes.c_int32
+    _lib.goud_animation_stop.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_animation_stop.restype = ctypes.c_int32
+    _lib.goud_animation_set_state.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32]
+    _lib.goud_animation_set_state.restype = ctypes.c_int32
+    _lib.goud_animation_set_parameter_bool.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_bool]
+    _lib.goud_animation_set_parameter_bool.restype = ctypes.c_int32
+    _lib.goud_animation_set_parameter_float.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_float]
+    _lib.goud_animation_set_parameter_float.restype = ctypes.c_int32
+
     # network
     try:
         _lib.goud_network_host.argtypes = [GoudContextId, ctypes.c_int32, ctypes.c_uint16]

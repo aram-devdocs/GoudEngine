@@ -1322,10 +1322,38 @@ def _gen_tool_class(tool_name: str, lines: list):
                 )
             lines.append("        return Entity(bits)")
         elif "entity_params" in mmap and "ffi" in mmap:
-            lines.append(
-                f"        return self._lib.{mmap['ffi']}("
-                "self._ctx, entity._bits)"
-            )
+            ffi_fn = mmap["ffi"]
+            no_ctx = mmap.get("no_context", False)
+            entity_set = set(mmap["entity_params"])
+            string_set = set(mmap.get("string_params", []))
+            uses_ptr_len = _ffi_uses_ptr_len(ffi_fn)
+
+            ffi_parts = [] if no_ctx else ["self._ctx"]
+            for p in params:
+                pn = p["name"]
+                sn = to_snake(pn)
+                if pn in entity_set:
+                    ffi_parts.append(f"{sn}._bits")
+                elif p["type"] == "string" and pn in string_set and uses_ptr_len:
+                    lines.append(f"        _{sn}_bytes = {sn}.encode('utf-8')")
+                    lines.append(
+                        f"        _{sn}_buf = ctypes.create_string_buffer("
+                        f"_{sn}_bytes, len(_{sn}_bytes))"
+                    )
+                    ffi_parts.append(
+                        f"ctypes.cast(_{sn}_buf, ctypes.POINTER(ctypes.c_uint8))"
+                    )
+                    ffi_parts.append(f"len(_{sn}_bytes)")
+                elif p["type"] in schema.get("enums", {}):
+                    ffi_parts.append(f"int({sn})")
+                else:
+                    ffi_parts.append(sn)
+
+            args_str = ", ".join(ffi_parts)
+            if ret == "void":
+                lines.append(f"        self._lib.{ffi_fn}({args_str})")
+            else:
+                lines.append(f"        return self._lib.{ffi_fn}({args_str})")
         elif "out_params" in mmap and "returns_struct" in mmap and any(op["type"] != "f32" for op in mmap["out_params"]):
             struct_name = mmap["returns_struct"]
             ffi_type_name = mapping["ffi_types"][struct_name]["ffi_name"]

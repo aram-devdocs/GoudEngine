@@ -1261,6 +1261,22 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_animation_layer_reset(GoudContextId ctx, ulong entity_id, uint layer_index);
 
+        // animation_control
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_play(GoudContextId ctx, ulong entity_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_stop(GoudContextId ctx, ulong entity_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_set_state(GoudContextId ctx, ulong entity_id, IntPtr state_ptr, int state_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_set_parameter_bool(GoudContextId ctx, ulong entity_id, IntPtr name_ptr, int name_len, [MarshalAs(UnmanagedType.U1)] bool value);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_animation_set_parameter_float(GoudContextId ctx, ulong entity_id, IntPtr name_ptr, int name_len, float value);
+
         // network
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern long goud_network_host(GoudContextId ctx, int protocol, ushort port);

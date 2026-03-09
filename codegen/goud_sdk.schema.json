@@ -3554,6 +3554,81 @@
           "name": "despawnBatch"
         },
         {
+          "name": "play",
+          "doc": "Starts animation playback for an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "stop",
+          "doc": "Stops animation playback for an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setState",
+          "doc": "Sets the active animation state for an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "stateName",
+              "type": "string"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setParameterBool",
+          "doc": "Sets a boolean animation parameter for an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "value",
+              "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setParameterFloat",
+          "doc": "Sets a float animation parameter for an entity",
+          "params": [
+            {
+              "name": "entity",
+              "type": "Entity"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "value",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
           "name": "createCube",
           "doc": "Creates a 3D cube",
           "params": [

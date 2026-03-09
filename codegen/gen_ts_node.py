@@ -212,7 +212,7 @@ def gen_interface():
         else:
             lines.append(f"  {mn}({sig}): {ts_ret};")
 
-    # Animation Layer Stack & Events -- from separate tools
+    # Animation Layer Stack / Events -- from separate tools
     _anim_iface = [
         ("animationLayerStackCreate", [("entity", "IEntity")], "number"),
         ("animationLayerAdd", [("entity", "IEntity"), ("name", "string"), ("blendMode", "number")], "number"),
@@ -225,8 +225,11 @@ def gen_interface():
         ("animationEventsCount", [], "number"),
         ("animationEventsRead", [("index", "number")], "IAnimationEventData"),
     ]
-    lines.append("  // Animation Layer Stack & Events")
+    existing_iface_methods = {to_camel(m["name"]) for m in tool["methods"]}
+    lines.append("  // Animation Layer Stack / Events")
     for mn, params, ret in _anim_iface:
+        if mn in existing_iface_methods:
+            continue
         sig = ", ".join(f"{pn}: {pt}" for pn, pt in params)
         lines.append(f"  {mn}({sig}): {ret};")
 
@@ -407,11 +410,8 @@ def gen_node_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import {",
-        "  GoudGame as NativeGoudGame,",
-        "  Entity as NativeEntity,",
-        "  type GameConfig,",
-        "} from '../../../index';",
+        "// @ts-ignore Native entrypoint is generated at package root during native build.",
+        "import { GoudGame as NativeGoudGame, Entity as NativeEntity, type GameConfig } from '../../../index';",
         "",
         "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
@@ -572,7 +572,7 @@ def gen_node_wrapper():
         lines.append("  }")
         lines.append("")
 
-    # Animation Layer Stack & Events wrapper methods
+    # Animation Layer Stack / Events wrapper methods
     _anim_wrappers = [
         ("animationLayerStackCreate", "entity: IEntity", "return (this.native as any).animationLayerStackCreate(entity as unknown as NativeEntity);", "number"),
         ("animationLayerAdd", "entity: IEntity, name: string, blendMode: number", "return (this.native as any).animationLayerAdd(entity as unknown as NativeEntity, name, blendMode);", "number"),
@@ -585,8 +585,11 @@ def gen_node_wrapper():
         ("animationEventsCount", "", "return (this.native as any).animationEventsCount();", "number"),
         ("animationEventsRead", "index: number", "return (this.native as any).animationEventsRead(index) as unknown as IAnimationEventData;", "IAnimationEventData"),
     ]
-    lines.append("  // Animation Layer Stack & Events")
+    existing_wrapper_methods = {to_camel(m["name"]) for m in tool["methods"]}
+    lines.append("  // Animation Layer Stack / Events")
     for mn, sig, body, ret in _anim_wrappers:
+        if mn in existing_wrapper_methods:
+            continue
         lines.append(f"  {mn}({sig}): {ret} {{")
         lines.append(f"    {body}")
         lines.append("  }")
@@ -1052,6 +1055,9 @@ use goud_engine::ffi::animation::{
     goud_animation_layer_add_frame, goud_animation_layer_play,
     goud_animation_layer_reset, goud_animation_layer_set_clip,
     goud_animation_layer_set_weight, goud_animation_layer_stack_create,
+    goud_animation_play, goud_animation_set_parameter_bool,
+    goud_animation_set_parameter_float, goud_animation_set_state,
+    goud_animation_stop,
 };
 use goud_engine::ffi::providers::{
     goud_provider_render_capabilities, goud_provider_physics_capabilities,
@@ -1923,6 +1929,41 @@ impl GoudGame {
     /// Returns the raw FFI delta time from the last poll_events call.
     #[napi(getter)]
     pub fn ffi_delta_time(&self) -> f64 { goud_window_get_delta_time(self.context_id) as f64 }
+
+    // =========================================================================
+    // Animation Control
+    // =========================================================================
+
+    #[napi]
+    pub fn play(&self, entity: &Entity) -> i32 {
+        goud_animation_play(self.context_id, entity.bits)
+    }
+
+    #[napi]
+    pub fn stop(&self, entity: &Entity) -> i32 {
+        goud_animation_stop(self.context_id, entity.bits)
+    }
+
+    #[napi]
+    pub fn set_state(&self, entity: &Entity, state_name: String) -> Result<i32> {
+        let bytes = state_name.as_bytes();
+        // SAFETY: bytes pointer is valid for bytes.len() bytes (Rust String guarantee).
+        Ok(unsafe { goud_animation_set_state(self.context_id, entity.bits, bytes.as_ptr(), bytes.len() as i32) })
+    }
+
+    #[napi]
+    pub fn set_parameter_bool(&self, entity: &Entity, name: String, value: bool) -> Result<i32> {
+        let bytes = name.as_bytes();
+        // SAFETY: bytes pointer is valid for bytes.len() bytes (Rust String guarantee).
+        Ok(unsafe { goud_animation_set_parameter_bool(self.context_id, entity.bits, bytes.as_ptr(), bytes.len() as i32, value) })
+    }
+
+    #[napi]
+    pub fn set_parameter_float(&self, entity: &Entity, name: String, value: f64) -> Result<i32> {
+        let bytes = name.as_bytes();
+        // SAFETY: bytes pointer is valid for bytes.len() bytes (Rust String guarantee).
+        Ok(unsafe { goud_animation_set_parameter_float(self.context_id, entity.bits, bytes.as_ptr(), bytes.len() as i32, value as f32) })
+    }
 
     // =========================================================================
     // Animation Layer Stack

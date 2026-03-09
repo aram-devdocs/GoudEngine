@@ -221,6 +221,59 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_animation_play": {
+      "source_file": "ffi/animation/control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_animation_set_parameter_bool": {
+      "source_file": "ffi/animation/control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "name_ptr: *const u8",
+        "name_len: i32",
+        "value: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_animation_set_parameter_float": {
+      "source_file": "ffi/animation/control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "name_ptr: *const u8",
+        "name_len: i32",
+        "value: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_animation_set_state": {
+      "source_file": "ffi/animation/control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64",
+        "state_ptr: *const u8",
+        "state_len: i32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_animation_stop": {
+      "source_file": "ffi/animation/control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_audio_active_count": {
       "source_file": "ffi/audio/controls.rs",
       "params": [
@@ -3532,5 +3585,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 364
+  "total_count": 369
 }

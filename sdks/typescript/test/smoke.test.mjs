@@ -146,6 +146,23 @@ describe('GoudGame', () => {
     game.updateFrame(1 / 60);
     assert.equal(game.frameCount, 2);
   });
+
+  it('exposes animation control methods and accepts entity/string params', () => {
+    const game = new GoudGame();
+    const entity = game.spawnEmpty();
+
+    assert.equal(typeof game.play, 'function');
+    assert.equal(typeof game.stop, 'function');
+    assert.equal(typeof game.setState, 'function');
+    assert.equal(typeof game.setParameterBool, 'function');
+    assert.equal(typeof game.setParameterFloat, 'function');
+
+    assert.equal(typeof game.play(entity), 'number');
+    assert.equal(typeof game.stop(entity), 'number');
+    assert.equal(typeof game.setState(entity, 'idle'), 'number');
+    assert.equal(typeof game.setParameterBool(entity, 'moving', true), 'number');
+    assert.equal(typeof game.setParameterFloat(entity, 'speed', 1.5), 'number');
+  });
 });
 
 describe('Entity', () => {

@@ -161,6 +161,16 @@ export interface IGoudGame {
   spawnBatch(count: number): IEntity[];
   /** Despawns multiple entities at once */
   despawnBatch(entities: IEntity[]): number;
+  /** Starts animation playback for an entity */
+  play(entity: IEntity): number;
+  /** Stops animation playback for an entity */
+  stop(entity: IEntity): number;
+  /** Sets the active animation state for an entity */
+  setState(entity: IEntity, stateName: string): number;
+  /** Sets a boolean animation parameter for an entity */
+  setParameterBool(entity: IEntity, name: string, value: boolean): number;
+  /** Sets a float animation parameter for an entity */
+  setParameterFloat(entity: IEntity, name: string, value: number): number;
   /** Creates a 3D cube */
   createCube(textureId: number, width: number, height: number, depth: number): number;
   /** Creates a 3D plane */
@@ -259,7 +269,7 @@ export interface IGoudGame {
   getNetworkCapabilities(): INetworkCapabilities;
   /** Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred. */
   checkHotSwapShortcut(): boolean;
-  // Animation Layer Stack & Events
+  // Animation Layer Stack / Events
   animationLayerStackCreate(entity: IEntity): number;
   animationLayerAdd(entity: IEntity, name: string, blendMode: number): number;
   animationLayerSetWeight(entity: IEntity, layerIndex: number, weight: number): number;

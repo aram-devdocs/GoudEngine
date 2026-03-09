@@ -12,9 +12,6 @@ import math
 import importlib.util
 from pathlib import Path
 
-# errors.py lives directly in goud_engine/, not in generated/
-_ERRORS_PATH = Path(__file__).parent / "goud_engine" / "errors.py"
-
 # Ensure goud_engine package is importable
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -24,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 # via _ffi.py before it has been built.
 # ---------------------------------------------------------------------------
 _GENERATED_DIR = Path(__file__).parent / "goud_engine" / "generated"
+_ERRORS_PATH = _GENERATED_DIR / "_errors.py"
 
 
 def _load_module(name, path):
@@ -63,6 +61,17 @@ def test_imports():
     # without the native library, which requires a Cargo build).
     game_path = _GENERATED_DIR / "_game.py"
     assert game_path.exists(), f"GoudGame source not found at {game_path}"
+    game_source = game_path.read_text(encoding="utf-8")
+    for method_name in (
+        "play",
+        "stop",
+        "set_state",
+        "set_parameter_bool",
+        "set_parameter_float",
+    ):
+        assert f"def {method_name}(" in game_source, (
+            f"GoudGame missing generated method: {method_name}"
+        )
 
     print("  All imports successful")
     return True
@@ -568,8 +577,10 @@ def test_errors():
     # We must avoid triggering FFI load, so load __init__ indirectly via importlib
     init_path = Path(__file__).parent / "goud_engine" / "__init__.py"
     init_src = init_path.read_text()
-    assert "from .errors import" in init_src, \
-        "__init__.py should re-export error classes from .errors"
+    assert (
+        "from .generated._errors import" in init_src
+        or "from .errors import" in init_src
+    ), "__init__.py should re-export error classes"
 
     # Test dispatch path: _category_from_code maps error codes to category strings
     assert _category_from_code(1) == "Context", \

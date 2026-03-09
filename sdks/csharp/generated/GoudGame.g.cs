@@ -435,6 +435,57 @@ namespace GoudEngine
             }
         }
 
+        /// <summary>Starts animation playback for an entity</summary>
+        public int Play(Entity entity)
+        {
+            return NativeMethods.goud_animation_play(_ctx, entity.ToBits());
+        }
+
+        /// <summary>Stops animation playback for an entity</summary>
+        public int Stop(Entity entity)
+        {
+            return NativeMethods.goud_animation_stop(_ctx, entity.ToBits());
+        }
+
+        /// <summary>Sets the active animation state for an entity</summary>
+        public int SetState(Entity entity, string stateName)
+        {
+            unsafe
+            {
+                var stateNameBytes = System.Text.Encoding.UTF8.GetBytes(stateName);
+                fixed (byte* stateNamePtr = stateNameBytes)
+                {
+                    return NativeMethods.goud_animation_set_state(_ctx, entity.ToBits(), (IntPtr)stateNamePtr, (int)stateNameBytes.Length);
+                }
+            }
+        }
+
+        /// <summary>Sets a boolean animation parameter for an entity</summary>
+        public int SetParameterBool(Entity entity, string name, bool value)
+        {
+            unsafe
+            {
+                var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
+                fixed (byte* namePtr = nameBytes)
+                {
+                    return NativeMethods.goud_animation_set_parameter_bool(_ctx, entity.ToBits(), (IntPtr)namePtr, (int)nameBytes.Length, value);
+                }
+            }
+        }
+
+        /// <summary>Sets a float animation parameter for an entity</summary>
+        public int SetParameterFloat(Entity entity, string name, float value)
+        {
+            unsafe
+            {
+                var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
+                fixed (byte* namePtr = nameBytes)
+                {
+                    return NativeMethods.goud_animation_set_parameter_float(_ctx, entity.ToBits(), (IntPtr)namePtr, (int)nameBytes.Length, value);
+                }
+            }
+        }
+
         /// <summary>Creates a 3D cube</summary>
         public uint CreateCube(uint textureId, float width, float height, float depth)
         {
