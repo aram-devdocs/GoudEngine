@@ -120,6 +120,24 @@ class GoudContact(ctypes.Structure):
         ("penetration", ctypes.c_float)
     ]
 
+class FfiPhysicsRaycastHit2D(ctypes.Structure):
+    _fields_ = [
+        ("body_handle", ctypes.c_uint64),
+        ("collider_handle", ctypes.c_uint64),
+        ("point_x", ctypes.c_float),
+        ("point_y", ctypes.c_float),
+        ("normal_x", ctypes.c_float),
+        ("normal_y", ctypes.c_float),
+        ("distance", ctypes.c_float)
+    ]
+
+class FfiPhysicsCollisionEvent2D(ctypes.Structure):
+    _fields_ = [
+        ("body_a", ctypes.c_uint64),
+        ("body_b", ctypes.c_uint64),
+        ("kind", ctypes.c_uint32)
+    ]
+
 class FfiVec3(ctypes.Structure):
     _fields_ = [
         ("x", ctypes.c_float),
@@ -751,6 +769,8 @@ def _setup():
         _lib.goud_physics_add_rigid_body.restype = ctypes.c_int64
         _lib.goud_physics_add_collider.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
         _lib.goud_physics_add_collider.restype = ctypes.c_int64
+        _lib.goud_physics_add_collider_ex.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_bool, ctypes.c_uint32, ctypes.c_uint32]
+        _lib.goud_physics_add_collider_ex.restype = ctypes.c_int64
         _lib.goud_physics_remove_body.argtypes = [GoudContextId, ctypes.c_uint64]
         _lib.goud_physics_remove_body.restype = ctypes.c_int32
         _lib.goud_physics_step.argtypes = [GoudContextId, ctypes.c_float]
@@ -767,6 +787,18 @@ def _setup():
         _lib.goud_physics_apply_impulse.restype = ctypes.c_int32
         _lib.goud_physics_raycast.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
         _lib.goud_physics_raycast.restype = ctypes.c_int32
+        _lib.goud_physics_raycast_ex.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
+        _lib.goud_physics_raycast_ex.restype = ctypes.c_int32
+        _lib.goud_physics_collision_events_count.argtypes = [GoudContextId]
+        _lib.goud_physics_collision_events_count.restype = ctypes.c_int32
+        _lib.goud_physics_collision_event_count.argtypes = [GoudContextId]
+        _lib.goud_physics_collision_event_count.restype = ctypes.c_int32
+        _lib.goud_physics_collision_events_read.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint32)]
+        _lib.goud_physics_collision_events_read.restype = ctypes.c_int32
+        _lib.goud_physics_collision_event_read.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint32)]
+        _lib.goud_physics_collision_event_read.restype = ctypes.c_int32
+        _lib.goud_physics_set_collision_callback.argtypes = [GoudContextId, ctypes.c_void_p, ctypes.c_void_p]
+        _lib.goud_physics_set_collision_callback.restype = ctypes.c_int32
         _lib.goud_physics_get_gravity.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
         _lib.goud_physics_get_gravity.restype = ctypes.c_int32
         _lib.goud_physics_set_body_gravity_scale.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]

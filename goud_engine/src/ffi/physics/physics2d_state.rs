@@ -16,13 +16,8 @@ use crate::ffi::context::GoudContextId;
 /// Kind mapping: 0 = Enter, 1 = Stay, 2 = Exit.
 ///
 /// Ownership: `user_data` is borrowed, never freed by the engine.
-pub type CollisionCallback = extern "C" fn(
-    ctx: GoudContextId,
-    body_a: u64,
-    body_b: u64,
-    kind: u32,
-    user_data: *mut c_void,
-);
+pub type CollisionCallback =
+    extern "C" fn(ctx: GoudContextId, body_a: u64, body_b: u64, kind: u32, user_data: *mut c_void);
 
 #[derive(Clone, Copy)]
 struct ColliderFilterMeta {
