@@ -168,7 +168,7 @@ jobs:
 
     - name: Upload coverage report
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: coverage-report
         path: coverage-report/
@@ -451,7 +451,7 @@ jobs:
       run: dotnet test ../csharp.tests/GoudEngine.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
     - name: Upload test results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: dotnet-test-results-${{ matrix.os }}
@@ -603,7 +603,7 @@ jobs:
         echo "Full smoke tests run on ubuntu-latest with xvfb."
 
     - name: Upload native addon
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ts-native-${{ matrix.os }}
         path: sdks/typescript/*.node
@@ -697,7 +697,7 @@ jobs:
         test -f wasm/goud_engine.js
 
     - name: Upload wasm artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ts-wasm
         path: |
