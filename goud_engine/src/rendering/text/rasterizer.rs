@@ -71,6 +71,36 @@ pub fn rasterize_glyphs(
         .collect()
 }
 
+/// Rasterizes a set of glyph indices at the given pixel size.
+///
+/// Returns a `Vec` of `(glyph_index, RasterizedGlyph)` pairs in the same
+/// order as the input `glyph_indices` slice.
+pub fn rasterize_glyph_indices(
+    font: &fontdue::Font,
+    size_px: f32,
+    glyph_indices: &[u16],
+) -> Vec<(u16, RasterizedGlyph)> {
+    glyph_indices
+        .iter()
+        .map(|&glyph_index| {
+            let (metrics, bitmap) = font.rasterize_indexed(glyph_index, size_px);
+            let glyph = RasterizedGlyph {
+                bitmap,
+                width: metrics.width as u32,
+                height: metrics.height as u32,
+                metrics: GlyphMetrics {
+                    advance_width: metrics.advance_width,
+                    bearing_x: metrics.xmin as f32,
+                    bearing_y: metrics.ymin as f32,
+                    width: metrics.width as f32,
+                    height: metrics.height as f32,
+                },
+            };
+            (glyph_index, glyph)
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -151,5 +181,15 @@ mod tests {
             glyph.metrics.advance_width > 0.0,
             "advance_width should be positive for 'M'"
         );
+    }
+
+    #[test]
+    fn test_rasterize_glyph_indices_matches_lookup() {
+        let font = test_font();
+        let idx_a = font.lookup_glyph_index('A');
+        let glyphs = rasterize_glyph_indices(&font, 20.0, &[idx_a]);
+        assert_eq!(glyphs.len(), 1);
+        assert_eq!(glyphs[0].0, idx_a);
+        assert!(glyphs[0].1.metrics.advance_width > 0.0);
     }
 }

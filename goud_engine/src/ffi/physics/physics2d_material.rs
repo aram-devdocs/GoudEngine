@@ -7,7 +7,7 @@ use crate::core::error::{set_last_error, GoudError};
 use crate::core::providers::types::{BodyHandle, ColliderHandle};
 use crate::ffi::context::GoudContextId;
 
-use super::physics2d::{with_provider, with_provider_mut};
+use super::physics2d_common::{with_provider, with_provider_mut};
 
 // =============================================================================
 // Gravity

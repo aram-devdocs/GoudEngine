@@ -22,8 +22,9 @@
 use std::collections::HashMap;
 use std::time::Instant;
 
+use crate::core::event::Events;
 use crate::core::providers::physics::PhysicsProvider;
-use crate::core::providers::types::BodyHandle;
+use crate::core::providers::types::{BodyHandle, CollisionEvent};
 use crate::ecs::entity::Entity;
 use crate::ecs::physics_world::interpolation::PhysicsInterpolation;
 use crate::ecs::physics_world::PhysicsWorld;
@@ -129,6 +130,16 @@ impl System for PhysicsStepSystem2D {
             }
         }
 
+        // Forward provider collision events into ECS Events resource when present.
+        let collision_events = self.provider.drain_collision_events();
+        if !collision_events.is_empty() {
+            if let Some(events) = world.get_resource_mut::<Events<CollisionEvent>>() {
+                for event in collision_events {
+                    events.send(event);
+                }
+            }
+        }
+
         // Read back positions from the physics provider into Transform2D.
         // We need to take the handle map out of the world temporarily to
         // avoid holding an immutable borrow while mutating transforms.
@@ -162,7 +173,174 @@ impl System for PhysicsStepSystem2D {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::error::GoudResult;
+    use crate::core::event::Events;
     use crate::core::providers::impls::NullPhysicsProvider;
+    use crate::core::providers::types::{
+        BodyDesc, BodyHandle, ColliderDesc, ColliderHandle, CollisionEvent, CollisionEventKind,
+        ContactPair, DebugShape, JointDesc, JointHandle, PhysicsCapabilities, RaycastHit,
+    };
+    use crate::core::providers::{Provider, ProviderLifecycle};
+
+    struct TestCollisionEventProvider {
+        capabilities: PhysicsCapabilities,
+        pending_events: Vec<CollisionEvent>,
+    }
+
+    impl TestCollisionEventProvider {
+        fn with_events(events: Vec<CollisionEvent>) -> Self {
+            Self {
+                capabilities: PhysicsCapabilities::default(),
+                pending_events: events,
+            }
+        }
+    }
+
+    impl Provider for TestCollisionEventProvider {
+        fn name(&self) -> &str {
+            "test-collision-events"
+        }
+
+        fn version(&self) -> &str {
+            "0.0-test"
+        }
+
+        fn capabilities(&self) -> Box<dyn std::any::Any> {
+            Box::new(self.capabilities.clone())
+        }
+    }
+
+    impl ProviderLifecycle for TestCollisionEventProvider {
+        fn init(&mut self) -> GoudResult<()> {
+            Ok(())
+        }
+
+        fn update(&mut self, _delta: f32) -> GoudResult<()> {
+            Ok(())
+        }
+
+        fn shutdown(&mut self) {}
+    }
+
+    impl PhysicsProvider for TestCollisionEventProvider {
+        fn physics_capabilities(&self) -> &PhysicsCapabilities {
+            &self.capabilities
+        }
+
+        fn step(&mut self, _delta: f32) -> GoudResult<()> {
+            Ok(())
+        }
+
+        fn set_gravity(&mut self, _gravity: [f32; 2]) {}
+
+        fn gravity(&self) -> [f32; 2] {
+            [0.0, 0.0]
+        }
+
+        fn set_timestep(&mut self, _dt: f32) {}
+
+        fn timestep(&self) -> f32 {
+            1.0 / 60.0
+        }
+
+        fn create_body(&mut self, _desc: &BodyDesc) -> GoudResult<BodyHandle> {
+            Ok(BodyHandle(1))
+        }
+
+        fn destroy_body(&mut self, _handle: BodyHandle) {}
+
+        fn body_position(&self, _handle: BodyHandle) -> GoudResult<[f32; 2]> {
+            Ok([0.0, 0.0])
+        }
+
+        fn set_body_position(&mut self, _handle: BodyHandle, _pos: [f32; 2]) -> GoudResult<()> {
+            Ok(())
+        }
+
+        fn body_velocity(&self, _handle: BodyHandle) -> GoudResult<[f32; 2]> {
+            Ok([0.0, 0.0])
+        }
+
+        fn set_body_velocity(&mut self, _handle: BodyHandle, _vel: [f32; 2]) -> GoudResult<()> {
+            Ok(())
+        }
+
+        fn apply_force(&mut self, _handle: BodyHandle, _force: [f32; 2]) -> GoudResult<()> {
+            Ok(())
+        }
+
+        fn apply_impulse(&mut self, _handle: BodyHandle, _impulse: [f32; 2]) -> GoudResult<()> {
+            Ok(())
+        }
+
+        fn body_gravity_scale(&self, _handle: BodyHandle) -> GoudResult<f32> {
+            Ok(1.0)
+        }
+
+        fn set_body_gravity_scale(&mut self, _handle: BodyHandle, _scale: f32) -> GoudResult<()> {
+            Ok(())
+        }
+
+        fn create_collider(
+            &mut self,
+            _body: BodyHandle,
+            _desc: &ColliderDesc,
+        ) -> GoudResult<ColliderHandle> {
+            Ok(ColliderHandle(1))
+        }
+
+        fn destroy_collider(&mut self, _handle: ColliderHandle) {}
+
+        fn collider_friction(&self, _handle: ColliderHandle) -> GoudResult<f32> {
+            Ok(0.5)
+        }
+
+        fn set_collider_friction(
+            &mut self,
+            _handle: ColliderHandle,
+            _friction: f32,
+        ) -> GoudResult<()> {
+            Ok(())
+        }
+
+        fn collider_restitution(&self, _handle: ColliderHandle) -> GoudResult<f32> {
+            Ok(0.0)
+        }
+
+        fn set_collider_restitution(
+            &mut self,
+            _handle: ColliderHandle,
+            _restitution: f32,
+        ) -> GoudResult<()> {
+            Ok(())
+        }
+
+        fn raycast(&self, _origin: [f32; 2], _dir: [f32; 2], _max_dist: f32) -> Option<RaycastHit> {
+            None
+        }
+
+        fn overlap_circle(&self, _center: [f32; 2], _radius: f32) -> Vec<BodyHandle> {
+            Vec::new()
+        }
+
+        fn drain_collision_events(&mut self) -> Vec<CollisionEvent> {
+            std::mem::take(&mut self.pending_events)
+        }
+
+        fn contact_pairs(&self) -> Vec<ContactPair> {
+            Vec::new()
+        }
+
+        fn create_joint(&mut self, _desc: &JointDesc) -> GoudResult<JointHandle> {
+            Ok(JointHandle(1))
+        }
+
+        fn destroy_joint(&mut self, _handle: JointHandle) {}
+
+        fn debug_shapes(&self) -> Vec<DebugShape> {
+            Vec::new()
+        }
+    }
 
     #[test]
     fn test_handle_map_default() {
@@ -246,5 +424,37 @@ mod tests {
 
         // No PhysicsInterpolation since we used fallback path.
         assert!(!world.contains_resource::<PhysicsInterpolation>());
+    }
+
+    #[test]
+    fn test_system_forwards_collision_events_into_events_resource() {
+        let expected_event = CollisionEvent {
+            body_a: BodyHandle(11),
+            body_b: BodyHandle(22),
+            kind: CollisionEventKind::Enter,
+        };
+        let provider = TestCollisionEventProvider::with_events(vec![expected_event.clone()]);
+        let mut system = PhysicsStepSystem2D::new(Box::new(provider));
+        let mut world = World::new();
+        world.insert_resource(PhysicsHandleMap2D::default());
+        world.insert_resource(Events::<CollisionEvent>::new());
+
+        system.run(&mut world);
+
+        let events = world
+            .get_resource_mut::<Events<CollisionEvent>>()
+            .expect("Events<CollisionEvent> resource should exist");
+        assert_eq!(
+            events.len(),
+            1,
+            "physics step should forward drained provider collision events into Events<CollisionEvent>"
+        );
+
+        events.update();
+        let collected: Vec<_> = events.reader().read().cloned().collect();
+        assert_eq!(collected.len(), 1);
+        assert_eq!(collected[0].body_a, expected_event.body_a);
+        assert_eq!(collected[0].body_b, expected_event.body_b);
+        assert_eq!(collected[0].kind, expected_event.kind);
     }
 }

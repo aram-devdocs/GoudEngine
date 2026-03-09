@@ -146,6 +146,22 @@ describe('GoudGame', () => {
     game.updateFrame(1 / 60);
     assert.equal(game.frameCount, 2);
   });
+
+  it('exposes idiomatic scene wrapper API', () => {
+    const game = new GoudGame();
+
+    assert.equal(typeof game.loadScene, 'function');
+    assert.equal(typeof game.unloadScene, 'function');
+    assert.equal(typeof game.setActiveScene, 'function');
+
+    const sceneName = 'sdk_scene_wrapper';
+    const sceneJson = '{"name":"sdk_scene_wrapper_data","entities":[]}';
+    const sceneId = game.loadScene(sceneName, sceneJson);
+    assert.notEqual(sceneId, 0xFFFFFFFF);
+
+    assert.equal(game.setActiveScene(sceneId, true), true);
+    assert.equal(game.unloadScene(sceneName), true);
+  });
 });
 
 describe('Entity', () => {

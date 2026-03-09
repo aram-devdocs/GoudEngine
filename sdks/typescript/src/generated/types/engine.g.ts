@@ -95,6 +95,12 @@ export interface IGoudGame {
   loadTexture(path: string): Promise<number>;
   /** Destroys a previously loaded texture */
   destroyTexture(handle: number): void;
+  /** Loads a font from a file path and returns its handle */
+  loadFont(path: string): Promise<number>;
+  /** Destroys a previously loaded font */
+  destroyFont(handle: number): boolean;
+  /** Draws text using a loaded font */
+  drawText(fontHandle: number, text: string, x: number, y: number, fontSize?: number, alignment?: number, maxWidth?: number, lineSpacing?: number, direction?: number, color?: IColor): boolean;
   /** Draws a textured sprite */
   drawSprite(texture: number, x: number, y: number, width: number, height: number, rotation?: number, color?: IColor): void;
   /** Draws a colored rectangle */
@@ -161,6 +167,16 @@ export interface IGoudGame {
   spawnBatch(count: number): IEntity[];
   /** Despawns multiple entities at once */
   despawnBatch(entities: IEntity[]): number;
+  /** Starts animation playback for an entity */
+  play(entity: IEntity): number;
+  /** Stops animation playback for an entity */
+  stop(entity: IEntity): number;
+  /** Sets the active animation state for an entity */
+  setState(entity: IEntity, stateName: string): number;
+  /** Sets a boolean animation parameter for an entity */
+  setParameterBool(entity: IEntity, name: string, value: boolean): number;
+  /** Sets a float animation parameter for an entity */
+  setParameterFloat(entity: IEntity, name: string, value: number): number;
   /** Creates a 3D cube */
   createCube(textureId: number, width: number, height: number, depth: number): number;
   /** Creates a 3D plane */

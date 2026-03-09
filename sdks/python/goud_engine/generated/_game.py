@@ -100,6 +100,19 @@ class GoudGame:
         """Destroys a previously loaded texture"""
         self._lib.goud_texture_destroy(self._ctx, handle)
 
+    def load_font(self, path):
+        """Loads a font from a file path and returns its handle"""
+        return self._lib.goud_font_load(self._ctx, path.encode('utf-8'))
+
+    def destroy_font(self, handle):
+        """Destroys a previously loaded font"""
+        return self._lib.goud_font_destroy(self._ctx, handle)
+
+    def draw_text(self, font_handle, text, x, y, font_size = 16, alignment = 0, max_width = 0, line_spacing = 1, direction = 0, color = None):
+        """Draws text using a loaded font"""
+        if color is None: color = Color.white()
+        return self._lib.goud_renderer_draw_text(self._ctx, font_handle, text.encode('utf-8'), x, y, font_size, int(alignment), max_width, line_spacing, int(direction), color.r, color.g, color.b, color.a)
+
     def draw_sprite(self, texture, x, y, width, height, rotation = 0, color = None):
         """Draws a textured sprite"""
         if color is None: color = Color.white()
@@ -270,6 +283,32 @@ class GoudGame:
     def despawn_batch(self, entities):
         """Despawns multiple entities at once"""
         return self._lib.goud_entity_despawn_batch(self._ctx, entities)
+
+    def play(self, entity):
+        """Starts animation playback for an entity"""
+        return self._lib.goud_animation_play(self._ctx, entity._bits)
+
+    def stop(self, entity):
+        """Stops animation playback for an entity"""
+        return self._lib.goud_animation_stop(self._ctx, entity._bits)
+
+    def set_state(self, entity, state_name):
+        """Sets the active animation state for an entity"""
+        _state_name_bytes = state_name.encode('utf-8')
+        _state_name_buf = ctypes.create_string_buffer(_state_name_bytes, len(_state_name_bytes))
+        return self._lib.goud_animation_set_state(self._ctx, entity._bits, ctypes.cast(_state_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_state_name_bytes))
+
+    def set_parameter_bool(self, entity, name, value):
+        """Sets a boolean animation parameter for an entity"""
+        _name_bytes = name.encode('utf-8')
+        _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
+        return self._lib.goud_animation_set_parameter_bool(self._ctx, entity._bits, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), value)
+
+    def set_parameter_float(self, entity, name, value):
+        """Sets a float animation parameter for an entity"""
+        _name_bytes = name.encode('utf-8')
+        _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
+        return self._lib.goud_animation_set_parameter_float(self._ctx, entity._bits, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), value)
 
     def create_cube(self, texture_id, width, height, depth):
         """Creates a 3D cube"""
@@ -461,23 +500,23 @@ class GoudGame:
 
     def component_add(self, entity, type_id_hash, data_ptr, data_size):
         """Adds a generic component to an entity"""
-        return self._lib.goud_component_add(self._ctx, entity._bits)
+        return self._lib.goud_component_add(self._ctx, entity._bits, type_id_hash, data_ptr, data_size)
 
     def component_remove(self, entity, type_id_hash):
         """Removes a generic component from an entity"""
-        return self._lib.goud_component_remove(self._ctx, entity._bits)
+        return self._lib.goud_component_remove(self._ctx, entity._bits, type_id_hash)
 
     def component_has(self, entity, type_id_hash):
         """Checks if an entity has a generic component"""
-        return self._lib.goud_component_has(self._ctx, entity._bits)
+        return self._lib.goud_component_has(self._ctx, entity._bits, type_id_hash)
 
     def component_get(self, entity, type_id_hash):
         """Gets a read-only pointer to a generic component"""
-        return self._lib.goud_component_get(self._ctx, entity._bits)
+        return self._lib.goud_component_get(self._ctx, entity._bits, type_id_hash)
 
     def component_get_mut(self, entity, type_id_hash):
         """Gets a mutable pointer to a generic component"""
-        return self._lib.goud_component_get_mut(self._ctx, entity._bits)
+        return self._lib.goud_component_get_mut(self._ctx, entity._bits, type_id_hash)
 
     def component_add_batch(self, entities, type_id_hash, data_ptr, component_size):
         """Adds a generic component to multiple entities"""
@@ -779,23 +818,23 @@ class GoudContext:
 
     def component_add(self, entity, type_id_hash, data_ptr, data_size):
         """Adds a generic component to an entity"""
-        return self._lib.goud_component_add(self._ctx, entity._bits)
+        return self._lib.goud_component_add(self._ctx, entity._bits, type_id_hash, data_ptr, data_size)
 
     def component_remove(self, entity, type_id_hash):
         """Removes a generic component from an entity"""
-        return self._lib.goud_component_remove(self._ctx, entity._bits)
+        return self._lib.goud_component_remove(self._ctx, entity._bits, type_id_hash)
 
     def component_has(self, entity, type_id_hash):
         """Checks if an entity has a generic component"""
-        return self._lib.goud_component_has(self._ctx, entity._bits)
+        return self._lib.goud_component_has(self._ctx, entity._bits, type_id_hash)
 
     def component_get(self, entity, type_id_hash):
         """Gets a read-only pointer to a generic component"""
-        return self._lib.goud_component_get(self._ctx, entity._bits)
+        return self._lib.goud_component_get(self._ctx, entity._bits, type_id_hash)
 
     def component_get_mut(self, entity, type_id_hash):
         """Gets a mutable pointer to a generic component"""
-        return self._lib.goud_component_get_mut(self._ctx, entity._bits)
+        return self._lib.goud_component_get_mut(self._ctx, entity._bits, type_id_hash)
 
     def component_add_batch(self, entities, type_id_hash, data_ptr, component_size):
         """Adds a generic component to multiple entities"""
@@ -824,6 +863,24 @@ class GoudContext:
         _name_bytes = name.encode('utf-8')
         _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
         return self._lib.goud_scene_get_by_name(self._ctx, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
+
+    def load_scene(self, name, json):
+        """Loads a scene from JSON data and returns its ID"""
+        _name_bytes = name.encode('utf-8')
+        _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
+        _json_bytes = json.encode('utf-8')
+        _json_buf = ctypes.create_string_buffer(_json_bytes, len(_json_bytes))
+        return self._lib.goud_scene_load(self._ctx, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), ctypes.cast(_json_buf, ctypes.POINTER(ctypes.c_uint8)), len(_json_bytes))
+
+    def unload_scene(self, name):
+        """Unloads a scene by name"""
+        _name_bytes = name.encode('utf-8')
+        _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
+        return self._lib.goud_scene_unload(self._ctx, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
+
+    def set_active_scene(self, scene_id, active):
+        """Sets whether a scene is active"""
+        return self._lib.goud_scene_set_active(self._ctx, scene_id, active)
 
     def scene_set_active(self, scene_id, active):
         """Sets whether a scene is active"""

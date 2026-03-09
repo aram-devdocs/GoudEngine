@@ -121,6 +121,25 @@ namespace GoudEngine
             NativeMethods.goud_texture_destroy(_ctx, handle);
         }
 
+        /// <summary>Loads a font from a file path and returns its handle</summary>
+        public ulong LoadFont(string path)
+        {
+            return NativeMethods.goud_font_load(_ctx, path);
+        }
+
+        /// <summary>Destroys a previously loaded font</summary>
+        public bool DestroyFont(ulong handle)
+        {
+            return NativeMethods.goud_font_destroy(_ctx, handle);
+        }
+
+        /// <summary>Draws text using a loaded font</summary>
+        public bool DrawText(ulong fontHandle, string text, float x, float y, float fontSize = 16, TextAlignment alignment = TextAlignment.Left, float maxWidth = 0, float lineSpacing = 1, TextDirection direction = TextDirection.Auto, Color? color = null)
+        {
+            var c = color ?? Color.White();
+            return NativeMethods.goud_renderer_draw_text(_ctx, fontHandle, text, x, y, fontSize, (byte)alignment, maxWidth, lineSpacing, (byte)direction, c.R, c.G, c.B, c.A);
+        }
+
         /// <summary>Draws a textured sprite</summary>
         public void DrawSprite(ulong texture, float x, float y, float width, float height, float rotation = 0, Color? color = null)
         {
@@ -431,6 +450,57 @@ namespace GoudEngine
                 fixed (ulong* p = buf)
                 {
                     return NativeMethods.goud_entity_despawn_batch(_ctx, (System.IntPtr)p, (uint)entities.Length);
+                }
+            }
+        }
+
+        /// <summary>Starts animation playback for an entity</summary>
+        public int Play(Entity entity)
+        {
+            return NativeMethods.goud_animation_play(_ctx, entity.ToBits());
+        }
+
+        /// <summary>Stops animation playback for an entity</summary>
+        public int Stop(Entity entity)
+        {
+            return NativeMethods.goud_animation_stop(_ctx, entity.ToBits());
+        }
+
+        /// <summary>Sets the active animation state for an entity</summary>
+        public int SetState(Entity entity, string stateName)
+        {
+            unsafe
+            {
+                var stateNameBytes = System.Text.Encoding.UTF8.GetBytes(stateName);
+                fixed (byte* stateNamePtr = stateNameBytes)
+                {
+                    return NativeMethods.goud_animation_set_state(_ctx, entity.ToBits(), (IntPtr)stateNamePtr, (int)stateNameBytes.Length);
+                }
+            }
+        }
+
+        /// <summary>Sets a boolean animation parameter for an entity</summary>
+        public int SetParameterBool(Entity entity, string name, bool value)
+        {
+            unsafe
+            {
+                var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
+                fixed (byte* namePtr = nameBytes)
+                {
+                    return NativeMethods.goud_animation_set_parameter_bool(_ctx, entity.ToBits(), (IntPtr)namePtr, (int)nameBytes.Length, value);
+                }
+            }
+        }
+
+        /// <summary>Sets a float animation parameter for an entity</summary>
+        public int SetParameterFloat(Entity entity, string name, float value)
+        {
+            unsafe
+            {
+                var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
+                fixed (byte* namePtr = nameBytes)
+                {
+                    return NativeMethods.goud_animation_set_parameter_float(_ctx, entity.ToBits(), (IntPtr)namePtr, (int)nameBytes.Length, value);
                 }
             }
         }
@@ -833,36 +903,78 @@ namespace GoudEngine
         /// <summary>Plays audio from raw bytes on the default channel</summary>
         public long AudioPlay(byte[] data)
         {
-            unsafe
+            if (data == null || data.Length == 0)
             {
-                fixed (byte* dataPtr = data)
-                {
-                    return NativeMethods.goud_audio_play(_ctx, (IntPtr)dataPtr, (nuint)data.Length);
-                }
+                return NativeMethods.goud_audio_play(_ctx, IntPtr.Zero, 0);
+            }
+
+            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+            try
+            {
+                return NativeMethods.goud_audio_play(_ctx, handle.AddrOfPinnedObject(), (nuint)data.Length);
+            }
+            finally
+            {
+                handle.Free();
             }
         }
 
         /// <summary>Plays audio from raw bytes on the given channel</summary>
         public long AudioPlayOnChannel(byte[] data, byte channel)
         {
-            unsafe
+            if (data == null || data.Length == 0)
             {
-                fixed (byte* dataPtr = data)
-                {
-                    return NativeMethods.goud_audio_play_on_channel(_ctx, (IntPtr)dataPtr, (nuint)data.Length, channel);
-                }
+                return NativeMethods.goud_audio_play_on_channel(_ctx, IntPtr.Zero, 0, channel);
+            }
+
+            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+            try
+            {
+                return NativeMethods.goud_audio_play_on_channel(
+                    _ctx,
+                    handle.AddrOfPinnedObject(),
+                    (nuint)data.Length,
+                    channel
+                );
+            }
+            finally
+            {
+                handle.Free();
             }
         }
 
         /// <summary>Plays audio with explicit volume, speed, looping, and channel settings</summary>
         public long AudioPlayWithSettings(byte[] data, float volume, float speed, bool looping, byte channel)
         {
-            unsafe
+            if (data == null || data.Length == 0)
             {
-                fixed (byte* dataPtr = data)
-                {
-                    return NativeMethods.goud_audio_play_with_settings(_ctx, (IntPtr)dataPtr, (nuint)data.Length, volume, speed, looping, channel);
-                }
+                return NativeMethods.goud_audio_play_with_settings(
+                    _ctx,
+                    IntPtr.Zero,
+                    0,
+                    volume,
+                    speed,
+                    looping,
+                    channel
+                );
+            }
+
+            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+            try
+            {
+                return NativeMethods.goud_audio_play_with_settings(
+                    _ctx,
+                    handle.AddrOfPinnedObject(),
+                    (nuint)data.Length,
+                    volume,
+                    speed,
+                    looping,
+                    channel
+                );
+            }
+            finally
+            {
+                handle.Free();
             }
         }
 
@@ -935,12 +1047,43 @@ namespace GoudEngine
         /// <summary>Plays audio with 3D spatial attenuation</summary>
         public long AudioPlaySpatial3d(byte[] data, float sourceX, float sourceY, float sourceZ, float listenerX, float listenerY, float listenerZ, float maxDistance, float rolloff)
         {
-            unsafe
+            if (data == null || data.Length == 0)
             {
-                fixed (byte* dataPtr = data)
-                {
-                    return NativeMethods.goud_audio_play_spatial_3d(_ctx, (IntPtr)dataPtr, (nuint)data.Length, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff);
-                }
+                return NativeMethods.goud_audio_play_spatial_3d(
+                    _ctx,
+                    IntPtr.Zero,
+                    0,
+                    sourceX,
+                    sourceY,
+                    sourceZ,
+                    listenerX,
+                    listenerY,
+                    listenerZ,
+                    maxDistance,
+                    rolloff
+                );
+            }
+
+            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+            try
+            {
+                return NativeMethods.goud_audio_play_spatial_3d(
+                    _ctx,
+                    handle.AddrOfPinnedObject(),
+                    (nuint)data.Length,
+                    sourceX,
+                    sourceY,
+                    sourceZ,
+                    listenerX,
+                    listenerY,
+                    listenerZ,
+                    maxDistance,
+                    rolloff
+                );
+            }
+            finally
+            {
+                handle.Free();
             }
         }
 
@@ -983,24 +1126,66 @@ namespace GoudEngine
         /// <summary>Starts a timed crossfade from one player to a new audio asset</summary>
         public long AudioCrossfadeTo(ulong fromPlayerId, byte[] data, float durationSec, byte channel)
         {
-            unsafe
+            if (data == null || data.Length == 0)
             {
-                fixed (byte* dataPtr = data)
-                {
-                    return NativeMethods.goud_audio_crossfade_to(_ctx, fromPlayerId, (IntPtr)dataPtr, (nuint)data.Length, durationSec, channel);
-                }
+                return NativeMethods.goud_audio_crossfade_to(
+                    _ctx,
+                    fromPlayerId,
+                    IntPtr.Zero,
+                    0,
+                    durationSec,
+                    channel
+                );
+            }
+
+            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+            try
+            {
+                return NativeMethods.goud_audio_crossfade_to(
+                    _ctx,
+                    fromPlayerId,
+                    handle.AddrOfPinnedObject(),
+                    (nuint)data.Length,
+                    durationSec,
+                    channel
+                );
+            }
+            finally
+            {
+                handle.Free();
             }
         }
 
         /// <summary>Mixes a secondary audio asset with a primary player</summary>
         public long AudioMixWith(ulong primaryPlayerId, byte[] data, float secondaryVolume, byte secondaryChannel)
         {
-            unsafe
+            if (data == null || data.Length == 0)
             {
-                fixed (byte* dataPtr = data)
-                {
-                    return NativeMethods.goud_audio_mix_with(_ctx, primaryPlayerId, (IntPtr)dataPtr, (nuint)data.Length, secondaryVolume, secondaryChannel);
-                }
+                return NativeMethods.goud_audio_mix_with(
+                    _ctx,
+                    primaryPlayerId,
+                    IntPtr.Zero,
+                    0,
+                    secondaryVolume,
+                    secondaryChannel
+                );
+            }
+
+            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+            try
+            {
+                return NativeMethods.goud_audio_mix_with(
+                    _ctx,
+                    primaryPlayerId,
+                    handle.AddrOfPinnedObject(),
+                    (nuint)data.Length,
+                    secondaryVolume,
+                    secondaryChannel
+                );
+            }
+            finally
+            {
+                handle.Free();
             }
         }
 

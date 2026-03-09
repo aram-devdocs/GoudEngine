@@ -91,6 +91,26 @@
         "penetration"
       ]
     },
+    "PhysicsRaycastHit2D": {
+      "ffi_name": "FfiPhysicsRaycastHit2D",
+      "fields": [
+        "body_handle",
+        "collider_handle",
+        "point_x",
+        "point_y",
+        "normal_x",
+        "normal_y",
+        "distance"
+      ]
+    },
+    "PhysicsCollisionEvent2D": {
+      "ffi_name": "FfiPhysicsCollisionEvent2D",
+      "fields": [
+        "body_a",
+        "body_b",
+        "kind"
+      ]
+    },
     "Vec3": {
       "ffi_name": "FfiVec3",
       "fields": [
@@ -188,6 +208,14 @@
         "Center": 1,
         "Right": 2
       }
+    },
+    "TextDirection": {
+      "ffi_name": "u8",
+      "enum_values": {
+        "Auto": 0,
+        "Ltr": 1,
+        "Rtl": 2
+      }
     }
   },
   "ffi_handles": {
@@ -237,6 +265,7 @@
     "*mut FfiAnimationClipBuilder": "ctypes.POINTER(FfiAnimationClipBuilder)",
     "*const FfiSpriteAnimator": "ctypes.POINTER(FfiSpriteAnimator)",
     "*mut c_void": "ctypes.c_void_p",
+    "Option<CollisionCallback>": "ctypes.c_void_p",
     "*const c_char": "ctypes.c_char_p"
   },
   "tools": {
@@ -320,6 +349,49 @@
         },
         "destroyTexture": {
           "ffi": "goud_texture_destroy"
+        },
+        "loadFont": {
+          "ffi": "goud_font_load",
+          "string_params": [
+            "path"
+          ],
+          "return_cast": "u64"
+        },
+        "destroyFont": {
+          "ffi": "goud_font_destroy"
+        },
+        "drawText": {
+          "ffi": "goud_renderer_draw_text",
+          "param_order": [
+            "fontHandle",
+            "text",
+            "x",
+            "y",
+            "fontSize",
+            "alignment",
+            "maxWidth",
+            "lineSpacing",
+            "direction"
+          ],
+          "string_params": [
+            "text"
+          ],
+          "expand_params": {
+            "color": {
+              "fields": [
+                "r",
+                "g",
+                "b",
+                "a"
+              ],
+              "defaults": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ]
+            }
+          }
         },
         "drawSprite": {
           "ffi": "goud_renderer_draw_sprite",
@@ -602,6 +674,45 @@
         "despawnBatch": {
           "ffi": "goud_entity_despawn_batch",
           "batch_in": true
+        },
+        "play": {
+          "ffi": "goud_animation_play",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "stop": {
+          "ffi": "goud_animation_stop",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "setState": {
+          "ffi": "goud_animation_set_state",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "stateName"
+          ]
+        },
+        "setParameterBool": {
+          "ffi": "goud_animation_set_parameter_bool",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "name"
+          ]
+        },
+        "setParameterFloat": {
+          "ffi": "goud_animation_set_parameter_float",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "name"
+          ]
         },
         "createCube": {
           "ffi": "goud_renderer3d_create_cube"
@@ -1290,6 +1401,22 @@
             "name"
           ]
         },
+        "loadScene": {
+          "ffi": "goud_scene_load",
+          "string_params": [
+            "name",
+            "json"
+          ]
+        },
+        "unloadScene": {
+          "ffi": "goud_scene_unload",
+          "string_params": [
+            "name"
+          ]
+        },
+        "setActiveScene": {
+          "ffi": "goud_scene_set_active"
+        },
         "sceneSetActive": {
           "ffi": "goud_scene_set_active"
         },
@@ -1336,6 +1463,9 @@
         },
         "addCollider": {
           "ffi": "goud_physics_add_collider"
+        },
+        "addColliderEx": {
+          "ffi": "goud_physics_add_collider_ex"
         },
         "removeBody": {
           "ffi": "goud_physics_remove_body"
@@ -1393,6 +1523,85 @@
             }
           ],
           "returns_struct": "Vec2"
+        },
+        "raycastEx": {
+          "ffi": "goud_physics_raycast_ex",
+          "out_params": [
+            {
+              "name": "body_handle",
+              "type": "u64"
+            },
+            {
+              "name": "collider_handle",
+              "type": "u64"
+            },
+            {
+              "name": "point_x",
+              "type": "f32"
+            },
+            {
+              "name": "point_y",
+              "type": "f32"
+            },
+            {
+              "name": "normal_x",
+              "type": "f32"
+            },
+            {
+              "name": "normal_y",
+              "type": "f32"
+            },
+            {
+              "name": "distance",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "PhysicsRaycastHit2D"
+        },
+        "collisionEventsCount": {
+          "ffi": "goud_physics_collision_events_count"
+        },
+        "collisionEventsRead": {
+          "ffi": "goud_physics_collision_events_read",
+          "out_params": [
+            {
+              "name": "body_a",
+              "type": "u64"
+            },
+            {
+              "name": "body_b",
+              "type": "u64"
+            },
+            {
+              "name": "kind",
+              "type": "u32"
+            }
+          ],
+          "returns_struct": "PhysicsCollisionEvent2D"
+        },
+        "collisionEventCount": {
+          "ffi": "goud_physics_collision_event_count"
+        },
+        "collisionEventRead": {
+          "ffi": "goud_physics_collision_event_read",
+          "out_params": [
+            {
+              "name": "body_a",
+              "type": "u64"
+            },
+            {
+              "name": "body_b",
+              "type": "u64"
+            },
+            {
+              "name": "kind",
+              "type": "u32"
+            }
+          ],
+          "returns_struct": "PhysicsCollisionEvent2D"
+        },
+        "setCollisionCallback": {
+          "ffi": "goud_physics_set_collision_callback"
         },
         "getGravity": {
           "ffi": "goud_physics_get_gravity",
@@ -2167,6 +2376,50 @@
         "returns": "u32",
         "unsafe": true
       },
+      "goud_scene_load": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "name_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "name_len",
+            "type": "u32"
+          },
+          {
+            "name": "json_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "json_len",
+            "type": "u32"
+          }
+        ],
+        "returns": "u32",
+        "unsafe": true
+      },
+      "goud_scene_unload": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "name_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "name_len",
+            "type": "u32"
+          }
+        ],
+        "returns": "GoudResult",
+        "unsafe": true
+      },
       "goud_scene_set_active": {
         "params": [
           {
@@ -2550,6 +2803,158 @@
           }
         ],
         "returns": "bool"
+      },
+      "goud_font_load": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "path",
+            "type": "*const c_char"
+          }
+        ],
+        "returns": "u64",
+        "unsafe": true
+      },
+      "goud_font_destroy": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "font_handle",
+            "type": "u64"
+          }
+        ],
+        "returns": "bool"
+      },
+      "goud_renderer_draw_text": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "font_handle",
+            "type": "u64"
+          },
+          {
+            "name": "text",
+            "type": "*const c_char"
+          },
+          {
+            "name": "x",
+            "type": "f32"
+          },
+          {
+            "name": "y",
+            "type": "f32"
+          },
+          {
+            "name": "font_size",
+            "type": "f32"
+          },
+          {
+            "name": "alignment",
+            "type": "u8"
+          },
+          {
+            "name": "max_width",
+            "type": "f32"
+          },
+          {
+            "name": "line_spacing",
+            "type": "f32"
+          },
+          {
+            "name": "direction",
+            "type": "u8"
+          },
+          {
+            "name": "r",
+            "type": "f32"
+          },
+          {
+            "name": "g",
+            "type": "f32"
+          },
+          {
+            "name": "b",
+            "type": "f32"
+          },
+          {
+            "name": "a",
+            "type": "f32"
+          }
+        ],
+        "returns": "bool",
+        "unsafe": true
+      },
+      "goud_draw_text": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "font_handle",
+            "type": "u64"
+          },
+          {
+            "name": "text",
+            "type": "*const c_char"
+          },
+          {
+            "name": "x",
+            "type": "f32"
+          },
+          {
+            "name": "y",
+            "type": "f32"
+          },
+          {
+            "name": "font_size",
+            "type": "f32"
+          },
+          {
+            "name": "alignment",
+            "type": "u8"
+          },
+          {
+            "name": "max_width",
+            "type": "f32"
+          },
+          {
+            "name": "line_spacing",
+            "type": "f32"
+          },
+          {
+            "name": "direction",
+            "type": "u8"
+          },
+          {
+            "name": "r",
+            "type": "f32"
+          },
+          {
+            "name": "g",
+            "type": "f32"
+          },
+          {
+            "name": "b",
+            "type": "f32"
+          },
+          {
+            "name": "a",
+            "type": "f32"
+          }
+        ],
+        "returns": "bool",
+        "unsafe": true,
+        "alias_of": "goud_renderer_draw_text"
       },
       "goud_renderer_draw_sprite_rect": {
         "params": [
@@ -5989,6 +6394,55 @@
         ],
         "returns": "i64"
       },
+      "goud_physics_add_collider_ex": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "body_handle",
+            "type": "u64"
+          },
+          {
+            "name": "shape_type",
+            "type": "u32"
+          },
+          {
+            "name": "width",
+            "type": "f32"
+          },
+          {
+            "name": "height",
+            "type": "f32"
+          },
+          {
+            "name": "radius",
+            "type": "f32"
+          },
+          {
+            "name": "friction",
+            "type": "f32"
+          },
+          {
+            "name": "restitution",
+            "type": "f32"
+          },
+          {
+            "name": "is_sensor",
+            "type": "bool"
+          },
+          {
+            "name": "layer",
+            "type": "u32"
+          },
+          {
+            "name": "mask",
+            "type": "u32"
+          }
+        ],
+        "returns": "i64"
+      },
       "goud_physics_remove_body": {
         "params": [
           {
@@ -6159,6 +6613,155 @@
         ],
         "returns": "i32",
         "unsafe": true
+      },
+      "goud_physics_raycast_ex": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "ox",
+            "type": "f32"
+          },
+          {
+            "name": "oy",
+            "type": "f32"
+          },
+          {
+            "name": "dx",
+            "type": "f32"
+          },
+          {
+            "name": "dy",
+            "type": "f32"
+          },
+          {
+            "name": "max_dist",
+            "type": "f32"
+          },
+          {
+            "name": "layer_mask",
+            "type": "u32"
+          },
+          {
+            "name": "out_body_handle",
+            "type": "*mut u64"
+          },
+          {
+            "name": "out_collider_handle",
+            "type": "*mut u64"
+          },
+          {
+            "name": "out_hit_x",
+            "type": "*mut f32"
+          },
+          {
+            "name": "out_hit_y",
+            "type": "*mut f32"
+          },
+          {
+            "name": "out_normal_x",
+            "type": "*mut f32"
+          },
+          {
+            "name": "out_normal_y",
+            "type": "*mut f32"
+          },
+          {
+            "name": "out_distance",
+            "type": "*mut f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics_collision_events_count": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics_collision_event_count": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics_collision_events_read": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "index",
+            "type": "u32"
+          },
+          {
+            "name": "out_body_a",
+            "type": "*mut u64"
+          },
+          {
+            "name": "out_body_b",
+            "type": "*mut u64"
+          },
+          {
+            "name": "out_kind",
+            "type": "*mut u32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics_collision_event_read": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "index",
+            "type": "u32"
+          },
+          {
+            "name": "out_body_a",
+            "type": "*mut u64"
+          },
+          {
+            "name": "out_body_b",
+            "type": "*mut u64"
+          },
+          {
+            "name": "out_kind",
+            "type": "*mut u32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_physics_set_collision_callback": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "callback",
+            "type": "Option<CollisionCallback>"
+          },
+          {
+            "name": "user_data",
+            "type": "*mut c_void"
+          }
+        ],
+        "returns": "i32"
       },
       "goud_physics_get_gravity": {
         "params": [
@@ -7328,6 +7931,108 @@
           }
         ],
         "returns": "i32"
+      }
+    },
+    "animation_control": {
+      "goud_animation_play": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "entity_id",
+            "type": "u64"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_animation_stop": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "entity_id",
+            "type": "u64"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_animation_set_state": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "entity_id",
+            "type": "u64"
+          },
+          {
+            "name": "state_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "state_len",
+            "type": "i32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_animation_set_parameter_bool": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "entity_id",
+            "type": "u64"
+          },
+          {
+            "name": "name_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "name_len",
+            "type": "i32"
+          },
+          {
+            "name": "value",
+            "type": "bool"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_animation_set_parameter_float": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "entity_id",
+            "type": "u64"
+          },
+          {
+            "name": "name_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "name_len",
+            "type": "i32"
+          },
+          {
+            "name": "value",
+            "type": "f32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
       }
     },
     "network": {

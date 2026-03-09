@@ -1,12 +1,8 @@
+use super::GoudGame;
 use crate::context_registry::scene::SceneId;
-use crate::core::error::GoudResult;
-use crate::core::providers::ProviderRegistry;
 use crate::ecs::World;
 use crate::sdk::debug_overlay::FpsStats;
-use crate::sdk::engine_config::EngineConfig;
 use crate::sdk::game_config::GameContext;
-
-use super::GoudGame;
 
 impl GoudGame {
     /// Runs the game loop with the given update callback.
@@ -44,7 +40,6 @@ impl GoudGame {
             // Clean up finished audio players
             #[cfg(feature = "native")]
             if let Some(am) = &mut self.audio_manager {
-                am.update_crossfades(frame_time);
                 am.cleanup_finished();
             }
 
@@ -84,7 +79,6 @@ impl GoudGame {
         // Clean up finished audio players
         #[cfg(feature = "native")]
         if let Some(am) = &mut self.audio_manager {
-            am.update_crossfades(delta_time);
             am.cleanup_finished();
         }
 
@@ -128,34 +122,5 @@ impl GoudGame {
     #[inline]
     pub fn fps(&self) -> f32 {
         self.context.fps()
-    }
-
-    /// Returns true if the game has been initialized.
-    #[inline]
-    pub fn is_initialized(&self) -> bool {
-        self.initialized
-    }
-
-    /// Creates a headless game from an [`EngineConfig`] builder.
-    pub fn from_engine_config(config: EngineConfig) -> GoudResult<Self> {
-        let (game_config, providers) = config.build();
-        let mut game = Self::new(game_config)?;
-        game.providers = providers;
-        Ok(game)
-    }
-
-    /// Creates a windowed game from an [`EngineConfig`] builder.
-    #[cfg(feature = "native")]
-    pub fn from_engine_config_with_platform(config: EngineConfig) -> GoudResult<Self> {
-        let (game_config, providers) = config.build();
-        let mut game = Self::with_platform(game_config)?;
-        game.providers = providers;
-        Ok(game)
-    }
-
-    /// Returns a reference to the provider registry.
-    #[inline]
-    pub fn providers(&self) -> &ProviderRegistry {
-        &self.providers
     }
 }

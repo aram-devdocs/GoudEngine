@@ -24,7 +24,10 @@ interface WasmGameHandle {
   set_canvas_size(w: number, h: number): void;
   has_renderer(): boolean;
   register_texture_from_bytes(data: Uint8Array): number;
+  register_font_from_bytes(data: Uint8Array): number;
   destroy_texture(handle: number): void;
+  destroy_font(handle: number): boolean;
+  draw_text(font_handle: number, text: string, x: number, y: number, font_size: number, alignment: number, max_width: number, line_spacing: number, direction: number, r: number, g: number, b: number, a: number): boolean;
   draw_sprite(t: number, x: number, y: number, w: number, h: number, rot: number, r: number, g: number, b: number, a: number): void;
   draw_sprite_rect(t: number, x: number, y: number, w: number, h: number, rot: number, src_x: number, src_y: number, src_w: number, src_h: number, r: number, g: number, b: number, a: number): boolean;
   draw_quad(x: number, y: number, w: number, h: number, r: number, g: number, b: number, a: number): void;
@@ -227,7 +230,10 @@ export class GoudGame implements IGoudGame {
     this._startLoop(update);
   }
 
-  stop(): void {
+  stop(): void;
+  stop(_entity: IEntity): number;
+  stop(entity?: IEntity): void | number {
+    if (entity !== undefined) return 0;
     this.running = false;
     if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = 0; }
     if (this.detachInput) { this.detachInput(); this.detachInput = null; }
@@ -267,6 +273,20 @@ export class GoudGame implements IGoudGame {
   }
   /** Destroys a previously loaded texture */
   destroyTexture(handle: number): void { this.handle.destroy_texture(handle); }
+  /** Loads a font from a file path and returns its handle */
+  async loadFont(path: string): Promise<number> {
+    const resp = await fetch(path);
+    if (!resp.ok) throw new Error(`Failed to load font: ${path} (HTTP ${resp.status})`);
+    const bytes = new Uint8Array(await resp.arrayBuffer());
+    return this.handle.register_font_from_bytes(bytes);
+  }
+  /** Destroys a previously loaded font */
+  destroyFont(handle: number): boolean { return this.handle.destroy_font(handle); }
+  /** Draws text using a loaded font */
+  drawText(fontHandle: number, text: string, x: number, y: number, fontSize = 16, alignment = 0, maxWidth = 0, lineSpacing = 1, direction = 0, color?: IColor): boolean {
+    const c = color ?? Color.white();
+    return this.handle.draw_text(fontHandle, text, x, y, fontSize, alignment, maxWidth, lineSpacing, direction, c.r, c.g, c.b, c.a);
+  }
   /** Draws a textured sprite */
   drawSprite(texture: number, x: number, y: number, width: number, height: number, rotation = 0, color?: IColor): void {
     const c = color ?? Color.white();
@@ -526,6 +546,16 @@ export class GoudGame implements IGoudGame {
   /** Removes the Name from the entity */
   removeName(entity: IEntity): boolean { return this.handle.remove_name(entity.toBits()); }
 
+  loadScene(_name: string, _json: string): number {
+    throw new Error('Not supported in WASM mode');
+  }
+  unloadScene(_name: string): boolean {
+    throw new Error('Not supported in WASM mode');
+  }
+  setActiveScene(_sceneId: number, _active: boolean): boolean {
+    throw new Error('Not supported in WASM mode');
+  }
+
   /** AABB vs AABB collision test with contact */
   collisionAabbAabb(centerAx: number, centerAy: number, halfWa: number, halfHa: number, centerBx: number, centerBy: number, halfWb: number, halfHb: number): IContact | null {
     const c = this.handle.collision_aabb_aabb(centerAx, centerAy, halfWa, halfHa, centerBx, centerBy, halfWb, halfHb);
@@ -591,6 +621,10 @@ export class GoudGame implements IGoudGame {
   setFpsOverlayCorner(_corner: number): void {}
 
   // TODO: wasm animation -- these stub methods satisfy the IGoudGame interface
+  play(_entity: IEntity): number { return 0; }
+  setState(_entity: IEntity, _stateName: string): number { return 0; }
+  setParameterBool(_entity: IEntity, _name: string, _value: boolean): number { return 0; }
+  setParameterFloat(_entity: IEntity, _name: string, _value: number): number { return 0; }
   animationLayerStackCreate(_entity: IEntity): number { return 0; }
   animationLayerAdd(_entity: IEntity, _name: string, _blendMode: number): number { return 0; }
   animationLayerSetWeight(_entity: IEntity, _layerIndex: number, _weight: number): number { return 0; }

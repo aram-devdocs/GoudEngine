@@ -1,7 +1,12 @@
 //! [`GoudGame`] struct definition, construction, and core API.
 
+mod ecs_scene;
+
 use crate::context_registry::scene::SceneManager;
 use crate::core::error::GoudResult;
+use crate::core::providers::ProviderRegistry;
+use crate::sdk::debug_overlay::DebugOverlay;
+use crate::sdk::game_config::{GameConfig, GameContext};
 use crate::ui::UiManager;
 
 #[cfg(feature = "native")]
@@ -14,17 +19,6 @@ use crate::libs::graphics::renderer3d::Renderer3D;
 use crate::libs::platform::PlatformBackend;
 #[cfg(feature = "native")]
 use crate::rendering::sprite_batch::SpriteBatch;
-
-use crate::core::providers::ProviderRegistry;
-use crate::sdk::debug_overlay::DebugOverlay;
-use crate::sdk::game_config::{GameConfig, GameContext};
-
-#[path = "instance/audio_ui.rs"]
-mod audio_ui;
-#[path = "instance/default_scene.rs"]
-mod default_scene;
-#[path = "instance/runtime.rs"]
-mod runtime;
 
 /// The main game instance managing the ECS world and game loop.
 ///
@@ -206,6 +200,24 @@ impl GoudGame {
             immediate_state: None,
             audio_manager,
         })
+    }
+
+    /// Returns the game configuration.
+    #[inline]
+    pub fn config(&self) -> &GameConfig {
+        &self.config
+    }
+
+    /// Returns the window title.
+    #[inline]
+    pub fn title(&self) -> &str {
+        &self.config.title
+    }
+
+    /// Returns the window dimensions.
+    #[inline]
+    pub fn window_size(&self) -> (u32, u32) {
+        (self.config.width, self.config.height)
     }
 }
 

@@ -7,7 +7,7 @@
 use std::collections::HashSet;
 
 use crate::context_registry::scene::transition::{TransitionComplete, TransitionType};
-use crate::context_registry::scene::{SceneId, SceneManager};
+use crate::context_registry::scene::{SceneId, SceneLoader, SceneManager};
 use crate::ecs::World;
 
 /// A single engine context containing scene management and associated state.
@@ -120,6 +120,41 @@ impl GoudContext {
         if self.current_scene == id {
             self.current_scene = self.scene_manager.default_scene();
         }
+        Ok(())
+    }
+
+    /// Loads a scene from JSON data.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if JSON parsing, scene creation, or deserialization fails.
+    pub fn load_scene_from_json(
+        &mut self,
+        name: &str,
+        json: &str,
+    ) -> Result<SceneId, crate::core::error::GoudError> {
+        SceneLoader::load_scene_from_json(&mut self.scene_manager, name, json)
+    }
+
+    /// Unloads a scene by name.
+    ///
+    /// If the unloaded scene was the current scene, current scene is reset to
+    /// the default scene to avoid dangling references.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the scene does not exist or cannot be destroyed.
+    pub fn unload_scene_by_name(
+        &mut self,
+        name: &str,
+    ) -> Result<(), crate::core::error::GoudError> {
+        let target_id = self.scene_manager.get_scene_by_name(name);
+        SceneLoader::unload_scene(&mut self.scene_manager, name)?;
+
+        if Some(self.current_scene) == target_id {
+            self.current_scene = self.scene_manager.default_scene();
+        }
+
         Ok(())
     }
 

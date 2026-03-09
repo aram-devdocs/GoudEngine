@@ -48,12 +48,18 @@ mod draw;
 mod handles;
 mod immediate;
 mod lifecycle;
+mod text;
 mod texture;
 
 // Re-export all public items to preserve the original flat public API.
 
 pub use draw::{
     goud_renderer_draw_quad, goud_renderer_draw_sprite, goud_renderer_draw_sprite_rect,
+};
+
+pub use text::{
+    goud_draw_text, goud_font_destroy, goud_font_load, goud_renderer_draw_text, GoudFontHandle,
+    GOUD_INVALID_FONT,
 };
 
 pub use handles::{
@@ -70,3 +76,5 @@ pub use lifecycle::{
 pub use texture::{
     goud_texture_destroy, goud_texture_load, GoudTextureHandle, GOUD_INVALID_TEXTURE,
 };
+
+pub(crate) use text::cleanup_text_state;

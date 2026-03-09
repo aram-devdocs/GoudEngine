@@ -23,6 +23,8 @@
 
 use super::plugin::Plugin;
 use super::App;
+use crate::core::event::Events;
+use crate::core::providers::types::CollisionEvent;
 use crate::ecs::systems::physics_sync_2d::PhysicsHandleMap2D;
 use crate::ecs::systems::physics_sync_3d::PhysicsHandleMap3D;
 
@@ -40,6 +42,7 @@ pub struct PhysicsPlugin2D;
 impl Plugin for PhysicsPlugin2D {
     fn build(&self, app: &mut App) {
         app.insert_resource(PhysicsHandleMap2D::default());
+        app.insert_resource(Events::<CollisionEvent>::new());
     }
 
     fn name(&self) -> &'static str {
@@ -71,12 +74,28 @@ impl Plugin for PhysicsPlugin3D {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::event::Events;
+    use crate::core::providers::types::CollisionEvent;
 
     #[test]
     fn test_physics_plugin_2d_build() {
         let mut app = App::new();
         app.add_plugin(PhysicsPlugin2D);
         assert!(app.world().get_resource::<PhysicsHandleMap2D>().is_some());
+        assert!(app
+            .world()
+            .get_resource::<Events<CollisionEvent>>()
+            .is_some());
+    }
+
+    #[test]
+    fn test_physics_plugin_2d_build_registers_collision_events_resource() {
+        let mut app = App::new();
+        app.add_plugin(PhysicsPlugin2D);
+        assert!(
+            app.world().get_resource::<Events<CollisionEvent>>().is_some(),
+            "PhysicsPlugin2D should register Events<CollisionEvent> so collision events are readable"
+        );
     }
 
     #[test]
@@ -105,6 +124,10 @@ mod tests {
         app.add_plugin(PhysicsPlugin3D);
         assert!(app.world().get_resource::<PhysicsHandleMap2D>().is_some());
         assert!(app.world().get_resource::<PhysicsHandleMap3D>().is_some());
+        assert!(app
+            .world()
+            .get_resource::<Events<CollisionEvent>>()
+            .is_some());
     }
 
     #[test]

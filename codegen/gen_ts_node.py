@@ -198,7 +198,7 @@ def gen_interface():
                 ts_t = ts_iface_type(pt)
                 param_strs.append(f"{pn}{opt}: {ts_t}")
             elif pt in schema["enums"]:
-                param_strs.append(f"{pn}: number")
+                param_strs.append(f"{pn}{opt}: number")
             else:
                 ts_t = ts_iface_type(pt)
                 param_strs.append(f"{pn}{opt}: {ts_t}")
@@ -371,7 +371,8 @@ def gen_math():
 
 NATIVE_KNOWN_METHODS = {
     "shouldClose", "close", "destroy", "beginFrame", "endFrame",
-    "loadTexture", "destroyTexture", "drawSprite", "drawQuad",
+    "loadTexture", "destroyTexture", "loadFont", "destroyFont",
+    "drawSprite", "drawQuad", "drawText",
     "isKeyPressed", "isKeyJustPressed", "isKeyJustReleased",
     "isMouseButtonPressed", "isMouseButtonJustPressed", "isMouseButtonJustReleased",
     "getMousePosition", "getMouseDelta", "getScrollDelta",
@@ -397,24 +398,6 @@ NATIVE_KNOWN_METHODS = {
     "getRenderCapabilities", "getPhysicsCapabilities", "getAudioCapabilities",
     "getInputCapabilities", "getNetworkCapabilities",
     "checkHotSwapShortcut",
-    "audioPlay", "audioPlayOnChannel", "audioPlayWithSettings",
-    "audioStop", "audioPause", "audioResume", "audioStopAll",
-    "audioSetGlobalVolume", "audioGetGlobalVolume",
-    "audioSetChannelVolume", "audioGetChannelVolume",
-    "audioIsPlaying", "audioActiveCount", "audioCleanupFinished",
-    "audioPlaySpatial3D", "audioUpdateSpatial3D",
-    "audioSetListenerPosition3D", "audioSetSourcePosition3D",
-    "audioSetPlayerVolume", "audioSetPlayerSpeed",
-    "audioCrossfade", "audioCrossfadeTo", "audioMixWith",
-    "audioUpdateCrossfades", "audioActiveCrossfadeCount",
-    "audioActivate",
-}
-
-NATIVE_METHOD_NAME_OVERRIDES = {
-    "audioPlaySpatial3d": "audioPlaySpatial3D",
-    "audioUpdateSpatial3d": "audioUpdateSpatial3D",
-    "audioSetListenerPosition3d": "audioSetListenerPosition3D",
-    "audioSetSourcePosition3d": "audioSetSourcePosition3D",
 }
 
 
@@ -491,14 +474,16 @@ def gen_node_wrapper():
                 param_strs.append(f"{pn}{opt}: {ts_iface_type(pt)}")
                 call_args.append(pn)
             elif pt in schema["enums"]:
-                param_strs.append(f"{pn}: number")
-                call_args.append(pn)
+                param_strs.append(f"{pn}{opt}: number")
+                if can_be_optional[i]:
+                    default_val = p.get("default")
+                    call_args.append(f"{pn} ?? {default_val}")
+                else:
+                    call_args.append(pn)
             else:
                 ts_t = ts_iface_type(pt)
                 param_strs.append(f"{pn}{opt}: {ts_t}")
-                if pt == "bytes":
-                    call_args.append(f"Buffer.from({pn}.buffer, {pn}.byteOffset, {pn}.byteLength)")
-                elif can_be_optional[i]:
+                if can_be_optional[i]:
                     default_val = p.get("default")
                     call_args.append(f"{pn} ?? {default_val}")
                 else:
@@ -529,6 +514,9 @@ def gen_node_wrapper():
         elif mn == "drawQuad":
             lines.append("    const c = color ?? Color.white();")
             lines.append("    this.native.drawQuad(x, y, width, height, c.r, c.g, c.b, c.a);")
+        elif mn == "drawText":
+            lines.append("    const c = color ?? Color.white();")
+            lines.append("    return this.native.drawText(fontHandle, text, x, y, fontSize, alignment, maxWidth, lineSpacing, direction, c.r, c.g, c.b, c.a);")
         elif mn in ("getMousePosition", "getMouseDelta", "getScrollDelta"):
             lines.append(f"    const arr = this.native.{mn}();")
             lines.append("    return { x: arr[0], y: arr[1] };")
@@ -579,19 +567,33 @@ def gen_node_wrapper():
             lines.append("    return this.native.getFpsStats() as unknown as IFpsStats;")
         elif mn == "loadTexture":
             lines.append("    return this.native.loadTexture(path);")
+        elif mn == "loadFont":
+            lines.append("    return this.native.loadFont(path);")
         elif mn == "destroy":
             lines.append("    this.native.destroy();")
         else:
             native_call_args = ", ".join(call_args)
-            native_mn = NATIVE_METHOD_NAME_OVERRIDES.get(mn, mn)
-            native_obj = "this.native" if native_mn in NATIVE_KNOWN_METHODS else "(this.native as any)"
+            native_obj = "this.native" if mn in NATIVE_KNOWN_METHODS else "(this.native as any)"
             if ret == "void":
-                lines.append(f"    {native_obj}.{native_mn}({native_call_args});")
+                lines.append(f"    {native_obj}.{mn}({native_call_args});")
             else:
-                lines.append(f"    return {native_obj}.{native_mn}({native_call_args});")
-
+                lines.append(f"    return {native_obj}.{mn}({native_call_args});")
         lines.append("  }")
         lines.append("")
+
+    # Scene wrapper methods (idiomatic names across SDKs).
+    lines.append("  loadScene(name: string, json: string): number {")
+    lines.append("    return (this.native as any).loadScene(name, json);")
+    lines.append("  }")
+    lines.append("")
+    lines.append("  unloadScene(name: string): boolean {")
+    lines.append("    return (this.native as any).unloadScene(name);")
+    lines.append("  }")
+    lines.append("")
+    lines.append("  setActiveScene(sceneId: number, active: boolean): boolean {")
+    lines.append("    return (this.native as any).setActiveScene(sceneId, active);")
+    lines.append("  }")
+    lines.append("")
 
     # Animation Layer Stack & Events wrapper methods
     _anim_wrappers = [
@@ -1033,26 +1035,13 @@ use goud_engine::ffi::debug::{
     goud_debug_get_fps_stats, goud_debug_set_fps_overlay_corner,
     goud_debug_set_fps_overlay_enabled, goud_debug_set_fps_update_interval,
 };
-use goud_engine::ffi::audio::controls::{
-    goud_audio_active_count, goud_audio_cleanup_finished, goud_audio_get_channel_volume,
-    goud_audio_get_global_volume, goud_audio_is_playing, goud_audio_pause,
-    goud_audio_resume, goud_audio_set_channel_volume, goud_audio_set_global_volume,
-    goud_audio_stop, goud_audio_stop_all,
-};
-use goud_engine::ffi::audio::playback::{
-    goud_audio_play, goud_audio_play_on_channel, goud_audio_play_with_settings,
-};
-use goud_engine::ffi::audio::spatial::{
-    goud_audio_active_crossfade_count, goud_audio_crossfade, goud_audio_crossfade_to,
-    goud_audio_mix_with, goud_audio_play_spatial_3d, goud_audio_set_listener_position_3d,
-    goud_audio_set_player_speed, goud_audio_set_player_volume, goud_audio_set_source_position_3d,
-    goud_audio_update_crossfades, goud_audio_update_spatial_volume_3d,
-};
 use goud_engine::sdk::debug_overlay::FpsStats;
 use goud_engine::ffi::entity::{
     goud_entity_count, goud_entity_despawn, goud_entity_is_alive,
     goud_entity_spawn_batch, goud_entity_spawn_empty,
 };
+use goud_engine::ffi::scene::goud_scene_set_active;
+use goud_engine::ffi::scene_loading::{goud_scene_load, goud_scene_unload};
 use goud_engine::ffi::input::{
     goud_input_get_mouse_delta, goud_input_get_mouse_position,
     goud_input_get_scroll_delta, goud_input_key_just_pressed,
@@ -1066,9 +1055,12 @@ use goud_engine::ffi::renderer::{
     goud_renderer_begin, goud_renderer_clear_depth, goud_renderer_disable_blending,
     goud_renderer_disable_depth_test, goud_renderer_draw_quad,
     goud_renderer_draw_sprite, goud_renderer_draw_sprite_rect,
+    goud_renderer_draw_text,
     goud_renderer_enable_blending, goud_renderer_enable_depth_test,
     goud_renderer_end, goud_renderer_get_stats, goud_renderer_set_viewport,
-    goud_texture_destroy, goud_texture_load, GoudRenderStats,
+    goud_texture_destroy, goud_texture_load,
+    goud_font_destroy, goud_font_load,
+    GoudRenderStats,
 };
 use goud_engine::ffi::renderer3d::{
     goud_renderer3d_add_light, goud_renderer3d_configure_fog,
@@ -1107,7 +1099,6 @@ use goud_engine::ffi::window::{
 };
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use std::convert::TryFrom;
 use std::ffi::CString;
 
 // =============================================================================
@@ -1201,17 +1192,6 @@ pub struct NapiNetworkCapabilities {
     pub max_message_size: u32,
 }
 
-fn parse_player_id(player_id: f64) -> Option<u64> {
-    if !player_id.is_finite() || player_id < 0.0 || player_id.fract() != 0.0 || player_id > u64::MAX as f64 {
-        return None;
-    }
-    Some(player_id as u64)
-}
-
-fn parse_channel(channel: u32) -> Option<u8> {
-    u8::try_from(channel).ok()
-}
-
 // =============================================================================
 // GoudGame -- FFI-only, no Rust SDK access
 // =============================================================================
@@ -1298,6 +1278,48 @@ impl GoudGame {
     #[napi]
     pub fn destroy_texture(&self, handle: f64) -> bool {
         goud_texture_destroy(self.context_id, handle as u64)
+    }
+
+    #[napi]
+    pub fn load_font(&self, path: String) -> Result<f64> {
+        let c_path = CString::new(path)
+            .map_err(|e| Error::from_reason(format!("Invalid path: {}", e)))?;
+        // SAFETY: CString guarantees a valid null-terminated pointer.
+        let handle = unsafe { goud_font_load(self.context_id, c_path.as_ptr()) };
+        Ok(handle as f64)
+    }
+
+    #[napi]
+    pub fn destroy_font(&self, handle: f64) -> bool {
+        goud_font_destroy(self.context_id, handle as u64)
+    }
+
+    #[napi]
+    pub fn draw_text(&self, font_handle: f64, text: String, x: f64, y: f64,
+                     font_size: Option<f64>, alignment: Option<u32>, max_width: Option<f64>,
+                     line_spacing: Option<f64>, direction: Option<u32>,
+                     r: Option<f64>, g: Option<f64>, b: Option<f64>, a: Option<f64>) -> Result<bool> {
+        let c_text = CString::new(text)
+            .map_err(|e| Error::from_reason(format!("Invalid text: {}", e)))?;
+        // SAFETY: CString guarantees a valid null-terminated pointer.
+        Ok(unsafe {
+            goud_renderer_draw_text(
+                self.context_id,
+                font_handle as u64,
+                c_text.as_ptr(),
+                x as f32,
+                y as f32,
+                font_size.unwrap_or(16.0) as f32,
+                alignment.unwrap_or(0) as u8,
+                max_width.unwrap_or(0.0) as f32,
+                line_spacing.unwrap_or(1.0) as f32,
+                direction.unwrap_or(0) as u8,
+                r.unwrap_or(1.0) as f32,
+                g.unwrap_or(1.0) as f32,
+                b.unwrap_or(1.0) as f32,
+                a.unwrap_or(1.0) as f32,
+            )
+        })
     }
 
     #[napi]
@@ -1460,310 +1482,6 @@ impl GoudGame {
     }
 
     // =========================================================================
-    // Audio
-    // =========================================================================
-
-    #[napi]
-    pub fn audio_play(&self, data: Buffer) -> f64 {
-        // SAFETY: Buffer pointer is valid for data.len() bytes for this call.
-        unsafe { goud_audio_play(self.context_id, data.as_ptr(), data.len()) as f64 }
-    }
-
-    #[napi]
-    pub fn audio_play_on_channel(&self, data: Buffer, channel: u32) -> f64 {
-        let Some(channel_u8) = parse_channel(channel) else {
-            return -1.0;
-        };
-        // SAFETY: Buffer pointer is valid for data.len() bytes for this call.
-        unsafe { goud_audio_play_on_channel(self.context_id, data.as_ptr(), data.len(), channel_u8) as f64 }
-    }
-
-    #[napi]
-    pub fn audio_play_with_settings(
-        &self,
-        data: Buffer,
-        volume: f64,
-        speed: f64,
-        looping: bool,
-        channel: u32,
-    ) -> f64 {
-        let Some(channel_u8) = parse_channel(channel) else {
-            return -1.0;
-        };
-        // SAFETY: Buffer pointer is valid for data.len() bytes for this call.
-        unsafe {
-            goud_audio_play_with_settings(
-                self.context_id,
-                data.as_ptr(),
-                data.len(),
-                volume as f32,
-                speed as f32,
-                looping,
-                channel_u8,
-            ) as f64
-        }
-    }
-
-    #[napi]
-    pub fn audio_stop(&self, player_id: f64) -> i32 {
-        let Some(id) = parse_player_id(player_id) else {
-            return -1;
-        };
-        goud_audio_stop(self.context_id, id)
-    }
-
-    #[napi]
-    pub fn audio_pause(&self, player_id: f64) -> i32 {
-        let Some(id) = parse_player_id(player_id) else {
-            return -1;
-        };
-        goud_audio_pause(self.context_id, id)
-    }
-
-    #[napi]
-    pub fn audio_resume(&self, player_id: f64) -> i32 {
-        let Some(id) = parse_player_id(player_id) else {
-            return -1;
-        };
-        goud_audio_resume(self.context_id, id)
-    }
-
-    #[napi]
-    pub fn audio_stop_all(&self) -> i32 {
-        goud_audio_stop_all(self.context_id)
-    }
-
-    #[napi]
-    pub fn audio_set_global_volume(&self, volume: f64) -> i32 {
-        goud_audio_set_global_volume(self.context_id, volume as f32)
-    }
-
-    #[napi]
-    pub fn audio_get_global_volume(&self) -> f64 {
-        goud_audio_get_global_volume(self.context_id) as f64
-    }
-
-    #[napi]
-    pub fn audio_set_channel_volume(&self, channel: u32, volume: f64) -> i32 {
-        let Some(channel_u8) = parse_channel(channel) else {
-            return -1;
-        };
-        goud_audio_set_channel_volume(self.context_id, channel_u8, volume as f32)
-    }
-
-    #[napi]
-    pub fn audio_get_channel_volume(&self, channel: u32) -> f64 {
-        let Some(channel_u8) = parse_channel(channel) else {
-            return -1.0;
-        };
-        goud_audio_get_channel_volume(self.context_id, channel_u8) as f64
-    }
-
-    #[napi]
-    pub fn audio_is_playing(&self, player_id: f64) -> i32 {
-        let Some(id) = parse_player_id(player_id) else {
-            return -1;
-        };
-        goud_audio_is_playing(self.context_id, id)
-    }
-
-    #[napi]
-    pub fn audio_active_count(&self) -> i32 {
-        goud_audio_active_count(self.context_id)
-    }
-
-    #[napi]
-    pub fn audio_cleanup_finished(&self) -> i32 {
-        goud_audio_cleanup_finished(self.context_id)
-    }
-
-    #[napi]
-    pub fn audio_play_spatial_3d(
-        &self,
-        data: Buffer,
-        source_x: f64,
-        source_y: f64,
-        source_z: f64,
-        listener_x: f64,
-        listener_y: f64,
-        listener_z: f64,
-        max_distance: f64,
-        rolloff: f64,
-    ) -> f64 {
-        // SAFETY: Buffer pointer is valid for data.len() bytes for this call.
-        unsafe {
-            goud_audio_play_spatial_3d(
-                self.context_id,
-                data.as_ptr(),
-                data.len(),
-                source_x as f32,
-                source_y as f32,
-                source_z as f32,
-                listener_x as f32,
-                listener_y as f32,
-                listener_z as f32,
-                max_distance as f32,
-                rolloff as f32,
-            ) as f64
-        }
-    }
-
-    #[napi]
-    pub fn audio_update_spatial_3d(
-        &self,
-        player_id: f64,
-        source_x: f64,
-        source_y: f64,
-        source_z: f64,
-        listener_x: f64,
-        listener_y: f64,
-        listener_z: f64,
-        max_distance: f64,
-        rolloff: f64,
-    ) -> i32 {
-        let Some(id) = parse_player_id(player_id) else {
-            return -1;
-        };
-        goud_audio_update_spatial_volume_3d(
-            self.context_id,
-            id,
-            source_x as f32,
-            source_y as f32,
-            source_z as f32,
-            listener_x as f32,
-            listener_y as f32,
-            listener_z as f32,
-            max_distance as f32,
-            rolloff as f32,
-        )
-    }
-
-    #[napi]
-    pub fn audio_set_listener_position_3d(&self, x: f64, y: f64, z: f64) -> i32 {
-        goud_audio_set_listener_position_3d(self.context_id, x as f32, y as f32, z as f32)
-    }
-
-    #[napi]
-    pub fn audio_set_source_position_3d(
-        &self,
-        player_id: f64,
-        x: f64,
-        y: f64,
-        z: f64,
-        max_distance: f64,
-        rolloff: f64,
-    ) -> i32 {
-        let Some(id) = parse_player_id(player_id) else {
-            return -1;
-        };
-        goud_audio_set_source_position_3d(
-            self.context_id,
-            id,
-            x as f32,
-            y as f32,
-            z as f32,
-            max_distance as f32,
-            rolloff as f32,
-        )
-    }
-
-    #[napi]
-    pub fn audio_set_player_volume(&self, player_id: f64, volume: f64) -> i32 {
-        let Some(id) = parse_player_id(player_id) else {
-            return -1;
-        };
-        goud_audio_set_player_volume(self.context_id, id, volume as f32)
-    }
-
-    #[napi]
-    pub fn audio_set_player_speed(&self, player_id: f64, speed: f64) -> i32 {
-        let Some(id) = parse_player_id(player_id) else {
-            return -1;
-        };
-        goud_audio_set_player_speed(self.context_id, id, speed as f32)
-    }
-
-    #[napi]
-    pub fn audio_crossfade(&self, from_player_id: f64, to_player_id: f64, mix: f64) -> i32 {
-        let Some(from_id) = parse_player_id(from_player_id) else {
-            return -1;
-        };
-        let Some(to_id) = parse_player_id(to_player_id) else {
-            return -1;
-        };
-        goud_audio_crossfade(self.context_id, from_id, to_id, mix as f32)
-    }
-
-    #[napi]
-    pub fn audio_crossfade_to(
-        &self,
-        from_player_id: f64,
-        data: Buffer,
-        duration_sec: f64,
-        channel: u32,
-    ) -> f64 {
-        let Some(from_id) = parse_player_id(from_player_id) else {
-            return -1.0;
-        };
-        let Some(channel_u8) = parse_channel(channel) else {
-            return -1.0;
-        };
-        // SAFETY: Buffer pointer is valid for data.len() bytes for this call.
-        unsafe {
-            goud_audio_crossfade_to(
-                self.context_id,
-                from_id,
-                data.as_ptr(),
-                data.len(),
-                duration_sec as f32,
-                channel_u8,
-            ) as f64
-        }
-    }
-
-    #[napi]
-    pub fn audio_mix_with(
-        &self,
-        primary_player_id: f64,
-        data: Buffer,
-        secondary_volume: f64,
-        secondary_channel: u32,
-    ) -> f64 {
-        let Some(primary_id) = parse_player_id(primary_player_id) else {
-            return -1.0;
-        };
-        let Some(channel_u8) = parse_channel(secondary_channel) else {
-            return -1.0;
-        };
-        // SAFETY: Buffer pointer is valid for data.len() bytes for this call.
-        unsafe {
-            goud_audio_mix_with(
-                self.context_id,
-                primary_id,
-                data.as_ptr(),
-                data.len(),
-                secondary_volume as f32,
-                channel_u8,
-            ) as f64
-        }
-    }
-
-    #[napi]
-    pub fn audio_update_crossfades(&self, delta_sec: f64) -> i32 {
-        goud_audio_update_crossfades(self.context_id, delta_sec as f32)
-    }
-
-    #[napi]
-    pub fn audio_active_crossfade_count(&self) -> i32 {
-        goud_audio_active_crossfade_count(self.context_id)
-    }
-
-    #[napi]
-    pub fn audio_activate(&self) -> i32 {
-        0
-    }
-
-    // =========================================================================
     // Input
     // =========================================================================
 
@@ -1861,6 +1579,45 @@ impl GoudGame {
     #[napi]
     pub fn is_alive(&self, entity: &Entity) -> bool {
         goud_entity_is_alive(self.context_id, entity.bits)
+    }
+
+    // =========================================================================
+    // Scene Management Wrappers
+    // =========================================================================
+
+    #[napi]
+    pub fn load_scene(&self, name: String, json: String) -> u32 {
+        let name_bytes = name.as_bytes();
+        let json_bytes = json.as_bytes();
+        // SAFETY: String byte pointers are valid for their respective lengths.
+        unsafe {
+            goud_scene_load(
+                self.context_id,
+                name_bytes.as_ptr(),
+                name_bytes.len() as u32,
+                json_bytes.as_ptr(),
+                json_bytes.len() as u32,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn unload_scene(&self, name: String) -> bool {
+        let name_bytes = name.as_bytes();
+        // SAFETY: name_bytes pointer is valid for name_bytes.len() bytes.
+        unsafe {
+            goud_scene_unload(
+                self.context_id,
+                name_bytes.as_ptr(),
+                name_bytes.len() as u32,
+            )
+            .success
+        }
+    }
+
+    #[napi]
+    pub fn set_active_scene(&self, scene_id: u32, active: bool) -> bool {
+        goud_scene_set_active(self.context_id, scene_id, active).success
     }
 
     // =========================================================================

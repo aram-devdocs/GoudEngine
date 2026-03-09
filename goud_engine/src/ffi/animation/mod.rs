@@ -10,11 +10,13 @@
 //! ## Module Layout
 //!
 //! - `controller` -- AnimationController component operations
+//! - `control` -- High-level animation playback/state/parameter controls
 //! - `tween` -- Standalone tween interpolation with easing
 //! - `skeletal` -- Skeleton2D and SkeletalAnimator operations
 //! - `events` -- Animation event add/read operations
 //! - `layer` -- AnimationLayerStack component operations
 
+pub mod control;
 pub mod controller;
 pub mod events;
 pub mod layer;
@@ -46,6 +48,10 @@ pub(super) unsafe fn str_from_raw<'a>(ptr: *const u8, len: i32) -> Result<&'a st
 }
 
 // Re-export all FFI functions for flat namespace access.
+pub use control::{
+    goud_animation_play, goud_animation_set_parameter_bool, goud_animation_set_parameter_float,
+    goud_animation_set_state, goud_animation_stop,
+};
 pub use controller::{
     goud_animation_controller_add_state, goud_animation_controller_add_transition,
     goud_animation_controller_create, goud_animation_controller_get_state,
