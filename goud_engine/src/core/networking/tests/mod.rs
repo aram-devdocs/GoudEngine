@@ -1,2 +1,5 @@
+mod authority_tests;
+mod discovery_tests;
+mod lifecycle_tests;
 mod mock_provider;
-mod session_tests;
+mod protocol_validation_tests;

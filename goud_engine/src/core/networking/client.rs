@@ -217,13 +217,18 @@ impl SessionClient {
                 if self.server_connection == Some(connection) {
                     self.joined = false;
                     self.server_connection = None;
+                    // `DisconnectReason` has no graceful reason variant, so treat protocol leave
+                    // notices as non-error remote closes and preserve graceful semantics at the
+                    // event level.
+                    events.push(ClientEvent::Left {
+                        connection,
+                        reason: DisconnectReason::RemoteClose,
+                    });
+                } else {
+                    events.push(ClientEvent::ProtocolError {
+                        reason: "Received LeaveNotice from non-server connection".to_string(),
+                    });
                 }
-                // `DisconnectReason` has no graceful reason variant, so treat protocol leave notices
-                // as non-error remote closes and preserve graceful semantics at the event level.
-                events.push(ClientEvent::Left {
-                    connection,
-                    reason: DisconnectReason::RemoteClose,
-                });
             }
             ProtocolMessage::JoinRequest | ProtocolMessage::StateCommand { .. } => {
                 events.push(ClientEvent::ProtocolError {
