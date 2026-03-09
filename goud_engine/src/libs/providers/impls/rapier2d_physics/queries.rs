@@ -17,67 +17,51 @@ impl Rapier2DPhysicsProvider {
         dir: [f32; 2],
         max_dist: f32,
     ) -> Option<RaycastHit> {
-        let ray = Ray::new(point![origin[0], origin[1]], vector![dir[0], dir[1]]);
-
-        let (collider_handle, toi) = self.query_pipeline.cast_ray(
+        let ray = Ray::new(
+            Vector::new(origin[0], origin[1]),
+            Vector::new(dir[0], dir[1]),
+        );
+        let query_pipeline = self.broad_phase.as_query_pipeline(
+            self.narrow_phase.query_dispatcher(),
             &self.rigid_body_set,
             &self.collider_set,
-            &ray,
-            max_dist,
-            true,
             QueryFilter::default(),
-        )?;
+        );
+        let (collider_handle, intersection) =
+            query_pipeline.cast_ray_and_get_normal(&ray, max_dist, true)?;
 
         let collider = self.collider_set.get(collider_handle)?;
         let engine_id = self.body_handles_rev.get(&collider.parent()?)?;
-        let hit_point = ray.point_at(toi);
-        let proj = collider.shape().project_point(
-            collider.position(),
-            &point![hit_point.x, hit_point.y],
-            false,
-        );
-        let normal = if proj.is_inside {
-            [0.0, 0.0]
-        } else {
-            let d = point![hit_point.x, hit_point.y] - proj.point;
-            let len = (d.x * d.x + d.y * d.y).sqrt();
-            if len > f32::EPSILON {
-                [d.x / len, d.y / len]
-            } else {
-                [0.0, 0.0]
-            }
-        };
+        let hit_point = ray.point_at(intersection.time_of_impact);
         Some(RaycastHit {
             body: BodyHandle(*engine_id),
             point: [hit_point.x, hit_point.y],
-            normal,
-            distance: toi,
+            normal: [intersection.normal.x, intersection.normal.y],
+            distance: intersection.time_of_impact,
         })
     }
 
     /// Find all bodies whose colliders overlap a circle.
     pub(crate) fn query_overlap_circle(&self, center: [f32; 2], radius: f32) -> Vec<BodyHandle> {
         let shape = Ball::new(radius);
-        let shape_pos = Isometry::translation(center[0], center[1]);
+        let shape_pos = Pose::translation(center[0], center[1]);
         let mut results = Vec::new();
-
-        self.query_pipeline.intersections_with_shape(
+        let query_pipeline = self.broad_phase.as_query_pipeline(
+            self.narrow_phase.query_dispatcher(),
             &self.rigid_body_set,
             &self.collider_set,
-            &shape_pos,
-            &shape,
             QueryFilter::default(),
-            |collider_handle| {
-                if let Some(collider) = self.collider_set.get(collider_handle) {
-                    if let Some(parent) = collider.parent() {
-                        if let Some(&engine_id) = self.body_handles_rev.get(&parent) {
-                            results.push(BodyHandle(engine_id));
-                        }
+        );
+
+        for (collider_handle, _) in query_pipeline.intersect_shape(shape_pos, &shape) {
+            if let Some(collider) = self.collider_set.get(collider_handle) {
+                if let Some(parent) = collider.parent() {
+                    if let Some(&engine_id) = self.body_handles_rev.get(&parent) {
+                        results.push(BodyHandle(engine_id));
                     }
                 }
-                true // continue searching
-            },
-        );
+            }
+        }
 
         results
     }
@@ -86,7 +70,7 @@ impl Rapier2DPhysicsProvider {
     pub(crate) fn query_contact_pairs(&self) -> Vec<ContactPair> {
         let mut pairs = Vec::new();
         for pair in self.narrow_phase.contact_pairs() {
-            if !pair.has_any_active_contact {
+            if !pair.has_any_active_contact() {
                 continue;
             }
             let body_a = self

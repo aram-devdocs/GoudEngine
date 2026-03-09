@@ -40,7 +40,7 @@ jobs:
         components: rustfmt, clippy
     
     - name: Cache cargo registry
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cargo/bin/
@@ -168,7 +168,7 @@ jobs:
 
     - name: Upload coverage report
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: coverage-report
         path: coverage-report/
@@ -206,7 +206,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
 
     - name: Cache cargo registry
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cargo/bin/
@@ -268,7 +268,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
     
     - name: Cache cargo registry
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cargo/bin/
@@ -375,7 +375,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
 
     - name: Cache cargo registry
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cargo/bin/
@@ -406,7 +406,7 @@ jobs:
       run: python3 codegen/gen_csharp.py
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '8.0.x'
 
@@ -419,7 +419,7 @@ jobs:
       run: echo "DYLD_LIBRARY_PATH=${{ github.workspace }}/target/release:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
 
     - name: Cache NuGet packages
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
@@ -451,7 +451,7 @@ jobs:
       run: dotnet test ../csharp.tests/GoudEngine.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
     - name: Upload test results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: dotnet-test-results-${{ matrix.os }}
@@ -473,7 +473,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
     
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '8.0.x'
     
@@ -538,7 +538,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
 
     - name: Cache cargo registry
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cargo/bin/
@@ -603,7 +603,7 @@ jobs:
         echo "Full smoke tests run on ubuntu-latest with xvfb."
 
     - name: Upload native addon
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ts-native-${{ matrix.os }}
         path: sdks/typescript/*.node
@@ -624,7 +624,7 @@ jobs:
         targets: wasm32-unknown-unknown
 
     - name: Cache cargo registry
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cargo/bin/
@@ -697,7 +697,7 @@ jobs:
         test -f wasm/goud_engine.js
 
     - name: Upload wasm artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ts-wasm
         path: |

@@ -9,9 +9,9 @@ mod queries;
 mod tests;
 
 use std::collections::HashMap;
+use std::sync::mpsc::{channel, Receiver};
+use std::sync::Mutex;
 
-use crossbeam_channel::Receiver;
-use rapier3d::na::{Quaternion, UnitQuaternion};
 use rapier3d::prelude::*;
 
 use crate::core::error::{GoudError, GoudResult};
@@ -32,7 +32,7 @@ use conversions::{body_type_from_u32, joint_from_desc, shape_from_desc};
 /// A 3D physics provider backed by Rapier3D.
 pub struct Rapier3DPhysicsProvider {
     capabilities: PhysicsCapabilities3D,
-    gravity: Vector<f32>,
+    gravity: Vector,
     integration_params: IntegrationParameters,
     physics_pipeline: PhysicsPipeline,
     island_manager: IslandManager,
@@ -43,7 +43,6 @@ pub struct Rapier3DPhysicsProvider {
     impulse_joint_set: ImpulseJointSet,
     multibody_joint_set: MultibodyJointSet,
     ccd_solver: CCDSolver,
-    query_pipeline: QueryPipeline,
 
     // Handle mapping: engine u64 <-> rapier handles
     next_body_id: u64,
@@ -57,19 +56,19 @@ pub struct Rapier3DPhysicsProvider {
 
     // Collision event handling
     collision_events: Vec<EngineCollisionEvent>,
-    collision_recv: Receiver<rapier3d::geometry::CollisionEvent>,
+    collision_recv: Mutex<Receiver<rapier3d::geometry::CollisionEvent>>,
     // Stored to keep the channel alive; contact force events are drained
     // to prevent unbounded growth but processed via narrow_phase directly.
     #[allow(dead_code)]
-    contact_recv: Receiver<ContactForceEvent>,
+    contact_recv: Mutex<Receiver<ContactForceEvent>>,
     event_handler: ChannelEventCollector,
 }
 
 impl Rapier3DPhysicsProvider {
     /// Create a new Rapier3D physics provider with default gravity [0, -9.81, 0].
     pub fn new() -> Self {
-        let (collision_send, collision_recv) = crossbeam_channel::unbounded();
-        let (contact_send, contact_recv) = crossbeam_channel::unbounded();
+        let (collision_send, collision_recv) = channel();
+        let (contact_send, contact_recv) = channel();
         let event_handler = ChannelEventCollector::new(collision_send, contact_send);
 
         Self {
@@ -78,7 +77,7 @@ impl Rapier3DPhysicsProvider {
                 supports_joints: true,
                 max_bodies: u32::MAX,
             },
-            gravity: vector![0.0, -9.81, 0.0],
+            gravity: Vector::new(0.0, -9.81, 0.0),
             integration_params: IntegrationParameters::default(),
             physics_pipeline: PhysicsPipeline::new(),
             island_manager: IslandManager::new(),
@@ -89,7 +88,6 @@ impl Rapier3DPhysicsProvider {
             impulse_joint_set: ImpulseJointSet::new(),
             multibody_joint_set: MultibodyJointSet::new(),
             ccd_solver: CCDSolver::new(),
-            query_pipeline: QueryPipeline::new(),
 
             next_body_id: 1,
             next_collider_id: 1,
@@ -101,8 +99,8 @@ impl Rapier3DPhysicsProvider {
             joint_map: HashMap::new(),
 
             collision_events: Vec::new(),
-            collision_recv,
-            contact_recv,
+            collision_recv: Mutex::new(collision_recv),
+            contact_recv: Mutex::new(contact_recv),
             event_handler,
         }
     }
@@ -137,7 +135,7 @@ impl Provider for Rapier3DPhysicsProvider {
     }
 
     fn version(&self) -> &str {
-        "0.22"
+        "0.32"
     }
 
     fn capabilities(&self) -> Box<dyn std::any::Any> {
@@ -166,7 +164,7 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
         self.integration_params.dt = delta;
 
         self.physics_pipeline.step(
-            &self.gravity,
+            self.gravity,
             &self.integration_params,
             &mut self.island_manager,
             &mut self.broad_phase,
@@ -176,13 +174,18 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
             &mut self.impulse_joint_set,
             &mut self.multibody_joint_set,
             &mut self.ccd_solver,
-            Some(&mut self.query_pipeline),
             &(),
             &self.event_handler,
         );
 
         // Drain collision events from the channel and convert to engine events
-        while let Ok(event) = self.collision_recv.try_recv() {
+        let mut drained = Vec::new();
+        if let Ok(collision_recv) = self.collision_recv.lock() {
+            while let Ok(event) = collision_recv.try_recv() {
+                drained.push(event);
+            }
+        }
+        for event in drained {
             let (h1, h2, started) = match event {
                 rapier3d::geometry::CollisionEvent::Started(a, b, _) => (a, b, true),
                 rapier3d::geometry::CollisionEvent::Stopped(a, b, _) => (a, b, false),
@@ -211,7 +214,7 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
     }
 
     fn set_gravity(&mut self, gravity: [f32; 3]) {
-        self.gravity = vector![gravity[0], gravity[1], gravity[2]];
+        self.gravity = Vector::new(gravity[0], gravity[1], gravity[2]);
     }
 
     fn gravity(&self) -> [f32; 3] {
@@ -227,12 +230,13 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
     }
 
     fn create_body(&mut self, desc: &BodyDesc3D) -> GoudResult<BodyHandle> {
-        let rotation = UnitQuaternion::from_quaternion(Quaternion::new(
-            desc.rotation[3],
+        let rotation = Rotation::from_xyzw(
             desc.rotation[0],
             desc.rotation[1],
             desc.rotation[2],
-        ));
+            desc.rotation[3],
+        )
+        .normalize();
         let body_type = body_type_from_u32(desc.body_type);
         let builder = match body_type {
             RigidBodyType::Fixed => RigidBodyBuilder::fixed(),
@@ -240,12 +244,10 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
             _ => RigidBodyBuilder::kinematic_position_based(),
         };
         let body = builder
-            .translation(vector![
-                desc.position[0],
-                desc.position[1],
-                desc.position[2]
-            ])
-            .rotation(rotation.scaled_axis())
+            .pose(Pose::from_parts(
+                Vector::new(desc.position[0], desc.position[1], desc.position[2]),
+                rotation,
+            ))
             .linear_damping(desc.linear_damping)
             .angular_damping(desc.angular_damping)
             .gravity_scale(desc.gravity_scale)
@@ -294,7 +296,7 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
             .rigid_body_set
             .get_mut(rb)
             .ok_or(GoudError::InvalidHandle)?;
-        body.set_translation(vector![pos[0], pos[1], pos[2]], true);
+        body.set_translation(Vector::new(pos[0], pos[1], pos[2]), true);
         Ok(())
     }
 
@@ -305,7 +307,7 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
             .get(rb)
             .ok_or(GoudError::InvalidHandle)?;
         let q = body.rotation();
-        Ok([q.i, q.j, q.k, q.w])
+        Ok([q.x, q.y, q.z, q.w])
     }
 
     fn set_body_rotation(&mut self, handle: BodyHandle, rot: [f32; 4]) -> GoudResult<()> {
@@ -314,8 +316,7 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
             .rigid_body_set
             .get_mut(rb)
             .ok_or(GoudError::InvalidHandle)?;
-        let rotation =
-            UnitQuaternion::from_quaternion(Quaternion::new(rot[3], rot[0], rot[1], rot[2]));
+        let rotation = Rotation::from_xyzw(rot[0], rot[1], rot[2], rot[3]).normalize();
         body.set_rotation(rotation, true);
         Ok(())
     }
@@ -336,7 +337,7 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
             .rigid_body_set
             .get_mut(rb)
             .ok_or(GoudError::InvalidHandle)?;
-        body.set_linvel(vector![vel[0], vel[1], vel[2]], true);
+        body.set_linvel(Vector::new(vel[0], vel[1], vel[2]), true);
         Ok(())
     }
 
@@ -346,7 +347,7 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
             .rigid_body_set
             .get_mut(rb)
             .ok_or(GoudError::InvalidHandle)?;
-        body.add_force(vector![force[0], force[1], force[2]], true);
+        body.add_force(Vector::new(force[0], force[1], force[2]), true);
         Ok(())
     }
 
@@ -356,7 +357,7 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
             .rigid_body_set
             .get_mut(rb)
             .ok_or(GoudError::InvalidHandle)?;
-        body.apply_impulse(vector![impulse[0], impulse[1], impulse[2]], true);
+        body.apply_impulse(Vector::new(impulse[0], impulse[1], impulse[2]), true);
         Ok(())
     }
 

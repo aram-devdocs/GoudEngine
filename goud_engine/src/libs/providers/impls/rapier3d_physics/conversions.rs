@@ -42,23 +42,39 @@ pub fn joint_from_desc(
     _body_b: RigidBodyHandle,
 ) -> GenericJoint {
     match desc.joint_type {
-        0 => RevoluteJointBuilder::new(Vector::y_axis())
-            .local_anchor1(point![desc.anchor_a[0], desc.anchor_a[1], desc.anchor_a[2]])
-            .local_anchor2(point![desc.anchor_b[0], desc.anchor_b[1], desc.anchor_b[2]])
+        0 => RevoluteJointBuilder::new(Vector::new(0.0, 1.0, 0.0))
+            .local_anchor1(Vector::new(
+                desc.anchor_a[0],
+                desc.anchor_a[1],
+                desc.anchor_a[2],
+            ))
+            .local_anchor2(Vector::new(
+                desc.anchor_b[0],
+                desc.anchor_b[1],
+                desc.anchor_b[2],
+            ))
             .build()
             .into(),
-        1 => PrismaticJointBuilder::new(UnitVector::new_normalize(vector![1.0, 0.0, 0.0]))
-            .local_anchor1(point![desc.anchor_a[0], desc.anchor_a[1], desc.anchor_a[2]])
-            .local_anchor2(point![desc.anchor_b[0], desc.anchor_b[1], desc.anchor_b[2]])
+        1 => PrismaticJointBuilder::new(Vector::new(1.0, 0.0, 0.0))
+            .local_anchor1(Vector::new(
+                desc.anchor_a[0],
+                desc.anchor_a[1],
+                desc.anchor_a[2],
+            ))
+            .local_anchor2(Vector::new(
+                desc.anchor_b[0],
+                desc.anchor_b[1],
+                desc.anchor_b[2],
+            ))
             .build()
             .into(),
         _ => {
-            let dist = (vector![
+            let dist = Vector::new(
                 desc.anchor_b[0] - desc.anchor_a[0],
                 desc.anchor_b[1] - desc.anchor_a[1],
-                desc.anchor_b[2] - desc.anchor_a[2]
-            ])
-            .norm()
+                desc.anchor_b[2] - desc.anchor_a[2],
+            )
+            .length()
             .max(0.01);
             RopeJointBuilder::new(dist).build().into()
         }

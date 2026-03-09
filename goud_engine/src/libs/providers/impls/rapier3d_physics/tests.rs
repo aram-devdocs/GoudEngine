@@ -9,7 +9,7 @@ use crate::core::providers::{Provider, ProviderLifecycle};
 fn test_construction() {
     let provider = Rapier3DPhysicsProvider::new();
     assert_eq!(provider.name(), "rapier3d");
-    assert_eq!(provider.version(), "0.22");
+    assert_eq!(provider.version(), "0.32");
 
     let caps = provider.physics_capabilities();
     assert!(caps.supports_continuous_collision);

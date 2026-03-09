@@ -8,9 +8,9 @@ mod queries;
 #[cfg(test)]
 mod tests;
 
-use crossbeam_channel::{unbounded, Receiver};
 use rapier2d::prelude::*;
 use std::collections::HashMap;
+use std::sync::Mutex;
 
 use crate::core::error::{GoudError, GoudResult};
 use crate::core::providers::physics::PhysicsProvider;
@@ -23,6 +23,7 @@ use crate::core::providers::types::{
 use crate::core::providers::{Provider, ProviderLifecycle};
 
 use rapier2d::prelude::ColliderHandle as RapierColliderHandle;
+use std::sync::mpsc::{channel, Receiver};
 
 /// Physics provider backed by Rapier2D.
 pub struct Rapier2DPhysicsProvider {
@@ -36,8 +37,7 @@ pub struct Rapier2DPhysicsProvider {
     impulse_joint_set: ImpulseJointSet,
     multibody_joint_set: MultibodyJointSet,
     ccd_solver: CCDSolver,
-    query_pipeline: QueryPipeline,
-    gravity: Vector<f32>,
+    gravity: Vector,
 
     // Handle mappings: engine u64 <-> rapier handles
     body_handles: HashMap<u64, RigidBodyHandle>,
@@ -50,11 +50,11 @@ pub struct Rapier2DPhysicsProvider {
 
     // Collision event handling
     collision_events: Vec<EngineCollisionEvent>,
-    collision_recv: Receiver<rapier2d::prelude::CollisionEvent>,
+    collision_recv: Mutex<Receiver<rapier2d::prelude::CollisionEvent>>,
     // Stored to keep the channel alive; contact force events are drained
     // to prevent unbounded growth but processed via narrow_phase directly.
     #[allow(dead_code)]
-    contact_recv: Receiver<ContactForceEvent>,
+    contact_recv: Mutex<Receiver<ContactForceEvent>>,
     event_handler: ChannelEventCollector,
 
     capabilities: PhysicsCapabilities,
@@ -63,8 +63,8 @@ pub struct Rapier2DPhysicsProvider {
 impl Rapier2DPhysicsProvider {
     /// Create a new Rapier2D physics provider with the given gravity vector.
     pub fn new(gravity: [f32; 2]) -> Self {
-        let (collision_send, collision_recv) = unbounded();
-        let (contact_send, contact_recv) = unbounded();
+        let (collision_send, collision_recv) = channel();
+        let (contact_send, contact_recv) = channel();
         let event_handler = ChannelEventCollector::new(collision_send, contact_send);
 
         Self {
@@ -78,8 +78,7 @@ impl Rapier2DPhysicsProvider {
             impulse_joint_set: ImpulseJointSet::new(),
             multibody_joint_set: MultibodyJointSet::new(),
             ccd_solver: CCDSolver::new(),
-            query_pipeline: QueryPipeline::new(),
-            gravity: vector![gravity[0], gravity[1]],
+            gravity: Vector::new(gravity[0], gravity[1]),
             body_handles: HashMap::new(),
             body_handles_rev: HashMap::new(),
             collider_handles: HashMap::new(),
@@ -88,8 +87,8 @@ impl Rapier2DPhysicsProvider {
             joint_handles_rev: HashMap::new(),
             next_id: 1,
             collision_events: Vec::new(),
-            collision_recv,
-            contact_recv,
+            collision_recv: Mutex::new(collision_recv),
+            contact_recv: Mutex::new(contact_recv),
             event_handler,
             capabilities: PhysicsCapabilities {
                 supports_continuous_collision: true,
@@ -108,7 +107,14 @@ impl Rapier2DPhysicsProvider {
 
     /// Drain rapier collision events from the channel and convert to engine events.
     fn drain_rapier_collision_events(&mut self) {
-        while let Ok(event) = self.collision_recv.try_recv() {
+        let mut drained = Vec::new();
+        if let Ok(collision_recv) = self.collision_recv.lock() {
+            while let Ok(event) = collision_recv.try_recv() {
+                drained.push(event);
+            }
+        }
+
+        for event in drained {
             let (h1, h2, started) = match event {
                 rapier2d::prelude::CollisionEvent::Started(h1, h2, _) => (h1, h2, true),
                 rapier2d::prelude::CollisionEvent::Stopped(h1, h2, _) => (h1, h2, false),
@@ -160,7 +166,7 @@ impl Provider for Rapier2DPhysicsProvider {
     }
 
     fn version(&self) -> &str {
-        "0.22"
+        "0.32"
     }
 
     fn capabilities(&self) -> Box<dyn std::any::Any> {
@@ -192,7 +198,7 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
         self.drain_rapier_collision_events();
 
         self.physics_pipeline.step(
-            &self.gravity,
+            self.gravity,
             &self.integration_parameters,
             &mut self.island_manager,
             &mut self.broad_phase,
@@ -202,7 +208,6 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
             &mut self.impulse_joint_set,
             &mut self.multibody_joint_set,
             &mut self.ccd_solver,
-            Some(&mut self.query_pipeline),
             &(),
             &self.event_handler,
         );
@@ -210,13 +215,11 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
         // Drain events produced by this step
         self.drain_rapier_collision_events();
 
-        self.query_pipeline.update(&self.collider_set);
-
         Ok(())
     }
 
     fn set_gravity(&mut self, gravity: [f32; 2]) {
-        self.gravity = vector![gravity[0], gravity[1]];
+        self.gravity = Vector::new(gravity[0], gravity[1]);
     }
 
     fn gravity(&self) -> [f32; 2] {
@@ -234,7 +237,7 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
     fn create_body(&mut self, desc: &BodyDesc) -> GoudResult<BodyHandle> {
         let body_type = conversions::body_type_from_u32(desc.body_type);
         let rb = RigidBodyBuilder::new(body_type)
-            .translation(vector![desc.position[0], desc.position[1]])
+            .translation(Vector::new(desc.position[0], desc.position[1]))
             .linear_damping(desc.linear_damping)
             .angular_damping(desc.angular_damping)
             .gravity_scale(desc.gravity_scale)
@@ -282,7 +285,7 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
         self.rigid_body_set
             .get_mut(rh)
             .ok_or(GoudError::InvalidHandle)?
-            .set_translation(vector![pos[0], pos[1]], true);
+            .set_translation(Vector::new(pos[0], pos[1]), true);
         Ok(())
     }
 
@@ -301,7 +304,7 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
         self.rigid_body_set
             .get_mut(rh)
             .ok_or(GoudError::InvalidHandle)?
-            .set_linvel(vector![vel[0], vel[1]], true);
+            .set_linvel(Vector::new(vel[0], vel[1]), true);
         Ok(())
     }
 
@@ -310,7 +313,7 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
         self.rigid_body_set
             .get_mut(rh)
             .ok_or(GoudError::InvalidHandle)?
-            .add_force(vector![force[0], force[1]], true);
+            .add_force(Vector::new(force[0], force[1]), true);
         Ok(())
     }
 
@@ -319,7 +322,7 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
         self.rigid_body_set
             .get_mut(rh)
             .ok_or(GoudError::InvalidHandle)?
-            .apply_impulse(vector![impulse[0], impulse[1]], true);
+            .apply_impulse(Vector::new(impulse[0], impulse[1]), true);
         Ok(())
     }
 
