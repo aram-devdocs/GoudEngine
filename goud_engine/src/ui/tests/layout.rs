@@ -181,6 +181,47 @@ fn layout_resolves_flex_column_alignment_and_spacing() {
 }
 
 #[test]
+fn layout_resolves_flex_cross_axis_center_with_asymmetric_margins() {
+    let mut ui = UiManager::new();
+    let container = ui.create_node(Some(UiComponent::Panel));
+    let child = ui.create_node(Some(UiComponent::Panel));
+
+    ui.set_parent(child, Some(container)).unwrap();
+
+    {
+        let node = ui.get_node_mut(container).unwrap();
+        node.set_anchor(UiAnchor::TopLeft);
+        node.set_size(Vec2::new(200.0, 100.0));
+        node.set_layout(UiLayout::Flex(UiFlexLayout {
+            direction: UiFlexDirection::Row,
+            justify: UiJustify::Start,
+            align_items: UiAlign::Center,
+            spacing: 0.0,
+        }));
+    }
+
+    {
+        let node = ui.get_node_mut(child).unwrap();
+        node.set_size(Vec2::new(40.0, 20.0));
+        node.set_margin(UiEdges::new(0.0, 0.0, 10.0, 0.0));
+    }
+
+    ui.set_viewport_size(800, 600);
+    ui.update();
+
+    assert_rect_eq(
+        ui.computed_rect(container).unwrap(),
+        Rect::new(0.0, 0.0, 200.0, 100.0),
+    );
+    // Outer height is 10(top) + 20(content) + 0(bottom) = 30.
+    // Center outer box in 100px cross-axis -> start at 35, then add top margin => y = 45.
+    assert_rect_eq(
+        ui.computed_rect(child).unwrap(),
+        Rect::new(0.0, 45.0, 40.0, 20.0),
+    );
+}
+
+#[test]
 fn layout_recomputes_on_tree_changes_and_window_resize() {
     let mut ui = UiManager::new();
     let root = ui.create_node(Some(UiComponent::Panel));

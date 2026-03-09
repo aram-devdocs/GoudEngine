@@ -143,10 +143,10 @@ impl UiManager {
                     axis_cross_start(direction, parent_content_rect) + margin_cross_before
                 }
                 UiAlign::Center => {
+                    let outer_cross_size = cross_size + margin_cross_before + margin_cross_after;
                     axis_cross_start(direction, parent_content_rect)
-                        + (available_cross - cross_size) * 0.5
+                        + (available_cross - outer_cross_size) * 0.5
                         + margin_cross_before
-                        - margin_cross_after
                 }
                 UiAlign::End => {
                     axis_cross_start(direction, parent_content_rect) + available_cross
