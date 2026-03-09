@@ -4,11 +4,10 @@
 //!
 //! Run with: `cargo bench --bench serialization_benchmarks`
 
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use goud_engine::core::math::{Color, Rect, Vec2, Vec3, Vec4};
 use goud_engine::core::serialization::{binary, DeltaEncode};
 use goud_engine::ecs::components::Transform2D;
-use std::hint::black_box;
 
 // =============================================================================
 // Test data helpers

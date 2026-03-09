@@ -9,7 +9,7 @@ use crate::libs::providers::impls::rapier2d_physics::Rapier2DPhysicsProvider;
 fn test_construction() {
     let provider = Rapier2DPhysicsProvider::new([0.0, -9.81]);
     assert_eq!(provider.name(), "rapier2d");
-    assert_eq!(provider.version(), "0.32");
+    assert_eq!(provider.version(), "0.22");
     assert_eq!(provider.gravity(), [0.0, -9.81]);
 }
 

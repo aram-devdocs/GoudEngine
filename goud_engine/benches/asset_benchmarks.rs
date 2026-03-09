@@ -17,9 +17,8 @@
 //! - Texture loading: <10ms for 1024x1024 RGBA
 //! - Batch load (100 assets): <100ms total
 
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use goud_engine::assets::*;
-use std::hint::black_box;
 
 // ================================================================================================
 // Test Asset Types

@@ -21,52 +21,57 @@ impl Rapier3DPhysicsProvider {
         max_dist: f32,
     ) -> Option<RaycastHit3D> {
         let ray = Ray::new(
-            Vector::new(origin[0], origin[1], origin[2]),
-            Vector::new(dir[0], dir[1], dir[2]),
+            point![origin[0], origin[1], origin[2]],
+            vector![dir[0], dir[1], dir[2]],
         );
-        let query_pipeline = self.broad_phase.as_query_pipeline(
-            self.narrow_phase.query_dispatcher(),
-            &self.rigid_body_set,
-            &self.collider_set,
-            QueryFilter::default(),
-        );
-        let (collider_handle, intersection) =
-            query_pipeline.cast_ray_and_get_normal(&ray, max_dist, true)?;
-        let rb_handle = self.collider_to_body.get(&collider_handle)?;
-        let engine_id = self.body_reverse.get(rb_handle)?;
-        let hit_point = ray.point_at(intersection.time_of_impact);
 
-        Some(RaycastHit3D {
-            body: BodyHandle(*engine_id),
-            point: [hit_point.x, hit_point.y, hit_point.z],
-            normal: [
-                intersection.normal.x,
-                intersection.normal.y,
-                intersection.normal.z,
-            ],
-            distance: intersection.time_of_impact,
-        })
+        self.query_pipeline
+            .cast_ray_and_get_normal(
+                &self.rigid_body_set,
+                &self.collider_set,
+                &ray,
+                max_dist,
+                true,
+                QueryFilter::default(),
+            )
+            .and_then(|(collider_handle, intersection)| {
+                let rb_handle = self.collider_to_body.get(&collider_handle)?;
+                let engine_id = self.body_reverse.get(rb_handle)?;
+                let hit_point = ray.point_at(intersection.time_of_impact);
+                Some(RaycastHit3D {
+                    body: BodyHandle(*engine_id),
+                    point: [hit_point.x, hit_point.y, hit_point.z],
+                    normal: [
+                        intersection.normal.x,
+                        intersection.normal.y,
+                        intersection.normal.z,
+                    ],
+                    distance: intersection.time_of_impact,
+                })
+            })
     }
 
     /// Find all bodies whose colliders overlap a sphere.
     pub(crate) fn query_overlap_sphere(&self, center: [f32; 3], radius: f32) -> Vec<BodyHandle> {
-        let shape = Ball::new(radius);
-        let shape_pos = Pose::translation(center[0], center[1], center[2]);
+        let shape = SharedShape::ball(radius);
+        let pos = Isometry::translation(center[0], center[1], center[2]);
         let mut results = Vec::new();
-        let query_pipeline = self.broad_phase.as_query_pipeline(
-            self.narrow_phase.query_dispatcher(),
+
+        self.query_pipeline.intersections_with_shape(
             &self.rigid_body_set,
             &self.collider_set,
+            &pos,
+            shape.as_ref(),
             QueryFilter::default(),
-        );
-
-        for (collider_handle, _) in query_pipeline.intersect_shape(shape_pos, &shape) {
-            if let Some(rb_handle) = self.collider_to_body.get(&collider_handle) {
-                if let Some(engine_id) = self.body_reverse.get(rb_handle) {
-                    results.push(BodyHandle(*engine_id));
+            |collider_handle| {
+                if let Some(rb_handle) = self.collider_to_body.get(&collider_handle) {
+                    if let Some(engine_id) = self.body_reverse.get(rb_handle) {
+                        results.push(BodyHandle(*engine_id));
+                    }
                 }
-            }
-        }
+                true // continue searching
+            },
+        );
 
         results
     }
@@ -75,7 +80,7 @@ impl Rapier3DPhysicsProvider {
     pub(crate) fn query_contact_pairs(&self) -> Vec<ContactPair3D> {
         let mut pairs = Vec::new();
         for pair in self.narrow_phase.contact_pairs() {
-            if !pair.has_any_active_contact() {
+            if !pair.has_any_active_contact {
                 continue;
             }
             let body_a = self
@@ -134,7 +139,7 @@ impl Rapier3DPhysicsProvider {
                 shape_type,
                 position: [pos.x, pos.y, pos.z],
                 size,
-                rotation: [rot.x, rot.y, rot.z, rot.w],
+                rotation: [rot.i, rot.j, rot.k, rot.w],
                 color: [0.0, 1.0, 0.0, 0.5],
             });
         }

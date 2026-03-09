@@ -13,7 +13,7 @@
 //! - gather: <5us per entity
 //! - sort: <100ns per entity
 
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use goud_engine::assets::loaders::TextureAsset;
 use goud_engine::assets::AssetHandle;
 use goud_engine::core::error::GoudResult;
@@ -30,7 +30,6 @@ use goud_engine::libs::graphics::backend::{
     StateOps, TextureOps,
 };
 use goud_engine::rendering::sprite_batch::{SpriteBatch, SpriteBatchConfig, SpriteInstance};
-use std::hint::black_box;
 
 // ================================================================================================
 // NullBackend — minimal RenderBackend for CPU-only benchmarks
