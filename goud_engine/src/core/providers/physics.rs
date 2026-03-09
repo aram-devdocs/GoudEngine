@@ -113,6 +113,20 @@ pub trait PhysicsProvider: Provider + ProviderLifecycle {
     /// ray length.
     fn raycast(&self, origin: [f32; 2], dir: [f32; 2], max_dist: f32) -> Option<RaycastHit>;
 
+    /// Cast a ray and return the first hit, restricted by collider layer mask.
+    ///
+    /// `layer_mask` filters candidate colliders by layer membership.
+    fn raycast_with_mask(
+        &self,
+        origin: [f32; 2],
+        dir: [f32; 2],
+        max_dist: f32,
+        layer_mask: u32,
+    ) -> Option<RaycastHit> {
+        let _ = layer_mask;
+        self.raycast(origin, dir, max_dist)
+    }
+
     /// Find all bodies whose colliders overlap the given circle.
     fn overlap_circle(&self, center: [f32; 2], radius: f32) -> Vec<BodyHandle>;
 

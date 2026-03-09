@@ -5,7 +5,9 @@
 
 use rapier2d::prelude::*;
 
-use crate::core::providers::types::{BodyHandle, ContactPair, DebugShape, RaycastHit};
+use crate::core::providers::types::{
+    BodyHandle, ColliderHandle, ContactPair, DebugShape, RaycastHit,
+};
 
 use super::Rapier2DPhysicsProvider;
 
@@ -17,41 +19,39 @@ impl Rapier2DPhysicsProvider {
         dir: [f32; 2],
         max_dist: f32,
     ) -> Option<RaycastHit> {
+        self.query_raycast_with_mask(origin, dir, max_dist, u32::MAX)
+    }
+
+    /// Cast a ray and return the first hit filtered by layer mask.
+    pub(crate) fn query_raycast_with_mask(
+        &self,
+        origin: [f32; 2],
+        dir: [f32; 2],
+        max_dist: f32,
+        layer_mask: u32,
+    ) -> Option<RaycastHit> {
         let ray = Ray::new(point![origin[0], origin[1]], vector![dir[0], dir[1]]);
 
-        let (collider_handle, toi) = self.query_pipeline.cast_ray(
+        let (collider_handle, hit) = self.query_pipeline.cast_ray_and_get_normal(
             &self.rigid_body_set,
             &self.collider_set,
             &ray,
             max_dist,
             true,
-            QueryFilter::default(),
+            super::conversions::raycast_query_filter(layer_mask),
         )?;
 
         let collider = self.collider_set.get(collider_handle)?;
-        let engine_id = self.body_handles_rev.get(&collider.parent()?)?;
-        let hit_point = ray.point_at(toi);
-        let proj = collider.shape().project_point(
-            collider.position(),
-            &point![hit_point.x, hit_point.y],
-            false,
-        );
-        let normal = if proj.is_inside {
-            [0.0, 0.0]
-        } else {
-            let d = point![hit_point.x, hit_point.y] - proj.point;
-            let len = (d.x * d.x + d.y * d.y).sqrt();
-            if len > f32::EPSILON {
-                [d.x / len, d.y / len]
-            } else {
-                [0.0, 0.0]
-            }
-        };
+        let body_engine_id = self.body_handles_rev.get(&collider.parent()?)?;
+        let collider_engine_id = self.collider_handles_rev.get(&collider_handle)?;
+        let hit_point = ray.point_at(hit.time_of_impact);
+
         Some(RaycastHit {
-            body: BodyHandle(*engine_id),
+            body: BodyHandle(*body_engine_id),
+            collider: ColliderHandle(*collider_engine_id),
             point: [hit_point.x, hit_point.y],
-            normal,
-            distance: toi,
+            normal: [hit.normal.x, hit.normal.y],
+            distance: hit.time_of_impact,
         })
     }
 

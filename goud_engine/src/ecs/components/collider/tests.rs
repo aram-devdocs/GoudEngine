@@ -170,6 +170,8 @@ mod shape_tests {
         assert!(collider.shape().is_circle());
         assert_eq!(collider.restitution(), 0.3);
         assert_eq!(collider.friction(), 0.5);
+        assert_eq!(collider.layer(), 1);
+        assert_eq!(collider.mask(), u32::MAX);
         assert!(!collider.is_sensor());
         assert!(collider.is_enabled());
     }
@@ -320,8 +322,37 @@ mod shape_tests {
         assert!(collider.shape().is_circle());
         assert_eq!(collider.restitution(), 0.3);
         assert_eq!(collider.friction(), 0.5);
+        assert_eq!(collider.layer(), 1);
+        assert_eq!(collider.mask(), u32::MAX);
         assert!(!collider.is_sensor());
         assert!(collider.is_enabled());
+    }
+
+    #[test]
+    fn test_collider_default_layer_and_mask_expectations() {
+        let circle = Collider::circle(1.0);
+        assert_eq!(
+            circle.layer(),
+            0b0001,
+            "default collision layer should be layer 1"
+        );
+        assert_eq!(
+            circle.mask(),
+            0xFFFF_FFFF,
+            "default collision mask should collide with all layers"
+        );
+
+        let default_collider = Collider::default();
+        assert_eq!(
+            default_collider.layer(),
+            0b0001,
+            "Collider::default() should use layer 1"
+        );
+        assert_eq!(
+            default_collider.mask(),
+            0xFFFF_FFFF,
+            "Collider::default() should use full collision mask"
+        );
     }
 
     #[test]
