@@ -137,9 +137,9 @@ pub(super) fn register_collider(
     }
 }
 
-pub(super) fn body_matches_layer_mask(
+pub(super) fn collider_matches_layer_mask(
     ctx: GoudContextId,
-    body_handle: u64,
+    collider_handle: u64,
     layer_mask: u32,
 ) -> bool {
     let Ok(guard) = registry().lock() else {
@@ -151,19 +151,12 @@ pub(super) fn body_matches_layer_mask(
         return true;
     };
 
-    let Some(collider_handles) = state.body_colliders.get(&body_handle) else {
+    let Some(meta) = state.collider_filters.get(&collider_handle) else {
         return true;
     };
 
-    collider_handles.iter().any(|collider_handle| {
-        state
-            .collider_filters
-            .get(collider_handle)
-            .is_some_and(|meta| {
-                let _ = meta.is_sensor;
-                (meta.layer & layer_mask) != 0
-            })
-    })
+    let _ = meta.is_sensor;
+    (meta.layer & layer_mask) != 0
 }
 
 pub(super) fn set_collision_callback(
@@ -219,4 +212,35 @@ pub(super) fn collision_event_at(ctx: GoudContextId, index: usize) -> Option<Col
 
     let state = guard.contexts.get(&ctx)?;
     state.collision_events.get(index).cloned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{clear_context, collider_matches_layer_mask, register_collider};
+    use crate::ffi::context::{goud_context_create, goud_context_destroy, GOUD_INVALID_CONTEXT_ID};
+
+    #[test]
+    fn test_collider_layer_mask_matching_is_per_collider_not_body() {
+        let ctx = goud_context_create();
+        assert_ne!(ctx, GOUD_INVALID_CONTEXT_ID);
+
+        let body = 1_u64;
+        let non_matching_collider = 101_u64;
+        let matching_collider = 102_u64;
+
+        register_collider(ctx, body, non_matching_collider, 0b0001, u32::MAX, false);
+        register_collider(ctx, body, matching_collider, 0b0010, u32::MAX, false);
+
+        assert!(
+            !collider_matches_layer_mask(ctx, non_matching_collider, 0b0010),
+            "non-matching collider should fail even if another collider on the same body matches"
+        );
+        assert!(
+            collider_matches_layer_mask(ctx, matching_collider, 0b0010),
+            "matching collider should pass"
+        );
+
+        clear_context(ctx);
+        assert!(goud_context_destroy(ctx));
+    }
 }

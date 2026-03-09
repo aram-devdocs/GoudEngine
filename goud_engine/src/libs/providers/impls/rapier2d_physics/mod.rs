@@ -52,6 +52,8 @@ pub struct Rapier2DPhysicsProvider {
     // Collision event handling
     collision_events: Vec<EngineCollisionEvent>,
     active_collision_pairs: HashSet<(u64, u64)>,
+    active_collision_collider_pairs:
+        HashMap<(u64, u64), HashSet<(RapierColliderHandle, RapierColliderHandle)>>,
     collision_recv: Receiver<rapier2d::prelude::CollisionEvent>,
     // Stored to keep the channel alive; contact force events are drained
     // to prevent unbounded growth but processed via narrow_phase directly.
@@ -91,6 +93,7 @@ impl Rapier2DPhysicsProvider {
             next_id: 1,
             collision_events: Vec::new(),
             active_collision_pairs: HashSet::new(),
+            active_collision_collider_pairs: HashMap::new(),
             collision_recv,
             contact_recv,
             event_handler,
@@ -220,6 +223,8 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
             self.body_handles_rev.remove(&rapier_handle);
             self.active_collision_pairs
                 .retain(|(a, b)| *a != handle.0 && *b != handle.0);
+            self.active_collision_collider_pairs
+                .retain(|(a, b), _| *a != handle.0 && *b != handle.0);
             self.rigid_body_set.remove(
                 rapier_handle,
                 &mut self.island_manager,

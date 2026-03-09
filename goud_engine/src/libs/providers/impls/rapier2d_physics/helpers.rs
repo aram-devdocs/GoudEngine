@@ -40,9 +40,15 @@ impl Rapier2DPhysicsProvider {
             }
 
             let pair = Self::ordered_pair(a, b);
+            let collider_pair = Self::ordered_collider_pair(a, h1, b, h2);
 
             if started {
-                if self.active_collision_pairs.insert(pair) {
+                let collider_pairs = self
+                    .active_collision_collider_pairs
+                    .entry(pair)
+                    .or_default();
+                if collider_pairs.insert(collider_pair) && self.active_collision_pairs.insert(pair)
+                {
                     self.collision_events.push(EngineCollisionEvent {
                         body_a: BodyHandle(pair.0),
                         body_b: BodyHandle(pair.1),
@@ -50,12 +56,26 @@ impl Rapier2DPhysicsProvider {
                     });
                     entered_this_drain.insert(pair);
                 }
-            } else if self.active_collision_pairs.remove(&pair) {
-                self.collision_events.push(EngineCollisionEvent {
-                    body_a: BodyHandle(pair.0),
-                    body_b: BodyHandle(pair.1),
-                    kind: CollisionEventKind::Exit,
-                });
+            } else {
+                let pair_became_inactive = if let Some(collider_pairs) =
+                    self.active_collision_collider_pairs.get_mut(&pair)
+                {
+                    let removed = collider_pairs.remove(&collider_pair);
+                    removed && collider_pairs.is_empty()
+                } else {
+                    false
+                };
+
+                if pair_became_inactive {
+                    self.active_collision_collider_pairs.remove(&pair);
+                    if self.active_collision_pairs.remove(&pair) {
+                        self.collision_events.push(EngineCollisionEvent {
+                            body_a: BodyHandle(pair.0),
+                            body_b: BodyHandle(pair.1),
+                            kind: CollisionEventKind::Exit,
+                        });
+                    }
+                }
             }
         }
 
@@ -67,6 +87,19 @@ impl Rapier2DPhysicsProvider {
             (a, b)
         } else {
             (b, a)
+        }
+    }
+
+    pub(super) fn ordered_collider_pair(
+        body_a: u64,
+        collider_a: RapierColliderHandle,
+        body_b: u64,
+        collider_b: RapierColliderHandle,
+    ) -> (RapierColliderHandle, RapierColliderHandle) {
+        if body_a <= body_b {
+            (collider_a, collider_b)
+        } else {
+            (collider_b, collider_a)
         }
     }
 

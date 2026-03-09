@@ -7,7 +7,7 @@ use crate::core::providers::types::{BodyHandle, ColliderDesc};
 use crate::ffi::context::GoudContextId;
 
 use super::physics2d_common::{with_provider, with_provider_mut, INVALID_HANDLE};
-use super::physics2d_state::{body_matches_layer_mask, register_collider};
+use super::physics2d_state::{collider_matches_layer_mask, register_collider};
 
 pub(super) const DEFAULT_COLLISION_LAYER: u32 = 1;
 pub(super) const DEFAULT_COLLISION_MASK: u32 = u32::MAX;
@@ -102,8 +102,8 @@ pub extern "C" fn goud_physics_add_collider_ex(
 
 /// Casts a filtered ray and returns full hit payload.
 ///
-/// The function tests colliders in ray order and skips any hit whose body does
-/// not match `layer_mask` (based on collider metadata registered via
+/// The function tests colliders in ray order and skips any hit whose collider
+/// does not match `layer_mask` (based on collider metadata registered via
 /// `goud_physics_add_collider_ex`).
 ///
 /// # Safety
@@ -170,7 +170,7 @@ pub unsafe extern "C" fn goud_physics_raycast_ex(
                 return 0;
             };
 
-            if body_matches_layer_mask(ctx, hit.body.0, layer_mask) {
+            if collider_matches_layer_mask(ctx, hit.collider.0, layer_mask) {
                 // SAFETY: Null checks above guarantee all output pointers are writable.
                 *out_body_handle = hit.body.0;
                 *out_collider_handle = hit.collider.0;
@@ -195,4 +195,115 @@ pub unsafe extern "C" fn goud_physics_raycast_ex(
 
         0
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{goud_physics_add_collider_ex, goud_physics_raycast_ex};
+    use crate::ffi::context::{goud_context_create, goud_context_destroy, GoudContextId};
+
+    use super::super::physics2d::{
+        goud_physics_add_rigid_body, goud_physics_create, goud_physics_destroy, goud_physics_step,
+    };
+    use super::super::physics2d_state::register_collider;
+
+    struct Physics2DContextGuard {
+        ctx: GoudContextId,
+        has_physics: bool,
+    }
+
+    impl Physics2DContextGuard {
+        fn new() -> Self {
+            let ctx = goud_context_create();
+            Self {
+                ctx,
+                has_physics: false,
+            }
+        }
+    }
+
+    impl Drop for Physics2DContextGuard {
+        fn drop(&mut self) {
+            if self.has_physics {
+                let _ = goud_physics_destroy(self.ctx);
+            }
+            let _ = goud_context_destroy(self.ctx);
+        }
+    }
+
+    #[test]
+    fn test_raycast_ex_filters_by_hit_collider_layer_not_body_layer_union() {
+        let mut guard = Physics2DContextGuard::new();
+        assert_eq!(goud_physics_create(guard.ctx, 0.0, 0.0), 0);
+        guard.has_physics = true;
+
+        let body_handle = goud_physics_add_rigid_body(guard.ctx, 0, 5.0, 0.0, 0.0);
+        assert!(
+            body_handle > 0,
+            "expected rigid body creation to succeed, got {body_handle}"
+        );
+
+        let collider_handle = goud_physics_add_collider_ex(
+            guard.ctx,
+            body_handle as u64,
+            0,
+            0.0,
+            0.0,
+            1.0,
+            0.5,
+            0.0,
+            false,
+            0b0001,
+            u32::MAX,
+        );
+        assert!(
+            collider_handle > 0,
+            "expected collider creation to succeed, got {collider_handle}"
+        );
+
+        // Inject metadata for a different collider on the same body that matches
+        // the query mask; this reproduces the old false-positive body-level filter.
+        register_collider(
+            guard.ctx,
+            body_handle as u64,
+            collider_handle as u64 + 100_000,
+            0b0010,
+            u32::MAX,
+            false,
+        );
+
+        assert_eq!(goud_physics_step(guard.ctx, 0.0), 0);
+
+        let mut out_body = 0_u64;
+        let mut out_collider = 0_u64;
+        let mut out_hit_x = 0.0_f32;
+        let mut out_hit_y = 0.0_f32;
+        let mut out_normal_x = 0.0_f32;
+        let mut out_normal_y = 0.0_f32;
+        let mut out_distance = 0.0_f32;
+
+        let hit = unsafe {
+            goud_physics_raycast_ex(
+                guard.ctx,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                100.0,
+                0b0010,
+                &mut out_body,
+                &mut out_collider,
+                &mut out_hit_x,
+                &mut out_hit_y,
+                &mut out_normal_x,
+                &mut out_normal_y,
+                &mut out_distance,
+            )
+        };
+
+        assert_eq!(
+            hit, 0,
+            "raycast_ex should miss because the actual hit collider is on layer 0b0001"
+        );
+    }
 }

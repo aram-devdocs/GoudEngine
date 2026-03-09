@@ -139,6 +139,98 @@ fn test_collision_events_have_enter_stay_exit_without_duplicates() {
 }
 
 #[test]
+fn test_collision_exit_waits_for_last_active_collider_pair_between_bodies() {
+    let mut provider = Rapier2DPhysicsProvider::new([0.0, 0.0]);
+
+    let body_a = provider
+        .create_body(&BodyDesc {
+            position: [0.0, 0.0],
+            body_type: 0,
+            ..Default::default()
+        })
+        .unwrap();
+    provider
+        .create_collider(
+            body_a,
+            &ColliderDesc {
+                shape: 0,
+                radius: 3.0,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    provider
+        .create_collider(
+            body_a,
+            &ColliderDesc {
+                shape: 0,
+                radius: 1.0,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+    let body_b = provider
+        .create_body(&BodyDesc {
+            position: [1.0, 0.0],
+            body_type: 1,
+            ..Default::default()
+        })
+        .unwrap();
+    provider
+        .create_collider(
+            body_b,
+            &ColliderDesc {
+                shape: 0,
+                radius: 1.0,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+    provider.step(1.0 / 60.0).unwrap();
+    let initial_events = provider.drain_collision_events();
+    assert_eq!(
+        pair_kind_count(&initial_events, body_a, body_b, CollisionEventKind::Enter),
+        1,
+        "first overlap should still produce exactly one Enter"
+    );
+
+    provider.set_body_position(body_b, [3.0, 0.0]).unwrap();
+    provider.step(1.0 / 60.0).unwrap();
+    let partial_overlap_events = provider.drain_collision_events();
+    assert_eq!(
+        pair_kind_count(
+            &partial_overlap_events,
+            body_a,
+            body_b,
+            CollisionEventKind::Exit
+        ),
+        0,
+        "stopping one collider pair must not emit Exit while another pair still overlaps"
+    );
+    assert_eq!(
+        pair_kind_count(
+            &partial_overlap_events,
+            body_a,
+            body_b,
+            CollisionEventKind::Stay
+        ),
+        1,
+        "body pair should remain in Stay while any collider pair is still overlapping"
+    );
+
+    provider.set_body_position(body_b, [10.0, 0.0]).unwrap();
+    provider.step(1.0 / 60.0).unwrap();
+    let separation_events = provider.drain_collision_events();
+    assert_eq!(
+        pair_kind_count(&separation_events, body_a, body_b, CollisionEventKind::Exit),
+        1,
+        "Exit should fire once after the final overlapping collider pair ends"
+    );
+}
+
+#[test]
 fn test_sensor_emits_enter_stay_exit_and_has_no_push_response() {
     let mut provider = Rapier2DPhysicsProvider::new([0.0, 0.0]);
 
