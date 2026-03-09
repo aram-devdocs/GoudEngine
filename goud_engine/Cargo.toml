@@ -47,7 +47,7 @@ headless = []
 # TODO: https://github.com/aram-devdocs/GoudEngine/issues/8
 [dependencies]
 cc = { version = "1.2", optional = true }
-bindgen = { version = "0.64.0", optional = true }
+bindgen = { version = "0.72.1", optional = true }
 cgmath = "0.18.0"
 crossbeam-channel = "0.5"
 env_logger = { version = "0.11.6", optional = true }
