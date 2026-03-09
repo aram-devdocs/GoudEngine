@@ -406,7 +406,7 @@ jobs:
       run: python3 codegen/gen_csharp.py
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '8.0.x'
 
@@ -473,7 +473,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
     
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '8.0.x'
     
