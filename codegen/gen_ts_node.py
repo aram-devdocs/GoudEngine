@@ -1562,8 +1562,7 @@ impl GoudGame {
 
     #[napi]
     pub fn set_active_scene(&self, scene_id: u32, active: bool) -> bool {
-        // SAFETY: context_id is a valid opaque handle obtained at construction.
-        unsafe { goud_scene_set_active(self.context_id, scene_id, active).success }
+        goud_scene_set_active(self.context_id, scene_id, active).success
     }
 
     // =========================================================================
