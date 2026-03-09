@@ -6,6 +6,7 @@ use crate::ecs::Component;
 use super::attenuation::AttenuationModel;
 use super::channel::AudioChannel;
 use super::source::AudioSource;
+use super::spatial::{AudioEmitter, AudioListener};
 
 // AudioChannel tests
 #[test]
@@ -274,4 +275,36 @@ fn test_audio_source_debug() {
     let source = AudioSource::new(handle);
     let debug = format!("{:?}", source);
     assert!(debug.contains("AudioSource"));
+}
+
+#[test]
+fn test_audio_listener_defaults() {
+    let listener = AudioListener::new();
+    assert!(listener.enabled);
+}
+
+#[test]
+fn test_audio_listener_builder() {
+    let listener = AudioListener::new().with_enabled(false);
+    assert!(!listener.enabled);
+}
+
+#[test]
+fn test_audio_emitter_defaults() {
+    let emitter = AudioEmitter::new();
+    assert!(emitter.enabled);
+    assert_eq!(emitter.max_distance, 100.0);
+    assert_eq!(emitter.rolloff, 1.0);
+}
+
+#[test]
+fn test_audio_emitter_builder_and_clamp() {
+    let emitter = AudioEmitter::new()
+        .with_enabled(false)
+        .with_max_distance(-10.0)
+        .with_rolloff(0.0);
+
+    assert!(!emitter.enabled);
+    assert_eq!(emitter.max_distance, 0.1);
+    assert_eq!(emitter.rolloff, 0.01);
 }

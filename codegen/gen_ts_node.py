@@ -397,6 +397,17 @@ NATIVE_KNOWN_METHODS = {
     "getRenderCapabilities", "getPhysicsCapabilities", "getAudioCapabilities",
     "getInputCapabilities", "getNetworkCapabilities",
     "checkHotSwapShortcut",
+    "audioPlay", "audioPlayOnChannel", "audioPlayWithSettings",
+    "audioStop", "audioPause", "audioResume", "audioStopAll",
+    "audioSetGlobalVolume", "audioGetGlobalVolume",
+    "audioSetChannelVolume", "audioGetChannelVolume",
+    "audioIsPlaying", "audioActiveCount", "audioCleanupFinished",
+    "audioPlaySpatial3d", "audioUpdateSpatial3d",
+    "audioSetListenerPosition3d", "audioSetSourcePosition3d",
+    "audioSetPlayerVolume", "audioSetPlayerSpeed",
+    "audioCrossfade", "audioCrossfadeTo", "audioMixWith",
+    "audioUpdateCrossfades", "audioActiveCrossfadeCount",
+    "audioActivate",
 }
 
 
@@ -1012,6 +1023,21 @@ use goud_engine::ffi::debug::{
     goud_debug_get_fps_stats, goud_debug_set_fps_overlay_corner,
     goud_debug_set_fps_overlay_enabled, goud_debug_set_fps_update_interval,
 };
+use goud_engine::ffi::audio::controls::{
+    goud_audio_active_count, goud_audio_cleanup_finished, goud_audio_get_channel_volume,
+    goud_audio_get_global_volume, goud_audio_is_playing, goud_audio_pause,
+    goud_audio_resume, goud_audio_set_channel_volume, goud_audio_set_global_volume,
+    goud_audio_stop, goud_audio_stop_all,
+};
+use goud_engine::ffi::audio::playback::{
+    goud_audio_play, goud_audio_play_on_channel, goud_audio_play_with_settings,
+};
+use goud_engine::ffi::audio::spatial::{
+    goud_audio_active_crossfade_count, goud_audio_crossfade, goud_audio_crossfade_to,
+    goud_audio_mix_with, goud_audio_play_spatial_3d, goud_audio_set_listener_position_3d,
+    goud_audio_set_player_speed, goud_audio_set_player_volume, goud_audio_set_source_position_3d,
+    goud_audio_update_crossfades, goud_audio_update_spatial_volume_3d,
+};
 use goud_engine::sdk::debug_overlay::FpsStats;
 use goud_engine::ffi::entity::{
     goud_entity_count, goud_entity_despawn, goud_entity_is_alive,
@@ -1071,6 +1097,7 @@ use goud_engine::ffi::window::{
 };
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
+use std::convert::TryFrom;
 use std::ffi::CString;
 
 // =============================================================================
@@ -1162,6 +1189,17 @@ pub struct NapiNetworkCapabilities {
     pub max_connections: u32,
     pub max_channels: u32,
     pub max_message_size: u32,
+}
+
+fn parse_player_id(player_id: f64) -> Option<u64> {
+    if !player_id.is_finite() || player_id < 0.0 || player_id.fract() != 0.0 || player_id > u64::MAX as f64 {
+        return None;
+    }
+    Some(player_id as u64)
+}
+
+fn parse_channel(channel: u32) -> Option<u8> {
+    u8::try_from(channel).ok()
 }
 
 // =============================================================================
@@ -1409,6 +1447,310 @@ impl GoudGame {
     pub fn check_hot_swap_shortcut(&self) -> bool {
         // SAFETY: context_id is a valid opaque handle obtained at construction.
         goud_provider_check_hot_swap_shortcut(self.context_id) != 0
+    }
+
+    // =========================================================================
+    // Audio
+    // =========================================================================
+
+    #[napi]
+    pub fn audio_play(&self, data: Buffer) -> f64 {
+        // SAFETY: Buffer pointer is valid for data.len() bytes for this call.
+        unsafe { goud_audio_play(self.context_id, data.as_ptr(), data.len()) as f64 }
+    }
+
+    #[napi]
+    pub fn audio_play_on_channel(&self, data: Buffer, channel: u32) -> f64 {
+        let Some(channel_u8) = parse_channel(channel) else {
+            return -1.0;
+        };
+        // SAFETY: Buffer pointer is valid for data.len() bytes for this call.
+        unsafe { goud_audio_play_on_channel(self.context_id, data.as_ptr(), data.len(), channel_u8) as f64 }
+    }
+
+    #[napi]
+    pub fn audio_play_with_settings(
+        &self,
+        data: Buffer,
+        volume: f64,
+        speed: f64,
+        looping: bool,
+        channel: u32,
+    ) -> f64 {
+        let Some(channel_u8) = parse_channel(channel) else {
+            return -1.0;
+        };
+        // SAFETY: Buffer pointer is valid for data.len() bytes for this call.
+        unsafe {
+            goud_audio_play_with_settings(
+                self.context_id,
+                data.as_ptr(),
+                data.len(),
+                volume as f32,
+                speed as f32,
+                looping,
+                channel_u8,
+            ) as f64
+        }
+    }
+
+    #[napi]
+    pub fn audio_stop(&self, player_id: f64) -> i32 {
+        let Some(id) = parse_player_id(player_id) else {
+            return -1;
+        };
+        goud_audio_stop(self.context_id, id)
+    }
+
+    #[napi]
+    pub fn audio_pause(&self, player_id: f64) -> i32 {
+        let Some(id) = parse_player_id(player_id) else {
+            return -1;
+        };
+        goud_audio_pause(self.context_id, id)
+    }
+
+    #[napi]
+    pub fn audio_resume(&self, player_id: f64) -> i32 {
+        let Some(id) = parse_player_id(player_id) else {
+            return -1;
+        };
+        goud_audio_resume(self.context_id, id)
+    }
+
+    #[napi]
+    pub fn audio_stop_all(&self) -> i32 {
+        goud_audio_stop_all(self.context_id)
+    }
+
+    #[napi]
+    pub fn audio_set_global_volume(&self, volume: f64) -> i32 {
+        goud_audio_set_global_volume(self.context_id, volume as f32)
+    }
+
+    #[napi]
+    pub fn audio_get_global_volume(&self) -> f64 {
+        goud_audio_get_global_volume(self.context_id) as f64
+    }
+
+    #[napi]
+    pub fn audio_set_channel_volume(&self, channel: u32, volume: f64) -> i32 {
+        let Some(channel_u8) = parse_channel(channel) else {
+            return -1;
+        };
+        goud_audio_set_channel_volume(self.context_id, channel_u8, volume as f32)
+    }
+
+    #[napi]
+    pub fn audio_get_channel_volume(&self, channel: u32) -> f64 {
+        let Some(channel_u8) = parse_channel(channel) else {
+            return -1.0;
+        };
+        goud_audio_get_channel_volume(self.context_id, channel_u8) as f64
+    }
+
+    #[napi]
+    pub fn audio_is_playing(&self, player_id: f64) -> i32 {
+        let Some(id) = parse_player_id(player_id) else {
+            return -1;
+        };
+        goud_audio_is_playing(self.context_id, id)
+    }
+
+    #[napi]
+    pub fn audio_active_count(&self) -> i32 {
+        goud_audio_active_count(self.context_id)
+    }
+
+    #[napi]
+    pub fn audio_cleanup_finished(&self) -> i32 {
+        goud_audio_cleanup_finished(self.context_id)
+    }
+
+    #[napi]
+    pub fn audio_play_spatial_3d(
+        &self,
+        data: Buffer,
+        source_x: f64,
+        source_y: f64,
+        source_z: f64,
+        listener_x: f64,
+        listener_y: f64,
+        listener_z: f64,
+        max_distance: f64,
+        rolloff: f64,
+    ) -> f64 {
+        // SAFETY: Buffer pointer is valid for data.len() bytes for this call.
+        unsafe {
+            goud_audio_play_spatial_3d(
+                self.context_id,
+                data.as_ptr(),
+                data.len(),
+                source_x as f32,
+                source_y as f32,
+                source_z as f32,
+                listener_x as f32,
+                listener_y as f32,
+                listener_z as f32,
+                max_distance as f32,
+                rolloff as f32,
+            ) as f64
+        }
+    }
+
+    #[napi]
+    pub fn audio_update_spatial_3d(
+        &self,
+        player_id: f64,
+        source_x: f64,
+        source_y: f64,
+        source_z: f64,
+        listener_x: f64,
+        listener_y: f64,
+        listener_z: f64,
+        max_distance: f64,
+        rolloff: f64,
+    ) -> i32 {
+        let Some(id) = parse_player_id(player_id) else {
+            return -1;
+        };
+        goud_audio_update_spatial_volume_3d(
+            self.context_id,
+            id,
+            source_x as f32,
+            source_y as f32,
+            source_z as f32,
+            listener_x as f32,
+            listener_y as f32,
+            listener_z as f32,
+            max_distance as f32,
+            rolloff as f32,
+        )
+    }
+
+    #[napi]
+    pub fn audio_set_listener_position_3d(&self, x: f64, y: f64, z: f64) -> i32 {
+        goud_audio_set_listener_position_3d(self.context_id, x as f32, y as f32, z as f32)
+    }
+
+    #[napi]
+    pub fn audio_set_source_position_3d(
+        &self,
+        player_id: f64,
+        x: f64,
+        y: f64,
+        z: f64,
+        max_distance: f64,
+        rolloff: f64,
+    ) -> i32 {
+        let Some(id) = parse_player_id(player_id) else {
+            return -1;
+        };
+        goud_audio_set_source_position_3d(
+            self.context_id,
+            id,
+            x as f32,
+            y as f32,
+            z as f32,
+            max_distance as f32,
+            rolloff as f32,
+        )
+    }
+
+    #[napi]
+    pub fn audio_set_player_volume(&self, player_id: f64, volume: f64) -> i32 {
+        let Some(id) = parse_player_id(player_id) else {
+            return -1;
+        };
+        goud_audio_set_player_volume(self.context_id, id, volume as f32)
+    }
+
+    #[napi]
+    pub fn audio_set_player_speed(&self, player_id: f64, speed: f64) -> i32 {
+        let Some(id) = parse_player_id(player_id) else {
+            return -1;
+        };
+        goud_audio_set_player_speed(self.context_id, id, speed as f32)
+    }
+
+    #[napi]
+    pub fn audio_crossfade(&self, from_player_id: f64, to_player_id: f64, mix: f64) -> i32 {
+        let Some(from_id) = parse_player_id(from_player_id) else {
+            return -1;
+        };
+        let Some(to_id) = parse_player_id(to_player_id) else {
+            return -1;
+        };
+        goud_audio_crossfade(self.context_id, from_id, to_id, mix as f32)
+    }
+
+    #[napi]
+    pub fn audio_crossfade_to(
+        &self,
+        from_player_id: f64,
+        data: Buffer,
+        duration_sec: f64,
+        channel: u32,
+    ) -> f64 {
+        let Some(from_id) = parse_player_id(from_player_id) else {
+            return -1.0;
+        };
+        let Some(channel_u8) = parse_channel(channel) else {
+            return -1.0;
+        };
+        // SAFETY: Buffer pointer is valid for data.len() bytes for this call.
+        unsafe {
+            goud_audio_crossfade_to(
+                self.context_id,
+                from_id,
+                data.as_ptr(),
+                data.len(),
+                duration_sec as f32,
+                channel_u8,
+            ) as f64
+        }
+    }
+
+    #[napi]
+    pub fn audio_mix_with(
+        &self,
+        primary_player_id: f64,
+        data: Buffer,
+        secondary_volume: f64,
+        secondary_channel: u32,
+    ) -> f64 {
+        let Some(primary_id) = parse_player_id(primary_player_id) else {
+            return -1.0;
+        };
+        let Some(channel_u8) = parse_channel(secondary_channel) else {
+            return -1.0;
+        };
+        // SAFETY: Buffer pointer is valid for data.len() bytes for this call.
+        unsafe {
+            goud_audio_mix_with(
+                self.context_id,
+                primary_id,
+                data.as_ptr(),
+                data.len(),
+                secondary_volume as f32,
+                channel_u8,
+            ) as f64
+        }
+    }
+
+    #[napi]
+    pub fn audio_update_crossfades(&self, delta_sec: f64) -> i32 {
+        goud_audio_update_crossfades(self.context_id, delta_sec as f32)
+    }
+
+    #[napi]
+    pub fn audio_active_crossfade_count(&self) -> i32 {
+        goud_audio_active_crossfade_count(self.context_id)
+    }
+
+    #[napi]
+    pub fn audio_activate(&self) -> i32 {
+        0
     }
 
     // =========================================================================

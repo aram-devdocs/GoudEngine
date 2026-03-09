@@ -278,6 +278,14 @@ impl AudioManager {
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         if let Some(entry) = players.remove(&sink_id) {
             entry.player.stop();
+            self.spatial_sources
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .remove(&sink_id);
+            self.crossfades
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .retain(|_, fade| fade.from_id != sink_id && fade.to_id != sink_id);
             true
         } else {
             false
@@ -323,6 +331,14 @@ impl AudioManager {
             entry.player.stop();
         }
         players.clear();
+        self.spatial_sources
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
+        self.crossfades
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clear();
     }
 
     /// Cleans up finished audio players.
@@ -334,6 +350,32 @@ impl AudioManager {
             .players
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        players.retain(|_, entry| !entry.player.empty());
+        let mut finished: Vec<u64> = Vec::new();
+        players.retain(|id, entry| {
+            let alive = !entry.player.empty();
+            if !alive {
+                finished.push(*id);
+            }
+            alive
+        });
+        drop(players);
+
+        if finished.is_empty() {
+            return;
+        }
+
+        let mut spatial_sources = self
+            .spatial_sources
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        for id in &finished {
+            spatial_sources.remove(id);
+        }
+        drop(spatial_sources);
+
+        self.crossfades
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .retain(|_, fade| !finished.contains(&fade.from_id) && !finished.contains(&fade.to_id));
     }
 }

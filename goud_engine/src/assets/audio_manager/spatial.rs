@@ -1,7 +1,5 @@
 //! Spatial audio helpers: distance-based attenuation models.
 
-use crate::core::math::Vec2;
-
 /// Computes linear attenuation based on distance.
 ///
 /// Formula: attenuation = max(0, 1 - (distance / max_distance) ^ rolloff)
@@ -93,24 +91,34 @@ pub(super) fn compute_attenuation_exponential(
     attenuation.max(0.0)
 }
 
-/// Computes attenuation volume for a spatial audio source at the given positions.
-///
-/// # Arguments
-///
-/// * `source_position` - Position of the audio source in world space
-/// * `listener_position` - Position of the listener
-/// * `max_distance` - Maximum audible distance
-/// * `rolloff` - Rolloff exponent (1.0 = linear, 2.0 = quadratic)
-///
-/// # Returns
-///
-/// Attenuation factor (0.0-1.0)
-pub(super) fn spatial_attenuation(
-    source_position: Vec2,
-    listener_position: Vec2,
+/// Computes attenuation volume for a 3D spatial audio source.
+pub(super) fn spatial_attenuation_3d(
+    source_position: [f32; 3],
+    listener_position: [f32; 3],
     max_distance: f32,
     rolloff: f32,
 ) -> f32 {
-    let distance = (source_position - listener_position).length();
+    let dx = source_position[0] - listener_position[0];
+    let dy = source_position[1] - listener_position[1];
+    let dz = source_position[2] - listener_position[2];
+    let distance = (dx * dx + dy * dy + dz * dz).sqrt();
     compute_attenuation_linear(distance, max_distance, rolloff)
+}
+
+#[cfg(test)]
+pub(super) fn compute_stereo_pan(source_position: [f32; 3], listener_position: [f32; 3]) -> f32 {
+    let x_delta = source_position[0] - listener_position[0];
+    if x_delta.abs() <= f32::EPSILON {
+        0.0
+    } else {
+        (x_delta / (x_delta.abs() + 1.0)).clamp(-1.0, 1.0)
+    }
+}
+
+#[cfg(test)]
+pub(super) fn stereo_gains_from_pan(pan: f32) -> (f32, f32) {
+    let p = pan.clamp(-1.0, 1.0);
+    let left = ((1.0 - p) * 0.5).sqrt();
+    let right = ((1.0 + p) * 0.5).sqrt();
+    (left, right)
 }

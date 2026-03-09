@@ -904,6 +904,84 @@
           ],
           "returns_struct": "NetworkCapabilities"
         },
+        "audioPlay": {
+          "ffi": "goud_audio_play"
+        },
+        "audioPlayOnChannel": {
+          "ffi": "goud_audio_play_on_channel"
+        },
+        "audioPlayWithSettings": {
+          "ffi": "goud_audio_play_with_settings"
+        },
+        "audioStop": {
+          "ffi": "goud_audio_stop"
+        },
+        "audioPause": {
+          "ffi": "goud_audio_pause"
+        },
+        "audioResume": {
+          "ffi": "goud_audio_resume"
+        },
+        "audioStopAll": {
+          "ffi": "goud_audio_stop_all"
+        },
+        "audioSetGlobalVolume": {
+          "ffi": "goud_audio_set_global_volume"
+        },
+        "audioGetGlobalVolume": {
+          "ffi": "goud_audio_get_global_volume"
+        },
+        "audioSetChannelVolume": {
+          "ffi": "goud_audio_set_channel_volume"
+        },
+        "audioGetChannelVolume": {
+          "ffi": "goud_audio_get_channel_volume"
+        },
+        "audioIsPlaying": {
+          "ffi": "goud_audio_is_playing"
+        },
+        "audioActiveCount": {
+          "ffi": "goud_audio_active_count"
+        },
+        "audioCleanupFinished": {
+          "ffi": "goud_audio_cleanup_finished"
+        },
+        "audioPlaySpatial3d": {
+          "ffi": "goud_audio_play_spatial_3d"
+        },
+        "audioUpdateSpatial3d": {
+          "ffi": "goud_audio_update_spatial_volume_3d"
+        },
+        "audioSetListenerPosition3d": {
+          "ffi": "goud_audio_set_listener_position_3d"
+        },
+        "audioSetSourcePosition3d": {
+          "ffi": "goud_audio_set_source_position_3d"
+        },
+        "audioSetPlayerVolume": {
+          "ffi": "goud_audio_set_player_volume"
+        },
+        "audioSetPlayerSpeed": {
+          "ffi": "goud_audio_set_player_speed"
+        },
+        "audioCrossfade": {
+          "ffi": "goud_audio_crossfade"
+        },
+        "audioCrossfadeTo": {
+          "ffi": "goud_audio_crossfade_to"
+        },
+        "audioMixWith": {
+          "ffi": "goud_audio_mix_with"
+        },
+        "audioUpdateCrossfades": {
+          "ffi": "goud_audio_update_crossfades"
+        },
+        "audioActiveCrossfadeCount": {
+          "ffi": "goud_audio_active_crossfade_count"
+        },
+        "audioActivate": {
+          "ffi": "goud_audio_cleanup_finished"
+        },
         "checkHotSwapShortcut": {
           "ffi": "goud_provider_check_hot_swap_shortcut",
           "returns_bool_from_i32": true
@@ -7649,6 +7727,121 @@
         "returns": "i32"
       },
       "goud_audio_cleanup_finished": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_play_spatial_3d": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "asset_data", "type": "*const u8" },
+          { "name": "asset_len", "type": "usize" },
+          { "name": "source_x", "type": "f32" },
+          { "name": "source_y", "type": "f32" },
+          { "name": "source_z", "type": "f32" },
+          { "name": "listener_x", "type": "f32" },
+          { "name": "listener_y", "type": "f32" },
+          { "name": "listener_z", "type": "f32" },
+          { "name": "max_distance", "type": "f32" },
+          { "name": "rolloff", "type": "f32" }
+        ],
+        "returns": "i64",
+        "unsafe": true
+      },
+      "goud_audio_update_spatial_volume_3d": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "player_id", "type": "u64" },
+          { "name": "source_x", "type": "f32" },
+          { "name": "source_y", "type": "f32" },
+          { "name": "source_z", "type": "f32" },
+          { "name": "listener_x", "type": "f32" },
+          { "name": "listener_y", "type": "f32" },
+          { "name": "listener_z", "type": "f32" },
+          { "name": "max_distance", "type": "f32" },
+          { "name": "rolloff", "type": "f32" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_set_listener_position_3d": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "x", "type": "f32" },
+          { "name": "y", "type": "f32" },
+          { "name": "z", "type": "f32" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_set_source_position_3d": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "player_id", "type": "u64" },
+          { "name": "x", "type": "f32" },
+          { "name": "y", "type": "f32" },
+          { "name": "z", "type": "f32" },
+          { "name": "max_distance", "type": "f32" },
+          { "name": "rolloff", "type": "f32" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_set_player_volume": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "player_id", "type": "u64" },
+          { "name": "volume", "type": "f32" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_set_player_speed": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "player_id", "type": "u64" },
+          { "name": "speed", "type": "f32" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_crossfade": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "from_player_id", "type": "u64" },
+          { "name": "to_player_id", "type": "u64" },
+          { "name": "mix", "type": "f32" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_crossfade_to": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "from_player_id", "type": "u64" },
+          { "name": "asset_data", "type": "*const u8" },
+          { "name": "asset_len", "type": "usize" },
+          { "name": "duration_sec", "type": "f32" },
+          { "name": "channel", "type": "u8" }
+        ],
+        "returns": "i64",
+        "unsafe": true
+      },
+      "goud_audio_mix_with": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "primary_player_id", "type": "u64" },
+          { "name": "asset_data", "type": "*const u8" },
+          { "name": "asset_len", "type": "usize" },
+          { "name": "secondary_volume", "type": "f32" },
+          { "name": "secondary_channel", "type": "u8" }
+        ],
+        "returns": "i64",
+        "unsafe": true
+      },
+      "goud_audio_update_crossfades": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "delta_sec", "type": "f32" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_active_crossfade_count": {
         "params": [
           { "name": "ctx", "type": "GoudContextId" }
         ],

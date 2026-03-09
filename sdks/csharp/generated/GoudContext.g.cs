@@ -358,7 +358,7 @@ namespace GoudEngine
                 var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
                 fixed (byte* namePtr = nameBytes)
                 {
-                    return NativeMethods.goud_scene_create(_ctx, (IntPtr)namePtr, (uint)nameBytes.Length);
+                    return NativeMethods.goud_scene_create(_ctx, (IntPtr)namePtr, (nuint)nameBytes.Length);
                 }
             }
         }
@@ -377,7 +377,7 @@ namespace GoudEngine
                 var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
                 fixed (byte* namePtr = nameBytes)
                 {
-                    return NativeMethods.goud_scene_get_by_name(_ctx, (IntPtr)namePtr, (uint)nameBytes.Length);
+                    return NativeMethods.goud_scene_get_by_name(_ctx, (IntPtr)namePtr, (nuint)nameBytes.Length);
                 }
             }
         }

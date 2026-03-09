@@ -32,6 +32,7 @@
 pub(super) mod spatial;
 
 mod controls;
+mod mixing;
 mod playback;
 mod spatial_playback;
 #[cfg(test)]
@@ -48,6 +49,26 @@ pub(crate) struct PlayerEntry {
     pub(crate) player: Player,
     pub(crate) channel: AudioChannel,
     pub(crate) individual_volume: f32,
+}
+
+/// Runtime spatial metadata tracked for an active sink.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct SpatialSourceState {
+    pub(crate) source_position: [f32; 3],
+    pub(crate) max_distance: f32,
+    pub(crate) rolloff: f32,
+    pub(crate) base_volume: f32,
+}
+
+/// Active crossfade state between two sink IDs.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct CrossfadeState {
+    pub(crate) from_id: u64,
+    pub(crate) to_id: u64,
+    pub(crate) elapsed_sec: f32,
+    pub(crate) duration_sec: f32,
+    pub(crate) from_start_volume: f32,
+    pub(crate) to_target_volume: f32,
 }
 
 /// Central audio playback manager resource.
@@ -90,6 +111,15 @@ pub struct AudioManager {
 
     /// Per-channel volume multipliers (0.0 to 1.0).
     pub(super) channel_volumes: Arc<Mutex<HashMap<AudioChannel, f32>>>,
+
+    /// Current listener position for spatial audio updates.
+    pub(super) listener_position: Arc<Mutex<[f32; 3]>>,
+
+    /// Spatial state for active sink IDs.
+    pub(super) spatial_sources: Arc<Mutex<HashMap<u64, SpatialSourceState>>>,
+
+    /// In-progress crossfades, keyed by destination sink ID.
+    pub(super) crossfades: Arc<Mutex<HashMap<u64, CrossfadeState>>>,
 }
 
 impl AudioManager {
@@ -129,6 +159,9 @@ impl AudioManager {
             players: Arc::new(Mutex::new(HashMap::new())),
             next_player_id: Arc::new(Mutex::new(0)),
             channel_volumes: Arc::new(Mutex::new(channel_volumes)),
+            listener_position: Arc::new(Mutex::new([0.0, 0.0, 0.0])),
+            spatial_sources: Arc::new(Mutex::new(HashMap::new())),
+            crossfades: Arc::new(Mutex::new(HashMap::new())),
         })
     }
 }

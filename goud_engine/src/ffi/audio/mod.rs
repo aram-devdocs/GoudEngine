@@ -8,9 +8,12 @@
 //! Split across submodules:
 //! - `playback`: play, play_on_channel, play_with_settings
 //! - `controls`: stop, pause, resume, stop_all, volume, queries
+//! - `spatial`: spatial play/update, listener/source positioning, per-player mix,
+//!   timed crossfade, and additive mix helpers
 
 pub mod controls;
 pub mod playback;
+pub mod spatial;
 
 /// Error sentinel for functions returning `i64` player IDs.
 const ERR_AUDIO: i64 = -1;

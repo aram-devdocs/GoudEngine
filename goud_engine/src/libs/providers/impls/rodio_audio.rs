@@ -14,27 +14,91 @@ use crate::libs::providers::types::{
 };
 use crate::libs::providers::{Provider, ProviderLifecycle};
 
-use rodio::{DeviceSinkBuilder, MixerDeviceSink, Player};
+use rodio::{DeviceSinkBuilder, MixerDeviceSink, Player, SpatialPlayer};
 
-/// Tracks both a player and its individual volume for composition with master volume.
-struct PlayerState {
-    player: Player,
-    /// Individual volume (0.0 to 1.0) before master composition.
-    volume: f32,
+/// Underlying rodio handle type for a playback instance.
+enum BackendPlayer {
+    Standard(Player),
+    Spatial(SpatialPlayer),
 }
 
-impl PlayerState {
-    /// Creates a new player state with the given volume.
-    fn new(player: Player, volume: f32) -> Self {
-        Self {
-            player,
-            volume: volume.clamp(0.0, 1.0),
+impl BackendPlayer {
+    fn set_volume(&self, volume: f32) {
+        match self {
+            Self::Standard(player) => player.set_volume(volume),
+            Self::Spatial(player) => player.set_volume(volume),
         }
     }
 
-    /// Applies the effective volume = master_volume * individual_volume.
-    fn apply_composed_volume(&self, master: f32) {
-        let composed = (master * self.volume).clamp(0.0, 1.0);
+    fn pause(&self) {
+        match self {
+            Self::Standard(player) => player.pause(),
+            Self::Spatial(player) => player.pause(),
+        }
+    }
+
+    fn play(&self) {
+        match self {
+            Self::Standard(player) => player.play(),
+            Self::Spatial(player) => player.play(),
+        }
+    }
+
+    fn stop(&self) {
+        match self {
+            Self::Standard(player) => player.stop(),
+            Self::Spatial(player) => player.stop(),
+        }
+    }
+
+    fn is_paused(&self) -> bool {
+        match self {
+            Self::Standard(player) => player.is_paused(),
+            Self::Spatial(player) => player.is_paused(),
+        }
+    }
+
+    fn empty(&self) -> bool {
+        match self {
+            Self::Standard(player) => player.empty(),
+            Self::Spatial(player) => player.empty(),
+        }
+    }
+
+    fn set_source_position(&self, position: [f32; 3]) {
+        if let Self::Spatial(player) = self {
+            player.set_emitter_position(position);
+        }
+    }
+
+    fn set_listener_ears(&self, left_ear: [f32; 3], right_ear: [f32; 3]) {
+        if let Self::Spatial(player) = self {
+            player.set_left_ear_position(left_ear);
+            player.set_right_ear_position(right_ear);
+        }
+    }
+}
+
+/// Tracks both a player and its individual volume for composition with master volume.
+struct PlayerState {
+    player: BackendPlayer,
+    /// Individual volume (0.0 to 1.0) before master/channel composition.
+    volume: f32,
+    /// Channel for channel-volume composition.
+    channel: AudioChannel,
+}
+
+impl PlayerState {
+    fn new(player: BackendPlayer, volume: f32, channel: AudioChannel) -> Self {
+        Self {
+            player,
+            volume: volume.clamp(0.0, 1.0),
+            channel,
+        }
+    }
+
+    fn apply_composed_volume(&self, master: f32, channel_volume: f32) {
+        let composed = (master * channel_volume * self.volume).clamp(0.0, 1.0);
         self.player.set_volume(composed);
     }
 }
@@ -57,13 +121,15 @@ pub struct RodioAudioProvider {
     next_id: u64,
     master_volume: f32,
     channel_volumes: HashMap<AudioChannel, f32>,
+    listener_position: [f32; 3],
+    ear_half_distance: f32,
 }
 
 // SAFETY: RodioAudioProvider is Send + Sync because:
 // - MixerDeviceSink wraps cpal::Stream (Send but not Sync by default).
 //   We only access the mixer through &mut self methods, which provides
 //   exclusive access and is safe across threads.
-// - Player is Send. HashMap/f32/u64 are Send + Sync.
+// - Player/SpatialPlayer are Send. HashMap/f32/u64 are Send + Sync.
 unsafe impl Send for RodioAudioProvider {}
 // SAFETY: All mutable state is accessed through &mut self. The Provider
 // trait requires Sync, and since we never share interior mutable state
@@ -84,13 +150,15 @@ impl RodioAudioProvider {
         Ok(Self {
             device_sink,
             capabilities: AudioCapabilities {
-                supports_spatial: false,
+                supports_spatial: true,
                 max_channels: 32,
             },
             players: HashMap::new(),
             next_id: 0,
             master_volume: 1.0,
             channel_volumes: HashMap::new(),
+            listener_position: [0.0, 0.0, 0.0],
+            ear_half_distance: 0.15,
         })
     }
 
@@ -101,14 +169,27 @@ impl RodioAudioProvider {
         id
     }
 
-    /// Computes the effective volume for a playback instance.
-    fn effective_volume(&self, config: &PlayConfig) -> f32 {
-        let channel_vol = self
-            .channel_volumes
-            .get(&config.channel)
-            .copied()
-            .unwrap_or(1.0);
-        self.master_volume * channel_vol * config.volume.clamp(0.0, 1.0)
+    fn channel_volume(&self, channel: AudioChannel) -> f32 {
+        self.channel_volumes.get(&channel).copied().unwrap_or(1.0)
+    }
+
+    fn listener_ear_positions(
+        listener_position: [f32; 3],
+        ear_half_distance: f32,
+    ) -> ([f32; 3], [f32; 3]) {
+        let half = ear_half_distance.max(0.001);
+        (
+            [
+                listener_position[0] - half,
+                listener_position[1],
+                listener_position[2],
+            ],
+            [
+                listener_position[0] + half,
+                listener_position[1],
+                listener_position[2],
+            ],
+        )
     }
 }
 
@@ -159,15 +240,32 @@ impl AudioProvider for RodioAudioProvider {
         // The provider receives a SoundHandle but does not own the sound
         // data. The actual audio data must be loaded and appended by
         // higher-layer code through a bridge method. Here we create the
-        // player with the correct volume/speed settings.
-        let player = Player::connect_new(self.device_sink.mixer());
-        let vol = self.effective_volume(config);
-        player.set_volume(vol);
-        player.set_speed(config.speed.clamp(0.1, 10.0));
+        // player with the correct volume/speed/spatial settings.
+
+        let clamped_speed = config.speed.clamp(0.1, 10.0);
+        let clamped_volume = config.volume.clamp(0.0, 1.0);
+
+        let backend_player = if let Some(source_position) = config.position {
+            let (left_ear, right_ear) =
+                Self::listener_ear_positions(self.listener_position, self.ear_half_distance);
+            let spatial = SpatialPlayer::connect_new(
+                self.device_sink.mixer(),
+                source_position,
+                left_ear,
+                right_ear,
+            );
+            spatial.set_speed(clamped_speed);
+            BackendPlayer::Spatial(spatial)
+        } else {
+            let player = Player::connect_new(self.device_sink.mixer());
+            player.set_speed(clamped_speed);
+            BackendPlayer::Standard(player)
+        };
+
+        let state = PlayerState::new(backend_player, clamped_volume, config.channel);
+        state.apply_composed_volume(self.master_volume, self.channel_volume(config.channel));
 
         let id = self.allocate_id();
-        // Store both the player and its individual volume for composition
-        let state = PlayerState::new(player, config.volume);
         self.players.insert(id, state);
         Ok(PlaybackId(id))
     }
@@ -203,29 +301,47 @@ impl AudioProvider for RodioAudioProvider {
     fn set_volume(&mut self, id: PlaybackId, volume: f32) -> GoudResult<()> {
         if let Some(state) = self.players.get_mut(&id.0) {
             state.volume = volume.clamp(0.0, 1.0);
-            state.apply_composed_volume(self.master_volume);
+            let channel_volume = self
+                .channel_volumes
+                .get(&state.channel)
+                .copied()
+                .unwrap_or(1.0);
+            state.apply_composed_volume(self.master_volume, channel_volume);
         }
         Ok(())
     }
 
     fn set_master_volume(&mut self, volume: f32) {
         self.master_volume = volume.clamp(0.0, 1.0);
-        // Update all active players with composed volume (master * individual)
         for state in self.players.values() {
-            state.apply_composed_volume(self.master_volume);
+            state.apply_composed_volume(self.master_volume, self.channel_volume(state.channel));
         }
     }
 
     fn set_channel_volume(&mut self, channel: AudioChannel, volume: f32) {
-        self.channel_volumes.insert(channel, volume.clamp(0.0, 1.0));
+        let clamped = volume.clamp(0.0, 1.0);
+        self.channel_volumes.insert(channel, clamped);
+
+        for state in self.players.values() {
+            if state.channel == channel {
+                state.apply_composed_volume(self.master_volume, clamped);
+            }
+        }
     }
 
-    fn set_listener_position(&mut self, _pos: [f32; 3]) {
-        // Spatial audio not yet supported.
+    fn set_listener_position(&mut self, pos: [f32; 3]) {
+        self.listener_position = pos;
+
+        let (left_ear, right_ear) = Self::listener_ear_positions(pos, self.ear_half_distance);
+        for state in self.players.values() {
+            state.player.set_listener_ears(left_ear, right_ear);
+        }
     }
 
-    fn set_source_position(&mut self, _id: PlaybackId, _pos: [f32; 3]) -> GoudResult<()> {
-        // Spatial audio not yet supported.
+    fn set_source_position(&mut self, id: PlaybackId, pos: [f32; 3]) -> GoudResult<()> {
+        if let Some(state) = self.players.get(&id.0) {
+            state.player.set_source_position(pos);
+        }
         Ok(())
     }
 }
@@ -235,6 +351,7 @@ impl std::fmt::Debug for RodioAudioProvider {
         f.debug_struct("RodioAudioProvider")
             .field("master_volume", &self.master_volume)
             .field("active_players", &self.players.len())
+            .field("listener_position", &self.listener_position)
             .finish()
     }
 }
@@ -242,6 +359,13 @@ impl std::fmt::Debug for RodioAudioProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_listener_ear_positions_math() {
+        let (left, right) = RodioAudioProvider::listener_ear_positions([2.0, 3.0, 4.0], 0.2);
+        assert_eq!(left, [1.8, 3.0, 4.0]);
+        assert_eq!(right, [2.2, 3.0, 4.0]);
+    }
 
     /// Single integration test to minimize audio device init/teardown cycles.
     /// Multiple RodioAudioProvider instances can cause STATUS_ACCESS_VIOLATION
@@ -259,7 +383,7 @@ mod tests {
 
         // Capabilities
         let caps = provider.audio_capabilities();
-        assert!(!caps.supports_spatial);
+        assert!(caps.supports_spatial);
         assert_eq!(caps.max_channels, 32);
 
         // Lifecycle
@@ -282,18 +406,29 @@ mod tests {
             Some(&0.7)
         );
 
-        // Spatial stubs
+        // Spatial operations before and after creating a spatial player
         provider.set_listener_position([1.0, 2.0, 3.0]);
         assert!(provider
             .set_source_position(PlaybackId(0), [4.0, 5.0, 6.0])
             .is_ok());
 
-        // Play creates player
         let id = provider
             .play(SoundHandle(1), &PlayConfig::default())
             .unwrap();
         assert_eq!(id, PlaybackId(0));
+
+        let spatial_config = PlayConfig {
+            position: Some([0.0, 0.0, 0.0]),
+            ..PlayConfig::default()
+        };
+        let spatial_id = provider.play(SoundHandle(2), &spatial_config).unwrap();
+        assert_eq!(spatial_id, PlaybackId(1));
+        assert!(provider
+            .set_source_position(spatial_id, [2.0, 0.0, 0.0])
+            .is_ok());
+
         assert!(provider.stop(id).is_ok());
+        assert!(provider.stop(spatial_id).is_ok());
 
         // Debug format
         let debug = format!("{:?}", provider);

@@ -102,14 +102,14 @@ CSHARP_TYPES = {
     "f32": "float", "f64": "double",
     "u8": "byte", "u16": "ushort", "u32": "uint", "u64": "ulong",
     "i8": "sbyte", "i16": "short", "i32": "int", "i64": "long",
-    "bool": "bool", "string": "string", "void": "void",
+    "bool": "bool", "string": "string", "bytes": "byte[]", "void": "void",
 }
 
 PYTHON_TYPES = {
     "f32": "float", "f64": "float",
     "u8": "int", "u16": "int", "u32": "int", "u64": "int",
     "i8": "int", "i16": "int", "i32": "int", "i64": "int",
-    "bool": "bool", "string": "str", "void": "None",
+    "bool": "bool", "string": "str", "bytes": "bytes", "void": "None",
 }
 
 TYPESCRIPT_TYPES = {
@@ -118,7 +118,7 @@ TYPESCRIPT_TYPES = {
     "i8": "number", "i16": "number", "i32": "number", "i64": "number",
     "usize": "number", "ptr": "number",
     "bool": "boolean", "string": "string", "void": "void",
-    "u8[]": "Uint8Array", "bytes": "Buffer",
+    "u8[]": "Uint8Array", "bytes": "Uint8Array",
 }
 
 CTYPES_MAP = {

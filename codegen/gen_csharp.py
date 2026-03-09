@@ -935,14 +935,13 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                   "                }",
                   "            }"]
             return
-        # Generic string param marshalling: string -> UTF8 ptr + len
-        # Only applies when the FFI function uses *const u8 (ptr+len), not *const c_char
+        # Generic ptr+len marshalling for string/bytes parameters.
+        # Only applies when the FFI function uses *const u8 (ptr+len), not *const c_char.
         string_params = [p for p in params if p["type"] == "string"]
-        if string_params and _ffi_uses_ptr_len(ffi_fn):
-            non_string = [p for p in params if p["type"] != "string"]
+        bytes_params = [p for p in params if p["type"] in ("bytes", "u8[]")]
+        if (string_params or bytes_params) and _ffi_uses_ptr_len(ffi_fn):
             L.append("            unsafe")
             L.append("            {")
-            byte_vars = []
             fixed_lines = []
             ffi_arg_parts = [] if no_ctx else ["_ctx"]
             for p in params:
@@ -952,14 +951,24 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                     L.append(f"                var {bvar} = System.Text.Encoding.UTF8.GetBytes({p['name']});")
                     fixed_lines.append(f"byte* {pvar} = {bvar}")
                     ffi_arg_parts.append(f"(IntPtr){pvar}")
-                    ffi_arg_parts.append(f"(uint){bvar}.Length")
+                    ffi_arg_parts.append(f"(nuint){bvar}.Length")
+                elif p["type"] in ("bytes", "u8[]"):
+                    pvar = f"{p['name']}Ptr"
+                    fixed_lines.append(f"byte* {pvar} = {p['name']}")
+                    ffi_arg_parts.append(f"(IntPtr){pvar}")
+                    ffi_arg_parts.append(f"(nuint){p['name']}.Length")
                 else:
                     ffi_arg_parts.append(p["name"])
             fixed_expr = "\n                ".join(f"fixed ({fl})" for fl in fixed_lines)
             L.append(f"                {fixed_expr}")
             L.append("                {")
-            call = f"NativeMethods.{ffi_fn}({', '.join(ffi_arg_parts)});"
-            L.append(f"                    {'return ' if ret != 'void' else ''}{call}")
+            call_expr = f"NativeMethods.{ffi_fn}({', '.join(ffi_arg_parts)})"
+            if mm.get("returns_bool_from_i32"):
+                L.append(f"                    return {call_expr} != 0;")
+            elif ret == "void":
+                L.append(f"                    {call_expr};")
+            else:
+                L.append(f"                    return {call_expr};")
             L.append("                }")
             L.append("            }")
             return
@@ -985,7 +994,7 @@ def _build_param_strs(params: list) -> list:
             result.append(f"Action<float> {name}")
         elif pt == "Entity[]":
             result.append(f"Entity[] {name}")
-        elif pt == "u8[]":
+        elif pt in ("u8[]", "bytes"):
             result.append(f"byte[] {name}")
         elif pt in schema["types"]:
             result.append(f"{to_pascal(pt)}? {name} = null" if default else f"{to_pascal(pt)} {name}")

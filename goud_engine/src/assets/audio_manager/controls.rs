@@ -2,6 +2,7 @@
 
 use crate::ecs::components::AudioChannel;
 
+use super::spatial::spatial_attenuation_3d;
 use super::AudioManager;
 
 impl AudioManager {
@@ -78,14 +79,37 @@ impl AudioManager {
     ///
     /// `true` if the sink was found and volume set, `false` otherwise.
     pub fn set_sink_volume(&self, sink_id: u64, volume: f32) -> bool {
+        let clamped = volume.clamp(0.0, 1.0);
+        let listener_position = self.listener_position();
+
+        // If this sink is spatial, treat set_sink_volume as setting the base
+        // volume and compose attenuation on top.
+        let effective_individual = {
+            let mut spatial_sources = self
+                .spatial_sources
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if let Some(state) = spatial_sources.get_mut(&sink_id) {
+                state.base_volume = clamped;
+                let attenuation = spatial_attenuation_3d(
+                    state.source_position,
+                    listener_position,
+                    state.max_distance,
+                    state.rolloff,
+                );
+                (state.base_volume * attenuation).clamp(0.0, 1.0)
+            } else {
+                clamped
+            }
+        };
+
         let mut players = self
             .players
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         if let Some(entry) = players.get_mut(&sink_id) {
-            let clamped = volume.clamp(0.0, 1.0);
-            entry.individual_volume = clamped;
-            let effective = self.effective_volume(entry.channel, clamped);
+            entry.individual_volume = effective_individual;
+            let effective = self.effective_volume(entry.channel, effective_individual);
             entry.player.set_volume(effective);
             true
         } else {
@@ -203,5 +227,22 @@ impl AudioManager {
         let global = self.global_volume();
         let ch_vol = self.get_channel_volume(channel);
         global * ch_vol * individual
+    }
+
+    /// Returns whether the given sink ID currently exists.
+    pub(crate) fn has_sink(&self, sink_id: u64) -> bool {
+        self.players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .contains_key(&sink_id)
+    }
+
+    /// Returns the current per-sink individual volume if the sink exists.
+    pub(crate) fn sink_volume(&self, sink_id: u64) -> Option<f32> {
+        self.players
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .get(&sink_id)
+            .map(|entry| entry.individual_volume)
     }
 }

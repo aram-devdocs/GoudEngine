@@ -12,6 +12,7 @@
 //!    canvas)
 //! ```
 
+mod audio;
 mod collision;
 mod ecs_ops;
 mod input;
@@ -144,6 +145,9 @@ pub struct WasmGame {
 
     // Optional wgpu renderer (None for ECS-only / headless mode)
     render_state: Option<WgpuRenderState>,
+
+    // WebAudio runtime state.
+    audio_state: audio::WasmAudioState,
 }
 
 #[wasm_bindgen]
@@ -184,6 +188,7 @@ impl WasmGame {
             frame_mouse_just_released: HashSet::new(),
             action_map: HashMap::new(),
             render_state: None,
+            audio_state: audio::WasmAudioState::new(),
         }
     }
 
@@ -283,6 +288,7 @@ impl WasmGame {
             frame_mouse_just_released: HashSet::new(),
             action_map: HashMap::new(),
             render_state: Some(render_state),
+            audio_state: audio::WasmAudioState::new(),
         })
     }
 

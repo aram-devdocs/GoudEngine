@@ -1,8 +1,10 @@
 //! Tests for the audio manager and spatial attenuation helpers.
 
 use crate::assets::audio_manager::{
+    mixing::{clamp_duration, crossfade_pair, crossfade_progress},
     spatial::{
         compute_attenuation_exponential, compute_attenuation_inverse, compute_attenuation_linear,
+        compute_stereo_pan, spatial_attenuation_3d, stereo_gains_from_pan,
     },
     AudioManager,
 };
@@ -355,6 +357,44 @@ fn test_spatial_audio_attenuation_positions() {
             "spatial at dist {distance}: expected {expected}, got {att}"
         );
     }
+}
+
+#[test]
+fn test_spatial_audio_attenuation_3d() {
+    let at_source = spatial_attenuation_3d([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 100.0, 1.0);
+    assert!((at_source - 1.0).abs() < 0.001);
+
+    let at_max = spatial_attenuation_3d([100.0, 0.0, 0.0], [0.0, 0.0, 0.0], 100.0, 1.0);
+    assert!((at_max - 0.0).abs() < 0.001);
+
+    let diagonal = spatial_attenuation_3d([50.0, 50.0, 0.0], [0.0, 0.0, 0.0], 100.0, 1.0);
+    assert!(diagonal > 0.25 && diagonal < 0.35);
+}
+
+#[test]
+fn test_stereo_pan_and_gains_math() {
+    let left_pan = compute_stereo_pan([-10.0, 0.0, 0.0], [0.0, 0.0, 0.0]);
+    let center_pan = compute_stereo_pan([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]);
+    let right_pan = compute_stereo_pan([10.0, 0.0, 0.0], [0.0, 0.0, 0.0]);
+
+    assert!(left_pan < 0.0);
+    assert_eq!(center_pan, 0.0);
+    assert!(right_pan > 0.0);
+
+    let (left_gain, right_gain) = stereo_gains_from_pan(0.0);
+    assert!((left_gain - right_gain).abs() < 0.001);
+    assert!((left_gain * left_gain + right_gain * right_gain - 1.0).abs() < 0.001);
+}
+
+#[test]
+fn test_crossfade_and_mix_math_helpers() {
+    assert_eq!(clamp_duration(-5.0), 0.0);
+    assert_eq!(clamp_duration(1.5), 1.5);
+    assert_eq!(crossfade_progress(0.5, 1.0), 0.5);
+
+    let (from, to) = crossfade_pair(1.0, 0.8, 0.25);
+    assert!((from - 0.75).abs() < 0.001);
+    assert!((to - 0.2).abs() < 0.001);
 }
 
 // ============================================================================
