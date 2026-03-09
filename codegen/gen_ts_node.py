@@ -402,12 +402,19 @@ NATIVE_KNOWN_METHODS = {
     "audioSetGlobalVolume", "audioGetGlobalVolume",
     "audioSetChannelVolume", "audioGetChannelVolume",
     "audioIsPlaying", "audioActiveCount", "audioCleanupFinished",
-    "audioPlaySpatial3d", "audioUpdateSpatial3d",
-    "audioSetListenerPosition3d", "audioSetSourcePosition3d",
+    "audioPlaySpatial3D", "audioUpdateSpatial3D",
+    "audioSetListenerPosition3D", "audioSetSourcePosition3D",
     "audioSetPlayerVolume", "audioSetPlayerSpeed",
     "audioCrossfade", "audioCrossfadeTo", "audioMixWith",
     "audioUpdateCrossfades", "audioActiveCrossfadeCount",
     "audioActivate",
+}
+
+NATIVE_METHOD_NAME_OVERRIDES = {
+    "audioPlaySpatial3d": "audioPlaySpatial3D",
+    "audioUpdateSpatial3d": "audioUpdateSpatial3D",
+    "audioSetListenerPosition3d": "audioSetListenerPosition3D",
+    "audioSetSourcePosition3d": "audioSetSourcePosition3D",
 }
 
 
@@ -489,7 +496,9 @@ def gen_node_wrapper():
             else:
                 ts_t = ts_iface_type(pt)
                 param_strs.append(f"{pn}{opt}: {ts_t}")
-                if can_be_optional[i]:
+                if pt == "bytes":
+                    call_args.append(f"Buffer.from({pn}.buffer, {pn}.byteOffset, {pn}.byteLength)")
+                elif can_be_optional[i]:
                     default_val = p.get("default")
                     call_args.append(f"{pn} ?? {default_val}")
                 else:
@@ -574,11 +583,12 @@ def gen_node_wrapper():
             lines.append("    this.native.destroy();")
         else:
             native_call_args = ", ".join(call_args)
-            native_obj = "this.native" if mn in NATIVE_KNOWN_METHODS else "(this.native as any)"
+            native_mn = NATIVE_METHOD_NAME_OVERRIDES.get(mn, mn)
+            native_obj = "this.native" if native_mn in NATIVE_KNOWN_METHODS else "(this.native as any)"
             if ret == "void":
-                lines.append(f"    {native_obj}.{mn}({native_call_args});")
+                lines.append(f"    {native_obj}.{native_mn}({native_call_args});")
             else:
-                lines.append(f"    return {native_obj}.{mn}({native_call_args});")
+                lines.append(f"    return {native_obj}.{native_mn}({native_call_args});")
 
         lines.append("  }")
         lines.append("")

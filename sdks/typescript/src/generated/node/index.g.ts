@@ -499,17 +499,17 @@ export class GoudGame implements IGoudGame {
 
   /** Plays audio from raw bytes on the default channel */
   audioPlay(data: Uint8Array): number {
-    return this.native.audioPlay(data);
+    return this.native.audioPlay(Buffer.from(data.buffer, data.byteOffset, data.byteLength));
   }
 
   /** Plays audio from raw bytes on the given channel */
   audioPlayOnChannel(data: Uint8Array, channel: number): number {
-    return this.native.audioPlayOnChannel(data, channel);
+    return this.native.audioPlayOnChannel(Buffer.from(data.buffer, data.byteOffset, data.byteLength), channel);
   }
 
   /** Plays audio with explicit volume, speed, looping, and channel settings */
   audioPlayWithSettings(data: Uint8Array, volume: number, speed: number, looping: boolean, channel: number): number {
-    return this.native.audioPlayWithSettings(data, volume, speed, looping, channel);
+    return this.native.audioPlayWithSettings(Buffer.from(data.buffer, data.byteOffset, data.byteLength), volume, speed, looping, channel);
   }
 
   /** Stops a playing audio player */
@@ -569,22 +569,22 @@ export class GoudGame implements IGoudGame {
 
   /** Plays audio with 3D spatial attenuation */
   audioPlaySpatial3d(data: Uint8Array, sourceX: number, sourceY: number, sourceZ: number, listenerX: number, listenerY: number, listenerZ: number, maxDistance: number, rolloff: number): number {
-    return this.native.audioPlaySpatial3d(data, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff);
+    return this.native.audioPlaySpatial3D(Buffer.from(data.buffer, data.byteOffset, data.byteLength), sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff);
   }
 
   /** Updates 3D spatial attenuation for an active player */
   audioUpdateSpatial3d(playerId: number, sourceX: number, sourceY: number, sourceZ: number, listenerX: number, listenerY: number, listenerZ: number, maxDistance: number, rolloff: number): number {
-    return this.native.audioUpdateSpatial3d(playerId, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff);
+    return this.native.audioUpdateSpatial3D(playerId, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff);
   }
 
   /** Sets the 3D listener position */
   audioSetListenerPosition3d(x: number, y: number, z: number): number {
-    return this.native.audioSetListenerPosition3d(x, y, z);
+    return this.native.audioSetListenerPosition3D(x, y, z);
   }
 
   /** Sets the 3D source position for an active player */
   audioSetSourcePosition3d(playerId: number, x: number, y: number, z: number, maxDistance: number, rolloff: number): number {
-    return this.native.audioSetSourcePosition3d(playerId, x, y, z, maxDistance, rolloff);
+    return this.native.audioSetSourcePosition3D(playerId, x, y, z, maxDistance, rolloff);
   }
 
   /** Sets the volume for an active player */
@@ -604,12 +604,12 @@ export class GoudGame implements IGoudGame {
 
   /** Starts a timed crossfade from one player to a new audio asset */
   audioCrossfadeTo(fromPlayerId: number, data: Uint8Array, durationSec: number, channel: number): number {
-    return this.native.audioCrossfadeTo(fromPlayerId, data, durationSec, channel);
+    return this.native.audioCrossfadeTo(fromPlayerId, Buffer.from(data.buffer, data.byteOffset, data.byteLength), durationSec, channel);
   }
 
   /** Mixes a secondary audio asset with a primary player */
   audioMixWith(primaryPlayerId: number, data: Uint8Array, secondaryVolume: number, secondaryChannel: number): number {
-    return this.native.audioMixWith(primaryPlayerId, data, secondaryVolume, secondaryChannel);
+    return this.native.audioMixWith(primaryPlayerId, Buffer.from(data.buffer, data.byteOffset, data.byteLength), secondaryVolume, secondaryChannel);
   }
 
   /** Advances all active timed crossfades */
