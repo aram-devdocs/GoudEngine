@@ -83,6 +83,32 @@ interface WasmGameHandle {
   circle_overlap(x1: number, y1: number, r1: number, x2: number, y2: number, r2: number): boolean;
   distance(x1: number, y1: number, x2: number, y2: number): number;
   distance_squared(x1: number, y1: number, x2: number, y2: number): number;
+  audio_play(data: Uint8Array): number;
+  audio_play_on_channel(data: Uint8Array, channel: number): number;
+  audio_play_with_settings(data: Uint8Array, volume: number, speed: number, looping: boolean, channel: number): number;
+  audio_stop(player_id: number): number;
+  audio_pause(player_id: number): number;
+  audio_resume(player_id: number): number;
+  audio_stop_all(): number;
+  audio_set_global_volume(volume: number): number;
+  audio_get_global_volume(): number;
+  audio_set_channel_volume(channel: number, volume: number): number;
+  audio_get_channel_volume(channel: number): number;
+  audio_is_playing(player_id: number): number;
+  audio_active_count(): number;
+  audio_cleanup_finished(): number;
+  audio_play_spatial_3d(data: Uint8Array, source_x: number, source_y: number, source_z: number, listener_x: number, listener_y: number, listener_z: number, max_distance: number, rolloff: number): number;
+  audio_update_spatial_volume_3d(player_id: number, source_x: number, source_y: number, source_z: number, listener_x: number, listener_y: number, listener_z: number, max_distance: number, rolloff: number): number;
+  audio_set_listener_position_3d(x: number, y: number, z: number): number;
+  audio_set_source_position_3d(player_id: number, x: number, y: number, z: number, max_distance: number, rolloff: number): number;
+  audio_set_player_volume(player_id: number, volume: number): number;
+  audio_set_player_speed(player_id: number, speed: number): number;
+  audio_crossfade(from_player_id: number, to_player_id: number, mix: number): number;
+  audio_crossfade_to(from_player_id: number, data: Uint8Array, duration_sec: number, channel: number): number;
+  audio_mix_with(primary_player_id: number, data: Uint8Array, secondary_volume: number, secondary_channel: number): number;
+  audio_update_crossfades(delta_sec: number): number;
+  audio_active_crossfade_count(): number;
+  audio_activate(): number;
 }
 
 interface WasmExports {
@@ -130,6 +156,9 @@ export class GoudGame implements IGoudGame {
   private lastTs = 0;
   private _shouldClose = false;
   private _updateFn: ((dt: number) => void) | null = null;
+  private _audioGlobalVolume = 1;
+  private _audioChannelVolumes = new Map<number, number>();
+  private _activeAudioPlayers = new Set<number>();
 
   private constructor(handle: WasmGameHandle, canvas: HTMLCanvasElement) {
     this.handle = handle; this.canvas = canvas;
@@ -175,7 +204,7 @@ export class GoudGame implements IGoudGame {
   /** Signals the window to close */
   close(): void { this._shouldClose = true; this.stop(); }
   /** Releases all engine resources */
-  destroy(): void { this.stop(); this.handle.free(); }
+  destroy(): void { this.stop(); this._activeAudioPlayers.clear(); this.handle.free(); }
 
   /** Starts a new render frame with the given clear color */
   beginFrame(r = 0, g = 0, b = 0, a = 1): void {
@@ -272,6 +301,152 @@ export class GoudGame implements IGoudGame {
   drawQuad(x: number, y: number, width: number, height: number, color?: IColor): void {
     const c = color ?? Color.white();
     this.handle.draw_quad(x, y, width, height, c.r, c.g, c.b, c.a);
+  }
+
+  /** Plays audio from raw bytes on the default channel */
+  audioPlay(data: Uint8Array): number {
+    const playerId = this.handle.audio_play(data);
+    if (playerId >= 0) this._activeAudioPlayers.add(playerId);
+    return playerId;
+  }
+  /** Plays audio from raw bytes on the given channel */
+  audioPlayOnChannel(data: Uint8Array, channel: number): number {
+    const fn = (this.handle as any).audio_play_on_channel as ((data: Uint8Array, channel: number) => number) | undefined;
+    const playerId = fn ? fn.call(this.handle, data, channel) : this.handle.audio_play(data);
+    if (playerId >= 0) this._activeAudioPlayers.add(playerId);
+    return playerId;
+  }
+  /** Plays audio with explicit volume, speed, looping, and channel settings */
+  audioPlayWithSettings(data: Uint8Array, volume: number, speed: number, looping: boolean, channel: number): number {
+    const fn = (this.handle as any).audio_play_with_settings as ((data: Uint8Array, volume: number, speed: number, looping: boolean, channel: number) => number) | undefined;
+    const playerId = fn ? fn.call(this.handle, data, volume, speed, looping, channel) : this.handle.audio_play(data);
+    if (playerId < 0) return playerId;
+    this._activeAudioPlayers.add(playerId);
+    if (!fn) {
+      this.handle.audio_set_player_volume(playerId, volume);
+      this.handle.audio_set_player_speed(playerId, speed);
+    }
+    return playerId;
+  }
+  /** Stops a playing audio player */
+  audioStop(playerId: number): number {
+    const rc = this.handle.audio_stop(playerId);
+    if (rc === 0) this._activeAudioPlayers.delete(playerId);
+    return rc;
+  }
+  /** Pauses a playing audio player */
+  audioPause(playerId: number): number { return this.handle.audio_pause(playerId); }
+  /** Resumes a paused audio player */
+  audioResume(playerId: number): number { return this.handle.audio_resume(playerId); }
+  /** Stops all active audio players */
+  audioStopAll(): number {
+    const rc = this.handle.audio_stop_all();
+    if (rc === 0) this._activeAudioPlayers.clear();
+    return rc;
+  }
+  /** Sets the global audio volume */
+  audioSetGlobalVolume(volume: number): number {
+    const fn = (this.handle as any).audio_set_global_volume as ((volume: number) => number) | undefined;
+    if (fn) {
+      const rc = fn.call(this.handle, volume);
+      if (rc === 0) this._audioGlobalVolume = volume;
+      return rc;
+    }
+    this._audioGlobalVolume = volume;
+    return 0;
+  }
+  /** Gets the global audio volume */
+  audioGetGlobalVolume(): number {
+    const fn = (this.handle as any).audio_get_global_volume as (() => number) | undefined;
+    return fn ? fn.call(this.handle) : this._audioGlobalVolume;
+  }
+  /** Sets the volume for a specific channel */
+  audioSetChannelVolume(channel: number, volume: number): number {
+    const fn = (this.handle as any).audio_set_channel_volume as ((channel: number, volume: number) => number) | undefined;
+    if (fn) return fn.call(this.handle, channel, volume);
+    this._audioChannelVolumes.set(channel, volume);
+    return 0;
+  }
+  /** Gets the volume for a specific channel */
+  audioGetChannelVolume(channel: number): number {
+    const fn = (this.handle as any).audio_get_channel_volume as ((channel: number) => number) | undefined;
+    if (fn) return fn.call(this.handle, channel);
+    return this._audioChannelVolumes.get(channel) ?? this._audioGlobalVolume;
+  }
+  /** Returns non-zero when the player is still playing */
+  audioIsPlaying(playerId: number): number {
+    const fn = (this.handle as any).audio_is_playing as ((playerId: number) => number) | undefined;
+    if (fn) return fn.call(this.handle, playerId);
+    return this._activeAudioPlayers.has(playerId) ? 1 : 0;
+  }
+  /** Returns the number of active audio players */
+  audioActiveCount(): number {
+    const fn = (this.handle as any).audio_active_count as (() => number) | undefined;
+    return fn ? fn.call(this.handle) : this._activeAudioPlayers.size;
+  }
+  /** Cleans up finished audio players */
+  audioCleanupFinished(): number {
+    const fn = (this.handle as any).audio_cleanup_finished as (() => number) | undefined;
+    return fn ? fn.call(this.handle) : 0;
+  }
+  /** Plays audio with 3D spatial attenuation */
+  audioPlaySpatial3d(data: Uint8Array, sourceX: number, sourceY: number, sourceZ: number, listenerX: number, listenerY: number, listenerZ: number, maxDistance: number, rolloff: number): number {
+    const playerId = this.handle.audio_play_spatial_3d(data, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff);
+    if (playerId >= 0) this._activeAudioPlayers.add(playerId);
+    return playerId;
+  }
+  /** Updates 3D spatial attenuation for an active player */
+  audioUpdateSpatial3d(playerId: number, sourceX: number, sourceY: number, sourceZ: number, listenerX: number, listenerY: number, listenerZ: number, maxDistance: number, rolloff: number): number {
+    return this.handle.audio_update_spatial_volume_3d(playerId, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff);
+  }
+  /** Sets the 3D listener position */
+  audioSetListenerPosition3d(x: number, y: number, z: number): number { return this.handle.audio_set_listener_position_3d(x, y, z); }
+  /** Sets the 3D source position for an active player */
+  audioSetSourcePosition3d(playerId: number, x: number, y: number, z: number, maxDistance: number, rolloff: number): number {
+    return this.handle.audio_set_source_position_3d(playerId, x, y, z, maxDistance, rolloff);
+  }
+  /** Sets the volume for an active player */
+  audioSetPlayerVolume(playerId: number, volume: number): number { return this.handle.audio_set_player_volume(playerId, volume); }
+  /** Sets the playback speed for an active player */
+  audioSetPlayerSpeed(playerId: number, speed: number): number { return this.handle.audio_set_player_speed(playerId, speed); }
+  /** Applies an immediate crossfade mix between two active players */
+  audioCrossfade(fromPlayerId: number, toPlayerId: number, mix: number): number {
+    return this.handle.audio_crossfade(fromPlayerId, toPlayerId, mix);
+  }
+  /** Starts a timed crossfade from one player to a new audio asset */
+  audioCrossfadeTo(fromPlayerId: number, data: Uint8Array, durationSec: number, channel: number): number {
+    const fn = (this.handle as any).audio_crossfade_to as ((fromPlayerId: number, data: Uint8Array, durationSec: number, channel: number) => number) | undefined;
+    const playerId = fn ? fn.call(this.handle, fromPlayerId, data, durationSec, channel) : this.handle.audio_play(data);
+    if (playerId >= 0) this._activeAudioPlayers.add(playerId);
+    if (!fn && playerId >= 0) this.handle.audio_crossfade(fromPlayerId, playerId, 1.0);
+    return playerId;
+  }
+  /** Mixes a secondary audio asset with a primary player */
+  audioMixWith(primaryPlayerId: number, data: Uint8Array, secondaryVolume: number, secondaryChannel: number): number {
+    const fn = (this.handle as any).audio_mix_with as ((primaryPlayerId: number, data: Uint8Array, secondaryVolume: number, secondaryChannel: number) => number) | undefined;
+    const playerId = fn ? fn.call(this.handle, primaryPlayerId, data, secondaryVolume, secondaryChannel) : this.handle.audio_play(data);
+    if (playerId >= 0) this._activeAudioPlayers.add(playerId);
+    if (!fn && playerId >= 0) {
+      this.handle.audio_set_player_volume(playerId, secondaryVolume);
+      const mix = Math.max(0, Math.min(1, secondaryVolume));
+      this.handle.audio_crossfade(primaryPlayerId, playerId, mix);
+    }
+    return playerId;
+  }
+  /** Advances all active timed crossfades */
+  audioUpdateCrossfades(deltaSec: number): number {
+    const fn = (this.handle as any).audio_update_crossfades as ((deltaSec: number) => number) | undefined;
+    return fn ? fn.call(this.handle, deltaSec) : 0;
+  }
+  /** Returns the number of active timed crossfades */
+  audioActiveCrossfadeCount(): number {
+    const fn = (this.handle as any).audio_active_crossfade_count as (() => number) | undefined;
+    return fn ? fn.call(this.handle) : 0;
+  }
+  /** Activates audio playback on platforms that require user gesture initialization */
+  audioActivate(): number {
+    const fn = (this.handle as any).audio_activate as (() => number) | undefined;
+    return fn ? fn.call(this.handle) : 0;
   }
 
   /** Returns true if the key is currently held down */

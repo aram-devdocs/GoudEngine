@@ -538,6 +538,136 @@ export class GoudGame implements IGoudGame {
     return this.native.getNetworkCapabilities();
   }
 
+  /** Plays audio from raw bytes on the default channel */
+  audioPlay(data: Uint8Array): number {
+    return (this.native as any).audioPlay(data);
+  }
+
+  /** Plays audio from raw bytes on the given channel */
+  audioPlayOnChannel(data: Uint8Array, channel: number): number {
+    return (this.native as any).audioPlayOnChannel(data, channel);
+  }
+
+  /** Plays audio with explicit volume, speed, looping, and channel settings */
+  audioPlayWithSettings(data: Uint8Array, volume: number, speed: number, looping: boolean, channel: number): number {
+    return (this.native as any).audioPlayWithSettings(data, volume, speed, looping, channel);
+  }
+
+  /** Stops a playing audio player */
+  audioStop(playerId: number): number {
+    return (this.native as any).audioStop(playerId);
+  }
+
+  /** Pauses a playing audio player */
+  audioPause(playerId: number): number {
+    return (this.native as any).audioPause(playerId);
+  }
+
+  /** Resumes a paused audio player */
+  audioResume(playerId: number): number {
+    return (this.native as any).audioResume(playerId);
+  }
+
+  /** Stops all active audio players */
+  audioStopAll(): number {
+    return (this.native as any).audioStopAll();
+  }
+
+  /** Sets the global audio volume */
+  audioSetGlobalVolume(volume: number): number {
+    return (this.native as any).audioSetGlobalVolume(volume);
+  }
+
+  /** Gets the global audio volume */
+  audioGetGlobalVolume(): number {
+    return (this.native as any).audioGetGlobalVolume();
+  }
+
+  /** Sets the volume for a specific channel */
+  audioSetChannelVolume(channel: number, volume: number): number {
+    return (this.native as any).audioSetChannelVolume(channel, volume);
+  }
+
+  /** Gets the volume for a specific channel */
+  audioGetChannelVolume(channel: number): number {
+    return (this.native as any).audioGetChannelVolume(channel);
+  }
+
+  /** Returns non-zero when the player is still playing */
+  audioIsPlaying(playerId: number): number {
+    return (this.native as any).audioIsPlaying(playerId);
+  }
+
+  /** Returns the number of active audio players */
+  audioActiveCount(): number {
+    return (this.native as any).audioActiveCount();
+  }
+
+  /** Cleans up finished audio players */
+  audioCleanupFinished(): number {
+    return (this.native as any).audioCleanupFinished();
+  }
+
+  /** Plays audio with 3D spatial attenuation */
+  audioPlaySpatial3d(data: Uint8Array, sourceX: number, sourceY: number, sourceZ: number, listenerX: number, listenerY: number, listenerZ: number, maxDistance: number, rolloff: number): number {
+    return (this.native as any).audioPlaySpatial3d(data, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff);
+  }
+
+  /** Updates 3D spatial attenuation for an active player */
+  audioUpdateSpatial3d(playerId: number, sourceX: number, sourceY: number, sourceZ: number, listenerX: number, listenerY: number, listenerZ: number, maxDistance: number, rolloff: number): number {
+    return (this.native as any).audioUpdateSpatial3d(playerId, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff);
+  }
+
+  /** Sets the 3D listener position */
+  audioSetListenerPosition3d(x: number, y: number, z: number): number {
+    return (this.native as any).audioSetListenerPosition3d(x, y, z);
+  }
+
+  /** Sets the 3D source position for an active player */
+  audioSetSourcePosition3d(playerId: number, x: number, y: number, z: number, maxDistance: number, rolloff: number): number {
+    return (this.native as any).audioSetSourcePosition3d(playerId, x, y, z, maxDistance, rolloff);
+  }
+
+  /** Sets the volume for an active player */
+  audioSetPlayerVolume(playerId: number, volume: number): number {
+    return (this.native as any).audioSetPlayerVolume(playerId, volume);
+  }
+
+  /** Sets the playback speed for an active player */
+  audioSetPlayerSpeed(playerId: number, speed: number): number {
+    return (this.native as any).audioSetPlayerSpeed(playerId, speed);
+  }
+
+  /** Applies an immediate crossfade mix between two active players */
+  audioCrossfade(fromPlayerId: number, toPlayerId: number, mix: number): number {
+    return (this.native as any).audioCrossfade(fromPlayerId, toPlayerId, mix);
+  }
+
+  /** Starts a timed crossfade from one player to a new audio asset */
+  audioCrossfadeTo(fromPlayerId: number, data: Uint8Array, durationSec: number, channel: number): number {
+    return (this.native as any).audioCrossfadeTo(fromPlayerId, data, durationSec, channel);
+  }
+
+  /** Mixes a secondary audio asset with a primary player */
+  audioMixWith(primaryPlayerId: number, data: Uint8Array, secondaryVolume: number, secondaryChannel: number): number {
+    return (this.native as any).audioMixWith(primaryPlayerId, data, secondaryVolume, secondaryChannel);
+  }
+
+  /** Advances all active timed crossfades */
+  audioUpdateCrossfades(deltaSec: number): number {
+    return (this.native as any).audioUpdateCrossfades(deltaSec);
+  }
+
+  /** Returns the number of active timed crossfades */
+  audioActiveCrossfadeCount(): number {
+    return (this.native as any).audioActiveCrossfadeCount();
+  }
+
+  /** Activates audio playback on platforms that require user gesture initialization */
+  audioActivate(): number {
+    return (this.native as any).audioActivate();
+  }
+
   /** Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred. */
   checkHotSwapShortcut(): boolean {
     return this.native.checkHotSwapShortcut();

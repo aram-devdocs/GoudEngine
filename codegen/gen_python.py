@@ -1417,28 +1417,44 @@ def _gen_tool_class(tool_name: str, lines: list):
                 lines.append(
                     f"        self._lib.{ffi_fn}(self._ctx, {extra})"
                 )
-            elif any(p["type"] == "string" for p in params) and _ffi_uses_ptr_len(ffi_fn):
-                # String params need encoding to bytes ptr + len (only for *const u8 FFI)
+            elif _ffi_uses_ptr_len(ffi_fn) and any(p["type"] in ("string", "bytes") for p in params):
+                # String/bytes params need ptr+len marshalling for *const u8 FFI.
                 for p in params:
+                    sn = to_snake(p["name"])
                     if p["type"] == "string":
-                        sn = to_snake(p["name"])
+                        lines.append(f"        _{sn}_bytes = {sn}.encode('utf-8')")
                         lines.append(
-                            f"        _{sn}_bytes = {sn}.encode('utf-8')"
+                            f"        _{sn}_buf = ctypes.create_string_buffer(_{sn}_bytes, len(_{sn}_bytes))"
+                        )
+                    elif p["type"] == "bytes":
+                        lines.append(
+                            f"        _{sn}_buf = (ctypes.c_uint8 * len({sn})).from_buffer_copy({sn})"
                         )
                 ffi_parts = ["self._ctx"]
                 for p in params:
                     sn = to_snake(p["name"])
                     if p["type"] == "string":
                         ffi_parts.append(
-                            f"ctypes.cast(ctypes.create_string_buffer(_{sn}_bytes, len(_{sn}_bytes)), ctypes.POINTER(ctypes.c_uint8))"
+                            f"ctypes.cast(_{sn}_buf, ctypes.POINTER(ctypes.c_uint8))"
                         )
                         ffi_parts.append(f"len(_{sn}_bytes)")
+                    elif p["type"] == "bytes":
+                        ffi_parts.append(
+                            f"ctypes.cast(_{sn}_buf, ctypes.POINTER(ctypes.c_uint8))"
+                        )
+                        ffi_parts.append(f"len({sn})")
+                    elif p["type"] in schema.get("enums", {}):
+                        ffi_parts.append(f"int({sn})")
                     else:
                         ffi_parts.append(sn)
                 args_str = ", ".join(ffi_parts)
                 if ret == "void":
                     lines.append(
                         f"        self._lib.{ffi_fn}({args_str})"
+                    )
+                elif mmap.get("returns_bool_from_i32"):
+                    lines.append(
+                        f"        return self._lib.{ffi_fn}({args_str}) != 0"
                     )
                 else:
                     lines.append(

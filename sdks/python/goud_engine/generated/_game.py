@@ -495,7 +495,8 @@ class GoudGame:
     def component_register_type(self, type_id_hash, name, size, align):
         """Registers a component type for generic operations"""
         _name_bytes = name.encode('utf-8')
-        return self._lib.goud_component_register_type(self._ctx, type_id_hash, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), size, align)
+        _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
+        return self._lib.goud_component_register_type(self._ctx, type_id_hash, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), size, align)
 
     def component_add(self, entity, type_id_hash, data_ptr, data_size):
         """Adds a generic component to an entity"""
@@ -558,6 +559,116 @@ class GoudGame:
         _stats = FfiNetworkCapabilities()
         self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_stats))
         return NetworkCapabilities(_stats.supports_hosting, _stats.max_connections, _stats.max_channels, _stats.max_message_size)
+
+    def audio_play(self, data):
+        """Plays audio from raw bytes on the default channel"""
+        _data_buf = (ctypes.c_uint8 * len(data)).from_buffer_copy(data)
+        return self._lib.goud_audio_play(self._ctx, ctypes.cast(_data_buf, ctypes.POINTER(ctypes.c_uint8)), len(data))
+
+    def audio_play_on_channel(self, data, channel):
+        """Plays audio from raw bytes on the given channel"""
+        _data_buf = (ctypes.c_uint8 * len(data)).from_buffer_copy(data)
+        return self._lib.goud_audio_play_on_channel(self._ctx, ctypes.cast(_data_buf, ctypes.POINTER(ctypes.c_uint8)), len(data), channel)
+
+    def audio_play_with_settings(self, data, volume, speed, looping, channel):
+        """Plays audio with explicit volume, speed, looping, and channel settings"""
+        _data_buf = (ctypes.c_uint8 * len(data)).from_buffer_copy(data)
+        return self._lib.goud_audio_play_with_settings(self._ctx, ctypes.cast(_data_buf, ctypes.POINTER(ctypes.c_uint8)), len(data), volume, speed, looping, channel)
+
+    def audio_stop(self, player_id):
+        """Stops a playing audio player"""
+        return self._lib.goud_audio_stop(self._ctx, player_id)
+
+    def audio_pause(self, player_id):
+        """Pauses a playing audio player"""
+        return self._lib.goud_audio_pause(self._ctx, player_id)
+
+    def audio_resume(self, player_id):
+        """Resumes a paused audio player"""
+        return self._lib.goud_audio_resume(self._ctx, player_id)
+
+    def audio_stop_all(self):
+        """Stops all active audio players"""
+        return self._lib.goud_audio_stop_all(self._ctx)
+
+    def audio_set_global_volume(self, volume):
+        """Sets the global audio volume"""
+        return self._lib.goud_audio_set_global_volume(self._ctx, volume)
+
+    def audio_get_global_volume(self):
+        """Gets the global audio volume"""
+        return self._lib.goud_audio_get_global_volume(self._ctx)
+
+    def audio_set_channel_volume(self, channel, volume):
+        """Sets the volume for a specific channel"""
+        return self._lib.goud_audio_set_channel_volume(self._ctx, channel, volume)
+
+    def audio_get_channel_volume(self, channel):
+        """Gets the volume for a specific channel"""
+        return self._lib.goud_audio_get_channel_volume(self._ctx, channel)
+
+    def audio_is_playing(self, player_id):
+        """Returns non-zero when the player is still playing"""
+        return self._lib.goud_audio_is_playing(self._ctx, player_id)
+
+    def audio_active_count(self):
+        """Returns the number of active audio players"""
+        return self._lib.goud_audio_active_count(self._ctx)
+
+    def audio_cleanup_finished(self):
+        """Cleans up finished audio players"""
+        return self._lib.goud_audio_cleanup_finished(self._ctx)
+
+    def audio_play_spatial3d(self, data, source_x, source_y, source_z, listener_x, listener_y, listener_z, max_distance, rolloff):
+        """Plays audio with 3D spatial attenuation"""
+        _data_buf = (ctypes.c_uint8 * len(data)).from_buffer_copy(data)
+        return self._lib.goud_audio_play_spatial_3d(self._ctx, ctypes.cast(_data_buf, ctypes.POINTER(ctypes.c_uint8)), len(data), source_x, source_y, source_z, listener_x, listener_y, listener_z, max_distance, rolloff)
+
+    def audio_update_spatial3d(self, player_id, source_x, source_y, source_z, listener_x, listener_y, listener_z, max_distance, rolloff):
+        """Updates 3D spatial attenuation for an active player"""
+        return self._lib.goud_audio_update_spatial_volume_3d(self._ctx, player_id, source_x, source_y, source_z, listener_x, listener_y, listener_z, max_distance, rolloff)
+
+    def audio_set_listener_position3d(self, x, y, z):
+        """Sets the 3D listener position"""
+        return self._lib.goud_audio_set_listener_position_3d(self._ctx, x, y, z)
+
+    def audio_set_source_position3d(self, player_id, x, y, z, max_distance, rolloff):
+        """Sets the 3D source position for an active player"""
+        return self._lib.goud_audio_set_source_position_3d(self._ctx, player_id, x, y, z, max_distance, rolloff)
+
+    def audio_set_player_volume(self, player_id, volume):
+        """Sets the volume for an active player"""
+        return self._lib.goud_audio_set_player_volume(self._ctx, player_id, volume)
+
+    def audio_set_player_speed(self, player_id, speed):
+        """Sets the playback speed for an active player"""
+        return self._lib.goud_audio_set_player_speed(self._ctx, player_id, speed)
+
+    def audio_crossfade(self, from_player_id, to_player_id, mix):
+        """Applies an immediate crossfade mix between two active players"""
+        return self._lib.goud_audio_crossfade(self._ctx, from_player_id, to_player_id, mix)
+
+    def audio_crossfade_to(self, from_player_id, data, duration_sec, channel):
+        """Starts a timed crossfade from one player to a new audio asset"""
+        _data_buf = (ctypes.c_uint8 * len(data)).from_buffer_copy(data)
+        return self._lib.goud_audio_crossfade_to(self._ctx, from_player_id, ctypes.cast(_data_buf, ctypes.POINTER(ctypes.c_uint8)), len(data), duration_sec, channel)
+
+    def audio_mix_with(self, primary_player_id, data, secondary_volume, secondary_channel):
+        """Mixes a secondary audio asset with a primary player"""
+        _data_buf = (ctypes.c_uint8 * len(data)).from_buffer_copy(data)
+        return self._lib.goud_audio_mix_with(self._ctx, primary_player_id, ctypes.cast(_data_buf, ctypes.POINTER(ctypes.c_uint8)), len(data), secondary_volume, secondary_channel)
+
+    def audio_update_crossfades(self, delta_sec):
+        """Advances all active timed crossfades"""
+        return self._lib.goud_audio_update_crossfades(self._ctx, delta_sec)
+
+    def audio_active_crossfade_count(self):
+        """Returns the number of active timed crossfades"""
+        return self._lib.goud_audio_active_crossfade_count(self._ctx)
+
+    def audio_activate(self):
+        """Activates audio playback on platforms that require user gesture initialization"""
+        return self._lib.goud_audio_cleanup_finished(self._ctx)
 
     def check_hot_swap_shortcut(self):
         """Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred."""
@@ -702,7 +813,8 @@ class GoudContext:
     def component_register_type(self, type_id_hash, name, size, align):
         """Registers a component type for generic operations"""
         _name_bytes = name.encode('utf-8')
-        return self._lib.goud_component_register_type(self._ctx, type_id_hash, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), size, align)
+        _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
+        return self._lib.goud_component_register_type(self._ctx, type_id_hash, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), size, align)
 
     def component_add(self, entity, type_id_hash, data_ptr, data_size):
         """Adds a generic component to an entity"""
@@ -739,7 +851,8 @@ class GoudContext:
     def scene_create(self, name):
         """Creates a new named scene and returns its ID"""
         _name_bytes = name.encode('utf-8')
-        return self._lib.goud_scene_create(self._ctx, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
+        _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
+        return self._lib.goud_scene_create(self._ctx, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
 
     def scene_destroy(self, scene_id):
         """Destroys a scene by ID"""
@@ -748,18 +861,22 @@ class GoudContext:
     def scene_get_by_name(self, name):
         """Looks up a scene ID by name"""
         _name_bytes = name.encode('utf-8')
-        return self._lib.goud_scene_get_by_name(self._ctx, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
+        _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
+        return self._lib.goud_scene_get_by_name(self._ctx, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
 
     def load_scene(self, name, json):
         """Loads a scene from JSON data and returns its ID"""
         _name_bytes = name.encode('utf-8')
+        _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
         _json_bytes = json.encode('utf-8')
-        return self._lib.goud_scene_load(self._ctx, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), ctypes.cast(ctypes.create_string_buffer(_json_bytes, len(_json_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_json_bytes))
+        _json_buf = ctypes.create_string_buffer(_json_bytes, len(_json_bytes))
+        return self._lib.goud_scene_load(self._ctx, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), ctypes.cast(_json_buf, ctypes.POINTER(ctypes.c_uint8)), len(_json_bytes))
 
     def unload_scene(self, name):
         """Unloads a scene by name"""
         _name_bytes = name.encode('utf-8')
-        return self._lib.goud_scene_unload(self._ctx, ctypes.cast(ctypes.create_string_buffer(_name_bytes, len(_name_bytes)), ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
+        _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
+        return self._lib.goud_scene_unload(self._ctx, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes))
 
     def set_active_scene(self, scene_id, active):
         """Sets whether a scene is active"""

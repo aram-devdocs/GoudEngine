@@ -159,6 +159,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     // audio module
     "src/ffi/audio/playback.rs",
     "src/ffi/audio/controls.rs",
+    "src/ffi/audio/spatial.rs",
     // ui module
     "src/ffi/ui/manager.rs",
     "src/ffi/ui/node.rs",

@@ -1027,6 +1027,36 @@ def _setup():
     _lib.goud_audio_active_count.restype = ctypes.c_int32
     _lib.goud_audio_cleanup_finished.argtypes = [GoudContextId]
     _lib.goud_audio_cleanup_finished.restype = ctypes.c_int32
+    _lib.goud_audio_play_spatial.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_play_spatial.restype = ctypes.c_int64
+    _lib.goud_audio_play_spatial_3d.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_play_spatial_3d.restype = ctypes.c_int64
+    _lib.goud_audio_update_spatial_volume.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_update_spatial_volume.restype = ctypes.c_int32
+    _lib.goud_audio_update_spatial_volume_3d.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_update_spatial_volume_3d.restype = ctypes.c_int32
+    _lib.goud_audio_set_listener_position.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_set_listener_position.restype = ctypes.c_int32
+    _lib.goud_audio_set_listener_position_3d.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_set_listener_position_3d.restype = ctypes.c_int32
+    _lib.goud_audio_set_source_position.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_set_source_position.restype = ctypes.c_int32
+    _lib.goud_audio_set_source_position_3d.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_audio_set_source_position_3d.restype = ctypes.c_int32
+    _lib.goud_audio_set_player_volume.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]
+    _lib.goud_audio_set_player_volume.restype = ctypes.c_int32
+    _lib.goud_audio_set_player_speed.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float]
+    _lib.goud_audio_set_player_speed.restype = ctypes.c_int32
+    _lib.goud_audio_crossfade.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_float]
+    _lib.goud_audio_crossfade.restype = ctypes.c_int32
+    _lib.goud_audio_crossfade_to.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t, ctypes.c_float, ctypes.c_uint8]
+    _lib.goud_audio_crossfade_to.restype = ctypes.c_int64
+    _lib.goud_audio_mix_with.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t, ctypes.c_float, ctypes.c_uint8]
+    _lib.goud_audio_mix_with.restype = ctypes.c_int64
+    _lib.goud_audio_update_crossfades.argtypes = [GoudContextId, ctypes.c_float]
+    _lib.goud_audio_update_crossfades.restype = ctypes.c_int32
+    _lib.goud_audio_active_crossfade_count.argtypes = [GoudContextId]
+    _lib.goud_audio_active_crossfade_count.restype = ctypes.c_int32
 
     # ui_manager
     _lib.goud_ui_manager_create.argtypes = []

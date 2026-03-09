@@ -87,8 +87,12 @@ web-sys = { version = "0.3", optional = true, features = [
     "Document", "HtmlCanvasElement", "Element",
     "Performance",
     "console",
-    "AudioContext", "AudioBuffer", "AudioBufferSourceNode",
-    "GainNode", "AudioDestinationNode", "BaseAudioContext",
+    "AudioContext", "AudioContextState", "AudioBuffer", "AudioBufferSourceNode",
+    "AudioNode", "AudioParam",
+    "GainNode", "StereoPannerNode", "MediaElementAudioSourceNode",
+    "HtmlMediaElement", "HtmlAudioElement",
+    "AudioDestinationNode", "BaseAudioContext",
+    "Blob", "Url",
 ] }
 
 [lib]
