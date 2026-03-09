@@ -121,6 +121,25 @@ namespace GoudEngine
             NativeMethods.goud_texture_destroy(_ctx, handle);
         }
 
+        /// <summary>Loads a font from a file path and returns its handle</summary>
+        public ulong LoadFont(string path)
+        {
+            return NativeMethods.goud_font_load(_ctx, path);
+        }
+
+        /// <summary>Destroys a previously loaded font</summary>
+        public bool DestroyFont(ulong handle)
+        {
+            return NativeMethods.goud_font_destroy(_ctx, handle);
+        }
+
+        /// <summary>Draws text using a loaded font</summary>
+        public bool DrawText(ulong fontHandle, string text, float x, float y, float fontSize = 16, TextAlignment alignment, float maxWidth = 0, float lineSpacing = 1, TextDirection direction, Color? color = null)
+        {
+            var c = color ?? Color.White();
+            return NativeMethods.goud_renderer_draw_text(_ctx, fontHandle, text, x, y, fontSize, (byte)alignment, maxWidth, lineSpacing, (byte)direction, c.R, c.G, c.B, c.A);
+        }
+
         /// <summary>Draws a textured sprite</summary>
         public void DrawSprite(ulong texture, float x, float y, float width, float height, float rotation = 0, Color? color = null)
         {

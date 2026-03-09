@@ -95,6 +95,12 @@ export interface IGoudGame {
   loadTexture(path: string): Promise<number>;
   /** Destroys a previously loaded texture */
   destroyTexture(handle: number): void;
+  /** Loads a font from a file path and returns its handle */
+  loadFont(path: string): Promise<number>;
+  /** Destroys a previously loaded font */
+  destroyFont(handle: number): boolean;
+  /** Draws text using a loaded font */
+  drawText(fontHandle: number, text: string, x: number, y: number, fontSize?: number, alignment: number, maxWidth?: number, lineSpacing?: number, direction: number, color?: IColor): boolean;
   /** Draws a textured sprite */
   drawSprite(texture: number, x: number, y: number, width: number, height: number, rotation?: number, color?: IColor): void;
   /** Draws a colored rectangle */

@@ -170,6 +170,12 @@ class TextAlignment:
     CENTER = 1
     RIGHT = 2
 
+class TextDirection:
+    """Text flow direction"""
+    AUTO = 0
+    LTR = 1
+    RTL = 2
+
 class BlendMode:
     """How an animation layer blends with layers below it"""
     OVERRIDE = 0

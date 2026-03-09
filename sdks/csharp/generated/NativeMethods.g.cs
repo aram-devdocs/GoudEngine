@@ -352,6 +352,21 @@ namespace GoudEngine
         public static extern bool goud_texture_destroy(GoudContextId ctx, ulong texture);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong goud_font_load(GoudContextId ctx, string path);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_font_destroy(GoudContextId ctx, ulong font_handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer_draw_text(GoudContextId ctx, ulong font_handle, string text, float x, float y, float font_size, byte alignment, float max_width, float line_spacing, byte direction, float r, float g, float b, float a);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_draw_text(GoudContextId ctx, ulong font_handle, string text, float x, float y, float font_size, byte alignment, float max_width, float line_spacing, byte direction, float r, float g, float b, float a);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_renderer_draw_sprite_rect(GoudContextId ctx, ulong texture, float x, float y, float width, float height, float rotation, float src_x, float src_y, float src_w, float src_h, float r, float g, float b, float a);
 
