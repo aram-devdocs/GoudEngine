@@ -166,8 +166,8 @@ impl GoudGame {
     pub fn with_platform(config: GameConfig) -> GoudResult<Self> {
         init_engine_diagnostics(&config);
 
-        use crate::libs::platform::WindowConfig;
         use crate::libs::platform::glfw_platform::GlfwPlatform;
+        use crate::libs::platform::WindowConfig;
 
         let window_config = WindowConfig {
             width: config.width,
