@@ -277,15 +277,6 @@ pub(super) fn ensure_immediate_state(context_id: GoudContextId) -> Result<(), Go
     Ok(())
 }
 
-/// Binds the immediate-mode VAO for draw calls.
-pub(super) fn bind_immediate_vao(vao: u32) {
-    // SAFETY: `vao` is created and owned by the immediate renderer state for the
-    // active GL context, so binding it is valid for subsequent draw calls.
-    unsafe {
-        gl::BindVertexArray(vao);
-    }
-}
-
 // ============================================================================
 // Math Helpers
 // ============================================================================

@@ -2,15 +2,13 @@ use crate::core::error::GoudError;
 use crate::core::handle::Handle;
 use crate::ffi::context::GoudContextId;
 use crate::ffi::window::WindowState;
-use crate::libs::graphics::backend::types::{PrimitiveTopology, TextureHandle};
-use crate::libs::graphics::backend::{DrawOps, ShaderOps, StateOps, TextureOps};
+use crate::libs::graphics::backend::types::TextureHandle;
 use crate::rendering::text::{
     layout_shaped_text, shape_text, GlyphAtlas, TextDirection, TextLayoutConfig,
 };
 
-use super::super::immediate::{
-    bind_immediate_vao, model_matrix, ortho_matrix, ImmediateStateData, IMMEDIATE_STATE,
-};
+use super::super::draw::draw_sprite_rect_internal;
+use super::super::immediate::{ImmediateStateData, IMMEDIATE_STATE};
 use super::{FontMarker, GoudFontHandle, FONT_STATES};
 
 pub(super) fn draw_text_internal(
@@ -87,35 +85,7 @@ fn draw_layout(
     b: f32,
     a: f32,
 ) -> Result<(), GoudError> {
-    let (
-        shader,
-        _vertex_buffer,
-        _index_buffer,
-        vao,
-        u_projection,
-        u_model,
-        u_color,
-        u_use_texture,
-        u_texture,
-        u_uv_offset,
-        u_uv_scale,
-    ) = state_data;
-
-    let (fb_width, fb_height) = window_state.get_framebuffer_size();
-    let (win_width, win_height) = window_state.get_size();
-
-    let backend = window_state.backend_mut();
-    backend.set_viewport(0, 0, fb_width, fb_height);
-    let projection = ortho_matrix(0.0, win_width as f32, win_height as f32, 0.0);
-
-    bind_immediate_vao(vao);
-
-    backend.bind_shader(shader)?;
-    backend.set_uniform_mat4(u_projection, &projection);
-    backend.set_uniform_vec4(u_color, r, g, b, a);
-    backend.set_uniform_int(u_use_texture, 1);
-    backend.set_uniform_int(u_texture, 0);
-    backend.bind_texture(texture, 0)?;
+    let texture_handle = texture.to_u64();
 
     for glyph in &layout.glyphs {
         if glyph.size_x <= 0.0 || glyph.size_y <= 0.0 {
@@ -124,15 +94,24 @@ fn draw_layout(
 
         let center_x = x + glyph.x + glyph.size_x * 0.5;
         let center_y = y + glyph.y + glyph.size_y * 0.5;
-        let model = model_matrix(center_x, center_y, glyph.size_x, glyph.size_y, 0.0);
-        backend.set_uniform_mat4(u_model, &model);
-        backend.set_uniform_vec2(u_uv_offset, glyph.uv_rect.u_min, glyph.uv_rect.v_min);
-        backend.set_uniform_vec2(
-            u_uv_scale,
+        draw_sprite_rect_internal(
+            window_state,
+            state_data,
+            texture_handle,
+            center_x,
+            center_y,
+            glyph.size_x,
+            glyph.size_y,
+            0.0,
+            glyph.uv_rect.u_min,
+            glyph.uv_rect.v_min,
             glyph.uv_rect.u_max - glyph.uv_rect.u_min,
             glyph.uv_rect.v_max - glyph.uv_rect.v_min,
-        );
-        backend.draw_indexed(PrimitiveTopology::Triangles, 6, 0)?;
+            r,
+            g,
+            b,
+            a,
+        )?;
     }
 
     Ok(())

@@ -134,7 +134,7 @@ namespace GoudEngine
         }
 
         /// <summary>Draws text using a loaded font</summary>
-        public bool DrawText(ulong fontHandle, string text, float x, float y, float fontSize = 16, TextAlignment alignment, float maxWidth = 0, float lineSpacing = 1, TextDirection direction, Color? color = null)
+        public bool DrawText(ulong fontHandle, string text, float x, float y, float fontSize = 16, TextAlignment alignment = TextAlignment.Left, float maxWidth = 0, float lineSpacing = 1, TextDirection direction = TextDirection.Auto, Color? color = null)
         {
             var c = color ?? Color.White();
             return NativeMethods.goud_renderer_draw_text(_ctx, fontHandle, text, x, y, fontSize, (byte)alignment, maxWidth, lineSpacing, (byte)direction, c.R, c.G, c.B, c.A);
