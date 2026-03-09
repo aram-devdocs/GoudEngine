@@ -903,79 +903,19 @@ namespace GoudEngine
         /// <summary>Plays audio from raw bytes on the default channel</summary>
         public long AudioPlay(byte[] data)
         {
-            if (data == null || data.Length == 0)
-            {
-                return NativeMethods.goud_audio_play(_ctx, IntPtr.Zero, 0);
-            }
-
-            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-            try
-            {
-                return NativeMethods.goud_audio_play(_ctx, handle.AddrOfPinnedObject(), (nuint)data.Length);
-            }
-            finally
-            {
-                handle.Free();
-            }
+            return NativeMethods.goud_audio_play(_ctx, data);
         }
 
         /// <summary>Plays audio from raw bytes on the given channel</summary>
         public long AudioPlayOnChannel(byte[] data, byte channel)
         {
-            if (data == null || data.Length == 0)
-            {
-                return NativeMethods.goud_audio_play_on_channel(_ctx, IntPtr.Zero, 0, channel);
-            }
-
-            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-            try
-            {
-                return NativeMethods.goud_audio_play_on_channel(
-                    _ctx,
-                    handle.AddrOfPinnedObject(),
-                    (nuint)data.Length,
-                    channel
-                );
-            }
-            finally
-            {
-                handle.Free();
-            }
+            return NativeMethods.goud_audio_play_on_channel(_ctx, data, channel);
         }
 
         /// <summary>Plays audio with explicit volume, speed, looping, and channel settings</summary>
         public long AudioPlayWithSettings(byte[] data, float volume, float speed, bool looping, byte channel)
         {
-            if (data == null || data.Length == 0)
-            {
-                return NativeMethods.goud_audio_play_with_settings(
-                    _ctx,
-                    IntPtr.Zero,
-                    0,
-                    volume,
-                    speed,
-                    looping,
-                    channel
-                );
-            }
-
-            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-            try
-            {
-                return NativeMethods.goud_audio_play_with_settings(
-                    _ctx,
-                    handle.AddrOfPinnedObject(),
-                    (nuint)data.Length,
-                    volume,
-                    speed,
-                    looping,
-                    channel
-                );
-            }
-            finally
-            {
-                handle.Free();
-            }
+            return NativeMethods.goud_audio_play_with_settings(_ctx, data, volume, speed, looping, channel);
         }
 
         /// <summary>Stops a playing audio player</summary>
@@ -1047,44 +987,7 @@ namespace GoudEngine
         /// <summary>Plays audio with 3D spatial attenuation</summary>
         public long AudioPlaySpatial3d(byte[] data, float sourceX, float sourceY, float sourceZ, float listenerX, float listenerY, float listenerZ, float maxDistance, float rolloff)
         {
-            if (data == null || data.Length == 0)
-            {
-                return NativeMethods.goud_audio_play_spatial_3d(
-                    _ctx,
-                    IntPtr.Zero,
-                    0,
-                    sourceX,
-                    sourceY,
-                    sourceZ,
-                    listenerX,
-                    listenerY,
-                    listenerZ,
-                    maxDistance,
-                    rolloff
-                );
-            }
-
-            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-            try
-            {
-                return NativeMethods.goud_audio_play_spatial_3d(
-                    _ctx,
-                    handle.AddrOfPinnedObject(),
-                    (nuint)data.Length,
-                    sourceX,
-                    sourceY,
-                    sourceZ,
-                    listenerX,
-                    listenerY,
-                    listenerZ,
-                    maxDistance,
-                    rolloff
-                );
-            }
-            finally
-            {
-                handle.Free();
-            }
+            return NativeMethods.goud_audio_play_spatial_3d(_ctx, data, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff);
         }
 
         /// <summary>Updates 3D spatial attenuation for an active player</summary>
@@ -1126,67 +1029,13 @@ namespace GoudEngine
         /// <summary>Starts a timed crossfade from one player to a new audio asset</summary>
         public long AudioCrossfadeTo(ulong fromPlayerId, byte[] data, float durationSec, byte channel)
         {
-            if (data == null || data.Length == 0)
-            {
-                return NativeMethods.goud_audio_crossfade_to(
-                    _ctx,
-                    fromPlayerId,
-                    IntPtr.Zero,
-                    0,
-                    durationSec,
-                    channel
-                );
-            }
-
-            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-            try
-            {
-                return NativeMethods.goud_audio_crossfade_to(
-                    _ctx,
-                    fromPlayerId,
-                    handle.AddrOfPinnedObject(),
-                    (nuint)data.Length,
-                    durationSec,
-                    channel
-                );
-            }
-            finally
-            {
-                handle.Free();
-            }
+            return NativeMethods.goud_audio_crossfade_to(_ctx, fromPlayerId, data, durationSec, channel);
         }
 
         /// <summary>Mixes a secondary audio asset with a primary player</summary>
         public long AudioMixWith(ulong primaryPlayerId, byte[] data, float secondaryVolume, byte secondaryChannel)
         {
-            if (data == null || data.Length == 0)
-            {
-                return NativeMethods.goud_audio_mix_with(
-                    _ctx,
-                    primaryPlayerId,
-                    IntPtr.Zero,
-                    0,
-                    secondaryVolume,
-                    secondaryChannel
-                );
-            }
-
-            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-            try
-            {
-                return NativeMethods.goud_audio_mix_with(
-                    _ctx,
-                    primaryPlayerId,
-                    handle.AddrOfPinnedObject(),
-                    (nuint)data.Length,
-                    secondaryVolume,
-                    secondaryChannel
-                );
-            }
-            finally
-            {
-                handle.Free();
-            }
+            return NativeMethods.goud_audio_mix_with(_ctx, primaryPlayerId, data, secondaryVolume, secondaryChannel);
         }
 
         /// <summary>Advances all active timed crossfades</summary>
