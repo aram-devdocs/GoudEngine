@@ -1233,6 +1233,22 @@
             "name"
           ]
         },
+        "loadScene": {
+          "ffi": "goud_scene_load",
+          "string_params": [
+            "name",
+            "json"
+          ]
+        },
+        "unloadScene": {
+          "ffi": "goud_scene_unload",
+          "string_params": [
+            "name"
+          ]
+        },
+        "setActiveScene": {
+          "ffi": "goud_scene_set_active"
+        },
         "sceneSetActive": {
           "ffi": "goud_scene_set_active"
         },
@@ -2190,6 +2206,50 @@
           }
         ],
         "returns": "u32",
+        "unsafe": true
+      },
+      "goud_scene_load": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "name_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "name_len",
+            "type": "u32"
+          },
+          {
+            "name": "json_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "json_len",
+            "type": "u32"
+          }
+        ],
+        "returns": "u32",
+        "unsafe": true
+      },
+      "goud_scene_unload": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "name_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "name_len",
+            "type": "u32"
+          }
+        ],
+        "returns": "GoudResult",
         "unsafe": true
       },
       "goud_scene_set_active": {

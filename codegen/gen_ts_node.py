@@ -568,9 +568,22 @@ def gen_node_wrapper():
                 lines.append(f"    {native_obj}.{mn}({native_call_args});")
             else:
                 lines.append(f"    return {native_obj}.{mn}({native_call_args});")
-
         lines.append("  }")
         lines.append("")
+
+    # Scene wrapper methods (idiomatic names across SDKs).
+    lines.append("  loadScene(name: string, json: string): number {")
+    lines.append("    return (this.native as any).loadScene(name, json);")
+    lines.append("  }")
+    lines.append("")
+    lines.append("  unloadScene(name: string): boolean {")
+    lines.append("    return (this.native as any).unloadScene(name);")
+    lines.append("  }")
+    lines.append("")
+    lines.append("  setActiveScene(sceneId: number, active: boolean): boolean {")
+    lines.append("    return (this.native as any).setActiveScene(sceneId, active);")
+    lines.append("  }")
+    lines.append("")
 
     # Animation Layer Stack & Events wrapper methods
     _anim_wrappers = [
@@ -1017,6 +1030,8 @@ use goud_engine::ffi::entity::{
     goud_entity_count, goud_entity_despawn, goud_entity_is_alive,
     goud_entity_spawn_batch, goud_entity_spawn_empty,
 };
+use goud_engine::ffi::scene::goud_scene_set_active;
+use goud_engine::ffi::scene_loading::{goud_scene_load, goud_scene_unload};
 use goud_engine::ffi::input::{
     goud_input_get_mouse_delta, goud_input_get_mouse_position,
     goud_input_get_scroll_delta, goud_input_key_just_pressed,
@@ -1509,6 +1524,45 @@ impl GoudGame {
     #[napi]
     pub fn is_alive(&self, entity: &Entity) -> bool {
         goud_entity_is_alive(self.context_id, entity.bits)
+    }
+
+    // =========================================================================
+    // Scene Management Wrappers
+    // =========================================================================
+
+    #[napi]
+    pub fn load_scene(&self, name: String, json: String) -> u32 {
+        let name_bytes = name.as_bytes();
+        let json_bytes = json.as_bytes();
+        // SAFETY: String byte pointers are valid for their respective lengths.
+        unsafe {
+            goud_scene_load(
+                self.context_id,
+                name_bytes.as_ptr(),
+                name_bytes.len() as u32,
+                json_bytes.as_ptr(),
+                json_bytes.len() as u32,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn unload_scene(&self, name: String) -> bool {
+        let name_bytes = name.as_bytes();
+        // SAFETY: name_bytes pointer is valid for name_bytes.len() bytes.
+        unsafe {
+            goud_scene_unload(
+                self.context_id,
+                name_bytes.as_ptr(),
+                name_bytes.len() as u32,
+            )
+            .success
+        }
+    }
+
+    #[napi]
+    pub fn set_active_scene(&self, scene_id: u32, active: bool) -> bool {
+        goud_scene_set_active(self.context_id, scene_id, active).success
     }
 
     // =========================================================================

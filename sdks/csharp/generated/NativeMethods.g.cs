@@ -285,6 +285,12 @@ namespace GoudEngine
         public static extern uint goud_scene_get_by_name(GoudContextId ctx, IntPtr name_ptr, uint name_len);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_scene_load(GoudContextId ctx, IntPtr name_ptr, uint name_len, IntPtr json_ptr, uint json_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern GoudResult goud_scene_unload(GoudContextId ctx, IntPtr name_ptr, uint name_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern GoudResult goud_scene_set_active(GoudContextId ctx, uint scene_id, [MarshalAs(UnmanagedType.U1)] bool active);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

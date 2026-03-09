@@ -12,9 +12,6 @@ import math
 import importlib.util
 from pathlib import Path
 
-# errors.py lives directly in goud_engine/, not in generated/
-_ERRORS_PATH = Path(__file__).parent / "goud_engine" / "errors.py"
-
 # Ensure goud_engine package is importable
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -24,6 +21,12 @@ sys.path.insert(0, str(Path(__file__).parent))
 # via _ffi.py before it has been built.
 # ---------------------------------------------------------------------------
 _GENERATED_DIR = Path(__file__).parent / "goud_engine" / "generated"
+_LEGACY_ERRORS_PATH = Path(__file__).parent / "goud_engine" / "errors.py"
+_ERRORS_PATH = (
+    _LEGACY_ERRORS_PATH
+    if _LEGACY_ERRORS_PATH.exists()
+    else _GENERATED_DIR / "_errors.py"
+)
 
 
 def _load_module(name, path):
@@ -65,6 +68,26 @@ def test_imports():
     assert game_path.exists(), f"GoudGame source not found at {game_path}"
 
     print("  All imports successful")
+    return True
+
+
+def test_generated_scene_wrapper_api_names():
+    """Validate generated scene wrapper method names without loading native lib."""
+    print("Testing generated scene wrapper API names...")
+
+    game_src = (_GENERATED_DIR / "_game.py").read_text()
+
+    # New idiomatic wrappers
+    assert "def load_scene(self, name, json):" in game_src, "missing load_scene wrapper"
+    assert "def unload_scene(self, name):" in game_src, "missing unload_scene wrapper"
+    assert "def set_active_scene(self, scene_id, active):" in game_src, "missing set_active_scene wrapper"
+
+    # Legacy API kept for compatibility
+    assert "def scene_create(self, name):" in game_src, "missing legacy scene_create API"
+    assert "def scene_destroy(self, scene_id):" in game_src, "missing legacy scene_destroy API"
+    assert "def scene_set_current(self, scene_id):" in game_src, "missing legacy scene_set_current API"
+
+    print("  Scene wrapper API name tests passed")
     return True
 
 
@@ -568,8 +591,10 @@ def test_errors():
     # We must avoid triggering FFI load, so load __init__ indirectly via importlib
     init_path = Path(__file__).parent / "goud_engine" / "__init__.py"
     init_src = init_path.read_text()
-    assert "from .errors import" in init_src, \
-        "__init__.py should re-export error classes from .errors"
+    assert (
+        "from .errors import" in init_src
+        or "from .generated._errors import" in init_src
+    ), "__init__.py should re-export error classes from the package errors module"
 
     # Test dispatch path: _category_from_code maps error codes to category strings
     assert _category_from_code(1) == "Context", \
@@ -619,6 +644,7 @@ def main():
 
     tests = [
         test_imports,
+        test_generated_scene_wrapper_api_names,
         test_vec2,
         test_color,
         test_rect,

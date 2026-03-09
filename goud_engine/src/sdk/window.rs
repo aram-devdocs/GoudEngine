@@ -170,6 +170,7 @@ impl GoudGame {
             backend.set_viewport(0, 0, fb_size.0, fb_size.1);
         }
 
+        self.process_ui_frame_with_viewport(fb_size);
         self.context.update(dt);
         Ok(dt)
     }
