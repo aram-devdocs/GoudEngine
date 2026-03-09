@@ -229,6 +229,14 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_audio_active_crossfade_count": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_audio_cleanup_finished": {
       "source_file": "ffi/audio/controls.rs",
       "params": [
@@ -236,6 +244,30 @@
       ],
       "return_type": "i32",
       "is_unsafe": false
+    },
+    "goud_audio_crossfade": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "from_player_id: u64",
+        "to_player_id: u64",
+        "mix: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_crossfade_to": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "from_player_id: u64",
+        "asset_data: *const u8",
+        "asset_len: usize",
+        "duration_sec: f32",
+        "channel: u8"
+      ],
+      "return_type": "i64",
+      "is_unsafe": true
     },
     "goud_audio_get_channel_volume": {
       "source_file": "ffi/audio/controls.rs",
@@ -263,6 +295,19 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_audio_mix_with": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "primary_player_id: u64",
+        "asset_data: *const u8",
+        "asset_len: usize",
+        "secondary_volume: f32",
+        "secondary_channel: u8"
+      ],
+      "return_type": "i64",
+      "is_unsafe": true
+    },
     "goud_audio_pause": {
       "source_file": "ffi/audio/controls.rs",
       "params": [
@@ -289,6 +334,40 @@
         "asset_data: *const u8",
         "asset_len: usize",
         "channel: u8"
+      ],
+      "return_type": "i64",
+      "is_unsafe": true
+    },
+    "goud_audio_play_spatial": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "asset_data: *const u8",
+        "asset_len: usize",
+        "source_x: f32",
+        "source_y: f32",
+        "listener_x: f32",
+        "listener_y: f32",
+        "max_distance: f32",
+        "rolloff: f32"
+      ],
+      "return_type": "i64",
+      "is_unsafe": true
+    },
+    "goud_audio_play_spatial_3d": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "asset_data: *const u8",
+        "asset_len: usize",
+        "source_x: f32",
+        "source_y: f32",
+        "source_z: f32",
+        "listener_x: f32",
+        "listener_y: f32",
+        "listener_z: f32",
+        "max_distance: f32",
+        "rolloff: f32"
       ],
       "return_type": "i64",
       "is_unsafe": true
@@ -335,6 +414,74 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_audio_set_listener_position": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "x: f32",
+        "y: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_set_listener_position_3d": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "x: f32",
+        "y: f32",
+        "z: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_set_player_speed": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64",
+        "speed: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_set_player_volume": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64",
+        "volume: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_set_source_position": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64",
+        "x: f32",
+        "y: f32",
+        "max_distance: f32",
+        "rolloff: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_set_source_position_3d": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64",
+        "x: f32",
+        "y: f32",
+        "z: f32",
+        "max_distance: f32",
+        "rolloff: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_audio_stop": {
       "source_file": "ffi/audio/controls.rs",
       "params": [
@@ -348,6 +495,47 @@
       "source_file": "ffi/audio/controls.rs",
       "params": [
         "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_update_crossfades": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "delta_sec: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_update_spatial_volume": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64",
+        "source_x: f32",
+        "source_y: f32",
+        "listener_x: f32",
+        "listener_y: f32",
+        "max_distance: f32",
+        "rolloff: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_audio_update_spatial_volume_3d": {
+      "source_file": "ffi/audio/spatial.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "player_id: u64",
+        "source_x: f32",
+        "source_y: f32",
+        "source_z: f32",
+        "listener_x: f32",
+        "listener_y: f32",
+        "listener_z: f32",
+        "max_distance: f32",
+        "rolloff: f32"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -3532,5 +3720,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 364
+  "total_count": 379
 }

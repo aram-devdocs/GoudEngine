@@ -7732,6 +7732,21 @@
         ],
         "returns": "i32"
       },
+      "goud_audio_play_spatial": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "asset_data", "type": "*const u8" },
+          { "name": "asset_len", "type": "usize" },
+          { "name": "source_x", "type": "f32" },
+          { "name": "source_y", "type": "f32" },
+          { "name": "listener_x", "type": "f32" },
+          { "name": "listener_y", "type": "f32" },
+          { "name": "max_distance", "type": "f32" },
+          { "name": "rolloff", "type": "f32" }
+        ],
+        "returns": "i64",
+        "unsafe": true
+      },
       "goud_audio_play_spatial_3d": {
         "params": [
           { "name": "ctx", "type": "GoudContextId" },
@@ -7749,6 +7764,19 @@
         "returns": "i64",
         "unsafe": true
       },
+      "goud_audio_update_spatial_volume": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "player_id", "type": "u64" },
+          { "name": "source_x", "type": "f32" },
+          { "name": "source_y", "type": "f32" },
+          { "name": "listener_x", "type": "f32" },
+          { "name": "listener_y", "type": "f32" },
+          { "name": "max_distance", "type": "f32" },
+          { "name": "rolloff", "type": "f32" }
+        ],
+        "returns": "i32"
+      },
       "goud_audio_update_spatial_volume_3d": {
         "params": [
           { "name": "ctx", "type": "GoudContextId" },
@@ -7764,12 +7792,31 @@
         ],
         "returns": "i32"
       },
+      "goud_audio_set_listener_position": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "x", "type": "f32" },
+          { "name": "y", "type": "f32" }
+        ],
+        "returns": "i32"
+      },
       "goud_audio_set_listener_position_3d": {
         "params": [
           { "name": "ctx", "type": "GoudContextId" },
           { "name": "x", "type": "f32" },
           { "name": "y", "type": "f32" },
           { "name": "z", "type": "f32" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_set_source_position": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" },
+          { "name": "player_id", "type": "u64" },
+          { "name": "x", "type": "f32" },
+          { "name": "y", "type": "f32" },
+          { "name": "max_distance", "type": "f32" },
+          { "name": "rolloff", "type": "f32" }
         ],
         "returns": "i32"
       },

@@ -1365,13 +1365,25 @@ namespace GoudEngine
         public static extern int goud_audio_cleanup_finished(GoudContextId ctx);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_audio_play_spatial(GoudContextId ctx, IntPtr asset_data, nuint asset_len, float source_x, float source_y, float listener_x, float listener_y, float max_distance, float rolloff);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern long goud_audio_play_spatial_3d(GoudContextId ctx, IntPtr asset_data, nuint asset_len, float source_x, float source_y, float source_z, float listener_x, float listener_y, float listener_z, float max_distance, float rolloff);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_update_spatial_volume(GoudContextId ctx, ulong player_id, float source_x, float source_y, float listener_x, float listener_y, float max_distance, float rolloff);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_audio_update_spatial_volume_3d(GoudContextId ctx, ulong player_id, float source_x, float source_y, float source_z, float listener_x, float listener_y, float listener_z, float max_distance, float rolloff);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_set_listener_position(GoudContextId ctx, float x, float y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_audio_set_listener_position_3d(GoudContextId ctx, float x, float y, float z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_set_source_position(GoudContextId ctx, ulong player_id, float x, float y, float max_distance, float rolloff);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_audio_set_source_position_3d(GoudContextId ctx, ulong player_id, float x, float y, float z, float max_distance, float rolloff);

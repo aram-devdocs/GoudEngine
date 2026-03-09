@@ -138,6 +138,13 @@ def _ffi_uses_ptr_len(ffi_fn_name: str) -> bool:
     return "*const u8" in param_types
 
 
+def _ffi_ptr_len_cast(ffi_params: list[dict], ptr_param_idx: int) -> str:
+    """Return C# cast type for the len parameter paired with a ptr parameter."""
+    if ptr_param_idx + 1 < len(ffi_params):
+        return _cs_ffi_param_type(ffi_params[ptr_param_idx + 1].get("type", "usize"))
+    return "nuint"
+
+
 def _enum_cs_name(key: str) -> str:
     if key == "Key":
         return "Keys"
@@ -944,6 +951,8 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
             L.append("            {")
             fixed_lines = []
             ffi_arg_parts = [] if no_ctx else ["_ctx"]
+            ffi_param_defs = _ffi_fn_def(ffi_fn).get("params", [])
+            ffi_param_idx = 0 if no_ctx else 1
             for p in params:
                 if p["type"] == "string":
                     bvar = f"{p['name']}Bytes"
@@ -951,14 +960,19 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                     L.append(f"                var {bvar} = System.Text.Encoding.UTF8.GetBytes({p['name']});")
                     fixed_lines.append(f"byte* {pvar} = {bvar}")
                     ffi_arg_parts.append(f"(IntPtr){pvar}")
-                    ffi_arg_parts.append(f"(nuint){bvar}.Length")
+                    len_cast = _ffi_ptr_len_cast(ffi_param_defs, ffi_param_idx)
+                    ffi_arg_parts.append(f"({len_cast}){bvar}.Length")
+                    ffi_param_idx += 2
                 elif p["type"] in ("bytes", "u8[]"):
                     pvar = f"{p['name']}Ptr"
                     fixed_lines.append(f"byte* {pvar} = {p['name']}")
                     ffi_arg_parts.append(f"(IntPtr){pvar}")
-                    ffi_arg_parts.append(f"(nuint){p['name']}.Length")
+                    len_cast = _ffi_ptr_len_cast(ffi_param_defs, ffi_param_idx)
+                    ffi_arg_parts.append(f"({len_cast}){p['name']}.Length")
+                    ffi_param_idx += 2
                 else:
                     ffi_arg_parts.append(p["name"])
+                    ffi_param_idx += 1
             fixed_expr = "\n                ".join(f"fixed ({fl})" for fl in fixed_lines)
             L.append(f"                {fixed_expr}")
             L.append("                {")
