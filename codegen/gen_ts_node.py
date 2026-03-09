@@ -198,7 +198,7 @@ def gen_interface():
                 ts_t = ts_iface_type(pt)
                 param_strs.append(f"{pn}{opt}: {ts_t}")
             elif pt in schema["enums"]:
-                param_strs.append(f"{pn}: number")
+                param_strs.append(f"{pn}{opt}: number")
             else:
                 ts_t = ts_iface_type(pt)
                 param_strs.append(f"{pn}{opt}: {ts_t}")
@@ -474,8 +474,12 @@ def gen_node_wrapper():
                 param_strs.append(f"{pn}{opt}: {ts_iface_type(pt)}")
                 call_args.append(pn)
             elif pt in schema["enums"]:
-                param_strs.append(f"{pn}: number")
-                call_args.append(pn)
+                param_strs.append(f"{pn}{opt}: number")
+                if can_be_optional[i]:
+                    default_val = p.get("default")
+                    call_args.append(f"{pn} ?? {default_val}")
+                else:
+                    call_args.append(pn)
             else:
                 ts_t = ts_iface_type(pt)
                 param_strs.append(f"{pn}{opt}: {ts_t}")

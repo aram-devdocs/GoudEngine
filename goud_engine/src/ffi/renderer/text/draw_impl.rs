@@ -3,12 +3,14 @@ use crate::core::handle::Handle;
 use crate::ffi::context::GoudContextId;
 use crate::ffi::window::WindowState;
 use crate::libs::graphics::backend::types::{PrimitiveTopology, TextureHandle};
-use crate::libs::graphics::backend::{DrawOps, ShaderOps, TextureOps};
+use crate::libs::graphics::backend::{DrawOps, ShaderOps, StateOps, TextureOps};
 use crate::rendering::text::{
     layout_shaped_text, shape_text, GlyphAtlas, TextDirection, TextLayoutConfig,
 };
 
-use super::super::immediate::{model_matrix, ortho_matrix, ImmediateStateData, IMMEDIATE_STATE};
+use super::super::immediate::{
+    bind_immediate_vao, model_matrix, ortho_matrix, ImmediateStateData, IMMEDIATE_STATE,
+};
 use super::{FontMarker, GoudFontHandle, FONT_STATES};
 
 pub(super) fn draw_text_internal(
@@ -102,18 +104,11 @@ fn draw_layout(
     let (fb_width, fb_height) = window_state.get_framebuffer_size();
     let (win_width, win_height) = window_state.get_size();
 
-    // SAFETY: gl::Viewport is safe with integer dimensions from the active context.
-    unsafe {
-        gl::Viewport(0, 0, fb_width as i32, fb_height as i32);
-    }
-
     let backend = window_state.backend_mut();
+    backend.set_viewport(0, 0, fb_width, fb_height);
     let projection = ortho_matrix(0.0, win_width as f32, win_height as f32, 0.0);
 
-    // SAFETY: vao is created and owned by ensure_immediate_state for this context.
-    unsafe {
-        gl::BindVertexArray(vao);
-    }
+    bind_immediate_vao(vao);
 
     backend.bind_shader(shader)?;
     backend.set_uniform_mat4(u_projection, &projection);

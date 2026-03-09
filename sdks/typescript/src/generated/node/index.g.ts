@@ -94,7 +94,7 @@ export class GoudGame implements IGoudGame {
   }
 
   /** Draws text using a loaded font */
-  drawText(fontHandle: number, text: string, x: number, y: number, fontSize?: number, alignment: number, maxWidth?: number, lineSpacing?: number, direction: number, color?: IColor): boolean {
+  drawText(fontHandle: number, text: string, x: number, y: number, fontSize?: number, alignment?: number, maxWidth?: number, lineSpacing?: number, direction?: number, color?: IColor): boolean {
     const c = color ?? Color.white();
     return this.native.drawText(fontHandle, text, x, y, fontSize, alignment, maxWidth, lineSpacing, direction, c.r, c.g, c.b, c.a);
   }
