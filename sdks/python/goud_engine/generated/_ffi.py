@@ -308,6 +308,14 @@ def _setup():
     _lib.goud_texture_load.restype = ctypes.c_uint64
     _lib.goud_texture_destroy.argtypes = [GoudContextId, ctypes.c_uint64]
     _lib.goud_texture_destroy.restype = ctypes.c_bool
+    _lib.goud_font_load.argtypes = [GoudContextId, ctypes.c_char_p]
+    _lib.goud_font_load.restype = ctypes.c_uint64
+    _lib.goud_font_destroy.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_font_destroy.restype = ctypes.c_bool
+    _lib.goud_renderer_draw_text.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_char_p, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_uint8, ctypes.c_float, ctypes.c_float, ctypes.c_uint8, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_renderer_draw_text.restype = ctypes.c_bool
+    _lib.goud_draw_text.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_char_p, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_uint8, ctypes.c_float, ctypes.c_float, ctypes.c_uint8, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_draw_text.restype = ctypes.c_bool
     _lib.goud_renderer_draw_sprite_rect.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
     _lib.goud_renderer_draw_sprite_rect.restype = ctypes.c_bool
     _lib.goud_renderer_set_viewport.argtypes = [GoudContextId, ctypes.c_int32, ctypes.c_int32, ctypes.c_uint32, ctypes.c_uint32]

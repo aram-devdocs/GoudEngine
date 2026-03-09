@@ -198,7 +198,7 @@ def gen_interface():
                 ts_t = ts_iface_type(pt)
                 param_strs.append(f"{pn}{opt}: {ts_t}")
             elif pt in schema["enums"]:
-                param_strs.append(f"{pn}: number")
+                param_strs.append(f"{pn}{opt}: number")
             else:
                 ts_t = ts_iface_type(pt)
                 param_strs.append(f"{pn}{opt}: {ts_t}")
@@ -371,7 +371,8 @@ def gen_math():
 
 NATIVE_KNOWN_METHODS = {
     "shouldClose", "close", "destroy", "beginFrame", "endFrame",
-    "loadTexture", "destroyTexture", "drawSprite", "drawQuad",
+    "loadTexture", "destroyTexture", "loadFont", "destroyFont",
+    "drawSprite", "drawQuad", "drawText",
     "isKeyPressed", "isKeyJustPressed", "isKeyJustReleased",
     "isMouseButtonPressed", "isMouseButtonJustPressed", "isMouseButtonJustReleased",
     "getMousePosition", "getMouseDelta", "getScrollDelta",
@@ -473,8 +474,12 @@ def gen_node_wrapper():
                 param_strs.append(f"{pn}{opt}: {ts_iface_type(pt)}")
                 call_args.append(pn)
             elif pt in schema["enums"]:
-                param_strs.append(f"{pn}: number")
-                call_args.append(pn)
+                param_strs.append(f"{pn}{opt}: number")
+                if can_be_optional[i]:
+                    default_val = p.get("default")
+                    call_args.append(f"{pn} ?? {default_val}")
+                else:
+                    call_args.append(pn)
             else:
                 ts_t = ts_iface_type(pt)
                 param_strs.append(f"{pn}{opt}: {ts_t}")
@@ -509,6 +514,9 @@ def gen_node_wrapper():
         elif mn == "drawQuad":
             lines.append("    const c = color ?? Color.white();")
             lines.append("    this.native.drawQuad(x, y, width, height, c.r, c.g, c.b, c.a);")
+        elif mn == "drawText":
+            lines.append("    const c = color ?? Color.white();")
+            lines.append("    return this.native.drawText(fontHandle, text, x, y, fontSize, alignment, maxWidth, lineSpacing, direction, c.r, c.g, c.b, c.a);")
         elif mn in ("getMousePosition", "getMouseDelta", "getScrollDelta"):
             lines.append(f"    const arr = this.native.{mn}();")
             lines.append("    return { x: arr[0], y: arr[1] };")
@@ -559,6 +567,8 @@ def gen_node_wrapper():
             lines.append("    return this.native.getFpsStats() as unknown as IFpsStats;")
         elif mn == "loadTexture":
             lines.append("    return this.native.loadTexture(path);")
+        elif mn == "loadFont":
+            lines.append("    return this.native.loadFont(path);")
         elif mn == "destroy":
             lines.append("    this.native.destroy();")
         else:
@@ -1045,9 +1055,12 @@ use goud_engine::ffi::renderer::{
     goud_renderer_begin, goud_renderer_clear_depth, goud_renderer_disable_blending,
     goud_renderer_disable_depth_test, goud_renderer_draw_quad,
     goud_renderer_draw_sprite, goud_renderer_draw_sprite_rect,
+    goud_renderer_draw_text,
     goud_renderer_enable_blending, goud_renderer_enable_depth_test,
     goud_renderer_end, goud_renderer_get_stats, goud_renderer_set_viewport,
-    goud_texture_destroy, goud_texture_load, GoudRenderStats,
+    goud_texture_destroy, goud_texture_load,
+    goud_font_destroy, goud_font_load,
+    GoudRenderStats,
 };
 use goud_engine::ffi::renderer3d::{
     goud_renderer3d_add_light, goud_renderer3d_configure_fog,
@@ -1265,6 +1278,48 @@ impl GoudGame {
     #[napi]
     pub fn destroy_texture(&self, handle: f64) -> bool {
         goud_texture_destroy(self.context_id, handle as u64)
+    }
+
+    #[napi]
+    pub fn load_font(&self, path: String) -> Result<f64> {
+        let c_path = CString::new(path)
+            .map_err(|e| Error::from_reason(format!("Invalid path: {}", e)))?;
+        // SAFETY: CString guarantees a valid null-terminated pointer.
+        let handle = unsafe { goud_font_load(self.context_id, c_path.as_ptr()) };
+        Ok(handle as f64)
+    }
+
+    #[napi]
+    pub fn destroy_font(&self, handle: f64) -> bool {
+        goud_font_destroy(self.context_id, handle as u64)
+    }
+
+    #[napi]
+    pub fn draw_text(&self, font_handle: f64, text: String, x: f64, y: f64,
+                     font_size: Option<f64>, alignment: Option<u32>, max_width: Option<f64>,
+                     line_spacing: Option<f64>, direction: Option<u32>,
+                     r: Option<f64>, g: Option<f64>, b: Option<f64>, a: Option<f64>) -> Result<bool> {
+        let c_text = CString::new(text)
+            .map_err(|e| Error::from_reason(format!("Invalid text: {}", e)))?;
+        // SAFETY: CString guarantees a valid null-terminated pointer.
+        Ok(unsafe {
+            goud_renderer_draw_text(
+                self.context_id,
+                font_handle as u64,
+                c_text.as_ptr(),
+                x as f32,
+                y as f32,
+                font_size.unwrap_or(16.0) as f32,
+                alignment.unwrap_or(0) as u8,
+                max_width.unwrap_or(0.0) as f32,
+                line_spacing.unwrap_or(1.0) as f32,
+                direction.unwrap_or(0) as u8,
+                r.unwrap_or(1.0) as f32,
+                g.unwrap_or(1.0) as f32,
+                b.unwrap_or(1.0) as f32,
+                a.unwrap_or(1.0) as f32,
+            )
+        })
     }
 
     #[napi]

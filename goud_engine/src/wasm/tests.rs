@@ -142,3 +142,28 @@ fn canvas_resize() {
     assert_eq!(game.window_width(), 1920);
     assert_eq!(game.window_height(), 1080);
 }
+
+#[test]
+fn font_lifecycle_headless() {
+    let mut game = WasmGame::new(800, 600, "Test");
+    let font_bytes = include_bytes!("../../test_assets/fonts/test_font.ttf");
+    let handle = game
+        .register_font_from_bytes(font_bytes)
+        .expect("font registration should succeed");
+    assert!(handle > 0);
+    assert!(game.destroy_font(handle));
+    assert!(!game.destroy_font(handle));
+}
+
+#[test]
+fn draw_text_returns_false_without_renderer() {
+    let mut game = WasmGame::new(800, 600, "Test");
+    let font_bytes = include_bytes!("../../test_assets/fonts/test_font.ttf");
+    let handle = game
+        .register_font_from_bytes(font_bytes)
+        .expect("font registration should succeed");
+    let ok = game.draw_text(
+        handle, "Hello", 0.0, 0.0, 16.0, 0, 0.0, 1.0, 0, 1.0, 1.0, 1.0, 1.0,
+    );
+    assert!(!ok);
+}

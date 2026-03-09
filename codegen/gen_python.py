@@ -1278,6 +1278,26 @@ def _gen_tool_class(tool_name: str, lines: list):
                 "        self._lib.goud_texture_destroy("
                 "self._ctx, handle)"
             )
+        elif mname == "load_font":
+            lines.append(
+                "        return self._lib.goud_font_load("
+                "self._ctx, path.encode('utf-8'))"
+            )
+        elif mname == "destroy_font":
+            lines.append(
+                "        return self._lib.goud_font_destroy("
+                "self._ctx, handle)"
+            )
+        elif mname == "draw_text":
+            lines.append(
+                "        if color is None: color = Color.white()"
+            )
+            lines.append(
+                "        return self._lib.goud_renderer_draw_text("
+                "self._ctx, font_handle, text.encode('utf-8'), x, y, font_size, "
+                "int(alignment), max_width, line_spacing, int(direction), "
+                "color.r, color.g, color.b, color.a)"
+            )
         elif "ffi_strategy" in mmap:
             strategy = mmap["ffi_strategy"]
             comp_type = mmap.get("component_type", "")

@@ -24,7 +24,10 @@ interface WasmGameHandle {
   set_canvas_size(w: number, h: number): void;
   has_renderer(): boolean;
   register_texture_from_bytes(data: Uint8Array): number;
+  register_font_from_bytes(data: Uint8Array): number;
   destroy_texture(handle: number): void;
+  destroy_font(handle: number): boolean;
+  draw_text(font_handle: number, text: string, x: number, y: number, font_size: number, alignment: number, max_width: number, line_spacing: number, direction: number, r: number, g: number, b: number, a: number): boolean;
   draw_sprite(t: number, x: number, y: number, w: number, h: number, rot: number, r: number, g: number, b: number, a: number): void;
   draw_sprite_rect(t: number, x: number, y: number, w: number, h: number, rot: number, src_x: number, src_y: number, src_w: number, src_h: number, r: number, g: number, b: number, a: number): boolean;
   draw_quad(x: number, y: number, w: number, h: number, r: number, g: number, b: number, a: number): void;
@@ -238,6 +241,20 @@ export class GoudGame implements IGoudGame {
   }
   /** Destroys a previously loaded texture */
   destroyTexture(handle: number): void { this.handle.destroy_texture(handle); }
+  /** Loads a font from a file path and returns its handle */
+  async loadFont(path: string): Promise<number> {
+    const resp = await fetch(path);
+    if (!resp.ok) throw new Error(`Failed to load font: ${path} (HTTP ${resp.status})`);
+    const bytes = new Uint8Array(await resp.arrayBuffer());
+    return this.handle.register_font_from_bytes(bytes);
+  }
+  /** Destroys a previously loaded font */
+  destroyFont(handle: number): boolean { return this.handle.destroy_font(handle); }
+  /** Draws text using a loaded font */
+  drawText(fontHandle: number, text: string, x: number, y: number, fontSize = 16, alignment = 0, maxWidth = 0, lineSpacing = 1, direction = 0, color?: IColor): boolean {
+    const c = color ?? Color.white();
+    return this.handle.draw_text(fontHandle, text, x, y, fontSize, alignment, maxWidth, lineSpacing, direction, c.r, c.g, c.b, c.a);
+  }
   /** Draws a textured sprite */
   drawSprite(texture: number, x: number, y: number, width: number, height: number, rotation = 0, color?: IColor): void {
     const c = color ?? Color.white();

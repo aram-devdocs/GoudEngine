@@ -323,7 +323,7 @@ fn draw_sprite_internal(
 }
 
 /// Internal function to draw a sprite with source rectangle.
-fn draw_sprite_rect_internal(
+pub(super) fn draw_sprite_rect_internal(
     window_state: &mut crate::ffi::window::WindowState,
     state_data: ImmediateStateData,
     texture: GoudTextureHandle,

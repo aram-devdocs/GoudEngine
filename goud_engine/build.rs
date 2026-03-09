@@ -114,6 +114,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/renderer/draw.rs",
     "src/ffi/renderer/texture.rs",
     "src/ffi/renderer/handles.rs",
+    "src/ffi/renderer/text.rs",
     // renderer3d module
     "src/ffi/renderer3d/camera.rs",
     "src/ffi/renderer3d/environment.rs",

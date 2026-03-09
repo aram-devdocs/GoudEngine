@@ -83,6 +83,22 @@ export class GoudGame implements IGoudGame {
     this.native.destroyTexture(handle);
   }
 
+  /** Loads a font from a file path and returns its handle */
+  async loadFont(path: string): Promise<number> {
+    return this.native.loadFont(path);
+  }
+
+  /** Destroys a previously loaded font */
+  destroyFont(handle: number): boolean {
+    return this.native.destroyFont(handle);
+  }
+
+  /** Draws text using a loaded font */
+  drawText(fontHandle: number, text: string, x: number, y: number, fontSize?: number, alignment?: number, maxWidth?: number, lineSpacing?: number, direction?: number, color?: IColor): boolean {
+    const c = color ?? Color.white();
+    return this.native.drawText(fontHandle, text, x, y, fontSize, alignment, maxWidth, lineSpacing, direction, c.r, c.g, c.b, c.a);
+  }
+
   /** Draws a textured sprite */
   drawSprite(texture: number, x: number, y: number, width: number, height: number, rotation?: number, color?: IColor): void {
     const c = color ?? Color.white();

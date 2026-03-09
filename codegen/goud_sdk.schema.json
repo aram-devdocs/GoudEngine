@@ -2688,6 +2688,15 @@
         "Right": 2
       }
     },
+    "TextDirection": {
+      "doc": "Text flow direction",
+      "underlying": "u8",
+      "values": {
+        "Auto": 0,
+        "Ltr": 1,
+        "Rtl": 2
+      }
+    },
     "BlendMode": {
       "doc": "How an animation layer blends with layers below it",
       "values": {
@@ -3353,6 +3362,91 @@
           "returns": "void",
           "wasm_name": "destroy_texture",
           "wasm_signature": "destroy_texture(handle: number): void"
+        },
+        {
+          "name": "loadFont",
+          "doc": "Loads a font from a file path and returns its handle",
+          "params": [
+            {
+              "name": "path",
+              "type": "string",
+              "doc": "Path to the font file"
+            }
+          ],
+          "returns": "u64",
+          "async": true,
+          "wasm_name": "register_font_from_bytes",
+          "wasm_signature": "register_font_from_bytes(data: Uint8Array): number"
+        },
+        {
+          "name": "destroyFont",
+          "doc": "Destroys a previously loaded font",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "destroy_font",
+          "wasm_signature": "destroy_font(handle: number): boolean"
+        },
+        {
+          "name": "drawText",
+          "doc": "Draws text using a loaded font",
+          "params": [
+            {
+              "name": "fontHandle",
+              "type": "u64",
+              "doc": "Font handle from loadFont"
+            },
+            {
+              "name": "text",
+              "type": "string",
+              "doc": "UTF-8 text to render"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "fontSize",
+              "type": "f32",
+              "default": 16
+            },
+            {
+              "name": "alignment",
+              "type": "TextAlignment",
+              "default": 0
+            },
+            {
+              "name": "maxWidth",
+              "type": "f32",
+              "default": 0
+            },
+            {
+              "name": "lineSpacing",
+              "type": "f32",
+              "default": 1
+            },
+            {
+              "name": "direction",
+              "type": "TextDirection",
+              "default": 0
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "default": "Color.white()"
+            }
+          ],
+          "returns": "bool",
+          "wasm_name": "draw_text",
+          "wasm_signature": "draw_text(font_handle: number, text: string, x: number, y: number, font_size: number, alignment: number, max_width: number, line_spacing: number, direction: number, r: number, g: number, b: number, a: number): boolean"
         },
         {
           "name": "drawSprite",
@@ -4678,7 +4772,16 @@
           "sig": "register_texture_from_bytes(data: Uint8Array): number"
         },
         {
+          "sig": "register_font_from_bytes(data: Uint8Array): number"
+        },
+        {
           "method": "destroyTexture"
+        },
+        {
+          "method": "destroyFont"
+        },
+        {
+          "method": "drawText"
         },
         {
           "method": "drawSprite"

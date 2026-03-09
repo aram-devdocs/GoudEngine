@@ -19,6 +19,7 @@ use super::atlas_cache::GlyphAtlasCache;
 use super::bitmap_atlas::BitmapGlyphAtlas;
 use super::glyph_atlas::UvRect;
 use super::layout::{layout_text, TextLayoutConfig};
+use super::{layout_shaped_text, shape_text, TextDirection};
 
 /// A single draw batch for glyphs sharing the same atlas texture.
 #[derive(Debug)]
@@ -231,11 +232,15 @@ impl TextBatch {
             .get::<FontAsset>(font_handle)
             .ok_or_else(|| format!("font asset not found for handle {:?}", font_handle))?;
 
+        let parsed_font = font_asset.parse()?;
         let atlas = self
             .atlas_cache
             .get_or_create_mut(font_asset, *font_handle, font_size)?;
 
-        let layout = layout_text(content, atlas, font_size, config, None);
+        let shaped = shape_text(content, font_asset.data(), font_size, TextDirection::Auto)?;
+        atlas.ensure_glyph_indices(&parsed_font, shaped.glyph_indices())?;
+
+        let layout = layout_shaped_text(&shaped, atlas, font_size, config);
         let tex = atlas.ensure_gpu_texture(backend)?;
         Ok(Some((layout, tex)))
     }
