@@ -528,7 +528,7 @@ export class GoudGame implements IGoudGame {
     return this.native.physicsCollisionEventsRead(index);
   }
 
-  /** Registers or clears a physics collision callback function pointer (FFI: goud_physics_set_collision_callback) */
+  /** Registers or clears a physics collision callback function pointer. C# callers must keep the callback delegate alive for the full registration lifetime. Python and TypeScript wrappers support clear-only (`callbackPtr = 0`, `userData = 0`) for safety. (FFI: goud_physics_set_collision_callback) */
   physicsSetCollisionCallback(callbackPtr: number, userData: number): number {
     return this.native.physicsSetCollisionCallback(callbackPtr, userData);
   }

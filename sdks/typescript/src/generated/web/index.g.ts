@@ -636,12 +636,12 @@ export class GoudGame implements IGoudGame {
   animationEventsCount(): number { return 0; }
   animationEventsRead(_index: number): IAnimationEventData { return { entity: 0, name: '', frameIndex: 0, payloadType: 0, payloadInt: 0, payloadFloat: 0, payloadString: '' }; }
   /** Casts a filtered ray and returns the full hit payload, or null when no hit is found (FFI: goud_physics_raycast_ex) */
-  physicsRaycastEx(_originX: number, _originY: number, _dirX: number, _dirY: number, _maxDist: number, _layerMask: number): IPhysicsRaycastHit2D | null { throw new Error('Not supported in WASM mode'); }
+  physicsRaycastEx(_originX: number, _originY: number, _dirX: number, _dirY: number, _maxDist: number, _layerMask: number): IPhysicsRaycastHit2D | null { return null; }
   /** Returns the number of queued physics collision events available to read (FFI: goud_physics_collision_events_count) */
   physicsCollisionEventsCount(): number { throw new Error('Not supported in WASM mode'); }
   /** Reads one queued physics collision event by index, or null when the index is out of range (FFI: goud_physics_collision_events_read) */
-  physicsCollisionEventsRead(_index: number): IPhysicsCollisionEvent2D | null { throw new Error('Not supported in WASM mode'); }
-  /** Registers or clears a physics collision callback function pointer (FFI: goud_physics_set_collision_callback) */
+  physicsCollisionEventsRead(_index: number): IPhysicsCollisionEvent2D | null { return null; }
+  /** Registers or clears a physics collision callback function pointer. C# callers must keep the callback delegate alive for the full registration lifetime. Python and TypeScript wrappers support clear-only (`callbackPtr = 0`, `userData = 0`) for safety. (FFI: goud_physics_set_collision_callback) */
   physicsSetCollisionCallback(_callbackPtr: number, _userData: number): number { throw new Error('Not supported in WASM mode'); }
   // Provider capability queries -- not available in WASM mode
   getRenderCapabilities(): IRenderCapabilities { throw new Error('Not supported in WASM mode'); }

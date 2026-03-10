@@ -25,6 +25,8 @@ mod physics3d;
 mod physics3d_material;
 
 #[cfg(feature = "rapier2d")]
+// Keep both singular and plural collision-event symbols exported for backward compatibility:
+// older SDKs use singular names while newer APIs use pluralized names.
 pub use physics2d_events::{
     goud_physics_collision_event_count, goud_physics_collision_event_read,
     goud_physics_collision_events_count, goud_physics_collision_events_read,

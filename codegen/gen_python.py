@@ -1313,6 +1313,16 @@ def _gen_tool_class(tool_name: str, lines: list):
                 "int(alignment), max_width, line_spacing, int(direction), "
                 "color.r, color.g, color.b, color.a)"
             )
+        elif mname == "physics_set_collision_callback":
+            lines.append(
+                "        if callback_ptr not in (0, None) or user_data not in (0, None):"
+            )
+            lines.append(
+                "            raise RuntimeError('Python cannot safely pass raw function pointers here; pass 0 to clear callback')"
+            )
+            lines.append(
+                "        return self._lib.goud_physics_set_collision_callback(self._ctx, 0, 0)"
+            )
         elif "ffi_strategy" in mmap:
             strategy = mmap["ffi_strategy"]
             comp_type = mmap.get("component_type", "")

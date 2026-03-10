@@ -525,8 +525,10 @@ class GoudGame:
         return PhysicsCollisionEvent2D(_body_a.value, _body_b.value, _kind.value)
 
     def physics_set_collision_callback(self, callback_ptr, user_data):
-        """Registers or clears a physics collision callback function pointer (FFI: goud_physics_set_collision_callback)"""
-        return self._lib.goud_physics_set_collision_callback(self._ctx, callback_ptr, user_data)
+        """Registers or clears a physics collision callback function pointer. C# callers must keep the callback delegate alive for the full registration lifetime. Python and TypeScript wrappers support clear-only (`callbackPtr = 0`, `userData = 0`) for safety. (FFI: goud_physics_set_collision_callback)"""
+        if callback_ptr not in (0, None) or user_data not in (0, None):
+            raise RuntimeError('Python cannot safely pass raw function pointers here; pass 0 to clear callback')
+        return self._lib.goud_physics_set_collision_callback(self._ctx, 0, 0)
 
     def component_register_type(self, type_id_hash, name, size, align):
         """Registers a component type for generic operations"""

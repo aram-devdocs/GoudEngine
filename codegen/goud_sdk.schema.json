@@ -4780,7 +4780,7 @@
         },
         {
           "name": "physicsSetCollisionCallback",
-          "doc": "Registers or clears a physics collision callback function pointer (FFI: goud_physics_set_collision_callback)",
+          "doc": "Registers or clears a physics collision callback function pointer. C# callers must keep the callback delegate alive for the full registration lifetime. Python and TypeScript wrappers support clear-only (`callbackPtr = 0`, `userData = 0`) for safety. (FFI: goud_physics_set_collision_callback)",
           "params": [
             {
               "name": "callbackPtr",
@@ -6389,7 +6389,7 @@
         },
         {
           "name": "setCollisionCallback",
-          "doc": "Registers or clears a collision callback function pointer. Pass 0 for callbackPtr to clear (FFI: goud_physics_set_collision_callback)",
+          "doc": "Registers or clears a collision callback function pointer. Keep callback storage alive for the full registration lifetime. In safety-restricted wrappers (Python/TypeScript), pass 0 for callbackPtr and userData to clear. (FFI: goud_physics_set_collision_callback)",
           "params": [
             {
               "name": "callbackPtr",

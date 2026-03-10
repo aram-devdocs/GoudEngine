@@ -819,7 +819,7 @@ namespace GoudEngine
             return new PhysicsCollisionEvent2D(_body_a, _body_b, _kind);
         }
 
-        /// <summary>Registers or clears a physics collision callback function pointer (FFI: goud_physics_set_collision_callback)</summary>
+        /// <summary>Registers or clears a physics collision callback function pointer. C# callers must keep the callback delegate alive for the full registration lifetime. Python and TypeScript wrappers support clear-only (`callbackPtr = 0`, `userData = 0`) for safety. (FFI: goud_physics_set_collision_callback)</summary>
         public int PhysicsSetCollisionCallback(IntPtr callbackPtr, IntPtr userData)
         {
             return NativeMethods.goud_physics_set_collision_callback(_ctx, callbackPtr, userData);
