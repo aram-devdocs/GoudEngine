@@ -52,7 +52,9 @@ impl From<NetworkStats> for FfiNetworkStats {
 ///
 /// # Safety
 ///
-/// All four output pointers must point to valid `u64` values.
+/// All four output pointers must be non-null and point to caller-owned writable
+/// storage for one `u64` each. The function only writes these values; ownership
+/// of pointees remains with the caller and pointers are not retained.
 #[no_mangle]
 pub unsafe extern "C" fn goud_network_get_stats(
     _context_id: GoudContextId,
@@ -75,11 +77,15 @@ pub unsafe extern "C" fn goud_network_get_stats(
 
     let result = with_instance(handle, |inst| {
         let stats = inst.provider.stats();
-        // SAFETY: Caller guarantees all output pointers are valid.
-        *out_bytes_sent = stats.bytes_sent;
-        *out_bytes_recv = stats.bytes_received;
-        *out_packets_sent = stats.packets_sent;
-        *out_packets_recv = stats.packets_received;
+        {
+            // SAFETY: Caller guarantees all four output pointers are valid writable storage.
+            unsafe {
+                *out_bytes_sent = stats.bytes_sent;
+                *out_bytes_recv = stats.bytes_received;
+                *out_packets_sent = stats.packets_sent;
+                *out_packets_recv = stats.packets_received;
+            }
+        }
         Ok(0)
     });
     result.unwrap_or_else(|e| e)
@@ -105,8 +111,12 @@ pub unsafe extern "C" fn goud_network_get_stats_v2(
 
     let result = with_instance(handle, |inst| {
         let stats = FfiNetworkStats::from(inst.provider.stats());
-        // SAFETY: Caller guarantees out_stats points to writable FfiNetworkStats storage.
-        *out_stats = stats;
+        {
+            // SAFETY: Caller guarantees `out_stats` points to writable storage.
+            unsafe {
+                *out_stats = stats;
+            }
+        }
         Ok(0)
     });
     result.unwrap_or_else(|e| e)

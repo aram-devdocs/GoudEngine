@@ -215,11 +215,15 @@ pub unsafe extern "C" fn goud_network_send(
         return ERR_INVALID_STATE;
     }
 
-    // SAFETY: Caller guarantees data_ptr is valid for data_len bytes.
-    let data = if data_len > 0 {
-        std::slice::from_raw_parts(data_ptr, data_len as usize)
-    } else {
-        &[]
+    let data = {
+        // SAFETY: Caller guarantees `data_ptr` is valid for `data_len` bytes.
+        unsafe {
+            if data_len > 0 {
+                std::slice::from_raw_parts(data_ptr, data_len as usize)
+            } else {
+                &[]
+            }
+        }
     };
 
     let result = with_instance(handle, |inst| {
@@ -268,11 +272,19 @@ pub unsafe extern "C" fn goud_network_receive(
         let (peer, data) = inst.recv_queue.pop_front().unwrap();
 
         let copy_len = data.len().min(buf_len as usize);
-        // SAFETY: Caller guarantees out_buf is valid for buf_len bytes,
-        // and copy_len <= buf_len.
-        std::ptr::copy_nonoverlapping(data.as_ptr(), out_buf, copy_len);
-        // SAFETY: Caller guarantees out_peer_id points to a valid u64.
-        *out_peer_id = peer;
+        {
+            // SAFETY: Caller guarantees `out_buf` is valid for `buf_len` bytes,
+            // and `copy_len <= buf_len`.
+            unsafe {
+                std::ptr::copy_nonoverlapping(data.as_ptr(), out_buf, copy_len);
+            }
+        }
+        {
+            // SAFETY: Caller guarantees `out_peer_id` points to a valid writable `u64`.
+            unsafe {
+                *out_peer_id = peer;
+            }
+        }
 
         Ok(copy_len as i32)
     });
