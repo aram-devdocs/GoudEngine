@@ -234,16 +234,35 @@ def gen_keys():
 def _py_field_default(field: dict) -> str:
     """Return the Python type annotation and default value for a schema field."""
     t = field.get("type", "f32")
+    return f"{_py_field_type(field)} = {_py_field_default_expr(field)}"
+
+
+def _py_field_type(field: dict) -> str:
+    """Return the Python annotation type for a schema field."""
+    t = field.get("type", "f32")
     if t == "bool":
-        return "bool = False"
-    elif t in ("bytes", "u8[]"):
-        return "bytes = b''"
-    elif t in ("u8", "u16", "u32", "i8", "i16", "i32", "u64", "i64", "usize", "ptr"):
-        return "int = 0"
-    elif t in schema.get("types", {}):
-        return f"'{t}' = None"
-    else:
-        return "float = 0.0"
+        return "bool"
+    if t in ("bytes", "u8[]"):
+        return "bytes"
+    if t in ("u8", "u16", "u32", "i8", "i16", "i32", "u64", "i64", "usize", "ptr"):
+        return "int"
+    if t in schema.get("types", {}):
+        return f"'{t}'"
+    return "float"
+
+
+def _py_field_default_expr(field: dict) -> str:
+    """Return a raw Python default expression for a schema field."""
+    t = field.get("type", "f32")
+    if t == "bool":
+        return "False"
+    if t in ("bytes", "u8[]"):
+        return "b''"
+    if t in ("u8", "u16", "u32", "i8", "i16", "i32", "u64", "i64", "usize", "ptr"):
+        return "0"
+    if t in schema.get("types", {}):
+        return "None"
+    return "0.0"
 
 
 def _get_ffi_func_def(ffi_name: str) -> dict | None:
@@ -1690,7 +1709,7 @@ def _gen_tool_class(tool_name: str, lines: list):
                     elif field["name"] == "peerId":
                         field_args.append("_out_peer_id.value")
                     else:
-                        field_args.append(_py_field_default(field))
+                        field_args.append(_py_field_default_expr(field))
                 lines.append(f"        return {returns_struct}({', '.join(field_args)})")
             else:
                 lines.append("        return bytes(_out_buf[:_status])")
@@ -2086,6 +2105,17 @@ def gen_init():
     enum_imports = sorted(schema.get("enums", {}).keys())
 
     has_diagnostic = "diagnostic" in schema
+    networking_type_exports = [
+        name for name in (
+            "NetworkCapabilities",
+            "NetworkConnectResult",
+            "NetworkPacket",
+            "NetworkSimulationConfig",
+            "NetworkStats",
+        )
+        if name in schema.get("types", {})
+    ]
+    has_networking_wrappers = (OUT.parent / "networking.py").exists()
 
     lines = [
         f'"""{HEADER_COMMENT}"""',
@@ -2123,19 +2153,48 @@ def gen_init():
         f'"""{HEADER_COMMENT}"""',
         "",
         "from .generated import *  # noqa: F401,F403",
-        "",
+        "from .generated import __all__ as _generated_all  # noqa: F401",
     ]
+    if networking_type_exports:
+        root_init.extend([
+            "from .generated._types import (  # noqa: F401",
+            *(f"    {name}," for name in networking_type_exports),
+            ")",
+        ])
+    if has_networking_wrappers:
+        root_init.append("from .networking import NetworkManager, NetworkEndpoint  # noqa: F401")
+    root_init.append("")
+
+    extra_exports: list[str] = []
+    if has_networking_wrappers:
+        extra_exports.extend(["NetworkManager", "NetworkEndpoint"])
+    extra_exports.extend(networking_type_exports)
 
     # Include error types if the errors section exists in schema
     if "errors" in schema:
-        root_init.append("from .generated._errors import (  # noqa: F401")
-        root_init.append("    GoudError,")
+        root_init.extend([
+            "from .generated._errors import (  # noqa: F401",
+            "    GoudError,",
+        ])
+        extra_exports.append("GoudError")
         for cat in schema["errors"].get("categories", []):
             cls = cat["base_class"]
             root_init.append(f"    {cls},")
-        root_init.append("    RecoveryClass,")
-        root_init.append(")")
-        root_init.append("")
+            extra_exports.append(cls)
+        root_init.extend([
+            "    RecoveryClass,",
+            ")",
+            "",
+        ])
+        extra_exports.append("RecoveryClass")
+
+    root_init.append("__all__ = list(_generated_all) + [")
+    for export in extra_exports:
+        root_init.append(f'    "{export}",')
+    root_init.extend([
+        "]",
+        "",
+    ])
     root = OUT.parent / "__init__.py"
     write_generated(root, "\n".join(root_init))
 

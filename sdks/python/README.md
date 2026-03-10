@@ -30,8 +30,7 @@ while not game.should_close():
         game.close()
 
     game.draw_sprite(player_tex, 400, 300, 64, 64)
-
-game.end_frame()
+    game.end_frame()
 
 game.destroy()
 ```
