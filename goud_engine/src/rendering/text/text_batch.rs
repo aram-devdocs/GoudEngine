@@ -20,6 +20,7 @@ use super::bitmap_atlas::BitmapGlyphAtlas;
 use super::glyph_atlas::UvRect;
 use super::layout::{layout_text, TextLayoutConfig};
 use super::{layout_shaped_text, shape_text, TextDirection};
+pub use crate::rendering::text::text_batch_requests::DirectTextDrawRequest;
 
 /// A single draw batch for glyphs sharing the same atlas texture.
 #[derive(Debug)]
@@ -133,43 +134,53 @@ impl TextBatch {
                 continue;
             }
 
-            let config = TextLayoutConfig {
-                max_width: text.max_width,
-                line_spacing: text.line_spacing,
-                alignment: text.alignment,
-            };
-
-            let (layout, gpu_texture) =
-                if let Some(bitmap_handle) = text.bitmap_font_handle.as_ref() {
-                    self.resolve_bitmap_font(
-                        &text.content,
-                        text.font_size,
-                        &config,
-                        bitmap_handle,
-                        asset_server,
-                        backend,
-                    )?
-                } else {
-                    match self.resolve_truetype_font(
-                        &text.content,
-                        text.font_size,
-                        &config,
-                        &text.font_handle,
-                        asset_server,
-                        backend,
-                    )? {
-                        Some(result) => result,
-                        None => continue,
-                    }
-                };
-
-            if layout.glyphs.is_empty() {
-                continue;
-            }
-
-            self.append_glyph_batch(&layout, text.color, transform, gpu_texture);
+            self.draw_component_text(text, transform, asset_server, backend)?;
         }
 
+        Ok(())
+    }
+
+    fn draw_component_text(
+        &mut self,
+        text: &Text,
+        transform: &Transform2D,
+        asset_server: &AssetServer,
+        backend: &mut dyn RenderBackend,
+    ) -> Result<(), String> {
+        let config = TextLayoutConfig {
+            max_width: text.max_width,
+            line_spacing: text.line_spacing,
+            alignment: text.alignment,
+        };
+
+        let (layout, gpu_texture) = if let Some(bitmap_handle) = text.bitmap_font_handle.as_ref() {
+            self.resolve_bitmap_font(
+                &text.content,
+                text.font_size,
+                &config,
+                bitmap_handle,
+                asset_server,
+                backend,
+            )?
+        } else {
+            match self.resolve_truetype_font(
+                &text.content,
+                text.font_size,
+                &config,
+                &text.font_handle,
+                asset_server,
+                backend,
+            )? {
+                Some(result) => result,
+                None => return Ok(()),
+            }
+        };
+
+        if layout.glyphs.is_empty() {
+            return Ok(());
+        }
+
+        self.append_glyph_batch(&layout, text.color, transform, gpu_texture);
         Ok(())
     }
 
@@ -215,7 +226,7 @@ impl TextBatch {
 
     /// Resolves a TrueType font, builds/caches its atlas, and returns layout
     /// and GPU texture handle. Returns `None` if the font handle is invalid.
-    fn resolve_truetype_font(
+    pub(crate) fn resolve_truetype_font(
         &mut self,
         content: &str,
         font_size: f32,
@@ -246,7 +257,7 @@ impl TextBatch {
     }
 
     /// Emits glyph quads for a layout and appends or merges a draw batch.
-    fn append_glyph_batch(
+    pub(crate) fn append_glyph_batch(
         &mut self,
         layout: &super::layout::TextLayoutResult,
         color: Color,

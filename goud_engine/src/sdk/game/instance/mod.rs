@@ -19,6 +19,8 @@ use crate::libs::graphics::renderer3d::Renderer3D;
 use crate::libs::platform::PlatformBackend;
 #[cfg(feature = "native")]
 use crate::rendering::sprite_batch::SpriteBatch;
+#[cfg(feature = "native")]
+use crate::rendering::UiRenderSystem;
 
 /// The main game instance managing the ECS world and game loop.
 ///
@@ -84,6 +86,10 @@ pub struct GoudGame {
     #[cfg(feature = "native")]
     pub(crate) asset_server: Option<crate::assets::AssetServer>,
 
+    /// Native UI renderer that consumes `UiManager` command streams.
+    #[cfg(feature = "native")]
+    pub(crate) ui_render_system: Option<UiRenderSystem>,
+
     /// 3D renderer for primitives, lighting, and camera.
     #[cfg(feature = "native")]
     pub(crate) renderer_3d: Option<Renderer3D>,
@@ -138,6 +144,8 @@ impl GoudGame {
             sprite_batch: None,
             #[cfg(feature = "native")]
             asset_server: None,
+            #[cfg(feature = "native")]
+            ui_render_system: None,
             #[cfg(feature = "native")]
             renderer_3d: None,
             #[cfg(feature = "native")]
@@ -196,6 +204,7 @@ impl GoudGame {
             input_manager: InputManager::default(),
             sprite_batch: None,
             asset_server: None,
+            ui_render_system: None,
             renderer_3d: None,
             immediate_state: None,
             audio_manager,

@@ -8,6 +8,8 @@ use glfw::{Key, MouseButton};
 
 mod input;
 mod layout;
+mod render_commands;
+mod theme;
 
 fn assert_rect_eq(actual: Rect, expected: Rect) {
     assert!(

@@ -5,7 +5,7 @@ use crate::sdk::components::{GlobalTransform2D, Transform2D};
 use crate::sdk::engine_config::EngineConfig;
 use crate::sdk::game::GoudGame;
 use crate::sdk::game_config::GameConfig;
-use crate::ui::{UiAnchor, UiButton, UiComponent};
+use crate::ui::{UiAnchor, UiButton, UiComponent, UiImage, UiLabel};
 use glfw::{Key, MouseButton};
 
 #[test]
@@ -369,4 +369,45 @@ fn test_update_frame_ui_consumes_tab_and_enter_activation() {
     assert!(events
         .iter()
         .any(|event| matches!(event, crate::ui::UiEvent::Click(id) if *id == button)));
+}
+
+#[test]
+fn test_update_frame_headless_with_ui_render_commands_is_safe() {
+    let mut game = GoudGame::default();
+
+    let panel = game.ui_manager_mut().create_node(Some(UiComponent::Panel));
+    let label = game
+        .ui_manager_mut()
+        .create_node(Some(UiComponent::Label(UiLabel::new("Headless UI"))));
+    let image = game
+        .ui_manager_mut()
+        .create_node(Some(UiComponent::Image(UiImage::new(
+            "ui://fixture-checker",
+        ))));
+
+    game.ui_manager_mut()
+        .set_parent(label, Some(panel))
+        .unwrap();
+    game.ui_manager_mut()
+        .set_parent(image, Some(panel))
+        .unwrap();
+
+    game.ui_manager_mut()
+        .get_node_mut(panel)
+        .unwrap()
+        .set_size(Vec2::new(320.0, 100.0));
+    game.ui_manager_mut()
+        .get_node_mut(label)
+        .unwrap()
+        .set_size(Vec2::new(220.0, 24.0));
+    game.ui_manager_mut()
+        .get_node_mut(image)
+        .unwrap()
+        .set_size(Vec2::new(64.0, 64.0));
+
+    // No platform/render backend in this test; update_frame must remain safe.
+    game.update_frame(0.016, |_ctx, _world| {});
+
+    let commands = game.ui_manager_mut().build_render_commands();
+    assert!(!commands.is_empty());
 }

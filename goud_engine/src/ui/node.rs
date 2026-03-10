@@ -8,6 +8,7 @@ use crate::core::math::{Rect, Vec2};
 use super::component::UiComponent;
 use super::layout::{UiAnchor, UiEdges, UiLayout};
 use super::node_id::UiNodeId;
+use super::theme::UiStyleOverrides;
 
 /// A single node in the UI tree.
 #[derive(Debug, Clone)]
@@ -26,6 +27,7 @@ pub struct UiNode {
     focusable: bool,
     layout_enabled: bool,
     computed_rect: Rect,
+    style_overrides: Option<UiStyleOverrides>,
 }
 
 impl UiNode {
@@ -46,6 +48,7 @@ impl UiNode {
             focusable: false,
             layout_enabled: true,
             computed_rect: Rect::default(),
+            style_overrides: None,
         }
     }
 
@@ -93,14 +96,14 @@ impl UiNode {
     /// Sets this node's component.
     #[inline]
     pub fn set_component(&mut self, component: Option<UiComponent>) {
-        self.focusable = component.is_some_and(UiComponent::is_focusable);
+        self.focusable = component.as_ref().is_some_and(UiComponent::is_focusable);
         self.component = component;
     }
 
     /// Returns this node's component, if any.
     #[inline]
-    pub fn component(&self) -> Option<UiComponent> {
-        self.component
+    pub fn component(&self) -> Option<&UiComponent> {
+        self.component.as_ref()
     }
 
     /// Returns this node's anchor.
@@ -222,6 +225,24 @@ impl UiNode {
     pub fn set_computed_rect(&mut self, rect: Rect) {
         self.computed_rect = rect;
     }
+
+    /// Returns style overrides for this node.
+    #[inline]
+    pub fn style_overrides(&self) -> Option<&UiStyleOverrides> {
+        self.style_overrides.as_ref()
+    }
+
+    /// Sets style overrides for this node.
+    #[inline]
+    pub fn set_style_overrides(&mut self, overrides: UiStyleOverrides) {
+        self.style_overrides = Some(overrides);
+    }
+
+    /// Clears style overrides for this node.
+    #[inline]
+    pub fn clear_style_overrides(&mut self) {
+        self.style_overrides = None;
+    }
 }
 
 #[cfg(test)]
@@ -248,6 +269,7 @@ mod tests {
         assert!(!node.focusable());
         assert!(node.layout_enabled());
         assert_eq!(node.computed_rect(), Rect::default());
+        assert!(node.style_overrides().is_none());
     }
 
     #[test]
@@ -288,7 +310,7 @@ mod tests {
         let mut node = UiNode::new(id);
 
         node.set_component(Some(UiComponent::Panel));
-        assert_eq!(node.component(), Some(UiComponent::Panel));
+        assert!(matches!(node.component(), Some(UiComponent::Panel)));
         assert!(!node.focusable());
 
         node.set_component(Some(UiComponent::Button(UiButton::default())));
