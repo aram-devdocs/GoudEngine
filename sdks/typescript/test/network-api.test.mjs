@@ -58,13 +58,19 @@ describe('Generated network SDK surface', () => {
 
   it('exposes matching native napi methods', () => {
     const nativeSrc = fs.readFileSync(nativeGeneratedPath, 'utf8');
+    const normalizedNativeSrc = nativeSrc.replace(/\s+/g, ' ');
 
     assert.ok(nativeSrc.includes('pub struct NapiNetworkConnectResult {'));
     assert.ok(nativeSrc.includes('pub struct NapiNetworkPacket {'));
     assert.ok(nativeSrc.includes('pub struct GoudContext {'));
     assert.ok(nativeSrc.includes('pub fn network_host(&self, protocol: i32, port: u16) -> f64 {'));
     assert.ok(nativeSrc.includes('pub fn network_connect(&self, protocol: i32, address: String, port: u16) -> Result<f64> {'));
-    assert.ok(nativeSrc.includes('pub fn network_connect_with_peer(&self, protocol: i32, address: String, port: u16) -> Result<NapiNetworkConnectResult> {'));
+    const networkConnectWithPeerSignatureStart = normalizedNativeSrc.indexOf('pub fn network_connect_with_peer(');
+    assert.ok(networkConnectWithPeerSignatureStart >= 0);
+    const signatureChunk = normalizedNativeSrc.slice(networkConnectWithPeerSignatureStart, networkConnectWithPeerSignatureStart + 180);
+    assert.ok(
+      /protocol:\s*i32,\s*address:\s*String,\s*port:\s*u16,?\s*\)\s*->\s*Result<NapiNetworkConnectResult>\s*\{/.test(signatureChunk),
+    );
     assert.ok(nativeSrc.includes('pub fn network_receive_packet(&self, handle: f64) -> Result<Option<NapiNetworkPacket>> {'));
     assert.ok(nativeSrc.includes('pub fn get_network_stats(&self, handle: f64) -> Result<NapiNetworkStats> {'));
     assert.ok(nativeSrc.includes('goud_network_get_stats_v2 failed with status {}'));
