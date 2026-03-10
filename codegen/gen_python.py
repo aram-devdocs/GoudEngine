@@ -117,15 +117,24 @@ def gen_ffi():
             if "[" in ft:
                 base = ft.split("[")[0]
                 count = int(ft.split("[")[1].rstrip("]"))
-                ct = _FIELD_CTYPES.get(base, "ctypes.c_float")
+                ct = resolve_ctypes_type(
+                    base,
+                    enums=schema.get("enums", {}),
+                    default=_FIELD_CTYPES.get(base, "ctypes.c_float"),
+                )
                 fields_list.append(f'        ("{fn}", {ct} * {count})')
             else:
-                if ft in _FIELD_CTYPES:
-                    ct = _FIELD_CTYPES[ft]
+                if ft in schema.get("enums", {}):
+                    underlying = schema["enums"][ft].get("underlying", "i32")
+                    ct = CTYPES_MAP.get(underlying, "ctypes.c_int32")
                 elif ft in mapping.get("ffi_types", {}):
                     ct = mapping["ffi_types"][ft].get("ffi_name", "ctypes.c_float")
                 else:
-                    ct = "ctypes.c_float"
+                    ct = resolve_ctypes_type(
+                        ft,
+                        enums=schema.get("enums", {}),
+                        default=_FIELD_CTYPES.get(ft, "ctypes.c_float"),
+                    )
                 fields_list.append(f'        ("{fn}", {ct})')
         lines.append("    _fields_ = [")
         lines.append(",\n".join(fields_list))

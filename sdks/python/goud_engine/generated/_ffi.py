@@ -194,7 +194,7 @@ class FfiSpriteAnimator(ctypes.Structure):
         ("playing", ctypes.c_bool),
         ("finished", ctypes.c_bool),
         ("frame_duration", ctypes.c_float),
-        ("mode", FfiPlaybackMode),
+        ("mode", ctypes.c_int32),
         ("frame_count", ctypes.c_uint32)
     ]
 
