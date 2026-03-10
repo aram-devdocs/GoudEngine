@@ -681,6 +681,11 @@ jobs:
         export class Entity {
           [key: string]: any;
         }
+
+        export class UiManager {
+          constructor();
+          [key: string]: any;
+        }
         EOF
 
     - name: Build native addon

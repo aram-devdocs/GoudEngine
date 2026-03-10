@@ -968,7 +968,7 @@ class SpriteBuilder:
 
 class Text:
     """Text rendering component"""
-    def __init__(self, font_handle: int = 0, font_size: float = 0.0, color_r: float = 0.0, color_g: float = 0.0, color_b: float = 0.0, color_a: float = 0.0, alignment: float = 0.0, max_width: float = 0.0, has_max_width: bool = False, line_spacing: float = 0.0):
+    def __init__(self, font_handle: int = 0, font_size: float = 0.0, color_r: float = 0.0, color_g: float = 0.0, color_b: float = 0.0, color_a: float = 0.0, alignment: int = 0, max_width: float = 0.0, has_max_width: bool = False, line_spacing: float = 0.0):
         self.font_handle = font_handle
         self.font_size = font_size
         self.color_r = color_r
@@ -1456,7 +1456,7 @@ class InputCapabilities:
 
 class NetworkCapabilities:
     """Capabilities reported by the active network provider"""
-    def __init__(self, supports_hosting: bool = False, max_connections: int = 0, max_channels: float = 0.0, max_message_size: int = 0):
+    def __init__(self, supports_hosting: bool = False, max_connections: int = 0, max_channels: int = 0, max_message_size: int = 0):
         self.supports_hosting = supports_hosting
         self.max_connections = max_connections
         self.max_channels = max_channels
@@ -1464,3 +1464,37 @@ class NetworkCapabilities:
 
     def __repr__(self):
         return f"NetworkCapabilities(supports_hosting={self.supports_hosting}, max_connections={self.max_connections}, max_channels={self.max_channels}, max_message_size={self.max_message_size})"
+
+class UiStyle:
+    """C-safe UI style payload for node-level visual overrides."""
+    def __init__(self, has_background_color: bool = False, background_color: 'Color' = None, has_foreground_color: bool = False, foreground_color: 'Color' = None, has_border_color: bool = False, border_color: 'Color' = None, has_border_width: bool = False, border_width: float = 0.0, has_font_family: bool = False, font_family: str = '', has_font_size: bool = False, font_size: float = 0.0, has_texture_path: bool = False, texture_path: str = '', has_widget_spacing: bool = False, widget_spacing: float = 0.0):
+        self.has_background_color = has_background_color
+        self.background_color = background_color if background_color is not None else Color()
+        self.has_foreground_color = has_foreground_color
+        self.foreground_color = foreground_color if foreground_color is not None else Color()
+        self.has_border_color = has_border_color
+        self.border_color = border_color if border_color is not None else Color()
+        self.has_border_width = has_border_width
+        self.border_width = border_width
+        self.has_font_family = has_font_family
+        self.font_family = '' if font_family is None else font_family
+        self.has_font_size = has_font_size
+        self.font_size = font_size
+        self.has_texture_path = has_texture_path
+        self.texture_path = '' if texture_path is None else texture_path
+        self.has_widget_spacing = has_widget_spacing
+        self.widget_spacing = widget_spacing
+
+    def __repr__(self):
+        return f"UiStyle(has_background_color={self.has_background_color}, background_color={self.background_color}, has_foreground_color={self.has_foreground_color}, foreground_color={self.foreground_color}, has_border_color={self.has_border_color}, border_color={self.border_color}, has_border_width={self.has_border_width}, border_width={self.border_width}, has_font_family={self.has_font_family}, font_family={self.font_family}, has_font_size={self.has_font_size}, font_size={self.font_size}, has_texture_path={self.has_texture_path}, texture_path={self.texture_path}, has_widget_spacing={self.has_widget_spacing}, widget_spacing={self.widget_spacing})"
+
+class UiEvent:
+    """UI event payload returned by deterministic polling APIs."""
+    def __init__(self, event_kind: int = 0, node_id: int = 0, previous_node_id: int = 0, current_node_id: int = 0):
+        self.event_kind = event_kind
+        self.node_id = node_id
+        self.previous_node_id = previous_node_id
+        self.current_node_id = current_node_id
+
+    def __repr__(self):
+        return f"UiEvent(event_kind={self.event_kind}, node_id={self.node_id}, previous_node_id={self.previous_node_id}, current_node_id={self.current_node_id})"

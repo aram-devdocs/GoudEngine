@@ -43,6 +43,10 @@ NATIVE_KNOWN_METHODS = {
     "getRenderCapabilities", "getPhysicsCapabilities", "getAudioCapabilities",
     "getInputCapabilities", "getNetworkCapabilities",
     "checkHotSwapShortcut",
+    "update", "render", "nodeCount",
+    "createNode", "removeNode", "setParent", "getParent", "getChildCount", "getChildAt",
+    "setWidget", "setStyle", "setLabelText", "setButtonEnabled", "setImageTexturePath",
+    "setSlider", "eventCount", "eventRead",
 }
 
 
@@ -54,16 +58,17 @@ def gen_node_wrapper():
         "",
         "import {",
         "  GoudGame as NativeGoudGame,",
+        "  UiManager as NativeUiManager,",
         "  Entity as NativeEntity,",
         "  type GameConfig,",
         "} from '../../../index';",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';",
+        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';",
         "import { PhysicsBackend2D } from '../types/input.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';",
+        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';",
         "",
     ]
     if tool.get("doc"):
@@ -345,15 +350,103 @@ def gen_node_wrapper():
             lines.append("")
         lines += ["}", ""]
 
+    if "UiManager" in schema.get("tools", {}) and "UiManager" in mapping.get("tools", {}):
+        ui_tool = schema["tools"]["UiManager"]
+        lines += [
+            "function toNativeUiNodeId(nodeId: UiNodeId): number {",
+            "  return typeof nodeId === 'bigint' ? Number(nodeId) : nodeId;",
+            "}",
+            "",
+            "export class UiManager implements IUiManager {",
+            "  private native: NativeUiManager;",
+            "",
+            "  constructor() {",
+            "    this.native = new NativeUiManager();",
+            "  }",
+            "",
+        ]
+        for method in ui_tool.get("methods", []):
+            mn = to_camel(method["name"])
+            params = method.get("params", [])
+            ret = method.get("returns", "void")
+            if method.get("doc"):
+                lines.append(f"  /** {method['doc']} */")
+            param_defs = []
+            call_args = []
+            uses_ui_node_id = False
+            for p in params:
+                pn = to_camel(p["name"])
+                pt = p["type"]
+                if pn in {"nodeId", "childId", "parentId"}:
+                    param_defs.append(f"{pn}: UiNodeId")
+                    call_args.append(f"toNativeUiNodeId({pn})")
+                    uses_ui_node_id = True
+                elif pt == "UiStyle":
+                    param_defs.append(f"{pn}: IUiStyle")
+                    call_args.append(pn)
+                elif pt in schema.get("enums", {}):
+                    param_defs.append(f"{pn}: number")
+                    call_args.append(pn)
+                else:
+                    param_defs.append(f"{pn}: {ts_iface_type(pt)}")
+                    call_args.append(pn)
+            return_type = "UiNodeId" if mn in {"createNode", "getParent", "getChildAt"} else ts_iface_type(ret)
+            lines.append(f"  {mn}({', '.join(param_defs)}): {return_type} {{")
+            if mn == "eventRead":
+                lines.append(f"    return this.native.{mn}({', '.join(call_args)}) as unknown as IUiEvent | null;")
+            elif ret == "void":
+                lines.append(f"    this.native.{mn}({', '.join(call_args)});")
+            elif uses_ui_node_id and mn in {"createNode", "getParent", "getChildAt"}:
+                lines.append(f"    return this.native.{mn}({', '.join(call_args)}) as UiNodeId;")
+            else:
+                lines.append(f"    return this.native.{mn}({', '.join(call_args)});")
+            lines.append("  }")
+            lines.append("")
+
+        lines += [
+            "  createPanel(): UiNodeId {",
+            "    return this.createNode(0);",
+            "  }",
+            "",
+            "  createLabel(text: string): UiNodeId {",
+            "    const nodeId = this.createNode(2);",
+            "    this.setLabelText(nodeId, text);",
+            "    return nodeId;",
+            "  }",
+            "",
+            "  createButton(enabled: boolean = true): UiNodeId {",
+            "    const nodeId = this.createNode(1);",
+            "    this.setButtonEnabled(nodeId, enabled);",
+            "    return nodeId;",
+            "  }",
+            "",
+            "  createImage(path: string): UiNodeId {",
+            "    const nodeId = this.createNode(3);",
+            "    this.setImageTexturePath(nodeId, path);",
+            "    return nodeId;",
+            "  }",
+            "",
+            "  createSlider(min: number, max: number, value: number, enabled: boolean = true): UiNodeId {",
+            "    const nodeId = this.createNode(4);",
+            "    this.setSlider(nodeId, min, max, value, enabled);",
+            "    return nodeId;",
+            "  }",
+            "}",
+            "",
+        ]
+
     write_generated(GEN / "node" / "index.g.ts", "\n".join(lines))
 
 
 def gen_entry():
     has_engine_config = "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {})
+    has_ui_manager = "UiManager" in schema.get("tools", {}) and "UiManager" in mapping.get("tools", {})
     has_physics_world_2d = "PhysicsWorld2D" in schema.get("tools", {}) and "PhysicsWorld2D" in mapping.get("tools", {})
     has_physics_world_3d = "PhysicsWorld3D" in schema.get("tools", {}) and "PhysicsWorld3D" in mapping.get("tools", {})
     ec_export = ", EngineConfig" if has_engine_config else ""
     ec_type_export = ", IEngineConfig" if has_engine_config else ""
+    ui_export = ", UiManager" if has_ui_manager else ""
+    ui_type_export = ", IUiManager, IUiStyle, IUiEvent, UiNodeId" if has_ui_manager else ""
     pw2d_export = ", PhysicsWorld2D" if has_physics_world_2d else ""
     pw2d_type_export = ", IPhysicsWorld2D" if has_physics_world_2d else ""
     pw3d_export = ", PhysicsWorld3D" if has_physics_world_3d else ""
@@ -367,8 +460,8 @@ def gen_entry():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        f"export {{ GoudGame{ec_export}{pw2d_export}{pw3d_export}, Color, Vec2, Vec3, Key, MouseButton, PhysicsBackend2D }} from './node/index.g.js';",
-        f"export type {{ IGoudGame{ec_type_export}{pw2d_type_export}{pw3d_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities }} from './types/engine.g.js';",
+        f"export {{ GoudGame{ec_export}{ui_export}{pw2d_export}{pw3d_export}, Color, Vec2, Vec3, Key, MouseButton, PhysicsBackend2D }} from './node/index.g.js';",
+        f"export type {{ IGoudGame{ec_type_export}{ui_type_export}{pw2d_type_export}{pw3d_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities }} from './types/engine.g.js';",
         "export type { Rect } from './types/math.g.js';",
         f"export {{ {', '.join(error_names)} }} from './errors.g.js';",
     ]

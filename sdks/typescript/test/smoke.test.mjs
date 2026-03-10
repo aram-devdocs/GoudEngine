@@ -7,6 +7,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   GoudGame,
@@ -251,6 +252,95 @@ describe('Generated native audio bindings', () => {
       assert.equal(typeof game.native.unloadAudioClip, 'undefined');
     } finally {
       game.destroy();
+    }
+  });
+});
+
+describe('Generated web UiManager bindings', () => {
+  it('expands setStyle into the scalar wasm ABI while keeping the public object API', () => {
+    const typesSrc = readFileSync(new URL('../src/generated/types/engine.g.ts', import.meta.url), 'utf8');
+    const nodeSrc = readFileSync(new URL('../src/generated/node/index.g.ts', import.meta.url), 'utf8');
+    const webSrc = readFileSync(new URL('../src/generated/web/index.g.ts', import.meta.url), 'utf8');
+
+    assert.ok(
+      typesSrc.includes('export type UiNodeId = number | bigint;'),
+      'generated engine types should expose a shared UiNodeId alias',
+    );
+
+    for (const fragment of [
+      'nodeId: UiNodeId;',
+      'previousNodeId: UiNodeId;',
+      'currentNodeId: UiNodeId;',
+      'createNode(componentType: number): UiNodeId;',
+      'setStyle(nodeId: UiNodeId, style: IUiStyle): number;',
+      'createPanel(): UiNodeId;',
+    ]) {
+      assert.ok(
+        typesSrc.includes(fragment),
+        `generated engine types missing UiNodeId fragment: ${fragment}`,
+      );
+    }
+
+    assert.ok(
+      webSrc.includes(
+        'set_style(node_id: bigint, background_r?: number, background_g?: number, background_b?: number, background_a?: number, foreground_r?: number, foreground_g?: number, foreground_b?: number, foreground_a?: number, border_r?: number, border_g?: number, border_b?: number, border_a?: number, border_width?: number, font_family?: string, font_size?: number, texture_path?: string, widget_spacing?: number): number;',
+      ),
+      'web wasm handle signature should expose scalar UiStyle fields with bigint node ids',
+    );
+
+    assert.ok(
+      webSrc.includes('function toWasmUiNodeId(nodeId: UiNodeId): bigint {'),
+      'web UiManager should normalize public node ids to the wasm bigint boundary',
+    );
+
+    assert.ok(
+      webSrc.includes('setStyle(nodeId: UiNodeId, style: IUiStyle): number {'),
+      'public web UiManager API should keep the object-shaped setStyle signature with UiNodeId typing',
+    );
+
+    for (const fragment of [
+      'createNode(componentType: number): UiNodeId { return this.handle.create_node(componentType); }',
+      'removeNode(nodeId: UiNodeId): number { return this.handle.remove_node(toWasmUiNodeId(nodeId)); }',
+      'setParent(childId: UiNodeId, parentId: UiNodeId): number { return this.handle.set_parent(toWasmUiNodeId(childId), toWasmUiNodeId(parentId)); }',
+      'toWasmUiNodeId(nodeId),',
+      'style.backgroundColor?.r,',
+      'style.backgroundColor?.a,',
+      'style.foregroundColor?.r,',
+      'style.borderColor?.a,',
+      'style.borderWidth,',
+      'style.fontFamily,',
+      'style.fontSize,',
+      'style.texturePath,',
+      'style.widgetSpacing,',
+    ]) {
+      assert.ok(
+        webSrc.includes(fragment),
+        `web UiManager.setStyle bridge missing fragment: ${fragment}`,
+      );
+    }
+
+    assert.equal(
+      webSrc.includes('return this.handle.set_style(nodeId, style);'),
+      false,
+      'web UiManager.setStyle must not pass the whole style object directly to wasm',
+    );
+
+    assert.ok(
+      nodeSrc.includes('function toNativeUiNodeId(nodeId: UiNodeId): number {'),
+      'node UiManager should accept shared UiNodeId values and normalize them for the native addon',
+    );
+
+    for (const fragment of [
+      'createNode(componentType: number): UiNodeId {',
+      'removeNode(nodeId: UiNodeId): number {',
+      'return this.native.removeNode(toNativeUiNodeId(nodeId));',
+      'setParent(childId: UiNodeId, parentId: UiNodeId): number {',
+      'return this.native.setParent(toNativeUiNodeId(childId), toNativeUiNodeId(parentId));',
+    ]) {
+      assert.ok(
+        nodeSrc.includes(fragment),
+        `node UiManager source missing UiNodeId fragment: ${fragment}`,
+      );
     }
   });
 });

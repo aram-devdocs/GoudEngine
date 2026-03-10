@@ -129,6 +129,7 @@ CTYPES_MAP = {
     "i8": "ctypes.c_int8", "i16": "ctypes.c_int16",
     "i32": "ctypes.c_int32", "i64": "ctypes.c_int64",
     "usize": "ctypes.c_size_t",
+    "ptr": "ctypes.c_void_p",
     "bool": "ctypes.c_bool",
     "*const c_char": "ctypes.c_char_p",
     "*const u8": "ctypes.POINTER(ctypes.c_uint8)",
@@ -163,6 +164,49 @@ CTYPES_MAP = {
     "GoudContextId": "GoudContextId",
     "GoudResult": "GoudResult",
 }
+
+
+def resolve_ctypes_type(
+    ffi_type: str,
+    enums: dict | None = None,
+    default: str = "ctypes.c_uint64",
+) -> str:
+    """Resolve an FFI type string into a ctypes declaration type string."""
+    if ffi_type == "void":
+        return "None"
+
+    direct = CTYPES_MAP.get(ffi_type)
+    if direct:
+        return direct
+
+    if enums and ffi_type.startswith("Ffi"):
+        enum_name = ffi_type[3:]
+        if enum_name in enums:
+            underlying = enums[enum_name].get("underlying", "i32")
+            return CTYPES_MAP.get(underlying, "ctypes.c_int32")
+
+    if ffi_type.startswith("Option<") and ffi_type.endswith(">"):
+        inner = ffi_type[7:-1]
+        if "Callback" in inner:
+            return "ctypes.c_void_p"
+        inner_direct = CTYPES_MAP.get(inner)
+        if inner_direct:
+            return inner_direct
+
+    if ffi_type.startswith("*const ") or ffi_type.startswith("*mut "):
+        inner = ffi_type.split(" ", 1)[1].strip()
+        if inner == "c_void":
+            return "ctypes.c_void_p"
+        if inner == "c_char" and ffi_type.startswith("*const "):
+            return "ctypes.c_char_p"
+        inner_direct = CTYPES_MAP.get(inner)
+        if inner_direct:
+            return f"ctypes.POINTER({inner_direct})"
+        if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", inner):
+            return f"ctypes.POINTER({inner})"
+        return "ctypes.c_void_p"
+
+    return default
 
 CSHARP_FFI_TYPES = {
     "f32": "float", "f64": "double",

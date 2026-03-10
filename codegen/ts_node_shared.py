@@ -42,6 +42,9 @@ IFACE_TYPES = {
     "AudioCapabilities": "IAudioCapabilities",
     "InputCapabilities": "IInputCapabilities",
     "NetworkCapabilities": "INetworkCapabilities",
+    "UiStyle": "IUiStyle",
+    "UiEvent": "IUiEvent",
+    "UiManager": "IUiManager",
     "PhysicsWorld2D": "IPhysicsWorld2D",
     "PhysicsWorld3D": "IPhysicsWorld3D",
 }

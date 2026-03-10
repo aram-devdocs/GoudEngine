@@ -3908,6 +3908,42 @@
       "return_type": "u64",
       "is_unsafe": true
     },
+    "goud_ui_event_count": {
+      "source_file": "ffi/ui/events.rs",
+      "params": [
+        "mgr: *const UiManager"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_ui_event_read": {
+      "source_file": "ffi/ui/events.rs",
+      "params": [
+        "mgr: *const UiManager",
+        "index: u32",
+        "out_event: *mut FfiUiEvent"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_ui_events_count": {
+      "source_file": "ffi/ui/events.rs",
+      "params": [
+        "mgr: *const UiManager"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_ui_events_read": {
+      "source_file": "ffi/ui/events.rs",
+      "params": [
+        "mgr: *const UiManager",
+        "index: u32",
+        "out_event: *mut FfiUiEvent"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_ui_get_child_at": {
       "source_file": "ffi/ui/node.rs",
       "params": [
@@ -3983,12 +4019,87 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_ui_set_button_enabled": {
+      "source_file": "ffi/ui/widget.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "node_id: u64",
+        "enabled: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_ui_set_event_callback": {
+      "source_file": "ffi/ui/events.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "callback: Option<UiEventCallback>",
+        "user_data: *mut c_void"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_ui_set_image_texture_path": {
+      "source_file": "ffi/ui/widget.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "node_id: u64",
+        "path_ptr: *const u8",
+        "path_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_ui_set_label_text": {
+      "source_file": "ffi/ui/widget.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "node_id: u64",
+        "text_ptr: *const u8",
+        "text_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_ui_set_parent": {
       "source_file": "ffi/ui/node.rs",
       "params": [
         "mgr: *mut UiManager",
         "child_id: u64",
         "parent_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_ui_set_slider": {
+      "source_file": "ffi/ui/widget.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "node_id: u64",
+        "min: f32",
+        "max: f32",
+        "value: f32",
+        "enabled: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_ui_set_style": {
+      "source_file": "ffi/ui/widget.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "node_id: u64",
+        "style: *const FfiUiStyle"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_ui_set_widget": {
+      "source_file": "ffi/ui/widget.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "node_id: u64",
+        "widget_kind: i32"
       ],
       "return_type": "i32",
       "is_unsafe": true
@@ -4075,5 +4186,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 407
+  "total_count": 418
 }

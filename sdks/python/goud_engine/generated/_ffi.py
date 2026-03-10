@@ -194,7 +194,7 @@ class FfiSpriteAnimator(ctypes.Structure):
         ("playing", ctypes.c_bool),
         ("finished", ctypes.c_bool),
         ("frame_duration", ctypes.c_float),
-        ("mode", ctypes.c_float),
+        ("mode", ctypes.c_int32),
         ("frame_count", ctypes.c_uint32)
     ]
 
@@ -210,6 +210,36 @@ class FfiText(ctypes.Structure):
         ("max_width", ctypes.c_float),
         ("has_max_width", ctypes.c_bool),
         ("line_spacing", ctypes.c_float)
+    ]
+
+class FfiUiStyle(ctypes.Structure):
+    _fields_ = [
+        ("has_background_color", ctypes.c_bool),
+        ("background_color", FfiColor),
+        ("has_foreground_color", ctypes.c_bool),
+        ("foreground_color", FfiColor),
+        ("has_border_color", ctypes.c_bool),
+        ("border_color", FfiColor),
+        ("has_border_width", ctypes.c_bool),
+        ("border_width", ctypes.c_float),
+        ("has_font_family", ctypes.c_bool),
+        ("font_family_ptr", ctypes.c_void_p),
+        ("font_family_len", ctypes.c_size_t),
+        ("has_font_size", ctypes.c_bool),
+        ("font_size", ctypes.c_float),
+        ("has_texture_path", ctypes.c_bool),
+        ("texture_path_ptr", ctypes.c_void_p),
+        ("texture_path_len", ctypes.c_size_t),
+        ("has_widget_spacing", ctypes.c_bool),
+        ("widget_spacing", ctypes.c_float)
+    ]
+
+class FfiUiEvent(ctypes.Structure):
+    _fields_ = [
+        ("event_kind", ctypes.c_uint32),
+        ("node_id", ctypes.c_uint64),
+        ("previous_node_id", ctypes.c_uint64),
+        ("current_node_id", ctypes.c_uint64)
     ]
 
 # ── Function signatures ──
@@ -722,11 +752,11 @@ def _setup():
     _lib.goud_animation_clip_builder_free.restype = None
     _lib.goud_sprite_animator_from_clip.argtypes = [ctypes.c_void_p]
     _lib.goud_sprite_animator_from_clip.restype = ctypes.c_uint64
-    _lib.goud_sprite_animator_get_current_frame.argtypes = [ctypes.c_uint64]
+    _lib.goud_sprite_animator_get_current_frame.argtypes = [ctypes.POINTER(FfiSpriteAnimator)]
     _lib.goud_sprite_animator_get_current_frame.restype = ctypes.c_uint32
-    _lib.goud_sprite_animator_is_playing.argtypes = [ctypes.c_uint64]
+    _lib.goud_sprite_animator_is_playing.argtypes = [ctypes.POINTER(FfiSpriteAnimator)]
     _lib.goud_sprite_animator_is_playing.restype = ctypes.c_bool
-    _lib.goud_sprite_animator_is_finished.argtypes = [ctypes.c_uint64]
+    _lib.goud_sprite_animator_is_finished.argtypes = [ctypes.POINTER(FfiSpriteAnimator)]
     _lib.goud_sprite_animator_is_finished.restype = ctypes.c_bool
 
     # component_generic
@@ -1101,6 +1131,28 @@ def _setup():
     _lib.goud_ui_get_child_count.restype = ctypes.c_uint32
     _lib.goud_ui_get_child_at.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_uint32]
     _lib.goud_ui_get_child_at.restype = ctypes.c_uint64
+    _lib.goud_ui_set_widget.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_int32]
+    _lib.goud_ui_set_widget.restype = ctypes.c_int32
+    _lib.goud_ui_set_style.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(FfiUiStyle)]
+    _lib.goud_ui_set_style.restype = ctypes.c_int32
+    _lib.goud_ui_set_label_text.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_ui_set_label_text.restype = ctypes.c_int32
+    _lib.goud_ui_set_button_enabled.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_bool]
+    _lib.goud_ui_set_button_enabled.restype = ctypes.c_int32
+    _lib.goud_ui_set_image_texture_path.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_ui_set_image_texture_path.restype = ctypes.c_int32
+    _lib.goud_ui_set_slider.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_bool]
+    _lib.goud_ui_set_slider.restype = ctypes.c_int32
+    _lib.goud_ui_set_event_callback.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+    _lib.goud_ui_set_event_callback.restype = ctypes.c_int32
+    _lib.goud_ui_event_count.argtypes = [ctypes.c_void_p]
+    _lib.goud_ui_event_count.restype = ctypes.c_uint32
+    _lib.goud_ui_event_read.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.POINTER(FfiUiEvent)]
+    _lib.goud_ui_event_read.restype = ctypes.c_int32
+    _lib.goud_ui_events_count.argtypes = [ctypes.c_void_p]
+    _lib.goud_ui_events_count.restype = ctypes.c_uint32
+    _lib.goud_ui_events_read.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.POINTER(FfiUiEvent)]
+    _lib.goud_ui_events_read.restype = ctypes.c_int32
 
 _setup()
 
