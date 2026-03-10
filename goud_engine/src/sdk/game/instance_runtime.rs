@@ -10,10 +10,7 @@ use crate::sdk::engine_config::EngineConfig;
 use crate::sdk::game_config::GameContext;
 use crate::ui::UiManager;
 #[cfg(feature = "native")]
-use crate::{
-    assets::loaders::{FontAsset, FontLoader, TextureAsset, TextureLoader},
-    assets::AssetServer,
-};
+use crate::assets::AssetServer;
 
 impl GoudGame {
     /// Runs the game loop with the given update callback.
@@ -184,16 +181,6 @@ impl GoudGame {
         &mut self.ui_manager
     }
 
-    #[cfg(feature = "native")]
-    fn ensure_ui_assets_ready(asset_server: &mut AssetServer) {
-        if !asset_server.has_loader_for_type::<FontAsset>() {
-            asset_server.register_loader(FontLoader);
-        }
-        if !asset_server.has_loader_for_type::<TextureAsset>() {
-            asset_server.register_loader(TextureLoader);
-        }
-    }
-
     fn render_ui_frame(&mut self) {
         #[cfg(feature = "native")]
         {
@@ -211,7 +198,7 @@ impl GoudGame {
                 self.asset_server.as_mut(),
                 self.render_backend.as_mut(),
             ) {
-                Self::ensure_ui_assets_ready(asset_server);
+                crate::rendering::ensure_ui_asset_loaders(asset_server);
                 if let Err(err) = system.run(&commands, asset_server, backend, viewport) {
                     log::warn!("UiRenderSystem frame failed: {err}");
                 }
@@ -220,7 +207,7 @@ impl GoudGame {
 
         #[cfg(not(feature = "native"))]
         {
-            self.ui_manager.render();
+            let _ = self.ui_manager.build_render_commands();
         }
     }
 }

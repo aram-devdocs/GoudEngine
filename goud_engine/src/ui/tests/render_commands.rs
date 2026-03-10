@@ -77,7 +77,7 @@ fn render_panel_and_button_emit_border_and_fill_quads() {
     ui.get_node_mut(button)
         .unwrap()
         .set_style_overrides(UiStyleOverrides {
-            widget_spacing: Some(6.0),
+            border_width: Some(6.0),
             ..UiStyleOverrides::default()
         });
 

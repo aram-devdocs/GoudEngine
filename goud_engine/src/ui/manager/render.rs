@@ -68,7 +68,7 @@ impl UiManager {
     ) {
         let border_width = node
             .style_overrides()
-            .and_then(|o| o.widget_spacing)
+            .and_then(|o| o.border_width)
             .unwrap_or(self.theme.spacing.small)
             .max(1.0)
             .min(rect.width * 0.5)

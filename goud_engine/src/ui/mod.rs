@@ -31,5 +31,8 @@ pub use manager::{UiEvent, UiManager};
 pub use node::UiNode;
 pub use node_id::UiNodeId;
 pub use render_commands::{UiQuadCommand, UiRenderCommand, UiTextCommand, UiTexturedQuadCommand};
-pub use theme::{UiComponentVisual, UiStyleOverrides, UiTheme, UiVisualStyle};
+pub use theme::{
+    UiComponentVisual, UiStyleOverrides, UiTheme, UiVisualStyle, UI_DEFAULT_FONT_ASSET_PATH,
+    UI_DEFAULT_FONT_FAMILY,
+};
 pub use visuals::{resolve_widget_visual, UiInteractionState};

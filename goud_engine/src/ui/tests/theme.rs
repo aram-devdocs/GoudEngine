@@ -2,7 +2,7 @@ use crate::core::math::Color;
 use crate::core::math::Vec2;
 use crate::ui::{
     resolve_widget_visual, UiComponent, UiComponentVisual, UiInteractionState, UiLabel, UiManager,
-    UiRenderCommand, UiStyleOverrides, UiTheme, UiVisualStyle,
+    UiRenderCommand, UiStyleOverrides, UiTheme, UiVisualStyle, UI_DEFAULT_FONT_FAMILY,
 };
 
 #[test]
@@ -11,6 +11,8 @@ fn theme_light_and_dark_have_distinct_palette_and_defaults() {
     let dark = UiTheme::dark();
 
     assert_ne!(light.palette.surface, dark.palette.surface);
+    assert_eq!(light.typography.default_font_family, UI_DEFAULT_FONT_FAMILY);
+    assert_eq!(dark.typography.default_font_family, UI_DEFAULT_FONT_FAMILY);
     assert!(light.typography.default_font_size > 0.0);
     assert!(light.spacing.medium > 0.0);
 }
@@ -34,7 +36,7 @@ fn theme_visual_resolution_applies_style_overrides() {
     let theme = UiTheme::light();
     let overrides = UiStyleOverrides {
         background_color: Some(Color::RED),
-        text_color: Some(Color::BLUE),
+        foreground_color: Some(Color::BLUE),
         border_color: Some(Color::GREEN),
         ..UiStyleOverrides::default()
     };

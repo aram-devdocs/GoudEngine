@@ -11,3 +11,4 @@ mod ui_render_system;
 pub use render_system::SpriteRenderSystem;
 pub use text::TextRenderSystem;
 pub use ui_render_system::{UiRenderStats, UiRenderSystem};
+pub(crate) use ui_render_system::ensure_ui_asset_loaders;

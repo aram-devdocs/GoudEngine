@@ -2,13 +2,14 @@
 //!
 //! The system keeps UI rendering on the engine side by:
 //! - Translating UI text commands into direct text pipeline requests.
-//! - Resolving UI font families.
+//! - Resolving UI font families through the standard UI fallback chain.
 //! - Rendering UI quads through backend-safe abstractions.
 
 use std::collections::HashMap;
 
 use self::bytes::{index_slice_as_bytes, vertex_slice_as_bytes};
-use crate::assets::loaders::{FontAsset, FontLoader, TextureAsset, TextureLoader};
+use self::resources::{resolve_font, resolve_texture_asset};
+use crate::assets::loaders::FontAsset;
 use crate::assets::{AssetHandle, AssetServer};
 use crate::core::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::{
@@ -21,6 +22,7 @@ use crate::rendering::text::{DirectTextDrawRequest, TextRenderStats, TextRenderS
 use crate::ui::UiRenderCommand;
 
 mod bytes;
+mod resources;
 
 /// Per-frame UI rendering statistics.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -122,7 +124,7 @@ void main() {
         viewport: (u32, u32),
     ) -> GoudResult<()> {
         self.stats = UiRenderStats::default();
-        self.ensure_required_loaders(asset_server);
+        ensure_ui_asset_loaders(asset_server);
         self.begin_quad_frame();
         let solid_texture = self.ensure_white_texture(backend)?;
 
@@ -136,9 +138,12 @@ void main() {
                 }
                 UiRenderCommand::TexturedQuad(textured) => {
                     self.stats.textured_quad_commands += 1;
-                    if let Some(texture) =
-                        self.resolve_texture_asset(asset_server, backend, &textured.texture_path)
-                    {
+                    if let Some(texture) = resolve_texture_asset(
+                        asset_server,
+                        backend,
+                        &mut self.texture_cache,
+                        &textured.texture_path,
+                    ) {
                         self.emit_ui_quad(textured.rect, textured.tint, texture);
                     } else {
                         self.emit_ui_quad(textured.rect, textured.tint, solid_texture);
@@ -150,7 +155,9 @@ void main() {
                         continue;
                     }
 
-                    if let Some(font_handle) = self.resolve_font(asset_server, &text.font_family) {
+                    if let Some(font_handle) =
+                        resolve_font(asset_server, &mut self.font_cache, &text.font_family)
+                    {
                         text_requests.push(DirectTextDrawRequest {
                             content: text.text.clone(),
                             position: crate::core::math::Vec2::new(
@@ -190,57 +197,6 @@ void main() {
     /// Returns stats from the latest `run` call.
     pub fn stats(&self) -> UiRenderStats {
         self.stats
-    }
-
-    fn ensure_required_loaders(&self, asset_server: &mut AssetServer) {
-        if !asset_server.has_loader_for_type::<FontAsset>() {
-            asset_server.register_loader(FontLoader);
-        }
-        if !asset_server.has_loader_for_type::<TextureAsset>() {
-            asset_server.register_loader(TextureLoader);
-        }
-    }
-
-    fn resolve_font(
-        &mut self,
-        asset_server: &mut AssetServer,
-        font_family: &str,
-    ) -> Option<AssetHandle<FontAsset>> {
-        let is_f05 = font_family.eq_ignore_ascii_case("f05");
-        if let Some(handle) = self.font_cache.get(font_family) {
-            if asset_server.is_loaded(handle) {
-                return Some(*handle);
-            }
-        }
-
-        let (resolved, cacheable) = if is_f05 {
-            let handle = asset_server.load::<FontAsset>("fonts/F05.ttf");
-            if asset_server.is_loaded(&handle) {
-                (Some(handle), true)
-            } else {
-                (None, false)
-            }
-        } else {
-            let candidate_path = format!("fonts/{font_family}.ttf");
-            let candidate_handle = asset_server.load::<FontAsset>(&candidate_path);
-            if asset_server.is_loaded(&candidate_handle) {
-                (Some(candidate_handle), true)
-            } else {
-                let fallback = asset_server.load::<FontAsset>("fonts/F05.ttf");
-                if asset_server.is_loaded(&fallback) {
-                    (Some(fallback), false)
-                } else {
-                    (None, false)
-                }
-            }
-        };
-
-        if let Some(handle) = resolved {
-            if cacheable {
-                self.font_cache.insert(font_family.to_string(), handle);
-            }
-        }
-        resolved
     }
 
     fn begin_quad_frame(&mut self) {
@@ -320,52 +276,6 @@ void main() {
             })?;
         self.white_texture = Some(handle);
         Ok(handle)
-    }
-
-    fn resolve_texture_asset(
-        &mut self,
-        asset_server: &mut AssetServer,
-        backend: &mut dyn RenderBackend,
-        texture_path: &str,
-    ) -> Option<TextureHandle> {
-        if texture_path.is_empty() {
-            return None;
-        }
-
-        if let Some(&cached) = self.texture_cache.get(texture_path) {
-            if backend.is_texture_valid(cached) {
-                return Some(cached);
-            }
-            self.texture_cache.remove(texture_path);
-        }
-
-        let texture_asset_handle = self.prime_texture_asset(asset_server, texture_path);
-        if !asset_server.is_loaded(&texture_asset_handle) {
-            return None;
-        }
-
-        let texture_asset = asset_server.get(&texture_asset_handle)?;
-        let gpu_texture = backend
-            .create_texture(
-                texture_asset.width,
-                texture_asset.height,
-                BackendTextureFormat::RGBA8,
-                TextureFilter::Linear,
-                TextureWrap::ClampToEdge,
-                &texture_asset.data,
-            )
-            .ok()?;
-        self.texture_cache
-            .insert(texture_path.to_string(), gpu_texture);
-        Some(gpu_texture)
-    }
-
-    fn prime_texture_asset(
-        &self,
-        asset_server: &mut AssetServer,
-        texture_path: &str,
-    ) -> AssetHandle<TextureAsset> {
-        asset_server.load::<TextureAsset>(texture_path)
     }
 
     fn ensure_quad_shader(&mut self, backend: &mut dyn RenderBackend) -> GoudResult<ShaderHandle> {
@@ -495,6 +405,9 @@ impl std::fmt::Debug for UiRenderSystem {
             .finish()
     }
 }
+
+pub(crate) use resources::ensure_ui_asset_loaders;
+
 #[cfg(test)]
 #[path = "ui_render_system_tests.rs"]
 mod tests;

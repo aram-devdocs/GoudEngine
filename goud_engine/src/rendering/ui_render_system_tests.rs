@@ -1,19 +1,18 @@
 use super::*;
-use crate::assets::loaders::{FontLoader, TextureLoader};
 use crate::core::math::{Color, Rect};
+use crate::assets::loaders::TextureAsset;
 use crate::libs::graphics::backend::null::NullBackend;
-use crate::ui::{UiNodeId, UiQuadCommand, UiRenderCommand, UiTextCommand, UiTexturedQuadCommand};
+use crate::rendering::ensure_ui_asset_loaders;
+use crate::ui::{
+    UiNodeId, UiQuadCommand, UiRenderCommand, UiTextCommand, UiTexturedQuadCommand,
+    UI_DEFAULT_FONT_ASSET_PATH, UI_DEFAULT_FONT_FAMILY,
+};
 
 fn preload_test_fixtures(asset_server: &mut AssetServer) {
-    if !asset_server.has_loader_for_type::<FontAsset>() {
-        asset_server.register_loader(FontLoader);
-    }
-    if !asset_server.has_loader_for_type::<TextureAsset>() {
-        asset_server.register_loader(TextureLoader);
-    }
+    ensure_ui_asset_loaders(asset_server);
 
     asset_server.load_from_bytes::<FontAsset>(
-        "fonts/F05.ttf",
+        UI_DEFAULT_FONT_ASSET_PATH,
         include_bytes!("../../test_assets/fonts/test_font.ttf"),
     );
     asset_server.load_from_bytes::<TextureAsset>(
@@ -48,7 +47,7 @@ fn headless_run_renders_text_and_tracks_stats() {
             position: [12.0, 8.0],
             font_size: 16.0,
             color: Color::WHITE,
-            font_family: "F05".to_string(),
+            font_family: UI_DEFAULT_FONT_FAMILY.to_string(),
         }),
     ];
 

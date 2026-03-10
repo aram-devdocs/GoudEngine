@@ -42,9 +42,6 @@ pub fn resolve_widget_visual(
         if let Some(color) = overrides.foreground_color {
             base.text = color;
         }
-        if let Some(color) = overrides.text_color {
-            base.text = color;
-        }
         if let Some(color) = overrides.border_color {
             base.border = color;
         }
