@@ -178,6 +178,16 @@ describe('GoudGame', () => {
       'audioPlay',
       'audioPlayOnChannel',
       'audioPlayWithSettings',
+      'audioStop',
+      'audioPause',
+      'audioResume',
+      'audioStopAll',
+      'audioSetGlobalVolume',
+      'audioGetGlobalVolume',
+      'audioSetChannelVolume',
+      'audioGetChannelVolume',
+      'audioIsPlaying',
+      'audioActiveCount',
       'audioPlaySpatial3d',
       'audioUpdateSpatial3d',
       'audioSetListenerPosition3d',
@@ -196,6 +206,9 @@ describe('GoudGame', () => {
     for (const method of requiredNativeMethods) {
       assert.equal(typeof game[method], 'function', `Missing native method: ${method}`);
     }
+
+    assert.equal(typeof game.loadAudioClip, 'undefined');
+    assert.equal(typeof game.unloadAudioClip, 'undefined');
   });
 });
 
@@ -215,10 +228,30 @@ describe('Generated native audio bindings', () => {
 
     const requiredWrapperMethods = [
       'audioPlay',
+      'audioPlayOnChannel',
+      'audioPlayWithSettings',
+      'audioStop',
+      'audioPause',
+      'audioResume',
+      'audioStopAll',
+      'audioSetGlobalVolume',
+      'audioGetGlobalVolume',
+      'audioSetChannelVolume',
+      'audioGetChannelVolume',
+      'audioIsPlaying',
+      'audioActiveCount',
       'audioPlaySpatial3d',
       'audioUpdateSpatial3d',
       'audioSetListenerPosition3d',
       'audioSetSourcePosition3d',
+      'audioSetPlayerVolume',
+      'audioSetPlayerSpeed',
+      'audioCrossfade',
+      'audioCrossfadeTo',
+      'audioMixWith',
+      'audioUpdateCrossfades',
+      'audioActiveCrossfadeCount',
+      'audioCleanupFinished',
       'audioActivate',
     ];
 
@@ -226,6 +259,11 @@ describe('Generated native audio bindings', () => {
       assert.equal(typeof game[method], 'function', `Missing wrapper method: ${method}`);
       assert.equal(typeof game.native[method], 'function', `Wrapper native target missing method: ${method}`);
     }
+
+    assert.equal(typeof game.loadAudioClip, 'undefined');
+    assert.equal(typeof game.unloadAudioClip, 'undefined');
+    assert.equal(typeof game.native.loadAudioClip, 'undefined');
+    assert.equal(typeof game.native.unloadAudioClip, 'undefined');
 
     game.destroy();
   });

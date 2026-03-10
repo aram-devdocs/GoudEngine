@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using GoudEngine;
 using Xunit;
 
@@ -33,6 +34,22 @@ public class GoudGameAudioMethodGenerationTests
         AssertMethod("AudioActiveCount", typeof(int));
         AssertMethod("AudioCleanupFinished", typeof(int));
         AssertMethod("AudioActivate", typeof(int));
+
+        var generatedSource = ReadGeneratedGoudGameSource();
+        var audioActivateIndex = generatedSource.IndexOf("public int AudioActivate()", StringComparison.Ordinal);
+        Assert.True(audioActivateIndex >= 0, "missing AudioActivate wrapper in generated GoudGame source");
+        Assert.True(
+            generatedSource.IndexOf("return NativeMethods.goud_audio_activate(_ctx);", audioActivateIndex, StringComparison.Ordinal) >= 0,
+            "AudioActivate must map to goud_audio_activate"
+        );
+        Assert.True(
+            generatedSource.IndexOf(
+                "return NativeMethods.goud_audio_cleanup_finished(_ctx);",
+                audioActivateIndex,
+                StringComparison.Ordinal
+            ) == -1,
+            "AudioActivate must not map to goud_audio_cleanup_finished"
+        );
     }
 
     [Fact]
@@ -80,5 +97,36 @@ public class GoudGameAudioMethodGenerationTests
         var method = typeof(GoudGame).GetMethod(name, parameterTypes);
         Assert.NotNull(method);
         Assert.Equal(returnType, method!.ReturnType);
+    }
+
+    private static string ReadGeneratedGoudGameSource()
+    {
+        var current = AppContext.BaseDirectory;
+        for (var i = 0; i < 12; i++)
+        {
+            var candidate = Path.Combine(current, "sdks", "csharp", "generated", "GoudGame.g.cs");
+            if (File.Exists(candidate))
+            {
+                return File.ReadAllText(candidate);
+            }
+
+            var parent = Directory.GetParent(current);
+            if (parent == null)
+            {
+                break;
+            }
+
+            current = parent.FullName;
+        }
+
+        var cwdCandidate = Path.Combine(Directory.GetCurrentDirectory(), "sdks", "csharp", "generated", "GoudGame.g.cs");
+        if (File.Exists(cwdCandidate))
+        {
+            return File.ReadAllText(cwdCandidate);
+        }
+
+        throw new FileNotFoundException(
+            "Could not locate generated C# SDK source at sdks/csharp/generated/GoudGame.g.cs"
+        );
     }
 }

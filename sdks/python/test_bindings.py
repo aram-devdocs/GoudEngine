@@ -129,6 +129,11 @@ def test_generated_audio_wrapper_api_names():
     for signature in expected_game_methods:
         assert signature in game_src, f"missing generated audio wrapper: {signature}"
 
+    assert "def load_audio_clip(self" not in game_src, "deprecated load_audio_clip wrapper should not be generated"
+    assert "def unload_audio_clip(self" not in game_src, "deprecated unload_audio_clip wrapper should not be generated"
+    assert "_lib.load_audio_clip" not in ffi_src, "deprecated load_audio_clip ffi symbol should not be generated"
+    assert "_lib.unload_audio_clip" not in ffi_src, "deprecated unload_audio_clip ffi symbol should not be generated"
+
     # Ensure ctypes declarations include the expected FFI export.
     assert "_lib.goud_audio_activate.argtypes = [GoudContextId]" in ffi_src, \
         "missing goud_audio_activate argtypes declaration"

@@ -400,7 +400,9 @@ export class FlappyBirdGame {
   }
 
   private resetGame(game: IGoudGame): void {
-    game.audioPlay(RESET_WAV_BYTES);
+    if (this.audioActivated) {
+      game.audioPlay(RESET_WAV_BYTES);
+    }
     this.bird.reset();
     this.pipes = [];
     this.scoreCounter.resetScore();
