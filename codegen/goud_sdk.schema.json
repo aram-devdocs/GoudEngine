@@ -4731,6 +4731,71 @@
           "wasm_signature": "distance_squared(x1: number, y1: number, x2: number, y2: number): number"
         },
         {
+          "name": "physicsRaycastEx",
+          "doc": "Casts a filtered ray and returns the full hit payload, or null when no hit is found (FFI: goud_physics_raycast_ex)",
+          "params": [
+            {
+              "name": "originX",
+              "type": "f32"
+            },
+            {
+              "name": "originY",
+              "type": "f32"
+            },
+            {
+              "name": "dirX",
+              "type": "f32"
+            },
+            {
+              "name": "dirY",
+              "type": "f32"
+            },
+            {
+              "name": "maxDist",
+              "type": "f32"
+            },
+            {
+              "name": "layerMask",
+              "type": "u32"
+            }
+          ],
+          "returns": "PhysicsRaycastHit2D?"
+        },
+        {
+          "name": "physicsCollisionEventsCount",
+          "doc": "Returns the number of queued physics collision events available to read (FFI: goud_physics_collision_events_count)",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "physicsCollisionEventsRead",
+          "doc": "Reads one queued physics collision event by index, or null when the index is out of range (FFI: goud_physics_collision_events_read)",
+          "params": [
+            {
+              "name": "index",
+              "type": "u32"
+            }
+          ],
+          "returns": "PhysicsCollisionEvent2D?"
+        },
+        {
+          "name": "physicsSetCollisionCallback",
+          "doc": "Registers or clears a physics collision callback function pointer (FFI: goud_physics_set_collision_callback)",
+          "params": [
+            {
+              "name": "callbackPtr",
+              "type": "ptr",
+              "doc": "Function pointer with signature extern C fn(ctx, bodyA, bodyB, kind, userData)"
+            },
+            {
+              "name": "userData",
+              "type": "ptr",
+              "doc": "Opaque pointer forwarded unchanged to callbackPtr"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
           "$ref": "EcsMethods",
           "name": "componentRegisterType"
         },

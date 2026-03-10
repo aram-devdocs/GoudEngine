@@ -238,6 +238,21 @@ def _ffi_uses_ptr_len(ffi_name: str) -> bool:
     return "*const u8" in param_types
 
 
+def _py_out_var_ctype(raw_type: str) -> str:
+    """Resolve an out-param type to the ctypes declaration type."""
+    if raw_type in schema.get("enums", {}):
+        underlying = schema["enums"][raw_type].get("underlying", "i32")
+        return CTYPES_MAP.get(underlying, "ctypes.c_int32")
+    if raw_type in schema.get("types", {}):
+        ffi_info = mapping.get("ffi_types", {}).get(raw_type, {})
+        ffi_name = ffi_info.get("ffi_name")
+        if ffi_name:
+            return ffi_name
+    if raw_type.startswith("Ffi") or raw_type.startswith("Goud"):
+        return raw_type
+    return CTYPES_MAP.get(raw_type, "ctypes.c_float")
+
+
 def _ffi_to_sdk_return(ffi_returns: str, type_name: str) -> str:
     """Map an FFI return type to the SDK type string for annotations.
 
@@ -1374,18 +1389,65 @@ def _gen_tool_class(tool_name: str, lines: list):
                 lines.append(f"        self._lib.{ffi_fn}({args_str})")
             else:
                 lines.append(f"        return self._lib.{ffi_fn}({args_str})")
-        elif "out_params" in mmap and "returns_struct" in mmap and any(op["type"] != "f32" for op in mmap["out_params"]):
+        elif "out_params" in mmap and "returns_struct" in mmap:
             struct_name = mmap["returns_struct"]
-            ffi_type_name = mapping["ffi_types"][struct_name]["ffi_name"]
+            ffi_fn = mmap["ffi"]
+            no_ctx = mmap.get("no_context", False)
+            status_nullable_struct = bool(mmap.get("status_nullable_struct"))
+            entity_set = set(mmap.get("entity_params", []))
+            enum_set = set((mmap.get("enum_params") or {}).keys())
+            out_params = mmap["out_params"]
+
+            for op in out_params:
+                ctype = _py_out_var_ctype(op["type"])
+                lines.append(f"        _{op['name']} = {ctype}()")
+
+            ffi_parts = [] if no_ctx else ["self._ctx"]
+            for p in params:
+                pn = p["name"]
+                sn = to_snake(pn)
+                if pn in entity_set:
+                    ffi_parts.append(f"{sn}._bits")
+                elif pn in enum_set or p["type"] in schema.get("enums", {}):
+                    ffi_parts.append(f"int({sn})")
+                else:
+                    ffi_parts.append(sn)
+            ffi_parts.extend(
+                f"ctypes.byref(_{op['name']})" for op in out_params
+            )
+            if status_nullable_struct:
+                lines.append(
+                    f"        _status = self._lib.{ffi_fn}({', '.join(ffi_parts)})"
+                )
+                lines.append("        if _status < 0:")
+                lines.append(
+                    f"            raise RuntimeError(f'{ffi_fn} failed with status {{_status}}')"
+                )
+                lines.append("        if _status == 0:")
+                lines.append("            return None")
+            else:
+                lines.append(
+                    f"        self._lib.{ffi_fn}({', '.join(ffi_parts)})"
+                )
+
             rs_fields = schema["types"][struct_name]["fields"]
-            field_args = ", ".join(
-                f"_stats.{to_snake(f['name'])}" for f in rs_fields
-            )
-            lines.append(f"        _stats = {ffi_type_name}()")
-            lines.append(
-                f"        self._lib.{mmap['ffi']}("
-                "self._ctx, ctypes.byref(_stats))"
-            )
+            op0_type = out_params[0]["type"]
+            if (
+                len(out_params) == 1
+                and (
+                    op0_type in schema.get("types", {})
+                    or op0_type.startswith("Ffi")
+                    or op0_type.startswith("Goud")
+                )
+            ):
+                src = f"_{out_params[0]['name']}"
+                field_args = ", ".join(
+                    f"{src}.{to_snake(f['name'])}" for f in rs_fields
+                )
+            else:
+                field_args = ", ".join(
+                    f"_{op['name']}.value" for op in out_params
+                )
             lines.append(f"        return {struct_name}({field_args})")
         elif "out_params" in mmap:
             for op in mmap["out_params"]:

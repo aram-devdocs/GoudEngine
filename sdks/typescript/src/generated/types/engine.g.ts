@@ -12,6 +12,10 @@ export interface IRect { x: number; y: number; width: number; height: number; }
 export interface IRenderStats { drawCalls: number; triangles: number; textureBinds: number; shaderBinds: number; }
 /** Collision contact point information */
 export interface IContact { pointX: number; pointY: number; normalX: number; normalY: number; penetration: number; }
+/** Detailed payload for a 2D physics raycast hit */
+export interface IPhysicsRaycastHit2D { bodyHandle: number; colliderHandle: number; pointX: number; pointY: number; normalX: number; normalY: number; distance: number; }
+/** 2D collision event payload from the physics event queue */
+export interface IPhysicsCollisionEvent2D { bodyA: number; bodyB: number; kind: number; }
 /** Frame timing statistics from the debug overlay rolling window */
 export interface IFpsStats { currentFps: number; minFps: number; maxFps: number; avgFps: number; frameTimeMs: number; }
 /** Capabilities reported by the active render provider */
@@ -263,6 +267,14 @@ export interface IGoudGame {
   distance(x1: number, y1: number, x2: number, y2: number): number;
   /** Squared distance between two points */
   distanceSquared(x1: number, y1: number, x2: number, y2: number): number;
+  /** Casts a filtered ray and returns the full hit payload, or null when no hit is found (FFI: goud_physics_raycast_ex) */
+  physicsRaycastEx(originX: number, originY: number, dirX: number, dirY: number, maxDist: number, layerMask: number): IPhysicsRaycastHit2D | null;
+  /** Returns the number of queued physics collision events available to read (FFI: goud_physics_collision_events_count) */
+  physicsCollisionEventsCount(): number;
+  /** Reads one queued physics collision event by index, or null when the index is out of range (FFI: goud_physics_collision_events_read) */
+  physicsCollisionEventsRead(index: number): IPhysicsCollisionEvent2D | null;
+  /** Registers or clears a physics collision callback function pointer (FFI: goud_physics_set_collision_callback) */
+  physicsSetCollisionCallback(callbackPtr: number, userData: number): number;
   /** Queries the render provider's capabilities */
   getRenderCapabilities(): IRenderCapabilities;
   /** Queries the physics provider's capabilities */

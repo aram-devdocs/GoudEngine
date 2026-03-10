@@ -6,11 +6,11 @@ import {
   type GameConfig,
 } from '../../../index';
 
-import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';
+import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';
 import { Color, Vec2, Vec3 } from '../types/math.g.js';
 export { Color, Vec2, Vec3 } from '../types/math.g.js';
 export { Key, MouseButton } from '../types/input.g.js';
-export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';
+export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';
 
 /** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
 export class GoudGame implements IGoudGame {
@@ -511,6 +511,26 @@ export class GoudGame implements IGoudGame {
   /** Squared distance between two points */
   distanceSquared(x1: number, y1: number, x2: number, y2: number): number {
     return this.native.distanceSquared(x1, y1, x2, y2);
+  }
+
+  /** Casts a filtered ray and returns the full hit payload, or null when no hit is found (FFI: goud_physics_raycast_ex) */
+  physicsRaycastEx(originX: number, originY: number, dirX: number, dirY: number, maxDist: number, layerMask: number): IPhysicsRaycastHit2D | null {
+    return this.native.physicsRaycastEx(originX, originY, dirX, dirY, maxDist, layerMask);
+  }
+
+  /** Returns the number of queued physics collision events available to read (FFI: goud_physics_collision_events_count) */
+  physicsCollisionEventsCount(): number {
+    return this.native.physicsCollisionEventsCount();
+  }
+
+  /** Reads one queued physics collision event by index, or null when the index is out of range (FFI: goud_physics_collision_events_read) */
+  physicsCollisionEventsRead(index: number): IPhysicsCollisionEvent2D | null {
+    return this.native.physicsCollisionEventsRead(index);
+  }
+
+  /** Registers or clears a physics collision callback function pointer (FFI: goud_physics_set_collision_callback) */
+  physicsSetCollisionCallback(callbackPtr: number, userData: number): number {
+    return this.native.physicsSetCollisionCallback(callbackPtr, userData);
   }
 
   /** Queries the render provider's capabilities */

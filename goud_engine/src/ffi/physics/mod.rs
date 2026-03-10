@@ -24,6 +24,17 @@ mod physics3d;
 #[cfg(feature = "rapier3d")]
 mod physics3d_material;
 
+#[cfg(feature = "rapier2d")]
+pub use physics2d_events::{
+    goud_physics_collision_event_count, goud_physics_collision_event_read,
+    goud_physics_collision_events_count, goud_physics_collision_events_read,
+    goud_physics_set_collision_callback,
+};
+#[cfg(feature = "rapier2d")]
+pub use physics2d_ex::goud_physics_raycast_ex;
+#[cfg(feature = "rapier2d")]
+pub use physics2d_state::CollisionCallback;
+
 // =============================================================================
 // Global Physics Provider Registries (2D)
 // =============================================================================

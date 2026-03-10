@@ -109,6 +109,7 @@ PYTHON_TYPES = {
     "f32": "float", "f64": "float",
     "u8": "int", "u16": "int", "u32": "int", "u64": "int",
     "i8": "int", "i16": "int", "i32": "int", "i64": "int",
+    "usize": "int", "ptr": "int",
     "bool": "bool", "string": "str", "bytes": "bytes", "void": "None",
 }
 
@@ -208,6 +209,13 @@ def load_errors(schema: dict) -> tuple[list[dict], list[dict]]:
 def write_generated(path: Path, content: str):
     """Write a generated file, creating parent dirs as needed."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path.suffix == ".cs":
+        lines = content.splitlines()
+        header = "\n".join(lines[:5])
+        if "#nullable" not in header:
+            insert_at = 1 if lines and lines[0].startswith("//") else 0
+            lines.insert(insert_at, "#nullable enable")
+            content = "\n".join(lines)
     path.write_text(content)
     print(f"  Generated: {path.relative_to(ROOT_DIR)}")
 
