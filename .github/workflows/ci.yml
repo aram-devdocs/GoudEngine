@@ -662,6 +662,27 @@ jobs:
       working-directory: sdks/typescript
       run: npm ci
 
+    - name: Create native typing shim (PR macOS smoke lane)
+      if: github.event_name == 'pull_request' && matrix.os != 'ubuntu-latest'
+      working-directory: sdks/typescript
+      run: |
+        cat > index.d.ts <<'EOF'
+        export type GameConfig = {
+          width?: number;
+          height?: number;
+          title?: string;
+        };
+
+        export class GoudGame {
+          constructor(config?: GameConfig);
+          [key: string]: any;
+        }
+
+        export class Entity {
+          [key: string]: any;
+        }
+        EOF
+
     - name: Build native addon
       if: github.event_name != 'pull_request' || matrix.os == 'ubuntu-latest'
       working-directory: sdks/typescript
