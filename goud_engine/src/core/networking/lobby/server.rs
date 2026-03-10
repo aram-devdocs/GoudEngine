@@ -8,11 +8,13 @@ use crate::core::providers::network_types::ConnectionId;
 use crate::core::serialization::binary;
 
 use super::types::{
-    LobbyCommand, LobbyConfig, LobbyEvent, LobbyMember, LobbySnapshot, LobbyState, LobbyVisibility,
+    LobbyCommand, LobbyConfig, LobbyEvent, LobbyMember, LobbySnapshot, LobbyState,
+    LobbyValidationEnvelope, LobbyVisibility,
 };
 
 const LOBBY_FULL_REASON: &str = "lobby is full";
 const HOST_ONLY_KICK_REASON: &str = "only the host can kick members";
+const HOST_SELF_KICK_REASON: &str = "host cannot kick themselves";
 const HOST_ONLY_START_REASON: &str = "only the host can start the lobby";
 const HOST_ONLY_EARLY_START_REASON: &str = "only the host can start early";
 const READY_GATE_REASON: &str = "all players must be ready before starting";
@@ -94,14 +96,15 @@ impl LobbyServer {
             match event {
                 ServerEvent::ClientJoined { connection } => {
                     if self.members.len() as u32 >= self.config.max_players {
-                        self.session.send_validation_rejection(
+                        self.send_rejection(
                             connection,
-                            Vec::new(),
+                            LobbyValidationEnvelope::JoinRequest,
                             LOBBY_FULL_REASON,
                         )?;
                         self.session
                             .disconnect_client(connection, LOBBY_FULL_REASON)?;
-                        lobby_events.push(LobbyEvent::JoinRejected {
+                        lobby_events.push(LobbyEvent::JoinDenied {
+                            connection,
                             reason: LOBBY_FULL_REASON.to_string(),
                         });
                         continue;
@@ -164,8 +167,11 @@ impl LobbyServer {
             Ok(command) => command,
             Err(error) => {
                 let reason = format!("invalid lobby command: {error}");
-                self.session
-                    .send_validation_rejection(connection, payload, reason.clone())?;
+                self.send_rejection(
+                    connection,
+                    LobbyValidationEnvelope::Command { command: None },
+                    reason.clone(),
+                )?;
                 events.push(LobbyEvent::CommandRejected {
                     command: None,
                     reason,
@@ -220,6 +226,9 @@ impl LobbyServer {
                 if !self.is_host(connection) {
                     return self.reject_command(connection, command, HOST_ONLY_KICK_REASON, events);
                 }
+                if target == connection {
+                    return self.reject_command(connection, command, HOST_SELF_KICK_REASON, events);
+                }
                 if self.members.remove(&target).is_none() {
                     return self.reject_command(
                         connection,
@@ -243,13 +252,31 @@ impl LobbyServer {
         reason: &str,
         events: &mut Vec<LobbyEvent>,
     ) -> GoudResult<bool> {
-        self.session
-            .send_validation_rejection(connection, binary::encode(&command)?, reason)?;
+        self.send_rejection(
+            connection,
+            LobbyValidationEnvelope::Command {
+                command: Some(command.clone()),
+            },
+            reason,
+        )?;
         events.push(LobbyEvent::CommandRejected {
             command: Some(command),
             reason: reason.to_string(),
         });
         Ok(false)
+    }
+
+    fn send_rejection(
+        &mut self,
+        connection: ConnectionId,
+        envelope: LobbyValidationEnvelope,
+        reason: impl Into<String>,
+    ) -> GoudResult<()> {
+        self.session.send_validation_rejection(
+            connection,
+            binary::encode(&envelope)?,
+            reason.into(),
+        )
     }
 
     fn is_host(&self, connection: ConnectionId) -> bool {

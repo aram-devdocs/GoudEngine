@@ -5,6 +5,7 @@ use crate::core::networking::{
     StateSyncConfig, StateSyncEntitySnapshot, StateSyncServer, Transform2DSnapshot,
 };
 use crate::core::serialization::{DeltaEncode, MessageKind, NetworkMessage};
+use std::any::type_name;
 
 type Transform2D = crate::ecs::components::Transform2D;
 type World = crate::ecs::World;
@@ -272,6 +273,39 @@ fn state_sync_snapshot_rate_throttles_emission() {
 }
 
 #[test]
+fn state_sync_zero_snapshot_rate_only_emits_initial_snapshot_automatically() {
+    let hub = MockNetworkHub::default();
+    let session =
+        SessionServer::with_policy(Box::new(hub.provider()), BuiltInAuthorityPolicy::AllowAll);
+    let mut sync_server = StateSyncServer::new(
+        session,
+        StateSyncConfig {
+            snapshot_rate_hz: 0,
+            ..StateSyncConfig::default()
+        },
+    );
+
+    let mut world = sync_world();
+    let entity = world.spawn_empty();
+    world.insert(entity, NetworkSync);
+    world.insert(entity, Transform2D::from_position(Vec2::new(1.0, 1.0)));
+
+    let initial = sync_server
+        .prepare_snapshot_message_if_due(&world, 0.0)
+        .unwrap();
+    assert!(initial.is_some());
+
+    world.insert(entity, Transform2D::from_position(Vec2::new(5.0, 1.0)));
+    let second = sync_server
+        .prepare_snapshot_message_if_due(&world, 1.0)
+        .unwrap();
+    assert!(second.is_none());
+
+    let manual = sync_server.prepare_snapshot_message(&world).unwrap();
+    assert_eq!(manual.kind, MessageKind::Delta);
+}
+
+#[test]
 fn state_sync_apply_latest_to_world_applies_non_interpolated_components() {
     let hub = MockNetworkHub::default();
     let session =
@@ -288,6 +322,13 @@ fn state_sync_apply_latest_to_world_applies_non_interpolated_components() {
     server_world.insert(remote, Health(42));
 
     let message = sync_server.prepare_snapshot_message(&server_world).unwrap();
+    let payload: StateSnapshotPayload =
+        crate::core::serialization::binary::decode(&message.payload).unwrap();
+    assert_eq!(payload.entities.len(), 1);
+    assert!(payload.entities[0].components.contains_key("Health"));
+    assert!(!payload.entities[0]
+        .components
+        .contains_key(type_name::<Health>()));
 
     let client = SessionClient::new(Box::new(hub.provider()));
     let mut sync_client = StateSyncClient::new(client, StateSyncConfig::default());

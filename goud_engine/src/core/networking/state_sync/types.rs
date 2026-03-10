@@ -63,7 +63,7 @@ pub struct StateSyncEntitySnapshot {
     pub transform2d: Option<Transform2DSnapshot>,
     /// Optional 3D transform payload.
     pub transform: Option<TransformSnapshot>,
-    /// Additional serializable components keyed by type name and encoded as JSON bytes.
+    /// Additional serializable components keyed by stable wire keys and encoded as JSON bytes.
     pub components: HashMap<String, Vec<u8>>,
 }
 
@@ -254,4 +254,36 @@ fn lerp_angle(start: f32, end: f32, alpha: f32) -> f32 {
 
 fn find_entity(snapshot: &ResolvedStateSnapshot, entity: Entity) -> Option<&ResolvedSyncEntity> {
     snapshot.entity(entity)
+}
+
+pub(crate) fn state_sync_component_key(type_name: &str) -> String {
+    let mut key = String::with_capacity(type_name.len());
+    let mut token = String::new();
+
+    let flush_token = |key: &mut String, token: &mut String| {
+        if token.is_empty() {
+            return;
+        }
+
+        let segment = token.rsplit("::").next().unwrap_or(token.as_str());
+        key.push_str(segment);
+        token.clear();
+    };
+
+    for ch in type_name.chars() {
+        match ch {
+            ':' => token.push(ch),
+            '<' | '>' | '(' | ')' | '[' | ']' | ',' | ';' => {
+                flush_token(&mut key, &mut token);
+                key.push(ch);
+            }
+            c if c.is_whitespace() => {
+                flush_token(&mut key, &mut token);
+            }
+            _ => token.push(ch),
+        }
+    }
+
+    flush_token(&mut key, &mut token);
+    key
 }

@@ -227,6 +227,24 @@ fn lobby_rejects_non_host_actions_and_allows_host_kick_and_early_start() {
         )
     }));
 
+    let host_connection = host
+        .members()
+        .unwrap()
+        .into_iter()
+        .find(|member| member.is_host)
+        .map(|member| member.connection)
+        .unwrap();
+    host.kick(host_connection).unwrap();
+    let (_server_events, client_events) = pump_lobby(&mut server, &mut [&mut host, &mut guest], 2);
+    assert!(client_events[0].iter().any(|event| {
+        matches!(
+            event,
+            LobbyEvent::CommandRejected { command: Some(LobbyCommand::Kick { connection }), reason }
+                if *connection == host_connection && reason == "host cannot kick themselves"
+        )
+    }));
+    assert_eq!(server.members().len(), 2);
+
     host.kick(guest_connection).unwrap();
     let (_server_events, client_events) = pump_lobby(&mut server, &mut [&mut host, &mut guest], 2);
     assert!(client_events[0].iter().any(|event| {
@@ -262,9 +280,17 @@ fn lobby_rejects_join_when_room_is_full() {
     let _ = pump_lobby(&mut server, &mut [&mut first], 3);
 
     second.join_private_lobby("127.0.0.1:7206").unwrap();
-    let (_server_events, client_events) =
-        pump_lobby(&mut server, &mut [&mut first, &mut second], 3);
+    let (server_events, client_events) = pump_lobby(&mut server, &mut [&mut first, &mut second], 3);
 
+    assert!(server_events.iter().any(|event| {
+        matches!(
+            event,
+            LobbyEvent::JoinDenied { reason, .. } if reason == "lobby is full"
+        )
+    }));
+    assert!(!server_events
+        .iter()
+        .any(|event| matches!(event, LobbyEvent::JoinRejected { .. })));
     assert!(client_events[1].iter().any(|event| {
         matches!(event, LobbyEvent::JoinRejected { reason } if reason == "lobby is full")
     }));

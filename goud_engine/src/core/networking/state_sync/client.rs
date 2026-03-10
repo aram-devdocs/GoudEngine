@@ -10,8 +10,9 @@ type Entity = crate::ecs::entity::Entity;
 type World = crate::ecs::World;
 
 use super::types::{
-    NetworkSync, ResolvedStateSnapshot, ResolvedSyncEntity, StateSnapshotPayload, StateSyncConfig,
-    StateSyncEntityMap, StateSyncInterpolationBuffer, Transform2DSnapshot, TransformSnapshot,
+    state_sync_component_key, NetworkSync, ResolvedStateSnapshot, ResolvedSyncEntity,
+    StateSnapshotPayload, StateSyncConfig, StateSyncEntityMap, StateSyncInterpolationBuffer,
+    Transform2DSnapshot, TransformSnapshot,
 };
 
 /// Client wrapper that resolves synchronized snapshots and feeds an interpolation buffer.
@@ -220,16 +221,18 @@ impl StateSyncClient {
             }
 
             if !remote_entity.components.is_empty() {
+                let components = remote_entity
+                    .components
+                    .iter()
+                    .map(|(wire_key, value)| {
+                        resolve_registered_component_name(world, wire_key)
+                            .map(|name| (name, value.clone()))
+                    })
+                    .collect::<GoudResult<serde_json::Map<String, serde_json::Value>>>()?;
                 let mut json = serde_json::Map::new();
                 json.insert(
                     "components".to_string(),
-                    serde_json::Value::Object(
-                        remote_entity
-                            .components
-                            .iter()
-                            .map(|(name, value)| (name.clone(), value.clone()))
-                            .collect(),
-                    ),
+                    serde_json::Value::Object(components),
                 );
                 world.deserialize_entity_components(local_entity, &serde_json::Value::Object(json));
             }
@@ -266,4 +269,22 @@ fn decode_component_map(
                 })
         })
         .collect()
+}
+
+fn resolve_registered_component_name(world: &World, wire_key: &str) -> GoudResult<String> {
+    let mut matches = world
+        .serializable_component_names()
+        .filter(|name| state_sync_component_key(name) == wire_key);
+    let Some(component_name) = matches.next() else {
+        return Err(GoudError::InternalError(format!(
+            "No registered serializable component matches state-sync key '{wire_key}'"
+        )));
+    };
+    if matches.next().is_some() {
+        return Err(GoudError::InternalError(format!(
+            "Multiple registered serializable components match state-sync key '{wire_key}'"
+        )));
+    }
+
+    Ok(component_name.to_string())
 }

@@ -103,6 +103,13 @@ pub enum LobbyCommand {
 /// High-level lobby events emitted by the wrappers.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LobbyEvent {
+    /// A server-side join attempt was denied before the member entered the lobby.
+    JoinDenied {
+        /// Connection that attempted to join.
+        connection: ConnectionId,
+        /// Human-readable rejection reason.
+        reason: String,
+    },
     /// A member joined the lobby.
     MemberJoined {
         /// Joined member snapshot.
@@ -153,4 +160,11 @@ pub(super) struct LobbySnapshot {
     pub visibility: LobbyVisibility,
     pub state: LobbyState,
     pub members: Vec<LobbyMember>,
+}
+
+/// Explicit rejection envelope carried inside validation-rejection payloads.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub(super) enum LobbyValidationEnvelope {
+    JoinRequest,
+    Command { command: Option<LobbyCommand> },
 }

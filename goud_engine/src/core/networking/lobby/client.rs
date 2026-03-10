@@ -8,7 +8,9 @@ use crate::core::networking::{ClientEvent, SessionClient};
 use crate::core::providers::network_types::ConnectionId;
 use crate::core::serialization::binary;
 
-use super::types::{LobbyCommand, LobbyEvent, LobbyMember, LobbySnapshot, LobbyState};
+use super::types::{
+    LobbyCommand, LobbyEvent, LobbyMember, LobbySnapshot, LobbyState, LobbyValidationEnvelope,
+};
 
 /// Client-side lobby wrapper layered on top of a session client.
 pub struct LobbyClient {
@@ -145,11 +147,14 @@ impl LobbyClient {
                     });
                 }
                 ClientEvent::ValidationRejected { payload, reason } => {
-                    let command = binary::decode(&payload).ok();
-                    if command.is_some() {
-                        events.push(LobbyEvent::CommandRejected { command, reason });
-                    } else {
-                        events.push(LobbyEvent::JoinRejected { reason });
+                    let envelope: LobbyValidationEnvelope = binary::decode(&payload)?;
+                    match envelope {
+                        LobbyValidationEnvelope::JoinRequest => {
+                            events.push(LobbyEvent::JoinRejected { reason });
+                        }
+                        LobbyValidationEnvelope::Command { command } => {
+                            events.push(LobbyEvent::CommandRejected { command, reason });
+                        }
                     }
                 }
                 ClientEvent::Left { reason, .. } => {

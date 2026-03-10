@@ -7,8 +7,9 @@ use crate::core::error::{GoudError, GoudResult};
 use crate::core::serialization::{MessageKind, NetworkMessage};
 
 use super::types::{
-    NetworkSync, ResolvedSyncEntity, StateSnapshotPayload, StateSyncBandwidthStats,
-    StateSyncConfig, StateSyncEntitySnapshot, Transform2DSnapshot, TransformSnapshot,
+    state_sync_component_key, NetworkSync, ResolvedSyncEntity, StateSnapshotPayload,
+    StateSyncBandwidthStats, StateSyncConfig, StateSyncEntitySnapshot, Transform2DSnapshot,
+    TransformSnapshot,
 };
 use crate::core::networking::SessionServer;
 use crate::core::serialization::{binary, DeltaEncode};
@@ -211,12 +212,12 @@ impl StateSyncServer {
                 }
 
                 snapshot.components.insert(
-                    component_name.clone(),
+                    state_sync_component_key(component_name),
                     serde_json::to_vec(value).map_err(to_internal_error)?,
                 );
                 resolved
                     .components
-                    .insert(component_name.clone(), value.clone());
+                    .insert(state_sync_component_key(component_name), value.clone());
             }
 
             entities.push(snapshot);
@@ -248,8 +249,11 @@ impl StateSyncServer {
     }
 
     fn should_emit_snapshot(&mut self, delta_seconds: f32) -> bool {
-        if self.last_resolved.is_empty() || self.config.snapshot_rate_hz == 0 {
+        if self.last_resolved.is_empty() {
             return true;
+        }
+        if self.config.snapshot_rate_hz == 0 {
+            return false;
         }
 
         self.time_since_last_snapshot += delta_seconds.max(0.0);
