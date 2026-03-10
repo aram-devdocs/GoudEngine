@@ -124,7 +124,6 @@ pub struct FfiUiEvent {
     pub current_node_id: u64,
 }
 
-
 /// Packs a [`UiNodeId`] into a `u64`.
 ///
 /// Layout: `index` in the lower 32 bits, `generation` in the upper 32 bits.

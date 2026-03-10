@@ -84,11 +84,6 @@ use goud_engine::ffi::renderer3d::{
 };
 use goud_engine::ffi::scene::goud_scene_set_active;
 use goud_engine::ffi::scene_loading::{goud_scene_load, goud_scene_unload};
-use goud_engine::ffi::window::{
-    goud_window_clear, goud_window_create, goud_window_destroy, goud_window_get_delta_time,
-    goud_window_get_size, goud_window_poll_events, goud_window_set_should_close,
-    goud_window_should_close, goud_window_swap_buffers,
-};
 use goud_engine::ffi::ui::events::{goud_ui_event_count, goud_ui_event_read};
 use goud_engine::ffi::ui::manager::{
     goud_ui_manager_create, goud_ui_manager_destroy, goud_ui_manager_node_count,
@@ -103,6 +98,11 @@ use goud_engine::ffi::ui::widget::{
     goud_ui_set_slider, goud_ui_set_style, goud_ui_set_widget,
 };
 use goud_engine::ffi::ui::{FfiUiEvent, FfiUiStyle, INVALID_NODE_U64};
+use goud_engine::ffi::window::{
+    goud_window_clear, goud_window_create, goud_window_destroy, goud_window_get_delta_time,
+    goud_window_get_size, goud_window_poll_events, goud_window_set_should_close,
+    goud_window_should_close, goud_window_swap_buffers,
+};
 use goud_engine::sdk::debug_overlay::FpsStats;
 use goud_engine::ui::UiManager as EngineUiManager;
 use napi::bindgen_prelude::*;
@@ -2828,31 +2828,39 @@ impl UiManager {
             return -1;
         }
 
-        let font_family = style
-            .font_family
-            .and_then(|v| CString::new(v).ok());
-        let texture_path = style
-            .texture_path
-            .and_then(|v| CString::new(v).ok());
+        let font_family = style.font_family.and_then(|v| CString::new(v).ok());
+        let texture_path = style.texture_path.and_then(|v| CString::new(v).ok());
 
         let ffi_style = FfiUiStyle {
             has_background_color: style.background_color.is_some(),
             background_color: style
                 .background_color
                 .as_ref()
-                .map(|c| goud_engine::core::math::Color::new(c.r as f32, c.g as f32, c.b as f32, c.a as f32))
+                .map(|c| {
+                    goud_engine::core::math::Color::new(
+                        c.r as f32, c.g as f32, c.b as f32, c.a as f32,
+                    )
+                })
                 .unwrap_or(goud_engine::core::math::Color::TRANSPARENT),
             has_foreground_color: style.foreground_color.is_some(),
             foreground_color: style
                 .foreground_color
                 .as_ref()
-                .map(|c| goud_engine::core::math::Color::new(c.r as f32, c.g as f32, c.b as f32, c.a as f32))
+                .map(|c| {
+                    goud_engine::core::math::Color::new(
+                        c.r as f32, c.g as f32, c.b as f32, c.a as f32,
+                    )
+                })
                 .unwrap_or(goud_engine::core::math::Color::TRANSPARENT),
             has_border_color: style.border_color.is_some(),
             border_color: style
                 .border_color
                 .as_ref()
-                .map(|c| goud_engine::core::math::Color::new(c.r as f32, c.g as f32, c.b as f32, c.a as f32))
+                .map(|c| {
+                    goud_engine::core::math::Color::new(
+                        c.r as f32, c.g as f32, c.b as f32, c.a as f32,
+                    )
+                })
                 .unwrap_or(goud_engine::core::math::Color::TRANSPARENT),
             has_border_width: style.border_width.is_some(),
             border_width: style.border_width.unwrap_or(0.0) as f32,
@@ -2958,7 +2966,10 @@ impl UiManager {
         // SAFETY: out pointer references a valid stack value for this call.
         let status = unsafe { goud_ui_event_read(self.ptr, index, &mut event) };
         if status < 0 {
-            return Err(Error::from_reason(format!("goud_ui_event_read failed with status {}", status)));
+            return Err(Error::from_reason(format!(
+                "goud_ui_event_read failed with status {}",
+                status
+            )));
         }
         if status == 0 {
             return Ok(None);

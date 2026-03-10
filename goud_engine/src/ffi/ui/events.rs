@@ -6,7 +6,7 @@ use std::sync::{Mutex, OnceLock};
 
 use crate::ui::UiManager;
 
-use super::{FfiUiEvent, UiEventCallback, map_ui_event, ERR_NULL_MANAGER};
+use super::{map_ui_event, FfiUiEvent, UiEventCallback, ERR_NULL_MANAGER};
 
 const ERR_NULL_OUT: i32 = -2;
 
@@ -89,7 +89,7 @@ pub(super) fn unregister_manager(manager_key: usize) {
 ///   pointee remains valid and properly aligned for reads and writes by that
 ///   callback until the callback is cleared by passing `None` (or the manager is
 ///   dropped). If callback is `None`, `user_data` is ignored.
-/// 
+///
 /// # Returns
 /// * `0` on success
 /// * `-1` if manager is null

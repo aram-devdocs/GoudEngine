@@ -91,10 +91,7 @@ pub(crate) fn map_ui_event(event: UiEvent) -> PackedUiEvent {
         },
         UiEvent::FocusChanged { previous, current } => PackedUiEvent {
             event_kind: 2,
-            node_id: current
-                .or(previous)
-                .map(pack_node_id)
-                .unwrap_or(invalid),
+            node_id: current.or(previous).map(pack_node_id).unwrap_or(invalid),
             previous_node_id: previous.map(pack_node_id).unwrap_or(invalid),
             current_node_id: current.map(pack_node_id).unwrap_or(invalid),
         },

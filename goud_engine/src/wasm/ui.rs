@@ -4,12 +4,11 @@
 //! for creating UI nodes, tweaking style/widget properties, and reading events.
 
 use crate::core::math::Color;
+use crate::ui::component_from_widget_kind;
 use crate::ui::map_ui_event;
 use crate::ui::{
-    UiButton, UiComponent, UiImage, UiLabel, UiManager, UiNodeId, UiSlider,
-    UiStyleOverrides,
+    UiButton, UiComponent, UiImage, UiLabel, UiManager, UiNodeId, UiSlider, UiStyleOverrides,
 };
-use crate::ui::{component_from_widget_kind};
 const INVALID_NODE_U64: u64 = u64::MAX;
 use wasm_bindgen::prelude::*;
 
