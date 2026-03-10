@@ -2,9 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop, "**" ]
+    branches: [ develop ]
   pull_request:
     branches: [ main, develop ]
+  merge_group:
+    branches: [ main ]
 
 permissions:
   contents: read
@@ -61,6 +63,20 @@ jobs:
         python codegen/gen_ts_node.py
         python codegen/gen_ts_web.py
 
+    - name: Upload shared codegen artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: codegen-generated
+        path: |
+          sdks/csharp/generated/
+          sdks/python/goud_engine/generated/
+          sdks/python/goud_engine/__init__.py
+          sdks/typescript/src/generated/
+          sdks/typescript/native/src/*.g.rs
+          sdks/typescript/native/src/lib.rs
+        if-no-files-found: error
+        retention-days: 1
+
     - name: Quick Rust check
       run: cargo check --workspace --all-targets
 
@@ -76,6 +92,7 @@ jobs:
   # Rust checks and tests
   rust-check:
     name: Rust ${{ matrix.rust }} on ${{ matrix.os }}
+    if: github.event_name == matrix.event
     runs-on: ${{ matrix.os }}
     needs: [preflight]
     env:
@@ -84,22 +101,65 @@ jobs:
     strategy:
       fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        rust: [stable, nightly]
-        exclude:
-          # Skip nightly on Windows to save CI time
-          - os: windows-latest
+        include:
+          # pull_request lane: Linux full, Linux nightly check/build, macOS smoke.
+          - event: pull_request
+            os: ubuntu-latest
+            rust: stable
+            lane: full
+            run_windows_native_clippy: false
+          - event: pull_request
+            os: ubuntu-latest
             rust: nightly
-    
+            lane: smoke
+            run_windows_native_clippy: false
+          - event: pull_request
+            os: macos-latest
+            rust: stable
+            lane: smoke
+            run_windows_native_clippy: false
+          # merge_group lane: full matrix.
+          - event: merge_group
+            os: ubuntu-latest
+            rust: stable
+            lane: full
+            run_windows_native_clippy: false
+          - event: merge_group
+            os: macos-latest
+            rust: stable
+            lane: full
+            run_windows_native_clippy: false
+          - event: merge_group
+            os: windows-latest
+            rust: stable
+            lane: full
+            run_windows_native_clippy: true
+          - event: merge_group
+            os: ubuntu-latest
+            rust: nightly
+            lane: smoke
+            run_windows_native_clippy: false
+          - event: merge_group
+            os: macos-latest
+            rust: nightly
+            lane: smoke
+            run_windows_native_clippy: false
+
     steps:
     - uses: actions/checkout@v6
-    
+
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: codegen-generated
+        path: .
+
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ matrix.rust }}
         components: clippy
-    
+
     - name: Set up sccache
       uses: mozilla-actions/sccache-action@v0.0.9
 
@@ -107,50 +167,50 @@ jobs:
       uses: Swatinem/rust-cache@v2
       with:
         save-if: ${{ github.ref == 'refs/heads/main' }}
-    
+
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
 
-    - name: Build
-      run: cargo build --verbose
-
     - name: Run clippy (Windows stable)
-      if: matrix.rust == 'stable' && matrix.os == 'windows-latest'
+      if: matrix.run_windows_native_clippy
       run: cargo clippy --all-targets --features native -- -D warnings
       shell: bash
 
-    - name: Run tests
-      run: cargo test --verbose -- --nocapture
-    
-    # Run Rust SDK tests specifically
-    - name: Run Rust SDK tests
-      if: matrix.rust == 'stable'
-      run: cargo test --lib sdk --verbose -- --nocapture
+    - name: Nightly check/build smoke
+      if: matrix.rust == 'nightly'
+      run: |
+        cargo check --workspace --all-targets --all-features
+        cargo build --workspace --all-targets --all-features
 
-    # Headless backend tests (no GPU required)
-    - name: Run headless backend tests
-      # Intentionally run the full lib suite under the headless feature.
-      # This avoids silently filtering to zero tests via a name filter.
-      run: cargo test --features headless --lib -- --nocapture
+    - name: Stable smoke checks
+      if: matrix.rust == 'stable' && matrix.lane == 'smoke'
+      run: |
+        cargo check --workspace --all-targets --all-features
+        cargo test --lib sdk -- --nocapture
+        cargo test --test ffi_safety -- --nocapture
 
-    # FFI safety tests (null pointers, invalid handles, lifecycle)
-    - name: Run FFI safety tests
-      run: cargo test --test ffi_safety -- --nocapture
+    - name: Stable full suite (non-doc tests)
+      if: matrix.rust == 'stable' && matrix.lane == 'full'
+      run: cargo test --workspace --lib --bins --tests -- --nocapture
 
-    # Cross-layer integration tests (ECS + FFI)
-    - name: Run integration tests
-      run: cargo test --test integration -- --nocapture
+    - name: Headless profile tests
+      if: matrix.rust == 'stable' && matrix.lane == 'full' && matrix.os == 'ubuntu-latest'
+      run: cargo test --no-default-features --features headless --lib -- --nocapture
+
+    - name: Documentation tests (once per lane)
+      if: matrix.rust == 'stable' && matrix.lane == 'full' && matrix.os == 'ubuntu-latest'
+      run: cargo test --workspace --doc -- --nocapture
 
     # Only run on stable for coverage
     - name: Install cargo-tarpaulin
-      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && github.event_name == 'merge_group'
       uses: taiki-e/install-action@cargo-tarpaulin
     
     - name: Generate coverage
-      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && github.event_name == 'merge_group'
       run: |
         cargo tarpaulin \
           --out xml html \
@@ -166,7 +226,7 @@ jobs:
           --exclude-files "*/sdk.rs"
 
     - name: Check branch coverage threshold (70%)
-      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && always()
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && github.event_name == 'merge_group' && always()
       run: |
         if [ ! -f coverage-report/cobertura.xml ]; then
           echo "WARNING: Coverage report not found, skipping branch check"
@@ -193,7 +253,7 @@ jobs:
         fi
 
     - name: Upload coverage report
-      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && always()
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && github.event_name == 'merge_group' && always()
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
@@ -201,7 +261,7 @@ jobs:
         retention-days: 7
 
     - name: Upload coverage to Codecov
-      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && github.event_name == 'merge_group'
       uses: codecov/codecov-action@v5
       with:
         file: ./coverage-report/cobertura.xml
@@ -278,6 +338,7 @@ jobs:
   # Build native release libraries once per OS and share across SDK jobs
   native-release:
     name: Native Release Artifact on ${{ matrix.os }}
+    if: github.event_name != 'pull_request' || matrix.os != 'windows-latest'
     runs-on: ${{ matrix.os }}
     needs: [preflight]
     env:
@@ -302,23 +363,17 @@ jobs:
       with:
         save-if: ${{ github.ref == 'refs/heads/main' }}
 
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: codegen-generated
+        path: .
+
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
-
-    - name: Set up Python (for codegen)
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
-
-    - name: Run SDK codegen
-      run: |
-        python codegen/gen_csharp.py
-        python codegen/gen_python.py
-        python codegen/gen_ts_node.py
-        python codegen/gen_ts_web.py
 
     - name: Build native library
       run: cargo build --release
@@ -356,6 +411,12 @@ jobs:
     
     steps:
     - uses: actions/checkout@v6
+
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: codegen-generated
+        path: .
     
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
@@ -374,9 +435,6 @@ jobs:
         name: native-release-${{ matrix.os }}
         path: native-release
 
-    - name: Generate Python SDK
-      run: python codegen/gen_python.py
-    
     - name: Set up library path (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: echo "LD_LIBRARY_PATH=${{ github.workspace }}/native-release:$LD_LIBRARY_PATH" >> $GITHUB_ENV
@@ -443,6 +501,7 @@ jobs:
   # .NET SDK checks and tests
   dotnet-check:
     name: .NET SDK on ${{ matrix.os }}
+    if: github.event_name != 'pull_request' || matrix.os != 'windows-latest'
     runs-on: ${{ matrix.os }}
     needs: [preflight, native-release]
     strategy:
@@ -453,25 +512,23 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: codegen-generated
+        path: .
+
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
 
-    - name: Set up Python (for codegen)
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
-
     - name: Download native release artifact
       uses: actions/download-artifact@v4
       with:
         name: native-release-${{ matrix.os }}
         path: native-release
-
-    - name: Generate C# SDK
-      run: python codegen/gen_csharp.py
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -541,6 +598,12 @@ jobs:
     
     steps:
     - uses: actions/checkout@v6
+
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: codegen-generated
+        path: .
     
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -568,14 +631,6 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
-
-    - name: Run SDK codegen
-      run: |
-        python codegen/validate_coverage.py
-        python codegen/gen_csharp.py
-        python codegen/gen_python.py
-        python codegen/gen_ts_node.py
-        python codegen/gen_ts_web.py
 
     - name: Run full build script
       run: |
@@ -605,6 +660,7 @@ jobs:
   # TypeScript SDK — native addon build + tests
   typescript-sdk-native:
     name: TS SDK Native on ${{ matrix.os }}
+    if: github.event_name != 'pull_request' || matrix.os != 'windows-latest'
     runs-on: ${{ matrix.os }}
     needs: [preflight]
     env:
@@ -617,6 +673,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v6
+
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: codegen-generated
+        path: .
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -642,21 +704,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
 
-    - name: Set up Python (for codegen)
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
-
     - name: Install npm dependencies
       working-directory: sdks/typescript
       run: npm ci
 
-    - name: Generate TypeScript SDK (must run before native build)
-      run: |
-        python codegen/gen_ts_node.py
-        python codegen/gen_ts_web.py
-
     - name: Build native addon
+      if: github.event_name != 'pull_request' || matrix.os == 'ubuntu-latest'
       working-directory: sdks/typescript
       run: npm run build:native
 
@@ -681,6 +734,7 @@ jobs:
         echo "Full smoke tests run on ubuntu-latest with xvfb."
 
     - name: Upload native addon
+      if: github.event_name != 'pull_request' || matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v4
       with:
         name: ts-native-${{ matrix.os }}
@@ -690,6 +744,7 @@ jobs:
   # TypeScript SDK — wasm build (Ubuntu only, one platform sufficient)
   typescript-sdk-wasm:
     name: TS SDK Wasm Build
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     needs: [preflight]
     env:
@@ -698,6 +753,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v6
+
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: codegen-generated
+        path: .
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -744,16 +805,6 @@ jobs:
         echo "After optimization:"
         ls -lh wasm/goud_engine_bg.wasm
 
-    - name: Set up Python (for codegen)
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
-
-    - name: Generate web TypeScript SDK
-      run: |
-        python codegen/gen_ts_web.py
-        python codegen/gen_ts_node.py
-
     - name: Build web TypeScript
       working-directory: sdks/typescript
       run: npm run build:ts:web
@@ -791,16 +842,49 @@ jobs:
     steps:
     - name: Check all jobs
       run: |
-        if [[ "${{ needs.preflight.result }}" != "success" ]] || \
-           [[ "${{ needs.rust-check.result }}" != "success" ]] || \
-           [[ "${{ needs.cargo-deny.result }}" != "success" ]] || \
-           [[ "${{ needs.codegen-drift-check.result }}" != "success" ]] || \
-           [[ "${{ needs.native-release.result }}" != "success" ]] || \
-           [[ "${{ needs.dotnet-check.result }}" != "success" ]] || \
-           [[ "${{ needs.python-sdk-check.result }}" != "success" ]] || \
-           [[ "${{ needs.integration-build.result }}" != "success" ]] || \
-           [[ "${{ needs.typescript-sdk-native.result }}" != "success" ]] || \
-           [[ "${{ needs.typescript-sdk-wasm.result }}" != "success" ]]; then
+        check_job() {
+          local name="$1"
+          local result="$2"
+          local allow_skipped="$3"
+
+          if [[ "$result" == "success" ]]; then
+            echo "$name: success"
+            return 0
+          fi
+          if [[ "$allow_skipped" == "true" && "$result" == "skipped" ]]; then
+            echo "$name: skipped (allowed)"
+            return 0
+          fi
+          echo "$name: unexpected result '$result'"
+          return 1
+        }
+
+        EVENT="${{ github.event_name }}"
+        ALLOW_FASTLANE_SKIPPED="false"
+        ALLOW_RUST_SKIPPED="false"
+        ALLOW_PUSH_SKIPPED="false"
+        if [[ "$EVENT" == "pull_request" ]]; then
+          ALLOW_FASTLANE_SKIPPED="true"
+          ALLOW_RUST_SKIPPED="true"
+        fi
+        if [[ "$EVENT" == "push" ]]; then
+          ALLOW_RUST_SKIPPED="true"
+          ALLOW_PUSH_SKIPPED="true"
+        fi
+
+        FAIL=0
+        check_job "preflight" "${{ needs.preflight.result }}" "false" || FAIL=1
+        check_job "rust-check" "${{ needs.rust-check.result }}" "$ALLOW_RUST_SKIPPED" || FAIL=1
+        check_job "cargo-deny" "${{ needs.cargo-deny.result }}" "false" || FAIL=1
+        check_job "codegen-drift-check" "${{ needs.codegen-drift-check.result }}" "false" || FAIL=1
+        check_job "native-release" "${{ needs.native-release.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "dotnet-check" "${{ needs.dotnet-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "python-sdk-check" "${{ needs.python-sdk-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "integration-build" "${{ needs.integration-build.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "typescript-sdk-native" "${{ needs.typescript-sdk-native.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "typescript-sdk-wasm" "${{ needs.typescript-sdk-wasm.result }}" "$ALLOW_PUSH_SKIPPED" || FAIL=1
+
+        if [[ "$FAIL" -ne 0 ]]; then
           echo "One or more jobs failed"
           exit 1
         fi
