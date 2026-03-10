@@ -37,11 +37,13 @@ public class Bird
         animator.Reset();
     }
 
-    public void Update(float deltaTime)
+    public bool Update(float deltaTime)
     {
+        bool didFlap = false;
+
         if (game.IsKeyPressed(Keys.Space) || game.IsMouseButtonPressed(MouseButtons.Left))
         {
-            movement.TryJump(deltaTime);
+            didFlap = movement.TryJump(deltaTime);
         }
 
         movement.ApplyGravity(deltaTime);
@@ -51,6 +53,8 @@ public class Bird
 
         // Update the animator with the new position and rotation
         animator.Update(deltaTime, X, Y, movement.Rotation);
+
+        return didFlap;
     }
 
     /// <summary>

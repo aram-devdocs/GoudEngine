@@ -41,6 +41,7 @@
     "build": "npm run build:native && npm run build:ts",
     "build:all": "npm run build && npm run build:web",
     "clean": "rm -rf dist wasm *.node",
+    "pretest": "npm run build:native:debug && npm run build:ts",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.web.json --noEmit",
     "test": "node --test test/*.test.mjs",
     "prepublishOnly": "npm run clean && npm run build:all",

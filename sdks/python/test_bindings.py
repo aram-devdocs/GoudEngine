@@ -91,6 +91,77 @@ def test_generated_scene_wrapper_api_names():
     return True
 
 
+def test_generated_audio_wrapper_api_names():
+    """Validate generated audio wrapper method names without loading native lib."""
+    print("Testing generated audio wrapper API names...")
+
+    game_src = (_GENERATED_DIR / "_game.py").read_text()
+    ffi_src = (_GENERATED_DIR / "_ffi.py").read_text()
+
+    expected_game_methods = [
+        "def audio_play(self, data):",
+        "def audio_play_on_channel(self, data, channel):",
+        "def audio_play_with_settings(self, data, volume, speed, looping, channel):",
+        "def audio_stop(self, player_id):",
+        "def audio_pause(self, player_id):",
+        "def audio_resume(self, player_id):",
+        "def audio_stop_all(self):",
+        "def audio_set_global_volume(self, volume):",
+        "def audio_get_global_volume(self):",
+        "def audio_set_channel_volume(self, channel, volume):",
+        "def audio_get_channel_volume(self, channel):",
+        "def audio_is_playing(self, player_id):",
+        "def audio_active_count(self):",
+        "def audio_cleanup_finished(self):",
+        "def audio_play_spatial3d(self, data, source_x, source_y, source_z, listener_x, listener_y, listener_z, max_distance, rolloff):",
+        "def audio_update_spatial3d(self, player_id, source_x, source_y, source_z, listener_x, listener_y, listener_z, max_distance, rolloff):",
+        "def audio_set_listener_position3d(self, x, y, z):",
+        "def audio_set_source_position3d(self, player_id, x, y, z, max_distance, rolloff):",
+        "def audio_set_player_volume(self, player_id, volume):",
+        "def audio_set_player_speed(self, player_id, speed):",
+        "def audio_crossfade(self, from_player_id, to_player_id, mix):",
+        "def audio_crossfade_to(self, from_player_id, data, duration_sec, channel):",
+        "def audio_mix_with(self, primary_player_id, data, secondary_volume, secondary_channel):",
+        "def audio_update_crossfades(self, delta_sec):",
+        "def audio_active_crossfade_count(self):",
+        "def audio_activate(self):",
+    ]
+    for signature in expected_game_methods:
+        assert signature in game_src, f"missing generated audio wrapper: {signature}"
+
+    assert "def load_audio_clip(self" not in game_src, "deprecated load_audio_clip wrapper should not be generated"
+    assert "def unload_audio_clip(self" not in game_src, "deprecated unload_audio_clip wrapper should not be generated"
+    assert "_lib.load_audio_clip" not in ffi_src, "deprecated load_audio_clip ffi symbol should not be generated"
+    assert "_lib.unload_audio_clip" not in ffi_src, "deprecated unload_audio_clip ffi symbol should not be generated"
+
+    # Ensure ctypes declarations include the expected FFI export.
+    assert "_lib.goud_audio_activate.argtypes = [GoudContextId]" in ffi_src, \
+        "missing goud_audio_activate argtypes declaration"
+    assert "_lib.goud_audio_activate.restype = ctypes.c_int32" in ffi_src, \
+        "missing goud_audio_activate restype declaration"
+
+    print("  Audio wrapper API name tests passed")
+    return True
+
+
+def test_generated_audio_activate_maps_to_activate_ffi():
+    """Ensure audio_activate wrapper calls goud_audio_activate, not cleanup."""
+    print("Testing generated audio_activate FFI mapping...")
+
+    game_src = (_GENERATED_DIR / "_game.py").read_text()
+    start = game_src.find("def audio_activate(self):")
+    assert start != -1, "missing audio_activate wrapper"
+    snippet = game_src[start:start + 220]
+
+    assert "goud_audio_activate" in snippet, \
+        "audio_activate wrapper should call goud_audio_activate"
+    assert "goud_audio_cleanup_finished" not in snippet, \
+        "audio_activate wrapper must not call goud_audio_cleanup_finished"
+
+    print("  audio_activate mapping test passed")
+    return True
+
+
 def test_vec2():
     """Test Vec2 construction, factories, arithmetic, and math methods."""
     print("Testing Vec2...")
@@ -645,6 +716,8 @@ def main():
     tests = [
         test_imports,
         test_generated_scene_wrapper_api_names,
+        test_generated_audio_wrapper_api_names,
+        test_generated_audio_activate_maps_to_activate_ffi,
         test_vec2,
         test_color,
         test_rect,

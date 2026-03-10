@@ -23,13 +23,16 @@ public class Movement
         jumpCooldownTimer -= Math.Max(0, deltaTime);
     }
 
-    public void TryJump(float deltaTime)
+    public bool TryJump(float deltaTime)
     {
         if (jumpCooldownTimer <= 0)
         {
             Jump();
             jumpCooldownTimer = GameConstants.JumpCooldown; // Reset the cooldown timer after jumping
+            return true;
         }
+
+        return false;
     }
 
     private void Jump()

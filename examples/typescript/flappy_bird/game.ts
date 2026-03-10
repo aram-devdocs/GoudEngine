@@ -45,6 +45,25 @@ const DIGIT_SPACING = 30;
 const KEY_SPACE = 32;
 const KEY_ESCAPE = 256;
 const KEY_R = 82;
+// Canonical decimal fixture bytes are documented in examples/shared/flappy_audio_fixture.txt.
+const FLAP_WAV_BYTES = new Uint8Array([
+  82, 73, 70, 70, 116, 0, 0, 0, 87, 65, 86, 69, 102, 109, 116, 32, 16, 0, 0, 0, 1, 0, 1, 0, 64, 31,
+  0, 0, 64, 31, 0, 0, 1, 0, 8, 0, 100, 97, 116, 97, 80, 0, 0, 0, 127, 182, 191, 147, 87, 61, 88, 146,
+  186, 177, 127, 78, 70, 108, 160, 183, 159, 110, 75, 83, 126, 168, 175, 142, 98, 79, 99, 141, 169, 162,
+  127, 92, 87, 114, 150, 165, 149, 115, 92, 98, 126, 154, 158, 136, 108, 96, 109, 135, 153, 148, 126, 106,
+  104, 119, 140, 148, 138, 120, 109, 112, 126, 139, 141, 131, 119, 114, 120, 130, 136, 134, 126, 121, 121,
+  125, 129, 130, 128, 126, 126, 127,
+]);
+
+const RESET_WAV_BYTES = new Uint8Array([
+  82, 73, 70, 70, 156, 0, 0, 0, 87, 65, 86, 69, 102, 109, 116, 32, 16, 0, 0, 0, 1, 0, 1, 0, 64, 31,
+  0, 0, 64, 31, 0, 0, 1, 0, 8, 0, 100, 97, 116, 97, 120, 0, 0, 0, 127, 143, 158, 171, 181, 188, 192, 192,
+  189, 182, 172, 160, 146, 131, 117, 103, 91, 81, 74, 69, 68, 70, 76, 84, 94, 105, 118, 131, 143, 154, 164,
+  171, 175, 177, 176, 172, 166, 158, 148, 137, 127, 116, 106, 97, 91, 86, 84, 84, 87, 91, 98, 106, 114, 123,
+  132, 141, 148, 154, 158, 161, 161, 160, 156, 152, 146, 139, 131, 124, 117, 111, 106, 102, 100, 100, 100, 103,
+  106, 110, 116, 121, 126, 132, 136, 140, 143, 145, 146, 145, 144, 142, 139, 135, 131, 128, 124, 121, 119, 117,
+  115, 115, 115, 116, 118, 119, 121, 123, 125, 127, 128, 130, 130, 131, 130, 130, 129, 129, 128, 127, 127, 127,
+]);
 
 // ---------------------------------------------------------------------------
 // Movement — gravity, jump with cooldown, rotation smoothing
@@ -65,12 +84,14 @@ class Movement {
     this.jumpCooldownTimer -= Math.max(0, dt);
   }
 
-  tryJump(): void {
+  tryJump(): boolean {
     if (this.jumpCooldownTimer <= 0) {
       this.velocity = 0;
       this.velocity = this.jumpStrength * TARGET_FPS;
       this.jumpCooldownTimer = JUMP_COOLDOWN;
+      return true;
     }
+    return false;
   }
 
   updatePosition(positionY: number, dt: number): number {
@@ -151,13 +172,12 @@ class Bird {
     await this.animator.init(game, assetBase);
   }
 
-  update(game: IGoudGame, dt: number): void {
-    if (game.isKeyPressed(KEY_SPACE) || game.isMouseButtonPressed(0)) {
-      this.movement.tryJump();
-    }
+  update(_game: IGoudGame, dt: number, jumpPressed: boolean): boolean {
+    const didFlap = jumpPressed ? this.movement.tryJump() : false;
     this.movement.applyGravity(dt);
     this.y = this.movement.updatePosition(this.y, dt);
     this.animator.update(dt, this.x, this.y, this.movement.rotation);
+    return didFlap;
   }
 
   draw(game: IGoudGame): void {
@@ -280,6 +300,7 @@ export class FlappyBirdGame {
   private bgTexture = 0;
   private baseTexture = 0;
   private pipeTexture = 0;
+  private audioActivated = false;
 
   async init(game: IGoudGame, assetBase: string): Promise<void> {
     this.bgTexture = await game.loadTexture(`${assetBase}/background-day.png`);
@@ -290,25 +311,35 @@ export class FlappyBirdGame {
   }
 
   update(game: IGoudGame, dt: number): void {
+    const flapInput = game.isKeyPressed(KEY_SPACE) || game.isMouseButtonPressed(0);
+
     if (game.isKeyPressed(KEY_ESCAPE)) {
       game.close();
       return;
     }
     if (game.isKeyPressed(KEY_R)) {
-      this.resetGame();
+      this.ensureAudioActivated(game);
+      this.resetGame(game);
       return;
     }
 
-    this.bird.update(game, dt);
+    if (flapInput) {
+      this.ensureAudioActivated(game);
+    }
+
+    const didFlap = this.bird.update(game, dt, flapInput);
+    if (didFlap) {
+      game.audioPlay(FLAP_WAV_BYTES);
+    }
 
     // Ground collision
     if (this.bird.y + BIRD_HEIGHT > SCREEN_HEIGHT) {
-      this.resetGame();
+      this.resetGame(game);
       return;
     }
     // Ceiling collision
     if (this.bird.y < 0) {
-      this.resetGame();
+      this.resetGame(game);
       return;
     }
 
@@ -316,7 +347,7 @@ export class FlappyBirdGame {
     for (const pipe of this.pipes) {
       pipe.update(dt);
       if (pipe.collidesWithBird(this.bird.x, this.bird.y)) {
-        this.resetGame();
+        this.resetGame(game);
         return;
       }
     }
@@ -362,7 +393,17 @@ export class FlappyBirdGame {
       BASE_WIDTH, BASE_HEIGHT);
   }
 
-  private resetGame(): void {
+  private ensureAudioActivated(game: IGoudGame): void {
+    if (!this.audioActivated) {
+      game.audioActivate();
+      this.audioActivated = true;
+    }
+  }
+
+  private resetGame(game: IGoudGame): void {
+    if (this.audioActivated) {
+      game.audioPlay(RESET_WAV_BYTES);
+    }
     this.bird.reset();
     this.pipes = [];
     this.scoreCounter.resetScore();

@@ -274,6 +274,14 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_audio_activate": {
+      "source_file": "ffi/audio/controls.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_audio_active_count": {
       "source_file": "ffi/audio/controls.rs",
       "params": [
@@ -3944,5 +3952,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 397
+  "total_count": 398
 }

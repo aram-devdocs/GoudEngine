@@ -71,7 +71,11 @@ public class GameManager
         }
 
         // Update Bird Movement with deltaTime
-        bird.Update(deltaTime);
+        bool didFlap = bird.Update(deltaTime);
+        if (didFlap)
+        {
+            game.AudioPlay(EmbeddedAudioClips.FlapWav);
+        }
 
         // Check if bird is colliding with the base (ground)
         if (bird.Y + Bird.Height > GameConstants.ScreenHeight)
@@ -158,6 +162,7 @@ public class GameManager
 
     private void ResetGame()
     {
+        game.AudioPlay(EmbeddedAudioClips.ResetWav);
         scoreCounter.ResetScore();
         Start(); // Restart the game
     }

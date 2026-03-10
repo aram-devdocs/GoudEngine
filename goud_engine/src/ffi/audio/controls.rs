@@ -1,5 +1,3 @@
-//! Audio control and query FFI functions: stop, pause, resume, volume, queries.
-
 use crate::assets::AudioManager;
 use crate::core::error::{set_last_error, GoudError};
 use crate::ecs::components::AudioChannel;
@@ -7,9 +5,39 @@ use crate::ffi::context::{get_context_registry, GoudContextId, GOUD_INVALID_CONT
 
 use super::ERR_I32;
 
-// ============================================================================
-// Playback Control
-// ============================================================================
+#[path = "audio_activate.rs"]
+mod audio_activate;
+#[path = "query.rs"]
+mod query;
+#[cfg(test)]
+#[path = "tests/mod.rs"]
+mod tests;
+
+use audio_activate::goud_audio_activate_impl;
+use query::{
+    goud_audio_active_count_impl, goud_audio_cleanup_finished_impl,
+    goud_audio_get_channel_volume_impl, goud_audio_get_global_volume_impl,
+    goud_audio_is_playing_impl,
+};
+
+/// Activates audio playback on platforms that require explicit initialization.
+///
+/// For native contexts this is intentionally validation-only.
+///
+/// Browser/WebAudio activation lives in
+/// `crate::wasm::audio::activation_playback::WasmGame::audio_activate`.
+///
+/// # Arguments
+///
+/// * `context_id` - Engine context handle
+///
+/// # Returns
+///
+/// `0` on success, `-1` on error.
+#[no_mangle]
+pub extern "C" fn goud_audio_activate(context_id: GoudContextId) -> i32 {
+    goud_audio_activate_impl(context_id)
+}
 
 /// Stops audio playback for the given player ID.
 ///
@@ -249,37 +277,6 @@ pub extern "C" fn goud_audio_set_global_volume(context_id: GoudContextId, volume
     0
 }
 
-/// Returns the current global audio volume.
-///
-/// # Arguments
-///
-/// * `context_id` - Engine context handle
-///
-/// # Returns
-///
-/// The global volume (0.0-1.0), or `-1.0` on error.
-#[no_mangle]
-pub extern "C" fn goud_audio_get_global_volume(context_id: GoudContextId) -> f32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        return -1.0;
-    }
-
-    let registry = match get_context_registry().lock() {
-        Ok(r) => r,
-        Err(_) => return -1.0,
-    };
-    let context = match registry.get(context_id) {
-        Some(ctx) => ctx,
-        None => return -1.0,
-    };
-    let audio = match context.world().get_resource::<AudioManager>() {
-        Some(am) => am,
-        None => return -1.0,
-    };
-
-    audio.global_volume()
-}
-
 /// Sets the volume for a specific audio channel.
 ///
 /// # Arguments
@@ -332,6 +329,20 @@ pub extern "C" fn goud_audio_set_channel_volume(
     0
 }
 
+/// Returns the current global audio volume.
+///
+/// # Arguments
+///
+/// * `context_id` - Engine context handle
+///
+/// # Returns
+///
+/// The global volume (0.0-1.0), or `-1.0` on error.
+#[no_mangle]
+pub extern "C" fn goud_audio_get_global_volume(context_id: GoudContextId) -> f32 {
+    goud_audio_get_global_volume_impl(context_id)
+}
+
 /// Returns the current volume for a specific audio channel.
 ///
 /// # Arguments
@@ -344,29 +355,8 @@ pub extern "C" fn goud_audio_set_channel_volume(
 /// The channel volume (0.0-1.0), or `-1.0` on error.
 #[no_mangle]
 pub extern "C" fn goud_audio_get_channel_volume(context_id: GoudContextId, channel: u8) -> f32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        return -1.0;
-    }
-
-    let registry = match get_context_registry().lock() {
-        Ok(r) => r,
-        Err(_) => return -1.0,
-    };
-    let context = match registry.get(context_id) {
-        Some(ctx) => ctx,
-        None => return -1.0,
-    };
-    let audio = match context.world().get_resource::<AudioManager>() {
-        Some(am) => am,
-        None => return -1.0,
-    };
-
-    audio.get_channel_volume(AudioChannel::from_id(channel))
+    goud_audio_get_channel_volume_impl(context_id, channel)
 }
-
-// ============================================================================
-// Queries
-// ============================================================================
 
 /// Checks whether a specific player is currently playing audio.
 ///
@@ -380,28 +370,7 @@ pub extern "C" fn goud_audio_get_channel_volume(context_id: GoudContextId, chann
 /// `1` if playing, `0` if not playing (or paused/finished), `-1` on error.
 #[no_mangle]
 pub extern "C" fn goud_audio_is_playing(context_id: GoudContextId, player_id: u64) -> i32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        return ERR_I32;
-    }
-
-    let registry = match get_context_registry().lock() {
-        Ok(r) => r,
-        Err(_) => return ERR_I32,
-    };
-    let context = match registry.get(context_id) {
-        Some(ctx) => ctx,
-        None => return ERR_I32,
-    };
-    let audio = match context.world().get_resource::<AudioManager>() {
-        Some(am) => am,
-        None => return ERR_I32,
-    };
-
-    if audio.is_playing(player_id) {
-        1
-    } else {
-        0
-    }
+    goud_audio_is_playing_impl(context_id, player_id)
 }
 
 /// Returns the number of active audio players.
@@ -415,24 +384,7 @@ pub extern "C" fn goud_audio_is_playing(context_id: GoudContextId, player_id: u6
 /// The number of active players, or `-1` on error.
 #[no_mangle]
 pub extern "C" fn goud_audio_active_count(context_id: GoudContextId) -> i32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        return ERR_I32;
-    }
-
-    let registry = match get_context_registry().lock() {
-        Ok(r) => r,
-        Err(_) => return ERR_I32,
-    };
-    let context = match registry.get(context_id) {
-        Some(ctx) => ctx,
-        None => return ERR_I32,
-    };
-    let audio = match context.world().get_resource::<AudioManager>() {
-        Some(am) => am,
-        None => return ERR_I32,
-    };
-
-    audio.active_count() as i32
+    goud_audio_active_count_impl(context_id)
 }
 
 /// Cleans up finished audio players.
@@ -446,37 +398,5 @@ pub extern "C" fn goud_audio_active_count(context_id: GoudContextId) -> i32 {
 /// `0` on success, `-1` on error.
 #[no_mangle]
 pub extern "C" fn goud_audio_cleanup_finished(context_id: GoudContextId) -> i32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return ERR_I32;
-    }
-
-    let mut registry = match get_context_registry().lock() {
-        Ok(r) => r,
-        Err(_) => {
-            set_last_error(GoudError::InternalError(
-                "Failed to lock context registry".to_string(),
-            ));
-            return ERR_I32;
-        }
-    };
-    let context = match registry.get_mut(context_id) {
-        Some(ctx) => ctx,
-        None => {
-            set_last_error(GoudError::InvalidContext);
-            return ERR_I32;
-        }
-    };
-    match context.world_mut().get_resource_mut::<AudioManager>() {
-        Some(am) => {
-            am.cleanup_finished();
-            0
-        }
-        None => {
-            set_last_error(GoudError::InvalidState(
-                "AudioManager resource not found".to_string(),
-            ));
-            ERR_I32
-        }
-    }
+    goud_audio_cleanup_finished_impl(context_id)
 }

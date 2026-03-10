@@ -1151,7 +1151,7 @@
           "ffi": "goud_audio_active_crossfade_count"
         },
         "audioActivate": {
-          "ffi": "goud_audio_cleanup_finished"
+          "ffi": "goud_audio_activate"
         },
         "checkHotSwapShortcut": {
           "ffi": "goud_provider_check_hot_swap_shortcut",
@@ -8492,6 +8492,12 @@
         "returns": "i32"
       },
       "goud_audio_cleanup_finished": {
+        "params": [
+          { "name": "ctx", "type": "GoudContextId" }
+        ],
+        "returns": "i32"
+      },
+      "goud_audio_activate": {
         "params": [
           { "name": "ctx", "type": "GoudContextId" }
         ],

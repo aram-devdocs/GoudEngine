@@ -23,6 +23,7 @@ import {
   vec2Zero,
   vec2One,
 } from '../index.js';
+import { GoudGame as WrappedGoudGame } from '../dist/generated/node/index.g.js';
 
 describe('GoudGame', () => {
   it('creates with default config', () => {
@@ -161,6 +162,96 @@ describe('GoudGame', () => {
 
     assert.equal(game.setActiveScene(sceneId, true), true);
     assert.equal(game.unloadScene(sceneName), true);
+  });
+
+  it('exposes native advanced audio methods for parity', () => {
+    const game = new GoudGame();
+
+    const requiredNativeMethods = [
+      'audioPlay',
+      'audioPlayOnChannel',
+      'audioPlayWithSettings',
+      'audioStop',
+      'audioPause',
+      'audioResume',
+      'audioStopAll',
+      'audioSetGlobalVolume',
+      'audioGetGlobalVolume',
+      'audioSetChannelVolume',
+      'audioGetChannelVolume',
+      'audioIsPlaying',
+      'audioActiveCount',
+      'audioPlaySpatial3d',
+      'audioUpdateSpatial3d',
+      'audioSetListenerPosition3d',
+      'audioSetSourcePosition3d',
+      'audioSetPlayerVolume',
+      'audioSetPlayerSpeed',
+      'audioCrossfade',
+      'audioCrossfadeTo',
+      'audioMixWith',
+      'audioUpdateCrossfades',
+      'audioActiveCrossfadeCount',
+      'audioCleanupFinished',
+      'audioActivate',
+    ];
+
+    for (const method of requiredNativeMethods) {
+      assert.equal(typeof game[method], 'function', `Missing native method: ${method}`);
+    }
+
+    assert.equal(typeof game.loadAudioClip, 'undefined');
+    assert.equal(typeof game.unloadAudioClip, 'undefined');
+  });
+});
+
+describe('Generated native audio bindings', () => {
+  it('keeps generated wrapper audio methods aligned with the native runtime object', () => {
+    const game = new WrappedGoudGame();
+    try {
+      const requiredWrapperMethods = [
+        'audioPlay',
+        'audioPlayOnChannel',
+        'audioPlayWithSettings',
+        'audioStop',
+        'audioPause',
+        'audioResume',
+        'audioStopAll',
+        'audioSetGlobalVolume',
+        'audioGetGlobalVolume',
+        'audioSetChannelVolume',
+        'audioGetChannelVolume',
+        'audioIsPlaying',
+        'audioActiveCount',
+        'audioPlaySpatial3d',
+        'audioUpdateSpatial3d',
+        'audioSetListenerPosition3d',
+        'audioSetSourcePosition3d',
+        'audioSetPlayerVolume',
+        'audioSetPlayerSpeed',
+        'audioCrossfade',
+        'audioCrossfadeTo',
+        'audioMixWith',
+        'audioUpdateCrossfades',
+        'audioActiveCrossfadeCount',
+        'audioCleanupFinished',
+        'audioActivate',
+      ];
+
+      for (const method of requiredWrapperMethods) {
+        assert.equal(typeof game[method], 'function', `Missing wrapper method: ${method}`);
+        assert.equal(typeof game.native[method], 'function', `Wrapper native target missing method: ${method}`);
+      }
+
+      assert.doesNotThrow(() => game.audioActivate());
+
+      assert.equal(typeof game.loadAudioClip, 'undefined');
+      assert.equal(typeof game.unloadAudioClip, 'undefined');
+      assert.equal(typeof game.native.loadAudioClip, 'undefined');
+      assert.equal(typeof game.native.unloadAudioClip, 'undefined');
+    } finally {
+      game.destroy();
+    }
   });
 });
 

@@ -11,6 +11,7 @@
 //! - `spatial`: spatial play/update, listener/source positioning, per-player mix,
 //!   timed crossfade, and additive mix helpers
 
+/// FFI functions for playback control, channel/volume state, and playback state queries.
 pub mod controls;
 pub mod playback;
 pub mod spatial;

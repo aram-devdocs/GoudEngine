@@ -706,7 +706,7 @@ class GoudGame:
 
     def audio_activate(self):
         """Activates audio playback on platforms that require user gesture initialization"""
-        return self._lib.goud_audio_cleanup_finished(self._ctx)
+        return self._lib.goud_audio_activate(self._ctx)
 
     def check_hot_swap_shortcut(self):
         """Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred."""
