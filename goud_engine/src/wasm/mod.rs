@@ -16,10 +16,10 @@ mod audio;
 mod collision;
 mod ecs_ops;
 mod input;
-mod ui;
 mod rendering;
 mod sprite_renderer;
 mod texture_loader;
+mod ui;
 
 #[cfg(all(test, target_arch = "wasm32"))]
 #[cfg(test)]

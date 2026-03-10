@@ -5,7 +5,8 @@
 
 use crate::core::math::Color;
 use crate::ui::{
-    UiButton, UiComponent, UiEvent, UiImage, UiLabel, UiManager, UiNodeId, UiSlider, UiStyleOverrides,
+    UiButton, UiComponent, UiEvent, UiImage, UiLabel, UiManager, UiNodeId, UiSlider,
+    UiStyleOverrides,
 };
 use wasm_bindgen::prelude::*;
 
