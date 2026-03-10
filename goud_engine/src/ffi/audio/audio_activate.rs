@@ -1,6 +1,6 @@
 use crate::core::error::{set_last_error, GoudError};
-use crate::ffi::context::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::audio::ERR_I32;
+use crate::ffi::context::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
 
 pub(crate) fn goud_audio_activate_impl(context_id: GoudContextId) -> i32 {
     if context_id == GOUD_INVALID_CONTEXT_ID {
