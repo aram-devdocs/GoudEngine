@@ -13,6 +13,7 @@ pub mod client;
 pub mod discovery;
 pub mod protocol;
 pub mod server;
+pub mod state_sync;
 pub mod types;
 
 #[cfg(test)]
@@ -28,4 +29,10 @@ pub use discovery::{
     LanDiscoveryProvider, NativeLanDiscoveryProvider,
 };
 pub use server::SessionServer;
+pub use state_sync::{
+    EntityBandwidthStat, NetworkSync, ResolvedStateSnapshot, ResolvedSyncEntity,
+    StateSnapshotPayload, StateSyncBandwidthStats, StateSyncClient, StateSyncConfig,
+    StateSyncEntitySnapshot, StateSyncInterpolationBuffer, StateSyncServer,
+    Transform2DSnapshot, TransformSnapshot,
+};
 pub use types::{ClientEvent, ServerConfig, ServerEvent, SessionChannels, SessionDescriptor};
