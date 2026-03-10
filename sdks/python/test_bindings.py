@@ -392,9 +392,6 @@ def test_handwritten_network_wrapper_send_contract_source():
     print("  Handwritten network wrapper send() contract tests passed")
     return True
 
-    print("  Handwritten network wrapper send() contract tests passed")
-    return True
-
 
 def test_generated_ui_manager_wrapper_api_names():
     """Validate generated UiManager wrappers and exports without native lib."""
