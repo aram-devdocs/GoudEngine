@@ -22,7 +22,10 @@ use query::{
 
 /// Activates audio playback on platforms that require explicit initialization.
 ///
-/// For native contexts this is currently a no-op that validates the context.
+/// For native contexts this is intentionally validation-only.
+///
+/// Browser/WebAudio activation lives in
+/// `crate::wasm::audio::activation_playback::WasmGame::audio_activate`.
 ///
 /// # Arguments
 ///
