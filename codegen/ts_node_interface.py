@@ -58,6 +58,12 @@ def gen_interface():
     if schema["types"]["NetworkSimulationConfig"].get("doc"):
         lines.append(f"/** {schema['types']['NetworkSimulationConfig']['doc']} */")
     lines.append(f"export interface INetworkSimulationConfig {{ {nsc_str}; }}")
+    if schema["types"]["NetworkConnectResult"].get("doc"):
+        lines.append(f"/** {schema['types']['NetworkConnectResult']['doc']} */")
+    lines.append("export interface INetworkConnectResult { handle: number; peerId: number; }")
+    if schema["types"]["NetworkPacket"].get("doc"):
+        lines.append(f"/** {schema['types']['NetworkPacket']['doc']} */")
+    lines.append("export interface INetworkPacket { peerId: number; data: Uint8Array; }")
 
     for cap_name in ["RenderCapabilities", "PhysicsCapabilities", "AudioCapabilities", "InputCapabilities", "NetworkCapabilities"]:
         cap_type = schema["types"][cap_name]
@@ -204,6 +210,27 @@ def gen_interface():
         sig = ", ".join(f"{pn}: {pt}" for pn, pt in params)
         lines.append(f"  {mn}({sig}): {ret};")
 
+    lines.append("}")
+    lines.append("")
+    lines.append("/** Headless engine context exposing low-level networking APIs for Node-only tests. */")
+    lines.append("export interface IGoudContext {")
+    lines.append("  destroy(): boolean;")
+    lines.append("  isValid(): boolean;")
+    lines.append("  getNetworkCapabilities(): INetworkCapabilities;")
+    lines.append("  networkHost(protocol: number, port: number): number;")
+    lines.append("  networkConnect(protocol: number, address: string, port: number): number;")
+    lines.append("  networkConnectWithPeer(protocol: number, address: string, port: number): INetworkConnectResult;")
+    lines.append("  networkDisconnect(handle: number): number;")
+    lines.append("  networkSend(handle: number, peerId: number, data: Uint8Array, channel: number): number;")
+    lines.append("  networkReceive(handle: number): Uint8Array;")
+    lines.append("  networkReceivePacket(handle: number): INetworkPacket | null;")
+    lines.append("  networkPoll(handle: number): number;")
+    lines.append("  getNetworkStats(handle: number): INetworkStats;")
+    lines.append("  networkPeerCount(handle: number): number;")
+    lines.append("  setNetworkSimulation(handle: number, config: INetworkSimulationConfig): number;")
+    lines.append("  clearNetworkSimulation(handle: number): number;")
+    lines.append("  setNetworkOverlayHandle(handle: number): number;")
+    lines.append("  clearNetworkOverlayHandle(): number;")
     lines.append("}")
     lines.append("")
     lines.append("/** Data for a fired animation event */")

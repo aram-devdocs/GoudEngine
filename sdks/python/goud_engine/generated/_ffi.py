@@ -1026,6 +1026,8 @@ def _setup():
         _lib.goud_network_host.restype = ctypes.c_int64
         _lib.goud_network_connect.argtypes = [GoudContextId, ctypes.c_int32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_uint16]
         _lib.goud_network_connect.restype = ctypes.c_int64
+        _lib.goud_network_connect_with_peer.argtypes = [GoudContextId, ctypes.c_int32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_uint16, ctypes.POINTER(ctypes.c_int64), ctypes.POINTER(ctypes.c_uint64)]
+        _lib.goud_network_connect_with_peer.restype = ctypes.c_int32
         _lib.goud_network_disconnect.argtypes = [GoudContextId, ctypes.c_int64]
         _lib.goud_network_disconnect.restype = ctypes.c_int32
         _lib.goud_network_send.argtypes = [GoudContextId, ctypes.c_int64, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_uint8]

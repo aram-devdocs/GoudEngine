@@ -24,6 +24,10 @@ export interface IFpsStats { currentFps: number; minFps: number; maxFps: number;
 export interface INetworkStats { bytesSent: number; bytesReceived: number; packetsSent: number; packetsReceived: number; packetsLost: number; rttMs: number; sendBandwidthBytesPerSec: number; receiveBandwidthBytesPerSec: number; packetLossPercent: number; jitterMs: number; }
 /** Debug-only network simulation settings for a network handle */
 export interface INetworkSimulationConfig { oneWayLatencyMs: number; jitterMs: number; packetLossPercent: number; }
+/** Peer-preserving connection result returned by networkConnectWithPeer */
+export interface INetworkConnectResult { handle: number; peerId: number; }
+/** Inbound network payload with the sender peer ID preserved */
+export interface INetworkPacket { peerId: number; data: Uint8Array; }
 /** Capabilities reported by the active render provider */
 export interface IRenderCapabilities { maxTextureUnits: number; maxTextureSize: number; supportsInstancing: boolean; supportsCompute: boolean; supportsMsaa: boolean; }
 /** Capabilities reported by the active physics provider */
@@ -317,12 +321,16 @@ export interface IGoudGame {
   networkHost(protocol: number, port: number): number;
   /** Connects to a remote host with the selected transport protocol. */
   networkConnect(protocol: number, address: string, port: number): number;
+  /** Connects to a remote host with the selected transport protocol and preserves the provider-assigned peer ID. */
+  networkConnectWithPeer(protocol: number, address: string, port: number): INetworkConnectResult;
   /** Disconnects a network host or connection handle. */
   networkDisconnect(handle: number): number;
   /** Sends raw bytes to the given peer over a network handle and channel. */
   networkSend(handle: number, peerId: number, data: Uint8Array, channel: number): number;
   /** Receives the next buffered payload produced by networkPoll. */
   networkReceive(handle: number): Uint8Array;
+  /** Receives the next buffered payload produced by networkPoll and preserves the sender peer ID. */
+  networkReceivePacket(handle: number): INetworkPacket | null;
   /** Polls the network handle and buffers inbound messages for retrieval. */
   networkPoll(handle: number): number;
   /** Returns aggregate network statistics for a network handle. */
@@ -402,6 +410,27 @@ export interface IGoudGame {
   animationClipAddEvent(entity: IEntity, frameIndex: number, name: string, payloadType: number, payloadInt: number, payloadFloat: number, payloadString?: string | null): number;
   animationEventsCount(): number;
   animationEventsRead(index: number): IAnimationEventData;
+}
+
+/** Headless engine context exposing low-level networking APIs for Node-only tests. */
+export interface IGoudContext {
+  destroy(): boolean;
+  isValid(): boolean;
+  getNetworkCapabilities(): INetworkCapabilities;
+  networkHost(protocol: number, port: number): number;
+  networkConnect(protocol: number, address: string, port: number): number;
+  networkConnectWithPeer(protocol: number, address: string, port: number): INetworkConnectResult;
+  networkDisconnect(handle: number): number;
+  networkSend(handle: number, peerId: number, data: Uint8Array, channel: number): number;
+  networkReceive(handle: number): Uint8Array;
+  networkReceivePacket(handle: number): INetworkPacket | null;
+  networkPoll(handle: number): number;
+  getNetworkStats(handle: number): INetworkStats;
+  networkPeerCount(handle: number): number;
+  setNetworkSimulation(handle: number, config: INetworkSimulationConfig): number;
+  clearNetworkSimulation(handle: number): number;
+  setNetworkOverlayHandle(handle: number): number;
+  clearNetworkOverlayHandle(): number;
 }
 
 /** Data for a fired animation event */

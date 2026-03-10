@@ -1079,36 +1079,85 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         status_struct = bool(mm.get("status_struct"))
         entity_set = set(mm.get("entity_params", []))
         enum_set = set(mm.get("enum_params", {}).keys())
+        string_set = set(mm.get("string_params", []))
+        uses_ptr_len = _ffi_uses_ptr_len(ffi_fn)
         out_params = mm["out_params"]
         out_locals = [f"_{op['name']}" for op in out_params]
+        has_marshaled_string = any(
+            p["type"] == "string" and p["name"] in string_set for p in params
+        ) and uses_ptr_len
 
         for op, local in zip(out_params, out_locals):
             var_ty = _cs_out_var_type(op["type"])
             L.append(f"            {var_ty} {local} = {_cs_default_value(var_ty)};")
-
-        ffi_parts = [] if no_ctx else ["_ctx"]
-        for p in params:
-            pname = p["name"]
-            if pname in entity_set:
-                ffi_parts.append(f"{pname}.ToBits()")
-            elif pname in enum_set:
-                ffi_parts.append(f"(int){pname}")
-            else:
-                ffi_parts.append(pname)
-        ffi_parts.extend(f"ref {local}" for local in out_locals)
-
-        if status_nullable_struct or status_struct:
-            L.append(f"            var _status = NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
-            L.append("            if (_status < 0)")
+        if has_marshaled_string:
+            L.append("            unsafe")
             L.append("            {")
-            L.append("                var _ex = GoudException.FromLastError();")
-            L.append("                if (_ex != null) throw _ex;")
-            L.append(f'                throw new InvalidOperationException($"{ffi_fn} failed with status {{_status}}.");')
+            fixed_lines = []
+            ffi_parts = [] if no_ctx else ["_ctx"]
+            ffi_param_index = 0 if no_ctx else 1
+            for p in params:
+                pname = p["name"]
+                if pname in entity_set:
+                    ffi_parts.append(f"{pname}.ToBits()")
+                    ffi_param_index += 1
+                elif p["type"] == "string" and pname in string_set:
+                    bvar = f"{pname}Bytes"
+                    pvar = f"{pname}Ptr"
+                    L.append(f"                var {bvar} = System.Text.Encoding.UTF8.GetBytes({pname});")
+                    fixed_lines.append(f"byte* {pvar} = {bvar}")
+                    ffi_parts.append(f"(IntPtr){pvar}")
+                    len_type = _ffi_param_type_at(ffi_fn, ffi_param_index + 1)
+                    ffi_parts.append(_cs_len_cast_expr(len_type, f"{bvar}.Length"))
+                    ffi_param_index += 2
+                elif pname in enum_set:
+                    ffi_parts.append(f"(int){pname}")
+                    ffi_param_index += 1
+                else:
+                    ffi_parts.append(pname)
+                    ffi_param_index += 1
+            ffi_parts.extend(f"ref {local}" for local in out_locals)
+            fixed_expr = "\n                ".join(f"fixed ({fl})" for fl in fixed_lines)
+            L.append(f"                {fixed_expr}")
+            L.append("                {")
+            if status_nullable_struct or status_struct:
+                L.append(f"                    var _status = NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
+                L.append("                    if (_status < 0)")
+                L.append("                    {")
+                L.append("                        var _ex = GoudException.FromLastError();")
+                L.append("                        if (_ex != null) throw _ex;")
+                L.append(f'                        throw new InvalidOperationException($"{ffi_fn} failed with status {{_status}}.");')
+                L.append("                    }")
+                if status_nullable_struct:
+                    L.append("                    if (_status == 0) return null;")
+            else:
+                L.append(f"                    NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
+            L.append("                }")
             L.append("            }")
-            if status_nullable_struct:
-                L.append("            if (_status == 0) return null;")
         else:
-            L.append(f"            NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
+            ffi_parts = [] if no_ctx else ["_ctx"]
+            for p in params:
+                pname = p["name"]
+                if pname in entity_set:
+                    ffi_parts.append(f"{pname}.ToBits()")
+                elif pname in enum_set:
+                    ffi_parts.append(f"(int){pname}")
+                else:
+                    ffi_parts.append(pname)
+            ffi_parts.extend(f"ref {local}" for local in out_locals)
+
+            if status_nullable_struct or status_struct:
+                L.append(f"            var _status = NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
+                L.append("            if (_status < 0)")
+                L.append("            {")
+                L.append("                var _ex = GoudException.FromLastError();")
+                L.append("                if (_ex != null) throw _ex;")
+                L.append(f'                throw new InvalidOperationException($"{ffi_fn} failed with status {{_status}}.");')
+                L.append("            }")
+                if status_nullable_struct:
+                    L.append("            if (_status == 0) return null;")
+            else:
+                L.append(f"            NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
 
         rs_fields = schema["types"][struct_name]["fields"]
         if len(out_params) == 1 and out_params[0]["type"] not in CSHARP_TYPES:
@@ -1145,6 +1194,8 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         no_ctx = mm.get("no_context", False)
         entity_set = set(mm.get("entity_params", []))
         enum_set = set(mm.get("enum_params", {}).keys())
+        returns_struct = mm.get("returns_struct")
+        status_nullable_struct = bool(mm.get("status_nullable_struct"))
         if not no_ctx:
             L.append("            FfiNetworkCapabilities _caps = default;")
             L.append("            NativeMethods.goud_provider_network_capabilities(_ctx, ref _caps);")
@@ -1180,10 +1231,25 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         L.append("                        if (_ex != null) throw _ex;")
         L.append(f'                        throw new InvalidOperationException($"{ffi_fn} failed with status {{_written}}.");')
         L.append("                    }")
-        L.append("                    if (_written == 0) return Array.Empty<byte>();")
+        if returns_struct and status_nullable_struct:
+            L.append("                    if (_written == 0) return null;")
+        else:
+            L.append("                    if (_written == 0) return Array.Empty<byte>();")
         L.append("                    var result = new byte[_written];")
         L.append("                    Array.Copy(buf, result, _written);")
-        L.append("                    return result;")
+        if returns_struct:
+            rs_fields = schema["types"][returns_struct]["fields"]
+            field_args = []
+            for field in rs_fields:
+                if field["type"] in ("bytes", "u8[]"):
+                    field_args.append("result")
+                elif field["name"] == "peerId":
+                    field_args.append("_peerId")
+                else:
+                    field_args.append(f"default({cs_type(field['type'])})")
+            L.append(f"                    return new {returns_struct}({', '.join(field_args)});")
+        else:
+            L.append("                    return result;")
         L.append("                }")
         L.append("            }")
         return

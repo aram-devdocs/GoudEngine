@@ -73,6 +73,57 @@ pub extern "C" fn goud_network_host(_context_id: GoudContextId, protocol: i32, p
     .unwrap_or(ERR_HANDLE)
 }
 
+fn parse_connect_address(addr_ptr: *const u8, addr_len: i32, port: u16) -> Result<String, i32> {
+    if addr_ptr.is_null() || addr_len <= 0 {
+        set_last_error(GoudError::InvalidState(
+            "addr_ptr is null or empty".to_string(),
+        ));
+        return Err(ERR_INVALID_STATE);
+    }
+
+    // SAFETY: The caller guarantees that `addr_ptr` points to `addr_len` readable bytes.
+    let addr_bytes = unsafe { std::slice::from_raw_parts(addr_ptr, addr_len as usize) };
+    let addr_str = match std::str::from_utf8(addr_bytes) {
+        Ok(s) => s,
+        Err(_) => {
+            set_last_error(GoudError::InvalidState(
+                "address is not valid UTF-8".to_string(),
+            ));
+            return Err(ERR_INVALID_STATE);
+        }
+    };
+
+    Ok(if addr_str.contains(':') {
+        addr_str.to_string()
+    } else {
+        format!("{}:{}", addr_str, port)
+    })
+}
+
+fn connect_instance(
+    context_id: GoudContextId,
+    protocol: i32,
+    full_addr: &str,
+) -> Result<(i64, u64), i32> {
+    let mut provider = create_provider(protocol)?;
+    let peer_id = provider.connect(full_addr).map_err(|e| {
+        let code = e.error_code();
+        set_last_error(e);
+        code
+    })?;
+
+    let inst = NetInstance {
+        provider,
+        recv_queue: VecDeque::new(),
+    };
+
+    with_registry(|reg| {
+        let handle = reg.insert(inst);
+        reg.set_default_handle_for_context(context_id, handle);
+        Ok((handle, peer_id.0))
+    })
+}
+
 /// Connects to a remote host. Returns a positive handle or negative error.
 ///
 /// # Safety
@@ -87,58 +138,60 @@ pub unsafe extern "C" fn goud_network_connect(
     port: u16,
 ) -> i64 {
     let context_id = _context_id;
-    if addr_ptr.is_null() || addr_len <= 0 {
-        set_last_error(GoudError::InvalidState(
-            "addr_ptr is null or empty".to_string(),
-        ));
-        return ERR_HANDLE;
+    let full_addr = match parse_connect_address(addr_ptr, addr_len, port) {
+        Ok(addr) => addr,
+        Err(_) => return ERR_HANDLE,
+    };
+
+    match connect_instance(context_id, protocol, &full_addr) {
+        Ok((handle, _peer_id)) => handle,
+        Err(_) => ERR_HANDLE,
+    }
+}
+
+/// Connects to a remote host and preserves the provider-assigned peer ID.
+/// Returns 0 on success, or a negative error code on failure.
+///
+/// # Safety
+///
+/// `addr_ptr` must point to valid UTF-8 of `addr_len` bytes. `out_handle` and
+/// `out_peer_id` must point to writable storage retained by the caller.
+#[no_mangle]
+pub unsafe extern "C" fn goud_network_connect_with_peer(
+    _context_id: GoudContextId,
+    protocol: i32,
+    addr_ptr: *const u8,
+    addr_len: i32,
+    port: u16,
+    out_handle: *mut i64,
+    out_peer_id: *mut u64,
+) -> i32 {
+    let context_id = _context_id;
+    if out_handle.is_null() {
+        set_last_error(GoudError::InvalidState("out_handle is null".to_string()));
+        return ERR_INVALID_STATE;
+    }
+    if out_peer_id.is_null() {
+        set_last_error(GoudError::InvalidState("out_peer_id is null".to_string()));
+        return ERR_INVALID_STATE;
     }
 
-    // SAFETY: Caller guarantees addr_ptr is valid for addr_len bytes.
-    let addr_bytes = std::slice::from_raw_parts(addr_ptr, addr_len as usize);
-    let addr_str = match std::str::from_utf8(addr_bytes) {
-        Ok(s) => s,
-        Err(_) => {
-            set_last_error(GoudError::InvalidState(
-                "address is not valid UTF-8".to_string(),
-            ));
-            return ERR_HANDLE;
-        }
+    let full_addr = match parse_connect_address(addr_ptr, addr_len, port) {
+        Ok(addr) => addr,
+        Err(code) => return code,
     };
 
-    // Build the full address. If the caller provided just an IP, append the port.
-    let full_addr = if addr_str.contains(':') {
-        addr_str.to_string()
-    } else {
-        format!("{}:{}", addr_str, port)
+    let (handle, peer_id) = match connect_instance(context_id, protocol, &full_addr) {
+        Ok(result) => result,
+        Err(code) => return code,
     };
 
-    let mut provider = match create_provider(protocol) {
-        Ok(p) => p,
-        Err(_) => {
-            set_last_error(GoudError::InternalError(
-                "Failed to create network provider".to_string(),
-            ));
-            return ERR_HANDLE;
-        }
-    };
-
-    if let Err(e) = provider.connect(&full_addr) {
-        set_last_error(e);
-        return ERR_HANDLE;
+    // SAFETY: The caller guarantees that both output pointers are valid for one write.
+    unsafe {
+        *out_handle = handle;
+        *out_peer_id = peer_id;
     }
-
-    let inst = NetInstance {
-        provider,
-        recv_queue: VecDeque::new(),
-    };
-
-    with_registry(|reg| {
-        let handle = reg.insert(inst);
-        reg.set_default_handle_for_context(context_id, handle);
-        Ok(handle)
-    })
-    .unwrap_or(ERR_HANDLE)
+    0
 }
 
 /// Disconnects and destroys a network instance.

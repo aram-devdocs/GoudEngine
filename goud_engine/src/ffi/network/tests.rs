@@ -270,6 +270,29 @@ fn test_goud_network_get_stats_v2_writes_stats() {
 }
 
 #[test]
+fn test_goud_network_connect_with_peer_rejects_null_out_params() {
+    let _registry = RegistryResetGuard::new();
+    let context_id = GoudContextId::new(307, 1);
+    let address = b"127.0.0.1";
+    let mut peer_id = 0u64;
+
+    // SAFETY: `address` is valid input and this test intentionally passes a null out pointer.
+    let rc = unsafe {
+        goud_network_connect_with_peer(
+            context_id,
+            0,
+            address.as_ptr(),
+            address.len() as i32,
+            12345,
+            std::ptr::null_mut(),
+            &mut peer_id,
+        )
+    };
+
+    assert_eq!(rc, ERR_INVALID_STATE);
+}
+
+#[test]
 fn test_overlay_handle_public_exports_set_and_clear_override() {
     let _registry = RegistryResetGuard::new();
     let context_id = GoudContextId::new(301, 1);

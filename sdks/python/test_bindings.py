@@ -172,9 +172,11 @@ def test_generated_network_wrapper_api_names():
     expected_game_methods = [
         "def network_host(self, protocol, port):",
         "def network_connect(self, protocol, address, port):",
+        "def network_connect_with_peer(self, protocol, address, port):",
         "def network_disconnect(self, handle):",
         "def network_send(self, handle, peer_id, data, channel):",
         "def network_receive(self, handle):",
+        "def network_receive_packet(self, handle):",
         "def network_poll(self, handle):",
         "def get_network_stats(self, handle):",
         "def network_peer_count(self, handle):",
@@ -188,14 +190,23 @@ def test_generated_network_wrapper_api_names():
 
     assert "return self._lib.goud_network_host(self._ctx, protocol, port)" in game_src
     assert "return self._lib.goud_network_connect(self._ctx, protocol," in game_src
+    assert "_status = self._lib.goud_network_connect_with_peer(self._ctx, protocol," in game_src
+    assert "return NetworkConnectResult(_handle.value, _peer_id.value)" in game_src
     assert "_status = self._lib.goud_network_receive(self._ctx, handle," in game_src
+    assert "return NetworkPacket(_out_peer_id.value, bytes(_out_buf[:_status]))" in game_src
     assert "_status = self._lib.goud_network_get_stats_v2(self._ctx, handle, ctypes.byref(_stats))" in game_src
     assert "raise RuntimeError(f'goud_network_get_stats_v2 failed with status {_status}')" in game_src
     assert "return NetworkStats(" in game_src
     assert "_config_ffi = _ffi_module.FfiNetworkSimulationConfig()" in game_src
     assert "return self._lib.goud_network_set_simulation(self._ctx, handle, _config_ffi)" in game_src
+    assert "class NetworkConnectResult:" in (_GENERATED_DIR / "_types.py").read_text()
+    assert "class NetworkPacket:" in (_GENERATED_DIR / "_types.py").read_text()
+    assert "class GoudContext:" in game_src
+    assert "def network_connect_with_peer(self, protocol, address, port):" in game_src
+    assert "def network_receive_packet(self, handle):" in game_src
 
     assert "_lib.goud_network_get_stats_v2.argtypes = [GoudContextId, ctypes.c_int64, ctypes.POINTER(FfiNetworkStats)]" in ffi_src
+    assert "_lib.goud_network_connect_with_peer.argtypes = [GoudContextId, ctypes.c_int32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_uint16, ctypes.POINTER(ctypes.c_int64), ctypes.POINTER(ctypes.c_uint64)]" in ffi_src
     assert "_lib.goud_network_set_overlay_handle.argtypes = [GoudContextId, ctypes.c_int64]" in ffi_src
     assert "_lib.goud_network_clear_overlay_handle.argtypes = [GoudContextId]" in ffi_src
     assert "_lib.goud_network_set_simulation.argtypes = [GoudContextId, ctypes.c_int64, FfiNetworkSimulationConfig]" in ffi_src

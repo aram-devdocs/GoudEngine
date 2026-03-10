@@ -1427,6 +1427,20 @@
       "return_type": "i64",
       "is_unsafe": true
     },
+    "goud_network_connect_with_peer": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "protocol: i32",
+        "addr_ptr: *const u8",
+        "addr_len: i32",
+        "port: u16",
+        "out_handle: *mut i64",
+        "out_peer_id: *mut u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_network_disconnect": {
       "source_file": "ffi/network.rs",
       "params": [
@@ -4232,5 +4246,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 423
+  "total_count": 424
 }

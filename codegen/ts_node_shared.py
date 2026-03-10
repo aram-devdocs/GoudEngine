@@ -44,9 +44,12 @@ IFACE_TYPES = {
     "NetworkCapabilities": "INetworkCapabilities",
     "NetworkStats": "INetworkStats",
     "NetworkSimulationConfig": "INetworkSimulationConfig",
+    "NetworkConnectResult": "INetworkConnectResult",
+    "NetworkPacket": "INetworkPacket",
     "UiStyle": "IUiStyle",
     "UiEvent": "IUiEvent",
     "UiManager": "IUiManager",
+    "GoudContext": "IGoudContext",
     "PhysicsWorld2D": "IPhysicsWorld2D",
     "PhysicsWorld3D": "IPhysicsWorld3D",
 }

@@ -1527,11 +1527,13 @@ def _gen_tool_class(tool_name: str, lines: list):
             status_struct = bool(mmap.get("status_struct"))
             entity_set = set(mmap.get("entity_params", []))
             enum_set = set((mmap.get("enum_params") or {}).keys())
+            string_set = set(mmap.get("string_params", []))
+            uses_ptr_len = _ffi_uses_ptr_len(ffi_fn)
             out_params = mmap["out_params"]
 
             for op in out_params:
                 ctype = _py_out_var_ctype(op["type"])
-                lines.append(f"        _{op['name']} = {ctype}()")
+                lines.append(f"        _{to_snake(op['name'])} = {ctype}()")
 
             ffi_parts = [] if no_ctx else ["self._ctx"]
             for p in params:
@@ -1539,12 +1541,21 @@ def _gen_tool_class(tool_name: str, lines: list):
                 sn = to_snake(pn)
                 if pn in entity_set:
                     ffi_parts.append(f"{sn}._bits")
+                elif p["type"] == "string" and pn in string_set and uses_ptr_len:
+                    lines.append(f"        _{sn}_bytes = {sn}.encode('utf-8')")
+                    lines.append(
+                        f"        _{sn}_buf = ctypes.create_string_buffer(_{sn}_bytes, len(_{sn}_bytes))"
+                    )
+                    ffi_parts.append(
+                        f"ctypes.cast(_{sn}_buf, ctypes.POINTER(ctypes.c_uint8))"
+                    )
+                    ffi_parts.append(f"len(_{sn}_bytes)")
                 elif pn in enum_set or p["type"] in schema.get("enums", {}):
                     ffi_parts.append(f"int({sn})")
                 else:
                     ffi_parts.append(sn)
             ffi_parts.extend(
-                f"ctypes.byref(_{op['name']})" for op in out_params
+                f"ctypes.byref(_{to_snake(op['name'])})" for op in out_params
             )
             if status_nullable_struct or status_struct:
                 lines.append(
@@ -1572,13 +1583,13 @@ def _gen_tool_class(tool_name: str, lines: list):
                     or op0_type.startswith("Goud")
                 )
             ):
-                src = f"_{out_params[0]['name']}"
+                src = f"_{to_snake(out_params[0]['name'])}"
                 field_args = ", ".join(
                     f"{src}.{to_snake(f['name'])}" for f in rs_fields
                 )
             else:
                 field_args = ", ".join(
-                    f"_{op['name']}.value" for op in out_params
+                    f"_{to_snake(op['name'])}.value" for op in out_params
                 )
             lines.append(f"        return {struct_name}({field_args})")
         elif "out_params" in mmap and "returns_scalar" in mmap:
@@ -1625,6 +1636,8 @@ def _gen_tool_class(tool_name: str, lines: list):
             no_ctx = mmap.get("no_context", False)
             entity_set = set(mmap.get("entity_params", []))
             enum_set = set((mmap.get("enum_params") or {}).keys())
+            returns_struct = mmap.get("returns_struct")
+            status_nullable_struct = bool(mmap.get("status_nullable_struct"))
             if not no_ctx:
                 lines.append("        _caps = _ffi_module.FfiNetworkCapabilities()")
                 lines.append(
@@ -1660,9 +1673,25 @@ def _gen_tool_class(tool_name: str, lines: list):
             lines.append(
                 f"            raise RuntimeError(f'{ffi_fn} failed with status {{_status}}')"
             )
-            lines.append("        if _status == 0:")
-            lines.append("            return b''")
-            lines.append("        return bytes(_out_buf[:_status])")
+            if returns_struct and status_nullable_struct:
+                lines.append("        if _status == 0:")
+                lines.append("            return None")
+            else:
+                lines.append("        if _status == 0:")
+                lines.append("            return b''")
+            if returns_struct:
+                rs_fields = schema["types"][returns_struct]["fields"]
+                field_args = []
+                for field in rs_fields:
+                    if field["type"] in ("bytes", "u8[]"):
+                        field_args.append("bytes(_out_buf[:_status])")
+                    elif field["name"] == "peerId":
+                        field_args.append("_out_peer_id.value")
+                    else:
+                        field_args.append(_py_field_default(field))
+                lines.append(f"        return {returns_struct}({', '.join(field_args)})")
+            else:
+                lines.append("        return bytes(_out_buf[:_status])")
         elif "enum_params" in mmap:
             enum_arg = list(mmap["enum_params"].keys())[0]
             lines.append(
@@ -1981,7 +2010,8 @@ def gen_game():
         "    FfiNetworkStats, FfiNetworkSimulationConfig, GoudRenderStats, GoudContact)",
         "from ._types import ("
         "Entity, Vec2, Color, Transform2D, Sprite, RenderStats, "
-        "UiStyle, UiEvent, NetworkStats, NetworkSimulationConfig"
+        "UiStyle, UiEvent, NetworkStats, NetworkSimulationConfig, "
+        "NetworkConnectResult, NetworkPacket, NetworkCapabilities"
         ")",
         "from ._keys import Key, MouseButton, PhysicsBackend2D",
         "",
