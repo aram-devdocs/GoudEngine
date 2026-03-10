@@ -109,7 +109,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: codegen-generated
-        path: .
+        path: sdks
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -323,7 +323,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: codegen-generated
-        path: .
+        path: sdks
 
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
@@ -372,7 +372,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: codegen-generated
-        path: .
+        path: sdks
     
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
@@ -471,7 +471,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: codegen-generated
-        path: .
+        path: sdks
 
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
@@ -558,7 +558,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: codegen-generated
-        path: .
+        path: sdks
     
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
@@ -632,7 +632,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: codegen-generated
-        path: .
+        path: sdks
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -712,7 +712,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: codegen-generated
-        path: .
+        path: sdks
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
