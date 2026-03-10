@@ -2,6 +2,11 @@ use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::audio::ERR_I32;
 use crate::ffi::context::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
 
+/// Validates a native context for audio activation.
+///
+/// Native backends do not require an activation handshake, so this intentionally
+/// stops after context validation. Browser/WebAudio activation lives in
+/// `crate::wasm::audio::activation_playback::WasmGame::audio_activate`.
 pub(crate) fn goud_audio_activate_impl(context_id: GoudContextId) -> i32 {
     if context_id == GOUD_INVALID_CONTEXT_ID {
         set_last_error(GoudError::InvalidContext);
