@@ -243,6 +243,7 @@ impl UiManager {
             .is_some_and(|n| self.node_and_ancestors_input_enabled(node_id) && n.focusable())
     }
 
+    #[cfg(feature = "native")]
     fn node_is_clickable_button(&self, node_id: UiNodeId) -> bool {
         self.nodes.get(&node_id).is_some_and(|n| {
             self.node_and_ancestors_input_enabled(node_id)

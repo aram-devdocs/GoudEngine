@@ -152,12 +152,7 @@ pub fn create_texture_entry(
             },
         ],
     });
-    TextureEntry {
-        view,
-        bind_group,
-        width,
-        height,
-    }
+    TextureEntry { bind_group }
 }
 
 // ---------------------------------------------------------------------------

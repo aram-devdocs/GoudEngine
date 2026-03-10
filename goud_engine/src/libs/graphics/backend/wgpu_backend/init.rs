@@ -133,9 +133,6 @@ impl WgpuBackend {
                 ],
             });
 
-        let device = Arc::new(device);
-        let queue = Arc::new(queue);
-
         Ok(Self {
             info,
             device,
@@ -199,12 +196,12 @@ impl WgpuBackend {
     }
 
     /// Provides access to the wgpu device (for advanced use / surface creation).
-    pub fn device(&self) -> &Arc<wgpu::Device> {
+    pub fn device(&self) -> &wgpu::Device {
         &self.device
     }
 
     /// Provides access to the wgpu queue.
-    pub fn queue(&self) -> &Arc<wgpu::Queue> {
+    pub fn queue(&self) -> &wgpu::Queue {
         &self.queue
     }
 

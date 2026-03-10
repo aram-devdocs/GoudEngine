@@ -66,6 +66,9 @@ impl AssetLoader for MeshLoader {
         _settings: &'a Self::Settings,
         context: &'a mut LoadContext,
     ) -> Result<Self::Asset, AssetLoadError> {
+        #[cfg(not(feature = "native"))]
+        let _ = bytes;
+
         let format = context.extension().and_then(MeshFormat::from_extension);
 
         match format {

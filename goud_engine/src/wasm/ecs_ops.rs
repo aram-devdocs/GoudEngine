@@ -18,10 +18,12 @@ use super::{WasmGame, WasmSprite, WasmTransform2D};
 
 #[wasm_bindgen]
 impl WasmGame {
+    /// Spawns a single empty entity and returns its packed entity bits.
     pub fn spawn_empty(&mut self) -> u64 {
         self.world.spawn_empty().to_bits()
     }
 
+    /// Spawns `count` empty entities and returns their packed entity bits.
     pub fn spawn_batch(&mut self, count: u32) -> Vec<u64> {
         self.world
             .spawn_batch(count as usize)
@@ -30,6 +32,7 @@ impl WasmGame {
             .collect()
     }
 
+    /// Despawns an entity by packed entity bits.
     pub fn despawn(&mut self, entity_bits: u64) -> bool {
         self.world.despawn(Entity::from_bits(entity_bits))
     }
@@ -46,10 +49,12 @@ impl WasmGame {
         count
     }
 
+    /// Returns the number of currently alive entities.
     pub fn entity_count(&self) -> u32 {
         self.world.entity_count() as u32
     }
 
+    /// Returns whether the entity bits identify a live entity.
     pub fn is_alive(&self, entity_bits: u64) -> bool {
         self.world.is_alive(Entity::from_bits(entity_bits))
     }
@@ -58,6 +63,7 @@ impl WasmGame {
     // Transform2D component
     // ======================================================================
 
+    /// Inserts or replaces `Transform2D` on the entity.
     pub fn add_transform2d(
         &mut self,
         entity_bits: u64,
@@ -78,6 +84,7 @@ impl WasmGame {
         );
     }
 
+    /// Gets the entity's `Transform2D` as a wasm-safe DTO.
     pub fn get_transform2d(&self, entity_bits: u64) -> Option<WasmTransform2D> {
         let entity = Entity::from_bits(entity_bits);
         self.world
@@ -91,6 +98,7 @@ impl WasmGame {
             })
     }
 
+    /// Updates an existing `Transform2D` if present.
     pub fn set_transform2d(
         &mut self,
         entity_bits: u64,
@@ -108,11 +116,13 @@ impl WasmGame {
         }
     }
 
+    /// Returns whether the entity has a `Transform2D` component.
     pub fn has_transform2d(&self, entity_bits: u64) -> bool {
         self.world
             .has::<Transform2D>(Entity::from_bits(entity_bits))
     }
 
+    /// Removes `Transform2D` from the entity.
     pub fn remove_transform2d(&mut self, entity_bits: u64) -> bool {
         self.world
             .remove::<Transform2D>(Entity::from_bits(entity_bits))
@@ -123,6 +133,7 @@ impl WasmGame {
     // Sprite component
     // ======================================================================
 
+    /// Inserts or replaces `Sprite` on the entity.
     pub fn add_sprite(
         &mut self,
         entity_bits: u64,
@@ -137,7 +148,7 @@ impl WasmGame {
         anchor_y: f32,
     ) {
         let entity = Entity::from_bits(entity_bits);
-        let handle: AssetHandle<TextureAsset> = AssetHandle::new(texture_handle as u32, 1);
+        let handle: AssetHandle<TextureAsset> = AssetHandle::new(texture_handle, 1);
         let sprite = Sprite::new(handle)
             .with_color(Color::rgba(r, g, b, a))
             .with_flip(flip_x, flip_y)
@@ -145,10 +156,11 @@ impl WasmGame {
         self.world.insert(entity, sprite);
     }
 
+    /// Gets the entity's `Sprite` as a wasm-safe DTO.
     pub fn get_sprite(&self, entity_bits: u64) -> Option<WasmSprite> {
         let entity = Entity::from_bits(entity_bits);
         self.world.get::<Sprite>(entity).map(|s| WasmSprite {
-            texture_handle: s.texture.index() as u32,
+            texture_handle: s.texture.index(),
             r: s.color.r,
             g: s.color.g,
             b: s.color.b,
@@ -160,6 +172,7 @@ impl WasmGame {
         })
     }
 
+    /// Updates an existing `Sprite` if present.
     pub fn set_sprite(
         &mut self,
         entity_bits: u64,
@@ -175,7 +188,7 @@ impl WasmGame {
     ) {
         let entity = Entity::from_bits(entity_bits);
         if let Some(s) = self.world.get_mut::<Sprite>(entity) {
-            s.texture = AssetHandle::new(texture_handle as u32, 1);
+            s.texture = AssetHandle::new(texture_handle, 1);
             s.color = Color::rgba(r, g, b, a);
             s.flip_x = flip_x;
             s.flip_y = flip_y;
@@ -183,10 +196,12 @@ impl WasmGame {
         }
     }
 
+    /// Returns whether the entity has a `Sprite` component.
     pub fn has_sprite(&self, entity_bits: u64) -> bool {
         self.world.has::<Sprite>(Entity::from_bits(entity_bits))
     }
 
+    /// Removes `Sprite` from the entity.
     pub fn remove_sprite(&mut self, entity_bits: u64) -> bool {
         self.world
             .remove::<Sprite>(Entity::from_bits(entity_bits))
@@ -197,11 +212,13 @@ impl WasmGame {
     // Name component
     // ======================================================================
 
+    /// Inserts or replaces `Name` on the entity.
     pub fn add_name(&mut self, entity_bits: u64, name: &str) {
         let entity = Entity::from_bits(entity_bits);
         self.world.insert(entity, Name::new(name));
     }
 
+    /// Gets the entity's `Name`.
     pub fn get_name(&self, entity_bits: u64) -> Option<String> {
         let entity = Entity::from_bits(entity_bits);
         self.world
@@ -209,10 +226,12 @@ impl WasmGame {
             .map(|n| n.as_str().to_string())
     }
 
+    /// Returns whether the entity has a `Name` component.
     pub fn has_name(&self, entity_bits: u64) -> bool {
         self.world.has::<Name>(Entity::from_bits(entity_bits))
     }
 
+    /// Removes `Name` from the entity.
     pub fn remove_name(&mut self, entity_bits: u64) -> bool {
         self.world
             .remove::<Name>(Entity::from_bits(entity_bits))

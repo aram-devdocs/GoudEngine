@@ -106,6 +106,7 @@ impl AudioAsset {
     }
 
     /// Returns a reference to the underlying [`AudioData`] storage.
+    #[cfg(feature = "native")]
     pub(crate) fn audio_data(&self) -> &AudioData {
         &self.data
     }

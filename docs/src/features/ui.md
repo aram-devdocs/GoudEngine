@@ -35,6 +35,29 @@ A `UiComponent` can be attached to a node to define its visual role:
 
 Components are data-only — rendering and layout are handled by the UI rendering system.
 
+## Layout
+
+The layout system supports both anchor-based and flex-style placement:
+
+- Anchors: top-left, center, bottom-right, and stretch behaviors
+- Edge spacing: margin and padding fields on nodes
+- Flex containers: row/column direction, alignment, and spacing
+- Deterministic recompute when the UI tree changes or the window size changes
+
+The implementation is in `goud_engine/src/ui/layout.rs` and `goud_engine/src/ui/manager/layout.rs`.
+
+## Input Semantics
+
+UI input is processed before game-level input polling.
+
+- Click dispatch targets the topmost interactive node under the cursor
+- Hover state emits enter/leave transitions as the pointer moves
+- Focus traversal supports Tab and Shift+Tab
+- Enter/Space activates focused buttons
+- Consumed UI input is masked so gameplay input queries do not re-handle the same event
+
+The input flow is implemented in `goud_engine/src/ui/manager/input.rs` with per-frame integration in the game loop.
+
 ## Cycle Detection
 
 `set_parent` validates the relationship before applying it. Attempting to create a circular hierarchy returns an error immediately; it does not silently corrupt the tree.

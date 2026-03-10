@@ -48,10 +48,26 @@ Three levels of volume control, applied multiplicatively:
 
 When `spatial` is enabled on an `AudioSource`:
 
-- Set listener position with `set_listener_position([x, y, z])`
+- Set listener position with `set_listener_position([x, y, z])` (or 2D helper variants)
 - Source position is read from the entity's transform
 - Two attenuation models: `InverseDistance` and `LinearDistance`
 - `max_distance` controls the cutoff range
+
+Engine-level controls include explicit listener/source placement:
+
+- `goud_audio_set_listener_position_3d()`
+- `goud_audio_set_source_position_3d()`
+- 2D convenience variants: `goud_audio_set_listener_position()` and `goud_audio_set_source_position()`
+
+## Crossfade And Mixing
+
+Batch 2.5 added timed and immediate blend controls:
+
+- `goud_audio_crossfade(from, to, mix)` for immediate two-player blend
+- `goud_audio_crossfade_to(from, asset, duration, channel)` for timed transition to new content
+- `goud_audio_mix_with(primary, asset, secondary_volume, secondary_channel)` for layered playback
+- `goud_audio_update_crossfades(delta_sec)` to advance active timed transitions
+- `goud_audio_active_crossfade_count()` to inspect active transitions
 
 ## FFI
 
@@ -59,5 +75,7 @@ Audio FFI functions are in `goud_engine/src/ffi/audio/`. Key functions:
 
 - `goud_audio_play()` / `goud_audio_stop()`
 - `goud_audio_pause()` / `goud_audio_resume()`
-- `goud_audio_set_volume()` / `goud_audio_set_channel_volume()`
-- `goud_audio_set_spatial_position()`
+- `goud_audio_set_global_volume()` / `goud_audio_set_channel_volume()`
+- `goud_audio_set_listener_position_3d()` / `goud_audio_set_source_position_3d()`
+- `goud_audio_crossfade()` / `goud_audio_crossfade_to()` / `goud_audio_mix_with()`
+- `goud_audio_update_crossfades()` / `goud_audio_active_crossfade_count()`

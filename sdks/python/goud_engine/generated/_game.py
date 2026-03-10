@@ -149,22 +149,22 @@ class GoudGame:
 
     def get_mouse_position(self):
         """Returns the mouse position relative to the window"""
-        _x = ctypes.c_float(0.0)
-        _y = ctypes.c_float(0.0)
+        _x = ctypes.c_float()
+        _y = ctypes.c_float()
         self._lib.goud_input_get_mouse_position(self._ctx, ctypes.byref(_x), ctypes.byref(_y))
         return Vec2(_x.value, _y.value)
 
     def get_mouse_delta(self):
         """Returns the mouse movement since last frame"""
-        _dx = ctypes.c_float(0.0)
-        _dy = ctypes.c_float(0.0)
+        _dx = ctypes.c_float()
+        _dy = ctypes.c_float()
         self._lib.goud_input_get_mouse_delta(self._ctx, ctypes.byref(_dx), ctypes.byref(_dy))
         return Vec2(_dx.value, _dy.value)
 
     def get_scroll_delta(self):
         """Returns the scroll wheel delta this frame"""
-        _dx = ctypes.c_float(0.0)
-        _dy = ctypes.c_float(0.0)
+        _dx = ctypes.c_float()
+        _dy = ctypes.c_float()
         self._lib.goud_input_get_scroll_delta(self._ctx, ctypes.byref(_dx), ctypes.byref(_dy))
         return Vec2(_dx.value, _dy.value)
 
@@ -492,6 +492,44 @@ class GoudGame:
         """Squared distance between two points"""
         return self._lib.goud_collision_distance_squared(self._ctx, x1, y1, x2, y2)
 
+    def physics_raycast_ex(self, origin_x, origin_y, dir_x, dir_y, max_dist, layer_mask):
+        """Casts a filtered ray and returns the full hit payload, or null when no hit is found (FFI: goud_physics_raycast_ex)"""
+        _body_handle = ctypes.c_uint64()
+        _collider_handle = ctypes.c_uint64()
+        _point_x = ctypes.c_float()
+        _point_y = ctypes.c_float()
+        _normal_x = ctypes.c_float()
+        _normal_y = ctypes.c_float()
+        _distance = ctypes.c_float()
+        _status = self._lib.goud_physics_raycast_ex(self._ctx, origin_x, origin_y, dir_x, dir_y, max_dist, layer_mask, ctypes.byref(_body_handle), ctypes.byref(_collider_handle), ctypes.byref(_point_x), ctypes.byref(_point_y), ctypes.byref(_normal_x), ctypes.byref(_normal_y), ctypes.byref(_distance))
+        if _status < 0:
+            raise RuntimeError(f'goud_physics_raycast_ex failed with status {_status}')
+        if _status == 0:
+            return None
+        return PhysicsRaycastHit2D(_body_handle.value, _collider_handle.value, _point_x.value, _point_y.value, _normal_x.value, _normal_y.value, _distance.value)
+
+    def physics_collision_events_count(self):
+        """Returns the number of queued physics collision events available to read (FFI: goud_physics_collision_events_count)"""
+        return self._lib.goud_physics_collision_events_count(self._ctx)
+
+    def physics_collision_events_read(self, index):
+        """Reads one queued physics collision event by index, or null when the index is out of range (FFI: goud_physics_collision_events_read)"""
+        _body_a = ctypes.c_uint64()
+        _body_b = ctypes.c_uint64()
+        _kind = ctypes.c_uint32()
+        _status = self._lib.goud_physics_collision_events_read(self._ctx, index, ctypes.byref(_body_a), ctypes.byref(_body_b), ctypes.byref(_kind))
+        if _status < 0:
+            raise RuntimeError(f'goud_physics_collision_events_read failed with status {_status}')
+        if _status == 0:
+            return None
+        return PhysicsCollisionEvent2D(_body_a.value, _body_b.value, _kind.value)
+
+    def physics_set_collision_callback(self, callback_ptr, user_data):
+        """Registers or clears a physics collision callback function pointer. C# callers must keep the callback delegate alive for the full registration lifetime. Python and TypeScript wrappers support clear-only (`callbackPtr = 0`, `userData = 0`) for safety. (FFI: goud_physics_set_collision_callback)"""
+        if callback_ptr not in (0, None) or user_data not in (0, None):
+            raise RuntimeError('Python cannot safely pass raw function pointers here; pass 0 to clear callback')
+        return self._lib.goud_physics_set_collision_callback(self._ctx, 0, 0)
+
     def component_register_type(self, type_id_hash, name, size, align):
         """Registers a component type for generic operations"""
         _name_bytes = name.encode('utf-8')
@@ -532,33 +570,33 @@ class GoudGame:
 
     def get_render_capabilities(self):
         """Queries the render provider's capabilities"""
-        _stats = FfiRenderCapabilities()
-        self._lib.goud_provider_render_capabilities(self._ctx, ctypes.byref(_stats))
-        return RenderCapabilities(_stats.max_texture_units, _stats.max_texture_size, _stats.supports_instancing, _stats.supports_compute, _stats.supports_msaa)
+        _out = FfiRenderCapabilities()
+        self._lib.goud_provider_render_capabilities(self._ctx, ctypes.byref(_out))
+        return RenderCapabilities(_out.max_texture_units, _out.max_texture_size, _out.supports_instancing, _out.supports_compute, _out.supports_msaa)
 
     def get_physics_capabilities(self):
         """Queries the physics provider's capabilities"""
-        _stats = FfiPhysicsCapabilities()
-        self._lib.goud_provider_physics_capabilities(self._ctx, ctypes.byref(_stats))
-        return PhysicsCapabilities(_stats.supports_continuous_collision, _stats.supports_joints, _stats.max_bodies)
+        _out = FfiPhysicsCapabilities()
+        self._lib.goud_provider_physics_capabilities(self._ctx, ctypes.byref(_out))
+        return PhysicsCapabilities(_out.supports_continuous_collision, _out.supports_joints, _out.max_bodies)
 
     def get_audio_capabilities(self):
         """Queries the audio provider's capabilities"""
-        _stats = FfiAudioCapabilities()
-        self._lib.goud_provider_audio_capabilities(self._ctx, ctypes.byref(_stats))
-        return AudioCapabilities(_stats.supports_spatial, _stats.max_channels)
+        _out = FfiAudioCapabilities()
+        self._lib.goud_provider_audio_capabilities(self._ctx, ctypes.byref(_out))
+        return AudioCapabilities(_out.supports_spatial, _out.max_channels)
 
     def get_input_capabilities(self):
         """Queries the input provider's capabilities"""
-        _stats = FfiInputCapabilities()
-        self._lib.goud_provider_input_capabilities(self._ctx, ctypes.byref(_stats))
-        return InputCapabilities(_stats.supports_gamepad, _stats.supports_touch, _stats.max_gamepads)
+        _out = FfiInputCapabilities()
+        self._lib.goud_provider_input_capabilities(self._ctx, ctypes.byref(_out))
+        return InputCapabilities(_out.supports_gamepad, _out.supports_touch, _out.max_gamepads)
 
     def get_network_capabilities(self):
         """Queries the network provider's capabilities. Throws if no network provider is installed."""
-        _stats = FfiNetworkCapabilities()
-        self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_stats))
-        return NetworkCapabilities(_stats.supports_hosting, _stats.max_connections, _stats.max_channels, _stats.max_message_size)
+        _out = FfiNetworkCapabilities()
+        self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_out))
+        return NetworkCapabilities(_out.supports_hosting, _out.max_connections, _out.max_channels, _out.max_message_size)
 
     def audio_play(self, data):
         """Plays audio from raw bytes on the default channel"""
