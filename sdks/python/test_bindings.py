@@ -193,7 +193,13 @@ def test_generated_network_wrapper_api_names():
     assert "_status = self._lib.goud_network_connect_with_peer(self._ctx, protocol," in game_src
     assert "return NetworkConnectResult(_handle.value, _peer_id.value)" in game_src
     assert "_status = self._lib.goud_network_receive(self._ctx, handle," in game_src
-    assert "return NetworkPacket(_out_peer_id.value, bytes(_out_buf[:_status]))" in game_src
+    assert (
+        "return NetworkPacket(_out_peer_id.value, bytes(_out_buf[:_status]))" in game_src
+        or (
+            "_data = bytes(_out_buf[:_status])" in game_src
+            and "return NetworkPacket(_out_peer_id.value, _data)" in game_src
+        )
+    )
     assert "_status = self._lib.goud_network_get_stats_v2(self._ctx, handle, ctypes.byref(_stats))" in game_src
     assert "raise RuntimeError(f'goud_network_get_stats_v2 failed with status {_status}')" in game_src
     assert "return NetworkStats(" in game_src
