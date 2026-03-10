@@ -2,25 +2,11 @@
 
 use crate::ui::{UiButton, UiComponent, UiImage, UiLabel, UiManager, UiSlider, UiStyleOverrides};
 
-use super::{unpack_node_id, FfiUiStyle};
-
-const ERR_NULL_MANAGER: i32 = -1;
+use super::{component_from_widget_kind, unpack_node_id, FfiUiStyle, ERR_NULL_MANAGER};
 const ERR_NULL_ARG: i32 = -2;
 const ERR_NODE_NOT_FOUND: i32 = -3;
 const ERR_INVALID_UTF8: i32 = -4;
 const ERR_UNKNOWN_WIDGET: i32 = -5;
-
-fn component_from_widget_kind(widget_kind: i32) -> Option<Option<UiComponent>> {
-    match widget_kind {
-        -1 => Some(None),
-        0 => Some(Some(UiComponent::Panel)),
-        1 => Some(Some(UiComponent::Button(UiButton::default()))),
-        2 => Some(Some(UiComponent::Label(UiLabel::default()))),
-        3 => Some(Some(UiComponent::Image(UiImage::default()))),
-        4 => Some(Some(UiComponent::Slider(UiSlider::new(0.0, 1.0, 0.0)))),
-        _ => None,
-    }
-}
 
 fn read_utf8_bytes(ptr: *const u8, len: usize) -> Result<String, i32> {
     if len == 0 {

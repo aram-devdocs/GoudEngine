@@ -81,12 +81,14 @@ export interface IUiStyle {
   widgetSpacing?: number;
 }
 
+export type UiNodeId = number | bigint;
+
 /** UI event payload returned by deterministic polling APIs. */
 export interface IUiEvent {
   eventKind: number;
-  nodeId: number;
-  previousNodeId: number;
-  currentNodeId: number;
+  nodeId: UiNodeId;
+  previousNodeId: UiNodeId;
+  currentNodeId: UiNodeId;
 }
 
 /** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
@@ -538,36 +540,36 @@ export interface IUiManager {
   /** Returns the number of live nodes in the UI tree */
   nodeCount(): number;
   /** Creates a new UI node with the given component type (0=Panel, -1=none) */
-  createNode(componentType: number): number;
+  createNode(componentType: number): UiNodeId;
   /** Removes a UI node and its subtree */
-  removeNode(nodeId: number): number;
+  removeNode(nodeId: UiNodeId): number;
   /** Sets or clears the parent of a UI node (use u64.MAX to detach) */
-  setParent(childId: number, parentId: number): number;
+  setParent(childId: UiNodeId, parentId: UiNodeId): number;
   /** Returns the parent node ID, or u64.MAX if none */
-  getParent(nodeId: number): number;
+  getParent(nodeId: UiNodeId): UiNodeId;
   /** Returns the number of children of a node */
-  getChildCount(nodeId: number): number;
+  getChildCount(nodeId: UiNodeId): number;
   /** Returns the child node ID at a given index, or u64.MAX if out of bounds */
-  getChildAt(nodeId: number, index: number): number;
+  getChildAt(nodeId: UiNodeId, index: number): UiNodeId;
   /** Sets or clears the widget component on an existing UI node */
-  setWidget(nodeId: number, widgetKind: number): number;
+  setWidget(nodeId: UiNodeId, widgetKind: number): number;
   /** Applies per-node style overrides using a C-safe style payload */
-  setStyle(nodeId: number, style: IUiStyle): number;
+  setStyle(nodeId: UiNodeId, style: IUiStyle): number;
   /** Sets or creates a label widget and updates its text */
-  setLabelText(nodeId: number, text: string): number;
+  setLabelText(nodeId: UiNodeId, text: string): number;
   /** Sets or creates a button widget and updates its enabled state */
-  setButtonEnabled(nodeId: number, enabled: boolean): number;
+  setButtonEnabled(nodeId: UiNodeId, enabled: boolean): number;
   /** Sets or creates an image widget and updates its texture path */
-  setImageTexturePath(nodeId: number, path: string): number;
+  setImageTexturePath(nodeId: UiNodeId, path: string): number;
   /** Sets or creates a slider widget and updates range/value/enabled */
-  setSlider(nodeId: number, min: number, max: number, value: number, enabled: boolean): number;
+  setSlider(nodeId: UiNodeId, min: number, max: number, value: number, enabled: boolean): number;
   /** Returns the number of UI events captured in the latest update tick */
   eventCount(): number;
   /** Reads one captured UI event by index */
   eventRead(index: number): IUiEvent | null;
-  createPanel(): number;
-  createLabel(text: string): number;
-  createButton(enabled?: boolean): number;
-  createImage(path: string): number;
-  createSlider(min: number, max: number, value: number, enabled?: boolean): number;
+  createPanel(): UiNodeId;
+  createLabel(text: string): UiNodeId;
+  createButton(enabled?: boolean): UiNodeId;
+  createImage(path: string): UiNodeId;
+  createSlider(min: number, max: number, value: number, enabled?: boolean): UiNodeId;
 }

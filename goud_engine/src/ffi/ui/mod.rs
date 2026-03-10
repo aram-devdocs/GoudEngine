@@ -26,9 +26,13 @@ use std::ffi::c_void;
 
 use crate::core::math::Color;
 use crate::ui::UiNodeId;
+pub(crate) use crate::ui::{component_from_widget_kind, map_ui_event};
 
 /// Sentinel `u64` returned when a node operation fails or no node exists.
 pub const INVALID_NODE_U64: u64 = u64::MAX;
+
+/// Shared error code for FFI functions receiving a null [`UiManager`] pointer.
+pub(super) const ERR_NULL_MANAGER: i32 = -1;
 
 /// Callback signature for UI events crossing the FFI boundary.
 pub type UiEventCallback = extern "C" fn(
@@ -119,6 +123,7 @@ pub struct FfiUiEvent {
     /// Packed node id that currently has focus/hover state, or `INVALID_NODE_U64`.
     pub current_node_id: u64,
 }
+
 
 /// Packs a [`UiNodeId`] into a `u64`.
 ///

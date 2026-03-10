@@ -121,13 +121,16 @@ def gen_interface():
     lines.append("}")
     lines.append("")
 
+    lines.append("export type UiNodeId = number | bigint;")
+    lines.append("")
+
     if schema["types"].get("UiEvent", {}).get("doc"):
         lines.append(f"/** {schema['types']['UiEvent']['doc']} */")
     lines.append("export interface IUiEvent {")
     lines.append("  eventKind: number;")
-    lines.append("  nodeId: number;")
-    lines.append("  previousNodeId: number;")
-    lines.append("  currentNodeId: number;")
+    lines.append("  nodeId: UiNodeId;")
+    lines.append("  previousNodeId: UiNodeId;")
+    lines.append("  currentNodeId: UiNodeId;")
     lines.append("}")
     lines.append("")
 
@@ -259,6 +262,17 @@ def gen_interface():
 
     if "UiManager" in schema.get("tools", {}) and "UiManager" in mapping.get("tools", {}):
         ui_tool = schema["tools"]["UiManager"]
+        ui_node_id_methods = {
+            "createNode",
+            "getParent",
+            "getChildAt",
+            "createPanel",
+            "createLabel",
+            "createButton",
+            "createImage",
+            "createSlider",
+        }
+        ui_node_id_params = {"nodeId", "childId", "parentId"}
         if ui_tool.get("doc"):
             lines.append(f"/** {ui_tool['doc']} */")
         lines.append("export interface IUiManager {")
@@ -272,18 +286,21 @@ def gen_interface():
             for p in params:
                 pn = to_camel(p["name"])
                 pt = p["type"]
-                if pt == "UiStyle":
+                if pn in ui_node_id_params:
+                    ps.append(f"{pn}: UiNodeId")
+                elif pt == "UiStyle":
                     ps.append(f"{pn}: IUiStyle")
                 elif pt in schema.get("enums", {}):
                     ps.append(f"{pn}: number")
                 else:
                     ps.append(f"{pn}: {ts_iface_type(pt)}")
-            lines.append(f"  {mn}({', '.join(ps)}): {ts_iface_type(ret)};")
-        lines.append("  createPanel(): number;")
-        lines.append("  createLabel(text: string): number;")
-        lines.append("  createButton(enabled?: boolean): number;")
-        lines.append("  createImage(path: string): number;")
-        lines.append("  createSlider(min: number, max: number, value: number, enabled?: boolean): number;")
+            ret_type = "UiNodeId" if mn in ui_node_id_methods else ts_iface_type(ret)
+            lines.append(f"  {mn}({', '.join(ps)}): {ret_type};")
+        lines.append("  createPanel(): UiNodeId;")
+        lines.append("  createLabel(text: string): UiNodeId;")
+        lines.append("  createButton(enabled?: boolean): UiNodeId;")
+        lines.append("  createImage(path: string): UiNodeId;")
+        lines.append("  createSlider(min: number, max: number, value: number, enabled?: boolean): UiNodeId;")
         lines.append("}")
         lines.append("")
 

@@ -4,11 +4,10 @@ use std::collections::HashMap;
 use std::ffi::c_void;
 use std::sync::{Mutex, OnceLock};
 
-use crate::ui::{UiEvent, UiManager};
+use crate::ui::UiManager;
 
-use super::{pack_node_id, FfiUiEvent, UiEventCallback, INVALID_NODE_U64};
+use super::{FfiUiEvent, UiEventCallback, map_ui_event, ERR_NULL_MANAGER};
 
-const ERR_NULL_MANAGER: i32 = -1;
 const ERR_NULL_OUT: i32 = -2;
 
 #[derive(Clone, Copy)]
@@ -27,40 +26,20 @@ fn event_snapshots() -> &'static Mutex<HashMap<usize, Vec<FfiUiEvent>>> {
     SNAPSHOTS.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-fn map_event(event: UiEvent) -> FfiUiEvent {
-    match event {
-        UiEvent::HoverEnter(node) => FfiUiEvent {
-            event_kind: 0,
-            node_id: pack_node_id(node),
-            previous_node_id: INVALID_NODE_U64,
-            current_node_id: INVALID_NODE_U64,
-        },
-        UiEvent::HoverLeave(node) => FfiUiEvent {
-            event_kind: 1,
-            node_id: pack_node_id(node),
-            previous_node_id: INVALID_NODE_U64,
-            current_node_id: INVALID_NODE_U64,
-        },
-        UiEvent::FocusChanged { previous, current } => FfiUiEvent {
-            event_kind: 2,
-            node_id: current
-                .or(previous)
-                .map(pack_node_id)
-                .unwrap_or(INVALID_NODE_U64),
-            previous_node_id: previous.map(pack_node_id).unwrap_or(INVALID_NODE_U64),
-            current_node_id: current.map(pack_node_id).unwrap_or(INVALID_NODE_U64),
-        },
-        UiEvent::Click(node) => FfiUiEvent {
-            event_kind: 3,
-            node_id: pack_node_id(node),
-            previous_node_id: INVALID_NODE_U64,
-            current_node_id: INVALID_NODE_U64,
-        },
-    }
-}
-
 pub(super) fn capture_and_dispatch_events(manager_key: usize, manager: &mut UiManager) {
-    let ffi_events: Vec<FfiUiEvent> = manager.take_events().into_iter().map(map_event).collect();
+    let ffi_events: Vec<FfiUiEvent> = manager
+        .take_events()
+        .into_iter()
+        .map(|event| {
+            let mapped = map_ui_event(event);
+            FfiUiEvent {
+                event_kind: mapped.event_kind,
+                node_id: mapped.node_id,
+                previous_node_id: mapped.previous_node_id,
+                current_node_id: mapped.current_node_id,
+            }
+        })
+        .collect();
 
     if let Ok(mut snapshots) = event_snapshots().lock() {
         snapshots.insert(manager_key, ffi_events.clone());
@@ -101,6 +80,16 @@ pub(super) fn unregister_manager(manager_key: usize) {
 ///
 /// Pass `None` as callback to clear it.
 ///
+/// # Safety
+///
+/// This function is `extern "C"` and accepts raw pointers:
+/// * `mgr` must be a valid pointer to a live `UiManager` for the duration of
+///   the call.
+/// * If `callback` is `Some`, `user_data` must be a valid, non-null pointer whose
+///   pointee remains valid and properly aligned for reads and writes by that
+///   callback until the callback is cleared by passing `None` (or the manager is
+///   dropped). If callback is `None`, `user_data` is ignored.
+/// 
 /// # Returns
 /// * `0` on success
 /// * `-1` if manager is null

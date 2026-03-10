@@ -4,10 +4,13 @@
 //! for creating UI nodes, tweaking style/widget properties, and reading events.
 
 use crate::core::math::Color;
+use crate::ui::map_ui_event;
 use crate::ui::{
-    UiButton, UiComponent, UiEvent, UiImage, UiLabel, UiManager, UiNodeId, UiSlider,
+    UiButton, UiComponent, UiImage, UiLabel, UiManager, UiNodeId, UiSlider,
     UiStyleOverrides,
 };
+use crate::ui::{component_from_widget_kind};
+const INVALID_NODE_U64: u64 = u64::MAX;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -60,34 +63,12 @@ impl WasmUiManager {
             .inner
             .take_events()
             .into_iter()
-            .map(|event| match event {
-                UiEvent::HoverEnter(node) => WasmUiEvent {
-                    event_kind: 0,
-                    node_id: pack_ui_node_id(node),
-                    previous_node_id: u64::MAX,
-                    current_node_id: u64::MAX,
-                },
-                UiEvent::HoverLeave(node) => WasmUiEvent {
-                    event_kind: 1,
-                    node_id: pack_ui_node_id(node),
-                    previous_node_id: u64::MAX,
-                    current_node_id: u64::MAX,
-                },
-                UiEvent::FocusChanged { previous, current } => WasmUiEvent {
-                    event_kind: 2,
-                    node_id: current
-                        .or(previous)
-                        .map(pack_ui_node_id)
-                        .unwrap_or(u64::MAX),
-                    previous_node_id: previous.map(pack_ui_node_id).unwrap_or(u64::MAX),
-                    current_node_id: current.map(pack_ui_node_id).unwrap_or(u64::MAX),
-                },
-                UiEvent::Click(node) => WasmUiEvent {
-                    event_kind: 3,
-                    node_id: pack_ui_node_id(node),
-                    previous_node_id: u64::MAX,
-                    current_node_id: u64::MAX,
-                },
+            .map(map_ui_event)
+            .map(|event| WasmUiEvent {
+                event_kind: event.event_kind,
+                node_id: event.node_id,
+                previous_node_id: event.previous_node_id,
+                current_node_id: event.current_node_id,
             })
             .collect();
     }
@@ -104,14 +85,8 @@ impl WasmUiManager {
 
     /// Creates a UI node with the given component type code.
     pub fn create_node(&mut self, component_type: i32) -> u64 {
-        let component = match component_type {
-            -1 => None,
-            0 => Some(UiComponent::Panel),
-            1 => Some(UiComponent::Button(UiButton::default())),
-            2 => Some(UiComponent::Label(UiLabel::default())),
-            3 => Some(UiComponent::Image(UiImage::default())),
-            4 => Some(UiComponent::Slider(UiSlider::new(0.0, 1.0, 0.0))),
-            _ => return u64::MAX,
+        let Some(component) = component_from_widget_kind(component_type) else {
+            return INVALID_NODE_U64;
         };
         pack_ui_node_id(self.inner.create_node(component))
     }
@@ -167,14 +142,8 @@ impl WasmUiManager {
 
     /// Sets or clears the node widget component by widget-kind code.
     pub fn set_widget(&mut self, node_id: u64, widget_kind: i32) -> i32 {
-        let component = match widget_kind {
-            -1 => None,
-            0 => Some(UiComponent::Panel),
-            1 => Some(UiComponent::Button(UiButton::default())),
-            2 => Some(UiComponent::Label(UiLabel::default())),
-            3 => Some(UiComponent::Image(UiImage::default())),
-            4 => Some(UiComponent::Slider(UiSlider::new(0.0, 1.0, 0.0))),
-            _ => return -5,
+        let Some(component) = component_from_widget_kind(widget_kind) else {
+            return -5;
         };
         let Some(node) = self.inner.get_node_mut(unpack_ui_node_id(node_id)) else {
             return -3;

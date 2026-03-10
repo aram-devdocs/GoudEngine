@@ -62,8 +62,18 @@ public class UiManagerApiTests
     public void Generated_UiManager_Source_Uses_Managed_String_Marshalling()
     {
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../"));
-        string uiManagerSrc = File.ReadAllText(Path.Combine(root, "sdks/csharp/generated/Core/UiManager.g.cs"));
-        string uiStyleSrc = File.ReadAllText(Path.Combine(root, "sdks/csharp/generated/Math/UiStyle.g.cs"));
+        string uiManagerPath = Path.Combine(root, "sdks/csharp/generated/Core/UiManager.g.cs");
+        string uiStylePath = Path.Combine(root, "sdks/csharp/generated/Math/UiStyle.g.cs");
+
+        Assert.True(
+            File.Exists(uiManagerPath),
+            $"Expected generated UiManager source at '{uiManagerPath}'. Check the csharp test root resolution from '{root}'.");
+        Assert.True(
+            File.Exists(uiStylePath),
+            $"Expected generated UiStyle source at '{uiStylePath}'. Check the csharp test root resolution from '{root}'.");
+
+        string uiManagerSrc = File.ReadAllText(uiManagerPath);
+        string uiStyleSrc = File.ReadAllText(uiStylePath);
 
         Assert.Contains("string? FontFamily;", uiStyleSrc);
         Assert.Contains("string? TexturePath;", uiStyleSrc);

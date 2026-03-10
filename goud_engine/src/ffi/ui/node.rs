@@ -8,7 +8,7 @@
 //! All node IDs cross the FFI boundary as `u64` values. See the
 //! [parent module](super) for the packing layout.
 
-use crate::ui::{UiButton, UiComponent, UiImage, UiLabel, UiManager, UiSlider};
+use crate::ui::{UiComponent, UiManager};
 
 use super::{pack_node_id, unpack_node_id, INVALID_NODE_U64};
 
@@ -22,14 +22,9 @@ use super::{pack_node_id, unpack_node_id, INVALID_NODE_U64};
 /// * `-1` -> `None` (no component)
 /// * anything else -> `None` (no component, logs a warning)
 fn component_from_ffi(component_type: i32) -> Option<UiComponent> {
-    match component_type {
-        0 => Some(UiComponent::Panel),
-        1 => Some(UiComponent::Button(UiButton::default())),
-        2 => Some(UiComponent::Label(UiLabel::default())),
-        3 => Some(UiComponent::Image(UiImage::default())),
-        4 => Some(UiComponent::Slider(UiSlider::new(0.0, 1.0, 0.0))),
-        -1 => None,
-        _ => {
+    match super::component_from_widget_kind(component_type) {
+        Some(component) => component,
+        None => {
             log::warn!("Unknown component type: {}", component_type);
             None
         }

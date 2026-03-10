@@ -7,12 +7,12 @@ import {
   type GameConfig,
 } from '../../../index';
 
-import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';
+import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';
 import { PhysicsBackend2D } from '../types/input.g.js';
 import { Color, Vec2, Vec3 } from '../types/math.g.js';
 export { Color, Vec2, Vec3 } from '../types/math.g.js';
 export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';
-export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';
+export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';
 
 /** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
 export class GoudGame implements IGoudGame {
@@ -1126,6 +1126,10 @@ export class EngineConfig implements IEngineConfig {
 
 }
 
+function toNativeUiNodeId(nodeId: UiNodeId): number {
+  return typeof nodeId === 'bigint' ? Number(nodeId) : nodeId;
+}
+
 export class UiManager implements IUiManager {
   private native: NativeUiManager;
 
@@ -1149,63 +1153,63 @@ export class UiManager implements IUiManager {
   }
 
   /** Creates a new UI node with the given component type (0=Panel, -1=none) */
-  createNode(componentType: number): number {
+  createNode(componentType: number): UiNodeId {
     return this.native.createNode(componentType);
   }
 
   /** Removes a UI node and its subtree */
-  removeNode(nodeId: number): number {
-    return this.native.removeNode(nodeId);
+  removeNode(nodeId: UiNodeId): number {
+    return this.native.removeNode(toNativeUiNodeId(nodeId));
   }
 
   /** Sets or clears the parent of a UI node (use u64.MAX to detach) */
-  setParent(childId: number, parentId: number): number {
-    return this.native.setParent(childId, parentId);
+  setParent(childId: UiNodeId, parentId: UiNodeId): number {
+    return this.native.setParent(toNativeUiNodeId(childId), toNativeUiNodeId(parentId));
   }
 
   /** Returns the parent node ID, or u64.MAX if none */
-  getParent(nodeId: number): number {
-    return this.native.getParent(nodeId);
+  getParent(nodeId: UiNodeId): UiNodeId {
+    return this.native.getParent(toNativeUiNodeId(nodeId)) as UiNodeId;
   }
 
   /** Returns the number of children of a node */
-  getChildCount(nodeId: number): number {
-    return this.native.getChildCount(nodeId);
+  getChildCount(nodeId: UiNodeId): number {
+    return this.native.getChildCount(toNativeUiNodeId(nodeId));
   }
 
   /** Returns the child node ID at a given index, or u64.MAX if out of bounds */
-  getChildAt(nodeId: number, index: number): number {
-    return this.native.getChildAt(nodeId, index);
+  getChildAt(nodeId: UiNodeId, index: number): UiNodeId {
+    return this.native.getChildAt(toNativeUiNodeId(nodeId), index) as UiNodeId;
   }
 
   /** Sets or clears the widget component on an existing UI node */
-  setWidget(nodeId: number, widgetKind: number): number {
-    return this.native.setWidget(nodeId, widgetKind);
+  setWidget(nodeId: UiNodeId, widgetKind: number): number {
+    return this.native.setWidget(toNativeUiNodeId(nodeId), widgetKind);
   }
 
   /** Applies per-node style overrides using a C-safe style payload */
-  setStyle(nodeId: number, style: IUiStyle): number {
-    return this.native.setStyle(nodeId, style);
+  setStyle(nodeId: UiNodeId, style: IUiStyle): number {
+    return this.native.setStyle(toNativeUiNodeId(nodeId), style);
   }
 
   /** Sets or creates a label widget and updates its text */
-  setLabelText(nodeId: number, text: string): number {
-    return this.native.setLabelText(nodeId, text);
+  setLabelText(nodeId: UiNodeId, text: string): number {
+    return this.native.setLabelText(toNativeUiNodeId(nodeId), text);
   }
 
   /** Sets or creates a button widget and updates its enabled state */
-  setButtonEnabled(nodeId: number, enabled: boolean): number {
-    return this.native.setButtonEnabled(nodeId, enabled);
+  setButtonEnabled(nodeId: UiNodeId, enabled: boolean): number {
+    return this.native.setButtonEnabled(toNativeUiNodeId(nodeId), enabled);
   }
 
   /** Sets or creates an image widget and updates its texture path */
-  setImageTexturePath(nodeId: number, path: string): number {
-    return this.native.setImageTexturePath(nodeId, path);
+  setImageTexturePath(nodeId: UiNodeId, path: string): number {
+    return this.native.setImageTexturePath(toNativeUiNodeId(nodeId), path);
   }
 
   /** Sets or creates a slider widget and updates range/value/enabled */
-  setSlider(nodeId: number, min: number, max: number, value: number, enabled: boolean): number {
-    return this.native.setSlider(nodeId, min, max, value, enabled);
+  setSlider(nodeId: UiNodeId, min: number, max: number, value: number, enabled: boolean): number {
+    return this.native.setSlider(toNativeUiNodeId(nodeId), min, max, value, enabled);
   }
 
   /** Returns the number of UI events captured in the latest update tick */
@@ -1218,29 +1222,29 @@ export class UiManager implements IUiManager {
     return this.native.eventRead(index) as unknown as IUiEvent | null;
   }
 
-  createPanel(): number {
+  createPanel(): UiNodeId {
     return this.createNode(0);
   }
 
-  createLabel(text: string): number {
+  createLabel(text: string): UiNodeId {
     const nodeId = this.createNode(2);
     this.setLabelText(nodeId, text);
     return nodeId;
   }
 
-  createButton(enabled: boolean = true): number {
+  createButton(enabled: boolean = true): UiNodeId {
     const nodeId = this.createNode(1);
     this.setButtonEnabled(nodeId, enabled);
     return nodeId;
   }
 
-  createImage(path: string): number {
+  createImage(path: string): UiNodeId {
     const nodeId = this.createNode(3);
     this.setImageTexturePath(nodeId, path);
     return nodeId;
   }
 
-  createSlider(min: number, max: number, value: number, enabled: boolean = true): number {
+  createSlider(min: number, max: number, value: number, enabled: boolean = true): UiNodeId {
     const nodeId = this.createNode(4);
     this.setSlider(nodeId, min, max, value, enabled);
     return nodeId;
