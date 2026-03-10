@@ -27,6 +27,11 @@ namespace GoudEngine
         public NetworkEndpoint Host(NetworkProtocol protocol, ushort port)
         {
             var handle = RunHost((int)protocol, port);
+            if (handle < 0)
+            {
+                throw new InvalidOperationException($"NetworkHost failed with handle {handle}.");
+            }
+
             return new NetworkEndpoint(_game, _context, handle, defaultPeerId: null);
         }
 

@@ -28,7 +28,12 @@ export class NetworkManager {
   }
 
   host(protocol: number, port: number): NetworkEndpoint {
-    return new NetworkEndpoint(this.context, this.context.networkHost(protocol, port));
+    const handle = this.context.networkHost(protocol, port);
+    if (handle < 0) {
+      throw new Error(`networkHost failed with handle ${handle}`);
+    }
+
+    return new NetworkEndpoint(this.context, handle);
   }
 
   connect(protocol: number, address: string, port: number): NetworkEndpoint {

@@ -277,8 +277,8 @@ def test_handwritten_network_wrapper_send_contract_source():
         "send() must fail clearly when no default peer ID exists"
     assert "return self.send_to(self.default_peer_id, data, channel)" in networking_src, \
         "send() must route through send_to() using default peer ID"
-    assert "raise RuntimeError(f\"goud_network_host failed with handle {handle}\")" not in networking_src, \
-        "host() should return an endpoint directly for parity with C# and TypeScript"
+    assert "raise RuntimeError(f\"network_host failed with handle {handle}\")" in networking_src, \
+        "host() must fail clearly when the backend returns a negative handle"
 
     networking_mod = _load_module("_networking", networking_path)
     NetworkManager = networking_mod.NetworkManager
@@ -383,11 +383,12 @@ def test_handwritten_network_wrapper_send_contract_source():
         def network_host(self, protocol, port):
             return -17
 
-    negative_host_endpoint = NetworkManager(_NegativeHostBackend()).host(2, 40001)
-    assert negative_host_endpoint.handle == -17, \
-        "host() should preserve the raw handle instead of raising on negative values"
-    assert negative_host_endpoint.default_peer_id is None, \
-        "host() should not seed a default peer ID for negative handles either"
+    try:
+        NetworkManager(_NegativeHostBackend()).host(2, 40001)
+        assert False, "host() must raise when the backend returns a negative handle"
+    except RuntimeError as exc:
+        assert str(exc) == "network_host failed with handle -17", \
+            "host() should surface the negative handle clearly"
 
     print("  Handwritten network wrapper send() contract tests passed")
     return True

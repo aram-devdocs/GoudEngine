@@ -174,4 +174,23 @@ describe('Generated network SDK surface', () => {
     assert.equal(typeof nodeSdk.NetworkEndpoint, 'function');
     assert.equal(typeof nodeSdk.GoudContext, 'function');
   });
+
+  it('throws clearly when the handwritten host wrapper receives a negative handle', () => {
+    const sharedSrc = fs.readFileSync(sharedWrapperPath, 'utf8');
+    const mainSdk = require(path.join(repoRoot, 'dist', 'index.js'));
+
+    assert.ok(sharedSrc.includes('if (handle < 0) {'));
+    assert.ok(sharedSrc.includes('throw new Error(`networkHost failed with handle ${handle}`);'));
+
+    const manager = new mainSdk.NetworkManager({
+      networkHost() {
+        return -17;
+      },
+    });
+
+    assert.throws(
+      () => manager.host(2, 40001),
+      /networkHost failed with handle -17/,
+    );
+  });
 });

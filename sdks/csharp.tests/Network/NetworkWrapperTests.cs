@@ -1,9 +1,11 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using GoudEngine;
 using Xunit;
@@ -64,6 +66,19 @@ public class NetworkWrapperTests
         );
 
         _ = Invoke(endpoint, "Disconnect");
+    }
+
+    [Fact]
+    public void Host_Source_Guards_Against_Negative_Host_Handle()
+    {
+        var source = ReadNetworkManagerSource();
+
+        Assert.Contains("if (handle < 0)", source, StringComparison.Ordinal);
+        Assert.Contains(
+            "throw new InvalidOperationException($\"NetworkHost failed with handle {handle}.\");",
+            source,
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
@@ -144,6 +159,22 @@ public class NetworkWrapperTests
         }
 
         throw new Xunit.Sdk.XunitException(message);
+    }
+
+    private static string ReadNetworkManagerSource([CallerFilePath] string sourceFile = "")
+    {
+        var repoRoot = Path.GetFullPath(
+            Path.Combine(Path.GetDirectoryName(sourceFile)!, "..", "..", "..")
+        );
+        var sourcePath = Path.Combine(repoRoot, "sdks", "csharp", "NetworkManager.cs");
+        if (File.Exists(sourcePath))
+        {
+            return File.ReadAllText(sourcePath);
+        }
+
+        throw new FileNotFoundException(
+            $"Could not locate handwritten C# wrapper source at {sourcePath}"
+        );
     }
 
     private static void WaitForConnectedPeers(object first, object second)

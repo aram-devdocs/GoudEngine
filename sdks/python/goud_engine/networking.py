@@ -62,6 +62,8 @@ class NetworkManager:
 
     def host(self, protocol, port):
         handle = self._backend.network_host(protocol, port)
+        if handle < 0:
+            raise RuntimeError(f"network_host failed with handle {handle}")
         return NetworkEndpoint(self._backend, handle, None)
 
     def connect(self, protocol, address, port):
