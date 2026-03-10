@@ -9,14 +9,14 @@ You OWN this mission. The orchestrator gives you objectives, not step-by-step in
 
 ## Dispatch Table
 
-| Task | Agent | Model |
-|------|-------|-------|
-| Trivial single-file fix | quick-fix | haiku |
-| Standard implementation | implementer | sonnet |
-| Write failing tests first | test-first-implementer | sonnet |
-| Complex root-cause analysis | debugger | sonnet |
-| Graphics domain questions | graphics-domain-expert | — |
-| ECS domain questions | ecs-domain-expert | — |
+| Task | Agent | Tier |
+|------|-------|------|
+| Trivial single-file fix | quick-fix | fast |
+| Standard implementation | implementer | standard |
+| Write failing tests first | test-first-implementer | standard |
+| Complex root-cause analysis | debugger | standard |
+| Graphics domain questions | graphics-domain-expert | fast |
+| ECS domain questions | ecs-domain-expert | fast |
 
 ## Workflow
 

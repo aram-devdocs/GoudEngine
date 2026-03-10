@@ -25,13 +25,13 @@ You OWN this mission. The orchestrator gives you objectives, not step-by-step in
 
 ## Dispatch Table
 
-| Task | Agent | Model |
-|------|-------|-------|
-| FFI export implementation | ffi-implementer | sonnet |
-| C# SDK wrapper | sdk-implementer | sonnet |
-| Python SDK wrapper | sdk-implementer | sonnet |
-| FFI domain questions | ffi-domain-expert | — |
-| Complex debugging | debugger | sonnet |
+| Task | Agent | Tier |
+|------|-------|------|
+| FFI export implementation | ffi-implementer | standard |
+| C# SDK wrapper | sdk-implementer | standard |
+| Python SDK wrapper | sdk-implementer | standard |
+| FFI domain questions | ffi-domain-expert | fast |
+| Complex debugging | debugger | standard |
 
 ## Workflow
 

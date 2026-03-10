@@ -32,7 +32,7 @@ Classify the work:
 - **Engine-only**: Dispatch engine-lead
 - **FFI + SDK**: Dispatch integration-lead (or engine-lead + integration-lead if Rust core also changes)
 - **Cross-cutting**: Dispatch engine-lead AND integration-lead in parallel, then quality-lead for review
-- **Trivial fix**: Dispatch quick-fix (haiku) directly
+- **Trivial fix**: Dispatch quick-fix directly
 
 ### 2. Dispatch Team Leads
 
@@ -97,11 +97,13 @@ python3 sdks/python/test_bindings.py    # Python SDK tests
 
 ## Model Tier Selection
 
-| Tier | Model | Agents |
-|------|-------|--------|
-| Quick | haiku | quick-fix |
-| Standard | sonnet | implementer, ffi-implementer, sdk-implementer, test-first-implementer, spec-reviewer, code-quality-reviewer, architecture-validator, test-runner |
-| Complex | opus | engine-lead, integration-lead, quality-lead, security-auditor, debugger |
+Provider-specific model assignments live in `.agents/agent-catalog.toml` and the generated wrappers.
+
+| Tier | Agents | Use For |
+|------|--------|---------|
+| Fast | quick-fix, architecture-validator, explorer, monitor, domain experts | Single-file fixes, read-heavy scans, lightweight validation |
+| Standard | implementer, ffi-implementer, sdk-implementer, test-first-implementer, spec-reviewer, code-quality-reviewer, test-runner, debugger, worker, documentation-writer | Implementation, reviews, testing, and debugging |
+| High | engine-lead, integration-lead, quality-lead, security-auditor, default | Sub-orchestration, security review, and highest-judgment work |
 
 ## Governance (Hook-Enforced)
 

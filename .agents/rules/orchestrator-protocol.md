@@ -13,22 +13,22 @@ You are the orchestrator. You own ALL code in this repository. Nothing is out of
 ## Three-Tier Agent Hierarchy
 
 ```
-Tier 0: ORCHESTRATOR (root session, opus)
-  |-- engine-lead (opus) -- Rust core, graphics, ECS, assets
-  |   |-- implementer (sonnet)
-  |   |-- test-first-implementer (sonnet)
-  |   |-- debugger (sonnet)
-  |   +-- quick-fix (haiku)
-  |-- integration-lead (opus) -- FFI, C# SDK, Python SDK, TypeScript SDK
-  |   |-- ffi-implementer (sonnet)
-  |   |-- sdk-implementer (sonnet)
-  |   +-- debugger (sonnet)
-  +-- quality-lead (opus) -- reviews, testing, validation
-      |-- spec-reviewer (sonnet)
-      |-- code-quality-reviewer (sonnet)
-      |-- architecture-validator (haiku)
-      |-- security-auditor (opus)
-      +-- test-runner (sonnet)
+Tier 0: ORCHESTRATOR (root session)
+  |-- engine-lead -- Rust core, graphics, ECS, assets
+  |   |-- implementer
+  |   |-- test-first-implementer
+  |   |-- debugger
+  |   +-- quick-fix
+  |-- integration-lead -- FFI, C# SDK, Python SDK, TypeScript SDK
+  |   |-- ffi-implementer
+  |   |-- sdk-implementer
+  |   +-- debugger
+  +-- quality-lead -- reviews, testing, validation
+      |-- spec-reviewer
+      |-- code-quality-reviewer
+      |-- architecture-validator
+      |-- security-auditor
+      +-- test-runner
 ```
 
 ## Delegation Dispatch
@@ -43,15 +43,15 @@ Tier 0: ORCHESTRATOR (root session, opus)
 
 ## Model Tier Strategy
 
-Select the right model for the right task:
+Select the right tier for the task. Provider-specific model assignments live in `.agents/agent-catalog.toml` and the generated wrappers.
 
-| Tier | Model | Use For |
-|------|-------|---------|
-| Quick | haiku | Single-file fixes, lightweight validation, read-heavy scans |
-| Standard | sonnet | Implementation, reviews, testing, and debugging |
-| Complex | opus | Security audits and sub-orchestration |
+| Tier | Use For |
+|------|---------|
+| Fast | Single-file fixes, lightweight validation, read-heavy scans |
+| Standard | Implementation, reviews, testing, and debugging |
+| High | Sub-orchestration, security audits, and highest-judgment work |
 
-Team leads (engine-lead, integration-lead, quality-lead) always run on opus because they manage other agents.
+Team leads (engine-lead, integration-lead, quality-lead) stay in the high tier because they manage other agents.
 
 ## Mandatory Skills
 
