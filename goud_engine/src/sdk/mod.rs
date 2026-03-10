@@ -75,7 +75,6 @@ pub mod game;
 pub mod game_config;
 #[cfg(feature = "native")]
 pub mod input;
-pub mod network_debug_overlay;
 #[cfg(feature = "native")]
 pub mod rendering;
 #[cfg(feature = "native")]
