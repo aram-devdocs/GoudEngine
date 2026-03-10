@@ -55,11 +55,11 @@ jobs:
 
     - name: Run SDK codegen (generates .g.rs files needed by workspace)
       run: |
-        python3 codegen/validate_coverage.py
-        python3 codegen/gen_csharp.py
-        python3 codegen/gen_python.py
-        python3 codegen/gen_ts_node.py
-        python3 codegen/gen_ts_web.py
+        python codegen/validate_coverage.py
+        python codegen/gen_csharp.py
+        python codegen/gen_python.py
+        python codegen/gen_ts_node.py
+        python codegen/gen_ts_web.py
 
     - name: Quick Rust check
       run: cargo check --workspace --all-targets
@@ -98,6 +98,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ matrix.rust }}
+        components: clippy
     
     - name: Set up sccache
       uses: mozilla-actions/sccache-action@v0.0.9
@@ -115,6 +116,11 @@ jobs:
 
     - name: Build
       run: cargo build --verbose
+
+    - name: Run clippy (Windows stable)
+      if: matrix.rust == 'stable' && matrix.os == 'windows-latest'
+      run: cargo clippy --all-targets --features native -- -D warnings
+      shell: bash
 
     - name: Run tests
       run: cargo test --verbose -- --nocapture
@@ -252,16 +258,16 @@ jobs:
 
     - name: Run all codegen scripts
       run: |
-        python3 codegen/gen_csharp.py
-        python3 codegen/gen_python.py
-        python3 codegen/gen_ts_node.py
-        python3 codegen/gen_ts_web.py
+        python codegen/gen_csharp.py
+        python codegen/gen_python.py
+        python codegen/gen_ts_node.py
+        python codegen/gen_ts_web.py
         cargo fmt --all
 
     - name: Validate codegen
       run: |
-        python3 codegen/validate.py
-        python3 codegen/validate_coverage.py
+        python codegen/validate.py
+        python codegen/validate_coverage.py
 
     - name: Lint layer dependencies
       run: cargo run -p lint-layers
@@ -363,13 +369,13 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Download native release artifact
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v4
       with:
         name: native-release-${{ matrix.os }}
         path: native-release
 
     - name: Generate Python SDK
-      run: python3 codegen/gen_python.py
+      run: python codegen/gen_python.py
     
     - name: Set up library path (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
@@ -459,7 +465,7 @@ jobs:
         python-version: '3.11'
 
     - name: Download native release artifact
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v4
       with:
         name: native-release-${{ matrix.os }}
         path: native-release
@@ -523,6 +529,7 @@ jobs:
   integration-build:
     name: Integration Build Check
     runs-on: ${{ matrix.os }}
+    # Intentionally parallelized for faster feedback; ci-success still gates SDK jobs.
     needs: [preflight]
     env:
       RUSTC_WRAPPER: sccache
@@ -564,11 +571,11 @@ jobs:
 
     - name: Run SDK codegen
       run: |
-        python3 codegen/validate_coverage.py
-        python3 codegen/gen_csharp.py
-        python3 codegen/gen_python.py
-        python3 codegen/gen_ts_node.py
-        python3 codegen/gen_ts_web.py
+        python codegen/validate_coverage.py
+        python codegen/gen_csharp.py
+        python codegen/gen_python.py
+        python codegen/gen_ts_node.py
+        python codegen/gen_ts_web.py
 
     - name: Run full build script
       run: |
@@ -744,8 +751,8 @@ jobs:
 
     - name: Generate web TypeScript SDK
       run: |
-        python3 codegen/gen_ts_web.py
-        python3 codegen/gen_ts_node.py
+        python codegen/gen_ts_web.py
+        python codegen/gen_ts_node.py
 
     - name: Build web TypeScript
       working-directory: sdks/typescript
