@@ -10,7 +10,7 @@ The networking SDK API is wrapper-based and sits on top of generated low-level b
 
 `connect()` stores the provider-assigned peer ID on the endpoint. Client code can call `send(...)` without passing a peer ID each time. Host endpoints do not have a default peer, so they reply with `send_to(...)` / `SendTo(...)`.
 
-## C#
+## CSharp
 
 ```csharp
 using System.Text;
