@@ -211,8 +211,11 @@ def test_generated_network_wrapper_api_names():
     assert "return NetworkStats(" in game_src
     assert "_config_ffi = _ffi_module.FfiNetworkSimulationConfig()" in game_src
     assert "return self._lib.goud_network_set_simulation(self._ctx, handle, _config_ffi)" in game_src
-    assert "class NetworkConnectResult:" in (_GENERATED_DIR / "_types.py").read_text()
-    assert "class NetworkPacket:" in (_GENERATED_DIR / "_types.py").read_text()
+    types_src = (_GENERATED_DIR / "_types.py").read_text()
+    assert "class NetworkConnectResult:" in types_src
+    assert "class NetworkPacket:" in types_src
+    assert "def __init__(self, peer_id: int = 0, data: bytes = b''):" in types_src, \
+        "NetworkPacket.data should generate as bytes-compatible storage"
     assert "class GoudContext:" in game_src
     assert "def network_connect_with_peer(self, protocol, address, port):" in game_src
     assert "def network_receive_packet(self, handle):" in game_src
@@ -274,6 +277,8 @@ def test_handwritten_network_wrapper_send_contract_source():
         "send() must fail clearly when no default peer ID exists"
     assert "return self.send_to(self.default_peer_id, data, channel)" in networking_src, \
         "send() must route through send_to() using default peer ID"
+    assert "raise RuntimeError(f\"goud_network_host failed with handle {handle}\")" not in networking_src, \
+        "host() should return an endpoint directly for parity with C# and TypeScript"
 
     networking_mod = _load_module("_networking", networking_path)
     NetworkManager = networking_mod.NetworkManager
@@ -373,6 +378,16 @@ def test_handwritten_network_wrapper_send_contract_source():
     assert packet.peer_id == 42
     assert packet.data == b"payload"
     assert connect_endpoint.receive() is None, "receive() should return None when no packet exists"
+
+    class _NegativeHostBackend:
+        def network_host(self, protocol, port):
+            return -17
+
+    negative_host_endpoint = NetworkManager(_NegativeHostBackend()).host(2, 40001)
+    assert negative_host_endpoint.handle == -17, \
+        "host() should preserve the raw handle instead of raising on negative values"
+    assert negative_host_endpoint.default_peer_id is None, \
+        "host() should not seed a default peer ID for negative handles either"
 
     print("  Handwritten network wrapper send() contract tests passed")
     return True

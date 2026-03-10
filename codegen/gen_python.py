@@ -236,6 +236,8 @@ def _py_field_default(field: dict) -> str:
     t = field.get("type", "f32")
     if t == "bool":
         return "bool = False"
+    elif t in ("bytes", "u8[]"):
+        return "bytes = b''"
     elif t in ("u8", "u16", "u32", "i8", "i16", "i32", "u64", "i64", "usize", "ptr"):
         return "int = 0"
     elif t in schema.get("types", {}):

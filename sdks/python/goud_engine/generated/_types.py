@@ -1503,7 +1503,7 @@ class NetworkConnectResult:
 
 class NetworkPacket:
     """Inbound network payload with the sender peer ID preserved"""
-    def __init__(self, peer_id: int = 0, data: float = 0.0):
+    def __init__(self, peer_id: int = 0, data: bytes = b''):
         self.peer_id = peer_id
         self.data = data
 
