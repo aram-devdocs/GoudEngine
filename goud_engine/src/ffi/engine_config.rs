@@ -185,7 +185,10 @@ pub unsafe extern "C" fn goud_engine_config_set_fps_overlay(
     true
 }
 
-/// Enables or disables physics debug visualization on an `EngineConfig`.
+/// Enables or disables the physics debug visualization overlay for physics worlds
+/// created through this `EngineConfig` and provider registry. Standalone FFI
+/// worlds created directly with `goud_physics_create` or `goud_physics3d_create`
+/// are not affected.
 ///
 /// # Safety
 /// `handle` must be a valid `EngineConfig` handle.
@@ -360,6 +363,8 @@ pub unsafe extern "C" fn goud_engine_create(
         return GOUD_INVALID_CONTEXT_ID;
     }
 
+    // Physics debug overlay uses providers created from EngineConfig / ProviderRegistry.
+    // It does not read worlds created with standalone FFI `goud_physics_*_create` calls.
     let window_state = WindowState::new(platform, backend, game_config.physics_debug.enabled);
 
     if let Err(e) = set_window_state(context_id, window_state) {

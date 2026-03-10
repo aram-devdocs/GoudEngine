@@ -35,6 +35,7 @@ VIOLATIONS=""
 COUNT=0
 
 for file in $(git ls-files '*.rs'); do
+    [ -f "$file" ] || continue
     if is_exempt "$file"; then
         continue
     fi

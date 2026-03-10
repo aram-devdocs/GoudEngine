@@ -1478,7 +1478,7 @@
       "is_unsafe": true
     },
     "goud_physics3d_add_collider": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/bodies.rs",
       "params": [
         "ctx: GoudContextId",
         "body_handle: u64",
@@ -1494,7 +1494,7 @@
       "is_unsafe": false
     },
     "goud_physics3d_add_rigid_body": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/bodies.rs",
       "params": [
         "ctx: GoudContextId",
         "body_type: u32",
@@ -1507,7 +1507,7 @@
       "is_unsafe": false
     },
     "goud_physics3d_add_rigid_body_ex": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/bodies.rs",
       "params": [
         "ctx: GoudContextId",
         "body_type: u32",
@@ -1521,7 +1521,7 @@
       "is_unsafe": false
     },
     "goud_physics3d_apply_force": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/simulation.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64",
@@ -1533,7 +1533,7 @@
       "is_unsafe": false
     },
     "goud_physics3d_apply_impulse": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/simulation.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64",
@@ -1545,7 +1545,7 @@
       "is_unsafe": false
     },
     "goud_physics3d_create": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/lifecycle.rs",
       "params": [
         "ctx: GoudContextId",
         "gx: f32",
@@ -1556,7 +1556,7 @@
       "is_unsafe": false
     },
     "goud_physics3d_create_joint": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/bodies.rs",
       "params": [
         "ctx: GoudContextId",
         "body_a: u64",
@@ -1582,7 +1582,7 @@
       "is_unsafe": false
     },
     "goud_physics3d_destroy": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/lifecycle.rs",
       "params": [
         "ctx: GoudContextId"
       ],
@@ -1631,7 +1631,7 @@
       "is_unsafe": true
     },
     "goud_physics3d_get_position": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/simulation.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64",
@@ -1652,7 +1652,7 @@
       "is_unsafe": true
     },
     "goud_physics3d_remove_body": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/bodies.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64"
@@ -1661,7 +1661,7 @@
       "is_unsafe": false
     },
     "goud_physics3d_remove_joint": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/bodies.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64"
@@ -1700,7 +1700,7 @@
       "is_unsafe": false
     },
     "goud_physics3d_set_gravity": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/lifecycle.rs",
       "params": [
         "ctx: GoudContextId",
         "x: f32",
@@ -1720,7 +1720,7 @@
       "is_unsafe": false
     },
     "goud_physics3d_set_velocity": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/simulation.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64",
@@ -1732,7 +1732,7 @@
       "is_unsafe": false
     },
     "goud_physics3d_step": {
-      "source_file": "ffi/physics/physics3d.rs",
+      "source_file": "ffi/physics/physics3d/simulation.rs",
       "params": [
         "ctx: GoudContextId",
         "dt: f32"
@@ -1741,7 +1741,7 @@
       "is_unsafe": false
     },
     "goud_physics_add_collider": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/bodies.rs",
       "params": [
         "ctx: GoudContextId",
         "body_handle: u64",
@@ -1774,7 +1774,7 @@
       "is_unsafe": false
     },
     "goud_physics_add_rigid_body": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/bodies.rs",
       "params": [
         "ctx: GoudContextId",
         "body_type: u32",
@@ -1786,7 +1786,7 @@
       "is_unsafe": false
     },
     "goud_physics_add_rigid_body_ex": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/bodies.rs",
       "params": [
         "ctx: GoudContextId",
         "body_type: u32",
@@ -1799,7 +1799,7 @@
       "is_unsafe": false
     },
     "goud_physics_apply_force": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/simulation.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64",
@@ -1810,7 +1810,7 @@
       "is_unsafe": false
     },
     "goud_physics_apply_impulse": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/simulation.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64",
@@ -1861,7 +1861,7 @@
       "is_unsafe": true
     },
     "goud_physics_create": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/lifecycle.rs",
       "params": [
         "ctx: GoudContextId",
         "gx: f32",
@@ -1871,7 +1871,7 @@
       "is_unsafe": false
     },
     "goud_physics_create_joint": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/bodies.rs",
       "params": [
         "ctx: GoudContextId",
         "body_a: u64",
@@ -1894,7 +1894,7 @@
       "is_unsafe": false
     },
     "goud_physics_create_with_backend": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/lifecycle.rs",
       "params": [
         "ctx: GoudContextId",
         "gx: f32",
@@ -1905,7 +1905,7 @@
       "is_unsafe": false
     },
     "goud_physics_destroy": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/lifecycle.rs",
       "params": [
         "ctx: GoudContextId"
       ],
@@ -1953,7 +1953,7 @@
       "is_unsafe": true
     },
     "goud_physics_get_position": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/simulation.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64",
@@ -1973,7 +1973,7 @@
       "is_unsafe": true
     },
     "goud_physics_get_velocity": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/simulation.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64",
@@ -1984,7 +1984,7 @@
       "is_unsafe": true
     },
     "goud_physics_raycast": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/simulation.rs",
       "params": [
         "ctx: GoudContextId",
         "ox: f32",
@@ -2020,7 +2020,7 @@
       "is_unsafe": true
     },
     "goud_physics_remove_body": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/bodies.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64"
@@ -2029,7 +2029,7 @@
       "is_unsafe": false
     },
     "goud_physics_remove_joint": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/bodies.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64"
@@ -2078,7 +2078,7 @@
       "is_unsafe": false
     },
     "goud_physics_set_gravity": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/lifecycle.rs",
       "params": [
         "ctx: GoudContextId",
         "x: f32",
@@ -2097,7 +2097,7 @@
       "is_unsafe": false
     },
     "goud_physics_set_velocity": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/simulation.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64",
@@ -2108,7 +2108,7 @@
       "is_unsafe": false
     },
     "goud_physics_step": {
-      "source_file": "ffi/physics/physics2d.rs",
+      "source_file": "ffi/physics/physics2d/simulation.rs",
       "params": [
         "ctx: GoudContextId",
         "dt: f32"
@@ -2487,7 +2487,7 @@
       "is_unsafe": false
     },
     "goud_renderer_draw_quad": {
-      "source_file": "ffi/renderer/draw.rs",
+      "source_file": "ffi/renderer/draw/ffi.rs",
       "params": [
         "context_id: GoudContextId",
         "x: f32",
@@ -2503,7 +2503,7 @@
       "is_unsafe": false
     },
     "goud_renderer_draw_sprite": {
-      "source_file": "ffi/renderer/draw.rs",
+      "source_file": "ffi/renderer/draw/ffi.rs",
       "params": [
         "context_id: GoudContextId",
         "texture: GoudTextureHandle",
@@ -2521,7 +2521,7 @@
       "is_unsafe": false
     },
     "goud_renderer_draw_sprite_rect": {
-      "source_file": "ffi/renderer/draw.rs",
+      "source_file": "ffi/renderer/draw/ffi.rs",
       "params": [
         "context_id: GoudContextId",
         "texture: GoudTextureHandle",

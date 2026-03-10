@@ -111,7 +111,11 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/window/properties.rs",
     // renderer module
     "src/ffi/renderer/lifecycle.rs",
-    "src/ffi/renderer/draw.rs",
+    "src/ffi/renderer/draw/ffi.rs",
+    "src/ffi/renderer/draw/mod.rs",
+    "src/ffi/renderer/draw/helpers.rs",
+    "src/ffi/renderer/draw/debug.rs",
+    "src/ffi/renderer/draw/internal.rs",
     "src/ffi/renderer/texture.rs",
     "src/ffi/renderer/handles.rs",
     "src/ffi/renderer/text.rs",
@@ -137,11 +141,18 @@ const FFI_SOURCE_FILES: &[&str] = &[
     // engine config module
     "src/ffi/engine_config.rs",
     // physics module
-    "src/ffi/physics/physics2d.rs",
+    "src/ffi/physics/physics2d/mod.rs",
+    "src/ffi/physics/physics2d/lifecycle.rs",
+    "src/ffi/physics/physics2d/simulation.rs",
+    "src/ffi/physics/physics2d/bodies.rs",
     "src/ffi/physics/physics2d_ex.rs",
     "src/ffi/physics/physics2d_events.rs",
     "src/ffi/physics/physics2d_material.rs",
-    "src/ffi/physics/physics3d.rs",
+    "src/ffi/physics/physics3d/mod.rs",
+    "src/ffi/physics/physics3d/lifecycle.rs",
+    "src/ffi/physics/physics3d/simulation.rs",
+    "src/ffi/physics/physics3d/bodies.rs",
+    "src/ffi/physics/physics3d/access.rs",
     "src/ffi/physics/physics3d_material.rs",
     // animation module
     "src/ffi/animation/control.rs",

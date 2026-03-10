@@ -37,14 +37,17 @@ pub unsafe extern "C" fn goud_physics3d_get_gravity(
         return GoudError::InvalidState(String::new()).error_code();
     }
 
-    with_provider(ctx, |p| {
-        let g = p.gravity();
-        // SAFETY: Null check above guarantees these are valid writable pointers.
-        *out_x = g[0];
-        *out_y = g[1];
-        *out_z = g[2];
-        0
-    })
+    with_provider(
+        ctx,
+        |p: &dyn crate::core::providers::physics3d::PhysicsProvider3D| {
+            let g = p.gravity();
+            // SAFETY: Null check above guarantees these are valid writable pointers.
+            *out_x = g[0];
+            *out_y = g[1];
+            *out_z = g[2];
+            0
+        },
+    )
 }
 
 // =============================================================================
@@ -62,16 +65,19 @@ pub extern "C" fn goud_physics3d_set_body_gravity_scale(
     handle: u64,
     scale: f32,
 ) -> i32 {
-    with_provider_mut(ctx, |p| {
-        match p.set_body_gravity_scale(BodyHandle(handle), scale) {
+    with_provider_mut(
+        ctx,
+        |p: &mut dyn crate::core::providers::physics3d::PhysicsProvider3D| match p
+            .set_body_gravity_scale(BodyHandle(handle), scale)
+        {
             Ok(()) => 0,
             Err(e) => {
                 let code = e.error_code();
                 set_last_error(e);
                 code
             }
-        }
-    })
+        },
+    )
 }
 
 /// Gets the gravity scale for a 3D rigid body.
@@ -94,18 +100,23 @@ pub unsafe extern "C" fn goud_physics3d_get_body_gravity_scale(
         return GoudError::InvalidState(String::new()).error_code();
     }
 
-    with_provider(ctx, |p| match p.body_gravity_scale(BodyHandle(handle)) {
-        Ok(scale) => {
-            // SAFETY: Null check above guarantees out_scale is valid.
-            *out_scale = scale;
-            0
-        }
-        Err(e) => {
-            let code = e.error_code();
-            set_last_error(e);
-            code
-        }
-    })
+    with_provider(
+        ctx,
+        |p: &dyn crate::core::providers::physics3d::PhysicsProvider3D| {
+            match p.body_gravity_scale(BodyHandle(handle)) {
+                Ok(scale) => {
+                    // SAFETY: Null check above guarantees out_scale is valid.
+                    *out_scale = scale;
+                    0
+                }
+                Err(e) => {
+                    let code = e.error_code();
+                    set_last_error(e);
+                    code
+                }
+            }
+        },
+    )
 }
 
 // =============================================================================
@@ -123,16 +134,19 @@ pub extern "C" fn goud_physics3d_set_collider_friction(
     handle: u64,
     friction: f32,
 ) -> i32 {
-    with_provider_mut(ctx, |p| {
-        match p.set_collider_friction(ColliderHandle(handle), friction) {
+    with_provider_mut(
+        ctx,
+        |p: &mut dyn crate::core::providers::physics3d::PhysicsProvider3D| match p
+            .set_collider_friction(ColliderHandle(handle), friction)
+        {
             Ok(()) => 0,
             Err(e) => {
                 let code = e.error_code();
                 set_last_error(e);
                 code
             }
-        }
-    })
+        },
+    )
 }
 
 /// Gets the friction coefficient for a 3D collider.
@@ -155,20 +169,23 @@ pub unsafe extern "C" fn goud_physics3d_get_collider_friction(
         return GoudError::InvalidState(String::new()).error_code();
     }
 
-    with_provider(ctx, |p| {
-        match p.collider_friction(ColliderHandle(handle)) {
-            Ok(friction) => {
-                // SAFETY: Null check above guarantees out_friction is valid.
-                *out_friction = friction;
-                0
+    with_provider(
+        ctx,
+        |p: &dyn crate::core::providers::physics3d::PhysicsProvider3D| {
+            match p.collider_friction(ColliderHandle(handle)) {
+                Ok(friction) => {
+                    // SAFETY: Null check above guarantees out_friction is valid.
+                    *out_friction = friction;
+                    0
+                }
+                Err(e) => {
+                    let code = e.error_code();
+                    set_last_error(e);
+                    code
+                }
             }
-            Err(e) => {
-                let code = e.error_code();
-                set_last_error(e);
-                code
-            }
-        }
-    })
+        },
+    )
 }
 
 // =============================================================================
@@ -186,16 +203,19 @@ pub extern "C" fn goud_physics3d_set_collider_restitution(
     handle: u64,
     restitution: f32,
 ) -> i32 {
-    with_provider_mut(ctx, |p| {
-        match p.set_collider_restitution(ColliderHandle(handle), restitution) {
+    with_provider_mut(
+        ctx,
+        |p: &mut dyn crate::core::providers::physics3d::PhysicsProvider3D| match p
+            .set_collider_restitution(ColliderHandle(handle), restitution)
+        {
             Ok(()) => 0,
             Err(e) => {
                 let code = e.error_code();
                 set_last_error(e);
                 code
             }
-        }
-    })
+        },
+    )
 }
 
 /// Gets the restitution (bounciness) for a 3D collider.
@@ -220,20 +240,23 @@ pub unsafe extern "C" fn goud_physics3d_get_collider_restitution(
         return GoudError::InvalidState(String::new()).error_code();
     }
 
-    with_provider(ctx, |p| {
-        match p.collider_restitution(ColliderHandle(handle)) {
-            Ok(restitution) => {
-                // SAFETY: Null check above guarantees out_restitution is valid.
-                *out_restitution = restitution;
-                0
+    with_provider(
+        ctx,
+        |p: &dyn crate::core::providers::physics3d::PhysicsProvider3D| {
+            match p.collider_restitution(ColliderHandle(handle)) {
+                Ok(restitution) => {
+                    // SAFETY: Null check above guarantees out_restitution is valid.
+                    *out_restitution = restitution;
+                    0
+                }
+                Err(e) => {
+                    let code = e.error_code();
+                    set_last_error(e);
+                    code
+                }
             }
-            Err(e) => {
-                let code = e.error_code();
-                set_last_error(e);
-                code
-            }
-        }
-    })
+        },
+    )
 }
 
 // =============================================================================
@@ -253,10 +276,13 @@ pub extern "C" fn goud_physics3d_set_timestep(ctx: GoudContextId, dt: f32) -> i3
         ));
         return GoudError::InvalidState(String::new()).error_code();
     }
-    with_provider_mut(ctx, |p| {
-        p.set_timestep(dt);
-        0
-    })
+    with_provider_mut(
+        ctx,
+        |p: &mut dyn crate::core::providers::physics3d::PhysicsProvider3D| {
+            p.set_timestep(dt);
+            0
+        },
+    )
 }
 
 /// Gets the current fixed timestep for the 3D physics simulation.
@@ -275,9 +301,12 @@ pub unsafe extern "C" fn goud_physics3d_get_timestep(ctx: GoudContextId, out_dt:
         return GoudError::InvalidState(String::new()).error_code();
     }
 
-    with_provider(ctx, |p| {
-        // SAFETY: Null check above guarantees out_dt is valid.
-        *out_dt = p.timestep();
-        0
-    })
+    with_provider(
+        ctx,
+        |p: &dyn crate::core::providers::physics3d::PhysicsProvider3D| {
+            // SAFETY: Null check above guarantees out_dt is valid.
+            *out_dt = p.timestep();
+            0
+        },
+    )
 }

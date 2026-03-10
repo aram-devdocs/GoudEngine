@@ -5,19 +5,17 @@ use std::collections::{HashMap, HashSet};
 use crate::core::error::{GoudError, GoudResult};
 use crate::core::providers::physics::PhysicsProvider;
 use crate::core::providers::types::{
-    BodyDesc, BodyHandle, ColliderDesc, ColliderHandle, CollisionEvent, CollisionEventKind,
-    ContactPair, DebugShape, JointDesc, JointHandle, PhysicsCapabilities, RaycastHit,
+    BodyDesc, BodyHandle, ColliderDesc, ColliderHandle, CollisionEvent, ContactPair, DebugShape,
+    JointDesc, JointHandle, PhysicsCapabilities, RaycastHit,
 };
 use crate::core::providers::{Provider, ProviderLifecycle};
 
+mod contacts;
 mod geometry;
 #[cfg(test)]
 mod tests;
 
-use geometry::{
-    circle_overlaps_aabb, collider_half_extents, layers_interact, ordered_pair, overlap,
-    raycast_aabb,
-};
+use geometry::{circle_overlaps_aabb, collider_half_extents, raycast_aabb};
 
 #[derive(Debug, Clone)]
 struct SimpleBody {
@@ -57,6 +55,10 @@ impl Aabb {
 }
 
 /// A lightweight physics provider for simple 2D games.
+///
+/// Intended for small scenes. Broad-phase collision detection uses a pairwise
+/// O(n^2) scan. Restitution is stored on colliders, but this simple solver
+/// does not apply it.
 pub struct SimplePhysicsProvider {
     capabilities: PhysicsCapabilities,
     gravity: [f32; 2],
@@ -123,122 +125,7 @@ impl SimplePhysicsProvider {
     }
 
     fn rebuild_contacts(&mut self) {
-        self.collision_events.clear();
-        self.contacts.clear();
-        let ids: Vec<u64> = self.colliders.keys().copied().collect();
-        let mut current_overlaps = HashSet::new();
-
-        for (index, left_id) in ids.iter().enumerate() {
-            for right_id in ids.iter().skip(index + 1) {
-                let Some(left) = self.colliders.get(left_id).cloned() else {
-                    continue;
-                };
-                let Some(right) = self.colliders.get(right_id).cloned() else {
-                    continue;
-                };
-                if !layers_interact(&left.desc, &right.desc) {
-                    continue;
-                }
-                let Ok(left_aabb) = self.body_aabb(&left) else {
-                    continue;
-                };
-                let Ok(right_aabb) = self.body_aabb(&right) else {
-                    continue;
-                };
-                let Some((normal, depth)) = overlap(left_aabb, right_aabb) else {
-                    continue;
-                };
-
-                let bodies = ordered_pair(left.body.0, right.body.0);
-                current_overlaps.insert(bodies);
-                let kind = if self.previous_overlaps.contains(&bodies) {
-                    CollisionEventKind::Stay
-                } else {
-                    CollisionEventKind::Enter
-                };
-                self.collision_events.push(CollisionEvent {
-                    body_a: BodyHandle(bodies.0),
-                    body_b: BodyHandle(bodies.1),
-                    kind,
-                });
-
-                if !(left.desc.is_sensor || right.desc.is_sensor) {
-                    self.contacts.push(ContactPair {
-                        body_a: left.body,
-                        body_b: right.body,
-                        normal,
-                        depth,
-                    });
-                    self.resolve_overlap(left.body, right.body, normal, depth);
-                }
-            }
-        }
-
-        for bodies in self.previous_overlaps.drain() {
-            if !current_overlaps.contains(&bodies) {
-                self.collision_events.push(CollisionEvent {
-                    body_a: BodyHandle(bodies.0),
-                    body_b: BodyHandle(bodies.1),
-                    kind: CollisionEventKind::Exit,
-                });
-            }
-        }
-        self.previous_overlaps = current_overlaps;
-    }
-
-    fn resolve_overlap(
-        &mut self,
-        left_handle: BodyHandle,
-        right_handle: BodyHandle,
-        normal: [f32; 2],
-        depth: f32,
-    ) {
-        let (left_type, right_type) = match (
-            self.bodies.get(&left_handle.0),
-            self.bodies.get(&right_handle.0),
-        ) {
-            (Some(left), Some(right)) => (left.body_type, right.body_type),
-            _ => return,
-        };
-        if left_type == 0 && right_type == 0 {
-            return;
-        }
-
-        let left_share = if left_type == 1 && right_type == 1 {
-            0.5
-        } else if left_type == 1 {
-            1.0
-        } else {
-            0.0
-        };
-        let right_share = if left_type == 1 && right_type == 1 {
-            0.5
-        } else if right_type == 1 {
-            1.0
-        } else {
-            0.0
-        };
-
-        if let Some(left) = self.bodies.get_mut(&left_handle.0) {
-            left.position[0] -= normal[0] * depth * left_share;
-            left.position[1] -= normal[1] * depth * left_share;
-            if normal[0] != 0.0 {
-                left.velocity[0] = 0.0;
-            }
-            if normal[1] != 0.0 {
-                left.velocity[1] = 0.0;
-            }
-        }
-        if let Some(right) = self.bodies.get_mut(&right_handle.0) {
-            right.position[0] += normal[0] * depth * right_share;
-            right.position[1] += normal[1] * depth * right_share;
-            if normal[0] != 0.0 {
-                right.velocity[0] = 0.0;
-            }
-            if normal[1] != 0.0 {
-                right.velocity[1] = 0.0;
-            }
-        }
+        contacts::rebuild_contacts(self);
     }
 }
 
