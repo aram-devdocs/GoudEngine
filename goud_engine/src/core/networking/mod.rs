@@ -11,6 +11,7 @@
 pub mod authority;
 pub mod client;
 pub mod discovery;
+pub mod lobby;
 pub mod protocol;
 pub mod server;
 pub mod state_sync;
@@ -28,11 +29,15 @@ pub use discovery::{
     DirectoryDiscoveryProvider, DiscoveredSession, DiscoveryError, DiscoveryMode, DiscoveryService,
     LanDiscoveryProvider, NativeLanDiscoveryProvider,
 };
+pub use lobby::{
+    LobbyClient, LobbyCommand, LobbyConfig, LobbyEvent, LobbyMember, LobbyServer, LobbyState,
+    LobbyVisibility,
+};
 pub use server::SessionServer;
 pub use state_sync::{
     EntityBandwidthStat, NetworkSync, ResolvedStateSnapshot, ResolvedSyncEntity,
     StateSnapshotPayload, StateSyncBandwidthStats, StateSyncClient, StateSyncConfig,
-    StateSyncEntitySnapshot, StateSyncInterpolationBuffer, StateSyncServer,
+    StateSyncEntityMap, StateSyncEntitySnapshot, StateSyncInterpolationBuffer, StateSyncServer,
     Transform2DSnapshot, TransformSnapshot,
 };
 pub use types::{ClientEvent, ServerConfig, ServerEvent, SessionChannels, SessionDescriptor};

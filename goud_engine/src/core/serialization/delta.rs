@@ -174,16 +174,56 @@ impl DeltaEncode for Transform {
             };
         }
 
-        read_if_present!(0, result.position.x, "truncated delta payload for Transform.position.x");
-        read_if_present!(1, result.position.y, "truncated delta payload for Transform.position.y");
-        read_if_present!(2, result.position.z, "truncated delta payload for Transform.position.z");
-        read_if_present!(3, result.rotation.x, "truncated delta payload for Transform.rotation.x");
-        read_if_present!(4, result.rotation.y, "truncated delta payload for Transform.rotation.y");
-        read_if_present!(5, result.rotation.z, "truncated delta payload for Transform.rotation.z");
-        read_if_present!(6, result.rotation.w, "truncated delta payload for Transform.rotation.w");
-        read_if_present!(7, result.scale.x, "truncated delta payload for Transform.scale.x");
-        read_if_present!(8, result.scale.y, "truncated delta payload for Transform.scale.y");
-        read_if_present!(9, result.scale.z, "truncated delta payload for Transform.scale.z");
+        read_if_present!(
+            0,
+            result.position.x,
+            "truncated delta payload for Transform.position.x"
+        );
+        read_if_present!(
+            1,
+            result.position.y,
+            "truncated delta payload for Transform.position.y"
+        );
+        read_if_present!(
+            2,
+            result.position.z,
+            "truncated delta payload for Transform.position.z"
+        );
+        read_if_present!(
+            3,
+            result.rotation.x,
+            "truncated delta payload for Transform.rotation.x"
+        );
+        read_if_present!(
+            4,
+            result.rotation.y,
+            "truncated delta payload for Transform.rotation.y"
+        );
+        read_if_present!(
+            5,
+            result.rotation.z,
+            "truncated delta payload for Transform.rotation.z"
+        );
+        read_if_present!(
+            6,
+            result.rotation.w,
+            "truncated delta payload for Transform.rotation.w"
+        );
+        read_if_present!(
+            7,
+            result.scale.x,
+            "truncated delta payload for Transform.scale.x"
+        );
+        read_if_present!(
+            8,
+            result.scale.y,
+            "truncated delta payload for Transform.scale.y"
+        );
+        read_if_present!(
+            9,
+            result.scale.z,
+            "truncated delta payload for Transform.scale.z"
+        );
 
         Ok(result)
     }

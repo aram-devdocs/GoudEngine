@@ -1,10 +1,10 @@
+use crate::core::math::Vec2;
 use crate::core::networking::authority::BuiltInAuthorityPolicy;
 use crate::core::networking::{
     NetworkSync, SessionClient, SessionServer, StateSnapshotPayload, StateSyncClient,
     StateSyncConfig, StateSyncEntitySnapshot, StateSyncServer, Transform2DSnapshot,
 };
 use crate::core::serialization::{DeltaEncode, MessageKind, NetworkMessage};
-use crate::core::math::Vec2;
 use crate::ecs::components::Transform2D;
 use crate::ecs::Component;
 use crate::ecs::World;
@@ -296,7 +296,9 @@ fn state_sync_apply_latest_to_world_applies_non_interpolated_components() {
     let mut client_world = World::new();
     client_world.register_builtin_serializables();
     client_world.register_serializable::<Health>();
-    sync_client.apply_latest_to_world(&mut client_world).unwrap();
+    sync_client
+        .apply_latest_to_world(&mut client_world)
+        .unwrap();
 
     let local = sync_client
         .entity_map()

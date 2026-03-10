@@ -12,7 +12,9 @@
 /// Assigned by the network provider when a connection is established.
 /// Valid until the connection closes. Game-level peer identity (player IDs,
 /// lobby slots) belongs above the provider boundary.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub struct ConnectionId(pub u64);
 
 /// Named channel for message routing.

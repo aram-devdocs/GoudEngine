@@ -5,8 +5,8 @@ use std::collections::HashMap;
 use crate::core::error::{GoudError, GoudResult};
 use crate::core::networking::{ClientEvent, SessionClient};
 use crate::core::serialization::{binary, DeltaEncode, NetworkMessage};
-use crate::ecs::World;
 use crate::ecs::entity::Entity;
+use crate::ecs::World;
 
 use super::types::{
     NetworkSync, ResolvedStateSnapshot, ResolvedSyncEntity, StateSnapshotPayload, StateSyncConfig,
@@ -179,7 +179,7 @@ impl StateSyncClient {
             }
 
             if !entity_snapshot.components.is_empty() {
-                resolved.components = entity_snapshot.components.clone();
+                resolved.components = decode_component_map(&entity_snapshot.components)?;
             }
 
             entities.push(resolved);
@@ -248,4 +248,21 @@ impl StateSyncClient {
         self.entity_map.insert(remote, local);
         local
     }
+}
+
+fn decode_component_map(
+    components: &HashMap<String, Vec<u8>>,
+) -> GoudResult<HashMap<String, serde_json::Value>> {
+    components
+        .iter()
+        .map(|(name, bytes)| {
+            serde_json::from_slice(bytes)
+                .map(|value| (name.clone(), value))
+                .map_err(|error| {
+                    GoudError::InternalError(format!(
+                        "Failed to decode component '{name}' from JSON bytes: {error}"
+                    ))
+                })
+        })
+        .collect()
 }

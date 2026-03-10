@@ -63,8 +63,8 @@ pub struct StateSyncEntitySnapshot {
     pub transform2d: Option<Transform2DSnapshot>,
     /// Optional 3D transform payload.
     pub transform: Option<TransformSnapshot>,
-    /// Additional serializable components keyed by type name.
-    pub components: HashMap<String, serde_json::Value>,
+    /// Additional serializable components keyed by type name and encoded as JSON bytes.
+    pub components: HashMap<String, Vec<u8>>,
 }
 
 /// Wire payload carried inside [`crate::core::serialization::NetworkMessage`].
@@ -177,12 +177,7 @@ impl StateSyncInterpolationBuffer {
     /// Interpolates a 2D transform from the newest two buffered snapshots.
     pub fn interpolate_transform2d(&self, entity: Entity, alpha: f32) -> Option<Transform2D> {
         let end = self.snapshots.back()?;
-        let start = self
-            .snapshots
-            .iter()
-            .rev()
-            .nth(1)
-            .unwrap_or(end);
+        let start = self.snapshots.iter().rev().nth(1).unwrap_or(end);
 
         let end_transform = find_entity(end, entity)?.transform2d?;
         let Some(start_transform) = find_entity(start, entity).and_then(|state| state.transform2d)
@@ -201,12 +196,7 @@ impl StateSyncInterpolationBuffer {
     /// Interpolates a 3D transform from the newest two buffered snapshots.
     pub fn interpolate_transform(&self, entity: Entity, alpha: f32) -> Option<Transform> {
         let end = self.snapshots.back()?;
-        let start = self
-            .snapshots
-            .iter()
-            .rev()
-            .nth(1)
-            .unwrap_or(end);
+        let start = self.snapshots.iter().rev().nth(1).unwrap_or(end);
 
         let end_transform = find_entity(end, entity)?.transform?;
         let Some(start_transform) = find_entity(start, entity).and_then(|state| state.transform)
@@ -217,7 +207,9 @@ impl StateSyncInterpolationBuffer {
         let alpha = alpha.clamp(0.0, 1.0);
         Some(Transform::new(
             lerp_vec3(start_transform.position, end_transform.position, alpha),
-            start_transform.rotation.slerp(end_transform.rotation, alpha),
+            start_transform
+                .rotation
+                .slerp(end_transform.rotation, alpha),
             lerp_vec3(start_transform.scale, end_transform.scale, alpha),
         ))
     }

@@ -168,16 +168,37 @@ impl SessionServer {
         reason: impl Into<String>,
     ) -> GoudResult<()> {
         let reason = reason.into();
+        let mut transport_errors = Vec::new();
         if self.provider.connection_state(connection) != ConnectionState::Disconnected {
-            let _ = self.send_protocol(
+            if let Err(error) = self.send_protocol(
                 connection,
                 &ProtocolMessage::LeaveNotice {
                     reason: reason.clone(),
                 },
-            );
-            let _ = self.provider.disconnect(connection);
+            ) {
+                transport_errors.push(format!(
+                    "Failed to send leave notice to {:?}: {}",
+                    connection, error
+                ));
+            }
+            if let Err(error) = self.provider.disconnect(connection) {
+                transport_errors.push(format!("Failed to disconnect {:?}: {}", connection, error));
+            }
         }
-        self.cleanup_connection_state(connection)
+
+        let cleanup_result = self.cleanup_connection_state(connection);
+        if transport_errors.is_empty() {
+            return cleanup_result;
+        }
+
+        if let Err(cleanup_error) = cleanup_result {
+            transport_errors.push(format!(
+                "Failed to cleanup local state for {:?}: {}",
+                connection, cleanup_error
+            ));
+        }
+
+        Err(network_error(transport_errors.join("; ")))
     }
 
     /// Advances session state and drains server events.
