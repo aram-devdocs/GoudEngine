@@ -10,6 +10,42 @@ SDK_TYPE="csharp"  # csharp, python, rust, typescript
 # Script directory for absolute paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Returns success when a localhost TCP port is available to bind.
+is_port_available() {
+    local port="$1"
+    python3 - "$port" <<'PY'
+import socket
+import sys
+
+port = int(sys.argv[1])
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+try:
+    sock.bind(("127.0.0.1", port))
+except OSError:
+    sys.exit(1)
+finally:
+    sock.close()
+sys.exit(0)
+PY
+}
+
+# Picks a web server port for TS web demo. Defaults to 8765, falls back if occupied.
+pick_web_port() {
+    local preferred="${TS_WEB_PORT:-8765}"
+    local port
+    if is_port_available "$preferred"; then
+        echo "$preferred"
+        return 0
+    fi
+    for port in $(seq 8766 8799); do
+        if is_port_available "$port"; then
+            echo "$port"
+            return 0
+        fi
+    done
+    return 1
+}
+
 # Parse command line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -172,11 +208,21 @@ case $SDK_TYPE in
     # cd into selected game directory and restore packages from the local feed
     cd "$SCRIPT_DIR/examples/csharp/$GAME"
 
+    # Prefer host dotnet. If .NET 8 runtime is missing but a newer runtime exists,
+    # allow major roll-forward so net8 apps still launch.
+    DOTNET_CMD="dotnet"
+    DOTNET_RUNNER=()
+    if ! dotnet --list-runtimes | grep -q "Microsoft.NETCore.App 8\\."; then
+        if dotnet --list-runtimes | grep -q "Microsoft.NETCore.App "; then
+            DOTNET_RUNNER=(env DOTNET_ROLL_FORWARD=Major)
+        fi
+    fi
+
     # Optimize dotnet commands
-    dotnet clean --nologo
-    dotnet restore --source $HOME/nuget-local --nologo
-    dotnet build --no-restore --nologo
-    dotnet run --no-build --nologo
+    "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" clean --nologo
+    "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" restore --source "$HOME/nuget-local" --source https://api.nuget.org/v3/index.json --nologo
+    "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" build --no-restore --nologo
+    "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" run --no-build --nologo
     ;;
 
 "python")
@@ -230,13 +276,21 @@ case $SDK_TYPE in
         cd "$SCRIPT_DIR/examples/typescript/flappy_bird"
         npx tsc
 
+        WEB_PORT="$(pick_web_port)" || {
+            echo "Error: No available localhost port found for web server (8765-8799)."
+            exit 1
+        }
+
         echo ""
-        echo "Starting web server on http://localhost:8765"
-        echo "Open: http://localhost:8765/examples/typescript/flappy_bird/web/index.html"
+        if [ "$WEB_PORT" != "${TS_WEB_PORT:-8765}" ]; then
+            echo "Port ${TS_WEB_PORT:-8765} is in use; using $WEB_PORT instead."
+        fi
+        echo "Starting web server on http://localhost:$WEB_PORT"
+        echo "Open: http://localhost:$WEB_PORT/examples/typescript/flappy_bird/web/index.html"
         echo "Press Ctrl+C to stop."
         echo ""
         cd "$SCRIPT_DIR"
-        python3 -m http.server 8765 --bind 127.0.0.1
+        python3 -m http.server "$WEB_PORT" --bind 127.0.0.1
         ;;
     esac
     ;;
