@@ -6,6 +6,7 @@
 #[cfg(feature = "native")]
 mod input;
 mod layout;
+mod render;
 
 use std::collections::HashMap;
 
@@ -16,6 +17,8 @@ use super::allocator::UiNodeAllocator;
 use super::component::UiComponent;
 use super::node::UiNode;
 use super::node_id::UiNodeId;
+use super::theme::UiTheme;
+use super::visuals::UiInteractionState;
 
 /// Events emitted by the UI manager during input processing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,6 +50,7 @@ pub struct UiManager {
     focused_node: Option<UiNodeId>,
     pressed_pointer_node: Option<UiNodeId>,
     frame_events: Vec<UiEvent>,
+    theme: UiTheme,
 }
 
 impl UiManager {
@@ -62,6 +66,7 @@ impl UiManager {
             focused_node: None,
             pressed_pointer_node: None,
             frame_events: Vec::new(),
+            theme: UiTheme::light(),
         }
     }
 
@@ -233,6 +238,44 @@ impl UiManager {
         std::mem::take(&mut self.frame_events)
     }
 
+    /// Returns the currently active UI theme.
+    #[inline]
+    pub fn theme(&self) -> &UiTheme {
+        &self.theme
+    }
+
+    /// Replaces the active UI theme.
+    pub fn set_theme(&mut self, theme: UiTheme) {
+        if self.theme == theme {
+            return;
+        }
+
+        self.theme = theme;
+        self.mark_layout_dirty();
+    }
+
+    /// Resolves interaction state for a node.
+    pub fn interaction_state_for(&self, node_id: UiNodeId) -> UiInteractionState {
+        let Some(node) = self.nodes.get(&node_id) else {
+            return UiInteractionState::Disabled;
+        };
+
+        let component = node.component();
+        let component_disabled =
+            component.is_some_and(|c| c.has_enabled_state() && !c.is_enabled());
+        if component_disabled || !self.node_and_ancestors_input_enabled(node_id) {
+            return UiInteractionState::Disabled;
+        }
+
+        if self.pressed_pointer_node == Some(node_id) {
+            return UiInteractionState::Pressed;
+        }
+        if self.hovered_node == Some(node_id) || self.focused_node == Some(node_id) {
+            return UiInteractionState::Hovered;
+        }
+        UiInteractionState::Normal
+    }
+
     fn mark_layout_dirty(&mut self) {
         self.layout_dirty = true;
     }
@@ -330,10 +373,12 @@ impl UiManager {
         out
     }
 
-    /// Placeholder for future UI rendering.
-    pub fn render(&self) {
-        // Rendering is implemented in later iterations.
-    }
+    /// Compatibility shim retained for legacy callers.
+    ///
+    /// Native engine rendering uses [`UiManager::build_render_commands`] plus
+    /// [`crate::rendering::UiRenderSystem`]. This method is intentionally a
+    /// no-op and should not be used by new runtime code paths.
+    pub fn render(&self) {}
 }
 
 impl Default for UiManager {

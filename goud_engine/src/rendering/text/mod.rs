@@ -21,6 +21,7 @@ pub mod layout;
 pub mod layout_shaped;
 pub mod rasterizer;
 pub mod text_batch;
+pub mod text_batch_requests;
 pub mod text_render_system;
 
 pub use atlas_cache::GlyphAtlasCache;
@@ -36,4 +37,5 @@ pub use layout_shaped::{
 };
 pub use rasterizer::{GlyphMetrics, RasterizedGlyph};
 pub use text_batch::{TextBatch, TextDrawBatch, TextRenderStats};
+pub use text_batch_requests::DirectTextDrawRequest;
 pub use text_render_system::TextRenderSystem;

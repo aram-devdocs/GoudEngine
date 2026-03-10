@@ -99,7 +99,11 @@ pub unsafe extern "C" fn goud_ui_manager_render(ptr: *const UiManager) {
     }
     // SAFETY: Caller guarantees `ptr` is valid and not aliased.
     let mgr = &*ptr;
-    mgr.render();
+    // Legacy compatibility path for existing FFI callers; keep deprecated Rust API as the shim.
+    #[allow(deprecated)]
+    {
+        mgr.render();
+    }
 }
 
 /// Returns the number of live nodes in the UI manager.

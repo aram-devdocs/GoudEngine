@@ -1,6 +1,8 @@
 //! Runtime loop and diagnostic methods for [`GoudGame`].
 
 use super::GoudGame;
+#[cfg(feature = "native")]
+use crate::assets::AssetServer;
 use crate::context_registry::scene::SceneId;
 use crate::core::error::GoudResult;
 use crate::core::providers::ProviderRegistry;
@@ -55,8 +57,7 @@ impl GoudGame {
                 self.last_transition_complete = Some(complete);
             }
 
-            // Render UI manager after updates (before buffer swap).
-            self.ui_manager.render();
+            self.render_ui_frame();
 
             // Safety: Limit iterations in tests/examples without actual window
             if self.context.frame_count() > 10000 {
@@ -92,8 +93,7 @@ impl GoudGame {
             self.last_transition_complete = Some(complete);
         }
 
-        // Render UI manager after updates (before buffer swap).
-        self.ui_manager.render();
+        self.render_ui_frame();
     }
 
     /// Returns the current FPS statistics from the debug overlay.
@@ -179,5 +179,35 @@ impl GoudGame {
     #[inline]
     pub fn ui_manager_mut(&mut self) -> &mut UiManager {
         &mut self.ui_manager
+    }
+
+    fn render_ui_frame(&mut self) {
+        #[cfg(feature = "native")]
+        {
+            if self.ui_render_system.is_none() {
+                self.ui_render_system = Some(crate::rendering::UiRenderSystem::new());
+            }
+            if self.asset_server.is_none() {
+                self.asset_server = Some(AssetServer::new());
+            }
+
+            let commands = self.ui_manager.build_render_commands();
+            let viewport = self.context.window_size();
+            if let (Some(system), Some(asset_server), Some(backend)) = (
+                self.ui_render_system.as_mut(),
+                self.asset_server.as_mut(),
+                self.render_backend.as_mut(),
+            ) {
+                crate::rendering::ensure_ui_asset_loaders(asset_server);
+                if let Err(err) = system.run(&commands, asset_server, backend, viewport) {
+                    log::warn!("UiRenderSystem frame failed: {err}");
+                }
+            }
+        }
+
+        #[cfg(not(feature = "native"))]
+        {
+            let _ = self.ui_manager.build_render_commands();
+        }
     }
 }

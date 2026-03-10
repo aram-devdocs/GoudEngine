@@ -7,7 +7,7 @@ use crate::assets::AssetServer;
 use crate::ecs::World;
 use crate::libs::graphics::backend::render_backend::RenderBackend;
 
-use super::text_batch::{TextBatch, TextRenderStats};
+use super::text_batch::{DirectTextDrawRequest, TextBatch, TextRenderStats};
 
 /// System for rendering text entities using batched rendering.
 ///
@@ -42,6 +42,20 @@ impl TextRenderSystem {
     ) -> Result<(), String> {
         self.text_batch.begin();
         self.text_batch.draw_text(world, asset_server, backend)?;
+        self.text_batch.end(backend)?;
+        Ok(())
+    }
+
+    /// Runs the text pipeline for direct text draw requests.
+    pub fn run_requests(
+        &mut self,
+        requests: &[DirectTextDrawRequest],
+        asset_server: &AssetServer,
+        backend: &mut dyn RenderBackend,
+    ) -> Result<(), String> {
+        self.text_batch.begin();
+        self.text_batch
+            .draw_text_requests(requests, asset_server, backend)?;
         self.text_batch.end(backend)?;
         Ok(())
     }
