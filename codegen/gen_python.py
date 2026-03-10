@@ -1206,10 +1206,27 @@ def _gen_tool_class(tool_name: str, lines: list):
     is_physics_world_2d = tool_name == "PhysicsWorld2D"
     is_physics_world_3d = tool_name == "PhysicsWorld3D"
     class_name = tool_name
+    uses_network_status_errors = any(
+        tool_mapping["methods"].get(method["name"], {}).get("ffi", "").startswith("goud_network_")
+        and (
+            tool_mapping["methods"].get(method["name"], {}).get("out_buffer")
+            or tool_mapping["methods"].get(method["name"], {}).get("status_struct")
+            or tool_mapping["methods"].get(method["name"], {}).get("status_nullable_struct")
+        )
+        for method in tool.get("methods", [])
+    )
 
     lines.append(f"class {class_name}:")
     lines.append(f'    """{tool["doc"]}"""')
     lines.append("")
+
+    if uses_network_status_errors:
+        lines.append("    def _raise_network_error_or_runtime(self, message):")
+        lines.append("        error = GoudError.from_last_error(self._lib)")
+        lines.append("        if error is not None:")
+        lines.append("            raise error")
+        lines.append("        raise RuntimeError(message)")
+        lines.append("")
 
     # Constructor
     if is_game:
@@ -1583,9 +1600,14 @@ def _gen_tool_class(tool_name: str, lines: list):
                     f"        _status = self._lib.{ffi_fn}({', '.join(ffi_parts)})"
                 )
                 lines.append("        if _status < 0:")
-                lines.append(
-                    f"            raise RuntimeError(f'{ffi_fn} failed with status {{_status}}')"
-                )
+                if ffi_fn.startswith("goud_network_"):
+                    lines.append(
+                        f"            self._raise_network_error_or_runtime(f'{ffi_fn} failed with status {{_status}}')"
+                    )
+                else:
+                    lines.append(
+                        f"            raise RuntimeError(f'{ffi_fn} failed with status {{_status}}')"
+                    )
                 if status_nullable_struct:
                     lines.append("        if _status == 0:")
                     lines.append("            return None")
@@ -1691,9 +1713,14 @@ def _gen_tool_class(tool_name: str, lines: list):
                 f"        _status = self._lib.{ffi_fn}({', '.join(ffi_parts)})"
             )
             lines.append("        if _status < 0:")
-            lines.append(
-                f"            raise RuntimeError(f'{ffi_fn} failed with status {{_status}}')"
-            )
+            if ffi_fn.startswith("goud_network_"):
+                lines.append(
+                    f"            self._raise_network_error_or_runtime(f'{ffi_fn} failed with status {{_status}}')"
+                )
+            else:
+                lines.append(
+                    f"            raise RuntimeError(f'{ffi_fn} failed with status {{_status}}')"
+                )
             if returns_struct and status_nullable_struct:
                 lines.append("        if _status == 0:")
                 lines.append("            return None")
@@ -2034,6 +2061,7 @@ def gen_game():
         "UiStyle, UiEvent, NetworkStats, NetworkSimulationConfig, "
         "NetworkConnectResult, NetworkPacket, NetworkCapabilities"
         ")",
+        "from ._errors import GoudError",
         "from ._keys import Key, MouseButton, PhysicsBackend2D",
         "",
         "# Type IDs for built-in component types (hash of type name)",

@@ -37,7 +37,11 @@ public class GoudGameNetworkMethodGenerationTests
         Assert.Contains("return NativeMethods.goud_network_host(_ctx, protocol, port);", generatedSource, StringComparison.Ordinal);
         Assert.Contains("return NativeMethods.goud_network_connect(_ctx, protocol,", generatedSource, StringComparison.Ordinal);
         Assert.Contains("var _status = NativeMethods.goud_network_connect_with_peer(_ctx, protocol,", generatedSource, StringComparison.Ordinal);
+        Assert.Contains("addressBytes.Length == 0 ? IntPtr.Zero : (IntPtr)addressPtr", generatedSource, StringComparison.Ordinal);
         Assert.Contains("return new NetworkConnectResult(_handle, _peerId);", generatedSource, StringComparison.Ordinal);
+        Assert.Contains("private int? _networkReceiveBufferSize;", generatedSource, StringComparison.Ordinal);
+        Assert.Contains("private int GetNetworkReceiveBufferSize()", generatedSource, StringComparison.Ordinal);
+        Assert.Contains("int _bufferSize = GetNetworkReceiveBufferSize();", generatedSource, StringComparison.Ordinal);
         Assert.Contains("if (_written == 0) return null;", generatedSource, StringComparison.Ordinal);
         Assert.Contains("return new NetworkPacket(_peerId, result);", generatedSource, StringComparison.Ordinal);
         Assert.Contains("var _status = NativeMethods.goud_network_get_stats_v2(_ctx, handle, ref _stats);", generatedSource, StringComparison.Ordinal);
@@ -46,6 +50,8 @@ public class GoudGameNetworkMethodGenerationTests
         Assert.Contains("return NativeMethods.goud_network_clear_overlay_handle(_ctx);", generatedSource, StringComparison.Ordinal);
         Assert.Contains("public NetworkConnectResult NetworkConnectWithPeer(int protocol, string address, ushort port)", generatedContextSource, StringComparison.Ordinal);
         Assert.Contains("public NetworkPacket? NetworkReceivePacket(long handle)", generatedContextSource, StringComparison.Ordinal);
+        Assert.Contains("addressBytes.Length == 0 ? IntPtr.Zero : (IntPtr)addressPtr", generatedContextSource, StringComparison.Ordinal);
+        Assert.Contains("private int GetNetworkReceiveBufferSize()", generatedContextSource, StringComparison.Ordinal);
         Assert.Contains("public static extern int goud_network_connect_with_peer", nativeMethodsSource, StringComparison.Ordinal);
     }
 

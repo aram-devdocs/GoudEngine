@@ -1106,7 +1106,7 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                     pvar = f"{pname}Ptr"
                     L.append(f"                var {bvar} = System.Text.Encoding.UTF8.GetBytes({pname});")
                     fixed_lines.append(f"byte* {pvar} = {bvar}")
-                    ffi_parts.append(f"(IntPtr){pvar}")
+                    ffi_parts.append(f"{bvar}.Length == 0 ? IntPtr.Zero : (IntPtr){pvar}")
                     len_type = _ffi_param_type_at(ffi_fn, ffi_param_index + 1)
                     ffi_parts.append(_cs_len_cast_expr(len_type, f"{bvar}.Length"))
                     ffi_param_index += 2
@@ -1197,14 +1197,7 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         returns_struct = mm.get("returns_struct")
         status_nullable_struct = bool(mm.get("status_nullable_struct"))
         if not no_ctx:
-            L.append("            FfiNetworkCapabilities _caps = default;")
-            L.append("            NativeMethods.goud_provider_network_capabilities(_ctx, ref _caps);")
-            L.append("            int _bufferSize = _caps.MaxMessageSize switch")
-            L.append("            {")
-            L.append("                0 => 65536,")
-            L.append("                > int.MaxValue => int.MaxValue,")
-            L.append("                _ => (int)_caps.MaxMessageSize,")
-            L.append("            };")
+            L.append("            int _bufferSize = GetNetworkReceiveBufferSize();")
         else:
             L.append("            const int _bufferSize = 65536;")
         L.append("            var buf = new byte[_bufferSize];")
@@ -1427,6 +1420,11 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
     tool = schema["tools"][tool_name]
     class_name = tool_name
     extra = []
+    needs_network_receive_buffer_cache = any(
+        tm.get("methods", {}).get(method["name"], {}).get("ffi") == "goud_network_receive"
+        and tm.get("methods", {}).get(method["name"], {}).get("out_buffer")
+        for method in tool.get("methods", [])
+    )
     if is_windowed:
         for prop in tool.get("properties", []):
             pm_check = tm.get("properties", {}).get(prop["name"], {})
@@ -1434,6 +1432,8 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
                 pt_priv = cs_type(prop["type"])
                 field = _to_cs_field(pm_check.get("field", f"_{to_snake(prop['name'])}"))
                 extra.append(f"        private {pt_priv} {field};")
+    if needs_network_receive_buffer_cache:
+        extra.append("        private int? _networkReceiveBufferSize;")
     ctor_params = tool.get("constructor", {}).get("params", [])
     ctor_ffi = tm.get("constructor", {}).get("ffi", "goud_context_create")
 
@@ -1504,6 +1504,28 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
                     default_val = _cs_default_value(cs_type(prop["type"]))
                     lines.append(f"            {field} = {default_val};")
         lines += ["        }", ""]
+
+    if needs_network_receive_buffer_cache:
+        lines += [
+            "        private int GetNetworkReceiveBufferSize()",
+            "        {",
+            "            if (_networkReceiveBufferSize.HasValue)",
+            "            {",
+            "                return _networkReceiveBufferSize.Value;",
+            "            }",
+            "",
+            "            FfiNetworkCapabilities _caps = default;",
+            "            NativeMethods.goud_provider_network_capabilities(_ctx, ref _caps);",
+            "            _networkReceiveBufferSize = _caps.MaxMessageSize switch",
+            "            {",
+            "                0 => 65536,",
+            "                > int.MaxValue => int.MaxValue,",
+            "                _ => (int)_caps.MaxMessageSize,",
+            "            };",
+            "            return _networkReceiveBufferSize.Value;",
+            "        }",
+            "",
+        ]
 
     # Properties (windowed only)
     for prop in tool.get("properties", []):

@@ -153,8 +153,10 @@ def test_generated_network_wrapper_api_names():
     assert "return self._lib.goud_network_host(self._ctx, protocol, port)" in game_src
     assert "return self._lib.goud_network_connect(self._ctx, protocol," in game_src
     assert "_status = self._lib.goud_network_connect_with_peer(self._ctx, protocol," in game_src
+    assert "self._raise_network_error_or_runtime(f'goud_network_connect_with_peer failed with status {_status}')" in game_src
     assert "return NetworkConnectResult(_handle.value, _peer_id.value)" in game_src
     assert "_status = self._lib.goud_network_receive(self._ctx, handle," in game_src
+    assert "self._raise_network_error_or_runtime(f'goud_network_receive failed with status {_status}')" in game_src
     assert (
         "return NetworkPacket(_out_peer_id.value, bytes(_out_buf[:_status]))" in game_src
         or (
@@ -163,10 +165,12 @@ def test_generated_network_wrapper_api_names():
         )
     )
     assert "_status = self._lib.goud_network_get_stats_v2(self._ctx, handle, ctypes.byref(_stats))" in game_src
-    assert "raise RuntimeError(f'goud_network_get_stats_v2 failed with status {_status}')" in game_src
+    assert "self._raise_network_error_or_runtime(f'goud_network_get_stats_v2 failed with status {_status}')" in game_src
     assert "return NetworkStats(" in game_src
     assert "_config_ffi = _ffi_module.FfiNetworkSimulationConfig()" in game_src
     assert "return self._lib.goud_network_set_simulation(self._ctx, handle, _config_ffi)" in game_src
+    assert "def _raise_network_error_or_runtime(self, message):" in game_src
+    assert "from ._errors import GoudError" in game_src
     types_src = (_GENERATED_DIR / "_types.py").read_text()
     assert "class NetworkConnectResult:" in types_src
     assert "class NetworkPacket:" in types_src

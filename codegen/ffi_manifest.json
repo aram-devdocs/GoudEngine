@@ -1418,7 +1418,7 @@
     "goud_network_connect": {
       "source_file": "ffi/network/lifecycle.rs",
       "params": [
-        "_context_id: GoudContextId",
+        "context_id: GoudContextId",
         "protocol: i32",
         "addr_ptr: *const u8",
         "addr_len: i32",
@@ -1430,7 +1430,7 @@
     "goud_network_connect_with_peer": {
       "source_file": "ffi/network/lifecycle.rs",
       "params": [
-        "_context_id: GoudContextId",
+        "context_id: GoudContextId",
         "protocol: i32",
         "addr_ptr: *const u8",
         "addr_len: i32",
@@ -1476,7 +1476,7 @@
     "goud_network_host": {
       "source_file": "ffi/network/lifecycle.rs",
       "params": [
-        "_context_id: GoudContextId",
+        "context_id: GoudContextId",
         "protocol: i32",
         "port: u16"
       ],

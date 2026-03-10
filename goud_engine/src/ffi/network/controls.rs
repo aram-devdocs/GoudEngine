@@ -20,9 +20,17 @@ pub extern "C" fn goud_network_set_overlay_handle(context_id: GoudContextId, han
     match with_registry(|reg| Ok(reg.instances.contains_key(&handle))) {
         Ok(true) => {
             if network_overlay_set_active_handle_override(context_id, Some(handle)) {
-                let _ = with_window_state(context_id, |state| {
+                if with_window_state(context_id, |state| {
                     state.network_overlay.set_active_handle(Some(handle));
-                });
+                })
+                .is_none()
+                {
+                    log::warn!(
+                        "Failed to sync network overlay state for context {} after setting handle {}",
+                        context_id,
+                        handle
+                    );
+                }
                 0
             } else {
                 ERR_INTERNAL_ERROR
@@ -44,9 +52,16 @@ pub extern "C" fn goud_network_set_overlay_handle(context_id: GoudContextId, han
 #[no_mangle]
 pub extern "C" fn goud_network_clear_overlay_handle(context_id: GoudContextId) -> i32 {
     if network_overlay_set_active_handle_override(context_id, None) {
-        let _ = with_window_state(context_id, |state| {
+        if with_window_state(context_id, |state| {
             state.network_overlay.set_active_handle(None);
-        });
+        })
+        .is_none()
+        {
+            log::warn!(
+                "Failed to sync network overlay state for context {} after clearing handle",
+                context_id
+            );
+        }
         0
     } else {
         ERR_INTERNAL_ERROR

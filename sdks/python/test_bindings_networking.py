@@ -33,6 +33,10 @@ def test_handwritten_network_wrapper_exports():
     assert '"NetworkConnectResult",' in init_src, "__init__.py must export NetworkConnectResult"
     assert '"NetworkPacket",' in init_src, "__init__.py must export NetworkPacket"
     assert "network_connect_with_peer" in networking_src, "connect() must use network_connect_with_peer"
+    assert "from .generated._errors import GoudError" in networking_src, \
+        "networking wrapper must import typed engine errors"
+    assert "def _raise_backend_error_or_runtime(backend: Any, message: str) -> None:" in networking_src, \
+        "networking wrapper must centralize typed last-error fallback"
 
     print("  Handwritten network wrapper export tests passed")
     return True
@@ -50,8 +54,8 @@ def test_handwritten_network_wrapper_send_contract_source():
         "send() must fail clearly when no default peer ID exists"
     assert "return self.send_to(self.default_peer_id, data, channel)" in networking_src, \
         "send() must route through send_to() using default peer ID"
-    assert "raise RuntimeError(f\"network_host failed with handle {handle}\")" in networking_src, \
-        "host() must fail clearly when the backend returns a negative handle"
+    assert "_raise_backend_error_or_runtime(" in networking_src, \
+        "host() must route failures through typed last-error support"
 
     networking_mod = _load_module("_networking", networking_path)
     NetworkManager = networking_mod.NetworkManager

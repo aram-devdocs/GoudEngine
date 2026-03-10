@@ -12,8 +12,7 @@ use super::registry::{with_instance, with_registry, NetInstance, ERR_HANDLE};
 /// Returns a positive network handle on success, or a negative error code.
 /// `protocol`: 0 = UDP, 1 = WebSocket, 2 = TCP.
 #[no_mangle]
-pub extern "C" fn goud_network_host(_context_id: GoudContextId, protocol: i32, port: u16) -> i64 {
-    let context_id = _context_id;
+pub extern "C" fn goud_network_host(context_id: GoudContextId, protocol: i32, port: u16) -> i64 {
     let provider = match create_provider(protocol) {
         Ok(p) => p,
         Err(_) => {
@@ -108,13 +107,12 @@ fn connect_instance(
 /// `addr_ptr` must point to valid UTF-8 of `addr_len` bytes. Not transferred.
 #[no_mangle]
 pub unsafe extern "C" fn goud_network_connect(
-    _context_id: GoudContextId,
+    context_id: GoudContextId,
     protocol: i32,
     addr_ptr: *const u8,
     addr_len: i32,
     port: u16,
 ) -> i64 {
-    let context_id = _context_id;
     let full_addr = match parse_connect_address(addr_ptr, addr_len, port) {
         Ok(addr) => addr,
         Err(_) => return ERR_HANDLE,
@@ -135,7 +133,7 @@ pub unsafe extern "C" fn goud_network_connect(
 /// `out_peer_id` must point to writable storage retained by the caller.
 #[no_mangle]
 pub unsafe extern "C" fn goud_network_connect_with_peer(
-    _context_id: GoudContextId,
+    context_id: GoudContextId,
     protocol: i32,
     addr_ptr: *const u8,
     addr_len: i32,
@@ -143,7 +141,6 @@ pub unsafe extern "C" fn goud_network_connect_with_peer(
     out_handle: *mut i64,
     out_peer_id: *mut u64,
 ) -> i32 {
-    let context_id = _context_id;
     if out_handle.is_null() {
         set_last_error(GoudError::InvalidState("out_handle is null".to_string()));
         return ERR_INVALID_STATE;

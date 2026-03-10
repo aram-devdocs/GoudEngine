@@ -5,6 +5,7 @@ from . import _ffi as _ffi_module
 from ._ffi import (get_lib, GoudContextId, FfiVec2, FfiTransform2D, FfiSprite, FfiColor, FfiUiStyle, FfiUiEvent,
     FfiNetworkStats, FfiNetworkSimulationConfig, GoudRenderStats, GoudContact)
 from ._types import (Entity, Vec2, Color, Transform2D, Sprite, RenderStats, UiStyle, UiEvent, NetworkStats, NetworkSimulationConfig, NetworkConnectResult, NetworkPacket, NetworkCapabilities)
+from ._errors import GoudError
 from ._keys import Key, MouseButton, PhysicsBackend2D
 
 # Type IDs for built-in component types (hash of type name)
@@ -13,6 +14,12 @@ _TYPEID_SPRITE = hash('Sprite') & 0xFFFFFFFFFFFFFFFF
 
 class GoudGame:
     """Main game engine instance. Creates a window, manages rendering, input, and ECS."""
+
+    def _raise_network_error_or_runtime(self, message):
+        error = GoudError.from_last_error(self._lib)
+        if error is not None:
+            raise error
+        raise RuntimeError(message)
 
     def __init__(self, width: int = 800, height: int = 600, title: str = 'GoudEngine'):
         lib = get_lib()
@@ -622,7 +629,7 @@ class GoudGame:
         _address_buf = ctypes.create_string_buffer(_address_bytes, len(_address_bytes))
         _status = self._lib.goud_network_connect_with_peer(self._ctx, protocol, ctypes.cast(_address_buf, ctypes.POINTER(ctypes.c_uint8)), len(_address_bytes), port, ctypes.byref(_handle), ctypes.byref(_peer_id))
         if _status < 0:
-            raise RuntimeError(f'goud_network_connect_with_peer failed with status {_status}')
+            self._raise_network_error_or_runtime(f'goud_network_connect_with_peer failed with status {_status}')
         return NetworkConnectResult(_handle.value, _peer_id.value)
 
     def network_disconnect(self, handle):
@@ -643,7 +650,7 @@ class GoudGame:
         _out_peer_id = ctypes.c_uint64()
         _status = self._lib.goud_network_receive(self._ctx, handle, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
         if _status < 0:
-            raise RuntimeError(f'goud_network_receive failed with status {_status}')
+            self._raise_network_error_or_runtime(f'goud_network_receive failed with status {_status}')
         if _status == 0:
             return b''
         return bytes(_out_buf[:_status])
@@ -657,7 +664,7 @@ class GoudGame:
         _out_peer_id = ctypes.c_uint64()
         _status = self._lib.goud_network_receive(self._ctx, handle, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
         if _status < 0:
-            raise RuntimeError(f'goud_network_receive failed with status {_status}')
+            self._raise_network_error_or_runtime(f'goud_network_receive failed with status {_status}')
         if _status == 0:
             return None
         return NetworkPacket(_out_peer_id.value, bytes(_out_buf[:_status]))
@@ -671,7 +678,7 @@ class GoudGame:
         _stats = FfiNetworkStats()
         _status = self._lib.goud_network_get_stats_v2(self._ctx, handle, ctypes.byref(_stats))
         if _status < 0:
-            raise RuntimeError(f'goud_network_get_stats_v2 failed with status {_status}')
+            self._raise_network_error_or_runtime(f'goud_network_get_stats_v2 failed with status {_status}')
         return NetworkStats(_stats.bytes_sent, _stats.bytes_received, _stats.packets_sent, _stats.packets_received, _stats.packets_lost, _stats.rtt_ms, _stats.send_bandwidth_bytes_per_sec, _stats.receive_bandwidth_bytes_per_sec, _stats.packet_loss_percent, _stats.jitter_ms)
 
     def network_peer_count(self, handle):
@@ -816,6 +823,12 @@ class GoudGame:
 class GoudContext:
     """Headless engine context for CI tests and non-windowed entity management."""
 
+    def _raise_network_error_or_runtime(self, message):
+        error = GoudError.from_last_error(self._lib)
+        if error is not None:
+            raise error
+        raise RuntimeError(message)
+
     def __init__(self):
         lib = get_lib()
         self._lib = lib
@@ -856,7 +869,7 @@ class GoudContext:
         _address_buf = ctypes.create_string_buffer(_address_bytes, len(_address_bytes))
         _status = self._lib.goud_network_connect_with_peer(self._ctx, protocol, ctypes.cast(_address_buf, ctypes.POINTER(ctypes.c_uint8)), len(_address_bytes), port, ctypes.byref(_handle), ctypes.byref(_peer_id))
         if _status < 0:
-            raise RuntimeError(f'goud_network_connect_with_peer failed with status {_status}')
+            self._raise_network_error_or_runtime(f'goud_network_connect_with_peer failed with status {_status}')
         return NetworkConnectResult(_handle.value, _peer_id.value)
 
     def network_disconnect(self, handle):
@@ -877,7 +890,7 @@ class GoudContext:
         _out_peer_id = ctypes.c_uint64()
         _status = self._lib.goud_network_receive(self._ctx, handle, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
         if _status < 0:
-            raise RuntimeError(f'goud_network_receive failed with status {_status}')
+            self._raise_network_error_or_runtime(f'goud_network_receive failed with status {_status}')
         if _status == 0:
             return b''
         return bytes(_out_buf[:_status])
@@ -891,7 +904,7 @@ class GoudContext:
         _out_peer_id = ctypes.c_uint64()
         _status = self._lib.goud_network_receive(self._ctx, handle, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
         if _status < 0:
-            raise RuntimeError(f'goud_network_receive failed with status {_status}')
+            self._raise_network_error_or_runtime(f'goud_network_receive failed with status {_status}')
         if _status == 0:
             return None
         return NetworkPacket(_out_peer_id.value, bytes(_out_buf[:_status]))
@@ -905,7 +918,7 @@ class GoudContext:
         _stats = FfiNetworkStats()
         _status = self._lib.goud_network_get_stats_v2(self._ctx, handle, ctypes.byref(_stats))
         if _status < 0:
-            raise RuntimeError(f'goud_network_get_stats_v2 failed with status {_status}')
+            self._raise_network_error_or_runtime(f'goud_network_get_stats_v2 failed with status {_status}')
         return NetworkStats(_stats.bytes_sent, _stats.bytes_received, _stats.packets_sent, _stats.packets_received, _stats.packets_lost, _stats.rtt_ms, _stats.send_bandwidth_bytes_per_sec, _stats.receive_bandwidth_bytes_per_sec, _stats.packet_loss_percent, _stats.jitter_ms)
 
     def network_peer_count(self, handle):

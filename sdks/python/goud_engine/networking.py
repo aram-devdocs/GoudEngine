@@ -4,8 +4,22 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional
 
+try:
+    from .generated._errors import GoudError
+except ImportError:  # pragma: no cover - supports direct module loading in tests
+    from goud_engine.generated._errors import GoudError
+
 if TYPE_CHECKING:
     from .generated._types import NetworkPacket, NetworkSimulationConfig, NetworkStats
+
+
+def _raise_backend_error_or_runtime(backend: Any, message: str) -> None:
+    lib = getattr(backend, "_lib", None)
+    if lib is not None:
+        error = GoudError.from_last_error(lib)
+        if error is not None:
+            raise error
+    raise RuntimeError(message)
 
 
 class NetworkEndpoint:
@@ -63,7 +77,10 @@ class NetworkManager:
     def host(self, protocol, port):
         handle = self._backend.network_host(protocol, port)
         if handle < 0:
-            raise RuntimeError(f"network_host failed with handle {handle}")
+            _raise_backend_error_or_runtime(
+                self._backend,
+                f"network_host failed with handle {handle}",
+            )
         return NetworkEndpoint(self._backend, handle, None)
 
     def connect(self, protocol, address, port):
