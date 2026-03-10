@@ -125,11 +125,19 @@ if len(section_split) != 2:
     errors.append("AGENTS.md: missing 'Subagent Dispatch Reference' section")
 else:
     table_block = section_split[1]
+    saw_table_row = False
     for line in table_block.splitlines():
+        if not line.strip():
+            if saw_table_row:
+                break
+            continue
         if not line.startswith("|"):
+            if saw_table_row:
+                break
             if line.strip():
                 continue
-            break
+            continue
+        saw_table_row = True
         cols = [c.strip() for c in line.strip().strip("|").split("|")]
         if len(cols) < 2 or cols[0] in {"Role", "------"}:
             continue
@@ -137,12 +145,14 @@ else:
         expected = expected_models.get(role)
         if expected and model != expected:
             errors.append(f"AGENTS.md: role '{role}' model '{model}' != catalog '{expected}'")
+    if not saw_table_row:
+        errors.append("AGENTS.md: could not parse Subagent Dispatch Reference table")
 
 # Orchestrator protocol tree consistency for explicit role(model) entries.
 protocol_text = (root / ".agents" / "rules" / "orchestrator-protocol.md").read_text(
     encoding="utf-8"
 )
-for match in re.finditer(r"(?:\\|--|\\+--)\\s+([a-z0-9-]+)\\s+\\(([^)]+)\\)", protocol_text):
+for match in re.finditer(r"(?:[|+]--)[ \t]+([a-z0-9-]+)[ \t]+\(([^)]+)\)", protocol_text):
     role, model = match.group(1), match.group(2)
     expected = expected_models.get(role)
     if expected and model != expected:
