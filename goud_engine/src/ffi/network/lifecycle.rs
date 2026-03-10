@@ -1,9 +1,7 @@
 use std::collections::VecDeque;
 
 use crate::core::error::{set_last_error, GoudError, ERR_INVALID_STATE};
-use crate::core::providers::network_types::{
-    Channel, ConnectionId, HostConfig, NetworkEvent,
-};
+use crate::core::providers::network_types::{Channel, ConnectionId, HostConfig, NetworkEvent};
 use crate::ffi::context::GoudContextId;
 
 use super::provider_factory::create_provider;
