@@ -4,10 +4,14 @@
 
 use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
+use crate::ffi::input::{goud_input_key_just_pressed, KEY_F6};
+use crate::ffi::network::{
+    network_overlay_handle_for_context, network_overlay_set_active_handle_override,
+};
 use crate::ffi::window::with_window_state;
 use crate::libs::graphics::backend::{ClearOps, FrameOps, StateOps};
 
-use super::draw::render_physics_debug_overlay;
+use super::draw::{render_network_debug_overlay, render_physics_debug_overlay};
 
 // ============================================================================
 // Renderer State
@@ -92,7 +96,32 @@ pub extern "C" fn goud_renderer_end(context_id: GoudContextId) -> bool {
 
     // End frame on the backend
     with_window_state(context_id, |state| {
+        if goud_input_key_just_pressed(context_id, KEY_F6) {
+            state.network_overlay.toggle_visibility();
+            if !state.network_overlay.is_visible() {
+                state.network_overlay.set_active_handle(None);
+                let _ = network_overlay_set_active_handle_override(context_id, None);
+            }
+        }
+
+        if state.network_overlay.is_visible() {
+            if state.network_overlay.active_handle().is_none() {
+                state
+                    .network_overlay
+                    .set_active_handle(network_overlay_handle_for_context(context_id));
+            }
+            let _ = network_overlay_set_active_handle_override(
+                context_id,
+                state.network_overlay.active_handle(),
+            );
+        }
+
         if let Err(e) = render_physics_debug_overlay(context_id, state) {
+            set_last_error(e);
+            return false;
+        }
+
+        if let Err(e) = render_network_debug_overlay(context_id, state) {
             set_last_error(e);
             return false;
         }

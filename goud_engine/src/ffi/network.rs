@@ -1,7 +1,7 @@
 //! Networking FFI functions.
 //!
 //! Provides C-compatible functions for creating and managing network
-//! connections using UDP or WebSocket transports. Network provider
+//! connections using UDP, WebSocket, or TCP transports. Network provider
 //! instances are stored in a global registry keyed by opaque handles.
 
 use std::collections::{HashMap, VecDeque};
@@ -10,9 +10,12 @@ use std::sync::Mutex;
 use crate::core::error::{set_last_error, GoudError, ERR_INTERNAL_ERROR, ERR_INVALID_STATE};
 use crate::core::providers::network::NetworkProvider;
 use crate::core::providers::network_types::{Channel, ConnectionId, HostConfig, NetworkEvent};
-#[cfg(any(feature = "net-udp", feature = "net-ws"))]
+#[cfg(any(feature = "net-tcp", feature = "net-udp", feature = "net-ws"))]
 use crate::core::providers::ProviderLifecycle;
 use crate::ffi::context::GoudContextId;
+use crate::sdk::network_debug_overlay::NetworkOverlayMetrics;
+#[cfg(feature = "net-tcp")]
+use crate::libs::providers::impls::tcp_network::TcpNetProvider;
 #[cfg(feature = "net-udp")]
 use crate::libs::providers::impls::udp_network::UdpNetProvider;
 #[cfg(feature = "net-ws")]
@@ -25,6 +28,7 @@ use crate::libs::providers::impls::ws_network::WsNetProvider;
 /// Protocol selector passed from FFI callers.
 const PROTOCOL_UDP: i32 = 0;
 const PROTOCOL_WS: i32 = 1;
+const PROTOCOL_TCP: i32 = 2;
 
 /// Error sentinel returned for handle-producing functions.
 const ERR_HANDLE: i64 = -1;
@@ -45,6 +49,8 @@ static NET_REGISTRY: Mutex<Option<NetRegistryInner>> = Mutex::new(None);
 
 struct NetRegistryInner {
     instances: HashMap<i64, NetInstance>,
+    default_handles_by_context: HashMap<(u32, u32), i64>,
+    overlay_override_handles_by_context: HashMap<(u32, u32), i64>,
     next_handle: i64,
 }
 
@@ -52,6 +58,8 @@ impl NetRegistryInner {
     fn new() -> Self {
         Self {
             instances: HashMap::new(),
+            default_handles_by_context: HashMap::new(),
+            overlay_override_handles_by_context: HashMap::new(),
             next_handle: 1,
         }
     }
@@ -62,6 +70,58 @@ impl NetRegistryInner {
         self.instances.insert(handle, instance);
         handle
     }
+
+    fn context_key(context_id: GoudContextId) -> (u32, u32) {
+        (context_id.index(), context_id.generation())
+    }
+
+    fn set_default_handle_for_context(&mut self, context_id: GoudContextId, handle: i64) {
+        self.default_handles_by_context
+            .insert(Self::context_key(context_id), handle);
+    }
+
+    fn set_overlay_override_handle_for_context(
+        &mut self,
+        context_id: GoudContextId,
+        handle: Option<i64>,
+    ) {
+        let key = Self::context_key(context_id);
+        if let Some(handle) = handle {
+            self.overlay_override_handles_by_context.insert(key, handle);
+        } else {
+            self.overlay_override_handles_by_context.remove(&key);
+        }
+    }
+
+    fn active_handle_for_context(&self, context_id: GoudContextId) -> Option<i64> {
+        let key = Self::context_key(context_id);
+        if let Some(handle) = self.overlay_override_handles_by_context.get(&key) {
+            if self.instances.contains_key(handle) {
+                return Some(*handle);
+            }
+        }
+
+        self.default_handles_by_context
+            .get(&key)
+            .copied()
+            .filter(|handle| self.instances.contains_key(handle))
+    }
+
+    fn clear_associations_for_handle(&mut self, handle: i64) {
+        self.default_handles_by_context
+            .retain(|_, mapped_handle| *mapped_handle != handle);
+        self.overlay_override_handles_by_context
+            .retain(|_, mapped_handle| *mapped_handle != handle);
+    }
+}
+
+/// Snapshot used by the native network overlay renderer.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct NetworkOverlaySnapshot {
+    /// Active network handle selected for this context.
+    pub handle: i64,
+    /// Metrics rendered in the overlay.
+    pub metrics: NetworkOverlayMetrics,
 }
 
 fn with_registry<F, R>(f: F) -> Result<R, i32>
@@ -98,6 +158,7 @@ fn create_provider(protocol: i32) -> Result<Box<dyn NetworkProvider>, i32> {
     match protocol {
         PROTOCOL_UDP => create_udp_provider(),
         PROTOCOL_WS => create_ws_provider(),
+        PROTOCOL_TCP => create_tcp_provider(),
         _ => {
             set_last_error(GoudError::InvalidState(format!(
                 "Unknown protocol: {}",
@@ -138,6 +199,25 @@ fn create_ws_provider() -> Result<Box<dyn NetworkProvider>, i32> {
     Ok(Box::new(p))
 }
 
+#[cfg(feature = "net-tcp")]
+fn create_tcp_provider() -> Result<Box<dyn NetworkProvider>, i32> {
+    let mut p = TcpNetProvider::new();
+    p.init().map_err(|e| {
+        let code = e.error_code();
+        set_last_error(e);
+        code
+    })?;
+    Ok(Box::new(p))
+}
+
+#[cfg(not(feature = "net-tcp"))]
+fn create_tcp_provider() -> Result<Box<dyn NetworkProvider>, i32> {
+    set_last_error(GoudError::InvalidState(
+        "TCP networking not available (net-tcp feature disabled)".to_string(),
+    ));
+    Err(ERR_INVALID_STATE)
+}
+
 #[cfg(not(feature = "net-ws"))]
 fn create_ws_provider() -> Result<Box<dyn NetworkProvider>, i32> {
     set_last_error(GoudError::InvalidState(
@@ -153,9 +233,10 @@ fn create_ws_provider() -> Result<Box<dyn NetworkProvider>, i32> {
 /// Creates a network host listening on the given port.
 ///
 /// Returns a positive network handle on success, or a negative error code.
-/// `protocol`: 0 = UDP, 1 = WebSocket.
+/// `protocol`: 0 = UDP, 1 = WebSocket, 2 = TCP.
 #[no_mangle]
 pub extern "C" fn goud_network_host(_context_id: GoudContextId, protocol: i32, port: u16) -> i64 {
+    let context_id = _context_id;
     let provider = match create_provider(protocol) {
         Ok(p) => p,
         Err(_) => {
@@ -184,7 +265,12 @@ pub extern "C" fn goud_network_host(_context_id: GoudContextId, protocol: i32, p
         return ERR_HANDLE;
     }
 
-    with_registry(|reg| Ok(reg.insert(inst))).unwrap_or(ERR_HANDLE)
+    with_registry(|reg| {
+        let handle = reg.insert(inst);
+        reg.set_default_handle_for_context(context_id, handle);
+        Ok(handle)
+    })
+    .unwrap_or(ERR_HANDLE)
 }
 
 /// Connects to a remote host. Returns a positive handle or negative error.
@@ -200,6 +286,7 @@ pub unsafe extern "C" fn goud_network_connect(
     addr_len: i32,
     port: u16,
 ) -> i64 {
+    let context_id = _context_id;
     if addr_ptr.is_null() || addr_len <= 0 {
         set_last_error(GoudError::InvalidState(
             "addr_ptr is null or empty".to_string(),
@@ -246,7 +333,12 @@ pub unsafe extern "C" fn goud_network_connect(
         recv_queue: VecDeque::new(),
     };
 
-    with_registry(|reg| Ok(reg.insert(inst))).unwrap_or(ERR_HANDLE)
+    with_registry(|reg| {
+        let handle = reg.insert(inst);
+        reg.set_default_handle_for_context(context_id, handle);
+        Ok(handle)
+    })
+    .unwrap_or(ERR_HANDLE)
 }
 
 /// Disconnects and destroys a network instance.
@@ -263,6 +355,7 @@ pub extern "C" fn goud_network_disconnect(_context_id: GoudContextId, handle: i6
         })?;
         let _ = inst.provider.disconnect_all();
         inst.provider.shutdown();
+        reg.clear_associations_for_handle(handle);
         Ok(0)
     });
     result.unwrap_or_else(|e| e)
@@ -428,4 +521,111 @@ pub unsafe extern "C" fn goud_network_get_stats(
 pub extern "C" fn goud_network_peer_count(_context_id: GoudContextId, handle: i64) -> i32 {
     let result = with_instance(handle, |inst| Ok(inst.provider.connections().len() as i32));
     result.unwrap_or_else(|e| e)
+}
+
+/// Sets/clears an explicit active overlay handle override for this context.
+///
+/// This is an internal seam used by the native debug overlay path in this
+/// batch. Passing `None` clears the override and falls back to the default
+/// context-associated handle.
+pub(crate) fn network_overlay_set_active_handle_override(
+    context_id: GoudContextId,
+    handle: Option<i64>,
+) -> bool {
+    with_registry(|reg| {
+        if let Some(handle) = handle {
+            if !reg.instances.contains_key(&handle) {
+                return Ok(false);
+            }
+        }
+        reg.set_overlay_override_handle_for_context(context_id, handle);
+        Ok(true)
+    })
+    .unwrap_or(false)
+}
+
+/// Returns the active handle for a context using override-first semantics.
+pub(crate) fn network_overlay_handle_for_context(context_id: GoudContextId) -> Option<i64> {
+    with_registry(|reg| Ok(reg.active_handle_for_context(context_id)))
+        .ok()
+        .flatten()
+}
+
+/// Returns active-handle stats for the network overlay in this context.
+pub(crate) fn network_overlay_snapshot_for_context(
+    context_id: GoudContextId,
+) -> Option<NetworkOverlaySnapshot> {
+    with_registry(|reg| {
+        let handle = match reg.active_handle_for_context(context_id) {
+            Some(handle) => handle,
+            None => return Ok(None),
+        };
+        let instance = match reg.instances.get(&handle) {
+            Some(instance) => instance,
+            None => return Ok(None),
+        };
+
+        let stats = instance.provider.stats();
+        Ok(Some(NetworkOverlaySnapshot {
+            handle,
+            metrics: NetworkOverlayMetrics {
+                rtt_ms: stats.rtt_ms,
+                send_bandwidth_bytes_per_sec: stats.send_bandwidth_bytes_per_sec,
+                receive_bandwidth_bytes_per_sec: stats.receive_bandwidth_bytes_per_sec,
+                packet_loss_percent: stats.packet_loss_percent,
+                jitter_ms: stats.jitter_ms,
+            },
+        }))
+    })
+    .ok()
+    .flatten()
+}
+
+#[cfg(test)]
+mod overlay_mapping_tests {
+    use super::*;
+
+    #[test]
+    fn test_active_handle_prefers_override_then_default() {
+        let context_id = GoudContextId::new(200, 1);
+        let mut reg = NetRegistryInner::new();
+        reg.instances.insert(
+            10,
+            NetInstance {
+                provider: Box::new(crate::core::providers::impls::NullNetworkProvider::new()),
+                recv_queue: VecDeque::new(),
+            },
+        );
+        reg.instances.insert(
+            11,
+            NetInstance {
+                provider: Box::new(crate::core::providers::impls::NullNetworkProvider::new()),
+                recv_queue: VecDeque::new(),
+            },
+        );
+
+        reg.set_default_handle_for_context(context_id, 10);
+        assert_eq!(reg.active_handle_for_context(context_id), Some(10));
+
+        reg.set_overlay_override_handle_for_context(context_id, Some(11));
+        assert_eq!(reg.active_handle_for_context(context_id), Some(11));
+
+        reg.set_overlay_override_handle_for_context(context_id, None);
+        assert_eq!(reg.active_handle_for_context(context_id), Some(10));
+    }
+
+    #[test]
+    fn test_clear_associations_removes_default_and_override() {
+        let context_id = GoudContextId::new(201, 1);
+        let mut reg = NetRegistryInner::new();
+        reg.default_handles_by_context
+            .insert(NetRegistryInner::context_key(context_id), 55);
+        reg.overlay_override_handles_by_context
+            .insert(NetRegistryInner::context_key(context_id), 55);
+
+        reg.clear_associations_for_handle(55);
+
+        assert!(reg.default_handles_by_context.is_empty());
+        assert!(reg.overlay_override_handles_by_context.is_empty());
+    }
 }

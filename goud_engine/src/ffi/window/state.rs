@@ -12,6 +12,7 @@ use crate::libs::graphics::backend::StateOps;
 use crate::libs::platform::glfw_platform::GlfwPlatform;
 use crate::libs::platform::PlatformBackend;
 use crate::sdk::debug_overlay::DebugOverlay;
+use crate::sdk::network_debug_overlay::NetworkOverlayState;
 use std::cell::RefCell;
 
 // ============================================================================
@@ -37,6 +38,9 @@ pub struct WindowState {
 
     /// Debug overlay for FPS stats tracking.
     pub(crate) debug_overlay: DebugOverlay,
+
+    /// Runtime state for the network debug overlay in this context.
+    pub(crate) network_overlay: NetworkOverlayState,
 }
 
 impl WindowState {
@@ -52,6 +56,7 @@ impl WindowState {
             physics_debug_enabled,
             delta_time: 0.0,
             debug_overlay: DebugOverlay::new(0.5),
+            network_overlay: NetworkOverlayState::default(),
         }
     }
 
