@@ -61,16 +61,18 @@ public class UiManagerApiTests
     [Fact]
     public void Generated_UiManager_Source_Uses_Managed_String_Marshalling()
     {
-        string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../"));
-        string uiManagerPath = Path.Combine(root, "sdks/csharp/generated/Core/UiManager.g.cs");
-        string uiStylePath = Path.Combine(root, "sdks/csharp/generated/Math/UiStyle.g.cs");
+        var sdksRoot = Path.GetFullPath(
+            Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "..", "..", "..", "..")
+        );
+        string uiManagerPath = Path.Combine(sdksRoot, "csharp", "generated", "Core", "UiManager.g.cs");
+        string uiStylePath = Path.Combine(sdksRoot, "csharp", "generated", "Math", "UiStyle.g.cs");
 
         Assert.True(
             File.Exists(uiManagerPath),
-            $"Expected generated UiManager source at '{uiManagerPath}'. Check the csharp test root resolution from '{root}'.");
+            $"Expected generated UiManager source at '{uiManagerPath}'. Check the csharp test root resolution from '{sdksRoot}'.");
         Assert.True(
             File.Exists(uiStylePath),
-            $"Expected generated UiStyle source at '{uiStylePath}'. Check the csharp test root resolution from '{root}'.");
+            $"Expected generated UiStyle source at '{uiStylePath}'. Check the csharp test root resolution from '{sdksRoot}'.");
 
         string uiManagerSrc = File.ReadAllText(uiManagerPath);
         string uiStyleSrc = File.ReadAllText(uiStylePath);
