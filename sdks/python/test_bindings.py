@@ -162,6 +162,49 @@ def test_generated_audio_activate_maps_to_activate_ffi():
     return True
 
 
+def test_generated_network_wrapper_api_names():
+    """Validate generated network wrapper API names and mappings without native load."""
+    print("Testing generated network wrapper API names...")
+
+    game_src = (_GENERATED_DIR / "_game.py").read_text()
+    ffi_src = (_GENERATED_DIR / "_ffi.py").read_text()
+
+    expected_game_methods = [
+        "def network_host(self, protocol, port):",
+        "def network_connect(self, protocol, address, port):",
+        "def network_disconnect(self, handle):",
+        "def network_send(self, handle, peer_id, data, channel):",
+        "def network_receive(self, handle):",
+        "def network_poll(self, handle):",
+        "def get_network_stats(self, handle):",
+        "def network_peer_count(self, handle):",
+        "def set_network_simulation(self, handle, config):",
+        "def clear_network_simulation(self, handle):",
+        "def set_network_overlay_handle(self, handle):",
+        "def clear_network_overlay_handle(self):",
+    ]
+    for signature in expected_game_methods:
+        assert signature in game_src, f"missing generated network wrapper: {signature}"
+
+    assert "return self._lib.goud_network_host(self._ctx, protocol, port)" in game_src
+    assert "return self._lib.goud_network_connect(self._ctx, protocol," in game_src
+    assert "_status = self._lib.goud_network_receive(self._ctx, handle," in game_src
+    assert "_status = self._lib.goud_network_get_stats_v2(self._ctx, handle, ctypes.byref(_stats))" in game_src
+    assert "raise RuntimeError(f'goud_network_get_stats_v2 failed with status {_status}')" in game_src
+    assert "return NetworkStats(" in game_src
+    assert "_config_ffi = _ffi_module.FfiNetworkSimulationConfig()" in game_src
+    assert "return self._lib.goud_network_set_simulation(self._ctx, handle, _config_ffi)" in game_src
+
+    assert "_lib.goud_network_get_stats_v2.argtypes = [GoudContextId, ctypes.c_int64, ctypes.POINTER(FfiNetworkStats)]" in ffi_src
+    assert "_lib.goud_network_set_overlay_handle.argtypes = [GoudContextId, ctypes.c_int64]" in ffi_src
+    assert "_lib.goud_network_clear_overlay_handle.argtypes = [GoudContextId]" in ffi_src
+    assert "_lib.goud_network_set_simulation.argtypes = [GoudContextId, ctypes.c_int64, FfiNetworkSimulationConfig]" in ffi_src
+    assert "_lib.goud_network_clear_simulation.argtypes = [GoudContextId, ctypes.c_int64]" in ffi_src
+
+    print("  Network wrapper API name tests passed")
+    return True
+
+
 def test_vec2():
     """Test Vec2 construction, factories, arithmetic, and math methods."""
     print("Testing Vec2...")
@@ -718,6 +761,7 @@ def main():
         test_generated_scene_wrapper_api_names,
         test_generated_audio_wrapper_api_names,
         test_generated_audio_activate_maps_to_activate_ffi,
+        test_generated_network_wrapper_api_names,
         test_vec2,
         test_color,
         test_rect,

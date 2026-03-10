@@ -644,7 +644,9 @@ class GoudGame:
     def get_network_stats(self, handle):
         """Returns aggregate network statistics for a network handle."""
         _stats = FfiNetworkStats()
-        self._lib.goud_network_get_stats_v2(self._ctx, handle, ctypes.byref(_stats))
+        _status = self._lib.goud_network_get_stats_v2(self._ctx, handle, ctypes.byref(_stats))
+        if _status < 0:
+            raise RuntimeError(f'goud_network_get_stats_v2 failed with status {_status}')
         return NetworkStats(_stats.bytes_sent, _stats.bytes_received, _stats.packets_sent, _stats.packets_received, _stats.packets_lost, _stats.rtt_ms, _stats.send_bandwidth_bytes_per_sec, _stats.receive_bandwidth_bytes_per_sec, _stats.packet_loss_percent, _stats.jitter_ms)
 
     def network_peer_count(self, handle):

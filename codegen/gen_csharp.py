@@ -1012,6 +1012,7 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         ffi_fn = mm["ffi"]
         no_ctx = mm.get("no_context", False)
         status_nullable_struct = bool(mm.get("status_nullable_struct"))
+        status_struct = bool(mm.get("status_struct"))
         entity_set = set(mm.get("entity_params", []))
         enum_set = set(mm.get("enum_params", {}).keys())
         out_params = mm["out_params"]
@@ -1032,7 +1033,7 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                 ffi_parts.append(pname)
         ffi_parts.extend(f"ref {local}" for local in out_locals)
 
-        if status_nullable_struct:
+        if status_nullable_struct or status_struct:
             L.append(f"            var _status = NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
             L.append("            if (_status < 0)")
             L.append("            {")
@@ -1040,7 +1041,8 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
             L.append("                if (_ex != null) throw _ex;")
             L.append(f'                throw new InvalidOperationException($"{ffi_fn} failed with status {{_status}}.");')
             L.append("            }")
-            L.append("            if (_status == 0) return null;")
+            if status_nullable_struct:
+                L.append("            if (_status == 0) return null;")
         else:
             L.append(f"            NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
 

@@ -1031,7 +1031,13 @@ namespace GoudEngine
         public NetworkStats GetNetworkStats(long handle)
         {
             FfiNetworkStats _stats = default;
-            NativeMethods.goud_network_get_stats_v2(_ctx, handle, ref _stats);
+            var _status = NativeMethods.goud_network_get_stats_v2(_ctx, handle, ref _stats);
+            if (_status < 0)
+            {
+                var _ex = GoudException.FromLastError();
+                if (_ex != null) throw _ex;
+                throw new InvalidOperationException($"goud_network_get_stats_v2 failed with status {_status}.");
+            }
             return new NetworkStats(_stats.BytesSent, _stats.BytesReceived, _stats.PacketsSent, _stats.PacketsReceived, _stats.PacketsLost, _stats.RttMs, _stats.SendBandwidthBytesPerSec, _stats.ReceiveBandwidthBytesPerSec, _stats.PacketLossPercent, _stats.JitterMs);
         }
 

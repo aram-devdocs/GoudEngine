@@ -1133,6 +1133,7 @@
           "out_params": [
             { "name": "stats", "type": "NetworkStats" }
           ],
+          "status_struct": true,
           "returns_struct": "NetworkStats"
         },
         "networkPeerCount": {

@@ -1471,6 +1471,7 @@ def _gen_tool_class(tool_name: str, lines: list):
             ffi_fn = mmap["ffi"]
             no_ctx = mmap.get("no_context", False)
             status_nullable_struct = bool(mmap.get("status_nullable_struct"))
+            status_struct = bool(mmap.get("status_struct"))
             entity_set = set(mmap.get("entity_params", []))
             enum_set = set((mmap.get("enum_params") or {}).keys())
             out_params = mmap["out_params"]
@@ -1492,7 +1493,7 @@ def _gen_tool_class(tool_name: str, lines: list):
             ffi_parts.extend(
                 f"ctypes.byref(_{op['name']})" for op in out_params
             )
-            if status_nullable_struct:
+            if status_nullable_struct or status_struct:
                 lines.append(
                     f"        _status = self._lib.{ffi_fn}({', '.join(ffi_parts)})"
                 )
@@ -1500,8 +1501,9 @@ def _gen_tool_class(tool_name: str, lines: list):
                 lines.append(
                     f"            raise RuntimeError(f'{ffi_fn} failed with status {{_status}}')"
                 )
-                lines.append("        if _status == 0:")
-                lines.append("            return None")
+                if status_nullable_struct:
+                    lines.append("        if _status == 0:")
+                    lines.append("            return None")
             else:
                 lines.append(
                     f"        self._lib.{ffi_fn}({', '.join(ffi_parts)})"
