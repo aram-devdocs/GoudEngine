@@ -10,9 +10,9 @@ use crate::ecs::system::{BoxedSystem, IntoSystem, SystemId};
 use crate::ecs::World;
 
 use super::core_stage::CoreStage;
-use super::parallel_types::{ParallelBatch, ParallelExecutionConfig, ParallelExecutionStats};
 #[cfg(feature = "native")]
 use super::parallel_types::UnsafePtr;
+use super::parallel_types::{ParallelBatch, ParallelExecutionConfig, ParallelExecutionStats};
 use super::stage::Stage;
 use super::stage_label::StageLabel;
 use super::system_ordering::SystemOrdering;
