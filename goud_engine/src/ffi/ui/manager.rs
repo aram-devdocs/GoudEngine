@@ -52,6 +52,7 @@ pub unsafe extern "C" fn goud_ui_manager_destroy(ptr: *mut UiManager) {
     if ptr.is_null() {
         return;
     }
+    super::events::unregister_manager(ptr as usize);
     // SAFETY: Caller guarantees `ptr` was allocated by `goud_ui_manager_create`
     // via `Box::into_raw` and has not been freed yet. We reclaim ownership and
     // drop the value.
@@ -77,10 +78,12 @@ pub unsafe extern "C" fn goud_ui_manager_update(ptr: *mut UiManager) {
     if ptr.is_null() {
         return;
     }
+    let manager_key = ptr as usize;
     // SAFETY: Caller guarantees `ptr` is a valid, exclusively-owned UiManager
     // pointer. We borrow it mutably for the duration of this call.
     let mgr = &mut *ptr;
     mgr.update();
+    super::events::capture_and_dispatch_events(manager_key, mgr);
 }
 
 /// Calls render on the UI manager.

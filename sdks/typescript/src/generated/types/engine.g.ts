@@ -69,6 +69,26 @@ export interface ISpriteData {
   hasCustomSize: boolean;
 }
 
+/** C-safe UI style payload for node-level visual overrides. */
+export interface IUiStyle {
+  backgroundColor?: IColor;
+  foregroundColor?: IColor;
+  borderColor?: IColor;
+  borderWidth?: number;
+  fontFamily?: string;
+  fontSize?: number;
+  texturePath?: string;
+  widgetSpacing?: number;
+}
+
+/** UI event payload returned by deterministic polling APIs. */
+export interface IUiEvent {
+  eventKind: number;
+  nodeId: number;
+  previousNodeId: number;
+  currentNodeId: number;
+}
+
 /** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
 export interface IGoudGame {
   /** Seconds elapsed since last frame */
@@ -507,4 +527,47 @@ export interface IPhysicsWorld3D {
   setTimestep(dt: number): number;
   /** Get the current fixed physics timestep in seconds */
   getTimestep(): number;
+}
+
+/** Immediate-mode UI manager for creating and managing UI node trees */
+export interface IUiManager {
+  /** Runs the UI layout update tick */
+  update(): void;
+  /** Renders the UI tree */
+  render(): void;
+  /** Returns the number of live nodes in the UI tree */
+  nodeCount(): number;
+  /** Creates a new UI node with the given component type (0=Panel, -1=none) */
+  createNode(componentType: number): number;
+  /** Removes a UI node and its subtree */
+  removeNode(nodeId: number): number;
+  /** Sets or clears the parent of a UI node (use u64.MAX to detach) */
+  setParent(childId: number, parentId: number): number;
+  /** Returns the parent node ID, or u64.MAX if none */
+  getParent(nodeId: number): number;
+  /** Returns the number of children of a node */
+  getChildCount(nodeId: number): number;
+  /** Returns the child node ID at a given index, or u64.MAX if out of bounds */
+  getChildAt(nodeId: number, index: number): number;
+  /** Sets or clears the widget component on an existing UI node */
+  setWidget(nodeId: number, widgetKind: number): number;
+  /** Applies per-node style overrides using a C-safe style payload */
+  setStyle(nodeId: number, style: IUiStyle): number;
+  /** Sets or creates a label widget and updates its text */
+  setLabelText(nodeId: number, text: string): number;
+  /** Sets or creates a button widget and updates its enabled state */
+  setButtonEnabled(nodeId: number, enabled: boolean): number;
+  /** Sets or creates an image widget and updates its texture path */
+  setImageTexturePath(nodeId: number, path: string): number;
+  /** Sets or creates a slider widget and updates range/value/enabled */
+  setSlider(nodeId: number, min: number, max: number, value: number, enabled: boolean): number;
+  /** Returns the number of UI events captured in the latest update tick */
+  eventCount(): number;
+  /** Reads one captured UI event by index */
+  eventRead(index: number): IUiEvent | null;
+  createPanel(): number;
+  createLabel(text: string): number;
+  createButton(enabled?: boolean): number;
+  createImage(path: string): number;
+  createSlider(min: number, max: number, value: number, enabled?: boolean): number;
 }

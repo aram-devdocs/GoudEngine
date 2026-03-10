@@ -224,6 +224,38 @@
         "Rapier": 1,
         "Simple": 2
       }
+    },
+    "UiStyle": {
+      "ffi_name": "FfiUiStyle",
+      "fields": [
+        "has_background_color",
+        "background_color",
+        "has_foreground_color",
+        "foreground_color",
+        "has_border_color",
+        "border_color",
+        "has_border_width",
+        "border_width",
+        "has_font_family",
+        "font_family_ptr",
+        "font_family_len",
+        "has_font_size",
+        "font_size",
+        "has_texture_path",
+        "texture_path_ptr",
+        "texture_path_len",
+        "has_widget_spacing",
+        "widget_spacing"
+      ]
+    },
+    "UiEvent": {
+      "ffi_name": "FfiUiEvent",
+      "fields": [
+        "event_kind",
+        "node_id",
+        "previous_node_id",
+        "current_node_id"
+      ]
     }
   },
   "ffi_handles": {
@@ -272,6 +304,8 @@
     "*mut FfiSpriteBuilder": "ctypes.POINTER(FfiSpriteBuilder)",
     "*mut FfiAnimationClipBuilder": "ctypes.POINTER(FfiAnimationClipBuilder)",
     "*const FfiSpriteAnimator": "ctypes.POINTER(FfiSpriteAnimator)",
+    "*const FfiUiStyle": "ctypes.POINTER(FfiUiStyle)",
+    "*mut FfiUiEvent": "ctypes.POINTER(FfiUiEvent)",
     "*mut c_void": "ctypes.c_void_p",
     "Option<CollisionCallback>": "ctypes.c_void_p",
     "*const c_char": "ctypes.c_char_p"
@@ -2280,6 +2314,38 @@
         },
         "getChildAt": {
           "ffi": "goud_ui_get_child_at"
+        },
+        "setWidget": {
+          "ffi": "goud_ui_set_widget"
+        },
+        "setStyle": {
+          "ffi": "goud_ui_set_style"
+        },
+        "setLabelText": {
+          "ffi": "goud_ui_set_label_text"
+        },
+        "setButtonEnabled": {
+          "ffi": "goud_ui_set_button_enabled"
+        },
+        "setImageTexturePath": {
+          "ffi": "goud_ui_set_image_texture_path"
+        },
+        "setSlider": {
+          "ffi": "goud_ui_set_slider"
+        },
+        "eventCount": {
+          "ffi": "goud_ui_event_count"
+        },
+        "eventRead": {
+          "ffi": "goud_ui_event_read",
+          "out_params": [
+            {
+              "name": "event",
+              "type": "UiEvent"
+            }
+          ],
+          "returns_struct": "UiEvent",
+          "status_nullable_struct": true
         }
       }
     }
@@ -9126,6 +9192,210 @@
           }
         ],
         "returns": "u64",
+        "unsafe": true
+      },
+      "goud_ui_set_widget": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          },
+          {
+            "name": "widget_kind",
+            "type": "i32"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_ui_set_style": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          },
+          {
+            "name": "style",
+            "type": "*const FfiUiStyle"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_ui_set_label_text": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          },
+          {
+            "name": "text_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "text_len",
+            "type": "usize"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_ui_set_button_enabled": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          },
+          {
+            "name": "enabled",
+            "type": "bool"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_ui_set_image_texture_path": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          },
+          {
+            "name": "path_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "path_len",
+            "type": "usize"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_ui_set_slider": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "node_id",
+            "type": "u64"
+          },
+          {
+            "name": "min",
+            "type": "f32"
+          },
+          {
+            "name": "max",
+            "type": "f32"
+          },
+          {
+            "name": "value",
+            "type": "f32"
+          },
+          {
+            "name": "enabled",
+            "type": "bool"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_ui_set_event_callback": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "callback",
+            "type": "ptr"
+          },
+          {
+            "name": "user_data",
+            "type": "*mut c_void"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_ui_event_count": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          }
+        ],
+        "returns": "u32",
+        "unsafe": true
+      },
+      "goud_ui_event_read": {
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "index",
+            "type": "u32"
+          },
+          {
+            "name": "out_event",
+            "type": "*mut FfiUiEvent"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
+      "goud_ui_events_count": {
+        "alias_of": "goud_ui_event_count",
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          }
+        ],
+        "returns": "u32",
+        "unsafe": true
+      },
+      "goud_ui_events_read": {
+        "alias_of": "goud_ui_event_read",
+        "params": [
+          {
+            "name": "mgr",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "index",
+            "type": "u32"
+          },
+          {
+            "name": "out_event",
+            "type": "*mut FfiUiEvent"
+          }
+        ],
+        "returns": "i32",
         "unsafe": true
       }
     }

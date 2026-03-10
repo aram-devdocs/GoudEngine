@@ -107,6 +107,30 @@ def gen_interface():
     lines.append("}")
     lines.append("")
 
+    if schema["types"].get("UiStyle", {}).get("doc"):
+        lines.append(f"/** {schema['types']['UiStyle']['doc']} */")
+    lines.append("export interface IUiStyle {")
+    lines.append("  backgroundColor?: IColor;")
+    lines.append("  foregroundColor?: IColor;")
+    lines.append("  borderColor?: IColor;")
+    lines.append("  borderWidth?: number;")
+    lines.append("  fontFamily?: string;")
+    lines.append("  fontSize?: number;")
+    lines.append("  texturePath?: string;")
+    lines.append("  widgetSpacing?: number;")
+    lines.append("}")
+    lines.append("")
+
+    if schema["types"].get("UiEvent", {}).get("doc"):
+        lines.append(f"/** {schema['types']['UiEvent']['doc']} */")
+    lines.append("export interface IUiEvent {")
+    lines.append("  eventKind: number;")
+    lines.append("  nodeId: number;")
+    lines.append("  previousNodeId: number;")
+    lines.append("  currentNodeId: number;")
+    lines.append("}")
+    lines.append("")
+
     if tool.get("doc"):
         lines.append(f"/** {tool['doc']} */")
     lines.append("export interface IGoudGame {")
@@ -230,6 +254,36 @@ def gen_interface():
                 lines.append(f"  /** {method['doc']} */")
             ps = ", ".join(f"{to_camel(p['name'])}: {ts_iface_type(p['type'])}" for p in params)
             lines.append(f"  {mn}({ps}): {ts_iface_type(ret)};")
+        lines.append("}")
+        lines.append("")
+
+    if "UiManager" in schema.get("tools", {}) and "UiManager" in mapping.get("tools", {}):
+        ui_tool = schema["tools"]["UiManager"]
+        if ui_tool.get("doc"):
+            lines.append(f"/** {ui_tool['doc']} */")
+        lines.append("export interface IUiManager {")
+        for method in ui_tool.get("methods", []):
+            mn = to_camel(method["name"])
+            params = method.get("params", [])
+            ret = method.get("returns", "void")
+            if method.get("doc"):
+                lines.append(f"  /** {method['doc']} */")
+            ps = []
+            for p in params:
+                pn = to_camel(p["name"])
+                pt = p["type"]
+                if pt == "UiStyle":
+                    ps.append(f"{pn}: IUiStyle")
+                elif pt in schema.get("enums", {}):
+                    ps.append(f"{pn}: number")
+                else:
+                    ps.append(f"{pn}: {ts_iface_type(pt)}")
+            lines.append(f"  {mn}({', '.join(ps)}): {ts_iface_type(ret)};")
+        lines.append("  createPanel(): number;")
+        lines.append("  createLabel(text: string): number;")
+        lines.append("  createButton(enabled?: boolean): number;")
+        lines.append("  createImage(path: string): number;")
+        lines.append("  createSlider(min: number, max: number, value: number, enabled?: boolean): number;")
         lines.append("}")
         lines.append("")
 

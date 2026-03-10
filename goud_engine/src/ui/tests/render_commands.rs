@@ -266,3 +266,40 @@ fn render_slider_knob_stays_robust_when_rect_is_smaller_than_knob() {
         crate::core::math::Rect::new(0.0, 0.0, 1.0, 1.0)
     );
 }
+
+#[test]
+fn render_top_left_anchor_stays_at_viewport_origin_after_resize() {
+    let mut ui = UiManager::new();
+    let panel = ui.create_node(Some(UiComponent::Panel));
+    ui.get_node_mut(panel)
+        .unwrap()
+        .set_anchor(UiAnchor::TopLeft);
+    ui.get_node_mut(panel)
+        .unwrap()
+        .set_size(Vec2::new(80.0, 32.0));
+
+    ui.set_viewport_size(320, 180);
+    ui.update();
+    let initial_commands = ui.build_render_commands();
+
+    ui.set_viewport_size(1920, 1080);
+    ui.update();
+    let resized_commands = ui.build_render_commands();
+
+    let initial_rect = quad_commands_for_node(&initial_commands, panel)
+        .into_iter()
+        .next()
+        .expect("top-left panel should emit a quad")
+        .rect;
+    let resized_rect = quad_commands_for_node(&resized_commands, panel)
+        .into_iter()
+        .next()
+        .expect("resized top-left panel should emit a quad")
+        .rect;
+
+    assert_eq!(initial_rect, resized_rect);
+    assert_eq!(
+        initial_rect,
+        crate::core::math::Rect::new(0.0, 0.0, 80.0, 32.0)
+    );
+}

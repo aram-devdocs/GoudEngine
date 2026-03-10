@@ -16,6 +16,7 @@ mod audio;
 mod collision;
 mod ecs_ops;
 mod input;
+mod ui;
 mod rendering;
 mod sprite_renderer;
 mod texture_loader;
@@ -25,6 +26,7 @@ mod texture_loader;
 mod tests;
 
 pub use collision::WasmContact;
+pub use ui::{WasmUiEvent, WasmUiManager};
 
 use std::collections::{HashMap, HashSet};
 use wasm_bindgen::prelude::*;

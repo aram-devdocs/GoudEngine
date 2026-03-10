@@ -8,18 +8,26 @@
 //! All node IDs cross the FFI boundary as `u64` values. See the
 //! [parent module](super) for the packing layout.
 
-use crate::ui::{UiComponent, UiManager};
+use crate::ui::{UiButton, UiComponent, UiImage, UiLabel, UiManager, UiSlider};
 
 use super::{pack_node_id, unpack_node_id, INVALID_NODE_U64};
 
 /// Maps an FFI `i32` component type to a [`UiComponent`] variant.
 ///
 /// * `0` -> `Some(UiComponent::Panel)`
+/// * `1` -> `Some(UiComponent::Button(default))`
+/// * `2` -> `Some(UiComponent::Label(default))`
+/// * `3` -> `Some(UiComponent::Image(default))`
+/// * `4` -> `Some(UiComponent::Slider(default))`
 /// * `-1` -> `None` (no component)
 /// * anything else -> `None` (no component, logs a warning)
 fn component_from_ffi(component_type: i32) -> Option<UiComponent> {
     match component_type {
         0 => Some(UiComponent::Panel),
+        1 => Some(UiComponent::Button(UiButton::default())),
+        2 => Some(UiComponent::Label(UiLabel::default())),
+        3 => Some(UiComponent::Image(UiImage::default())),
+        4 => Some(UiComponent::Slider(UiSlider::new(0.0, 1.0, 0.0))),
         -1 => None,
         _ => {
             log::warn!("Unknown component type: {}", component_type);
@@ -39,6 +47,10 @@ fn component_from_ffi(component_type: i32) -> Option<UiComponent> {
 /// * `mgr` - Mutable pointer to the [`UiManager`]. Must not be null.
 /// * `component_type` - The component variant to attach:
 ///   - `0` = Panel
+///   - `1` = Button
+///   - `2` = Label
+///   - `3` = Image
+///   - `4` = Slider
 ///   - `-1` = no component
 ///
 /// # Returns
@@ -276,6 +288,30 @@ mod tests {
 
             let count = super::super::manager::goud_ui_manager_node_count(mgr);
             assert_eq!(count, 1);
+
+            goud_ui_manager_destroy(mgr);
+        }
+    }
+
+    #[test]
+    fn test_create_node_supports_all_widget_kind_codes() {
+        let mgr = goud_ui_manager_create();
+        // SAFETY: mgr was just created.
+        unsafe {
+            let panel = goud_ui_create_node(mgr, 0);
+            let button = goud_ui_create_node(mgr, 1);
+            let label = goud_ui_create_node(mgr, 2);
+            let image = goud_ui_create_node(mgr, 3);
+            let slider = goud_ui_create_node(mgr, 4);
+            let none = goud_ui_create_node(mgr, -1);
+
+            assert_ne!(panel, INVALID_NODE_U64);
+            assert_ne!(button, INVALID_NODE_U64);
+            assert_ne!(label, INVALID_NODE_U64);
+            assert_ne!(image, INVALID_NODE_U64);
+            assert_ne!(slider, INVALID_NODE_U64);
+            assert_ne!(none, INVALID_NODE_U64);
+            assert_eq!(super::super::manager::goud_ui_manager_node_count(mgr), 6);
 
             goud_ui_manager_destroy(mgr);
         }

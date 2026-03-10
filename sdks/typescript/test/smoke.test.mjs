@@ -7,6 +7,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   GoudGame,
@@ -252,6 +253,47 @@ describe('Generated native audio bindings', () => {
     } finally {
       game.destroy();
     }
+  });
+});
+
+describe('Generated web UiManager bindings', () => {
+  it('expands setStyle into the scalar wasm ABI while keeping the public object API', () => {
+    const webSrc = readFileSync(new URL('../src/generated/web/index.g.ts', import.meta.url), 'utf8');
+
+    assert.ok(
+      webSrc.includes(
+        'set_style(node_id: number, background_r?: number, background_g?: number, background_b?: number, background_a?: number, foreground_r?: number, foreground_g?: number, foreground_b?: number, foreground_a?: number, border_r?: number, border_g?: number, border_b?: number, border_a?: number, border_width?: number, font_family?: string, font_size?: number, texture_path?: string, widget_spacing?: number): number;',
+      ),
+      'web wasm handle signature should expose scalar UiStyle fields',
+    );
+
+    assert.ok(
+      webSrc.includes('setStyle(nodeId: number, style: IUiStyle): number {'),
+      'public web UiManager API should keep the object-shaped setStyle signature',
+    );
+
+    for (const fragment of [
+      'style.backgroundColor?.r,',
+      'style.backgroundColor?.a,',
+      'style.foregroundColor?.r,',
+      'style.borderColor?.a,',
+      'style.borderWidth,',
+      'style.fontFamily,',
+      'style.fontSize,',
+      'style.texturePath,',
+      'style.widgetSpacing,',
+    ]) {
+      assert.ok(
+        webSrc.includes(fragment),
+        `web UiManager.setStyle bridge missing fragment: ${fragment}`,
+      );
+    }
+
+    assert.equal(
+      webSrc.includes('return this.handle.set_style(nodeId, style);'),
+      false,
+      'web UiManager.setStyle must not pass the whole style object directly to wasm',
+    );
   });
 });
 

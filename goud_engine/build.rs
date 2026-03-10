@@ -174,6 +174,8 @@ const FFI_SOURCE_FILES: &[&str] = &[
     // ui module
     "src/ffi/ui/manager.rs",
     "src/ffi/ui/node.rs",
+    "src/ffi/ui/events.rs",
+    "src/ffi/ui/widget.rs",
 ];
 
 /// A single extracted FFI function signature.
