@@ -21,4 +21,7 @@ cargo run -p lint-layers || exit 1
 echo "Checking .rs file line limits..."
 "$REPO_ROOT/scripts/check-rs-line-limit.sh" --error || exit 1
 
+echo "Validating AI config and generated agent wrappers..."
+"$REPO_ROOT/scripts/validate-ai-config.sh" || exit 1
+
 echo "=== Pre-commit passed ==="

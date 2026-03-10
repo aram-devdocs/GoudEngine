@@ -138,6 +138,18 @@ jobs:
         chmod +x scripts/check-rs-line-limit.sh
         scripts/check-rs-line-limit.sh --error
 
+  check-ai-config:
+    name: Validate AI Config Sync
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Verify generated agent wrappers are in sync
+      run: |
+        python3 scripts/sync-agent-configs.py --check
+        bash scripts/validate-ai-config.sh
+
   check-todos:
     name: Check TODOs
     runs-on: ubuntu-latest
@@ -252,7 +264,7 @@ jobs:
 
   validate-success:
     name: PR Validation Success
-    needs: [validate-pr-title, validate-release-config, check-file-size, check-rs-line-limit, check-todos, lint-markdown, pr-size-labeler]
+    needs: [validate-pr-title, validate-release-config, check-file-size, check-rs-line-limit, check-ai-config, check-todos, lint-markdown, pr-size-labeler]
     runs-on: ubuntu-latest
     if: always()
 
@@ -262,7 +274,8 @@ jobs:
         if [[ "${{ needs.validate-pr-title.result }}" == "failure" ]] || \
            [[ "${{ needs.validate-release-config.result }}" == "failure" ]] || \
            [[ "${{ needs.check-file-size.result }}" == "failure" ]] || \
-           [[ "${{ needs.check-rs-line-limit.result }}" == "failure" ]]; then
+           [[ "${{ needs.check-rs-line-limit.result }}" == "failure" ]] || \
+           [[ "${{ needs.check-ai-config.result }}" == "failure" ]]; then
           echo "PR validation failed!"
           exit 1
         fi
