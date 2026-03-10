@@ -1,6 +1,5 @@
 use crate::core::error::{set_last_error, GoudError, ERR_INVALID_STATE};
 use crate::core::providers::network::NetworkProvider;
-#[cfg(any(feature = "net-tcp", feature = "net-udp", feature = "net-ws"))]
 use crate::core::providers::ProviderLifecycle;
 #[cfg(any(debug_assertions, test))]
 use crate::libs::providers::impls::NetworkSimProvider;
@@ -37,7 +36,7 @@ where
     P: NetworkProvider + 'static,
 {
     let mut provider = NetworkSimProvider::new(provider);
-    provider.init().map_err(|e| {
+    ProviderLifecycle::init(&mut provider).map_err(|e| {
         let code = e.error_code();
         set_last_error(e);
         code
@@ -51,7 +50,7 @@ where
     P: NetworkProvider + 'static,
 {
     let mut provider = provider;
-    provider.init().map_err(|e| {
+    ProviderLifecycle::init(&mut provider).map_err(|e| {
         let code = e.error_code();
         set_last_error(e);
         code

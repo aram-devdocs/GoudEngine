@@ -1,6 +1,7 @@
 use super::*;
+use std::time::{Duration, Instant};
+
 use crate::core::providers::impls::NullNetworkProvider;
-use crate::core::providers::network_types::DisconnectReason;
 #[cfg(feature = "net-tcp")]
 use crate::libs::providers::impls::TcpNetProvider;
 use crate::libs::providers::impls::UdpNetProvider;
@@ -108,6 +109,46 @@ impl NetworkProvider for RecordingProvider {
     }
 }
 
+fn host_config() -> HostConfig {
+    HostConfig {
+        bind_address: "127.0.0.1".to_string(),
+        port: 0,
+        max_connections: 8,
+        tls_cert_path: None,
+        tls_key_path: None,
+    }
+}
+
+fn wait_until(
+    timeout: Duration,
+    poll_interval: Duration,
+    failure_message: &str,
+    mut condition: impl FnMut() -> bool,
+) {
+    let deadline = Instant::now() + timeout;
+    loop {
+        if condition() {
+            return;
+        }
+        assert!(Instant::now() < deadline, "{failure_message}");
+        std::thread::sleep(poll_interval);
+    }
+}
+
+fn assert_never_receives(
+    timeout: Duration,
+    poll_interval: Duration,
+    failure_message: &str,
+    mut poll_for_receive: impl FnMut() -> bool,
+) {
+    let deadline = Instant::now() + timeout;
+    while Instant::now() < deadline {
+        assert!(!poll_for_receive(), "{failure_message}");
+        std::thread::sleep(poll_interval);
+    }
+    assert!(!poll_for_receive(), "{failure_message}");
+}
+
 #[test]
 fn test_networking_sim_provider_delays_outbound_sends_until_update() {
     let inner = RecordingProvider::new();
@@ -128,8 +169,15 @@ fn test_networking_sim_provider_delays_outbound_sends_until_update() {
     simulated.update(0.0).unwrap();
     assert!(simulated.inner().sent.is_empty());
 
-    std::thread::sleep(Duration::from_millis(30));
-    simulated.update(0.0).unwrap();
+    wait_until(
+        Duration::from_secs(1),
+        Duration::from_millis(5),
+        "delayed outbound send should flush after the configured latency window",
+        || {
+            simulated.update(0.0).unwrap();
+            !simulated.inner().sent.is_empty()
+        },
+    );
 
     assert_eq!(simulated.inner().sent.len(), 1);
     assert_eq!(simulated.inner().sent[0].2, b"delayed");
@@ -180,6 +228,148 @@ fn test_networking_sim_provider_wraps_supported_native_transports() {
     }
 }
 
+#[cfg(feature = "net-tcp")]
+#[test]
+fn test_networking_sim_provider_drops_real_tcp_packets() {
+    let mut host = TcpNetProvider::new();
+    host.host(&host_config()).unwrap();
+    let host_addr = host.local_addr().expect("host should bind to an address");
+
+    let mut client = NetworkSimProvider::new(TcpNetProvider::new());
+    client
+        .set_simulation_config(NetworkSimulationConfig {
+            one_way_latency_ms: 0,
+            jitter_ms: 0,
+            packet_loss_percent: 100.0,
+        })
+        .unwrap();
+    let client_conn = client.connect(&host_addr.to_string()).unwrap();
+
+    let mut host_connected = false;
+    wait_until(
+        Duration::from_secs(2),
+        Duration::from_millis(5),
+        "host should accept the TCP client connection",
+        || {
+            host.update(0.0).unwrap();
+            client.update(0.0).unwrap();
+
+            host_connected |= host
+                .drain_events()
+                .into_iter()
+                .any(|event| matches!(event, NetworkEvent::Connected { .. }));
+            client.drain_events();
+
+            host_connected && client.connection_state(client_conn) == ConnectionState::Connected
+        },
+    );
+
+    assert!(
+        host_connected,
+        "host should accept the TCP client connection"
+    );
+    assert_eq!(
+        client.connection_state(client_conn),
+        ConnectionState::Connected
+    );
+
+    client
+        .send(client_conn, Channel(0), b"simulated tcp loss")
+        .unwrap();
+
+    let stats = client.stats();
+    assert_eq!(stats.packets_lost, 1);
+    assert_eq!(stats.packet_loss_percent, 100.0);
+
+    assert_never_receives(
+        Duration::from_millis(400),
+        Duration::from_millis(10),
+        "host should not receive packets that the simulator drops on TCP",
+        || {
+            host.update(0.0).unwrap();
+            client.update(0.0).unwrap();
+
+            host.drain_events()
+                .into_iter()
+                .any(|event| matches!(event, NetworkEvent::Received { .. }))
+        },
+    );
+
+    host.shutdown();
+    client.shutdown();
+}
+
+#[cfg(feature = "net-ws")]
+#[test]
+fn test_networking_sim_provider_drops_real_websocket_packets() {
+    let mut host = WsNetProvider::new();
+    host.host(&host_config()).unwrap();
+    let host_addr = host.local_addr().expect("host should bind to an address");
+
+    let mut client = NetworkSimProvider::new(WsNetProvider::new());
+    client
+        .set_simulation_config(NetworkSimulationConfig {
+            one_way_latency_ms: 0,
+            jitter_ms: 0,
+            packet_loss_percent: 100.0,
+        })
+        .unwrap();
+    let client_conn = client.connect(&format!("ws://{}", host_addr)).unwrap();
+
+    let mut host_connected = false;
+    wait_until(
+        Duration::from_secs(5),
+        Duration::from_millis(50),
+        "host should accept the WebSocket client connection",
+        || {
+            host.update(0.0).unwrap();
+            client.update(0.0).unwrap();
+
+            host_connected |= host
+                .drain_events()
+                .into_iter()
+                .any(|event| matches!(event, NetworkEvent::Connected { .. }));
+            client.drain_events();
+
+            host_connected && client.connection_state(client_conn) == ConnectionState::Connected
+        },
+    );
+
+    assert!(
+        host_connected,
+        "host should accept the WebSocket client connection"
+    );
+    assert_eq!(
+        client.connection_state(client_conn),
+        ConnectionState::Connected
+    );
+
+    client
+        .send(client_conn, Channel(0), b"simulated websocket loss")
+        .unwrap();
+
+    let stats = client.stats();
+    assert_eq!(stats.packets_lost, 1);
+    assert_eq!(stats.packet_loss_percent, 100.0);
+
+    assert_never_receives(
+        Duration::from_millis(500),
+        Duration::from_millis(25),
+        "host should not receive packets that the simulator drops on WebSocket",
+        || {
+            host.update(0.0).unwrap();
+            client.update(0.0).unwrap();
+
+            host.drain_events()
+                .into_iter()
+                .any(|event| matches!(event, NetworkEvent::Received { .. }))
+        },
+    );
+
+    host.shutdown();
+    client.shutdown();
+}
+
 #[test]
 fn test_networking_sim_provider_rejects_invalid_loss_range() {
     let inner = RecordingProvider::new();
@@ -219,5 +409,5 @@ fn test_networking_sim_provider_clear_resets_config_and_pending_packets() {
     simulated.clear_simulation_config().unwrap();
     assert!(simulated.simulation_config().is_none());
     assert!(simulated.pending.is_empty());
-    assert_eq!(DisconnectReason::LocalClose, DisconnectReason::LocalClose);
+    assert!(simulated.inner().sent.is_empty());
 }

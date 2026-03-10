@@ -1,8 +1,7 @@
 use std::sync::Mutex;
-use std::{env, fs, process::Command};
+use std::time::{Duration, Instant};
 
 use super::*;
-use crate::core::error::last_error_message;
 use crate::core::providers::impls::NullNetworkProvider;
 use crate::core::providers::network::NetworkProvider;
 use crate::core::providers::network_types::{
@@ -14,6 +13,11 @@ use crate::ffi::network::provider_factory::create_provider;
 use crate::ffi::network::registry::{
     reset_registry_for_tests, with_instance, with_registry, NetInstance, NetRegistryInner,
 };
+
+#[path = "tests_live.rs"]
+mod live_tests;
+#[path = "tests_release.rs"]
+mod tests_release;
 
 static TEST_MUTEX: Mutex<()> = Mutex::new(());
 
@@ -178,6 +182,22 @@ fn assert_within_5_percent(actual: f32, expected: f32) {
         delta <= tolerance,
         "expected {actual} within 5% of {expected} (delta={delta}, tolerance={tolerance})"
     );
+}
+
+fn wait_until(
+    timeout: Duration,
+    poll_interval: Duration,
+    failure_message: &str,
+    mut condition: impl FnMut() -> bool,
+) {
+    let deadline = Instant::now() + timeout;
+    loop {
+        if condition() {
+            return;
+        }
+        assert!(Instant::now() < deadline, "{failure_message}");
+        std::thread::sleep(poll_interval);
+    }
 }
 
 #[test]
@@ -383,54 +403,4 @@ fn test_simulation_ffi_exports_reject_unknown_handle() {
         goud_network_clear_simulation(context_id, unknown_handle),
         ERR_INVALID_STATE
     );
-}
-
-#[test]
-fn test_release_stub_behavior_helper_returns_expected_error() {
-    let _registry = RegistryResetGuard::new();
-
-    let code = simulation_controls_unavailable();
-
-    assert_eq!(code, ERR_INVALID_STATE);
-    let message = last_error_message().expect("expected error message");
-    assert!(
-        message.contains("only available in debug/test builds"),
-        "unexpected message: {message}"
-    );
-}
-
-#[test]
-fn test_release_binary_exercises_exported_simulation_stubs() {
-    let workspace_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("workspace root");
-    let thread_suffix = std::thread::current()
-        .name()
-        .unwrap_or("default")
-        .replace(':', "_");
-    let target_dir = env::temp_dir().join(format!(
-        "goud-network-release-probe-{}-{}",
-        std::process::id(),
-        thread_suffix
-    ));
-    let _ = fs::remove_dir_all(&target_dir);
-
-    let status = Command::new(env!("CARGO"))
-        .current_dir(workspace_root)
-        .env("CARGO_TARGET_DIR", &target_dir)
-        .args([
-            "run",
-            "-p",
-            "goud-engine-core",
-            "--release",
-            "--bin",
-            "network_sim_release_probe",
-            "--quiet",
-        ])
-        .status()
-        .expect("failed to run release probe binary");
-
-    assert!(status.success(), "release probe exited with {status}");
-
-    let _ = fs::remove_dir_all(&target_dir);
 }
