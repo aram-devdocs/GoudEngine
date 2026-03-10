@@ -3,6 +3,8 @@
 //! The `NetworkProvider` trait abstracts the transport backend, enabling
 //! runtime selection between UDP, WebSocket, or null (no-op).
 
+#[cfg(any(debug_assertions, test))]
+use super::network_types::NetworkSimulationConfig;
 use super::network_types::{
     Channel, ConnectionId, ConnectionState, ConnectionStats, HostConfig, NetworkCapabilities,
     NetworkEvent, NetworkStats,
@@ -64,9 +66,39 @@ pub trait NetworkProvider: Provider + ProviderLifecycle {
     /// Return static capability flags for this provider.
     fn network_capabilities(&self) -> &NetworkCapabilities;
 
-    /// Return aggregate network statistics.
+    /// Return aggregate statistics for this provider handle.
+    ///
+    /// These counters are scoped to a single provider instance. Later systems
+    /// that associate engine contexts with overlay handles must first resolve
+    /// the active provider handle for that context, then query stats from the
+    /// same provider instance.
     fn stats(&self) -> NetworkStats;
 
     /// Return per-connection statistics, or `None` if the ID is unknown.
+    ///
+    /// `ConnectionId` values are only meaningful within the provider instance
+    /// that created them; callers must not cache a connection ID and use it
+    /// against a different provider or engine context.
     fn connection_stats(&self, conn: ConnectionId) -> Option<ConnectionStats>;
+
+    /// Set the debug-only network simulation config for this provider handle.
+    #[cfg(any(debug_assertions, test))]
+    fn set_simulation_config(&mut self, _config: NetworkSimulationConfig) -> GoudResult<()> {
+        Err(crate::core::error::GoudError::ProviderError {
+            subsystem: "network",
+            message: "network simulation is not supported by this provider".into(),
+        })
+    }
+
+    /// Clear the debug-only network simulation config for this provider handle.
+    #[cfg(any(debug_assertions, test))]
+    fn clear_simulation_config(&mut self) -> GoudResult<()> {
+        self.set_simulation_config(NetworkSimulationConfig::default())
+    }
+
+    /// Return the currently applied debug-only simulation config, if any.
+    #[cfg(any(debug_assertions, test))]
+    fn simulation_config(&self) -> Option<NetworkSimulationConfig> {
+        None
+    }
 }

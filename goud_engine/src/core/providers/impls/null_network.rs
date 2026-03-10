@@ -203,6 +203,11 @@ mod tests {
         assert_eq!(stats.packets_sent, 0);
         assert_eq!(stats.packets_received, 0);
         assert_eq!(stats.packets_lost, 0);
+        assert_eq!(stats.rtt_ms, 0.0);
+        assert_eq!(stats.send_bandwidth_bytes_per_sec, 0.0);
+        assert_eq!(stats.receive_bandwidth_bytes_per_sec, 0.0);
+        assert_eq!(stats.packet_loss_percent, 0.0);
+        assert_eq!(stats.jitter_ms, 0.0);
         assert!(provider.connection_stats(ConnectionId(0)).is_none());
     }
 }

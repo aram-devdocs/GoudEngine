@@ -18,7 +18,7 @@ mod native {
     use crate::core::providers::network::NetworkProvider;
     use crate::core::providers::network_types::{
         Channel, ConnectionId, ConnectionState, ConnectionStats, DisconnectReason, HostConfig,
-        NetworkCapabilities, NetworkEvent, NetworkStats,
+        NetworkCapabilities, NetworkEvent, NetworkStats, NetworkStatsTracker,
     };
     use crate::core::providers::{Provider, ProviderLifecycle};
     use crate::libs::error::{GoudError, GoudResult};
@@ -53,7 +53,7 @@ mod native {
     struct WsConnection {
         id: ConnectionId,
         state: ConnectionState,
-        stats: ConnectionStats,
+        stats: NetworkStatsTracker,
     }
 
     /// Spawn a single I/O thread that handles both reading and writing for
@@ -134,7 +134,7 @@ mod native {
         event_rx: Mutex<Option<mpsc::Receiver<InternalWsEvent>>>,
         events: Vec<NetworkEvent>,
         send_txs: HashMap<u64, mpsc::Sender<Vec<u8>>>,
-        stats: NetworkStats,
+        stats: NetworkStatsTracker,
         next_id: Arc<AtomicU64>,
         conn_count: Arc<AtomicU32>,
         threads: Mutex<Vec<JoinHandle<()>>>,
@@ -167,7 +167,7 @@ mod native {
                 event_rx: Mutex::new(Some(event_rx)),
                 events: Vec::new(),
                 send_txs: HashMap::new(),
-                stats: NetworkStats::default(),
+                stats: NetworkStatsTracker::new(),
                 next_id: Arc::new(AtomicU64::new(1)),
                 conn_count: Arc::new(AtomicU32::new(0)),
                 threads: Mutex::new(Vec::new()),
@@ -229,10 +229,9 @@ mod native {
                                 .push(NetworkEvent::Disconnected { conn: id, reason });
                         }
                         InternalWsEvent::Received(id, data) => {
-                            self.stats.bytes_received += data.len() as u64;
-                            self.stats.packets_received += 1;
+                            self.stats.record_received_packet(data.len());
                             if let Some(c) = self.connections.get_mut(&id.0) {
-                                c.stats.bytes_received += data.len() as u64;
+                                c.stats.record_received_packet(data.len());
                             }
                             self.events.push(NetworkEvent::Received {
                                 conn: id,
@@ -253,7 +252,7 @@ mod native {
                                 .or_insert_with(|| WsConnection {
                                     id,
                                     state: ConnectionState::Connecting,
-                                    stats: ConnectionStats::default(),
+                                    stats: NetworkStatsTracker::new(),
                                 });
                         }
                     }
@@ -346,7 +345,7 @@ mod native {
                 WsConnection {
                     id,
                     state: ConnectionState::Connecting,
-                    stats: ConnectionStats::default(),
+                    stats: NetworkStatsTracker::new(),
                 },
             );
             let url = if addr.starts_with("ws://") || addr.starts_with("wss://") {
@@ -414,10 +413,9 @@ mod native {
             let len = data.len();
             tx.send(data.to_vec())
                 .map_err(|e| net_err(format!("enqueue: {}", e)))?;
-            self.stats.bytes_sent += len as u64;
-            self.stats.packets_sent += 1;
+            self.stats.record_sent_packet(len);
             if let Some(c) = self.connections.get_mut(&conn_id.0) {
-                c.stats.bytes_sent += len as u64;
+                c.stats.record_sent_packet(len);
             }
             Ok(())
         }
@@ -457,11 +455,13 @@ mod native {
             &self.capabilities
         }
         fn stats(&self) -> NetworkStats {
-            self.stats.clone()
+            self.stats.snapshot_network()
         }
 
         fn connection_stats(&self, conn: ConnectionId) -> Option<ConnectionStats> {
-            self.connections.get(&conn.0).map(|c| c.stats.clone())
+            self.connections
+                .get(&conn.0)
+                .map(|c| c.stats.snapshot_connection())
         }
     }
 
