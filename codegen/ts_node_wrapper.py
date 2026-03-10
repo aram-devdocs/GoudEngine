@@ -42,6 +42,10 @@ NATIVE_KNOWN_METHODS = {
     "windowWidth", "windowHeight",
     "getRenderCapabilities", "getPhysicsCapabilities", "getAudioCapabilities",
     "getInputCapabilities", "getNetworkCapabilities",
+    "networkHost", "networkConnect", "networkDisconnect", "networkSend",
+    "networkReceive", "networkPoll", "getNetworkStats", "networkPeerCount",
+    "setNetworkSimulation", "clearNetworkSimulation",
+    "setNetworkOverlayHandle", "clearNetworkOverlayHandle",
     "checkHotSwapShortcut",
 }
 
@@ -58,12 +62,12 @@ def gen_node_wrapper():
         "  type GameConfig,",
         "} from '../../../index';",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';",
         "import { PhysicsBackend2D } from '../types/input.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';",
         "",
     ]
     if tool.get("doc"):
@@ -194,6 +198,16 @@ def gen_node_wrapper():
             lines.append("    return this.native.getRenderStats() as unknown as IRenderStats;")
         elif mn == "getFpsStats":
             lines.append("    return this.native.getFpsStats() as unknown as IFpsStats;")
+        elif mn == "getNetworkStats":
+            lines.append("    return this.native.getNetworkStats(handle) as unknown as INetworkStats;")
+        elif mn == "networkSend":
+            lines.append("    return this.native.networkSend(handle, peerId, Buffer.from(data), channel);")
+        elif mn == "setNetworkSimulation":
+            lines.append("    return this.native.setNetworkSimulation(handle, {")
+            lines.append("      one_way_latency_ms: config.oneWayLatencyMs,")
+            lines.append("      jitter_ms: config.jitterMs,")
+            lines.append("      packet_loss_percent: config.packetLossPercent,")
+            lines.append("    } as unknown as INetworkSimulationConfig);")
         elif mn == "loadTexture":
             lines.append("    return this.native.loadTexture(path);")
         elif mn == "loadFont":

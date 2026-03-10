@@ -160,6 +160,7 @@ CTYPES_MAP = {
     "*mut FfiText": "ctypes.POINTER(FfiText)",
     "*const FfiText": "ctypes.POINTER(FfiText)",
     "FfiMat3x3": "FfiMat3x3",
+    "NetworkSimulationConfig": "FfiNetworkSimulationConfig",
     "GoudContextId": "GoudContextId",
     "GoudResult": "GoudResult",
 }

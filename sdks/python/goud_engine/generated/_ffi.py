@@ -182,6 +182,27 @@ class FfiNetworkCapabilities(ctypes.Structure):
         ("max_message_size", ctypes.c_uint32)
     ]
 
+class FfiNetworkStats(ctypes.Structure):
+    _fields_ = [
+        ("bytes_sent", ctypes.c_uint64),
+        ("bytes_received", ctypes.c_uint64),
+        ("packets_sent", ctypes.c_uint64),
+        ("packets_received", ctypes.c_uint64),
+        ("packets_lost", ctypes.c_uint64),
+        ("rtt_ms", ctypes.c_float),
+        ("send_bandwidth_bytes_per_sec", ctypes.c_float),
+        ("receive_bandwidth_bytes_per_sec", ctypes.c_float),
+        ("packet_loss_percent", ctypes.c_float),
+        ("jitter_ms", ctypes.c_float)
+    ]
+
+class FfiNetworkSimulationConfig(ctypes.Structure):
+    _fields_ = [
+        ("one_way_latency_ms", ctypes.c_uint32),
+        ("jitter_ms", ctypes.c_uint32),
+        ("packet_loss_percent", ctypes.c_float)
+    ]
+
 class FfiMat3x3(ctypes.Structure):
     _fields_ = [
         ("m", ctypes.c_float * 9)
@@ -985,8 +1006,18 @@ def _setup():
         _lib.goud_network_poll.restype = ctypes.c_int32
         _lib.goud_network_get_stats.argtypes = [GoudContextId, ctypes.c_int64, ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_uint64)]
         _lib.goud_network_get_stats.restype = ctypes.c_int32
+        _lib.goud_network_get_stats_v2.argtypes = [GoudContextId, ctypes.c_int64, ctypes.POINTER(FfiNetworkStats)]
+        _lib.goud_network_get_stats_v2.restype = ctypes.c_int32
         _lib.goud_network_peer_count.argtypes = [GoudContextId, ctypes.c_int64]
         _lib.goud_network_peer_count.restype = ctypes.c_int32
+        _lib.goud_network_set_overlay_handle.argtypes = [GoudContextId, ctypes.c_int64]
+        _lib.goud_network_set_overlay_handle.restype = ctypes.c_int32
+        _lib.goud_network_clear_overlay_handle.argtypes = [GoudContextId]
+        _lib.goud_network_clear_overlay_handle.restype = ctypes.c_int32
+        _lib.goud_network_set_simulation.argtypes = [GoudContextId, ctypes.c_int64, FfiNetworkSimulationConfig]
+        _lib.goud_network_set_simulation.restype = ctypes.c_int32
+        _lib.goud_network_clear_simulation.argtypes = [GoudContextId, ctypes.c_int64]
+        _lib.goud_network_clear_simulation.restype = ctypes.c_int32
     except AttributeError:
         pass  # feature not compiled in
 

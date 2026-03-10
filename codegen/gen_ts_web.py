@@ -114,7 +114,7 @@ def gen_web_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "import { PhysicsBackend2D } from '../types/input.g.js';",
         "import { attachInputHandlers } from './input.g.js';",
@@ -122,7 +122,7 @@ def gen_web_wrapper():
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';",
         "export { Rect } from '../types/math.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig } from '../types/engine.g.js';",
         "",
     ]
 
@@ -620,6 +620,19 @@ def gen_web_wrapper():
     lines.append("  setActiveScene(_sceneId: number, _active: boolean): boolean {")
     lines.append("    throw new Error('Not supported in WASM mode');")
     lines.append("  }")
+    lines.append("")
+    lines.append("  networkHost(_protocol: number, _port: number): number { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  networkConnect(_protocol: number, _address: string, _port: number): number { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  networkDisconnect(_handle: number): number { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  networkSend(_handle: number, _peerId: number, _data: Uint8Array, _channel: number): number { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  networkReceive(_handle: number): Uint8Array { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  networkPoll(_handle: number): number { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  getNetworkStats(_handle: number): INetworkStats { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  networkPeerCount(_handle: number): number { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  setNetworkSimulation(_handle: number, _config: INetworkSimulationConfig): number { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  clearNetworkSimulation(_handle: number): number { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  setNetworkOverlayHandle(_handle: number): number { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  clearNetworkOverlayHandle(): number { throw new Error('Not supported in WASM mode'); }")
     lines.append("")
 
     # Collision methods

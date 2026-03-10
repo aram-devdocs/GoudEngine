@@ -6,12 +6,12 @@ import {
   type GameConfig,
 } from '../../../index';
 
-import type { IGoudGame, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';
+import type { IGoudGame, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';
 import { PhysicsBackend2D } from '../types/input.g.js';
 import { Color, Vec2, Vec3 } from '../types/math.g.js';
 export { Color, Vec2, Vec3 } from '../types/math.g.js';
 export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';
-export type { IGoudGame, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';
+export type { IGoudGame, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';
 
 /** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
 export class GoudGame implements IGoudGame {
@@ -557,6 +557,70 @@ export class GoudGame implements IGoudGame {
   /** Queries the network provider's capabilities. Throws if no network provider is installed. */
   getNetworkCapabilities(): INetworkCapabilities {
     return this.native.getNetworkCapabilities();
+  }
+
+  /** Starts hosting on the given port with the selected transport protocol. */
+  networkHost(protocol: number, port: number): number {
+    return this.native.networkHost(protocol, port);
+  }
+
+  /** Connects to a remote host with the selected transport protocol. */
+  networkConnect(protocol: number, address: string, port: number): number {
+    return this.native.networkConnect(protocol, address, port);
+  }
+
+  /** Disconnects a network host or connection handle. */
+  networkDisconnect(handle: number): number {
+    return this.native.networkDisconnect(handle);
+  }
+
+  /** Sends raw bytes to the given peer over a network handle and channel. */
+  networkSend(handle: number, peerId: number, data: Uint8Array, channel: number): number {
+    return this.native.networkSend(handle, peerId, Buffer.from(data), channel);
+  }
+
+  /** Receives the next buffered payload produced by networkPoll. */
+  networkReceive(handle: number): Uint8Array {
+    return this.native.networkReceive(handle);
+  }
+
+  /** Polls the network handle and buffers inbound messages for retrieval. */
+  networkPoll(handle: number): number {
+    return this.native.networkPoll(handle);
+  }
+
+  /** Returns aggregate network statistics for a network handle. */
+  getNetworkStats(handle: number): INetworkStats {
+    return this.native.getNetworkStats(handle) as unknown as INetworkStats;
+  }
+
+  /** Returns the number of connected peers for a network handle. */
+  networkPeerCount(handle: number): number {
+    return this.native.networkPeerCount(handle);
+  }
+
+  /** Applies debug-only latency, jitter, and packet-loss simulation to a network handle. */
+  setNetworkSimulation(handle: number, config: INetworkSimulationConfig): number {
+    return this.native.setNetworkSimulation(handle, {
+      one_way_latency_ms: config.oneWayLatencyMs,
+      jitter_ms: config.jitterMs,
+      packet_loss_percent: config.packetLossPercent,
+    } as unknown as INetworkSimulationConfig);
+  }
+
+  /** Clears debug-only network simulation settings from a network handle. */
+  clearNetworkSimulation(handle: number): number {
+    return this.native.clearNetworkSimulation(handle);
+  }
+
+  /** Overrides the active network handle displayed by the native debug overlay for this context. */
+  setNetworkOverlayHandle(handle: number): number {
+    return this.native.setNetworkOverlayHandle(handle);
+  }
+
+  /** Clears the explicit network-overlay handle override for this context. */
+  clearNetworkOverlayHandle(): number {
+    return this.native.clearNetworkOverlayHandle();
   }
 
   /** Plays audio from raw bytes on the default channel */

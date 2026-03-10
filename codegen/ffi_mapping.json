@@ -161,6 +161,29 @@
         "max_message_size"
       ]
     },
+    "NetworkStats": {
+      "ffi_name": "FfiNetworkStats",
+      "fields": [
+        "bytes_sent",
+        "bytes_received",
+        "packets_sent",
+        "packets_received",
+        "packets_lost",
+        "rtt_ms",
+        "send_bandwidth_bytes_per_sec",
+        "receive_bandwidth_bytes_per_sec",
+        "packet_loss_percent",
+        "jitter_ms"
+      ]
+    },
+    "NetworkSimulationConfig": {
+      "ffi_name": "FfiNetworkSimulationConfig",
+      "fields": [
+        "one_way_latency_ms",
+        "jitter_ms",
+        "packet_loss_percent"
+      ]
+    },
     "Mat3x3": {
       "ffi_name": "FfiMat3x3",
       "fields": [
@@ -1082,6 +1105,50 @@
             { "name": "out", "type": "NetworkCapabilities" }
           ],
           "returns_struct": "NetworkCapabilities"
+        },
+        "networkHost": {
+          "ffi": "goud_network_host"
+        },
+        "networkConnect": {
+          "ffi": "goud_network_connect",
+          "string_params": [
+            "address"
+          ]
+        },
+        "networkDisconnect": {
+          "ffi": "goud_network_disconnect"
+        },
+        "networkSend": {
+          "ffi": "goud_network_send"
+        },
+        "networkReceive": {
+          "ffi": "goud_network_receive",
+          "out_buffer": true
+        },
+        "networkPoll": {
+          "ffi": "goud_network_poll"
+        },
+        "getNetworkStats": {
+          "ffi": "goud_network_get_stats_v2",
+          "out_params": [
+            { "name": "stats", "type": "NetworkStats" }
+          ],
+          "returns_struct": "NetworkStats"
+        },
+        "networkPeerCount": {
+          "ffi": "goud_network_peer_count"
+        },
+        "setNetworkSimulation": {
+          "ffi": "goud_network_set_simulation"
+        },
+        "clearNetworkSimulation": {
+          "ffi": "goud_network_clear_simulation"
+        },
+        "setNetworkOverlayHandle": {
+          "ffi": "goud_network_set_overlay_handle"
+        },
+        "clearNetworkOverlayHandle": {
+          "ffi": "goud_network_clear_overlay_handle"
         },
         "audioPlay": {
           "ffi": "goud_audio_play"
@@ -8577,7 +8644,77 @@
         "returns": "i32",
         "unsafe": true
       },
+      "goud_network_get_stats_v2": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "i64"
+          },
+          {
+            "name": "out_stats",
+            "type": "ref FfiNetworkStats"
+          }
+        ],
+        "returns": "i32",
+        "unsafe": true
+      },
       "goud_network_peer_count": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "i64"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_network_set_overlay_handle": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "i64"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_network_clear_overlay_handle": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_network_set_simulation": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "i64"
+          },
+          {
+            "name": "config",
+            "type": "FfiNetworkSimulationConfig"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_network_clear_simulation": {
         "params": [
           {
             "name": "ctx",

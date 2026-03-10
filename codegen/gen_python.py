@@ -45,16 +45,43 @@ def _resolve_ffi_param(ptype: str) -> str:
     if ptype.startswith("ref "):
         inner = ptype[4:]
         return f"ctypes.POINTER({inner})"
+    if schema.get("types", {}).get(ptype, {}).get("kind") == "value":
+        ffi_info = mapping.get("ffi_types", {}).get(ptype, {})
+        ffi_name = ffi_info.get("ffi_name")
+        if ffi_name:
+            return ffi_name
     ct = CTYPES_MAP.get(ptype)
     if ct:
         return ct
     # Check if it's an FFI enum type (e.g., FfiTransitionType -> TransitionType)
+    if ptype.startswith("Ffi") and ptype[3:] in schema.get("types", {}):
+        return ptype
     if ptype.startswith("Ffi") and ptype[3:] in schema.get("enums", {}):
         enum_name = ptype[3:]
         enum_def = schema["enums"][enum_name]
         underlying = enum_def.get("underlying", "i32")
         return CTYPES_MAP.get(underlying, "ctypes.c_int32")
     return "ctypes.c_uint64"
+
+
+def _py_value_param_ffi_setup(param: dict) -> tuple[list[str], str] | None:
+    """Marshal a schema value type into its ctypes struct form for tool calls."""
+    raw_type = param["type"]
+    type_def = schema.get("types", {}).get(raw_type, {})
+    ffi_info = mapping.get("ffi_types", {}).get(raw_type, {})
+    ffi_name = ffi_info.get("ffi_name")
+    if type_def.get("kind") != "value" or not ffi_name:
+        return None
+
+    param_name = to_snake(param["name"])
+    local_name = f"_{param_name}_ffi"
+    lines = [f"        {local_name} = _ffi_module.{ffi_name}()"]
+    for field in type_def.get("fields", []):
+        field_name = to_snake(field["name"])
+        lines.append(
+            f"        {local_name}.{field_name} = {param_name}.{field_name}"
+        )
+    return lines, local_name
 
 
 # ── _ffi.g.py ───────────────────────────────────────────────────────
@@ -1426,7 +1453,13 @@ def _gen_tool_class(tool_name: str, lines: list):
                 elif p["type"] in schema.get("enums", {}):
                     ffi_parts.append(f"int({sn})")
                 else:
-                    ffi_parts.append(sn)
+                    value_setup = _py_value_param_ffi_setup(p)
+                    if value_setup:
+                        value_lines, value_arg = value_setup
+                        lines.extend(value_lines)
+                        ffi_parts.append(value_arg)
+                    else:
+                        ffi_parts.append(sn)
 
             args_str = ", ".join(ffi_parts)
             if ret == "void":
@@ -1532,6 +1565,49 @@ def _gen_tool_class(tool_name: str, lines: list):
                 f"_{op['name']}.value" for op in mmap["out_params"]
             )
             lines.append(f"        return Vec2({out_vals})")
+        elif mmap.get("out_buffer"):
+            ffi_fn = mmap["ffi"]
+            no_ctx = mmap.get("no_context", False)
+            entity_set = set(mmap.get("entity_params", []))
+            enum_set = set((mmap.get("enum_params") or {}).keys())
+            if not no_ctx:
+                lines.append("        _caps = _ffi_module.FfiNetworkCapabilities()")
+                lines.append(
+                    "        self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_caps))"
+                )
+                lines.append(
+                    "        _buf_len = int(_caps.max_message_size) if _caps.max_message_size else 65536"
+                )
+            else:
+                lines.append("        _buf_len = 65536")
+            lines.append("        _out_buf = (ctypes.c_uint8 * _buf_len)()")
+            lines.append("        _out_peer_id = ctypes.c_uint64()")
+
+            ffi_parts = [] if no_ctx else ["self._ctx"]
+            for p in params:
+                pn = p["name"]
+                sn = to_snake(pn)
+                if pn in entity_set:
+                    ffi_parts.append(f"{sn}._bits")
+                elif pn in enum_set or p["type"] in schema.get("enums", {}):
+                    ffi_parts.append(f"int({sn})")
+                else:
+                    ffi_parts.append(sn)
+            ffi_parts.extend([
+                "ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8))",
+                "_buf_len",
+                "ctypes.byref(_out_peer_id)",
+            ])
+            lines.append(
+                f"        _status = self._lib.{ffi_fn}({', '.join(ffi_parts)})"
+            )
+            lines.append("        if _status < 0:")
+            lines.append(
+                f"            raise RuntimeError(f'{ffi_fn} failed with status {{_status}}')"
+            )
+            lines.append("        if _status == 0:")
+            lines.append("            return b''")
+            lines.append("        return bytes(_out_buf[:_status])")
         elif "enum_params" in mmap:
             enum_arg = list(mmap["enum_params"].keys())[0]
             lines.append(
@@ -1540,6 +1616,7 @@ def _gen_tool_class(tool_name: str, lines: list):
             )
         elif "ffi" in mmap:
             ffi_fn = mmap["ffi"]
+            no_ctx = mmap.get("no_context", False)
             if "append_args" in mmap:
                 extra = ", ".join(str(a) for a in mmap["append_args"])
                 lines.append(
@@ -1589,13 +1666,22 @@ def _gen_tool_class(tool_name: str, lines: list):
                         f"        return self._lib.{ffi_fn}({args_str})"
                     )
             else:
-                ffi_args = [
-                    f"int({to_snake(p['name'])})"
-                    if p["type"] in schema.get("enums", {})
-                    else to_snake(p["name"])
-                    for p in params
-                ]
-                args_str = ", ".join(["self._ctx"] + ffi_args)
+                ffi_args = []
+                setup_lines = []
+                for p in params:
+                    sn = to_snake(p["name"])
+                    if p["type"] in schema.get("enums", {}):
+                        ffi_args.append(f"int({sn})")
+                        continue
+                    value_setup = _py_value_param_ffi_setup(p)
+                    if value_setup:
+                        value_lines, value_arg = value_setup
+                        setup_lines.extend(value_lines)
+                        ffi_args.append(value_arg)
+                        continue
+                    ffi_args.append(sn)
+                lines.extend(setup_lines)
+                args_str = ", ".join(([] if no_ctx else ["self._ctx"]) + ffi_args)
                 if ret == "void":
                     lines.append(
                         f"        self._lib.{ffi_fn}({args_str})"
@@ -1697,10 +1783,11 @@ def gen_game():
         f'"""{HEADER_COMMENT}"""',
         "",
         "import ctypes",
+        "from . import _ffi as _ffi_module",
         "from ._ffi import (get_lib, GoudContextId, FfiVec2, "
-        "FfiTransform2D, FfiSprite,",
+        "FfiTransform2D, FfiSprite, FfiNetworkStats, FfiNetworkSimulationConfig,",
         "    GoudRenderStats, GoudContact)",
-        "from ._types import Entity, Vec2, Color, Transform2D, Sprite, RenderStats",
+        "from ._types import Entity, Vec2, Color, Transform2D, Sprite, RenderStats, NetworkStats, NetworkSimulationConfig",
         "from ._keys import Key, MouseButton, PhysicsBackend2D",
         "",
         "# Type IDs for built-in component types (hash of type name)",

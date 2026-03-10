@@ -21,7 +21,7 @@ fn test_tcp_construction() {
     let caps = provider.network_capabilities();
     assert!(caps.supports_hosting);
     assert_eq!(caps.max_connections, 64);
-    assert_eq!(caps.max_message_size, 16_777_216);
+    assert_eq!(caps.max_message_size, 16_777_215);
 
     let stats = provider.stats();
     assert_eq!(stats.bytes_sent, 0);

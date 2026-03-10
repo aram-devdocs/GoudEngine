@@ -163,6 +163,7 @@ class NetworkProtocol:
     """Network transport protocol"""
     UDP = 0
     WEB_SOCKET = 1
+    TCP = 2
 
 class TransitionType:
     """Scene transition type"""
