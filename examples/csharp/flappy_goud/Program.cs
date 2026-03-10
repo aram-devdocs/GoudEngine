@@ -7,11 +7,16 @@ public class Program
 {
     static void Main(string[] args)
     {
-        using GoudGame game = new GoudGame(
-            GameConstants.ScreenWidth,
-            GameConstants.ScreenHeight + (uint)GameConstants.BaseHeight,
-            "Flappy Bird Clone"
-        );
+        using EngineConfig config = new EngineConfig();
+        config
+            .SetSize(
+                GameConstants.ScreenWidth,
+                GameConstants.ScreenHeight + (uint)GameConstants.BaseHeight
+            )
+            .SetTitle("Flappy Bird Clone")
+            .SetPhysicsBackend2D(PhysicsBackend2D.Simple);
+
+        using GoudGame game = config.Build();
 
         GameManager gameManager = new GameManager(game);
 

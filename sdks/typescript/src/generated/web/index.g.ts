@@ -2,10 +2,11 @@
 
 import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';
 import { Color, Vec2, Vec3 } from '../types/math.g.js';
+import { PhysicsBackend2D } from '../types/input.g.js';
 import { attachInputHandlers } from './input.g.js';
 
 export { Color, Vec2, Vec3 } from '../types/math.g.js';
-export { Key, MouseButton } from '../types/input.g.js';
+export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';
 export { Rect } from '../types/math.g.js';
 export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';
 
@@ -678,6 +679,16 @@ export class EngineConfig {
   /** Enables or disables the FPS debug overlay */
   setFpsOverlay(_enabled: boolean): EngineConfig {
     // FPS overlay is not yet supported in WASM; accepted for API parity.
+    return this;
+  }
+
+  /** Enables or disables physics debug visualization */
+  setPhysicsDebug(_enabled: boolean): EngineConfig {
+    return this;
+  }
+
+  /** Selects the 2D physics backend used by the built game */
+  setPhysicsBackend2D(_backend: PhysicsBackend2D): EngineConfig {
     return this;
   }
 

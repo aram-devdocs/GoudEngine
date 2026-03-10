@@ -253,6 +253,7 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
             .linear_damping(desc.linear_damping)
             .angular_damping(desc.angular_damping)
             .gravity_scale(desc.gravity_scale)
+            .ccd_enabled(desc.ccd_enabled)
             .locked_axes(if desc.fixed_rotation {
                 LockedAxes::ROTATION_LOCKED
             } else {
@@ -459,7 +460,7 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
             .ok_or(GoudError::InvalidHandle)
             .and_then(|h| self.resolve_body(h))?;
 
-        let joint = joint_from_desc(desc, body_a_handle, body_b_handle);
+        let joint = joint_from_desc(desc, body_a_handle, body_b_handle)?;
         let rapier_handle =
             self.impulse_joint_set
                 .insert(body_a_handle, body_b_handle, joint, true);

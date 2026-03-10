@@ -203,6 +203,7 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
             .linear_damping(desc.linear_damping)
             .angular_damping(desc.angular_damping)
             .gravity_scale(desc.gravity_scale)
+            .ccd_enabled(desc.ccd_enabled)
             .locked_axes(if desc.fixed_rotation {
                 LockedAxes::ROTATION_LOCKED
             } else {
@@ -423,7 +424,7 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
     fn create_joint(&mut self, desc: &JointDesc) -> GoudResult<JointHandle> {
         let rapier_a = self.get_rapier_body(desc.body_a.ok_or(GoudError::InvalidHandle)?)?;
         let rapier_b = self.get_rapier_body(desc.body_b.ok_or(GoudError::InvalidHandle)?)?;
-        let (joint, _, _) = conversions::joint_from_desc(desc, rapier_a, rapier_b);
+        let (joint, _, _) = conversions::joint_from_desc(desc, rapier_a, rapier_b)?;
         let rapier_handle = self
             .impulse_joint_set
             .insert(rapier_a, rapier_b, joint, true);

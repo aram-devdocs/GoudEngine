@@ -2654,6 +2654,15 @@
         "Circle": 1
       }
     },
+    "PhysicsBackend2D": {
+      "doc": "2D physics backend selection",
+      "underlying": "u32",
+      "values": {
+        "Default": 0,
+        "Rapier": 1,
+        "Simple": 2
+      }
+    },
     "EasingType": {
       "doc": "Easing function for tweens",
       "values": {
@@ -5710,6 +5719,28 @@
           "returns": "bool"
         },
         {
+          "name": "setPhysicsDebug",
+          "doc": "Enables or disables physics debug visualization",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setPhysicsBackend2D",
+          "doc": "Selects the 2D physics backend used by the built game",
+          "params": [
+            {
+              "name": "backend",
+              "type": "PhysicsBackend2D"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
           "name": "build",
           "doc": "Consumes the config and creates a windowed GoudGame instance",
           "params": [],
@@ -6069,6 +6100,25 @@
           "returns": "i32"
         },
         {
+          "name": "createWithBackend",
+          "doc": "Creates a 2D physics world with explicit backend selection",
+          "params": [
+            {
+              "name": "gravityX",
+              "type": "f32"
+            },
+            {
+              "name": "gravityY",
+              "type": "f32"
+            },
+            {
+              "name": "backend",
+              "type": "PhysicsBackend2D"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
           "name": "destroy",
           "doc": "Destroys the 2D physics world",
           "params": [],
@@ -6108,6 +6158,33 @@
             {
               "name": "gravityScale",
               "type": "f32"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "addRigidBodyEx",
+          "doc": "Adds a rigid body with explicit CCD control and returns its handle (FFI: goud_physics_add_rigid_body_ex)",
+          "params": [
+            {
+              "name": "bodyType",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "gravityScale",
+              "type": "f32"
+            },
+            {
+              "name": "ccdEnabled",
+              "type": "bool"
             }
           ],
           "returns": "i64"
@@ -6197,6 +6274,84 @@
         {
           "name": "removeBody",
           "doc": "Removes a rigid body from the simulation",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "createJoint",
+          "doc": "Creates a joint between two bodies and returns its handle (FFI: goud_physics_create_joint)",
+          "params": [
+            {
+              "name": "bodyA",
+              "type": "u64"
+            },
+            {
+              "name": "bodyB",
+              "type": "u64"
+            },
+            {
+              "name": "kind",
+              "type": "u32"
+            },
+            {
+              "name": "anchorAx",
+              "type": "f32"
+            },
+            {
+              "name": "anchorAy",
+              "type": "f32"
+            },
+            {
+              "name": "anchorBx",
+              "type": "f32"
+            },
+            {
+              "name": "anchorBy",
+              "type": "f32"
+            },
+            {
+              "name": "axisX",
+              "type": "f32"
+            },
+            {
+              "name": "axisY",
+              "type": "f32"
+            },
+            {
+              "name": "hasLimits",
+              "type": "bool"
+            },
+            {
+              "name": "limitMin",
+              "type": "f32"
+            },
+            {
+              "name": "limitMax",
+              "type": "f32"
+            },
+            {
+              "name": "hasMotor",
+              "type": "bool"
+            },
+            {
+              "name": "motorTargetVelocity",
+              "type": "f32"
+            },
+            {
+              "name": "motorMaxForce",
+              "type": "f32"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "removeJoint",
+          "doc": "Removes a joint from the simulation (FFI: goud_physics_remove_joint)",
           "params": [
             {
               "name": "handle",
@@ -6598,6 +6753,37 @@
           "returns": "i64"
         },
         {
+          "name": "addRigidBodyEx",
+          "doc": "Adds a rigid body with explicit CCD control and returns its handle (FFI: goud_physics3d_add_rigid_body_ex)",
+          "params": [
+            {
+              "name": "bodyType",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            },
+            {
+              "name": "gravityScale",
+              "type": "f32"
+            },
+            {
+              "name": "ccdEnabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
           "name": "addCollider",
           "doc": "Adds a collider to a rigid body",
           "params": [
@@ -6639,6 +6825,96 @@
         {
           "name": "removeBody",
           "doc": "Removes a rigid body from the simulation",
+          "params": [
+            {
+              "name": "handle",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "createJoint",
+          "doc": "Creates a 3D joint between two bodies and returns its handle (FFI: goud_physics3d_create_joint)",
+          "params": [
+            {
+              "name": "bodyA",
+              "type": "u64"
+            },
+            {
+              "name": "bodyB",
+              "type": "u64"
+            },
+            {
+              "name": "kind",
+              "type": "u32"
+            },
+            {
+              "name": "anchorAx",
+              "type": "f32"
+            },
+            {
+              "name": "anchorAy",
+              "type": "f32"
+            },
+            {
+              "name": "anchorAz",
+              "type": "f32"
+            },
+            {
+              "name": "anchorBx",
+              "type": "f32"
+            },
+            {
+              "name": "anchorBy",
+              "type": "f32"
+            },
+            {
+              "name": "anchorBz",
+              "type": "f32"
+            },
+            {
+              "name": "axisX",
+              "type": "f32"
+            },
+            {
+              "name": "axisY",
+              "type": "f32"
+            },
+            {
+              "name": "axisZ",
+              "type": "f32"
+            },
+            {
+              "name": "hasLimits",
+              "type": "bool"
+            },
+            {
+              "name": "limitMin",
+              "type": "f32"
+            },
+            {
+              "name": "limitMax",
+              "type": "f32"
+            },
+            {
+              "name": "hasMotor",
+              "type": "bool"
+            },
+            {
+              "name": "motorTargetVelocity",
+              "type": "f32"
+            },
+            {
+              "name": "motorMaxForce",
+              "type": "f32"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "removeJoint",
+          "doc": "Removes a 3D joint from the simulation (FFI: goud_physics3d_remove_joint)",
           "params": [
             {
               "name": "handle",

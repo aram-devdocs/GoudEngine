@@ -4,7 +4,7 @@ import ctypes
 from ._ffi import (get_lib, GoudContextId, FfiVec2, FfiTransform2D, FfiSprite,
     GoudRenderStats, GoudContact)
 from ._types import Entity, Vec2, Color, Transform2D, Sprite, RenderStats
-from ._keys import Key, MouseButton
+from ._keys import Key, MouseButton, PhysicsBackend2D
 
 # Type IDs for built-in component types (hash of type name)
 _TYPEID_TRANSFORM2D = hash('Transform2D') & 0xFFFFFFFFFFFFFFFF
@@ -957,6 +957,324 @@ class GoudContext:
         return self._lib.goud_scene_transition_tick(self._ctx, delta_time)
 
 
+class PhysicsWorld2D:
+    """2D physics simulation powered by Rapier2D"""
+
+    def __init__(self, gravity_x: float, gravity_y: float, backend=PhysicsBackend2D.DEFAULT):
+        lib = get_lib()
+        self._lib = lib
+        self._ctx = lib.goud_context_create()
+        if self._ctx._bits == 0xFFFFFFFFFFFFFFFF:
+            raise RuntimeError('Failed to create headless context')
+        status = lib.goud_physics_create_with_backend(self._ctx, gravity_x, gravity_y, int(backend))
+        if status != 0:
+            lib.goud_context_destroy(self._ctx)
+            raise RuntimeError(f'Failed to create PhysicsWorld2D (status {status})')
+
+    def __del__(self):
+        self.destroy()
+
+    def create(self, gravity_x, gravity_y):
+        """Creates a 2D physics world with given gravity"""
+        return self._lib.goud_physics_create(self._ctx, gravity_x, gravity_y)
+
+    def create_with_backend(self, gravity_x, gravity_y, backend):
+        """Creates a 2D physics world with explicit backend selection"""
+        return self._lib.goud_physics_create_with_backend(self._ctx, gravity_x, gravity_y, int(backend))
+
+    def destroy(self):
+        """Destroys the 2D physics world"""
+        if hasattr(self, '_ctx'):
+            self._lib.goud_physics_destroy(self._ctx)
+            self._lib.goud_context_destroy(self._ctx)
+            del self._ctx
+
+    def set_gravity(self, x, y):
+        """Sets the gravity vector"""
+        return self._lib.goud_physics_set_gravity(self._ctx, x, y)
+
+    def add_rigid_body(self, body_type, x, y, gravity_scale):
+        """Adds a rigid body and returns its handle"""
+        return self._lib.goud_physics_add_rigid_body(self._ctx, body_type, x, y, gravity_scale)
+
+    def add_rigid_body_ex(self, body_type, x, y, gravity_scale, ccd_enabled):
+        """Adds a rigid body with explicit CCD control and returns its handle (FFI: goud_physics_add_rigid_body_ex)"""
+        return self._lib.goud_physics_add_rigid_body_ex(self._ctx, body_type, x, y, gravity_scale, ccd_enabled)
+
+    def add_collider(self, body_handle, shape_type, width, height, radius, friction, restitution):
+        """Adds a collider to a rigid body"""
+        return self._lib.goud_physics_add_collider(self._ctx, body_handle, shape_type, width, height, radius, friction, restitution)
+
+    def add_collider_ex(self, body_handle, shape_type, width, height, radius, friction, restitution, is_sensor, layer, mask):
+        """Adds a collider with sensor and collision-layer configuration (FFI: goud_physics_add_collider_ex)"""
+        return self._lib.goud_physics_add_collider_ex(self._ctx, body_handle, shape_type, width, height, radius, friction, restitution, is_sensor, layer, mask)
+
+    def remove_body(self, handle):
+        """Removes a rigid body from the simulation"""
+        return self._lib.goud_physics_remove_body(self._ctx, handle)
+
+    def create_joint(self, body_a, body_b, kind, anchor_ax, anchor_ay, anchor_bx, anchor_by, axis_x, axis_y, has_limits, limit_min, limit_max, has_motor, motor_target_velocity, motor_max_force):
+        """Creates a joint between two bodies and returns its handle (FFI: goud_physics_create_joint)"""
+        return self._lib.goud_physics_create_joint(self._ctx, body_a, body_b, kind, anchor_ax, anchor_ay, anchor_bx, anchor_by, axis_x, axis_y, has_limits, limit_min, limit_max, has_motor, motor_target_velocity, motor_max_force)
+
+    def remove_joint(self, handle):
+        """Removes a joint from the simulation (FFI: goud_physics_remove_joint)"""
+        return self._lib.goud_physics_remove_joint(self._ctx, handle)
+
+    def step(self, dt):
+        """Steps the physics simulation"""
+        return self._lib.goud_physics_step(self._ctx, dt)
+
+    def get_position(self, handle):
+        """Gets the position of a rigid body"""
+        _x = ctypes.c_float()
+        _y = ctypes.c_float()
+        self._lib.goud_physics_get_position(self._ctx, handle, ctypes.byref(_x), ctypes.byref(_y))
+        return Vec2(_x.value, _y.value)
+
+    def get_velocity(self, handle):
+        """Gets the velocity of a rigid body"""
+        _x = ctypes.c_float()
+        _y = ctypes.c_float()
+        self._lib.goud_physics_get_velocity(self._ctx, handle, ctypes.byref(_x), ctypes.byref(_y))
+        return Vec2(_x.value, _y.value)
+
+    def set_velocity(self, handle, vx, vy):
+        """Sets the velocity of a rigid body"""
+        return self._lib.goud_physics_set_velocity(self._ctx, handle, vx, vy)
+
+    def apply_force(self, handle, fx, fy):
+        """Applies a force to a rigid body"""
+        return self._lib.goud_physics_apply_force(self._ctx, handle, fx, fy)
+
+    def apply_impulse(self, handle, ix, iy):
+        """Applies an impulse to a rigid body"""
+        return self._lib.goud_physics_apply_impulse(self._ctx, handle, ix, iy)
+
+    def raycast(self, origin_x, origin_y, dir_x, dir_y, max_dist):
+        """Casts a ray and returns the hit point"""
+        _hit_x = ctypes.c_float()
+        _hit_y = ctypes.c_float()
+        self._lib.goud_physics_raycast(self._ctx, origin_x, origin_y, dir_x, dir_y, max_dist, ctypes.byref(_hit_x), ctypes.byref(_hit_y))
+        return Vec2(_hit_x.value, _hit_y.value)
+
+    def raycast_ex(self, origin_x, origin_y, dir_x, dir_y, max_dist, layer_mask):
+        """Casts a ray and returns the full raycast hit payload (FFI: goud_physics_raycast_ex)"""
+        _body_handle = ctypes.c_uint64()
+        _collider_handle = ctypes.c_uint64()
+        _point_x = ctypes.c_float()
+        _point_y = ctypes.c_float()
+        _normal_x = ctypes.c_float()
+        _normal_y = ctypes.c_float()
+        _distance = ctypes.c_float()
+        self._lib.goud_physics_raycast_ex(self._ctx, origin_x, origin_y, dir_x, dir_y, max_dist, layer_mask, ctypes.byref(_body_handle), ctypes.byref(_collider_handle), ctypes.byref(_point_x), ctypes.byref(_point_y), ctypes.byref(_normal_x), ctypes.byref(_normal_y), ctypes.byref(_distance))
+        return PhysicsRaycastHit2D(_body_handle.value, _collider_handle.value, _point_x.value, _point_y.value, _normal_x.value, _normal_y.value, _distance.value)
+
+    def collision_events_count(self):
+        """Returns the number of queued collision events available to read (FFI: goud_physics_collision_events_count)"""
+        return self._lib.goud_physics_collision_events_count(self._ctx)
+
+    def collision_events_read(self, index):
+        """Reads one queued collision event by index; kind is 0 = Enter, 1 = Stay, 2 = Exit (FFI: goud_physics_collision_events_read)"""
+        _body_a = ctypes.c_uint64()
+        _body_b = ctypes.c_uint64()
+        _kind = ctypes.c_uint32()
+        self._lib.goud_physics_collision_events_read(self._ctx, index, ctypes.byref(_body_a), ctypes.byref(_body_b), ctypes.byref(_kind))
+        return PhysicsCollisionEvent2D(_body_a.value, _body_b.value, _kind.value)
+
+    def collision_event_count(self):
+        """Backward-compatible alias for collisionEventsCount (FFI: goud_physics_collision_event_count)"""
+        return self._lib.goud_physics_collision_event_count(self._ctx)
+
+    def collision_event_read(self, index):
+        """Backward-compatible alias for collisionEventsRead (FFI: goud_physics_collision_event_read)"""
+        _body_a = ctypes.c_uint64()
+        _body_b = ctypes.c_uint64()
+        _kind = ctypes.c_uint32()
+        self._lib.goud_physics_collision_event_read(self._ctx, index, ctypes.byref(_body_a), ctypes.byref(_body_b), ctypes.byref(_kind))
+        return PhysicsCollisionEvent2D(_body_a.value, _body_b.value, _kind.value)
+
+    def set_collision_callback(self, callback_ptr, user_data):
+        """Registers or clears a collision callback function pointer. Keep callback storage alive for the full registration lifetime. In safety-restricted wrappers (Python/TypeScript), pass 0 for callbackPtr and userData to clear. (FFI: goud_physics_set_collision_callback)"""
+        return self._lib.goud_physics_set_collision_callback(self._ctx, callback_ptr, user_data)
+
+    def get_gravity(self):
+        """Gets the current gravity vector"""
+        _x = ctypes.c_float()
+        _y = ctypes.c_float()
+        self._lib.goud_physics_get_gravity(self._ctx, ctypes.byref(_x), ctypes.byref(_y))
+        return Vec2(_x.value, _y.value)
+
+    def set_body_gravity_scale(self, handle, scale):
+        """Sets the gravity scale for a rigid body"""
+        return self._lib.goud_physics_set_body_gravity_scale(self._ctx, handle, scale)
+
+    def get_body_gravity_scale(self, handle):
+        """Gets the gravity scale for a rigid body"""
+        _scale = ctypes.c_float()
+        self._lib.goud_physics_get_body_gravity_scale(self._ctx, handle, ctypes.byref(_scale))
+        return _scale.value
+
+    def set_collider_friction(self, handle, friction):
+        """Sets the friction coefficient for a collider"""
+        return self._lib.goud_physics_set_collider_friction(self._ctx, handle, friction)
+
+    def get_collider_friction(self, handle):
+        """Gets the friction coefficient for a collider"""
+        _friction = ctypes.c_float()
+        self._lib.goud_physics_get_collider_friction(self._ctx, handle, ctypes.byref(_friction))
+        return _friction.value
+
+    def set_collider_restitution(self, handle, restitution):
+        """Sets the restitution (bounciness) for a collider"""
+        return self._lib.goud_physics_set_collider_restitution(self._ctx, handle, restitution)
+
+    def get_collider_restitution(self, handle):
+        """Gets the restitution (bounciness) for a collider"""
+        _restitution = ctypes.c_float()
+        self._lib.goud_physics_get_collider_restitution(self._ctx, handle, ctypes.byref(_restitution))
+        return _restitution.value
+
+    def set_timestep(self, dt):
+        """Set the fixed physics timestep in seconds"""
+        return self._lib.goud_physics_set_timestep(self._ctx, dt)
+
+    def get_timestep(self):
+        """Get the current fixed physics timestep in seconds"""
+        _dt = ctypes.c_float()
+        self._lib.goud_physics_get_timestep(self._ctx, ctypes.byref(_dt))
+        return _dt.value
+
+
+class PhysicsWorld3D:
+    """3D physics simulation powered by Rapier3D"""
+
+    def __init__(self, gravity_x: float, gravity_y: float, gravity_z: float):
+        lib = get_lib()
+        self._lib = lib
+        self._ctx = lib.goud_context_create()
+        if self._ctx._bits == 0xFFFFFFFFFFFFFFFF:
+            raise RuntimeError('Failed to create headless context')
+        status = lib.goud_physics3d_create(self._ctx, gravity_x, gravity_y, gravity_z)
+        if status != 0:
+            lib.goud_context_destroy(self._ctx)
+            raise RuntimeError(f'Failed to create PhysicsWorld3D (status {status})')
+
+    def __del__(self):
+        self.destroy()
+
+    def create(self, gravity_x, gravity_y, gravity_z):
+        """Creates a 3D physics world with given gravity"""
+        return self._lib.goud_physics3d_create(self._ctx, gravity_x, gravity_y, gravity_z)
+
+    def destroy(self):
+        """Destroys the 3D physics world"""
+        if hasattr(self, '_ctx'):
+            self._lib.goud_physics3d_destroy(self._ctx)
+            self._lib.goud_context_destroy(self._ctx)
+            del self._ctx
+
+    def set_gravity(self, x, y, z):
+        """Sets the gravity vector"""
+        return self._lib.goud_physics3d_set_gravity(self._ctx, x, y, z)
+
+    def add_rigid_body(self, body_type, x, y, z, gravity_scale):
+        """Adds a rigid body and returns its handle"""
+        return self._lib.goud_physics3d_add_rigid_body(self._ctx, body_type, x, y, z, gravity_scale)
+
+    def add_rigid_body_ex(self, body_type, x, y, z, gravity_scale, ccd_enabled):
+        """Adds a rigid body with explicit CCD control and returns its handle (FFI: goud_physics3d_add_rigid_body_ex)"""
+        return self._lib.goud_physics3d_add_rigid_body_ex(self._ctx, body_type, x, y, z, gravity_scale, ccd_enabled)
+
+    def add_collider(self, body_handle, shape_type, hx, hy, hz, radius, friction, restitution):
+        """Adds a collider to a rigid body"""
+        return self._lib.goud_physics3d_add_collider(self._ctx, body_handle, shape_type, hx, hy, hz, radius, friction, restitution)
+
+    def remove_body(self, handle):
+        """Removes a rigid body from the simulation"""
+        return self._lib.goud_physics3d_remove_body(self._ctx, handle)
+
+    def create_joint(self, body_a, body_b, kind, anchor_ax, anchor_ay, anchor_az, anchor_bx, anchor_by, anchor_bz, axis_x, axis_y, axis_z, has_limits, limit_min, limit_max, has_motor, motor_target_velocity, motor_max_force):
+        """Creates a 3D joint between two bodies and returns its handle (FFI: goud_physics3d_create_joint)"""
+        return self._lib.goud_physics3d_create_joint(self._ctx, body_a, body_b, kind, anchor_ax, anchor_ay, anchor_az, anchor_bx, anchor_by, anchor_bz, axis_x, axis_y, axis_z, has_limits, limit_min, limit_max, has_motor, motor_target_velocity, motor_max_force)
+
+    def remove_joint(self, handle):
+        """Removes a 3D joint from the simulation (FFI: goud_physics3d_remove_joint)"""
+        return self._lib.goud_physics3d_remove_joint(self._ctx, handle)
+
+    def step(self, dt):
+        """Steps the physics simulation"""
+        return self._lib.goud_physics3d_step(self._ctx, dt)
+
+    def get_position(self, handle):
+        """Gets the position of a rigid body"""
+        _x = ctypes.c_float()
+        _y = ctypes.c_float()
+        _z = ctypes.c_float()
+        self._lib.goud_physics3d_get_position(self._ctx, handle, ctypes.byref(_x), ctypes.byref(_y), ctypes.byref(_z))
+        return Vec3(_x.value, _y.value, _z.value)
+
+    def set_velocity(self, handle, vx, vy, vz):
+        """Sets the velocity of a rigid body"""
+        return self._lib.goud_physics3d_set_velocity(self._ctx, handle, vx, vy, vz)
+
+    def apply_force(self, handle, fx, fy, fz):
+        """Applies a force to a rigid body"""
+        return self._lib.goud_physics3d_apply_force(self._ctx, handle, fx, fy, fz)
+
+    def apply_impulse(self, handle, ix, iy, iz):
+        """Applies an impulse to a rigid body"""
+        return self._lib.goud_physics3d_apply_impulse(self._ctx, handle, ix, iy, iz)
+
+    def get_gravity(self):
+        """Gets the current gravity vector"""
+        _x = ctypes.c_float()
+        _y = ctypes.c_float()
+        _z = ctypes.c_float()
+        self._lib.goud_physics3d_get_gravity(self._ctx, ctypes.byref(_x), ctypes.byref(_y), ctypes.byref(_z))
+        return Vec3(_x.value, _y.value, _z.value)
+
+    def set_body_gravity_scale(self, handle, scale):
+        """Sets the gravity scale for a rigid body"""
+        return self._lib.goud_physics3d_set_body_gravity_scale(self._ctx, handle, scale)
+
+    def get_body_gravity_scale(self, handle):
+        """Gets the gravity scale for a rigid body"""
+        _scale = ctypes.c_float()
+        self._lib.goud_physics3d_get_body_gravity_scale(self._ctx, handle, ctypes.byref(_scale))
+        return _scale.value
+
+    def set_collider_friction(self, handle, friction):
+        """Sets the friction coefficient for a collider"""
+        return self._lib.goud_physics3d_set_collider_friction(self._ctx, handle, friction)
+
+    def get_collider_friction(self, handle):
+        """Gets the friction coefficient for a collider"""
+        _friction = ctypes.c_float()
+        self._lib.goud_physics3d_get_collider_friction(self._ctx, handle, ctypes.byref(_friction))
+        return _friction.value
+
+    def set_collider_restitution(self, handle, restitution):
+        """Sets the restitution (bounciness) for a collider"""
+        return self._lib.goud_physics3d_set_collider_restitution(self._ctx, handle, restitution)
+
+    def get_collider_restitution(self, handle):
+        """Gets the restitution (bounciness) for a collider"""
+        _restitution = ctypes.c_float()
+        self._lib.goud_physics3d_get_collider_restitution(self._ctx, handle, ctypes.byref(_restitution))
+        return _restitution.value
+
+    def set_timestep(self, dt):
+        """Set the fixed physics timestep in seconds"""
+        return self._lib.goud_physics3d_set_timestep(self._ctx, dt)
+
+    def get_timestep(self):
+        """Get the current fixed physics timestep in seconds"""
+        _dt = ctypes.c_float()
+        self._lib.goud_physics3d_get_timestep(self._ctx, ctypes.byref(_dt))
+        return _dt.value
+
+
 class EngineConfig:
     """Builder for configuring and creating a GoudGame instance with provider selection."""
 
@@ -1008,6 +1326,20 @@ class EngineConfig:
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
         self._lib.goud_engine_config_set_fps_overlay(self._handle, enabled)
+        return self
+
+    def set_physics_debug(self, enabled):
+        """Enables or disables physics debug visualization"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
+        self._lib.goud_engine_config_set_physics_debug(self._handle, enabled)
+        return self
+
+    def set_physics_backend2_d(self, backend):
+        """Selects the 2D physics backend used by the built game"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
+        self._lib.goud_engine_config_set_physics_backend_2d(self._handle, int(backend))
         return self
 
     def build(self):

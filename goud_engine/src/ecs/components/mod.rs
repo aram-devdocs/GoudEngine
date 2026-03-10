@@ -42,6 +42,7 @@
 //! - [`RigidBody`]: Physics body component (dynamic, kinematic, or static)
 //! - [`Collider`]: Collision shape component (circle, box, capsule, polygon)
 //! - [`ColliderShape`]: Geometric shape types for colliders
+//! - [`Joint`]: ECS constraint component linking one entity to another
 //!
 //! ## Hierarchy Components
 //!
@@ -168,6 +169,7 @@ pub mod collider;
 pub mod global_transform;
 pub mod global_transform2d;
 pub mod hierarchy;
+pub mod joint;
 pub mod propagation;
 pub mod rigidbody;
 pub mod skeleton2d;
@@ -186,6 +188,7 @@ pub use collider::{Collider, ColliderShape};
 pub use global_transform::GlobalTransform;
 pub use global_transform2d::GlobalTransform2D;
 pub use hierarchy::{Children, Name, Parent};
+pub use joint::Joint;
 pub use rigidbody::{RigidBody, RigidBodyType};
 pub use skeleton2d::{
     Bone2D, BoneKeyframe, BoneTrack, BoneTransform, BoneWeight, SkeletalAnimation,

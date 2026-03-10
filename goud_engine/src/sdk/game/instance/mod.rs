@@ -4,6 +4,7 @@ mod ecs_scene;
 
 use crate::context_registry::scene::SceneManager;
 use crate::core::error::GoudResult;
+use crate::core::providers::types::DebugShape;
 use crate::core::providers::ProviderRegistry;
 use crate::sdk::debug_overlay::DebugOverlay;
 use crate::sdk::game_config::{GameConfig, GameContext};
@@ -54,6 +55,9 @@ pub struct GoudGame {
 
     /// Provider registry for subsystem backends (render, physics, audio, input).
     pub(crate) providers: ProviderRegistry,
+
+    /// Cached physics debug shapes for the most recent frame.
+    pub(crate) physics_debug_shapes: Vec<DebugShape>,
 
     /// Stores the result of the most recent transition completion, if any.
     /// Use [`take_transition_complete`](Self::take_transition_complete) to consume it.
@@ -114,6 +118,18 @@ fn init_engine_diagnostics(config: &GameConfig) {
 }
 
 impl GoudGame {
+    /// Updates cached physics debug shapes according to runtime config.
+    ///
+    /// When disabled, this avoids querying the physics provider entirely.
+    pub(crate) fn update_physics_debug_shapes(&mut self) {
+        if !self.config.physics_debug.enabled {
+            self.physics_debug_shapes.clear();
+            return;
+        }
+
+        self.physics_debug_shapes = self.providers.physics.debug_shapes();
+    }
+
     /// Creates a new game instance with the given configuration.
     ///
     /// This creates a headless game instance suitable for testing and
@@ -132,6 +148,7 @@ impl GoudGame {
             initialized: false,
             debug_overlay,
             providers: ProviderRegistry::default(),
+            physics_debug_shapes: Vec::new(),
             last_transition_complete: None,
             ui_manager: UiManager::new(),
             #[cfg(feature = "native")]
@@ -197,6 +214,7 @@ impl GoudGame {
             initialized: false,
             debug_overlay,
             providers: ProviderRegistry::default(),
+            physics_debug_shapes: Vec::new(),
             last_transition_complete: None,
             ui_manager: UiManager::new(),
             platform: Some(Box::new(platform)),

@@ -57,6 +57,7 @@ impl GoudGame {
                 self.last_transition_complete = Some(complete);
             }
 
+            self.update_physics_debug_shapes();
             self.render_ui_frame();
 
             // Safety: Limit iterations in tests/examples without actual window
@@ -93,6 +94,7 @@ impl GoudGame {
             self.last_transition_complete = Some(complete);
         }
 
+        self.update_physics_debug_shapes();
         self.render_ui_frame();
     }
 
@@ -209,5 +211,221 @@ impl GoudGame {
         {
             let _ = self.ui_manager.build_render_commands();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::error::GoudResult;
+    use crate::core::providers::impls::NullPhysicsProvider;
+    use crate::core::providers::physics::PhysicsProvider;
+    use crate::core::providers::types::{
+        BodyDesc, BodyHandle, ColliderDesc, ColliderHandle, CollisionEvent, ContactPair,
+        DebugShape, JointDesc, JointHandle, PhysicsCapabilities, RaycastHit,
+    };
+    use crate::core::providers::{Provider, ProviderLifecycle};
+    use crate::sdk::engine_config::EngineConfig;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+
+    struct CountingPhysicsProvider {
+        inner: NullPhysicsProvider,
+        debug_shapes_calls: Arc<AtomicUsize>,
+    }
+
+    impl CountingPhysicsProvider {
+        fn new(debug_shapes_calls: Arc<AtomicUsize>) -> Self {
+            Self {
+                inner: NullPhysicsProvider::new(),
+                debug_shapes_calls,
+            }
+        }
+    }
+
+    impl Provider for CountingPhysicsProvider {
+        fn name(&self) -> &str {
+            self.inner.name()
+        }
+
+        fn version(&self) -> &str {
+            self.inner.version()
+        }
+
+        fn capabilities(&self) -> Box<dyn std::any::Any> {
+            self.inner.capabilities()
+        }
+    }
+
+    impl ProviderLifecycle for CountingPhysicsProvider {
+        fn init(&mut self) -> GoudResult<()> {
+            self.inner.init()
+        }
+
+        fn update(&mut self, delta: f32) -> GoudResult<()> {
+            self.inner.update(delta)
+        }
+
+        fn shutdown(&mut self) {
+            self.inner.shutdown();
+        }
+    }
+
+    impl PhysicsProvider for CountingPhysicsProvider {
+        fn physics_capabilities(&self) -> &PhysicsCapabilities {
+            self.inner.physics_capabilities()
+        }
+
+        fn step(&mut self, delta: f32) -> GoudResult<()> {
+            self.inner.step(delta)
+        }
+
+        fn set_gravity(&mut self, gravity: [f32; 2]) {
+            self.inner.set_gravity(gravity);
+        }
+
+        fn gravity(&self) -> [f32; 2] {
+            self.inner.gravity()
+        }
+
+        fn set_timestep(&mut self, dt: f32) {
+            self.inner.set_timestep(dt);
+        }
+
+        fn timestep(&self) -> f32 {
+            self.inner.timestep()
+        }
+
+        fn create_body(&mut self, desc: &BodyDesc) -> GoudResult<BodyHandle> {
+            self.inner.create_body(desc)
+        }
+
+        fn destroy_body(&mut self, handle: BodyHandle) {
+            self.inner.destroy_body(handle);
+        }
+
+        fn body_position(&self, handle: BodyHandle) -> GoudResult<[f32; 2]> {
+            self.inner.body_position(handle)
+        }
+
+        fn set_body_position(&mut self, handle: BodyHandle, pos: [f32; 2]) -> GoudResult<()> {
+            self.inner.set_body_position(handle, pos)
+        }
+
+        fn body_velocity(&self, handle: BodyHandle) -> GoudResult<[f32; 2]> {
+            self.inner.body_velocity(handle)
+        }
+
+        fn set_body_velocity(&mut self, handle: BodyHandle, vel: [f32; 2]) -> GoudResult<()> {
+            self.inner.set_body_velocity(handle, vel)
+        }
+
+        fn apply_force(&mut self, handle: BodyHandle, force: [f32; 2]) -> GoudResult<()> {
+            self.inner.apply_force(handle, force)
+        }
+
+        fn apply_impulse(&mut self, handle: BodyHandle, impulse: [f32; 2]) -> GoudResult<()> {
+            self.inner.apply_impulse(handle, impulse)
+        }
+
+        fn body_gravity_scale(&self, handle: BodyHandle) -> GoudResult<f32> {
+            self.inner.body_gravity_scale(handle)
+        }
+
+        fn set_body_gravity_scale(&mut self, handle: BodyHandle, scale: f32) -> GoudResult<()> {
+            self.inner.set_body_gravity_scale(handle, scale)
+        }
+
+        fn create_collider(
+            &mut self,
+            body: BodyHandle,
+            desc: &ColliderDesc,
+        ) -> GoudResult<ColliderHandle> {
+            self.inner.create_collider(body, desc)
+        }
+
+        fn destroy_collider(&mut self, handle: ColliderHandle) {
+            self.inner.destroy_collider(handle);
+        }
+
+        fn collider_friction(&self, handle: ColliderHandle) -> GoudResult<f32> {
+            self.inner.collider_friction(handle)
+        }
+
+        fn set_collider_friction(
+            &mut self,
+            handle: ColliderHandle,
+            friction: f32,
+        ) -> GoudResult<()> {
+            self.inner.set_collider_friction(handle, friction)
+        }
+
+        fn collider_restitution(&self, handle: ColliderHandle) -> GoudResult<f32> {
+            self.inner.collider_restitution(handle)
+        }
+
+        fn set_collider_restitution(
+            &mut self,
+            handle: ColliderHandle,
+            restitution: f32,
+        ) -> GoudResult<()> {
+            self.inner.set_collider_restitution(handle, restitution)
+        }
+
+        fn raycast(&self, origin: [f32; 2], dir: [f32; 2], max_dist: f32) -> Option<RaycastHit> {
+            self.inner.raycast(origin, dir, max_dist)
+        }
+
+        fn overlap_circle(&self, center: [f32; 2], radius: f32) -> Vec<BodyHandle> {
+            self.inner.overlap_circle(center, radius)
+        }
+
+        fn drain_collision_events(&mut self) -> Vec<CollisionEvent> {
+            self.inner.drain_collision_events()
+        }
+
+        fn contact_pairs(&self) -> Vec<ContactPair> {
+            self.inner.contact_pairs()
+        }
+
+        fn create_joint(&mut self, desc: &JointDesc) -> GoudResult<JointHandle> {
+            self.inner.create_joint(desc)
+        }
+
+        fn destroy_joint(&mut self, handle: JointHandle) {
+            self.inner.destroy_joint(handle);
+        }
+
+        fn debug_shapes(&self) -> Vec<DebugShape> {
+            self.debug_shapes_calls.fetch_add(1, Ordering::SeqCst);
+            self.inner.debug_shapes()
+        }
+    }
+
+    #[test]
+    fn test_update_frame_skips_physics_debug_shapes_when_disabled() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let config = EngineConfig::new()
+            .with_physics_provider(CountingPhysicsProvider::new(Arc::clone(&calls)))
+            .with_physics_debug(false);
+        let mut game = GoudGame::from_engine_config(config).unwrap();
+
+        game.update_frame(0.016, |_ctx, _world| {});
+
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+        assert!(game.physics_debug_shapes.is_empty());
+    }
+
+    #[test]
+    fn test_update_frame_queries_physics_debug_shapes_when_enabled() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let config = EngineConfig::new()
+            .with_physics_provider(CountingPhysicsProvider::new(Arc::clone(&calls)))
+            .with_physics_debug(true);
+        let mut game = GoudGame::from_engine_config(config).unwrap();
+
+        game.update_frame(0.016, |_ctx, _world| {});
+
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
     }
 }

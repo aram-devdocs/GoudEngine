@@ -146,6 +146,12 @@ class ShapeType:
     BOX = 0
     CIRCLE = 1
 
+class PhysicsBackend2D:
+    """2D physics backend selection"""
+    DEFAULT = 0
+    RAPIER = 1
+    SIMPLE = 2
+
 class EasingType:
     """Easing function for tweens"""
     LINEAR = 0

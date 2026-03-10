@@ -18,7 +18,9 @@ use goud_engine::ffi::collision::{
     goud_collision_distance_squared, goud_collision_point_in_circle, goud_collision_point_in_rect,
     GoudContact,
 };
-use goud_engine::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
+use goud_engine::ffi::context::{
+    goud_context_create, goud_context_destroy, GoudContextId, GOUD_INVALID_CONTEXT_ID,
+};
 use goud_engine::ffi::debug::{
     goud_debug_get_fps_stats, goud_debug_set_fps_overlay_corner,
     goud_debug_set_fps_overlay_enabled, goud_debug_set_fps_update_interval,
@@ -35,8 +37,27 @@ use goud_engine::ffi::input::{
     goud_input_mouse_button_just_released, goud_input_mouse_button_pressed,
 };
 use goud_engine::ffi::physics::{
-    goud_physics_collision_events_count, goud_physics_collision_events_read,
-    goud_physics_raycast_ex, goud_physics_set_collision_callback,
+    goud_physics3d_add_collider, goud_physics3d_add_rigid_body, goud_physics3d_apply_force,
+    goud_physics3d_apply_impulse, goud_physics3d_create, goud_physics3d_destroy,
+    goud_physics3d_get_body_gravity_scale, goud_physics3d_get_collider_friction,
+    goud_physics3d_get_collider_restitution, goud_physics3d_get_gravity,
+    goud_physics3d_get_position, goud_physics3d_get_timestep, goud_physics3d_remove_body,
+    goud_physics3d_set_body_gravity_scale, goud_physics3d_set_collider_friction,
+    goud_physics3d_set_collider_restitution, goud_physics3d_set_gravity,
+    goud_physics3d_set_timestep, goud_physics3d_set_velocity, goud_physics3d_step,
+    goud_physics_add_collider, goud_physics_add_collider_ex, goud_physics_add_rigid_body,
+    goud_physics_add_rigid_body_ex, goud_physics_apply_force, goud_physics_apply_impulse,
+    goud_physics_collision_event_count, goud_physics_collision_event_read,
+    goud_physics_collision_events_count, goud_physics_collision_events_read, goud_physics_create,
+    goud_physics_create_joint, goud_physics_create_with_backend, goud_physics_destroy,
+    goud_physics_get_body_gravity_scale, goud_physics_get_collider_friction,
+    goud_physics_get_collider_restitution, goud_physics_get_gravity, goud_physics_get_position,
+    goud_physics_get_timestep, goud_physics_get_velocity, goud_physics_raycast,
+    goud_physics_raycast_ex, goud_physics_remove_body, goud_physics_remove_joint,
+    goud_physics_set_body_gravity_scale, goud_physics_set_collider_friction,
+    goud_physics_set_collider_restitution, goud_physics_set_collision_callback,
+    goud_physics_set_gravity, goud_physics_set_timestep, goud_physics_set_velocity,
+    goud_physics_step,
 };
 use goud_engine::ffi::providers::{
     goud_provider_audio_capabilities, goud_provider_check_hot_swap_shortcut,
@@ -1739,6 +1760,763 @@ pub struct NapiAnimationEventData {
 }
 
 // =============================================================================
+// NativePhysicsWorld2D -- Standalone 2D physics world via FFI
+// =============================================================================
+
+#[napi(js_name = "NativePhysicsWorld2D")]
+pub struct NativePhysicsWorld2D {
+    context_id: GoudContextId,
+    destroyed: bool,
+}
+
+#[napi]
+impl NativePhysicsWorld2D {
+    #[napi(constructor)]
+    pub fn new(gravity_x: f64, gravity_y: f64, backend: Option<u32>) -> Result<Self> {
+        let context_id = goud_context_create();
+        if context_id == GOUD_INVALID_CONTEXT_ID {
+            return Err(Error::from_reason("Failed to create headless context"));
+        }
+        // SAFETY: context_id is valid and all parameters are plain values.
+        let status = unsafe {
+            goud_physics_create_with_backend(
+                context_id,
+                gravity_x as f32,
+                gravity_y as f32,
+                backend.unwrap_or(0),
+            )
+        };
+        if status != 0 {
+            let _ = goud_context_destroy(context_id);
+            return Err(Error::from_reason(format!(
+                "Failed to create PhysicsWorld2D (status {})",
+                status
+            )));
+        }
+        Ok(Self {
+            context_id,
+            destroyed: false,
+        })
+    }
+
+    #[napi]
+    pub fn create(&self, gravity_x: f64, gravity_y: f64) -> i32 {
+        unsafe { goud_physics_create(self.context_id, gravity_x as f32, gravity_y as f32) }
+    }
+
+    #[napi]
+    pub fn create_with_backend(&self, gravity_x: f64, gravity_y: f64, backend: u32) -> i32 {
+        // SAFETY: context_id is valid and all parameters are plain values.
+        unsafe {
+            goud_physics_create_with_backend(
+                self.context_id,
+                gravity_x as f32,
+                gravity_y as f32,
+                backend,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn destroy(&mut self) -> i32 {
+        if self.destroyed {
+            return 0;
+        }
+        let status = unsafe { goud_physics_destroy(self.context_id) };
+        let _ = goud_context_destroy(self.context_id);
+        self.destroyed = true;
+        status
+    }
+
+    #[napi]
+    pub fn set_gravity(&self, x: f64, y: f64) -> i32 {
+        unsafe { goud_physics_set_gravity(self.context_id, x as f32, y as f32) }
+    }
+
+    #[napi]
+    pub fn add_rigid_body(&self, body_type: u32, x: f64, y: f64, gravity_scale: f64) -> f64 {
+        unsafe {
+            goud_physics_add_rigid_body(
+                self.context_id,
+                body_type,
+                x as f32,
+                y as f32,
+                gravity_scale as f32,
+            ) as f64
+        }
+    }
+
+    #[napi]
+    pub fn add_rigid_body_ex(
+        &self,
+        body_type: u32,
+        x: f64,
+        y: f64,
+        gravity_scale: f64,
+        ccd_enabled: bool,
+    ) -> f64 {
+        unsafe {
+            goud_physics_add_rigid_body_ex(
+                self.context_id,
+                body_type,
+                x as f32,
+                y as f32,
+                gravity_scale as f32,
+                ccd_enabled,
+            ) as f64
+        }
+    }
+
+    #[napi]
+    pub fn add_collider(
+        &self,
+        body_handle: f64,
+        shape_type: u32,
+        width: f64,
+        height: f64,
+        radius: f64,
+        friction: f64,
+        restitution: f64,
+    ) -> f64 {
+        unsafe {
+            goud_physics_add_collider(
+                self.context_id,
+                body_handle as u64,
+                shape_type,
+                width as f32,
+                height as f32,
+                radius as f32,
+                friction as f32,
+                restitution as f32,
+            ) as f64
+        }
+    }
+
+    #[napi]
+    pub fn add_collider_ex(
+        &self,
+        body_handle: f64,
+        shape_type: u32,
+        width: f64,
+        height: f64,
+        radius: f64,
+        friction: f64,
+        restitution: f64,
+        is_sensor: bool,
+        layer: u32,
+        mask: u32,
+    ) -> f64 {
+        unsafe {
+            goud_physics_add_collider_ex(
+                self.context_id,
+                body_handle as u64,
+                shape_type,
+                width as f32,
+                height as f32,
+                radius as f32,
+                friction as f32,
+                restitution as f32,
+                is_sensor,
+                layer,
+                mask,
+            ) as f64
+        }
+    }
+
+    #[napi]
+    pub fn remove_body(&self, handle: f64) -> i32 {
+        unsafe { goud_physics_remove_body(self.context_id, handle as u64) }
+    }
+
+    #[napi]
+    pub fn create_joint(
+        &self,
+        body_a: f64,
+        body_b: f64,
+        kind: u32,
+        anchor_ax: f64,
+        anchor_ay: f64,
+        anchor_bx: f64,
+        anchor_by: f64,
+        axis_x: f64,
+        axis_y: f64,
+        has_limits: bool,
+        limit_min: f64,
+        limit_max: f64,
+        has_motor: bool,
+        motor_target_velocity: f64,
+        motor_max_force: f64,
+    ) -> f64 {
+        unsafe {
+            goud_physics_create_joint(
+                self.context_id,
+                body_a as u64,
+                body_b as u64,
+                kind,
+                anchor_ax as f32,
+                anchor_ay as f32,
+                anchor_bx as f32,
+                anchor_by as f32,
+                axis_x as f32,
+                axis_y as f32,
+                has_limits,
+                limit_min as f32,
+                limit_max as f32,
+                has_motor,
+                motor_target_velocity as f32,
+                motor_max_force as f32,
+            ) as f64
+        }
+    }
+
+    #[napi]
+    pub fn remove_joint(&self, handle: f64) -> i32 {
+        unsafe { goud_physics_remove_joint(self.context_id, handle as u64) }
+    }
+
+    #[napi]
+    pub fn step(&self, dt: f64) -> i32 {
+        unsafe { goud_physics_step(self.context_id, dt as f32) }
+    }
+
+    #[napi]
+    pub fn get_position(&self, handle: f64) -> crate::types::Vec2 {
+        let mut x = 0.0f32;
+        let mut y = 0.0f32;
+        // SAFETY: Passing valid mutable references as out-pointers.
+        let _ =
+            unsafe { goud_physics_get_position(self.context_id, handle as u64, &mut x, &mut y) };
+        crate::types::Vec2 {
+            x: x as f64,
+            y: y as f64,
+        }
+    }
+
+    #[napi]
+    pub fn get_velocity(&self, handle: f64) -> crate::types::Vec2 {
+        let mut x = 0.0f32;
+        let mut y = 0.0f32;
+        // SAFETY: Passing valid mutable references as out-pointers.
+        let _ =
+            unsafe { goud_physics_get_velocity(self.context_id, handle as u64, &mut x, &mut y) };
+        crate::types::Vec2 {
+            x: x as f64,
+            y: y as f64,
+        }
+    }
+
+    #[napi]
+    pub fn set_velocity(&self, handle: f64, vx: f64, vy: f64) -> i32 {
+        unsafe { goud_physics_set_velocity(self.context_id, handle as u64, vx as f32, vy as f32) }
+    }
+
+    #[napi]
+    pub fn apply_force(&self, handle: f64, fx: f64, fy: f64) -> i32 {
+        unsafe { goud_physics_apply_force(self.context_id, handle as u64, fx as f32, fy as f32) }
+    }
+
+    #[napi]
+    pub fn apply_impulse(&self, handle: f64, ix: f64, iy: f64) -> i32 {
+        unsafe { goud_physics_apply_impulse(self.context_id, handle as u64, ix as f32, iy as f32) }
+    }
+
+    #[napi]
+    pub fn raycast(
+        &self,
+        origin_x: f64,
+        origin_y: f64,
+        dir_x: f64,
+        dir_y: f64,
+        max_dist: f64,
+    ) -> crate::types::Vec2 {
+        let mut hit_x = 0.0f32;
+        let mut hit_y = 0.0f32;
+        // SAFETY: Passing valid mutable references as out-pointers.
+        let _ = unsafe {
+            goud_physics_raycast(
+                self.context_id,
+                origin_x as f32,
+                origin_y as f32,
+                dir_x as f32,
+                dir_y as f32,
+                max_dist as f32,
+                &mut hit_x,
+                &mut hit_y,
+            )
+        };
+        crate::types::Vec2 {
+            x: hit_x as f64,
+            y: hit_y as f64,
+        }
+    }
+
+    #[napi]
+    pub fn raycast_ex(
+        &self,
+        origin_x: f64,
+        origin_y: f64,
+        dir_x: f64,
+        dir_y: f64,
+        max_dist: f64,
+        layer_mask: u32,
+    ) -> NapiPhysicsRaycastHit2D {
+        let mut body_handle: u64 = 0;
+        let mut collider_handle: u64 = 0;
+        let mut point_x: f32 = 0.0;
+        let mut point_y: f32 = 0.0;
+        let mut normal_x: f32 = 0.0;
+        let mut normal_y: f32 = 0.0;
+        let mut distance: f32 = 0.0;
+        // SAFETY: Passing valid mutable references as out-pointers.
+        let _ = unsafe {
+            goud_physics_raycast_ex(
+                self.context_id,
+                origin_x as f32,
+                origin_y as f32,
+                dir_x as f32,
+                dir_y as f32,
+                max_dist as f32,
+                layer_mask,
+                &mut body_handle,
+                &mut collider_handle,
+                &mut point_x,
+                &mut point_y,
+                &mut normal_x,
+                &mut normal_y,
+                &mut distance,
+            )
+        };
+        NapiPhysicsRaycastHit2D {
+            body_handle: body_handle as f64,
+            collider_handle: collider_handle as f64,
+            point_x: point_x as f64,
+            point_y: point_y as f64,
+            normal_x: normal_x as f64,
+            normal_y: normal_y as f64,
+            distance: distance as f64,
+        }
+    }
+
+    #[napi]
+    pub fn collision_events_count(&self) -> i32 {
+        goud_physics_collision_events_count(self.context_id)
+    }
+
+    #[napi]
+    pub fn collision_events_read(&self, index: u32) -> NapiPhysicsCollisionEvent2D {
+        let mut body_a: u64 = 0;
+        let mut body_b: u64 = 0;
+        let mut kind: u32 = 0;
+        // SAFETY: Passing valid mutable references as out-pointers.
+        let _ = unsafe {
+            goud_physics_collision_events_read(
+                self.context_id,
+                index,
+                &mut body_a,
+                &mut body_b,
+                &mut kind,
+            )
+        };
+        NapiPhysicsCollisionEvent2D {
+            body_a: body_a as f64,
+            body_b: body_b as f64,
+            kind,
+        }
+    }
+
+    #[napi]
+    pub fn collision_event_count(&self) -> i32 {
+        goud_physics_collision_event_count(self.context_id)
+    }
+
+    #[napi]
+    pub fn collision_event_read(&self, index: u32) -> NapiPhysicsCollisionEvent2D {
+        let mut body_a: u64 = 0;
+        let mut body_b: u64 = 0;
+        let mut kind: u32 = 0;
+        // SAFETY: Passing valid mutable references as out-pointers.
+        let _ = unsafe {
+            goud_physics_collision_event_read(
+                self.context_id,
+                index,
+                &mut body_a,
+                &mut body_b,
+                &mut kind,
+            )
+        };
+        NapiPhysicsCollisionEvent2D {
+            body_a: body_a as f64,
+            body_b: body_b as f64,
+            kind,
+        }
+    }
+
+    #[napi]
+    pub fn set_collision_callback(&self, callback_ptr: f64, user_data: f64) -> Result<i32> {
+        if callback_ptr != 0.0 || user_data != 0.0 {
+            return Err(Error::from_reason(
+                "TypeScript cannot pass raw function pointers safely; pass 0 to clear callback",
+            ));
+        }
+        Ok(goud_physics_set_collision_callback(
+            self.context_id,
+            None,
+            std::ptr::null_mut(),
+        ))
+    }
+
+    #[napi]
+    pub fn get_gravity(&self) -> crate::types::Vec2 {
+        let mut x = 0.0f32;
+        let mut y = 0.0f32;
+        // SAFETY: Passing valid mutable references as out-pointers.
+        let _ = unsafe { goud_physics_get_gravity(self.context_id, &mut x, &mut y) };
+        crate::types::Vec2 {
+            x: x as f64,
+            y: y as f64,
+        }
+    }
+
+    #[napi]
+    pub fn set_body_gravity_scale(&self, handle: f64, scale: f64) -> i32 {
+        unsafe { goud_physics_set_body_gravity_scale(self.context_id, handle as u64, scale as f32) }
+    }
+
+    #[napi]
+    pub fn get_body_gravity_scale(&self, handle: f64) -> f64 {
+        let mut out_scale = 0.0f32;
+        // SAFETY: Passing valid mutable reference as out-pointer.
+        let _ = unsafe {
+            goud_physics_get_body_gravity_scale(self.context_id, handle as u64, &mut out_scale)
+        };
+        out_scale as f64
+    }
+
+    #[napi]
+    pub fn set_collider_friction(&self, handle: f64, friction: f64) -> i32 {
+        unsafe {
+            goud_physics_set_collider_friction(self.context_id, handle as u64, friction as f32)
+        }
+    }
+
+    #[napi]
+    pub fn get_collider_friction(&self, handle: f64) -> f64 {
+        let mut out_friction = 0.0f32;
+        // SAFETY: Passing valid mutable reference as out-pointer.
+        let _ = unsafe {
+            goud_physics_get_collider_friction(self.context_id, handle as u64, &mut out_friction)
+        };
+        out_friction as f64
+    }
+
+    #[napi]
+    pub fn set_collider_restitution(&self, handle: f64, restitution: f64) -> i32 {
+        unsafe {
+            goud_physics_set_collider_restitution(
+                self.context_id,
+                handle as u64,
+                restitution as f32,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn get_collider_restitution(&self, handle: f64) -> f64 {
+        let mut out_restitution = 0.0f32;
+        // SAFETY: Passing valid mutable reference as out-pointer.
+        let _ = unsafe {
+            goud_physics_get_collider_restitution(
+                self.context_id,
+                handle as u64,
+                &mut out_restitution,
+            )
+        };
+        out_restitution as f64
+    }
+
+    #[napi]
+    pub fn set_timestep(&self, dt: f64) -> i32 {
+        unsafe { goud_physics_set_timestep(self.context_id, dt as f32) }
+    }
+
+    #[napi]
+    pub fn get_timestep(&self) -> f64 {
+        let mut dt = 0.0f32;
+        // SAFETY: Passing valid mutable reference as out-pointer.
+        let _ = unsafe { goud_physics_get_timestep(self.context_id, &mut dt) };
+        dt as f64
+    }
+}
+
+// =============================================================================
+// NativePhysicsWorld3D -- Standalone 3D physics world via FFI
+// =============================================================================
+
+#[napi(js_name = "NativePhysicsWorld3D")]
+pub struct NativePhysicsWorld3D {
+    context_id: GoudContextId,
+    destroyed: bool,
+}
+
+#[napi]
+impl NativePhysicsWorld3D {
+    #[napi(constructor)]
+    pub fn new(gravity_x: f64, gravity_y: f64, gravity_z: f64) -> Result<Self> {
+        let context_id = goud_context_create();
+        if context_id == GOUD_INVALID_CONTEXT_ID {
+            return Err(Error::from_reason("Failed to create headless context"));
+        }
+        // SAFETY: context_id is valid and all parameters are plain values.
+        let status = unsafe {
+            goud_physics3d_create(
+                context_id,
+                gravity_x as f32,
+                gravity_y as f32,
+                gravity_z as f32,
+            )
+        };
+        if status != 0 {
+            let _ = goud_context_destroy(context_id);
+            return Err(Error::from_reason(format!(
+                "Failed to create PhysicsWorld3D (status {})",
+                status
+            )));
+        }
+        Ok(Self {
+            context_id,
+            destroyed: false,
+        })
+    }
+
+    #[napi]
+    pub fn create(&self, gravity_x: f64, gravity_y: f64, gravity_z: f64) -> i32 {
+        unsafe {
+            goud_physics3d_create(
+                self.context_id,
+                gravity_x as f32,
+                gravity_y as f32,
+                gravity_z as f32,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn destroy(&mut self) -> i32 {
+        if self.destroyed {
+            return 0;
+        }
+        let status = unsafe { goud_physics3d_destroy(self.context_id) };
+        let _ = goud_context_destroy(self.context_id);
+        self.destroyed = true;
+        status
+    }
+
+    #[napi]
+    pub fn set_gravity(&self, x: f64, y: f64, z: f64) -> i32 {
+        unsafe { goud_physics3d_set_gravity(self.context_id, x as f32, y as f32, z as f32) }
+    }
+
+    #[napi]
+    pub fn add_rigid_body(
+        &self,
+        body_type: u32,
+        x: f64,
+        y: f64,
+        z: f64,
+        gravity_scale: f64,
+    ) -> f64 {
+        unsafe {
+            goud_physics3d_add_rigid_body(
+                self.context_id,
+                body_type,
+                x as f32,
+                y as f32,
+                z as f32,
+                gravity_scale as f32,
+            ) as f64
+        }
+    }
+
+    #[napi]
+    pub fn add_collider(
+        &self,
+        body_handle: f64,
+        shape_type: u32,
+        width: f64,
+        height: f64,
+        depth: f64,
+        radius: f64,
+        friction: f64,
+        restitution: f64,
+    ) -> f64 {
+        unsafe {
+            goud_physics3d_add_collider(
+                self.context_id,
+                body_handle as u64,
+                shape_type,
+                width as f32,
+                height as f32,
+                depth as f32,
+                radius as f32,
+                friction as f32,
+                restitution as f32,
+            ) as f64
+        }
+    }
+
+    #[napi]
+    pub fn remove_body(&self, handle: f64) -> i32 {
+        unsafe { goud_physics3d_remove_body(self.context_id, handle as u64) }
+    }
+
+    #[napi]
+    pub fn step(&self, dt: f64) -> i32 {
+        unsafe { goud_physics3d_step(self.context_id, dt as f32) }
+    }
+
+    #[napi]
+    pub fn get_position(&self, handle: f64) -> crate::types::Vec3 {
+        let mut x = 0.0f32;
+        let mut y = 0.0f32;
+        let mut z = 0.0f32;
+        // SAFETY: Passing valid mutable references as out-pointers.
+        let _ = unsafe {
+            goud_physics3d_get_position(self.context_id, handle as u64, &mut x, &mut y, &mut z)
+        };
+        crate::types::Vec3 {
+            x: x as f64,
+            y: y as f64,
+            z: z as f64,
+        }
+    }
+
+    #[napi]
+    pub fn set_velocity(&self, handle: f64, vx: f64, vy: f64, vz: f64) -> i32 {
+        unsafe {
+            goud_physics3d_set_velocity(
+                self.context_id,
+                handle as u64,
+                vx as f32,
+                vy as f32,
+                vz as f32,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn apply_force(&self, handle: f64, fx: f64, fy: f64, fz: f64) -> i32 {
+        unsafe {
+            goud_physics3d_apply_force(
+                self.context_id,
+                handle as u64,
+                fx as f32,
+                fy as f32,
+                fz as f32,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn apply_impulse(&self, handle: f64, ix: f64, iy: f64, iz: f64) -> i32 {
+        unsafe {
+            goud_physics3d_apply_impulse(
+                self.context_id,
+                handle as u64,
+                ix as f32,
+                iy as f32,
+                iz as f32,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn get_gravity(&self) -> crate::types::Vec3 {
+        let mut x = 0.0f32;
+        let mut y = 0.0f32;
+        let mut z = 0.0f32;
+        // SAFETY: Passing valid mutable references as out-pointers.
+        let _ = unsafe { goud_physics3d_get_gravity(self.context_id, &mut x, &mut y, &mut z) };
+        crate::types::Vec3 {
+            x: x as f64,
+            y: y as f64,
+            z: z as f64,
+        }
+    }
+
+    #[napi]
+    pub fn set_body_gravity_scale(&self, handle: f64, scale: f64) -> i32 {
+        unsafe {
+            goud_physics3d_set_body_gravity_scale(self.context_id, handle as u64, scale as f32)
+        }
+    }
+
+    #[napi]
+    pub fn get_body_gravity_scale(&self, handle: f64) -> f64 {
+        let mut out_scale = 0.0f32;
+        // SAFETY: Passing valid mutable reference as out-pointer.
+        let _ = unsafe {
+            goud_physics3d_get_body_gravity_scale(self.context_id, handle as u64, &mut out_scale)
+        };
+        out_scale as f64
+    }
+
+    #[napi]
+    pub fn set_collider_friction(&self, handle: f64, friction: f64) -> i32 {
+        unsafe {
+            goud_physics3d_set_collider_friction(self.context_id, handle as u64, friction as f32)
+        }
+    }
+
+    #[napi]
+    pub fn get_collider_friction(&self, handle: f64) -> f64 {
+        let mut out_friction = 0.0f32;
+        // SAFETY: Passing valid mutable reference as out-pointer.
+        let _ = unsafe {
+            goud_physics3d_get_collider_friction(self.context_id, handle as u64, &mut out_friction)
+        };
+        out_friction as f64
+    }
+
+    #[napi]
+    pub fn set_collider_restitution(&self, handle: f64, restitution: f64) -> i32 {
+        unsafe {
+            goud_physics3d_set_collider_restitution(
+                self.context_id,
+                handle as u64,
+                restitution as f32,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn get_collider_restitution(&self, handle: f64) -> f64 {
+        let mut out_restitution = 0.0f32;
+        // SAFETY: Passing valid mutable reference as out-pointer.
+        let _ = unsafe {
+            goud_physics3d_get_collider_restitution(
+                self.context_id,
+                handle as u64,
+                &mut out_restitution,
+            )
+        };
+        out_restitution as f64
+    }
+
+    #[napi]
+    pub fn set_timestep(&self, dt: f64) -> i32 {
+        unsafe { goud_physics3d_set_timestep(self.context_id, dt as f32) }
+    }
+
+    #[napi]
+    pub fn get_timestep(&self) -> f64 {
+        let mut dt = 0.0f32;
+        // SAFETY: Passing valid mutable reference as out-pointer.
+        let _ = unsafe { goud_physics3d_get_timestep(self.context_id, &mut dt) };
+        dt as f64
+    }
+}
+
+// =============================================================================
 // NativeEngineConfig -- Builder for GoudGame via FFI
 // =============================================================================
 
@@ -1832,6 +2610,20 @@ impl NativeEngineConfig {
             goud_engine::ffi::engine_config::goud_engine_config_set_fps_overlay(
                 self.handle,
                 enabled,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn set_physics_backend_2d(&self, backend: u32) -> bool {
+        if self.handle.is_null() {
+            return false;
+        }
+        // SAFETY: handle is valid.
+        unsafe {
+            goud_engine::ffi::engine_config::goud_engine_config_set_physics_backend_2d(
+                self.handle,
+                backend,
             )
         }
     }

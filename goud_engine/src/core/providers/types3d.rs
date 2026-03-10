@@ -3,7 +3,7 @@
 //! Descriptor structs, query results, and capability reports for 3D physics.
 //! These types follow the same FFI-friendly patterns as their 2D counterparts.
 
-use super::types::BodyHandle;
+use super::types::{BodyHandle, JointKind, JointLimits, JointMotor};
 
 /// Describes a 3D physics body to be created.
 #[derive(Debug, Clone)]
@@ -20,6 +20,8 @@ pub struct BodyDesc3D {
     pub angular_damping: f32,
     /// Whether gravity applies to this body.
     pub gravity_scale: f32,
+    /// Whether continuous collision detection is enabled for this body.
+    pub ccd_enabled: bool,
     /// Fixed rotation (no angular velocity).
     pub fixed_rotation: bool,
 }
@@ -33,6 +35,7 @@ impl Default for BodyDesc3D {
             linear_damping: 0.0,
             angular_damping: 0.0,
             gravity_scale: 1.0,
+            ccd_enabled: false,
             fixed_rotation: false,
         }
     }
@@ -64,12 +67,18 @@ pub struct JointDesc3D {
     pub body_a: Option<BodyHandle>,
     /// Second body in the joint.
     pub body_b: Option<BodyHandle>,
-    /// Joint type (0 = revolute, 1 = prismatic, 2 = distance).
-    pub joint_type: u32,
+    /// High-level joint kind.
+    pub kind: JointKind,
     /// Anchor point on body A as [x, y, z] in local space.
     pub anchor_a: [f32; 3],
     /// Anchor point on body B as [x, y, z] in local space.
     pub anchor_b: [f32; 3],
+    /// Local axis used by prismatic and revolute joints.
+    pub axis: [f32; 3],
+    /// Optional travel/rotation limits.
+    pub limits: Option<JointLimits>,
+    /// Optional motor settings.
+    pub motor: Option<JointMotor>,
 }
 
 /// Result of a 3D physics raycast query.

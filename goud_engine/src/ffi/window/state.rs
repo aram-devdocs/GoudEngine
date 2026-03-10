@@ -29,6 +29,9 @@ pub struct WindowState {
     /// OpenGL rendering backend
     pub(crate) backend: OpenGLBackend,
 
+    /// Whether the physics debug overlay should render for this context.
+    pub(crate) physics_debug_enabled: bool,
+
     /// Delta time from last frame
     delta_time: f32,
 
@@ -38,10 +41,15 @@ pub struct WindowState {
 
 impl WindowState {
     /// Creates a new [`WindowState`] from the given platform and backend.
-    pub fn new(platform: GlfwPlatform, backend: OpenGLBackend) -> Self {
+    pub fn new(
+        platform: GlfwPlatform,
+        backend: OpenGLBackend,
+        physics_debug_enabled: bool,
+    ) -> Self {
         Self {
             platform,
             backend,
+            physics_debug_enabled,
             delta_time: 0.0,
             debug_overlay: DebugOverlay::new(0.5),
         }

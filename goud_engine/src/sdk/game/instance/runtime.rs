@@ -48,6 +48,8 @@ impl GoudGame {
                 self.last_transition_complete = Some(complete);
             }
 
+            self.update_physics_debug_shapes();
+
             // Update UI manager after scene updates.
             self.ui_manager.update();
 
@@ -86,6 +88,8 @@ impl GoudGame {
         if let Some(complete) = self.scene_manager.tick_transition(delta_time) {
             self.last_transition_complete = Some(complete);
         }
+
+        self.update_physics_debug_shapes();
 
         // Update UI manager after scene updates.
         self.ui_manager.update();

@@ -261,6 +261,14 @@ namespace GoudEngine
         public static extern bool goud_engine_config_set_fps_overlay(IntPtr handle, [MarshalAs(UnmanagedType.U1)] bool enabled);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_physics_debug(IntPtr handle, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_physics_backend_2d(IntPtr handle, uint backend);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern GoudContextId goud_engine_create(IntPtr handle);
 
         // context
@@ -1097,6 +1105,9 @@ namespace GoudEngine
         public static extern int goud_physics_create(GoudContextId ctx, float gx, float gy);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_create_with_backend(GoudContextId ctx, float gx, float gy, uint backend);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_destroy(GoudContextId ctx);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -1106,6 +1117,9 @@ namespace GoudEngine
         public static extern long goud_physics_add_rigid_body(GoudContextId ctx, uint body_type, float x, float y, float gravity_scale);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_physics_add_rigid_body_ex(GoudContextId ctx, uint body_type, float x, float y, float gravity_scale, [MarshalAs(UnmanagedType.U1)] bool ccd_enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern long goud_physics_add_collider(GoudContextId ctx, ulong body_handle, uint shape_type, float width, float height, float radius, float friction, float restitution);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -1113,6 +1127,12 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_remove_body(GoudContextId ctx, ulong handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_physics_create_joint(GoudContextId ctx, ulong body_a, ulong body_b, uint kind, float anchor_ax, float anchor_ay, float anchor_bx, float anchor_by, float axis_x, float axis_y, [MarshalAs(UnmanagedType.U1)] bool has_limits, float limit_min, float limit_max, [MarshalAs(UnmanagedType.U1)] bool has_motor, float motor_target_velocity, float motor_max_force);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics_remove_joint(GoudContextId ctx, ulong handle);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics_step(GoudContextId ctx, float dt);
@@ -1194,10 +1214,19 @@ namespace GoudEngine
         public static extern long goud_physics3d_add_rigid_body(GoudContextId ctx, uint body_type, float x, float y, float z, float gravity_scale);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_physics3d_add_rigid_body_ex(GoudContextId ctx, uint body_type, float x, float y, float z, float gravity_scale, [MarshalAs(UnmanagedType.U1)] bool ccd_enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern long goud_physics3d_add_collider(GoudContextId ctx, ulong body_handle, uint shape_type, float hx, float hy, float hz, float radius, float friction, float restitution);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics3d_remove_body(GoudContextId ctx, ulong handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_physics3d_create_joint(GoudContextId ctx, ulong body_a, ulong body_b, uint joint_kind, float anchor_ax, float anchor_ay, float anchor_az, float anchor_bx, float anchor_by, float anchor_bz, float axis_x, float axis_y, float axis_z, [MarshalAs(UnmanagedType.U1)] bool use_limits, float limit_min, float limit_max, [MarshalAs(UnmanagedType.U1)] bool use_motor, float motor_target_velocity, float motor_max_force);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_remove_joint(GoudContextId ctx, ulong handle);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics3d_step(GoudContextId ctx, float dt);

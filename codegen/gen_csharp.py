@@ -1031,6 +1031,28 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
             field_args = ", ".join(out_locals)
         L.append(f"            return new {struct_name}({field_args});")
         return
+    if "out_params" in mm and "returns_scalar" in mm:
+        ffi_fn = mm["ffi"]
+        no_ctx = mm.get("no_context", False)
+        entity_set = set(mm.get("entity_params", []))
+        enum_set = set(mm.get("enum_params", {}).keys())
+        out = mm["out_params"][0]
+        out_ty = _cs_out_var_type(out["type"])
+        out_name = f"_{out['name']}"
+        L.append(f"            {out_ty} {out_name} = {_cs_default_value(out_ty)};")
+        ffi_parts = [] if no_ctx else ["_ctx"]
+        for p in params:
+            pname = p["name"]
+            if pname in entity_set:
+                ffi_parts.append(f"{pname}.ToBits()")
+            elif pname in enum_set:
+                ffi_parts.append(f"(int){pname}")
+            else:
+                ffi_parts.append(pname)
+        ffi_parts.append(f"ref {out_name}")
+        L.append(f"            NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
+        L.append(f"            return {out_name};")
+        return
     if "out_params" in mm:
         for op in mm["out_params"]:
             L.append(f"            float {op['name']} = 0;")
@@ -1080,7 +1102,15 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                     ffi_arg_parts.append(_cs_len_cast_expr(len_type, f"{bvar}.Length"))
                     ffi_param_index += 2
                 else:
-                    ffi_arg_parts.append(p["name"])
+                    if p["type"] in schema.get("enums", {}):
+                        expected = _ffi_param_type_at(ffi_fn, ffi_param_index)
+                        if expected.startswith("Ffi") and expected[3:] in schema.get("enums", {}):
+                            ffi_arg_parts.append(p["name"])
+                        else:
+                            underlying = schema["enums"][p["type"]].get("underlying", "i32")
+                            ffi_arg_parts.append(f"({cs_type(underlying)}){p['name']}")
+                    else:
+                        ffi_arg_parts.append(p["name"])
                     ffi_param_index += 1
             fixed_expr = "\n                ".join(f"fixed ({fl})" for fl in fixed_lines)
             L.append(f"                {fixed_expr}")
@@ -1090,7 +1120,20 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
             L.append("                }")
             L.append("            }")
             return
-        ffi_args = ", ".join(p["name"] for p in params)
+        ffi_args_parts = []
+        ffi_param_index = 0 if no_ctx else 1
+        for p in params:
+            if p["type"] in schema.get("enums", {}):
+                expected = _ffi_param_type_at(ffi_fn, ffi_param_index)
+                if expected.startswith("Ffi") and expected[3:] in schema.get("enums", {}):
+                    ffi_args_parts.append(p["name"])
+                else:
+                    underlying = schema["enums"][p["type"]].get("underlying", "i32")
+                    ffi_args_parts.append(f"({cs_type(underlying)}){p['name']}")
+            else:
+                ffi_args_parts.append(p["name"])
+            ffi_param_index += 1
+        ffi_args = ", ".join(ffi_args_parts)
         all_args = ffi_args if no_ctx else (f"_ctx, {ffi_args}" if ffi_args else "_ctx")
         call_expr = f"NativeMethods.{ffi_fn}({all_args})"
         if mm.get("returns_bool_from_i32"):
@@ -1310,6 +1353,148 @@ def gen_context():
     _gen_tool_class("GoudContext", mapping["tools"]["GoudContext"], OUT / "GoudContext.g.cs", is_windowed=False)
 
 
+def gen_physics_world_2d():
+    if "PhysicsWorld2D" not in schema.get("tools", {}) or "PhysicsWorld2D" not in mapping.get("tools", {}):
+        return
+    tool = schema["tools"]["PhysicsWorld2D"]
+    tm = mapping["tools"]["PhysicsWorld2D"]
+    ctor_params = tool.get("constructor", {}).get("params", [])
+    ctor_sig = ", ".join(_safe_param_strs(ctor_params + [{"name": "backend", "type": "PhysicsBackend2D", "default": 0}]))
+
+    lines = [
+        f"// {HEADER_COMMENT}",
+        "using System;", "",
+        f"namespace {NS}", "{",
+        f"    /// <summary>{tool.get('doc', '2D physics simulation world')}</summary>",
+        "    public class PhysicsWorld2D : IDisposable", "    {",
+        "        private GoudContextId _ctx;",
+        "        private bool _disposed;", "",
+        f"        public PhysicsWorld2D({ctor_sig})",
+        "        {",
+        "            _ctx = NativeMethods.goud_context_create();",
+        "            if (!_ctx.IsValid) throw new Exception(\"Failed to create headless context\");",
+        "            int status = NativeMethods.goud_physics_create_with_backend(_ctx, gravityX, gravityY, (uint)backend);",
+        "            if (status != 0)",
+        "            {",
+        "                NativeMethods.goud_context_destroy(_ctx);",
+        "                _ctx = GoudContextId.Invalid;",
+        "                throw new Exception($\"Failed to create PhysicsWorld2D (status {status})\");",
+        "            }",
+        "        }", "",
+    ]
+
+    for method in tool.get("methods", []):
+        mn = to_pascal(method["name"])
+        mm = tm.get("methods", {}).get(method["name"], {})
+        params = method.get("params", [])
+        ret = method.get("returns", "void")
+        cs_ret = cs_type(ret.rstrip("[]").rstrip("?"))
+        actual_ret = cs_ret if not ret.endswith("[]") else f"{cs_ret}[]"
+
+        sig = ", ".join(_safe_param_strs(params))
+        if method.get("doc"):
+            lines.append(f"        /// <summary>{method['doc']}</summary>")
+
+        if method["name"] == "destroy":
+            lines += [
+                f"        public {actual_ret} {mn}({sig})",
+                "        {",
+                "            if (_disposed) return 0;",
+                "            int status = NativeMethods.goud_physics_destroy(_ctx);",
+                "            NativeMethods.goud_context_destroy(_ctx);",
+                "            _disposed = true;",
+                "            return status;",
+                "        }", "",
+            ]
+            continue
+
+        lines += [f"        public {actual_ret} {mn}({sig})", "        {"]
+        _gen_method_body(mn, mm, params, ret, lines, False)
+        lines += ["        }", ""]
+
+    lines += [
+        "        public void Dispose()",
+        "        {",
+        "            if (!_disposed) Destroy();",
+        "        }",
+        "    }",
+        "}",
+        "",
+    ]
+    write_generated(OUT / "Core" / "PhysicsWorld2D.g.cs", "\n".join(lines))
+
+
+def gen_physics_world_3d():
+    if "PhysicsWorld3D" not in schema.get("tools", {}) or "PhysicsWorld3D" not in mapping.get("tools", {}):
+        return
+    tool = schema["tools"]["PhysicsWorld3D"]
+    tm = mapping["tools"]["PhysicsWorld3D"]
+    ctor_params = tool.get("constructor", {}).get("params", [])
+    ctor_sig = ", ".join(_safe_param_strs(ctor_params))
+
+    lines = [
+        f"// {HEADER_COMMENT}",
+        "using System;", "",
+        f"namespace {NS}", "{",
+        f"    /// <summary>{tool.get('doc', '3D physics simulation world')}</summary>",
+        "    public class PhysicsWorld3D : IDisposable", "    {",
+        "        private GoudContextId _ctx;",
+        "        private bool _disposed;", "",
+        f"        public PhysicsWorld3D({ctor_sig})",
+        "        {",
+        "            _ctx = NativeMethods.goud_context_create();",
+        "            if (!_ctx.IsValid) throw new Exception(\"Failed to create headless context\");",
+        "            int status = NativeMethods.goud_physics3d_create(_ctx, gravityX, gravityY, gravityZ);",
+        "            if (status != 0)",
+        "            {",
+        "                NativeMethods.goud_context_destroy(_ctx);",
+        "                _ctx = GoudContextId.Invalid;",
+        "                throw new Exception($\"Failed to create PhysicsWorld3D (status {status})\");",
+        "            }",
+        "        }", "",
+    ]
+
+    for method in tool.get("methods", []):
+        mn = to_pascal(method["name"])
+        mm = tm.get("methods", {}).get(method["name"], {})
+        params = method.get("params", [])
+        ret = method.get("returns", "void")
+        cs_ret = cs_type(ret.rstrip("[]").rstrip("?"))
+        actual_ret = cs_ret if not ret.endswith("[]") else f"{cs_ret}[]"
+
+        sig = ", ".join(_safe_param_strs(params))
+        if method.get("doc"):
+            lines.append(f"        /// <summary>{method['doc']}</summary>")
+
+        if method["name"] == "destroy":
+            lines += [
+                f"        public {actual_ret} {mn}({sig})",
+                "        {",
+                "            if (_disposed) return 0;",
+                "            int status = NativeMethods.goud_physics3d_destroy(_ctx);",
+                "            NativeMethods.goud_context_destroy(_ctx);",
+                "            _disposed = true;",
+                "            return status;",
+                "        }", "",
+            ]
+            continue
+
+        lines += [f"        public {actual_ret} {mn}({sig})", "        {"]
+        _gen_method_body(mn, mm, params, ret, lines, False)
+        lines += ["        }", ""]
+
+    lines += [
+        "        public void Dispose()",
+        "        {",
+        "            if (!_disposed) Destroy();",
+        "        }",
+        "    }",
+        "}",
+        "",
+    ]
+    write_generated(OUT / "Core" / "PhysicsWorld3D.g.cs", "\n".join(lines))
+
+
 def gen_engine_config():
     """Generate EngineConfig builder class for C#."""
     tool = schema["tools"]["EngineConfig"]
@@ -1370,7 +1555,20 @@ def gen_engine_config():
             ]
         else:
             cs_params = ", ".join(f"{cs_type(p['type'])} {p['name']}" for p in params)
-            ffi_args = ", ".join(["_handle"] + [p["name"] for p in params])
+            ffi_params = []
+            ffi_fn_param_index = 1  # _handle is first
+            for p in params:
+                if p["type"] in schema.get("enums", {}):
+                    expected = _ffi_param_type_at(ffi_fn, ffi_fn_param_index)
+                    if expected.startswith("Ffi") and expected[3:] in schema.get("enums", {}):
+                        ffi_params.append(p["name"])
+                    else:
+                        underlying = schema["enums"][p["type"]].get("underlying", "i32")
+                        ffi_params.append(f"({cs_type(underlying)}){p['name']}")
+                else:
+                    ffi_params.append(p["name"])
+                ffi_fn_param_index += 1
+            ffi_args = ", ".join(["_handle"] + ffi_params)
             lines += [
                 f"        public EngineConfig {cs_mn}({cs_params})",
                 "        {",
@@ -1660,6 +1858,8 @@ if __name__ == "__main__":
     gen_entity()
     gen_game()
     gen_context()
+    gen_physics_world_2d()
+    gen_physics_world_3d()
     gen_engine_config()
     gen_errors()
     gen_diagnostic()

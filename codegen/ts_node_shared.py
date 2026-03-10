@@ -42,6 +42,8 @@ IFACE_TYPES = {
     "AudioCapabilities": "IAudioCapabilities",
     "InputCapabilities": "IInputCapabilities",
     "NetworkCapabilities": "INetworkCapabilities",
+    "PhysicsWorld2D": "IPhysicsWorld2D",
+    "PhysicsWorld3D": "IPhysicsWorld3D",
 }
 
 TS_EXCLUDE_METHODS = {

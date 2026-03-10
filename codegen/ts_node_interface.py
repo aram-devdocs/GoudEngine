@@ -15,7 +15,7 @@ from ts_node_shared import (
 
 def gen_interface():
     tool = schema["tools"]["GoudGame"]
-    lines = [f"// {HEADER_COMMENT}", ""]
+    lines = [f"// {HEADER_COMMENT}", "", "import type { PhysicsBackend2D } from './input.g.js';", ""]
 
     if schema["types"]["Vec2"].get("doc"):
         lines.append(f"/** {schema['types']['Vec2']['doc']} */")
@@ -198,6 +198,38 @@ def gen_interface():
             else:
                 ps = ", ".join(f"{to_camel(p['name'])}: {ts_iface_type(p['type'])}" for p in params)
                 lines.append(f"  {mn}({ps}): IEngineConfig;")
+        lines.append("}")
+        lines.append("")
+
+    if "PhysicsWorld2D" in schema.get("tools", {}) and "PhysicsWorld2D" in mapping.get("tools", {}):
+        pw2d_tool = schema["tools"]["PhysicsWorld2D"]
+        if pw2d_tool.get("doc"):
+            lines.append(f"/** {pw2d_tool['doc']} */")
+        lines.append("export interface IPhysicsWorld2D {")
+        for method in pw2d_tool.get("methods", []):
+            mn = to_camel(method["name"])
+            params = method.get("params", [])
+            ret = method.get("returns", "void")
+            if method.get("doc"):
+                lines.append(f"  /** {method['doc']} */")
+            ps = ", ".join(f"{to_camel(p['name'])}: {ts_iface_type(p['type'])}" for p in params)
+            lines.append(f"  {mn}({ps}): {ts_iface_type(ret)};")
+        lines.append("}")
+        lines.append("")
+
+    if "PhysicsWorld3D" in schema.get("tools", {}) and "PhysicsWorld3D" in mapping.get("tools", {}):
+        pw3d_tool = schema["tools"]["PhysicsWorld3D"]
+        if pw3d_tool.get("doc"):
+            lines.append(f"/** {pw3d_tool['doc']} */")
+        lines.append("export interface IPhysicsWorld3D {")
+        for method in pw3d_tool.get("methods", []):
+            mn = to_camel(method["name"])
+            params = method.get("params", [])
+            ret = method.get("returns", "void")
+            if method.get("doc"):
+                lines.append(f"  /** {method['doc']} */")
+            ps = ", ".join(f"{to_camel(p['name'])}: {ts_iface_type(p['type'])}" for p in params)
+            lines.append(f"  {mn}({ps}): {ts_iface_type(ret)};")
         lines.append("}")
         lines.append("")
 

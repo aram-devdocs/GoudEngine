@@ -65,6 +65,22 @@ namespace GoudEngine
             return this;
         }
 
+        /// <summary>Enables or disables physics debug visualization</summary>
+        public EngineConfig SetPhysicsDebug(bool enabled)
+        {
+            if (_handle == IntPtr.Zero) throw new ObjectDisposedException("EngineConfig");
+            NativeMethods.goud_engine_config_set_physics_debug(_handle, enabled);
+            return this;
+        }
+
+        /// <summary>Selects the 2D physics backend used by the built game</summary>
+        public EngineConfig SetPhysicsBackend2D(PhysicsBackend2D backend)
+        {
+            if (_handle == IntPtr.Zero) throw new ObjectDisposedException("EngineConfig");
+            NativeMethods.goud_engine_config_set_physics_backend_2d(_handle, (uint)backend);
+            return this;
+        }
+
         /// <summary>Consumes the config and creates a windowed GoudGame instance</summary>
         public GoudGame Build()
         {
