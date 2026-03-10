@@ -155,7 +155,7 @@ jobs:
 
     - name: Headless profile tests
       if: matrix.rust == 'stable' && matrix.lane == 'full' && matrix.os == 'ubuntu-latest'
-      run: cargo test --no-default-features --features headless --lib -- --nocapture
+      run: cargo test --features headless --lib -- null --nocapture
 
     - name: Documentation tests (once per lane)
       if: matrix.rust == 'stable' && matrix.lane == 'full' && matrix.os == 'ubuntu-latest'
