@@ -4,233 +4,30 @@
 //! connections using UDP, WebSocket, or TCP transports. Network provider
 //! instances are stored in a global registry keyed by opaque handles.
 
-use std::collections::{HashMap, VecDeque};
-use std::sync::Mutex;
+use std::collections::VecDeque;
 
 use crate::core::error::{set_last_error, GoudError, ERR_INTERNAL_ERROR, ERR_INVALID_STATE};
-use crate::core::providers::network::NetworkProvider;
 use crate::core::providers::network_types::{
     Channel, ConnectionId, HostConfig, NetworkEvent, NetworkSimulationConfig,
 };
-#[cfg(any(feature = "net-tcp", feature = "net-udp", feature = "net-ws"))]
-use crate::core::providers::ProviderLifecycle;
 use crate::ffi::context::GoudContextId;
-#[cfg(feature = "net-tcp")]
-use crate::libs::providers::impls::tcp_network::TcpNetProvider;
-#[cfg(feature = "net-udp")]
-use crate::libs::providers::impls::udp_network::UdpNetProvider;
-#[cfg(feature = "net-ws")]
-use crate::libs::providers::impls::ws_network::WsNetProvider;
-use crate::sdk::network_debug_overlay::NetworkOverlayMetrics;
 
-// ============================================================================
-// Network Handle Registry
-// ============================================================================
+mod overlay;
+mod provider_factory;
+mod registry;
 
-/// Protocol selector passed from FFI callers.
-const PROTOCOL_UDP: i32 = 0;
-const PROTOCOL_WS: i32 = 1;
-const PROTOCOL_TCP: i32 = 2;
+#[allow(unused_imports)]
+pub(crate) use overlay::NetworkOverlaySnapshot;
+pub(crate) use overlay::{
+    network_overlay_handle_for_context, network_overlay_set_active_handle_override,
+    network_overlay_snapshot_for_context,
+};
+use provider_factory::create_provider;
+use registry::{with_instance, with_registry, NetInstance, ERR_HANDLE};
 
-/// Error sentinel returned for handle-producing functions.
-const ERR_HANDLE: i64 = -1;
-
-/// Internal state for a network instance.
-struct NetInstance {
-    provider: Box<dyn NetworkProvider>,
-    /// Buffered received-data events from the last `poll`.
-    recv_queue: VecDeque<(u64, Vec<u8>)>, // (peer_id / conn_id, data)
-}
-
-// SAFETY: NetInstance is only accessed through the global Mutex, so all
-// access is serialized. The trait object inside is not Sync on its own
-// (WsNetProvider uses mpsc channels), but the Mutex serializes all access.
-unsafe impl Send for NetInstance {}
-
-static NET_REGISTRY: Mutex<Option<NetRegistryInner>> = Mutex::new(None);
-
-struct NetRegistryInner {
-    instances: HashMap<i64, NetInstance>,
-    default_handles_by_context: HashMap<(u32, u32), i64>,
-    overlay_override_handles_by_context: HashMap<(u32, u32), i64>,
-    next_handle: i64,
-}
-
-impl NetRegistryInner {
-    fn new() -> Self {
-        Self {
-            instances: HashMap::new(),
-            default_handles_by_context: HashMap::new(),
-            overlay_override_handles_by_context: HashMap::new(),
-            next_handle: 1,
-        }
-    }
-
-    fn insert(&mut self, instance: NetInstance) -> i64 {
-        let handle = self.next_handle;
-        self.next_handle += 1;
-        self.instances.insert(handle, instance);
-        handle
-    }
-
-    fn context_key(context_id: GoudContextId) -> (u32, u32) {
-        (context_id.index(), context_id.generation())
-    }
-
-    fn set_default_handle_for_context(&mut self, context_id: GoudContextId, handle: i64) {
-        self.default_handles_by_context
-            .insert(Self::context_key(context_id), handle);
-    }
-
-    fn set_overlay_override_handle_for_context(
-        &mut self,
-        context_id: GoudContextId,
-        handle: Option<i64>,
-    ) {
-        let key = Self::context_key(context_id);
-        if let Some(handle) = handle {
-            self.overlay_override_handles_by_context.insert(key, handle);
-        } else {
-            self.overlay_override_handles_by_context.remove(&key);
-        }
-    }
-
-    fn active_handle_for_context(&self, context_id: GoudContextId) -> Option<i64> {
-        let key = Self::context_key(context_id);
-        if let Some(handle) = self.overlay_override_handles_by_context.get(&key) {
-            if self.instances.contains_key(handle) {
-                return Some(*handle);
-            }
-        }
-
-        self.default_handles_by_context
-            .get(&key)
-            .copied()
-            .filter(|handle| self.instances.contains_key(handle))
-    }
-
-    fn clear_associations_for_handle(&mut self, handle: i64) {
-        self.default_handles_by_context
-            .retain(|_, mapped_handle| *mapped_handle != handle);
-        self.overlay_override_handles_by_context
-            .retain(|_, mapped_handle| *mapped_handle != handle);
-    }
-}
-
-/// Snapshot used by the native network overlay renderer.
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct NetworkOverlaySnapshot {
-    /// Active network handle selected for this context.
-    pub handle: i64,
-    /// Metrics rendered in the overlay.
-    pub metrics: NetworkOverlayMetrics,
-}
-
-fn with_registry<F, R>(f: F) -> Result<R, i32>
-where
-    F: FnOnce(&mut NetRegistryInner) -> Result<R, i32>,
-{
-    let mut guard = NET_REGISTRY.lock().map_err(|_| {
-        set_last_error(GoudError::InternalError(
-            "Failed to lock network registry".to_string(),
-        ));
-        ERR_INTERNAL_ERROR
-    })?;
-    let reg = guard.get_or_insert_with(NetRegistryInner::new);
-    f(reg)
-}
-
-fn with_instance<F, R>(handle: i64, f: F) -> Result<R, i32>
-where
-    F: FnOnce(&mut NetInstance) -> Result<R, i32>,
-{
-    with_registry(|reg| {
-        let inst = reg.instances.get_mut(&handle).ok_or_else(|| {
-            set_last_error(GoudError::InvalidState(format!(
-                "Unknown network handle {}",
-                handle
-            )));
-            ERR_INVALID_STATE
-        })?;
-        f(inst)
-    })
-}
-
-fn create_provider(protocol: i32) -> Result<Box<dyn NetworkProvider>, i32> {
-    match protocol {
-        PROTOCOL_UDP => create_udp_provider(),
-        PROTOCOL_WS => create_ws_provider(),
-        PROTOCOL_TCP => create_tcp_provider(),
-        _ => {
-            set_last_error(GoudError::InvalidState(format!(
-                "Unknown protocol: {}",
-                protocol
-            )));
-            Err(ERR_INVALID_STATE)
-        }
-    }
-}
-
-#[cfg(feature = "net-udp")]
-fn create_udp_provider() -> Result<Box<dyn NetworkProvider>, i32> {
-    let mut p = UdpNetProvider::new();
-    p.init().map_err(|e| {
-        let code = e.error_code();
-        set_last_error(e);
-        code
-    })?;
-    Ok(Box::new(p))
-}
-
-#[cfg(not(feature = "net-udp"))]
-fn create_udp_provider() -> Result<Box<dyn NetworkProvider>, i32> {
-    set_last_error(GoudError::InvalidState(
-        "UDP networking not available (net-udp feature disabled)".to_string(),
-    ));
-    Err(ERR_INVALID_STATE)
-}
-
-#[cfg(feature = "net-ws")]
-fn create_ws_provider() -> Result<Box<dyn NetworkProvider>, i32> {
-    let mut p = WsNetProvider::new();
-    p.init().map_err(|e| {
-        let code = e.error_code();
-        set_last_error(e);
-        code
-    })?;
-    Ok(Box::new(p))
-}
-
-#[cfg(feature = "net-tcp")]
-fn create_tcp_provider() -> Result<Box<dyn NetworkProvider>, i32> {
-    let mut p = TcpNetProvider::new();
-    p.init().map_err(|e| {
-        let code = e.error_code();
-        set_last_error(e);
-        code
-    })?;
-    Ok(Box::new(p))
-}
-
-#[cfg(not(feature = "net-tcp"))]
-fn create_tcp_provider() -> Result<Box<dyn NetworkProvider>, i32> {
-    set_last_error(GoudError::InvalidState(
-        "TCP networking not available (net-tcp feature disabled)".to_string(),
-    ));
-    Err(ERR_INVALID_STATE)
-}
-
-#[cfg(not(feature = "net-ws"))]
-fn create_ws_provider() -> Result<Box<dyn NetworkProvider>, i32> {
-    set_last_error(GoudError::InvalidState(
-        "WebSocket networking not available (net-ws feature disabled)".to_string(),
-    ));
-    Err(ERR_INVALID_STATE)
-}
-
-// ============================================================================
-// Host / Connect / Disconnect
-// ============================================================================
+#[cfg(test)]
+#[path = "network/tests.rs"]
+mod tests;
 
 /// Creates a network host listening on the given port.
 ///
@@ -363,10 +160,6 @@ pub extern "C" fn goud_network_disconnect(_context_id: GoudContextId, handle: i6
     result.unwrap_or_else(|e| e)
 }
 
-// ============================================================================
-// Send / Receive / Poll
-// ============================================================================
-
 /// Sends data to a specific peer on the given channel.
 /// Returns 0 on success, negative error code on failure.
 ///
@@ -475,10 +268,6 @@ pub extern "C" fn goud_network_poll(_context_id: GoudContextId, handle: i64) -> 
     });
     result.unwrap_or_else(|e| e)
 }
-
-// ============================================================================
-// Statistics / Queries
-// ============================================================================
 
 /// FFI-safe aggregate network statistics for a provider handle.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -629,6 +418,14 @@ pub extern "C" fn goud_network_clear_overlay_handle(context_id: GoudContextId) -
     }
 }
 
+#[cfg_attr(any(debug_assertions, test), allow(dead_code))]
+fn simulation_controls_unavailable() -> i32 {
+    set_last_error(GoudError::InvalidState(
+        "Network simulation controls are only available in debug/test builds".to_string(),
+    ));
+    ERR_INVALID_STATE
+}
+
 /// Applies a debug-only network simulation config to the provider handle.
 /// Returns 0 on success, negative error code on failure.
 #[cfg(any(debug_assertions, test))]
@@ -665,10 +462,7 @@ pub extern "C" fn goud_network_set_simulation(
     config: NetworkSimulationConfig,
 ) -> i32 {
     let _ = (handle, config);
-    set_last_error(GoudError::InvalidState(
-        "Network simulation controls are only available in debug/test builds".to_string(),
-    ));
-    ERR_INVALID_STATE
+    simulation_controls_unavailable()
 }
 
 /// Clears any debug-only network simulation config from the provider handle.
@@ -694,200 +488,5 @@ pub extern "C" fn goud_network_clear_simulation(_context_id: GoudContextId, hand
 #[no_mangle]
 pub extern "C" fn goud_network_clear_simulation(_context_id: GoudContextId, handle: i64) -> i32 {
     let _ = handle;
-    set_last_error(GoudError::InvalidState(
-        "Network simulation controls are only available in debug/test builds".to_string(),
-    ));
-    ERR_INVALID_STATE
-}
-
-/// Sets/clears an explicit active overlay handle override for this context.
-///
-/// This is an internal seam used by the native debug overlay path in this
-/// batch. Passing `None` clears the override and falls back to the default
-/// context-associated handle.
-pub(crate) fn network_overlay_set_active_handle_override(
-    context_id: GoudContextId,
-    handle: Option<i64>,
-) -> bool {
-    with_registry(|reg| {
-        if let Some(handle) = handle {
-            if !reg.instances.contains_key(&handle) {
-                return Ok(false);
-            }
-        }
-        reg.set_overlay_override_handle_for_context(context_id, handle);
-        Ok(true)
-    })
-    .unwrap_or(false)
-}
-
-/// Returns the active handle for a context using override-first semantics.
-pub(crate) fn network_overlay_handle_for_context(context_id: GoudContextId) -> Option<i64> {
-    with_registry(|reg| Ok(reg.active_handle_for_context(context_id)))
-        .ok()
-        .flatten()
-}
-
-/// Returns active-handle stats for the network overlay in this context.
-pub(crate) fn network_overlay_snapshot_for_context(
-    context_id: GoudContextId,
-) -> Option<NetworkOverlaySnapshot> {
-    with_registry(|reg| {
-        let handle = match reg.active_handle_for_context(context_id) {
-            Some(handle) => handle,
-            None => return Ok(None),
-        };
-        let instance = match reg.instances.get(&handle) {
-            Some(instance) => instance,
-            None => return Ok(None),
-        };
-
-        let stats = instance.provider.stats();
-        Ok(Some(NetworkOverlaySnapshot {
-            handle,
-            metrics: NetworkOverlayMetrics {
-                rtt_ms: stats.rtt_ms,
-                send_bandwidth_bytes_per_sec: stats.send_bandwidth_bytes_per_sec,
-                receive_bandwidth_bytes_per_sec: stats.receive_bandwidth_bytes_per_sec,
-                packet_loss_percent: stats.packet_loss_percent,
-                jitter_ms: stats.jitter_ms,
-            },
-        }))
-    })
-    .ok()
-    .flatten()
-}
-
-#[cfg(test)]
-mod overlay_mapping_tests {
-    use super::*;
-
-    #[test]
-    fn test_active_handle_prefers_override_then_default() {
-        let context_id = GoudContextId::new(200, 1);
-        let mut reg = NetRegistryInner::new();
-        reg.instances.insert(
-            10,
-            NetInstance {
-                provider: Box::new(crate::core::providers::impls::NullNetworkProvider::new()),
-                recv_queue: VecDeque::new(),
-            },
-        );
-        reg.instances.insert(
-            11,
-            NetInstance {
-                provider: Box::new(crate::core::providers::impls::NullNetworkProvider::new()),
-                recv_queue: VecDeque::new(),
-            },
-        );
-
-        reg.set_default_handle_for_context(context_id, 10);
-        assert_eq!(reg.active_handle_for_context(context_id), Some(10));
-
-        reg.set_overlay_override_handle_for_context(context_id, Some(11));
-        assert_eq!(reg.active_handle_for_context(context_id), Some(11));
-
-        reg.set_overlay_override_handle_for_context(context_id, None);
-        assert_eq!(reg.active_handle_for_context(context_id), Some(10));
-    }
-
-    #[test]
-    fn test_clear_associations_removes_default_and_override() {
-        let context_id = GoudContextId::new(201, 1);
-        let mut reg = NetRegistryInner::new();
-        reg.default_handles_by_context
-            .insert(NetRegistryInner::context_key(context_id), 55);
-        reg.overlay_override_handles_by_context
-            .insert(NetRegistryInner::context_key(context_id), 55);
-
-        reg.clear_associations_for_handle(55);
-
-        assert!(reg.default_handles_by_context.is_empty());
-        assert!(reg.overlay_override_handles_by_context.is_empty());
-    }
-}
-
-#[cfg(test)]
-mod ffi_network_exports_tests {
-    use super::*;
-    use crate::core::providers::impls::NullNetworkProvider;
-    use std::sync::Mutex;
-
-    static TEST_MUTEX: Mutex<()> = Mutex::new(());
-
-    struct RegistryResetGuard {
-        _guard: std::sync::MutexGuard<'static, ()>,
-    }
-
-    impl RegistryResetGuard {
-        fn new() -> Self {
-            let guard = TEST_MUTEX.lock().unwrap();
-            reset_registry();
-            Self { _guard: guard }
-        }
-    }
-
-    impl Drop for RegistryResetGuard {
-        fn drop(&mut self) {
-            reset_registry();
-        }
-    }
-
-    fn reset_registry() {
-        let mut guard = NET_REGISTRY.lock().unwrap();
-        *guard = None;
-    }
-
-    fn insert_null_provider() -> i64 {
-        with_registry(|reg| {
-            Ok(reg.insert(NetInstance {
-                provider: Box::new(NullNetworkProvider::new()),
-                recv_queue: VecDeque::new(),
-            }))
-        })
-        .unwrap()
-    }
-
-    #[test]
-    fn test_goud_network_get_stats_v2_writes_stats() {
-        let _registry = RegistryResetGuard::new();
-        let context_id = GoudContextId::new(300, 1);
-        let handle = insert_null_provider();
-        let mut ffi_stats = FfiNetworkStats {
-            bytes_sent: 1,
-            bytes_received: 1,
-            packets_sent: 1,
-            packets_received: 1,
-            packets_lost: 1,
-            rtt_ms: 1.0,
-            send_bandwidth_bytes_per_sec: 1.0,
-            receive_bandwidth_bytes_per_sec: 1.0,
-            packet_loss_percent: 1.0,
-            jitter_ms: 1.0,
-        };
-
-        // SAFETY: `ffi_stats` is a valid, writable out-parameter for one FfiNetworkStats value.
-        let rc = unsafe { goud_network_get_stats_v2(context_id, handle, &mut ffi_stats) };
-
-        assert_eq!(rc, 0);
-        assert_eq!(ffi_stats, FfiNetworkStats::default());
-    }
-
-    #[test]
-    fn test_overlay_handle_public_exports_set_and_clear_override() {
-        let _registry = RegistryResetGuard::new();
-        let context_id = GoudContextId::new(301, 1);
-        let handle = insert_null_provider();
-
-        assert_eq!(goud_network_set_overlay_handle(context_id, handle), 0);
-        assert_eq!(network_overlay_handle_for_context(context_id), Some(handle));
-
-        assert_eq!(goud_network_clear_overlay_handle(context_id), 0);
-        assert_eq!(network_overlay_handle_for_context(context_id), None);
-
-        assert_eq!(
-            goud_network_set_overlay_handle(context_id, handle + 999),
-            ERR_INVALID_STATE
-        );
-    }
+    simulation_controls_unavailable()
 }
