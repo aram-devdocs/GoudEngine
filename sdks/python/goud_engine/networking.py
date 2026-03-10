@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
-    from .generated._types import NetworkPacket
+    from .generated._types import NetworkPacket, NetworkSimulationConfig, NetworkStats
 
 
 class NetworkEndpoint:
@@ -16,19 +16,16 @@ class NetworkEndpoint:
         self.handle = handle
         self.default_peer_id = default_peer_id
 
-    def poll(self) -> int:
+    def poll(self):
         return self._backend.network_poll(self.handle)
 
     def receive(self):
-        status = self._backend.network_poll(self.handle)
-        if status < 0:
-            raise RuntimeError(f"goud_network_poll failed with status {status}")
         return self._backend.network_receive_packet(self.handle)
 
     def send(self, data, channel = 0):
         if self.default_peer_id is None:
             raise ValueError(
-                "No default peer ID is set for this endpoint; use send_to(peer_id, data, channel)."
+                "No default peer ID is set for this endpoint; use send_to(peer_id, data, channel) instead."
             )
         return self.send_to(self.default_peer_id, data, channel)
 
@@ -37,6 +34,24 @@ class NetworkEndpoint:
 
     def disconnect(self):
         return self._backend.network_disconnect(self.handle)
+
+    def get_stats(self):
+        return self._backend.get_network_stats(self.handle)
+
+    def peer_count(self):
+        return self._backend.network_peer_count(self.handle)
+
+    def set_simulation(self, config):
+        return self._backend.set_network_simulation(self.handle, config)
+
+    def clear_simulation(self):
+        return self._backend.clear_network_simulation(self.handle)
+
+    def set_overlay_target(self):
+        return self._backend.set_network_overlay_handle(self.handle)
+
+    def clear_overlay_target(self):
+        return self._backend.clear_network_overlay_handle()
 
 
 class NetworkManager:

@@ -228,145 +228,6 @@ def test_generated_network_wrapper_api_names():
     return True
 
 
-def test_network_wrapper_exports_and_runtime_api():
-    """Validate handwritten networking wrappers without loading the native library."""
-    print("Testing handwritten networking wrapper exports...")
-
-    networking_src = _NETWORKING_PATH.read_text()
-    root_init_src = _ROOT_INIT_PATH.read_text()
-
-    expected_exports = [
-        "from .networking import NetworkManager, NetworkEndpoint",
-        "from .generated._types import (",
-        '"NetworkManager",',
-        '"NetworkEndpoint",',
-        '"NetworkConnectResult",',
-        '"NetworkPacket",',
-    ]
-    for export_line in expected_exports:
-        assert export_line in root_init_src, f"missing root networking export: {export_line}"
-
-    expected_defs = [
-        "class NetworkManager:",
-        "class NetworkEndpoint:",
-        "def host(self, protocol, port):",
-        "def connect(self, protocol, address, port):",
-        "def receive(self):",
-        "def send(self, data, channel=0):",
-        "def send_to(self, peer_id, data, channel=0):",
-        "def poll(self):",
-        "def disconnect(self):",
-        "def get_stats(self):",
-        "def peer_count(self):",
-        "def set_simulation(self, config):",
-        "def clear_simulation(self):",
-        "def set_overlay_target(self):",
-        "def clear_overlay_target(self):",
-    ]
-    for definition in expected_defs:
-        assert definition in networking_src, f"missing networking wrapper member: {definition}"
-
-    networking_mod = _load_module("_networking", _NETWORKING_PATH)
-    NetworkManager = networking_mod.NetworkManager
-
-    class FakeNetworkContext:
-        def __init__(self):
-            self.sent = []
-            self.received = []
-            self.overlay_target = None
-
-        def network_host(self, protocol, port):
-            self.hosted = (protocol, port)
-            return 11
-
-        def network_connect_with_peer(self, protocol, address, port):
-            self.connected = (protocol, address, port)
-            return NetworkConnectResult(22, 77)
-
-        def network_receive_packet(self, handle):
-            if self.received:
-                return self.received.pop(0)
-            return None
-
-        def network_send(self, handle, peer_id, data, channel):
-            self.sent.append((handle, peer_id, bytes(data), channel))
-            return 0
-
-        def network_poll(self, handle):
-            self.last_polled = handle
-            return 0
-
-        def network_disconnect(self, handle):
-            self.last_disconnected = handle
-            return 0
-
-        def get_network_stats(self, handle):
-            self.last_stats_handle = handle
-            return "stats"
-
-        def network_peer_count(self, handle):
-            self.last_peer_count_handle = handle
-            return 2
-
-        def set_network_simulation(self, handle, config):
-            self.last_simulation = (handle, config)
-            return 0
-
-        def clear_network_simulation(self, handle):
-            self.last_cleared_simulation = handle
-            return 0
-
-        def set_network_overlay_handle(self, handle):
-            self.overlay_target = handle
-            return 0
-
-        def clear_network_overlay_handle(self):
-            self.overlay_target = None
-            return 0
-
-    fake = FakeNetworkContext()
-    manager = NetworkManager(fake)
-
-    host_endpoint = manager.host(2, 40123)
-    assert host_endpoint.handle == 11
-    assert host_endpoint.default_peer_id is None
-
-    client_endpoint = manager.connect(2, "127.0.0.1", 40123)
-    assert client_endpoint.handle == 22
-    assert client_endpoint.default_peer_id == 77
-
-    fake.received.append(NetworkPacket(55, b"payload"))
-    packet = host_endpoint.receive()
-    assert packet.peer_id == 55
-    assert packet.data == b"payload"
-
-    assert client_endpoint.send(b"ping") == 0
-    assert fake.sent[-1] == (22, 77, b"ping", 0)
-    assert host_endpoint.send_to(55, b"pong", channel=1) == 0
-    assert fake.sent[-1] == (11, 55, b"pong", 1)
-
-    try:
-        host_endpoint.send(b"no-default")
-        raise AssertionError("host endpoint send should fail without a default peer")
-    except RuntimeError as exc:
-        assert "default peer" in str(exc).lower()
-
-    sim = NetworkSimulationConfig(one_way_latency_ms=12, jitter_ms=3, packet_loss_percent=1.5)
-    assert client_endpoint.set_simulation(sim) == 0
-    assert client_endpoint.clear_simulation() == 0
-    assert client_endpoint.set_overlay_target() == 0
-    assert fake.overlay_target == 22
-    assert client_endpoint.clear_overlay_target() == 0
-    assert fake.overlay_target is None
-    assert client_endpoint.poll() == 0
-    assert client_endpoint.disconnect() == 0
-    assert client_endpoint.get_stats() == "stats"
-    assert client_endpoint.peer_count() == 2
-
-    print("  Handwritten networking wrapper tests passed")
-    return True
-
-
 def test_handwritten_network_wrapper_exports():
     """Validate handwritten network wrapper exports and source API shape."""
     print("Testing handwritten network wrapper exports...")
@@ -385,7 +246,16 @@ def test_handwritten_network_wrapper_exports():
     assert "def receive(self):" in networking_src, "missing NetworkEndpoint.receive()"
     assert "def send(self, data, channel = 0):" in networking_src, "missing NetworkEndpoint.send()"
     assert "def send_to(self, peer_id, data, channel = 0):" in networking_src, "missing NetworkEndpoint.send_to()"
+    assert "def poll(self):" in networking_src, "missing NetworkEndpoint.poll()"
     assert "def disconnect(self):" in networking_src, "missing NetworkEndpoint.disconnect()"
+    assert "def get_stats(self):" in networking_src, "missing NetworkEndpoint.get_stats()"
+    assert "def peer_count(self):" in networking_src, "missing NetworkEndpoint.peer_count()"
+    assert "def set_simulation(self, config):" in networking_src, "missing NetworkEndpoint.set_simulation()"
+    assert "def clear_simulation(self):" in networking_src, "missing NetworkEndpoint.clear_simulation()"
+    assert "def set_overlay_target(self):" in networking_src, "missing NetworkEndpoint.set_overlay_target()"
+    assert "def clear_overlay_target(self):" in networking_src, "missing NetworkEndpoint.clear_overlay_target()"
+    assert '"NetworkConnectResult",' in init_src, "__init__.py must export NetworkConnectResult"
+    assert '"NetworkPacket",' in init_src, "__init__.py must export NetworkPacket"
     assert "network_connect_with_peer" in networking_src, "connect() must use network_connect_with_peer"
 
     print("  Handwritten network wrapper export tests passed")
@@ -422,6 +292,7 @@ def test_handwritten_network_wrapper_send_contract_source():
         def __init__(self):
             self.calls = []
             self._packet = _FakePacket(42, b"payload")
+            self._stats = "stats"
 
         def network_host(self, protocol, port):
             self.calls.append(("network_host", protocol, port))
@@ -449,6 +320,30 @@ def test_handwritten_network_wrapper_send_contract_source():
             self.calls.append(("network_disconnect", handle))
             return 0
 
+        def get_network_stats(self, handle):
+            self.calls.append(("get_network_stats", handle))
+            return self._stats
+
+        def network_peer_count(self, handle):
+            self.calls.append(("network_peer_count", handle))
+            return 2
+
+        def set_network_simulation(self, handle, config):
+            self.calls.append(("set_network_simulation", handle, config))
+            return 0
+
+        def clear_network_simulation(self, handle):
+            self.calls.append(("clear_network_simulation", handle))
+            return 0
+
+        def set_network_overlay_handle(self, handle):
+            self.calls.append(("set_network_overlay_handle", handle))
+            return 0
+
+        def clear_network_overlay_handle(self):
+            self.calls.append(("clear_network_overlay_handle",))
+            return 0
+
     backend = _FakeBackend()
     manager = NetworkManager(backend)
     host_endpoint = manager.host(2, 40000)
@@ -464,6 +359,14 @@ def test_handwritten_network_wrapper_send_contract_source():
     assert connect_endpoint.default_peer_id == 77, "connect() should seed default peer ID"
     assert connect_endpoint.send(b"hello") == 0
     assert connect_endpoint.send_to(88, b"other", 1) == 0
+    assert connect_endpoint.poll() == 0
+    assert connect_endpoint.get_stats() == "stats"
+    assert connect_endpoint.peer_count() == 2
+    sim = NetworkSimulationConfig(one_way_latency_ms=5, jitter_ms=1, packet_loss_percent=0.5)
+    assert connect_endpoint.set_simulation(sim) == 0
+    assert connect_endpoint.clear_simulation() == 0
+    assert connect_endpoint.set_overlay_target() == 0
+    assert connect_endpoint.clear_overlay_target() == 0
 
     packet = connect_endpoint.receive()
     assert packet is not None, "receive() should return packet when available"

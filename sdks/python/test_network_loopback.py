@@ -22,6 +22,7 @@ def _reserve_port() -> int:
 def _wait_for_packet(endpoint, companion_endpoint=None, timeout_sec=3.0):
     deadline = time.monotonic() + timeout_sec
     while time.monotonic() < deadline:
+        endpoint.poll()
         if companion_endpoint is not None:
             companion_endpoint.poll()
         packet = endpoint.receive()
@@ -31,15 +32,12 @@ def _wait_for_packet(endpoint, companion_endpoint=None, timeout_sec=3.0):
     return None
 
 
-def _wait_for_peer_counts(host_ctx, host_endpoint, client_ctx, client_endpoint, timeout_sec=3.0):
+def _wait_for_peer_counts(host_endpoint, client_endpoint, timeout_sec=3.0):
     deadline = time.monotonic() + timeout_sec
     while time.monotonic() < deadline:
         host_endpoint.poll()
         client_endpoint.poll()
-        if (
-            host_ctx.network_peer_count(host_endpoint.handle) > 0
-            and client_ctx.network_peer_count(client_endpoint.handle) > 0
-        ):
+        if host_endpoint.peer_count() > 0 and client_endpoint.peer_count() > 0:
             return True
         time.sleep(0.01)
     return False
@@ -86,7 +84,7 @@ def _test_tcp_loopback_roundtrip():
 
         if client_endpoint.default_peer_id is None:
             raise AssertionError("connect() should seed a default peer ID")
-        if not _wait_for_peer_counts(host_ctx, host_endpoint, client_ctx, client_endpoint):
+        if not _wait_for_peer_counts(host_endpoint, client_endpoint):
             raise AssertionError("host/client did not report connected peers in time")
 
         client_payload = b"python-loopback-client"
@@ -112,6 +110,24 @@ def _test_tcp_loopback_roundtrip():
             raise AssertionError(
                 f"client payload mismatch: expected {host_payload!r}, got {client_packet.data!r}"
             )
+        if client_packet.peer_id != client_endpoint.default_peer_id:
+            raise AssertionError(
+                f"client peer ID mismatch: expected {client_endpoint.default_peer_id}, got {client_packet.peer_id}"
+            )
+
+        for _ in range(10):
+            host_endpoint.poll()
+            client_endpoint.poll()
+            time.sleep(0.01)
+
+        host_stats = host_endpoint.get_stats()
+        client_stats = client_endpoint.get_stats()
+        if host_stats.bytes_received <= 0:
+            raise AssertionError("host stats should record received bytes")
+        if client_stats.bytes_sent <= 0:
+            raise AssertionError("client stats should record sent bytes")
+        if client_stats.bytes_received <= 0:
+            raise AssertionError("client stats should record received bytes")
     except RuntimeError as exc:
         raise _SkipTest(f"TCP loopback unavailable: {exc}") from exc
     finally:
