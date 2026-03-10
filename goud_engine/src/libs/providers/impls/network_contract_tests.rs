@@ -21,7 +21,9 @@ fn test_tcp_provider_host_connect_send_receive_round_trip() {
         tls_key_path: None,
     };
     host.host(&config).unwrap();
-    let host_addr = host.local_addr().expect("tcp host should expose local addr");
+    let host_addr = host
+        .local_addr()
+        .expect("tcp host should expose local addr");
 
     let mut client = TcpNetProvider::new();
     let client_conn = client.connect(&host_addr.to_string()).unwrap();

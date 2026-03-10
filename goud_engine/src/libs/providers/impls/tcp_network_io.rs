@@ -114,7 +114,8 @@ pub(super) fn spawn_io_thread(
                 match write_rx.try_recv() {
                     Ok(frame) => {
                         if let Err(e) = stream.write_all(&frame) {
-                            let _ = event_tx.send(InternalTcpEvent::Error(cid, format!("write: {e}")));
+                            let _ =
+                                event_tx.send(InternalTcpEvent::Error(cid, format!("write: {e}")));
                             let _ = event_tx.send(InternalTcpEvent::Disconnected(
                                 cid,
                                 DisconnectReason::Error(e.to_string()),

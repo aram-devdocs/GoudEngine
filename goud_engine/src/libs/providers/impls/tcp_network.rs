@@ -154,17 +154,22 @@ impl ProviderLifecycle for TcpNetProvider {
                         self.events.push(NetworkEvent::Connected { conn: id });
                     }
                     InternalTcpEvent::Disconnected(id, reason) => {
-                        let removed =
-                            self.connections.remove(&id.0).is_some() | self.send_txs.remove(&id.0).is_some();
+                        let removed = self.connections.remove(&id.0).is_some()
+                            | self.send_txs.remove(&id.0).is_some();
                         self.decrement_conn_count_if_needed(removed);
-                        self.events.push(NetworkEvent::Disconnected { conn: id, reason });
+                        self.events
+                            .push(NetworkEvent::Disconnected { conn: id, reason });
                     }
                     InternalTcpEvent::Received(id, channel, data) => {
                         self.stats.record_received_packet(data.len());
                         if let Some(conn) = self.connections.get_mut(&id.0) {
                             conn.stats.record_received_packet(data.len());
                         }
-                        self.events.push(NetworkEvent::Received { conn: id, channel, data });
+                        self.events.push(NetworkEvent::Received {
+                            conn: id,
+                            channel,
+                            data,
+                        });
                     }
                     InternalTcpEvent::Error(id, message) => {
                         if let Some(conn) = self.connections.get_mut(&id.0) {
@@ -174,11 +179,13 @@ impl ProviderLifecycle for TcpNetProvider {
                     }
                     InternalTcpEvent::WriteTxReady(id, write_tx) => {
                         self.send_txs.insert(id.0, write_tx);
-                        self.connections.entry(id.0).or_insert_with(|| TcpConnection {
-                            id,
-                            state: ConnectionState::Connecting,
-                            stats: NetworkStatsTracker::new(),
-                        });
+                        self.connections
+                            .entry(id.0)
+                            .or_insert_with(|| TcpConnection {
+                                id,
+                                state: ConnectionState::Connecting,
+                                stats: NetworkStatsTracker::new(),
+                            });
                     }
                 }
             }
@@ -209,9 +216,12 @@ impl NetworkProvider for TcpNetProvider {
         }
 
         let bind = format!("{}:{}", config.bind_address, config.port);
-        let listener = TcpListener::bind(&bind).map_err(|e| net_err(format!("bind {bind}: {e}")))?;
+        let listener =
+            TcpListener::bind(&bind).map_err(|e| net_err(format!("bind {bind}: {e}")))?;
         self.local_addr = Some(listener.local_addr().map_err(|e| net_err(e.to_string()))?);
-        listener.set_nonblocking(true).map_err(|e| net_err(e.to_string()))?;
+        listener
+            .set_nonblocking(true)
+            .map_err(|e| net_err(e.to_string()))?;
         self.is_hosting = true;
 
         let running = self.running.clone();
@@ -230,7 +240,8 @@ impl NetworkProvider for TcpNetProvider {
                         configure_stream(&stream);
                         let id = ConnectionId(next_id.fetch_add(1, Ordering::Relaxed));
                         conn_count.fetch_add(1, Ordering::Relaxed);
-                        let write_tx = spawn_io_thread(id, stream, event_tx.clone(), running.clone());
+                        let write_tx =
+                            spawn_io_thread(id, stream, event_tx.clone(), running.clone());
                         let _ = event_tx.send(InternalTcpEvent::WriteTxReady(id, write_tx));
                         let _ = event_tx.send(InternalTcpEvent::Connected(id));
                     }
@@ -286,7 +297,8 @@ impl NetworkProvider for TcpNetProvider {
     }
 
     fn disconnect(&mut self, conn: ConnectionId) -> GoudResult<()> {
-        let removed = self.connections.remove(&conn.0).is_some() | self.send_txs.remove(&conn.0).is_some();
+        let removed =
+            self.connections.remove(&conn.0).is_some() | self.send_txs.remove(&conn.0).is_some();
         self.decrement_conn_count_if_needed(removed);
         self.events.push(NetworkEvent::Disconnected {
             conn,
@@ -296,7 +308,11 @@ impl NetworkProvider for TcpNetProvider {
     }
 
     fn disconnect_all(&mut self) -> GoudResult<()> {
-        let ids: Vec<_> = self.connections.keys().map(|id| ConnectionId(*id)).collect();
+        let ids: Vec<_> = self
+            .connections
+            .keys()
+            .map(|id| ConnectionId(*id))
+            .collect();
         for id in ids {
             let _ = self.disconnect(id);
         }
@@ -317,7 +333,8 @@ impl NetworkProvider for TcpNetProvider {
             .send_txs
             .get(&conn.0)
             .ok_or_else(|| net_err("No write channel"))?;
-        tx.send(frame).map_err(|e| net_err(format!("enqueue: {e}")))?;
+        tx.send(frame)
+            .map_err(|e| net_err(format!("enqueue: {e}")))?;
         self.stats.record_sent_packet(data.len());
         if let Some(connection) = self.connections.get_mut(&conn.0) {
             connection.stats.record_sent_packet(data.len());
@@ -343,7 +360,10 @@ impl NetworkProvider for TcpNetProvider {
     }
 
     fn connections(&self) -> Vec<ConnectionId> {
-        self.connections.keys().map(|id| ConnectionId(*id)).collect()
+        self.connections
+            .keys()
+            .map(|id| ConnectionId(*id))
+            .collect()
     }
 
     fn connection_state(&self, conn: ConnectionId) -> ConnectionState {

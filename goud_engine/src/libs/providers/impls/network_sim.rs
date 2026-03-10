@@ -276,7 +276,8 @@ impl<P: NetworkProvider> NetworkSimProvider<P> {
             self.metrics.record_delay_sample(pending.delay_ms);
             self.metric_for_connection(pending.conn)
                 .record_delay_sample(pending.delay_ms);
-            self.inner.send(pending.conn, pending.channel, &pending.data)?;
+            self.inner
+                .send(pending.conn, pending.channel, &pending.data)?;
         }
 
         Ok(())

@@ -58,7 +58,10 @@ fn test_tcp_disconnect_emits_local_close() {
         std::thread::sleep(std::time::Duration::from_millis(5));
     }
 
-    assert_eq!(client.connection_state(client_conn), ConnectionState::Connected);
+    assert_eq!(
+        client.connection_state(client_conn),
+        ConnectionState::Connected
+    );
     client.disconnect(client_conn).unwrap();
 
     let events = client.drain_events();

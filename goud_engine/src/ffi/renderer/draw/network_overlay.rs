@@ -4,9 +4,9 @@ use crate::ffi::network::network_overlay_snapshot_for_context;
 use crate::ffi::window::WindowState;
 use crate::sdk::network_debug_overlay::format_overlay_lines;
 
+use super::super::immediate::ImmediateStateData;
 use super::helpers::prepare_draw_state;
 use super::internal::draw_quad_rotated_internal;
-use super::super::immediate::ImmediateStateData;
 
 const CHAR_SCALE: f32 = 2.0;
 const CHAR_ADVANCE: f32 = 12.0;
@@ -86,7 +86,14 @@ fn draw_embedded_text(
     color: [f32; 4],
 ) -> Result<(), GoudError> {
     for ch in text.chars() {
-        draw_embedded_char(window_state, state_data, x, y, ch.to_ascii_uppercase(), color)?;
+        draw_embedded_char(
+            window_state,
+            state_data,
+            x,
+            y,
+            ch.to_ascii_uppercase(),
+            color,
+        )?;
         x += CHAR_ADVANCE;
     }
     Ok(())

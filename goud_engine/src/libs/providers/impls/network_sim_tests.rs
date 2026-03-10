@@ -147,7 +147,9 @@ fn test_networking_sim_provider_reports_dropped_packets_in_stats() {
         })
         .unwrap();
 
-    simulated.send(ConnectionId(1), Channel(0), b"lost").unwrap();
+    simulated
+        .send(ConnectionId(1), Channel(0), b"lost")
+        .unwrap();
 
     let stats = simulated.stats();
     let conn_stats = simulated.connection_stats(ConnectionId(1)).unwrap();
