@@ -9,10 +9,10 @@ use crate::ffi::context::GoudContextId;
 pub(super) const ERR_HANDLE: i64 = -1;
 
 /// Internal state for a network instance.
-pub(super) struct NetInstance {
-    pub(super) provider: Box<dyn NetworkProvider>,
+pub(crate) struct NetInstance {
+    pub(crate) provider: Box<dyn NetworkProvider>,
     /// Buffered received-data events from the last `poll`.
-    pub(super) recv_queue: VecDeque<(u64, Vec<u8>)>, // (peer_id / conn_id, data)
+    pub(crate) recv_queue: VecDeque<(u64, Vec<u8>)>, // (peer_id / conn_id, data)
 }
 
 // SAFETY: NetInstance is only accessed through the global Mutex, so all
@@ -22,15 +22,15 @@ unsafe impl Send for NetInstance {}
 
 pub(super) static NET_REGISTRY: Mutex<Option<NetRegistryInner>> = Mutex::new(None);
 
-pub(super) struct NetRegistryInner {
-    pub(super) instances: HashMap<i64, NetInstance>,
-    pub(super) default_handles_by_context: HashMap<(u32, u32), i64>,
-    pub(super) overlay_override_handles_by_context: HashMap<(u32, u32), i64>,
+pub(crate) struct NetRegistryInner {
+    pub(crate) instances: HashMap<i64, NetInstance>,
+    pub(crate) default_handles_by_context: HashMap<(u32, u32), i64>,
+    pub(crate) overlay_override_handles_by_context: HashMap<(u32, u32), i64>,
     next_handle: i64,
 }
 
 impl NetRegistryInner {
-    pub(super) fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             instances: HashMap::new(),
             default_handles_by_context: HashMap::new(),
@@ -39,18 +39,18 @@ impl NetRegistryInner {
         }
     }
 
-    pub(super) fn insert(&mut self, instance: NetInstance) -> i64 {
+    pub(crate) fn insert(&mut self, instance: NetInstance) -> i64 {
         let handle = self.next_handle;
         self.next_handle += 1;
         self.instances.insert(handle, instance);
         handle
     }
 
-    pub(super) fn context_key(context_id: GoudContextId) -> (u32, u32) {
+    pub(crate) fn context_key(context_id: GoudContextId) -> (u32, u32) {
         (context_id.index(), context_id.generation())
     }
 
-    pub(super) fn set_default_handle_for_context(
+    pub(crate) fn set_default_handle_for_context(
         &mut self,
         context_id: GoudContextId,
         handle: i64,
@@ -59,7 +59,7 @@ impl NetRegistryInner {
             .insert(Self::context_key(context_id), handle);
     }
 
-    pub(super) fn set_overlay_override_handle_for_context(
+    pub(crate) fn set_overlay_override_handle_for_context(
         &mut self,
         context_id: GoudContextId,
         handle: Option<i64>,
@@ -72,7 +72,7 @@ impl NetRegistryInner {
         }
     }
 
-    pub(super) fn active_handle_for_context(&self, context_id: GoudContextId) -> Option<i64> {
+    pub(crate) fn active_handle_for_context(&self, context_id: GoudContextId) -> Option<i64> {
         let key = Self::context_key(context_id);
         if let Some(handle) = self.overlay_override_handles_by_context.get(&key) {
             if self.instances.contains_key(handle) {
@@ -86,7 +86,7 @@ impl NetRegistryInner {
             .filter(|handle| self.instances.contains_key(handle))
     }
 
-    pub(super) fn clear_associations_for_handle(&mut self, handle: i64) {
+    pub(crate) fn clear_associations_for_handle(&mut self, handle: i64) {
         self.default_handles_by_context
             .retain(|_, mapped_handle| *mapped_handle != handle);
         self.overlay_override_handles_by_context
@@ -94,7 +94,7 @@ impl NetRegistryInner {
     }
 }
 
-pub(super) fn with_registry<F, R>(f: F) -> Result<R, i32>
+pub(crate) fn with_registry<F, R>(f: F) -> Result<R, i32>
 where
     F: FnOnce(&mut NetRegistryInner) -> Result<R, i32>,
 {
@@ -125,7 +125,7 @@ where
 }
 
 #[cfg(test)]
-pub(super) fn reset_registry_for_tests() {
+pub(crate) fn reset_registry_for_tests() {
     let mut guard = NET_REGISTRY
         .lock()
         .expect("network registry mutex poisoned");

@@ -11,10 +11,11 @@ use crate::core::providers::network_types::{
     Channel, ConnectionId, HostConfig, NetworkEvent, NetworkSimulationConfig,
 };
 use crate::ffi::context::GoudContextId;
+use crate::ffi::window::with_window_state;
 
 mod overlay;
 mod provider_factory;
-mod registry;
+pub(crate) mod registry;
 
 #[allow(unused_imports)]
 pub(crate) use overlay::NetworkOverlaySnapshot;
@@ -391,6 +392,9 @@ pub extern "C" fn goud_network_set_overlay_handle(context_id: GoudContextId, han
     match with_registry(|reg| Ok(reg.instances.contains_key(&handle))) {
         Ok(true) => {
             if network_overlay_set_active_handle_override(context_id, Some(handle)) {
+                let _ = with_window_state(context_id, |state| {
+                    state.network_overlay.set_active_handle(Some(handle));
+                });
                 0
             } else {
                 ERR_INTERNAL_ERROR
@@ -412,6 +416,9 @@ pub extern "C" fn goud_network_set_overlay_handle(context_id: GoudContextId, han
 #[no_mangle]
 pub extern "C" fn goud_network_clear_overlay_handle(context_id: GoudContextId) -> i32 {
     if network_overlay_set_active_handle_override(context_id, None) {
+        let _ = with_window_state(context_id, |state| {
+            state.network_overlay.set_active_handle(None);
+        });
         0
     } else {
         ERR_INTERNAL_ERROR

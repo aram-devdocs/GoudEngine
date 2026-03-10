@@ -1,4 +1,5 @@
 use std::sync::Mutex;
+use std::{env, fs, process::Command};
 
 use super::*;
 use crate::core::error::last_error_message;
@@ -396,4 +397,40 @@ fn test_release_stub_behavior_helper_returns_expected_error() {
         message.contains("only available in debug/test builds"),
         "unexpected message: {message}"
     );
+}
+
+#[test]
+fn test_release_binary_exercises_exported_simulation_stubs() {
+    let workspace_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("workspace root");
+    let thread_suffix = std::thread::current()
+        .name()
+        .unwrap_or("default")
+        .replace(':', "_");
+    let target_dir = env::temp_dir().join(format!(
+        "goud-network-release-probe-{}-{}",
+        std::process::id(),
+        thread_suffix
+    ));
+    let _ = fs::remove_dir_all(&target_dir);
+
+    let status = Command::new(env!("CARGO"))
+        .current_dir(workspace_root)
+        .env("CARGO_TARGET_DIR", &target_dir)
+        .args([
+            "run",
+            "-p",
+            "goud-engine-core",
+            "--release",
+            "--bin",
+            "network_sim_release_probe",
+            "--quiet",
+        ])
+        .status()
+        .expect("failed to run release probe binary");
+
+    assert!(status.success(), "release probe exited with {status}");
+
+    let _ = fs::remove_dir_all(&target_dir);
 }
