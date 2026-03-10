@@ -40,6 +40,41 @@ const game = await GoudGame.create(800, 600, "My Game");
 // same API as Node
 ```
 
+## Networking
+
+Networking wrappers are available in the Node build. Use `NetworkManager` with `GoudGame` or `GoudContext`. `connect()` stores the default peer ID, so clients can call `send(...)`. Host endpoints reply with `sendTo(...)`.
+
+```typescript
+import { GoudContext, NetworkManager, NetworkProtocol } from "goudengine/node";
+
+const hostContext = new GoudContext();
+const clientContext = new GoudContext();
+
+const host = new NetworkManager(hostContext).host(NetworkProtocol.Tcp, 9000);
+const client = new NetworkManager(clientContext).connect(
+  NetworkProtocol.Tcp,
+  "127.0.0.1",
+  9000,
+);
+
+client.send(Buffer.from("ping"));
+
+while (true) {
+  host.poll();
+  client.poll();
+
+  const packet = host.receive();
+  if (!packet) {
+    continue;
+  }
+
+  host.sendTo(packet.peerId, Buffer.from("pong"));
+  break;
+}
+```
+
+`goudengine/web` still throws `Not supported in WASM mode` for networking calls. The wrapper classes are exported there so shared code can compile, but browser networking is still unsupported.
+
 ## Features
 
 - 2D and 3D rendering with runtime renderer selection

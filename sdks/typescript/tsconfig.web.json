@@ -16,6 +16,8 @@
     "resolveJsonModule": true
   },
   "include": [
+    "src/shared/**/*",
+    "src/web/**/*",
     "src/generated/types/**/*",
     "src/generated/web/**/*"
   ],

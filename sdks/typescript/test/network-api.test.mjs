@@ -2,15 +2,21 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
+const require = createRequire(import.meta.url);
 const nodeGeneratedPath = path.join(repoRoot, 'src', 'generated', 'node', 'index.g.ts');
 const webGeneratedPath = path.join(repoRoot, 'src', 'generated', 'web', 'index.g.ts');
 const typesGeneratedPath = path.join(repoRoot, 'src', 'generated', 'types', 'engine.g.ts');
 const nativeGeneratedPath = path.join(repoRoot, 'native', 'src', 'game.g.rs');
+const mainEntryPath = path.join(repoRoot, 'src', 'index.ts');
+const nodeEntryPath = path.join(repoRoot, 'src', 'node', 'index.ts');
+const webEntryPath = path.join(repoRoot, 'src', 'web', 'index.ts');
+const sharedWrapperPath = path.join(repoRoot, 'src', 'shared', 'network.ts');
 
 describe('Generated network SDK surface', () => {
   it('exposes the requested Node wrapper methods on GoudGame', () => {
@@ -89,5 +95,77 @@ describe('Generated network SDK surface', () => {
     for (const stub of expectedStubs) {
       assert.ok(webSrc.includes(stub), `missing generated WASM stub: ${stub}`);
     }
+  });
+
+  it('exports handwritten wrapper entrypoints for default, node, and web builds', () => {
+    const mainSrc = fs.readFileSync(mainEntryPath, 'utf8');
+    const nodeSrc = fs.readFileSync(nodeEntryPath, 'utf8');
+    const webSrc = fs.readFileSync(webEntryPath, 'utf8');
+    const sharedSrc = fs.readFileSync(sharedWrapperPath, 'utf8');
+
+    const expectedMain = [
+      "export * from './generated/index.g.js';",
+      "export { NetworkManager, NetworkEndpoint } from './shared/network.js';",
+      "export type { NetworkContextLike } from './shared/network.js';",
+      "export { NetworkProtocol } from './generated/types/input.g.js';",
+    ];
+    for (const line of expectedMain) {
+      assert.ok(mainSrc.includes(line), `missing default entrypoint export: ${line}`);
+    }
+
+    const expectedNode = [
+      "export * from '../generated/node/index.g.js';",
+      "export { NetworkManager, NetworkEndpoint } from '../shared/network.js';",
+      "export type { NetworkContextLike } from '../shared/network.js';",
+      "export { NetworkProtocol } from '../generated/types/input.g.js';",
+    ];
+    for (const line of expectedNode) {
+      assert.ok(nodeSrc.includes(line), `missing node entrypoint export: ${line}`);
+    }
+
+    const expectedWeb = [
+      "export * from '../generated/web/index.g.js';",
+      "export { NetworkManager, NetworkEndpoint } from '../shared/network.js';",
+      "export type { NetworkContextLike } from '../shared/network.js';",
+      "export { NetworkProtocol } from '../generated/types/input.g.js';",
+    ];
+    for (const line of expectedWeb) {
+      assert.ok(webSrc.includes(line), `missing web entrypoint export: ${line}`);
+    }
+
+    const expectedShared = [
+      'export interface NetworkContextLike {',
+      'export class NetworkManager {',
+      'export class NetworkEndpoint {',
+      'host(protocol: number, port: number): NetworkEndpoint {',
+      'connect(protocol: number, address: string, port: number): NetworkEndpoint {',
+      'receive(): INetworkPacket | null {',
+      'send(data: Uint8Array, channel = 0): number {',
+      'sendTo(peerId: number, data: Uint8Array, channel = 0): number {',
+      'poll(): number {',
+      'disconnect(): number {',
+      'getStats(): INetworkStats {',
+      'peerCount(): number {',
+      'setSimulation(config: INetworkSimulationConfig): number {',
+      'clearSimulation(): number {',
+      'setOverlayTarget(): number {',
+      'clearOverlayTarget(): number {',
+      'Use sendTo(peerId, data, channel) instead.',
+    ];
+    for (const line of expectedShared) {
+      assert.ok(sharedSrc.includes(line), `missing shared wrapper member: ${line}`);
+    }
+  });
+
+  it('exports network wrappers from the built package entrypoints', () => {
+    const mainSdk = require(path.join(repoRoot, 'dist', 'index.js'));
+    const nodeSdk = require(path.join(repoRoot, 'dist', 'node', 'index.js'));
+
+    assert.equal(typeof mainSdk.NetworkManager, 'function');
+    assert.equal(typeof mainSdk.NetworkEndpoint, 'function');
+    assert.equal(typeof mainSdk.NetworkProtocol, 'object');
+    assert.equal(typeof nodeSdk.NetworkManager, 'function');
+    assert.equal(typeof nodeSdk.NetworkEndpoint, 'function');
+    assert.equal(typeof nodeSdk.GoudContext, 'function');
   });
 });
