@@ -1398,6 +1398,23 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_network_clear_overlay_handle": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_network_clear_simulation": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_network_connect": {
       "source_file": "ffi/network.rs",
       "params": [
@@ -1428,6 +1445,16 @@
         "out_bytes_recv: *mut u64",
         "out_packets_sent: *mut u64",
         "out_packets_recv: *mut u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_network_get_stats_v2": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64",
+        "out_stats: *mut FfiNetworkStats"
       ],
       "return_type": "i32",
       "is_unsafe": true
@@ -1484,6 +1511,25 @@
       ],
       "return_type": "i32",
       "is_unsafe": true
+    },
+    "goud_network_set_overlay_handle": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_network_set_simulation": {
+      "source_file": "ffi/network.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64",
+        "config: NetworkSimulationConfig"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
     },
     "goud_physics3d_add_collider": {
       "source_file": "ffi/physics/physics3d/bodies.rs",
@@ -4186,5 +4232,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 418
+  "total_count": 423
 }

@@ -83,6 +83,27 @@ def _cs_out_var_type(raw_type: str) -> str:
     return ffi_type(raw_type)
 
 
+def _cs_value_param_ffi_setup(raw_type: str, param_name: str) -> tuple[list[str], str] | None:
+    """Marshal a schema value type into its FFI struct form for tool calls."""
+    type_def = schema.get("types", {}).get(raw_type, {})
+    ffi_info = mapping.get("ffi_types", {}).get(raw_type, {})
+    ffi_name = ffi_info.get("ffi_name")
+    if type_def.get("kind") != "value" or not ffi_name:
+        return None
+
+    local_name = f"_{param_name}Ffi"
+    lines = [f"            var {local_name} = new {ffi_name}", "            {"]
+    fields = type_def.get("fields", [])
+    for idx, field in enumerate(fields):
+        field_name = to_pascal(field["name"])
+        comma = "," if idx < len(fields) - 1 else ""
+        lines.append(
+            f"                {field_name} = {param_name}.{field_name}{comma}"
+        )
+    lines.append("            };")
+    return lines, local_name
+
+
 def _cs_ffi_param_type(raw: str) -> str:
     """Convert an ffi_mapping param type to valid C# for NativeMethods."""
     ptr_map = {
@@ -1055,6 +1076,7 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         ffi_fn = mm["ffi"]
         no_ctx = mm.get("no_context", False)
         status_nullable_struct = bool(mm.get("status_nullable_struct"))
+        status_struct = bool(mm.get("status_struct"))
         entity_set = set(mm.get("entity_params", []))
         enum_set = set(mm.get("enum_params", {}).keys())
         out_params = mm["out_params"]
@@ -1075,7 +1097,7 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                 ffi_parts.append(pname)
         ffi_parts.extend(f"ref {local}" for local in out_locals)
 
-        if status_nullable_struct:
+        if status_nullable_struct or status_struct:
             L.append(f"            var _status = NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
             L.append("            if (_status < 0)")
             L.append("            {")
@@ -1083,7 +1105,8 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
             L.append("                if (_ex != null) throw _ex;")
             L.append(f'                throw new InvalidOperationException($"{ffi_fn} failed with status {{_status}}.");')
             L.append("            }")
-            L.append("            if (_status == 0) return null;")
+            if status_nullable_struct:
+                L.append("            if (_status == 0) return null;")
         else:
             L.append(f"            NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
 
@@ -1117,6 +1140,53 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         L.append(f"            NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
         L.append(f"            return {out_name};")
         return
+    if mm.get("out_buffer"):
+        ffi_fn = mm["ffi"]
+        no_ctx = mm.get("no_context", False)
+        entity_set = set(mm.get("entity_params", []))
+        enum_set = set(mm.get("enum_params", {}).keys())
+        if not no_ctx:
+            L.append("            FfiNetworkCapabilities _caps = default;")
+            L.append("            NativeMethods.goud_provider_network_capabilities(_ctx, ref _caps);")
+            L.append("            int _bufferSize = _caps.MaxMessageSize switch")
+            L.append("            {")
+            L.append("                0 => 65536,")
+            L.append("                > int.MaxValue => int.MaxValue,")
+            L.append("                _ => (int)_caps.MaxMessageSize,")
+            L.append("            };")
+        else:
+            L.append("            const int _bufferSize = 65536;")
+        L.append("            var buf = new byte[_bufferSize];")
+        L.append("            ulong _peerId = 0;")
+        L.append("            unsafe")
+        L.append("            {")
+        L.append("                fixed (byte* bufPtr = buf)")
+        L.append("                {")
+        ffi_parts = [] if no_ctx else ["_ctx"]
+        for p in params:
+            pname = p["name"]
+            if pname in entity_set:
+                ffi_parts.append(f"{pname}.ToBits()")
+            elif pname in enum_set or p["type"] in schema.get("enums", {}):
+                underlying = schema["enums"][p["type"]].get("underlying", "i32")
+                ffi_parts.append(f"({cs_type(underlying)}){pname}")
+            else:
+                ffi_parts.append(pname)
+        ffi_parts.extend(["(IntPtr)bufPtr", "buf.Length", "ref _peerId"])
+        L.append(f"                    int _written = NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
+        L.append("                    if (_written < 0)")
+        L.append("                    {")
+        L.append("                        var _ex = GoudException.FromLastError();")
+        L.append("                        if (_ex != null) throw _ex;")
+        L.append(f'                        throw new InvalidOperationException($"{ffi_fn} failed with status {{_written}}.");')
+        L.append("                    }")
+        L.append("                    if (_written == 0) return Array.Empty<byte>();")
+        L.append("                    var result = new byte[_written];")
+        L.append("                    Array.Copy(buf, result, _written);")
+        L.append("                    return result;")
+        L.append("                }")
+        L.append("            }")
+        return
     if "out_params" in mm:
         for op in mm["out_params"]:
             L.append(f"            float {op['name']} = 0;")
@@ -1142,6 +1212,15 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                   f"                    return NativeMethods.{ffi_fn}(typeIdHash, (IntPtr)np, (nuint)nameBytes.Length, size, align);",
                   "                }",
                   "            }"]
+            return
+        if ffi_fn == "goud_network_set_simulation":
+            value_setup = _cs_value_param_ffi_setup("NetworkSimulationConfig", "config")
+            if value_setup:
+                value_lines, value_arg = value_setup
+                L.extend(value_lines)
+                L.append(f"            return NativeMethods.{ffi_fn}(_ctx, handle, {value_arg});")
+            else:
+                L.append(f"            return NativeMethods.{ffi_fn}(_ctx, handle, config);")
             return
         # Generic ptr+len marshalling for UTF-8 strings and raw bytes.
         # Applies when the FFI function uses *const u8 (ptr+len), not *const c_char.

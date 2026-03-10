@@ -348,12 +348,61 @@ fn test_udp_unreliable_no_retransmit() {
 }
 
 #[test]
-fn test_udp_stats() {
-    let provider = UdpNetProvider::new();
-    let stats = provider.stats();
-    assert_eq!(stats.bytes_sent, 0);
-    assert_eq!(stats.packets_sent, 0);
-    assert!(provider.connection_stats(ConnectionId(999)).is_none());
+fn test_udp_stats_report_bandwidth_rtt_and_connection_counters_after_round_trip() {
+    let (mut host, mut client, client_conn) = setup_connected_pair();
+    let host_conn = host.connections().into_iter().next().unwrap();
+
+    client.send(client_conn, Channel(0), b"ping").unwrap();
+
+    let mut host_received_ping = false;
+    for _ in 0..20 {
+        host.update(0.0).unwrap();
+        if host
+            .drain_events()
+            .iter()
+            .any(|event| matches!(event, NetworkEvent::Received { data, .. } if data == b"ping"))
+        {
+            host_received_ping = true;
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+    assert!(
+        host_received_ping,
+        "host must receive ping before sampling stats"
+    );
+
+    host.send(host_conn, Channel(0), b"pong").unwrap();
+
+    let mut client_received_pong = false;
+    for _ in 0..20 {
+        client.update(0.0).unwrap();
+        if client
+            .drain_events()
+            .iter()
+            .any(|event| matches!(event, NetworkEvent::Received { data, .. } if data == b"pong"))
+        {
+            client_received_pong = true;
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+    assert!(
+        client_received_pong,
+        "client must receive pong before sampling stats"
+    );
+
+    let provider_stats = client.stats();
+    let conn_stats = client.connection_stats(client_conn).unwrap();
+
+    assert!(provider_stats.send_bandwidth_bytes_per_sec > 0.0);
+    assert!(provider_stats.receive_bandwidth_bytes_per_sec > 0.0);
+    assert!(provider_stats.rtt_ms > 0.0);
+    assert!(conn_stats.packets_sent >= 1);
+    assert!(conn_stats.packets_received >= 1);
+    assert!(conn_stats.send_bandwidth_bytes_per_sec > 0.0);
+    assert!(conn_stats.receive_bandwidth_bytes_per_sec > 0.0);
+    assert!(conn_stats.rtt_ms > 0.0);
 }
 
 #[test]

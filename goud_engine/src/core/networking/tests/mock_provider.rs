@@ -192,6 +192,7 @@ impl MockNetworkProvider {
                 .get_mut(&connection.0)
                 .ok_or_else(|| network_error(format!("Unknown connection {:?}", connection)))?;
             stats_connection.stats.bytes_sent += data.len() as u64;
+            stats_connection.stats.packets_sent += 1;
             stats_connection.clone()
         };
 
@@ -212,6 +213,7 @@ impl MockNetworkProvider {
             .get_mut(&local.remote_connection.0)
         {
             remote_connection.stats.bytes_received += data.len() as u64;
+            remote_connection.stats.packets_received += 1;
         }
 
         Ok(())

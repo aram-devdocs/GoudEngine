@@ -1465,6 +1465,33 @@ class NetworkCapabilities:
     def __repr__(self):
         return f"NetworkCapabilities(supports_hosting={self.supports_hosting}, max_connections={self.max_connections}, max_channels={self.max_channels}, max_message_size={self.max_message_size})"
 
+class NetworkStats:
+    """Aggregate network statistics for a network handle"""
+    def __init__(self, bytes_sent: int = 0, bytes_received: int = 0, packets_sent: int = 0, packets_received: int = 0, packets_lost: int = 0, rtt_ms: float = 0.0, send_bandwidth_bytes_per_sec: float = 0.0, receive_bandwidth_bytes_per_sec: float = 0.0, packet_loss_percent: float = 0.0, jitter_ms: float = 0.0):
+        self.bytes_sent = bytes_sent
+        self.bytes_received = bytes_received
+        self.packets_sent = packets_sent
+        self.packets_received = packets_received
+        self.packets_lost = packets_lost
+        self.rtt_ms = rtt_ms
+        self.send_bandwidth_bytes_per_sec = send_bandwidth_bytes_per_sec
+        self.receive_bandwidth_bytes_per_sec = receive_bandwidth_bytes_per_sec
+        self.packet_loss_percent = packet_loss_percent
+        self.jitter_ms = jitter_ms
+
+    def __repr__(self):
+        return f"NetworkStats(bytes_sent={self.bytes_sent}, bytes_received={self.bytes_received}, packets_sent={self.packets_sent}, packets_received={self.packets_received}, packets_lost={self.packets_lost}, rtt_ms={self.rtt_ms}, send_bandwidth_bytes_per_sec={self.send_bandwidth_bytes_per_sec}, receive_bandwidth_bytes_per_sec={self.receive_bandwidth_bytes_per_sec}, packet_loss_percent={self.packet_loss_percent}, jitter_ms={self.jitter_ms})"
+
+class NetworkSimulationConfig:
+    """Debug-only network simulation settings for a network handle"""
+    def __init__(self, one_way_latency_ms: int = 0, jitter_ms: int = 0, packet_loss_percent: float = 0.0):
+        self.one_way_latency_ms = one_way_latency_ms
+        self.jitter_ms = jitter_ms
+        self.packet_loss_percent = packet_loss_percent
+
+    def __repr__(self):
+        return f"NetworkSimulationConfig(one_way_latency_ms={self.one_way_latency_ms}, jitter_ms={self.jitter_ms}, packet_loss_percent={self.packet_loss_percent})"
+
 class UiStyle:
     """C-safe UI style payload for node-level visual overrides."""
     def __init__(self, has_background_color: bool = False, background_color: 'Color' = None, has_foreground_color: bool = False, foreground_color: 'Color' = None, has_border_color: bool = False, border_color: 'Color' = None, has_border_width: bool = False, border_width: float = 0.0, has_font_family: bool = False, font_family: str = '', has_font_size: bool = False, font_size: float = 0.0, has_texture_path: bool = False, texture_path: str = '', has_widget_spacing: bool = False, widget_spacing: float = 0.0):

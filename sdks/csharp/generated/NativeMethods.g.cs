@@ -190,6 +190,29 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FfiNetworkStats
+    {
+        public ulong BytesSent;
+        public ulong BytesReceived;
+        public ulong PacketsSent;
+        public ulong PacketsReceived;
+        public ulong PacketsLost;
+        public float RttMs;
+        public float SendBandwidthBytesPerSec;
+        public float ReceiveBandwidthBytesPerSec;
+        public float PacketLossPercent;
+        public float JitterMs;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiNetworkSimulationConfig
+    {
+        public uint OneWayLatencyMs;
+        public uint JitterMs;
+        public float PacketLossPercent;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct FfiSpriteAnimator
     {
         public uint CurrentFrame;
@@ -1432,7 +1455,22 @@ namespace GoudEngine
         public static extern int goud_network_get_stats(GoudContextId ctx, long handle, ref ulong out_bytes_sent, ref ulong out_bytes_recv, ref ulong out_packets_sent, ref ulong out_packets_recv);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_network_get_stats_v2(GoudContextId ctx, long handle, ref FfiNetworkStats out_stats);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_network_peer_count(GoudContextId ctx, long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_network_set_overlay_handle(GoudContextId ctx, long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_network_clear_overlay_handle(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_network_set_simulation(GoudContextId ctx, long handle, FfiNetworkSimulationConfig config);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_network_clear_simulation(GoudContextId ctx, long handle);
 
         // providers
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

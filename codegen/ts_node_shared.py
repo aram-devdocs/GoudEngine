@@ -42,6 +42,8 @@ IFACE_TYPES = {
     "AudioCapabilities": "IAudioCapabilities",
     "InputCapabilities": "IInputCapabilities",
     "NetworkCapabilities": "INetworkCapabilities",
+    "NetworkStats": "INetworkStats",
+    "NetworkSimulationConfig": "INetworkSimulationConfig",
     "UiStyle": "IUiStyle",
     "UiEvent": "IUiEvent",
     "UiManager": "IUiManager",

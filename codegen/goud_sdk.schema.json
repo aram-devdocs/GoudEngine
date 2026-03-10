@@ -2382,6 +2382,83 @@
         }
       ]
     },
+    "NetworkStats": {
+      "kind": "value",
+      "doc": "Aggregate network statistics for a network handle",
+      "fields": [
+        {
+          "name": "bytesSent",
+          "type": "u64",
+          "doc": "Total bytes sent across all connections"
+        },
+        {
+          "name": "bytesReceived",
+          "type": "u64",
+          "doc": "Total bytes received across all connections"
+        },
+        {
+          "name": "packetsSent",
+          "type": "u64",
+          "doc": "Total packets sent across all connections"
+        },
+        {
+          "name": "packetsReceived",
+          "type": "u64",
+          "doc": "Total packets received across all connections"
+        },
+        {
+          "name": "packetsLost",
+          "type": "u64",
+          "doc": "Total packets lost across all connections"
+        },
+        {
+          "name": "rttMs",
+          "type": "f32",
+          "doc": "Most recent RTT sample in milliseconds"
+        },
+        {
+          "name": "sendBandwidthBytesPerSec",
+          "type": "f32",
+          "doc": "Rolling send bandwidth in bytes per second"
+        },
+        {
+          "name": "receiveBandwidthBytesPerSec",
+          "type": "f32",
+          "doc": "Rolling receive bandwidth in bytes per second"
+        },
+        {
+          "name": "packetLossPercent",
+          "type": "f32",
+          "doc": "Rolling packet loss percentage"
+        },
+        {
+          "name": "jitterMs",
+          "type": "f32",
+          "doc": "Rolling RTT jitter in milliseconds"
+        }
+      ]
+    },
+    "NetworkSimulationConfig": {
+      "kind": "value",
+      "doc": "Debug-only network simulation settings for a network handle",
+      "fields": [
+        {
+          "name": "oneWayLatencyMs",
+          "type": "u32",
+          "doc": "Artificial one-way latency in milliseconds"
+        },
+        {
+          "name": "jitterMs",
+          "type": "u32",
+          "doc": "Additional jitter range in milliseconds"
+        },
+        {
+          "name": "packetLossPercent",
+          "type": "f32",
+          "doc": "Packet loss percentage in the range 0 to 100"
+        }
+      ]
+    },
     "UiStyle": {
       "doc": "C-safe UI style payload for node-level visual overrides.",
       "kind": "value",
@@ -2776,7 +2853,8 @@
       "doc": "Network transport protocol",
       "values": {
         "UDP": 0,
-        "WebSocket": 1
+        "WebSocket": 1,
+        "Tcp": 2
       }
     },
     "TransitionType": {
@@ -4969,6 +5047,161 @@
           "doc": "Queries the network provider's capabilities. Throws if no network provider is installed.",
           "params": [],
           "returns": "NetworkCapabilities"
+        },
+        {
+          "name": "networkHost",
+          "doc": "Starts hosting on the given port with the selected transport protocol.",
+          "params": [
+            {
+              "name": "protocol",
+              "type": "i32"
+            },
+            {
+              "name": "port",
+              "type": "u16"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "networkConnect",
+          "doc": "Connects to a remote host with the selected transport protocol.",
+          "params": [
+            {
+              "name": "protocol",
+              "type": "i32"
+            },
+            {
+              "name": "address",
+              "type": "string"
+            },
+            {
+              "name": "port",
+              "type": "u16"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "networkDisconnect",
+          "doc": "Disconnects a network host or connection handle.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "networkSend",
+          "doc": "Sends raw bytes to the given peer over a network handle and channel.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "peerId",
+              "type": "u64"
+            },
+            {
+              "name": "data",
+              "type": "bytes"
+            },
+            {
+              "name": "channel",
+              "type": "u8"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "networkReceive",
+          "doc": "Receives the next buffered payload produced by networkPoll.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "bytes"
+        },
+        {
+          "name": "networkPoll",
+          "doc": "Polls the network handle and buffers inbound messages for retrieval.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getNetworkStats",
+          "doc": "Returns aggregate network statistics for a network handle.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "NetworkStats"
+        },
+        {
+          "name": "networkPeerCount",
+          "doc": "Returns the number of connected peers for a network handle.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setNetworkSimulation",
+          "doc": "Applies debug-only latency, jitter, and packet-loss simulation to a network handle.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "config",
+              "type": "NetworkSimulationConfig"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "clearNetworkSimulation",
+          "doc": "Clears debug-only network simulation settings from a network handle.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setNetworkOverlayHandle",
+          "doc": "Overrides the active network handle displayed by the native debug overlay for this context.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "clearNetworkOverlayHandle",
+          "doc": "Clears the explicit network-overlay handle override for this context.",
+          "params": [],
+          "returns": "i32"
         },
         {
           "name": "audioPlay",
@@ -7696,7 +7929,7 @@
       ]
     },
     "Network": {
-      "doc": "Networking transport layer supporting UDP and WebSocket",
+      "doc": "Networking transport layer supporting UDP, WebSocket, and TCP",
       "methods": [
         {
           "name": "host",

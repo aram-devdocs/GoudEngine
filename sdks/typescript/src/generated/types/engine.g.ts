@@ -20,6 +20,10 @@ export interface IPhysicsRaycastHit2D { bodyHandle: number; colliderHandle: numb
 export interface IPhysicsCollisionEvent2D { bodyA: number; bodyB: number; kind: number; }
 /** Frame timing statistics from the debug overlay rolling window */
 export interface IFpsStats { currentFps: number; minFps: number; maxFps: number; avgFps: number; frameTimeMs: number; }
+/** Aggregate network statistics for a network handle */
+export interface INetworkStats { bytesSent: number; bytesReceived: number; packetsSent: number; packetsReceived: number; packetsLost: number; rttMs: number; sendBandwidthBytesPerSec: number; receiveBandwidthBytesPerSec: number; packetLossPercent: number; jitterMs: number; }
+/** Debug-only network simulation settings for a network handle */
+export interface INetworkSimulationConfig { oneWayLatencyMs: number; jitterMs: number; packetLossPercent: number; }
 /** Capabilities reported by the active render provider */
 export interface IRenderCapabilities { maxTextureUnits: number; maxTextureSize: number; supportsInstancing: boolean; supportsCompute: boolean; supportsMsaa: boolean; }
 /** Capabilities reported by the active physics provider */
@@ -309,6 +313,30 @@ export interface IGoudGame {
   getInputCapabilities(): IInputCapabilities;
   /** Queries the network provider's capabilities. Throws if no network provider is installed. */
   getNetworkCapabilities(): INetworkCapabilities;
+  /** Starts hosting on the given port with the selected transport protocol. */
+  networkHost(protocol: number, port: number): number;
+  /** Connects to a remote host with the selected transport protocol. */
+  networkConnect(protocol: number, address: string, port: number): number;
+  /** Disconnects a network host or connection handle. */
+  networkDisconnect(handle: number): number;
+  /** Sends raw bytes to the given peer over a network handle and channel. */
+  networkSend(handle: number, peerId: number, data: Uint8Array, channel: number): number;
+  /** Receives the next buffered payload produced by networkPoll. */
+  networkReceive(handle: number): Uint8Array;
+  /** Polls the network handle and buffers inbound messages for retrieval. */
+  networkPoll(handle: number): number;
+  /** Returns aggregate network statistics for a network handle. */
+  getNetworkStats(handle: number): INetworkStats;
+  /** Returns the number of connected peers for a network handle. */
+  networkPeerCount(handle: number): number;
+  /** Applies debug-only latency, jitter, and packet-loss simulation to a network handle. */
+  setNetworkSimulation(handle: number, config: INetworkSimulationConfig): number;
+  /** Clears debug-only network simulation settings from a network handle. */
+  clearNetworkSimulation(handle: number): number;
+  /** Overrides the active network handle displayed by the native debug overlay for this context. */
+  setNetworkOverlayHandle(handle: number): number;
+  /** Clears the explicit network-overlay handle override for this context. */
+  clearNetworkOverlayHandle(): number;
   /** Plays audio from raw bytes on the default channel */
   audioPlay(data: Uint8Array): number;
   /** Plays audio from raw bytes on the given channel */

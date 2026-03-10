@@ -100,6 +100,8 @@ pub struct ReliabilityLayer {
     has_remote: bool,
     /// Reliable packets awaiting acknowledgment.
     pending: Vec<PendingPacket>,
+    /// RTT samples produced while processing acknowledgments.
+    acked_rtt_samples_ms: Vec<f32>,
     /// Retransmission timeout duration.
     rto: Duration,
     /// Maximum retransmit attempts before considering the packet lost.
@@ -121,6 +123,7 @@ impl ReliabilityLayer {
             received_bits: 0,
             has_remote: false,
             pending: Vec::new(),
+            acked_rtt_samples_ms: Vec::new(),
             rto: Duration::from_millis(100),
             max_retransmits: 10,
         }
@@ -199,19 +202,24 @@ impl ReliabilityLayer {
 
     /// Mark pending reliable packets as acknowledged based on remote ack info.
     pub fn mark_acked(&mut self, ack: u16, ack_bitfield: u16) {
+        let now = Instant::now();
+        let mut acked_samples = Vec::new();
         self.pending.retain(|p| {
             if p.sequence == ack {
+                acked_samples.push(now.duration_since(p.sent_at).as_secs_f32() * 1000.0);
                 return false; // Acked directly.
             }
             let diff = sequence_diff(ack, p.sequence);
             if diff > 0 && diff <= 16 {
                 let bit = 1u16 << (diff - 1);
                 if ack_bitfield & bit != 0 {
+                    acked_samples.push(now.duration_since(p.sent_at).as_secs_f32() * 1000.0);
                     return false; // Acked via bitfield.
                 }
             }
             true // Not yet acked.
         });
+        self.acked_rtt_samples_ms.extend(acked_samples);
     }
 
     /// Queue a reliable packet for retransmission tracking.
@@ -252,6 +260,11 @@ impl ReliabilityLayer {
     /// Number of pending reliable packets awaiting acknowledgment.
     pub fn pending_count(&self) -> usize {
         self.pending.len()
+    }
+
+    /// Drains RTT samples gathered while processing acknowledgments.
+    pub fn drain_acked_rtt_samples_ms(&mut self) -> Vec<f32> {
+        std::mem::take(&mut self.acked_rtt_samples_ms)
     }
 }
 

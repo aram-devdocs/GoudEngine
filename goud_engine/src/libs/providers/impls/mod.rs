@@ -52,12 +52,22 @@ pub use rapier3d_physics::Rapier3DPhysicsProvider;
 pub mod simple_physics;
 pub use simple_physics::SimplePhysicsProvider;
 
+/// Debug-only network simulation wrapper shared by native transports.
+#[cfg(any(debug_assertions, test))]
+pub mod network_sim;
+/// TCP transport provider implementing `NetworkProvider`.
+#[cfg(feature = "net-tcp")]
+pub mod tcp_network;
 /// UDP transport provider implementing `NetworkProvider`.
 #[cfg(feature = "net-udp")]
 pub mod udp_network;
 /// UDP reliability sub-module for packet sequencing and retransmission.
 #[cfg(feature = "net-udp")]
 pub mod udp_reliability;
+#[cfg(any(debug_assertions, test))]
+pub use network_sim::NetworkSimProvider;
+#[cfg(feature = "net-tcp")]
+pub use tcp_network::TcpNetProvider;
 #[cfg(feature = "net-udp")]
 pub use udp_network::UdpNetProvider;
 
@@ -66,3 +76,6 @@ pub use udp_network::UdpNetProvider;
 pub mod ws_network;
 #[cfg(feature = "net-ws")]
 pub use ws_network::WsNetProvider;
+
+#[cfg(test)]
+mod network_contract_tests;

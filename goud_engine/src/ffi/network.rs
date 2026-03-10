@@ -1,161 +1,42 @@
 //! Networking FFI functions.
 //!
 //! Provides C-compatible functions for creating and managing network
-//! connections using UDP or WebSocket transports. Network provider
+//! connections using UDP, WebSocket, or TCP transports. Network provider
 //! instances are stored in a global registry keyed by opaque handles.
 
-use std::collections::{HashMap, VecDeque};
-use std::sync::Mutex;
+use std::collections::VecDeque;
 
 use crate::core::error::{set_last_error, GoudError, ERR_INTERNAL_ERROR, ERR_INVALID_STATE};
-use crate::core::providers::network::NetworkProvider;
-use crate::core::providers::network_types::{Channel, ConnectionId, HostConfig, NetworkEvent};
-#[cfg(any(feature = "net-udp", feature = "net-ws"))]
-use crate::core::providers::ProviderLifecycle;
+use crate::core::providers::network_types::{
+    Channel, ConnectionId, HostConfig, NetworkEvent, NetworkSimulationConfig,
+};
 use crate::ffi::context::GoudContextId;
-#[cfg(feature = "net-udp")]
-use crate::libs::providers::impls::udp_network::UdpNetProvider;
-#[cfg(feature = "net-ws")]
-use crate::libs::providers::impls::ws_network::WsNetProvider;
+use crate::ffi::window::with_window_state;
 
-// ============================================================================
-// Network Handle Registry
-// ============================================================================
+mod overlay;
+mod provider_factory;
+pub(crate) mod registry;
 
-/// Protocol selector passed from FFI callers.
-const PROTOCOL_UDP: i32 = 0;
-const PROTOCOL_WS: i32 = 1;
+#[allow(unused_imports)]
+pub(crate) use overlay::NetworkOverlaySnapshot;
+pub(crate) use overlay::{
+    network_overlay_handle_for_context, network_overlay_set_active_handle_override,
+    network_overlay_snapshot_for_context,
+};
+use provider_factory::create_provider;
+use registry::{with_instance, with_registry, NetInstance, ERR_HANDLE};
 
-/// Error sentinel returned for handle-producing functions.
-const ERR_HANDLE: i64 = -1;
-
-/// Internal state for a network instance.
-struct NetInstance {
-    provider: Box<dyn NetworkProvider>,
-    /// Buffered received-data events from the last `poll`.
-    recv_queue: VecDeque<(u64, Vec<u8>)>, // (peer_id / conn_id, data)
-}
-
-// SAFETY: NetInstance is only accessed through the global Mutex, so all
-// access is serialized. The trait object inside is not Sync on its own
-// (WsNetProvider uses mpsc channels), but the Mutex serializes all access.
-unsafe impl Send for NetInstance {}
-
-static NET_REGISTRY: Mutex<Option<NetRegistryInner>> = Mutex::new(None);
-
-struct NetRegistryInner {
-    instances: HashMap<i64, NetInstance>,
-    next_handle: i64,
-}
-
-impl NetRegistryInner {
-    fn new() -> Self {
-        Self {
-            instances: HashMap::new(),
-            next_handle: 1,
-        }
-    }
-
-    fn insert(&mut self, instance: NetInstance) -> i64 {
-        let handle = self.next_handle;
-        self.next_handle += 1;
-        self.instances.insert(handle, instance);
-        handle
-    }
-}
-
-fn with_registry<F, R>(f: F) -> Result<R, i32>
-where
-    F: FnOnce(&mut NetRegistryInner) -> Result<R, i32>,
-{
-    let mut guard = NET_REGISTRY.lock().map_err(|_| {
-        set_last_error(GoudError::InternalError(
-            "Failed to lock network registry".to_string(),
-        ));
-        ERR_INTERNAL_ERROR
-    })?;
-    let reg = guard.get_or_insert_with(NetRegistryInner::new);
-    f(reg)
-}
-
-fn with_instance<F, R>(handle: i64, f: F) -> Result<R, i32>
-where
-    F: FnOnce(&mut NetInstance) -> Result<R, i32>,
-{
-    with_registry(|reg| {
-        let inst = reg.instances.get_mut(&handle).ok_or_else(|| {
-            set_last_error(GoudError::InvalidState(format!(
-                "Unknown network handle {}",
-                handle
-            )));
-            ERR_INVALID_STATE
-        })?;
-        f(inst)
-    })
-}
-
-fn create_provider(protocol: i32) -> Result<Box<dyn NetworkProvider>, i32> {
-    match protocol {
-        PROTOCOL_UDP => create_udp_provider(),
-        PROTOCOL_WS => create_ws_provider(),
-        _ => {
-            set_last_error(GoudError::InvalidState(format!(
-                "Unknown protocol: {}",
-                protocol
-            )));
-            Err(ERR_INVALID_STATE)
-        }
-    }
-}
-
-#[cfg(feature = "net-udp")]
-fn create_udp_provider() -> Result<Box<dyn NetworkProvider>, i32> {
-    let mut p = UdpNetProvider::new();
-    p.init().map_err(|e| {
-        let code = e.error_code();
-        set_last_error(e);
-        code
-    })?;
-    Ok(Box::new(p))
-}
-
-#[cfg(not(feature = "net-udp"))]
-fn create_udp_provider() -> Result<Box<dyn NetworkProvider>, i32> {
-    set_last_error(GoudError::InvalidState(
-        "UDP networking not available (net-udp feature disabled)".to_string(),
-    ));
-    Err(ERR_INVALID_STATE)
-}
-
-#[cfg(feature = "net-ws")]
-fn create_ws_provider() -> Result<Box<dyn NetworkProvider>, i32> {
-    let mut p = WsNetProvider::new();
-    p.init().map_err(|e| {
-        let code = e.error_code();
-        set_last_error(e);
-        code
-    })?;
-    Ok(Box::new(p))
-}
-
-#[cfg(not(feature = "net-ws"))]
-fn create_ws_provider() -> Result<Box<dyn NetworkProvider>, i32> {
-    set_last_error(GoudError::InvalidState(
-        "WebSocket networking not available (net-ws feature disabled)".to_string(),
-    ));
-    Err(ERR_INVALID_STATE)
-}
-
-// ============================================================================
-// Host / Connect / Disconnect
-// ============================================================================
+#[cfg(test)]
+#[path = "network/tests.rs"]
+mod tests;
 
 /// Creates a network host listening on the given port.
 ///
 /// Returns a positive network handle on success, or a negative error code.
-/// `protocol`: 0 = UDP, 1 = WebSocket.
+/// `protocol`: 0 = UDP, 1 = WebSocket, 2 = TCP.
 #[no_mangle]
 pub extern "C" fn goud_network_host(_context_id: GoudContextId, protocol: i32, port: u16) -> i64 {
+    let context_id = _context_id;
     let provider = match create_provider(protocol) {
         Ok(p) => p,
         Err(_) => {
@@ -184,7 +65,12 @@ pub extern "C" fn goud_network_host(_context_id: GoudContextId, protocol: i32, p
         return ERR_HANDLE;
     }
 
-    with_registry(|reg| Ok(reg.insert(inst))).unwrap_or(ERR_HANDLE)
+    with_registry(|reg| {
+        let handle = reg.insert(inst);
+        reg.set_default_handle_for_context(context_id, handle);
+        Ok(handle)
+    })
+    .unwrap_or(ERR_HANDLE)
 }
 
 /// Connects to a remote host. Returns a positive handle or negative error.
@@ -200,6 +86,7 @@ pub unsafe extern "C" fn goud_network_connect(
     addr_len: i32,
     port: u16,
 ) -> i64 {
+    let context_id = _context_id;
     if addr_ptr.is_null() || addr_len <= 0 {
         set_last_error(GoudError::InvalidState(
             "addr_ptr is null or empty".to_string(),
@@ -246,7 +133,12 @@ pub unsafe extern "C" fn goud_network_connect(
         recv_queue: VecDeque::new(),
     };
 
-    with_registry(|reg| Ok(reg.insert(inst))).unwrap_or(ERR_HANDLE)
+    with_registry(|reg| {
+        let handle = reg.insert(inst);
+        reg.set_default_handle_for_context(context_id, handle);
+        Ok(handle)
+    })
+    .unwrap_or(ERR_HANDLE)
 }
 
 /// Disconnects and destroys a network instance.
@@ -263,14 +155,11 @@ pub extern "C" fn goud_network_disconnect(_context_id: GoudContextId, handle: i6
         })?;
         let _ = inst.provider.disconnect_all();
         inst.provider.shutdown();
+        reg.clear_associations_for_handle(handle);
         Ok(0)
     });
     result.unwrap_or_else(|e| e)
 }
-
-// ============================================================================
-// Send / Receive / Poll
-// ============================================================================
 
 /// Sends data to a specific peer on the given channel.
 /// Returns 0 on success, negative error code on failure.
@@ -381,9 +270,48 @@ pub extern "C" fn goud_network_poll(_context_id: GoudContextId, handle: i64) -> 
     result.unwrap_or_else(|e| e)
 }
 
-// ============================================================================
-// Statistics / Queries
-// ============================================================================
+/// FFI-safe aggregate network statistics for a provider handle.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[repr(C)]
+pub struct FfiNetworkStats {
+    /// Total bytes sent across all connections.
+    pub bytes_sent: u64,
+    /// Total bytes received across all connections.
+    pub bytes_received: u64,
+    /// Total packets sent across all connections.
+    pub packets_sent: u64,
+    /// Total packets received across all connections.
+    pub packets_received: u64,
+    /// Total packets lost across all connections.
+    pub packets_lost: u64,
+    /// Most recent RTT sample in milliseconds.
+    pub rtt_ms: f32,
+    /// Send bandwidth over the rolling 1-second window.
+    pub send_bandwidth_bytes_per_sec: f32,
+    /// Receive bandwidth over the rolling 1-second window.
+    pub receive_bandwidth_bytes_per_sec: f32,
+    /// Packet loss percentage over the rolling 1-second window.
+    pub packet_loss_percent: f32,
+    /// Rolling RTT jitter in milliseconds.
+    pub jitter_ms: f32,
+}
+
+impl From<crate::core::providers::network_types::NetworkStats> for FfiNetworkStats {
+    fn from(stats: crate::core::providers::network_types::NetworkStats) -> Self {
+        Self {
+            bytes_sent: stats.bytes_sent,
+            bytes_received: stats.bytes_received,
+            packets_sent: stats.packets_sent,
+            packets_received: stats.packets_received,
+            packets_lost: stats.packets_lost,
+            rtt_ms: stats.rtt_ms,
+            send_bandwidth_bytes_per_sec: stats.send_bandwidth_bytes_per_sec,
+            receive_bandwidth_bytes_per_sec: stats.receive_bandwidth_bytes_per_sec,
+            packet_loss_percent: stats.packet_loss_percent,
+            jitter_ms: stats.jitter_ms,
+        }
+    }
+}
 
 /// Writes aggregate network statistics into caller-provided pointers.
 /// Returns 0 on success, negative error code on failure.
@@ -423,9 +351,149 @@ pub unsafe extern "C" fn goud_network_get_stats(
     result.unwrap_or_else(|e| e)
 }
 
+/// Writes aggregate network statistics into `out_stats`.
+/// Returns 0 on success, negative error code on failure.
+///
+/// # Safety
+///
+/// `out_stats` must be non-null and point to writable storage for one
+/// [`FfiNetworkStats`] value. Ownership is retained by the caller.
+#[no_mangle]
+pub unsafe extern "C" fn goud_network_get_stats_v2(
+    _context_id: GoudContextId,
+    handle: i64,
+    out_stats: *mut FfiNetworkStats,
+) -> i32 {
+    if out_stats.is_null() {
+        set_last_error(GoudError::InvalidState("out_stats is null".to_string()));
+        return ERR_INVALID_STATE;
+    }
+
+    let result = with_instance(handle, |inst| {
+        let stats = FfiNetworkStats::from(inst.provider.stats());
+        // SAFETY: Caller guarantees out_stats points to writable FfiNetworkStats storage.
+        *out_stats = stats;
+        Ok(0)
+    });
+    result.unwrap_or_else(|e| e)
+}
+
 /// Returns the number of active connections, or a negative error code.
 #[no_mangle]
 pub extern "C" fn goud_network_peer_count(_context_id: GoudContextId, handle: i64) -> i32 {
     let result = with_instance(handle, |inst| Ok(inst.provider.connections().len() as i32));
     result.unwrap_or_else(|e| e)
+}
+
+/// Sets an explicit overlay-handle override for this context.
+/// Returns 0 on success, negative error code on failure.
+#[no_mangle]
+pub extern "C" fn goud_network_set_overlay_handle(context_id: GoudContextId, handle: i64) -> i32 {
+    match with_registry(|reg| Ok(reg.instances.contains_key(&handle))) {
+        Ok(true) => {
+            if network_overlay_set_active_handle_override(context_id, Some(handle)) {
+                let _ = with_window_state(context_id, |state| {
+                    state.network_overlay.set_active_handle(Some(handle));
+                });
+                0
+            } else {
+                ERR_INTERNAL_ERROR
+            }
+        }
+        Ok(false) => {
+            set_last_error(GoudError::InvalidState(format!(
+                "Unknown network handle {}",
+                handle
+            )));
+            ERR_INVALID_STATE
+        }
+        Err(code) => code,
+    }
+}
+
+/// Clears any explicit overlay-handle override for this context.
+/// Returns 0 on success, negative error code on failure.
+#[no_mangle]
+pub extern "C" fn goud_network_clear_overlay_handle(context_id: GoudContextId) -> i32 {
+    if network_overlay_set_active_handle_override(context_id, None) {
+        let _ = with_window_state(context_id, |state| {
+            state.network_overlay.set_active_handle(None);
+        });
+        0
+    } else {
+        ERR_INTERNAL_ERROR
+    }
+}
+
+#[cfg_attr(any(debug_assertions, test), allow(dead_code))]
+fn simulation_controls_unavailable() -> i32 {
+    set_last_error(GoudError::InvalidState(
+        "Network simulation controls are only available in debug/test builds".to_string(),
+    ));
+    ERR_INVALID_STATE
+}
+
+/// Applies a debug-only network simulation config to the provider handle.
+/// Returns 0 on success, negative error code on failure.
+#[cfg(any(debug_assertions, test))]
+#[no_mangle]
+pub extern "C" fn goud_network_set_simulation(
+    _context_id: GoudContextId,
+    handle: i64,
+    config: NetworkSimulationConfig,
+) -> i32 {
+    if let Err(message) = config.validate() {
+        set_last_error(GoudError::InvalidState(message));
+        return ERR_INVALID_STATE;
+    }
+
+    let result = with_instance(handle, |inst| {
+        inst.provider.set_simulation_config(config).map_err(|e| {
+            let code = e.error_code();
+            set_last_error(e);
+            code
+        })?;
+        Ok(0)
+    });
+    result.unwrap_or_else(|e| e)
+}
+
+/// Applies a debug-only network simulation config to the provider handle.
+/// Returns `ERR_INVALID_STATE` in release builds because simulation hooks are
+/// not compiled into release networking providers.
+#[cfg(not(any(debug_assertions, test)))]
+#[no_mangle]
+pub extern "C" fn goud_network_set_simulation(
+    _context_id: GoudContextId,
+    handle: i64,
+    config: NetworkSimulationConfig,
+) -> i32 {
+    let _ = (handle, config);
+    simulation_controls_unavailable()
+}
+
+/// Clears any debug-only network simulation config from the provider handle.
+/// Returns 0 on success, negative error code on failure.
+#[cfg(any(debug_assertions, test))]
+#[no_mangle]
+pub extern "C" fn goud_network_clear_simulation(_context_id: GoudContextId, handle: i64) -> i32 {
+    let result = with_instance(handle, |inst| {
+        inst.provider.clear_simulation_config().map_err(|e| {
+            let code = e.error_code();
+            set_last_error(e);
+            code
+        })?;
+        Ok(0)
+    });
+    result.unwrap_or_else(|e| e)
+}
+
+/// Clears any debug-only network simulation config from the provider handle.
+/// Returns `ERR_INVALID_STATE` in release builds because simulation hooks are
+/// not compiled into release networking providers.
+#[cfg(not(any(debug_assertions, test)))]
+#[no_mangle]
+pub extern "C" fn goud_network_clear_simulation(_context_id: GoudContextId, handle: i64) -> i32 {
+    let _ = handle;
+    simulation_controls_unavailable()
 }

@@ -2,7 +2,7 @@
 use crate::components::{SpriteData, Transform2DData};
 use crate::entity::Entity;
 use goud_engine::core::providers::input_types::InputCapabilities;
-use goud_engine::core::providers::network_types::NetworkCapabilities;
+use goud_engine::core::providers::network_types::{NetworkCapabilities, NetworkSimulationConfig};
 use goud_engine::core::providers::types::{
     AudioCapabilities, PhysicsCapabilities, RenderCapabilities,
 };
@@ -35,6 +35,12 @@ use goud_engine::ffi::input::{
     goud_input_key_just_pressed, goud_input_key_just_released, goud_input_key_pressed,
     goud_input_map_action_key, goud_input_mouse_button_just_pressed,
     goud_input_mouse_button_just_released, goud_input_mouse_button_pressed,
+};
+use goud_engine::ffi::network::{
+    goud_network_clear_overlay_handle, goud_network_clear_simulation, goud_network_connect,
+    goud_network_disconnect, goud_network_get_stats_v2, goud_network_host, goud_network_peer_count,
+    goud_network_poll, goud_network_receive, goud_network_send, goud_network_set_overlay_handle,
+    goud_network_set_simulation, FfiNetworkStats,
 };
 use goud_engine::ffi::physics::{
     goud_physics3d_add_collider, goud_physics3d_add_rigid_body, goud_physics3d_apply_force,
@@ -218,6 +224,29 @@ pub struct NapiNetworkCapabilities {
     pub max_connections: u32,
     pub max_channels: u32,
     pub max_message_size: u32,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiNetworkStats {
+    pub bytes_sent: f64,
+    pub bytes_received: f64,
+    pub packets_sent: f64,
+    pub packets_received: f64,
+    pub packets_lost: f64,
+    pub rtt_ms: f64,
+    pub send_bandwidth_bytes_per_sec: f64,
+    pub receive_bandwidth_bytes_per_sec: f64,
+    pub packet_loss_percent: f64,
+    pub jitter_ms: f64,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiNetworkSimulationConfig {
+    pub one_way_latency_ms: u32,
+    pub jitter_ms: u32,
+    pub packet_loss_percent: f64,
 }
 
 // =============================================================================
@@ -613,6 +642,145 @@ impl GoudGame {
     pub fn check_hot_swap_shortcut(&self) -> bool {
         // SAFETY: context_id is a valid opaque handle obtained at construction.
         goud_provider_check_hot_swap_shortcut(self.context_id) != 0
+    }
+
+    // =========================================================================
+    // Networking
+    // =========================================================================
+
+    #[napi]
+    pub fn network_host(&self, protocol: i32, port: u16) -> f64 {
+        goud_network_host(self.context_id, protocol, port) as f64
+    }
+
+    #[napi]
+    pub fn network_connect(&self, protocol: i32, address: String, port: u16) -> Result<f64> {
+        let address_bytes = address.as_bytes();
+        // SAFETY: `address_bytes` pointer is valid for `address_bytes.len()` bytes.
+        let handle = unsafe {
+            goud_network_connect(
+                self.context_id,
+                protocol,
+                address_bytes.as_ptr(),
+                address_bytes.len() as i32,
+                port,
+            )
+        };
+        Ok(handle as f64)
+    }
+
+    #[napi]
+    pub fn network_disconnect(&self, handle: f64) -> i32 {
+        goud_network_disconnect(self.context_id, handle as i64)
+    }
+
+    #[napi]
+    pub fn network_send(&self, handle: f64, peer_id: f64, data: Buffer, channel: u8) -> i32 {
+        // SAFETY: `data` provides a stable pointer valid for `data.len()` bytes during this call.
+        unsafe {
+            goud_network_send(
+                self.context_id,
+                handle as i64,
+                peer_id as u64,
+                data.as_ptr(),
+                data.len() as i32,
+                channel,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn network_receive(&self, handle: f64) -> Result<Buffer> {
+        let mut caps = NetworkCapabilities::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_provider_network_capabilities(self.context_id, &mut caps) };
+        let buffer_len = match caps.max_message_size {
+            0 => 65_536usize,
+            size => size.min(i32::MAX as u32) as usize,
+        };
+        let mut out = vec![0u8; buffer_len];
+        let mut peer_id = 0u64;
+        // SAFETY: `out` and `peer_id` provide valid writable out-parameters.
+        let rc = unsafe {
+            goud_network_receive(
+                self.context_id,
+                handle as i64,
+                out.as_mut_ptr(),
+                out.len() as i32,
+                &mut peer_id as *mut u64,
+            )
+        };
+        if rc < 0 {
+            return Err(Error::from_reason(format!(
+                "goud_network_receive failed with status {}",
+                rc
+            )));
+        }
+        out.truncate(rc as usize);
+        Ok(Buffer::from(out))
+    }
+
+    #[napi]
+    pub fn network_poll(&self, handle: f64) -> i32 {
+        goud_network_poll(self.context_id, handle as i64)
+    }
+
+    #[napi]
+    pub fn get_network_stats(&self, handle: f64) -> Result<NapiNetworkStats> {
+        let mut stats = FfiNetworkStats::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        let rc = unsafe { goud_network_get_stats_v2(self.context_id, handle as i64, &mut stats) };
+        if rc < 0 {
+            return Err(Error::from_reason(format!(
+                "goud_network_get_stats_v2 failed with status {}",
+                rc
+            )));
+        }
+        Ok(NapiNetworkStats {
+            bytes_sent: stats.bytes_sent as f64,
+            bytes_received: stats.bytes_received as f64,
+            packets_sent: stats.packets_sent as f64,
+            packets_received: stats.packets_received as f64,
+            packets_lost: stats.packets_lost as f64,
+            rtt_ms: stats.rtt_ms as f64,
+            send_bandwidth_bytes_per_sec: stats.send_bandwidth_bytes_per_sec as f64,
+            receive_bandwidth_bytes_per_sec: stats.receive_bandwidth_bytes_per_sec as f64,
+            packet_loss_percent: stats.packet_loss_percent as f64,
+            jitter_ms: stats.jitter_ms as f64,
+        })
+    }
+
+    #[napi]
+    pub fn network_peer_count(&self, handle: f64) -> i32 {
+        goud_network_peer_count(self.context_id, handle as i64)
+    }
+
+    #[napi]
+    pub fn set_network_simulation(&self, handle: f64, config: NapiNetworkSimulationConfig) -> i32 {
+        goud_network_set_simulation(
+            self.context_id,
+            handle as i64,
+            NetworkSimulationConfig {
+                one_way_latency_ms: config.one_way_latency_ms,
+                jitter_ms: config.jitter_ms,
+                packet_loss_percent: config.packet_loss_percent as f32,
+            },
+        )
+    }
+
+    #[napi]
+    pub fn clear_network_simulation(&self, handle: f64) -> i32 {
+        goud_network_clear_simulation(self.context_id, handle as i64)
+    }
+
+    #[napi]
+    pub fn set_network_overlay_handle(&self, handle: f64) -> i32 {
+        goud_network_set_overlay_handle(self.context_id, handle as i64)
+    }
+
+    #[napi]
+    pub fn clear_network_overlay_handle(&self) -> i32 {
+        goud_network_clear_overlay_handle(self.context_id)
     }
 
     // =========================================================================

@@ -48,6 +48,16 @@ def gen_interface():
     if schema["types"]["FpsStats"].get("doc"):
         lines.append(f"/** {schema['types']['FpsStats']['doc']} */")
     lines.append(f"export interface IFpsStats {{ {fps_str}; }}")
+    ns_fields = schema["types"]["NetworkStats"]["fields"]
+    ns_str = "; ".join(f"{to_camel(f['name'])}: number" for f in ns_fields)
+    if schema["types"]["NetworkStats"].get("doc"):
+        lines.append(f"/** {schema['types']['NetworkStats']['doc']} */")
+    lines.append(f"export interface INetworkStats {{ {ns_str}; }}")
+    nsc_fields = schema["types"]["NetworkSimulationConfig"]["fields"]
+    nsc_str = "; ".join(f"{to_camel(f['name'])}: number" for f in nsc_fields)
+    if schema["types"]["NetworkSimulationConfig"].get("doc"):
+        lines.append(f"/** {schema['types']['NetworkSimulationConfig']['doc']} */")
+    lines.append(f"export interface INetworkSimulationConfig {{ {nsc_str}; }}")
 
     for cap_name in ["RenderCapabilities", "PhysicsCapabilities", "AudioCapabilities", "InputCapabilities", "NetworkCapabilities"]:
         cap_type = schema["types"][cap_name]

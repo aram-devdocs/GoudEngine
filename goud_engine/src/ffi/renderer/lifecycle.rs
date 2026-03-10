@@ -4,10 +4,15 @@
 
 use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
+use crate::ffi::input::{goud_input_key_just_pressed, KEY_F6};
+use crate::ffi::network::{
+    network_overlay_handle_for_context, network_overlay_set_active_handle_override,
+};
 use crate::ffi::window::with_window_state;
 use crate::libs::graphics::backend::{ClearOps, FrameOps, StateOps};
+use crate::sdk::network_debug_overlay::NetworkOverlayState;
 
-use super::draw::render_physics_debug_overlay;
+use super::draw::{render_network_debug_overlay, render_physics_debug_overlay};
 
 // ============================================================================
 // Renderer State
@@ -16,6 +21,25 @@ use super::draw::render_physics_debug_overlay;
 // Tracks whether we're currently in a rendering frame.
 thread_local! {
     pub(super) static RENDER_ACTIVE: std::cell::RefCell<bool> = const { std::cell::RefCell::new(false) };
+}
+
+fn update_network_overlay_for_frame_end(
+    context_id: GoudContextId,
+    overlay: &mut NetworkOverlayState,
+    toggle_requested: bool,
+) {
+    if toggle_requested {
+        overlay.toggle_visibility();
+        if !overlay.is_visible() {
+            overlay.set_active_handle(None);
+            let _ = network_overlay_set_active_handle_override(context_id, None);
+            return;
+        }
+    }
+
+    if overlay.is_visible() {
+        overlay.set_active_handle(network_overlay_handle_for_context(context_id));
+    }
 }
 
 // ============================================================================
@@ -92,7 +116,18 @@ pub extern "C" fn goud_renderer_end(context_id: GoudContextId) -> bool {
 
     // End frame on the backend
     with_window_state(context_id, |state| {
+        update_network_overlay_for_frame_end(
+            context_id,
+            &mut state.network_overlay,
+            goud_input_key_just_pressed(context_id, KEY_F6),
+        );
+
         if let Err(e) = render_physics_debug_overlay(context_id, state) {
+            set_last_error(e);
+            return false;
+        }
+
+        if let Err(e) = render_network_debug_overlay(context_id, state) {
             set_last_error(e);
             return false;
         }
@@ -219,4 +254,103 @@ pub extern "C" fn goud_renderer_clear_depth(context_id: GoudContextId) {
     with_window_state(context_id, |state| {
         state.backend_mut().clear_depth();
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::update_network_overlay_for_frame_end;
+    use crate::core::providers::impls::NullNetworkProvider;
+    use crate::ffi::context::GoudContextId;
+    use crate::ffi::network::{
+        network_overlay_handle_for_context, network_overlay_set_active_handle_override,
+        registry::{reset_registry_for_tests, with_registry, NetInstance},
+    };
+    use crate::sdk::network_debug_overlay::NetworkOverlayState;
+    use std::collections::VecDeque;
+    use std::sync::Mutex;
+
+    static TEST_MUTEX: Mutex<()> = Mutex::new(());
+
+    struct RegistryResetGuard {
+        _guard: std::sync::MutexGuard<'static, ()>,
+    }
+
+    impl RegistryResetGuard {
+        fn new() -> Self {
+            let guard = TEST_MUTEX.lock().expect("test mutex poisoned");
+            reset_registry_for_tests();
+            Self { _guard: guard }
+        }
+    }
+
+    impl Drop for RegistryResetGuard {
+        fn drop(&mut self) {
+            reset_registry_for_tests();
+        }
+    }
+
+    #[test]
+    fn test_frame_end_toggle_syncs_visibility_and_overlay_handle() {
+        let _registry = RegistryResetGuard::new();
+        let context_id = GoudContextId::new(901, 1);
+        let default_handle = with_registry(|reg| {
+            let handle = reg.insert(NetInstance {
+                provider: Box::new(NullNetworkProvider::new()),
+                recv_queue: VecDeque::new(),
+            });
+            reg.set_default_handle_for_context(context_id, handle);
+            Ok(handle)
+        })
+        .expect("failed to insert default handle");
+
+        let mut overlay = NetworkOverlayState::default();
+        update_network_overlay_for_frame_end(context_id, &mut overlay, true);
+
+        assert!(overlay.is_visible());
+        assert_eq!(overlay.active_handle(), Some(default_handle));
+
+        update_network_overlay_for_frame_end(context_id, &mut overlay, true);
+
+        assert!(!overlay.is_visible());
+        assert_eq!(overlay.active_handle(), None);
+        assert_eq!(
+            network_overlay_handle_for_context(context_id),
+            Some(default_handle)
+        );
+    }
+
+    #[test]
+    fn test_frame_end_respects_external_overlay_handle_updates_while_visible() {
+        let _registry = RegistryResetGuard::new();
+        let context_id = GoudContextId::new(902, 1);
+        let (handle_a, handle_b) = with_registry(|reg| {
+            let handle_a = reg.insert(NetInstance {
+                provider: Box::new(NullNetworkProvider::new()),
+                recv_queue: VecDeque::new(),
+            });
+            let handle_b = reg.insert(NetInstance {
+                provider: Box::new(NullNetworkProvider::new()),
+                recv_queue: VecDeque::new(),
+            });
+            reg.set_default_handle_for_context(context_id, handle_a);
+            Ok((handle_a, handle_b))
+        })
+        .expect("failed to insert handles");
+
+        let mut overlay = NetworkOverlayState::default();
+        overlay.set_visible(true);
+        overlay.set_active_handle(Some(handle_a));
+
+        assert!(network_overlay_set_active_handle_override(
+            context_id,
+            Some(handle_b)
+        ));
+        update_network_overlay_for_frame_end(context_id, &mut overlay, false);
+
+        assert_eq!(overlay.active_handle(), Some(handle_b));
+        assert_eq!(
+            network_overlay_handle_for_context(context_id),
+            Some(handle_b)
+        );
+    }
 }
