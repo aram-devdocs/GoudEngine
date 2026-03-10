@@ -42,6 +42,18 @@ def main():
         for m in mapped_methods - schema_methods:
             errors.append(f"  {tool_name}.{m}: in ffi_mapping but missing from schema")
 
+    audio_activate_mapping = (
+        mapping.get("tools", {})
+        .get("GoudGame", {})
+        .get("methods", {})
+        .get("audioActivate", {})
+        .get("ffi")
+    )
+    if audio_activate_mapping != "goud_audio_activate":
+        errors.append(
+            "  GoudGame.audioActivate: expected ffi mapping to goud_audio_activate"
+        )
+
     if errors:
         print(f"Validation FAILED ({len(errors)} issues):")
         for e in errors:

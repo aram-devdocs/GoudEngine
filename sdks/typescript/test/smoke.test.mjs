@@ -7,9 +7,6 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import {
   GoudGame,
@@ -27,10 +24,6 @@ import {
   vec2One,
 } from '../index.js';
 import { GoudGame as WrappedGoudGame } from '../dist/generated/node/index.g.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const nativeAudioBindingsPath = path.resolve(__dirname, '../native/src/audio.g.rs');
 
 describe('GoudGame', () => {
   it('creates with default config', () => {
@@ -213,16 +206,6 @@ describe('GoudGame', () => {
 });
 
 describe('Generated native audio bindings', () => {
-  it('maps audioActivate to goud_audio_activate and includes advanced methods', () => {
-    const generated = fs.readFileSync(nativeAudioBindingsPath, 'utf8');
-
-    assert.match(generated, /\bgoud_audio_activate\b/);
-    assert.doesNotMatch(generated, /pub fn audio_activate\(\)[\s\S]*goud_audio_cleanup_finished/);
-    assert.match(generated, /\bpub fn audio_play_spatial3d\(/);
-    assert.match(generated, /\bpub fn audio_crossfade_to\(/);
-    assert.match(generated, /\bpub fn audio_mix_with\(/);
-  });
-
   it('keeps generated wrapper audio methods aligned with the native runtime object', () => {
     const game = new WrappedGoudGame();
     try {
@@ -259,6 +242,8 @@ describe('Generated native audio bindings', () => {
         assert.equal(typeof game[method], 'function', `Missing wrapper method: ${method}`);
         assert.equal(typeof game.native[method], 'function', `Wrapper native target missing method: ${method}`);
       }
+
+      assert.doesNotThrow(() => game.audioActivate());
 
       assert.equal(typeof game.loadAudioClip, 'undefined');
       assert.equal(typeof game.unloadAudioClip, 'undefined');

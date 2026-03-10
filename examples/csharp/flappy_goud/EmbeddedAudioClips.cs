@@ -1,5 +1,6 @@
 public static class EmbeddedAudioClips
 {
+    // Canonical decimal fixture bytes are documented in examples/shared/flappy_audio_fixture.txt.
     public static readonly byte[] FlapWav =
     new byte[]
     {

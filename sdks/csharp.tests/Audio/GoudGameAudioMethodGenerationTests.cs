@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using GoudEngine;
 using Xunit;
 
@@ -99,34 +100,19 @@ public class GoudGameAudioMethodGenerationTests
         Assert.Equal(returnType, method!.ReturnType);
     }
 
-    private static string ReadGeneratedGoudGameSource()
+    private static string ReadGeneratedGoudGameSource([CallerFilePath] string sourceFile = "")
     {
-        var current = AppContext.BaseDirectory;
-        for (var i = 0; i < 12; i++)
+        var repoRoot = Path.GetFullPath(
+            Path.Combine(Path.GetDirectoryName(sourceFile)!, "..", "..", "..")
+        );
+        var generatedPath = Path.Combine(repoRoot, "sdks", "csharp", "generated", "GoudGame.g.cs");
+        if (File.Exists(generatedPath))
         {
-            var candidate = Path.Combine(current, "sdks", "csharp", "generated", "GoudGame.g.cs");
-            if (File.Exists(candidate))
-            {
-                return File.ReadAllText(candidate);
-            }
-
-            var parent = Directory.GetParent(current);
-            if (parent == null)
-            {
-                break;
-            }
-
-            current = parent.FullName;
-        }
-
-        var cwdCandidate = Path.Combine(Directory.GetCurrentDirectory(), "sdks", "csharp", "generated", "GoudGame.g.cs");
-        if (File.Exists(cwdCandidate))
-        {
-            return File.ReadAllText(cwdCandidate);
+            return File.ReadAllText(generatedPath);
         }
 
         throw new FileNotFoundException(
-            "Could not locate generated C# SDK source at sdks/csharp/generated/GoudGame.g.cs"
+            $"Could not locate generated C# SDK source at {generatedPath}"
         );
     }
 }

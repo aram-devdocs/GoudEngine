@@ -45,6 +45,7 @@ const DIGIT_SPACING = 30;
 const KEY_SPACE = 32;
 const KEY_ESCAPE = 256;
 const KEY_R = 82;
+// Canonical decimal fixture bytes are documented in examples/shared/flappy_audio_fixture.txt.
 const FLAP_WAV_BYTES = new Uint8Array([
   82, 73, 70, 70, 116, 0, 0, 0, 87, 65, 86, 69, 102, 109, 116, 32, 16, 0, 0, 0, 1, 0, 1, 0, 64, 31,
   0, 0, 64, 31, 0, 0, 1, 0, 8, 0, 100, 97, 116, 97, 80, 0, 0, 0, 127, 182, 191, 147, 87, 61, 88, 146,
