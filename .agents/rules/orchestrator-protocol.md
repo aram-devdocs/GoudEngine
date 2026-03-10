@@ -17,16 +17,16 @@ Tier 0: ORCHESTRATOR (root session, opus)
   |-- engine-lead (opus) -- Rust core, graphics, ECS, assets
   |   |-- implementer (sonnet)
   |   |-- test-first-implementer (sonnet)
-  |   |-- debugger (opus)
+  |   |-- debugger (sonnet)
   |   +-- quick-fix (haiku)
   |-- integration-lead (opus) -- FFI, C# SDK, Python SDK, TypeScript SDK
   |   |-- ffi-implementer (sonnet)
   |   |-- sdk-implementer (sonnet)
-  |   +-- debugger (opus)
+  |   +-- debugger (sonnet)
   +-- quality-lead (opus) -- reviews, testing, validation
       |-- spec-reviewer (sonnet)
       |-- code-quality-reviewer (sonnet)
-      |-- architecture-validator (sonnet)
+      |-- architecture-validator (haiku)
       |-- security-auditor (opus)
       +-- test-runner (sonnet)
 ```
@@ -47,9 +47,9 @@ Select the right model for the right task:
 
 | Tier | Model | Use For |
 |------|-------|---------|
-| Quick | haiku | Single-file fixes, config tweaks, formatting |
-| Standard | sonnet | Implementation, reviews, testing, validation |
-| Complex | opus | Security audits, complex debugging, sub-orchestration |
+| Quick | haiku | Single-file fixes, lightweight validation, read-heavy scans |
+| Standard | sonnet | Implementation, reviews, testing, and debugging |
+| Complex | opus | Security audits and sub-orchestration |
 
 Team leads (engine-lead, integration-lead, quality-lead) always run on opus because they manage other agents.
 

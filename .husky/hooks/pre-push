@@ -153,10 +153,17 @@ echo "=== [11/12] Checking .rs file line limits ==="
 "$REPO_ROOT/scripts/check-rs-line-limit.sh" --error || exit 1
 
 # =============================================================================
+# AI Config Validation (sync + model table consistency)
+# =============================================================================
+echo ""
+echo "=== [12/13] Validating AI config and generated wrappers ==="
+"$REPO_ROOT/scripts/validate-ai-config.sh" || exit 1
+
+# =============================================================================
 # Large File Check (mirrors: pr-validation.yml check-file-size)
 # =============================================================================
 echo ""
-echo "=== [12/12] Checking for large files ==="
+echo "=== [13/13] Checking for large files ==="
 LARGE_FILES=$(find . -type f -size +1M ! -path "./.git/*" ! -path "./target/*" ! -path "*/bin/*" ! -path "*/obj/*" ! -name "*.png" ! -name "*.jpg" ! -name "*.jpeg" ! -name "*.gif" 2>/dev/null)
 if [ -n "$LARGE_FILES" ]; then
     TRACKED_LARGE=""

@@ -173,6 +173,21 @@ After modifying `.husky/hooks/pre-commit` or `.husky/hooks/pre-push`:
 cargo clean && cargo test  # Required for husky-rs to reload
 ```
 
+### Agent Config Generation
+Agent wrappers for Codex and Claude are generated from the canonical catalog:
+```bash
+python3 scripts/sync-agent-configs.py          # Regenerate wrappers
+python3 scripts/sync-agent-configs.py --check  # Drift check (non-zero on mismatch)
+```
+Source of truth:
+- `.agents/agent-catalog.toml` -- role metadata, model tiers, sandbox intent
+- `.agents/role-specs/*.md` -- shared role instruction bodies
+
+Generated outputs:
+- `.codex/config.toml`
+- `.codex/agents/*.toml`
+- `.claude/agents/*.md`
+
 ### Module Dependencies
 Generate visual dependency graph:
 ```bash
@@ -251,7 +266,8 @@ When executing a plan (from `.claude/plans/`, `.codex/plans/`, `.agents/runs/gh-
 | sdk-implementer | sonnet | integration-lead | SDK wrapper development |
 | spec-reviewer | sonnet | quality-lead or orchestrator | Validates impl matches spec |
 | code-quality-reviewer | sonnet | quality-lead or orchestrator | Code quality, patterns |
-| architecture-validator | sonnet | quality-lead or orchestrator | Layer hierarchy check |
+| architecture-validator | haiku | quality-lead or orchestrator | Layer hierarchy check |
+| debugger | sonnet | engine-lead, integration-lead, or quality-lead | Root-cause analysis for failures |
 | security-auditor | opus | quality-lead or orchestrator | FFI/unsafe audit (SEQUENTIAL ONLY) |
 | test-runner | sonnet | quality-lead or orchestrator | Run and analyze tests |
 
