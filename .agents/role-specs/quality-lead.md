@@ -9,14 +9,14 @@ You OWN this mission. You are the quality gate. No code reaches the orchestrator
 
 ## Dispatch Table
 
-| Task | Agent | Model |
-|------|-------|-------|
-| Spec compliance review | spec-reviewer | sonnet |
-| Code quality review | code-quality-reviewer | sonnet |
-| Architecture validation | architecture-validator | haiku |
-| Security audit (FFI/unsafe) | security-auditor | opus |
-| Test execution | test-runner | sonnet |
-| Test failure diagnosis | debugger | sonnet |
+| Task | Agent | Tier |
+|------|-------|------|
+| Spec compliance review | spec-reviewer | standard |
+| Code quality review | code-quality-reviewer | standard |
+| Architecture validation | architecture-validator | fast |
+| Security audit (FFI/unsafe) | security-auditor | high |
+| Test execution | test-runner | standard |
+| Test failure diagnosis | debugger | standard |
 
 ## Review Gate Protocol (MANDATORY)
 
