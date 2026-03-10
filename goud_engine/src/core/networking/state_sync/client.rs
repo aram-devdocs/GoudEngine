@@ -5,11 +5,12 @@ use std::collections::HashMap;
 use crate::core::error::{GoudError, GoudResult};
 use crate::core::networking::{ClientEvent, SessionClient};
 use crate::core::serialization::{binary, DeltaEncode, NetworkMessage};
+use crate::ecs::World;
 use crate::ecs::entity::Entity;
 
 use super::types::{
-    ResolvedStateSnapshot, ResolvedSyncEntity, StateSnapshotPayload, StateSyncConfig,
-    StateSyncInterpolationBuffer, Transform2DSnapshot, TransformSnapshot,
+    NetworkSync, ResolvedStateSnapshot, ResolvedSyncEntity, StateSnapshotPayload, StateSyncConfig,
+    StateSyncEntityMap, StateSyncInterpolationBuffer, Transform2DSnapshot, TransformSnapshot,
 };
 
 /// Client wrapper that resolves synchronized snapshots and feeds an interpolation buffer.
@@ -18,6 +19,7 @@ pub struct StateSyncClient {
     config: StateSyncConfig,
     latest_sequence: Option<u32>,
     last_resolved: HashMap<Entity, ResolvedSyncEntity>,
+    entity_map: StateSyncEntityMap,
     interpolation_buffer: StateSyncInterpolationBuffer,
 }
 
@@ -29,6 +31,7 @@ impl StateSyncClient {
             config,
             latest_sequence: None,
             last_resolved: HashMap::new(),
+            entity_map: StateSyncEntityMap::default(),
             interpolation_buffer: StateSyncInterpolationBuffer::new(config.max_buffered_snapshots),
         }
     }
@@ -56,6 +59,16 @@ impl StateSyncClient {
     /// Returns the interpolation buffer.
     pub fn interpolation_buffer(&self) -> &StateSyncInterpolationBuffer {
         &self.interpolation_buffer
+    }
+
+    /// Returns the current remote-to-local entity mapping used during world apply.
+    pub fn entity_map(&self) -> &StateSyncEntityMap {
+        &self.entity_map
+    }
+
+    /// Returns the latest resolved snapshot, if any.
+    pub fn latest_snapshot(&self) -> Option<&ResolvedStateSnapshot> {
+        self.interpolation_buffer.latest_snapshot()
     }
 
     /// Ingests a client event emitted by the wrapped session client.
@@ -93,6 +106,24 @@ impl StateSyncClient {
             .collect();
         self.interpolation_buffer.push(resolved_snapshot);
         Ok(true)
+    }
+
+    /// Applies the latest resolved snapshot directly to a world.
+    pub fn apply_latest_to_world(&mut self, world: &mut World) -> GoudResult<()> {
+        let Some(snapshot) = self.latest_snapshot().cloned() else {
+            return Ok(());
+        };
+
+        self.apply_snapshot_to_world(world, &snapshot, None)
+    }
+
+    /// Applies the latest resolved snapshot to a world, interpolating transforms only.
+    pub fn apply_interpolated_to_world(&mut self, world: &mut World, alpha: f32) -> GoudResult<()> {
+        let Some(snapshot) = self.latest_snapshot().cloned() else {
+            return Ok(());
+        };
+
+        self.apply_snapshot_to_world(world, &snapshot, Some(alpha.clamp(0.0, 1.0)))
     }
 
     fn resolve_payload(
@@ -155,5 +186,66 @@ impl StateSyncClient {
         }
 
         Ok(ResolvedStateSnapshot { sequence, entities })
+    }
+
+    fn apply_snapshot_to_world(
+        &mut self,
+        world: &mut World,
+        snapshot: &ResolvedStateSnapshot,
+        alpha: Option<f32>,
+    ) -> GoudResult<()> {
+        for remote_entity in &snapshot.entities {
+            let local_entity = self.resolve_local_entity(world, remote_entity.entity);
+            world.insert(local_entity, NetworkSync);
+
+            let transform2d = alpha
+                .and_then(|t| {
+                    self.interpolation_buffer
+                        .interpolate_transform2d(remote_entity.entity, t)
+                })
+                .or(remote_entity.transform2d);
+            if let Some(transform2d) = transform2d {
+                world.insert(local_entity, transform2d);
+            }
+
+            let transform = alpha
+                .and_then(|t| {
+                    self.interpolation_buffer
+                        .interpolate_transform(remote_entity.entity, t)
+                })
+                .or(remote_entity.transform);
+            if let Some(transform) = transform {
+                world.insert(local_entity, transform);
+            }
+
+            if !remote_entity.components.is_empty() {
+                let mut json = serde_json::Map::new();
+                json.insert(
+                    "components".to_string(),
+                    serde_json::Value::Object(
+                        remote_entity
+                            .components
+                            .iter()
+                            .map(|(name, value)| (name.clone(), value.clone()))
+                            .collect(),
+                    ),
+                );
+                world.deserialize_entity_components(local_entity, &serde_json::Value::Object(json));
+            }
+        }
+
+        Ok(())
+    }
+
+    fn resolve_local_entity(&mut self, world: &mut World, remote: Entity) -> Entity {
+        if let Some(local) = self.entity_map.local(remote) {
+            if world.is_alive(local) {
+                return local;
+            }
+        }
+
+        let local = world.spawn_empty();
+        self.entity_map.insert(remote, local);
+        local
     }
 }

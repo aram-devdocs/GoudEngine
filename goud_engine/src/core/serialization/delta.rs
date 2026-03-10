@@ -6,7 +6,7 @@
 
 use crate::core::error::GoudError;
 use crate::core::math::{Color, Rect, Vec2, Vec3, Vec4};
-use crate::ecs::components::{Transform, Transform2D};
+use crate::ecs::components::Transform;
 
 /// A delta payload containing a change mask and the raw bytes of changed fields.
 ///
@@ -126,85 +126,6 @@ impl_delta_encode!(Vec3, (0, x), (1, y), (2, z));
 impl_delta_encode!(Vec4, (0, x), (1, y), (2, z), (3, w));
 impl_delta_encode!(Color, (0, r), (1, g), (2, b), (3, a));
 impl_delta_encode!(Rect, (0, x), (1, y), (2, width), (3, height));
-
-impl DeltaEncode for Transform2D {
-    type Mask = u8;
-
-    fn delta_from(&self, baseline: &Self) -> Option<DeltaPayload<u8>> {
-        let mut mask = 0;
-        let mut data = Vec::new();
-
-        if f32_changed(self.position.x, baseline.position.x) {
-            mask |= 1 << 0;
-            data.extend_from_slice(&self.position.x.to_le_bytes());
-        }
-        if f32_changed(self.position.y, baseline.position.y) {
-            mask |= 1 << 1;
-            data.extend_from_slice(&self.position.y.to_le_bytes());
-        }
-        if f32_changed(self.rotation, baseline.rotation) {
-            mask |= 1 << 2;
-            data.extend_from_slice(&self.rotation.to_le_bytes());
-        }
-        if f32_changed(self.scale.x, baseline.scale.x) {
-            mask |= 1 << 3;
-            data.extend_from_slice(&self.scale.x.to_le_bytes());
-        }
-        if f32_changed(self.scale.y, baseline.scale.y) {
-            mask |= 1 << 4;
-            data.extend_from_slice(&self.scale.y.to_le_bytes());
-        }
-
-        if mask == 0 {
-            None
-        } else {
-            Some(DeltaPayload { mask, data })
-        }
-    }
-
-    fn apply_delta(&self, delta: &DeltaPayload<u8>) -> Result<Self, GoudError> {
-        let mut result = *self;
-        let mut offset = 0;
-
-        if delta.mask & (1 << 0) != 0 {
-            result.position.x = read_f32(&delta.data, &mut offset).ok_or_else(|| {
-                GoudError::InternalError(
-                    "truncated delta payload for Transform2D.position.x".to_string(),
-                )
-            })?;
-        }
-        if delta.mask & (1 << 1) != 0 {
-            result.position.y = read_f32(&delta.data, &mut offset).ok_or_else(|| {
-                GoudError::InternalError(
-                    "truncated delta payload for Transform2D.position.y".to_string(),
-                )
-            })?;
-        }
-        if delta.mask & (1 << 2) != 0 {
-            result.rotation = read_f32(&delta.data, &mut offset).ok_or_else(|| {
-                GoudError::InternalError(
-                    "truncated delta payload for Transform2D.rotation".to_string(),
-                )
-            })?;
-        }
-        if delta.mask & (1 << 3) != 0 {
-            result.scale.x = read_f32(&delta.data, &mut offset).ok_or_else(|| {
-                GoudError::InternalError(
-                    "truncated delta payload for Transform2D.scale.x".to_string(),
-                )
-            })?;
-        }
-        if delta.mask & (1 << 4) != 0 {
-            result.scale.y = read_f32(&delta.data, &mut offset).ok_or_else(|| {
-                GoudError::InternalError(
-                    "truncated delta payload for Transform2D.scale.y".to_string(),
-                )
-            })?;
-        }
-
-        Ok(result)
-    }
-}
 
 impl DeltaEncode for Transform {
     type Mask = u16;

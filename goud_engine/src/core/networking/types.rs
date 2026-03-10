@@ -67,6 +67,8 @@ pub struct ServerConfig {
     pub channels: SessionChannels,
     /// Whether to publish this session to native LAN discovery.
     pub advertise_on_lan: bool,
+    /// Whether accepted state commands should be rebroadcast automatically.
+    pub auto_broadcast_commands: bool,
 }
 
 impl ServerConfig {
@@ -77,6 +79,7 @@ impl ServerConfig {
             session,
             channels: SessionChannels::default(),
             advertise_on_lan: false,
+            auto_broadcast_commands: true,
         }
     }
 }

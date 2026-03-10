@@ -1,15 +1,20 @@
 use crate::core::networking::authority::BuiltInAuthorityPolicy;
 use crate::core::networking::{
-    SessionClient, SessionServer, StateSnapshotPayload, StateSyncClient, StateSyncConfig,
-    StateSyncEntitySnapshot, StateSyncServer, Transform2DSnapshot,
+    NetworkSync, SessionClient, SessionServer, StateSnapshotPayload, StateSyncClient,
+    StateSyncConfig, StateSyncEntitySnapshot, StateSyncServer, Transform2DSnapshot,
 };
 use crate::core::serialization::{DeltaEncode, MessageKind, NetworkMessage};
 use crate::core::math::Vec2;
 use crate::ecs::components::Transform2D;
+use crate::ecs::Component;
 use crate::ecs::World;
-use crate::core::networking::NetworkSync;
 
 use super::mock_provider::MockNetworkHub;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+struct Health(u32);
+
+impl Component for Health {}
 
 fn sync_world() -> World {
     let mut world = World::new();
@@ -230,4 +235,80 @@ fn state_sync_bandwidth_stats_track_per_entity_full_and_delta_counts() {
     assert_eq!(stats_b.full_snapshots, 1);
     assert_eq!(stats_b.delta_snapshots, 1);
     assert!(stats_b.bytes_sent > 0);
+}
+
+#[test]
+fn state_sync_snapshot_rate_throttles_emission() {
+    let hub = MockNetworkHub::default();
+    let session =
+        SessionServer::with_policy(Box::new(hub.provider()), BuiltInAuthorityPolicy::AllowAll);
+    let mut sync_server = StateSyncServer::new(
+        session,
+        StateSyncConfig {
+            snapshot_rate_hz: 2,
+            ..StateSyncConfig::default()
+        },
+    );
+
+    let mut world = sync_world();
+    let entity = world.spawn_empty();
+    world.insert(entity, NetworkSync);
+    world.insert(entity, Transform2D::from_position(Vec2::new(1.0, 1.0)));
+
+    let first = sync_server
+        .prepare_snapshot_message_if_due(&world, 0.0)
+        .unwrap();
+    assert!(first.is_some());
+
+    let second = sync_server
+        .prepare_snapshot_message_if_due(&world, 0.2)
+        .unwrap();
+    assert!(second.is_none());
+
+    let third = sync_server
+        .prepare_snapshot_message_if_due(&world, 0.3)
+        .unwrap();
+    assert!(third.is_some());
+}
+
+#[test]
+fn state_sync_apply_latest_to_world_applies_non_interpolated_components() {
+    let hub = MockNetworkHub::default();
+    let session =
+        SessionServer::with_policy(Box::new(hub.provider()), BuiltInAuthorityPolicy::AllowAll);
+    let mut sync_server = StateSyncServer::new(session, StateSyncConfig::default());
+
+    let mut server_world = World::new();
+    server_world.register_builtin_serializables();
+    server_world.register_serializable::<Health>();
+
+    let remote = server_world.spawn_empty();
+    server_world.insert(remote, NetworkSync);
+    server_world.insert(remote, Transform2D::from_position(Vec2::new(6.0, 3.0)));
+    server_world.insert(remote, Health(42));
+
+    let message = sync_server.prepare_snapshot_message(&server_world).unwrap();
+
+    let client = SessionClient::new(Box::new(hub.provider()));
+    let mut sync_client = StateSyncClient::new(client, StateSyncConfig::default());
+    assert!(sync_client.ingest_message(&message).unwrap());
+
+    let mut client_world = World::new();
+    client_world.register_builtin_serializables();
+    client_world.register_serializable::<Health>();
+    sync_client.apply_latest_to_world(&mut client_world).unwrap();
+
+    let local = sync_client
+        .entity_map()
+        .local(remote)
+        .expect("remote entity should be mapped locally");
+    let transform = client_world
+        .get::<Transform2D>(local)
+        .expect("transform should be applied");
+    let health = client_world
+        .get::<Health>(local)
+        .expect("custom component should be applied");
+
+    assert_eq!(transform.position, Vec2::new(6.0, 3.0));
+    assert_eq!(*health, Health(42));
 }

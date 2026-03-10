@@ -10,9 +10,8 @@ use crate::ecs::entity::Entity;
 use crate::ecs::World;
 
 use super::types::{
-    EntityBandwidthStat, NetworkSync, ResolvedSyncEntity, StateSnapshotPayload,
-    StateSyncBandwidthStats, StateSyncConfig, StateSyncEntitySnapshot, Transform2DSnapshot,
-    TransformSnapshot,
+    NetworkSync, ResolvedSyncEntity, StateSnapshotPayload, StateSyncBandwidthStats,
+    StateSyncConfig, StateSyncEntitySnapshot, Transform2DSnapshot, TransformSnapshot,
 };
 use crate::core::networking::SessionServer;
 use crate::core::serialization::{binary, DeltaEncode};
@@ -22,6 +21,7 @@ pub struct StateSyncServer {
     session: SessionServer,
     config: StateSyncConfig,
     next_sequence: u32,
+    time_since_last_snapshot: f32,
     last_resolved: HashMap<Entity, ResolvedSyncEntity>,
     latest_full_payload: Option<StateSnapshotPayload>,
     latest_full_sequence: Option<u32>,
@@ -35,6 +35,7 @@ impl StateSyncServer {
             session,
             config,
             next_sequence: 0,
+            time_since_last_snapshot: 0.0,
             last_resolved: HashMap::new(),
             latest_full_payload: None,
             latest_full_sequence: None,
@@ -95,10 +96,38 @@ impl StateSyncServer {
         Ok(NetworkMessage::new(kind, self.next_sequence, payload_bytes))
     }
 
+    /// Builds the next network message only when the configured send interval has elapsed.
+    pub fn prepare_snapshot_message_if_due(
+        &mut self,
+        world: &World,
+        delta_seconds: f32,
+    ) -> GoudResult<Option<NetworkMessage>> {
+        if !self.should_emit_snapshot(delta_seconds) {
+            return Ok(None);
+        }
+
+        self.prepare_snapshot_message(world).map(Some)
+    }
+
     /// Broadcasts the next synchronized snapshot through the wrapped session server.
     pub fn sync_now(&mut self, world: &World) -> GoudResult<crate::core::networking::ServerEvent> {
         let message = self.prepare_snapshot_message(world)?;
         self.session.broadcast_authoritative_state(message.encode()?)
+    }
+
+    /// Broadcasts a synchronized snapshot only when the configured send interval has elapsed.
+    pub fn sync_if_due(
+        &mut self,
+        world: &World,
+        delta_seconds: f32,
+    ) -> GoudResult<Option<crate::core::networking::ServerEvent>> {
+        let Some(message) = self.prepare_snapshot_message_if_due(world, delta_seconds)? else {
+            return Ok(None);
+        };
+
+        self.session
+            .broadcast_authoritative_state(message.encode()?)
+            .map(Some)
     }
 
     fn capture_payload(
@@ -196,7 +225,7 @@ impl StateSyncServer {
                 .bandwidth_stats
                 .per_entity
                 .entry(entity_snapshot.entity)
-                .or_insert_with(EntityBandwidthStat::default);
+                .or_default();
             entry.bytes_sent += encoded.len() as u64;
             match kind {
                 MessageKind::Full => entry.full_snapshots += 1,
@@ -204,6 +233,24 @@ impl StateSyncServer {
             }
         }
         Ok(())
+    }
+
+    fn should_emit_snapshot(&mut self, delta_seconds: f32) -> bool {
+        if self.last_resolved.is_empty() || self.config.snapshot_rate_hz == 0 {
+            return true;
+        }
+
+        self.time_since_last_snapshot += delta_seconds.max(0.0);
+        let interval_seconds = 1.0 / self.config.snapshot_rate_hz as f32;
+        if self.time_since_last_snapshot + f32::EPSILON < interval_seconds {
+            return false;
+        }
+
+        while self.time_since_last_snapshot >= interval_seconds {
+            self.time_since_last_snapshot -= interval_seconds;
+        }
+
+        true
     }
 }
 

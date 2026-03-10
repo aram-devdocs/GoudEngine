@@ -5,14 +5,14 @@ use std::time::Instant;
 
 use crate::core::error::{GoudError, GoudResult};
 use crate::core::providers::network::NetworkProvider;
-use crate::core::providers::network_types::{ConnectionId, NetworkEvent};
+use crate::core::providers::network_types::{ConnectionId, ConnectionState, NetworkEvent};
 
 use super::authority::{AuthorityPolicy, BuiltInAuthorityPolicy};
 use super::discovery::{
     register_native_lan_session, unregister_native_lan_session, update_native_lan_population,
 };
 use super::protocol::{decode_message, encode_message, ProtocolMessage};
-use super::types::{ServerConfig, ServerEvent};
+use super::types::{ServerConfig, ServerEvent, SessionDescriptor};
 
 /// Session server managing authoritative state for multiple clients.
 pub struct SessionServer {
@@ -22,6 +22,7 @@ pub struct SessionServer {
     joined_clients: HashSet<ConnectionId>,
     authoritative_state: Vec<u8>,
     state_sequence: u64,
+    auto_broadcast_commands: bool,
     config: Option<ServerConfig>,
     advertised_session_id: Option<String>,
 }
@@ -46,6 +47,7 @@ impl SessionServer {
             joined_clients: HashSet::new(),
             authoritative_state: Vec::new(),
             state_sequence: 0,
+            auto_broadcast_commands: true,
             config: None,
             advertised_session_id: None,
         }
@@ -82,6 +84,7 @@ impl SessionServer {
         } else {
             self.advertised_session_id = None;
         }
+        self.auto_broadcast_commands = config.auto_broadcast_commands;
         self.config = Some(config);
         Ok(())
     }
@@ -99,6 +102,82 @@ impl SessionServer {
     /// Returns the latest authoritative state sequence.
     pub fn state_sequence(&self) -> u64 {
         self.state_sequence
+    }
+
+    /// Returns whether accepted client commands auto-broadcast as authoritative state.
+    pub fn auto_broadcast_commands(&self) -> bool {
+        self.auto_broadcast_commands
+    }
+
+    /// Enables or disables automatic authoritative-state broadcasts for accepted commands.
+    pub fn set_auto_broadcast_commands(&mut self, enabled: bool) {
+        self.auto_broadcast_commands = enabled;
+    }
+
+    /// Returns the current hosted session descriptor, if the server is hosted.
+    pub fn session_descriptor(&self) -> Option<&SessionDescriptor> {
+        self.config.as_ref().map(|config| &config.session)
+    }
+
+    /// Replaces the hosted session descriptor and refreshes discovery advertisement state.
+    pub fn update_session_descriptor(&mut self, descriptor: SessionDescriptor) -> GoudResult<()> {
+        let Some(config) = self.config.as_mut() else {
+            return Err(GoudError::InvalidState(
+                "Session server must be hosted before updating its descriptor".to_string(),
+            ));
+        };
+
+        let previous_id = config.session.id.clone();
+        config.session = descriptor.clone();
+
+        if config.advertise_on_lan {
+            if previous_id != descriptor.id {
+                unregister_native_lan_session(&previous_id).map_err(|error| {
+                    network_error(format!("Failed to unregister LAN session: {error:?}"))
+                })?;
+            }
+            register_native_lan_session(descriptor.clone()).map_err(|error| {
+                network_error(format!("Failed to register LAN session: {error:?}"))
+            })?;
+            self.advertised_session_id = Some(descriptor.id);
+        }
+
+        Ok(())
+    }
+
+    /// Sends a rejection response to one client without changing authoritative state.
+    pub fn send_validation_rejection(
+        &mut self,
+        connection: ConnectionId,
+        payload: Vec<u8>,
+        reason: impl Into<String>,
+    ) -> GoudResult<()> {
+        self.send_protocol(
+            connection,
+            &ProtocolMessage::ValidationRejected {
+                reason: reason.into(),
+                payload,
+            },
+        )
+    }
+
+    /// Gracefully disconnects one client and updates membership tracking immediately.
+    pub fn disconnect_client(
+        &mut self,
+        connection: ConnectionId,
+        reason: impl Into<String>,
+    ) -> GoudResult<()> {
+        let reason = reason.into();
+        if self.provider.connection_state(connection) != ConnectionState::Disconnected {
+            let _ = self.send_protocol(
+                connection,
+                &ProtocolMessage::LeaveNotice {
+                    reason: reason.clone(),
+                },
+            );
+            let _ = self.provider.disconnect(connection);
+        }
+        self.cleanup_connection_state(connection)
     }
 
     /// Advances session state and drains server events.
@@ -226,8 +305,10 @@ impl SessionServer {
                             connection,
                             payload: payload.clone(),
                         });
-                        let broadcast_event = self.broadcast_authoritative_state(payload)?;
-                        events.push(broadcast_event);
+                        if self.auto_broadcast_commands {
+                            let broadcast_event = self.broadcast_authoritative_state(payload)?;
+                            events.push(broadcast_event);
+                        }
                     }
                     super::authority::AuthorityDecision::Reject { reason } => {
                         self.send_protocol(

@@ -96,6 +96,15 @@ pub struct ResolvedStateSnapshot {
     pub entities: Vec<ResolvedSyncEntity>,
 }
 
+impl ResolvedStateSnapshot {
+    /// Returns the resolved entity state for one synchronized entity.
+    pub fn entity(&self, entity: Entity) -> Option<&ResolvedSyncEntity> {
+        self.entities
+            .iter()
+            .find(|candidate| candidate.entity == entity)
+    }
+}
+
 /// Aggregate bandwidth stats for one synchronized entity.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct EntityBandwidthStat {
@@ -160,6 +169,11 @@ impl StateSyncInterpolationBuffer {
         self.snapshots.back().map(|snapshot| snapshot.sequence)
     }
 
+    /// Returns the newest resolved snapshot, if any.
+    pub fn latest_snapshot(&self) -> Option<&ResolvedStateSnapshot> {
+        self.snapshots.back()
+    }
+
     /// Interpolates a 2D transform from the newest two buffered snapshots.
     pub fn interpolate_transform2d(&self, entity: Entity, alpha: f32) -> Option<Transform2D> {
         let end = self.snapshots.back()?;
@@ -209,11 +223,22 @@ impl StateSyncInterpolationBuffer {
     }
 }
 
-fn find_entity(snapshot: &ResolvedStateSnapshot, entity: Entity) -> Option<&ResolvedSyncEntity> {
-    snapshot
-        .entities
-        .iter()
-        .find(|candidate| candidate.entity == entity)
+/// Remote-to-local entity mapping used when applying synchronized snapshots.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct StateSyncEntityMap {
+    remote_to_local: HashMap<Entity, Entity>,
+}
+
+impl StateSyncEntityMap {
+    /// Returns the local entity mapped to one remote entity, if present.
+    pub fn local(&self, remote: Entity) -> Option<Entity> {
+        self.remote_to_local.get(&remote).copied()
+    }
+
+    /// Records or replaces the mapping for one remote entity.
+    pub fn insert(&mut self, remote: Entity, local: Entity) {
+        self.remote_to_local.insert(remote, local);
+    }
 }
 
 fn lerp_vec2(start: Vec2, end: Vec2, alpha: f32) -> Vec2 {
@@ -233,4 +258,8 @@ fn lerp_angle(start: f32, end: f32, alpha: f32) -> f32 {
         delta += TAU;
     }
     start + delta * alpha
+}
+
+fn find_entity(snapshot: &ResolvedStateSnapshot, entity: Entity) -> Option<&ResolvedSyncEntity> {
+    snapshot.entity(entity)
 }
