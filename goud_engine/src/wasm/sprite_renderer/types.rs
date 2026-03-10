@@ -64,10 +64,8 @@ pub struct RenderStats {
 
 /// A fully-uploaded wgpu texture with its associated bind group, ready to render.
 pub struct TextureEntry {
-    pub view: wgpu::TextureView,
+    /// Bind group used when this texture is active for a sprite batch.
     pub bind_group: wgpu::BindGroup,
-    pub width: u32,
-    pub height: u32,
 }
 
 // ---------------------------------------------------------------------------

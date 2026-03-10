@@ -15,11 +15,17 @@ use super::WasmGame;
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy)]
+/// Collision contact data returned by wasm collision helper methods.
 pub struct WasmContact {
+    /// Contact point X coordinate.
     pub point_x: f32,
+    /// Contact point Y coordinate.
     pub point_y: f32,
+    /// Contact normal X component.
     pub normal_x: f32,
+    /// Contact normal Y component.
     pub normal_y: f32,
+    /// Penetration depth along the contact normal.
     pub penetration: f32,
 }
 
@@ -29,6 +35,7 @@ pub struct WasmContact {
 
 #[wasm_bindgen]
 impl WasmGame {
+    /// Tests axis-aligned box vs axis-aligned box overlap and returns contact data.
     pub fn collision_aabb_aabb(
         &self,
         center_ax: f32,
@@ -54,6 +61,7 @@ impl WasmGame {
         })
     }
 
+    /// Tests circle vs circle overlap and returns contact data.
     pub fn collision_circle_circle(
         &self,
         center_ax: f32,
@@ -75,6 +83,7 @@ impl WasmGame {
         })
     }
 
+    /// Tests circle vs axis-aligned box overlap and returns contact data.
     pub fn collision_circle_aabb(
         &self,
         cx: f32,
@@ -98,16 +107,19 @@ impl WasmGame {
         })
     }
 
+    /// Returns whether point `(px, py)` is inside the rectangle.
     pub fn point_in_rect(&self, px: f32, py: f32, rx: f32, ry: f32, rw: f32, rh: f32) -> bool {
         px >= rx && px <= rx + rw && py >= ry && py <= ry + rh
     }
 
+    /// Returns whether point `(px, py)` is inside the circle.
     pub fn point_in_circle(&self, px: f32, py: f32, cx: f32, cy: f32, r: f32) -> bool {
         let dx = px - cx;
         let dy = py - cy;
         (dx * dx + dy * dy) <= (r * r)
     }
 
+    /// Returns whether two AABBs overlap.
     pub fn aabb_overlap(
         &self,
         min_ax: f32,
@@ -122,6 +134,7 @@ impl WasmGame {
         max_ax >= min_bx && min_ax <= max_bx && max_ay >= min_by && min_ay <= max_by
     }
 
+    /// Returns whether two circles overlap.
     pub fn circle_overlap(&self, x1: f32, y1: f32, r1: f32, x2: f32, y2: f32, r2: f32) -> bool {
         let dx = x2 - x1;
         let dy = y2 - y1;
@@ -129,12 +142,14 @@ impl WasmGame {
         (dx * dx + dy * dy) <= (combined * combined)
     }
 
+    /// Returns Euclidean distance between two points.
     pub fn distance(&self, x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {
         let dx = x2 - x1;
         let dy = y2 - y1;
         (dx * dx + dy * dy).sqrt()
     }
 
+    /// Returns squared Euclidean distance between two points.
     pub fn distance_squared(&self, x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {
         let dx = x2 - x1;
         let dy = y2 - y1;

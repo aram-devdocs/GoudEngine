@@ -25,7 +25,7 @@ impl WgpuBackend {
             })
         } else {
             wgpu::util::DeviceExt::create_buffer_init(
-                &*self.device,
+                &self.device,
                 &wgpu::util::BufferInitDescriptor {
                     label: None,
                     contents: data,

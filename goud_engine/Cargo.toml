@@ -10,29 +10,6 @@ readme = "README.md"
 keywords = ["game-engine", "ecs", "rendering", "ffi"]
 categories = ["game-engines", "graphics", "rendering"]
 
-# Enable parallel compilation
-[profile.dev]
-opt-level = 0
-debug = true
-debug-assertions = true
-overflow-checks = true
-lto = false
-panic = 'unwind'
-incremental = true
-codegen-units = 256
-rpath = false
-
-[profile.release]
-opt-level = 3
-debug = false
-debug-assertions = false
-overflow-checks = false
-lto = true
-panic = 'unwind'
-incremental = false
-codegen-units = 16
-rpath = false
-
 [features]
 default = ["native"]
 native = ["dep:gl", "dep:glfw", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj"]

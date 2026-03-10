@@ -13,8 +13,10 @@ use crate::ecs::system::SystemId;
 ///
 /// Only safe when the caller guarantees no conflicting concurrent access
 /// and the pointer remains valid for the duration of use.
+#[cfg(feature = "native")]
 pub(super) struct UnsafePtr<T>(pub(super) *mut T);
 
+#[cfg(feature = "native")]
 impl<T> UnsafePtr<T> {
     #[inline]
     pub(super) fn get(&self) -> *mut T {
@@ -22,16 +24,20 @@ impl<T> UnsafePtr<T> {
     }
 }
 
+#[cfg(feature = "native")]
 impl<T> Clone for UnsafePtr<T> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
+#[cfg(feature = "native")]
 impl<T> Copy for UnsafePtr<T> {}
 
 // SAFETY: UnsafePtr is only used where concurrent access is verified safe.
+#[cfg(feature = "native")]
 unsafe impl<T> Send for UnsafePtr<T> {}
+#[cfg(feature = "native")]
 unsafe impl<T> Sync for UnsafePtr<T> {}
 
 /// Configuration for parallel system execution.
