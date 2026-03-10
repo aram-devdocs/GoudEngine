@@ -2,129 +2,172 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop, "*" ]
+    branches: [ develop ]
   pull_request:
     branches: [ main, develop ]
+  merge_group:
+    types: [checks_requested]
 
 permissions:
   contents: read
   actions: read
   pull-requests: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
 
 jobs:
-  # Rust checks and tests
-  rust-check:
-    name: Rust ${{ matrix.rust }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        rust: [stable, nightly]
-        exclude:
-          # Skip nightly on Windows to save CI time
-          - os: windows-latest
-            rust: nightly
-    
+  # Fast sanity checks to fail quickly before heavy matrix jobs
+  preflight:
+    name: Preflight (Ubuntu Stable)
+    runs-on: ubuntu-latest
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
     steps:
     - uses: actions/checkout@v6
-    
+
     - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@master
+      uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: ${{ matrix.rust }}
         components: rustfmt, clippy
-    
-    - name: Cache cargo registry
-      uses: actions/cache@v4
+
+    - name: Set up sccache
+      uses: mozilla-actions/sccache-action@v0.0.9
+
+    - name: Restore Rust cache
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-${{ matrix.rust }}-
-          ${{ runner.os }}-cargo-
-    
-    - name: Install system dependencies (Ubuntu)
-      if: matrix.os == 'ubuntu-latest'
+        save-if: ${{ github.ref == 'refs/heads/main' }}
+
+    - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
-    
+
     - name: Set up Python (for codegen)
-      if: matrix.rust == 'stable'
       uses: actions/setup-python@v6
       with:
         python-version: '3.11'
 
     - name: Run SDK codegen (generates .g.rs files needed by workspace)
-      if: matrix.rust == 'stable'
       run: |
-        python3 codegen/validate_coverage.py
-        python3 codegen/gen_csharp.py
-        python3 codegen/gen_python.py
-        python3 codegen/gen_ts_node.py
-        python3 codegen/gen_ts_web.py
+        python codegen/validate_coverage.py
+        python codegen/gen_csharp.py
+        python codegen/gen_python.py
+        python codegen/gen_ts_node.py
+        python codegen/gen_ts_web.py
+
+    - name: Upload shared codegen artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: codegen-generated
+        path: |
+          sdks/csharp/generated/
+          sdks/python/goud_engine/generated/
+          sdks/python/goud_engine/__init__.py
+          sdks/typescript/src/generated/
+          sdks/typescript/native/src/*.g.rs
+          sdks/typescript/native/src/lib.rs
+        if-no-files-found: error
+        retention-days: 1
+
+    - name: Quick Rust check
+      run: cargo check --workspace --all-targets
 
     - name: Check formatting
-      if: matrix.rust == 'stable'
       run: |
         cargo fmt -p goud-engine-core -- --check
         # Format generated napi-rs files (gitignored, no --check needed)
         cargo fmt -p goud-engine-node
 
     - name: Run clippy
-      if: matrix.rust == 'stable'
+      run: cargo clippy --all-targets --all-features -- -D warnings
+
+  # Rust checks and tests
+  rust-check:
+    name: Rust ${{ matrix.rust }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    needs: [preflight]
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+    strategy:
+      fail-fast: ${{ github.event_name == 'pull_request' }}
+      matrix:
+        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"os":"ubuntu-latest","rust":"stable","lane":"full","run_windows_native_clippy":false},{"os":"ubuntu-latest","rust":"nightly","lane":"smoke","run_windows_native_clippy":false},{"os":"macos-latest","rust":"stable","lane":"smoke","run_windows_native_clippy":false}]' || '[{"os":"ubuntu-latest","rust":"stable","lane":"full","run_windows_native_clippy":false},{"os":"macos-latest","rust":"stable","lane":"full","run_windows_native_clippy":false},{"os":"windows-latest","rust":"stable","lane":"full","run_windows_native_clippy":true},{"os":"ubuntu-latest","rust":"nightly","lane":"smoke","run_windows_native_clippy":false},{"os":"macos-latest","rust":"nightly","lane":"smoke","run_windows_native_clippy":false}]') }}
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: codegen-generated
+        path: sdks
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ matrix.rust }}
+        components: clippy
+
+    - name: Set up sccache
+      uses: mozilla-actions/sccache-action@v0.0.9
+
+    - name: Restore Rust cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        save-if: ${{ github.ref == 'refs/heads/main' }}
+
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
       run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          # wgpu-backend/web features target wasm32 only; the D3D12 backend
-          # has an upstream windows-crate version conflict (gpu-allocator 0.28
-          # uses windows 0.54, wgpu-hal uses windows 0.62)
-          cargo clippy --all-targets --features native -- -D warnings
-        else
-          cargo clippy --all-targets --all-features -- -D warnings
-        fi
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+
+    - name: Run clippy (Windows stable)
+      if: matrix.run_windows_native_clippy
+      run: cargo clippy --all-targets --features native -- -D warnings
       shell: bash
 
-    - name: Build
-      run: cargo build --verbose
+    - name: Nightly check/build smoke
+      if: matrix.rust == 'nightly'
+      run: |
+        cargo check --workspace --all-targets --all-features
+        cargo build --workspace --all-targets --all-features
 
-    - name: Run tests
-      run: cargo test --verbose -- --nocapture
-    
-    # Run Rust SDK tests specifically
-    - name: Run Rust SDK tests
-      if: matrix.rust == 'stable'
-      run: cargo test --lib sdk --verbose -- --nocapture
+    - name: Stable smoke checks
+      if: matrix.rust == 'stable' && matrix.lane == 'smoke'
+      run: |
+        cargo check --workspace --all-targets --all-features
+        cargo test --lib sdk -- --nocapture
+        cargo test --test ffi_safety -- --nocapture
 
-    # Headless backend tests (no GPU required)
-    - name: Run headless backend tests
+    - name: Stable full suite (non-doc tests)
+      if: matrix.rust == 'stable' && matrix.lane == 'full'
+      run: cargo test --workspace --lib --bins --tests -- --nocapture
+
+    - name: Headless profile tests
+      if: matrix.rust == 'stable' && matrix.lane == 'full' && matrix.os == 'ubuntu-latest'
       run: cargo test --features headless --lib -- null --nocapture
 
-    # FFI safety tests (null pointers, invalid handles, lifecycle)
-    - name: Run FFI safety tests
-      run: cargo test --test ffi_safety -- --nocapture
-
-    # Cross-layer integration tests (ECS + FFI)
-    - name: Run integration tests
-      run: cargo test --test integration -- --nocapture
+    - name: Documentation tests (once per lane)
+      if: matrix.rust == 'stable' && matrix.lane == 'full' && matrix.os == 'ubuntu-latest'
+      run: cargo test --workspace --doc -- --nocapture
 
     # Only run on stable for coverage
     - name: Install cargo-tarpaulin
-      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
-      run: |
-        cargo install cargo-tarpaulin || true
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && github.event_name == 'merge_group'
+      uses: taiki-e/install-action@cargo-tarpaulin
     
     - name: Generate coverage
-      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && github.event_name == 'merge_group'
       run: |
         cargo tarpaulin \
           --out xml html \
@@ -140,7 +183,7 @@ jobs:
           --exclude-files "*/sdk.rs"
 
     - name: Check branch coverage threshold (70%)
-      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && always()
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && github.event_name == 'merge_group' && always()
       run: |
         if [ ! -f coverage-report/cobertura.xml ]; then
           echo "WARNING: Coverage report not found, skipping branch check"
@@ -167,7 +210,7 @@ jobs:
         fi
 
     - name: Upload coverage report
-      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && always()
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && github.event_name == 'merge_group' && always()
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
@@ -175,7 +218,7 @@ jobs:
         retention-days: 7
 
     - name: Upload coverage to Codecov
-      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
+      if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && github.event_name == 'merge_group'
       uses: codecov/codecov-action@v5
       with:
         file: ./coverage-report/cobertura.xml
@@ -199,24 +242,23 @@ jobs:
   codegen-drift-check:
     name: Codegen Drift Check
     runs-on: ubuntu-latest
+    needs: [preflight]
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
     steps:
     - uses: actions/checkout@v6
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
 
-    - name: Cache cargo registry
-      uses: actions/cache@v4
+    - name: Set up sccache
+      uses: mozilla-actions/sccache-action@v0.0.9
+
+    - name: Restore Rust cache
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-codegen-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-codegen-
+        save-if: ${{ github.ref == 'refs/heads/main' }}
 
     - name: Install system dependencies
       run: |
@@ -233,16 +275,16 @@ jobs:
 
     - name: Run all codegen scripts
       run: |
-        python3 codegen/gen_csharp.py
-        python3 codegen/gen_python.py
-        python3 codegen/gen_ts_node.py
-        python3 codegen/gen_ts_web.py
+        python codegen/gen_csharp.py
+        python codegen/gen_python.py
+        python codegen/gen_ts_node.py
+        python codegen/gen_ts_web.py
         cargo fmt --all
 
     - name: Validate codegen
       run: |
-        python3 codegen/validate.py
-        python3 codegen/validate_coverage.py
+        python codegen/validate.py
+        python codegen/validate_coverage.py
 
     - name: Lint layer dependencies
       run: cargo run -p lint-layers
@@ -250,35 +292,87 @@ jobs:
     - name: Check for codegen drift
       run: git diff --exit-code -- sdks/
 
+  # Build native release libraries once per OS and share across SDK jobs
+  native-release:
+    name: Native Release Artifact on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    needs: [preflight]
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+    strategy:
+      fail-fast: ${{ github.event_name == 'pull_request' }}
+      matrix:
+        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest","macos-latest"]' || '["ubuntu-latest","macos-latest","windows-latest"]') }}
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Set up sccache
+      uses: mozilla-actions/sccache-action@v0.0.9
+
+    - name: Restore Rust cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        save-if: ${{ github.ref == 'refs/heads/main' }}
+
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: codegen-generated
+        path: sdks
+
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+
+    - name: Build native library
+      run: cargo build --release
+
+    - name: Stage native release artifact
+      run: |
+        mkdir -p native-release
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          cp target/release/libgoud_engine.so native-release/
+        elif [[ "$RUNNER_OS" == "macOS" ]]; then
+          cp target/release/libgoud_engine.dylib native-release/
+        else
+          cp target/release/goud_engine.dll native-release/
+        fi
+      shell: bash
+
+    - name: Upload native release artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: native-release-${{ matrix.os }}
+        path: native-release/
+        if-no-files-found: error
+        retention-days: 7
+
   # Python SDK checks and tests
   python-sdk-check:
     name: Python SDK on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    needs: [rust-check]
+    needs: [preflight, native-release]
     strategy:
-      fail-fast: false
+      fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: ['3.10', '3.11', '3.12']
     
     steps:
     - uses: actions/checkout@v6
-    
-    - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
-    
-    - name: Cache cargo registry
-      uses: actions/cache@v4
+
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
       with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-python-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-python-
+        name: codegen-generated
+        path: sdks
     
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
@@ -290,24 +384,25 @@ jobs:
       uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
-    
-    - name: Build native library
-      run: cargo build --release
 
-    - name: Generate Python SDK
-      run: python3 codegen/gen_python.py
-    
+    - name: Download native release artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: native-release-${{ matrix.os }}
+        path: native-release
+
     - name: Set up library path (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
-      run: echo "LD_LIBRARY_PATH=${{ github.workspace }}/target/release:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-    
+      run: echo "LD_LIBRARY_PATH=${{ github.workspace }}/native-release:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
     - name: Set up library path (macOS)
       if: matrix.os == 'macos-latest'
-      run: echo "DYLD_LIBRARY_PATH=${{ github.workspace }}/target/release:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
+      run: echo "DYLD_LIBRARY_PATH=${{ github.workspace }}/native-release:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
     
     - name: Run Python SDK tests
       env:
         PYTHONPATH: ${{ github.workspace }}/sdks/python
+        GOUD_ENGINE_LIB: ${{ github.workspace }}/native-release
       run: |
         python --version
         # Run Python tests that don't require a window/display
@@ -341,6 +436,7 @@ jobs:
     - name: Test Python demo imports
       env:
         PYTHONPATH: ${{ github.workspace }}/sdks/python
+        GOUD_ENGINE_LIB: ${{ github.workspace }}/native-release
       run: |
         cd examples/python
         python << 'EOF'
@@ -362,31 +458,20 @@ jobs:
   dotnet-check:
     name: .NET SDK on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    needs: [rust-check]
+    needs: [preflight, native-release]
     strategy:
-      fail-fast: false
+      fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest","macos-latest"]' || '["ubuntu-latest","macos-latest","windows-latest"]') }}
 
     steps:
     - uses: actions/checkout@v6
 
-    - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
-
-    - name: Cache cargo registry
-      uses: actions/cache@v4
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
       with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-dotnet-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-dotnet-
-          ${{ runner.os }}-cargo-
+        name: codegen-generated
+        path: sdks
 
     - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
@@ -394,16 +479,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
 
-    - name: Set up Python (for codegen)
-      uses: actions/setup-python@v6
+    - name: Download native release artifact
+      uses: actions/download-artifact@v4
       with:
-        python-version: '3.11'
-
-    - name: Build native library
-      run: cargo build --release
-
-    - name: Generate C# SDK
-      run: python3 codegen/gen_csharp.py
+        name: native-release-${{ matrix.os }}
+        path: native-release
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -412,11 +492,11 @@ jobs:
 
     - name: Set up library path (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
-      run: echo "LD_LIBRARY_PATH=${{ github.workspace }}/target/release:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+      run: echo "LD_LIBRARY_PATH=${{ github.workspace }}/native-release:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
     - name: Set up library path (macOS)
       if: matrix.os == 'macos-latest'
-      run: echo "DYLD_LIBRARY_PATH=${{ github.workspace }}/target/release:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
+      run: echo "DYLD_LIBRARY_PATH=${{ github.workspace }}/native-release:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
 
     - name: Cache NuGet packages
       uses: actions/cache@v4
@@ -436,15 +516,15 @@ jobs:
 
     - name: Copy native library to test directory (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
-      run: cp target/release/libgoud_engine.so sdks/csharp.tests/bin/Release/net8.0/
+      run: cp native-release/libgoud_engine.so sdks/csharp.tests/bin/Release/net8.0/
 
     - name: Copy native library to test directory (macOS)
       if: matrix.os == 'macos-latest'
-      run: cp target/release/libgoud_engine.dylib sdks/csharp.tests/bin/Release/net8.0/
+      run: cp native-release/libgoud_engine.dylib sdks/csharp.tests/bin/Release/net8.0/
 
     - name: Copy native library to test directory (Windows)
       if: matrix.os == 'windows-latest'
-      run: copy target\release\goud_engine.dll sdks\csharp.tests\bin\Release\net8.0\libgoud_engine.dll
+      run: copy native-release\goud_engine.dll sdks\csharp.tests\bin\Release\net8.0\libgoud_engine.dll
 
     - name: Test
       working-directory: sdks/csharp
@@ -461,16 +541,35 @@ jobs:
   integration-build:
     name: Integration Build Check
     runs-on: ${{ matrix.os }}
-    needs: [rust-check, dotnet-check, python-sdk-check]
+    # Intentionally parallelized for faster feedback; ci-success still gates SDK jobs.
+    needs: [preflight]
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
     strategy:
+      fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
         os: [ubuntu-latest, macos-latest]
     
     steps:
     - uses: actions/checkout@v6
+
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: codegen-generated
+        path: sdks
     
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+
+    - name: Set up sccache
+      uses: mozilla-actions/sccache-action@v0.0.9
+
+    - name: Restore Rust cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        save-if: ${{ github.ref == 'refs/heads/main' }}
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -487,14 +586,6 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
-
-    - name: Run SDK codegen
-      run: |
-        python3 codegen/validate_coverage.py
-        python3 codegen/gen_csharp.py
-        python3 codegen/gen_python.py
-        python3 codegen/gen_ts_node.py
-        python3 codegen/gen_ts_web.py
 
     - name: Run full build script
       run: |
@@ -525,31 +616,34 @@ jobs:
   typescript-sdk-native:
     name: TS SDK Native on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    needs: [rust-check]
+    needs: [preflight]
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
     strategy:
-      fail-fast: false
+      fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest","macos-latest"]' || '["ubuntu-latest","macos-latest","windows-latest"]') }}
 
     steps:
     - uses: actions/checkout@v6
 
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: codegen-generated
+        path: sdks
+
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
 
-    - name: Cache cargo registry
-      uses: actions/cache@v4
+    - name: Set up sccache
+      uses: mozilla-actions/sccache-action@v0.0.9
+
+    - name: Restore Rust cache
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-ts-native-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-ts-native-
-          ${{ runner.os }}-cargo-
+        save-if: ${{ github.ref == 'refs/heads/main' }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v6
@@ -564,21 +658,33 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
 
-    - name: Set up Python (for codegen)
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
-
     - name: Install npm dependencies
       working-directory: sdks/typescript
       run: npm ci
 
-    - name: Generate TypeScript SDK (must run before native build)
+    - name: Create native typing shim (PR macOS smoke lane)
+      if: github.event_name == 'pull_request' && matrix.os != 'ubuntu-latest'
+      working-directory: sdks/typescript
       run: |
-        python3 codegen/gen_ts_node.py
-        python3 codegen/gen_ts_web.py
+        cat > index.d.ts <<'EOF'
+        export type GameConfig = {
+          width?: number;
+          height?: number;
+          title?: string;
+        };
+
+        export class GoudGame {
+          constructor(config?: GameConfig);
+          [key: string]: any;
+        }
+
+        export class Entity {
+          [key: string]: any;
+        }
+        EOF
 
     - name: Build native addon
+      if: github.event_name != 'pull_request' || matrix.os == 'ubuntu-latest'
       working-directory: sdks/typescript
       run: npm run build:native
 
@@ -603,6 +709,7 @@ jobs:
         echo "Full smoke tests run on ubuntu-latest with xvfb."
 
     - name: Upload native addon
+      if: github.event_name != 'pull_request' || matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v4
       with:
         name: ts-native-${{ matrix.os }}
@@ -612,29 +719,34 @@ jobs:
   # TypeScript SDK — wasm build (Ubuntu only, one platform sufficient)
   typescript-sdk-wasm:
     name: TS SDK Wasm Build
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
-    needs: [rust-check]
+    needs: [preflight]
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
 
     steps:
     - uses: actions/checkout@v6
+
+    - name: Download shared codegen artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: codegen-generated
+        path: sdks
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
       with:
         targets: wasm32-unknown-unknown
 
-    - name: Cache cargo registry
-      uses: actions/cache@v4
+    - name: Set up sccache
+      uses: mozilla-actions/sccache-action@v0.0.9
+
+    - name: Restore Rust cache
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ubuntu-cargo-ts-wasm-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ubuntu-cargo-ts-wasm-
+        save-if: ${{ github.ref == 'refs/heads/main' }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v6
@@ -668,16 +780,6 @@ jobs:
         echo "After optimization:"
         ls -lh wasm/goud_engine_bg.wasm
 
-    - name: Set up Python (for codegen)
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
-
-    - name: Generate web TypeScript SDK
-      run: |
-        python3 codegen/gen_ts_web.py
-        python3 codegen/gen_ts_node.py
-
     - name: Build web TypeScript
       working-directory: sdks/typescript
       run: npm run build:ts:web
@@ -710,19 +812,54 @@ jobs:
   ci-success:
     name: CI Success
     if: always()
-    needs: [rust-check, cargo-deny, codegen-drift-check, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm]
+    needs: [preflight, rust-check, cargo-deny, codegen-drift-check, native-release, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm]
     runs-on: ubuntu-latest
     steps:
     - name: Check all jobs
       run: |
-        if [[ "${{ needs.rust-check.result }}" != "success" ]] || \
-           [[ "${{ needs.cargo-deny.result }}" != "success" ]] || \
-           [[ "${{ needs.codegen-drift-check.result }}" != "success" ]] || \
-           [[ "${{ needs.dotnet-check.result }}" != "success" ]] || \
-           [[ "${{ needs.python-sdk-check.result }}" != "success" ]] || \
-           [[ "${{ needs.integration-build.result }}" != "success" ]] || \
-           [[ "${{ needs.typescript-sdk-native.result }}" != "success" ]] || \
-           [[ "${{ needs.typescript-sdk-wasm.result }}" != "success" ]]; then
+        check_job() {
+          local name="$1"
+          local result="$2"
+          local allow_skipped="$3"
+
+          if [[ "$result" == "success" ]]; then
+            echo "$name: success"
+            return 0
+          fi
+          if [[ "$allow_skipped" == "true" && "$result" == "skipped" ]]; then
+            echo "$name: skipped (allowed)"
+            return 0
+          fi
+          echo "$name: unexpected result '$result'"
+          return 1
+        }
+
+        EVENT="${{ github.event_name }}"
+        ALLOW_FASTLANE_SKIPPED="false"
+        ALLOW_RUST_SKIPPED="false"
+        ALLOW_PUSH_SKIPPED="false"
+        if [[ "$EVENT" == "pull_request" ]]; then
+          ALLOW_FASTLANE_SKIPPED="true"
+          ALLOW_RUST_SKIPPED="true"
+        fi
+        if [[ "$EVENT" == "push" ]]; then
+          ALLOW_RUST_SKIPPED="true"
+          ALLOW_PUSH_SKIPPED="true"
+        fi
+
+        FAIL=0
+        check_job "preflight" "${{ needs.preflight.result }}" "false" || FAIL=1
+        check_job "rust-check" "${{ needs.rust-check.result }}" "$ALLOW_RUST_SKIPPED" || FAIL=1
+        check_job "cargo-deny" "${{ needs.cargo-deny.result }}" "false" || FAIL=1
+        check_job "codegen-drift-check" "${{ needs.codegen-drift-check.result }}" "false" || FAIL=1
+        check_job "native-release" "${{ needs.native-release.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "dotnet-check" "${{ needs.dotnet-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "python-sdk-check" "${{ needs.python-sdk-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "integration-build" "${{ needs.integration-build.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "typescript-sdk-native" "${{ needs.typescript-sdk-native.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "typescript-sdk-wasm" "${{ needs.typescript-sdk-wasm.result }}" "$ALLOW_PUSH_SKIPPED" || FAIL=1
+
+        if [[ "$FAIL" -ne 0 ]]; then
           echo "One or more jobs failed"
           exit 1
         fi
