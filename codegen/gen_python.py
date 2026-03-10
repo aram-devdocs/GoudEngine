@@ -1102,6 +1102,8 @@ def _gen_tool_class(tool_name: str, lines: list):
     tool_mapping = mapping["tools"][tool_name]
 
     is_game = tool_name == "GoudGame"
+    is_physics_world_2d = tool_name == "PhysicsWorld2D"
+    is_physics_world_3d = tool_name == "PhysicsWorld3D"
     class_name = tool_name
 
     lines.append(f"class {class_name}:")
@@ -1124,6 +1126,28 @@ def _gen_tool_class(tool_name: str, lines: list):
         lines.append("        self._title = title")
         lines.append("        self._frame_count = 0")
         lines.append("        self._total_time = 0.0")
+    elif is_physics_world_2d:
+        lines.append("    def __init__(self, gravity_x: float, gravity_y: float, backend=PhysicsBackend2D.DEFAULT):")
+        lines.append("        lib = get_lib()")
+        lines.append("        self._lib = lib")
+        lines.append("        self._ctx = lib.goud_context_create()")
+        lines.append("        if self._ctx._bits == 0xFFFFFFFFFFFFFFFF:")
+        lines.append("            raise RuntimeError('Failed to create headless context')")
+        lines.append("        status = lib.goud_physics_create_with_backend(self._ctx, gravity_x, gravity_y, int(backend))")
+        lines.append("        if status != 0:")
+        lines.append("            lib.goud_context_destroy(self._ctx)")
+        lines.append("            raise RuntimeError(f'Failed to create PhysicsWorld2D (status {status})')")
+    elif is_physics_world_3d:
+        lines.append("    def __init__(self, gravity_x: float, gravity_y: float, gravity_z: float):")
+        lines.append("        lib = get_lib()")
+        lines.append("        self._lib = lib")
+        lines.append("        self._ctx = lib.goud_context_create()")
+        lines.append("        if self._ctx._bits == 0xFFFFFFFFFFFFFFFF:")
+        lines.append("            raise RuntimeError('Failed to create headless context')")
+        lines.append("        status = lib.goud_physics3d_create(self._ctx, gravity_x, gravity_y, gravity_z)")
+        lines.append("        if status != 0:")
+        lines.append("            lib.goud_context_destroy(self._ctx)")
+        lines.append("            raise RuntimeError(f'Failed to create PhysicsWorld3D (status {status})')")
     else:
         lines.append("    def __init__(self):")
         lines.append("        lib = get_lib()")
@@ -1227,6 +1251,16 @@ def _gen_tool_class(tool_name: str, lines: list):
                 lines.append(
                     "            self._lib.goud_window_destroy(self._ctx)"
                 )
+                lines.append("            del self._ctx")
+            elif is_physics_world_2d:
+                lines.append("        if hasattr(self, '_ctx'):")
+                lines.append("            self._lib.goud_physics_destroy(self._ctx)")
+                lines.append("            self._lib.goud_context_destroy(self._ctx)")
+                lines.append("            del self._ctx")
+            elif is_physics_world_3d:
+                lines.append("        if hasattr(self, '_ctx'):")
+                lines.append("            self._lib.goud_physics3d_destroy(self._ctx)")
+                lines.append("            self._lib.goud_context_destroy(self._ctx)")
                 lines.append("            del self._ctx")
             else:
                 lines.append("        if hasattr(self, '_ctx'):")
@@ -1459,6 +1493,28 @@ def _gen_tool_class(tool_name: str, lines: list):
                     f"_{op['name']}.value" for op in out_params
                 )
             lines.append(f"        return {struct_name}({field_args})")
+        elif "out_params" in mmap and "returns_scalar" in mmap:
+            ffi_fn = mmap["ffi"]
+            no_ctx = mmap.get("no_context", False)
+            entity_set = set(mmap.get("entity_params", []))
+            enum_set = set((mmap.get("enum_params") or {}).keys())
+            out = mmap["out_params"][0]
+            ctype = _py_out_var_ctype(out["type"])
+            lines.append(f"        _{out['name']} = {ctype}()")
+
+            ffi_parts = [] if no_ctx else ["self._ctx"]
+            for p in params:
+                pn = p["name"]
+                sn = to_snake(pn)
+                if pn in entity_set:
+                    ffi_parts.append(f"{sn}._bits")
+                elif pn in enum_set or p["type"] in schema.get("enums", {}):
+                    ffi_parts.append(f"int({sn})")
+                else:
+                    ffi_parts.append(sn)
+            ffi_parts.append(f"ctypes.byref(_{out['name']})")
+            lines.append(f"        self._lib.{ffi_fn}({', '.join(ffi_parts)})")
+            lines.append(f"        return _{out['name']}.value")
         elif "out_params" in mmap:
             for op in mmap["out_params"]:
                 lines.append(
@@ -1623,7 +1679,14 @@ def _gen_engine_config(lines: list):
                 lines.append(f'        """{method["doc"]}"""')
             lines.append("        if not self._handle:")
             lines.append("            raise RuntimeError('EngineConfig already consumed or destroyed')")
-            ffi_args = ", ".join(["self._handle"] + [to_snake(p["name"]) for p in params])
+            ffi_call_args = []
+            for p in params:
+                pn = to_snake(p["name"])
+                if p["type"] in schema.get("enums", {}):
+                    ffi_call_args.append(f"int({pn})")
+                else:
+                    ffi_call_args.append(pn)
+            ffi_args = ", ".join(["self._handle"] + ffi_call_args)
             lines.append(f"        self._lib.{ffi_fn}({ffi_args})")
             lines.append("        return self")
             lines.append("")
@@ -1638,7 +1701,7 @@ def gen_game():
         "FfiTransform2D, FfiSprite,",
         "    GoudRenderStats, GoudContact)",
         "from ._types import Entity, Vec2, Color, Transform2D, Sprite, RenderStats",
-        "from ._keys import Key, MouseButton",
+        "from ._keys import Key, MouseButton, PhysicsBackend2D",
         "",
         "# Type IDs for built-in component types (hash of type name)",
         "_TYPEID_TRANSFORM2D = hash('Transform2D') & 0xFFFFFFFFFFFFFFFF",
@@ -1653,6 +1716,16 @@ def gen_game():
         lines.append("")
         _gen_tool_class("GoudContext", lines)
 
+    # Generate PhysicsWorld2D if present in both schema and mapping
+    if "PhysicsWorld2D" in schema.get("tools", {}) and "PhysicsWorld2D" in mapping.get("tools", {}):
+        lines.append("")
+        _gen_tool_class("PhysicsWorld2D", lines)
+
+    # Generate PhysicsWorld3D if present in both schema and mapping
+    if "PhysicsWorld3D" in schema.get("tools", {}) and "PhysicsWorld3D" in mapping.get("tools", {}):
+        lines.append("")
+        _gen_tool_class("PhysicsWorld3D", lines)
+
     # Generate EngineConfig if present in both schema and mapping
     if "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {}):
         lines.append("")
@@ -1665,6 +1738,8 @@ def gen_game():
 
 def gen_init():
     has_context = "GoudContext" in schema.get("tools", {}) and "GoudContext" in mapping.get("tools", {})
+    has_physics_world_2d = "PhysicsWorld2D" in schema.get("tools", {}) and "PhysicsWorld2D" in mapping.get("tools", {})
+    has_physics_world_3d = "PhysicsWorld3D" in schema.get("tools", {}) and "PhysicsWorld3D" in mapping.get("tools", {})
     has_engine_config = "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {})
 
     type_imports = "Color, Vec2, Rect, Transform2D, Sprite, Entity"
@@ -1679,6 +1754,10 @@ def gen_init():
     game_imports = ["GoudGame"]
     if has_context:
         game_imports.append("GoudContext")
+    if has_physics_world_2d:
+        game_imports.append("PhysicsWorld2D")
+    if has_physics_world_3d:
+        game_imports.append("PhysicsWorld3D")
     if has_engine_config:
         game_imports.append("EngineConfig")
 

@@ -34,6 +34,114 @@ fn test_body_lifecycle() {
 }
 
 #[test]
+fn test_body_desc_defaults_ccd_disabled() {
+    let desc = BodyDesc::default();
+    assert!(!desc.ccd_enabled);
+    assert_eq!(desc.gravity_scale, 1.0);
+}
+
+#[test]
+fn test_create_body_threads_ccd_flag() {
+    let mut provider = Rapier2DPhysicsProvider::new([0.0, 0.0]);
+
+    let disabled = provider
+        .create_body(&BodyDesc {
+            body_type: 1,
+            ..Default::default()
+        })
+        .unwrap();
+    let disabled_rb = provider
+        .rigid_body_set
+        .get(provider.get_rapier_body(disabled).unwrap())
+        .unwrap();
+    assert!(!disabled_rb.is_ccd_enabled());
+
+    let enabled = provider
+        .create_body(&BodyDesc {
+            body_type: 1,
+            ccd_enabled: true,
+            ..Default::default()
+        })
+        .unwrap();
+    let enabled_rb = provider
+        .rigid_body_set
+        .get(provider.get_rapier_body(enabled).unwrap())
+        .unwrap();
+    assert!(enabled_rb.is_ccd_enabled());
+}
+
+#[test]
+fn test_create_and_destroy_revolute_joint() {
+    let mut provider = Rapier2DPhysicsProvider::new([0.0, 0.0]);
+    let body_a = provider
+        .create_body(&BodyDesc {
+            body_type: 1,
+            ..Default::default()
+        })
+        .unwrap();
+    let body_b = provider
+        .create_body(&BodyDesc {
+            body_type: 1,
+            ..Default::default()
+        })
+        .unwrap();
+
+    let joint = provider
+        .create_joint(&JointDesc {
+            body_a: Some(body_a),
+            body_b: Some(body_b),
+            kind: JointKind::Revolute,
+            limits: Some(JointLimits {
+                min: -0.5,
+                max: 0.5,
+            }),
+            motor: Some(JointMotor {
+                target_velocity: 1.5,
+                max_force: 8.0,
+            }),
+            ..Default::default()
+        })
+        .unwrap();
+
+    assert!(provider.joint_handles.contains_key(&joint.0));
+
+    provider.destroy_joint(joint);
+    assert!(!provider.joint_handles.contains_key(&joint.0));
+}
+
+#[test]
+fn test_create_prismatic_joint_rejects_zero_axis() {
+    let mut provider = Rapier2DPhysicsProvider::new([0.0, 0.0]);
+    let body_a = provider
+        .create_body(&BodyDesc {
+            body_type: 1,
+            ..Default::default()
+        })
+        .unwrap();
+    let body_b = provider
+        .create_body(&BodyDesc {
+            body_type: 1,
+            ..Default::default()
+        })
+        .unwrap();
+
+    let err = provider
+        .create_joint(&JointDesc {
+            body_a: Some(body_a),
+            body_b: Some(body_b),
+            kind: JointKind::Prismatic,
+            axis: [0.0, 0.0],
+            ..Default::default()
+        })
+        .unwrap_err();
+
+    assert!(matches!(
+        err,
+        crate::core::error::GoudError::ProviderError { .. }
+    ));
+}
+
+#[test]
 fn test_body_type_conversions() {
     let mut provider = Rapier2DPhysicsProvider::new([0.0, 0.0]);
 

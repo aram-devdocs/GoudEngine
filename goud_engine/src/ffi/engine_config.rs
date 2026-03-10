@@ -7,6 +7,7 @@ use std::ffi::CStr;
 use std::os::raw::c_char;
 
 use crate::core::error::{set_last_error, GoudError};
+use crate::core::providers::types::PhysicsBackend2D;
 use crate::sdk::engine_config::EngineConfig;
 
 /// Opaque handle to an `EngineConfig` on the heap.
@@ -184,6 +185,64 @@ pub unsafe extern "C" fn goud_engine_config_set_fps_overlay(
     true
 }
 
+/// Enables or disables physics debug visualization on an `EngineConfig`.
+///
+/// # Safety
+/// `handle` must be a valid `EngineConfig` handle.
+#[no_mangle]
+pub unsafe extern "C" fn goud_engine_config_set_physics_debug(
+    handle: EngineConfigHandle,
+    enabled: bool,
+) -> bool {
+    if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
+        return false;
+    }
+    // SAFETY: Caller guarantees handle points to a valid EngineConfig.
+    let config = &mut *(handle as *mut EngineConfig);
+    config.game_config_mut().physics_debug.enabled = enabled;
+    true
+}
+
+/// Sets the 2D physics backend used when building providers from `EngineConfig`.
+///
+/// Backend values:
+/// - 0: Default
+/// - 1: Rapier
+/// - 2: Simple
+///
+/// # Safety
+/// `handle` must be a valid `EngineConfig` handle.
+#[no_mangle]
+pub unsafe extern "C" fn goud_engine_config_set_physics_backend_2d(
+    handle: EngineConfigHandle,
+    backend: u32,
+) -> bool {
+    if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
+        return false;
+    }
+
+    let backend = match PhysicsBackend2D::from_u32(backend) {
+        Some(backend) => backend,
+        None => {
+            set_last_error(GoudError::InvalidState(
+                "invalid physics backend".to_string(),
+            ));
+            return false;
+        }
+    };
+
+    // SAFETY: Caller guarantees handle points to a valid EngineConfig.
+    let config = &mut *(handle as *mut EngineConfig);
+    config.set_physics_backend_2d(backend);
+    true
+}
+
 /// Consumes an `EngineConfig` handle and creates a windowed engine context.
 ///
 /// This follows the same pattern as [`goud_window_create`] but uses the
@@ -301,7 +360,7 @@ pub unsafe extern "C" fn goud_engine_create(
         return GOUD_INVALID_CONTEXT_ID;
     }
 
-    let window_state = WindowState::new(platform, backend);
+    let window_state = WindowState::new(platform, backend, game_config.physics_debug.enabled);
 
     if let Err(e) = set_window_state(context_id, window_state) {
         if let Ok(mut registry) = get_context_registry().lock() {

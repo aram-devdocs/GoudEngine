@@ -1054,6 +1054,24 @@
       "return_type": "bool",
       "is_unsafe": true
     },
+    "goud_engine_config_set_physics_backend_2d": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "backend: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_engine_config_set_physics_debug": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "enabled: bool"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
     "goud_engine_config_set_size": {
       "source_file": "ffi/engine_config.rs",
       "params": [
@@ -1488,6 +1506,20 @@
       "return_type": "i64",
       "is_unsafe": false
     },
+    "goud_physics3d_add_rigid_body_ex": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "body_type: u32",
+        "x: f32",
+        "y: f32",
+        "z: f32",
+        "gravity_scale: f32",
+        "ccd_enabled: bool"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
     "goud_physics3d_apply_force": {
       "source_file": "ffi/physics/physics3d.rs",
       "params": [
@@ -1521,6 +1553,32 @@
         "gz: f32"
       ],
       "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_create_joint": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "body_a: u64",
+        "body_b: u64",
+        "joint_kind: u32",
+        "anchor_ax: f32",
+        "anchor_ay: f32",
+        "anchor_az: f32",
+        "anchor_bx: f32",
+        "anchor_by: f32",
+        "anchor_bz: f32",
+        "axis_x: f32",
+        "axis_y: f32",
+        "axis_z: f32",
+        "use_limits: bool",
+        "limit_min: f32",
+        "limit_max: f32",
+        "use_motor: bool",
+        "motor_target_velocity: f32",
+        "motor_max_force: f32"
+      ],
+      "return_type": "i64",
       "is_unsafe": false
     },
     "goud_physics3d_destroy": {
@@ -1594,6 +1652,15 @@
       "is_unsafe": true
     },
     "goud_physics3d_remove_body": {
+      "source_file": "ffi/physics/physics3d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics3d_remove_joint": {
       "source_file": "ffi/physics/physics3d.rs",
       "params": [
         "ctx: GoudContextId",
@@ -1718,6 +1785,19 @@
       "return_type": "i64",
       "is_unsafe": false
     },
+    "goud_physics_add_rigid_body_ex": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "body_type: u32",
+        "x: f32",
+        "y: f32",
+        "gravity_scale: f32",
+        "ccd_enabled: bool"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
     "goud_physics_apply_force": {
       "source_file": "ffi/physics/physics2d.rs",
       "params": [
@@ -1786,6 +1866,40 @@
         "ctx: GoudContextId",
         "gx: f32",
         "gy: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_create_joint": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "body_a: u64",
+        "body_b: u64",
+        "joint_kind: u32",
+        "anchor_ax: f32",
+        "anchor_ay: f32",
+        "anchor_bx: f32",
+        "anchor_by: f32",
+        "axis_x: f32",
+        "axis_y: f32",
+        "use_limits: bool",
+        "limit_min: f32",
+        "limit_max: f32",
+        "use_motor: bool",
+        "motor_target_velocity: f32",
+        "motor_max_force: f32"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
+    "goud_physics_create_with_backend": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "gx: f32",
+        "gy: f32",
+        "backend: u32"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -1906,6 +2020,15 @@
       "is_unsafe": true
     },
     "goud_physics_remove_body": {
+      "source_file": "ffi/physics/physics2d.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "handle: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_physics_remove_joint": {
       "source_file": "ffi/physics/physics2d.rs",
       "params": [
         "ctx: GoudContextId",
@@ -3944,5 +4067,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 397
+  "total_count": 406
 }

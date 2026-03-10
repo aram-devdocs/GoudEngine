@@ -6,11 +6,12 @@ import {
   type GameConfig,
 } from '../../../index';
 
-import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';
+import type { IGoudGame, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';
+import { PhysicsBackend2D } from '../types/input.g.js';
 import { Color, Vec2, Vec3 } from '../types/math.g.js';
 export { Color, Vec2, Vec3 } from '../types/math.g.js';
-export { Key, MouseButton } from '../types/input.g.js';
-export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';
+export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';
+export type { IGoudGame, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';
 
 /** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
 export class GoudGame implements IGoudGame {
@@ -748,6 +749,308 @@ export class GoudGame implements IGoudGame {
 
 }
 
+/** 2D physics simulation powered by Rapier2D */
+export class PhysicsWorld2D implements IPhysicsWorld2D {
+  private native: any;
+
+  constructor(gravityX: number, gravityY: number, backend: number = 0) {
+    const { NativePhysicsWorld2D } = require('../../../index');
+    this.native = new NativePhysicsWorld2D(gravityX, gravityY, backend);
+  }
+
+  /** Creates a 2D physics world with given gravity */
+  create(gravityX: number, gravityY: number): number {
+    return this.native.create(gravityX, gravityY);
+  }
+
+  /** Creates a 2D physics world with explicit backend selection */
+  createWithBackend(gravityX: number, gravityY: number, backend: PhysicsBackend2D): number {
+    return this.native.createWithBackend(gravityX, gravityY, backend);
+  }
+
+  /** Destroys the 2D physics world */
+  destroy(): number {
+    return this.native.destroy();
+  }
+
+  /** Sets the gravity vector */
+  setGravity(x: number, y: number): number {
+    return this.native.setGravity(x, y);
+  }
+
+  /** Adds a rigid body and returns its handle */
+  addRigidBody(bodyType: number, x: number, y: number, gravityScale: number): number {
+    return this.native.addRigidBody(bodyType, x, y, gravityScale);
+  }
+
+  /** Adds a rigid body with explicit CCD control and returns its handle (FFI: goud_physics_add_rigid_body_ex) */
+  addRigidBodyEx(bodyType: number, x: number, y: number, gravityScale: number, ccdEnabled: boolean): number {
+    return this.native.addRigidBodyEx(bodyType, x, y, gravityScale, ccdEnabled);
+  }
+
+  /** Adds a collider to a rigid body */
+  addCollider(bodyHandle: number, shapeType: number, width: number, height: number, radius: number, friction: number, restitution: number): number {
+    return this.native.addCollider(bodyHandle, shapeType, width, height, radius, friction, restitution);
+  }
+
+  /** Adds a collider with sensor and collision-layer configuration (FFI: goud_physics_add_collider_ex) */
+  addColliderEx(bodyHandle: number, shapeType: number, width: number, height: number, radius: number, friction: number, restitution: number, isSensor: boolean, layer: number, mask: number): number {
+    return this.native.addColliderEx(bodyHandle, shapeType, width, height, radius, friction, restitution, isSensor, layer, mask);
+  }
+
+  /** Removes a rigid body from the simulation */
+  removeBody(handle: number): number {
+    return this.native.removeBody(handle);
+  }
+
+  /** Creates a joint between two bodies and returns its handle (FFI: goud_physics_create_joint) */
+  createJoint(bodyA: number, bodyB: number, kind: number, anchorAx: number, anchorAy: number, anchorBx: number, anchorBy: number, axisX: number, axisY: number, hasLimits: boolean, limitMin: number, limitMax: number, hasMotor: boolean, motorTargetVelocity: number, motorMaxForce: number): number {
+    return this.native.createJoint(bodyA, bodyB, kind, anchorAx, anchorAy, anchorBx, anchorBy, axisX, axisY, hasLimits, limitMin, limitMax, hasMotor, motorTargetVelocity, motorMaxForce);
+  }
+
+  /** Removes a joint from the simulation (FFI: goud_physics_remove_joint) */
+  removeJoint(handle: number): number {
+    return this.native.removeJoint(handle);
+  }
+
+  /** Steps the physics simulation */
+  step(dt: number): number {
+    return this.native.step(dt);
+  }
+
+  /** Gets the position of a rigid body */
+  getPosition(handle: number): IVec2 {
+    return this.native.getPosition(handle);
+  }
+
+  /** Gets the velocity of a rigid body */
+  getVelocity(handle: number): IVec2 {
+    return this.native.getVelocity(handle);
+  }
+
+  /** Sets the velocity of a rigid body */
+  setVelocity(handle: number, vx: number, vy: number): number {
+    return this.native.setVelocity(handle, vx, vy);
+  }
+
+  /** Applies a force to a rigid body */
+  applyForce(handle: number, fx: number, fy: number): number {
+    return this.native.applyForce(handle, fx, fy);
+  }
+
+  /** Applies an impulse to a rigid body */
+  applyImpulse(handle: number, ix: number, iy: number): number {
+    return this.native.applyImpulse(handle, ix, iy);
+  }
+
+  /** Casts a ray and returns the hit point */
+  raycast(originX: number, originY: number, dirX: number, dirY: number, maxDist: number): IVec2 {
+    return this.native.raycast(originX, originY, dirX, dirY, maxDist);
+  }
+
+  /** Casts a ray and returns the full raycast hit payload (FFI: goud_physics_raycast_ex) */
+  raycastEx(originX: number, originY: number, dirX: number, dirY: number, maxDist: number, layerMask: number): IPhysicsRaycastHit2D {
+    return this.native.raycastEx(originX, originY, dirX, dirY, maxDist, layerMask);
+  }
+
+  /** Returns the number of queued collision events available to read (FFI: goud_physics_collision_events_count) */
+  collisionEventsCount(): number {
+    return this.native.collisionEventsCount();
+  }
+
+  /** Reads one queued collision event by index; kind is 0 = Enter, 1 = Stay, 2 = Exit (FFI: goud_physics_collision_events_read) */
+  collisionEventsRead(index: number): IPhysicsCollisionEvent2D {
+    return this.native.collisionEventsRead(index);
+  }
+
+  /** Backward-compatible alias for collisionEventsCount (FFI: goud_physics_collision_event_count) */
+  collisionEventCount(): number {
+    return this.native.collisionEventCount();
+  }
+
+  /** Backward-compatible alias for collisionEventsRead (FFI: goud_physics_collision_event_read) */
+  collisionEventRead(index: number): IPhysicsCollisionEvent2D {
+    return this.native.collisionEventRead(index);
+  }
+
+  /** Registers or clears a collision callback function pointer. Keep callback storage alive for the full registration lifetime. In safety-restricted wrappers (Python/TypeScript), pass 0 for callbackPtr and userData to clear. (FFI: goud_physics_set_collision_callback) */
+  setCollisionCallback(callbackPtr: number, userData: number): number {
+    return this.native.setCollisionCallback(callbackPtr, userData);
+  }
+
+  /** Gets the current gravity vector */
+  getGravity(): IVec2 {
+    return this.native.getGravity();
+  }
+
+  /** Sets the gravity scale for a rigid body */
+  setBodyGravityScale(handle: number, scale: number): number {
+    return this.native.setBodyGravityScale(handle, scale);
+  }
+
+  /** Gets the gravity scale for a rigid body */
+  getBodyGravityScale(handle: number): number {
+    return this.native.getBodyGravityScale(handle);
+  }
+
+  /** Sets the friction coefficient for a collider */
+  setColliderFriction(handle: number, friction: number): number {
+    return this.native.setColliderFriction(handle, friction);
+  }
+
+  /** Gets the friction coefficient for a collider */
+  getColliderFriction(handle: number): number {
+    return this.native.getColliderFriction(handle);
+  }
+
+  /** Sets the restitution (bounciness) for a collider */
+  setColliderRestitution(handle: number, restitution: number): number {
+    return this.native.setColliderRestitution(handle, restitution);
+  }
+
+  /** Gets the restitution (bounciness) for a collider */
+  getColliderRestitution(handle: number): number {
+    return this.native.getColliderRestitution(handle);
+  }
+
+  /** Set the fixed physics timestep in seconds */
+  setTimestep(dt: number): number {
+    return this.native.setTimestep(dt);
+  }
+
+  /** Get the current fixed physics timestep in seconds */
+  getTimestep(): number {
+    return this.native.getTimestep();
+  }
+
+}
+
+/** 3D physics simulation powered by Rapier3D */
+export class PhysicsWorld3D implements IPhysicsWorld3D {
+  private native: any;
+
+  constructor(gravityX: number, gravityY: number, gravityZ: number) {
+    const { NativePhysicsWorld3D } = require('../../../index');
+    this.native = new NativePhysicsWorld3D(gravityX, gravityY, gravityZ);
+  }
+
+  /** Creates a 3D physics world with given gravity */
+  create(gravityX: number, gravityY: number, gravityZ: number): number {
+    return this.native.create(gravityX, gravityY, gravityZ);
+  }
+
+  /** Destroys the 3D physics world */
+  destroy(): number {
+    return this.native.destroy();
+  }
+
+  /** Sets the gravity vector */
+  setGravity(x: number, y: number, z: number): number {
+    return this.native.setGravity(x, y, z);
+  }
+
+  /** Adds a rigid body and returns its handle */
+  addRigidBody(bodyType: number, x: number, y: number, z: number, gravityScale: number): number {
+    return this.native.addRigidBody(bodyType, x, y, z, gravityScale);
+  }
+
+  /** Adds a rigid body with explicit CCD control and returns its handle (FFI: goud_physics3d_add_rigid_body_ex) */
+  addRigidBodyEx(bodyType: number, x: number, y: number, z: number, gravityScale: number, ccdEnabled: boolean): number {
+    return this.native.addRigidBodyEx(bodyType, x, y, z, gravityScale, ccdEnabled);
+  }
+
+  /** Adds a collider to a rigid body */
+  addCollider(bodyHandle: number, shapeType: number, hx: number, hy: number, hz: number, radius: number, friction: number, restitution: number): number {
+    return this.native.addCollider(bodyHandle, shapeType, hx, hy, hz, radius, friction, restitution);
+  }
+
+  /** Removes a rigid body from the simulation */
+  removeBody(handle: number): number {
+    return this.native.removeBody(handle);
+  }
+
+  /** Creates a 3D joint between two bodies and returns its handle (FFI: goud_physics3d_create_joint) */
+  createJoint(bodyA: number, bodyB: number, kind: number, anchorAx: number, anchorAy: number, anchorAz: number, anchorBx: number, anchorBy: number, anchorBz: number, axisX: number, axisY: number, axisZ: number, hasLimits: boolean, limitMin: number, limitMax: number, hasMotor: boolean, motorTargetVelocity: number, motorMaxForce: number): number {
+    return this.native.createJoint(bodyA, bodyB, kind, anchorAx, anchorAy, anchorAz, anchorBx, anchorBy, anchorBz, axisX, axisY, axisZ, hasLimits, limitMin, limitMax, hasMotor, motorTargetVelocity, motorMaxForce);
+  }
+
+  /** Removes a 3D joint from the simulation (FFI: goud_physics3d_remove_joint) */
+  removeJoint(handle: number): number {
+    return this.native.removeJoint(handle);
+  }
+
+  /** Steps the physics simulation */
+  step(dt: number): number {
+    return this.native.step(dt);
+  }
+
+  /** Gets the position of a rigid body */
+  getPosition(handle: number): IVec3 {
+    return this.native.getPosition(handle);
+  }
+
+  /** Sets the velocity of a rigid body */
+  setVelocity(handle: number, vx: number, vy: number, vz: number): number {
+    return this.native.setVelocity(handle, vx, vy, vz);
+  }
+
+  /** Applies a force to a rigid body */
+  applyForce(handle: number, fx: number, fy: number, fz: number): number {
+    return this.native.applyForce(handle, fx, fy, fz);
+  }
+
+  /** Applies an impulse to a rigid body */
+  applyImpulse(handle: number, ix: number, iy: number, iz: number): number {
+    return this.native.applyImpulse(handle, ix, iy, iz);
+  }
+
+  /** Gets the current gravity vector */
+  getGravity(): IVec3 {
+    return this.native.getGravity();
+  }
+
+  /** Sets the gravity scale for a rigid body */
+  setBodyGravityScale(handle: number, scale: number): number {
+    return this.native.setBodyGravityScale(handle, scale);
+  }
+
+  /** Gets the gravity scale for a rigid body */
+  getBodyGravityScale(handle: number): number {
+    return this.native.getBodyGravityScale(handle);
+  }
+
+  /** Sets the friction coefficient for a collider */
+  setColliderFriction(handle: number, friction: number): number {
+    return this.native.setColliderFriction(handle, friction);
+  }
+
+  /** Gets the friction coefficient for a collider */
+  getColliderFriction(handle: number): number {
+    return this.native.getColliderFriction(handle);
+  }
+
+  /** Sets the restitution (bounciness) for a collider */
+  setColliderRestitution(handle: number, restitution: number): number {
+    return this.native.setColliderRestitution(handle, restitution);
+  }
+
+  /** Gets the restitution (bounciness) for a collider */
+  getColliderRestitution(handle: number): number {
+    return this.native.getColliderRestitution(handle);
+  }
+
+  /** Set the fixed physics timestep in seconds */
+  setTimestep(dt: number): number {
+    return this.native.setTimestep(dt);
+  }
+
+  /** Get the current fixed physics timestep in seconds */
+  getTimestep(): number {
+    return this.native.getTimestep();
+  }
+
+}
+
 import type { IEngineConfig } from '../types/engine.g.js';
 
 /** Builder for configuring and creating a GoudGame instance with provider selection. */
@@ -792,6 +1095,18 @@ export class EngineConfig implements IEngineConfig {
   /** Enables or disables the FPS debug overlay */
   setFpsOverlay(enabled: boolean): EngineConfig {
     this.native.setFpsOverlay(enabled);
+    return this;
+  }
+
+  /** Enables or disables physics debug visualization */
+  setPhysicsDebug(enabled: boolean): EngineConfig {
+    this.native.setPhysicsDebug(enabled);
+    return this;
+  }
+
+  /** Selects the 2D physics backend used by the built game */
+  setPhysicsBackend2D(backend: PhysicsBackend2D): EngineConfig {
+    this.native.setPhysicsBackend2D(backend);
     return this;
   }
 

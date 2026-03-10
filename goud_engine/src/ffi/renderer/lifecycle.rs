@@ -7,6 +7,8 @@ use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
 use crate::libs::graphics::backend::{ClearOps, FrameOps, StateOps};
 
+use super::draw::render_physics_debug_overlay;
+
 // ============================================================================
 // Renderer State
 // ============================================================================
@@ -90,6 +92,11 @@ pub extern "C" fn goud_renderer_end(context_id: GoudContextId) -> bool {
 
     // End frame on the backend
     with_window_state(context_id, |state| {
+        if let Err(e) = render_physics_debug_overlay(context_id, state) {
+            set_last_error(e);
+            return false;
+        }
+
         if let Err(e) = state.backend_mut().end_frame() {
             set_last_error(e);
             return false;

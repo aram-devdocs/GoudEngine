@@ -2,7 +2,9 @@
 
 use super::Rapier3DPhysicsProvider;
 use crate::core::providers::physics3d::PhysicsProvider3D;
-use crate::core::providers::types::{BodyDesc3D, BodyHandle, ColliderDesc3D};
+use crate::core::providers::types::{
+    BodyDesc3D, BodyHandle, ColliderDesc3D, JointDesc3D, JointKind, JointLimits, JointMotor,
+};
 use crate::core::providers::{Provider, ProviderLifecycle};
 
 #[test]
@@ -39,6 +41,82 @@ fn test_body_lifecycle() {
 
     // After destruction, the handle should be invalid.
     assert!(provider.body_position(body).is_err());
+}
+
+#[test]
+fn test_body_desc_3d_defaults_ccd_disabled() {
+    let desc = BodyDesc3D::default();
+    assert!(!desc.ccd_enabled);
+}
+
+#[test]
+fn test_create_body_threads_ccd_flag() {
+    let mut provider = Rapier3DPhysicsProvider::new();
+
+    let disabled = provider
+        .create_body(&BodyDesc3D {
+            body_type: 1,
+            ..Default::default()
+        })
+        .unwrap();
+    let disabled_rb = provider
+        .rigid_body_set
+        .get(provider.resolve_body(disabled).unwrap())
+        .unwrap();
+    assert!(!disabled_rb.is_ccd_enabled());
+
+    let enabled = provider
+        .create_body(&BodyDesc3D {
+            body_type: 1,
+            ccd_enabled: true,
+            ..Default::default()
+        })
+        .unwrap();
+    let enabled_rb = provider
+        .rigid_body_set
+        .get(provider.resolve_body(enabled).unwrap())
+        .unwrap();
+    assert!(enabled_rb.is_ccd_enabled());
+}
+
+#[test]
+fn test_create_and_destroy_prismatic_joint() {
+    let mut provider = Rapier3DPhysicsProvider::new();
+    let body_a = provider
+        .create_body(&BodyDesc3D {
+            body_type: 1,
+            ..Default::default()
+        })
+        .unwrap();
+    let body_b = provider
+        .create_body(&BodyDesc3D {
+            body_type: 1,
+            ..Default::default()
+        })
+        .unwrap();
+
+    let joint = provider
+        .create_joint(&JointDesc3D {
+            body_a: Some(body_a),
+            body_b: Some(body_b),
+            kind: JointKind::Prismatic,
+            axis: [0.0, 1.0, 0.0],
+            limits: Some(JointLimits {
+                min: -1.0,
+                max: 2.0,
+            }),
+            motor: Some(JointMotor {
+                target_velocity: 2.0,
+                max_force: 5.0,
+            }),
+            ..Default::default()
+        })
+        .unwrap();
+
+    assert!(provider.joint_map.contains_key(&joint.0));
+
+    provider.destroy_joint(joint);
+    assert!(!provider.joint_map.contains_key(&joint.0));
 }
 
 #[test]

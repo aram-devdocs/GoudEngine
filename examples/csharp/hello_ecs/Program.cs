@@ -33,7 +33,13 @@ public class Program
         Console.WriteLine("Move the player (blue) to collide with the target (red)!");
         Console.WriteLine();
 
-        using var game = new GoudGame(ScreenWidth, ScreenHeight, "Hello ECS - GoudEngine");
+        WarmPhysicsApi();
+
+        using var game = new EngineConfig()
+            .SetTitle("Hello ECS - GoudEngine")
+            .SetSize(ScreenWidth, ScreenHeight)
+            .SetPhysicsDebug(true)
+            .Build();
 
         // Main game loop
         while (!game.ShouldClose())
@@ -71,6 +77,32 @@ public class Program
         }
 
         Console.WriteLine("Game exited cleanly.");
+    }
+
+    static void WarmPhysicsApi()
+    {
+        using var world = new PhysicsWorld2D(0.0f, -9.81f);
+
+        ulong anchorA = (ulong)world.AddRigidBody(0, 0.0f, -3.0f, 1.0f);
+        ulong anchorB = (ulong)world.AddRigidBodyEx(1, 0.0f, 2.0f, 1.0f, true);
+
+        world.AddCollider(anchorA, 1, 2.0f, 0.25f, 0.0f, 0.5f, 0.0f);
+        world.AddCollider(anchorB, 1, 0.25f, 0.25f, 0.0f, 0.5f, 0.0f);
+
+        ulong joint = (ulong)world.CreateJoint(
+            anchorA, anchorB,
+            2,
+            0.0f, 0.0f,
+            0.0f, 0.0f,
+            0.0f, 1.0f,
+            true,
+            1.0f, 3.0f,
+            false,
+            0.0f, 0.0f
+        );
+
+        world.Step(1.0f / 60.0f);
+        world.RemoveJoint(joint);
     }
 
     static void Update(GoudGame game, float deltaTime)

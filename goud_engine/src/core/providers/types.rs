@@ -201,7 +201,7 @@ pub struct CameraData {
 // =============================================================================
 
 /// Describes a physics body to be created.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct BodyDesc {
     /// Initial position as [x, y].
     pub position: [f32; 2],
@@ -213,8 +213,49 @@ pub struct BodyDesc {
     pub angular_damping: f32,
     /// Whether gravity applies to this body.
     pub gravity_scale: f32,
+    /// Whether continuous collision detection is enabled for this body.
+    pub ccd_enabled: bool,
     /// Fixed rotation (no angular velocity).
     pub fixed_rotation: bool,
+}
+
+/// Selection of 2D physics backends available to `EngineConfig` and native FFI.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[repr(u32)]
+pub enum PhysicsBackend2D {
+    /// Use whatever default backend `EngineConfig` currently selects.
+    #[default]
+    Default = 0,
+    /// Use the Rapier2D backend.
+    Rapier = 1,
+    /// Use the lightweight simple 2D backend.
+    Simple = 2,
+}
+
+impl PhysicsBackend2D {
+    /// Attempts to convert a raw backend selector into a validated enum value.
+    pub fn from_u32(value: u32) -> Option<Self> {
+        match value {
+            0 => Some(Self::Default),
+            1 => Some(Self::Rapier),
+            2 => Some(Self::Simple),
+            _ => None,
+        }
+    }
+}
+
+impl Default for BodyDesc {
+    fn default() -> Self {
+        Self {
+            position: [0.0, 0.0],
+            body_type: 0,
+            linear_damping: 0.0,
+            angular_damping: 0.0,
+            gravity_scale: 1.0,
+            ccd_enabled: false,
+            fixed_rotation: false,
+        }
+    }
 }
 
 /// Describes a physics collider to be attached to a body.
@@ -259,18 +300,54 @@ impl Default for ColliderDesc {
 }
 
 /// Describes a physics joint connecting two bodies.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum JointKind {
+    /// Distance-limited joint.
+    Distance,
+    /// Revolute/hinge joint.
+    #[default]
+    Revolute,
+    /// Prismatic/slider joint.
+    Prismatic,
+}
+
+/// Shared joint limits configuration.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct JointLimits {
+    /// Minimum travel/rotation along the constrained axis.
+    pub min: f32,
+    /// Maximum travel/rotation along the constrained axis.
+    pub max: f32,
+}
+
+/// Shared joint motor configuration.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct JointMotor {
+    /// Desired angular or linear velocity.
+    pub target_velocity: f32,
+    /// Maximum force/torque the motor can apply.
+    pub max_force: f32,
+}
+
+/// Describes a physics joint connecting two bodies.
 #[derive(Debug, Clone, Default)]
 pub struct JointDesc {
     /// First body in the joint.
     pub body_a: Option<BodyHandle>,
     /// Second body in the joint.
     pub body_b: Option<BodyHandle>,
-    /// Joint type (0 = revolute, 1 = prismatic, 2 = distance).
-    pub joint_type: u32,
+    /// High-level joint kind.
+    pub kind: JointKind,
     /// Anchor point on body A as [x, y] in local space.
     pub anchor_a: [f32; 2],
     /// Anchor point on body B as [x, y] in local space.
     pub anchor_b: [f32; 2],
+    /// Local axis used by prismatic joints.
+    pub axis: [f32; 2],
+    /// Optional travel/rotation limits.
+    pub limits: Option<JointLimits>,
+    /// Optional motor settings.
+    pub motor: Option<JointMotor>,
 }
 
 // =============================================================================

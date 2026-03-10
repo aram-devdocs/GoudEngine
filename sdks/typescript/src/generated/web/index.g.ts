@@ -681,6 +681,11 @@ export class EngineConfig {
     return this;
   }
 
+  /** Selects the 2D physics backend used by the built game */
+  setPhysicsBackend2D(_backend: PhysicsBackend2D): EngineConfig {
+    return this;
+  }
+
   /** Consumes the config and creates a windowed GoudGame instance */
   async build(): Promise<GoudGame> {
     return GoudGame.create(this._config);

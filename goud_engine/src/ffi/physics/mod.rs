@@ -25,6 +25,15 @@ mod physics3d;
 mod physics3d_material;
 
 #[cfg(feature = "rapier2d")]
+pub use physics2d::{
+    goud_physics_add_collider, goud_physics_add_rigid_body, goud_physics_add_rigid_body_ex,
+    goud_physics_apply_force, goud_physics_apply_impulse, goud_physics_create,
+    goud_physics_create_joint, goud_physics_create_with_backend, goud_physics_destroy,
+    goud_physics_get_position, goud_physics_get_velocity, goud_physics_raycast,
+    goud_physics_remove_body, goud_physics_remove_joint, goud_physics_set_gravity,
+    goud_physics_set_velocity, goud_physics_step,
+};
+#[cfg(feature = "rapier2d")]
 // Keep both singular and plural collision-event symbols exported for backward compatibility:
 // older SDKs use singular names while newer APIs use pluralized names.
 pub use physics2d_events::{
@@ -33,9 +42,32 @@ pub use physics2d_events::{
     goud_physics_set_collision_callback,
 };
 #[cfg(feature = "rapier2d")]
-pub use physics2d_ex::goud_physics_raycast_ex;
+pub use physics2d_ex::{goud_physics_add_collider_ex, goud_physics_raycast_ex};
+#[cfg(feature = "rapier2d")]
+pub use physics2d_material::{
+    goud_physics_get_body_gravity_scale, goud_physics_get_collider_friction,
+    goud_physics_get_collider_restitution, goud_physics_get_gravity, goud_physics_get_timestep,
+    goud_physics_set_body_gravity_scale, goud_physics_set_collider_friction,
+    goud_physics_set_collider_restitution, goud_physics_set_timestep,
+};
 #[cfg(feature = "rapier2d")]
 pub use physics2d_state::CollisionCallback;
+#[cfg(feature = "rapier3d")]
+pub use physics3d::{
+    goud_physics3d_add_collider, goud_physics3d_add_rigid_body, goud_physics3d_add_rigid_body_ex,
+    goud_physics3d_apply_force, goud_physics3d_apply_impulse, goud_physics3d_create,
+    goud_physics3d_create_joint, goud_physics3d_destroy, goud_physics3d_get_position,
+    goud_physics3d_remove_body, goud_physics3d_remove_joint, goud_physics3d_set_gravity,
+    goud_physics3d_set_velocity, goud_physics3d_step,
+};
+#[cfg(feature = "rapier3d")]
+pub use physics3d_material::{
+    goud_physics3d_get_body_gravity_scale, goud_physics3d_get_collider_friction,
+    goud_physics3d_get_collider_restitution, goud_physics3d_get_gravity,
+    goud_physics3d_get_timestep, goud_physics3d_set_body_gravity_scale,
+    goud_physics3d_set_collider_friction, goud_physics3d_set_collider_restitution,
+    goud_physics3d_set_timestep,
+};
 
 // =============================================================================
 // Global Physics Provider Registries (2D)

@@ -3,6 +3,7 @@
 //! Immediate-mode draw calls: sprites, sprite sheet rects, and colored quads.
 
 use crate::core::error::{set_last_error, GoudError};
+use crate::core::providers::types::DebugShape;
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
 use crate::libs::graphics::backend::{DrawOps, ShaderOps, TextureOps};
@@ -271,6 +272,30 @@ fn extract_state(context_id: GoudContextId) -> Option<ImmediateStateData> {
     })
 }
 
+/// Renders physics debug wireframes for the current context.
+pub(super) fn render_physics_debug_overlay(
+    context_id: GoudContextId,
+    window_state: &mut crate::ffi::window::WindowState,
+) -> Result<(), GoudError> {
+    if !window_state.physics_debug_enabled {
+        return Ok(());
+    }
+
+    let shapes = crate::ffi::providers::physics_debug_shapes(context_id);
+    if shapes.is_empty() {
+        return Ok(());
+    }
+
+    ensure_immediate_state(context_id)?;
+    let state_data = extract_state(context_id).ok_or(GoudError::InvalidContext)?;
+
+    for shape in shapes {
+        draw_debug_shape(window_state, state_data, &shape)?;
+    }
+
+    Ok(())
+}
+
 /// Maps the draw result (Option<Result<(), GoudError>>) to a bool FFI return value.
 fn map_draw_result(result: Option<Result<(), GoudError>>) -> bool {
     match result {
@@ -284,6 +309,143 @@ fn map_draw_result(result: Option<Result<(), GoudError>>) -> bool {
             false
         }
     }
+}
+
+fn draw_debug_shape(
+    window_state: &mut crate::ffi::window::WindowState,
+    state_data: ImmediateStateData,
+    shape: &DebugShape,
+) -> Result<(), GoudError> {
+    match shape.shape_type {
+        0 => draw_circle_outline(window_state, state_data, shape),
+        1 => draw_box_outline(window_state, state_data, shape),
+        2 => draw_line_shape(window_state, state_data, shape),
+        _ => Ok(()),
+    }
+}
+
+fn draw_box_outline(
+    window_state: &mut crate::ffi::window::WindowState,
+    state_data: ImmediateStateData,
+    shape: &DebugShape,
+) -> Result<(), GoudError> {
+    let half_w = shape.size[0] * 0.5;
+    let half_h = shape.size[1] * 0.5;
+    let corners = [
+        rotate_point([-half_w, -half_h], shape.rotation, shape.position),
+        rotate_point([half_w, -half_h], shape.rotation, shape.position),
+        rotate_point([half_w, half_h], shape.rotation, shape.position),
+        rotate_point([-half_w, half_h], shape.rotation, shape.position),
+    ];
+
+    for segment in corners.windows(2) {
+        draw_line_segment(
+            window_state,
+            state_data,
+            segment[0],
+            segment[1],
+            shape.color,
+            2.0,
+        )?;
+    }
+
+    draw_line_segment(
+        window_state,
+        state_data,
+        corners[3],
+        corners[0],
+        shape.color,
+        2.0,
+    )
+}
+
+fn draw_circle_outline(
+    window_state: &mut crate::ffi::window::WindowState,
+    state_data: ImmediateStateData,
+    shape: &DebugShape,
+) -> Result<(), GoudError> {
+    let radius = shape.size[0].max(shape.size[1]).max(0.5);
+    let segments = 24;
+    let mut previous = [
+        shape.position[0] + radius * shape.rotation.cos(),
+        shape.position[1] + radius * shape.rotation.sin(),
+    ];
+
+    for index in 1..=segments {
+        let theta = shape.rotation + (index as f32 / segments as f32) * std::f32::consts::TAU;
+        let current = [
+            shape.position[0] + radius * theta.cos(),
+            shape.position[1] + radius * theta.sin(),
+        ];
+        draw_line_segment(
+            window_state,
+            state_data,
+            previous,
+            current,
+            shape.color,
+            2.0,
+        )?;
+        previous = current;
+    }
+
+    Ok(())
+}
+
+fn draw_line_shape(
+    window_state: &mut crate::ffi::window::WindowState,
+    state_data: ImmediateStateData,
+    shape: &DebugShape,
+) -> Result<(), GoudError> {
+    let half_length = shape.size[0] * 0.5;
+    let start = rotate_point([-half_length, 0.0], shape.rotation, shape.position);
+    let end = rotate_point([half_length, 0.0], shape.rotation, shape.position);
+    draw_line_segment(
+        window_state,
+        state_data,
+        start,
+        end,
+        shape.color,
+        shape.size[1].max(2.0),
+    )
+}
+
+fn draw_line_segment(
+    window_state: &mut crate::ffi::window::WindowState,
+    state_data: ImmediateStateData,
+    start: [f32; 2],
+    end: [f32; 2],
+    color: [f32; 4],
+    thickness: f32,
+) -> Result<(), GoudError> {
+    let dx = end[0] - start[0];
+    let dy = end[1] - start[1];
+    let length = (dx * dx + dy * dy).sqrt();
+    if length <= f32::EPSILON {
+        return Ok(());
+    }
+
+    draw_quad_rotated_internal(
+        window_state,
+        state_data,
+        (start[0] + end[0]) * 0.5,
+        (start[1] + end[1]) * 0.5,
+        length,
+        thickness,
+        dy.atan2(dx),
+        color[0],
+        color[1],
+        color[2],
+        color[3],
+    )
+}
+
+fn rotate_point(local: [f32; 2], rotation: f32, center: [f32; 2]) -> [f32; 2] {
+    let cos_r = rotation.cos();
+    let sin_r = rotation.sin();
+    [
+        center[0] + local[0] * cos_r - local[1] * sin_r,
+        center[1] + local[0] * sin_r + local[1] * cos_r,
+    ]
 }
 
 /// Internal function to draw a sprite (delegates to `draw_sprite_rect_internal` with full UV).
@@ -424,6 +586,35 @@ fn draw_quad_internal(
     b: f32,
     a: f32,
 ) -> Result<(), GoudError> {
+    draw_quad_rotated_internal(
+        window_state,
+        state_data,
+        x,
+        y,
+        width,
+        height,
+        0.0,
+        r,
+        g,
+        b,
+        a,
+    )
+}
+
+/// Internal function to draw a rotated colored quad (no texture).
+fn draw_quad_rotated_internal(
+    window_state: &mut crate::ffi::window::WindowState,
+    state_data: ImmediateStateData,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    rotation: f32,
+    r: f32,
+    g: f32,
+    b: f32,
+    a: f32,
+) -> Result<(), GoudError> {
     use crate::libs::graphics::backend::types::PrimitiveTopology;
 
     let (
@@ -457,8 +648,7 @@ fn draw_quad_internal(
     // Create orthographic projection (screen coordinates)
     let projection = ortho_matrix(0.0, win_width as f32, win_height as f32, 0.0);
 
-    // Create model matrix (no rotation for simple quads)
-    let model = model_matrix(x, y, width, height, 0.0);
+    let model = model_matrix(x, y, width, height, rotation);
 
     // Bind VAO (includes vertex buffer, index buffer, and vertex attributes)
     // SAFETY: vao was created by ensure_immediate_state and is valid for this context.

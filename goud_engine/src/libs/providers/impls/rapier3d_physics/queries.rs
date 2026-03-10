@@ -135,12 +135,25 @@ impl Rapier3DPhysicsProvider {
                 (2, [0.1, 0.1, 0.1])
             };
 
+            let color = if collider.is_sensor() {
+                [1.0, 1.0, 0.0, 0.5]
+            } else if collider
+                .parent()
+                .and_then(|body| self.rigid_body_set.get(body))
+                .map(|body| body.is_fixed())
+                .unwrap_or(false)
+            {
+                [0.0, 1.0, 0.0, 0.5]
+            } else {
+                [0.0, 0.0, 1.0, 0.5]
+            };
+
             shapes.push(DebugShape3D {
                 shape_type,
                 position: [pos.x, pos.y, pos.z],
                 size,
                 rotation: [rot.i, rot.j, rot.k, rot.w],
-                color: [0.0, 1.0, 0.0, 0.5],
+                color,
             });
         }
         shapes

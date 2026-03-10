@@ -49,6 +49,9 @@ pub mod rapier3d_physics;
 #[cfg(feature = "rapier3d")]
 pub use rapier3d_physics::Rapier3DPhysicsProvider;
 
+pub mod simple_physics;
+pub use simple_physics::SimplePhysicsProvider;
+
 /// UDP transport provider implementing `NetworkProvider`.
 #[cfg(feature = "net-udp")]
 pub mod udp_network;

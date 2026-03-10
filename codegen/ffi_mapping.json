@@ -216,6 +216,14 @@
         "Ltr": 1,
         "Rtl": 2
       }
+    },
+    "PhysicsBackend2D": {
+      "ffi_name": "u32",
+      "enum_values": {
+        "Default": 0,
+        "Rapier": 1,
+        "Simple": 2
+      }
     }
   },
   "ffi_handles": {
@@ -1224,6 +1232,15 @@
         "setFpsOverlay": {
           "ffi": "goud_engine_config_set_fps_overlay"
         },
+        "setPhysicsDebug": {
+          "ffi": "goud_engine_config_set_physics_debug"
+        },
+        "setPhysicsBackend2D": {
+          "ffi": "goud_engine_config_set_physics_backend_2d",
+          "enum_params": {
+            "backend": "PhysicsBackend2D"
+          }
+        },
         "build": {
           "ffi": "goud_engine_create",
           "returns_context": true
@@ -1512,6 +1529,9 @@
         "create": {
           "ffi": "goud_physics_create"
         },
+        "createWithBackend": {
+          "ffi": "goud_physics_create_with_backend"
+        },
         "destroy": {
           "ffi": "goud_physics_destroy"
         },
@@ -1521,6 +1541,9 @@
         "addRigidBody": {
           "ffi": "goud_physics_add_rigid_body"
         },
+        "addRigidBodyEx": {
+          "ffi": "goud_physics_add_rigid_body_ex"
+        },
         "addCollider": {
           "ffi": "goud_physics_add_collider"
         },
@@ -1529,6 +1552,12 @@
         },
         "removeBody": {
           "ffi": "goud_physics_remove_body"
+        },
+        "createJoint": {
+          "ffi": "goud_physics_create_joint"
+        },
+        "removeJoint": {
+          "ffi": "goud_physics_remove_joint"
         },
         "step": {
           "ffi": "goud_physics_step"
@@ -1746,11 +1775,20 @@
         "addRigidBody": {
           "ffi": "goud_physics3d_add_rigid_body"
         },
+        "addRigidBodyEx": {
+          "ffi": "goud_physics3d_add_rigid_body_ex"
+        },
         "addCollider": {
           "ffi": "goud_physics3d_add_collider"
         },
         "removeBody": {
           "ffi": "goud_physics3d_remove_body"
+        },
+        "createJoint": {
+          "ffi": "goud_physics3d_create_joint"
+        },
+        "removeJoint": {
+          "ffi": "goud_physics3d_remove_joint"
         },
         "step": {
           "ffi": "goud_physics3d_step"
@@ -2346,6 +2384,34 @@
           {
             "name": "enabled",
             "type": "bool"
+          }
+        ],
+        "returns": "bool",
+        "unsafe": true
+      },
+      "goud_engine_config_set_physics_debug": {
+        "params": [
+          {
+            "name": "handle",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "enabled",
+            "type": "bool"
+          }
+        ],
+        "returns": "bool",
+        "unsafe": true
+      },
+      "goud_engine_config_set_physics_backend_2d": {
+        "params": [
+          {
+            "name": "handle",
+            "type": "*mut c_void"
+          },
+          {
+            "name": "backend",
+            "type": "u32"
           }
         ],
         "returns": "bool",
@@ -6366,6 +6432,27 @@
         ],
         "returns": "i32"
       },
+      "goud_physics_create_with_backend": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "gx",
+            "type": "f32"
+          },
+          {
+            "name": "gy",
+            "type": "f32"
+          },
+          {
+            "name": "backend",
+            "type": "u32"
+          }
+        ],
+        "returns": "i32"
+      },
       "goud_physics_destroy": {
         "params": [
           {
@@ -6413,6 +6500,35 @@
           {
             "name": "gravity_scale",
             "type": "f32"
+          }
+        ],
+        "returns": "i64"
+      },
+      "goud_physics_add_rigid_body_ex": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "body_type",
+            "type": "u32"
+          },
+          {
+            "name": "x",
+            "type": "f32"
+          },
+          {
+            "name": "y",
+            "type": "f32"
+          },
+          {
+            "name": "gravity_scale",
+            "type": "f32"
+          },
+          {
+            "name": "ccd_enabled",
+            "type": "bool"
           }
         ],
         "returns": "i64"
@@ -6504,6 +6620,88 @@
         "returns": "i64"
       },
       "goud_physics_remove_body": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics_create_joint": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "body_a",
+            "type": "u64"
+          },
+          {
+            "name": "body_b",
+            "type": "u64"
+          },
+          {
+            "name": "kind",
+            "type": "u32"
+          },
+          {
+            "name": "anchor_ax",
+            "type": "f32"
+          },
+          {
+            "name": "anchor_ay",
+            "type": "f32"
+          },
+          {
+            "name": "anchor_bx",
+            "type": "f32"
+          },
+          {
+            "name": "anchor_by",
+            "type": "f32"
+          },
+          {
+            "name": "axis_x",
+            "type": "f32"
+          },
+          {
+            "name": "axis_y",
+            "type": "f32"
+          },
+          {
+            "name": "has_limits",
+            "type": "bool"
+          },
+          {
+            "name": "limit_min",
+            "type": "f32"
+          },
+          {
+            "name": "limit_max",
+            "type": "f32"
+          },
+          {
+            "name": "has_motor",
+            "type": "bool"
+          },
+          {
+            "name": "motor_target_velocity",
+            "type": "f32"
+          },
+          {
+            "name": "motor_max_force",
+            "type": "f32"
+          }
+        ],
+        "returns": "i64"
+      },
+      "goud_physics_remove_joint": {
         "params": [
           {
             "name": "ctx",
@@ -7056,6 +7254,39 @@
         ],
         "returns": "i64"
       },
+      "goud_physics3d_add_rigid_body_ex": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "body_type",
+            "type": "u32"
+          },
+          {
+            "name": "x",
+            "type": "f32"
+          },
+          {
+            "name": "y",
+            "type": "f32"
+          },
+          {
+            "name": "z",
+            "type": "f32"
+          },
+          {
+            "name": "gravity_scale",
+            "type": "f32"
+          },
+          {
+            "name": "ccd_enabled",
+            "type": "bool"
+          }
+        ],
+        "returns": "i64"
+      },
       "goud_physics3d_add_collider": {
         "params": [
           {
@@ -7098,6 +7329,100 @@
         "returns": "i64"
       },
       "goud_physics3d_remove_body": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "handle",
+            "type": "u64"
+          }
+        ],
+        "returns": "i32"
+      },
+      "goud_physics3d_create_joint": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "body_a",
+            "type": "u64"
+          },
+          {
+            "name": "body_b",
+            "type": "u64"
+          },
+          {
+            "name": "joint_kind",
+            "type": "u32"
+          },
+          {
+            "name": "anchor_ax",
+            "type": "f32"
+          },
+          {
+            "name": "anchor_ay",
+            "type": "f32"
+          },
+          {
+            "name": "anchor_az",
+            "type": "f32"
+          },
+          {
+            "name": "anchor_bx",
+            "type": "f32"
+          },
+          {
+            "name": "anchor_by",
+            "type": "f32"
+          },
+          {
+            "name": "anchor_bz",
+            "type": "f32"
+          },
+          {
+            "name": "axis_x",
+            "type": "f32"
+          },
+          {
+            "name": "axis_y",
+            "type": "f32"
+          },
+          {
+            "name": "axis_z",
+            "type": "f32"
+          },
+          {
+            "name": "use_limits",
+            "type": "bool"
+          },
+          {
+            "name": "limit_min",
+            "type": "f32"
+          },
+          {
+            "name": "limit_max",
+            "type": "f32"
+          },
+          {
+            "name": "use_motor",
+            "type": "bool"
+          },
+          {
+            "name": "motor_target_velocity",
+            "type": "f32"
+          },
+          {
+            "name": "motor_max_force",
+            "type": "f32"
+          }
+        ],
+        "returns": "i64"
+      },
+      "goud_physics3d_remove_joint": {
         "params": [
           {
             "name": "ctx",

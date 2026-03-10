@@ -22,8 +22,12 @@ use crate::core::providers::audio::AudioProvider;
 use crate::core::providers::input::InputProvider;
 use crate::core::providers::physics::PhysicsProvider;
 use crate::core::providers::render::RenderProvider;
+use crate::core::providers::types::PhysicsBackend2D;
 use crate::core::providers::ProviderRegistry;
 use crate::core::providers::ProviderRegistryBuilder;
+#[cfg(feature = "rapier2d")]
+use crate::libs::providers::impls::Rapier2DPhysicsProvider;
+use crate::libs::providers::impls::SimplePhysicsProvider;
 use crate::sdk::game_config::GameConfig;
 
 /// Unified engine configuration combining window settings and provider selection.
@@ -33,6 +37,7 @@ use crate::sdk::game_config::GameConfig;
 /// to consume the builder and obtain both parts.
 pub struct EngineConfig {
     game_config: GameConfig,
+    physics_backend_2d: PhysicsBackend2D,
     provider_builder: ProviderRegistryBuilder,
 }
 
@@ -41,6 +46,7 @@ impl EngineConfig {
     pub fn new() -> Self {
         Self {
             game_config: GameConfig::default(),
+            physics_backend_2d: PhysicsBackend2D::Default,
             provider_builder: ProviderRegistryBuilder::new(),
         }
     }
@@ -83,6 +89,18 @@ impl EngineConfig {
         self
     }
 
+    /// Enables or disables runtime physics debug visualization.
+    pub fn with_physics_debug(mut self, enabled: bool) -> Self {
+        self.game_config = self.game_config.with_physics_debug(enabled);
+        self
+    }
+
+    /// Selects the 2D physics backend used during engine creation.
+    pub fn with_physics_backend_2d(mut self, backend: PhysicsBackend2D) -> Self {
+        self.physics_backend_2d = backend;
+        self
+    }
+
     /// Replaces the entire [`GameConfig`] with the provided one.
     pub fn with_game_config(mut self, config: GameConfig) -> Self {
         self.game_config = config;
@@ -118,8 +136,30 @@ impl EngineConfig {
     // Build & Accessors
 
     /// Consumes the builder and returns the `GameConfig` and `ProviderRegistry`.
+    pub(crate) fn set_physics_backend_2d(&mut self, backend: PhysicsBackend2D) {
+        self.physics_backend_2d = backend;
+    }
+
+    /// Consumes the builder and returns the `GameConfig` and configured `ProviderRegistry`.
+    ///
+    /// 2D physics selection is applied during build. `PhysicsBackend2D::Default`
+    /// keeps existing defaults, while explicit variants install the corresponding provider.
     pub fn build(self) -> (GameConfig, ProviderRegistry) {
-        (self.game_config, self.provider_builder.build())
+        let mut builder = self.provider_builder;
+        match self.physics_backend_2d {
+            PhysicsBackend2D::Default => {}
+            PhysicsBackend2D::Rapier => {
+                #[cfg(feature = "rapier2d")]
+                {
+                    builder = builder.with_physics(Rapier2DPhysicsProvider::new([0.0, 0.0]));
+                }
+            }
+            PhysicsBackend2D::Simple => {
+                builder = builder.with_physics(SimplePhysicsProvider::new([0.0, 0.0]));
+            }
+        }
+
+        (self.game_config, builder.build())
     }
 
     /// Returns a reference to the current game configuration.
@@ -169,7 +209,8 @@ mod tests {
             .with_vsync(false)
             .with_fullscreen(true)
             .with_target_fps(144)
-            .with_fps_overlay(true);
+            .with_fps_overlay(true)
+            .with_physics_debug(true);
         let gc = config.game_config();
         assert_eq!(gc.title, "Chain Test");
         assert_eq!(gc.width, 1920);
@@ -178,6 +219,7 @@ mod tests {
         assert!(gc.fullscreen);
         assert_eq!(gc.target_fps, 144);
         assert!(gc.show_fps_overlay);
+        assert!(gc.physics_debug.enabled);
     }
 
     #[test]

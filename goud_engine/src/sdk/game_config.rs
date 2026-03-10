@@ -25,6 +25,13 @@
 ///     ..Default::default()
 /// };
 /// ```
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct PhysicsDebugConfig {
+    /// Enables runtime physics debug visualization and shape collection.
+    pub enabled: bool,
+}
+
+/// Configuration for creating a GoudGame instance.
 #[derive(Debug, Clone)]
 pub struct GameConfig {
     /// Window title displayed in the title bar.
@@ -54,6 +61,9 @@ pub struct GameConfig {
     /// Show the FPS stats overlay.
     pub show_fps_overlay: bool,
 
+    /// Physics debug visualization settings.
+    pub physics_debug: PhysicsDebugConfig,
+
     /// How often (in seconds) the FPS overlay recomputes statistics.
     pub fps_update_interval: f32,
 
@@ -73,6 +83,7 @@ impl Default for GameConfig {
             target_fps: 60,
             debug_rendering: false,
             show_fps_overlay: false,
+            physics_debug: PhysicsDebugConfig::default(),
             fps_update_interval: 0.5,
             diagnostic_mode: false,
         }
@@ -132,6 +143,12 @@ impl GameConfig {
     /// Enables or disables the FPS stats overlay.
     pub fn with_fps_overlay(mut self, enabled: bool) -> Self {
         self.show_fps_overlay = enabled;
+        self
+    }
+
+    /// Enables or disables physics debug visualization.
+    pub fn with_physics_debug(mut self, enabled: bool) -> Self {
+        self.physics_debug.enabled = enabled;
         self
     }
 

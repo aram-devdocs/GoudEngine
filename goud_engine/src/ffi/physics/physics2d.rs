@@ -4,9 +4,13 @@
 //! collider attachment, forces, impulses, simulation stepping, and raycasting.
 
 use crate::core::error::{set_last_error, GoudError, ERR_INTERNAL_ERROR};
-use crate::core::providers::types::{BodyDesc, BodyHandle};
+use crate::core::providers::types::{
+    BodyDesc, BodyHandle, JointDesc, JointHandle, JointKind, JointLimits, JointMotor,
+    PhysicsBackend2D,
+};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::libs::providers::impls::rapier2d_physics::Rapier2DPhysicsProvider;
+use crate::libs::providers::impls::simple_physics::SimplePhysicsProvider;
 
 use super::get_physics_registry_2d;
 use super::physics2d_common::{with_provider, with_provider_mut, INVALID_HANDLE};
@@ -20,7 +24,11 @@ use super::physics2d_state::{clear_context, remove_body as remove_body_state};
 // Provider Lifecycle
 // =============================================================================
 
+const PHYSICS_BACKEND_DEFAULT: u32 = PhysicsBackend2D::Default as u32;
+
 /// Creates a 2D physics provider for the given context with initial gravity.
+///
+/// Uses `PhysicsBackend2D::Default` backend selection.
 ///
 /// Must be called before any other `goud_physics_*` function for this context.
 ///
@@ -33,12 +41,53 @@ use super::physics2d_state::{clear_context, remove_body as remove_body_state};
 /// 0 on success, negative error code on failure.
 #[no_mangle]
 pub extern "C" fn goud_physics_create(ctx: GoudContextId, gx: f32, gy: f32) -> i32 {
+    goud_physics_create_with_backend(ctx, gx, gy, PHYSICS_BACKEND_DEFAULT)
+}
+
+/// Creates a 2D physics provider for the given context with explicit backend.
+///
+/// Backend values:
+/// - `0`: Default (same as `goud_physics_create` delegation)
+/// - `1`: Rapier2D
+/// - `2`: SimplePhysicsProvider
+///
+/// Must be called before any other `goud_physics_*` function for this context.
+///
+/// **Cleanup:** The caller MUST call `goud_physics_destroy` before destroying
+/// the context. Physics providers are stored in a global registry separate
+/// from `GoudContext` and are NOT automatically cleaned up on context destroy.
+///
+/// # Returns
+///
+/// 0 on success, negative error code on failure.
+#[no_mangle]
+pub extern "C" fn goud_physics_create_with_backend(
+    ctx: GoudContextId,
+    gx: f32,
+    gy: f32,
+    backend: u32,
+) -> i32 {
     if ctx == GOUD_INVALID_CONTEXT_ID {
         set_last_error(GoudError::InvalidContext);
         return GoudError::InvalidContext.error_code();
     }
 
-    let provider = Rapier2DPhysicsProvider::new([gx, gy]);
+    let backend_value = match PhysicsBackend2D::from_u32(backend) {
+        Some(backend) => backend,
+        None => {
+            set_last_error(GoudError::InvalidState(
+                "invalid physics backend".to_string(),
+            ));
+            return GoudError::InvalidState(String::new()).error_code();
+        }
+    };
+    let provider: Box<dyn crate::core::providers::physics::PhysicsProvider> = match backend_value {
+        PhysicsBackend2D::Default | PhysicsBackend2D::Rapier => {
+            Box::new(Rapier2DPhysicsProvider::new([gx, gy]))
+        }
+        PhysicsBackend2D::Simple => Box::new(SimplePhysicsProvider::new([gx, gy])),
+    };
+
     let mut registry = match get_physics_registry_2d().lock() {
         Ok(r) => r,
         Err(_) => {
@@ -48,7 +97,7 @@ pub extern "C" fn goud_physics_create(ctx: GoudContextId, gx: f32, gy: f32) -> i
             return ERR_INTERNAL_ERROR;
         }
     };
-    registry.providers.insert(ctx, Box::new(provider));
+    registry.providers.insert(ctx, provider);
     0
 }
 
@@ -119,11 +168,37 @@ pub extern "C" fn goud_physics_add_rigid_body(
     y: f32,
     gravity_scale: f32,
 ) -> i64 {
+    goud_physics_add_rigid_body_ex(ctx, body_type, x, y, gravity_scale, false)
+}
+
+/// Creates a rigid body in the 2D physics world with explicit CCD control.
+///
+/// # Arguments
+///
+/// * `ctx` - Context ID
+/// * `body_type` - 0 = static, 1 = dynamic, 2 = kinematic
+/// * `x`, `y` - Initial position
+/// * `gravity_scale` - Per-body gravity multiplier (1.0 = normal)
+/// * `ccd_enabled` - Enables continuous collision detection for this body
+///
+/// # Returns
+///
+/// A positive body handle on success, or -1 on error.
+#[no_mangle]
+pub extern "C" fn goud_physics_add_rigid_body_ex(
+    ctx: GoudContextId,
+    body_type: u32,
+    x: f32,
+    y: f32,
+    gravity_scale: f32,
+    ccd_enabled: bool,
+) -> i64 {
     with_provider_mut(ctx, |p| {
         let desc = BodyDesc {
             position: [x, y],
             body_type,
             gravity_scale,
+            ccd_enabled,
             ..BodyDesc::default()
         };
         match p.create_body(&desc) {
@@ -146,6 +221,67 @@ pub extern "C" fn goud_physics_remove_body(ctx: GoudContextId, handle: u64) -> i
     with_provider_mut(ctx, |p| {
         p.destroy_body(BodyHandle(handle));
         remove_body_state(ctx, handle);
+        0
+    })
+}
+
+/// Creates a joint between two rigid bodies in the 2D physics world.
+///
+/// `joint_kind` mapping:
+/// - `0`: revolute
+/// - `1`: prismatic
+/// - `2+`: distance
+#[no_mangle]
+pub extern "C" fn goud_physics_create_joint(
+    ctx: GoudContextId,
+    body_a: u64,
+    body_b: u64,
+    joint_kind: u32,
+    anchor_ax: f32,
+    anchor_ay: f32,
+    anchor_bx: f32,
+    anchor_by: f32,
+    axis_x: f32,
+    axis_y: f32,
+    use_limits: bool,
+    limit_min: f32,
+    limit_max: f32,
+    use_motor: bool,
+    motor_target_velocity: f32,
+    motor_max_force: f32,
+) -> i64 {
+    with_provider_mut(ctx, |p| {
+        let desc = JointDesc {
+            body_a: Some(BodyHandle(body_a)),
+            body_b: Some(BodyHandle(body_b)),
+            kind: joint_kind_from_u32(joint_kind),
+            anchor_a: [anchor_ax, anchor_ay],
+            anchor_b: [anchor_bx, anchor_by],
+            axis: [axis_x, axis_y],
+            limits: use_limits.then_some(JointLimits {
+                min: limit_min,
+                max: limit_max,
+            }),
+            motor: use_motor.then_some(JointMotor {
+                target_velocity: motor_target_velocity,
+                max_force: motor_max_force,
+            }),
+        };
+        match p.create_joint(&desc) {
+            Ok(handle) => handle.0 as i64,
+            Err(e) => {
+                set_last_error(e);
+                INVALID_HANDLE
+            }
+        }
+    })
+}
+
+/// Removes a joint from the 2D physics world.
+#[no_mangle]
+pub extern "C" fn goud_physics_remove_joint(ctx: GoudContextId, handle: u64) -> i32 {
+    with_provider_mut(ctx, |p| {
+        p.destroy_joint(JointHandle(handle));
         0
     })
 }
@@ -207,6 +343,14 @@ pub extern "C" fn goud_physics_add_collider(
 #[no_mangle]
 pub extern "C" fn goud_physics_step(ctx: GoudContextId, dt: f32) -> i32 {
     step_and_dispatch_collision_events(ctx, dt)
+}
+
+fn joint_kind_from_u32(raw: u32) -> JointKind {
+    match raw {
+        0 => JointKind::Revolute,
+        1 => JointKind::Prismatic,
+        _ => JointKind::Distance,
+    }
 }
 
 // =============================================================================

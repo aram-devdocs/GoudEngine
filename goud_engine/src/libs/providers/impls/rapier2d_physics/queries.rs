@@ -124,9 +124,16 @@ impl Rapier2DPhysicsProvider {
             let rot = collider.position().rotation.angle();
 
             let color = if collider.is_sensor() {
-                [0.0, 1.0, 0.0, 0.5] // green for sensors
+                [1.0, 1.0, 0.0, 0.5]
+            } else if collider
+                .parent()
+                .and_then(|body| self.rigid_body_set.get(body))
+                .map(|body| body.is_fixed())
+                .unwrap_or(false)
+            {
+                [0.0, 1.0, 0.0, 0.5]
             } else {
-                [0.0, 1.0, 1.0, 0.5] // cyan for solid
+                [0.0, 0.0, 1.0, 0.5]
             };
 
             if let Some(ball) = collider.shape().as_ball() {

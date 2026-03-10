@@ -114,6 +114,7 @@ fn test_rigidbody_default() {
     let body = RigidBody::default();
     assert!(body.is_dynamic());
     assert_eq!(body.mass, 1.0);
+    assert!(!body.has_continuous_cd());
 }
 
 // =========================================================================

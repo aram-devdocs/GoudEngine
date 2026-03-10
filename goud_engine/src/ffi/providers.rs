@@ -16,7 +16,9 @@ use crate::core::error::{
 };
 use crate::core::providers::input_types::InputCapabilities;
 use crate::core::providers::network_types::NetworkCapabilities;
-use crate::core::providers::types::{AudioCapabilities, PhysicsCapabilities, RenderCapabilities};
+use crate::core::providers::types::{
+    AudioCapabilities, DebugShape, PhysicsCapabilities, RenderCapabilities,
+};
 use crate::core::providers::ProviderRegistry;
 use crate::ffi::context::GoudContextId;
 
@@ -86,6 +88,14 @@ pub fn provider_registry_remove(context_id: GoudContextId) {
             map.remove(&context_id);
         }
     }
+}
+
+/// Returns cached physics debug shapes for the given context.
+///
+/// Missing registries are treated as "no overlay data" so rendering callers can
+/// stay on the fast path without surfacing context-management errors.
+pub(crate) fn physics_debug_shapes(context_id: GoudContextId) -> Vec<DebugShape> {
+    with_registry(context_id, |reg| Ok(reg.physics.debug_shapes())).unwrap_or_default()
 }
 
 // ============================================================================
