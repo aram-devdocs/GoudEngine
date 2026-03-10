@@ -1,5 +1,8 @@
 use crate::core::math::{Color, Rect, Vec2, Vec3, Vec4};
 use crate::core::serialization::delta::DeltaEncode;
+type Quat = crate::ecs::components::transform::Quat;
+type Transform = crate::ecs::components::Transform;
+type Transform2D = crate::ecs::components::Transform2D;
 
 // =============================================================================
 // Vec2 delta tests
@@ -211,6 +214,44 @@ fn test_rect_partial_change_width_height() {
 fn test_rect_apply_delta_reconstructs() {
     let baseline = Rect::new(0.0, 0.0, 100.0, 50.0);
     let target = Rect::new(5.0, 0.0, 100.0, 75.0);
+
+    let delta = target.delta_from(&baseline).unwrap();
+    let reconstructed = baseline.apply_delta(&delta).unwrap();
+
+    assert_eq!(reconstructed, target);
+}
+
+// =============================================================================
+// Transform2D delta tests
+// =============================================================================
+
+#[test]
+fn test_transform2d_apply_delta_reconstructs_roundtrip() {
+    let baseline = Transform2D::new(Vec2::new(1.0, 2.0), 0.25, Vec2::new(1.0, 1.0));
+    let target = Transform2D::new(Vec2::new(4.0, 2.0), 1.5, Vec2::new(2.0, 0.5));
+
+    let delta = target.delta_from(&baseline).unwrap();
+    let reconstructed = baseline.apply_delta(&delta).unwrap();
+
+    assert_eq!(reconstructed, target);
+}
+
+// =============================================================================
+// Transform delta tests
+// =============================================================================
+
+#[test]
+fn test_transform_apply_delta_reconstructs_roundtrip() {
+    let baseline = Transform::new(
+        Vec3::new(1.0, 2.0, 3.0),
+        Quat::new(0.0, 0.0, 0.0, 1.0),
+        Vec3::new(1.0, 1.0, 1.0),
+    );
+    let target = Transform::new(
+        Vec3::new(5.0, 2.0, -2.0),
+        Quat::new(0.1, -0.2, 0.3, 0.9),
+        Vec3::new(1.5, 0.5, 2.0),
+    );
 
     let delta = target.delta_from(&baseline).unwrap();
     let reconstructed = baseline.apply_delta(&delta).unwrap();

@@ -223,6 +223,11 @@ impl World {
 
         count
     }
+
+    /// Returns the registered serializable component type names.
+    pub fn serializable_component_names(&self) -> impl Iterator<Item = &str> {
+        self.serializable_names.keys().map(String::as_str)
+    }
 }
 
 #[cfg(test)]
