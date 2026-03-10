@@ -126,6 +126,8 @@ jobs:
 
     # Headless backend tests (no GPU required)
     - name: Run headless backend tests
+      # Intentionally run the full lib suite under the headless feature.
+      # This avoids silently filtering to zero tests via a name filter.
       run: cargo test --features headless --lib -- --nocapture
 
     # FFI safety tests (null pointers, invalid handles, lifecycle)
@@ -299,6 +301,18 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+
+    - name: Set up Python (for codegen)
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - name: Run SDK codegen
+      run: |
+        python codegen/gen_csharp.py
+        python codegen/gen_python.py
+        python codegen/gen_ts_node.py
+        python codegen/gen_ts_web.py
 
     - name: Build native library
       run: cargo build --release
