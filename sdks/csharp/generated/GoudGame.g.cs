@@ -14,6 +14,7 @@ namespace GoudEngine
         private string _title;
         private double _totalTime;
         private uint _frameCount;
+        private int? _networkReceiveBufferSize;
 
         public GoudGame(uint width = 800, uint height = 600, string title = "GoudEngine")
         {
@@ -33,6 +34,24 @@ namespace GoudEngine
             _title = title;
             _totalTime = 0.0;
             _frameCount = 0;
+        }
+
+        private int GetNetworkReceiveBufferSize()
+        {
+            if (_networkReceiveBufferSize.HasValue)
+            {
+                return _networkReceiveBufferSize.Value;
+            }
+
+            FfiNetworkCapabilities _caps = default;
+            NativeMethods.goud_provider_network_capabilities(_ctx, ref _caps);
+            _networkReceiveBufferSize = _caps.MaxMessageSize switch
+            {
+                0 => 65536,
+                > int.MaxValue => int.MaxValue,
+                _ => (int)_caps.MaxMessageSize,
+            };
+            return _networkReceiveBufferSize.Value;
         }
 
         public float DeltaTime => _deltaTime;
@@ -970,6 +989,28 @@ namespace GoudEngine
             }
         }
 
+        /// <summary>Connects to a remote host with the selected transport protocol and preserves the provider-assigned peer ID.</summary>
+        public NetworkConnectResult NetworkConnectWithPeer(int protocol, string address, ushort port)
+        {
+            long _handle = 0;
+            ulong _peerId = 0;
+            unsafe
+            {
+                var addressBytes = System.Text.Encoding.UTF8.GetBytes(address);
+                fixed (byte* addressPtr = addressBytes)
+                {
+                    var _status = NativeMethods.goud_network_connect_with_peer(_ctx, protocol, addressBytes.Length == 0 ? IntPtr.Zero : (IntPtr)addressPtr, (int)addressBytes.Length, port, ref _handle, ref _peerId);
+                    if (_status < 0)
+                    {
+                        var _ex = GoudException.FromLastError();
+                        if (_ex != null) throw _ex;
+                        throw new InvalidOperationException($"goud_network_connect_with_peer failed with status {_status}.");
+                    }
+                }
+            }
+            return new NetworkConnectResult(_handle, _peerId);
+        }
+
         /// <summary>Disconnects a network host or connection handle.</summary>
         public int NetworkDisconnect(long handle)
         {
@@ -992,14 +1033,7 @@ namespace GoudEngine
         /// <summary>Receives the next buffered payload produced by networkPoll.</summary>
         public byte[] NetworkReceive(long handle)
         {
-            FfiNetworkCapabilities _caps = default;
-            NativeMethods.goud_provider_network_capabilities(_ctx, ref _caps);
-            int _bufferSize = _caps.MaxMessageSize switch
-            {
-                0 => 65536,
-                > int.MaxValue => int.MaxValue,
-                _ => (int)_caps.MaxMessageSize,
-            };
+            int _bufferSize = GetNetworkReceiveBufferSize();
             var buf = new byte[_bufferSize];
             ulong _peerId = 0;
             unsafe
@@ -1017,6 +1051,31 @@ namespace GoudEngine
                     var result = new byte[_written];
                     Array.Copy(buf, result, _written);
                     return result;
+                }
+            }
+        }
+
+        /// <summary>Receives the next buffered payload produced by networkPoll and preserves the sender peer ID.</summary>
+        public NetworkPacket? NetworkReceivePacket(long handle)
+        {
+            int _bufferSize = GetNetworkReceiveBufferSize();
+            var buf = new byte[_bufferSize];
+            ulong _peerId = 0;
+            unsafe
+            {
+                fixed (byte* bufPtr = buf)
+                {
+                    int _written = NativeMethods.goud_network_receive(_ctx, handle, (IntPtr)bufPtr, buf.Length, ref _peerId);
+                    if (_written < 0)
+                    {
+                        var _ex = GoudException.FromLastError();
+                        if (_ex != null) throw _ex;
+                        throw new InvalidOperationException($"goud_network_receive failed with status {_written}.");
+                    }
+                    if (_written == 0) return null;
+                    var result = new byte[_written];
+                    Array.Copy(buf, result, _written);
+                    return new NetworkPacket(_peerId, result);
                 }
             }
         }

@@ -30,10 +30,63 @@ while not game.should_close():
         game.close()
 
     game.draw_sprite(player_tex, 400, 300, 64, 64)
-
     game.end_frame()
 
 game.destroy()
+```
+
+## Networking
+
+Use `NetworkManager(game_or_context)` to create wrapper endpoints. `host()` and `connect()` return `NetworkEndpoint`. `connect()` stores the connected peer ID, so clients can call `send(...)`. Host endpoints reply with `send_to(...)`.
+
+```python
+from goud_engine import GoudContext, NetworkManager, NetworkProtocol
+
+host_context = GoudContext()
+client_context = GoudContext()
+
+host = NetworkManager(host_context).host(NetworkProtocol.TCP, 9000)
+client = NetworkManager(client_context).connect(NetworkProtocol.TCP, "127.0.0.1", 9000)
+
+client.send(b"ping")
+
+while True:
+    host.poll()
+    client.poll()
+
+    packet = host.receive()
+    if packet is None:
+        continue
+
+    host.send_to(packet.peer_id, b"pong")
+    break
+```
+
+## Networking Wrapper API
+
+The wrapper API is constructor-based and works with `GoudGame` or `GoudContext`:
+
+```python
+from goud_engine import GoudContext, NetworkManager, NetworkProtocol
+
+host_ctx = GoudContext()
+client_ctx = GoudContext()
+
+host_net = NetworkManager(host_ctx)
+client_net = NetworkManager(client_ctx)
+
+host = host_net.host(NetworkProtocol.TCP, 40000)  # no default peer ID
+client = client_net.connect(NetworkProtocol.TCP, "127.0.0.1", 40000)  # default peer ID is set
+
+client.send(b"hello")            # uses default peer ID from connect()
+packet = host.receive()          # Optional[NetworkPacket]
+if packet is not None:
+    host.send_to(packet.peer_id, b"world")
+
+host.disconnect()
+client.disconnect()
+host_ctx.destroy()
+client_ctx.destroy()
 ```
 
 ## Features

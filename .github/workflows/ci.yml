@@ -678,6 +678,11 @@ jobs:
           [key: string]: any;
         }
 
+        export class GoudContext {
+          constructor();
+          [key: string]: any;
+        }
+
         export class Entity {
           [key: string]: any;
         }

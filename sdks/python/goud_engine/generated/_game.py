@@ -4,7 +4,8 @@ import ctypes
 from . import _ffi as _ffi_module
 from ._ffi import (get_lib, GoudContextId, FfiVec2, FfiTransform2D, FfiSprite, FfiColor, FfiUiStyle, FfiUiEvent,
     FfiNetworkStats, FfiNetworkSimulationConfig, GoudRenderStats, GoudContact)
-from ._types import (Entity, Vec2, Color, Transform2D, Sprite, RenderStats, UiStyle, UiEvent, NetworkStats, NetworkSimulationConfig)
+from ._types import (Entity, Vec2, Color, Transform2D, Sprite, RenderStats, UiStyle, UiEvent, NetworkStats, NetworkSimulationConfig, NetworkConnectResult, NetworkPacket, NetworkCapabilities)
+from ._errors import GoudError
 from ._keys import Key, MouseButton, PhysicsBackend2D
 
 # Type IDs for built-in component types (hash of type name)
@@ -13,6 +14,12 @@ _TYPEID_SPRITE = hash('Sprite') & 0xFFFFFFFFFFFFFFFF
 
 class GoudGame:
     """Main game engine instance. Creates a window, manages rendering, input, and ECS."""
+
+    def _raise_network_error_or_runtime(self, message):
+        error = GoudError.from_last_error(self._lib)
+        if error is not None:
+            raise error
+        raise RuntimeError(message)
 
     def __init__(self, width: int = 800, height: int = 600, title: str = 'GoudEngine'):
         lib = get_lib()
@@ -614,6 +621,17 @@ class GoudGame:
         _address_buf = ctypes.create_string_buffer(_address_bytes, len(_address_bytes))
         return self._lib.goud_network_connect(self._ctx, protocol, ctypes.cast(_address_buf, ctypes.POINTER(ctypes.c_uint8)), len(_address_bytes), port)
 
+    def network_connect_with_peer(self, protocol, address, port):
+        """Connects to a remote host with the selected transport protocol and preserves the provider-assigned peer ID."""
+        _handle = ctypes.c_int64()
+        _peer_id = ctypes.c_uint64()
+        _address_bytes = address.encode('utf-8')
+        _address_buf = ctypes.create_string_buffer(_address_bytes, len(_address_bytes))
+        _status = self._lib.goud_network_connect_with_peer(self._ctx, protocol, ctypes.cast(_address_buf, ctypes.POINTER(ctypes.c_uint8)), len(_address_bytes), port, ctypes.byref(_handle), ctypes.byref(_peer_id))
+        if _status < 0:
+            self._raise_network_error_or_runtime(f'goud_network_connect_with_peer failed with status {_status}')
+        return NetworkConnectResult(_handle.value, _peer_id.value)
+
     def network_disconnect(self, handle):
         """Disconnects a network host or connection handle."""
         return self._lib.goud_network_disconnect(self._ctx, handle)
@@ -632,10 +650,24 @@ class GoudGame:
         _out_peer_id = ctypes.c_uint64()
         _status = self._lib.goud_network_receive(self._ctx, handle, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
         if _status < 0:
-            raise RuntimeError(f'goud_network_receive failed with status {_status}')
+            self._raise_network_error_or_runtime(f'goud_network_receive failed with status {_status}')
         if _status == 0:
             return b''
         return bytes(_out_buf[:_status])
+
+    def network_receive_packet(self, handle):
+        """Receives the next buffered payload produced by networkPoll and preserves the sender peer ID."""
+        _caps = _ffi_module.FfiNetworkCapabilities()
+        self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_caps))
+        _buf_len = int(_caps.max_message_size) if _caps.max_message_size else 65536
+        _out_buf = (ctypes.c_uint8 * _buf_len)()
+        _out_peer_id = ctypes.c_uint64()
+        _status = self._lib.goud_network_receive(self._ctx, handle, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
+        if _status < 0:
+            self._raise_network_error_or_runtime(f'goud_network_receive failed with status {_status}')
+        if _status == 0:
+            return None
+        return NetworkPacket(_out_peer_id.value, bytes(_out_buf[:_status]))
 
     def network_poll(self, handle):
         """Polls the network handle and buffers inbound messages for retrieval."""
@@ -646,7 +678,7 @@ class GoudGame:
         _stats = FfiNetworkStats()
         _status = self._lib.goud_network_get_stats_v2(self._ctx, handle, ctypes.byref(_stats))
         if _status < 0:
-            raise RuntimeError(f'goud_network_get_stats_v2 failed with status {_status}')
+            self._raise_network_error_or_runtime(f'goud_network_get_stats_v2 failed with status {_status}')
         return NetworkStats(_stats.bytes_sent, _stats.bytes_received, _stats.packets_sent, _stats.packets_received, _stats.packets_lost, _stats.rtt_ms, _stats.send_bandwidth_bytes_per_sec, _stats.receive_bandwidth_bytes_per_sec, _stats.packet_loss_percent, _stats.jitter_ms)
 
     def network_peer_count(self, handle):
@@ -791,6 +823,12 @@ class GoudGame:
 class GoudContext:
     """Headless engine context for CI tests and non-windowed entity management."""
 
+    def _raise_network_error_or_runtime(self, message):
+        error = GoudError.from_last_error(self._lib)
+        if error is not None:
+            raise error
+        raise RuntimeError(message)
+
     def __init__(self):
         lib = get_lib()
         self._lib = lib
@@ -806,6 +844,106 @@ class GoudContext:
 
     def is_valid(self):
         return self._lib.goud_context_is_valid(self._ctx)
+
+    def get_network_capabilities(self):
+        """Queries the network provider's capabilities. Throws if no network provider is installed."""
+        _out = FfiNetworkCapabilities()
+        self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_out))
+        return NetworkCapabilities(_out.supports_hosting, _out.max_connections, _out.max_channels, _out.max_message_size)
+
+    def network_host(self, protocol, port):
+        """Starts hosting on the given port with the selected transport protocol."""
+        return self._lib.goud_network_host(self._ctx, protocol, port)
+
+    def network_connect(self, protocol, address, port):
+        """Connects to a remote host with the selected transport protocol."""
+        _address_bytes = address.encode('utf-8')
+        _address_buf = ctypes.create_string_buffer(_address_bytes, len(_address_bytes))
+        return self._lib.goud_network_connect(self._ctx, protocol, ctypes.cast(_address_buf, ctypes.POINTER(ctypes.c_uint8)), len(_address_bytes), port)
+
+    def network_connect_with_peer(self, protocol, address, port):
+        """Connects to a remote host with the selected transport protocol and preserves the provider-assigned peer ID."""
+        _handle = ctypes.c_int64()
+        _peer_id = ctypes.c_uint64()
+        _address_bytes = address.encode('utf-8')
+        _address_buf = ctypes.create_string_buffer(_address_bytes, len(_address_bytes))
+        _status = self._lib.goud_network_connect_with_peer(self._ctx, protocol, ctypes.cast(_address_buf, ctypes.POINTER(ctypes.c_uint8)), len(_address_bytes), port, ctypes.byref(_handle), ctypes.byref(_peer_id))
+        if _status < 0:
+            self._raise_network_error_or_runtime(f'goud_network_connect_with_peer failed with status {_status}')
+        return NetworkConnectResult(_handle.value, _peer_id.value)
+
+    def network_disconnect(self, handle):
+        """Disconnects a network host or connection handle."""
+        return self._lib.goud_network_disconnect(self._ctx, handle)
+
+    def network_send(self, handle, peer_id, data, channel):
+        """Sends raw bytes to the given peer over a network handle and channel."""
+        _data_buf = (ctypes.c_uint8 * len(data)).from_buffer_copy(data)
+        return self._lib.goud_network_send(self._ctx, handle, peer_id, ctypes.cast(_data_buf, ctypes.POINTER(ctypes.c_uint8)), len(data), channel)
+
+    def network_receive(self, handle):
+        """Receives the next buffered payload produced by networkPoll."""
+        _caps = _ffi_module.FfiNetworkCapabilities()
+        self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_caps))
+        _buf_len = int(_caps.max_message_size) if _caps.max_message_size else 65536
+        _out_buf = (ctypes.c_uint8 * _buf_len)()
+        _out_peer_id = ctypes.c_uint64()
+        _status = self._lib.goud_network_receive(self._ctx, handle, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
+        if _status < 0:
+            self._raise_network_error_or_runtime(f'goud_network_receive failed with status {_status}')
+        if _status == 0:
+            return b''
+        return bytes(_out_buf[:_status])
+
+    def network_receive_packet(self, handle):
+        """Receives the next buffered payload produced by networkPoll and preserves the sender peer ID."""
+        _caps = _ffi_module.FfiNetworkCapabilities()
+        self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_caps))
+        _buf_len = int(_caps.max_message_size) if _caps.max_message_size else 65536
+        _out_buf = (ctypes.c_uint8 * _buf_len)()
+        _out_peer_id = ctypes.c_uint64()
+        _status = self._lib.goud_network_receive(self._ctx, handle, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
+        if _status < 0:
+            self._raise_network_error_or_runtime(f'goud_network_receive failed with status {_status}')
+        if _status == 0:
+            return None
+        return NetworkPacket(_out_peer_id.value, bytes(_out_buf[:_status]))
+
+    def network_poll(self, handle):
+        """Polls the network handle and buffers inbound messages for retrieval."""
+        return self._lib.goud_network_poll(self._ctx, handle)
+
+    def get_network_stats(self, handle):
+        """Returns aggregate network statistics for a network handle."""
+        _stats = FfiNetworkStats()
+        _status = self._lib.goud_network_get_stats_v2(self._ctx, handle, ctypes.byref(_stats))
+        if _status < 0:
+            self._raise_network_error_or_runtime(f'goud_network_get_stats_v2 failed with status {_status}')
+        return NetworkStats(_stats.bytes_sent, _stats.bytes_received, _stats.packets_sent, _stats.packets_received, _stats.packets_lost, _stats.rtt_ms, _stats.send_bandwidth_bytes_per_sec, _stats.receive_bandwidth_bytes_per_sec, _stats.packet_loss_percent, _stats.jitter_ms)
+
+    def network_peer_count(self, handle):
+        """Returns the number of connected peers for a network handle."""
+        return self._lib.goud_network_peer_count(self._ctx, handle)
+
+    def set_network_simulation(self, handle, config):
+        """Applies debug-only latency, jitter, and packet-loss simulation to a network handle."""
+        _config_ffi = _ffi_module.FfiNetworkSimulationConfig()
+        _config_ffi.one_way_latency_ms = config.one_way_latency_ms
+        _config_ffi.jitter_ms = config.jitter_ms
+        _config_ffi.packet_loss_percent = config.packet_loss_percent
+        return self._lib.goud_network_set_simulation(self._ctx, handle, _config_ffi)
+
+    def clear_network_simulation(self, handle):
+        """Clears debug-only network simulation settings from a network handle."""
+        return self._lib.goud_network_clear_simulation(self._ctx, handle)
+
+    def set_network_overlay_handle(self, handle):
+        """Overrides the active network handle displayed by the native debug overlay for this context."""
+        return self._lib.goud_network_set_overlay_handle(self._ctx, handle)
+
+    def clear_network_overlay_handle(self):
+        """Clears the explicit network-overlay handle override for this context."""
+        return self._lib.goud_network_clear_overlay_handle(self._ctx)
 
     def spawn_empty(self):
         """Creates a new empty entity"""

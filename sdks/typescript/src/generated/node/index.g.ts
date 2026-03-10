@@ -2,6 +2,7 @@
 
 import {
   GoudGame as NativeGoudGame,
+  GoudContext as NativeGoudContext,
   UiManager as NativeUiManager,
   Entity as NativeEntity,
   type GameConfig,
@@ -13,6 +14,28 @@ import { Color, Vec2, Vec3 } from '../types/math.g.js';
 export { Color, Vec2, Vec3 } from '../types/math.g.js';
 export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';
 export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';
+
+export interface INetworkConnectResult { handle: number; peerId: number; }
+export interface INetworkPacket { peerId: number; data: Uint8Array; }
+export interface IGoudContext {
+  destroy(): boolean;
+  isValid(): boolean;
+  getNetworkCapabilities(): INetworkCapabilities;
+  networkHost(protocol: number, port: number): number;
+  networkConnect(protocol: number, address: string, port: number): number;
+  networkConnectWithPeer(protocol: number, address: string, port: number): INetworkConnectResult;
+  networkDisconnect(handle: number): number;
+  networkSend(handle: number, peerId: number, data: Uint8Array, channel: number): number;
+  networkReceive(handle: number): Uint8Array;
+  networkReceivePacket(handle: number): INetworkPacket | null;
+  networkPoll(handle: number): number;
+  getNetworkStats(handle: number): INetworkStats;
+  networkPeerCount(handle: number): number;
+  setNetworkSimulation(handle: number, config: INetworkSimulationConfig): number;
+  clearNetworkSimulation(handle: number): number;
+  setNetworkOverlayHandle(handle: number): number;
+  clearNetworkOverlayHandle(): number;
+}
 
 /** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
 export class GoudGame implements IGoudGame {
@@ -570,6 +593,11 @@ export class GoudGame implements IGoudGame {
     return this.native.networkConnect(protocol, address, port);
   }
 
+  /** Connects to a remote host with the selected transport protocol and preserves the provider-assigned peer ID. */
+  networkConnectWithPeer(protocol: number, address: string, port: number): INetworkConnectResult {
+    return this.native.networkConnectWithPeer(protocol, address, port) as unknown as INetworkConnectResult;
+  }
+
   /** Disconnects a network host or connection handle. */
   networkDisconnect(handle: number): number {
     return this.native.networkDisconnect(handle);
@@ -583,6 +611,11 @@ export class GoudGame implements IGoudGame {
   /** Receives the next buffered payload produced by networkPoll. */
   networkReceive(handle: number): Uint8Array {
     return this.native.networkReceive(handle);
+  }
+
+  /** Receives the next buffered payload produced by networkPoll and preserves the sender peer ID. */
+  networkReceivePacket(handle: number): INetworkPacket | null {
+    return this.native.networkReceivePacket(handle) as unknown as INetworkPacket | null;
   }
 
   /** Polls the network handle and buffers inbound messages for retrieval. */
@@ -812,6 +845,87 @@ export class GoudGame implements IGoudGame {
     return (this.native as any).animationEventsRead(index) as unknown as IAnimationEventData;
   }
 
+}
+
+/** Headless engine context exposing low-level networking APIs for Node-only tests. */
+export class GoudContext implements IGoudContext {
+  private native: NativeGoudContext;
+
+  constructor() {
+    this.native = new NativeGoudContext();
+  }
+
+  destroy(): boolean {
+    return this.native.destroy();
+  }
+
+  isValid(): boolean {
+    return this.native.isValid();
+  }
+
+  getNetworkCapabilities(): INetworkCapabilities {
+    return this.native.getNetworkCapabilities() as unknown as INetworkCapabilities;
+  }
+
+  networkHost(protocol: number, port: number): number {
+    return this.native.networkHost(protocol, port);
+  }
+
+  networkConnect(protocol: number, address: string, port: number): number {
+    return this.native.networkConnect(protocol, address, port);
+  }
+
+  networkConnectWithPeer(protocol: number, address: string, port: number): INetworkConnectResult {
+    return this.native.networkConnectWithPeer(protocol, address, port) as unknown as INetworkConnectResult;
+  }
+
+  networkDisconnect(handle: number): number {
+    return this.native.networkDisconnect(handle);
+  }
+
+  networkSend(handle: number, peerId: number, data: Uint8Array, channel: number): number {
+    return this.native.networkSend(handle, peerId, Buffer.from(data), channel);
+  }
+
+  networkReceive(handle: number): Uint8Array {
+    return this.native.networkReceive(handle);
+  }
+
+  networkReceivePacket(handle: number): INetworkPacket | null {
+    return this.native.networkReceivePacket(handle) as unknown as INetworkPacket | null;
+  }
+
+  networkPoll(handle: number): number {
+    return this.native.networkPoll(handle);
+  }
+
+  getNetworkStats(handle: number): INetworkStats {
+    return this.native.getNetworkStats(handle) as unknown as INetworkStats;
+  }
+
+  networkPeerCount(handle: number): number {
+    return this.native.networkPeerCount(handle);
+  }
+
+  setNetworkSimulation(handle: number, config: INetworkSimulationConfig): number {
+    return this.native.setNetworkSimulation(handle, {
+      one_way_latency_ms: config.oneWayLatencyMs,
+      jitter_ms: config.jitterMs,
+      packet_loss_percent: config.packetLossPercent,
+    } as unknown as INetworkSimulationConfig);
+  }
+
+  clearNetworkSimulation(handle: number): number {
+    return this.native.clearNetworkSimulation(handle);
+  }
+
+  setNetworkOverlayHandle(handle: number): number {
+    return this.native.setNetworkOverlayHandle(handle);
+  }
+
+  clearNetworkOverlayHandle(): number {
+    return this.native.clearNetworkOverlayHandle();
+  }
 }
 
 /** 2D physics simulation powered by Rapier2D */

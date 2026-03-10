@@ -28,6 +28,38 @@ entity.Transform.Position = new Vec2(100, 50);
 game.Run();
 ```
 
+## Networking
+
+Use `new NetworkManager(gameOrContext)` to create wrapper endpoints. `Host(...)` and `Connect(...)` return `NetworkEndpoint`. `Connect(...)` stores a default peer ID, so clients can call `Send(...)`. Host endpoints do not have a default peer, so they reply with `SendTo(...)`.
+
+```csharp
+using System.Text;
+using GoudEngine;
+
+using var hostContext = new GoudContext();
+using var clientContext = new GoudContext();
+
+var host = new NetworkManager(hostContext).Host(NetworkProtocol.Tcp, 9000);
+var client = new NetworkManager(clientContext).Connect(NetworkProtocol.Tcp, "127.0.0.1", 9000);
+
+client.Send(Encoding.UTF8.GetBytes("ping"));
+
+while (true)
+{
+    host.Poll();
+    client.Poll();
+
+    var packet = host.Receive();
+    if (packet is null)
+    {
+        continue;
+    }
+
+    host.SendTo(packet.Value.PeerId, Encoding.UTF8.GetBytes("pong"));
+    break;
+}
+```
+
 ## Flappy Bird Example
 
 A condensed view of the Flappy Bird clone showing how the main patterns fit together.

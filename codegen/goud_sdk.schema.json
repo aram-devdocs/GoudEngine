@@ -2459,6 +2459,38 @@
         }
       ]
     },
+    "NetworkConnectResult": {
+      "kind": "value",
+      "doc": "Peer-preserving connection result returned by networkConnectWithPeer",
+      "fields": [
+        {
+          "name": "handle",
+          "type": "i64",
+          "doc": "Opaque network handle created for the connection"
+        },
+        {
+          "name": "peerId",
+          "type": "u64",
+          "doc": "Provider-assigned default remote peer ID"
+        }
+      ]
+    },
+    "NetworkPacket": {
+      "kind": "value",
+      "doc": "Inbound network payload with the sender peer ID preserved",
+      "fields": [
+        {
+          "name": "peerId",
+          "type": "u64",
+          "doc": "Sender peer ID for the buffered payload"
+        },
+        {
+          "name": "data",
+          "type": "bytes",
+          "doc": "Buffered packet payload bytes"
+        }
+      ]
+    },
     "UiStyle": {
       "doc": "C-safe UI style payload for node-level visual overrides.",
       "kind": "value",
@@ -5083,6 +5115,25 @@
           "returns": "i64"
         },
         {
+          "name": "networkConnectWithPeer",
+          "doc": "Connects to a remote host with the selected transport protocol and preserves the provider-assigned peer ID.",
+          "params": [
+            {
+              "name": "protocol",
+              "type": "i32"
+            },
+            {
+              "name": "address",
+              "type": "string"
+            },
+            {
+              "name": "port",
+              "type": "u16"
+            }
+          ],
+          "returns": "NetworkConnectResult"
+        },
+        {
           "name": "networkDisconnect",
           "doc": "Disconnects a network host or connection handle.",
           "params": [
@@ -5126,6 +5177,17 @@
             }
           ],
           "returns": "bytes"
+        },
+        {
+          "name": "networkReceivePacket",
+          "doc": "Receives the next buffered payload produced by networkPoll and preserves the sender peer ID.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "NetworkPacket?"
         },
         {
           "name": "networkPoll",
@@ -6102,6 +6164,197 @@
           "name": "isValid",
           "params": [],
           "returns": "bool"
+        },
+        {
+          "name": "getNetworkCapabilities",
+          "doc": "Queries the network provider's capabilities. Throws if no network provider is installed.",
+          "params": [],
+          "returns": "NetworkCapabilities"
+        },
+        {
+          "name": "networkHost",
+          "doc": "Starts hosting on the given port with the selected transport protocol.",
+          "params": [
+            {
+              "name": "protocol",
+              "type": "i32"
+            },
+            {
+              "name": "port",
+              "type": "u16"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "networkConnect",
+          "doc": "Connects to a remote host with the selected transport protocol.",
+          "params": [
+            {
+              "name": "protocol",
+              "type": "i32"
+            },
+            {
+              "name": "address",
+              "type": "string"
+            },
+            {
+              "name": "port",
+              "type": "u16"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "networkConnectWithPeer",
+          "doc": "Connects to a remote host with the selected transport protocol and preserves the provider-assigned peer ID.",
+          "params": [
+            {
+              "name": "protocol",
+              "type": "i32"
+            },
+            {
+              "name": "address",
+              "type": "string"
+            },
+            {
+              "name": "port",
+              "type": "u16"
+            }
+          ],
+          "returns": "NetworkConnectResult"
+        },
+        {
+          "name": "networkDisconnect",
+          "doc": "Disconnects a network host or connection handle.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "networkSend",
+          "doc": "Sends raw bytes to the given peer over a network handle and channel.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "peerId",
+              "type": "u64"
+            },
+            {
+              "name": "data",
+              "type": "bytes"
+            },
+            {
+              "name": "channel",
+              "type": "u8"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "networkReceive",
+          "doc": "Receives the next buffered payload produced by networkPoll.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "bytes"
+        },
+        {
+          "name": "networkReceivePacket",
+          "doc": "Receives the next buffered payload produced by networkPoll and preserves the sender peer ID.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "NetworkPacket?"
+        },
+        {
+          "name": "networkPoll",
+          "doc": "Polls the network handle and buffers inbound messages for retrieval.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getNetworkStats",
+          "doc": "Returns aggregate network statistics for a network handle.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "NetworkStats"
+        },
+        {
+          "name": "networkPeerCount",
+          "doc": "Returns the number of connected peers for a network handle.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setNetworkSimulation",
+          "doc": "Applies debug-only latency, jitter, and packet-loss simulation to a network handle.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "config",
+              "type": "NetworkSimulationConfig"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "clearNetworkSimulation",
+          "doc": "Clears debug-only network simulation settings from a network handle.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setNetworkOverlayHandle",
+          "doc": "Overrides the active network handle displayed by the native debug overlay for this context.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "clearNetworkOverlayHandle",
+          "doc": "Clears the explicit network-overlay handle override for this context.",
+          "params": [],
+          "returns": "i32"
         },
         {
           "$ref": "EcsMethods",

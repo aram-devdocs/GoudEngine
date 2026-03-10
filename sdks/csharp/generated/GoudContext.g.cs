@@ -10,11 +10,30 @@ namespace GoudEngine
     {
         private GoudContextId _ctx;
         private bool _disposed;
+        private int? _networkReceiveBufferSize;
 
         public GoudContext()
         {
             _ctx = NativeMethods.goud_context_create();
             if (!_ctx.IsValid) throw new Exception("Failed to create headless context");
+        }
+
+        private int GetNetworkReceiveBufferSize()
+        {
+            if (_networkReceiveBufferSize.HasValue)
+            {
+                return _networkReceiveBufferSize.Value;
+            }
+
+            FfiNetworkCapabilities _caps = default;
+            NativeMethods.goud_provider_network_capabilities(_ctx, ref _caps);
+            _networkReceiveBufferSize = _caps.MaxMessageSize switch
+            {
+                0 => 65536,
+                > int.MaxValue => int.MaxValue,
+                _ => (int)_caps.MaxMessageSize,
+            };
+            return _networkReceiveBufferSize.Value;
         }
 
         public bool Destroy()
@@ -26,6 +45,180 @@ namespace GoudEngine
         public bool IsValid()
         {
             return NativeMethods.goud_context_is_valid(_ctx);
+        }
+
+        /// <summary>Queries the network provider's capabilities. Throws if no network provider is installed.</summary>
+        public NetworkCapabilities GetNetworkCapabilities()
+        {
+            FfiNetworkCapabilities _out = default;
+            NativeMethods.goud_provider_network_capabilities(_ctx, ref _out);
+            return new NetworkCapabilities(_out.SupportsHosting, _out.MaxConnections, _out.MaxChannels, _out.MaxMessageSize);
+        }
+
+        /// <summary>Starts hosting on the given port with the selected transport protocol.</summary>
+        public long NetworkHost(int protocol, ushort port)
+        {
+            return NativeMethods.goud_network_host(_ctx, protocol, port);
+        }
+
+        /// <summary>Connects to a remote host with the selected transport protocol.</summary>
+        public long NetworkConnect(int protocol, string address, ushort port)
+        {
+            unsafe
+            {
+                var addressBytes = System.Text.Encoding.UTF8.GetBytes(address);
+                fixed (byte* addressPtr = addressBytes)
+                {
+                    return NativeMethods.goud_network_connect(_ctx, protocol, addressBytes.Length == 0 ? IntPtr.Zero : (IntPtr)addressPtr, (int)addressBytes.Length, port);
+                }
+            }
+        }
+
+        /// <summary>Connects to a remote host with the selected transport protocol and preserves the provider-assigned peer ID.</summary>
+        public NetworkConnectResult NetworkConnectWithPeer(int protocol, string address, ushort port)
+        {
+            long _handle = 0;
+            ulong _peerId = 0;
+            unsafe
+            {
+                var addressBytes = System.Text.Encoding.UTF8.GetBytes(address);
+                fixed (byte* addressPtr = addressBytes)
+                {
+                    var _status = NativeMethods.goud_network_connect_with_peer(_ctx, protocol, addressBytes.Length == 0 ? IntPtr.Zero : (IntPtr)addressPtr, (int)addressBytes.Length, port, ref _handle, ref _peerId);
+                    if (_status < 0)
+                    {
+                        var _ex = GoudException.FromLastError();
+                        if (_ex != null) throw _ex;
+                        throw new InvalidOperationException($"goud_network_connect_with_peer failed with status {_status}.");
+                    }
+                }
+            }
+            return new NetworkConnectResult(_handle, _peerId);
+        }
+
+        /// <summary>Disconnects a network host or connection handle.</summary>
+        public int NetworkDisconnect(long handle)
+        {
+            return NativeMethods.goud_network_disconnect(_ctx, handle);
+        }
+
+        /// <summary>Sends raw bytes to the given peer over a network handle and channel.</summary>
+        public int NetworkSend(long handle, ulong peerId, byte[] data, byte channel)
+        {
+            unsafe
+            {
+                var dataBytes = data ?? Array.Empty<byte>();
+                fixed (byte* dataPtr = dataBytes)
+                {
+                    return NativeMethods.goud_network_send(_ctx, handle, peerId, dataBytes.Length == 0 ? IntPtr.Zero : (IntPtr)dataPtr, (int)dataBytes.Length, channel);
+                }
+            }
+        }
+
+        /// <summary>Receives the next buffered payload produced by networkPoll.</summary>
+        public byte[] NetworkReceive(long handle)
+        {
+            int _bufferSize = GetNetworkReceiveBufferSize();
+            var buf = new byte[_bufferSize];
+            ulong _peerId = 0;
+            unsafe
+            {
+                fixed (byte* bufPtr = buf)
+                {
+                    int _written = NativeMethods.goud_network_receive(_ctx, handle, (IntPtr)bufPtr, buf.Length, ref _peerId);
+                    if (_written < 0)
+                    {
+                        var _ex = GoudException.FromLastError();
+                        if (_ex != null) throw _ex;
+                        throw new InvalidOperationException($"goud_network_receive failed with status {_written}.");
+                    }
+                    if (_written == 0) return Array.Empty<byte>();
+                    var result = new byte[_written];
+                    Array.Copy(buf, result, _written);
+                    return result;
+                }
+            }
+        }
+
+        /// <summary>Receives the next buffered payload produced by networkPoll and preserves the sender peer ID.</summary>
+        public NetworkPacket? NetworkReceivePacket(long handle)
+        {
+            int _bufferSize = GetNetworkReceiveBufferSize();
+            var buf = new byte[_bufferSize];
+            ulong _peerId = 0;
+            unsafe
+            {
+                fixed (byte* bufPtr = buf)
+                {
+                    int _written = NativeMethods.goud_network_receive(_ctx, handle, (IntPtr)bufPtr, buf.Length, ref _peerId);
+                    if (_written < 0)
+                    {
+                        var _ex = GoudException.FromLastError();
+                        if (_ex != null) throw _ex;
+                        throw new InvalidOperationException($"goud_network_receive failed with status {_written}.");
+                    }
+                    if (_written == 0) return null;
+                    var result = new byte[_written];
+                    Array.Copy(buf, result, _written);
+                    return new NetworkPacket(_peerId, result);
+                }
+            }
+        }
+
+        /// <summary>Polls the network handle and buffers inbound messages for retrieval.</summary>
+        public int NetworkPoll(long handle)
+        {
+            return NativeMethods.goud_network_poll(_ctx, handle);
+        }
+
+        /// <summary>Returns aggregate network statistics for a network handle.</summary>
+        public NetworkStats GetNetworkStats(long handle)
+        {
+            FfiNetworkStats _stats = default;
+            var _status = NativeMethods.goud_network_get_stats_v2(_ctx, handle, ref _stats);
+            if (_status < 0)
+            {
+                var _ex = GoudException.FromLastError();
+                if (_ex != null) throw _ex;
+                throw new InvalidOperationException($"goud_network_get_stats_v2 failed with status {_status}.");
+            }
+            return new NetworkStats(_stats.BytesSent, _stats.BytesReceived, _stats.PacketsSent, _stats.PacketsReceived, _stats.PacketsLost, _stats.RttMs, _stats.SendBandwidthBytesPerSec, _stats.ReceiveBandwidthBytesPerSec, _stats.PacketLossPercent, _stats.JitterMs);
+        }
+
+        /// <summary>Returns the number of connected peers for a network handle.</summary>
+        public int NetworkPeerCount(long handle)
+        {
+            return NativeMethods.goud_network_peer_count(_ctx, handle);
+        }
+
+        /// <summary>Applies debug-only latency, jitter, and packet-loss simulation to a network handle.</summary>
+        public int SetNetworkSimulation(long handle, NetworkSimulationConfig config)
+        {
+            var _configFfi = new FfiNetworkSimulationConfig
+            {
+                OneWayLatencyMs = config.OneWayLatencyMs,
+                JitterMs = config.JitterMs,
+                PacketLossPercent = config.PacketLossPercent
+            };
+            return NativeMethods.goud_network_set_simulation(_ctx, handle, _configFfi);
+        }
+
+        /// <summary>Clears debug-only network simulation settings from a network handle.</summary>
+        public int ClearNetworkSimulation(long handle)
+        {
+            return NativeMethods.goud_network_clear_simulation(_ctx, handle);
+        }
+
+        /// <summary>Overrides the active network handle displayed by the native debug overlay for this context.</summary>
+        public int SetNetworkOverlayHandle(long handle)
+        {
+            return NativeMethods.goud_network_set_overlay_handle(_ctx, handle);
+        }
+
+        /// <summary>Clears the explicit network-overlay handle override for this context.</summary>
+        public int ClearNetworkOverlayHandle()
+        {
+            return NativeMethods.goud_network_clear_overlay_handle(_ctx);
         }
 
         /// <summary>Creates a new empty entity</summary>

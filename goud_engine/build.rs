@@ -162,7 +162,10 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/animation/events.rs",
     "src/ffi/animation/layer.rs",
     // network module
-    "src/ffi/network.rs",
+    "src/ffi/network/mod.rs",
+    "src/ffi/network/lifecycle.rs",
+    "src/ffi/network/stats.rs",
+    "src/ffi/network/controls.rs",
     // providers module
     "src/ffi/providers.rs",
     // plugin module

@@ -234,14 +234,35 @@ def gen_keys():
 def _py_field_default(field: dict) -> str:
     """Return the Python type annotation and default value for a schema field."""
     t = field.get("type", "f32")
+    return f"{_py_field_type(field)} = {_py_field_default_expr(field)}"
+
+
+def _py_field_type(field: dict) -> str:
+    """Return the Python annotation type for a schema field."""
+    t = field.get("type", "f32")
     if t == "bool":
-        return "bool = False"
-    elif t in ("u8", "u16", "u32", "i8", "i16", "i32", "u64", "i64", "usize", "ptr"):
-        return "int = 0"
-    elif t in schema.get("types", {}):
-        return f"'{t}' = None"
-    else:
-        return "float = 0.0"
+        return "bool"
+    if t in ("bytes", "u8[]"):
+        return "bytes"
+    if t in ("u8", "u16", "u32", "i8", "i16", "i32", "u64", "i64", "usize", "ptr"):
+        return "int"
+    if t in schema.get("types", {}):
+        return f"'{t}'"
+    return "float"
+
+
+def _py_field_default_expr(field: dict) -> str:
+    """Return a raw Python default expression for a schema field."""
+    t = field.get("type", "f32")
+    if t == "bool":
+        return "False"
+    if t in ("bytes", "u8[]"):
+        return "b''"
+    if t in ("u8", "u16", "u32", "i8", "i16", "i32", "u64", "i64", "usize", "ptr"):
+        return "0"
+    if t in schema.get("types", {}):
+        return "None"
+    return "0.0"
 
 
 def _get_ffi_func_def(ffi_name: str) -> dict | None:
@@ -1185,10 +1206,27 @@ def _gen_tool_class(tool_name: str, lines: list):
     is_physics_world_2d = tool_name == "PhysicsWorld2D"
     is_physics_world_3d = tool_name == "PhysicsWorld3D"
     class_name = tool_name
+    uses_network_status_errors = any(
+        tool_mapping["methods"].get(method["name"], {}).get("ffi", "").startswith("goud_network_")
+        and (
+            tool_mapping["methods"].get(method["name"], {}).get("out_buffer")
+            or tool_mapping["methods"].get(method["name"], {}).get("status_struct")
+            or tool_mapping["methods"].get(method["name"], {}).get("status_nullable_struct")
+        )
+        for method in tool.get("methods", [])
+    )
 
     lines.append(f"class {class_name}:")
     lines.append(f'    """{tool["doc"]}"""')
     lines.append("")
+
+    if uses_network_status_errors:
+        lines.append("    def _raise_network_error_or_runtime(self, message):")
+        lines.append("        error = GoudError.from_last_error(self._lib)")
+        lines.append("        if error is not None:")
+        lines.append("            raise error")
+        lines.append("        raise RuntimeError(message)")
+        lines.append("")
 
     # Constructor
     if is_game:
@@ -1527,11 +1565,13 @@ def _gen_tool_class(tool_name: str, lines: list):
             status_struct = bool(mmap.get("status_struct"))
             entity_set = set(mmap.get("entity_params", []))
             enum_set = set((mmap.get("enum_params") or {}).keys())
+            string_set = set(mmap.get("string_params", []))
+            uses_ptr_len = _ffi_uses_ptr_len(ffi_fn)
             out_params = mmap["out_params"]
 
             for op in out_params:
                 ctype = _py_out_var_ctype(op["type"])
-                lines.append(f"        _{op['name']} = {ctype}()")
+                lines.append(f"        _{to_snake(op['name'])} = {ctype}()")
 
             ffi_parts = [] if no_ctx else ["self._ctx"]
             for p in params:
@@ -1539,21 +1579,35 @@ def _gen_tool_class(tool_name: str, lines: list):
                 sn = to_snake(pn)
                 if pn in entity_set:
                     ffi_parts.append(f"{sn}._bits")
+                elif p["type"] == "string" and pn in string_set and uses_ptr_len:
+                    lines.append(f"        _{sn}_bytes = {sn}.encode('utf-8')")
+                    lines.append(
+                        f"        _{sn}_buf = ctypes.create_string_buffer(_{sn}_bytes, len(_{sn}_bytes))"
+                    )
+                    ffi_parts.append(
+                        f"ctypes.cast(_{sn}_buf, ctypes.POINTER(ctypes.c_uint8))"
+                    )
+                    ffi_parts.append(f"len(_{sn}_bytes)")
                 elif pn in enum_set or p["type"] in schema.get("enums", {}):
                     ffi_parts.append(f"int({sn})")
                 else:
                     ffi_parts.append(sn)
             ffi_parts.extend(
-                f"ctypes.byref(_{op['name']})" for op in out_params
+                f"ctypes.byref(_{to_snake(op['name'])})" for op in out_params
             )
             if status_nullable_struct or status_struct:
                 lines.append(
                     f"        _status = self._lib.{ffi_fn}({', '.join(ffi_parts)})"
                 )
                 lines.append("        if _status < 0:")
-                lines.append(
-                    f"            raise RuntimeError(f'{ffi_fn} failed with status {{_status}}')"
-                )
+                if ffi_fn.startswith("goud_network_"):
+                    lines.append(
+                        f"            self._raise_network_error_or_runtime(f'{ffi_fn} failed with status {{_status}}')"
+                    )
+                else:
+                    lines.append(
+                        f"            raise RuntimeError(f'{ffi_fn} failed with status {{_status}}')"
+                    )
                 if status_nullable_struct:
                     lines.append("        if _status == 0:")
                     lines.append("            return None")
@@ -1572,13 +1626,13 @@ def _gen_tool_class(tool_name: str, lines: list):
                     or op0_type.startswith("Goud")
                 )
             ):
-                src = f"_{out_params[0]['name']}"
+                src = f"_{to_snake(out_params[0]['name'])}"
                 field_args = ", ".join(
                     f"{src}.{to_snake(f['name'])}" for f in rs_fields
                 )
             else:
                 field_args = ", ".join(
-                    f"_{op['name']}.value" for op in out_params
+                    f"_{to_snake(op['name'])}.value" for op in out_params
                 )
             lines.append(f"        return {struct_name}({field_args})")
         elif "out_params" in mmap and "returns_scalar" in mmap:
@@ -1625,6 +1679,8 @@ def _gen_tool_class(tool_name: str, lines: list):
             no_ctx = mmap.get("no_context", False)
             entity_set = set(mmap.get("entity_params", []))
             enum_set = set((mmap.get("enum_params") or {}).keys())
+            returns_struct = mmap.get("returns_struct")
+            status_nullable_struct = bool(mmap.get("status_nullable_struct"))
             if not no_ctx:
                 lines.append("        _caps = _ffi_module.FfiNetworkCapabilities()")
                 lines.append(
@@ -1657,12 +1713,33 @@ def _gen_tool_class(tool_name: str, lines: list):
                 f"        _status = self._lib.{ffi_fn}({', '.join(ffi_parts)})"
             )
             lines.append("        if _status < 0:")
-            lines.append(
-                f"            raise RuntimeError(f'{ffi_fn} failed with status {{_status}}')"
-            )
-            lines.append("        if _status == 0:")
-            lines.append("            return b''")
-            lines.append("        return bytes(_out_buf[:_status])")
+            if ffi_fn.startswith("goud_network_"):
+                lines.append(
+                    f"            self._raise_network_error_or_runtime(f'{ffi_fn} failed with status {{_status}}')"
+                )
+            else:
+                lines.append(
+                    f"            raise RuntimeError(f'{ffi_fn} failed with status {{_status}}')"
+                )
+            if returns_struct and status_nullable_struct:
+                lines.append("        if _status == 0:")
+                lines.append("            return None")
+            else:
+                lines.append("        if _status == 0:")
+                lines.append("            return b''")
+            if returns_struct:
+                rs_fields = schema["types"][returns_struct]["fields"]
+                field_args = []
+                for field in rs_fields:
+                    if field["type"] in ("bytes", "u8[]"):
+                        field_args.append("bytes(_out_buf[:_status])")
+                    elif field["name"] == "peerId":
+                        field_args.append("_out_peer_id.value")
+                    else:
+                        field_args.append(_py_field_default_expr(field))
+                lines.append(f"        return {returns_struct}({', '.join(field_args)})")
+            else:
+                lines.append("        return bytes(_out_buf[:_status])")
         elif "enum_params" in mmap:
             enum_arg = list(mmap["enum_params"].keys())[0]
             lines.append(
@@ -1981,8 +2058,10 @@ def gen_game():
         "    FfiNetworkStats, FfiNetworkSimulationConfig, GoudRenderStats, GoudContact)",
         "from ._types import ("
         "Entity, Vec2, Color, Transform2D, Sprite, RenderStats, "
-        "UiStyle, UiEvent, NetworkStats, NetworkSimulationConfig"
+        "UiStyle, UiEvent, NetworkStats, NetworkSimulationConfig, "
+        "NetworkConnectResult, NetworkPacket, NetworkCapabilities"
         ")",
+        "from ._errors import GoudError",
         "from ._keys import Key, MouseButton, PhysicsBackend2D",
         "",
         "# Type IDs for built-in component types (hash of type name)",
@@ -2054,6 +2133,17 @@ def gen_init():
     enum_imports = sorted(schema.get("enums", {}).keys())
 
     has_diagnostic = "diagnostic" in schema
+    networking_type_exports = [
+        name for name in (
+            "NetworkCapabilities",
+            "NetworkConnectResult",
+            "NetworkPacket",
+            "NetworkSimulationConfig",
+            "NetworkStats",
+        )
+        if name in schema.get("types", {})
+    ]
+    has_networking_wrappers = (OUT.parent / "networking.py").exists()
 
     lines = [
         f'"""{HEADER_COMMENT}"""',
@@ -2091,19 +2181,48 @@ def gen_init():
         f'"""{HEADER_COMMENT}"""',
         "",
         "from .generated import *  # noqa: F401,F403",
-        "",
+        "from .generated import __all__ as _generated_all  # noqa: F401",
     ]
+    if networking_type_exports:
+        root_init.extend([
+            "from .generated._types import (  # noqa: F401",
+            *(f"    {name}," for name in networking_type_exports),
+            ")",
+        ])
+    if has_networking_wrappers:
+        root_init.append("from .networking import NetworkManager, NetworkEndpoint  # noqa: F401")
+    root_init.append("")
+
+    extra_exports: list[str] = []
+    if has_networking_wrappers:
+        extra_exports.extend(["NetworkManager", "NetworkEndpoint"])
+    extra_exports.extend(networking_type_exports)
 
     # Include error types if the errors section exists in schema
     if "errors" in schema:
-        root_init.append("from .generated._errors import (  # noqa: F401")
-        root_init.append("    GoudError,")
+        root_init.extend([
+            "from .generated._errors import (  # noqa: F401",
+            "    GoudError,",
+        ])
+        extra_exports.append("GoudError")
         for cat in schema["errors"].get("categories", []):
             cls = cat["base_class"]
             root_init.append(f"    {cls},")
-        root_init.append("    RecoveryClass,")
-        root_init.append(")")
-        root_init.append("")
+            extra_exports.append(cls)
+        root_init.extend([
+            "    RecoveryClass,",
+            ")",
+            "",
+        ])
+        extra_exports.append("RecoveryClass")
+
+    root_init.append("__all__ = list(_generated_all) + [")
+    for export in extra_exports:
+        root_init.append(f'    "{export}",')
+    root_init.extend([
+        "]",
+        "",
+    ])
     root = OUT.parent / "__init__.py"
     write_generated(root, "\n".join(root_init))
 

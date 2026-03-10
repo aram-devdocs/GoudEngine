@@ -1399,7 +1399,7 @@
       "is_unsafe": true
     },
     "goud_network_clear_overlay_handle": {
-      "source_file": "ffi/network.rs",
+      "source_file": "ffi/network/controls.rs",
       "params": [
         "context_id: GoudContextId"
       ],
@@ -1407,7 +1407,7 @@
       "is_unsafe": false
     },
     "goud_network_clear_simulation": {
-      "source_file": "ffi/network.rs",
+      "source_file": "ffi/network/controls.rs",
       "params": [
         "_context_id: GoudContextId",
         "handle: i64"
@@ -1416,9 +1416,9 @@
       "is_unsafe": false
     },
     "goud_network_connect": {
-      "source_file": "ffi/network.rs",
+      "source_file": "ffi/network/lifecycle.rs",
       "params": [
-        "_context_id: GoudContextId",
+        "context_id: GoudContextId",
         "protocol: i32",
         "addr_ptr: *const u8",
         "addr_len: i32",
@@ -1427,8 +1427,22 @@
       "return_type": "i64",
       "is_unsafe": true
     },
+    "goud_network_connect_with_peer": {
+      "source_file": "ffi/network/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "protocol: i32",
+        "addr_ptr: *const u8",
+        "addr_len: i32",
+        "port: u16",
+        "out_handle: *mut i64",
+        "out_peer_id: *mut u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_network_disconnect": {
-      "source_file": "ffi/network.rs",
+      "source_file": "ffi/network/lifecycle.rs",
       "params": [
         "_context_id: GoudContextId",
         "handle: i64"
@@ -1437,7 +1451,7 @@
       "is_unsafe": false
     },
     "goud_network_get_stats": {
-      "source_file": "ffi/network.rs",
+      "source_file": "ffi/network/stats.rs",
       "params": [
         "_context_id: GoudContextId",
         "handle: i64",
@@ -1450,7 +1464,7 @@
       "is_unsafe": true
     },
     "goud_network_get_stats_v2": {
-      "source_file": "ffi/network.rs",
+      "source_file": "ffi/network/stats.rs",
       "params": [
         "_context_id: GoudContextId",
         "handle: i64",
@@ -1460,9 +1474,9 @@
       "is_unsafe": true
     },
     "goud_network_host": {
-      "source_file": "ffi/network.rs",
+      "source_file": "ffi/network/lifecycle.rs",
       "params": [
-        "_context_id: GoudContextId",
+        "context_id: GoudContextId",
         "protocol: i32",
         "port: u16"
       ],
@@ -1470,7 +1484,7 @@
       "is_unsafe": false
     },
     "goud_network_peer_count": {
-      "source_file": "ffi/network.rs",
+      "source_file": "ffi/network/controls.rs",
       "params": [
         "_context_id: GoudContextId",
         "handle: i64"
@@ -1479,7 +1493,7 @@
       "is_unsafe": false
     },
     "goud_network_poll": {
-      "source_file": "ffi/network.rs",
+      "source_file": "ffi/network/lifecycle.rs",
       "params": [
         "_context_id: GoudContextId",
         "handle: i64"
@@ -1488,7 +1502,7 @@
       "is_unsafe": false
     },
     "goud_network_receive": {
-      "source_file": "ffi/network.rs",
+      "source_file": "ffi/network/lifecycle.rs",
       "params": [
         "_context_id: GoudContextId",
         "handle: i64",
@@ -1500,7 +1514,7 @@
       "is_unsafe": true
     },
     "goud_network_send": {
-      "source_file": "ffi/network.rs",
+      "source_file": "ffi/network/lifecycle.rs",
       "params": [
         "_context_id: GoudContextId",
         "handle: i64",
@@ -1513,7 +1527,7 @@
       "is_unsafe": true
     },
     "goud_network_set_overlay_handle": {
-      "source_file": "ffi/network.rs",
+      "source_file": "ffi/network/controls.rs",
       "params": [
         "context_id: GoudContextId",
         "handle: i64"
@@ -1522,7 +1536,7 @@
       "is_unsafe": false
     },
     "goud_network_set_simulation": {
-      "source_file": "ffi/network.rs",
+      "source_file": "ffi/network/controls.rs",
       "params": [
         "_context_id: GoudContextId",
         "handle: i64",
@@ -4232,5 +4246,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 423
+  "total_count": 424
 }

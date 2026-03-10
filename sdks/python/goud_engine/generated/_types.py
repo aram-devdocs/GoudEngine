@@ -1492,6 +1492,24 @@ class NetworkSimulationConfig:
     def __repr__(self):
         return f"NetworkSimulationConfig(one_way_latency_ms={self.one_way_latency_ms}, jitter_ms={self.jitter_ms}, packet_loss_percent={self.packet_loss_percent})"
 
+class NetworkConnectResult:
+    """Peer-preserving connection result returned by networkConnectWithPeer"""
+    def __init__(self, handle: int = 0, peer_id: int = 0):
+        self.handle = handle
+        self.peer_id = peer_id
+
+    def __repr__(self):
+        return f"NetworkConnectResult(handle={self.handle}, peer_id={self.peer_id})"
+
+class NetworkPacket:
+    """Inbound network payload with the sender peer ID preserved"""
+    def __init__(self, peer_id: int = 0, data: bytes = b''):
+        self.peer_id = peer_id
+        self.data = data
+
+    def __repr__(self):
+        return f"NetworkPacket(peer_id={self.peer_id}, data={self.data})"
+
 class UiStyle:
     """C-safe UI style payload for node-level visual overrides."""
     def __init__(self, has_background_color: bool = False, background_color: 'Color' = None, has_foreground_color: bool = False, foreground_color: 'Color' = None, has_border_color: bool = False, border_color: 'Color' = None, has_border_width: bool = False, border_width: float = 0.0, has_font_family: bool = False, font_family: str = '', has_font_size: bool = False, font_size: float = 0.0, has_texture_path: bool = False, texture_path: str = '', has_widget_spacing: bool = False, widget_spacing: float = 0.0):

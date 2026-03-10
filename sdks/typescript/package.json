@@ -2,32 +2,32 @@
   "name": "goudengine",
   "version": "0.0.828",
   "description": "GoudEngine — build 2D and 3D games with TypeScript for Node.js and web",
-  "main": "dist/generated/index.g.js",
-  "types": "dist/generated/index.g.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "sideEffects": false,
   "exports": {
     ".": {
       "node": {
-        "types": "./dist/generated/index.g.d.ts",
-        "import": "./dist/generated/index.g.js",
-        "require": "./dist/generated/index.g.js"
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.js"
       },
       "browser": {
-        "types": "./dist/generated/web/index.g.d.ts",
-        "import": "./dist/generated/web/index.g.js"
+        "types": "./dist/web/index.d.ts",
+        "import": "./dist/web/index.js"
       },
       "default": {
-        "types": "./dist/generated/index.g.d.ts",
-        "default": "./dist/generated/index.g.js"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
       }
     },
     "./web": {
-      "types": "./dist/generated/web/index.g.d.ts",
-      "import": "./dist/generated/web/index.g.js"
+      "types": "./dist/web/index.d.ts",
+      "import": "./dist/web/index.js"
     },
     "./node": {
-      "types": "./dist/generated/node/index.g.d.ts",
-      "import": "./dist/generated/node/index.g.js"
+      "types": "./dist/node/index.d.ts",
+      "import": "./dist/node/index.js"
     }
   },
   "scripts": {

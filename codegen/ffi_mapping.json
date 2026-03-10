@@ -1149,6 +1149,18 @@
             "address"
           ]
         },
+        "networkConnectWithPeer": {
+          "ffi": "goud_network_connect_with_peer",
+          "string_params": [
+            "address"
+          ],
+          "out_params": [
+            { "name": "handle", "type": "i64" },
+            { "name": "peerId", "type": "u64" }
+          ],
+          "status_struct": true,
+          "returns_struct": "NetworkConnectResult"
+        },
         "networkDisconnect": {
           "ffi": "goud_network_disconnect"
         },
@@ -1158,6 +1170,12 @@
         "networkReceive": {
           "ffi": "goud_network_receive",
           "out_buffer": true
+        },
+        "networkReceivePacket": {
+          "ffi": "goud_network_receive",
+          "out_buffer": true,
+          "status_nullable_struct": true,
+          "returns_struct": "NetworkPacket"
         },
         "networkPoll": {
           "ffi": "goud_network_poll"
@@ -1365,6 +1383,76 @@
         },
         "isValid": {
           "ffi": "goud_context_is_valid"
+        },
+        "getNetworkCapabilities": {
+          "ffi": "goud_provider_network_capabilities",
+          "out_params": [
+            { "name": "out", "type": "NetworkCapabilities" }
+          ],
+          "returns_struct": "NetworkCapabilities"
+        },
+        "networkHost": {
+          "ffi": "goud_network_host"
+        },
+        "networkConnect": {
+          "ffi": "goud_network_connect",
+          "string_params": [
+            "address"
+          ]
+        },
+        "networkConnectWithPeer": {
+          "ffi": "goud_network_connect_with_peer",
+          "string_params": [
+            "address"
+          ],
+          "out_params": [
+            { "name": "handle", "type": "i64" },
+            { "name": "peerId", "type": "u64" }
+          ],
+          "status_struct": true,
+          "returns_struct": "NetworkConnectResult"
+        },
+        "networkDisconnect": {
+          "ffi": "goud_network_disconnect"
+        },
+        "networkSend": {
+          "ffi": "goud_network_send"
+        },
+        "networkReceive": {
+          "ffi": "goud_network_receive",
+          "out_buffer": true
+        },
+        "networkReceivePacket": {
+          "ffi": "goud_network_receive",
+          "out_buffer": true,
+          "status_nullable_struct": true,
+          "returns_struct": "NetworkPacket"
+        },
+        "networkPoll": {
+          "ffi": "goud_network_poll"
+        },
+        "getNetworkStats": {
+          "ffi": "goud_network_get_stats_v2",
+          "out_params": [
+            { "name": "stats", "type": "NetworkStats" }
+          ],
+          "status_struct": true,
+          "returns_struct": "NetworkStats"
+        },
+        "networkPeerCount": {
+          "ffi": "goud_network_peer_count"
+        },
+        "setNetworkSimulation": {
+          "ffi": "goud_network_set_simulation"
+        },
+        "clearNetworkSimulation": {
+          "ffi": "goud_network_clear_simulation"
+        },
+        "setNetworkOverlayHandle": {
+          "ffi": "goud_network_set_overlay_handle"
+        },
+        "clearNetworkOverlayHandle": {
+          "ffi": "goud_network_clear_overlay_handle"
         },
         "spawnEmpty": {
           "ffi": "goud_entity_spawn_empty",
@@ -8597,6 +8685,40 @@
           }
         ],
         "returns": "i64",
+        "unsafe": true
+      },
+      "goud_network_connect_with_peer": {
+        "params": [
+          {
+            "name": "ctx",
+            "type": "GoudContextId"
+          },
+          {
+            "name": "protocol",
+            "type": "i32"
+          },
+          {
+            "name": "addr_ptr",
+            "type": "*const u8"
+          },
+          {
+            "name": "addr_len",
+            "type": "i32"
+          },
+          {
+            "name": "port",
+            "type": "u16"
+          },
+          {
+            "name": "out_handle",
+            "type": "*mut i64"
+          },
+          {
+            "name": "out_peer_id",
+            "type": "*mut u64"
+          }
+        ],
+        "returns": "i32",
         "unsafe": true
       },
       "goud_network_disconnect": {

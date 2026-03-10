@@ -40,6 +40,41 @@ const game = await GoudGame.create(800, 600, "My Game");
 // same API as Node
 ```
 
+## Networking
+
+Networking wrappers are available in the Node build. Use `new NetworkManager(gameOrContext)` with `GoudGame` or `GoudContext`. `host()` and `connect()` return `NetworkEndpoint`. `connect()` stores the default peer ID, so clients can call `send(...)`. Host endpoints reply with `sendTo(...)`.
+
+```typescript
+import { GoudContext, NetworkManager, NetworkProtocol } from "goudengine/node";
+
+const hostContext = new GoudContext();
+const clientContext = new GoudContext();
+
+const host = new NetworkManager(hostContext).host(NetworkProtocol.Tcp, 9000);
+const client = new NetworkManager(clientContext).connect(
+  NetworkProtocol.Tcp,
+  "127.0.0.1",
+  9000,
+);
+
+client.send(Buffer.from("ping"));
+
+while (true) {
+  host.poll();
+  client.poll();
+
+  const packet = host.receive();
+  if (!packet) {
+    continue;
+  }
+
+  host.sendTo(packet.peerId, Buffer.from("pong"));
+  break;
+}
+```
+
+TypeScript networking is currently Node-only (`goudengine/node`), including loopback and headless usage. `goudengine/web` still throws `Not supported in WASM mode` for networking calls. Wrapper classes are exported in the web target for type parity, but browser networking is not supported yet.
+
 ## Features
 
 - 2D and 3D rendering with runtime renderer selection

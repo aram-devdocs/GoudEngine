@@ -1440,6 +1440,9 @@ namespace GoudEngine
         public static extern long goud_network_connect(GoudContextId ctx, int protocol, IntPtr addr_ptr, int addr_len, ushort port);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_network_connect_with_peer(GoudContextId ctx, int protocol, IntPtr addr_ptr, int addr_len, ushort port, ref long out_handle, ref ulong out_peer_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_network_disconnect(GoudContextId ctx, long handle);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
