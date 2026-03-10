@@ -41,6 +41,8 @@ IFACE_TYPES = {
     "RenderStats": "IRenderStats",
     "FpsStats": "IFpsStats",
     "Contact": "IContact",
+    "PhysicsRaycastHit2D": "IPhysicsRaycastHit2D",
+    "PhysicsCollisionEvent2D": "IPhysicsCollisionEvent2D",
     "Entity[]": "IEntity[]",
     "RenderCapabilities": "IRenderCapabilities",
     "PhysicsCapabilities": "IPhysicsCapabilities",
@@ -101,6 +103,12 @@ def gen_interface():
     if schema["types"].get("Contact", {}).get("doc"):
         lines.append(f"/** {schema['types']['Contact']['doc']} */")
     lines.append("export interface IContact { pointX: number; pointY: number; normalX: number; normalY: number; penetration: number; }")
+    if schema["types"].get("PhysicsRaycastHit2D", {}).get("doc"):
+        lines.append(f"/** {schema['types']['PhysicsRaycastHit2D']['doc']} */")
+    lines.append("export interface IPhysicsRaycastHit2D { bodyHandle: number; colliderHandle: number; pointX: number; pointY: number; normalX: number; normalY: number; distance: number; }")
+    if schema["types"].get("PhysicsCollisionEvent2D", {}).get("doc"):
+        lines.append(f"/** {schema['types']['PhysicsCollisionEvent2D']['doc']} */")
+    lines.append("export interface IPhysicsCollisionEvent2D { bodyA: number; bodyB: number; kind: number; }")
     fps_fields = schema["types"]["FpsStats"]["fields"]
     fps_str = "; ".join(f"{to_camel(f['name'])}: number" for f in fps_fields)
     if schema["types"]["FpsStats"].get("doc"):
@@ -387,6 +395,8 @@ NATIVE_KNOWN_METHODS = {
     "collisionAabbAabb", "collisionCircleCircle", "collisionCircleAabb",
     "pointInRect", "pointInCircle", "aabbOverlap", "circleOverlap",
     "distance", "distanceSquared",
+    "physicsRaycastEx", "physicsCollisionEventsCount",
+    "physicsCollisionEventsRead", "physicsSetCollisionCallback",
     "createCube", "createPlane", "createSphere", "createCylinder",
     "setObjectPosition", "setObjectRotation", "setObjectScale", "destroyObject",
     "addLight", "updateLight", "removeLight",
@@ -414,11 +424,11 @@ def gen_node_wrapper():
         "  type GameConfig,",
         "} from '../../../index';",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton } from '../types/input.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "",
     ]
     if tool.get("doc"):
@@ -684,7 +694,7 @@ def gen_entry():
         f"// {HEADER_COMMENT}",
         "",
         f"export {{ GoudGame{ec_export}, Color, Vec2, Vec3, Key, MouseButton }} from './node/index.g.js';",
-        f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities }} from './types/engine.g.js';",
+        f"export type {{ IGoudGame{ec_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities }} from './types/engine.g.js';",
         "export type { Rect } from './types/math.g.js';",
         f"export {{ {', '.join(error_names)} }} from './errors.g.js';",
     ]
@@ -1086,6 +1096,10 @@ use goud_engine::ffi::providers::{
     goud_provider_audio_capabilities, goud_provider_input_capabilities,
     goud_provider_network_capabilities, goud_provider_check_hot_swap_shortcut,
 };
+use goud_engine::ffi::physics::{
+    goud_physics_collision_events_count, goud_physics_collision_events_read,
+    goud_physics_raycast_ex, goud_physics_set_collision_callback,
+};
 use goud_engine::core::providers::types::{
     RenderCapabilities, PhysicsCapabilities, AudioCapabilities,
 };
@@ -1134,6 +1148,26 @@ pub struct NapiContact {
     pub normal_x: f64,
     pub normal_y: f64,
     pub penetration: f64,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiPhysicsRaycastHit2D {
+    pub body_handle: f64,
+    pub collider_handle: f64,
+    pub point_x: f64,
+    pub point_y: f64,
+    pub normal_x: f64,
+    pub normal_y: f64,
+    pub distance: f64,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiPhysicsCollisionEvent2D {
+    pub body_a: f64,
+    pub body_b: f64,
+    pub kind: u32,
 }
 
 #[napi(object)]
@@ -1819,6 +1853,122 @@ impl GoudGame {
         reg.get_mut(self.context_id).is_some_and(|ctx| {
             ctx.world_mut().remove::<Name>(goud_engine::ecs::Entity::from_bits(entity.bits)).is_some()
         })
+    }
+
+    // =========================================================================
+    // Physics Event/Raycast helpers -- via FFI
+    // =========================================================================
+
+    #[napi]
+    pub fn physics_raycast_ex(
+        &self,
+        origin_x: f64,
+        origin_y: f64,
+        dir_x: f64,
+        dir_y: f64,
+        max_dist: f64,
+        layer_mask: u32,
+    ) -> Result<Option<NapiPhysicsRaycastHit2D>> {
+        let mut body_handle: u64 = 0;
+        let mut collider_handle: u64 = 0;
+        let mut point_x: f32 = 0.0;
+        let mut point_y: f32 = 0.0;
+        let mut normal_x: f32 = 0.0;
+        let mut normal_y: f32 = 0.0;
+        let mut distance: f32 = 0.0;
+
+        // SAFETY: All out-pointers are valid stack references for the duration of the call.
+        let status = unsafe {
+            goud_physics_raycast_ex(
+                self.context_id,
+                origin_x as f32,
+                origin_y as f32,
+                dir_x as f32,
+                dir_y as f32,
+                max_dist as f32,
+                layer_mask,
+                &mut body_handle,
+                &mut collider_handle,
+                &mut point_x,
+                &mut point_y,
+                &mut normal_x,
+                &mut normal_y,
+                &mut distance,
+            )
+        };
+
+        if status < 0 {
+            return Err(Error::from_reason(format!(
+                "goud_physics_raycast_ex failed with status {}",
+                status
+            )));
+        }
+        if status == 0 {
+            return Ok(None);
+        }
+
+        Ok(Some(NapiPhysicsRaycastHit2D {
+            body_handle: body_handle as f64,
+            collider_handle: collider_handle as f64,
+            point_x: point_x as f64,
+            point_y: point_y as f64,
+            normal_x: normal_x as f64,
+            normal_y: normal_y as f64,
+            distance: distance as f64,
+        }))
+    }
+
+    #[napi]
+    pub fn physics_collision_events_count(&self) -> i32 {
+        goud_physics_collision_events_count(self.context_id)
+    }
+
+    #[napi]
+    pub fn physics_collision_events_read(&self, index: u32) -> Result<Option<NapiPhysicsCollisionEvent2D>> {
+        let mut body_a: u64 = 0;
+        let mut body_b: u64 = 0;
+        let mut kind: u32 = 0;
+
+        // SAFETY: All out-pointers are valid stack references for the duration of the call.
+        let status = unsafe {
+            goud_physics_collision_events_read(
+                self.context_id,
+                index,
+                &mut body_a,
+                &mut body_b,
+                &mut kind,
+            )
+        };
+
+        if status < 0 {
+            return Err(Error::from_reason(format!(
+                "goud_physics_collision_events_read failed with status {}",
+                status
+            )));
+        }
+        if status == 0 {
+            return Ok(None);
+        }
+
+        Ok(Some(NapiPhysicsCollisionEvent2D {
+            body_a: body_a as f64,
+            body_b: body_b as f64,
+            kind,
+        }))
+    }
+
+    #[napi]
+    pub fn physics_set_collision_callback(&self, callback_ptr: f64, user_data: f64) -> Result<i32> {
+        if callback_ptr != 0.0 || user_data != 0.0 {
+            return Err(Error::from_reason(
+                "TypeScript cannot pass raw function pointers safely; pass 0 to clear callback",
+            ));
+        }
+        Ok(goud_physics_set_collision_callback(
+            self.context_id,
+            None,
+            std::ptr::null_mut(),
+        ))
     }
 
     // =========================================================================

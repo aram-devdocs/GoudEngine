@@ -4,8 +4,6 @@
 
 use wasm_bindgen::prelude::*;
 
-use image::GenericImageView;
-
 use crate::core::types::TextAlignment;
 use crate::rendering::text::{
     layout_shaped_text, shape_text, GlyphAtlas, TextDirection, TextLayoutConfig,
@@ -20,6 +18,9 @@ use super::{WasmGame, WasmRenderStats};
 
 #[wasm_bindgen]
 impl WasmGame {
+    /// Draws a textured sprite in world or screen space.
+    ///
+    /// `texture` is a 1-based handle returned by `register_texture_from_bytes`.
     pub fn draw_sprite(
         &mut self,
         texture: u32,
@@ -39,6 +40,9 @@ impl WasmGame {
         }
     }
 
+    /// Draws a textured sprite using a source rectangle in texture UV space.
+    ///
+    /// Returns `true` when the draw command is queued.
     pub fn draw_sprite_rect(
         &mut self,
         texture: u32,
@@ -65,6 +69,7 @@ impl WasmGame {
         }
     }
 
+    /// Draws a solid-color quad using the renderer fallback texture.
     pub fn draw_quad(&mut self, x: f32, y: f32, w: f32, h: f32, r: f32, g: f32, b: f32, a: f32) {
         if let Some(rs) = &mut self.render_state {
             rs.renderer.draw_quad(x, y, w, h, r, g, b, a);
@@ -107,6 +112,9 @@ impl WasmGame {
         Ok((idx + 1) as u32)
     }
 
+    /// Releases a previously registered texture handle.
+    ///
+    /// Handle `0` is reserved and ignored.
     pub fn destroy_texture(&mut self, handle: u32) {
         if handle == 0 {
             return;

@@ -129,6 +129,7 @@ impl EngineConfig {
 
     /// Returns a mutable reference to the current game configuration.
     /// Used for direct field mutation in FFI boundary code.
+    #[cfg(feature = "native")]
     pub(crate) fn game_config_mut(&mut self) -> &mut GameConfig {
         &mut self.game_config
     }

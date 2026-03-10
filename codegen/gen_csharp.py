@@ -71,6 +71,18 @@ def _cs_default_value(cs_ty: str) -> str:
     return "default"
 
 
+def _cs_out_var_type(raw_type: str) -> str:
+    """Resolve an out-param type to the C# declaration type."""
+    if raw_type in CSHARP_TYPES or raw_type in ("ptr", "usize"):
+        return cs_type(raw_type)
+    if raw_type in schema.get("enums", {}):
+        return cs_type(raw_type)
+    ffi_info = mapping.get("ffi_types", {}).get(raw_type)
+    if isinstance(ffi_info, dict) and ffi_info.get("ffi_name"):
+        return ffi_info["ffi_name"]
+    return ffi_type(raw_type)
+
+
 def _cs_ffi_param_type(raw: str) -> str:
     """Convert an ffi_mapping param type to valid C# for NativeMethods."""
     ptr_map = {
@@ -974,15 +986,50 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         else:
             L.append(f"            {prefix}NativeMethods.{ffi_fn}(_ctx, (int){ek});")
         return
-    if "out_params" in mm and "returns_struct" in mm and any(op["type"] != "f32" for op in mm["out_params"]):
+    if "out_params" in mm and "returns_struct" in mm:
         struct_name = mm["returns_struct"]
         ffi_fn = mm["ffi"]
-        ffi_type_name = mapping["ffi_types"][struct_name]["ffi_name"]
+        no_ctx = mm.get("no_context", False)
+        status_nullable_struct = bool(mm.get("status_nullable_struct"))
+        entity_set = set(mm.get("entity_params", []))
+        enum_set = set(mm.get("enum_params", {}).keys())
+        out_params = mm["out_params"]
+        out_locals = [f"_{op['name']}" for op in out_params]
+
+        for op, local in zip(out_params, out_locals):
+            var_ty = _cs_out_var_type(op["type"])
+            L.append(f"            {var_ty} {local} = {_cs_default_value(var_ty)};")
+
+        ffi_parts = [] if no_ctx else ["_ctx"]
+        for p in params:
+            pname = p["name"]
+            if pname in entity_set:
+                ffi_parts.append(f"{pname}.ToBits()")
+            elif pname in enum_set:
+                ffi_parts.append(f"(int){pname}")
+            else:
+                ffi_parts.append(pname)
+        ffi_parts.extend(f"ref {local}" for local in out_locals)
+
+        if status_nullable_struct:
+            L.append(f"            var _status = NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
+            L.append("            if (_status < 0)")
+            L.append("            {")
+            L.append("                var _ex = GoudException.FromLastError();")
+            L.append("                if (_ex != null) throw _ex;")
+            L.append(f'                throw new InvalidOperationException($"{ffi_fn} failed with status {{_status}}.");')
+            L.append("            }")
+            L.append("            if (_status == 0) return null;")
+        else:
+            L.append(f"            NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
+
         rs_fields = schema["types"][struct_name]["fields"]
-        field_args = ", ".join(f"stats.{to_pascal(f['name'])}" for f in rs_fields)
-        L += [f"            var stats = new {ffi_type_name}();",
-              f"            NativeMethods.{ffi_fn}(_ctx, ref stats);",
-              f"            return new {struct_name}({field_args});"]
+        if len(out_params) == 1 and out_params[0]["type"] not in CSHARP_TYPES:
+            src = out_locals[0]
+            field_args = ", ".join(f"{src}.{to_pascal(f['name'])}" for f in rs_fields)
+        else:
+            field_args = ", ".join(out_locals)
+        L.append(f"            return new {struct_name}({field_args});")
         return
     if "out_params" in mm:
         for op in mm["out_params"]:
@@ -1233,10 +1280,10 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
         mm = tm.get("methods", {}).get(method["name"], {})
         params = method.get("params", [])
         ret = method.get("returns", "void")
-        cs_ret = cs_type(ret.rstrip("?").rstrip("[]"))
+        cs_ret = cs_type(ret.rstrip("[]").rstrip("?"))
         if ret.endswith("[]"):
             actual_ret = f"{cs_ret}[]"
-        elif method.get("nullable", False):
+        elif ret.endswith("?") or method.get("nullable", False):
             actual_ret = f"{cs_ret}?"
         elif method.get("async"):
             actual_ret = cs_ret

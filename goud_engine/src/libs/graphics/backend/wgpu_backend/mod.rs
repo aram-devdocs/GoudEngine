@@ -21,7 +21,6 @@ use super::{
 };
 use crate::core::handle::HandleAllocator;
 use std::collections::HashMap;
-use std::sync::Arc;
 
 mod buffer;
 mod convert;
@@ -50,8 +49,8 @@ pub use init::{MAX_TEXTURE_UNITS, UNIFORM_BUFFER_SIZE};
 /// and manages GPU resources via generational handles identical to OpenGLBackend.
 pub struct WgpuBackend {
     info: BackendInfo,
-    device: Arc<wgpu::Device>,
-    queue: Arc<wgpu::Queue>,
+    device: wgpu::Device,
+    queue: wgpu::Queue,
     surface: wgpu::Surface<'static>,
     surface_config: wgpu::SurfaceConfiguration,
     surface_format: wgpu::TextureFormat,

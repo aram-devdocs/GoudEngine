@@ -10,4 +10,4 @@ mod types;
 
 pub use renderer_core::WgpuSpriteRenderer;
 pub use texture::create_texture_entry;
-pub use types::{RenderStats, SpriteVertex, TextureEntry};
+pub use types::TextureEntry;

@@ -114,14 +114,14 @@ def gen_web_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
+        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "import { attachInputHandlers } from './input.g.js';",
         "",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton } from '../types/input.g.js';",
         "export { Rect } from '../types/math.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
+        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities } from '../types/engine.g.js';",
         "",
     ]
 
@@ -705,6 +705,14 @@ def gen_web_wrapper():
     lines.append("  animationClipAddEvent(_entity: IEntity, _frameIndex: number, _name: string, _payloadType: number, _payloadInt: number, _payloadFloat: number, _payloadString?: string | null): number { return 0; }")
     lines.append("  animationEventsCount(): number { return 0; }")
     lines.append("  animationEventsRead(_index: number): IAnimationEventData { return { entity: 0, name: '', frameIndex: 0, payloadType: 0, payloadInt: 0, payloadFloat: 0, payloadString: '' }; }")
+    emit_jsdoc(lines, _method_docs.get("physics_raycast_ex"))
+    lines.append("  physicsRaycastEx(_originX: number, _originY: number, _dirX: number, _dirY: number, _maxDist: number, _layerMask: number): IPhysicsRaycastHit2D | null { return null; }")
+    emit_jsdoc(lines, _method_docs.get("physics_collision_events_count"))
+    lines.append("  physicsCollisionEventsCount(): number { throw new Error('Not supported in WASM mode'); }")
+    emit_jsdoc(lines, _method_docs.get("physics_collision_events_read"))
+    lines.append("  physicsCollisionEventsRead(_index: number): IPhysicsCollisionEvent2D | null { return null; }")
+    emit_jsdoc(lines, _method_docs.get("physics_set_collision_callback"))
+    lines.append("  physicsSetCollisionCallback(_callbackPtr: number, _userData: number): number { throw new Error('Not supported in WASM mode'); }")
     lines.append("  // Provider capability queries -- not available in WASM mode")
     lines.append("  getRenderCapabilities(): IRenderCapabilities { throw new Error('Not supported in WASM mode'); }")
     lines.append("  getPhysicsCapabilities(): IPhysicsCapabilities { throw new Error('Not supported in WASM mode'); }")

@@ -58,7 +58,7 @@ impl WasmAudioState {
         };
 
         let _ = player.element.pause();
-        let _ = player.element.set_current_time(0.0);
+        player.element.set_current_time(0.0);
         let _ = web_sys::Url::revoke_object_url(&player.object_url);
         true
     }

@@ -876,6 +876,66 @@
             "action"
           ]
         },
+        "physicsRaycastEx": {
+          "ffi": "goud_physics_raycast_ex",
+          "out_params": [
+            {
+              "name": "body_handle",
+              "type": "u64"
+            },
+            {
+              "name": "collider_handle",
+              "type": "u64"
+            },
+            {
+              "name": "point_x",
+              "type": "f32"
+            },
+            {
+              "name": "point_y",
+              "type": "f32"
+            },
+            {
+              "name": "normal_x",
+              "type": "f32"
+            },
+            {
+              "name": "normal_y",
+              "type": "f32"
+            },
+            {
+              "name": "distance",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "PhysicsRaycastHit2D",
+          "status_nullable_struct": true
+        },
+        "physicsCollisionEventsCount": {
+          "ffi": "goud_physics_collision_events_count"
+        },
+        "physicsCollisionEventsRead": {
+          "ffi": "goud_physics_collision_events_read",
+          "out_params": [
+            {
+              "name": "body_a",
+              "type": "u64"
+            },
+            {
+              "name": "body_b",
+              "type": "u64"
+            },
+            {
+              "name": "kind",
+              "type": "u32"
+            }
+          ],
+          "returns_struct": "PhysicsCollisionEvent2D",
+          "status_nullable_struct": true
+        },
+        "physicsSetCollisionCallback": {
+          "ffi": "goud_physics_set_collision_callback"
+        },
         "collisionAabbAabb": {
           "ffi": "goud_collision_aabb_aabb",
           "no_context": true,
