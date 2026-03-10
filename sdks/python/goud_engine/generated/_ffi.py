@@ -1027,6 +1027,8 @@ def _setup():
     _lib.goud_audio_active_count.restype = ctypes.c_int32
     _lib.goud_audio_cleanup_finished.argtypes = [GoudContextId]
     _lib.goud_audio_cleanup_finished.restype = ctypes.c_int32
+    _lib.goud_audio_activate.argtypes = [GoudContextId]
+    _lib.goud_audio_activate.restype = ctypes.c_int32
     _lib.goud_audio_play_spatial.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
     _lib.goud_audio_play_spatial.restype = ctypes.c_int64
     _lib.goud_audio_play_spatial_3d.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]

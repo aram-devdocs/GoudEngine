@@ -1146,7 +1146,7 @@ namespace GoudEngine
         /// <summary>Activates audio playback on platforms that require user gesture initialization</summary>
         public int AudioActivate()
         {
-            return NativeMethods.goud_audio_cleanup_finished(_ctx);
+            return NativeMethods.goud_audio_activate(_ctx);
         }
 
         /// <summary>Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred.</summary>

@@ -1444,6 +1444,9 @@ namespace GoudEngine
         public static extern int goud_audio_cleanup_finished(GoudContextId ctx);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_audio_activate(GoudContextId ctx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern long goud_audio_play_spatial(GoudContextId ctx, IntPtr asset_data, nuint asset_len, float source_x, float source_y, float listener_x, float listener_y, float max_distance, float rolloff);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

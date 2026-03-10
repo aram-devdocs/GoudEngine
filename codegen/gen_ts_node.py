@@ -1029,7 +1029,6 @@ def gen_napi_rust_game():
     write_generated(NATIVE_SRC / "game.g.rs", _game_rs_content())
 
 
-
 def _game_rs_content():
     return RUST_HEADER + r"""
 use crate::components::{SpriteData, Transform2DData};
@@ -1232,7 +1231,7 @@ pub struct NapiNetworkCapabilities {
 
 #[napi]
 pub struct GoudGame {
-    context_id: GoudContextId,
+    pub(crate) context_id: GoudContextId,
     last_delta_time: f32,
     title: String,
     frame_count: u64,
@@ -2396,10 +2395,191 @@ impl NativeEngineConfig {
 """
 
 
+AUDIO_PLAYBACK_FNS = {
+    "goud_audio_play",
+    "goud_audio_play_on_channel",
+    "goud_audio_play_with_settings",
+}
+
+AUDIO_CONTROLS_FNS = {
+    "goud_audio_stop",
+    "goud_audio_pause",
+    "goud_audio_resume",
+    "goud_audio_stop_all",
+    "goud_audio_set_global_volume",
+    "goud_audio_get_global_volume",
+    "goud_audio_set_channel_volume",
+    "goud_audio_get_channel_volume",
+    "goud_audio_is_playing",
+    "goud_audio_active_count",
+    "goud_audio_cleanup_finished",
+    "goud_audio_activate",
+}
+
+
+def _napi_rust_param_type(schema_type: str) -> str:
+    if schema_type == "bytes":
+        return "Buffer"
+    return _napi_type(schema_type)
+
+
+def _napi_rust_return_type(schema_type: str) -> str:
+    if schema_type in {"f32", "f64", "u64", "i64"}:
+        return "f64"
+    return _napi_type(schema_type)
+
+
+def _ffi_native_return_type(ffi_type: str) -> str:
+    native_map = {
+        "f32": "f32",
+        "f64": "f64",
+        "u8": "u8",
+        "u16": "u16",
+        "u32": "u32",
+        "u64": "u64",
+        "i32": "i32",
+        "i64": "i64",
+        "bool": "bool",
+        "usize": "usize",
+        "void": "()",
+    }
+    return native_map.get(ffi_type, ffi_type)
+
+
+def _audio_ffi_module(ffi_name: str) -> str:
+    if ffi_name in AUDIO_PLAYBACK_FNS:
+        return "playback"
+    if ffi_name in AUDIO_CONTROLS_FNS:
+        return "controls"
+    return "spatial"
+
+
+def _ffi_arg_from_schema(param_name: str, param_type: str, ffi_param_type: str) -> str:
+    if param_type == "bytes":
+        if ffi_param_type == "*const u8":
+            return f"{param_name}.as_ptr()"
+        if ffi_param_type == "usize":
+            return f"{param_name}.len()"
+
+    if ffi_param_type == "f32":
+        return f"{param_name} as f32"
+    if ffi_param_type == "f64":
+        return param_name
+    if ffi_param_type == "u8":
+        return f"{param_name} as u8"
+    if ffi_param_type == "u16":
+        return f"{param_name} as u16"
+    if ffi_param_type == "u32":
+        return f"{param_name} as u32"
+    if ffi_param_type == "u64":
+        return f"{param_name} as u64"
+    if ffi_param_type == "i32":
+        return f"{param_name} as i32"
+    if ffi_param_type == "i64":
+        return f"{param_name} as i64"
+    return param_name
+
+
+def gen_napi_rust_audio():
+    """Generate sdks/typescript/native/src/audio.g.rs from schema+FFI mapping."""
+    tool = schema["tools"]["GoudGame"]
+    tool_mapping = mapping["tools"]["GoudGame"]["methods"]
+    ffi_audio = mapping["ffi_functions"]["audio"]
+
+    audio_methods = [
+        m for m in tool["methods"]
+        if m["name"].startswith("audio") and m["name"] != "getAudioCapabilities"
+    ]
+
+    lines = [
+        RUST_HEADER,
+        "use crate::game::GoudGame;",
+        "use napi::bindgen_prelude::*;",
+        "use napi_derive::napi;",
+        "",
+        "// =============================================================================",
+        "// Audio methods on GoudGame",
+        "// =============================================================================",
+        "",
+        "#[napi]",
+        "impl GoudGame {",
+    ]
+
+    for method in audio_methods:
+        method_name = method["name"]
+        rust_name = to_snake(method_name)
+        ffi_name = tool_mapping[method_name]["ffi"]
+        ffi_sig = ffi_audio.get(ffi_name, {})
+        ffi_params = ffi_sig.get("params", [])
+        ffi_ret = ffi_sig.get("returns")
+        ffi_arg_types = [p["type"] for p in ffi_params[1:]]  # skip context arg
+
+        if method.get("doc"):
+            lines.append(f"    /// {method['doc']}")
+        lines.append(f'    #[napi(js_name = "{method_name}")]')
+
+        param_defs = []
+        ffi_call_args = ["self.context_id"]
+        ffi_index = 0
+        for p in method.get("params", []):
+            pn = to_snake(p["name"])
+            pt = p["type"]
+            param_defs.append(f"{pn}: {_napi_rust_param_type(pt)}")
+
+            if pt == "bytes":
+                data_ptr_type = ffi_arg_types[ffi_index]
+                data_len_type = ffi_arg_types[ffi_index + 1]
+                ffi_call_args.append(_ffi_arg_from_schema(pn, pt, data_ptr_type))
+                ffi_call_args.append(_ffi_arg_from_schema(pn, pt, data_len_type))
+                ffi_index += 2
+            else:
+                arg_type = ffi_arg_types[ffi_index]
+                ffi_call_args.append(_ffi_arg_from_schema(pn, pt, arg_type))
+                ffi_index += 1
+
+        params_sig = ", ".join(param_defs)
+        method_ret_schema = method.get("returns", "void")
+        method_ret_rust = _napi_rust_return_type(method_ret_schema)
+        lines.append(f"    pub fn {rust_name}(&self{', ' if params_sig else ''}{params_sig}) -> {method_ret_rust} {{")
+
+        ffi_mod = _audio_ffi_module(ffi_name)
+        call = f"goud_engine::ffi::audio::{ffi_mod}::{ffi_name}({', '.join(ffi_call_args)})"
+        is_unsafe = ffi_sig.get("unsafe", False)
+
+        if method_ret_schema == "void":
+            if is_unsafe:
+                lines.append(f"        unsafe {{ {call}; }}")
+            else:
+                lines.append(f"        {call};")
+        else:
+            needs_cast = method_ret_rust != _ffi_native_return_type(ffi_ret or method_ret_schema)
+            if is_unsafe:
+                if needs_cast:
+                    lines.append(f"        unsafe {{ {call} as {method_ret_rust} }}")
+                else:
+                    lines.append(f"        unsafe {{ {call} }}")
+            else:
+                if needs_cast:
+                    lines.append(f"        {call} as {method_ret_rust}")
+                else:
+                    lines.append(f"        {call}")
+
+        lines.append("    }")
+        lines.append("")
+
+    lines.append("}")
+    lines.append("")
+
+    write_generated(NATIVE_SRC / "audio.g.rs", "\n".join(lines))
+
+
 def gen_napi_rust_lib():
     """Generate lib.rs."""
     lines = [
         RUST_HEADER,
+        "#[allow(dead_code)]",
+        '#[path = "audio.g.rs"]',
+        "mod audio;",
         "#[allow(dead_code)]",
         '#[path = "components.g.rs"]',
         "mod components;",
@@ -2420,6 +2600,7 @@ def gen_napi_rust():
     gen_napi_rust_entity()
     gen_napi_rust_components()
     gen_napi_rust_game()
+    gen_napi_rust_audio()
     gen_napi_rust_lib()
 
 

@@ -190,7 +190,7 @@ pub struct NapiNetworkCapabilities {
 
 #[napi]
 pub struct GoudGame {
-    context_id: GoudContextId,
+    pub(crate) context_id: GoudContextId,
     last_delta_time: f32,
     title: String,
     frame_count: u64,
