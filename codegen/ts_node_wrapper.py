@@ -12,6 +12,18 @@ from ts_node_shared import (
     ts_type,
     write_generated,
 )
+from ts_node_wrapper_sections import (
+    append_animation_wrappers,
+    append_context_wrapper,
+    append_engine_config_wrapper,
+    append_physics_world_2d_wrapper,
+    append_physics_world_3d_wrapper,
+    append_ui_manager_wrapper,
+    has_engine_config,
+    has_physics_world_2d,
+    has_physics_world_3d,
+    has_ui_manager,
+)
 
 NATIVE_KNOWN_METHODS = {
     "shouldClose", "close", "destroy", "beginFrame", "endFrame",
@@ -272,310 +284,41 @@ def gen_node_wrapper():
         "  // Animation Layer Stack & Events",
     ]
 
-    _anim_wrappers = [
-        ("animationLayerStackCreate", "entity: IEntity", "return (this.native as any).animationLayerStackCreate(entity as unknown as NativeEntity);", "number"),
-        ("animationLayerAdd", "entity: IEntity, name: string, blendMode: number", "return (this.native as any).animationLayerAdd(entity as unknown as NativeEntity, name, blendMode);", "number"),
-        ("animationLayerSetWeight", "entity: IEntity, layerIndex: number, weight: number", "return (this.native as any).animationLayerSetWeight(entity as unknown as NativeEntity, layerIndex, weight);", "number"),
-        ("animationLayerPlay", "entity: IEntity, layerIndex: number", "return (this.native as any).animationLayerPlay(entity as unknown as NativeEntity, layerIndex);", "number"),
-        ("animationLayerSetClip", "entity: IEntity, layerIndex: number, frameCount: number, frameDuration: number, mode: number", "return (this.native as any).animationLayerSetClip(entity as unknown as NativeEntity, layerIndex, frameCount, frameDuration, mode);", "number"),
-        ("animationLayerAddFrame", "entity: IEntity, layerIndex: number, x: number, y: number, w: number, h: number", "return (this.native as any).animationLayerAddFrame(entity as unknown as NativeEntity, layerIndex, x, y, w, h);", "number"),
-        ("animationLayerReset", "entity: IEntity, layerIndex: number", "return (this.native as any).animationLayerReset(entity as unknown as NativeEntity, layerIndex);", "number"),
-        ("animationClipAddEvent", "entity: IEntity, frameIndex: number, name: string, payloadType: number, payloadInt: number, payloadFloat: number, payloadString?: string | null", "return (this.native as any).animationClipAddEvent(entity as unknown as NativeEntity, frameIndex, name, payloadType, payloadInt, payloadFloat, payloadString ?? null);", "number"),
-        ("animationEventsCount", "", "return (this.native as any).animationEventsCount();", "number"),
-        ("animationEventsRead", "index: number", "return (this.native as any).animationEventsRead(index) as unknown as IAnimationEventData;", "IAnimationEventData"),
-    ]
-    for mn, sig, body, ret in _anim_wrappers:
-        lines.append(f"  {mn}({sig}): {ret} {{")
-        lines.append(f"    {body}")
-        lines.append("  }")
-        lines.append("")
+    append_animation_wrappers(lines)
 
     lines.append("}")
     lines.append("")
 
-    lines += [
-        "/** Headless engine context exposing low-level networking APIs for Node-only tests. */",
-        "export class GoudContext implements IGoudContext {",
-        "  private native: NativeGoudContext;",
-        "",
-        "  constructor() {",
-        "    this.native = new NativeGoudContext();",
-        "  }",
-        "",
-        "  destroy(): boolean {",
-        "    return this.native.destroy();",
-        "  }",
-        "",
-        "  isValid(): boolean {",
-        "    return this.native.isValid();",
-        "  }",
-        "",
-        "  getNetworkCapabilities(): INetworkCapabilities {",
-        "    return this.native.getNetworkCapabilities() as unknown as INetworkCapabilities;",
-        "  }",
-        "",
-        "  networkHost(protocol: number, port: number): number {",
-        "    return this.native.networkHost(protocol, port);",
-        "  }",
-        "",
-        "  networkConnect(protocol: number, address: string, port: number): number {",
-        "    return this.native.networkConnect(protocol, address, port);",
-        "  }",
-        "",
-        "  networkConnectWithPeer(protocol: number, address: string, port: number): INetworkConnectResult {",
-        "    return this.native.networkConnectWithPeer(protocol, address, port) as unknown as INetworkConnectResult;",
-        "  }",
-        "",
-        "  networkDisconnect(handle: number): number {",
-        "    return this.native.networkDisconnect(handle);",
-        "  }",
-        "",
-        "  networkSend(handle: number, peerId: number, data: Uint8Array, channel: number): number {",
-        "    return this.native.networkSend(handle, peerId, Buffer.from(data), channel);",
-        "  }",
-        "",
-        "  networkReceive(handle: number): Uint8Array {",
-        "    return this.native.networkReceive(handle);",
-        "  }",
-        "",
-        "  networkReceivePacket(handle: number): INetworkPacket | null {",
-        "    return this.native.networkReceivePacket(handle) as unknown as INetworkPacket | null;",
-        "  }",
-        "",
-        "  networkPoll(handle: number): number {",
-        "    return this.native.networkPoll(handle);",
-        "  }",
-        "",
-        "  getNetworkStats(handle: number): INetworkStats {",
-        "    return this.native.getNetworkStats(handle) as unknown as INetworkStats;",
-        "  }",
-        "",
-        "  networkPeerCount(handle: number): number {",
-        "    return this.native.networkPeerCount(handle);",
-        "  }",
-        "",
-        "  setNetworkSimulation(handle: number, config: INetworkSimulationConfig): number {",
-        "    return this.native.setNetworkSimulation(handle, {",
-        "      one_way_latency_ms: config.oneWayLatencyMs,",
-        "      jitter_ms: config.jitterMs,",
-        "      packet_loss_percent: config.packetLossPercent,",
-        "    } as unknown as INetworkSimulationConfig);",
-        "  }",
-        "",
-        "  clearNetworkSimulation(handle: number): number {",
-        "    return this.native.clearNetworkSimulation(handle);",
-        "  }",
-        "",
-        "  setNetworkOverlayHandle(handle: number): number {",
-        "    return this.native.setNetworkOverlayHandle(handle);",
-        "  }",
-        "",
-        "  clearNetworkOverlayHandle(): number {",
-        "    return this.native.clearNetworkOverlayHandle();",
-        "  }",
-        "}",
-        "",
-    ]
+    append_context_wrapper(lines)
 
-    if "PhysicsWorld2D" in schema.get("tools", {}) and "PhysicsWorld2D" in mapping.get("tools", {}):
-        pw2d_tool = schema["tools"]["PhysicsWorld2D"]
-        if pw2d_tool.get("doc"):
-            lines.append(f"/** {pw2d_tool['doc']} */")
-        lines.append("export class PhysicsWorld2D implements IPhysicsWorld2D {")
-        lines.append("  private native: any;")
-        lines.append("")
-        lines.append("  constructor(gravityX: number, gravityY: number, backend: number = 0) {")
-        lines.append("    const { NativePhysicsWorld2D } = require('../../../index');")
-        lines.append("    this.native = new NativePhysicsWorld2D(gravityX, gravityY, backend);")
-        lines.append("  }")
-        lines.append("")
-        for method in pw2d_tool.get("methods", []):
-            mn = to_camel(method["name"])
-            params = method.get("params", [])
-            ret = method.get("returns", "void")
-            if method.get("doc"):
-                lines.append(f"  /** {method['doc']} */")
-            ps = ", ".join(f"{to_camel(p['name'])}: {ts_iface_type(p['type'])}" for p in params)
-            args = ", ".join(to_camel(p["name"]) for p in params)
-            lines.append(f"  {mn}({ps}): {ts_iface_type(ret)} {{")
-            if ret == "void":
-                lines.append(f"    this.native.{mn}({args});")
-            else:
-                lines.append(f"    return this.native.{mn}({args});")
-            lines.append("  }")
-            lines.append("")
-        lines.append("}")
-        lines.append("")
+    if has_physics_world_2d():
+        append_physics_world_2d_wrapper(lines)
 
-    if "PhysicsWorld3D" in schema.get("tools", {}) and "PhysicsWorld3D" in mapping.get("tools", {}):
-        pw3d_tool = schema["tools"]["PhysicsWorld3D"]
-        if pw3d_tool.get("doc"):
-            lines.append(f"/** {pw3d_tool['doc']} */")
-        lines.append("export class PhysicsWorld3D implements IPhysicsWorld3D {")
-        lines.append("  private native: any;")
-        lines.append("")
-        lines.append("  constructor(gravityX: number, gravityY: number, gravityZ: number) {")
-        lines.append("    const { NativePhysicsWorld3D } = require('../../../index');")
-        lines.append("    this.native = new NativePhysicsWorld3D(gravityX, gravityY, gravityZ);")
-        lines.append("  }")
-        lines.append("")
-        for method in pw3d_tool.get("methods", []):
-            mn = to_camel(method["name"])
-            params = method.get("params", [])
-            ret = method.get("returns", "void")
-            if method.get("doc"):
-                lines.append(f"  /** {method['doc']} */")
-            ps = ", ".join(f"{to_camel(p['name'])}: {ts_iface_type(p['type'])}" for p in params)
-            args = ", ".join(to_camel(p["name"]) for p in params)
-            lines.append(f"  {mn}({ps}): {ts_iface_type(ret)} {{")
-            if ret == "void":
-                lines.append(f"    this.native.{mn}({args});")
-            else:
-                lines.append(f"    return this.native.{mn}({args});")
-            lines.append("  }")
-            lines.append("")
-        lines.append("}")
-        lines.append("")
+    if has_physics_world_3d():
+        append_physics_world_3d_wrapper(lines)
 
-    if "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {}):
-        ec_tool = schema["tools"]["EngineConfig"]
-        lines += ["import type { IEngineConfig } from '../types/engine.g.js';", ""]
-        if ec_tool.get("doc"):
-            lines.append(f"/** {ec_tool['doc']} */")
-        lines += [
-            "export class EngineConfig implements IEngineConfig {",
-            "  private native: any;",
-            "",
-            "  constructor() {",
-            "    const { NativeEngineConfig } = require('../../../index');",
-            "    this.native = new NativeEngineConfig();",
-            "  }",
-            "",
-        ]
-        for method in ec_tool.get("methods", []):
-            mn = to_camel(method["name"])
-            params = method.get("params", [])
-            if method.get("doc"):
-                lines.append(f"  /** {method['doc']} */")
-            if mn == "build":
-                lines += [
-                    "  build(): GoudGame {",
-                    "    const ctx = this.native.build();",
-                    "    const game = Object.create(GoudGame.prototype);",
-                    "    game.native = ctx;",
-                    "    return game;",
-                    "  }",
-                ]
-            elif mn == "destroy":
-                lines += ["  destroy(): void {", "    this.native.destroy();", "  }"]
-            else:
-                ps = ", ".join(f"{to_camel(p['name'])}: {ts_iface_type(p['type'])}" for p in params)
-                args = ", ".join(to_camel(p["name"]) for p in params)
-                lines += [f"  {mn}({ps}): EngineConfig {{", f"    this.native.{mn}({args});", "    return this;", "  }"]
-            lines.append("")
-        lines += ["}", ""]
+    if has_engine_config():
+        append_engine_config_wrapper(lines)
 
-    if "UiManager" in schema.get("tools", {}) and "UiManager" in mapping.get("tools", {}):
-        ui_tool = schema["tools"]["UiManager"]
-        lines += [
-            "function toNativeUiNodeId(nodeId: UiNodeId): number {",
-            "  return typeof nodeId === 'bigint' ? Number(nodeId) : nodeId;",
-            "}",
-            "",
-            "export class UiManager implements IUiManager {",
-            "  private native: NativeUiManager;",
-            "",
-            "  constructor() {",
-            "    this.native = new NativeUiManager();",
-            "  }",
-            "",
-        ]
-        for method in ui_tool.get("methods", []):
-            mn = to_camel(method["name"])
-            params = method.get("params", [])
-            ret = method.get("returns", "void")
-            if method.get("doc"):
-                lines.append(f"  /** {method['doc']} */")
-            param_defs = []
-            call_args = []
-            uses_ui_node_id = False
-            for p in params:
-                pn = to_camel(p["name"])
-                pt = p["type"]
-                if pn in {"nodeId", "childId", "parentId"}:
-                    param_defs.append(f"{pn}: UiNodeId")
-                    call_args.append(f"toNativeUiNodeId({pn})")
-                    uses_ui_node_id = True
-                elif pt == "UiStyle":
-                    param_defs.append(f"{pn}: IUiStyle")
-                    call_args.append(pn)
-                elif pt in schema.get("enums", {}):
-                    param_defs.append(f"{pn}: number")
-                    call_args.append(pn)
-                else:
-                    param_defs.append(f"{pn}: {ts_iface_type(pt)}")
-                    call_args.append(pn)
-            return_type = "UiNodeId" if mn in {"createNode", "getParent", "getChildAt"} else ts_iface_type(ret)
-            lines.append(f"  {mn}({', '.join(param_defs)}): {return_type} {{")
-            if mn == "eventRead":
-                lines.append(f"    return this.native.{mn}({', '.join(call_args)}) as unknown as IUiEvent | null;")
-            elif ret == "void":
-                lines.append(f"    this.native.{mn}({', '.join(call_args)});")
-            elif uses_ui_node_id and mn in {"createNode", "getParent", "getChildAt"}:
-                lines.append(f"    return this.native.{mn}({', '.join(call_args)}) as UiNodeId;")
-            else:
-                lines.append(f"    return this.native.{mn}({', '.join(call_args)});")
-            lines.append("  }")
-            lines.append("")
-
-        lines += [
-            "  createPanel(): UiNodeId {",
-            "    return this.createNode(0);",
-            "  }",
-            "",
-            "  createLabel(text: string): UiNodeId {",
-            "    const nodeId = this.createNode(2);",
-            "    this.setLabelText(nodeId, text);",
-            "    return nodeId;",
-            "  }",
-            "",
-            "  createButton(enabled: boolean = true): UiNodeId {",
-            "    const nodeId = this.createNode(1);",
-            "    this.setButtonEnabled(nodeId, enabled);",
-            "    return nodeId;",
-            "  }",
-            "",
-            "  createImage(path: string): UiNodeId {",
-            "    const nodeId = this.createNode(3);",
-            "    this.setImageTexturePath(nodeId, path);",
-            "    return nodeId;",
-            "  }",
-            "",
-            "  createSlider(min: number, max: number, value: number, enabled: boolean = true): UiNodeId {",
-            "    const nodeId = this.createNode(4);",
-            "    this.setSlider(nodeId, min, max, value, enabled);",
-            "    return nodeId;",
-            "  }",
-            "}",
-            "",
-        ]
+    if has_ui_manager():
+        append_ui_manager_wrapper(lines)
 
     write_generated(GEN / "node" / "index.g.ts", "\n".join(lines))
 
 
 def gen_entry():
-    has_engine_config = "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {})
-    has_ui_manager = "UiManager" in schema.get("tools", {}) and "UiManager" in mapping.get("tools", {})
-    has_physics_world_2d = "PhysicsWorld2D" in schema.get("tools", {}) and "PhysicsWorld2D" in mapping.get("tools", {})
-    has_physics_world_3d = "PhysicsWorld3D" in schema.get("tools", {}) and "PhysicsWorld3D" in mapping.get("tools", {})
-    ec_export = ", EngineConfig" if has_engine_config else ""
-    ec_type_export = ", IEngineConfig" if has_engine_config else ""
-    ui_export = ", UiManager" if has_ui_manager else ""
-    ui_type_export = ", IUiManager, IUiStyle, IUiEvent, UiNodeId" if has_ui_manager else ""
-    pw2d_export = ", PhysicsWorld2D" if has_physics_world_2d else ""
-    pw2d_type_export = ", IPhysicsWorld2D" if has_physics_world_2d else ""
-    pw3d_export = ", PhysicsWorld3D" if has_physics_world_3d else ""
-    pw3d_type_export = ", IPhysicsWorld3D" if has_physics_world_3d else ""
+    has_engine_config_export = has_engine_config()
+    has_ui_manager_export = has_ui_manager()
+    has_physics_world_2d_export = has_physics_world_2d()
+    has_physics_world_3d_export = has_physics_world_3d()
+    ec_export = ", EngineConfig" if has_engine_config_export else ""
+    ec_type_export = ", IEngineConfig" if has_engine_config_export else ""
+    ui_export = ", UiManager" if has_ui_manager_export else ""
+    ui_type_export = ", IUiManager, IUiStyle, IUiEvent, UiNodeId" if has_ui_manager_export else ""
+    pw2d_export = ", PhysicsWorld2D" if has_physics_world_2d_export else ""
+    pw2d_type_export = ", IPhysicsWorld2D" if has_physics_world_2d_export else ""
+    pw3d_export = ", PhysicsWorld3D" if has_physics_world_3d_export else ""
+    pw3d_type_export = ", IPhysicsWorld3D" if has_physics_world_3d_export else ""
     errors_section = schema.get("errors", {})
     error_names = ["GoudError"]
     for cat in errors_section.get("categories", []):
