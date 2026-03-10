@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from sdk_common import (
     HEADER_COMMENT, SDKS_DIR, load_schema, load_ffi_mapping, load_errors,
     to_snake, to_screaming_snake, write_generated, CTYPES_MAP, PYTHON_TYPES,
+    resolve_ctypes_type,
 )
 
 OUT = SDKS_DIR / "python" / "goud_engine" / "generated"
@@ -25,18 +26,7 @@ mapping = load_ffi_mapping()
 
 def _resolve_ffi_return(ret: str) -> str:
     """Map an FFI return type string to its ctypes restype."""
-    if ret == "void":
-        return "None"
-    ct = CTYPES_MAP.get(ret)
-    if ct:
-        return ct
-    # Check if it's an FFI enum type (e.g., FfiTransitionType -> TransitionType)
-    if ret.startswith("Ffi") and ret[3:] in schema.get("enums", {}):
-        enum_name = ret[3:]
-        enum_def = schema["enums"][enum_name]
-        underlying = enum_def.get("underlying", "i32")
-        return CTYPES_MAP.get(underlying, "ctypes.c_int32")
-    return "ctypes.c_uint64"
+    return resolve_ctypes_type(ret, enums=schema.get("enums", {}), default="ctypes.c_uint64")
 
 
 def _resolve_ffi_param(ptype: str) -> str:
@@ -45,23 +35,12 @@ def _resolve_ffi_param(ptype: str) -> str:
     if ptype.startswith("ref "):
         inner = ptype[4:]
         return f"ctypes.POINTER({inner})"
-    if schema.get("types", {}).get(ptype, {}).get("kind") == "value":
-        ffi_info = mapping.get("ffi_types", {}).get(ptype, {})
-        ffi_name = ffi_info.get("ffi_name")
-        if ffi_name:
-            return ffi_name
-    ct = CTYPES_MAP.get(ptype)
-    if ct:
-        return ct
-    # Check if it's an FFI enum type (e.g., FfiTransitionType -> TransitionType)
+    resolved = resolve_ctypes_type(ptype, enums=schema.get("enums", {}), default="ctypes.c_uint64")
+    if resolved != "ctypes.c_uint64":
+        return resolved
     if ptype.startswith("Ffi") and ptype[3:] in schema.get("types", {}):
         return ptype
-    if ptype.startswith("Ffi") and ptype[3:] in schema.get("enums", {}):
-        enum_name = ptype[3:]
-        enum_def = schema["enums"][enum_name]
-        underlying = enum_def.get("underlying", "i32")
-        return CTYPES_MAP.get(underlying, "ctypes.c_int32")
-    return "ctypes.c_uint64"
+    return resolved
 
 
 def _py_value_param_ffi_setup(param: dict) -> tuple[list[str], str] | None:
@@ -133,10 +112,13 @@ def gen_ffi():
     # Map of ffi_type field names -> ctypes types for struct generation
     _FIELD_CTYPES = {
         "f32": "ctypes.c_float",
+        "f64": "ctypes.c_double",
         "u8": "ctypes.c_uint8",
         "u16": "ctypes.c_uint16",
         "u32": "ctypes.c_uint32",
         "u64": "ctypes.c_uint64",
+        "usize": "ctypes.c_size_t",
+        "ptr": "ctypes.c_void_p",
         "bool": "ctypes.c_bool",
         "i8": "ctypes.c_int8",
         "i16": "ctypes.c_int16",
@@ -160,10 +142,24 @@ def gen_ffi():
             if "[" in ft:
                 base = ft.split("[")[0]
                 count = int(ft.split("[")[1].rstrip("]"))
-                ct = _FIELD_CTYPES.get(base, "ctypes.c_float")
+                ct = resolve_ctypes_type(
+                    base,
+                    enums=schema.get("enums", {}),
+                    default=_FIELD_CTYPES.get(base, "ctypes.c_float"),
+                )
                 fields_list.append(f'        ("{fn}", {ct} * {count})')
             else:
-                ct = _FIELD_CTYPES.get(ft, "ctypes.c_float")
+                if ft in schema.get("enums", {}):
+                    underlying = schema["enums"][ft].get("underlying", "i32")
+                    ct = CTYPES_MAP.get(underlying, "ctypes.c_int32")
+                elif ft in mapping.get("ffi_types", {}):
+                    ct = mapping["ffi_types"][ft].get("ffi_name", "ctypes.c_float")
+                else:
+                    ct = resolve_ctypes_type(
+                        ft,
+                        enums=schema.get("enums", {}),
+                        default=_FIELD_CTYPES.get(ft, "ctypes.c_float"),
+                    )
                 fields_list.append(f'        ("{fn}", {ct})')
         lines.append("    _fields_ = [")
         lines.append(",\n".join(fields_list))
@@ -240,8 +236,10 @@ def _py_field_default(field: dict) -> str:
     t = field.get("type", "f32")
     if t == "bool":
         return "bool = False"
-    elif t in ("u32", "i32", "u64", "i64"):
+    elif t in ("u8", "u16", "u32", "i8", "i16", "i32", "u64", "i64", "usize", "ptr"):
         return "int = 0"
+    elif t in schema.get("types", {}):
+        return f"'{t}' = None"
     else:
         return "float = 0.0"
 
@@ -396,8 +394,13 @@ def _gen_component_type(type_name: str, type_def: dict, lines: list):
         f"{to_snake(f['name'])}: {_py_field_default(f)}" for f in fields
     )
     lines.append(f"    def __init__(self, {params}):")
-    for fn in field_names:
-        lines.append(f"        self.{fn} = {fn}")
+    for field in fields:
+        fn = to_snake(field["name"])
+        ft = field.get("type", "f32")
+        if ft in schema.get("types", {}) and schema["types"][ft].get("kind") == "value":
+            lines.append(f"        self.{fn} = {fn} if {fn} is not None else {ft}()")
+        else:
+            lines.append(f"        self.{fn} = {fn}")
     lines.append("        self._ffi = None")
     lines.append("")
 
@@ -777,6 +780,51 @@ def gen_types():
         fields = type_def.get("fields", [])
         field_names = [to_snake(f["name"]) for f in fields]
 
+        if type_name == "UiStyle":
+            lines.append(f"class {type_name}:")
+            if type_def.get("doc"):
+                lines.append(f'    """{type_def["doc"]}"""')
+            lines.append(
+                "    def __init__(self, has_background_color: bool = False, background_color: 'Color' = None, "
+                "has_foreground_color: bool = False, foreground_color: 'Color' = None, "
+                "has_border_color: bool = False, border_color: 'Color' = None, "
+                "has_border_width: bool = False, border_width: float = 0.0, "
+                "has_font_family: bool = False, font_family: str = '', "
+                "has_font_size: bool = False, font_size: float = 0.0, "
+                "has_texture_path: bool = False, texture_path: str = '', "
+                "has_widget_spacing: bool = False, widget_spacing: float = 0.0):"
+            )
+            lines.append("        self.has_background_color = has_background_color")
+            lines.append("        self.background_color = background_color if background_color is not None else Color()")
+            lines.append("        self.has_foreground_color = has_foreground_color")
+            lines.append("        self.foreground_color = foreground_color if foreground_color is not None else Color()")
+            lines.append("        self.has_border_color = has_border_color")
+            lines.append("        self.border_color = border_color if border_color is not None else Color()")
+            lines.append("        self.has_border_width = has_border_width")
+            lines.append("        self.border_width = border_width")
+            lines.append("        self.has_font_family = has_font_family")
+            lines.append("        self.font_family = '' if font_family is None else font_family")
+            lines.append("        self.has_font_size = has_font_size")
+            lines.append("        self.font_size = font_size")
+            lines.append("        self.has_texture_path = has_texture_path")
+            lines.append("        self.texture_path = '' if texture_path is None else texture_path")
+            lines.append("        self.has_widget_spacing = has_widget_spacing")
+            lines.append("        self.widget_spacing = widget_spacing")
+            lines.append("")
+            lines.append("    def __repr__(self):")
+            lines.append(
+                '        return f"UiStyle(has_background_color={self.has_background_color}, background_color={self.background_color}, '
+                'has_foreground_color={self.has_foreground_color}, foreground_color={self.foreground_color}, '
+                'has_border_color={self.has_border_color}, border_color={self.border_color}, '
+                'has_border_width={self.has_border_width}, border_width={self.border_width}, '
+                'has_font_family={self.has_font_family}, font_family={self.font_family}, '
+                'has_font_size={self.has_font_size}, font_size={self.font_size}, '
+                'has_texture_path={self.has_texture_path}, texture_path={self.texture_path}, '
+                'has_widget_spacing={self.has_widget_spacing}, widget_spacing={self.widget_spacing})"'
+            )
+            lines.append("")
+            continue
+
         lines.append(f"class {type_name}:")
         if type_def.get("doc"):
             lines.append(f'    """{type_def["doc"]}"""')
@@ -785,8 +833,13 @@ def gen_types():
             f"{to_snake(f['name'])}: {_py_field_default(f)}" for f in fields
         )
         lines.append(f"    def __init__(self, {params}):")
-        for fn in field_names:
-            lines.append(f"        self.{fn} = {fn}")
+        for field in fields:
+            fn = to_snake(field["name"])
+            ft = field.get("type", "f32")
+            if ft in schema.get("types", {}) and schema["types"][ft].get("kind") == "value":
+                lines.append(f"        self.{fn} = {fn} if {fn} is not None else {ft}()")
+            else:
+                lines.append(f"        self.{fn} = {fn}")
         lines.append("")
 
         for factory in type_def.get("factories", []):
@@ -1780,6 +1833,143 @@ def _gen_engine_config(lines: list):
             lines.append("")
 
 
+def _gen_ui_manager(lines: list):
+    """Generate standalone UiManager wrapper for Python."""
+    if "UiManager" not in schema.get("tools", {}) or "UiManager" not in mapping.get("tools", {}):
+        return
+
+    lines.append("class UiManager:")
+    lines.append('    """Immediate-mode UI manager for creating and managing UI node trees"""')
+    lines.append("")
+    lines.append("    def __init__(self):")
+    lines.append("        lib = get_lib()")
+    lines.append("        self._lib = lib")
+    lines.append("        self._handle = lib.goud_ui_manager_create()")
+    lines.append("        if not self._handle:")
+    lines.append("            raise RuntimeError('Failed to create UiManager')")
+    lines.append("")
+    lines.append("    def __del__(self):")
+    lines.append("        self.destroy()")
+    lines.append("")
+    lines.append("    def destroy(self):")
+    lines.append("        if hasattr(self, '_handle') and self._handle:")
+    lines.append("            self._lib.goud_ui_manager_destroy(self._handle)")
+    lines.append("            self._handle = None")
+    lines.append("")
+    lines.append("    def update(self):")
+    lines.append("        self._lib.goud_ui_manager_update(self._handle)")
+    lines.append("")
+    lines.append("    def render(self):")
+    lines.append("        self._lib.goud_ui_manager_render(self._handle)")
+    lines.append("")
+    lines.append("    def node_count(self):")
+    lines.append("        return self._lib.goud_ui_manager_node_count(self._handle)")
+    lines.append("")
+    lines.append("    def create_node(self, component_type):")
+    lines.append("        return self._lib.goud_ui_create_node(self._handle, component_type)")
+    lines.append("")
+    lines.append("    def remove_node(self, node_id):")
+    lines.append("        return self._lib.goud_ui_remove_node(self._handle, node_id)")
+    lines.append("")
+    lines.append("    def set_parent(self, child_id, parent_id):")
+    lines.append("        return self._lib.goud_ui_set_parent(self._handle, child_id, parent_id)")
+    lines.append("")
+    lines.append("    def get_parent(self, node_id):")
+    lines.append("        return self._lib.goud_ui_get_parent(self._handle, node_id)")
+    lines.append("")
+    lines.append("    def get_child_count(self, node_id):")
+    lines.append("        return self._lib.goud_ui_get_child_count(self._handle, node_id)")
+    lines.append("")
+    lines.append("    def get_child_at(self, node_id, index):")
+    lines.append("        return self._lib.goud_ui_get_child_at(self._handle, node_id, index)")
+    lines.append("")
+    lines.append("    def set_widget(self, node_id, widget_kind):")
+    lines.append("        return self._lib.goud_ui_set_widget(self._handle, node_id, widget_kind)")
+    lines.append("")
+    lines.append("    def set_style(self, node_id, style):")
+    lines.append("        ffi_style = FfiUiStyle()")
+    lines.append("        ffi_style.has_background_color = bool(style.has_background_color)")
+    lines.append("        ffi_style.background_color = FfiColor(style.background_color.r, style.background_color.g, style.background_color.b, style.background_color.a)")
+    lines.append("        ffi_style.has_foreground_color = bool(style.has_foreground_color)")
+    lines.append("        ffi_style.foreground_color = FfiColor(style.foreground_color.r, style.foreground_color.g, style.foreground_color.b, style.foreground_color.a)")
+    lines.append("        ffi_style.has_border_color = bool(style.has_border_color)")
+    lines.append("        ffi_style.border_color = FfiColor(style.border_color.r, style.border_color.g, style.border_color.b, style.border_color.a)")
+    lines.append("        ffi_style.has_border_width = bool(style.has_border_width)")
+    lines.append("        ffi_style.border_width = style.border_width")
+    lines.append("        ffi_style.has_font_family = bool(style.has_font_family)")
+    lines.append("        font_family = '' if style.font_family is None else style.font_family")
+    lines.append("        font_family_bytes = font_family.encode('utf-8') if style.has_font_family else b''")
+    lines.append("        font_family_buf = ctypes.create_string_buffer(font_family_bytes, len(font_family_bytes)) if font_family_bytes else None")
+    lines.append("        ffi_style.font_family_ptr = ctypes.cast(font_family_buf, ctypes.c_void_p).value if font_family_bytes else None")
+    lines.append("        ffi_style.font_family_len = len(font_family_bytes)")
+    lines.append("        ffi_style.has_font_size = bool(style.has_font_size)")
+    lines.append("        ffi_style.font_size = style.font_size")
+    lines.append("        ffi_style.has_texture_path = bool(style.has_texture_path)")
+    lines.append("        texture_path = '' if style.texture_path is None else style.texture_path")
+    lines.append("        texture_path_bytes = texture_path.encode('utf-8') if style.has_texture_path else b''")
+    lines.append("        texture_path_buf = ctypes.create_string_buffer(texture_path_bytes, len(texture_path_bytes)) if texture_path_bytes else None")
+    lines.append("        ffi_style.texture_path_ptr = ctypes.cast(texture_path_buf, ctypes.c_void_p).value if texture_path_bytes else None")
+    lines.append("        ffi_style.texture_path_len = len(texture_path_bytes)")
+    lines.append("        ffi_style.has_widget_spacing = bool(style.has_widget_spacing)")
+    lines.append("        ffi_style.widget_spacing = style.widget_spacing")
+    lines.append("        return self._lib.goud_ui_set_style(self._handle, node_id, ctypes.byref(ffi_style))")
+    lines.append("")
+    lines.append("    def set_label_text(self, node_id, text):")
+    lines.append("        text = '' if text is None else text")
+    lines.append("        text_bytes = text.encode('utf-8')")
+    lines.append("        text_buf = ctypes.create_string_buffer(text_bytes, len(text_bytes)) if text_bytes else None")
+    lines.append("        text_ptr = ctypes.cast(text_buf, ctypes.POINTER(ctypes.c_uint8)) if text_bytes else ctypes.POINTER(ctypes.c_uint8)()")
+    lines.append("        return self._lib.goud_ui_set_label_text(self._handle, node_id, text_ptr, len(text_bytes))")
+    lines.append("")
+    lines.append("    def set_button_enabled(self, node_id, enabled):")
+    lines.append("        return self._lib.goud_ui_set_button_enabled(self._handle, node_id, enabled)")
+    lines.append("")
+    lines.append("    def set_image_texture_path(self, node_id, path):")
+    lines.append("        path = '' if path is None else path")
+    lines.append("        path_bytes = path.encode('utf-8')")
+    lines.append("        path_buf = ctypes.create_string_buffer(path_bytes, len(path_bytes)) if path_bytes else None")
+    lines.append("        path_ptr = ctypes.cast(path_buf, ctypes.POINTER(ctypes.c_uint8)) if path_bytes else ctypes.POINTER(ctypes.c_uint8)()")
+    lines.append("        return self._lib.goud_ui_set_image_texture_path(self._handle, node_id, path_ptr, len(path_bytes))")
+    lines.append("")
+    lines.append("    def set_slider(self, node_id, min_value, max_value, value, enabled):")
+    lines.append("        return self._lib.goud_ui_set_slider(self._handle, node_id, min_value, max_value, value, enabled)")
+    lines.append("")
+    lines.append("    def event_count(self):")
+    lines.append("        return self._lib.goud_ui_event_count(self._handle)")
+    lines.append("")
+    lines.append("    def event_read(self, index):")
+    lines.append("        event = FfiUiEvent()")
+    lines.append("        status = self._lib.goud_ui_event_read(self._handle, index, ctypes.byref(event))")
+    lines.append("        if status <= 0:")
+    lines.append("            return None")
+    lines.append("        return UiEvent(event.event_kind, event.node_id, event.previous_node_id, event.current_node_id)")
+    lines.append("")
+    lines.append("    # Convenience widget helpers")
+    lines.append("    def create_panel(self):")
+    lines.append("        return self.create_node(0)")
+    lines.append("")
+    lines.append("    def create_label(self, text):")
+    lines.append("        node = self.create_node(2)")
+    lines.append("        self.set_label_text(node, text)")
+    lines.append("        return node")
+    lines.append("")
+    lines.append("    def create_button(self, enabled = True):")
+    lines.append("        node = self.create_node(1)")
+    lines.append("        self.set_button_enabled(node, enabled)")
+    lines.append("        return node")
+    lines.append("")
+    lines.append("    def create_image(self, path):")
+    lines.append("        node = self.create_node(3)")
+    lines.append("        self.set_image_texture_path(node, path)")
+    lines.append("        return node")
+    lines.append("")
+    lines.append("    def create_slider(self, min_value, max_value, value, enabled = True):")
+    lines.append("        node = self.create_node(4)")
+    lines.append("        self.set_slider(node, min_value, max_value, value, enabled)")
+    lines.append("        return node")
+    lines.append("")
+
+
 def gen_game():
     lines = [
         f'"""{HEADER_COMMENT}"""',
@@ -1787,9 +1977,12 @@ def gen_game():
         "import ctypes",
         "from . import _ffi as _ffi_module",
         "from ._ffi import (get_lib, GoudContextId, FfiVec2, "
-        "FfiTransform2D, FfiSprite, FfiNetworkStats, FfiNetworkSimulationConfig,",
-        "    GoudRenderStats, GoudContact)",
-        "from ._types import Entity, Vec2, Color, Transform2D, Sprite, RenderStats, NetworkStats, NetworkSimulationConfig",
+        "FfiTransform2D, FfiSprite, FfiColor, FfiUiStyle, FfiUiEvent,",
+        "    FfiNetworkStats, FfiNetworkSimulationConfig, GoudRenderStats, GoudContact)",
+        "from ._types import ("
+        "Entity, Vec2, Color, Transform2D, Sprite, RenderStats, "
+        "UiStyle, UiEvent, NetworkStats, NetworkSimulationConfig"
+        ")",
         "from ._keys import Key, MouseButton, PhysicsBackend2D",
         "",
         "# Type IDs for built-in component types (hash of type name)",
@@ -1820,6 +2013,10 @@ def gen_game():
         lines.append("")
         _gen_engine_config(lines)
 
+    if "UiManager" in schema.get("tools", {}) and "UiManager" in mapping.get("tools", {}):
+        lines.append("")
+        _gen_ui_manager(lines)
+
     write_generated(OUT / "_game.py", "\n".join(lines))
 
 
@@ -1830,6 +2027,7 @@ def gen_init():
     has_physics_world_2d = "PhysicsWorld2D" in schema.get("tools", {}) and "PhysicsWorld2D" in mapping.get("tools", {})
     has_physics_world_3d = "PhysicsWorld3D" in schema.get("tools", {}) and "PhysicsWorld3D" in mapping.get("tools", {})
     has_engine_config = "EngineConfig" in schema.get("tools", {}) and "EngineConfig" in mapping.get("tools", {})
+    has_ui_manager = "UiManager" in schema.get("tools", {}) and "UiManager" in mapping.get("tools", {})
 
     type_imports = "Color, Vec2, Rect, Transform2D, Sprite, Entity"
     builder_imports = []
@@ -1849,6 +2047,8 @@ def gen_init():
         game_imports.append("PhysicsWorld3D")
     if has_engine_config:
         game_imports.append("EngineConfig")
+    if has_ui_manager:
+        game_imports.append("UiManager")
 
     # Collect all enum names from the schema
     enum_imports = sorted(schema.get("enums", {}).keys())

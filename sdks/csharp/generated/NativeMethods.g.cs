@@ -243,6 +243,46 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FfiUiStyle
+    {
+        [MarshalAs(UnmanagedType.U1)]
+        public bool HasBackgroundColor;
+        public FfiColor BackgroundColor;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool HasForegroundColor;
+        public FfiColor ForegroundColor;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool HasBorderColor;
+        public FfiColor BorderColor;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool HasBorderWidth;
+        public float BorderWidth;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool HasFontFamily;
+        public IntPtr FontFamilyPtr;
+        public nuint FontFamilyLen;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool HasFontSize;
+        public float FontSize;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool HasTexturePath;
+        public IntPtr TexturePathPtr;
+        public nuint TexturePathLen;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool HasWidgetSpacing;
+        public float WidgetSpacing;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiUiEvent
+    {
+        public uint EventKind;
+        public ulong NodeId;
+        public ulong PreviousNodeId;
+        public ulong CurrentNodeId;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct FfiMat3x3
     {
         public fixed float M[9];
@@ -1591,6 +1631,39 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern ulong goud_ui_get_child_at(IntPtr mgr, ulong node_id, uint index);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_ui_set_widget(IntPtr mgr, ulong node_id, int widget_kind);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_ui_set_style(IntPtr mgr, ulong node_id, ref FfiUiStyle style);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_ui_set_label_text(IntPtr mgr, ulong node_id, IntPtr text_ptr, nuint text_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_ui_set_button_enabled(IntPtr mgr, ulong node_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_ui_set_image_texture_path(IntPtr mgr, ulong node_id, IntPtr path_ptr, nuint path_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_ui_set_slider(IntPtr mgr, ulong node_id, float min, float max, float value, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_ui_set_event_callback(IntPtr mgr, IntPtr callback, IntPtr user_data);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_ui_event_count(IntPtr mgr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_ui_event_read(IntPtr mgr, uint index, ref FfiUiEvent out_event);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_ui_events_count(IntPtr mgr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_ui_events_read(IntPtr mgr, uint index, ref FfiUiEvent out_event);
 
     }
 }

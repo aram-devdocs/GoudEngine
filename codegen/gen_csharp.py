@@ -119,9 +119,12 @@ def _cs_ffi_param_type(raw: str) -> str:
         "*const FfiText": "ref FfiText",
         "FfiPlaybackMode": "PlaybackMode",
         "FfiTransitionType": "TransitionType",
+        "*const FfiUiStyle": "ref FfiUiStyle",
+        "*mut FfiUiEvent": "ref FfiUiEvent",
         "*const u8": "IntPtr",
         "*mut u8": "IntPtr",
         "*mut *const u8": "ref IntPtr",
+        "ptr": "IntPtr",
         "*mut c_void": "IntPtr",
         "*const c_char": "string",
         "usize": "nuint",
@@ -249,9 +252,13 @@ def gen_native_methods():
             ft = f["type"]
             cs = CSHARP_TYPES.get(ft)
             if cs is None:
+                if ft in ("ptr", "usize"):
+                    cs = cs_type(ft)
                 # Check if it's a schema enum type
-                if ft in schema.get("enums", {}):
+                elif ft in schema.get("enums", {}):
                     cs = to_pascal(ft)
+                elif ft in mapping.get("ffi_types", {}):
+                    cs = mapping["ffi_types"][ft].get("ffi_name", "float")
                 else:
                     cs = "float"
             if ft == "bool":
@@ -390,6 +397,63 @@ def gen_value_types():
             continue
         if type_name == "Mat3x3":
             _gen_mat3x3()
+            continue
+        if type_name == "UiStyle":
+            lines = [
+                f"// {HEADER_COMMENT}",
+                "using System;",
+                "",
+                f"namespace {NS}",
+                "{",
+            ]
+            if type_def.get("doc"):
+                lines.append(f"    /// <summary>{type_def['doc']}</summary>")
+            lines += [
+                "    public struct UiStyle",
+                "    {",
+                "        public bool HasBackgroundColor;",
+                "        public Color BackgroundColor;",
+                "        public bool HasForegroundColor;",
+                "        public Color ForegroundColor;",
+                "        public bool HasBorderColor;",
+                "        public Color BorderColor;",
+                "        public bool HasBorderWidth;",
+                "        public float BorderWidth;",
+                "        public bool HasFontFamily;",
+                "        public string? FontFamily;",
+                "        public bool HasFontSize;",
+                "        public float FontSize;",
+                "        public bool HasTexturePath;",
+                "        public string? TexturePath;",
+                "        public bool HasWidgetSpacing;",
+                "        public float WidgetSpacing;",
+                "",
+                "        public UiStyle(bool hasBackgroundColor, Color backgroundColor, bool hasForegroundColor, Color foregroundColor, bool hasBorderColor, Color borderColor, bool hasBorderWidth, float borderWidth, bool hasFontFamily, string? fontFamily, bool hasFontSize, float fontSize, bool hasTexturePath, string? texturePath, bool hasWidgetSpacing, float widgetSpacing)",
+                "        {",
+                "            HasBackgroundColor = hasBackgroundColor;",
+                "            BackgroundColor = backgroundColor;",
+                "            HasForegroundColor = hasForegroundColor;",
+                "            ForegroundColor = foregroundColor;",
+                "            HasBorderColor = hasBorderColor;",
+                "            BorderColor = borderColor;",
+                "            HasBorderWidth = hasBorderWidth;",
+                "            BorderWidth = borderWidth;",
+                "            HasFontFamily = hasFontFamily;",
+                "            FontFamily = fontFamily;",
+                "            HasFontSize = hasFontSize;",
+                "            FontSize = fontSize;",
+                "            HasTexturePath = hasTexturePath;",
+                "            TexturePath = texturePath;",
+                "            HasWidgetSpacing = hasWidgetSpacing;",
+                "            WidgetSpacing = widgetSpacing;",
+                "        }",
+                "",
+                '        public override string ToString() => $"UiStyle({HasBackgroundColor}, {BackgroundColor}, {HasForegroundColor}, {ForegroundColor}, {HasBorderColor}, {BorderColor}, {HasBorderWidth}, {BorderWidth}, {HasFontFamily}, {FontFamily}, {HasFontSize}, {FontSize}, {HasTexturePath}, {TexturePath}, {HasWidgetSpacing}, {WidgetSpacing})";',
+                "    }",
+                "}",
+                "",
+            ]
+            write_generated(OUT / "Math" / "UiStyle.g.cs", "\n".join(lines))
             continue
         fields = type_def.get("fields", [])
         lines = [f"// {HEADER_COMMENT}", "using System;", "", f"namespace {NS}", "{"]
@@ -1664,6 +1728,179 @@ def gen_engine_config():
     write_generated(OUT / "Core" / "EngineConfig.g.cs", "\n".join(lines))
 
 
+def gen_ui_manager():
+    if "UiManager" not in schema.get("tools", {}) or "UiManager" not in mapping.get("tools", {}):
+        return
+    tool = schema["tools"]["UiManager"]
+    tm = mapping["tools"]["UiManager"]
+    ctor_ffi = tm["constructor"]["ffi"]
+    dtor_ffi = tm["destructor"]
+
+    lines = [
+        f"// {HEADER_COMMENT}",
+        "using System;",
+        "using System.Runtime.InteropServices;",
+        "",
+        f"namespace {NS}",
+        "{",
+        f"    /// <summary>{tool.get('doc', 'Standalone UI manager')}</summary>",
+        "    public class UiManager : IDisposable",
+        "    {",
+        "        private IntPtr _handle;",
+        "        private bool _disposed;",
+        "",
+        "        public UiManager()",
+        "        {",
+        f"            _handle = NativeMethods.{ctor_ffi}();",
+        "            if (_handle == IntPtr.Zero) throw new Exception(\"Failed to create UiManager\");",
+        "        }",
+        "",
+        "        public void Destroy()",
+        "        {",
+        "            if (_disposed) return;",
+        f"            NativeMethods.{dtor_ffi}(_handle);",
+        "            _handle = IntPtr.Zero;",
+        "            _disposed = true;",
+        "        }",
+        "",
+        "        public void Update() => NativeMethods.goud_ui_manager_update(_handle);",
+        "        public void Render() => NativeMethods.goud_ui_manager_render(_handle);",
+        "        public uint NodeCount() => NativeMethods.goud_ui_manager_node_count(_handle);",
+        "        public ulong CreateNode(int componentType) => NativeMethods.goud_ui_create_node(_handle, componentType);",
+        "        public int RemoveNode(ulong nodeId) => NativeMethods.goud_ui_remove_node(_handle, nodeId);",
+        "        public int SetParent(ulong childId, ulong parentId) => NativeMethods.goud_ui_set_parent(_handle, childId, parentId);",
+        "        public ulong GetParent(ulong nodeId) => NativeMethods.goud_ui_get_parent(_handle, nodeId);",
+        "        public uint GetChildCount(ulong nodeId) => NativeMethods.goud_ui_get_child_count(_handle, nodeId);",
+        "        public ulong GetChildAt(ulong nodeId, uint index) => NativeMethods.goud_ui_get_child_at(_handle, nodeId, index);",
+        "        public int SetWidget(ulong nodeId, int widgetKind) => NativeMethods.goud_ui_set_widget(_handle, nodeId, widgetKind);",
+        "",
+        "        public int SetStyle(ulong nodeId, UiStyle style)",
+        "        {",
+        "            unsafe",
+        "            {",
+        "                var fontFamilyBytes = style.HasFontFamily",
+        "                    ? System.Text.Encoding.UTF8.GetBytes(style.FontFamily ?? string.Empty)",
+        "                    : Array.Empty<byte>();",
+        "                var texturePathBytes = style.HasTexturePath",
+        "                    ? System.Text.Encoding.UTF8.GetBytes(style.TexturePath ?? string.Empty)",
+        "                    : Array.Empty<byte>();",
+        "                fixed (byte* fontFamilyPtr = fontFamilyBytes)",
+        "                fixed (byte* texturePathPtr = texturePathBytes)",
+        "                {",
+        "                    var ffi = new FfiUiStyle",
+        "                    {",
+        "                        HasBackgroundColor = style.HasBackgroundColor,",
+        "                        BackgroundColor = new FfiColor { R = style.BackgroundColor.R, G = style.BackgroundColor.G, B = style.BackgroundColor.B, A = style.BackgroundColor.A },",
+        "                        HasForegroundColor = style.HasForegroundColor,",
+        "                        ForegroundColor = new FfiColor { R = style.ForegroundColor.R, G = style.ForegroundColor.G, B = style.ForegroundColor.B, A = style.ForegroundColor.A },",
+        "                        HasBorderColor = style.HasBorderColor,",
+        "                        BorderColor = new FfiColor { R = style.BorderColor.R, G = style.BorderColor.G, B = style.BorderColor.B, A = style.BorderColor.A },",
+        "                        HasBorderWidth = style.HasBorderWidth,",
+        "                        BorderWidth = style.BorderWidth,",
+        "                        HasFontFamily = style.HasFontFamily,",
+        "                        FontFamilyPtr = fontFamilyBytes.Length == 0 ? IntPtr.Zero : (IntPtr)fontFamilyPtr,",
+        "                        FontFamilyLen = (nuint)fontFamilyBytes.Length,",
+        "                        HasFontSize = style.HasFontSize,",
+        "                        FontSize = style.FontSize,",
+        "                        HasTexturePath = style.HasTexturePath,",
+        "                        TexturePathPtr = texturePathBytes.Length == 0 ? IntPtr.Zero : (IntPtr)texturePathPtr,",
+        "                        TexturePathLen = (nuint)texturePathBytes.Length,",
+        "                        HasWidgetSpacing = style.HasWidgetSpacing,",
+        "                        WidgetSpacing = style.WidgetSpacing,",
+        "                    };",
+        "                    return NativeMethods.goud_ui_set_style(_handle, nodeId, ref ffi);",
+        "                }",
+        "            }",
+        "        }",
+        "",
+        "        public int SetLabelText(ulong nodeId, string text)",
+        "        {",
+        "            unsafe",
+        "            {",
+        "                var textBytes = System.Text.Encoding.UTF8.GetBytes(text ?? string.Empty);",
+        "                fixed (byte* textPtr = textBytes)",
+        "                {",
+        "                    return NativeMethods.goud_ui_set_label_text(",
+        "                        _handle,",
+        "                        nodeId,",
+        "                        textBytes.Length == 0 ? IntPtr.Zero : (IntPtr)textPtr,",
+        "                        (nuint)textBytes.Length",
+        "                    );",
+        "                }",
+        "            }",
+        "        }",
+        "",
+        "        public int SetButtonEnabled(ulong nodeId, bool enabled) => NativeMethods.goud_ui_set_button_enabled(_handle, nodeId, enabled);",
+        "",
+        "        public int SetImageTexturePath(ulong nodeId, string path)",
+        "        {",
+        "            unsafe",
+        "            {",
+        "                var pathBytes = System.Text.Encoding.UTF8.GetBytes(path ?? string.Empty);",
+        "                fixed (byte* pathPtr = pathBytes)",
+        "                {",
+        "                    return NativeMethods.goud_ui_set_image_texture_path(",
+        "                        _handle,",
+        "                        nodeId,",
+        "                        pathBytes.Length == 0 ? IntPtr.Zero : (IntPtr)pathPtr,",
+        "                        (nuint)pathBytes.Length",
+        "                    );",
+        "                }",
+        "            }",
+        "        }",
+        "",
+        "        public int SetSlider(ulong nodeId, float min, float max, float value, bool enabled) =>",
+        "            NativeMethods.goud_ui_set_slider(_handle, nodeId, min, max, value, enabled);",
+        "",
+        "        public uint EventCount() => NativeMethods.goud_ui_event_count(_handle);",
+        "",
+        "        public UiEvent? EventRead(uint index)",
+        "        {",
+        "            var ffi = new FfiUiEvent();",
+        "            var status = NativeMethods.goud_ui_event_read(_handle, index, ref ffi);",
+        "            if (status <= 0) return null;",
+        "            return new UiEvent(ffi.EventKind, ffi.NodeId, ffi.PreviousNodeId, ffi.CurrentNodeId);",
+        "        }",
+        "",
+        "        // Convenience widget helpers",
+        "        public ulong CreatePanel() => CreateNode(0);",
+        "",
+        "        public ulong CreateLabel(string text)",
+        "        {",
+        "            var node = CreateNode(2);",
+        "            SetLabelText(node, text);",
+        "            return node;",
+        "        }",
+        "",
+        "        public ulong CreateButton(bool enabled = true)",
+        "        {",
+        "            var node = CreateNode(1);",
+        "            SetButtonEnabled(node, enabled);",
+        "            return node;",
+        "        }",
+        "",
+        "        public ulong CreateImage(string path)",
+        "        {",
+        "            var node = CreateNode(3);",
+        "            SetImageTexturePath(node, path);",
+        "            return node;",
+        "        }",
+        "",
+        "        public ulong CreateSlider(float min, float max, float value, bool enabled = true)",
+        "        {",
+        "            var node = CreateNode(4);",
+        "            SetSlider(node, min, max, value, enabled);",
+        "            return node;",
+        "        }",
+        "",
+        "        public void Dispose() => Destroy();",
+        "    }",
+        "}",
+        "",
+    ]
+    write_generated(OUT / "Core" / "UiManager.g.cs", "\n".join(lines))
+
+
 def gen_errors():
     categories, codes = load_errors(schema)
     if not categories:
@@ -1940,6 +2177,7 @@ if __name__ == "__main__":
     gen_physics_world_2d()
     gen_physics_world_3d()
     gen_engine_config()
+    gen_ui_manager()
     gen_errors()
     gen_diagnostic()
     print("C# SDK generation complete.")

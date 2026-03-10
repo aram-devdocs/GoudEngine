@@ -2,7 +2,7 @@
 
 from ._types import Color, Vec2, Rect, Transform2D, Sprite, Entity, Transform2DBuilder, SpriteBuilder
 from ._keys import BlendMode, BodyType, EasingType, EventPayloadType, Key, MouseButton, NetworkProtocol, OverlayCorner, PhysicsBackend2D, PlaybackMode, RendererType, ShapeType, TextAlignment, TextDirection, TransitionType
-from ._game import GoudGame, GoudContext, PhysicsWorld2D, PhysicsWorld3D, EngineConfig
+from ._game import GoudGame, GoudContext, PhysicsWorld2D, PhysicsWorld3D, EngineConfig, UiManager
 from ._diagnostic import DiagnosticMode
 
 __all__ = [
@@ -11,6 +11,7 @@ __all__ = [
     "PhysicsWorld2D",
     "PhysicsWorld3D",
     "EngineConfig",
+    "UiManager",
     "Entity",
     "Color", "Vec2", "Rect", "Transform2D", "Sprite",
     "Transform2DBuilder",

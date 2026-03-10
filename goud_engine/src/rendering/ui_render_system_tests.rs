@@ -112,3 +112,42 @@ fn missing_font_assets_are_skipped_without_error() {
     assert_eq!(stats.text_glyph_count, 0);
     assert_eq!(stats.text_draw_calls, 0);
 }
+
+#[test]
+fn headless_run_batches_ui_quads_without_sprite_batch_state() {
+    let mut system = UiRenderSystem::new();
+    let mut backend = NullBackend::new();
+    let mut assets = AssetServer::new();
+    preload_test_fixtures(&mut assets);
+
+    let node = UiNodeId::new(4, 1);
+    let commands = vec![
+        UiRenderCommand::Quad(UiQuadCommand {
+            node_id: node,
+            rect: Rect::new(0.0, 0.0, 24.0, 24.0),
+            color: Color::RED,
+        }),
+        UiRenderCommand::Quad(UiQuadCommand {
+            node_id: node,
+            rect: Rect::new(24.0, 0.0, 24.0, 24.0),
+            color: Color::GREEN,
+        }),
+        UiRenderCommand::TexturedQuad(UiTexturedQuadCommand {
+            node_id: node,
+            rect: Rect::new(48.0, 0.0, 24.0, 24.0),
+            texture_path: "ui/fixture-checker.png".to_string(),
+            tint: Color::WHITE,
+        }),
+    ];
+
+    system
+        .run(&commands, &mut assets, &mut backend, (320, 180))
+        .expect("UiRenderSystem should batch UI quads without a SpriteBatch");
+
+    let stats = system.stats();
+    assert_eq!(stats.quad_commands, 2);
+    assert_eq!(stats.textured_quad_commands, 1);
+    assert_eq!(stats.text_commands, 0);
+    assert_eq!(stats.quad_draw_calls, 2);
+    assert_eq!(stats.quad_index_count, 18);
+}

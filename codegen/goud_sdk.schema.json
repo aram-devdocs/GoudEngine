@@ -2458,6 +2458,106 @@
           "doc": "Packet loss percentage in the range 0 to 100"
         }
       ]
+    },
+    "UiStyle": {
+      "doc": "C-safe UI style payload for node-level visual overrides.",
+      "kind": "value",
+      "fields": [
+        {
+          "name": "hasBackgroundColor",
+          "type": "bool"
+        },
+        {
+          "name": "backgroundColor",
+          "type": "Color"
+        },
+        {
+          "name": "hasForegroundColor",
+          "type": "bool"
+        },
+        {
+          "name": "foregroundColor",
+          "type": "Color"
+        },
+        {
+          "name": "hasBorderColor",
+          "type": "bool"
+        },
+        {
+          "name": "borderColor",
+          "type": "Color"
+        },
+        {
+          "name": "hasBorderWidth",
+          "type": "bool"
+        },
+        {
+          "name": "borderWidth",
+          "type": "f32"
+        },
+        {
+          "name": "hasFontFamily",
+          "type": "bool"
+        },
+        {
+          "name": "fontFamilyPtr",
+          "type": "ptr"
+        },
+        {
+          "name": "fontFamilyLen",
+          "type": "usize"
+        },
+        {
+          "name": "hasFontSize",
+          "type": "bool"
+        },
+        {
+          "name": "fontSize",
+          "type": "f32"
+        },
+        {
+          "name": "hasTexturePath",
+          "type": "bool"
+        },
+        {
+          "name": "texturePathPtr",
+          "type": "ptr"
+        },
+        {
+          "name": "texturePathLen",
+          "type": "usize"
+        },
+        {
+          "name": "hasWidgetSpacing",
+          "type": "bool"
+        },
+        {
+          "name": "widgetSpacing",
+          "type": "f32"
+        }
+      ]
+    },
+    "UiEvent": {
+      "doc": "UI event payload returned by deterministic polling APIs.",
+      "kind": "value",
+      "fields": [
+        {
+          "name": "eventKind",
+          "type": "u32"
+        },
+        {
+          "name": "nodeId",
+          "type": "u64"
+        },
+        {
+          "name": "previousNodeId",
+          "type": "u64"
+        },
+        {
+          "name": "currentNodeId",
+          "type": "u64"
+        }
+      ]
     }
   },
   "enums": {
@@ -8087,6 +8187,126 @@
             }
           ],
           "returns": "u64"
+        },
+        {
+          "name": "setWidget",
+          "doc": "Sets or clears the widget component on an existing UI node",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            },
+            {
+              "name": "widgetKind",
+              "type": "i32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setStyle",
+          "doc": "Applies per-node style overrides using a C-safe style payload",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            },
+            {
+              "name": "style",
+              "type": "UiStyle"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setLabelText",
+          "doc": "Sets or creates a label widget and updates its text",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            },
+            {
+              "name": "text",
+              "type": "string"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setButtonEnabled",
+          "doc": "Sets or creates a button widget and updates its enabled state",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            },
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setImageTexturePath",
+          "doc": "Sets or creates an image widget and updates its texture path",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            },
+            {
+              "name": "path",
+              "type": "string"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setSlider",
+          "doc": "Sets or creates a slider widget and updates range/value/enabled",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            },
+            {
+              "name": "min",
+              "type": "f32"
+            },
+            {
+              "name": "max",
+              "type": "f32"
+            },
+            {
+              "name": "value",
+              "type": "f32"
+            },
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "eventCount",
+          "doc": "Returns the number of UI events captured in the latest update tick",
+          "params": [],
+          "returns": "u32"
+        },
+        {
+          "name": "eventRead",
+          "doc": "Reads one captured UI event by index",
+          "params": [
+            {
+              "name": "index",
+              "type": "u32"
+            }
+          ],
+          "returns": "UiEvent?",
+          "nullable": true
         }
       ]
     },

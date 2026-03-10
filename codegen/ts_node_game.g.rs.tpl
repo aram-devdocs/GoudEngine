@@ -97,7 +97,22 @@ use goud_engine::ffi::window::{
     goud_window_get_size, goud_window_poll_events, goud_window_set_should_close,
     goud_window_should_close, goud_window_swap_buffers,
 };
+use goud_engine::ffi::ui::events::{goud_ui_event_count, goud_ui_event_read};
+use goud_engine::ffi::ui::manager::{
+    goud_ui_manager_create, goud_ui_manager_destroy, goud_ui_manager_node_count,
+    goud_ui_manager_render, goud_ui_manager_update,
+};
+use goud_engine::ffi::ui::node::{
+    goud_ui_create_node, goud_ui_get_child_at, goud_ui_get_child_count, goud_ui_get_parent,
+    goud_ui_remove_node, goud_ui_set_parent,
+};
+use goud_engine::ffi::ui::widget::{
+    goud_ui_set_button_enabled, goud_ui_set_image_texture_path, goud_ui_set_label_text,
+    goud_ui_set_slider, goud_ui_set_style, goud_ui_set_widget,
+};
+use goud_engine::ffi::ui::{FfiUiEvent, FfiUiStyle, INVALID_NODE_U64};
 use goud_engine::sdk::debug_overlay::FpsStats;
+use goud_engine::ui::UiManager as EngineUiManager;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::ffi::CString;
@@ -2825,6 +2840,314 @@ impl NativeEngineConfig {
             // SAFETY: handle is valid and we own it.
             unsafe { goud_engine::ffi::engine_config::goud_engine_config_destroy(self.handle) };
             self.handle = std::ptr::null_mut();
+        }
+    }
+}
+
+// =============================================================================
+// UiManager -- Standalone UI tree manager via FFI
+// =============================================================================
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiUiColor {
+    pub r: f64,
+    pub g: f64,
+    pub b: f64,
+    pub a: f64,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug, Default)]
+pub struct NapiUiStyle {
+    pub background_color: Option<NapiUiColor>,
+    pub foreground_color: Option<NapiUiColor>,
+    pub border_color: Option<NapiUiColor>,
+    pub border_width: Option<f64>,
+    pub font_family: Option<String>,
+    pub font_size: Option<f64>,
+    pub texture_path: Option<String>,
+    pub widget_spacing: Option<f64>,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiUiEvent {
+    pub event_kind: u32,
+    pub node_id: f64,
+    pub previous_node_id: f64,
+    pub current_node_id: f64,
+}
+
+#[napi(js_name = "UiManager")]
+pub struct UiManager {
+    ptr: *mut EngineUiManager,
+}
+
+#[napi]
+impl UiManager {
+    #[napi(constructor)]
+    pub fn new() -> Self {
+        Self {
+            ptr: goud_ui_manager_create(),
+        }
+    }
+
+    #[napi]
+    pub fn destroy(&mut self) {
+        if !self.ptr.is_null() {
+            // SAFETY: pointer came from goud_ui_manager_create and is owned by this wrapper.
+            unsafe { goud_ui_manager_destroy(self.ptr) };
+            self.ptr = std::ptr::null_mut();
+        }
+    }
+
+    #[napi]
+    pub fn update(&self) {
+        if self.ptr.is_null() {
+            return;
+        }
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_manager_update(self.ptr) };
+    }
+
+    #[napi]
+    pub fn render(&self) {
+        if self.ptr.is_null() {
+            return;
+        }
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_manager_render(self.ptr) };
+    }
+
+    #[napi]
+    pub fn node_count(&self) -> u32 {
+        if self.ptr.is_null() {
+            return 0;
+        }
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_manager_node_count(self.ptr) }
+    }
+
+    #[napi]
+    pub fn create_node(&self, component_type: i32) -> f64 {
+        if self.ptr.is_null() {
+            return INVALID_NODE_U64 as f64;
+        }
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_create_node(self.ptr, component_type) as f64 }
+    }
+
+    #[napi]
+    pub fn remove_node(&self, node_id: f64) -> i32 {
+        if self.ptr.is_null() {
+            return -1;
+        }
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_remove_node(self.ptr, node_id as u64) }
+    }
+
+    #[napi]
+    pub fn set_parent(&self, child_id: f64, parent_id: f64) -> i32 {
+        if self.ptr.is_null() {
+            return -1;
+        }
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_set_parent(self.ptr, child_id as u64, parent_id as u64) }
+    }
+
+    #[napi]
+    pub fn get_parent(&self, node_id: f64) -> f64 {
+        if self.ptr.is_null() {
+            return INVALID_NODE_U64 as f64;
+        }
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_get_parent(self.ptr, node_id as u64) as f64 }
+    }
+
+    #[napi]
+    pub fn get_child_count(&self, node_id: f64) -> u32 {
+        if self.ptr.is_null() {
+            return 0;
+        }
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_get_child_count(self.ptr, node_id as u64) }
+    }
+
+    #[napi]
+    pub fn get_child_at(&self, node_id: f64, index: u32) -> f64 {
+        if self.ptr.is_null() {
+            return INVALID_NODE_U64 as f64;
+        }
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_get_child_at(self.ptr, node_id as u64, index) as f64 }
+    }
+
+    #[napi]
+    pub fn set_widget(&self, node_id: f64, widget_kind: i32) -> i32 {
+        if self.ptr.is_null() {
+            return -1;
+        }
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_set_widget(self.ptr, node_id as u64, widget_kind) }
+    }
+
+    #[napi]
+    pub fn set_style(&self, node_id: f64, style: NapiUiStyle) -> i32 {
+        if self.ptr.is_null() {
+            return -1;
+        }
+
+        let font_family = style
+            .font_family
+            .and_then(|v| CString::new(v).ok());
+        let texture_path = style
+            .texture_path
+            .and_then(|v| CString::new(v).ok());
+
+        let ffi_style = FfiUiStyle {
+            has_background_color: style.background_color.is_some(),
+            background_color: style
+                .background_color
+                .as_ref()
+                .map(|c| goud_engine::core::math::Color::new(c.r as f32, c.g as f32, c.b as f32, c.a as f32))
+                .unwrap_or(goud_engine::core::math::Color::TRANSPARENT),
+            has_foreground_color: style.foreground_color.is_some(),
+            foreground_color: style
+                .foreground_color
+                .as_ref()
+                .map(|c| goud_engine::core::math::Color::new(c.r as f32, c.g as f32, c.b as f32, c.a as f32))
+                .unwrap_or(goud_engine::core::math::Color::TRANSPARENT),
+            has_border_color: style.border_color.is_some(),
+            border_color: style
+                .border_color
+                .as_ref()
+                .map(|c| goud_engine::core::math::Color::new(c.r as f32, c.g as f32, c.b as f32, c.a as f32))
+                .unwrap_or(goud_engine::core::math::Color::TRANSPARENT),
+            has_border_width: style.border_width.is_some(),
+            border_width: style.border_width.unwrap_or(0.0) as f32,
+            has_font_family: font_family.is_some(),
+            font_family_ptr: font_family
+                .as_ref()
+                .map(|s| s.as_ptr() as *const u8)
+                .unwrap_or(std::ptr::null()),
+            font_family_len: font_family
+                .as_ref()
+                .map(|s| s.as_bytes().len())
+                .unwrap_or(0),
+            has_font_size: style.font_size.is_some(),
+            font_size: style.font_size.unwrap_or(0.0) as f32,
+            has_texture_path: texture_path.is_some(),
+            texture_path_ptr: texture_path
+                .as_ref()
+                .map(|s| s.as_ptr() as *const u8)
+                .unwrap_or(std::ptr::null()),
+            texture_path_len: texture_path
+                .as_ref()
+                .map(|s| s.as_bytes().len())
+                .unwrap_or(0),
+            has_widget_spacing: style.widget_spacing.is_some(),
+            widget_spacing: style.widget_spacing.unwrap_or(0.0) as f32,
+        };
+
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_set_style(self.ptr, node_id as u64, &ffi_style) }
+    }
+
+    #[napi]
+    pub fn set_label_text(&self, node_id: f64, text: String) -> i32 {
+        if self.ptr.is_null() {
+            return -1;
+        }
+        let bytes = text.into_bytes();
+        let ptr = if bytes.is_empty() {
+            std::ptr::null()
+        } else {
+            bytes.as_ptr()
+        };
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_set_label_text(self.ptr, node_id as u64, ptr, bytes.len()) }
+    }
+
+    #[napi]
+    pub fn set_button_enabled(&self, node_id: f64, enabled: bool) -> i32 {
+        if self.ptr.is_null() {
+            return -1;
+        }
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_set_button_enabled(self.ptr, node_id as u64, enabled) }
+    }
+
+    #[napi]
+    pub fn set_image_texture_path(&self, node_id: f64, path: String) -> i32 {
+        if self.ptr.is_null() {
+            return -1;
+        }
+        let bytes = path.into_bytes();
+        let ptr = if bytes.is_empty() {
+            std::ptr::null()
+        } else {
+            bytes.as_ptr()
+        };
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe { goud_ui_set_image_texture_path(self.ptr, node_id as u64, ptr, bytes.len()) }
+    }
+
+    #[napi]
+    pub fn set_slider(&self, node_id: f64, min: f64, max: f64, value: f64, enabled: bool) -> i32 {
+        if self.ptr.is_null() {
+            return -1;
+        }
+        // SAFETY: pointer validity is guarded by self ownership and null-check above.
+        unsafe {
+            goud_ui_set_slider(
+                self.ptr,
+                node_id as u64,
+                min as f32,
+                max as f32,
+                value as f32,
+                enabled,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn event_count(&self) -> u32 {
+        if self.ptr.is_null() {
+            return 0;
+        }
+        goud_ui_event_count(self.ptr)
+    }
+
+    #[napi]
+    pub fn event_read(&self, index: u32) -> Result<Option<NapiUiEvent>> {
+        if self.ptr.is_null() {
+            return Ok(None);
+        }
+        let mut event = FfiUiEvent::default();
+        // SAFETY: out pointer references a valid stack value for this call.
+        let status = unsafe { goud_ui_event_read(self.ptr, index, &mut event) };
+        if status < 0 {
+            return Err(Error::from_reason(format!("goud_ui_event_read failed with status {}", status)));
+        }
+        if status == 0 {
+            return Ok(None);
+        }
+        Ok(Some(NapiUiEvent {
+            event_kind: event.event_kind,
+            node_id: event.node_id as f64,
+            previous_node_id: event.previous_node_id as f64,
+            current_node_id: event.current_node_id as f64,
+        }))
+    }
+}
+
+impl Drop for UiManager {
+    fn drop(&mut self) {
+        if !self.ptr.is_null() {
+            // SAFETY: pointer came from goud_ui_manager_create and is owned by this wrapper.
+            unsafe { goud_ui_manager_destroy(self.ptr) };
+            self.ptr = std::ptr::null_mut();
         }
     }
 }

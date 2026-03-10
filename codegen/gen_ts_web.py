@@ -35,6 +35,47 @@ def ts_type(t: str) -> str:
     return mapped
 
 
+UI_STYLE_WASM_SIGNATURE = (
+    "set_style("
+    "node_id: bigint, "
+    "background_r?: number, background_g?: number, background_b?: number, background_a?: number, "
+    "foreground_r?: number, foreground_g?: number, foreground_b?: number, foreground_a?: number, "
+    "border_r?: number, border_g?: number, border_b?: number, border_a?: number, "
+    "border_width?: number, "
+    "font_family?: string, "
+    "font_size?: number, "
+    "texture_path?: string, "
+    "widget_spacing?: number"
+    "): number;"
+)
+
+
+def emit_ui_manager_set_style(lines: list[str]) -> None:
+    """Emit the thin public UiManager.setStyle wrapper for the scalar wasm ABI."""
+    lines.append("  setStyle(nodeId: UiNodeId, style: IUiStyle): number {")
+    lines.append("    return this.handle.set_style(")
+    lines.append("      toWasmUiNodeId(nodeId),")
+    lines.append("      style.backgroundColor?.r,")
+    lines.append("      style.backgroundColor?.g,")
+    lines.append("      style.backgroundColor?.b,")
+    lines.append("      style.backgroundColor?.a,")
+    lines.append("      style.foregroundColor?.r,")
+    lines.append("      style.foregroundColor?.g,")
+    lines.append("      style.foregroundColor?.b,")
+    lines.append("      style.foregroundColor?.a,")
+    lines.append("      style.borderColor?.r,")
+    lines.append("      style.borderColor?.g,")
+    lines.append("      style.borderColor?.b,")
+    lines.append("      style.borderColor?.a,")
+    lines.append("      style.borderWidth,")
+    lines.append("      style.fontFamily,")
+    lines.append("      style.fontSize,")
+    lines.append("      style.texturePath,")
+    lines.append("      style.widgetSpacing,")
+    lines.append("    );")
+    lines.append("  }")
+
+
 # ── web/input.g.ts ──────────────────────────────────────────────────
 
 def gen_web_input():
@@ -114,7 +155,7 @@ def gen_web_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig } from '../types/engine.g.js';",
+        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "import { PhysicsBackend2D } from '../types/input.g.js';",
         "import { attachInputHandlers } from './input.g.js';",
@@ -122,7 +163,7 @@ def gen_web_wrapper():
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';",
         "export { Rect } from '../types/math.g.js';",
-        "export type { IGoudGame, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig } from '../types/engine.g.js';",
+        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig } from '../types/engine.g.js';",
         "",
     ]
 
@@ -148,6 +189,31 @@ def gen_web_wrapper():
     lines.append("    new(width: number, height: number, title: string): WasmGameHandle;")
     lines.append("    createWithCanvas(canvas: HTMLCanvasElement, w: number, h: number, title: string): Promise<WasmGameHandle>;")
     lines.append("  };")
+    lines.append("  WasmUiManager: {")
+    lines.append("    new(): WasmUiManagerHandle;")
+    lines.append("  };")
+    lines.append("}")
+    lines.append("")
+
+    lines.append("interface WasmUiManagerHandle {")
+    lines.append("  free(): void;")
+    lines.append("  update(): void;")
+    lines.append("  render(): void;")
+    lines.append("  node_count(): number;")
+    lines.append("  create_node(component_type: number): bigint;")
+    lines.append("  remove_node(node_id: bigint): number;")
+    lines.append("  set_parent(child_id: bigint, parent_id: bigint): number;")
+    lines.append("  get_parent(node_id: bigint): bigint;")
+    lines.append("  get_child_count(node_id: bigint): number;")
+    lines.append("  get_child_at(node_id: bigint, index: number): bigint;")
+    lines.append("  set_widget(node_id: bigint, widget_kind: number): number;")
+    lines.append(f"  {UI_STYLE_WASM_SIGNATURE}")
+    lines.append("  set_label_text(node_id: bigint, text: string): number;")
+    lines.append("  set_button_enabled(node_id: bigint, enabled: boolean): number;")
+    lines.append("  set_image_texture_path(node_id: bigint, path: string): number;")
+    lines.append("  set_slider(node_id: bigint, min: number, max: number, value: number, enabled: boolean): number;")
+    lines.append("  event_count(): number;")
+    lines.append("  event_read(index: number): IUiEvent | undefined;")
     lines.append("}")
     lines.append("")
 
@@ -164,6 +230,50 @@ def gen_web_wrapper():
     lines.append("function getWasm(): WasmExports {")
     lines.append("  if (!_wasmModule) throw new Error('Wasm not loaded. Call initWasm() first.');")
     lines.append("  return _wasmModule;")
+    lines.append("}")
+    lines.append("")
+    lines.append("function toWasmUiNodeId(nodeId: UiNodeId): bigint {")
+    lines.append("  return typeof nodeId === 'bigint' ? nodeId : BigInt(nodeId);")
+    lines.append("}")
+    lines.append("")
+
+    lines.append("export class UiManager implements IUiManager {")
+    lines.append("  private handle: WasmUiManagerHandle;")
+    lines.append("")
+    lines.append("  private constructor(handle: WasmUiManagerHandle) {")
+    lines.append("    this.handle = handle;")
+    lines.append("  }")
+    lines.append("")
+    lines.append("  static async create(wasmUrl?: string): Promise<UiManager> {")
+    lines.append("    await initWasm(wasmUrl);")
+    lines.append("    const wasm = getWasm();")
+    lines.append("    return new UiManager(new wasm.WasmUiManager());")
+    lines.append("  }")
+    lines.append("")
+    lines.append("  destroy(): void { this.handle.free(); }")
+    lines.append("  update(): void { this.handle.update(); }")
+    lines.append("  render(): void { this.handle.render(); }")
+    lines.append("  nodeCount(): number { return this.handle.node_count(); }")
+    lines.append("  createNode(componentType: number): UiNodeId { return this.handle.create_node(componentType); }")
+    lines.append("  removeNode(nodeId: UiNodeId): number { return this.handle.remove_node(toWasmUiNodeId(nodeId)); }")
+    lines.append("  setParent(childId: UiNodeId, parentId: UiNodeId): number { return this.handle.set_parent(toWasmUiNodeId(childId), toWasmUiNodeId(parentId)); }")
+    lines.append("  getParent(nodeId: UiNodeId): UiNodeId { return this.handle.get_parent(toWasmUiNodeId(nodeId)); }")
+    lines.append("  getChildCount(nodeId: UiNodeId): number { return this.handle.get_child_count(toWasmUiNodeId(nodeId)); }")
+    lines.append("  getChildAt(nodeId: UiNodeId, index: number): UiNodeId { return this.handle.get_child_at(toWasmUiNodeId(nodeId), index); }")
+    lines.append("  setWidget(nodeId: UiNodeId, widgetKind: number): number { return this.handle.set_widget(toWasmUiNodeId(nodeId), widgetKind); }")
+    emit_ui_manager_set_style(lines)
+    lines.append("  setLabelText(nodeId: UiNodeId, text: string): number { return this.handle.set_label_text(toWasmUiNodeId(nodeId), text); }")
+    lines.append("  setButtonEnabled(nodeId: UiNodeId, enabled: boolean): number { return this.handle.set_button_enabled(toWasmUiNodeId(nodeId), enabled); }")
+    lines.append("  setImageTexturePath(nodeId: UiNodeId, path: string): number { return this.handle.set_image_texture_path(toWasmUiNodeId(nodeId), path); }")
+    lines.append("  setSlider(nodeId: UiNodeId, min: number, max: number, value: number, enabled: boolean): number { return this.handle.set_slider(toWasmUiNodeId(nodeId), min, max, value, enabled); }")
+    lines.append("  eventCount(): number { return this.handle.event_count(); }")
+    lines.append("  eventRead(index: number): IUiEvent | null { return this.handle.event_read(index) ?? null; }")
+    lines.append("")
+    lines.append("  createPanel(): UiNodeId { return this.createNode(0); }")
+    lines.append("  createLabel(text: string): UiNodeId { const nodeId = this.createNode(2); this.setLabelText(nodeId, text); return nodeId; }")
+    lines.append("  createButton(enabled = true): UiNodeId { const nodeId = this.createNode(1); this.setButtonEnabled(nodeId, enabled); return nodeId; }")
+    lines.append("  createImage(path: string): UiNodeId { const nodeId = this.createNode(3); this.setImageTexturePath(nodeId, path); return nodeId; }")
+    lines.append("  createSlider(min: number, max: number, value: number, enabled = true): UiNodeId { const nodeId = this.createNode(4); this.setSlider(nodeId, min, max, value, enabled); return nodeId; }")
     lines.append("}")
     lines.append("")
 

@@ -11,6 +11,16 @@ use crate::sdk::debug_overlay::FpsStats;
 use crate::sdk::engine_config::EngineConfig;
 use crate::sdk::game_config::GameContext;
 use crate::ui::UiManager;
+#[cfg(test)]
+use std::collections::HashMap;
+#[cfg(test)]
+use std::sync::{Mutex, OnceLock};
+
+#[cfg(test)]
+fn last_ui_command_counts() -> &'static Mutex<HashMap<usize, usize>> {
+    static COUNTS: OnceLock<Mutex<HashMap<usize, usize>>> = OnceLock::new();
+    COUNTS.get_or_init(|| Mutex::new(HashMap::new()))
+}
 
 impl GoudGame {
     /// Runs the game loop with the given update callback.
@@ -194,6 +204,8 @@ impl GoudGame {
             }
 
             let commands = self.ui_manager.build_render_commands();
+            #[cfg(test)]
+            self.record_last_ui_command_count(commands.len());
             let viewport = self.context.window_size();
             if let (Some(system), Some(asset_server), Some(backend)) = (
                 self.ui_render_system.as_mut(),
@@ -209,8 +221,28 @@ impl GoudGame {
 
         #[cfg(not(feature = "native"))]
         {
-            let _ = self.ui_manager.build_render_commands();
+            let _commands = self.ui_manager.build_render_commands();
+            #[cfg(test)]
+            self.record_last_ui_command_count(_commands.len());
         }
+    }
+
+    #[cfg(test)]
+    fn record_last_ui_command_count(&self, count: usize) {
+        let key = self as *const Self as usize;
+        let mut counts = last_ui_command_counts()
+            .lock()
+            .expect("UI command count test registry should not be poisoned");
+        counts.insert(key, count);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn last_ui_command_count(&self) -> usize {
+        let key = self as *const Self as usize;
+        let counts = last_ui_command_counts()
+            .lock()
+            .expect("UI command count test registry should not be poisoned");
+        counts.get(&key).copied().unwrap_or_default()
     }
 }
 

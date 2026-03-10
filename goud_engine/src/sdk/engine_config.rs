@@ -136,6 +136,7 @@ impl EngineConfig {
     // Build & Accessors
 
     /// Consumes the builder and returns the `GameConfig` and `ProviderRegistry`.
+    #[cfg(feature = "native")]
     pub(crate) fn set_physics_backend_2d(&mut self, backend: PhysicsBackend2D) {
         self.physics_backend_2d = backend;
     }
