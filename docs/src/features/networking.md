@@ -1,44 +1,99 @@
 # Networking
 
-GoudEngine provides a client-server networking foundation with server-authoritative state flow.
+The networking SDK API is wrapper-based and sits on top of generated low-level bindings.
 
-## Core Model
+- `NetworkManager` creates endpoints from a game or context:
+  - C#: `new NetworkManager(gameOrContext)`
+  - Python: `NetworkManager(game_or_context)`
+  - TypeScript: `new NetworkManager(gameOrContext)`
+- `NetworkEndpoint` is returned by `host()` / `Host()` and `connect()` / `Connect()`. It exposes `receive`, `send`, `send_to` / `sendTo`, `poll`, `disconnect`, stats, peer count, simulation, and overlay helpers.
 
-The networking module centers on two types:
+`connect()` stores the provider-assigned peer ID on the endpoint. Client code can call `send(...)` without passing a peer ID each time. Host endpoints do not have a default peer, so they reply with `send_to(...)` / `SendTo(...)`.
 
-- `SessionServer` for hosting, accepting clients, validating commands, and broadcasting authoritative updates
-- `SessionClient` for joining sessions, receiving authoritative state, and handling leave/disconnect lifecycle
+## C#
 
-## Authority
+```csharp
+using System.Text;
+using GoudEngine;
 
-Server authority is pluggable.
+using var hostContext = new GoudContext();
+using var clientContext = new GoudContext();
 
-- Built-in policies include allow-all, schema+bounds validation, and rate-limited validation
-- Commands are validated on the server before state updates are accepted
-- Rejected commands are surfaced as explicit events
+var host = new NetworkManager(hostContext).Host(NetworkProtocol.Tcp, 9000);
+var client = new NetworkManager(clientContext).Connect(NetworkProtocol.Tcp, "127.0.0.1", 9000);
 
-## Discovery And Join
+client.Send(Encoding.UTF8.GetBytes("ping"));
 
-Clients can join with direct addresses or discovered sessions.
+while (true)
+{
+    host.Poll();
+    client.Poll();
 
-- Direct join path: explicit address
-- Discovery path: local network and directory-backed discovery modes
-- Join/leave lifecycle is designed for mid-session churn
+    var packet = host.Receive();
+    if (packet is null)
+    {
+        continue;
+    }
 
-## Protocol
+    host.SendTo(packet.Value.PeerId, Encoding.UTF8.GetBytes("pong"));
+    break;
+}
+```
 
-The protocol covers:
+## Python
 
-- Join request/accept handshake
-- Client state-change commands
-- Server authoritative state update broadcasts
-- Rejection responses and graceful leave notices
+```python
+from goud_engine import GoudContext, NetworkManager, NetworkProtocol
 
-## Testing Focus
+host_context = GoudContext()
+client_context = GoudContext()
 
-The networking test suite covers:
+host = NetworkManager(host_context).host(NetworkProtocol.TCP, 9000)
+client = NetworkManager(client_context).connect(NetworkProtocol.TCP, "127.0.0.1", 9000)
 
-- Authority validation and rejection behavior
-- Multi-client host/join and broadcast flow
-- Discovery modes and rehost behavior
-- Protocol source validation and lifecycle edge cases
+client.send(b"ping")
+
+while True:
+    host.poll()
+    client.poll()
+
+    packet = host.receive()
+    if packet is None:
+        continue
+
+    host.send_to(packet.peer_id, b"pong")
+    break
+```
+
+## TypeScript
+
+```typescript
+import { GoudContext, NetworkManager, NetworkProtocol } from "goudengine/node";
+
+const hostContext = new GoudContext();
+const clientContext = new GoudContext();
+
+const host = new NetworkManager(hostContext).host(NetworkProtocol.Tcp, 9000);
+const client = new NetworkManager(clientContext).connect(
+  NetworkProtocol.Tcp,
+  "127.0.0.1",
+  9000,
+);
+
+client.send(Buffer.from("ping"));
+
+while (true) {
+  host.poll();
+  client.poll();
+
+  const packet = host.receive();
+  if (!packet) {
+    continue;
+  }
+
+  host.sendTo(packet.peerId, Buffer.from("pong"));
+  break;
+}
+```
+
+TypeScript networking is Node-only today (`goudengine/node`), including loopback/headless usage. `goudengine/web` exports the wrappers for type parity, but networking calls still throw `Not supported in WASM mode`.

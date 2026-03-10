@@ -36,9 +36,36 @@ game.end_frame()
 game.destroy()
 ```
 
+## Networking
+
+Use `NetworkManager(game_or_context)` to create wrapper endpoints. `host()` and `connect()` return `NetworkEndpoint`. `connect()` stores the connected peer ID, so clients can call `send(...)`. Host endpoints reply with `send_to(...)`.
+
+```python
+from goud_engine import GoudContext, NetworkManager, NetworkProtocol
+
+host_context = GoudContext()
+client_context = GoudContext()
+
+host = NetworkManager(host_context).host(NetworkProtocol.TCP, 9000)
+client = NetworkManager(client_context).connect(NetworkProtocol.TCP, "127.0.0.1", 9000)
+
+client.send(b"ping")
+
+while True:
+    host.poll()
+    client.poll()
+
+    packet = host.receive()
+    if packet is None:
+        continue
+
+    host.send_to(packet.peer_id, b"pong")
+    break
+```
+
 ## Networking Wrapper API
 
-Use constructor-based wrappers over `GoudGame` or `GoudContext`:
+The wrapper API is constructor-based and works with `GoudGame` or `GoudContext`:
 
 ```python
 from goud_engine import GoudContext, NetworkManager, NetworkProtocol

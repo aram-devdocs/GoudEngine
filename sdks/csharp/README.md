@@ -30,7 +30,7 @@ game.Run();
 
 ## Networking
 
-Use `NetworkManager` with either `GoudGame` or `GoudContext`. `Connect(...)` seeds a default peer ID, so client code can call `Send(...)`. Host endpoints do not have a default peer, so they reply with `SendTo(...)`.
+Use `new NetworkManager(gameOrContext)` to create wrapper endpoints. `Host(...)` and `Connect(...)` return `NetworkEndpoint`. `Connect(...)` stores a default peer ID, so clients can call `Send(...)`. Host endpoints do not have a default peer, so they reply with `SendTo(...)`.
 
 ```csharp
 using System.Text;
