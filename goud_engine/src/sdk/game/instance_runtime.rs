@@ -1,6 +1,8 @@
 //! Runtime loop and diagnostic methods for [`GoudGame`].
 
 use super::GoudGame;
+#[cfg(feature = "native")]
+use crate::assets::AssetServer;
 use crate::context_registry::scene::SceneId;
 use crate::core::error::GoudResult;
 use crate::core::providers::ProviderRegistry;
@@ -9,8 +11,6 @@ use crate::sdk::debug_overlay::FpsStats;
 use crate::sdk::engine_config::EngineConfig;
 use crate::sdk::game_config::GameContext;
 use crate::ui::UiManager;
-#[cfg(feature = "native")]
-use crate::assets::AssetServer;
 
 impl GoudGame {
     /// Runs the game loop with the given update callback.

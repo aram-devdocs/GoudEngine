@@ -45,13 +45,13 @@ pub(crate) fn resolve_font(
         } else {
             (None, false)
         }
+    } else {
+        let candidate_path = format!("fonts/{requested_family}.ttf");
+        let candidate_handle = asset_server.load::<FontAsset>(&candidate_path);
+        if asset_server.is_loaded(&candidate_handle) {
+            (Some(candidate_handle), true)
         } else {
-            let candidate_path = format!("fonts/{requested_family}.ttf");
-            let candidate_handle = asset_server.load::<FontAsset>(&candidate_path);
-            if asset_server.is_loaded(&candidate_handle) {
-                (Some(candidate_handle), true)
-            } else {
-                let fallback = asset_server.load::<FontAsset>(UI_DEFAULT_FONT_ASSET_PATH);
+            let fallback = asset_server.load::<FontAsset>(UI_DEFAULT_FONT_ASSET_PATH);
             if asset_server.is_loaded(&fallback) {
                 (Some(fallback), false)
             } else {

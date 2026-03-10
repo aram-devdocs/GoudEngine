@@ -373,15 +373,11 @@ impl UiManager {
         out
     }
 
-    /// Deprecated compatibility shim retained for legacy callers.
+    /// Compatibility shim retained for legacy callers.
     ///
     /// Native engine rendering uses [`UiManager::build_render_commands`] plus
     /// [`crate::rendering::UiRenderSystem`]. This method is intentionally a
     /// no-op and should not be used by new runtime code paths.
-    #[deprecated(
-        since = "0.0.828",
-        note = "no-op compatibility shim; use UiManager::build_render_commands and UiRenderSystem"
-    )]
     pub fn render(&self) {}
 }
 

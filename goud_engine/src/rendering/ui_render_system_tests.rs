@@ -1,6 +1,6 @@
 use super::*;
-use crate::core::math::{Color, Rect};
 use crate::assets::loaders::TextureAsset;
+use crate::core::math::{Color, Rect};
 use crate::libs::graphics::backend::null::NullBackend;
 use crate::rendering::ensure_ui_asset_loaders;
 use crate::ui::{
