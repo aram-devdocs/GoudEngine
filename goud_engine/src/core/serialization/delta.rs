@@ -6,6 +6,7 @@
 
 use crate::core::error::GoudError;
 use crate::core::math::{Color, Rect, Vec2, Vec3, Vec4};
+use crate::ecs::components::{Transform, Transform2D};
 
 /// A delta payload containing a change mask and the raw bytes of changed fields.
 ///
@@ -125,3 +126,144 @@ impl_delta_encode!(Vec3, (0, x), (1, y), (2, z));
 impl_delta_encode!(Vec4, (0, x), (1, y), (2, z), (3, w));
 impl_delta_encode!(Color, (0, r), (1, g), (2, b), (3, a));
 impl_delta_encode!(Rect, (0, x), (1, y), (2, width), (3, height));
+
+impl DeltaEncode for Transform2D {
+    type Mask = u8;
+
+    fn delta_from(&self, baseline: &Self) -> Option<DeltaPayload<u8>> {
+        let mut mask = 0;
+        let mut data = Vec::new();
+
+        if f32_changed(self.position.x, baseline.position.x) {
+            mask |= 1 << 0;
+            data.extend_from_slice(&self.position.x.to_le_bytes());
+        }
+        if f32_changed(self.position.y, baseline.position.y) {
+            mask |= 1 << 1;
+            data.extend_from_slice(&self.position.y.to_le_bytes());
+        }
+        if f32_changed(self.rotation, baseline.rotation) {
+            mask |= 1 << 2;
+            data.extend_from_slice(&self.rotation.to_le_bytes());
+        }
+        if f32_changed(self.scale.x, baseline.scale.x) {
+            mask |= 1 << 3;
+            data.extend_from_slice(&self.scale.x.to_le_bytes());
+        }
+        if f32_changed(self.scale.y, baseline.scale.y) {
+            mask |= 1 << 4;
+            data.extend_from_slice(&self.scale.y.to_le_bytes());
+        }
+
+        if mask == 0 {
+            None
+        } else {
+            Some(DeltaPayload { mask, data })
+        }
+    }
+
+    fn apply_delta(&self, delta: &DeltaPayload<u8>) -> Result<Self, GoudError> {
+        let mut result = *self;
+        let mut offset = 0;
+
+        if delta.mask & (1 << 0) != 0 {
+            result.position.x = read_f32(&delta.data, &mut offset).ok_or_else(|| {
+                GoudError::InternalError(
+                    "truncated delta payload for Transform2D.position.x".to_string(),
+                )
+            })?;
+        }
+        if delta.mask & (1 << 1) != 0 {
+            result.position.y = read_f32(&delta.data, &mut offset).ok_or_else(|| {
+                GoudError::InternalError(
+                    "truncated delta payload for Transform2D.position.y".to_string(),
+                )
+            })?;
+        }
+        if delta.mask & (1 << 2) != 0 {
+            result.rotation = read_f32(&delta.data, &mut offset).ok_or_else(|| {
+                GoudError::InternalError(
+                    "truncated delta payload for Transform2D.rotation".to_string(),
+                )
+            })?;
+        }
+        if delta.mask & (1 << 3) != 0 {
+            result.scale.x = read_f32(&delta.data, &mut offset).ok_or_else(|| {
+                GoudError::InternalError(
+                    "truncated delta payload for Transform2D.scale.x".to_string(),
+                )
+            })?;
+        }
+        if delta.mask & (1 << 4) != 0 {
+            result.scale.y = read_f32(&delta.data, &mut offset).ok_or_else(|| {
+                GoudError::InternalError(
+                    "truncated delta payload for Transform2D.scale.y".to_string(),
+                )
+            })?;
+        }
+
+        Ok(result)
+    }
+}
+
+impl DeltaEncode for Transform {
+    type Mask = u16;
+
+    fn delta_from(&self, baseline: &Self) -> Option<DeltaPayload<u16>> {
+        let mut mask = 0u16;
+        let mut data = Vec::new();
+
+        macro_rules! push_if_changed {
+            ($bit:expr, $current:expr, $previous:expr) => {
+                if f32_changed($current, $previous) {
+                    mask |= 1 << $bit;
+                    data.extend_from_slice(&$current.to_le_bytes());
+                }
+            };
+        }
+
+        push_if_changed!(0, self.position.x, baseline.position.x);
+        push_if_changed!(1, self.position.y, baseline.position.y);
+        push_if_changed!(2, self.position.z, baseline.position.z);
+        push_if_changed!(3, self.rotation.x, baseline.rotation.x);
+        push_if_changed!(4, self.rotation.y, baseline.rotation.y);
+        push_if_changed!(5, self.rotation.z, baseline.rotation.z);
+        push_if_changed!(6, self.rotation.w, baseline.rotation.w);
+        push_if_changed!(7, self.scale.x, baseline.scale.x);
+        push_if_changed!(8, self.scale.y, baseline.scale.y);
+        push_if_changed!(9, self.scale.z, baseline.scale.z);
+
+        if mask == 0 {
+            None
+        } else {
+            Some(DeltaPayload { mask, data })
+        }
+    }
+
+    fn apply_delta(&self, delta: &DeltaPayload<u16>) -> Result<Self, GoudError> {
+        let mut result = *self;
+        let mut offset = 0;
+
+        macro_rules! read_if_present {
+            ($bit:expr, $target:expr, $label:expr) => {
+                if delta.mask & (1 << $bit) != 0 {
+                    $target = read_f32(&delta.data, &mut offset)
+                        .ok_or_else(|| GoudError::InternalError($label.to_string()))?;
+                }
+            };
+        }
+
+        read_if_present!(0, result.position.x, "truncated delta payload for Transform.position.x");
+        read_if_present!(1, result.position.y, "truncated delta payload for Transform.position.y");
+        read_if_present!(2, result.position.z, "truncated delta payload for Transform.position.z");
+        read_if_present!(3, result.rotation.x, "truncated delta payload for Transform.rotation.x");
+        read_if_present!(4, result.rotation.y, "truncated delta payload for Transform.rotation.y");
+        read_if_present!(5, result.rotation.z, "truncated delta payload for Transform.rotation.z");
+        read_if_present!(6, result.rotation.w, "truncated delta payload for Transform.rotation.w");
+        read_if_present!(7, result.scale.x, "truncated delta payload for Transform.scale.x");
+        read_if_present!(8, result.scale.y, "truncated delta payload for Transform.scale.y");
+        read_if_present!(9, result.scale.z, "truncated delta payload for Transform.scale.z");
+
+        Ok(result)
+    }
+}
