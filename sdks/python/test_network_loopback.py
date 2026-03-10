@@ -143,8 +143,8 @@ def main() -> int:
     try:
         from goud_engine import GoudContext  # noqa: F401
     except Exception as exc:
-        print(f"SKIP: Python networking loopback tests require native library: {exc}")
-        return 0
+        print(f"ERROR: Python networking loopback tests require native library: {exc}")
+        return 1
 
     tests = [
         ("send_requires_default_peer", _test_send_requires_default_peer),
