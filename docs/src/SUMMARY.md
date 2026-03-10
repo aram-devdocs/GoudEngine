@@ -31,6 +31,7 @@
 - [Animation](features/animation.md)
 - [Scene Management](features/scenes.md)
 - [UI System](features/ui.md)
+- [Networking](features/networking.md)
 - [Error Handling](features/error-handling.md)
 
 # RFCs

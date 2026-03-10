@@ -30,10 +30,20 @@ Entities and components in one scene are not visible to queries in another. Swit
 
 ## FFI
 
-Scene FFI functions are in `goud_engine/src/ffi/scene.rs` and `scene_transition.rs`:
+Scene FFI functions are in `goud_engine/src/ffi/scene.rs`, `scene_loading.rs`, and `scene_transition.rs`:
 
 - `goud_scene_create()` / `goud_scene_destroy()`
-- `goud_scene_lookup_by_name()`
+- `goud_scene_get_by_name()`
+- `goud_scene_load()` / `goud_scene_unload()`
+- `goud_scene_set_active()`
 - `goud_scene_transition_to()`
 - `goud_scene_transition_progress()` / `goud_scene_transition_is_active()`
 - `goud_scene_transition_tick()`
+
+## SDK Surface
+
+These scene-loading APIs are exposed directly in all primary SDKs:
+
+- C#: `LoadScene()`, `UnloadScene()`, `SetActiveScene()`
+- Python: `load_scene()`, `unload_scene()`, `set_active_scene()`
+- TypeScript: `loadScene()`, `unloadScene()`, `setActiveScene()`
