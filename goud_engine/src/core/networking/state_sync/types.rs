@@ -5,15 +5,15 @@ use std::f32::consts::{PI, TAU};
 
 use crate::core::math::{Vec2, Vec3};
 use crate::core::serialization::DeltaPayload;
-use crate::ecs::components::{Transform, Transform2D};
-use crate::ecs::entity::Entity;
-use crate::ecs::Component;
+type Transform = crate::ecs::components::Transform;
+type Transform2D = crate::ecs::components::Transform2D;
+type Entity = crate::ecs::entity::Entity;
 
 /// Marker component for entities included in networking state sync snapshots.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct NetworkSync;
 
-impl Component for NetworkSync {}
+impl crate::ecs::Component for NetworkSync {}
 
 /// State-sync configuration.
 #[derive(Debug, Clone, Copy, PartialEq)]

@@ -6,7 +6,6 @@
 
 use crate::core::error::GoudError;
 use crate::core::math::{Color, Rect, Vec2, Vec3, Vec4};
-use crate::ecs::components::Transform;
 
 /// A delta payload containing a change mask and the raw bytes of changed fields.
 ///
@@ -127,7 +126,7 @@ impl_delta_encode!(Vec4, (0, x), (1, y), (2, z), (3, w));
 impl_delta_encode!(Color, (0, r), (1, g), (2, b), (3, a));
 impl_delta_encode!(Rect, (0, x), (1, y), (2, width), (3, height));
 
-impl DeltaEncode for Transform {
+impl DeltaEncode for crate::ecs::components::Transform {
     type Mask = u16;
 
     fn delta_from(&self, baseline: &Self) -> Option<DeltaPayload<u16>> {

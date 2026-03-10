@@ -5,9 +5,6 @@ use std::collections::HashMap;
 
 use crate::core::error::{GoudError, GoudResult};
 use crate::core::serialization::{MessageKind, NetworkMessage};
-use crate::ecs::components::{Transform, Transform2D};
-use crate::ecs::entity::Entity;
-use crate::ecs::World;
 
 use super::types::{
     NetworkSync, ResolvedSyncEntity, StateSnapshotPayload, StateSyncBandwidthStats,
@@ -15,6 +12,11 @@ use super::types::{
 };
 use crate::core::networking::SessionServer;
 use crate::core::serialization::{binary, DeltaEncode};
+
+type Entity = crate::ecs::entity::Entity;
+type Transform = crate::ecs::components::Transform;
+type Transform2D = crate::ecs::components::Transform2D;
+type World = crate::ecs::World;
 
 /// Server wrapper that produces synchronized snapshots from tagged ECS entities.
 pub struct StateSyncServer {

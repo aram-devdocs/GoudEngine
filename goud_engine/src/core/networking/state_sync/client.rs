@@ -5,8 +5,9 @@ use std::collections::HashMap;
 use crate::core::error::{GoudError, GoudResult};
 use crate::core::networking::{ClientEvent, SessionClient};
 use crate::core::serialization::{binary, DeltaEncode, NetworkMessage};
-use crate::ecs::entity::Entity;
-use crate::ecs::World;
+
+type Entity = crate::ecs::entity::Entity;
+type World = crate::ecs::World;
 
 use super::types::{
     NetworkSync, ResolvedStateSnapshot, ResolvedSyncEntity, StateSnapshotPayload, StateSyncConfig,

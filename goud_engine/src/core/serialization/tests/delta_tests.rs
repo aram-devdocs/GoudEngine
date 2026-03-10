@@ -1,7 +1,8 @@
 use crate::core::math::{Color, Rect, Vec2, Vec3, Vec4};
 use crate::core::serialization::delta::DeltaEncode;
-use crate::ecs::components::transform::Quat;
-use crate::ecs::components::{Transform, Transform2D};
+type Quat = crate::ecs::components::transform::Quat;
+type Transform = crate::ecs::components::Transform;
+type Transform2D = crate::ecs::components::Transform2D;
 
 // =============================================================================
 // Vec2 delta tests

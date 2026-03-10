@@ -5,16 +5,16 @@ use crate::core::networking::{
     StateSyncConfig, StateSyncEntitySnapshot, StateSyncServer, Transform2DSnapshot,
 };
 use crate::core::serialization::{DeltaEncode, MessageKind, NetworkMessage};
-use crate::ecs::components::Transform2D;
-use crate::ecs::Component;
-use crate::ecs::World;
+
+type Transform2D = crate::ecs::components::Transform2D;
+type World = crate::ecs::World;
 
 use super::mock_provider::MockNetworkHub;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 struct Health(u32);
 
-impl Component for Health {}
+impl crate::ecs::Component for Health {}
 
 fn sync_world() -> World {
     let mut world = World::new();
