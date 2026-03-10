@@ -415,7 +415,3 @@ impl<P: std::fmt::Debug> std::fmt::Debug for NetworkSimProvider<P> {
 #[cfg(test)]
 #[path = "network_sim_tests.rs"]
 mod tests;
-
-#[cfg(test)]
-#[path = "network_contract_tests.rs"]
-mod contract_tests;

@@ -171,6 +171,91 @@ pub extern "C" fn goud_renderer_set_viewport(
     });
 }
 
+/// Enables alpha blending for transparent sprites.
+///
+/// # Arguments
+///
+/// * `context_id` - The windowed context
+#[no_mangle]
+pub extern "C" fn goud_renderer_enable_blending(context_id: GoudContextId) {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return;
+    }
+
+    with_window_state(context_id, |state| {
+        state.backend_mut().enable_blending();
+    });
+}
+
+/// Disables alpha blending.
+///
+/// # Arguments
+///
+/// * `context_id` - The windowed context
+#[no_mangle]
+pub extern "C" fn goud_renderer_disable_blending(context_id: GoudContextId) {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return;
+    }
+
+    with_window_state(context_id, |state| {
+        state.backend_mut().disable_blending();
+    });
+}
+
+/// Enables depth testing.
+///
+/// # Arguments
+///
+/// * `context_id` - The windowed context
+#[no_mangle]
+pub extern "C" fn goud_renderer_enable_depth_test(context_id: GoudContextId) {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return;
+    }
+
+    with_window_state(context_id, |state| {
+        state.backend_mut().enable_depth_test();
+    });
+}
+
+/// Disables depth testing.
+///
+/// # Arguments
+///
+/// * `context_id` - The windowed context
+#[no_mangle]
+pub extern "C" fn goud_renderer_disable_depth_test(context_id: GoudContextId) {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return;
+    }
+
+    with_window_state(context_id, |state| {
+        state.backend_mut().disable_depth_test();
+    });
+}
+
+/// Clears the depth buffer.
+///
+/// # Arguments
+///
+/// * `context_id` - The windowed context
+#[no_mangle]
+pub extern "C" fn goud_renderer_clear_depth(context_id: GoudContextId) {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return;
+    }
+
+    with_window_state(context_id, |state| {
+        state.backend_mut().clear_depth();
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use super::update_network_overlay_for_frame_end;
@@ -268,89 +353,4 @@ mod tests {
             Some(handle_b)
         );
     }
-}
-
-/// Enables alpha blending for transparent sprites.
-///
-/// # Arguments
-///
-/// * `context_id` - The windowed context
-#[no_mangle]
-pub extern "C" fn goud_renderer_enable_blending(context_id: GoudContextId) {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return;
-    }
-
-    with_window_state(context_id, |state| {
-        state.backend_mut().enable_blending();
-    });
-}
-
-/// Disables alpha blending.
-///
-/// # Arguments
-///
-/// * `context_id` - The windowed context
-#[no_mangle]
-pub extern "C" fn goud_renderer_disable_blending(context_id: GoudContextId) {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return;
-    }
-
-    with_window_state(context_id, |state| {
-        state.backend_mut().disable_blending();
-    });
-}
-
-/// Enables depth testing.
-///
-/// # Arguments
-///
-/// * `context_id` - The windowed context
-#[no_mangle]
-pub extern "C" fn goud_renderer_enable_depth_test(context_id: GoudContextId) {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return;
-    }
-
-    with_window_state(context_id, |state| {
-        state.backend_mut().enable_depth_test();
-    });
-}
-
-/// Disables depth testing.
-///
-/// # Arguments
-///
-/// * `context_id` - The windowed context
-#[no_mangle]
-pub extern "C" fn goud_renderer_disable_depth_test(context_id: GoudContextId) {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return;
-    }
-
-    with_window_state(context_id, |state| {
-        state.backend_mut().disable_depth_test();
-    });
-}
-
-/// Clears the depth buffer.
-///
-/// # Arguments
-///
-/// * `context_id` - The windowed context
-#[no_mangle]
-pub extern "C" fn goud_renderer_clear_depth(context_id: GoudContextId) {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return;
-    }
-
-    with_window_state(context_id, |state| {
-        state.backend_mut().clear_depth();
-    });
 }
