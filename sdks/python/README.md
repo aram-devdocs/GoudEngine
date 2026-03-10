@@ -31,9 +31,36 @@ while not game.should_close():
 
     game.draw_sprite(player_tex, 400, 300, 64, 64)
 
-    game.end_frame()
+game.end_frame()
 
 game.destroy()
+```
+
+## Networking Wrapper API
+
+Use constructor-based wrappers over `GoudGame` or `GoudContext`:
+
+```python
+from goud_engine import GoudContext, NetworkManager, NetworkProtocol
+
+host_ctx = GoudContext()
+client_ctx = GoudContext()
+
+host_net = NetworkManager(host_ctx)
+client_net = NetworkManager(client_ctx)
+
+host = host_net.host(NetworkProtocol.TCP, 40000)  # no default peer ID
+client = client_net.connect(NetworkProtocol.TCP, "127.0.0.1", 40000)  # default peer ID is set
+
+client.send(b"hello")            # uses default peer ID from connect()
+packet = host.receive()          # Optional[NetworkPacket]
+if packet is not None:
+    host.send_to(packet.peer_id, b"world")
+
+host.disconnect()
+client.disconnect()
+host_ctx.destroy()
+client_ctx.destroy()
 ```
 
 ## Features
