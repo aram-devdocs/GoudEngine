@@ -1,5 +1,3 @@
-//! Audio control and query FFI functions: stop, pause, resume, volume, queries.
-
 use crate::assets::AudioManager;
 use crate::core::error::{set_last_error, GoudError};
 use crate::ecs::components::AudioChannel;
@@ -7,9 +5,13 @@ use crate::ffi::context::{get_context_registry, GoudContextId, GOUD_INVALID_CONT
 
 use super::ERR_I32;
 
-// ============================================================================
-// Playback Control
-// ============================================================================
+#[path = "audio_activate.rs"]
+mod audio_activate;
+#[cfg(test)]
+#[path = "tests/mod.rs"]
+mod tests;
+
+use audio_activate::goud_audio_activate_impl;
 
 /// Activates audio playback on platforms that require explicit initialization.
 ///
@@ -24,27 +26,7 @@ use super::ERR_I32;
 /// `0` on success, `-1` on error.
 #[no_mangle]
 pub extern "C" fn goud_audio_activate(context_id: GoudContextId) -> i32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return ERR_I32;
-    }
-
-    let registry = match get_context_registry().lock() {
-        Ok(r) => r,
-        Err(_) => {
-            set_last_error(GoudError::InternalError(
-                "Failed to lock context registry".to_string(),
-            ));
-            return ERR_I32;
-        }
-    };
-
-    if registry.get(context_id).is_none() {
-        set_last_error(GoudError::InvalidContext);
-        return ERR_I32;
-    }
-
-    0
+    goud_audio_activate_impl(context_id)
 }
 
 /// Stops audio playback for the given player ID.
@@ -514,58 +496,5 @@ pub extern "C" fn goud_audio_cleanup_finished(context_id: GoudContextId) -> i32 
             ));
             ERR_I32
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::core::error::{clear_last_error, last_error_code, ERR_INVALID_CONTEXT, SUCCESS};
-    use crate::ffi::context::{goud_context_create, goud_context_destroy, GOUD_INVALID_CONTEXT_ID};
-
-    #[test]
-    fn test_goud_audio_activate_returns_success_for_valid_context() {
-        // Arrange
-        clear_last_error();
-        let context_id = goud_context_create();
-        assert_ne!(context_id, GOUD_INVALID_CONTEXT_ID);
-
-        // Act
-        let result = goud_audio_activate(context_id);
-
-        // Assert
-        assert_eq!(result, 0);
-        assert_eq!(last_error_code(), SUCCESS);
-
-        assert!(goud_context_destroy(context_id));
-    }
-
-    #[test]
-    fn test_goud_audio_activate_returns_error_for_invalid_context() {
-        // Arrange
-        clear_last_error();
-
-        // Act
-        let result = goud_audio_activate(GOUD_INVALID_CONTEXT_ID);
-
-        // Assert
-        assert_eq!(result, ERR_I32);
-        assert_eq!(last_error_code(), ERR_INVALID_CONTEXT);
-    }
-
-    #[test]
-    fn test_goud_audio_activate_returns_error_for_destroyed_context() {
-        // Arrange
-        clear_last_error();
-        let context_id = goud_context_create();
-        assert_ne!(context_id, GOUD_INVALID_CONTEXT_ID);
-        assert!(goud_context_destroy(context_id));
-
-        // Act
-        let result = goud_audio_activate(context_id);
-
-        // Assert
-        assert_eq!(result, ERR_I32);
-        assert_eq!(last_error_code(), ERR_INVALID_CONTEXT);
     }
 }
