@@ -225,47 +225,48 @@ describe('Generated native audio bindings', () => {
 
   it('keeps generated wrapper audio methods aligned with the native runtime object', () => {
     const game = new WrappedGoudGame();
+    try {
+      const requiredWrapperMethods = [
+        'audioPlay',
+        'audioPlayOnChannel',
+        'audioPlayWithSettings',
+        'audioStop',
+        'audioPause',
+        'audioResume',
+        'audioStopAll',
+        'audioSetGlobalVolume',
+        'audioGetGlobalVolume',
+        'audioSetChannelVolume',
+        'audioGetChannelVolume',
+        'audioIsPlaying',
+        'audioActiveCount',
+        'audioPlaySpatial3d',
+        'audioUpdateSpatial3d',
+        'audioSetListenerPosition3d',
+        'audioSetSourcePosition3d',
+        'audioSetPlayerVolume',
+        'audioSetPlayerSpeed',
+        'audioCrossfade',
+        'audioCrossfadeTo',
+        'audioMixWith',
+        'audioUpdateCrossfades',
+        'audioActiveCrossfadeCount',
+        'audioCleanupFinished',
+        'audioActivate',
+      ];
 
-    const requiredWrapperMethods = [
-      'audioPlay',
-      'audioPlayOnChannel',
-      'audioPlayWithSettings',
-      'audioStop',
-      'audioPause',
-      'audioResume',
-      'audioStopAll',
-      'audioSetGlobalVolume',
-      'audioGetGlobalVolume',
-      'audioSetChannelVolume',
-      'audioGetChannelVolume',
-      'audioIsPlaying',
-      'audioActiveCount',
-      'audioPlaySpatial3d',
-      'audioUpdateSpatial3d',
-      'audioSetListenerPosition3d',
-      'audioSetSourcePosition3d',
-      'audioSetPlayerVolume',
-      'audioSetPlayerSpeed',
-      'audioCrossfade',
-      'audioCrossfadeTo',
-      'audioMixWith',
-      'audioUpdateCrossfades',
-      'audioActiveCrossfadeCount',
-      'audioCleanupFinished',
-      'audioActivate',
-    ];
+      for (const method of requiredWrapperMethods) {
+        assert.equal(typeof game[method], 'function', `Missing wrapper method: ${method}`);
+        assert.equal(typeof game.native[method], 'function', `Wrapper native target missing method: ${method}`);
+      }
 
-    for (const method of requiredWrapperMethods) {
-      assert.equal(typeof game[method], 'function', `Missing wrapper method: ${method}`);
-      assert.equal(typeof game.native[method], 'function', `Wrapper native target missing method: ${method}`);
+      assert.equal(typeof game.loadAudioClip, 'undefined');
+      assert.equal(typeof game.unloadAudioClip, 'undefined');
+      assert.equal(typeof game.native.loadAudioClip, 'undefined');
+      assert.equal(typeof game.native.unloadAudioClip, 'undefined');
+    } finally {
+      game.destroy();
     }
-
-    assert.equal(typeof game.loadAudioClip, 'undefined');
-    assert.equal(typeof game.unloadAudioClip, 'undefined');
-    assert.equal(typeof game.native.loadAudioClip, 'undefined');
-    assert.equal(typeof game.native.unloadAudioClip, 'undefined');
-
-    game.destroy();
   });
 });
 

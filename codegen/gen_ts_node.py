@@ -2461,6 +2461,10 @@ def _ffi_arg_from_schema(param_name: str, param_type: str, ffi_param_type: str) 
         if ffi_param_type == "usize":
             return f"{param_name}.len()"
 
+    rust_type = _napi_rust_param_type(param_type)
+    if rust_type == ffi_param_type:
+        return param_name
+
     if ffi_param_type == "f32":
         return f"{param_name} as f32"
     if ffi_param_type == "f64":
@@ -2548,12 +2552,22 @@ def gen_napi_rust_audio():
 
         if method_ret_schema == "void":
             if is_unsafe:
+                lines.append(
+                    "        // SAFETY: This method forwards generated N-API arguments to a native "
+                    "audio FFI call that only dereferences data derived from `Buffer` and "
+                    "the game context."
+                )
                 lines.append(f"        unsafe {{ {call}; }}")
             else:
                 lines.append(f"        {call};")
         else:
             needs_cast = method_ret_rust != _ffi_native_return_type(ffi_ret or method_ret_schema)
             if is_unsafe:
+                lines.append(
+                    "        // SAFETY: This method forwards generated N-API arguments to a native "
+                    "audio FFI call that only dereferences data derived from `Buffer` and "
+                    "the game context."
+                )
                 if needs_cast:
                     lines.append(f"        unsafe {{ {call} as {method_ret_rust} }}")
                 else:

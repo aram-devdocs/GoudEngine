@@ -12,6 +12,7 @@ impl GoudGame {
     /// Plays audio from raw bytes on the default channel
     #[napi(js_name = "audioPlay")]
     pub fn audio_play(&self, data: Buffer) -> f64 {
+        // SAFETY: This method forwards generated N-API arguments to a native audio FFI call that only dereferences data derived from `Buffer` and the game context.
         unsafe {
             goud_engine::ffi::audio::playback::goud_audio_play(
                 self.context_id,
@@ -24,12 +25,13 @@ impl GoudGame {
     /// Plays audio from raw bytes on the given channel
     #[napi(js_name = "audioPlayOnChannel")]
     pub fn audio_play_on_channel(&self, data: Buffer, channel: u8) -> f64 {
+        // SAFETY: This method forwards generated N-API arguments to a native audio FFI call that only dereferences data derived from `Buffer` and the game context.
         unsafe {
             goud_engine::ffi::audio::playback::goud_audio_play_on_channel(
                 self.context_id,
                 data.as_ptr(),
                 data.len(),
-                channel as u8,
+                channel,
             ) as f64
         }
     }
@@ -44,6 +46,7 @@ impl GoudGame {
         looping: bool,
         channel: u8,
     ) -> f64 {
+        // SAFETY: This method forwards generated N-API arguments to a native audio FFI call that only dereferences data derived from `Buffer` and the game context.
         unsafe {
             goud_engine::ffi::audio::playback::goud_audio_play_with_settings(
                 self.context_id,
@@ -52,7 +55,7 @@ impl GoudGame {
                 volume as f32,
                 speed as f32,
                 looping,
-                channel as u8,
+                channel,
             ) as f64
         }
     }
@@ -101,7 +104,7 @@ impl GoudGame {
     pub fn audio_set_channel_volume(&self, channel: u8, volume: f64) -> i32 {
         goud_engine::ffi::audio::controls::goud_audio_set_channel_volume(
             self.context_id,
-            channel as u8,
+            channel,
             volume as f32,
         )
     }
@@ -109,10 +112,8 @@ impl GoudGame {
     /// Gets the volume for a specific channel
     #[napi(js_name = "audioGetChannelVolume")]
     pub fn audio_get_channel_volume(&self, channel: u8) -> f64 {
-        goud_engine::ffi::audio::controls::goud_audio_get_channel_volume(
-            self.context_id,
-            channel as u8,
-        ) as f64
+        goud_engine::ffi::audio::controls::goud_audio_get_channel_volume(self.context_id, channel)
+            as f64
     }
 
     /// Returns non-zero when the player is still playing
@@ -147,6 +148,7 @@ impl GoudGame {
         max_distance: f64,
         rolloff: f64,
     ) -> f64 {
+        // SAFETY: This method forwards generated N-API arguments to a native audio FFI call that only dereferences data derived from `Buffer` and the game context.
         unsafe {
             goud_engine::ffi::audio::spatial::goud_audio_play_spatial_3d(
                 self.context_id,
@@ -265,6 +267,7 @@ impl GoudGame {
         duration_sec: f64,
         channel: u8,
     ) -> f64 {
+        // SAFETY: This method forwards generated N-API arguments to a native audio FFI call that only dereferences data derived from `Buffer` and the game context.
         unsafe {
             goud_engine::ffi::audio::spatial::goud_audio_crossfade_to(
                 self.context_id,
@@ -272,7 +275,7 @@ impl GoudGame {
                 data.as_ptr(),
                 data.len(),
                 duration_sec as f32,
-                channel as u8,
+                channel,
             ) as f64
         }
     }
@@ -286,6 +289,7 @@ impl GoudGame {
         secondary_volume: f64,
         secondary_channel: u8,
     ) -> f64 {
+        // SAFETY: This method forwards generated N-API arguments to a native audio FFI call that only dereferences data derived from `Buffer` and the game context.
         unsafe {
             goud_engine::ffi::audio::spatial::goud_audio_mix_with(
                 self.context_id,
@@ -293,7 +297,7 @@ impl GoudGame {
                 data.as_ptr(),
                 data.len(),
                 secondary_volume as f32,
-                secondary_channel as u8,
+                secondary_channel,
             ) as f64
         }
     }
