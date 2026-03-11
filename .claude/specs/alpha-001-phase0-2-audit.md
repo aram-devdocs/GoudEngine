@@ -110,6 +110,7 @@
   - Generated docs download/media binaries are now treated as pure generated outputs: required for docs builds, but ignored in Git because their archive/video containers are nondeterministic across clean-room runs.
   - `scripts/check-generated-artifacts.sh` now has a split contract: default mode validates fresh-checkout SDK/codegen outputs, and `--docs` adds showcase/download/media/docs proof for the hosted docs path.
   - The docs workflow now generates the downloadable Flappy bundles before publishing and validates the full docs artifact set with `bash scripts/check-generated-artifacts.sh --docs`.
+  - Generated showcase screenshots are required for docs builds but are no longer enforced as byte-stable drift artifacts across environments, because renderer/font/runtime differences make the PNG outputs nondeterministic in CI.
 - Feature Lab parity:
   - Added `/Users/aramhammoudeh/dev/game/GoudEngine/examples/rust/feature_lab`.
   - Added `/Users/aramhammoudeh/dev/game/GoudEngine/examples/python/feature_lab.py`.

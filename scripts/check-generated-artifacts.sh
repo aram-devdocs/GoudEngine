@@ -128,7 +128,6 @@ base_tracked_diff_paths=(
 )
 
 docs_tracked_diff_paths=(
-  "docs/src/generated/showcase"
   "docs/src/generated/snippets"
   "docs/src/guides/showcase.md"
   "examples/README.md"
@@ -156,6 +155,9 @@ if [[ "$INCLUDE_DOCS" -eq 1 ]]; then
   echo "Download bundles and captured media are still required above, but their"
   echo "archive/video containers are not stable enough to diff across clean-room runs."
   echo "Those binaries are also ignored in Git so clean-room docs runs do not dirty the tree."
+  echo "Skipping byte-for-byte drift on generated showcase screenshots..."
+  echo "Showcase PNGs are still required above, but renderer/font/runtime differences"
+  echo "make them unsuitable for cross-environment binary drift enforcement."
 
   echo "Checking generated showcase docs drift..."
   python3 scripts/generate-showcase-docs.py --check

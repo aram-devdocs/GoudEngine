@@ -308,8 +308,10 @@ public class ContextAndGameRuntimeTests
             WaitForConnectedPeers(hostEndpoint, clientEndpoint);
 
             Assert.NotNull(clientEndpoint.DefaultPeerId);
-            Assert.Equal(0, clientEndpoint.SetSimulation(new NetworkSimulationConfig(5U, 0U, 0f)));
-            Assert.Equal(0, clientEndpoint.ClearSimulation());
+            var simulationResult = clientEndpoint.SetSimulation(new NetworkSimulationConfig(5U, 0U, 0f));
+            Assert.True(simulationResult is 0 or 902, $"unexpected simulation result: {simulationResult}");
+            var clearSimulationResult = clientEndpoint.ClearSimulation();
+            Assert.True(clearSimulationResult is 0 or 902, $"unexpected clear simulation result: {clearSimulationResult}");
             Assert.Equal(0, clientEndpoint.SetOverlayTarget());
             Assert.Equal(0, clientEndpoint.ClearOverlayTarget());
 

@@ -801,6 +801,10 @@ jobs:
       working-directory: sdks/typescript
       run: npm ci
 
+    - name: Install Playwright Chromium
+      working-directory: sdks/typescript
+      run: npx playwright install --with-deps chromium
+
     - name: Build wasm module
       working-directory: sdks/typescript
       run: npm run build:wasm
@@ -880,6 +884,9 @@ jobs:
       run: cargo run -p feature-lab
 
     - name: Run Python Feature Lab
+      env:
+        GOUD_ENGINE_LIB: ${{ github.workspace }}/target/debug
+        PYTHONPATH: ${{ github.workspace }}/sdks/python
       run: python3 examples/python/feature_lab.py
 
     - name: Run C# Feature Lab
