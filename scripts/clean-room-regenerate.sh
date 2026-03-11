@@ -39,6 +39,8 @@ generated_outputs=(
   "sdks/typescript/tsconfig.json"
   "sdks/typescript/tsconfig.web.json"
   "sdks/typescript/tsconfig.typedoc.json"
+  "sdks/typescript/index.js"
+  "sdks/typescript/index.d.ts"
   "sdks/typescript/native/Cargo.toml"
   "sdks/typescript/native/build.rs"
   "sdks/typescript/wasm/package.json"
@@ -55,6 +57,11 @@ for path in "${generated_outputs[@]}"; do
 done
 
 for path in sdks/typescript/native/src/*.g.rs; do
+  [[ -e "$path" ]] || continue
+  delete_path "$path"
+done
+
+for path in sdks/typescript/*.node; do
   [[ -e "$path" ]] || continue
   delete_path "$path"
 done
@@ -119,6 +126,7 @@ if [[ "$INCLUDE_DOCS" -eq 1 ]]; then
 
   (
     cd sdks/typescript
+    npm run build:native:debug
     npm run build:ts
     npx typedoc \
       --tsconfig tsconfig.typedoc.json \
