@@ -107,6 +107,7 @@
   - `/Users/aramhammoudeh/dev/game/GoudEngine/.github/workflows/docs.yml` now uses strict TypeScript and C# doc steps, passes `GOUD_ENGINE_LIB` plus `PDOC_ALLOW_EXEC` for Python docs, and uses `sdks/typescript/tsconfig.typedoc.json` for warning-free TypeDoc generation.
   - `/Users/aramhammoudeh/dev/game/GoudEngine/.github/workflows/release.yml` no longer manufactures a synthetic `CI Success` check.
   - `scripts/check-generated-artifacts.sh` now covers the generated networking wrappers, TypeScript native/lib outputs, and the generated package/build scaffolding files that were previously handwritten.
+  - Generated docs download/media binaries are now treated as pure generated outputs: required for docs builds, but ignored in Git because their archive/video containers are nondeterministic across clean-room runs.
 - Feature Lab parity:
   - Added `/Users/aramhammoudeh/dev/game/GoudEngine/examples/rust/feature_lab`.
   - Added `/Users/aramhammoudeh/dev/game/GoudEngine/examples/python/feature_lab.py`.

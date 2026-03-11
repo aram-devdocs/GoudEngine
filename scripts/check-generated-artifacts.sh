@@ -117,8 +117,6 @@ tracked_diff_paths=(
 
 generated_scan_paths=(
   "docs/src/generated/showcase"
-  "docs/src/generated/downloads"
-  "docs/src/generated/media"
   "docs/src/generated/snippets"
   "sdks/csharp/generated"
   "sdks/python/goud_engine/generated"
@@ -132,6 +130,7 @@ git diff --exit-code -- "${tracked_diff_paths[@]}"
 echo "Skipping byte-for-byte drift on generated downloads/media..."
 echo "Download bundles and captured media are still required above, but their"
 echo "archive/video containers are not stable enough to diff across clean-room runs."
+echo "Those binaries are also ignored in Git so clean-room docs runs do not dirty the tree."
 
 echo "Checking generated showcase docs drift..."
 python3 scripts/generate-showcase-docs.py --check
