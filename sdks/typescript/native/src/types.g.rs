@@ -36,47 +36,92 @@ pub struct Rect {
 
 #[napi]
 pub fn color_white() -> Color {
-    Color { r: 1.0, g: 1.0, b: 1.0, a: 1.0 }
+    Color {
+        r: 1.0,
+        g: 1.0,
+        b: 1.0,
+        a: 1.0,
+    }
 }
 
 #[napi]
 pub fn color_black() -> Color {
-    Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }
+    Color {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+        a: 1.0,
+    }
 }
 
 #[napi]
 pub fn color_red() -> Color {
-    Color { r: 1.0, g: 0.0, b: 0.0, a: 1.0 }
+    Color {
+        r: 1.0,
+        g: 0.0,
+        b: 0.0,
+        a: 1.0,
+    }
 }
 
 #[napi]
 pub fn color_green() -> Color {
-    Color { r: 0.0, g: 1.0, b: 0.0, a: 1.0 }
+    Color {
+        r: 0.0,
+        g: 1.0,
+        b: 0.0,
+        a: 1.0,
+    }
 }
 
 #[napi]
 pub fn color_blue() -> Color {
-    Color { r: 0.0, g: 0.0, b: 1.0, a: 1.0 }
+    Color {
+        r: 0.0,
+        g: 0.0,
+        b: 1.0,
+        a: 1.0,
+    }
 }
 
 #[napi]
 pub fn color_yellow() -> Color {
-    Color { r: 1.0, g: 1.0, b: 0.0, a: 1.0 }
+    Color {
+        r: 1.0,
+        g: 1.0,
+        b: 0.0,
+        a: 1.0,
+    }
 }
 
 #[napi]
 pub fn color_cyan() -> Color {
-    Color { r: 0.0, g: 1.0, b: 1.0, a: 1.0 }
+    Color {
+        r: 0.0,
+        g: 1.0,
+        b: 1.0,
+        a: 1.0,
+    }
 }
 
 #[napi]
 pub fn color_magenta() -> Color {
-    Color { r: 1.0, g: 0.0, b: 1.0, a: 1.0 }
+    Color {
+        r: 1.0,
+        g: 0.0,
+        b: 1.0,
+        a: 1.0,
+    }
 }
 
 #[napi]
 pub fn color_transparent() -> Color {
-    Color { r: 0.0, g: 0.0, b: 0.0, a: 0.0 }
+    Color {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+        a: 0.0,
+    }
 }
 
 #[napi]
