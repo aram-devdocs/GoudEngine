@@ -175,6 +175,9 @@ def gen_python_scaffolding() -> None:
 def gen_typescript_scaffolding() -> None:
     typescript_dir = SDKS_DIR / "typescript"
 
+    # wasm-pack already optimizes the web bundle. A second manual wasm-opt pass
+    # regressed the browser networking runtime smoke in CI, so build:web must
+    # stay on the direct wasm-pack output.
     package_json = {
         "name": "goudengine",
         "version": VERSION,
@@ -213,8 +216,7 @@ def gen_typescript_scaffolding() -> None:
             "build:ts": "tsc",
             "build:ts:web": "tsc -p tsconfig.web.json",
             "build:wasm": "wasm-pack build ../../goud_engine --target web --out-dir ../sdks/typescript/wasm --features web --no-default-features",
-            "build:wasm:opt": "wasm-opt -Oz --enable-bulk-memory -o wasm/goud_engine_bg.wasm wasm/goud_engine_bg.wasm 2>/dev/null || echo 'wasm-opt not found - skipping optimization'",
-            "build:web": "npm run build:wasm && npm run build:wasm:opt && npm run build:ts:web",
+            "build:web": "npm run build:wasm && npm run build:ts:web",
             "build": "npm run build:native && npm run build:ts",
             "build:all": "npm run build && npm run build:web",
             "clean": "rm -rf dist wasm *.node",

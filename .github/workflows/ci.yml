@@ -789,13 +789,14 @@ jobs:
         cache: 'npm'
         cache-dependency-path: sdks/typescript/package-lock.json
 
-    - name: Install wasm-pack
-      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
-    - name: Install binaryen (wasm-opt)
+    - name: Install pinned wasm-pack
+      env:
+        WASM_PACK_VERSION: "0.13.1"
       run: |
-        sudo apt-get update
-        sudo apt-get install -y binaryen
+        curl -sSfL "https://github.com/rustwasm/wasm-pack/releases/download/v${WASM_PACK_VERSION}/wasm-pack-v${WASM_PACK_VERSION}-x86_64-unknown-linux-musl.tar.gz" -o /tmp/wasm-pack.tar.gz
+        tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
+        sudo install /tmp/wasm-pack-v${WASM_PACK_VERSION}-x86_64-unknown-linux-musl/wasm-pack /usr/local/bin/wasm-pack
+        wasm-pack --version
 
     - name: Install npm dependencies
       working-directory: sdks/typescript
@@ -807,16 +808,9 @@ jobs:
 
     - name: Build wasm module
       working-directory: sdks/typescript
+      # wasm-pack already runs wasm-opt for this bundle; a second manual pass
+      # broke Chromium's externref table initialization in the runtime smoke.
       run: npm run build:wasm
-
-    - name: Optimize wasm binary
-      working-directory: sdks/typescript
-      run: |
-        echo "Before optimization:"
-        ls -lh wasm/goud_engine_bg.wasm
-        npm run build:wasm:opt
-        echo "After optimization:"
-        ls -lh wasm/goud_engine_bg.wasm
 
     - name: Build web TypeScript
       working-directory: sdks/typescript

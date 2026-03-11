@@ -95,6 +95,9 @@
   - `cd sdks/typescript && npm test` now passes.
   - Regenerated TS artifacts restored the missing `NetworkProtocol.Tcp` path used by the loopback wrapper tests.
   - `sdks/typescript/src/shared/network.ts`, `sdks/typescript/src/index.ts`, `sdks/typescript/src/node/index.ts`, and `sdks/typescript/src/web/index.ts` are now generator-owned.
+  - The final GitHub Actions `TS SDK Wasm Build` blocker was traced to redundant post-build optimization: `wasm-pack build` already optimizes the browser bundle, and the extra explicit `wasm-opt` pass in CI/release corrupted the externref table growth path used by the browser runtime smoke.
+  - `build:web` now relies on the `wasm-pack` output directly, and CI/release no longer run a second `wasm-opt` pass on the same bundle.
+  - CI/release now pin `wasm-pack` to `0.13.1` so the release path stays on the same tested browser bundle behavior.
 - Rust docs/tests:
   - `goud_engine/src/assets/loaders/config/asset.rs` rustdoc examples now go through `ConfigLoader` + `LoadContext`, which removes the workspace doctest failure caused by doctest-local `serde_json` type skew.
 - CI/docs/release hardening:
@@ -126,14 +129,13 @@
 
 ## Remaining Blockers
 
-- No technical blockers remain for the Phase 0-2 remediation scope on this branch.
+- No known technical blockers remain for the Phase 0-2 remediation scope on this branch.
 - The CSV batch agent flow is still blocked by the tool-side database lock, so the ledger remains manually maintained.
 - `#114` remains open because it is the master alpha tracker for later-phase work outside this remediation branch; it is no longer blocked by Phase 0-2 SDK/docs/examples gaps.
 - Remaining release mechanics before merge:
-  - run final review gates
-  - commit the regenerated/generated outputs
-  - rerun clean-room checks from the committed tree
-  - open the PR and confirm GitHub Actions are green
+  - finish review gates for the final workflow/codegen delta
+  - commit the final generated outputs
+  - confirm GitHub Actions are green on PR `#510`
 
 ## CI and Release Gaps
 
