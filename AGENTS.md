@@ -287,6 +287,7 @@ Examples are organized by SDK language:
 - `goud_jumper/` -- Platformer game
 - `isometric_rpg/` -- Isometric RPG demo
 - `hello_ecs/` -- ECS basics
+- `feature_lab/` -- Headless feature-lab smoke checks
 
 **Python Examples** (`examples/python/`):
 - `main.py` -- Python SDK demo

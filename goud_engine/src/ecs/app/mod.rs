@@ -1,6 +1,7 @@
 //! Application framework for organizing ECS systems and plugins.
 //!
-//! The [`App`] struct is the top-level container that holds a [`World`], manages
+//! The [`App`] struct is the top-level container that holds a [`World`],
+//! manages
 //! system stages, and supports plugin-based composition.
 //!
 //! # Example
@@ -188,7 +189,8 @@ impl App {
         self
     }
 
-    /// Adds a system to a named set, returning its [`SystemId`].
+    /// Adds a system to a named set, returning its
+    /// [`SystemId`](crate::ecs::system::SystemId).
     ///
     /// The system is added to the stage and simultaneously placed in the
     /// named set.

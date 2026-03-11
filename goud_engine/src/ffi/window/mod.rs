@@ -8,11 +8,14 @@
 //!
 //! Window operations are integrated into the context system. When you create a
 //! windowed context, it includes:
-//! - A [`GlfwPlatform`] backend (window + input polling)
+//! - A [`GlfwPlatform`](crate::libs::platform::glfw_platform::GlfwPlatform)
+//!   backend (window + input polling)
 //! - An InputManager (as an ECS resource)
 //! - An OpenGL rendering backend
 //!
-//! The platform-specific code lives in [`GlfwPlatform`]; this module handles
+//! The platform-specific code lives in
+//! [`GlfwPlatform`](crate::libs::platform::glfw_platform::GlfwPlatform); this
+//! module handles
 //! FFI marshalling and context integration.
 //!
 //! ## Example Usage (C#)

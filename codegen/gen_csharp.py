@@ -11,8 +11,9 @@ from sdk_common import (
 )
 
 OUT = SDKS_DIR / "csharp" / "generated"
+CS_ROOT = SDKS_DIR / "csharp"
 schema = load_schema()
-mapping = load_ffi_mapping()
+mapping = load_ffi_mapping(schema)
 NS = "GoudEngine"
 
 # FFI struct field names (PascalCase as declared in codegen NativeMethods)
@@ -31,6 +32,29 @@ _FFI_TO_SDK_RETURN = {
     "FfiVec3": "Vec3",
     "FfiRect": "Rect",
     "FfiMat3x3": "Mat3x3",
+}
+
+_CSHARP_KEYWORDS = {
+    "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked",
+    "class", "const", "continue", "decimal", "default", "delegate", "do", "double", "else",
+    "enum", "event", "explicit", "extern", "false", "finally", "fixed", "float", "for",
+    "foreach", "goto", "if", "implicit", "in", "int", "interface", "internal", "is", "lock",
+    "long", "namespace", "new", "null", "object", "operator", "out", "override", "params",
+    "private", "protected", "public", "readonly", "ref", "return", "sbyte", "sealed", "short",
+    "sizeof", "stackalloc", "static", "string", "struct", "switch", "this", "throw", "true",
+    "try", "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "virtual",
+    "void", "volatile", "while",
+}
+
+_CSHARP_FFI_ALIASES = {
+    "EngineConfigHandle": "*mut c_void",
+    "UiManagerHandle": "*mut c_void",
+    "GoudTextureHandle": "u64",
+    "GoudFontHandle": "u64",
+    "GoudEntityId": "u64",
+    "GoudKeyCode": "i32",
+    "GoudMouseButton": "i32",
+    "GoudErrorCode": "i32",
 }
 
 
@@ -54,6 +78,11 @@ def _to_cs_field(snake: str) -> str:
     """
     parts = snake.lstrip('_').split('_')
     return '_' + parts[0] + ''.join(p.capitalize() for p in parts[1:])
+
+def _cs_identifier(name: str) -> str:
+    if name in _CSHARP_KEYWORDS:
+        return f"@{name}"
+    return name
 
 
 def _cs_default_value(cs_ty: str) -> str:
@@ -104,9 +133,37 @@ def _cs_value_param_ffi_setup(raw_type: str, param_name: str) -> tuple[list[str]
     return lines, local_name
 
 
+def _normalize_manifest_ffi_type(raw_type: str) -> str:
+    t = raw_type.strip()
+    if t == "()":
+        return "void"
+    if t.startswith("Option<") and t.endswith(">"):
+        inner = t[len("Option<"):-1]
+        return f"Option<{_normalize_manifest_ffi_type(inner)}>"
+    if t.startswith("*mut ") or t.startswith("*const "):
+        qualifier, inner = t.split(" ", 1)
+        return f"{qualifier} {_normalize_manifest_ffi_type(inner)}"
+    if "::" in t:
+        t = t.split("::")[-1]
+    if t in _CSHARP_FFI_ALIASES:
+        return _normalize_manifest_ffi_type(_CSHARP_FFI_ALIASES[t])
+    return t
+
+
 def _cs_ffi_param_type(raw: str) -> str:
     """Convert an ffi_mapping param type to valid C# for NativeMethods."""
+    def _ffi_struct_name(type_name: str) -> str:
+        ffi_info = mapping.get("ffi_types", {}).get(type_name, {})
+        return ffi_info.get("ffi_name", type_name)
+
+    raw = _normalize_manifest_ffi_type(raw)
     ptr_map = {
+        "*mut f32": "ref float",
+        "*mut i64": "ref long",
+        "*mut i32": "ref int",
+        "*mut u32": "ref uint",
+        "*mut u64": "ref ulong",
+        "*const u64": "IntPtr",
         "*mut FfiTransform2D": "ref FfiTransform2D",
         "*const FfiTransform2D": "ref FfiTransform2D",
         "*mut FfiSprite": "ref FfiSprite",
@@ -132,11 +189,31 @@ def _cs_ffi_param_type(raw: str) -> str:
     }
     if raw in ptr_map:
         return ptr_map[raw]
+    if raw.startswith("Option<") and raw.endswith(">"):
+        inner = raw[len("Option<"):-1]
+        if "Callback" in inner:
+            return "IntPtr"
+    if raw.startswith("*mut ") or raw.startswith("*const "):
+        qualifier, inner = raw.split(" ", 1)
+        ffi_inner = _ffi_struct_name(inner.strip())
+        if ffi_inner.startswith("Ffi"):
+            return f"ref {ffi_inner}"
+        if ffi_inner.startswith("Goud") and ffi_inner not in ("GoudTextureHandle", "GoudFontHandle"):
+            return f"ref {ffi_inner}"
+        if ffi_inner == "c_char" and qualifier == "*const":
+            return "string"
+        if ffi_inner in ("UiManager",):
+            return "IntPtr"
+        return "IntPtr"
+    ffi_info = mapping.get("ffi_types", {}).get(raw, {})
+    if ffi_info.get("ffi_name"):
+        return ffi_info["ffi_name"]
     return ffi_type(raw)
 
 
 def _cs_ffi_ret_type(raw: str) -> str:
     """Convert a return type to valid C#."""
+    raw = _normalize_manifest_ffi_type(raw)
     ret_map = {
         "*mut FfiTransform2DBuilder": "IntPtr",
         "*mut FfiSpriteBuilder": "IntPtr",
@@ -148,6 +225,13 @@ def _cs_ffi_ret_type(raw: str) -> str:
     }
     if raw in ret_map:
         return ret_map[raw]
+    if raw.startswith("*mut ") or raw.startswith("*const "):
+        return "IntPtr"
+    if raw.startswith("Option<") and raw.endswith(">") and "Callback" in raw:
+        return "IntPtr"
+    ffi_info = mapping.get("ffi_types", {}).get(raw, {})
+    if ffi_info.get("ffi_name"):
+        return ffi_info["ffi_name"]
     return ffi_type(raw)
 
 
@@ -155,7 +239,7 @@ def _ffi_return_type(ffi_fn_name: str) -> str:
     """Return the FFI return type string for a named function."""
     for _mod, funcs in mapping["ffi_functions"].items():
         if isinstance(funcs, dict) and ffi_fn_name in funcs:
-            return funcs[ffi_fn_name].get("returns", "void")
+            return _normalize_manifest_ffi_type(funcs[ffi_fn_name].get("returns", "void"))
     return "void"
 
 
@@ -284,7 +368,7 @@ def gen_native_methods():
         for fname, fdef in funcs.items():
             if fname.startswith("_") or not isinstance(fdef, dict):
                 continue
-            params = [f"{_cs_ffi_param_type(p['type'])} {p['name']}" for p in fdef["params"]]
+            params = [f"{_cs_ffi_param_type(p['type'])} {_cs_identifier(p['name'])}" for p in fdef["params"]]
             raw_ret = fdef["returns"]
             ret = _cs_ffi_ret_type(raw_ret)
             if raw_ret == "bool":
@@ -499,7 +583,7 @@ def _gen_comp_factory(type_name, factory_name, ffi_info, schema_factory, lines):
     """Generate a static factory method for a component wrapper struct."""
     ffi_fn = ffi_info["ffi"]
     ffi_def = _ffi_fn_def(ffi_fn)
-    ffi_ret = ffi_def.get("returns", "void")
+    ffi_ret = _normalize_manifest_ffi_type(ffi_def.get("returns", "void"))
     ffi_name = mapping["ffi_types"].get(type_name, {}).get("ffi_name", "")
     pascal_name = to_pascal(factory_name)
     args = schema_factory.get("args", []) if schema_factory else []
@@ -534,7 +618,7 @@ def _gen_comp_method(type_name, method_name, ffi_info, schema_method, lines):
     """Generate an instance or static method for a component wrapper struct."""
     ffi_fn = ffi_info["ffi"]
     ffi_def = _ffi_fn_def(ffi_fn)
-    ffi_ret = ffi_def.get("returns", "void")
+    ffi_ret = _normalize_manifest_ffi_type(ffi_def.get("returns", "void"))
     self_param = ffi_info.get("self_param", "")
     is_static = ffi_info.get("static", False)
     ffi_name = mapping["ffi_types"].get(type_name, {}).get("ffi_name", "")
@@ -578,6 +662,34 @@ def _gen_comp_method(type_name, method_name, ffi_info, schema_method, lines):
         extra_args = ", ".join(p["name"] for p in params)
         all_args = f"ref _inner, {extra_args}" if extra_args else "ref _inner"
         sdk_ret = _FFI_TO_SDK_RETURN.get(ffi_ret)
+
+        # Special case for value-returning component methods whose FFI changed to out-params
+        # (for example, getters that now return bool and fill an out struct).
+        out_ffi_type = mapping["ffi_types"].get(schema_ret, {}).get("ffi_name")
+        out_ptr_name = f"*mut {out_ffi_type}" if out_ffi_type else ""
+        ffi_params = ffi_def.get("params", [])[1:]
+        has_expected_out_param = any(
+            p.get("type") == out_ptr_name and out_ffi_type for p in ffi_params
+        )
+        if out_ffi_type and has_expected_out_param and ffi_ret == "bool":
+            out_var = "_out"
+            lines.append(f"        public {cs_ret} {pascal_name}({cs_params})")
+            lines.append("        {")
+            lines.append(f"            {out_ffi_type} {out_var} = default;")
+            # Append the by-ref out parameter (expected by generated FFI wrapper).
+            all_args = f"{all_args}, ref {out_var}"
+            if out_ffi_type in _FFI_TO_SDK_FIELDS:
+                fields = _FFI_TO_SDK_FIELDS[out_ffi_type]
+                field_refs = ", ".join(f"{out_var}.{f}" for f in fields)
+                lines.append(f"            NativeMethods.{ffi_fn}({all_args});")
+                lines.append(f"            return new {schema_ret}({field_refs});")
+            else:
+                lines.append(f"            NativeMethods.{ffi_fn}({all_args});")
+                lines.append(f"            return {out_var};")
+            lines.append("        }")
+            lines.append("")
+            return
+
         if sdk_ret and ffi_ret in _FFI_TO_SDK_FIELDS:
             fields = _FFI_TO_SDK_FIELDS[ffi_ret]
             field_refs = ", ".join(f"__r.{f}" for f in fields)
@@ -2180,6 +2292,234 @@ def gen_errors():
     write_generated(OUT / "Core" / "Errors.g.cs", "\n".join(lines))
 
 
+def gen_network_wrappers():
+    manager_lines = [
+        f"// {HEADER_COMMENT}",
+        "",
+        "using System;",
+        "",
+        f"namespace {NS}",
+        "{",
+        "    /// <summary>",
+        "    /// Thin auto-generated convenience wrapper for network lifecycle operations.",
+        "    /// </summary>",
+        "    public sealed class NetworkManager",
+        "    {",
+        "        private readonly GoudContext? _context;",
+        "        private readonly GoudGame? _game;",
+        "",
+        "        public NetworkManager(GoudGame game)",
+        "        {",
+        "            _game = game ?? throw new ArgumentNullException(nameof(game));",
+        "        }",
+        "",
+        "        public NetworkManager(GoudContext context)",
+        "        {",
+        "            _context = context ?? throw new ArgumentNullException(nameof(context));",
+        "        }",
+        "",
+        "        /// <summary>Hosts a network endpoint. Host endpoints do not have a default peer ID.</summary>",
+        "        public NetworkEndpoint Host(NetworkProtocol protocol, ushort port)",
+        "        {",
+        "            var handle = RunHost((int)protocol, port);",
+        "            if (handle < 0)",
+        "            {",
+        "                throw new InvalidOperationException($\"NetworkHost failed with handle {handle}.\");",
+        "            }",
+        "",
+        "            return new NetworkEndpoint(_game, _context, handle, defaultPeerId: null);",
+        "        }",
+        "",
+        "        /// <summary>",
+        "        /// Connects to a remote endpoint and preserves the provider-assigned default peer ID.",
+        "        /// </summary>",
+        "        public NetworkEndpoint Connect(NetworkProtocol protocol, string address, ushort port)",
+        "        {",
+        "            var result = RunConnectWithPeer((int)protocol, address, port);",
+        "            return new NetworkEndpoint(_game, _context, result.Handle, result.PeerId);",
+        "        }",
+        "",
+        "        private long RunHost(int protocol, ushort port)",
+        "        {",
+        "            if (_game != null)",
+        "            {",
+        "                return _game.NetworkHost(protocol, port);",
+        "            }",
+        "",
+        "            return _context!.NetworkHost(protocol, port);",
+        "        }",
+        "",
+        "        private NetworkConnectResult RunConnectWithPeer(int protocol, string address, ushort port)",
+        "        {",
+        "            if (_game != null)",
+        "            {",
+        "                return _game.NetworkConnectWithPeer(protocol, address, port);",
+        "            }",
+        "",
+        "            return _context!.NetworkConnectWithPeer(protocol, address, port);",
+        "        }",
+        "    }",
+        "}",
+        "",
+    ]
+
+    endpoint_lines = [
+        f"// {HEADER_COMMENT}",
+        "",
+        "using System;",
+        "",
+        f"namespace {NS}",
+        "{",
+        "    /// <summary>Auto-generated convenience wrapper for a concrete network handle.</summary>",
+        "    public sealed class NetworkEndpoint",
+        "    {",
+        "        private readonly GoudContext? _context;",
+        "        private readonly GoudGame? _game;",
+        "",
+        "        internal NetworkEndpoint(GoudGame? game, GoudContext? context, long handle, ulong? defaultPeerId)",
+        "        {",
+        "            _game = game;",
+        "            _context = context;",
+        "            Handle = handle;",
+        "            DefaultPeerId = defaultPeerId;",
+        "        }",
+        "",
+        "        /// <summary>Underlying native network handle.</summary>",
+        "        public long Handle { get; }",
+        "",
+        "        /// <summary>Default peer ID used by Send(byte[], byte).",
+        "        /// </summary>",
+        "        public ulong? DefaultPeerId { get; }",
+        "",
+        "        /// <summary>Sends bytes to the endpoint's default peer on the given channel.</summary>",
+        "        public int Send(byte[] data, byte channel = 0)",
+        "        {",
+        "            if (!DefaultPeerId.HasValue)",
+        "            {",
+        "                throw new InvalidOperationException(\"No default peer ID is available for this endpoint. Use SendTo(...) or connect via NetworkManager.Connect(...).\");",
+        "            }",
+        "",
+        "            return SendTo(DefaultPeerId.Value, data, channel);",
+        "        }",
+        "",
+        "        /// <summary>Sends bytes to a specific peer on the given channel.</summary>",
+        "        public int SendTo(ulong peerId, byte[] data, byte channel = 0)",
+        "        {",
+        "            if (_game != null)",
+        "            {",
+        "                return _game.NetworkSend(Handle, peerId, data, channel);",
+        "            }",
+        "",
+        "            return _context!.NetworkSend(Handle, peerId, data, channel);",
+        "        }",
+        "",
+        "        /// <summary>Polls the provider and buffers pending events/messages for this handle.</summary>",
+        "        public int Poll()",
+        "        {",
+        "            if (_game != null)",
+        "            {",
+        "                return _game.NetworkPoll(Handle);",
+        "            }",
+        "",
+        "            return _context!.NetworkPoll(Handle);",
+        "        }",
+        "",
+        "        /// <summary>Receives the next buffered packet or null when no packet is available.</summary>",
+        "        public NetworkPacket? Receive()",
+        "        {",
+        "            if (_game != null)",
+        "            {",
+        "                return _game.NetworkReceivePacket(Handle);",
+        "            }",
+        "",
+        "            return _context!.NetworkReceivePacket(Handle);",
+        "        }",
+        "",
+        "        /// <summary>Disconnects this endpoint handle.</summary>",
+        "        public int Disconnect()",
+        "        {",
+        "            if (_game != null)",
+        "            {",
+        "                return _game.NetworkDisconnect(Handle);",
+        "            }",
+        "",
+        "            return _context!.NetworkDisconnect(Handle);",
+        "        }",
+        "",
+        "        /// <summary>Returns aggregate stats for this endpoint handle.</summary>",
+        "        public NetworkStats GetStats()",
+        "        {",
+        "            if (_game != null)",
+        "            {",
+        "                return _game.GetNetworkStats(Handle);",
+        "            }",
+        "",
+        "            return _context!.GetNetworkStats(Handle);",
+        "        }",
+        "",
+        "        /// <summary>Returns the number of peers associated with this endpoint handle.</summary>",
+        "        public int PeerCount()",
+        "        {",
+        "            if (_game != null)",
+        "            {",
+        "                return _game.NetworkPeerCount(Handle);",
+        "            }",
+        "",
+        "            return _context!.NetworkPeerCount(Handle);",
+        "        }",
+        "",
+        "        /// <summary>Applies debug network simulation config to this endpoint handle.</summary>",
+        "        public int SetSimulation(NetworkSimulationConfig config)",
+        "        {",
+        "            if (_game != null)",
+        "            {",
+        "                return _game.SetNetworkSimulation(Handle, config);",
+        "            }",
+        "",
+        "            return _context!.SetNetworkSimulation(Handle, config);",
+        "        }",
+        "",
+        "        /// <summary>Clears debug network simulation config from this endpoint handle.</summary>",
+        "        public int ClearSimulation()",
+        "        {",
+        "            if (_game != null)",
+        "            {",
+        "                return _game.ClearNetworkSimulation(Handle);",
+        "            }",
+        "",
+        "            return _context!.ClearNetworkSimulation(Handle);",
+        "        }",
+        "",
+        "        /// <summary>Routes native network overlay stats to this endpoint handle.</summary>",
+        "        public int SetOverlayTarget()",
+        "        {",
+        "            if (_game != null)",
+        "            {",
+        "                return _game.SetNetworkOverlayHandle(Handle);",
+        "            }",
+        "",
+        "            return _context!.SetNetworkOverlayHandle(Handle);",
+        "        }",
+        "",
+        "        /// <summary>Clears the native network overlay target override for this context.</summary>",
+        "        public int ClearOverlayTarget()",
+        "        {",
+        "            if (_game != null)",
+        "            {",
+        "                return _game.ClearNetworkOverlayHandle();",
+        "            }",
+        "",
+        "            return _context!.ClearNetworkOverlayHandle();",
+        "        }",
+        "    }",
+        "}",
+        "",
+    ]
+
+    write_generated(CS_ROOT / "NetworkManager.cs", "\n".join(manager_lines))
+    write_generated(CS_ROOT / "NetworkEndpoint.cs", "\n".join(endpoint_lines))
+
+
 def gen_diagnostic():
     if "diagnostic" not in schema:
         return
@@ -2266,6 +2606,7 @@ if __name__ == "__main__":
     gen_physics_world_3d()
     gen_engine_config()
     gen_ui_manager()
+    gen_network_wrappers()
     gen_errors()
     gen_diagnostic()
     print("C# SDK generation complete.")

@@ -1,0 +1,22 @@
+{
+  "name": "feature-lab-goudengine",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Feature Lab (ALPHA-001) for GoudEngine TypeScript SDK -- desktop + web entrypoints",
+  "scripts": {
+    "desktop": "npx tsx desktop.ts",
+    "build:web": "npx tsc",
+    "web": "python3 -m http.server 8765 --bind 127.0.0.1",
+    "smoke:web-network": "node ./web-network-smoke.mjs"
+  },
+  "dependencies": {
+    "goudengine": "file:../../../sdks/typescript"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "playwright": "^1.53.0",
+    "ws": "^8.18.3",
+    "typescript": "^5.0.0"
+  }
+}

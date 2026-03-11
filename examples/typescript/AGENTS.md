@@ -8,6 +8,7 @@ and web (WASM) targets from the same game logic.
 ## Structure
 
 - `flappy_bird/` -- Flappy Bird clone, mirrors C#/Python versions for SDK parity testing
+- `feature_lab/` -- ALPHA-001 wrapper surface lab (desktop + web entrypoints)
 
 ## Running
 

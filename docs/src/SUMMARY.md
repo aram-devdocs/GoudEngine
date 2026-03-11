@@ -34,6 +34,15 @@
 - [Networking](features/networking.md)
 - [Error Handling](features/error-handling.md)
 
+# Guides
+
+- [Build Your First Game](guides/build-your-first-game.md)
+- [Cross-Platform Deployment](guides/deployment.md)
+- [Web Platform Gotchas](guides/web-platform-gotchas.md)
+- [FAQ and Troubleshooting](guides/faq.md)
+- [Video Tutorials](guides/videos.md)
+- [Example Showcase](guides/showcase.md)
+
 # RFCs
 
 - [RFC Process](../rfcs/README.md)
@@ -43,5 +52,6 @@
 # Reference
 
 - [API Reference](reference/api.md)
+- [Reusable Snippets (Generated)](reference/snippets.generated.md)
 - [husky-rs (Git Hooks)](reference/husky-rs.md)
 - [cbindgen (C Headers)](reference/cbindgen.md)

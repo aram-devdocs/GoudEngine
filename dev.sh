@@ -71,10 +71,10 @@ while [[ "$#" -gt 0 ]]; do
         echo "  --next           Run version increment and rebuild"
         echo "  -h, --help       Show this help message"
         echo ""
-        echo "C# Games:       flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs"
+        echo "C# Games:       flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab"
         echo "Python Demos:   python_demo, flappy_bird (use --sdk python)"
         echo "Rust SDK:       rust_demo (use --sdk rust)"
-        echo "TypeScript:     flappy_bird (desktop), flappy_bird_web (web) (use --sdk typescript)"
+        echo "TypeScript:     flappy_bird (desktop), flappy_bird_web (web), feature_lab (desktop), feature_lab_web (web) (use --sdk typescript)"
         echo ""
         echo "Examples:"
         echo "  ./dev.sh --game flappy_goud            # Run C# Flappy Goud"
@@ -83,6 +83,8 @@ while [[ "$#" -gt 0 ]]; do
         echo "  ./dev.sh --sdk rust                    # Run Rust SDK tests"
         echo "  ./dev.sh --sdk typescript --game flappy_bird      # TS desktop"
         echo "  ./dev.sh --sdk typescript --game flappy_bird_web  # TS web (browser)"
+        echo "  ./dev.sh --sdk typescript --game feature_lab      # TS Feature Lab desktop"
+        echo "  ./dev.sh --sdk typescript --game feature_lab_web  # TS Feature Lab web"
         exit 0
         ;;
     *)
@@ -108,12 +110,12 @@ esac
 case $SDK_TYPE in
 "csharp")
     case $GAME in
-    "flappy_goud" | "3d_cube" | "goud_jumper" | "isometric_rpg" | "hello_ecs")
+    "flappy_goud" | "3d_cube" | "goud_jumper" | "isometric_rpg" | "hello_ecs" | "feature_lab")
         echo "Building and running C# game: $GAME..."
         ;;
     *)
         echo "Error: Invalid C# game selection."
-        echo "Choose from: flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs"
+        echo "Choose from: flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab"
         exit 1
         ;;
     esac
@@ -135,12 +137,12 @@ case $SDK_TYPE in
     ;;
 "typescript")
     case $GAME in
-    "flappy_bird" | "flappy_bird_web")
+    "flappy_bird" | "flappy_bird_web" | "feature_lab" | "feature_lab_web")
         echo "Building and running TypeScript example: $GAME..."
         ;;
     *)
         echo "Error: Invalid TypeScript example selection."
-        echo "Choose from: flappy_bird (desktop), flappy_bird_web (web)"
+        echo "Choose from: flappy_bird (desktop), flappy_bird_web (web), feature_lab (desktop), feature_lab_web (web)"
         exit 1
         ;;
     esac
@@ -174,7 +176,7 @@ if [ "$SKIP_BUILD" = false ]; then
         python3 "$SCRIPT_DIR/codegen/gen_ts_node.py"
         python3 "$SCRIPT_DIR/codegen/gen_ts_web.py"
 
-        if [ "$GAME" = "flappy_bird_web" ]; then
+        if [ "$GAME" = "flappy_bird_web" ] || [ "$GAME" = "feature_lab_web" ]; then
             echo "Building TypeScript web SDK (wasm)..."
             cd "$SCRIPT_DIR/sdks/typescript" && npm run build:web
             cd "$SCRIPT_DIR"
@@ -184,8 +186,15 @@ if [ "$SKIP_BUILD" = false ]; then
             cd "$SCRIPT_DIR"
         fi
 
+        TS_EXAMPLE_DIR="flappy_bird"
+        case $GAME in
+        "feature_lab" | "feature_lab_web")
+            TS_EXAMPLE_DIR="feature_lab"
+            ;;
+        esac
+
         echo "Installing example dependencies..."
-        cd "$SCRIPT_DIR/examples/typescript/flappy_bird" && npm install
+        cd "$SCRIPT_DIR/examples/typescript/$TS_EXAMPLE_DIR" && npm install
         cd "$SCRIPT_DIR"
     else
         # For Python and Rust, just build the native library
@@ -287,6 +296,32 @@ case $SDK_TYPE in
         fi
         echo "Starting web server on http://localhost:$WEB_PORT"
         echo "Open: http://localhost:$WEB_PORT/examples/typescript/flappy_bird/web/index.html"
+        echo "Press Ctrl+C to stop."
+        echo ""
+        cd "$SCRIPT_DIR"
+        python3 -m http.server "$WEB_PORT" --bind 127.0.0.1
+        ;;
+    "feature_lab")
+        echo "Running TypeScript Feature Lab (desktop)..."
+        cd "$SCRIPT_DIR/examples/typescript/feature_lab"
+        npx tsx desktop.ts
+        ;;
+    "feature_lab_web")
+        echo "Compiling Feature Lab for web..."
+        cd "$SCRIPT_DIR/examples/typescript/feature_lab"
+        npx tsc
+
+        WEB_PORT="$(pick_web_port)" || {
+            echo "Error: No available localhost port found for web server (8765-8799)."
+            exit 1
+        }
+
+        echo ""
+        if [ "$WEB_PORT" != "${TS_WEB_PORT:-8765}" ]; then
+            echo "Port ${TS_WEB_PORT:-8765} is in use; using $WEB_PORT instead."
+        fi
+        echo "Starting web server on http://localhost:$WEB_PORT"
+        echo "Open: http://localhost:$WEB_PORT/examples/typescript/feature_lab/web/index.html"
         echo "Press Ctrl+C to stop."
         echo ""
         cd "$SCRIPT_DIR"

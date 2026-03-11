@@ -18,10 +18,15 @@ use super::format::ConfigFormat;
 /// # Example
 ///
 /// ```
-/// use goud_engine::assets::loaders::config::{ConfigAsset, ConfigFormat};
+/// use goud_engine::assets::{AssetLoader, AssetPath, LoadContext};
+/// use goud_engine::assets::loaders::config::{ConfigFormat, ConfigLoader};
 ///
-/// let value = serde_json::json!({"name": "player", "speed": 5.0});
-/// let asset = ConfigAsset::new(value, ConfigFormat::Json);
+/// let loader = ConfigLoader::new();
+/// let path = AssetPath::from_string("config/game.json".to_string());
+/// let mut context = LoadContext::new(path);
+/// let asset = loader
+///     .load(br#"{"name":"player","speed":5.0}"#, &(), &mut context)
+///     .unwrap();
 ///
 /// assert_eq!(asset.format(), ConfigFormat::Json);
 /// assert_eq!(asset.get("name").unwrap(), "player");
@@ -68,7 +73,8 @@ impl ConfigAsset {
     ///
     /// ```
     /// use serde::Deserialize;
-    /// use goud_engine::assets::loaders::config::{ConfigAsset, ConfigFormat};
+    /// use goud_engine::assets::{AssetLoader, AssetPath, LoadContext};
+    /// use goud_engine::assets::loaders::config::ConfigLoader;
     ///
     /// #[derive(Deserialize, Debug, PartialEq)]
     /// struct GameConfig {
@@ -76,8 +82,12 @@ impl ConfigAsset {
     ///     width: u32,
     /// }
     ///
-    /// let value = serde_json::json!({"title": "My Game", "width": 800});
-    /// let asset = ConfigAsset::new(value, ConfigFormat::Json);
+    /// let loader = ConfigLoader::new();
+    /// let path = AssetPath::from_string("config/game.json".to_string());
+    /// let mut context = LoadContext::new(path);
+    /// let asset = loader
+    ///     .load(br#"{"title":"My Game","width":800}"#, &(), &mut context)
+    ///     .unwrap();
     ///
     /// let config: GameConfig = asset.deserialize().unwrap();
     /// assert_eq!(config.title, "My Game");

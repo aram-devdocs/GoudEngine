@@ -78,32 +78,32 @@ describe('Generated network SDK surface', () => {
     assert.ok(nativeSrc.includes('pub fn clear_network_overlay_handle(&self) -> i32 {'));
   });
 
-  it("keeps WASM stubs unsupported with the exact error string", () => {
+  it('generates a wasm-backed web networking backend for the web target', () => {
     const webSrc = fs.readFileSync(webGeneratedPath, 'utf8');
 
-    const expectedStubs = [
-      "networkHost(_protocol: number, _port: number): number { throw new Error('Not supported in WASM mode'); }",
-      "networkConnect(_protocol: number, _address: string, _port: number): number { throw new Error('Not supported in WASM mode'); }",
-      "networkConnectWithPeer(_protocol: number, _address: string, _port: number): INetworkConnectResult { throw new Error('Not supported in WASM mode'); }",
-      "networkDisconnect(_handle: number): number { throw new Error('Not supported in WASM mode'); }",
-      "networkSend(_handle: number, _peerId: number, _data: Uint8Array, _channel: number): number { throw new Error('Not supported in WASM mode'); }",
-      "networkReceive(_handle: number): Uint8Array { throw new Error('Not supported in WASM mode'); }",
-      "networkReceivePacket(_handle: number): INetworkPacket | null { throw new Error('Not supported in WASM mode'); }",
-      "networkPoll(_handle: number): number { throw new Error('Not supported in WASM mode'); }",
-      "getNetworkStats(_handle: number): INetworkStats { throw new Error('Not supported in WASM mode'); }",
-      "networkPeerCount(_handle: number): number { throw new Error('Not supported in WASM mode'); }",
-      "setNetworkSimulation(_handle: number, _config: INetworkSimulationConfig): number { throw new Error('Not supported in WASM mode'); }",
-      "clearNetworkSimulation(_handle: number): number { throw new Error('Not supported in WASM mode'); }",
-      "setNetworkOverlayHandle(_handle: number): number { throw new Error('Not supported in WASM mode'); }",
-      "clearNetworkOverlayHandle(): number { throw new Error('Not supported in WASM mode'); }",
+    const expectedWebBackendLines = [
+      "networkHost(protocol: number, port: number): number {",
+      "return this.handle.network_host(protocol, port);",
+      "return this.handle.network_connect(protocol, address, port);",
+      "const result = this.handle.network_connect_with_peer(protocol, address, port);",
+      "return this.handle.network_send(handle, BigInt(peerId), data, channel);",
+      "networkReceivePacket(handle: number): INetworkPacket | null {",
+      "const packet = this.handle.network_receive_packet(handle);",
+      "getNetworkStats(handle: number): INetworkStats {",
+      "const stats = this.handle.get_network_stats(handle);",
+      "setNetworkSimulation(handle: number, config: INetworkSimulationConfig): number {",
+      "return this.handle.set_network_simulation(handle, config.oneWayLatencyMs, config.jitterMs, config.packetLossPercent);",
+      "const caps = this.handle.get_network_capabilities();",
     ];
 
-    for (const stub of expectedStubs) {
-      assert.ok(webSrc.includes(stub), `missing generated WASM stub: ${stub}`);
+    for (const line of expectedWebBackendLines) {
+      assert.ok(webSrc.includes(line), `missing generated WASM networking backend line: ${line}`);
     }
+
+    assert.ok(!webSrc.includes("new WebSocket("), 'web backend must not implement transport in TypeScript');
   });
 
-  it('exports handwritten wrapper entrypoints for default, node, and web builds', () => {
+  it('exports generated wrapper entrypoints for default, node, and web builds', () => {
     const mainSrc = fs.readFileSync(mainEntryPath, 'utf8');
     const nodeSrc = fs.readFileSync(nodeEntryPath, 'utf8');
     const webSrc = fs.readFileSync(webEntryPath, 'utf8');
@@ -175,7 +175,7 @@ describe('Generated network SDK surface', () => {
     assert.equal(typeof nodeSdk.GoudContext, 'function');
   });
 
-  it('throws clearly when the handwritten host wrapper receives a negative handle', () => {
+  it('throws clearly when the generated host wrapper receives a negative handle', () => {
     const sharedSrc = fs.readFileSync(sharedWrapperPath, 'utf8');
     const mainSdk = require(path.join(repoRoot, 'dist', 'index.js'));
 

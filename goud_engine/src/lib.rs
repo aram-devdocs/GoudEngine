@@ -1,6 +1,7 @@
 #![warn(missing_docs)]
 #![warn(rustdoc::all)]
 #![allow(rustdoc::private_intra_doc_links)]
+#![allow(rustdoc::private_doc_tests)]
 // Allow common lint warnings in test code
 #![cfg_attr(test, allow(dead_code))]
 #![cfg_attr(test, allow(unused_variables))]

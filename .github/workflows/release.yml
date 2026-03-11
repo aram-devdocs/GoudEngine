@@ -14,7 +14,6 @@ permissions:
   contents: write
   pull-requests: write
   id-token: write
-  checks: write
 
 concurrency:
   group: release-pipeline
@@ -52,35 +51,6 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag_name=v${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Using fallback version: ${VERSION}"
-
-      # GitHub suppresses pull_request events for GITHUB_TOKEN-created PRs,
-      # so CI never runs on release-please PRs. We satisfy the required
-      # "CI Success" check by creating a check run directly, then enable
-      # auto-merge. Runs on every push to main (handles both PR creation
-      # and subsequent PR updates from new merges).
-      - name: Auto-merge release PR
-        if: steps.release.outputs.release_created != 'true'
-        run: |
-          PR_NUMBER=$(gh pr list --label "autorelease: pending" --json number -q '.[0].number' --repo ${{ github.repository }} 2>/dev/null || true)
-          if [ -z "$PR_NUMBER" ]; then
-            echo "No open release PR found, skipping"
-            exit 0
-          fi
-
-          SHA=$(gh pr view "${PR_NUMBER}" --json headRefOid -q .headRefOid --repo ${{ github.repository }})
-          echo "Creating CI Success check on release PR #${PR_NUMBER} (SHA: ${SHA})"
-          gh api "repos/${{ github.repository }}/check-runs" \
-            -f "name=CI Success" \
-            -f "head_sha=${SHA}" \
-            -f "status=completed" \
-            -f "conclusion=success" \
-            -f "output[title]=Release PR" \
-            -f "output[summary]=CI bypassed for release-please version bump"
-
-          echo "Enabling auto-merge on release PR #${PR_NUMBER}"
-          gh pr merge "${PR_NUMBER}" --auto --squash --repo ${{ github.repository }} || true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ── Step 2a: Build native libraries for all platforms ──
   build-native-libs:
@@ -289,7 +259,7 @@ jobs:
           python3 gen_ts_web.py
 
       - name: Check for drift
-        run: git diff --exit-code -- sdks/
+        run: bash scripts/check-generated-artifacts.sh
 
       - name: Run validators
         run: |

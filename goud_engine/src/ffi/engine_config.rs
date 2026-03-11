@@ -248,7 +248,9 @@ pub unsafe extern "C" fn goud_engine_config_set_physics_backend_2d(
 
 /// Consumes an `EngineConfig` handle and creates a windowed engine context.
 ///
-/// This follows the same pattern as [`goud_window_create`] but uses the
+/// This follows the same pattern as
+/// [`goud_window_create`](crate::ffi::window::goud_window_create)
+/// but uses the
 /// configuration from the builder instead of explicit parameters.
 ///
 /// # Ownership

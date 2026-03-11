@@ -8743,6 +8743,2766 @@
       ]
     }
   },
+  "ffi_tools": {
+    "GoudGame": {
+      "handle": "GoudContextId",
+      "constructor": {
+        "ffi": "goud_window_create",
+        "params": [
+          {
+            "sdk": "width",
+            "ffi_name": "width",
+            "ffi_type": "u32"
+          },
+          {
+            "sdk": "height",
+            "ffi_name": "height",
+            "ffi_type": "u32"
+          },
+          {
+            "sdk": "title",
+            "ffi_name": "title",
+            "ffi_type": "*const c_char"
+          }
+        ]
+      },
+      "destructor": "goud_window_destroy",
+      "lifecycle": {
+        "beginFrame": {
+          "sequence": [
+            {
+              "ffi": "goud_window_poll_events",
+              "capture_return": "delta_time"
+            },
+            {
+              "ffi": "goud_window_clear",
+              "params_from_sdk": [
+                "r",
+                "g",
+                "b",
+                "a"
+              ]
+            },
+            {
+              "ffi": "goud_renderer_begin"
+            },
+            {
+              "ffi": "goud_renderer_enable_blending"
+            }
+          ]
+        },
+        "endFrame": {
+          "sequence": [
+            {
+              "ffi": "goud_renderer_end"
+            },
+            {
+              "ffi": "goud_window_swap_buffers"
+            }
+          ]
+        }
+      },
+      "methods": {
+        "shouldClose": {
+          "ffi": "goud_window_should_close"
+        },
+        "close": {
+          "ffi": "goud_window_set_should_close",
+          "append_args": [
+            true
+          ]
+        },
+        "destroy": {
+          "ffi": "goud_window_destroy"
+        },
+        "loadTexture": {
+          "ffi": "goud_texture_load",
+          "string_params": [
+            "path"
+          ],
+          "return_cast": "u64"
+        },
+        "destroyTexture": {
+          "ffi": "goud_texture_destroy"
+        },
+        "loadFont": {
+          "ffi": "goud_font_load",
+          "string_params": [
+            "path"
+          ],
+          "return_cast": "u64"
+        },
+        "destroyFont": {
+          "ffi": "goud_font_destroy"
+        },
+        "drawText": {
+          "ffi": "goud_renderer_draw_text",
+          "param_order": [
+            "fontHandle",
+            "text",
+            "x",
+            "y",
+            "fontSize",
+            "alignment",
+            "maxWidth",
+            "lineSpacing",
+            "direction"
+          ],
+          "string_params": [
+            "text"
+          ],
+          "expand_params": {
+            "color": {
+              "fields": [
+                "r",
+                "g",
+                "b",
+                "a"
+              ],
+              "defaults": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "drawSprite": {
+          "ffi": "goud_renderer_draw_sprite",
+          "param_order": [
+            "texture",
+            "x",
+            "y",
+            "width",
+            "height",
+            "rotation"
+          ],
+          "expand_params": {
+            "color": {
+              "fields": [
+                "r",
+                "g",
+                "b",
+                "a"
+              ],
+              "defaults": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "drawQuad": {
+          "ffi": "goud_renderer_draw_quad",
+          "param_order": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "expand_params": {
+            "color": {
+              "fields": [
+                "r",
+                "g",
+                "b",
+                "a"
+              ],
+              "defaults": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "isKeyPressed": {
+          "ffi": "goud_input_key_pressed",
+          "enum_params": {
+            "key": "i32"
+          }
+        },
+        "isKeyJustPressed": {
+          "ffi": "goud_input_key_just_pressed",
+          "enum_params": {
+            "key": "i32"
+          }
+        },
+        "isKeyJustReleased": {
+          "ffi": "goud_input_key_just_released",
+          "enum_params": {
+            "key": "i32"
+          }
+        },
+        "isMouseButtonPressed": {
+          "ffi": "goud_input_mouse_button_pressed",
+          "enum_params": {
+            "button": "i32"
+          }
+        },
+        "isMouseButtonJustPressed": {
+          "ffi": "goud_input_mouse_button_just_pressed",
+          "enum_params": {
+            "button": "i32"
+          }
+        },
+        "isMouseButtonJustReleased": {
+          "ffi": "goud_input_mouse_button_just_released",
+          "enum_params": {
+            "button": "i32"
+          }
+        },
+        "getMousePosition": {
+          "ffi": "goud_input_get_mouse_position",
+          "out_params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec2"
+        },
+        "getMouseDelta": {
+          "ffi": "goud_input_get_mouse_delta",
+          "out_params": [
+            {
+              "name": "dx",
+              "type": "f32"
+            },
+            {
+              "name": "dy",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec2"
+        },
+        "getScrollDelta": {
+          "ffi": "goud_input_get_scroll_delta",
+          "out_params": [
+            {
+              "name": "dx",
+              "type": "f32"
+            },
+            {
+              "name": "dy",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec2"
+        },
+        "spawnEmpty": {
+          "ffi": "goud_entity_spawn_empty",
+          "returns_entity": true
+        },
+        "despawn": {
+          "ffi": "goud_entity_despawn",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "cloneEntity": {
+          "ffi": "goud_entity_clone",
+          "entity_params": [
+            "entity"
+          ],
+          "returns_entity": true
+        },
+        "cloneEntityRecursive": {
+          "ffi": "goud_entity_clone_recursive",
+          "entity_params": [
+            "entity"
+          ],
+          "returns_entity": true
+        },
+        "entityCount": {
+          "ffi": "goud_entity_count"
+        },
+        "isAlive": {
+          "ffi": "goud_entity_is_alive",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "isAliveBatch": {
+          "ffi": "goud_entity_is_alive_batch",
+          "batch_in": true,
+          "batch_out_results": true
+        },
+        "addTransform2d": {
+          "ffi_strategy": "component_add",
+          "component_type": "Transform2D",
+          "entity_params": [
+            "entity"
+          ],
+          "struct_params": [
+            "transform"
+          ]
+        },
+        "getTransform2d": {
+          "ffi_strategy": "component_get",
+          "component_type": "Transform2D",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "setTransform2d": {
+          "ffi_strategy": "component_set",
+          "component_type": "Transform2D",
+          "entity_params": [
+            "entity"
+          ],
+          "struct_params": [
+            "transform"
+          ]
+        },
+        "hasTransform2d": {
+          "ffi_strategy": "component_has",
+          "component_type": "Transform2D",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "removeTransform2d": {
+          "ffi_strategy": "component_remove",
+          "component_type": "Transform2D",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "addName": {
+          "ffi_strategy": "name_add",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "getName": {
+          "ffi_strategy": "name_get",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "hasName": {
+          "ffi_strategy": "name_has",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "removeName": {
+          "ffi_strategy": "name_remove",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "addSprite": {
+          "ffi_strategy": "component_add",
+          "component_type": "Sprite",
+          "entity_params": [
+            "entity"
+          ],
+          "struct_params": [
+            "sprite"
+          ]
+        },
+        "getSprite": {
+          "ffi_strategy": "component_get",
+          "component_type": "Sprite",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "setSprite": {
+          "ffi_strategy": "component_set",
+          "component_type": "Sprite",
+          "entity_params": [
+            "entity"
+          ],
+          "struct_params": [
+            "sprite"
+          ]
+        },
+        "hasSprite": {
+          "ffi_strategy": "component_has",
+          "component_type": "Sprite",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "removeSprite": {
+          "ffi_strategy": "component_remove",
+          "component_type": "Sprite",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "spawnBatch": {
+          "ffi": "goud_entity_spawn_batch",
+          "batch_out": true
+        },
+        "despawnBatch": {
+          "ffi": "goud_entity_despawn_batch",
+          "batch_in": true
+        },
+        "play": {
+          "ffi": "goud_animation_play",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "stop": {
+          "ffi": "goud_animation_stop",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "setState": {
+          "ffi": "goud_animation_set_state",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "stateName"
+          ]
+        },
+        "setParameterBool": {
+          "ffi": "goud_animation_set_parameter_bool",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "name"
+          ]
+        },
+        "setParameterFloat": {
+          "ffi": "goud_animation_set_parameter_float",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "name"
+          ]
+        },
+        "createCube": {
+          "ffi": "goud_renderer3d_create_cube"
+        },
+        "createPlane": {
+          "ffi": "goud_renderer3d_create_plane"
+        },
+        "createSphere": {
+          "ffi": "goud_renderer3d_create_sphere"
+        },
+        "createCylinder": {
+          "ffi": "goud_renderer3d_create_cylinder"
+        },
+        "setObjectPosition": {
+          "ffi": "goud_renderer3d_set_object_position"
+        },
+        "setObjectRotation": {
+          "ffi": "goud_renderer3d_set_object_rotation"
+        },
+        "setObjectScale": {
+          "ffi": "goud_renderer3d_set_object_scale"
+        },
+        "destroyObject": {
+          "ffi": "goud_renderer3d_destroy_object"
+        },
+        "addLight": {
+          "ffi": "goud_renderer3d_add_light"
+        },
+        "updateLight": {
+          "ffi": "goud_renderer3d_update_light"
+        },
+        "removeLight": {
+          "ffi": "goud_renderer3d_remove_light"
+        },
+        "setCameraPosition3D": {
+          "ffi": "goud_renderer3d_set_camera_position"
+        },
+        "setCameraRotation3D": {
+          "ffi": "goud_renderer3d_set_camera_rotation"
+        },
+        "configureGrid": {
+          "ffi": "goud_renderer3d_configure_grid"
+        },
+        "setGridEnabled": {
+          "ffi": "goud_renderer3d_set_grid_enabled"
+        },
+        "configureSkybox": {
+          "ffi": "goud_renderer3d_configure_skybox"
+        },
+        "configureFog": {
+          "ffi": "goud_renderer3d_configure_fog"
+        },
+        "setFogEnabled": {
+          "ffi": "goud_renderer3d_set_fog_enabled"
+        },
+        "render3D": {
+          "ffi": "goud_renderer3d_render"
+        },
+        "drawSpriteRect": {
+          "ffi": "goud_renderer_draw_sprite_rect",
+          "param_order": [
+            "texture",
+            "x",
+            "y",
+            "width",
+            "height",
+            "rotation",
+            "srcX",
+            "srcY",
+            "srcW",
+            "srcH"
+          ],
+          "expand_params": {
+            "color": {
+              "fields": [
+                "r",
+                "g",
+                "b",
+                "a"
+              ],
+              "defaults": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "setViewport": {
+          "ffi": "goud_renderer_set_viewport"
+        },
+        "enableDepthTest": {
+          "ffi": "goud_renderer_enable_depth_test"
+        },
+        "disableDepthTest": {
+          "ffi": "goud_renderer_disable_depth_test"
+        },
+        "clearDepth": {
+          "ffi": "goud_renderer_clear_depth"
+        },
+        "disableBlending": {
+          "ffi": "goud_renderer_disable_blending"
+        },
+        "getRenderStats": {
+          "ffi": "goud_renderer_get_stats",
+          "out_params": [
+            {
+              "name": "stats",
+              "type": "GoudRenderStats"
+            }
+          ],
+          "returns_struct": "RenderStats"
+        },
+        "getFpsStats": {
+          "ffi": "goud_debug_get_fps_stats",
+          "out_params": [
+            {
+              "name": "stats",
+              "type": "FpsStats"
+            }
+          ],
+          "returns_struct": "FpsStats"
+        },
+        "setFpsOverlayEnabled": {
+          "ffi": "goud_debug_set_fps_overlay_enabled"
+        },
+        "setFpsUpdateInterval": {
+          "ffi": "goud_debug_set_fps_update_interval"
+        },
+        "setFpsOverlayCorner": {
+          "ffi": "goud_debug_set_fps_overlay_corner",
+          "enum_params": {
+            "corner": "i32"
+          }
+        },
+        "mapActionKey": {
+          "ffi": "goud_input_map_action_key",
+          "string_params": [
+            "action"
+          ],
+          "enum_params": {
+            "key": "i32"
+          }
+        },
+        "isActionPressed": {
+          "ffi": "goud_input_action_pressed",
+          "string_params": [
+            "action"
+          ]
+        },
+        "isActionJustPressed": {
+          "ffi": "goud_input_action_just_pressed",
+          "string_params": [
+            "action"
+          ]
+        },
+        "isActionJustReleased": {
+          "ffi": "goud_input_action_just_released",
+          "string_params": [
+            "action"
+          ]
+        },
+        "physicsRaycastEx": {
+          "ffi": "goud_physics_raycast_ex",
+          "out_params": [
+            {
+              "name": "body_handle",
+              "type": "u64"
+            },
+            {
+              "name": "collider_handle",
+              "type": "u64"
+            },
+            {
+              "name": "point_x",
+              "type": "f32"
+            },
+            {
+              "name": "point_y",
+              "type": "f32"
+            },
+            {
+              "name": "normal_x",
+              "type": "f32"
+            },
+            {
+              "name": "normal_y",
+              "type": "f32"
+            },
+            {
+              "name": "distance",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "PhysicsRaycastHit2D",
+          "status_nullable_struct": true
+        },
+        "physicsCollisionEventsCount": {
+          "ffi": "goud_physics_collision_events_count"
+        },
+        "physicsCollisionEventsRead": {
+          "ffi": "goud_physics_collision_events_read",
+          "out_params": [
+            {
+              "name": "body_a",
+              "type": "u64"
+            },
+            {
+              "name": "body_b",
+              "type": "u64"
+            },
+            {
+              "name": "kind",
+              "type": "u32"
+            }
+          ],
+          "returns_struct": "PhysicsCollisionEvent2D",
+          "status_nullable_struct": true
+        },
+        "physicsSetCollisionCallback": {
+          "ffi": "goud_physics_set_collision_callback"
+        },
+        "collisionAabbAabb": {
+          "ffi": "goud_collision_aabb_aabb",
+          "no_context": true,
+          "out_params": [
+            {
+              "name": "contact",
+              "type": "GoudContact"
+            }
+          ],
+          "returns_nullable_struct": "Contact"
+        },
+        "collisionCircleCircle": {
+          "ffi": "goud_collision_circle_circle",
+          "no_context": true,
+          "out_params": [
+            {
+              "name": "contact",
+              "type": "GoudContact"
+            }
+          ],
+          "returns_nullable_struct": "Contact"
+        },
+        "collisionCircleAabb": {
+          "ffi": "goud_collision_circle_aabb",
+          "no_context": true,
+          "out_params": [
+            {
+              "name": "contact",
+              "type": "GoudContact"
+            }
+          ],
+          "returns_nullable_struct": "Contact"
+        },
+        "pointInRect": {
+          "ffi": "goud_collision_point_in_rect",
+          "no_context": true
+        },
+        "pointInCircle": {
+          "ffi": "goud_collision_point_in_circle",
+          "no_context": true
+        },
+        "aabbOverlap": {
+          "ffi": "goud_collision_aabb_overlap",
+          "no_context": true
+        },
+        "circleOverlap": {
+          "ffi": "goud_collision_circle_overlap",
+          "no_context": true
+        },
+        "distance": {
+          "ffi": "goud_collision_distance",
+          "no_context": true
+        },
+        "distanceSquared": {
+          "ffi": "goud_collision_distance_squared",
+          "no_context": true
+        },
+        "componentRegisterType": {
+          "ffi": "goud_component_register_type",
+          "no_context": true
+        },
+        "componentAdd": {
+          "ffi": "goud_component_add",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "componentRemove": {
+          "ffi": "goud_component_remove",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "componentHas": {
+          "ffi": "goud_component_has",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "componentGet": {
+          "ffi": "goud_component_get",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "componentGetMut": {
+          "ffi": "goud_component_get_mut",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "componentAddBatch": {
+          "ffi": "goud_component_add_batch",
+          "batch_in": true
+        },
+        "componentRemoveBatch": {
+          "ffi": "goud_component_remove_batch",
+          "batch_in": true
+        },
+        "componentHasBatch": {
+          "ffi": "goud_component_has_batch",
+          "batch_in": true,
+          "batch_out_results": true
+        },
+        "getRenderCapabilities": {
+          "ffi": "goud_provider_render_capabilities",
+          "out_params": [
+            {
+              "name": "out",
+              "type": "RenderCapabilities"
+            }
+          ],
+          "returns_struct": "RenderCapabilities"
+        },
+        "getPhysicsCapabilities": {
+          "ffi": "goud_provider_physics_capabilities",
+          "out_params": [
+            {
+              "name": "out",
+              "type": "PhysicsCapabilities"
+            }
+          ],
+          "returns_struct": "PhysicsCapabilities"
+        },
+        "getAudioCapabilities": {
+          "ffi": "goud_provider_audio_capabilities",
+          "out_params": [
+            {
+              "name": "out",
+              "type": "AudioCapabilities"
+            }
+          ],
+          "returns_struct": "AudioCapabilities"
+        },
+        "getInputCapabilities": {
+          "ffi": "goud_provider_input_capabilities",
+          "out_params": [
+            {
+              "name": "out",
+              "type": "InputCapabilities"
+            }
+          ],
+          "returns_struct": "InputCapabilities"
+        },
+        "getNetworkCapabilities": {
+          "ffi": "goud_provider_network_capabilities",
+          "out_params": [
+            {
+              "name": "out",
+              "type": "NetworkCapabilities"
+            }
+          ],
+          "returns_struct": "NetworkCapabilities"
+        },
+        "networkHost": {
+          "ffi": "goud_network_host"
+        },
+        "networkConnect": {
+          "ffi": "goud_network_connect",
+          "string_params": [
+            "address"
+          ]
+        },
+        "networkConnectWithPeer": {
+          "ffi": "goud_network_connect_with_peer",
+          "string_params": [
+            "address"
+          ],
+          "out_params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "peerId",
+              "type": "u64"
+            }
+          ],
+          "status_struct": true,
+          "returns_struct": "NetworkConnectResult"
+        },
+        "networkDisconnect": {
+          "ffi": "goud_network_disconnect"
+        },
+        "networkSend": {
+          "ffi": "goud_network_send"
+        },
+        "networkReceive": {
+          "ffi": "goud_network_receive",
+          "out_buffer": true
+        },
+        "networkReceivePacket": {
+          "ffi": "goud_network_receive",
+          "out_buffer": true,
+          "status_nullable_struct": true,
+          "returns_struct": "NetworkPacket"
+        },
+        "networkPoll": {
+          "ffi": "goud_network_poll"
+        },
+        "getNetworkStats": {
+          "ffi": "goud_network_get_stats_v2",
+          "out_params": [
+            {
+              "name": "stats",
+              "type": "NetworkStats"
+            }
+          ],
+          "status_struct": true,
+          "returns_struct": "NetworkStats"
+        },
+        "networkPeerCount": {
+          "ffi": "goud_network_peer_count"
+        },
+        "setNetworkSimulation": {
+          "ffi": "goud_network_set_simulation"
+        },
+        "clearNetworkSimulation": {
+          "ffi": "goud_network_clear_simulation"
+        },
+        "setNetworkOverlayHandle": {
+          "ffi": "goud_network_set_overlay_handle"
+        },
+        "clearNetworkOverlayHandle": {
+          "ffi": "goud_network_clear_overlay_handle"
+        },
+        "audioPlay": {
+          "ffi": "goud_audio_play"
+        },
+        "audioPlayOnChannel": {
+          "ffi": "goud_audio_play_on_channel"
+        },
+        "audioPlayWithSettings": {
+          "ffi": "goud_audio_play_with_settings"
+        },
+        "audioStop": {
+          "ffi": "goud_audio_stop"
+        },
+        "audioPause": {
+          "ffi": "goud_audio_pause"
+        },
+        "audioResume": {
+          "ffi": "goud_audio_resume"
+        },
+        "audioStopAll": {
+          "ffi": "goud_audio_stop_all"
+        },
+        "audioSetGlobalVolume": {
+          "ffi": "goud_audio_set_global_volume"
+        },
+        "audioGetGlobalVolume": {
+          "ffi": "goud_audio_get_global_volume"
+        },
+        "audioSetChannelVolume": {
+          "ffi": "goud_audio_set_channel_volume"
+        },
+        "audioGetChannelVolume": {
+          "ffi": "goud_audio_get_channel_volume"
+        },
+        "audioIsPlaying": {
+          "ffi": "goud_audio_is_playing"
+        },
+        "audioActiveCount": {
+          "ffi": "goud_audio_active_count"
+        },
+        "audioCleanupFinished": {
+          "ffi": "goud_audio_cleanup_finished"
+        },
+        "audioPlaySpatial3d": {
+          "ffi": "goud_audio_play_spatial_3d"
+        },
+        "audioUpdateSpatial3d": {
+          "ffi": "goud_audio_update_spatial_volume_3d"
+        },
+        "audioSetListenerPosition3d": {
+          "ffi": "goud_audio_set_listener_position_3d"
+        },
+        "audioSetSourcePosition3d": {
+          "ffi": "goud_audio_set_source_position_3d"
+        },
+        "audioSetPlayerVolume": {
+          "ffi": "goud_audio_set_player_volume"
+        },
+        "audioSetPlayerSpeed": {
+          "ffi": "goud_audio_set_player_speed"
+        },
+        "audioCrossfade": {
+          "ffi": "goud_audio_crossfade"
+        },
+        "audioCrossfadeTo": {
+          "ffi": "goud_audio_crossfade_to"
+        },
+        "audioMixWith": {
+          "ffi": "goud_audio_mix_with"
+        },
+        "audioUpdateCrossfades": {
+          "ffi": "goud_audio_update_crossfades"
+        },
+        "audioActiveCrossfadeCount": {
+          "ffi": "goud_audio_active_crossfade_count"
+        },
+        "audioActivate": {
+          "ffi": "goud_audio_activate"
+        },
+        "checkHotSwapShortcut": {
+          "ffi": "goud_provider_check_hot_swap_shortcut",
+          "returns_bool_from_i32": true
+        }
+      },
+      "properties": {
+        "deltaTime": {
+          "source": "cached",
+          "doc": "Set from goud_window_poll_events return value during beginFrame"
+        },
+        "fps": {
+          "source": "computed",
+          "expression": "1.0 / deltaTime"
+        },
+        "windowWidth": {
+          "ffi": "goud_window_get_size",
+          "out_index": 0,
+          "out_type": "u32"
+        },
+        "windowHeight": {
+          "ffi": "goud_window_get_size",
+          "out_index": 1,
+          "out_type": "u32"
+        },
+        "title": {
+          "source": "cached",
+          "field": "_title",
+          "doc": "Stored from constructor arg"
+        },
+        "totalTime": {
+          "source": "cached",
+          "field": "_total_time",
+          "doc": "Accumulated in update_frame"
+        },
+        "frameCount": {
+          "source": "cached",
+          "field": "_frame_count",
+          "doc": "Incremented in update_frame"
+        }
+      }
+    },
+    "EngineConfig": {
+      "handle": "EngineConfigHandle",
+      "handle_type": "opaque",
+      "constructor": {
+        "ffi": "goud_engine_config_create",
+        "params": []
+      },
+      "destructor": "goud_engine_config_destroy",
+      "methods": {
+        "setTitle": {
+          "ffi": "goud_engine_config_set_title",
+          "string_params": [
+            "title"
+          ]
+        },
+        "setSize": {
+          "ffi": "goud_engine_config_set_size"
+        },
+        "setVsync": {
+          "ffi": "goud_engine_config_set_vsync"
+        },
+        "setFullscreen": {
+          "ffi": "goud_engine_config_set_fullscreen"
+        },
+        "setTargetFps": {
+          "ffi": "goud_engine_config_set_target_fps"
+        },
+        "setFpsOverlay": {
+          "ffi": "goud_engine_config_set_fps_overlay"
+        },
+        "setPhysicsDebug": {
+          "ffi": "goud_engine_config_set_physics_debug"
+        },
+        "setPhysicsBackend2D": {
+          "ffi": "goud_engine_config_set_physics_backend_2d",
+          "enum_params": {
+            "backend": "PhysicsBackend2D"
+          }
+        },
+        "build": {
+          "ffi": "goud_engine_create",
+          "returns_context": true
+        },
+        "destroy": {
+          "ffi": "goud_engine_config_destroy"
+        }
+      }
+    },
+    "GoudContext": {
+      "handle": "GoudContextId",
+      "constructor": {
+        "ffi": "goud_context_create",
+        "params": []
+      },
+      "destructor": "goud_context_destroy",
+      "methods": {
+        "destroy": {
+          "ffi": "goud_context_destroy"
+        },
+        "isValid": {
+          "ffi": "goud_context_is_valid"
+        },
+        "getNetworkCapabilities": {
+          "ffi": "goud_provider_network_capabilities",
+          "out_params": [
+            {
+              "name": "out",
+              "type": "NetworkCapabilities"
+            }
+          ],
+          "returns_struct": "NetworkCapabilities"
+        },
+        "networkHost": {
+          "ffi": "goud_network_host"
+        },
+        "networkConnect": {
+          "ffi": "goud_network_connect",
+          "string_params": [
+            "address"
+          ]
+        },
+        "networkConnectWithPeer": {
+          "ffi": "goud_network_connect_with_peer",
+          "string_params": [
+            "address"
+          ],
+          "out_params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "peerId",
+              "type": "u64"
+            }
+          ],
+          "status_struct": true,
+          "returns_struct": "NetworkConnectResult"
+        },
+        "networkDisconnect": {
+          "ffi": "goud_network_disconnect"
+        },
+        "networkSend": {
+          "ffi": "goud_network_send"
+        },
+        "networkReceive": {
+          "ffi": "goud_network_receive",
+          "out_buffer": true
+        },
+        "networkReceivePacket": {
+          "ffi": "goud_network_receive",
+          "out_buffer": true,
+          "status_nullable_struct": true,
+          "returns_struct": "NetworkPacket"
+        },
+        "networkPoll": {
+          "ffi": "goud_network_poll"
+        },
+        "getNetworkStats": {
+          "ffi": "goud_network_get_stats_v2",
+          "out_params": [
+            {
+              "name": "stats",
+              "type": "NetworkStats"
+            }
+          ],
+          "status_struct": true,
+          "returns_struct": "NetworkStats"
+        },
+        "networkPeerCount": {
+          "ffi": "goud_network_peer_count"
+        },
+        "setNetworkSimulation": {
+          "ffi": "goud_network_set_simulation"
+        },
+        "clearNetworkSimulation": {
+          "ffi": "goud_network_clear_simulation"
+        },
+        "setNetworkOverlayHandle": {
+          "ffi": "goud_network_set_overlay_handle"
+        },
+        "clearNetworkOverlayHandle": {
+          "ffi": "goud_network_clear_overlay_handle"
+        },
+        "spawnEmpty": {
+          "ffi": "goud_entity_spawn_empty",
+          "returns_entity": true
+        },
+        "spawnBatch": {
+          "ffi": "goud_entity_spawn_batch",
+          "batch_out": true
+        },
+        "despawn": {
+          "ffi": "goud_entity_despawn",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "despawnBatch": {
+          "ffi": "goud_entity_despawn_batch",
+          "batch_in": true
+        },
+        "cloneEntity": {
+          "ffi": "goud_entity_clone",
+          "entity_params": [
+            "entity"
+          ],
+          "returns_entity": true
+        },
+        "cloneEntityRecursive": {
+          "ffi": "goud_entity_clone_recursive",
+          "entity_params": [
+            "entity"
+          ],
+          "returns_entity": true
+        },
+        "isAlive": {
+          "ffi": "goud_entity_is_alive",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "isAliveBatch": {
+          "ffi": "goud_entity_is_alive_batch",
+          "batch_in": true,
+          "batch_out_results": true
+        },
+        "entityCount": {
+          "ffi": "goud_entity_count"
+        },
+        "addTransform2d": {
+          "ffi_strategy": "component_add",
+          "component_type": "Transform2D",
+          "entity_params": [
+            "entity"
+          ],
+          "struct_params": [
+            "transform"
+          ]
+        },
+        "getTransform2d": {
+          "ffi_strategy": "component_get",
+          "component_type": "Transform2D",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "setTransform2d": {
+          "ffi_strategy": "component_set",
+          "component_type": "Transform2D",
+          "entity_params": [
+            "entity"
+          ],
+          "struct_params": [
+            "transform"
+          ]
+        },
+        "hasTransform2d": {
+          "ffi_strategy": "component_has",
+          "component_type": "Transform2D",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "removeTransform2d": {
+          "ffi_strategy": "component_remove",
+          "component_type": "Transform2D",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "addSprite": {
+          "ffi_strategy": "component_add",
+          "component_type": "Sprite",
+          "entity_params": [
+            "entity"
+          ],
+          "struct_params": [
+            "sprite"
+          ]
+        },
+        "getSprite": {
+          "ffi_strategy": "component_get",
+          "component_type": "Sprite",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "setSprite": {
+          "ffi_strategy": "component_set",
+          "component_type": "Sprite",
+          "entity_params": [
+            "entity"
+          ],
+          "struct_params": [
+            "sprite"
+          ]
+        },
+        "hasSprite": {
+          "ffi_strategy": "component_has",
+          "component_type": "Sprite",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "removeSprite": {
+          "ffi_strategy": "component_remove",
+          "component_type": "Sprite",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "addName": {
+          "ffi_strategy": "name_add",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "getName": {
+          "ffi_strategy": "name_get",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "hasName": {
+          "ffi_strategy": "name_has",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "removeName": {
+          "ffi_strategy": "name_remove",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "componentRegisterType": {
+          "ffi": "goud_component_register_type",
+          "no_context": true
+        },
+        "componentAdd": {
+          "ffi": "goud_component_add",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "componentRemove": {
+          "ffi": "goud_component_remove",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "componentHas": {
+          "ffi": "goud_component_has",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "componentGet": {
+          "ffi": "goud_component_get",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "componentGetMut": {
+          "ffi": "goud_component_get_mut",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "componentAddBatch": {
+          "ffi": "goud_component_add_batch",
+          "batch_in": true
+        },
+        "componentRemoveBatch": {
+          "ffi": "goud_component_remove_batch",
+          "batch_in": true
+        },
+        "componentHasBatch": {
+          "ffi": "goud_component_has_batch",
+          "batch_in": true,
+          "batch_out_results": true
+        },
+        "sceneCreate": {
+          "ffi": "goud_scene_create",
+          "string_params": [
+            "name"
+          ]
+        },
+        "sceneDestroy": {
+          "ffi": "goud_scene_destroy"
+        },
+        "sceneGetByName": {
+          "ffi": "goud_scene_get_by_name",
+          "string_params": [
+            "name"
+          ]
+        },
+        "loadScene": {
+          "ffi": "goud_scene_load",
+          "string_params": [
+            "name",
+            "json"
+          ]
+        },
+        "unloadScene": {
+          "ffi": "goud_scene_unload",
+          "string_params": [
+            "name"
+          ]
+        },
+        "setActiveScene": {
+          "ffi": "goud_scene_set_active"
+        },
+        "sceneSetActive": {
+          "ffi": "goud_scene_set_active"
+        },
+        "sceneIsActive": {
+          "ffi": "goud_scene_is_active"
+        },
+        "sceneCount": {
+          "ffi": "goud_scene_count"
+        },
+        "sceneSetCurrent": {
+          "ffi": "goud_scene_set_current"
+        },
+        "sceneGetCurrent": {
+          "ffi": "goud_scene_get_current"
+        },
+        "sceneTransitionTo": {
+          "ffi": "goud_scene_transition_to"
+        },
+        "sceneTransitionProgress": {
+          "ffi": "goud_scene_transition_progress"
+        },
+        "sceneTransitionIsActive": {
+          "ffi": "goud_scene_transition_is_active"
+        },
+        "sceneTransitionTick": {
+          "ffi": "goud_scene_transition_tick"
+        }
+      }
+    },
+    "PhysicsWorld2D": {
+      "handle": "GoudContextId",
+      "methods": {
+        "create": {
+          "ffi": "goud_physics_create"
+        },
+        "createWithBackend": {
+          "ffi": "goud_physics_create_with_backend"
+        },
+        "destroy": {
+          "ffi": "goud_physics_destroy"
+        },
+        "setGravity": {
+          "ffi": "goud_physics_set_gravity"
+        },
+        "addRigidBody": {
+          "ffi": "goud_physics_add_rigid_body"
+        },
+        "addRigidBodyEx": {
+          "ffi": "goud_physics_add_rigid_body_ex"
+        },
+        "addCollider": {
+          "ffi": "goud_physics_add_collider"
+        },
+        "addColliderEx": {
+          "ffi": "goud_physics_add_collider_ex"
+        },
+        "removeBody": {
+          "ffi": "goud_physics_remove_body"
+        },
+        "createJoint": {
+          "ffi": "goud_physics_create_joint"
+        },
+        "removeJoint": {
+          "ffi": "goud_physics_remove_joint"
+        },
+        "step": {
+          "ffi": "goud_physics_step"
+        },
+        "getPosition": {
+          "ffi": "goud_physics_get_position",
+          "out_params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec2"
+        },
+        "getVelocity": {
+          "ffi": "goud_physics_get_velocity",
+          "out_params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec2"
+        },
+        "setVelocity": {
+          "ffi": "goud_physics_set_velocity"
+        },
+        "applyForce": {
+          "ffi": "goud_physics_apply_force"
+        },
+        "applyImpulse": {
+          "ffi": "goud_physics_apply_impulse"
+        },
+        "raycast": {
+          "ffi": "goud_physics_raycast",
+          "out_params": [
+            {
+              "name": "hit_x",
+              "type": "f32"
+            },
+            {
+              "name": "hit_y",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec2"
+        },
+        "raycastEx": {
+          "ffi": "goud_physics_raycast_ex",
+          "out_params": [
+            {
+              "name": "body_handle",
+              "type": "u64"
+            },
+            {
+              "name": "collider_handle",
+              "type": "u64"
+            },
+            {
+              "name": "point_x",
+              "type": "f32"
+            },
+            {
+              "name": "point_y",
+              "type": "f32"
+            },
+            {
+              "name": "normal_x",
+              "type": "f32"
+            },
+            {
+              "name": "normal_y",
+              "type": "f32"
+            },
+            {
+              "name": "distance",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "PhysicsRaycastHit2D"
+        },
+        "collisionEventsCount": {
+          "ffi": "goud_physics_collision_events_count"
+        },
+        "collisionEventsRead": {
+          "ffi": "goud_physics_collision_events_read",
+          "out_params": [
+            {
+              "name": "body_a",
+              "type": "u64"
+            },
+            {
+              "name": "body_b",
+              "type": "u64"
+            },
+            {
+              "name": "kind",
+              "type": "u32"
+            }
+          ],
+          "returns_struct": "PhysicsCollisionEvent2D"
+        },
+        "collisionEventCount": {
+          "ffi": "goud_physics_collision_event_count"
+        },
+        "collisionEventRead": {
+          "ffi": "goud_physics_collision_event_read",
+          "out_params": [
+            {
+              "name": "body_a",
+              "type": "u64"
+            },
+            {
+              "name": "body_b",
+              "type": "u64"
+            },
+            {
+              "name": "kind",
+              "type": "u32"
+            }
+          ],
+          "returns_struct": "PhysicsCollisionEvent2D"
+        },
+        "setCollisionCallback": {
+          "ffi": "goud_physics_set_collision_callback"
+        },
+        "getGravity": {
+          "ffi": "goud_physics_get_gravity",
+          "out_params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec2"
+        },
+        "setBodyGravityScale": {
+          "ffi": "goud_physics_set_body_gravity_scale"
+        },
+        "getBodyGravityScale": {
+          "ffi": "goud_physics_get_body_gravity_scale",
+          "out_params": [
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setColliderFriction": {
+          "ffi": "goud_physics_set_collider_friction"
+        },
+        "getColliderFriction": {
+          "ffi": "goud_physics_get_collider_friction",
+          "out_params": [
+            {
+              "name": "friction",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setColliderRestitution": {
+          "ffi": "goud_physics_set_collider_restitution"
+        },
+        "getColliderRestitution": {
+          "ffi": "goud_physics_get_collider_restitution",
+          "out_params": [
+            {
+              "name": "restitution",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setTimestep": {
+          "ffi": "goud_physics_set_timestep"
+        },
+        "getTimestep": {
+          "ffi": "goud_physics_get_timestep",
+          "out_params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        }
+      }
+    },
+    "PhysicsWorld3D": {
+      "handle": "GoudContextId",
+      "methods": {
+        "create": {
+          "ffi": "goud_physics3d_create"
+        },
+        "destroy": {
+          "ffi": "goud_physics3d_destroy"
+        },
+        "setGravity": {
+          "ffi": "goud_physics3d_set_gravity"
+        },
+        "addRigidBody": {
+          "ffi": "goud_physics3d_add_rigid_body"
+        },
+        "addRigidBodyEx": {
+          "ffi": "goud_physics3d_add_rigid_body_ex"
+        },
+        "addCollider": {
+          "ffi": "goud_physics3d_add_collider"
+        },
+        "removeBody": {
+          "ffi": "goud_physics3d_remove_body"
+        },
+        "createJoint": {
+          "ffi": "goud_physics3d_create_joint"
+        },
+        "removeJoint": {
+          "ffi": "goud_physics3d_remove_joint"
+        },
+        "step": {
+          "ffi": "goud_physics3d_step"
+        },
+        "getPosition": {
+          "ffi": "goud_physics3d_get_position",
+          "out_params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec3"
+        },
+        "setVelocity": {
+          "ffi": "goud_physics3d_set_velocity"
+        },
+        "applyForce": {
+          "ffi": "goud_physics3d_apply_force"
+        },
+        "applyImpulse": {
+          "ffi": "goud_physics3d_apply_impulse"
+        },
+        "getGravity": {
+          "ffi": "goud_physics3d_get_gravity",
+          "out_params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec3"
+        },
+        "setBodyGravityScale": {
+          "ffi": "goud_physics3d_set_body_gravity_scale"
+        },
+        "getBodyGravityScale": {
+          "ffi": "goud_physics3d_get_body_gravity_scale",
+          "out_params": [
+            {
+              "name": "scale",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setColliderFriction": {
+          "ffi": "goud_physics3d_set_collider_friction"
+        },
+        "getColliderFriction": {
+          "ffi": "goud_physics3d_get_collider_friction",
+          "out_params": [
+            {
+              "name": "friction",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setColliderRestitution": {
+          "ffi": "goud_physics3d_set_collider_restitution"
+        },
+        "getColliderRestitution": {
+          "ffi": "goud_physics3d_get_collider_restitution",
+          "out_params": [
+            {
+              "name": "restitution",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        },
+        "setTimestep": {
+          "ffi": "goud_physics3d_set_timestep"
+        },
+        "getTimestep": {
+          "ffi": "goud_physics3d_get_timestep",
+          "out_params": [
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns_scalar": "f32"
+        }
+      }
+    },
+    "AnimationController": {
+      "handle": "GoudContextId",
+      "methods": {
+        "create": {
+          "ffi": "goud_animation_controller_create",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "addState": {
+          "ffi": "goud_animation_controller_add_state",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "stateName"
+          ]
+        },
+        "addTransition": {
+          "ffi": "goud_animation_controller_add_transition",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "from",
+            "to",
+            "trigger"
+          ]
+        },
+        "setState": {
+          "ffi": "goud_animation_controller_set_state",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "stateName"
+          ]
+        },
+        "getState": {
+          "ffi": "goud_animation_controller_get_state",
+          "entity_params": [
+            "entity"
+          ],
+          "out_string": true
+        },
+        "update": {
+          "ffi": "goud_animation_controller_update",
+          "entity_params": [
+            "entity"
+          ]
+        }
+      }
+    },
+    "AnimationEvents": {
+      "handle": "GoudContextId",
+      "methods": {
+        "addClipEvent": {
+          "ffi": "goud_animation_clip_add_event",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "name",
+            "payloadString"
+          ]
+        },
+        "count": {
+          "ffi": "goud_animation_events_count"
+        },
+        "read": {
+          "ffi": "goud_animation_events_read",
+          "out_params": [
+            {
+              "name": "entity",
+              "type": "u64"
+            },
+            {
+              "name": "name_ptr",
+              "type": "*const u8"
+            },
+            {
+              "name": "name_len",
+              "type": "u32"
+            },
+            {
+              "name": "frame",
+              "type": "u32"
+            },
+            {
+              "name": "payload_type",
+              "type": "u32"
+            },
+            {
+              "name": "payload_int",
+              "type": "i32"
+            },
+            {
+              "name": "payload_float",
+              "type": "f32"
+            },
+            {
+              "name": "payload_str_ptr",
+              "type": "*const u8"
+            },
+            {
+              "name": "payload_str_len",
+              "type": "u32"
+            }
+          ],
+          "out_string": true,
+          "returns_struct": "AnimationEventData"
+        }
+      }
+    },
+    "Tween": {
+      "handle": "GoudContextId",
+      "methods": {
+        "create": {
+          "ffi": "goud_tween_create"
+        },
+        "update": {
+          "ffi": "goud_tween_update"
+        },
+        "value": {
+          "ffi": "goud_tween_value",
+          "out_params": [
+            {
+              "name": "value",
+              "type": "f32"
+            }
+          ]
+        },
+        "isComplete": {
+          "ffi": "goud_tween_is_complete"
+        },
+        "reset": {
+          "ffi": "goud_tween_reset"
+        },
+        "destroy": {
+          "ffi": "goud_tween_destroy"
+        }
+      }
+    },
+    "Skeleton": {
+      "handle": "GoudContextId",
+      "methods": {
+        "create": {
+          "ffi": "goud_skeleton_create",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "addBone": {
+          "ffi": "goud_skeleton_add_bone",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "boneName"
+          ]
+        },
+        "setBoneTransform": {
+          "ffi": "goud_skeleton_set_bone_transform",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "playClip": {
+          "ffi": "goud_skeleton_play_clip",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "clipName"
+          ]
+        }
+      }
+    },
+    "AnimationLayerStack": {
+      "handle": "GoudContextId",
+      "methods": {
+        "create": {
+          "ffi": "goud_animation_layer_stack_create",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "addLayer": {
+          "ffi": "goud_animation_layer_add",
+          "entity_params": [
+            "entity"
+          ],
+          "string_params": [
+            "name"
+          ]
+        },
+        "setLayerWeight": {
+          "ffi": "goud_animation_layer_set_weight",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "play": {
+          "ffi": "goud_animation_layer_play",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "setClip": {
+          "ffi": "goud_animation_layer_set_clip",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "addFrame": {
+          "ffi": "goud_animation_layer_add_frame",
+          "entity_params": [
+            "entity"
+          ]
+        },
+        "resetLayer": {
+          "ffi": "goud_animation_layer_reset",
+          "entity_params": [
+            "entity"
+          ]
+        }
+      }
+    },
+    "Network": {
+      "handle": "GoudContextId",
+      "methods": {
+        "host": {
+          "ffi": "goud_network_host"
+        },
+        "connect": {
+          "ffi": "goud_network_connect",
+          "string_params": [
+            "address"
+          ]
+        },
+        "disconnect": {
+          "ffi": "goud_network_disconnect"
+        },
+        "send": {
+          "ffi": "goud_network_send"
+        },
+        "receive": {
+          "ffi": "goud_network_receive",
+          "out_buffer": true
+        },
+        "poll": {
+          "ffi": "goud_network_poll"
+        },
+        "getStats": {
+          "ffi": "goud_network_get_stats",
+          "out_params": [
+            {
+              "name": "bytes_sent",
+              "type": "u64"
+            },
+            {
+              "name": "bytes_recv",
+              "type": "u64"
+            },
+            {
+              "name": "packets_sent",
+              "type": "u64"
+            },
+            {
+              "name": "packets_recv",
+              "type": "u64"
+            }
+          ]
+        },
+        "peerCount": {
+          "ffi": "goud_network_peer_count"
+        }
+      }
+    },
+    "Plugin": {
+      "handle": "GoudContextId",
+      "methods": {
+        "register": {
+          "ffi": "goud_plugin_register",
+          "string_params": [
+            "pluginId"
+          ]
+        },
+        "unregister": {
+          "ffi": "goud_plugin_unregister",
+          "string_params": [
+            "pluginId"
+          ]
+        },
+        "isRegistered": {
+          "ffi": "goud_plugin_is_registered",
+          "string_params": [
+            "pluginId"
+          ]
+        },
+        "list": {
+          "ffi": "goud_plugin_list",
+          "out_string": true
+        }
+      }
+    },
+    "Audio": {
+      "handle": "GoudContextId",
+      "methods": {
+        "play": {
+          "ffi": "goud_audio_play"
+        },
+        "playOnChannel": {
+          "ffi": "goud_audio_play_on_channel"
+        },
+        "playWithSettings": {
+          "ffi": "goud_audio_play_with_settings"
+        },
+        "stop": {
+          "ffi": "goud_audio_stop"
+        },
+        "pause": {
+          "ffi": "goud_audio_pause"
+        },
+        "resume": {
+          "ffi": "goud_audio_resume"
+        },
+        "stopAll": {
+          "ffi": "goud_audio_stop_all"
+        },
+        "setGlobalVolume": {
+          "ffi": "goud_audio_set_global_volume"
+        },
+        "getGlobalVolume": {
+          "ffi": "goud_audio_get_global_volume"
+        },
+        "setChannelVolume": {
+          "ffi": "goud_audio_set_channel_volume"
+        },
+        "getChannelVolume": {
+          "ffi": "goud_audio_get_channel_volume"
+        },
+        "isPlaying": {
+          "ffi": "goud_audio_is_playing"
+        },
+        "activeCount": {
+          "ffi": "goud_audio_active_count"
+        },
+        "cleanupFinished": {
+          "ffi": "goud_audio_cleanup_finished"
+        }
+      }
+    },
+    "UiManager": {
+      "handle": "UiManagerHandle",
+      "handle_type": "opaque",
+      "constructor": {
+        "ffi": "goud_ui_manager_create",
+        "params": []
+      },
+      "destructor": "goud_ui_manager_destroy",
+      "methods": {
+        "update": {
+          "ffi": "goud_ui_manager_update"
+        },
+        "render": {
+          "ffi": "goud_ui_manager_render"
+        },
+        "nodeCount": {
+          "ffi": "goud_ui_manager_node_count"
+        },
+        "createNode": {
+          "ffi": "goud_ui_create_node"
+        },
+        "removeNode": {
+          "ffi": "goud_ui_remove_node"
+        },
+        "setParent": {
+          "ffi": "goud_ui_set_parent"
+        },
+        "getParent": {
+          "ffi": "goud_ui_get_parent"
+        },
+        "getChildCount": {
+          "ffi": "goud_ui_get_child_count"
+        },
+        "getChildAt": {
+          "ffi": "goud_ui_get_child_at"
+        },
+        "setWidget": {
+          "ffi": "goud_ui_set_widget"
+        },
+        "setStyle": {
+          "ffi": "goud_ui_set_style"
+        },
+        "setLabelText": {
+          "ffi": "goud_ui_set_label_text"
+        },
+        "setButtonEnabled": {
+          "ffi": "goud_ui_set_button_enabled"
+        },
+        "setImageTexturePath": {
+          "ffi": "goud_ui_set_image_texture_path"
+        },
+        "setSlider": {
+          "ffi": "goud_ui_set_slider"
+        },
+        "eventCount": {
+          "ffi": "goud_ui_event_count"
+        },
+        "eventRead": {
+          "ffi": "goud_ui_event_read",
+          "out_params": [
+            {
+              "name": "event",
+              "type": "UiEvent"
+            }
+          ],
+          "returns_struct": "UiEvent",
+          "status_nullable_struct": true
+        }
+      }
+    }
+  },
+  "ffi_type_methods": {
+    "Color": {
+      "factories": {
+        "white": {
+          "ffi": "goud_color_white"
+        },
+        "black": {
+          "ffi": "goud_color_black"
+        },
+        "red": {
+          "ffi": "goud_color_red"
+        },
+        "green": {
+          "ffi": "goud_color_green"
+        },
+        "blue": {
+          "ffi": "goud_color_blue"
+        },
+        "yellow": {
+          "ffi": "goud_color_yellow"
+        },
+        "transparent": {
+          "ffi": "goud_color_transparent"
+        },
+        "rgba": {
+          "ffi": "goud_color_rgba"
+        },
+        "rgb": {
+          "ffi": "goud_color_rgb"
+        },
+        "fromU8": {
+          "ffi": "goud_color_from_u8"
+        },
+        "fromHex": {
+          "ffi": "goud_color_from_hex"
+        }
+      },
+      "methods": {
+        "lerp": {
+          "ffi": "goud_color_lerp",
+          "self_param": "FfiColor"
+        },
+        "withAlpha": {
+          "ffi": "goud_color_with_alpha",
+          "self_param": "FfiColor"
+        }
+      }
+    },
+    "Transform2D": {
+      "factories": {
+        "default": {
+          "ffi": "goud_transform2d_default"
+        },
+        "fromPosition": {
+          "ffi": "goud_transform2d_from_position"
+        },
+        "fromRotation": {
+          "ffi": "goud_transform2d_from_rotation"
+        },
+        "fromRotationDegrees": {
+          "ffi": "goud_transform2d_from_rotation_degrees"
+        },
+        "fromScale": {
+          "ffi": "goud_transform2d_from_scale"
+        },
+        "fromScaleUniform": {
+          "ffi": "goud_transform2d_from_scale_uniform"
+        },
+        "fromPositionRotation": {
+          "ffi": "goud_transform2d_from_position_rotation"
+        },
+        "new": {
+          "ffi": "goud_transform2d_new"
+        },
+        "lookAt": {
+          "ffi": "goud_transform2d_look_at"
+        }
+      },
+      "methods": {
+        "translate": {
+          "ffi": "goud_transform2d_translate",
+          "self_param": "*mut FfiTransform2D"
+        },
+        "translateLocal": {
+          "ffi": "goud_transform2d_translate_local",
+          "self_param": "*mut FfiTransform2D"
+        },
+        "setPosition": {
+          "ffi": "goud_transform2d_set_position",
+          "self_param": "*mut FfiTransform2D"
+        },
+        "getPosition": {
+          "ffi": "goud_transform2d_get_position",
+          "self_param": "*const FfiTransform2D"
+        },
+        "rotate": {
+          "ffi": "goud_transform2d_rotate",
+          "self_param": "*mut FfiTransform2D"
+        },
+        "rotateDegrees": {
+          "ffi": "goud_transform2d_rotate_degrees",
+          "self_param": "*mut FfiTransform2D"
+        },
+        "setRotation": {
+          "ffi": "goud_transform2d_set_rotation",
+          "self_param": "*mut FfiTransform2D"
+        },
+        "setRotationDegrees": {
+          "ffi": "goud_transform2d_set_rotation_degrees",
+          "self_param": "*mut FfiTransform2D"
+        },
+        "getRotation": {
+          "ffi": "goud_transform2d_get_rotation",
+          "self_param": "*const FfiTransform2D"
+        },
+        "getRotationDegrees": {
+          "ffi": "goud_transform2d_get_rotation_degrees",
+          "self_param": "*const FfiTransform2D"
+        },
+        "lookAtTarget": {
+          "ffi": "goud_transform2d_look_at_target",
+          "self_param": "*mut FfiTransform2D"
+        },
+        "setScale": {
+          "ffi": "goud_transform2d_set_scale",
+          "self_param": "*mut FfiTransform2D"
+        },
+        "setScaleUniform": {
+          "ffi": "goud_transform2d_set_scale_uniform",
+          "self_param": "*mut FfiTransform2D"
+        },
+        "getScale": {
+          "ffi": "goud_transform2d_get_scale",
+          "self_param": "*const FfiTransform2D"
+        },
+        "scaleBy": {
+          "ffi": "goud_transform2d_scale_by",
+          "self_param": "*mut FfiTransform2D"
+        },
+        "forward": {
+          "ffi": "goud_transform2d_forward",
+          "self_param": "*const FfiTransform2D"
+        },
+        "right": {
+          "ffi": "goud_transform2d_right",
+          "self_param": "*const FfiTransform2D"
+        },
+        "backward": {
+          "ffi": "goud_transform2d_backward",
+          "self_param": "*const FfiTransform2D"
+        },
+        "left": {
+          "ffi": "goud_transform2d_left",
+          "self_param": "*const FfiTransform2D"
+        },
+        "matrix": {
+          "ffi": "goud_transform2d_matrix",
+          "self_param": "*const FfiTransform2D"
+        },
+        "matrixInverse": {
+          "ffi": "goud_transform2d_matrix_inverse",
+          "self_param": "*const FfiTransform2D"
+        },
+        "transformPoint": {
+          "ffi": "goud_transform2d_transform_point",
+          "self_param": "*const FfiTransform2D"
+        },
+        "transformDirection": {
+          "ffi": "goud_transform2d_transform_direction",
+          "self_param": "*const FfiTransform2D"
+        },
+        "inverseTransformPoint": {
+          "ffi": "goud_transform2d_inverse_transform_point",
+          "self_param": "*const FfiTransform2D"
+        },
+        "inverseTransformDirection": {
+          "ffi": "goud_transform2d_inverse_transform_direction",
+          "self_param": "*const FfiTransform2D"
+        },
+        "lerp": {
+          "ffi": "goud_transform2d_lerp",
+          "self_param": "FfiTransform2D"
+        },
+        "normalizeAngle": {
+          "ffi": "goud_transform2d_normalize_angle",
+          "static": true
+        }
+      },
+      "builder": {
+        "new": {
+          "ffi": "goud_transform2d_builder_new"
+        },
+        "atPosition": {
+          "ffi": "goud_transform2d_builder_at_position"
+        },
+        "withPosition": {
+          "ffi": "goud_transform2d_builder_with_position",
+          "self_param": "*mut FfiTransform2DBuilder"
+        },
+        "withRotation": {
+          "ffi": "goud_transform2d_builder_with_rotation",
+          "self_param": "*mut FfiTransform2DBuilder"
+        },
+        "withRotationDegrees": {
+          "ffi": "goud_transform2d_builder_with_rotation_degrees",
+          "self_param": "*mut FfiTransform2DBuilder"
+        },
+        "withScale": {
+          "ffi": "goud_transform2d_builder_with_scale",
+          "self_param": "*mut FfiTransform2DBuilder"
+        },
+        "withScaleUniform": {
+          "ffi": "goud_transform2d_builder_with_scale_uniform",
+          "self_param": "*mut FfiTransform2DBuilder"
+        },
+        "lookingAt": {
+          "ffi": "goud_transform2d_builder_looking_at",
+          "self_param": "*mut FfiTransform2DBuilder"
+        },
+        "translate": {
+          "ffi": "goud_transform2d_builder_translate",
+          "self_param": "*mut FfiTransform2DBuilder"
+        },
+        "rotate": {
+          "ffi": "goud_transform2d_builder_rotate",
+          "self_param": "*mut FfiTransform2DBuilder"
+        },
+        "scaleBy": {
+          "ffi": "goud_transform2d_builder_scale_by",
+          "self_param": "*mut FfiTransform2DBuilder"
+        },
+        "build": {
+          "ffi": "goud_transform2d_builder_build",
+          "self_param": "*mut FfiTransform2DBuilder",
+          "consumes": true
+        },
+        "free": {
+          "ffi": "goud_transform2d_builder_free",
+          "self_param": "*mut FfiTransform2DBuilder",
+          "consumes": true
+        }
+      }
+    },
+    "Sprite": {
+      "factories": {
+        "new": {
+          "ffi": "goud_sprite_new"
+        },
+        "default": {
+          "ffi": "goud_sprite_default"
+        }
+      },
+      "methods": {
+        "setColor": {
+          "ffi": "goud_sprite_set_color",
+          "self_param": "*mut FfiSprite"
+        },
+        "getColor": {
+          "ffi": "goud_sprite_get_color",
+          "self_param": "*const FfiSprite"
+        },
+        "withColor": {
+          "ffi": "goud_sprite_with_color",
+          "self_param": "FfiSprite"
+        },
+        "setAlpha": {
+          "ffi": "goud_sprite_set_alpha",
+          "self_param": "*mut FfiSprite"
+        },
+        "getAlpha": {
+          "ffi": "goud_sprite_get_alpha",
+          "self_param": "*const FfiSprite"
+        },
+        "setSourceRect": {
+          "ffi": "goud_sprite_set_source_rect",
+          "self_param": "*mut FfiSprite"
+        },
+        "clearSourceRect": {
+          "ffi": "goud_sprite_clear_source_rect",
+          "self_param": "*mut FfiSprite"
+        },
+        "getSourceRect": {
+          "ffi": "goud_sprite_get_source_rect",
+          "self_param": "*const FfiSprite",
+          "out_params": [
+            {
+              "name": "outRect",
+              "type": "FfiRect"
+            }
+          ],
+          "returns_struct": "Rect"
+        },
+        "hasSourceRect": {
+          "ffi": "goud_sprite_has_source_rect",
+          "self_param": "*const FfiSprite"
+        },
+        "withSourceRect": {
+          "ffi": "goud_sprite_with_source_rect",
+          "self_param": "FfiSprite"
+        },
+        "setFlipX": {
+          "ffi": "goud_sprite_set_flip_x",
+          "self_param": "*mut FfiSprite"
+        },
+        "getFlipX": {
+          "ffi": "goud_sprite_get_flip_x",
+          "self_param": "*const FfiSprite"
+        },
+        "setFlipY": {
+          "ffi": "goud_sprite_set_flip_y",
+          "self_param": "*mut FfiSprite"
+        },
+        "getFlipY": {
+          "ffi": "goud_sprite_get_flip_y",
+          "self_param": "*const FfiSprite"
+        },
+        "setFlip": {
+          "ffi": "goud_sprite_set_flip",
+          "self_param": "*mut FfiSprite"
+        },
+        "withFlipX": {
+          "ffi": "goud_sprite_with_flip_x",
+          "self_param": "FfiSprite"
+        },
+        "withFlipY": {
+          "ffi": "goud_sprite_with_flip_y",
+          "self_param": "FfiSprite"
+        },
+        "withFlip": {
+          "ffi": "goud_sprite_with_flip",
+          "self_param": "FfiSprite"
+        },
+        "isFlipped": {
+          "ffi": "goud_sprite_is_flipped",
+          "self_param": "*const FfiSprite"
+        },
+        "setAnchor": {
+          "ffi": "goud_sprite_set_anchor",
+          "self_param": "*mut FfiSprite"
+        },
+        "getAnchor": {
+          "ffi": "goud_sprite_get_anchor",
+          "self_param": "*const FfiSprite"
+        },
+        "withAnchor": {
+          "ffi": "goud_sprite_with_anchor",
+          "self_param": "FfiSprite"
+        },
+        "setCustomSize": {
+          "ffi": "goud_sprite_set_custom_size",
+          "self_param": "*mut FfiSprite"
+        },
+        "clearCustomSize": {
+          "ffi": "goud_sprite_clear_custom_size",
+          "self_param": "*mut FfiSprite"
+        },
+        "getCustomSize": {
+          "ffi": "goud_sprite_get_custom_size",
+          "self_param": "*const FfiSprite",
+          "out_params": [
+            {
+              "name": "outSize",
+              "type": "FfiVec2"
+            }
+          ],
+          "returns_struct": "Vec2"
+        },
+        "hasCustomSize": {
+          "ffi": "goud_sprite_has_custom_size",
+          "self_param": "*const FfiSprite"
+        },
+        "withCustomSize": {
+          "ffi": "goud_sprite_with_custom_size",
+          "self_param": "FfiSprite"
+        },
+        "setTexture": {
+          "ffi": "goud_sprite_set_texture",
+          "self_param": "*mut FfiSprite"
+        },
+        "getTexture": {
+          "ffi": "goud_sprite_get_texture",
+          "self_param": "*const FfiSprite"
+        },
+        "sizeOrRect": {
+          "ffi": "goud_sprite_size_or_rect",
+          "self_param": "*const FfiSprite"
+        }
+      },
+      "builder": {
+        "new": {
+          "ffi": "goud_sprite_builder_new"
+        },
+        "default": {
+          "ffi": "goud_sprite_builder_default"
+        },
+        "withTexture": {
+          "ffi": "goud_sprite_builder_with_texture",
+          "self_param": "*mut FfiSpriteBuilder"
+        },
+        "withColor": {
+          "ffi": "goud_sprite_builder_with_color",
+          "self_param": "*mut FfiSpriteBuilder"
+        },
+        "withAlpha": {
+          "ffi": "goud_sprite_builder_with_alpha",
+          "self_param": "*mut FfiSpriteBuilder"
+        },
+        "withSourceRect": {
+          "ffi": "goud_sprite_builder_with_source_rect",
+          "self_param": "*mut FfiSpriteBuilder"
+        },
+        "withFlipX": {
+          "ffi": "goud_sprite_builder_with_flip_x",
+          "self_param": "*mut FfiSpriteBuilder"
+        },
+        "withFlipY": {
+          "ffi": "goud_sprite_builder_with_flip_y",
+          "self_param": "*mut FfiSpriteBuilder"
+        },
+        "withFlip": {
+          "ffi": "goud_sprite_builder_with_flip",
+          "self_param": "*mut FfiSpriteBuilder"
+        },
+        "withAnchor": {
+          "ffi": "goud_sprite_builder_with_anchor",
+          "self_param": "*mut FfiSpriteBuilder"
+        },
+        "withCustomSize": {
+          "ffi": "goud_sprite_builder_with_custom_size",
+          "self_param": "*mut FfiSpriteBuilder"
+        },
+        "build": {
+          "ffi": "goud_sprite_builder_build",
+          "self_param": "*mut FfiSpriteBuilder",
+          "consumes": true
+        },
+        "free": {
+          "ffi": "goud_sprite_builder_free",
+          "self_param": "*mut FfiSpriteBuilder",
+          "consumes": true
+        }
+      }
+    },
+    "Text": {
+      "factories": {
+        "new": {
+          "ffi": "goud_text_new"
+        },
+        "default": {
+          "ffi": "goud_text_default"
+        }
+      },
+      "methods": {
+        "setFontSize": {
+          "ffi": "goud_text_set_font_size",
+          "self_param": "*mut FfiText"
+        },
+        "getFontSize": {
+          "ffi": "goud_text_get_font_size",
+          "self_param": "*const FfiText"
+        },
+        "setColor": {
+          "ffi": "goud_text_set_color",
+          "self_param": "*mut FfiText"
+        },
+        "getColorR": {
+          "ffi": "goud_text_get_color_r",
+          "self_param": "*const FfiText"
+        },
+        "getColorG": {
+          "ffi": "goud_text_get_color_g",
+          "self_param": "*const FfiText"
+        },
+        "getColorB": {
+          "ffi": "goud_text_get_color_b",
+          "self_param": "*const FfiText"
+        },
+        "getColorA": {
+          "ffi": "goud_text_get_color_a",
+          "self_param": "*const FfiText"
+        },
+        "setAlignment": {
+          "ffi": "goud_text_set_alignment",
+          "self_param": "*mut FfiText"
+        },
+        "getAlignment": {
+          "ffi": "goud_text_get_alignment",
+          "self_param": "*const FfiText"
+        },
+        "setMaxWidth": {
+          "ffi": "goud_text_set_max_width",
+          "self_param": "*mut FfiText"
+        },
+        "clearMaxWidth": {
+          "ffi": "goud_text_clear_max_width",
+          "self_param": "*mut FfiText"
+        },
+        "getMaxWidth": {
+          "ffi": "goud_text_get_max_width",
+          "self_param": "*const FfiText"
+        },
+        "hasMaxWidth": {
+          "ffi": "goud_text_has_max_width",
+          "self_param": "*const FfiText"
+        },
+        "setLineSpacing": {
+          "ffi": "goud_text_set_line_spacing",
+          "self_param": "*mut FfiText"
+        },
+        "getLineSpacing": {
+          "ffi": "goud_text_get_line_spacing",
+          "self_param": "*const FfiText"
+        }
+      }
+    },
+    "SpriteAnimator": {
+      "methods": {
+        "getCurrentFrame": {
+          "ffi": "goud_sprite_animator_get_current_frame",
+          "self_param": "*const FfiSpriteAnimator"
+        },
+        "isPlaying": {
+          "ffi": "goud_sprite_animator_is_playing",
+          "self_param": "*const FfiSpriteAnimator"
+        },
+        "isFinished": {
+          "ffi": "goud_sprite_animator_is_finished",
+          "self_param": "*const FfiSpriteAnimator"
+        }
+      },
+      "builder": {
+        "new": {
+          "ffi": "goud_animation_clip_builder_new"
+        },
+        "addFrame": {
+          "ffi": "goud_animation_clip_builder_add_frame",
+          "self_param": "*mut FfiAnimationClipBuilder"
+        },
+        "build": {
+          "ffi": "goud_sprite_animator_from_clip",
+          "self_param": "*mut FfiAnimationClipBuilder",
+          "consumes": true
+        },
+        "free": {
+          "ffi": "goud_animation_clip_builder_free",
+          "self_param": "*mut FfiAnimationClipBuilder",
+          "consumes": true
+        }
+      }
+    }
+  },
   "errors": {
     "categories": [
       {

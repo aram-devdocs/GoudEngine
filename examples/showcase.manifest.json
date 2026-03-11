@@ -1,0 +1,213 @@
+{
+  "repo_url": "https://github.com/aram-devdocs/GoudEngine",
+  "sections": [
+    {
+      "id": "baseline-parity",
+      "title": "Baseline parity game: Flappy Bird",
+      "description": "Flappy Bird is the behavior baseline across SDKs.",
+      "entries": [
+        {
+          "name": "Flappy Goud",
+          "sdk": "C#",
+          "target": "Desktop",
+          "path": "examples/csharp/flappy_goud",
+          "run": "./dev.sh --game flappy_goud",
+          "description": "Flappy Bird parity baseline.",
+          "media": {
+            "path": "docs/src/generated/showcase/flappy-goud-csharp-desktop.png",
+            "alt": "Flappy Goud C# desktop preview"
+          }
+        },
+        {
+          "name": "Flappy Bird",
+          "sdk": "Python",
+          "target": "Desktop",
+          "path": "examples/python/flappy_bird.py",
+          "run": "./dev.sh --sdk python --game flappy_bird",
+          "description": "Python parity baseline.",
+          "media": {
+            "path": "docs/src/generated/showcase/flappy-bird-python-desktop.png",
+            "alt": "Flappy Bird Python desktop preview"
+          }
+        },
+        {
+          "name": "Flappy Bird",
+          "sdk": "TypeScript",
+          "target": "Desktop",
+          "path": "examples/typescript/flappy_bird/desktop.ts",
+          "run": "./dev.sh --sdk typescript --game flappy_bird",
+          "description": "TypeScript desktop parity baseline.",
+          "media": {
+            "path": "docs/src/generated/showcase/flappy-bird-typescript-desktop.png",
+            "alt": "Flappy Bird TypeScript desktop preview"
+          }
+        },
+        {
+          "name": "Flappy Bird",
+          "sdk": "TypeScript",
+          "target": "Web",
+          "path": "examples/typescript/flappy_bird/web",
+          "run": "./dev.sh --sdk typescript --game flappy_bird_web",
+          "description": "TypeScript web parity baseline.",
+          "media": {
+            "path": "docs/src/generated/showcase/flappy-bird-typescript-web.png",
+            "alt": "Flappy Bird TypeScript web preview"
+          }
+        },
+        {
+          "name": "Flappy Bird",
+          "sdk": "Rust",
+          "target": "Desktop",
+          "path": "examples/rust/flappy_bird",
+          "run": "cargo run -p flappy-bird",
+          "description": "Native Rust parity baseline.",
+          "media": {
+            "path": "docs/src/generated/showcase/flappy-bird-rust-desktop.png",
+            "alt": "Flappy Bird Rust desktop preview"
+          }
+        }
+      ]
+    },
+    {
+      "id": "feature-lab",
+      "title": "Feature Lab parity smoke",
+      "description": "Feature Lab validates broader API surface than Flappy Bird.",
+      "entries": [
+        {
+          "name": "Feature Lab",
+          "sdk": "C#",
+          "target": "Headless",
+          "path": "examples/csharp/feature_lab",
+          "run": "./dev.sh --game feature_lab",
+          "description": "Headless smoke for ECS and provider wrappers.",
+          "media": {
+            "path": "docs/src/generated/showcase/feature-lab-csharp-headless.png",
+            "alt": "Feature Lab C# headless preview"
+          }
+        },
+        {
+          "name": "Feature Lab",
+          "sdk": "Python",
+          "target": "Headless",
+          "path": "examples/python/feature_lab.py",
+          "run": "python3 examples/python/feature_lab.py",
+          "description": "Headless smoke for generated wrappers.",
+          "media": {
+            "path": "docs/src/generated/showcase/feature-lab-python-headless.png",
+            "alt": "Feature Lab Python headless preview"
+          }
+        },
+        {
+          "name": "Feature Lab",
+          "sdk": "TypeScript",
+          "target": "Desktop",
+          "path": "examples/typescript/feature_lab/desktop.ts",
+          "run": "./dev.sh --sdk typescript --game feature_lab",
+          "description": "Desktop smoke for SDK capability probes.",
+          "media": {
+            "path": "docs/src/generated/showcase/feature-lab-typescript-desktop.png",
+            "alt": "Feature Lab TypeScript desktop preview"
+          }
+        },
+        {
+          "name": "Feature Lab",
+          "sdk": "TypeScript",
+          "target": "Web",
+          "path": "examples/typescript/feature_lab/web",
+          "run": "./dev.sh --sdk typescript --game feature_lab_web",
+          "description": "Web smoke with browser/WASM coverage.",
+          "media": {
+            "path": "docs/src/generated/showcase/feature-lab-typescript-web.png",
+            "alt": "Feature Lab TypeScript web preview"
+          }
+        },
+        {
+          "name": "Feature Lab",
+          "sdk": "Rust",
+          "target": "Headless",
+          "path": "examples/rust/feature_lab",
+          "run": "cargo run -p feature-lab",
+          "description": "Native Rust smoke for SDK coverage.",
+          "media": {
+            "path": "docs/src/generated/showcase/feature-lab-rust-headless.png",
+            "alt": "Feature Lab Rust headless preview"
+          }
+        }
+      ]
+    },
+    {
+      "id": "csharp-specialization",
+      "title": "C# specialization demos",
+      "description": "C#-specific gameplay and renderer examples.",
+      "entries": [
+        {
+          "name": "3D Cube",
+          "sdk": "C#",
+          "target": "Desktop",
+          "path": "examples/csharp/3d_cube",
+          "run": "./dev.sh --game 3d_cube",
+          "description": "3D renderer demo.",
+          "media": {
+            "path": "docs/src/generated/showcase/3d-cube-csharp-desktop.png",
+            "alt": "3D Cube C# desktop preview"
+          }
+        },
+        {
+          "name": "Goud Jumper",
+          "sdk": "C#",
+          "target": "Desktop",
+          "path": "examples/csharp/goud_jumper",
+          "run": "./dev.sh --game goud_jumper",
+          "description": "Platform movement and collision.",
+          "media": {
+            "path": "docs/src/generated/showcase/goud-jumper-csharp-desktop.png",
+            "alt": "Goud Jumper C# desktop preview"
+          }
+        },
+        {
+          "name": "Isometric RPG",
+          "sdk": "C#",
+          "target": "Desktop",
+          "path": "examples/csharp/isometric_rpg",
+          "run": "./dev.sh --game isometric_rpg",
+          "description": "Isometric camera and RPG systems.",
+          "media": {
+            "path": "docs/src/generated/showcase/isometric-rpg-csharp-desktop.png",
+            "alt": "Isometric RPG C# desktop preview"
+          }
+        },
+        {
+          "name": "Hello ECS",
+          "sdk": "C#",
+          "target": "Desktop",
+          "path": "examples/csharp/hello_ecs",
+          "run": "./dev.sh --game hello_ecs",
+          "description": "Minimal ECS starter.",
+          "media": {
+            "path": "docs/src/generated/showcase/hello-ecs-csharp-desktop.png",
+            "alt": "Hello ECS C# desktop preview"
+          }
+        }
+      ]
+    },
+    {
+      "id": "starter-demos",
+      "title": "Starter demos",
+      "description": "Single-file SDK demos used for quick setup checks.",
+      "entries": [
+        {
+          "name": "Python SDK Demo",
+          "sdk": "Python",
+          "target": "Desktop",
+          "path": "examples/python/main.py",
+          "run": "./dev.sh --sdk python --game python_demo",
+          "description": "Minimal Python startup demo.",
+          "media": {
+            "path": "docs/src/generated/showcase/python-sdk-demo-python-desktop.png",
+            "alt": "Python SDK demo desktop preview"
+          }
+        }
+      ]
+    }
+  ]
+}

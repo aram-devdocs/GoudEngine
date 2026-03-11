@@ -1,6 +1,6 @@
 //! # SDK Rendering API
 //!
-//! Provides methods on [`GoudGame`](super::GoudGame) for 2D rendering operations
+//! Provides methods on [`GoudGame`] for 2D rendering operations
 //! including frame management, immediate-mode sprite/quad drawing, and render
 //! state control.
 //!

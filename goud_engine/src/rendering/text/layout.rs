@@ -1,7 +1,7 @@
 //! Text layout engine for positioning glyphs.
 //!
 //! Computes glyph positions, word-wrapping, alignment, and bounding boxes
-//! from a string of text and a [`GlyphAtlas`].
+//! from a string of text and a [`GlyphAtlas`](super::glyph_atlas::GlyphAtlas).
 
 use std::collections::HashMap;
 

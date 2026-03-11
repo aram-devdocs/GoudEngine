@@ -1,12 +1,14 @@
 //! GlobalTransform2D component for 2D world-space transformations.
 //!
 //! The [`GlobalTransform2D`] component stores the computed world-space transformation
-//! for 2D entities in a hierarchy. Unlike [`Transform2D`] which stores local-space data
+//! for 2D entities in a hierarchy. Unlike
+//! [`Transform2D`](crate::ecs::components::Transform2D) which stores local-space data
 //! relative to the parent, `GlobalTransform2D` stores the absolute world-space result.
 //!
 //! # Purpose
 //!
-//! When entities are arranged in a parent-child hierarchy, each child's [`Transform2D`]
+//! When entities are arranged in a parent-child hierarchy, each child's
+//! [`Transform2D`](crate::ecs::components::Transform2D)
 //! is relative to its parent. To render, perform physics, or do other world-space
 //! operations, we need the final world-space transformation.
 //!

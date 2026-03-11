@@ -1,6 +1,6 @@
 //! # SDK 3D Rendering API
 //!
-//! Provides methods on [`GoudGame`](super::GoudGame) for 3D rendering operations
+//! Provides methods on [`GoudGame`] for 3D rendering operations
 //! including primitive creation, object manipulation, lighting, camera control,
 //! and scene configuration.
 //!

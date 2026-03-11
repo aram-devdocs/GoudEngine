@@ -1,7 +1,8 @@
 //! 2D physics synchronization system.
 //!
 //! Provides [`PhysicsStepSystem2D`] which steps a [`PhysicsProvider`] each frame
-//! and synchronizes body positions back to ECS [`Transform2D`] components.
+//! and synchronizes body positions back to ECS
+//! [`Transform2D`](crate::ecs::components::Transform2D) components.
 //!
 //! # Usage
 //!

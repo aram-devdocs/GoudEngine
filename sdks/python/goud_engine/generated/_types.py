@@ -281,22 +281,19 @@ class Transform2D:
         """Translates by world-space offset"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_transform2d_translate(ctypes.byref(self._ffi), dx, dy)
-        self._sync_from_ffi()
+        return _lib.goud_transform2d_translate(ctypes.byref(self._ffi), dx, dy)
 
     def translate_local(self, dx: float, dy: float) -> None:
         """Translates by local-space offset (relative to rotation)"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_transform2d_translate_local(ctypes.byref(self._ffi), dx, dy)
-        self._sync_from_ffi()
+        return _lib.goud_transform2d_translate_local(ctypes.byref(self._ffi), dx, dy)
 
     def set_position(self, x: float, y: float) -> None:
         """Sets world-space position"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_transform2d_set_position(ctypes.byref(self._ffi), x, y)
-        self._sync_from_ffi()
+        return _lib.goud_transform2d_set_position(ctypes.byref(self._ffi), x, y)
 
     def get_position(self) -> Vec2:
         """Gets world-space position"""
@@ -309,29 +306,25 @@ class Transform2D:
         """Rotates by angle in radians"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_transform2d_rotate(ctypes.byref(self._ffi), angle)
-        self._sync_from_ffi()
+        return _lib.goud_transform2d_rotate(ctypes.byref(self._ffi), angle)
 
     def rotate_degrees(self, degrees: float) -> None:
         """Rotates by angle in degrees"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_transform2d_rotate_degrees(ctypes.byref(self._ffi), degrees)
-        self._sync_from_ffi()
+        return _lib.goud_transform2d_rotate_degrees(ctypes.byref(self._ffi), degrees)
 
     def set_rotation(self, rotation: float) -> None:
         """Sets rotation in radians"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_transform2d_set_rotation(ctypes.byref(self._ffi), rotation)
-        self._sync_from_ffi()
+        return _lib.goud_transform2d_set_rotation(ctypes.byref(self._ffi), rotation)
 
     def set_rotation_degrees(self, degrees: float) -> None:
         """Sets rotation in degrees"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_transform2d_set_rotation_degrees(ctypes.byref(self._ffi), degrees)
-        self._sync_from_ffi()
+        return _lib.goud_transform2d_set_rotation_degrees(ctypes.byref(self._ffi), degrees)
 
     def get_rotation(self) -> float:
         """Gets rotation in radians"""
@@ -349,22 +342,19 @@ class Transform2D:
         """Rotates to face a target point"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_transform2d_look_at_target(ctypes.byref(self._ffi), target_x, target_y)
-        self._sync_from_ffi()
+        return _lib.goud_transform2d_look_at_target(ctypes.byref(self._ffi), target_x, target_y)
 
     def set_scale(self, scale_x: float, scale_y: float) -> None:
         """Sets non-uniform scale"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_transform2d_set_scale(ctypes.byref(self._ffi), scale_x, scale_y)
-        self._sync_from_ffi()
+        return _lib.goud_transform2d_set_scale(ctypes.byref(self._ffi), scale_x, scale_y)
 
     def set_scale_uniform(self, scale: float) -> None:
         """Sets uniform scale"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_transform2d_set_scale_uniform(ctypes.byref(self._ffi), scale)
-        self._sync_from_ffi()
+        return _lib.goud_transform2d_set_scale_uniform(ctypes.byref(self._ffi), scale)
 
     def get_scale(self) -> Vec2:
         """Gets scale as Vec2"""
@@ -377,8 +367,7 @@ class Transform2D:
         """Multiplies current scale by factors"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_transform2d_scale_by(ctypes.byref(self._ffi), factor_x, factor_y)
-        self._sync_from_ffi()
+        return _lib.goud_transform2d_scale_by(ctypes.byref(self._ffi), factor_x, factor_y)
 
     def forward(self) -> Vec2:
         """Gets the forward direction vector"""
@@ -666,8 +655,7 @@ class Sprite:
         """Sets the RGBA color tint"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_sprite_set_color(ctypes.byref(self._ffi), r, g, b, a)
-        self._sync_from_ffi()
+        return _lib.goud_sprite_set_color(ctypes.byref(self._ffi), r, g, b, a)
 
     def get_color(self) -> Color:
         """Gets the color tint as FfiColor"""
@@ -687,8 +675,7 @@ class Sprite:
         """Sets the alpha channel"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_sprite_set_alpha(ctypes.byref(self._ffi), alpha)
-        self._sync_from_ffi()
+        return _lib.goud_sprite_set_alpha(ctypes.byref(self._ffi), alpha)
 
     def get_alpha(self) -> float:
         """Gets the alpha channel"""
@@ -700,22 +687,21 @@ class Sprite:
         """Sets the source rectangle for sprite sheets"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_sprite_set_source_rect(ctypes.byref(self._ffi), x, y, width, height)
-        self._sync_from_ffi()
+        return _lib.goud_sprite_set_source_rect(ctypes.byref(self._ffi), x, y, width, height)
 
     def clear_source_rect(self) -> None:
         """Clears the source rectangle (uses full texture)"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_sprite_clear_source_rect(ctypes.byref(self._ffi))
-        self._sync_from_ffi()
+        return _lib.goud_sprite_clear_source_rect(ctypes.byref(self._ffi))
 
     def get_source_rect(self) -> Rect:
         """Gets the source rectangle"""
         _ensure_ffi()
         self._sync_to_ffi()
-        ffi = _lib.goud_sprite_get_source_rect(ctypes.byref(self._ffi))
-        return Rect(ffi.x, ffi.y, ffi.width, ffi.height)
+        _out_rect = FfiRect()
+        _lib.goud_sprite_get_source_rect(ctypes.byref(self._ffi), ctypes.byref(_out_rect))
+        return Rect(_out_rect.x, _out_rect.y, _out_rect.width, _out_rect.height)
 
     def has_source_rect(self) -> bool:
         """Returns true if a source rectangle is set"""
@@ -734,8 +720,7 @@ class Sprite:
         """Sets horizontal flip"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_sprite_set_flip_x(ctypes.byref(self._ffi), flip)
-        self._sync_from_ffi()
+        return _lib.goud_sprite_set_flip_x(ctypes.byref(self._ffi), flip)
 
     def get_flip_x(self) -> bool:
         """Gets horizontal flip state"""
@@ -747,8 +732,7 @@ class Sprite:
         """Sets vertical flip"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_sprite_set_flip_y(ctypes.byref(self._ffi), flip)
-        self._sync_from_ffi()
+        return _lib.goud_sprite_set_flip_y(ctypes.byref(self._ffi), flip)
 
     def get_flip_y(self) -> bool:
         """Gets vertical flip state"""
@@ -760,8 +744,7 @@ class Sprite:
         """Sets both flip flags at once"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_sprite_set_flip(ctypes.byref(self._ffi), flip_x, flip_y)
-        self._sync_from_ffi()
+        return _lib.goud_sprite_set_flip(ctypes.byref(self._ffi), flip_x, flip_y)
 
     def with_flip_x(self, flip: bool) -> 'Sprite':
         """Returns a copy with horizontal flip"""
@@ -794,8 +777,7 @@ class Sprite:
         """Sets the anchor point (normalized 0-1)"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_sprite_set_anchor(ctypes.byref(self._ffi), x, y)
-        self._sync_from_ffi()
+        return _lib.goud_sprite_set_anchor(ctypes.byref(self._ffi), x, y)
 
     def get_anchor(self) -> Vec2:
         """Gets the anchor point"""
@@ -815,22 +797,21 @@ class Sprite:
         """Sets a custom render size"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_sprite_set_custom_size(ctypes.byref(self._ffi), width, height)
-        self._sync_from_ffi()
+        return _lib.goud_sprite_set_custom_size(ctypes.byref(self._ffi), width, height)
 
     def clear_custom_size(self) -> None:
         """Clears custom size (uses texture dimensions)"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_sprite_clear_custom_size(ctypes.byref(self._ffi))
-        self._sync_from_ffi()
+        return _lib.goud_sprite_clear_custom_size(ctypes.byref(self._ffi))
 
     def get_custom_size(self) -> Vec2:
         """Gets the custom size"""
         _ensure_ffi()
         self._sync_to_ffi()
-        ffi = _lib.goud_sprite_get_custom_size(ctypes.byref(self._ffi))
-        return Vec2(ffi.x, ffi.y)
+        _out_size = FfiVec2()
+        _lib.goud_sprite_get_custom_size(ctypes.byref(self._ffi), ctypes.byref(_out_size))
+        return Vec2(_out_size.x, _out_size.y)
 
     def has_custom_size(self) -> bool:
         """Returns true if custom size is set"""
@@ -849,8 +830,7 @@ class Sprite:
         """Sets the texture handle"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_sprite_set_texture(ctypes.byref(self._ffi), handle)
-        self._sync_from_ffi()
+        return _lib.goud_sprite_set_texture(ctypes.byref(self._ffi), handle)
 
     def get_texture(self) -> int:
         """Gets the texture handle"""
@@ -890,7 +870,7 @@ class SpriteBuilder:
     def with_texture(self, handle: int) -> 'SpriteBuilder':
         """Sets texture handle"""
         _ensure_ffi()
-        self._ptr = _lib.goud_sprite_builder_with_texture(self._ptr, handle)
+        self._ptr = _lib.goud_sprite_builder_with_texture(self._ptr, texture_handle)
         return self
 
     def with_color(self, r: float, g: float, b: float, a: float) -> 'SpriteBuilder':
@@ -1040,8 +1020,7 @@ class Text:
         """Sets the font size in pixels"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_text_set_font_size(ctypes.byref(self._ffi), size)
-        self._sync_from_ffi()
+        return _lib.goud_text_set_font_size(ctypes.byref(self._ffi), size)
 
     def get_font_size(self) -> float:
         """Gets the font size in pixels"""
@@ -1053,8 +1032,7 @@ class Text:
         """Sets the RGBA text color"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_text_set_color(ctypes.byref(self._ffi), r, g, b, a)
-        self._sync_from_ffi()
+        return _lib.goud_text_set_color(ctypes.byref(self._ffi), r, g, b, a)
 
     def get_color_r(self) -> float:
         """Gets the red color component"""
@@ -1084,10 +1062,9 @@ class Text:
         """Sets the horizontal text alignment (0=Left, 1=Center, 2=Right)"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_text_set_alignment(ctypes.byref(self._ffi), alignment)
-        self._sync_from_ffi()
+        return _lib.goud_text_set_alignment(ctypes.byref(self._ffi), alignment)
 
-    def get_alignment(self) -> 'Text':
+    def get_alignment(self) -> int:
         """Gets the horizontal text alignment"""
         _ensure_ffi()
         self._sync_to_ffi()
@@ -1097,15 +1074,13 @@ class Text:
         """Sets the maximum width for word-wrapping"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_text_set_max_width(ctypes.byref(self._ffi), width)
-        self._sync_from_ffi()
+        return _lib.goud_text_set_max_width(ctypes.byref(self._ffi), width)
 
     def clear_max_width(self) -> None:
         """Clears the maximum width, disabling word-wrapping"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_text_clear_max_width(ctypes.byref(self._ffi))
-        self._sync_from_ffi()
+        return _lib.goud_text_clear_max_width(ctypes.byref(self._ffi))
 
     def get_max_width(self) -> float:
         """Gets the maximum width for word-wrapping"""
@@ -1123,8 +1098,7 @@ class Text:
         """Sets the line spacing multiplier"""
         _ensure_ffi()
         self._sync_to_ffi()
-        _lib.goud_text_set_line_spacing(ctypes.byref(self._ffi), spacing)
-        self._sync_from_ffi()
+        return _lib.goud_text_set_line_spacing(ctypes.byref(self._ffi), spacing)
 
     def get_line_spacing(self) -> float:
         """Gets the line spacing multiplier"""

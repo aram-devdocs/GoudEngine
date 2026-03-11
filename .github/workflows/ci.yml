@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - 'release-please--**'
   pull_request:
     branches: [ main ]
   merge_group:
@@ -290,7 +292,7 @@ jobs:
       run: cargo run -p lint-layers
 
     - name: Check for codegen drift
-      run: git diff --exit-code -- sdks/
+      run: bash scripts/check-generated-artifacts.sh
 
   # Build native release libraries once per OS and share across SDK jobs
   native-release:
@@ -385,6 +387,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install Python coverage tooling
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      run: python -m pip install coverage
+
     - name: Download native release artifact
       uses: actions/download-artifact@v4
       with:
@@ -405,33 +411,8 @@ jobs:
         GOUD_ENGINE_LIB: ${{ github.workspace }}/native-release
       run: |
         python --version
-        # Run Python tests that don't require a window/display
-        # The test_game test requires windowed context which won't work in CI
-        python << 'EOF'
-        import sys
-        sys.path.insert(0, 'sdks/python')
-        from test_bindings import (
-            test_imports, test_vec2, test_color, test_rect,
-            test_transform2d, test_sprite, test_entity, test_enums
-        )
-        tests = [
-            test_imports, test_vec2, test_color, test_rect,
-            test_transform2d, test_sprite, test_entity, test_enums
-        ]
-        passed = 0
-        failed = 0
-        for test in tests:
-            try:
-                if test():
-                    passed += 1
-                else:
-                    failed += 1
-            except Exception as e:
-                print(f'  x {test.__name__} failed: {e}')
-                failed += 1
-        print(f'Python SDK tests: {passed} passed, {failed} failed')
-        sys.exit(1 if failed > 0 else 0)
-        EOF
+        python sdks/python/test_bindings.py
+        python sdks/python/test_network_loopback.py
     
     - name: Test Python demo imports
       env:
@@ -453,6 +434,26 @@ jobs:
         print(f'Sprite: {s}')
         print('All Python SDK basic tests passed!')
         EOF
+
+    - name: Generate Python coverage report
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      env:
+        PYTHONPATH: ${{ github.workspace }}/sdks/python
+        GOUD_ENGINE_LIB: ${{ github.workspace }}/native-release
+      run: |
+        python -m coverage erase
+        python -m coverage run --source=sdks/python/goud_engine sdks/python/test_bindings.py
+        python -m coverage run --append --source=sdks/python/goud_engine sdks/python/test_network_loopback.py
+        python -m coverage report --fail-under=80
+        python -m coverage xml -o sdks/python/coverage.xml
+
+    - name: Upload Python coverage results
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-coverage
+        path: sdks/python/coverage.xml
+        if-no-files-found: error
 
   # .NET SDK checks and tests
   dotnet-check:
@@ -528,7 +529,7 @@ jobs:
 
     - name: Test
       working-directory: sdks/csharp
-      run: dotnet test ../csharp.tests/GoudEngine.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+      run: dotnet test ../csharp.tests/GoudEngine.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx" /p:CollectCoverage=true /p:CoverletOutput=../csharp.tests/TestResults/${{ matrix.os }}/coverage/ /p:CoverletOutputFormat=cobertura
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
@@ -536,6 +537,13 @@ jobs:
       with:
         name: dotnet-test-results-${{ matrix.os }}
         path: '**/test-results.trx'
+
+    - name: Upload C# coverage results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: dotnet-coverage-${{ matrix.os }}
+        path: 'sdks/csharp.tests/TestResults/${{ matrix.os }}/coverage/coverage.cobertura.xml'
 
   # Build check to ensure everything compiles together
   integration-build:
@@ -596,7 +604,11 @@ jobs:
       run: |
         # Check Rust library exists
         if [[ "$RUNNER_OS" == "macOS" ]]; then
-          test -f sdks/csharp/runtimes/osx-x64/native/libgoud_engine.dylib
+          if [[ "$RUNNER_ARCH" == "ARM64" ]]; then
+            test -f sdks/csharp/runtimes/osx-arm64/native/libgoud_engine.dylib
+          else
+            test -f sdks/csharp/runtimes/osx-x64/native/libgoud_engine.dylib
+          fi
         elif [[ "$RUNNER_OS" == "Linux" ]]; then
           test -f sdks/csharp/runtimes/linux-x64/native/libgoud_engine.so
         fi
@@ -662,6 +674,10 @@ jobs:
       working-directory: sdks/typescript
       run: npm ci
 
+    - name: Install Playwright Chromium
+      working-directory: sdks/typescript
+      run: npx playwright install --with-deps chromium
+
     - name: Create native typing shim (PR macOS smoke lane)
       if: github.event_name == 'pull_request' && matrix.os != 'ubuntu-latest'
       working-directory: sdks/typescript
@@ -711,12 +727,25 @@ jobs:
       working-directory: sdks/typescript
       run: xvfb-run npm test
 
+    - name: Generate TypeScript coverage report
+      if: matrix.os == 'ubuntu-latest'
+      working-directory: sdks/typescript
+      run: xvfb-run npx c8 --reporter=text-summary --reporter=cobertura --report-dir coverage --check-coverage --lines 80 npm test
+
     - name: Run smoke tests (macOS/Windows — skip GLFW window tests in headless CI)
       if: matrix.os != 'ubuntu-latest'
       working-directory: sdks/typescript
       run: |
         echo "Smoke tests require a display (GLFW window). Build verified above."
         echo "Full smoke tests run on ubuntu-latest with xvfb."
+
+    - name: Upload TypeScript coverage results
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ts-coverage
+        path: sdks/typescript/coverage/cobertura-coverage.xml
+        if-no-files-found: error
 
     - name: Upload native addon
       if: github.event_name != 'pull_request' || matrix.os == 'ubuntu-latest'
@@ -798,6 +827,10 @@ jobs:
       working-directory: sdks/typescript
       run: npx tsc -p tsconfig.web.json --noEmit
 
+    - name: Run browser networking runtime smoke test
+      working-directory: sdks/typescript
+      run: npm run test:web-runtime
+
     - name: Verify wasm output structure
       working-directory: sdks/typescript
       run: |
@@ -818,11 +851,124 @@ jobs:
           sdks/typescript/wasm/*.d.ts
         retention-days: 7
 
+  feature-lab-parity:
+    name: Feature Lab Parity
+    runs-on: macos-latest
+    needs: [preflight]
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: |
+          sdks/typescript/package-lock.json
+          examples/typescript/feature_lab/package-lock.json
+
+    - name: Run Rust Feature Lab
+      run: cargo run -p feature-lab
+
+    - name: Run Python Feature Lab
+      run: python3 examples/python/feature_lab.py
+
+    - name: Run C# Feature Lab
+      run: |
+        cd examples/csharp/feature_lab
+        dotnet build
+        DOTNET_ROLL_FORWARD=Major dotnet run --no-build
+
+    - name: Build TypeScript Feature Lab
+      run: |
+        cd examples/typescript/feature_lab
+        npm ci
+        npm run build:web
+        npx tsc --noEmit --target ES2020 --module ES2020 --moduleResolution bundler --types node --skipLibCheck desktop.ts
+        node -e "import('./dist/lab.js').then(()=>console.log('feature_lab dist import ok'))"
+
+    - name: Install Playwright Chromium
+      run: |
+        cd examples/typescript/feature_lab
+        npx playwright install chromium
+
+    - name: Run TypeScript Web Network Smoke
+      run: |
+        cd examples/typescript/feature_lab
+        npm run smoke:web-network
+
+  clean-room-regeneration:
+    name: Clean Room Regeneration
+    runs-on: ubuntu-latest
+    needs: [preflight]
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: |
+          sdks/typescript/package-lock.json
+
+    - name: Install mdBook
+      run: |
+        mkdir -p "$HOME/.cargo/bin"
+        tag=$(curl -sI https://github.com/rust-lang/mdBook/releases/latest | grep -i '^location:' | sed 's|.*/tag/||;s/\r//')
+        curl -sSL "https://github.com/rust-lang/mdBook/releases/download/${tag}/mdbook-${tag}-x86_64-unknown-linux-gnu.tar.gz" \
+          | tar -xz -C "$HOME/.cargo/bin"
+        echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+    - name: Install pdoc
+      run: pip install pdoc
+
+    - name: Install DocFX
+      run: |
+        dotnet tool install -g docfx
+        echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+    - name: Verify clean-room regeneration
+      run: bash scripts/clean-room-regenerate.sh --docs
+
   # Final status check
   ci-success:
     name: CI Success
     if: always()
-    needs: [preflight, rust-check, cargo-deny, codegen-drift-check, native-release, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm]
+    needs: [preflight, rust-check, cargo-deny, codegen-drift-check, native-release, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm, feature-lab-parity, clean-room-regeneration]
     runs-on: ubuntu-latest
     steps:
     - name: Check all jobs
@@ -868,6 +1014,8 @@ jobs:
         check_job "integration-build" "${{ needs.integration-build.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "typescript-sdk-native" "${{ needs.typescript-sdk-native.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "typescript-sdk-wasm" "${{ needs.typescript-sdk-wasm.result }}" "$ALLOW_PUSH_SKIPPED" || FAIL=1
+        check_job "feature-lab-parity" "${{ needs.feature-lab-parity.result }}" "false" || FAIL=1
+        check_job "clean-room-regeneration" "${{ needs.clean-room-regeneration.result }}" "false" || FAIL=1
 
         if [[ "$FAIL" -ne 0 ]]; then
           echo "One or more jobs failed"

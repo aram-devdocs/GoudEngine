@@ -10,6 +10,7 @@ Produces:
 """
 
 import sys
+import subprocess
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -21,20 +22,68 @@ from sdk_common import (
 
 OUT = SDKS_DIR / "python" / "goud_engine" / "generated"
 schema = load_schema()
-mapping = load_ffi_mapping()
+mapping = load_ffi_mapping(schema)
 
 
 def _resolve_ffi_return(ret: str) -> str:
     """Map an FFI return type string to its ctypes restype."""
+    if ret.startswith("*const ") or ret.startswith("*mut "):
+        return _resolve_ffi_pointer(ret)
     return resolve_ctypes_type(ret, enums=schema.get("enums", {}), default="ctypes.c_uint64")
+
+
+def _resolve_ffi_pointer(pointer_type: str) -> str:
+    """Resolve Rust pointer types for Python ctypes signatures."""
+    direct = CTYPES_MAP.get(pointer_type)
+    if direct:
+        return direct
+
+    qualifier, inner = pointer_type.split(" ", 1)
+    inner = inner.strip()
+
+    if inner == "c_void":
+        return "ctypes.c_void_p"
+    if inner == "c_char" and qualifier == "*const":
+        return "ctypes.c_char_p"
+
+    ffi_info = mapping.get("ffi_types", {}).get(inner, {})
+    ffi_name = ffi_info.get("ffi_name")
+    if ffi_name:
+        return f"ctypes.POINTER({ffi_name})"
+
+    if inner in schema.get("enums", {}):
+        underlying = schema["enums"][inner].get("underlying", "i32")
+        underlying_ctypes = CTYPES_MAP.get(underlying, "ctypes.c_int32")
+        return f"ctypes.POINTER({underlying_ctypes})"
+
+    inner_direct = CTYPES_MAP.get(inner)
+    if inner_direct:
+        return f"ctypes.POINTER({inner_direct})"
+
+    if inner.startswith("Ffi") or inner.startswith("Goud"):
+        return f"ctypes.POINTER({inner})"
+
+    # Opaque handle pointers should stay untyped in Python.
+    return "ctypes.c_void_p"
 
 
 def _resolve_ffi_param(ptype: str) -> str:
     """Map an FFI param type string to its ctypes argtype."""
+    if ptype in CTYPES_MAP:
+        return CTYPES_MAP[ptype]
+
     # Handle ref types (out-pointers): "ref FfiRenderCapabilities" -> POINTER(FfiRenderCapabilities)
     if ptype.startswith("ref "):
-        inner = ptype[4:]
-        return f"ctypes.POINTER({inner})"
+        inner = ptype[4:].strip()
+        ffi_info = mapping.get("ffi_types", {}).get(inner, {})
+        ffi_name = ffi_info.get("ffi_name", inner)
+        if ffi_name.startswith("Ffi") or ffi_name.startswith("Goud"):
+            return f"ctypes.POINTER({ffi_name})"
+        return "ctypes.c_void_p"
+
+    if ptype.startswith("*const ") or ptype.startswith("*mut "):
+        return _resolve_ffi_pointer(ptype)
+
     resolved = resolve_ctypes_type(ptype, enums=schema.get("enums", {}), default="ctypes.c_uint64")
     if resolved != "ctypes.c_uint64":
         return resolved
@@ -68,8 +117,19 @@ def _py_value_param_ffi_setup(param: dict) -> tuple[list[str], str] | None:
 def gen_ffi():
     lines = [
         f'"""{HEADER_COMMENT}"""',
-        "", "import ctypes", "import platform", "import os", "from pathlib import Path", "",
+        "", "import ctypes", "import platform", "import os", "import subprocess", "from pathlib import Path", "",
         "# ── Library loading ──",
+        "",
+        "def _has_required_symbol(lib_path: Path, symbol: str) -> bool:",
+        "    # Some environments ship stale release artifacts; avoid selecting them when newer symbols exist elsewhere.",
+        "    # If symbol probing fails, return True to preserve compatibility with non-NM platforms.",
+        "    try:",
+        "        result = subprocess.run([\"nm\", \"-g\", str(lib_path)], check=False, capture_output=True, text=True)",
+        "        if result.returncode != 0:",
+        "            return True",
+        "        return symbol in result.stdout",
+        "    except Exception:",
+        "        return True",
         "",
         "def _load_library():",
         '    """Load the GoudEngine shared library."""',
@@ -85,14 +145,16 @@ def gen_ffi():
         "",
         '    name = f"{prefix}goud_engine{ext}"',
         "    search = [",
+        '        Path(os.environ.get("GOUD_ENGINE_LIB", "")) / name,',
         '        Path(__file__).parent / name,',
         '        Path(__file__).parent.parent / name,',
-        '        Path(__file__).parent.parent.parent.parent.parent / "target" / "release" / name,',
         '        Path(__file__).parent.parent.parent.parent.parent / "target" / "debug" / name,',
-        '        Path(os.environ.get("GOUD_ENGINE_LIB", "")) / name,',
+        '        Path(__file__).parent.parent.parent.parent.parent / "target" / "release" / name,',
         "    ]",
         "    for p in search:",
         "        if p.exists():",
+        "            if not _has_required_symbol(p, \"goud_engine_config_set_physics_debug\"):",
+        "                continue",
         "            return ctypes.cdll.LoadLibrary(str(p))",
         f'    raise OSError(f"Could not find {{name}}. Set GOUD_ENGINE_LIB env var.")',
         "",
@@ -328,6 +390,27 @@ def _ffi_to_sdk_return(ffi_returns: str, type_name: str) -> str:
     return f"'{type_name}'"
 
 
+def _py_schema_return_type(ret_type: str, self_type: str) -> str:
+    """Map schema return type to Python annotation string."""
+    if not ret_type:
+        return "None"
+    if ret_type.endswith("?"):
+        ret_type = ret_type[:-1]
+    if ret_type == "void":
+        return "None"
+    if ret_type in ("f32", "f64"):
+        return "float"
+    if ret_type in ("u8", "u16", "u32", "i8", "i16", "i32", "u64", "i64", "usize", "ptr"):
+        return "int"
+    if ret_type == "bool":
+        return "bool"
+    if ret_type == "string":
+        return "str"
+    if ret_type in schema.get("types", {}):
+        return f"'{ret_type}'" if ret_type == self_type else ret_type
+    return PYTHON_TYPES.get(ret_type, ret_type)
+
+
 def _gen_ffi_method_body(
     type_name: str, mname: str, ffi_name: str, fdef: dict,
     method_mapping: dict, schema_method: dict | None,
@@ -356,15 +439,54 @@ def _gen_ffi_method_body(
             # By-value: pass the struct directly
             ffi_args.append("self._ffi")
 
-    for p in extra_params:
-        ffi_args.append(to_snake(p["name"]))
+    out_params = method_mapping.get("out_params")
+    out_param_names = {to_snake(op["name"]) for op in (out_params or [])}
 
-    args_str = ", ".join(ffi_args)
-    call = f"_lib.{ffi_name}({args_str})"
+    for p in extra_params:
+        pname = to_snake(p["name"])
+        if pname in out_param_names:
+            continue
+        ffi_args.append(pname)
 
     # Ensure _ffi struct exists and is synced before pointer-based calls
     if needs_sync_before:
         body.append("        self._sync_to_ffi()")
+
+    args_str = ", ".join(ffi_args)
+    call = f"_lib.{ffi_name}({args_str})"
+
+    returns_struct = method_mapping.get("returns_struct")
+
+    if out_params and returns_struct:
+        # Wrap bool+out-params APIs as ergonomic return values.
+        for op in out_params:
+            ctype = _py_out_var_ctype(op["type"])
+            body.append(
+                f"        _{to_snake(op['name'])} = {ctype}()"
+            )
+
+        for op in out_params:
+            ffi_args.append(f"ctypes.byref(_{to_snake(op['name'])})")
+
+        call = f"_lib.{ffi_name}({', '.join(ffi_args)})"
+        body.append(f"        {call}")
+
+        rs_fields = schema["types"][returns_struct]["fields"]
+        if len(out_params) == 1 and (
+            out_params[0]["type"] in schema.get("types", {})
+            or out_params[0]["type"].startswith("Ffi")
+            or out_params[0]["type"].startswith("Goud")
+        ):
+            src = f"_{to_snake(out_params[0]['name'])}"
+            field_args = ", ".join(
+                f"{src}.{to_snake(f['name'])}" for f in rs_fields
+            )
+        else:
+            field_args = ", ".join(
+                f"_{to_snake(op['name'])}.value" for op in out_params
+            )
+        body.append(f"        return {returns_struct}({field_args})")
+        return body
 
     mutates = schema_method.get("mutates", False) if schema_method else False
 
@@ -525,7 +647,7 @@ def _gen_component_type(type_name: str, type_def: dict, lines: list):
             extra = ffi_params
 
         param_parts = []
-        if schema_meth and schema_meth.get("params"):
+        if schema_meth and "params" in schema_meth:
             for sp in schema_meth["params"]:
                 pn = to_snake(sp["name"])
                 pt = sp.get("type", "f32")
@@ -542,7 +664,12 @@ def _gen_component_type(type_name: str, type_def: dict, lines: list):
                     f"{pn}: {PYTHON_TYPES.get(p['type'], 'float')}"
                 )
 
-        ret_type = _ffi_to_sdk_return(fdef["returns"], type_name)
+        if schema_meth and schema_meth.get("returns"):
+            ret_type = _py_schema_return_type(
+                schema_meth["returns"], type_name
+            )
+        else:
+            ret_type = _ffi_to_sdk_return(fdef["returns"], type_name)
 
         if is_static:
             lines.append("    @staticmethod")
@@ -2055,11 +2182,15 @@ def gen_game():
         "from . import _ffi as _ffi_module",
         "from ._ffi import (get_lib, GoudContextId, FfiVec2, "
         "FfiTransform2D, FfiSprite, FfiColor, FfiUiStyle, FfiUiEvent,",
-        "    FfiNetworkStats, FfiNetworkSimulationConfig, GoudRenderStats, GoudContact)",
+        "    FfiRenderCapabilities, FfiPhysicsCapabilities, FfiAudioCapabilities,",
+        "    FfiInputCapabilities, FfiNetworkCapabilities, FfiNetworkStats,",
+        "    FfiNetworkSimulationConfig, GoudRenderStats, GoudContact)",
         "from ._types import ("
         "Entity, Vec2, Color, Transform2D, Sprite, RenderStats, "
-        "UiStyle, UiEvent, NetworkStats, NetworkSimulationConfig, "
-        "NetworkConnectResult, NetworkPacket, NetworkCapabilities"
+        "UiStyle, UiEvent, RenderCapabilities, PhysicsCapabilities, "
+        "AudioCapabilities, InputCapabilities, NetworkStats, "
+        "NetworkSimulationConfig, NetworkConnectResult, NetworkPacket, "
+        "NetworkCapabilities"
         ")",
         "from ._errors import GoudError",
         "from ._keys import Key, MouseButton, PhysicsBackend2D",
@@ -2097,6 +2228,101 @@ def gen_game():
         _gen_ui_manager(lines)
 
     write_generated(OUT / "_game.py", "\n".join(lines))
+
+
+def gen_network_wrappers():
+    lines = [
+        f'"""{HEADER_COMMENT}"""',
+        "",
+        "from __future__ import annotations",
+        "",
+        "from typing import TYPE_CHECKING, Any, Optional",
+        "",
+        "try:",
+        "    from .generated._errors import GoudError",
+        'except ImportError:  # pragma: no cover - supports direct module loading in tests',
+        "    from goud_engine.generated._errors import GoudError",
+        "",
+        "if TYPE_CHECKING:",
+        "    from .generated._types import NetworkPacket, NetworkSimulationConfig",
+        "",
+        "",
+        "def _raise_backend_error_or_runtime(backend: Any, message: str) -> None:",
+        "    lib = getattr(backend, '_lib', None)",
+        "    if lib is not None:",
+        "        error = GoudError.from_last_error(lib)",
+        "        if error is not None:",
+        "            raise error",
+        "    raise RuntimeError(message)",
+        "",
+        "",
+        "class NetworkEndpoint:",
+        '    """Thin wrapper around a low-level network handle."""',
+        "",
+        "    def __init__(self, backend: Any, handle: int, default_peer_id: Optional[int] = None):",
+        "        self._backend = backend",
+        "        self.handle = handle",
+        "        self.default_peer_id = default_peer_id",
+        "",
+        "    def poll(self):",
+        "        return self._backend.network_poll(self.handle)",
+        "",
+        "    def receive(self):",
+        "        return self._backend.network_receive_packet(self.handle)",
+        "",
+        "    def send(self, data, channel = 0):",
+        "        if self.default_peer_id is None:",
+        '            raise ValueError(',
+        '                "No default peer ID is set for this endpoint; use send_to(peer_id, data, channel) instead."',
+        '            )',
+        "        return self.send_to(self.default_peer_id, data, channel)",
+        "",
+        "    def send_to(self, peer_id, data, channel = 0):",
+        "        return self._backend.network_send(self.handle, peer_id, data, channel)",
+        "",
+        "    def disconnect(self):",
+        "        return self._backend.network_disconnect(self.handle)",
+        "",
+        "    def get_stats(self):",
+        "        return self._backend.get_network_stats(self.handle)",
+        "",
+        "    def peer_count(self):",
+        "        return self._backend.network_peer_count(self.handle)",
+        "",
+        "    def set_simulation(self, config):",
+        "        return self._backend.set_network_simulation(self.handle, config)",
+        "",
+        "    def clear_simulation(self):",
+        "        return self._backend.clear_network_simulation(self.handle)",
+        "",
+        "    def set_overlay_target(self):",
+        "        return self._backend.set_network_overlay_handle(self.handle)",
+        "",
+        "    def clear_overlay_target(self):",
+        "        return self._backend.clear_network_overlay_handle()",
+        "",
+        "",
+        "class NetworkManager:",
+        '    """Factory for creating NetworkEndpoint wrappers from a game/context backend."""',
+        "",
+        "    def __init__(self, backend: Any):",
+        "        self._backend = backend",
+        "",
+        "    def host(self, protocol, port):",
+        "        handle = self._backend.network_host(protocol, port)",
+        "        if handle < 0:",
+        "            _raise_backend_error_or_runtime(",
+        "                self._backend,",
+        "                f\"network_host failed with handle {handle}\"",
+        "            )",
+        "        return NetworkEndpoint(self._backend, handle, None)",
+        "",
+        "    def connect(self, protocol, address, port):",
+        "        result = self._backend.network_connect_with_peer(protocol, address, port)",
+        "        return NetworkEndpoint(self._backend, result.handle, result.peer_id)",
+    ]
+
+    write_generated(OUT.parent / "networking.py", "\n".join(lines))
 
 
 # ── __init__.py ─────────────────────────────────────────────────────
@@ -2419,6 +2645,7 @@ if __name__ == "__main__":
     gen_keys()
     gen_types()
     gen_game()
+    gen_network_wrappers()
     gen_errors()
     gen_diagnostic()
     gen_init()

@@ -149,7 +149,11 @@ namespace GoudEngine
 
         /// <summary>Gets the source rectangle</summary>
         public Rect GetSourceRect()
-        { var __r = NativeMethods.goud_sprite_get_source_rect(ref _inner); return new Rect(__r.X, __r.Y, __r.Width, __r.Height); }
+        {
+            FfiRect _out = default;
+            NativeMethods.goud_sprite_get_source_rect(ref _inner, ref _out);
+            return new Rect(_out.X, _out.Y, _out.Width, _out.Height);
+        }
 
         /// <summary>Returns true if a source rectangle is set</summary>
         public bool HasSourceRect()
@@ -217,7 +221,11 @@ namespace GoudEngine
 
         /// <summary>Gets the custom size</summary>
         public Vec2 GetCustomSize()
-        { var __r = NativeMethods.goud_sprite_get_custom_size(ref _inner); return new Vec2(__r.X, __r.Y); }
+        {
+            FfiVec2 _out = default;
+            NativeMethods.goud_sprite_get_custom_size(ref _inner, ref _out);
+            return new Vec2(_out.X, _out.Y);
+        }
 
         /// <summary>Returns true if custom size is set</summary>
         public bool HasCustomSize()

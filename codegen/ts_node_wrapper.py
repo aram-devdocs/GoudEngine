@@ -3,6 +3,7 @@
 
 from ts_node_shared import (
     GEN,
+    TS,
     HEADER_COMMENT,
     TS_EXCLUDE_METHODS,
     mapping,
@@ -80,7 +81,7 @@ def gen_node_wrapper():
         "  type GameConfig,",
         "} from '../../../index';",
         "",
-        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';",
+        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
         "import { PhysicsBackend2D } from '../types/input.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
@@ -109,12 +110,34 @@ def gen_node_wrapper():
         "  clearNetworkOverlayHandle(): number;",
         "}",
         "",
+        "const PRELOAD_TEXTURE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'tga', 'dds']);",
+        "const PRELOAD_FONT_EXTENSIONS = new Set(['ttf', 'otf', 'woff', 'woff2', 'fnt']);",
+        "",
+        "function detectPreloadKind(path: string): PreloadAssetKind {",
+        "  const ext = path.split('.').pop()?.toLowerCase() ?? '';",
+        "  if (PRELOAD_TEXTURE_EXTENSIONS.has(ext)) return 'texture';",
+        "  if (PRELOAD_FONT_EXTENSIONS.has(ext)) return 'font';",
+        "  throw new Error(`Unsupported preload asset type for path: ${path}`);",
+        "}",
+        "",
+        "function normalizePreloadAsset(asset: PreloadAssetInput): Required<IPreloadAssetRequest> {",
+        "  if (typeof asset === 'string') {",
+        "    return { path: asset, kind: detectPreloadKind(asset) };",
+        "  }",
+        "  return { path: asset.path, kind: asset.kind ?? detectPreloadKind(asset.path) };",
+        "}",
+        "",
     ]
     if tool.get("doc"):
         lines.append(f"/** {tool['doc']} */")
     lines += [
         "export class GoudGame implements IGoudGame {",
         "  private native: NativeGoudGame;",
+        "  private readonly preloadedTextures = new Map<string, number>();",
+        "  private readonly preloadedFonts = new Map<string, number>();",
+        "  private readonly texturePathByHandle = new Map<number, string>();",
+        "  private readonly fontPathByHandle = new Map<number, string>();",
+        "  private preloadInFlight = false;",
         "",
         "  constructor(config?: { width?: number; height?: number; title?: string }) {",
         "    this.native = new NativeGoudGame(config as GameConfig);",
@@ -173,6 +196,9 @@ def gen_node_wrapper():
         lines.append(f"  {'async ' if method.get('async') else ''}{mn}({sig}): {'Promise<' + ts_ret + '>' if method.get('async') else ts_ret} {{")
 
         if mn == "run":
+            lines.append("    if (this.preloadInFlight) {")
+            lines.append("      throw new Error('game.preload(...) must finish before game.run() starts.');")
+            lines.append("    }")
             lines.append("    while (!this.native.shouldClose()) {")
             lines.append("      this.native.beginFrame();")
             lines.append("      update(this.native.deltaTime);")
@@ -253,9 +279,37 @@ def gen_node_wrapper():
             lines.append("      packet_loss_percent: config.packetLossPercent,")
             lines.append("    } as unknown as INetworkSimulationConfig);")
         elif mn == "loadTexture":
-            lines.append("    return this.native.loadTexture(path);")
+            lines.append("    const cached = this.preloadedTextures.get(path);")
+            lines.append("    if (cached !== undefined) {")
+            lines.append("      return cached;")
+            lines.append("    }")
+            lines.append("    const handle = await this.native.loadTexture(path);")
+            lines.append("    this.preloadedTextures.set(path, handle);")
+            lines.append("    this.texturePathByHandle.set(handle, path);")
+            lines.append("    return handle;")
+        elif mn == "destroyTexture":
+            lines.append("    const path = this.texturePathByHandle.get(handle);")
+            lines.append("    if (path !== undefined) {")
+            lines.append("      this.texturePathByHandle.delete(handle);")
+            lines.append("      this.preloadedTextures.delete(path);")
+            lines.append("    }")
+            lines.append("    this.native.destroyTexture(handle);")
         elif mn == "loadFont":
-            lines.append("    return this.native.loadFont(path);")
+            lines.append("    const cached = this.preloadedFonts.get(path);")
+            lines.append("    if (cached !== undefined) {")
+            lines.append("      return cached;")
+            lines.append("    }")
+            lines.append("    const handle = await this.native.loadFont(path);")
+            lines.append("    this.preloadedFonts.set(path, handle);")
+            lines.append("    this.fontPathByHandle.set(handle, path);")
+            lines.append("    return handle;")
+        elif mn == "destroyFont":
+            lines.append("    const path = this.fontPathByHandle.get(handle);")
+            lines.append("    if (path !== undefined) {")
+            lines.append("      this.fontPathByHandle.delete(handle);")
+            lines.append("      this.preloadedFonts.delete(path);")
+            lines.append("    }")
+            lines.append("    return this.native.destroyFont(handle);")
         elif mn == "destroy":
             lines.append("    this.native.destroy();")
         else:
@@ -269,6 +323,38 @@ def gen_node_wrapper():
         lines.append("")
 
     lines += [
+        "  async preload(assets: PreloadAssetInput[], options: IPreloadOptions = {}): Promise<Record<string, number>> {",
+        "    if (this.preloadInFlight) {",
+        "      throw new Error('game.preload(...) is already in progress.');",
+        "    }",
+        "    this.preloadInFlight = true;",
+        "    const handles: Record<string, number> = {};",
+        "    try {",
+        "      const normalized = assets.map(normalizePreloadAsset);",
+        "      const total = normalized.length;",
+        "      let loaded = 0;",
+        "      for (const asset of normalized) {",
+        "        const handle = asset.kind === 'font'",
+        "          ? await this.loadFont(asset.path)",
+        "          : await this.loadTexture(asset.path);",
+        "        handles[asset.path] = handle;",
+        "        loaded += 1;",
+        "        const update: IPreloadProgress = {",
+        "          loaded,",
+        "          total,",
+        "          progress: total === 0 ? 1 : loaded / total,",
+        "          path: asset.path,",
+        "          kind: asset.kind,",
+        "          handle,",
+        "        };",
+        "        options.onProgress?.(update);",
+        "      }",
+        "      return handles;",
+        "    } finally {",
+        "      this.preloadInFlight = false;",
+        "    }",
+        "  }",
+        "",
         "  loadScene(name: string, json: string): number {",
         "    return (this.native as any).loadScene(name, json);",
         "  }",
@@ -306,6 +392,121 @@ def gen_node_wrapper():
     write_generated(GEN / "node" / "index.g.ts", "\n".join(lines))
 
 
+def gen_network_shared_wrapper():
+    lines = [
+        f"// {HEADER_COMMENT}",
+        "",
+        "import type {",
+        "  INetworkConnectResult,",
+        "  INetworkPacket,",
+        "  INetworkSimulationConfig,",
+        "  INetworkStats,",
+        "} from '../generated/types/engine.g.js';",
+        "",
+        "export interface NetworkContextLike {",
+        "  networkHost(protocol: number, port: number): number;",
+        "  networkConnectWithPeer(protocol: number, address: string, port: number): INetworkConnectResult;",
+        "  networkReceivePacket(handle: number): INetworkPacket | null;",
+        "  networkSend(handle: number, peerId: number, data: Uint8Array, channel: number): number;",
+        "  networkPoll(handle: number): number;",
+        "  networkDisconnect(handle: number): number;",
+        "  getNetworkStats(handle: number): INetworkStats;",
+        "  networkPeerCount(handle: number): number;",
+        "  setNetworkSimulation(handle: number, config: INetworkSimulationConfig): number;",
+        "  clearNetworkSimulation(handle: number): number;",
+        "  setNetworkOverlayHandle(handle: number): number;",
+        "  clearNetworkOverlayHandle(): number;",
+        "}",
+        "",
+        "export class NetworkManager {",
+        "  private readonly context: NetworkContextLike;",
+        "",
+        "  constructor(gameOrContext: NetworkContextLike) {",
+        "    this.context = gameOrContext;",
+        "  }",
+        "",
+        "  host(protocol: number, port: number): NetworkEndpoint {",
+        "    const handle = this.context.networkHost(protocol, port);",
+        "    if (handle < 0) {",
+        "      throw new Error(`networkHost failed with handle ${handle}`);",
+        "    }",
+        "",
+        "    return new NetworkEndpoint(this.context, handle);",
+        "  }",
+        "",
+        "  connect(protocol: number, address: string, port: number): NetworkEndpoint {",
+        "    const result = this.context.networkConnectWithPeer(protocol, address, port);",
+        "    return new NetworkEndpoint(this.context, result.handle, result.peerId);",
+        "  }",
+        "}",
+        "",
+        "export class NetworkEndpoint {",
+        "  private readonly context: NetworkContextLike;",
+        "",
+        "  readonly handle: number;",
+        "",
+        "  readonly defaultPeerId: number | null;",
+        "",
+        "  constructor(context: NetworkContextLike, handle: number, defaultPeerId: number | null = null) {",
+        "    this.context = context;",
+        "    this.handle = handle;",
+        "    this.defaultPeerId = defaultPeerId;",
+        "  }",
+        "",
+        "  receive(): INetworkPacket | null {",
+        "    return this.context.networkReceivePacket(this.handle);",
+        "  }",
+        "",
+        "  send(data: Uint8Array, channel = 0): number {",
+        "    if (this.defaultPeerId === null) {",
+        "      throw new Error('This endpoint has no default peer ID. Use sendTo(peerId, data, channel) instead.');",
+        "    }",
+        "",
+        "    return this.sendTo(this.defaultPeerId, data, channel);",
+        "  }",
+        "",
+        "  sendTo(peerId: number, data: Uint8Array, channel = 0): number {",
+        "    return this.context.networkSend(this.handle, peerId, data, channel);",
+        "  }",
+        "",
+        "  poll(): number {",
+        "    return this.context.networkPoll(this.handle);",
+        "  }",
+        "",
+        "  disconnect(): number {",
+        "    return this.context.networkDisconnect(this.handle);",
+        "  }",
+        "",
+        "  getStats(): INetworkStats {",
+        "    return this.context.getNetworkStats(this.handle);",
+        "  }",
+        "",
+        "  peerCount(): number {",
+        "    return this.context.networkPeerCount(this.handle);",
+        "  }",
+        "",
+        "  setSimulation(config: INetworkSimulationConfig): number {",
+        "    return this.context.setNetworkSimulation(this.handle, config);",
+        "  }",
+        "",
+        "  clearSimulation(): number {",
+        "    return this.context.clearNetworkSimulation(this.handle);",
+        "  }",
+        "",
+        "  setOverlayTarget(): number {",
+        "    return this.context.setNetworkOverlayHandle(this.handle);",
+        "  }",
+        "",
+        "  clearOverlayTarget(): number {",
+        "    return this.context.clearNetworkOverlayHandle();",
+        "  }",
+        "}",
+        "",
+    ]
+
+    write_generated(TS / "src" / "shared" / "network.ts", "\n".join(lines))
+
+
 def gen_entry():
     has_engine_config_export = has_engine_config()
     has_ui_manager_export = has_ui_manager()
@@ -338,3 +539,35 @@ def gen_entry():
         lines.append("export { DiagnosticMode } from './diagnostic.g.js';")
     lines.append("")
     write_generated(GEN / "index.g.ts", "\n".join(lines))
+
+
+def gen_public_entrypoints():
+    files = {
+        TS / "src" / "index.ts": [
+            f"// {HEADER_COMMENT}",
+            "export * from './generated/index.g.js';",
+            "export { NetworkManager, NetworkEndpoint } from './shared/network.js';",
+            "export type { NetworkContextLike } from './shared/network.js';",
+            "export { NetworkProtocol } from './generated/types/input.g.js';",
+            "",
+        ],
+        TS / "src" / "node" / "index.ts": [
+            f"// {HEADER_COMMENT}",
+            "export * from '../generated/node/index.g.js';",
+            "export { NetworkManager, NetworkEndpoint } from '../shared/network.js';",
+            "export type { NetworkContextLike } from '../shared/network.js';",
+            "export { NetworkProtocol } from '../generated/types/input.g.js';",
+            "",
+        ],
+        TS / "src" / "web" / "index.ts": [
+            f"// {HEADER_COMMENT}",
+            "export * from '../generated/web/index.g.js';",
+            "export { NetworkManager, NetworkEndpoint } from '../shared/network.js';",
+            "export type { NetworkContextLike } from '../shared/network.js';",
+            "export { NetworkProtocol } from '../generated/types/input.g.js';",
+            "",
+        ],
+    }
+
+    for path, lines in files.items():
+        write_generated(path, "\n".join(lines))

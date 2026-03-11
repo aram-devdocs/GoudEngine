@@ -1,7 +1,8 @@
 //! Bitmap font atlas adapter and unified [`FontAtlas`] enum.
 //!
 //! Wraps a [`BitmapFontAsset`] to provide the same [`GlyphInfo`] lookup
-//! interface as the TrueType [`GlyphAtlas`], and defines a [`FontAtlas`]
+//! interface as the TrueType [`GlyphAtlas`],
+//! and defines a [`FontAtlas`]
 //! enum that unifies both atlas types behind a common query surface.
 
 use std::collections::HashMap;

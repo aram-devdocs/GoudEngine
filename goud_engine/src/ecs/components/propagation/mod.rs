@@ -2,8 +2,10 @@
 //!
 //! This module provides functions to propagate transforms through entity hierarchies.
 //! When entities have parent-child relationships, child transforms are relative to
-//! their parents. These functions compute the world-space [`GlobalTransform`] and
-//! [`GlobalTransform2D`] from local transforms by traversing the hierarchy.
+//! their parents. These functions compute the world-space
+//! [`GlobalTransform`](crate::ecs::components::GlobalTransform) and
+//! [`GlobalTransform2D`](crate::ecs::components::GlobalTransform2D) from local
+//! transforms by traversing the hierarchy.
 //!
 //! # How Propagation Works
 //!

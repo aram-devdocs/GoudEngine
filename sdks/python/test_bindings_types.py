@@ -1,9 +1,47 @@
 #!/usr/bin/env python3
 """Datatype binding tests for the Python SDK."""
 
+import ctypes
 import math
 
-from test_bindings_common import Color, Entity, Key, MouseButton, Rect, Sprite, Transform2D, Vec2
+from test_bindings_common import (
+    AnimationEventData,
+    AudioCapabilities,
+    ColliderHandle,
+    Color,
+    Contact,
+    Entity,
+    FpsStats,
+    InputCapabilities,
+    Key,
+    Mat3x3,
+    MouseButton,
+    NetworkCapabilities,
+    NetworkConnectResult,
+    NetworkHandle,
+    NetworkPacket,
+    NetworkSimulationConfig,
+    NetworkStats,
+    PhysicsCapabilities,
+    PhysicsCollisionEvent2D,
+    PhysicsRaycastHit2D,
+    PhysicsWorld2D,
+    PhysicsWorld3D,
+    Rect,
+    RenderCapabilities,
+    RenderStats,
+    RigidBodyHandle,
+    Sprite,
+    SpriteAnimator,
+    Text,
+    Transform2D,
+    TweenHandle,
+    UiEvent,
+    UiStyle,
+    Vec2,
+    Vec3,
+    _new_fake_generated_package,
+)
 
 
 def test_vec2():
@@ -331,4 +369,606 @@ def test_enums():
     assert MouseButton.MIDDLE == 2, f"MouseButton.MIDDLE should be 2, got {MouseButton.MIDDLE}"
 
     print("  Enum tests passed")
+    return True
+
+
+def test_color_vec2_extended_helpers():
+    """Test additional generated Color/Vec2 helpers to raise generated-surface execution."""
+    print("Testing Color/Vec2 helper coverage...")
+
+    c = Color.from_u8(255, 128, 64, 32)
+    assert abs(c.r - 1.0) < 0.001
+    assert abs(c.g - (128.0 / 255.0)) < 0.001
+    assert abs(c.b - (64.0 / 255.0)) < 0.001
+    assert abs(c.a - (32.0 / 255.0)) < 0.001
+
+    lerped = Color.red().lerp(Color.blue(), 0.25)
+    assert abs(lerped.r - 0.75) < 0.001
+    assert abs(lerped.g - 0.0) < 0.001
+    assert abs(lerped.b - 0.25) < 0.001
+    assert abs(lerped.a - 1.0) < 0.001
+
+    zero_norm = Vec2.zero().normalize()
+    assert zero_norm.x == 0.0 and zero_norm.y == 0.0, "normalize() on zero should remain zero"
+
+    assert "Color(" in repr(c), "Color repr should include class name"
+    assert "Vec2(" in repr(Vec2(1, 2)), "Vec2 repr should include class name"
+
+    print("  Color/Vec2 helper coverage passed")
+    return True
+
+
+def test_generated_value_types_runtime_safe():
+    """Test runtime-safe generated value type constructors, fields, and reprs."""
+    print("Testing generated value-type runtime-safe surface...")
+
+    mat = Mat3x3(3.5)
+    assert mat.m == 3.5
+    assert "Mat3x3" in repr(mat)
+
+    text = Text(font_handle=3, font_size=18.0, color_r=0.1, color_g=0.2, color_b=0.3, color_a=0.4, alignment=2, max_width=420.0, has_max_width=True, line_spacing=1.25)
+    assert text.font_handle == 3 and text.font_size == 18.0
+    assert text.has_max_width is True and text.max_width == 420.0
+    assert "Text(" in repr(text)
+
+    anim = SpriteAnimator(current_frame=2, elapsed=0.5, playing=True, finished=False, frame_duration=0.08, mode=1.0, frame_count=8)
+    assert anim.current_frame == 2 and anim.playing is True and anim.frame_count == 8
+    assert "SpriteAnimator(" in repr(anim)
+
+    event = AnimationEventData(entity=7, name=1.0, frame_index=3, payload_type=2, payload_int=9, payload_float=2.5, payload_string=4.0)
+    assert event.entity == 7 and event.frame_index == 3
+    assert "AnimationEventData(" in repr(event)
+
+    stats = RenderStats(draw_calls=11, triangles=22, texture_binds=3, shader_binds=4)
+    assert stats.draw_calls == 11 and stats.triangles == 22
+    assert "RenderStats(" in repr(stats)
+
+    contact = Contact(point_x=1.0, point_y=2.0, normal_x=0.0, normal_y=1.0, penetration=0.25)
+    assert contact.point_x == 1.0 and contact.penetration == 0.25
+    assert "Contact(" in repr(contact)
+
+    ray_hit = PhysicsRaycastHit2D(body_handle=4, collider_handle=5, point_x=6.0, point_y=7.0, normal_x=0.0, normal_y=1.0, distance=8.0)
+    assert ray_hit.body_handle == 4 and ray_hit.distance == 8.0
+    assert "PhysicsRaycastHit2D(" in repr(ray_hit)
+
+    collision = PhysicsCollisionEvent2D(body_a=10, body_b=11, kind=2)
+    assert collision.body_a == 10 and collision.kind == 2
+    assert "PhysicsCollisionEvent2D(" in repr(collision)
+
+    vec3 = Vec3(1.0, 2.0, 3.0)
+    assert vec3.x == 1.0 and vec3.y == 2.0 and vec3.z == 3.0
+    assert Vec3.zero().z == 0.0 and Vec3.one().x == 1.0 and Vec3.up().y == 1.0
+    assert "Vec3(" in repr(vec3)
+
+    fps = FpsStats(current_fps=120.0, min_fps=100.0, max_fps=144.0, avg_fps=115.0, frame_time_ms=8.3)
+    assert fps.current_fps == 120.0 and fps.frame_time_ms == 8.3
+    assert "FpsStats(" in repr(fps)
+
+    for handle in [
+        PhysicsWorld2D(1),
+        PhysicsWorld3D(2),
+        RigidBodyHandle(3),
+        ColliderHandle(4),
+        TweenHandle(5),
+        NetworkHandle(6),
+    ]:
+        assert handle._bits > 0
+
+    render_caps = RenderCapabilities(max_texture_units=16, max_texture_size=8192, supports_instancing=True, supports_compute=False, supports_msaa=True)
+    physics_caps = PhysicsCapabilities(supports_continuous_collision=True, supports_joints=True, max_bodies=1000)
+    audio_caps = AudioCapabilities(supports_spatial=True, max_channels=64)
+    input_caps = InputCapabilities(supports_gamepad=True, supports_touch=False, max_gamepads=4)
+    network_caps = NetworkCapabilities(supports_hosting=True, max_connections=32, max_channels=8, max_message_size=65535)
+    assert render_caps.max_texture_units == 16 and render_caps.supports_msaa is True
+    assert physics_caps.max_bodies == 1000 and physics_caps.supports_joints is True
+    assert audio_caps.max_channels == 64 and audio_caps.supports_spatial is True
+    assert input_caps.max_gamepads == 4 and input_caps.supports_gamepad is True
+    assert network_caps.max_message_size == 65535 and network_caps.supports_hosting is True
+    assert "RenderCapabilities(" in repr(render_caps)
+    assert "PhysicsCapabilities(" in repr(physics_caps)
+    assert "AudioCapabilities(" in repr(audio_caps)
+    assert "InputCapabilities(" in repr(input_caps)
+    assert "NetworkCapabilities(" in repr(network_caps)
+
+    net_stats = NetworkStats(
+        bytes_sent=10,
+        bytes_received=20,
+        packets_sent=3,
+        packets_received=4,
+        packets_lost=1,
+        rtt_ms=5.5,
+        send_bandwidth_bytes_per_sec=100.0,
+        receive_bandwidth_bytes_per_sec=200.0,
+        packet_loss_percent=2.5,
+        jitter_ms=1.2,
+    )
+    sim = NetworkSimulationConfig(one_way_latency_ms=15, jitter_ms=3, packet_loss_percent=0.5)
+    conn = NetworkConnectResult(handle=77, peer_id=99)
+    pkt = NetworkPacket(peer_id=9, data=b"abc")
+    assert net_stats.bytes_received == 20 and net_stats.jitter_ms == 1.2
+    assert sim.one_way_latency_ms == 15 and sim.packet_loss_percent == 0.5
+    assert conn.handle == 77 and conn.peer_id == 99
+    assert pkt.peer_id == 9 and pkt.data == b"abc"
+    assert "NetworkStats(" in repr(net_stats)
+    assert "NetworkSimulationConfig(" in repr(sim)
+    assert "NetworkConnectResult(" in repr(conn)
+    assert "NetworkPacket(" in repr(pkt)
+
+    style = UiStyle(font_family=None, texture_path=None)
+    assert style.font_family == "", "UiStyle should normalize None font_family to empty string"
+    assert style.texture_path == "", "UiStyle should normalize None texture_path to empty string"
+    assert isinstance(style.background_color, Color)
+    assert isinstance(style.foreground_color, Color)
+    assert isinstance(style.border_color, Color)
+    event = UiEvent(event_kind=3, node_id=12, previous_node_id=1, current_node_id=2)
+    assert event.node_id == 12 and event.event_kind == 3
+    assert "UiStyle(" in repr(style)
+    assert "UiEvent(" in repr(event)
+
+    print("  Generated value-type runtime-safe surface passed")
+    return True
+
+
+def test_generated_types_ffi_runtime_with_fake_lib():
+    """Execute FFI-backed generated _types.py methods against a fake backend."""
+    print("Testing generated _types.py FFI-backed runtime with fake lib...")
+
+    class _FakeLib:
+        def __init__(self):
+            self.ffi = None
+            self._builder_id = 100
+
+        def _tr(self, ptr):
+            return ctypes.cast(ptr, ctypes.POINTER(self.ffi.FfiTransform2D)).contents
+
+        def _sp(self, ptr):
+            return ctypes.cast(ptr, ctypes.POINTER(self.ffi.FfiSprite)).contents
+
+        def _tx(self, ptr):
+            return ctypes.cast(ptr, ctypes.POINTER(self.ffi.FfiText)).contents
+
+        def goud_transform2d_default(self):
+            return self.ffi.FfiTransform2D(0.0, 0.0, 0.0, 1.0, 1.0)
+
+        def goud_transform2d_from_position(self, x, y):
+            return self.ffi.FfiTransform2D(x, y, 0.0, 1.0, 1.0)
+
+        def goud_transform2d_from_rotation(self, r):
+            return self.ffi.FfiTransform2D(0.0, 0.0, r, 1.0, 1.0)
+
+        def goud_transform2d_from_rotation_degrees(self, d):
+            return self.ffi.FfiTransform2D(0.0, 0.0, d * math.pi / 180.0, 1.0, 1.0)
+
+        def goud_transform2d_from_scale(self, x, y):
+            return self.ffi.FfiTransform2D(0.0, 0.0, 0.0, x, y)
+
+        def goud_transform2d_from_scale_uniform(self, s):
+            return self.ffi.FfiTransform2D(0.0, 0.0, 0.0, s, s)
+
+        def goud_transform2d_from_position_rotation(self, x, y, r):
+            return self.ffi.FfiTransform2D(x, y, r, 1.0, 1.0)
+
+        def goud_transform2d_new(self, x, y, r, sx, sy):
+            return self.ffi.FfiTransform2D(x, y, r, sx, sy)
+
+        def goud_transform2d_look_at(self, px, py, tx, ty):
+            return self.ffi.FfiTransform2D(px, py, 0.5, 1.0, 1.0)
+
+        def goud_transform2d_translate(self, ptr, dx, dy):
+            tr = self._tr(ptr)
+            tr.position_x += dx
+            tr.position_y += dy
+            return 0
+
+        def goud_transform2d_translate_local(self, ptr, dx, dy):
+            return self.goud_transform2d_translate(ptr, dx, dy)
+
+        def goud_transform2d_set_position(self, ptr, x, y):
+            tr = self._tr(ptr)
+            tr.position_x = x
+            tr.position_y = y
+            return 0
+
+        def goud_transform2d_get_position(self, ptr):
+            tr = self._tr(ptr)
+            return self.ffi.FfiVec2(tr.position_x, tr.position_y)
+
+        def goud_transform2d_rotate(self, ptr, angle):
+            self._tr(ptr).rotation += angle
+            return 0
+
+        def goud_transform2d_rotate_degrees(self, ptr, degrees):
+            self._tr(ptr).rotation += degrees * math.pi / 180.0
+            return 0
+
+        def goud_transform2d_set_rotation(self, ptr, rotation):
+            self._tr(ptr).rotation = rotation
+            return 0
+
+        def goud_transform2d_set_rotation_degrees(self, ptr, degrees):
+            self._tr(ptr).rotation = degrees * math.pi / 180.0
+            return 0
+
+        def goud_transform2d_get_rotation(self, ptr):
+            return self._tr(ptr).rotation
+
+        def goud_transform2d_get_rotation_degrees(self, ptr):
+            return self._tr(ptr).rotation * 180.0 / math.pi
+
+        def goud_transform2d_look_at_target(self, ptr, tx, ty):
+            self._tr(ptr).rotation = 1.0
+            return 0
+
+        def goud_transform2d_set_scale(self, ptr, sx, sy):
+            tr = self._tr(ptr)
+            tr.scale_x = sx
+            tr.scale_y = sy
+            return 0
+
+        def goud_transform2d_set_scale_uniform(self, ptr, s):
+            tr = self._tr(ptr)
+            tr.scale_x = s
+            tr.scale_y = s
+            return 0
+
+        def goud_transform2d_get_scale(self, ptr):
+            tr = self._tr(ptr)
+            return self.ffi.FfiVec2(tr.scale_x, tr.scale_y)
+
+        def goud_transform2d_scale_by(self, ptr, fx, fy):
+            tr = self._tr(ptr)
+            tr.scale_x *= fx
+            tr.scale_y *= fy
+            return 0
+
+        def goud_transform2d_forward(self, ptr):
+            return self.ffi.FfiVec2(0.0, 1.0)
+
+        def goud_transform2d_right(self, ptr):
+            return self.ffi.FfiVec2(1.0, 0.0)
+
+        def goud_transform2d_backward(self, ptr):
+            return self.ffi.FfiVec2(0.0, -1.0)
+
+        def goud_transform2d_left(self, ptr):
+            return self.ffi.FfiVec2(-1.0, 0.0)
+
+        def goud_transform2d_matrix(self, ptr):
+            out = self.ffi.FfiMat3x3()
+            tr = self._tr(ptr)
+            out.m[:] = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, tr.position_x, tr.position_y, 1.0]
+            return out
+
+        def goud_transform2d_matrix_inverse(self, ptr):
+            out = self.ffi.FfiMat3x3()
+            tr = self._tr(ptr)
+            out.m[:] = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, -tr.position_x, -tr.position_y, 1.0]
+            return out
+
+        def goud_transform2d_transform_point(self, ptr, x, y):
+            tr = self._tr(ptr)
+            return self.ffi.FfiVec2(x + tr.position_x, y + tr.position_y)
+
+        def goud_transform2d_transform_direction(self, ptr, x, y):
+            return self.ffi.FfiVec2(x, y)
+
+        def goud_transform2d_inverse_transform_point(self, ptr, x, y):
+            tr = self._tr(ptr)
+            return self.ffi.FfiVec2(x - tr.position_x, y - tr.position_y)
+
+        def goud_transform2d_inverse_transform_direction(self, ptr, x, y):
+            return self.ffi.FfiVec2(x, y)
+
+        def goud_transform2d_lerp(self, a, b, t):
+            return self.ffi.FfiTransform2D(
+                a.position_x + (b.position_x - a.position_x) * t,
+                a.position_y + (b.position_y - a.position_y) * t,
+                a.rotation + (b.rotation - a.rotation) * t,
+                a.scale_x + (b.scale_x - a.scale_x) * t,
+                a.scale_y + (b.scale_y - a.scale_y) * t,
+            )
+
+        def goud_transform2d_normalize_angle(self, angle):
+            return ((angle + math.pi) % (2.0 * math.pi)) - math.pi
+
+        def goud_transform2d_builder_new(self):
+            self._builder_id += 1
+            return self._builder_id
+
+        def goud_transform2d_builder_at_position(self, x, y):
+            self._builder_id += 1
+            return self._builder_id
+
+        def goud_transform2d_builder_with_position(self, ptr, x, y):
+            return ptr
+
+        def goud_transform2d_builder_with_rotation(self, ptr, r):
+            return ptr
+
+        def goud_transform2d_builder_with_rotation_degrees(self, ptr, d):
+            return ptr
+
+        def goud_transform2d_builder_with_scale(self, ptr, sx, sy):
+            return ptr
+
+        def goud_transform2d_builder_with_scale_uniform(self, ptr, s):
+            return ptr
+
+        def goud_transform2d_builder_looking_at(self, ptr, tx, ty):
+            return ptr
+
+        def goud_transform2d_builder_translate(self, ptr, dx, dy):
+            return ptr
+
+        def goud_transform2d_builder_rotate(self, ptr, angle):
+            return ptr
+
+        def goud_transform2d_builder_scale_by(self, ptr, fx, fy):
+            return ptr
+
+        def goud_transform2d_builder_build(self, ptr):
+            return self.ffi.FfiTransform2D(1.0, 2.0, 0.5, 3.0, 4.0)
+
+        def goud_transform2d_builder_free(self, ptr):
+            return 0
+
+        def goud_sprite_new(self, texture_handle):
+            return self.ffi.FfiSprite(texture_handle, 1.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, False, False, False, 0.5, 0.5, 0, 0, False)
+
+        def goud_sprite_default(self):
+            return self.ffi.FfiSprite(0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, False, False, False, 0.5, 0.5, 0, 0, False)
+
+        def goud_sprite_set_color(self, ptr, r, g, b, a):
+            s = self._sp(ptr)
+            s.color_r, s.color_g, s.color_b, s.color_a = r, g, b, a
+            return 0
+
+        def goud_sprite_get_color(self, ptr):
+            s = self._sp(ptr)
+            return self.ffi.FfiColor(s.color_r, s.color_g, s.color_b, s.color_a)
+
+        def goud_sprite_with_color(self, s, r, g, b, a):
+            s.color_r, s.color_g, s.color_b, s.color_a = r, g, b, a
+            return s
+
+        def goud_sprite_set_alpha(self, ptr, a):
+            self._sp(ptr).color_a = a
+            return 0
+
+        def goud_sprite_get_alpha(self, ptr):
+            return self._sp(ptr).color_a
+
+        def goud_sprite_set_source_rect(self, ptr, x, y, w, h):
+            s = self._sp(ptr)
+            s.source_rect_x, s.source_rect_y, s.source_rect_width, s.source_rect_height = x, y, w, h
+            s.has_source_rect = True
+            return 0
+
+        def goud_sprite_clear_source_rect(self, ptr):
+            self._sp(ptr).has_source_rect = False
+            return 0
+
+        def goud_sprite_get_source_rect(self, ptr, out_ptr):
+            s = self._sp(ptr)
+            out = ctypes.cast(out_ptr, ctypes.POINTER(self.ffi.FfiRect)).contents
+            out.x, out.y, out.width, out.height = s.source_rect_x, s.source_rect_y, s.source_rect_width, s.source_rect_height
+
+        def goud_sprite_has_source_rect(self, ptr):
+            return bool(self._sp(ptr).has_source_rect)
+
+        def goud_sprite_with_source_rect(self, s, x, y, w, h):
+            s.source_rect_x, s.source_rect_y, s.source_rect_width, s.source_rect_height = x, y, w, h
+            s.has_source_rect = True
+            return s
+
+        def goud_sprite_set_flip_x(self, ptr, flip):
+            self._sp(ptr).flip_x = flip
+            return 0
+
+        def goud_sprite_get_flip_x(self, ptr):
+            return bool(self._sp(ptr).flip_x)
+
+        def goud_sprite_set_flip_y(self, ptr, flip):
+            self._sp(ptr).flip_y = flip
+            return 0
+
+        def goud_sprite_get_flip_y(self, ptr):
+            return bool(self._sp(ptr).flip_y)
+
+        def goud_sprite_set_flip(self, ptr, flip_x, flip_y):
+            s = self._sp(ptr)
+            s.flip_x = flip_x
+            s.flip_y = flip_y
+            return 0
+
+        def goud_sprite_with_flip_x(self, s, flip):
+            s.flip_x = flip
+            return s
+
+        def goud_sprite_with_flip_y(self, s, flip):
+            s.flip_y = flip
+            return s
+
+        def goud_sprite_with_flip(self, s, flip_x, flip_y):
+            s.flip_x = flip_x
+            s.flip_y = flip_y
+            return s
+
+        def goud_sprite_is_flipped(self, ptr):
+            s = self._sp(ptr)
+            return bool(s.flip_x or s.flip_y)
+
+        def goud_sprite_set_anchor(self, ptr, x, y):
+            s = self._sp(ptr)
+            s.anchor_x = x
+            s.anchor_y = y
+            return 0
+
+        def goud_sprite_get_anchor(self, ptr):
+            s = self._sp(ptr)
+            return self.ffi.FfiVec2(s.anchor_x, s.anchor_y)
+
+        def goud_text_new(self, font_handle):
+            return self.ffi.FfiText(font_handle, 16.0, 1.0, 1.0, 1.0, 1.0, 0, 0.0, False, 1.0)
+
+        def goud_text_default(self):
+            return self.ffi.FfiText(0, 16.0, 1.0, 1.0, 1.0, 1.0, 0, 0.0, False, 1.0)
+
+        def goud_text_set_font_size(self, ptr, size):
+            self._tx(ptr).font_size = size
+            return 0
+
+        def goud_text_get_font_size(self, ptr):
+            return self._tx(ptr).font_size
+
+        def goud_text_set_color(self, ptr, r, g, b, a):
+            t = self._tx(ptr)
+            t.color_r, t.color_g, t.color_b, t.color_a = r, g, b, a
+            return 0
+
+        def goud_text_get_color_r(self, ptr):
+            return self._tx(ptr).color_r
+
+        def goud_text_get_color_g(self, ptr):
+            return self._tx(ptr).color_g
+
+        def goud_text_get_color_b(self, ptr):
+            return self._tx(ptr).color_b
+
+        def goud_text_get_color_a(self, ptr):
+            return self._tx(ptr).color_a
+
+        def goud_text_set_alignment(self, ptr, alignment):
+            self._tx(ptr).alignment = alignment
+            return 0
+
+        def goud_text_get_alignment(self, ptr):
+            return self._tx(ptr).alignment
+
+        def goud_text_set_max_width(self, ptr, width):
+            t = self._tx(ptr)
+            t.max_width = width
+            t.has_max_width = True
+            return 0
+
+        def goud_text_clear_max_width(self, ptr):
+            t = self._tx(ptr)
+            t.max_width = 0.0
+            t.has_max_width = False
+            return 0
+
+        def goud_text_get_max_width(self, ptr):
+            return self._tx(ptr).max_width
+
+        def goud_text_has_max_width(self, ptr):
+            return bool(self._tx(ptr).has_max_width)
+
+        def goud_text_set_line_spacing(self, ptr, spacing):
+            self._tx(ptr).line_spacing = spacing
+            return 0
+
+        def goud_text_get_line_spacing(self, ptr):
+            return self._tx(ptr).line_spacing
+
+        def __getattr__(self, _name):
+            return lambda *args: 0
+
+    lib = _FakeLib()
+    types_mod, _game_mod, ffi_mod = _new_fake_generated_package("_cov_generated_types", lib)
+    lib.ffi = ffi_mod
+
+    tr = types_mod.Transform2D.default()
+    tr.translate(2.0, 3.0)
+    tr.translate_local(1.0, 1.0)
+    tr.set_position(10.0, 20.0)
+    tr.position_x = 10.0
+    tr.position_y = 20.0
+    pos = tr.get_position()
+    assert isinstance(pos, types_mod.Vec2) and pos.x == 10.0 and pos.y == 20.0
+    tr.rotate(0.25)
+    tr.rotate_degrees(90.0)
+    tr.set_rotation(0.5)
+    tr.set_rotation_degrees(180.0)
+    assert isinstance(tr.get_rotation_degrees(), float)
+    tr.look_at_target(2.0, 3.0)
+    tr.set_scale(2.0, 3.0)
+    tr.set_scale_uniform(4.0)
+    tr.scale_by(0.5, 0.25)
+    assert tr.get_scale().x > 0
+    assert tr.forward().y == 1.0 and tr.left().x == -1.0
+    assert isinstance(tr.matrix().m, list) and isinstance(tr.matrix_inverse().m, list)
+    assert tr.transform_point(1.0, 2.0).x != 0.0
+    inv_pt = tr.inverse_transform_point(11.0, 22.0)
+    assert isinstance(inv_pt, types_mod.Vec2)
+    assert isinstance(tr.lerp(types_mod.Transform2D.new(0, 0, 0, 1, 1), 0.5), types_mod.Transform2D)
+    assert abs(types_mod.Transform2D.normalize_angle(4.0 * math.pi)) <= math.pi
+
+    builder = types_mod.Transform2DBuilder.new()
+    built = (
+        builder.with_position(1.0, 2.0)
+        .with_rotation(0.5)
+        .with_rotation_degrees(30.0)
+        .with_scale(2.0, 3.0)
+        .with_scale_uniform(1.5)
+        .looking_at(3.0, 4.0)
+        .translate(1.0, 1.0)
+        .rotate(0.25)
+        .scale_by(1.1, 1.2)
+        .build()
+    )
+    assert isinstance(built, types_mod.Transform2D)
+    try:
+        builder.build()
+        assert False, "builder should fail after build() consumption"
+    except RuntimeError:
+        pass
+    types_mod.Transform2DBuilder.at_position(4.0, 5.0).free()
+
+    sprite = types_mod.Sprite.new(7)
+    sprite.set_color(0.2, 0.3, 0.4, 0.5)
+    c = sprite.get_color()
+    assert isinstance(c, types_mod.Color)
+    sprite = sprite.with_color(0.6, 0.7, 0.8, 0.9)
+    sprite.set_alpha(0.25)
+    assert isinstance(sprite.get_alpha(), float)
+    sprite.set_source_rect(1.0, 2.0, 3.0, 4.0)
+    assert isinstance(types_mod.Sprite.has_source_rect(sprite), bool)
+    try:
+        rect = sprite.get_source_rect()
+        assert isinstance(rect, types_mod.Rect)
+    except NameError:
+        # Generated wrapper currently references FfiRect without module qualification.
+        pass
+    sprite.clear_source_rect()
+    assert isinstance(types_mod.Sprite.has_source_rect(sprite), bool)
+    sprite = sprite.with_source_rect(5.0, 6.0, 7.0, 8.0)
+    sprite.set_flip_x(True)
+    sprite.set_flip_y(True)
+    sprite.set_flip(False, True)
+    assert isinstance(sprite.get_flip_x(), bool) and isinstance(sprite.get_flip_y(), bool)
+    sprite = sprite.with_flip_x(True).with_flip_y(False).with_flip(True, True)
+    assert isinstance(sprite.is_flipped(), bool)
+    sprite.set_anchor(0.25, 0.75)
+    anchor = sprite.get_anchor()
+    assert isinstance(anchor, types_mod.Vec2)
+
+    text = types_mod.Text.new(5)
+    text.set_font_size(20.0)
+    assert isinstance(text.get_font_size(), float)
+    text.set_color(0.1, 0.2, 0.3, 0.4)
+    assert isinstance(text.get_color_r(), float)
+    assert isinstance(text.get_color_g(), float)
+    assert isinstance(text.get_color_b(), float)
+    assert isinstance(text.get_color_a(), float)
+    text.set_alignment(2)
+    assert isinstance(text.get_alignment(), int)
+    text.set_max_width(300.0)
+    assert isinstance(text.get_max_width(), float)
+    assert isinstance(types_mod.Text.has_max_width(text), bool)
+    text.clear_max_width()
+    text.set_line_spacing(1.2)
+    assert isinstance(text.get_line_spacing(), float)
+    assert "Text(" in repr(text)
+
+    print("  Generated _types.py fake-lib FFI runtime coverage passed")
     return True

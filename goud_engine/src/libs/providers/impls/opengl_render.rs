@@ -52,8 +52,7 @@ impl OpenGLRenderProvider {
     /// Used by higher-layer code that needs direct backend access for
     /// operations not yet exposed through the provider trait (e.g.,
     /// sprite batch rendering, tiled map drawing).
-    #[allow(dead_code)]
-    pub(crate) fn backend(&mut self) -> &mut OpenGLBackend {
+    pub fn backend(&mut self) -> &mut OpenGLBackend {
         &mut self.backend
     }
 }

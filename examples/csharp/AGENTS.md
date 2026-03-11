@@ -11,6 +11,7 @@ C# games demonstrating GoudEngine SDK features. Each is a standalone .NET projec
 - `goud_jumper/` — Platformer: physics, tile maps, sprite animation
 - `isometric_rpg/` — Complex RPG: combat, NPCs, dialogue, UI, isometric rendering
 - `hello_ecs/` — ECS basics: entity creation, components, systems
+- `feature_lab/` — Headless smoke app: ECS components, builders, and batch entity operations
 
 ## Patterns
 
@@ -24,6 +25,7 @@ C# games demonstrating GoudEngine SDK features. Each is a standalone .NET projec
 ```bash
 ./dev.sh --game flappy_goud          # Run with published NuGet
 ./dev.sh --game flappy_goud --local  # Run with local NuGet feed
+./dev.sh --game feature_lab          # Run headless feature-lab smoke checks
 ```
 
 ## Adding a New Example

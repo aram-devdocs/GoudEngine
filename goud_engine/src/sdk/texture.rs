@@ -1,6 +1,6 @@
 //! # SDK Texture API
 //!
-//! Provides methods on [`GoudGame`](super::GoudGame) for texture operations
+//! Provides methods on [`GoudGame`] for texture operations
 //! including loading image files and destroying GPU texture resources.
 //!
 //! # Availability

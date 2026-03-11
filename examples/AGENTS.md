@@ -6,10 +6,10 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 
 ## Structure
 
-- `csharp/` — C# example games (flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs)
+- `csharp/` — C# example games (flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab)
 - `python/` — Python example games (main.py demo, flappy_bird.py)
-- `typescript/` — TypeScript example games (flappy_bird — desktop + web targets)
-- `rust/` — Rust example games (flappy_bird)
+- `typescript/` — TypeScript example games (flappy_bird, feature_lab — desktop + web targets)
+- `rust/` — Rust example games (flappy_bird, feature_lab)
 
 ## Running
 
@@ -19,19 +19,21 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 ./dev.sh --game goud_jumper          # C# platformer
 ./dev.sh --game isometric_rpg        # C# isometric RPG
 ./dev.sh --game hello_ecs            # C# ECS basics
+./dev.sh --game feature_lab          # C# headless feature-lab smoke checks
 ./dev.sh --sdk python --game python_demo    # Python demo
 ./dev.sh --sdk python --game flappy_bird    # Python Flappy Bird
 ./dev.sh --sdk typescript --game flappy_bird  # TypeScript Flappy Bird (desktop)
+./dev.sh --sdk typescript --game feature_lab  # TypeScript Feature Lab (desktop)
 cargo run -p flappy-bird                      # Rust Flappy Bird
 ```
 
 ### TypeScript Web Target
 
 ```bash
-cd examples/typescript/flappy_bird
+cd examples/typescript/feature_lab
 npm run build:web        # Compile TS to dist/
 npm run web              # Start local server on port 8765
-# Open http://localhost:8765/examples/typescript/flappy_bird/web/index.html
+# Open http://localhost:8765/examples/typescript/feature_lab/web/index.html
 ```
 
 ## Rules
@@ -41,6 +43,7 @@ npm run web              # Start local server on port 8765
 - Examples demonstrate engine features — keep code readable and well-commented
 - Python Flappy Bird mirrors C# flappy_goud for SDK parity testing
 - TypeScript Flappy Bird mirrors C# and Python versions with shared game logic across desktop/web
+- TypeScript Feature Lab extends wrapper/API coverage for ALPHA-001 verification
 - Rust Flappy Bird (`examples/rust/flappy_bird/`) mirrors all other implementations
 
 ## Game constants

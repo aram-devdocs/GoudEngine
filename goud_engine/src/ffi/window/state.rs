@@ -1,6 +1,7 @@
 //! # Window State
 //!
-//! Defines [`WindowState`], which composes a [`GlfwPlatform`] and an
+//! Defines [`WindowState`], which composes a
+//! [`GlfwPlatform`](crate::libs::platform::glfw_platform::GlfwPlatform) and an
 //! [`OpenGLBackend`] into a single per-context object, and the thread-local
 //! storage helpers used to access it from FFI functions.
 
@@ -21,7 +22,8 @@ use std::cell::RefCell;
 
 /// Window state attached to a context.
 ///
-/// Composes a [`GlfwPlatform`] (windowing + input) with an [`OpenGLBackend`]
+/// Composes a [`GlfwPlatform`](crate::libs::platform::glfw_platform::GlfwPlatform)
+/// (windowing + input) with an [`OpenGLBackend`]
 /// (rendering). The platform backend owns the window handle and event loop;
 /// the render backend is stored alongside it.
 pub struct WindowState {

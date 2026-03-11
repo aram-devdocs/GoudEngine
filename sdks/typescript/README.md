@@ -42,7 +42,12 @@ const game = await GoudGame.create(800, 600, "My Game");
 
 ## Networking
 
-Networking wrappers are available in the Node build. Use `new NetworkManager(gameOrContext)` with `GoudGame` or `GoudContext`. `host()` and `connect()` return `NetworkEndpoint`. `connect()` stores the default peer ID, so clients can call `send(...)`. Host endpoints reply with `sendTo(...)`.
+Networking wrappers are available in both the Node and web builds.
+
+- `goudengine/node`: host + client
+- `goudengine/web`: WebSocket client only
+
+Use `new NetworkManager(gameOrContext)` with `GoudGame` or `GoudContext`. `host()` and `connect()` return `NetworkEndpoint`. `connect()` stores the default peer ID, so clients can call `send(...)`. Host endpoints reply with `sendTo(...)`.
 
 ```typescript
 import { GoudContext, NetworkManager, NetworkProtocol } from "goudengine/node";
@@ -73,7 +78,27 @@ while (true) {
 }
 ```
 
-TypeScript networking is currently Node-only (`goudengine/node`), including loopback and headless usage. `goudengine/web` still throws `Not supported in WASM mode` for networking calls. Wrapper classes are exported in the web target for type parity, but browser networking is not supported yet.
+Browser note:
+
+- On `goudengine/web`, use `NetworkProtocol.WebSocket`.
+- Browser hosting is not supported.
+- `connect()` returns before the socket is fully open, so poll until `peerCount() > 0` before sending.
+
+Example:
+
+```typescript
+import { GoudGame, NetworkManager, NetworkProtocol } from "goudengine/web";
+
+const game = await GoudGame.create({ width: 800, height: 600, title: "Web Net" });
+const endpoint = new NetworkManager(game).connect(
+  NetworkProtocol.WebSocket,
+  "ws://127.0.0.1:9001",
+  9001,
+);
+```
+
+Browser-specific limitations and workarounds are documented in the Web Platform Gotchas guide:
+[`docs/src/guides/web-platform-gotchas.md`](../../docs/src/guides/web-platform-gotchas.md).
 
 ## Features
 
@@ -203,6 +228,8 @@ A few things to keep in mind when targeting the browser:
   browser tab is hidden. No extra handling is needed.
 - **Touch input** -- Touch events are automatically mapped to mouse button 0.
   `touchstart` maps to `press_mouse_button(0)`, `touchend` maps to `release_mouse_button(0)`.
+- **More browser caveats** -- See the Web Platform Gotchas guide for async loop rules,
+  asset-loading caveats, and the current networking limitation on `goudengine/web`.
 
 ## Node vs Web Targets
 
@@ -254,8 +281,12 @@ npm run build:all       # Node + Web
 ```bash
 cd sdks/typescript
 npm test                # node --test test/*.test.mjs
+npx c8 --reporter=text-summary npm test
 npm run typecheck       # tsc --noEmit for both targets
 ```
+
+The TypeScript SDK CI gate expects at least `80%` line coverage across the
+public SDK surface and publishes a Cobertura report from `c8`.
 
 ## Codegen
 

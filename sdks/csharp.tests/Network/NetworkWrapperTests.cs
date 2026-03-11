@@ -173,7 +173,7 @@ public class NetworkWrapperTests
         }
 
         throw new FileNotFoundException(
-            $"Could not locate handwritten C# wrapper source at {sourcePath}"
+            $"Could not locate generated C# wrapper source at {sourcePath}"
         );
     }
 

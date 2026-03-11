@@ -1,0 +1,617 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0002: NetworkProvider Trait - GoudEngine Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Documentation for GoudEngine, a Rust game engine with multi-language SDK support">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-2459343d.css">
+        <link rel="stylesheet" href="../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-75a1eb4b.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-e7a7aa40.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">GoudEngine Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/aram-devdocs/GoudEngine" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/aram-devdocs/GoudEngine/edit/main/docs/src/docs/src/../rfcs/RFC-0002-network-provider-trait.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <hr>
+<h2 id="rfc-0002-title-networkprovider-trait-design-status-accepted-created-2026-03-06-authors-aram-devdocs-tracking-issue-356"><a class="header" href="#rfc-0002-title-networkprovider-trait-design-status-accepted-created-2026-03-06-authors-aram-devdocs-tracking-issue-356">rfc: “0002”
+title: “NetworkProvider Trait Design”
+status: accepted
+created: 2026-03-06
+authors: [“aram-devdocs”]
+tracking-issue: “#356”</a></h2>
+<h1 id="rfc-0002-networkprovider-trait-design"><a class="header" href="#rfc-0002-networkprovider-trait-design">RFC-0002: NetworkProvider Trait Design</a></h1>
+<h2 id="1-summary"><a class="header" href="#1-summary">1. Summary</a></h2>
+<p>This RFC defines <code>NetworkProvider</code>, a new subsystem trait following the provider pattern established in RFC-0001. It abstracts transport backends (UDP for desktop, WebSocket for web) behind a unified interface covering connection lifecycle, message passing over typed channels, and event polling. <code>NetworkProvider</code> extends both <code>Provider</code> and <code>ProviderLifecycle</code> supertraits per RFC-0001 §3.3, and integrates with <code>ProviderRegistry</code> as an optional field, leaving games that do not need networking unaffected.</p>
+<hr>
+<h2 id="2-motivation"><a class="header" href="#2-motivation">2. Motivation</a></h2>
+<p>GoudEngine has no networking subsystem. Parent issue #140 requires a full networking system; this RFC specifies the trait boundary before implementation begins.</p>
+<p>RFC-0001 established the provider pattern for rendering, physics, audio, windowing, and input. <code>NetworkProvider</code> must follow that same pattern: a trait in <code>libs/providers/</code>, concrete implementations in <code>libs/providers/impls/network/</code>, registration in <code>ProviderRegistry</code> at Layer 2, and FFI exposure at Layer 3. Diverging from this pattern would fragment the architecture.</p>
+<p>Multiplayer games target different transports by platform. A desktop build uses UDP (low latency, no browser restrictions); a web/WASM build uses WebSockets (only transport available in browsers). The game layer must not know which transport is active. <code>NetworkProvider</code> is the swap point.</p>
+<p>Integration attaches to <code>GoudGame</code> in <code>goud_engine/src/sdk/game/instance.rs</code>, the same file RFC-0001 identified as the central integration point for all providers.</p>
+<hr>
+<h2 id="3-design"><a class="header" href="#3-design">3. Design</a></h2>
+<h3 id="31-networkprovider-trait"><a class="header" href="#31-networkprovider-trait">3.1 NetworkProvider Trait</a></h3>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait NetworkProvider: Provider + ProviderLifecycle {
+    /// Begin accepting inbound connections on the given config.
+    ///
+    /// Calling `host` on an already-hosting provider returns an error.
+    fn host(&amp;mut self, config: &amp;HostConfig) -&gt; GoudResult&lt;()&gt;;
+
+    /// Open a connection to the given address.
+    ///
+    /// Returns a `ConnectionId` that is valid until the connection closes.
+    /// The connection may not be fully established when this returns; poll
+    /// `drain_events` for `NetworkEvent::Connected`.
+    fn connect(&amp;mut self, addr: &amp;str) -&gt; GoudResult&lt;ConnectionId&gt;;
+
+    /// Close a specific connection.
+    fn disconnect(&amp;mut self, conn: ConnectionId) -&gt; GoudResult&lt;()&gt;;
+
+    /// Close all active connections.
+    fn disconnect_all(&amp;mut self) -&gt; GoudResult&lt;()&gt;;
+
+    /// Send raw bytes to one connection on the given channel.
+    ///
+    /// The provider does not inspect or frame the bytes. Serialization
+    /// is the caller's responsibility.
+    fn send(&amp;mut self, conn: ConnectionId, channel: Channel, data: &amp;[u8]) -&gt; GoudResult&lt;()&gt;;
+
+    /// Send raw bytes to all active connections on the given channel.
+    fn broadcast(&amp;mut self, channel: Channel, data: &amp;[u8]) -&gt; GoudResult&lt;()&gt;;
+
+    /// Return all buffered network events and clear the internal buffer.
+    ///
+    /// Must be called once per frame. Returns owned `Vec` to avoid holding
+    /// a borrow on the provider while the caller processes events.
+    fn drain_events(&amp;mut self) -&gt; Vec&lt;NetworkEvent&gt;;
+
+    /// Return the current list of active connection IDs.
+    fn connections(&amp;self) -&gt; &amp;[ConnectionId];
+
+    /// Return the state of a specific connection.
+    fn connection_state(&amp;self, conn: ConnectionId) -&gt; ConnectionState;
+
+    /// Return this peer's own `ConnectionId`, if the provider has been assigned one.
+    fn local_id(&amp;self) -&gt; Option&lt;ConnectionId&gt;;
+
+    /// Return static capability flags for this provider.
+    fn network_capabilities(&amp;self) -&gt; &amp;NetworkCapabilities;
+
+    /// Return aggregate network statistics.
+    fn stats(&amp;self) -&gt; NetworkStats;
+
+    /// Return per-connection statistics, or `None` if the ID is unknown.
+    fn connection_stats(&amp;self, conn: ConnectionId) -&gt; Option&lt;ConnectionStats&gt;;
+}
+<span class="boring">}</span></code></pre>
+<p>Design decisions:</p>
+<ul>
+<li><strong>Raw bytes, not typed messages.</strong> Generic methods break object safety. Serialization (serde, bitcode, etc.) is a game-level concern; the provider passes bytes through.</li>
+<li><strong>Poll, not callbacks.</strong> Callbacks are not object-safe and require <code>'static</code> closures that complicate borrow lifetimes. <code>drain_events</code> matches <code>PhysicsProvider::drain_collision_events</code> from RFC-0001.</li>
+<li><strong><code>ConnectionId</code> not <code>PeerId</code>.</strong> <code>ConnectionId</code> is a transport-level concept. Game-level peer identity (player IDs, lobby slots) belongs above the provider boundary.</li>
+<li><strong>No async.</strong> The engine has no async runtime. Background I/O threads communicate with the main thread via channels; <code>drain_events</code> collects that work synchronously (see §3.5).</li>
+<li><strong>Owned <code>Vec</code> return accepted.</strong> <code>drain_events</code> returns <code>Vec&lt;NetworkEvent&gt;</code> where <code>Received</code> variants contain <code>data: Vec&lt;u8&gt;</code>, causing per-message heap allocations. This mirrors <code>PhysicsProvider::drain_collision_events</code> from RFC-0001, which justified the pattern to avoid lifetime coupling. Network payloads are larger than collision events, but <code>drain_events</code> runs once per frame (not per-packet), and the <code>Vec</code> is short-lived. If profiling shows allocation pressure, a future optimization can reuse a scratch buffer inside the provider and return <code>&amp;[NetworkEvent]</code> with a borrow — the trait can evolve without breaking the FFI boundary, which already uses caller-provided buffers (§3.8).</li>
+</ul>
+<hr>
+<h3 id="32-supporting-types"><a class="header" href="#32-supporting-types">3.2 Supporting Types</a></h3>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Opaque transport-level connection identifier.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ConnectionId(u64);
+
+/// Lifecycle state of a connection.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConnectionState {
+    Disconnected,
+    Connecting,
+    Connected,
+    Disconnecting,
+    Error,
+}
+
+/// Named channel for message routing.
+///
+/// Channels map to transport QoS settings (reliable/unreliable, ordered/unordered).
+/// Channel 0 is always reliable-ordered. Higher channels are provider-defined.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Channel(pub u8);
+
+/// An event produced by the network provider during `drain_events`.
+#[derive(Debug, Clone)]
+pub enum NetworkEvent {
+    Connected { conn: ConnectionId },
+    Disconnected { conn: ConnectionId, reason: DisconnectReason },
+    Received { conn: ConnectionId, channel: Channel, data: Vec&lt;u8&gt; },
+    Error { conn: ConnectionId, message: String },
+}
+
+/// Why a connection closed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DisconnectReason {
+    LocalClose,
+    RemoteClose,
+    Timeout,
+    Error(String),
+}
+
+/// Configuration for hosting (accepting inbound connections).
+#[derive(Debug, Clone)]
+pub struct HostConfig {
+    pub bind_address: String,
+    pub port: u16,
+    pub max_connections: u32,
+}
+
+/// Static capability flags for a network provider.
+#[derive(Debug, Clone)]
+pub struct NetworkCapabilities {
+    pub supports_hosting: bool,
+    pub max_connections: u32,
+    pub max_channels: u8,
+    pub max_message_size: usize,
+}
+
+/// Aggregate statistics for the provider.
+#[derive(Debug, Clone, Default)]
+pub struct NetworkStats {
+    pub bytes_sent: u64,
+    pub bytes_received: u64,
+    pub packets_sent: u64,
+    pub packets_received: u64,
+    pub packets_lost: u64,
+}
+
+/// Per-connection statistics.
+#[derive(Debug, Clone, Default)]
+pub struct ConnectionStats {
+    pub round_trip_ms: f32,
+    pub bytes_sent: u64,
+    pub bytes_received: u64,
+    pub packets_lost: u64,
+}
+<span class="boring">}</span></code></pre>
+<hr>
+<h3 id="33-connection-lifecycle"><a class="header" href="#33-connection-lifecycle">3.3 Connection Lifecycle</a></h3>
+<pre><code>Disconnected
+     |
+     | connect() / host() receives client
+     v
+ Connecting
+     |              \
+     | handshake ok  | handshake fail
+     v               v
+ Connected         Error
+     |
+     | disconnect() / remote close / timeout
+     v
+Disconnecting
+     |
+     v
+Disconnected
+</code></pre>
+<p><code>drain_events</code> emits <code>NetworkEvent::Connected</code> on the <code>Connecting -&gt; Connected</code> transition and <code>NetworkEvent::Disconnected</code> on the <code>Disconnecting -&gt; Disconnected</code> transition. <code>NetworkEvent::Error</code> does not automatically close the connection; call <code>disconnect</code> after receiving it.</p>
+<hr>
+<h3 id="34-built-in-implementations"><a class="header" href="#34-built-in-implementations">3.4 Built-in Implementations</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Implementation</th><th>Feature Flag</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>UdpNetProvider</code></td><td><code>net-udp</code></td><td>UDP transport; desktop targets</td></tr>
+<tr><td><code>WebSocketNetProvider</code></td><td><code>net-ws</code></td><td>WebSocket transport; web/WASM targets</td></tr>
+<tr><td><code>NullNetProvider</code></td><td>always</td><td>No-op; for games that do not use networking</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>NullNetProvider</code> satisfies the optional field in <code>ProviderRegistry</code> without adding a dependency or panicking. <code>drain_events</code> returns an empty <code>Vec</code>; all other methods return <code>Ok(())</code> or type-appropriate defaults.</p>
+<hr>
+<h3 id="35-thread-safety"><a class="header" href="#35-thread-safety">3.5 Thread Safety</a></h3>
+<p><code>NetworkProvider</code> extends <code>Provider</code>, which requires <code>Send + Sync + 'static</code>. Concrete implementations use background I/O threads that communicate with the main thread via <code>std::sync::mpsc</code> channels. <code>drain_events</code> drains the receiver end of that channel each frame. No locking is required on the call sites.</p>
+<p><code>ProviderLifecycle::update(delta)</code> is called once per frame by the engine loop. For network providers, <code>update</code> flushes the outbound send queue and transfers inbound data from the I/O thread channel into the event buffer that <code>drain_events</code> returns. Providers that do not need per-frame work (e.g., <code>NullNetProvider</code>) implement <code>update</code> as a no-op returning <code>Ok(())</code>.</p>
+<hr>
+<h3 id="36-layer-placement"><a class="header" href="#36-layer-placement">3.6 Layer Placement</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Component</th><th>Layer</th><th>Path</th></tr>
+</thead>
+<tbody>
+<tr><td><code>NetworkProvider</code> trait + supporting types</td><td>Layer 1</td><td><code>goud_engine/src/libs/providers/network.rs</code></td></tr>
+<tr><td>Concrete implementations</td><td>Layer 1</td><td><code>goud_engine/src/libs/providers/impls/network/</code></td></tr>
+<tr><td><code>ProviderRegistry</code> (gains <code>network</code> field)</td><td>Layer 2</td><td><code>goud_engine/src/core/providers/registry.rs</code></td></tr>
+<tr><td>FFI functions</td><td>Layer 3</td><td><code>goud_engine/src/ffi/network.rs</code></td></tr>
+<tr><td>SDK wrappers</td><td>Layer 4</td><td>generated via codegen from <code>goud_sdk.schema.json</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><code>ProviderRegistry</code> gains one optional field:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ProviderRegistry {
+    pub render: Box&lt;dyn RenderProvider&gt;,
+    pub physics: Box&lt;dyn PhysicsProvider&gt;,
+    pub audio: Box&lt;dyn AudioProvider&gt;,
+    pub input: Box&lt;dyn InputProvider&gt;,
+    pub network: Option&lt;Box&lt;dyn NetworkProvider&gt;&gt;, // new
+}
+<span class="boring">}</span></code></pre>
+<p>The field is <code>Option</code> because networking is not required — unlike render, physics, audio, and input, which every game needs at minimum as a <code>Null*Provider</code>. Most single-player games never touch networking. Making it <code>Option</code> avoids forcing a <code>NullNetProvider</code> allocation on every game and makes “networking not configured” a distinct, type-level state rather than a silent no-op. Call sites use <code>if let Some(net) = registry.network.as_mut()</code> (see §3.9). Open Question 1 tracks whether this should change.</p>
+<p>The error type prerequisite from RFC-0001 §3.10 applies here too: <code>GoudError</code> must move to Layer 1 before <code>NetworkProvider</code> trait methods can return <code>GoudResult&lt;T&gt;</code> without a Layer 1 → Layer 2 import violation.</p>
+<hr>
+<h3 id="37-error-handling"><a class="header" href="#37-error-handling">3.7 Error Handling</a></h3>
+<p>Network errors use the <code>ProviderError</code> variant established in RFC-0001 §3.9:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ProviderError { subsystem: "network", message: String }
+<span class="boring">}</span></code></pre>
+<p>Error codes 700–709 are reserved for the network subsystem, following the 10-codes-per-subsystem granularity established in RFC-0001 (600–609 render, 610–619 physics, etc.). The <code>error_code</code> match arm routes <code>ProviderError</code> by <code>subsystem</code> discriminator to the appropriate code range. The existing pattern in <code>goud_engine/src/core/error/types.rs</code> applies: the <code>message</code> carries a human-readable description; the code carries the machine-readable category.</p>
+<hr>
+<h3 id="38-ffi-boundary"><a class="header" href="#38-ffi-boundary">3.8 FFI Boundary</a></h3>
+<p>SDK users select the transport at engine initialization. Per RFC-0001 §5, <code>goud_game_create</code> gains provider-type parameters; networking adds <code>GoudNetworkType</code> to that signature. Passing <code>GoudNetworkType::Null</code> leaves <code>ProviderRegistry.network</code> as <code>None</code>. SDK-level overloads may default to <code>Null</code> when the parameter is omitted.</p>
+<p>Rust SDK users configure networking through the builder pattern established in RFC-0001 §3.5:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let game = GoudEngine::builder()
+    .with_renderer(OpenGLRenderProvider::new(RenderConfig::default()))
+    .with_network(UdpNetProvider::new(NetworkConfig::default()))
+    .build()?;
+<span class="boring">}</span></code></pre>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[repr(C)]
+pub enum GoudNetworkType {
+    Udp = 0,
+    WebSocket = 1,
+    Null = 99,
+}
+<span class="boring">}</span></code></pre>
+<p>The FFI surface exposes init, connection management, send, and event drain:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[no_mangle]
+pub unsafe extern "C" fn goud_network_host(
+    game: *mut GoudGame,
+    port: u16,
+    max_connections: u32,
+) -&gt; i32 { ... }
+
+#[no_mangle]
+pub unsafe extern "C" fn goud_network_connect(
+    game: *mut GoudGame,
+    addr: *const c_char,
+    out_conn: *mut u64,
+) -&gt; i32 { ... }
+
+#[no_mangle]
+pub unsafe extern "C" fn goud_network_send(
+    game: *mut GoudGame,
+    conn: u64,
+    channel: u8,
+    data: *const u8,
+    len: usize,
+) -&gt; i32 { ... }
+
+#[no_mangle]
+pub unsafe extern "C" fn goud_network_drain_events(
+    game: *mut GoudGame,
+    out_buf: *mut GoudNetworkEvent,
+    buf_len: usize,
+    out_count: *mut usize,
+) -&gt; i32 { ... }
+<span class="boring">}</span></code></pre>
+<p><code>GoudNetworkEvent</code> is a <code>#[repr(C)]</code> flat struct with a discriminant field:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[repr(u32)]
+pub enum GoudNetworkEventKind {
+    Connected    = 0,
+    Disconnected = 1,
+    Received     = 2,
+    Error        = 3,
+}
+
+/// C-compatible network event. Fields are variant-dependent:
+/// - Connected/Disconnected: `conn` is set; `data`/`data_len` are zero/null.
+/// - Received: `conn`, `channel`, `data`, `data_len` are set.
+/// - Error: `conn` is set; `message` points to a null-terminated string.
+#[repr(C)]
+pub struct GoudNetworkEvent {
+    pub kind: GoudNetworkEventKind,
+    pub conn: u64,
+    pub channel: u8,
+    pub data: *const u8,
+    pub data_len: usize,
+    pub message: *const c_char,
+}
+<span class="boring">}</span></code></pre>
+<p>All pointer parameters require null checks before dereferencing; each <code>unsafe</code> block carries a <code>// SAFETY:</code> comment per the FFI patterns rule. The <code>data</code> and <code>message</code> pointers are valid only until the next call to <code>goud_network_drain_events</code>; the provider owns the backing memory.</p>
+<hr>
+<h3 id="39-ecs-integration"><a class="header" href="#39-ecs-integration">3.9 ECS Integration</a></h3>
+<p><code>ProviderRegistry</code> is stored as a <code>World</code> resource. Systems access <code>NetworkProvider</code> through <code>ProviderRegistry</code>:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn network_system(registry: &amp;mut ProviderRegistry) {
+    if let Some(net) = registry.network.as_mut() {
+        for event in net.drain_events() {
+            // handle event
+        }
+    }
+}
+<span class="boring">}</span></code></pre>
+<p>No separate ECS component type is needed. The provider is a singleton resource, not a per-entity component.</p>
+<hr>
+<h3 id="310-network-simulation-deferred"><a class="header" href="#310-network-simulation-deferred">3.10 Network Simulation (Deferred)</a></h3>
+<p>A <code>NetworkSimWrapper</code> decorator will wrap any <code>NetworkProvider</code> implementation and inject configurable latency, jitter, and packet loss for local development and testing. It implements <code>NetworkProvider</code> and delegates to the inner provider after applying simulation parameters.</p>
+<p>Implementation is deferred to F25-13. This RFC defines the trait boundary that <code>NetworkSimWrapper</code> will target.</p>
+<hr>
+<h2 id="4-alternatives-considered"><a class="header" href="#4-alternatives-considered">4. Alternatives Considered</a></h2>
+<h3 id="callback-based-events"><a class="header" href="#callback-based-events">Callback-based events</a></h3>
+<p>Passing closures or function pointers into the provider for event dispatch avoids the <code>drain_events</code> polling step. Closures with non-<code>'static</code> lifetimes are not object-safe, and <code>'static</code> closures make it difficult to borrow game state during the callback. <code>PhysicsProvider::drain_collision_events</code> in RFC-0001 set the precedent; networking follows the same model.</p>
+<h3 id="typed-messages-with-generics"><a class="header" href="#typed-messages-with-generics">Typed messages with generics</a></h3>
+<p>Generic methods (<code>fn send&lt;M: Serialize&gt;</code>) cannot appear in an object-safe trait. Serialization format is not a transport concern. Games choose their serialization layer independently of the transport.</p>
+<h3 id="monolithic-networkmanager"><a class="header" href="#monolithic-networkmanager">Monolithic NetworkManager</a></h3>
+<p>A single <code>NetworkManager</code> struct hardcoded to one transport would not support transport swapping between desktop and web targets and would violate the provider pattern established in RFC-0001.</p>
+<h3 id="async-trait-methods"><a class="header" href="#async-trait-methods">Async trait methods</a></h3>
+<p>No async runtime exists in the engine. Async traits via <code>async-trait</code> produce non-object-safe signatures. Background threads with channel-based communication achieve the same non-blocking I/O without an executor dependency.</p>
+<h3 id="peerid-instead-of-connectionid"><a class="header" href="#peerid-instead-of-connectionid">PeerId instead of ConnectionId</a></h3>
+<p>A <code>PeerId</code> implies game-level identity (player slot, lobby position). <code>ConnectionId</code> is transport-level. Conflating them forces the network layer to understand game concepts. Game code maps <code>ConnectionId</code> to player identity; the provider does not.</p>
+<hr>
+<h2 id="5-impact"><a class="header" href="#5-impact">5. Impact</a></h2>
+<p>This RFC introduces a new subsystem with no breaking changes to existing code.</p>
+<ul>
+<li><strong><code>ProviderRegistry</code></strong>: gains <code>network: Option&lt;Box&lt;dyn NetworkProvider&gt;&gt;</code>. Existing construction code continues to compile; the field defaults to <code>None</code>.</li>
+<li><strong>Error types</strong>: network errors use <code>ProviderError { subsystem: "network", message }</code> from RFC-0001; error codes 700–709 reserved. No new <code>GoudError</code> variant needed.</li>
+<li><strong>FFI</strong>: new <code>goud_network_*</code> functions in <code>goud_engine/src/ffi/network.rs</code>. No existing FFI function signatures change. C# bindings regenerate automatically on <code>cargo build</code>. Python <code>generated/_ffi.py</code> requires manual update.</li>
+<li><strong>SDK wrappers</strong>: generated from <code>goud_sdk.schema.json</code> for C#, Python, and TypeScript. No existing wrapper changes.</li>
+<li><strong>Examples</strong>: unaffected unless they explicitly opt in to networking.</li>
+</ul>
+<p>Prerequisite: error type Layer 1 move, shared with RFC-0001 §3.10.</p>
+<hr>
+<h2 id="6-open-questions"><a class="header" href="#6-open-questions">6. Open Questions</a></h2>
+<ol>
+<li>
+<p><strong>Optional vs mandatory in <code>ProviderRegistry</code>.</strong> Using <code>Option&lt;Box&lt;dyn NetworkProvider&gt;&gt;</code> requires every network call site to unwrap. An alternative is always storing <code>NullNetProvider</code> and removing the <code>Option</code>. The choice affects how the engine signals “networking not configured” vs “networking failed.”</p>
+</li>
+<li>
+<p><strong>Async I/O strategy.</strong> Background <code>std::thread</code> per provider is simple but wastes a thread for games not using networking. A shared I/O thread pool (or eventual tokio adoption) would be more efficient. The trait boundary does not constrain this; implementations may evolve.</p>
+</li>
+<li>
+<p><strong><code>ConnectionId</code> reuse policy.</strong> After a connection closes, can its <code>ConnectionId</code> value be assigned to a new connection? Reuse risks use-after-close bugs. Generational IDs (epoch + index) would eliminate the ambiguity at the cost of a wider type.</p>
+</li>
+<li>
+<p><strong>Max message size enforcement.</strong> <code>NetworkCapabilities::max_message_size</code> declares the limit but the trait does not specify whether <code>send</code> silently truncates, returns an error, or panics on oversized messages. The current leaning is that implementations MUST return <code>Err(ProviderError)</code> on oversized data (no silent truncation, no panics), making a caller-side bounds check optional but safe. This must be confirmed before implementation.</p>
+</li>
+<li>
+<p><strong>Encryption and TLS surface.</strong> <code>HostConfig</code> and <code>connect</code> have no TLS parameters. If encryption is required, <code>HostConfig</code> needs certificate paths or raw key material. Deferring this leaves a gap for any game that needs secure transport.</p>
+</li>
+</ol>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../rfcs/RFC-0001-provider-trait-pattern.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../reference/api.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../rfcs/RFC-0001-provider-trait-pattern.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../reference/api.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-c2a407aa.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

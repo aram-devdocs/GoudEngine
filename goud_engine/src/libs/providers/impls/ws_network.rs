@@ -282,11 +282,135 @@ mod native {
         let _ = stream.set_read_timeout(Some(READ_TIMEOUT));
     }
 
+    fn load_server_tls_config(
+        cert_path: &str,
+        key_path: &str,
+    ) -> GoudResult<Arc<rustls::ServerConfig>> {
+        use rustls::pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer};
+
+        let certs = CertificateDer::pem_file_iter(cert_path)
+            .map_err(|e| net_err(format!("open TLS cert {}: {}", cert_path, e)))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| net_err(format!("parse TLS cert {}: {}", cert_path, e)))?;
+        if certs.is_empty() {
+            return Err(net_err(format!(
+                "no certificates found in TLS cert file {}",
+                cert_path
+            )));
+        }
+
+        let key = PrivateKeyDer::from_pem_file(key_path)
+            .map_err(|e| net_err(format!("parse TLS key {}: {}", key_path, e)))?;
+
+        let config = rustls::ServerConfig::builder()
+            .with_no_client_auth()
+            .with_single_cert(certs, key)
+            .map_err(|e| net_err(format!("build TLS server config: {}", e)))?;
+        Ok(Arc::new(config))
+    }
+
+    fn build_rustls_client_config_with_custom_ca(
+        ca_cert_path: &str,
+    ) -> GoudResult<Arc<rustls::ClientConfig>> {
+        use rustls::pki_types::{pem::PemObject, CertificateDer};
+
+        let ca_certs = CertificateDer::pem_file_iter(ca_cert_path)
+            .map_err(|e| net_err(format!("open custom CA cert {}: {}", ca_cert_path, e)))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| net_err(format!("parse custom CA cert {}: {}", ca_cert_path, e)))?;
+        if ca_certs.is_empty() {
+            return Err(net_err(format!(
+                "no certificates found in custom CA file {}",
+                ca_cert_path
+            )));
+        }
+
+        let mut roots = rustls::RootCertStore::empty();
+        let (added, _ignored) = roots.add_parsable_certificates(ca_certs);
+        if added == 0 {
+            return Err(net_err(format!(
+                "failed to add custom CA certs from {}",
+                ca_cert_path
+            )));
+        }
+
+        let config = rustls::ClientConfig::builder()
+            .with_root_certificates(roots)
+            .with_no_client_auth();
+        Ok(Arc::new(config))
+    }
+
+    fn connect_with_optional_custom_ca(
+        url: &str,
+    ) -> Result<
+        (
+            tungstenite::WebSocket<tungstenite::stream::MaybeTlsStream<std::net::TcpStream>>,
+            tungstenite::handshake::client::Response,
+        ),
+        Box<tungstenite::Error>,
+    > {
+        let custom_ca_path = match std::env::var("GOUD_WS_CA_CERT_PATH") {
+            Ok(v) if !v.trim().is_empty() => Some(v),
+            _ => None,
+        };
+
+        if url.starts_with("wss://") {
+            if let Some(ca_path) = custom_ca_path {
+                use std::net::ToSocketAddrs;
+                use tungstenite::client::IntoClientRequest;
+
+                let request = url.into_client_request()?;
+                let uri = request.uri();
+                let host = uri.host().ok_or(tungstenite::Error::Url(
+                    tungstenite::error::UrlError::NoHostName,
+                ))?;
+                let port = uri.port_u16().unwrap_or(443);
+                let addrs = (host, port)
+                    .to_socket_addrs()
+                    .map_err(|e| Box::new(tungstenite::Error::Io(e)))?;
+                let stream = addrs
+                    .into_iter()
+                    .find_map(|addr| std::net::TcpStream::connect(addr).ok())
+                    .ok_or_else(|| {
+                        tungstenite::Error::Url(tungstenite::error::UrlError::UnableToConnect(
+                            uri.to_string(),
+                        ))
+                    })?;
+                let tls_config = build_rustls_client_config_with_custom_ca(&ca_path)
+                    .map_err(|e| tungstenite::Error::Io(std::io::Error::other(format!("{}", e))))?;
+                return tungstenite::client_tls_with_config(
+                    request,
+                    stream,
+                    None,
+                    Some(tungstenite::Connector::Rustls(tls_config)),
+                )
+                .map_err(|e| match e {
+                    tungstenite::HandshakeError::Failure(f) => f,
+                    tungstenite::HandshakeError::Interrupted(_) => tungstenite::Error::Io(
+                        std::io::Error::other("TLS handshake interrupted unexpectedly"),
+                    ),
+                })
+                .map_err(Box::new);
+            }
+        }
+
+        tungstenite::connect(url).map_err(Box::new)
+    }
+
     impl NetworkProvider for WsNetProvider {
         fn host(&mut self, config: &HostConfig) -> GoudResult<()> {
             if self.is_hosting {
                 return Err(net_err("Already hosting".into()));
             }
+            let tls_config = match (&config.tls_cert_path, &config.tls_key_path) {
+                (Some(cert), Some(key)) => Some(load_server_tls_config(cert, key)?),
+                (None, None) => None,
+                (Some(_), None) | (None, Some(_)) => {
+                    return Err(net_err(
+                        "WebSocket TLS requires both tls_cert_path and tls_key_path".into(),
+                    ));
+                }
+            };
             let bind = format!("{}:{}", config.bind_address, config.port);
             let listener =
                 TcpListener::bind(&bind).map_err(|e| net_err(format!("bind {}: {}", bind, e)))?;
@@ -301,6 +425,7 @@ mod native {
             let next_id = self.next_id.clone();
             let max_conns = config.max_connections;
             let conn_count = self.conn_count.clone();
+            let tls_config = tls_config.clone();
 
             let h = thread::spawn(move || {
                 while running.load(Ordering::Relaxed) {
@@ -312,17 +437,57 @@ mod native {
                             if stream.set_nonblocking(false).is_err() {
                                 continue;
                             }
-                            match tungstenite::accept(stream) {
-                                Ok(ws) => {
-                                    set_stream_timeout(ws.get_ref());
-                                    let id = ConnectionId(next_id.fetch_add(1, Ordering::Relaxed));
-                                    conn_count.fetch_add(1, Ordering::Relaxed);
-                                    let wtx =
-                                        spawn_io_thread(id, ws, event_tx.clone(), running.clone());
-                                    let _ = event_tx.send(InternalWsEvent::WriteTxReady(id, wtx));
-                                    let _ = event_tx.send(InternalWsEvent::Connected(id));
+                            if let Some(tls_config) = &tls_config {
+                                let server_conn =
+                                    match rustls::ServerConnection::new(tls_config.clone()) {
+                                        Ok(conn) => conn,
+                                        Err(e) => {
+                                            log::warn!(
+                                                "WS TLS server connection setup failed: {}",
+                                                e
+                                            );
+                                            continue;
+                                        }
+                                    };
+                                let tls_stream = rustls::StreamOwned::new(server_conn, stream);
+                                match tungstenite::accept(tls_stream) {
+                                    Ok(ws) => {
+                                        let _ =
+                                            ws.get_ref().sock.set_read_timeout(Some(READ_TIMEOUT));
+                                        let id =
+                                            ConnectionId(next_id.fetch_add(1, Ordering::Relaxed));
+                                        conn_count.fetch_add(1, Ordering::Relaxed);
+                                        let wtx = spawn_io_thread(
+                                            id,
+                                            ws,
+                                            event_tx.clone(),
+                                            running.clone(),
+                                        );
+                                        let _ =
+                                            event_tx.send(InternalWsEvent::WriteTxReady(id, wtx));
+                                        let _ = event_tx.send(InternalWsEvent::Connected(id));
+                                    }
+                                    Err(e) => log::warn!("WS TLS handshake failed: {}", e),
                                 }
-                                Err(e) => log::warn!("WS handshake failed: {}", e),
+                            } else {
+                                match tungstenite::accept(stream) {
+                                    Ok(ws) => {
+                                        set_stream_timeout(ws.get_ref());
+                                        let id =
+                                            ConnectionId(next_id.fetch_add(1, Ordering::Relaxed));
+                                        conn_count.fetch_add(1, Ordering::Relaxed);
+                                        let wtx = spawn_io_thread(
+                                            id,
+                                            ws,
+                                            event_tx.clone(),
+                                            running.clone(),
+                                        );
+                                        let _ =
+                                            event_tx.send(InternalWsEvent::WriteTxReady(id, wtx));
+                                        let _ = event_tx.send(InternalWsEvent::Connected(id));
+                                    }
+                                    Err(e) => log::warn!("WS handshake failed: {}", e),
+                                }
                             }
                         }
                         Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
@@ -356,10 +521,16 @@ mod native {
             let event_tx = self.event_tx.clone();
             let running = self.running.clone();
 
-            let h = thread::spawn(move || match tungstenite::connect(&url) {
+            let h = thread::spawn(move || match connect_with_optional_custom_ca(&url) {
                 Ok((ws, _)) => {
-                    if let tungstenite::stream::MaybeTlsStream::Plain(s) = ws.get_ref() {
-                        let _ = s.set_read_timeout(Some(READ_TIMEOUT));
+                    match ws.get_ref() {
+                        tungstenite::stream::MaybeTlsStream::Plain(s) => {
+                            let _ = s.set_read_timeout(Some(READ_TIMEOUT));
+                        }
+                        tungstenite::stream::MaybeTlsStream::Rustls(s) => {
+                            let _ = s.sock.set_read_timeout(Some(READ_TIMEOUT));
+                        }
+                        _ => {}
                     }
                     let wtx = spawn_io_thread(id, ws, event_tx.clone(), running);
                     let _ = event_tx.send(InternalWsEvent::WriteTxReady(id, wtx));

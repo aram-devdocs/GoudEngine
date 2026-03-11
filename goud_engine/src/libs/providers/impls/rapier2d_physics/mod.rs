@@ -57,8 +57,7 @@ pub struct Rapier2DPhysicsProvider {
     collision_recv: Receiver<rapier2d::prelude::CollisionEvent>,
     // Stored to keep the channel alive; contact force events are drained
     // to prevent unbounded growth but processed via narrow_phase directly.
-    #[allow(dead_code)]
-    contact_recv: Receiver<ContactForceEvent>,
+    _contact_recv: Receiver<ContactForceEvent>,
     event_handler: ChannelEventCollector,
 
     capabilities: PhysicsCapabilities,
@@ -95,7 +94,7 @@ impl Rapier2DPhysicsProvider {
             active_collision_pairs: HashSet::new(),
             active_collision_collider_pairs: HashMap::new(),
             collision_recv,
-            contact_recv,
+            _contact_recv: contact_recv,
             event_handler,
             capabilities: PhysicsCapabilities {
                 supports_continuous_collision: true,

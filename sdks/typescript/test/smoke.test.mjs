@@ -8,6 +8,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 import {
   GoudGame,
@@ -25,6 +26,9 @@ import {
   vec2One,
 } from '../index.js';
 import { GoudGame as WrappedGoudGame } from '../dist/generated/node/index.g.js';
+import { GoudGame as PackageGoudGame } from '../dist/index.js';
+
+const repoRoot = path.resolve(process.cwd(), '..', '..');
 
 describe('GoudGame', () => {
   it('creates with default config', () => {
@@ -203,6 +207,31 @@ describe('GoudGame', () => {
 
     assert.equal(typeof game.loadAudioClip, 'undefined');
     assert.equal(typeof game.unloadAudioClip, 'undefined');
+  });
+
+  it('preloads textures before use and reuses cached handles', async () => {
+    const game = new PackageGoudGame();
+    const assetDir = path.resolve(repoRoot, '..', 'examples', 'csharp', 'flappy_goud', 'assets', 'sprites');
+    const bgPath = path.join(assetDir, 'background-day.png');
+    const pipePath = path.join(assetDir, 'pipe-green.png');
+
+    const progress = [];
+    const handles = await game.preload([bgPath, pipePath], {
+      onProgress(update) {
+        progress.push(update);
+      },
+    });
+
+    assert.equal(Object.keys(handles).length, 2);
+    assert.equal(progress.length, 2);
+    assert.equal(progress[0].loaded, 1);
+    assert.equal(progress[1].loaded, 2);
+    assert.equal(progress[1].total, 2);
+    assert.equal(progress[1].progress, 1);
+    assert.equal(progress[0].kind, 'texture');
+
+    const cachedBg = await game.loadTexture(bgPath);
+    assert.equal(cachedBg, handles[bgPath]);
   });
 });
 

@@ -23,21 +23,7 @@ The package bundles the native Rust library (`.so`, `.dylib`, or `.dll`). No sep
 
 Create `main.py`:
 
-```python
-from goud_engine import GoudGame, Key
-
-game = GoudGame(800, 600, "My Game")
-
-while not game.should_close():
-    game.begin_frame()
-
-    if game.is_key_just_pressed(Key.ESCAPE):
-        game.close()
-
-    game.end_frame()
-
-game.destroy()
-```
+{{#include ../generated/snippets/python/first-project.md}}
 
 Run it:
 
@@ -53,27 +39,7 @@ A window opens at 800x600 and closes when you press Escape.
 
 Load textures once before the game loop, then draw each frame.
 
-```python
-from goud_engine import GoudGame, Key
-
-game = GoudGame(800, 600, "My Game")
-
-# Load returns an integer handle. Store it and reuse it every frame.
-player_tex = game.load_texture("assets/player.png")
-
-while not game.should_close():
-    game.begin_frame()
-
-    if game.is_key_just_pressed(Key.ESCAPE):
-        game.close()
-
-    # draw_sprite(texture_id, center_x, center_y, width, height)
-    game.draw_sprite(player_tex, 400, 300, 64, 64)
-
-    game.end_frame()
-
-game.destroy()
-```
+{{#include ../generated/snippets/python/drawing-a-sprite.md}}
 
 `draw_sprite` takes the center position of the sprite, not the top-left corner.
 
@@ -90,31 +56,7 @@ game.draw_sprite(player_tex, 400, 300, 64, 64, math.pi / 4)
 
 Two modes are available: pressed this frame, or held continuously.
 
-```python
-from goud_engine import GoudGame, Key
-
-game = GoudGame(800, 600, "My Game")
-
-x = 400.0
-
-while not game.should_close():
-    game.begin_frame()
-    dt = game.delta_time
-
-    # is_key_just_pressed: true only on the frame the key is first pressed
-    if game.is_key_just_pressed(Key.ESCAPE):
-        game.close()
-
-    # is_key_pressed: true every frame the key is held down
-    if game.is_key_pressed(Key.LEFT):
-        x -= 200 * dt
-    if game.is_key_pressed(Key.RIGHT):
-        x += 200 * dt
-
-    game.end_frame()
-
-game.destroy()
-```
+{{#include ../generated/snippets/python/keyboard.md}}
 
 `delta_time` is the elapsed seconds since the last frame. Use it to make movement frame-rate independent.
 
@@ -122,23 +64,7 @@ Common key constants: `Key.ESCAPE`, `Key.SPACE`, `Key.ENTER`, `Key.W`, `Key.A`, 
 
 ### Mouse
 
-```python
-from goud_engine import GoudGame, MouseButton
-
-game = GoudGame(800, 600, "My Game")
-
-while not game.should_close():
-    game.begin_frame()
-
-    # is_mouse_button_just_pressed: true on the frame the button is first clicked
-    if game.is_mouse_button_just_pressed(MouseButton.LEFT):
-        pos = game.get_mouse_position()
-        print(f"Click at ({pos.x:.0f}, {pos.y:.0f})")
-
-    game.end_frame()
-
-game.destroy()
-```
+{{#include ../generated/snippets/python/mouse.md}}
 
 Mouse button constants: `MouseButton.LEFT`, `MouseButton.RIGHT`, `MouseButton.MIDDLE`.
 
@@ -151,6 +77,7 @@ git clone https://github.com/aram-devdocs/GoudEngine.git
 cd GoudEngine
 ./dev.sh --sdk python --game python_demo    # Basic demo
 ./dev.sh --sdk python --game flappy_bird    # Flappy Bird clone
+python3 examples/python/feature_lab.py      # Feature Lab parity smoke
 ```
 
 `dev.sh` builds the native library and launches the example. It requires a Rust toolchain (`cargo`) to be installed.
@@ -192,5 +119,9 @@ cargo build --release
 
 - [Python examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/python/) — source code for `main.py` and `flappy_bird.py`
 - [Python SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/python/) — full API reference
+- [Build Your First Game](../guides/build-your-first-game.md) — end-to-end minimal game walkthrough
+- [Example Showcase](../guides/showcase.md) — current cross-language parity matrix
+- [Cross-Platform Deployment](../guides/deployment.md) — packaging and release workflow
+- [FAQ and Troubleshooting](../guides/faq.md) — common runtime and build issues
 - [Architecture overview](../architecture/sdk-first.md) — how the Rust core and Python SDK connect
 - [Development guide](../development/guide.md) — building from source, running tests

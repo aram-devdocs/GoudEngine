@@ -17,7 +17,9 @@ from ts_node_core import (
     gen_math,
     gen_napi_rust,
     gen_node_wrapper,
+    gen_public_entrypoints,
 )
+from ts_node_wrapper import gen_network_shared_wrapper
 
 
 def main() -> None:
@@ -26,7 +28,9 @@ def main() -> None:
     gen_input()
     gen_math()
     gen_node_wrapper()
+    gen_network_shared_wrapper()
     gen_entry()
+    gen_public_entrypoints()
     gen_napi_rust()
     gen_errors()
     gen_diagnostic()

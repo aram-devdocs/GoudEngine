@@ -1,0 +1,689 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RFC-0001: Provider Trait Pattern - GoudEngine Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Documentation for GoudEngine, a Rust game engine with multi-language SDK support">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-2459343d.css">
+        <link rel="stylesheet" href="../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-75a1eb4b.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-e7a7aa40.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">GoudEngine Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/aram-devdocs/GoudEngine" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/aram-devdocs/GoudEngine/edit/main/docs/src/docs/src/../rfcs/RFC-0001-provider-trait-pattern.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <hr>
+<h2 id="rfc-0001-title-provider-trait-pattern-status-accepted-created-2026-03-06-authors-aram-devdocs-tracking-issue-217"><a class="header" href="#rfc-0001-title-provider-trait-pattern-status-accepted-created-2026-03-06-authors-aram-devdocs-tracking-issue-217">rfc: “0001”
+title: Provider Trait Pattern
+status: accepted
+created: 2026-03-06
+authors: [“aram-devdocs”]
+tracking-issue: “#217”</a></h2>
+<h1 id="rfc-0001-provider-trait-pattern"><a class="header" href="#rfc-0001-provider-trait-pattern">RFC-0001: Provider Trait Pattern</a></h1>
+<h2 id="1-summary"><a class="header" href="#1-summary">1. Summary</a></h2>
+<p>This RFC defines a universal provider abstraction for all GoudEngine subsystems. It replaces the hardcoded <code>OpenGLBackend</code> in <code>GoudGame</code> with configurable, swappable providers selected at engine initialization. The pattern applies uniformly to rendering, physics, audio, windowing, and input. SDK users select built-in providers via enums; Rust SDK users may supply custom implementations.</p>
+<hr>
+<h2 id="2-motivation"><a class="header" href="#2-motivation">2. Motivation</a></h2>
+<p><code>GoudGame</code> in <code>goud_engine/src/sdk/game/instance.rs</code> currently holds:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[cfg(feature = "native")]
+render_backend: Option&lt;OpenGLBackend&gt;,
+#[cfg(feature = "native")]
+sprite_batch: Option&lt;SpriteBatch&lt;OpenGLBackend&gt;&gt;,
+<span class="boring">}</span></code></pre>
+<p>This hardcoding creates several problems:</p>
+<ul>
+<li>Adding a <code>wgpu</code> backend requires duplicating every code path that touches <code>backend</code> and <code>sprite_batch</code>.</li>
+<li>Physics, audio, and windowing have the same problem — there is no swap point.</li>
+<li>Cross-platform targets (consoles, mobile) need NDA-bound backends that cannot ship in the public repo. There is no way to inject them without forking engine internals.</li>
+<li>Runtime renderer selection (e.g., falling back from Vulkan to OpenGL) is not possible.</li>
+</ul>
+<p><code>PlatformBackend</code> in <code>goud_engine/src/libs/platform/mod.rs</code> already solves this for the platform layer: <code>GoudGame</code> stores <code>Option&lt;Box&lt;dyn PlatformBackend&gt;&gt;</code>. This RFC extends that pattern to all subsystems.</p>
+<hr>
+<h2 id="3-design"><a class="header" href="#3-design">3. Design</a></h2>
+<h3 id="31-provider-supertrait"><a class="header" href="#31-provider-supertrait">3.1 Provider Supertrait</a></h3>
+<p>All providers implement a common base trait:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait Provider: Send + Sync + 'static {
+    fn name(&amp;self) -&gt; &amp;str;
+    fn version(&amp;self) -&gt; &amp;str;
+    fn capabilities(&amp;self) -&gt; Box&lt;dyn std::any::Any&gt;;
+}
+<span class="boring">}</span></code></pre>
+<p><code>Send + Sync + 'static</code> is required because providers are stored in <code>ProviderRegistry</code>, which may be accessed from worker threads during asset streaming. The exception is <code>WindowProvider</code> (see §3.7). Subsystem traits extend <code>Provider</code> with domain-specific methods.</p>
+<hr>
+<h3 id="32-subsystem-provider-traits"><a class="header" href="#32-subsystem-provider-traits">3.2 Subsystem Provider Traits</a></h3>
+<h4 id="renderprovider"><a class="header" href="#renderprovider">RenderProvider</a></h4>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait RenderProvider: Provider {
+    // Lifecycle — FrameContext token enforces begin/end pairing
+    fn begin_frame(&amp;mut self) -&gt; GoudResult&lt;FrameContext&gt;;
+    fn end_frame(&amp;mut self, frame: FrameContext) -&gt; GoudResult&lt;()&gt;;
+    fn resize(&amp;mut self, width: u32, height: u32) -&gt; GoudResult&lt;()&gt;;
+    // Resources
+    fn create_texture(&amp;mut self, desc: &amp;TextureDesc) -&gt; GoudResult&lt;TextureHandle&gt;;
+    fn destroy_texture(&amp;mut self, handle: TextureHandle);
+    fn create_buffer(&amp;mut self, desc: &amp;BufferDesc) -&gt; GoudResult&lt;BufferHandle&gt;;
+    fn destroy_buffer(&amp;mut self, handle: BufferHandle);
+    fn create_shader(&amp;mut self, desc: &amp;ShaderDesc) -&gt; GoudResult&lt;ShaderHandle&gt;;
+    fn destroy_shader(&amp;mut self, handle: ShaderHandle);
+    fn create_pipeline(&amp;mut self, desc: &amp;PipelineDesc) -&gt; GoudResult&lt;PipelineHandle&gt;;
+    fn destroy_pipeline(&amp;mut self, handle: PipelineHandle);
+    fn create_render_target(&amp;mut self, desc: &amp;RenderTargetDesc) -&gt; GoudResult&lt;RenderTargetHandle&gt;;
+    fn destroy_render_target(&amp;mut self, handle: RenderTargetHandle);
+    // Drawing
+    fn draw(&amp;mut self, cmd: &amp;DrawCommand) -&gt; GoudResult&lt;()&gt;;
+    fn draw_batch(&amp;mut self, cmds: &amp;[DrawCommand]) -&gt; GoudResult&lt;()&gt;;
+    fn draw_mesh(&amp;mut self, cmd: &amp;MeshDrawCommand) -&gt; GoudResult&lt;()&gt;;
+    fn draw_text(&amp;mut self, cmd: &amp;TextDrawCommand) -&gt; GoudResult&lt;()&gt;;
+    fn draw_particles(&amp;mut self, cmd: &amp;ParticleDrawCommand) -&gt; GoudResult&lt;()&gt;;
+    // State
+    fn set_viewport(&amp;mut self, x: i32, y: i32, width: u32, height: u32);
+    fn set_camera(&amp;mut self, camera: &amp;CameraData);
+    fn set_render_target(&amp;mut self, handle: Option&lt;RenderTargetHandle&gt;);
+    fn clear(&amp;mut self, color: [f32; 4]);
+}
+<span class="boring">}</span></code></pre>
+<p><code>FrameContext</code> is an opaque token returned by <code>begin_frame</code> and consumed by <code>end_frame</code>, ensuring the caller cannot skip frame finalization. <code>PipelineDesc</code> abstracts render pipeline state (shader + vertex layout + blend mode) required by wgpu; OpenGL providers can map this to their internal state tracking.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Built-in</th><th>Feature Flag</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>OpenGLRenderProvider</code></td><td><code>native</code></td><td>Wraps existing <code>OpenGLBackend</code></td></tr>
+<tr><td><code>WgpuRenderProvider</code></td><td><code>wgpu</code></td><td>F02-03; wraps existing <code>wgpu_backend/</code> modules</td></tr>
+<tr><td><code>NullRenderProvider</code></td><td>always</td><td>No-op, for headless tests</td></tr>
+</tbody>
+</table>
+</div>
+<p>The existing <code>RenderBackend</code> trait (<code>goud_engine/src/libs/graphics/backend/render_backend.rs</code>) is NOT object-safe by design. It becomes an internal detail of <code>OpenGLRenderProvider</code> and <code>WgpuRenderProvider</code> and does not appear in the public provider API.</p>
+<p>A partial wgpu backend already exists at <code>goud_engine/src/libs/graphics/backend/wgpu_backend/</code> (frame, texture, shader, buffer, pipeline modules). F02-03 will wrap this existing code inside <code>WgpuRenderProvider</code> rather than rewriting it.</p>
+<h4 id="physicsprovider"><a class="header" href="#physicsprovider">PhysicsProvider</a></h4>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait PhysicsProvider: Provider {
+    fn step(&amp;mut self, delta: f32) -&gt; GoudResult&lt;()&gt;;
+    fn set_gravity(&amp;mut self, gravity: Vec2);
+    fn gravity(&amp;self) -&gt; Vec2;
+    fn create_body(&amp;mut self, desc: &amp;BodyDesc) -&gt; GoudResult&lt;BodyHandle&gt;;
+    fn destroy_body(&amp;mut self, handle: BodyHandle);
+    fn body_position(&amp;self, handle: BodyHandle) -&gt; GoudResult&lt;Vec2&gt;;
+    fn set_body_position(&amp;mut self, handle: BodyHandle, pos: Vec2) -&gt; GoudResult&lt;()&gt;;
+    fn body_velocity(&amp;self, handle: BodyHandle) -&gt; GoudResult&lt;Vec2&gt;;
+    fn set_body_velocity(&amp;mut self, handle: BodyHandle, vel: Vec2) -&gt; GoudResult&lt;()&gt;;
+    fn apply_force(&amp;mut self, handle: BodyHandle, force: Vec2) -&gt; GoudResult&lt;()&gt;;
+    fn apply_impulse(&amp;mut self, handle: BodyHandle, impulse: Vec2) -&gt; GoudResult&lt;()&gt;;
+    fn create_collider(&amp;mut self, body: BodyHandle, desc: &amp;ColliderDesc) -&gt; GoudResult&lt;ColliderHandle&gt;;
+    fn destroy_collider(&amp;mut self, handle: ColliderHandle);
+    fn raycast(&amp;self, origin: Vec2, dir: Vec2, max_dist: f32) -&gt; Option&lt;RaycastHit&gt;;
+    fn overlap_circle(&amp;self, center: Vec2, radius: f32) -&gt; Vec&lt;BodyHandle&gt;;
+    fn drain_collision_events(&amp;mut self) -&gt; Vec&lt;CollisionEvent&gt;;
+    fn contact_pairs(&amp;self) -&gt; Vec&lt;ContactPair&gt;;
+    fn create_joint(&amp;mut self, desc: &amp;JointDesc) -&gt; GoudResult&lt;JointHandle&gt;;
+    fn destroy_joint(&amp;mut self, handle: JointHandle);
+    fn debug_shapes(&amp;self) -&gt; Vec&lt;DebugShape&gt;;
+}
+<span class="boring">}</span></code></pre>
+<p><code>drain_collision_events</code> returns owned <code>Vec</code> rather than a slice reference to avoid lifetime coupling between the event buffer and the provider borrow — callers process events after the physics step without holding a borrow on the provider.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Built-in</th><th>Feature Flag</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Rapier2DPhysicsProvider</code></td><td><code>rapier2d</code></td><td>2D rigid-body physics</td></tr>
+<tr><td><code>Rapier3DPhysicsProvider</code></td><td><code>rapier3d</code></td><td>3D rigid-body physics</td></tr>
+<tr><td><code>SimplePhysicsProvider</code></td><td>always</td><td>AABB collision + gravity only, no rapier dependency</td></tr>
+<tr><td><code>NullPhysicsProvider</code></td><td>always</td><td>No-op passthrough</td></tr>
+</tbody>
+</table>
+</div>
+<h4 id="audioprovider"><a class="header" href="#audioprovider">AudioProvider</a></h4>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait AudioProvider: Provider {
+    fn update(&amp;mut self) -&gt; GoudResult&lt;()&gt;;
+    fn play(&amp;mut self, handle: SoundHandle, config: &amp;PlayConfig) -&gt; GoudResult&lt;PlaybackId&gt;;
+    fn stop(&amp;mut self, id: PlaybackId) -&gt; GoudResult&lt;()&gt;;
+    fn pause(&amp;mut self, id: PlaybackId) -&gt; GoudResult&lt;()&gt;;
+    fn resume(&amp;mut self, id: PlaybackId) -&gt; GoudResult&lt;()&gt;;
+    fn is_playing(&amp;self, id: PlaybackId) -&gt; bool;
+    fn set_volume(&amp;mut self, id: PlaybackId, volume: f32) -&gt; GoudResult&lt;()&gt;;
+    fn set_master_volume(&amp;mut self, volume: f32);
+    fn set_channel_volume(&amp;mut self, channel: AudioChannel, volume: f32);
+    fn set_listener_position(&amp;mut self, pos: Vec3);
+    fn set_source_position(&amp;mut self, id: PlaybackId, pos: Vec3) -&gt; GoudResult&lt;()&gt;;
+}
+<span class="boring">}</span></code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Built-in</th><th>Feature Flag</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>RodioAudioProvider</code></td><td><code>audio</code></td><td>Uses existing rodio integration</td></tr>
+<tr><td><code>WebAudioProvider</code></td><td><code>web</code></td><td>Browser/WASM via web-sys</td></tr>
+<tr><td><code>NullAudioProvider</code></td><td>always</td><td>No-op, for CI / headless</td></tr>
+</tbody>
+</table>
+</div>
+<h4 id="windowprovider"><a class="header" href="#windowprovider">WindowProvider</a></h4>
+<p><code>WindowProvider</code> extracts the surface-management part of <code>PlatformBackend</code>. It is NOT <code>Send + Sync</code> because GLFW requires all window calls on the main thread (see §3.7).</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait WindowProvider: 'static {  // NOT Send + Sync — see §3.7
+    fn init(&amp;mut self) -&gt; GoudResult&lt;()&gt;;
+    fn shutdown(&amp;mut self);
+    fn should_close(&amp;self) -&gt; bool;
+    fn set_should_close(&amp;mut self, value: bool);
+    fn poll_events(&amp;mut self);
+    fn swap_buffers(&amp;mut self);
+    fn get_size(&amp;self) -&gt; (u32, u32);
+    fn get_framebuffer_size(&amp;self) -&gt; (u32, u32);
+}
+<span class="boring">}</span></code></pre>
+<p><code>WindowProvider</code> does NOT extend <code>Provider</code> (which requires <code>Send + Sync</code>) but does include its own <code>init()</code>/<code>shutdown()</code> methods matching the <code>ProviderLifecycle</code> contract. It cannot implement <code>ProviderLifecycle</code> directly because that trait will likely require <code>Provider</code> as a supertrait.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Built-in</th><th>Feature Flag</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>GlfwWindowProvider</code></td><td><code>native</code></td><td>Wraps existing GLFW platform layer</td></tr>
+<tr><td><code>WinitWindowProvider</code></td><td><code>winit</code></td><td>Future — needed for mobile/web targets</td></tr>
+<tr><td><code>NullWindowProvider</code></td><td>always</td><td>No-op for headless contexts</td></tr>
+</tbody>
+</table>
+</div>
+<p>GLFW is the current platform layer (<code>goud_engine/src/libs/platform/glfw_platform.rs</code>). The roadmap targets winit for broader platform support (mobile, web); <code>WinitWindowProvider</code> will be added when that migration begins.</p>
+<h4 id="inputprovider"><a class="header" href="#inputprovider">InputProvider</a></h4>
+<p>Extracted from <code>PlatformBackend</code> separately because input has a different update cadence and can be mocked without a real window (e.g., test harnesses injecting synthetic events). For the common GLFW case, a <code>WindowInputBridge</code> helper wires GLFW window events into the <code>InputProvider</code> interface.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait InputProvider: Provider {
+    fn key_pressed(&amp;self, key: KeyCode) -&gt; bool;
+    fn key_just_pressed(&amp;self, key: KeyCode) -&gt; bool;
+    fn key_just_released(&amp;self, key: KeyCode) -&gt; bool;
+    fn mouse_position(&amp;self) -&gt; Vec2;
+    fn mouse_delta(&amp;self) -&gt; Vec2;
+    fn mouse_button_pressed(&amp;self, button: MouseButton) -&gt; bool;
+    fn scroll_delta(&amp;self) -&gt; Vec2;
+    fn gamepad_connected(&amp;self, id: GamepadId) -&gt; bool;
+    fn gamepad_axis(&amp;self, id: GamepadId, axis: GamepadAxis) -&gt; f32;
+    fn gamepad_button_pressed(&amp;self, id: GamepadId, button: GamepadButton) -&gt; bool;
+}
+<span class="boring">}</span></code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Built-in</th><th>Feature Flag</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>GlfwInputProvider</code></td><td><code>native</code></td><td>Reads from GLFW event queue</td></tr>
+<tr><td><code>NullInputProvider</code></td><td>always</td><td>All buttons unpressed</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="33-lifecycle-protocol"><a class="header" href="#33-lifecycle-protocol">3.3 Lifecycle Protocol</a></h3>
+<p>Every provider follows a five-phase lifecycle:</p>
+<ol>
+<li><strong>Create</strong> — constructed with a config struct (<code>RenderConfig</code>, <code>PhysicsConfig</code>, etc.)</li>
+<li><strong>Init</strong> — <code>init()</code> called during <code>GoudGame::new()</code>. Failure is fatal unless a fallback is configured (§3.9).</li>
+<li><strong>Update</strong> — per-frame <code>update(delta)</code> for providers that need it (physics, audio).</li>
+<li><strong>Shutdown</strong> — <code>shutdown()</code> called during <code>GoudGame::drop()</code>. Must not fail.</li>
+<li><strong>Drop</strong> — provider dropped after shutdown. All GPU/OS resources must be released before this point.</li>
+</ol>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait ProviderLifecycle {
+    fn init(&amp;mut self) -&gt; GoudResult&lt;()&gt;;
+    fn update(&amp;mut self, delta: f32) -&gt; GoudResult&lt;()&gt;;
+    fn shutdown(&amp;mut self);
+}
+<span class="boring">}</span></code></pre>
+<p>All subsystem provider traits (<code>RenderProvider</code>, <code>PhysicsProvider</code>, etc.) extend both <code>Provider</code> and <code>ProviderLifecycle</code>. For example: <code>pub trait RenderProvider: Provider + ProviderLifecycle { ... }</code>.</p>
+<hr>
+<h3 id="34-capability-query-pattern"><a class="header" href="#34-capability-query-pattern">3.4 Capability Query Pattern</a></h3>
+<p>Each subsystem defines a typed capability struct, building on the existing <code>BackendCapabilities</code> pattern in <code>goud_engine/src/libs/graphics/backend/capabilities.rs</code>:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct RenderCapabilities {
+    pub max_texture_units: u32,
+    pub max_texture_size: u32,
+    pub supports_instancing: bool,
+    pub supports_compute: bool,
+    pub supports_msaa: bool,
+}
+<span class="boring">}</span></code></pre>
+<p>Each subsystem trait also provides a typed accessor that avoids the downcast:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait RenderProvider: Provider + ProviderLifecycle {
+    fn render_capabilities(&amp;self) -&gt; &amp;RenderCapabilities;
+    // ... other methods
+}
+<span class="boring">}</span></code></pre>
+<p>The generic <code>Provider::capabilities()</code> returning <code>Box&lt;dyn Any&gt;</code> remains available for code that operates on providers generically (e.g., logging all provider capabilities at startup). For subsystem-specific code, prefer the typed accessor:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Preferred — no downcast, no runtime failure path
+let caps = render_provider.render_capabilities();
+if caps.supports_instancing {
+    renderer.use_instanced_path();
+} else {
+    renderer.use_fallback_path();
+}
+<span class="boring">}</span></code></pre>
+<hr>
+<h3 id="35-registration-and-selection"><a class="header" href="#35-registration-and-selection">3.5 Registration and Selection</a></h3>
+<p><code>ProviderRegistry</code> lives at Layer 2 (<code>goud_engine/src/core/providers/registry.rs</code>):</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ProviderRegistry {
+    pub render: Box&lt;dyn RenderProvider&gt;,
+    pub physics: Box&lt;dyn PhysicsProvider&gt;,
+    pub audio: Box&lt;dyn AudioProvider&gt;,
+    pub input: Box&lt;dyn InputProvider&gt;,
+    // WindowProvider is !Send+Sync, stored separately in GoudGame.
+}
+<span class="boring">}</span></code></pre>
+<p><strong>Rust SDK</strong> — builder pattern with <code>Null*Provider</code> defaults for unconfigured slots:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let game = GoudEngine::builder()
+    .with_renderer(OpenGLRenderProvider::new(RenderConfig::default()))
+    .with_physics(Rapier2DPhysicsProvider::new(PhysicsConfig {
+        gravity: Vec2::new(0.0, -9.81), ..Default::default()
+    }))
+    .with_audio(RodioAudioProvider::new(AudioConfig::default()))
+    .with_window(GlfwWindowProvider::new(WindowConfig {
+        width: 1280, height: 720, title: "My Game".into(),
+    }))
+    .build()?;
+<span class="boring">}</span></code></pre>
+<p><strong>FFI SDKs</strong> — enum-based selection (custom providers require the Rust SDK):</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[repr(C)]
+pub enum GoudRendererType {
+    WgpuAuto = 0,     // Auto-select best wgpu backend
+    WgpuVulkan = 1,
+    WgpuMetal = 2,
+    WgpuDx12 = 3,
+    WgpuWebGpu = 4,
+    OpenGL = 10,
+    Null = 99,
+}
+
+#[repr(C)]
+pub enum GoudPhysicsType { Rapier2D = 0, Rapier3D = 1, Simple = 2, Null = 99 }
+
+#[repr(C)]
+pub enum GoudAudioType { Rodio = 0, WebAudio = 1, Null = 99 }
+<span class="boring">}</span></code></pre>
+<p>The renderer enum exposes wgpu backend sub-selection to allow SDK users to force a specific GPU API when needed (e.g., Vulkan for Linux, Metal for macOS).</p>
+<hr>
+<h3 id="36-object-safety-and-dispatch-strategy"><a class="header" href="#36-object-safety-and-dispatch-strategy">3.6 Object Safety and Dispatch Strategy</a></h3>
+<p>All provider traits are object-safe: no associated types, no generic methods. Stored as <code>Box&lt;dyn RenderProvider&gt;</code> etc. Dynamic dispatch overhead is acceptable here because calls are coarse-grained (per-frame or per-batch), not per-vertex.</p>
+<p>The existing <code>RenderBackend</code> trait (<code>goud_engine/src/libs/graphics/backend/render_backend.rs</code>) is intentionally NOT object-safe and remains an internal detail inside concrete providers. This mirrors <code>AssetLoader</code>/<code>ErasedAssetLoader</code> in <code>goud_engine/src/assets/loader/traits.rs</code> (same crate): typed generics for hot paths, erased trait objects for storage.</p>
+<p>For future cross-provider resource sharing, providers MAY expose <code>fn shared_resources(&amp;self) -&gt; Option&lt;&amp;dyn Any&gt;</code> as an extension point.</p>
+<p>For performance-critical inner loops needing direct backend access, providers expose typed accessors:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl OpenGLRenderProvider {
+    pub(crate) fn backend(&amp;mut self) -&gt; &amp;mut OpenGLBackend { ... }
+}
+<span class="boring">}</span></code></pre>
+<hr>
+<h3 id="37-thread-safety"><a class="header" href="#37-thread-safety">3.7 Thread Safety</a></h3>
+<p>Default bound: <code>Send + Sync + 'static</code> on all provider traits.</p>
+<p><strong>Exception: <code>WindowProvider</code>.</strong> GLFW requires main-thread access, so <code>WindowProvider</code> is <code>!Send + !Sync</code>. The engine enforces this by storing it outside <code>ProviderRegistry</code> directly in <code>GoudGame</code>, making <code>GoudGame</code> itself <code>!Send</code> when a native window is present. This matches <code>PlatformBackend</code> in <code>goud_engine/src/libs/platform/mod.rs</code>. If an async executor is adopted in the future, <code>WindowProvider</code> calls must be scheduled on the main thread via a <code>MainThreadScheduler</code> that queues operations from async tasks.</p>
+<hr>
+<h3 id="38-hot-swap-dev-mode"><a class="header" href="#38-hot-swap-dev-mode">3.8 Hot-Swap (Dev Mode)</a></h3>
+<p>Dev-mode only, gated behind <code>#[cfg(debug_assertions)]</code> or <code>dev-tools</code> feature. Protocol:</p>
+<ol>
+<li><code>shutdown()</code> on active provider → drop it</li>
+<li>Create and <code>init()</code> replacement provider</li>
+<li>Invalidate all resource handles (textures, buffers, shaders) from old provider</li>
+<li>Trigger one-frame resource re-upload</li>
+</ol>
+<p>Providers declare support with <code>fn supports_hot_swap(&amp;self) -&gt; bool</code> (default <code>false</code>). Implementation tracked in F02-08; this RFC defines constraints only.</p>
+<p><strong>Constraints:</strong> handle invalidation must produce errors (not silent UB), hot-swap must not be called from multiple threads, and replacement must pass <code>init()</code> before the old provider is dropped.</p>
+<p><strong>Expected invalidation mechanism:</strong> the engine already uses generational handles (see <code>core/handle.rs</code>). On hot-swap, the provider epoch increments; all existing handles carry the old epoch and fail validation on next use. This avoids scanning all live handles.</p>
+<hr>
+<h3 id="39-error-handling"><a class="header" href="#39-error-handling">3.9 Error Handling</a></h3>
+<p>All fallible provider methods return <code>GoudResult&lt;T&gt;</code>. A new variant is added to <code>GoudError</code> (<code>goud_engine/src/core/error/types.rs</code>):</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ProviderError { subsystem: &amp;'static str, message: String }
+<span class="boring">}</span></code></pre>
+<p>This uses a struct variant (unlike the existing tuple variants like <code>InitializationFailed(String)</code>) because provider errors need the <code>subsystem</code> discriminator for FFI error code routing — error codes 600–609 for render, 610–619 for physics, etc. A single <code>String</code> would require parsing to extract the subsystem.</p>
+<p>If <code>init()</code> fails and no fallback is configured, <code>GoudGame::new()</code> returns <code>Err(GoudError::ProviderError { ... })</code>. Fallback providers can be configured via <code>.with_fallback_renderer(NullRenderProvider::new())</code>.</p>
+<hr>
+<h3 id="310-layer-placement"><a class="header" href="#310-layer-placement">3.10 Layer Placement</a></h3>
+<p><code>libs/</code> is a module within <code>goud_engine/src/libs/</code>, not a standalone workspace crate. Per CLAUDE.md, <code>libs/</code> is Layer 1 (lowest) and must not import from Layer 2 (<code>core/</code>, <code>assets/</code>, <code>sdk/</code>) or higher.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Component</th><th>Layer</th><th>Path</th></tr>
+</thead>
+<tbody>
+<tr><td>Provider trait definitions</td><td>Layer 1</td><td><code>goud_engine/src/libs/providers/</code> (new module)</td></tr>
+<tr><td>Concrete implementations</td><td>Layer 1</td><td><code>goud_engine/src/libs/providers/impls/</code></td></tr>
+<tr><td><code>ProviderRegistry</code></td><td>Layer 2</td><td><code>goud_engine/src/core/providers/registry.rs</code></td></tr>
+<tr><td>Builder (<code>GoudEngine::builder()</code>)</td><td>Layer 2</td><td><code>goud_engine/src/core/providers/builder.rs</code></td></tr>
+<tr><td>FFI enum selection</td><td>Layer 3</td><td><code>goud_engine/src/ffi/providers.rs</code></td></tr>
+<tr><td>SDK enum wrappers</td><td>Layer 4</td><td>generated via codegen from <code>goud_sdk.schema.json</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Provider traits in <code>goud_engine/src/libs/providers/</code> may import from sibling Layer 1 modules (<code>libs/graphics/</code>, <code>libs/ecs/</code>) but must not import from <code>core/</code>, <code>sdk/</code>, or <code>ffi/</code> — those are Layer 2+ and importing them would violate the downward-only rule.</p>
+<p><strong>Prerequisite: error type placement.</strong> Provider trait methods return <code>GoudResult&lt;T&gt;</code>, but <code>GoudResult</code> and <code>GoudError</code> currently live in <code>goud_engine/src/core/error/</code> (Layer 2). Existing <code>libs/</code> modules already import from <code>core/error/</code> (e.g., <code>libs/graphics/backend/</code> uses <code>GoudResult</code>), which is an existing Layer 1→2 violation. Before implementing this RFC, error types must be moved to a Layer 1 location (e.g., <code>libs/error/</code>) so that provider traits can reference them without upward imports. This is tracked as a prerequisite for F02-02.</p>
+<hr>
+<h3 id="311-ffi-boundary"><a class="header" href="#311-ffi-boundary">3.11 FFI Boundary</a></h3>
+<p>SDK users never interact with provider traits. The FFI exposes enum parameters on init, capability query functions returning <code>#[repr(C)]</code> structs, and no provider handles. The high-level API (<code>draw_sprite</code>, <code>play_sound</code>) is unchanged.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[no_mangle]
+pub unsafe extern "C" fn goud_game_create(
+    width: u32, height: u32, title: *const c_char,
+    renderer_type: GoudRendererType,
+    physics_type: GoudPhysicsType,
+    audio_type: GoudAudioType,
+) -&gt; *mut GoudGame { ... }
+<span class="boring">}</span></code></pre>
+<hr>
+<h2 id="4-alternatives-considered"><a class="header" href="#4-alternatives-considered">4. Alternatives Considered</a></h2>
+<h3 id="feature-flag-only-selection-compile-time"><a class="header" href="#feature-flag-only-selection-compile-time">Feature-flag-only selection (compile-time)</a></h3>
+<p>Selecting the backend at compile time with <code>#[cfg(feature = "opengl")]</code> / <code>#[cfg(feature = "wgpu")]</code> avoids dynamic dispatch. It does not support runtime fallback, cannot support NDA backends that cannot be checked in, and requires separate binaries for each backend configuration. Rejected.</p>
+<h3 id="dynamic-plugin-system-sodll-loading"><a class="header" href="#dynamic-plugin-system-sodll-loading">Dynamic plugin system (.so/.dll loading)</a></h3>
+<p>Loading provider implementations from shared libraries at runtime would allow third-party backends without engine recompilation. It introduces significant complexity: platform differences in library loading, symbol resolution, versioning, and safety. The marginal benefit does not justify the cost for an engine at this stage. Rejected; revisit post-1.0.</p>
+<h3 id="enum-dispatch-instead-of-trait-objects"><a class="header" href="#enum-dispatch-instead-of-trait-objects">Enum dispatch instead of trait objects</a></h3>
+<p>Wrapping all built-in providers in an enum and dispatching with <code>match</code> avoids dynamic dispatch costs. It prevents custom providers entirely and grows the match arms with every new backend. It also does not solve the NDA backend problem. Rejected.</p>
+<h3 id="merge-windowinput-into-a-single-platformprovider"><a class="header" href="#merge-windowinput-into-a-single-platformprovider">Merge Window+Input into a single PlatformProvider</a></h3>
+<p><code>PlatformBackend</code> currently handles both windowing and input together. Keeping them merged is simpler. However, input and windowing have different threading and testing requirements: input can be mocked without a real window, but a window cannot exist without being on the main thread. Splitting them enables cleaner headless testing. The split is the recommended design (see §3.2); merging is noted as an open question (§6) if implementation complexity proves too high.</p>
+<hr>
+<h2 id="5-impact"><a class="header" href="#5-impact">5. Impact</a></h2>
+<h3 id="breaking-changes"><a class="header" href="#breaking-changes">Breaking Changes</a></h3>
+<ul>
+<li><code>GoudGame</code> struct changes: <code>Option&lt;OpenGLBackend&gt;</code> and <code>SpriteBatch&lt;OpenGLBackend&gt;</code> fields are replaced by <code>ProviderRegistry</code> and <code>Option&lt;Box&lt;dyn WindowProvider&gt;&gt;</code>.</li>
+<li><code>SpriteBatch&lt;B: RenderBackend&gt;</code> generic parameter changes: <code>SpriteBatch</code> will receive a <code>&amp;mut dyn RenderProvider</code> or a concrete backend reference via downcast. The public API surface of <code>SpriteBatch</code> may change.</li>
+<li><code>GoudGame::new(width, height, title, renderer_type)</code> signature expands to accept physics and audio provider selections.</li>
+</ul>
+<h3 id="ffi-changes"><a class="header" href="#ffi-changes">FFI Changes</a></h3>
+<ul>
+<li><code>goud_game_create</code> gains <code>GoudPhysicsType</code> and <code>GoudAudioType</code> parameters.</li>
+<li>New capability query functions added to the FFI surface.</li>
+<li>C# bindings regenerated via csbindgen after <code>cargo build</code>.</li>
+<li><strong>Minimum migration for existing games:</strong> pass <code>GoudRendererType::OpenGL</code>, <code>GoudPhysicsType::Null</code>, <code>GoudAudioType::Null</code> to preserve current behavior with no functional change.</li>
+</ul>
+<h3 id="sdk-changes"><a class="header" href="#sdk-changes">SDK Changes</a></h3>
+<ul>
+<li>All three SDK wrappers (C#, Python, TypeScript) updated via codegen from the schema.</li>
+<li>Init functions gain physics and audio type parameters.</li>
+<li>Existing game code that uses the default <code>OpenGL</code> + <code>Null</code> physics + <code>Null</code> audio continues to work with updated init calls.</li>
+</ul>
+<h3 id="examples"><a class="header" href="#examples">Examples</a></h3>
+<ul>
+<li>All C# examples in <code>examples/csharp/</code> updated to pass the new init parameters.</li>
+<li>Python and TypeScript examples updated in parallel.</li>
+</ul>
+<h3 id="migration-path"><a class="header" href="#migration-path">Migration Path</a></h3>
+<p>Implementation proceeds in phases F02-02 through F02-09 as defined in <code>ALPHA_ROADMAP.md</code>:</p>
+<ul>
+<li>F02-02: Define <code>libs/providers/</code> module with all trait definitions.</li>
+<li>F02-03: Implement <code>OpenGLRenderProvider</code> wrapping the existing backend.</li>
+<li>F02-04: Implement <code>Rapier2DPhysicsProvider</code>.</li>
+<li>F02-05: Implement <code>RodioAudioProvider</code>.</li>
+<li>F02-06: Split <code>PlatformBackend</code> into <code>WindowProvider</code> + <code>GlfwInputProvider</code>.</li>
+<li>F02-07: Wire <code>ProviderRegistry</code> into <code>GoudGame</code>, remove hardcoded fields.</li>
+<li>F02-08: Hot-swap mechanism (dev-tools feature only).</li>
+<li>F02-09: FFI enum selection + SDK codegen updates.</li>
+</ul>
+<hr>
+<h2 id="6-resolved-decisions"><a class="header" href="#6-resolved-decisions">6. Resolved Decisions</a></h2>
+<ol>
+<li>
+<p><strong>Window+Input: Keep Separate.</strong> <code>WindowProvider</code> and <code>InputProvider</code> remain separate traits. <code>glfw_platform.rs</code> pumps events via <code>poll_events(&amp;mut self, input: &amp;mut InputManager)</code> — tight event dispatch but loose storage. <code>InputManager</code> is an independent resource, and <code>GamepadState</code> infrastructure in <code>core/input_manager/types.rs</code> exists but isn’t wired to GLFW, proving input sources can be window-independent. Headless testing needs input without a window; gamepad/network inputs don’t come from windows. <code>WindowProvider</code> is <code>!Send + !Sync</code> (GLFW main-thread) while <code>InputProvider</code> can be <code>Send + Sync</code>. A <code>WindowInputBridge</code> helper wires GLFW events → <code>InputProvider</code> for the common case.</p>
+</li>
+<li>
+<p><strong>Resource Ownership: Provider-Owned.</strong> Providers own their resources. A shared <code>ResourcePool</code> is deferred to post-stabilization. <code>RenderBackend</code> already uses handle-based resource management (<code>create_buffer()</code>, <code>create_texture()</code>, <code>destroy_*()</code>), and <code>GoudGame</code> is the single root owner. No cross-subsystem resource sharing exists today. Extension point: providers MAY expose <code>fn shared_resources(&amp;self) -&gt; Option&lt;&amp;dyn Any&gt;</code> for future cross-provider sharing.</p>
+</li>
+<li>
+<p><strong>NullProvider: Explicit Structs.</strong> Use explicit <code>Null*Provider</code> structs, not default method implementations. The codebase uses <code>Option&lt;T&gt;</code> for conditional features and <code>AssetState</code> enum with explicit states (<code>NotLoaded</code>, <code>Loading</code>, <code>Failed</code>) rather than silent defaults. Explicit structs are visible, debuggable, and testable (can count draw calls, track state). FFI enum values (<code>GoudRendererType::Null</code>) map cleanly to concrete structs. Trait methods stay without defaults — forces implementors to be explicit.</p>
+</li>
+<li>
+<p><strong>Async &amp; Main-Thread: Document Constraint, Defer.</strong> The <code>!Send</code> constraint on <code>GoudGame</code> when a native <code>WindowProvider</code> is present is documented and correct. No async resolution is needed now — there is no async code in the codebase, and parallelism is Rayon scope-based (<code>parallel.rs</code>). GLFW requires main-thread access (<code>glfw_platform.rs</code> lines 7–10) and <code>GoudContext</code> is already <code>!Send + !Sync</code>. If an async executor is adopted later, <code>WindowProvider</code> calls must be scheduled on the main thread via a <code>MainThreadScheduler</code> that queues operations from async tasks.</p>
+</li>
+</ol>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../rfcs/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../../rfcs/RFC-0002-network-provider-trait.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../rfcs/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../../rfcs/RFC-0002-network-provider-trait.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-c2a407aa.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

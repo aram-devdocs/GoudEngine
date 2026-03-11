@@ -2,7 +2,7 @@
 //!
 //! Provides [`PhysicsStepSystem3D`] which steps a [`PhysicsProvider3D`] each
 //! frame and synchronizes body positions and rotations back to ECS
-//! [`Transform`] components.
+//! [`Transform`](crate::ecs::components::Transform) components.
 //!
 //! # Usage
 //!

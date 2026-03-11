@@ -99,6 +99,28 @@ export interface IUiEvent {
   currentNodeId: UiNodeId;
 }
 
+export type PreloadAssetKind = 'texture' | 'font';
+
+export interface IPreloadAssetRequest {
+  path: string;
+  kind?: PreloadAssetKind;
+}
+
+export interface IPreloadProgress {
+  loaded: number;
+  total: number;
+  progress: number;
+  path: string;
+  kind: PreloadAssetKind;
+  handle: number;
+}
+
+export interface IPreloadOptions {
+  onProgress?: (update: IPreloadProgress) => void;
+}
+
+export type PreloadAssetInput = string | IPreloadAssetRequest;
+
 /** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
 export interface IGoudGame {
   /** Seconds elapsed since last frame */
@@ -399,6 +421,8 @@ export interface IGoudGame {
   audioActivate(): number;
   /** Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred. */
   checkHotSwapShortcut(): boolean;
+  /** Preloads textures/fonts before `run()` starts and reports coarse per-asset progress. */
+  preload(assets: PreloadAssetInput[], options?: IPreloadOptions): Promise<Record<string, number>>;
   // Animation Layer Stack & Events
   animationLayerStackCreate(entity: IEntity): number;
   animationLayerAdd(entity: IEntity, name: string, blendMode: number): number;

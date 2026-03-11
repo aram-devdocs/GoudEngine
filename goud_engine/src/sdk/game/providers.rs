@@ -1,4 +1,4 @@
-//! Provider capability query and hot-swap methods for [`GoudGame`].
+//! Provider capability query and hot-swap methods for [`GoudGame`](super::GoudGame).
 
 use super::GoudGame;
 use crate::core::providers::input_types::InputCapabilities;

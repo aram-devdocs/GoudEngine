@@ -1,12 +1,14 @@
 //! GlobalTransform component for world-space transformations.
 //!
 //! The [`GlobalTransform`] component stores the computed world-space transformation
-//! for entities in a hierarchy. Unlike [`Transform`] which stores local-space data
+//! for entities in a hierarchy. Unlike
+//! [`Transform`](crate::ecs::components::Transform) which stores local-space data
 //! relative to the parent, `GlobalTransform` stores the absolute world-space result.
 //!
 //! # Purpose
 //!
-//! When entities are arranged in a parent-child hierarchy, each child's [`Transform`]
+//! When entities are arranged in a parent-child hierarchy, each child's
+//! [`Transform`](crate::ecs::components::Transform)
 //! is relative to its parent. To render, perform physics, or do other world-space
 //! operations, we need the final world-space transformation.
 //!

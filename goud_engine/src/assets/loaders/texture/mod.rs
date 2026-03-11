@@ -4,15 +4,18 @@
 //! Supports common image formats like PNG, JPG, BMP, TGA, and more.
 //!
 //! # Example
-///
-/// ```no_run
-/// use goud_engine::assets::{AssetServer, loaders::texture::TextureLoader, loaders::texture::TextureAsset};
-///
-/// let mut server = AssetServer::new();
-/// server.register_loader(TextureLoader::default());
-///
-/// let handle = server.load::<TextureAsset>("textures/player.png");
-/// ```
+//!
+//! ```no_run
+//! use goud_engine::assets::{
+//!     AssetServer,
+//!     loaders::texture::{TextureAsset, TextureLoader},
+//! };
+//!
+//! let mut server = AssetServer::new();
+//! server.register_loader(TextureLoader::default());
+//!
+//! let handle = server.load::<TextureAsset>("textures/player.png");
+//! ```
 mod asset;
 pub mod compressed;
 pub mod dds;

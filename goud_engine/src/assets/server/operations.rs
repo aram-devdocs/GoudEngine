@@ -342,7 +342,9 @@ impl AssetServer {
 
     /// Returns the cascade reload order for a changed asset path.
     ///
-    /// This delegates to [`DependencyGraph::get_cascade_order`] and
+    /// This delegates to
+    /// [`DependencyGraph::get_cascade_order`](crate::assets::dependency::DependencyGraph::get_cascade_order)
+    /// and
     /// returns the list of asset paths that should be reloaded, in
     /// the correct order, when `changed_path` changes.
     pub fn get_cascade_order(&self, changed_path: &str) -> Vec<String> {

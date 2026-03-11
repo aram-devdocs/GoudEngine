@@ -1,6 +1,6 @@
 //! # SDK Window Management API
 //!
-//! Provides methods on [`GoudGame`](super::GoudGame) for window lifecycle
+//! Provides methods on [`GoudGame`] for window lifecycle
 //! management: polling events, swapping buffers, querying window state, and
 //! clearing the screen. Also provides static lifecycle functions on [`Window`]
 //! for creating and destroying windowed contexts from FFI.

@@ -186,7 +186,7 @@ cbindgen contains the following hardcoded mappings (again completely ignoring na
 * PhantomData => *evaporates*, can only appear as the field of a type
 * PhantomPinned => *evaporates*, can only appear as the field of a type  
 * () => *evaporates*, can only appear as the field of a type
-* MaybeUninit<T>, ManuallyDrop<T>, and Pin<T> => T
+* `MaybeUninit<T>`, `ManuallyDrop<T>`, and `Pin<T>` => `T`
 
 
 
@@ -479,9 +479,9 @@ includes = ["my_great_lib.h"]
 # imports are included by default because our generated headers tend to require
 # them (e.g. for uint32_t). Currently, the generated imports are:
 #
-# * for C: <stdarg.h>, <stdbool.h>, <stdint.h>, <stdlib.h>, <uchar.h>
+# * for C: `stdarg.h`, `stdbool.h`, `stdint.h`, `stdlib.h`, `uchar.h`
 #
-# * for C++: <cstdarg>, <cstdint>, <cstdlib>, <new>, <cassert> (depending on config)
+# * for C++: `cstdarg`, `cstdint`, `cstdlib`, `new`, `cassert` (depending on config)
 #
 # default: false
 no_includes = false
@@ -840,11 +840,11 @@ derive_eq = false
 # default: false
 derive_neq = false
 
-# Whether to derive an operator< for all structs
+# Whether to derive an `operator<` for all structs
 # default: false
 derive_lt = false
 
-# Whether to derive an operator<= for all structs
+# Whether to derive an `operator<=` for all structs
 # default: false
 derive_lte = false
 
@@ -918,7 +918,7 @@ derive_mut_casts = false
 # The name of the macro/function to use for asserting `IsMyVariant()` in the body of
 # derived `AsMyVariant()` cast methods.
 #
-# default: "assert" (but also causes `<cassert>` to be included by default)
+# default: "assert" (but also causes ``<cassert>`` to be included by default)
 cast_assert_name = "MOZ_RELEASE_ASSERT"
 
 # An optional string that should come before the name of any enum which has been

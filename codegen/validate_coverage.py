@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Validates that ffi_manifest.json covers 100% of FFI functions from ffi_mapping.json."""
+"""Validates that ffi_manifest.json covers 100% of the resolved FFI contract."""
 
 import json
 import sys
 from pathlib import Path
 
 CODEGEN_DIR = Path(__file__).parent
+
+sys.path.insert(0, str(CODEGEN_DIR))
+from sdk_common import load_ffi_mapping, load_schema
 
 
 def load_manifest_functions(manifest_path: Path) -> set[str]:
@@ -90,6 +93,21 @@ _TYPE_ALIASES: dict[str, str] = {
     "*const std::os::raw::c_char": "*const c_char",
     "GoudEntityId": "u64",
     "GoudTextureHandle": "u64",
+    "GoudContextId": "u64",
+    "crate::ffi::context::GoudContextId": "u64",
+    "EngineConfigHandle": "*mut c_void",
+    "GoudFontHandle": "u64",
+    "FfiTransitionType": "u8",
+    "FfiNetworkSimulationConfig": "NetworkSimulationConfig",
+    "ref FfiNetworkStats": "*mut FfiNetworkStats",
+    "*const UiManager": "*mut c_void",
+    "*mut UiManager": "*mut c_void",
+    "Option<UiEventCallback>": "ptr",
+    "ref FfiAudioCapabilities": "*mut AudioCapabilities",
+    "ref FfiInputCapabilities": "*mut InputCapabilities",
+    "ref FfiNetworkCapabilities": "*mut NetworkCapabilities",
+    "ref FfiPhysicsCapabilities": "*mut PhysicsCapabilities",
+    "ref FfiRenderCapabilities": "*mut RenderCapabilities",
     "GoudKeyCode": "i32",
     "GoudMouseButton": "i32",
     "GoudErrorCode": "i32",
@@ -181,7 +199,6 @@ def load_mapping_functions(mapping: dict) -> set[str]:
 
 def main() -> None:
     manifest_path = CODEGEN_DIR / "ffi_manifest.json"
-    mapping_path = CODEGEN_DIR / "ffi_mapping.json"
 
     if not manifest_path.exists():
         print(
@@ -190,7 +207,8 @@ def main() -> None:
         )
         sys.exit(0)
 
-    mapping = json.loads(mapping_path.read_text())
+    schema = load_schema()
+    mapping = load_ffi_mapping(schema)
     manifest_functions = load_manifest_functions(manifest_path)
     mapping_functions = load_mapping_functions(mapping)
 
@@ -208,10 +226,11 @@ def main() -> None:
     print(f"Coverage:           {coverage:.1f}%")
     print()
 
-    # Signature comparison pass (warnings only, not hard failures)
+    # Signature comparison: warnings are now hard failures.
     manifest_sigs = load_manifest_signatures(manifest_path)
     mapping_sigs = load_mapping_signatures(mapping)
     sig_warnings = compare_signatures(manifest_sigs, mapping_sigs)
+    has_failures = bool(in_manifest_not_mapping or in_mapping_not_manifest or sig_warnings)
 
     if sig_warnings:
         print(f"Signature warnings ({len(sig_warnings)}):")
@@ -219,7 +238,7 @@ def main() -> None:
             print(w)
         print()
 
-    if not in_manifest_not_mapping and not in_mapping_not_manifest:
+    if not has_failures:
         print("Full coverage — all FFI functions are mapped.")
         sys.exit(0)
 

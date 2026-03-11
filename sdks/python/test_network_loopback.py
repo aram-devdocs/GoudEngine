@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Runtime networking tests for handwritten Python wrappers."""
+"""Runtime networking tests for generated Python wrappers."""
 
 import socket
 import sys
