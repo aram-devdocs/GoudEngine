@@ -167,4 +167,4 @@ PATH="$HOME/.cargo/bin:$HOME/.dotnet/tools:$PATH" bash scripts/clean-room-regene
 
 ## Next step
 
-After this tutorial, run [Example Showcase](showcase.md) and [Feature Lab](showcase.md#feature-lab-parity-smoke) for broader SDK coverage.
+After this tutorial, run [Example Showcase](showcase.md) and the new [Sandbox parity app](showcase.md#sandbox-parity-app) to cover more of the SDK surface. Keep [Feature Lab](showcase.md#feature-lab-smoke-coverage) as the supplemental smoke path.

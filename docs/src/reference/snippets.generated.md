@@ -2,67 +2,67 @@
 # Reusable Snippets (Generated)
 
 This page is generated from validated sources:
-- Feature Lab examples exercised by parity checks
+- Sandbox examples exercised by parity checks
 - SDK generated entrypoints emitted by codegen
 
-## Rust Headless Game Setup
+## Rust Sandbox Setup
 
-Source: `examples/rust/feature_lab/src/main.rs`
+Source: `examples/rust/sandbox/src/main.rs`
 
 ```rust
-    let config = GameConfig::new("Rust Feature Lab", 1280, 720)
-        .with_target_fps(120)
-        .with_fps_overlay(true)
-        .with_physics_debug(true);
-    let mut game = GoudGame::new(config).expect("failed to create headless game");
+    let mut game = GoudGame::with_platform(GameConfig::new("GoudEngine Sandbox - Rust", WINDOW_WIDTH, WINDOW_HEIGHT))
+        .expect("failed to create game");
 
-    let mut results = Vec::new();
-    run_feature_surface_checks(&mut game, &mut results);
+    let background = game.load("examples/shared/sandbox/sprites/background-day.png");
+    let sprite = game.load("examples/shared/sandbox/sprites/yellowbird-midflap.png");
+    let accent = game.load("examples/shared/sandbox/sprites/pipe-green.png");
+    let texture3d = game.load("examples/shared/sandbox/textures/default_grey.png") as u32;
+
 ```
 
-## C# Headless Context Setup
+## C# Sandbox Setup
 
-Source: `examples/csharp/feature_lab/Program.cs`
+Source: `examples/csharp/sandbox/Program.cs`
 
 ```csharp
-        using var ctx = new GoudContext();
+        using var game = new GoudGame(WindowWidth, WindowHeight, "GoudEngine Sandbox - C#");
+        using var sceneContext = new GoudContext();
+        using var network = new NetworkState(assets.Port);
+        using var ui = BuildUi();
 
-        var probe = ctx.SpawnEmpty();
-        Record(results, "headless context spawns entities", ctx.IsValid() && ctx.IsAlive(probe) && ctx.EntityCount() == 1);
-
-        ctx.AddName(probe, "feature_probe");
-        Record(
-            results,
+        var scene2D = sceneContext.SceneCreate("sandbox-2d");
+        var scene3D = sceneContext.SceneCreate("sandbox-3d");
+        var sceneHybrid = sceneContext.SceneCreate("sandbox-hybrid");
 ```
 
-## Python Feature Lab Startup
+## Python Sandbox Startup
 
-Source: `examples/python/feature_lab.py`
+Source: `examples/python/sandbox.py`
 
 ```python
-        ctx = GoudContext()
+    game = GoudGame(WINDOW_WIDTH, WINDOW_HEIGHT, "GoudEngine Sandbox - Python")
+    ui = _make_ui()
+    scene_context = GoudContext()
+    scene_ids = _try_scene_setup(scene_context)
+    network = NetworkState(port)
 
-        results.append(_run_check("headless context is valid", lambda: (bool(ctx.is_valid()), "")))
-        results.append(_run_check("scene lifecycle operations", lambda: check_scene_lifecycle(ctx)))
-        results.append(_run_check("entity lifecycle + clone operations", lambda: check_entity_lifecycle(ctx)))
-        results.append(_run_skippable_check("network capability query", lambda: check_network_capabilities(ctx)))
-        results.append(_run_skippable_check("network wrapper + safe send fallback", lambda: check_network_wrapper_and_fallback(ctx)))
-        results.append(_run_skippable_check("ui manager basic node tree", check_ui_manager_basics))
+    background = game.load_texture(assets.background)
+    sprite = game.load_texture(assets.sprite)
 ```
 
-## TypeScript Capability Probes
+## TypeScript Sandbox Asset Loading
 
-Source: `examples/typescript/feature_lab/lab.ts`
+Source: `examples/typescript/sandbox/sandbox.ts`
 
 ```ts
-  probes.push(safeProbe('cap.render', () => game.getRenderCapabilities()));
-  probes.push(safeProbe('cap.physics', () => game.getPhysicsCapabilities()));
-  probes.push(safeProbe('cap.audio', () => game.getAudioCapabilities()));
-  probes.push(safeProbe('cap.input', () => game.getInputCapabilities()));
-  probes.push(safeProbe('cap.network', () => game.getNetworkCapabilities()));
-
-  const sceneJson = JSON.stringify({
-    version: 1,
+    const background = await game.loadTexture(assets.background);
+    const sprite = await game.loadTexture(assets.sprite);
+    const accentSprite = await game.loadTexture(assets.accentSprite);
+    const font = await game.loadFont(assets.font);
+    let cube = 0;
+    if (target === 'desktop') {
+      const texture3d = await game.loadTexture(assets.texture3d);
+      game.configureGrid(true, 12, 12);
 ```
 
 ## Python Generated Public Exports

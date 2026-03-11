@@ -240,8 +240,8 @@ async function generateTutorialVideo(browser) {
     },
     {
       title: '3. Run broader smoke',
-      subtitle: 'Feature Lab + networking',
-      body: './dev.sh --sdk typescript --game feature_lab_web\\ncd examples/typescript/feature_lab && npm run smoke:web-network',
+      subtitle: 'Sandbox parity app',
+      body: './dev.sh --sdk typescript --game sandbox_web\\ncd examples/typescript/sandbox && npm run build:web',
       accent: '#f59e0b'
     },
     {
@@ -395,7 +395,7 @@ Step 1. Install once. Run cd sdks/typescript and npm ci.
 Step 2. Run the baseline. Use ./dev.sh --sdk typescript --game flappy_bird_web.
 
 00:06.600 --> 00:08.800
-Step 3. Run broader smoke. Use ./dev.sh --sdk typescript --game feature_lab_web and npm run smoke:web-network.
+Step 3. Run broader parity. Use ./dev.sh --sdk typescript --game sandbox_web and npm run build:web.
 
 00:08.800 --> 00:11.000
 Reference. Use the TypeScript getting-started page, Build Your First Game, and Example Showcase together.

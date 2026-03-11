@@ -71,10 +71,10 @@ while [[ "$#" -gt 0 ]]; do
         echo "  --next           Run version increment and rebuild"
         echo "  -h, --help       Show this help message"
         echo ""
-        echo "C# Games:       flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab"
-        echo "Python Demos:   python_demo, flappy_bird (use --sdk python)"
+        echo "C# Games:       flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox"
+        echo "Python Demos:   python_demo, flappy_bird, sandbox (use --sdk python)"
         echo "Rust SDK:       rust_demo (use --sdk rust)"
-        echo "TypeScript:     flappy_bird (desktop), flappy_bird_web (web), feature_lab (desktop), feature_lab_web (web) (use --sdk typescript)"
+        echo "TypeScript:     flappy_bird (desktop), flappy_bird_web (web), feature_lab (desktop), feature_lab_web (web), sandbox (desktop), sandbox_web (web) (use --sdk typescript)"
         echo ""
         echo "Examples:"
         echo "  ./dev.sh --game flappy_goud            # Run C# Flappy Goud"
@@ -85,6 +85,10 @@ while [[ "$#" -gt 0 ]]; do
         echo "  ./dev.sh --sdk typescript --game flappy_bird_web  # TS web (browser)"
         echo "  ./dev.sh --sdk typescript --game feature_lab      # TS Feature Lab desktop"
         echo "  ./dev.sh --sdk typescript --game feature_lab_web  # TS Feature Lab web"
+        echo "  ./dev.sh --game sandbox                           # C# Sandbox desktop"
+        echo "  ./dev.sh --sdk python --game sandbox             # Python Sandbox desktop"
+        echo "  ./dev.sh --sdk typescript --game sandbox         # TS Sandbox desktop"
+        echo "  ./dev.sh --sdk typescript --game sandbox_web     # TS Sandbox web"
         exit 0
         ;;
     *)
@@ -110,24 +114,24 @@ esac
 case $SDK_TYPE in
 "csharp")
     case $GAME in
-    "flappy_goud" | "3d_cube" | "goud_jumper" | "isometric_rpg" | "hello_ecs" | "feature_lab")
+    "flappy_goud" | "3d_cube" | "goud_jumper" | "isometric_rpg" | "hello_ecs" | "feature_lab" | "sandbox")
         echo "Building and running C# game: $GAME..."
         ;;
     *)
         echo "Error: Invalid C# game selection."
-        echo "Choose from: flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab"
+        echo "Choose from: flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox"
         exit 1
         ;;
     esac
     ;;
 "python")
     case $GAME in
-    "python_demo" | "flappy_bird")
+    "python_demo" | "flappy_bird" | "sandbox")
         echo "Running Python demo: $GAME..."
         ;;
     *)
         echo "Error: Invalid Python demo selection."
-        echo "Choose from: python_demo, flappy_bird"
+        echo "Choose from: python_demo, flappy_bird, sandbox"
         exit 1
         ;;
     esac
@@ -137,12 +141,12 @@ case $SDK_TYPE in
     ;;
 "typescript")
     case $GAME in
-    "flappy_bird" | "flappy_bird_web" | "feature_lab" | "feature_lab_web")
+    "flappy_bird" | "flappy_bird_web" | "feature_lab" | "feature_lab_web" | "sandbox" | "sandbox_web")
         echo "Building and running TypeScript example: $GAME..."
         ;;
     *)
         echo "Error: Invalid TypeScript example selection."
-        echo "Choose from: flappy_bird (desktop), flappy_bird_web (web), feature_lab (desktop), feature_lab_web (web)"
+        echo "Choose from: flappy_bird (desktop), flappy_bird_web (web), feature_lab (desktop), feature_lab_web (web), sandbox (desktop), sandbox_web (web)"
         exit 1
         ;;
     esac
@@ -176,7 +180,7 @@ if [ "$SKIP_BUILD" = false ]; then
         python3 "$SCRIPT_DIR/codegen/gen_ts_node.py"
         python3 "$SCRIPT_DIR/codegen/gen_ts_web.py"
 
-        if [ "$GAME" = "flappy_bird_web" ] || [ "$GAME" = "feature_lab_web" ]; then
+        if [ "$GAME" = "flappy_bird_web" ] || [ "$GAME" = "feature_lab_web" ] || [ "$GAME" = "sandbox_web" ]; then
             echo "Building TypeScript web SDK (wasm)..."
             cd "$SCRIPT_DIR/sdks/typescript" && npm run build:web
             cd "$SCRIPT_DIR"
@@ -190,6 +194,9 @@ if [ "$SKIP_BUILD" = false ]; then
         case $GAME in
         "feature_lab" | "feature_lab_web")
             TS_EXAMPLE_DIR="feature_lab"
+            ;;
+        "sandbox" | "sandbox_web")
+            TS_EXAMPLE_DIR="sandbox"
             ;;
         esac
 
@@ -255,6 +262,10 @@ case $SDK_TYPE in
     "flappy_bird")
         echo "Running Python Flappy Bird..."
         python3 flappy_bird.py
+        ;;
+    "sandbox")
+        echo "Running Python Sandbox..."
+        python3 sandbox.py
         ;;
     esac
     ;;
@@ -322,6 +333,32 @@ case $SDK_TYPE in
         fi
         echo "Starting web server on http://localhost:$WEB_PORT"
         echo "Open: http://localhost:$WEB_PORT/examples/typescript/feature_lab/web/index.html"
+        echo "Press Ctrl+C to stop."
+        echo ""
+        cd "$SCRIPT_DIR"
+        python3 -m http.server "$WEB_PORT" --bind 127.0.0.1
+        ;;
+    "sandbox")
+        echo "Running TypeScript Sandbox (desktop)..."
+        cd "$SCRIPT_DIR/examples/typescript/sandbox"
+        npx tsx desktop.ts
+        ;;
+    "sandbox_web")
+        echo "Compiling Sandbox for web..."
+        cd "$SCRIPT_DIR/examples/typescript/sandbox"
+        npx tsc
+
+        WEB_PORT="$(pick_web_port)" || {
+            echo "Error: No available localhost port found for web server (8765-8799)."
+            exit 1
+        }
+
+        echo ""
+        if [ "$WEB_PORT" != "${TS_WEB_PORT:-8765}" ]; then
+            echo "Port ${TS_WEB_PORT:-8765} is in use; using $WEB_PORT instead."
+        fi
+        echo "Starting web server on http://localhost:$WEB_PORT"
+        echo "Open: http://localhost:$WEB_PORT/examples/typescript/sandbox/web/index.html"
         echo "Press Ctrl+C to stop."
         echo ""
         cd "$SCRIPT_DIR"

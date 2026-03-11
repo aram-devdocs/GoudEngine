@@ -1,0 +1,24 @@
+{
+  "name": "sandbox-goudengine",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Interactive sandbox parity example for GoudEngine TypeScript SDK",
+  "scripts": {
+    "bootstrap:node": "node ../scripts/bootstrap-local-sdk.mjs node",
+    "bootstrap:web": "node ../scripts/bootstrap-local-sdk.mjs web",
+    "desktop": "npm run bootstrap:node && npx tsx desktop.ts",
+    "desktop:check": "npm run bootstrap:node && npx tsc --noEmit --target ES2020 --module ES2020 --moduleResolution bundler --types node --skipLibCheck desktop.ts",
+    "build:web": "npm run bootstrap:web && npx tsc",
+    "web": "python3 -m http.server 8765 --bind 127.0.0.1",
+    "smoke:web": "node ./web-smoke.mjs"
+  },
+  "dependencies": {
+    "goudengine": "file:../../../sdks/typescript"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "playwright": "^1.53.0",
+    "typescript": "^5.0.0"
+  }
+}

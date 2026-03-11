@@ -844,8 +844,8 @@ jobs:
           sdks/typescript/wasm/*.d.ts
         retention-days: 7
 
-  feature-lab-parity:
-    name: Feature Lab Parity
+  sandbox-parity:
+    name: Sandbox Parity
     runs-on: macos-latest
     needs: [preflight]
 
@@ -874,7 +874,7 @@ jobs:
         cache: 'npm'
         cache-dependency-path: |
           sdks/typescript/package-lock.json
-          examples/typescript/feature_lab/package-lock.json
+          examples/typescript/sandbox/package-lock.json
 
     - name: Install pinned wasm-pack
       env:
@@ -883,41 +883,36 @@ jobs:
         cargo install wasm-pack --version "${WASM_PACK_VERSION}" --locked
         wasm-pack --version
 
-    - name: Run Rust Feature Lab
-      run: cargo run -p feature-lab
+    - name: Run Rust Sandbox
+      env:
+        GOUD_SANDBOX_SMOKE_SECONDS: "1"
+      run: cargo run -p sandbox
 
-    - name: Build native library for Python Feature Lab
-      run: cargo build -p goud-engine-core
-
-    - name: Run Python Feature Lab
+    - name: Run Python Sandbox
       env:
         GOUD_ENGINE_LIB: ${{ github.workspace }}/target/debug
+        GOUD_SANDBOX_SMOKE_SECONDS: "1"
         PYTHONPATH: ${{ github.workspace }}/sdks/python
-      run: python3 examples/python/feature_lab.py
+      run: python3 examples/python/sandbox.py
 
-    - name: Run C# Feature Lab
+    - name: Run C# Sandbox
+      env:
+        GOUD_SANDBOX_SMOKE_SECONDS: "1"
       run: |
-        cd examples/csharp/feature_lab
+        cd examples/csharp/sandbox
         dotnet build
         DOTNET_ROLL_FORWARD=Major dotnet run --no-build
 
-    - name: Build TypeScript Feature Lab
+    - name: Run TypeScript Sandbox
       run: |
-        cd examples/typescript/feature_lab
+        cd examples/typescript/sandbox
         npm ci
+        npx playwright install chromium
         npm run build:web
         npm run desktop:check
-        node -e "import('./dist/lab.js').then(()=>console.log('feature_lab dist import ok'))"
-
-    - name: Install Playwright Chromium
-      run: |
-        cd examples/typescript/feature_lab
-        npx playwright install chromium
-
-    - name: Run TypeScript Web Network Smoke
-      run: |
-        cd examples/typescript/feature_lab
-        npm run smoke:web-network
+        GOUD_SANDBOX_SMOKE_SECONDS=1 npm run desktop
+        npm run smoke:web
+        node -e "import('./dist/sandbox.js').then(()=>console.log('sandbox dist import ok'))"
 
   clean-room-regeneration:
     name: Clean Room Regeneration
@@ -976,7 +971,7 @@ jobs:
   ci-success:
     name: CI Success
     if: always()
-    needs: [preflight, rust-check, cargo-deny, codegen-drift-check, native-release, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm, feature-lab-parity, clean-room-regeneration]
+    needs: [preflight, rust-check, cargo-deny, codegen-drift-check, native-release, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm, sandbox-parity, clean-room-regeneration]
     runs-on: ubuntu-latest
     steps:
     - name: Check all jobs
@@ -1022,7 +1017,7 @@ jobs:
         check_job "integration-build" "${{ needs.integration-build.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "typescript-sdk-native" "${{ needs.typescript-sdk-native.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "typescript-sdk-wasm" "${{ needs.typescript-sdk-wasm.result }}" "$ALLOW_PUSH_SKIPPED" || FAIL=1
-        check_job "feature-lab-parity" "${{ needs.feature-lab-parity.result }}" "false" || FAIL=1
+        check_job "sandbox-parity" "${{ needs.sandbox-parity.result }}" "false" || FAIL=1
         check_job "clean-room-regeneration" "${{ needs.clean-room-regeneration.result }}" "false" || FAIL=1
 
         if [[ "$FAIL" -ne 0 ]]; then

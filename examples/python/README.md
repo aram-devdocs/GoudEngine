@@ -8,6 +8,7 @@ Python examples for the GoudEngine SDK live in this directory.
 |------|---------|
 | `main.py` | Basic SDK demo (window lifecycle, input polling, `Transform2D`, `Sprite`) |
 | `flappy_bird.py` | Playable Flappy Bird sample with texture loading, sprite drawing, audio, and collision logic |
+| `sandbox.py` | Interactive parity sandbox covering 2D, 3D, diagnostics, UI widgets, and localhost networking state |
 | `feature_lab.py` | Headless feature smoke: scenes, ECS component roundtrip, network/UI wrappers, and provider-safe fallbacks |
 
 ## Prerequisites
@@ -28,6 +29,7 @@ From repo root:
 ```bash
 ./dev.sh --sdk python --game python_demo
 ./dev.sh --sdk python --game flappy_bird
+./dev.sh --sdk python --game sandbox
 python3 examples/python/feature_lab.py
 ```
 
@@ -37,6 +39,7 @@ Or run directly:
 cd examples/python
 python main.py
 python flappy_bird.py
+python sandbox.py
 python feature_lab.py
 ```
 
@@ -49,6 +52,7 @@ python feature_lab.py
 - SDK value types (`Transform2D`, `Sprite`, `Vec2`, `Color`)
 - Headless scene + ECS checks (`GoudContext`, `scene_create`, `scene_set_current`, `add/get/set/remove_transform2d`)
 - Network/UI wrapper access with provider-safe fallback reporting (`NetworkManager`, `UiManager`, capability queries)
+- Interactive parity walkthrough with shared sandbox assets and mixed 2D/3D runtime behavior
 
 ## API Snippets (Current Names)
 

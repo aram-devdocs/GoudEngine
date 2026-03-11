@@ -1,0 +1,20 @@
+{
+  "title": "GoudEngine Sandbox",
+  "network_port": 38491,
+  "assets": {
+    "background": "examples/shared/sandbox/sprites/background-day.png",
+    "sprite": "examples/shared/sandbox/sprites/yellowbird-midflap.png",
+    "accent_sprite": "examples/shared/sandbox/sprites/pipe-green.png",
+    "texture3d": "examples/shared/sandbox/textures/default_grey.png",
+    "font": "examples/shared/sandbox/fonts/test_font.ttf",
+    "audio": "examples/shared/sandbox/audio/sandbox-tone.wav"
+  },
+  "panels": [
+    "2D",
+    "3D",
+    "Hybrid",
+    "Diagnostics",
+    "Networking",
+    "Capability"
+  ]
+}

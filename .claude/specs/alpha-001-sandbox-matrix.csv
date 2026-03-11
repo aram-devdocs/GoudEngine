@@ -1,0 +1,16 @@
+feature_name,source_of_truth,sandbox_scene_or_panel,rust,csharp,python,typescript_desktop,typescript_web,unsupported_reason
+scene_switching,docs/src/guides/showcase.md,global navigation,planned,planned,planned,planned,planned,
+ecs_spawn_mutate,codegen/goud_sdk.schema.json,diagnostics + all scenes,planned,planned,planned,planned,planned,
+sprites,codegen/goud_sdk.schema.json,2D,planned,planned,planned,planned,planned,
+runtime_shapes,codegen/goud_sdk.schema.json,2D + Hybrid,planned,planned,planned,planned,planned,
+text_rendering,docs/src/architecture/deep-dive.md,2D + diagnostics,planned,planned,planned,planned,planned,
+ui_controls,docs/src/architecture/deep-dive.md,capability + networking + diagnostics,planned,planned,planned,planned,planned,
+render_3d,codegen/goud_sdk.schema.json,3D,planned,planned,planned,planned,planned,
+hybrid_2d_3d,docs/src/architecture/deep-dive.md,Hybrid,planned,planned,planned,planned,planned,
+asset_loading,examples/shared/sandbox,all scenes,planned,planned,planned,planned,planned,
+animation,codegen/goud_sdk.schema.json,2D,planned,planned,planned,planned,planned,
+physics,docs/src/architecture/deep-dive.md,Hybrid + diagnostics,planned,planned,planned,planned,planned,
+audio,codegen/goud_sdk.schema.json,diagnostics + global controls,planned,planned,planned,planned,planned,
+input,codegen/goud_sdk.schema.json,global controls,planned,planned,planned,planned,planned,
+diagnostics,docs/src/architecture/deep-dive.md,Diagnostics,planned,planned,planned,planned,planned,
+networking,docs/src/architecture/deep-dive.md,Networking,planned,planned,planned,planned,planned,Web may be capability-gated for host/server paths but not faked

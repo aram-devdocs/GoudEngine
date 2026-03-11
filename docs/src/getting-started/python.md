@@ -77,7 +77,8 @@ git clone https://github.com/aram-devdocs/GoudEngine.git
 cd GoudEngine
 ./dev.sh --sdk python --game python_demo    # Basic demo
 ./dev.sh --sdk python --game flappy_bird    # Flappy Bird clone
-python3 examples/python/feature_lab.py      # Feature Lab parity smoke
+./dev.sh --sdk python --game sandbox        # Full feature sandbox
+python3 examples/python/feature_lab.py      # Supplemental smoke coverage
 ```
 
 `dev.sh` builds the native library and launches the example. It requires a Rust toolchain (`cargo`) to be installed.
@@ -117,7 +118,7 @@ cargo build --release
 
 ## Next Steps
 
-- [Python examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/python/) — source code for `main.py` and `flappy_bird.py`
+- [Python examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/python/) — source code for `main.py`, `flappy_bird.py`, and `sandbox.py`
 - [Python SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/python/) — full API reference
 - [Build Your First Game](../guides/build-your-first-game.md) — end-to-end minimal game walkthrough
 - [Example Showcase](../guides/showcase.md) — current cross-language parity matrix

@@ -36,31 +36,31 @@ class SnippetSpec:
 
 REFERENCE_SPECS = [
     SnippetSpec(
-        title="Rust Headless Game Setup",
-        source=ROOT / "examples" / "rust" / "feature_lab" / "src" / "main.rs",
+        title="Rust Sandbox Setup",
+        source=ROOT / "examples" / "rust" / "sandbox" / "src" / "main.rs",
         language="rust",
-        start_pattern=r"^\s*let config = GameConfig::new\(",
+        start_pattern=r"^\s*let mut game = GoudGame::with_platform",
         line_count=8,
     ),
     SnippetSpec(
-        title="C# Headless Context Setup",
-        source=ROOT / "examples" / "csharp" / "feature_lab" / "Program.cs",
+        title="C# Sandbox Setup",
+        source=ROOT / "examples" / "csharp" / "sandbox" / "Program.cs",
         language="csharp",
-        start_pattern=r"^\s*using var ctx = new GoudContext\(\);$",
+        start_pattern=r"^\s*using var game = new GoudGame",
         line_count=8,
     ),
     SnippetSpec(
-        title="Python Feature Lab Startup",
-        source=ROOT / "examples" / "python" / "feature_lab.py",
+        title="Python Sandbox Startup",
+        source=ROOT / "examples" / "python" / "sandbox.py",
         language="python",
-        start_pattern=r"^\s*ctx = GoudContext\(\)$",
+        start_pattern=r"^\s*game = GoudGame",
         line_count=8,
     ),
     SnippetSpec(
-        title="TypeScript Capability Probes",
-        source=ROOT / "examples" / "typescript" / "feature_lab" / "lab.ts",
+        title="TypeScript Sandbox Asset Loading",
+        source=ROOT / "examples" / "typescript" / "sandbox" / "sandbox.ts",
         language="ts",
-        start_pattern=r"^\s*probes\.push\(safeProbe\('cap\.render',",
+        start_pattern=r"^\s*const background = await game\.loadTexture",
         line_count=8,
     ),
     SnippetSpec(
@@ -126,7 +126,7 @@ def _render_reference_page() -> str:
         "# Reusable Snippets (Generated)",
         "",
         "This page is generated from validated sources:",
-        "- Feature Lab examples exercised by parity checks",
+        "- Sandbox examples exercised by parity checks",
         "- SDK generated entrypoints emitted by codegen",
         "",
     ]

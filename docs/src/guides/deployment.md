@@ -144,7 +144,7 @@ jobs:
           path: |
             sdks/typescript/dist/web
             examples/typescript/flappy_bird/web
-            examples/typescript/feature_lab/web
+            examples/typescript/sandbox/web
 ```
 
 For this repository, canonical release automation remains:
@@ -160,6 +160,7 @@ Use the example workflow above as the portable template, and treat the checked-i
 - Host `goud_engine_bg.wasm` and generated JS in the same release payload.
 - Serve all assets over HTTP(S).
 - Keep import-map paths stable across local and deployed environments.
+- Ship the public Sandbox web directory alongside Flappy Bird if you want a full feature tour in browser-safe mode.
 
 ## Pre-release checklist
 

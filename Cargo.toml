@@ -1,5 +1,5 @@
 [workspace]
-members = ["goud_engine", "goud_engine_macros", "sdks/rust", "sdks/typescript/native", "tools", "examples/rust/flappy_bird", "examples/rust/feature_lab"]
+members = ["goud_engine", "goud_engine_macros", "sdks/rust", "sdks/typescript/native", "tools", "examples/rust/flappy_bird", "examples/rust/feature_lab", "examples/rust/sandbox"]
 default-members = ["goud_engine"]
 resolver = "2"
 

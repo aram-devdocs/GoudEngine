@@ -88,11 +88,12 @@ The repository includes several complete C# games. Clone and run them directly:
 git clone https://github.com/aram-devdocs/GoudEngine.git
 cd GoudEngine
 ./dev.sh --game flappy_goud     # Flappy Bird clone
+./dev.sh --game sandbox         # Full feature sandbox
 ./dev.sh --game goud_jumper     # Platformer
 ./dev.sh --game 3d_cube         # 3D rendering demo
 ./dev.sh --game isometric_rpg   # Isometric RPG
 ./dev.sh --game hello_ecs       # ECS basics
-./dev.sh --game feature_lab     # Feature Lab parity smoke
+./dev.sh --game feature_lab     # Supplemental smoke coverage
 ```
 
 `dev.sh` builds the engine and runs the example in one step. Source for each example is in [`examples/csharp/`](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/csharp/).

@@ -4,6 +4,7 @@
 
 - Branch: `codex/alpha-001-phase0-2-remediation`
 - Scope: Phase 0 through Phase 2 release-readiness remediation for `#114`
+- Active extension: replace public `Feature Lab parity` positioning with the new cross-language `Sandbox` parity app while retaining Feature Lab as supplemental smoke coverage
 - GitHub issue policy: no new issues; post wave summaries to `#114`
 - Allowed explicit deferrals: `#361`, `#366`, `#378`, `#380`, `#382`
 - CSV batch automation is currently locked; ledger updates below are manual and re-queued for retry.
@@ -25,7 +26,29 @@
   - `DOTNET_ROOT_X64=/usr/local/share/dotnet/x64 /usr/local/share/dotnet/x64/dotnet test sdks/csharp.tests/GoudEngine.Tests.csproj -c Release -v minimal /p:CollectCoverage=true /p:CoverletOutput=sdks/csharp.tests/TestResults/coverage/ /p:CoverletOutputFormat=cobertura`
   - `cargo test -p goud-engine-core --doc -- --nocapture`
   - `cargo test --workspace --doc -- --nocapture`
+  - `GOUD_SANDBOX_SMOKE_SECONDS=1 cargo run -p sandbox`
+  - `GOUD_SANDBOX_SMOKE_SECONDS=1 GOUD_ENGINE_LIB=$PWD/target/debug PYTHONPATH=$PWD/sdks/python python3 examples/python/sandbox.py`
+  - `cd examples/csharp/sandbox && dotnet build -v minimal && GOUD_SANDBOX_SMOKE_SECONDS=1 DOTNET_ROLL_FORWARD=Major dotnet run --no-build`
+  - `cd examples/typescript/sandbox && npm run build:web && GOUD_SANDBOX_SMOKE_SECONDS=1 npm run desktop && npm run smoke:web`
+  - `GOUD_ENGINE_LIB=$PWD/target/release PYTHONPATH=$PWD/sdks/python PDOC_ALLOW_EXEC=1 pdoc --output-dir docs/book/api/python sdks/python/goud_engine`
+  - `cd sdks/typescript && npm run build:native:debug && npm run build:ts && npx typedoc --tsconfig tsconfig.typedoc.json --entryPoints src/generated/node/index.g.ts src/generated/web/index.g.ts src/generated/types/engine.g.ts src/generated/types/math.g.ts --out ../../docs/book/api/typescript --name "GoudEngine TypeScript SDK"`
+  - `export PATH="$HOME/.dotnet/tools:$PATH" && cd sdks/csharp && dotnet restore GoudEngine.csproj && dotnet build -c Release --no-restore && docfx build docfx.json`
+  - `mdbook build` (validated locally with the preexisting `docs/book/api` subtree moved aside so the run matches CI's build order)
 - `cargo test --workspace --quiet` passes locally.
+
+## Sandbox Extension
+
+- Shared sandbox contract is now tracked in:
+  - `/Users/aramhammoudeh/dev/game/GoudEngine/.claude/specs/alpha-001-sandbox-spec.md`
+  - `/Users/aramhammoudeh/dev/game/GoudEngine/.claude/specs/alpha-001-sandbox-matrix.csv`
+- Shared sandbox asset root now exists at:
+  - `/Users/aramhammoudeh/dev/game/GoudEngine/examples/shared/sandbox/`
+- Current status:
+  - contract and asset root are in place
+  - sandbox examples exist for Rust, C#, Python, TypeScript desktop, and TypeScript web
+  - docs/showcase/snippet generation now point at Sandbox as the public parity app
+  - CI parity wiring now uses `sandbox-parity` with bounded desktop smokes and a browser smoke for `sandbox_web`
+  - web rendering is explicitly capability-gated when a browser/runtime exposes no WebGPU adapter; the page reports that fallback instead of faking support
 
 ## Audit Summary
 
@@ -61,7 +84,7 @@
   - Networking parent `#140` and children `#364` / `#386` are now closed on GitHub with comments linking the native ws/wss tests, browser runtime smoke, and generated SDK wrapper proof.
 - `#128` is now closed after the coverage/reporting and codegen drift acceptance criteria were met.
 - Phase 2 networking regressions reproduced at the start of this branch are fixed.
-- Cross-language example parity now includes both Flappy Bird baseline coverage and Feature Lab smoke coverage across Rust, C#, Python, TS desktop, and TS web.
+- Cross-language example parity now includes Flappy Bird baseline coverage, the Sandbox parity app, and Feature Lab smoke coverage across Rust, C#, Python, TS desktop, and TS web.
 - The generated-file size-bar blocker is explicitly waived for this release by user direction and is not part of the stop-the-line criteria.
 
 ## Reproduced Failures
@@ -106,7 +129,7 @@
   - Added `/Users/aramhammoudeh/dev/game/GoudEngine/codegen/gen_sdk_scaffolding.py`.
   - `codegen.sh` now bootstraps TypeScript native sources, regenerates package/build scaffolding for C#, Python, and TypeScript, and formats generated Rust outputs, so delete-and-regenerate covers more than just the wrapper subtree.
   - `/Users/aramhammoudeh/dev/game/GoudEngine/.github/workflows/ci.yml` now includes release-please branch pushes, full Python SDK binding coverage, and the generated-artifact check.
-  - `/Users/aramhammoudeh/dev/game/GoudEngine/.github/workflows/ci.yml` now also includes a clean-room regeneration lane and a Feature Lab parity lane.
+  - `/Users/aramhammoudeh/dev/game/GoudEngine/.github/workflows/ci.yml` now also includes a clean-room regeneration lane and a Sandbox parity lane.
   - `/Users/aramhammoudeh/dev/game/GoudEngine/.github/workflows/docs.yml` now uses strict TypeScript and C# doc steps, passes `GOUD_ENGINE_LIB` plus `PDOC_ALLOW_EXEC` for Python docs, and uses `sdks/typescript/tsconfig.typedoc.json` for warning-free TypeDoc generation.
   - `/Users/aramhammoudeh/dev/game/GoudEngine/.github/workflows/release.yml` no longer manufactures a synthetic `CI Success` check.
   - `scripts/check-generated-artifacts.sh` now covers the generated networking wrappers, TypeScript native/lib outputs, and the generated package/build scaffolding files that were previously handwritten.
@@ -129,11 +152,17 @@
 
 ## Remaining Blockers
 
-- No known technical blockers remain for the Phase 0-2 remediation scope on this branch.
+- `2026-03-11` follow-up on PR `#510`: the Claude review comment found one real remaining blocker in the checked-in Python FFI generation (`()` unit returns were emitted as `ctypes.c_uint64`, and `EngineConfigHandle` stayed integer-typed instead of `ctypes.c_void_p`).
+- Local remediation is in progress:
+  - fixed in source: shared FFI normalization now treats `()` as `void`, normalizes opaque handle aliases, and generates platform-aware symbol probing for Python library selection
+  - fixed in generated output: `sdks/python/goud_engine/generated/_ffi.py` now emits `None` for void returns, `ctypes.c_void_p` for engine config handles, and `GoudContextId` for `goud_engine_create`
+  - fixed in tests: `sdks/python/test_bindings_generated.py` now asserts the void/handle signatures explicitly
+  - fixed in CI perf: `feature-lab-parity` no longer performs the redundant extra `cargo build -p goud-engine-core` after the Rust Feature Lab build
+- Remaining review follow-up before this branch can honestly claim full closure of that comment:
+  - none locally; maintained Python/C# generator sources are now split below the 500-line maintained-source bar
 - The CSV batch agent flow is still blocked by the tool-side database lock, so the ledger remains manually maintained.
 - `#114` remains open because it is the master alpha tracker for later-phase work outside this remediation branch; it is no longer blocked by Phase 0-2 SDK/docs/examples gaps.
 - Remaining release mechanics before merge:
-  - finish review gates for the final workflow/codegen delta
   - commit the final generated outputs
   - confirm GitHub Actions are green on PR `#510`
 
@@ -166,9 +195,10 @@
 
 ## Examples And Documentation Findings
 
-- Current cross-language parity now includes both baseline and broader smoke coverage:
+- Current cross-language parity now includes:
   - Flappy Bird baseline: C#, Python, Rust, TS desktop, TS web
-  - Feature Lab parity smoke: C#, Python, Rust, TS desktop, TS web
+  - Sandbox parity app: C#, Python, Rust, TS desktop, TS web
+  - Feature Lab supplemental smoke: C#, Python, Rust, TS desktop, TS web
 - Coverage and reporting now meet the parent acceptance criteria:
   - Python line coverage: `81%`
   - TypeScript line coverage: `80.16%`
@@ -213,6 +243,10 @@
 
 - Harden CI drift/docs/release gates.
 - Make coverage, SDK regeneration, docs, and example proof mandatory.
+
+### Wave 6
+
+- Track and implement the shared Sandbox contract, examples, docs rewiring, and CI parity proof.
 
 ## Verification Baseline
 

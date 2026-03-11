@@ -6,10 +6,10 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 
 ## Structure
 
-- `csharp/` — C# example games (flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab)
-- `python/` — Python example games (main.py demo, flappy_bird.py)
-- `typescript/` — TypeScript example games (flappy_bird, feature_lab — desktop + web targets)
-- `rust/` — Rust example games (flappy_bird, feature_lab)
+- `csharp/` — C# example games (flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox)
+- `python/` — Python example games (main.py demo, flappy_bird.py, sandbox.py)
+- `typescript/` — TypeScript example games (flappy_bird, feature_lab, sandbox — desktop + web targets)
+- `rust/` — Rust example games (flappy_bird, feature_lab, sandbox)
 
 ## Running
 
@@ -20,20 +20,24 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 ./dev.sh --game isometric_rpg        # C# isometric RPG
 ./dev.sh --game hello_ecs            # C# ECS basics
 ./dev.sh --game feature_lab          # C# headless feature-lab smoke checks
+./dev.sh --game sandbox              # C# sandbox parity app
 ./dev.sh --sdk python --game python_demo    # Python demo
 ./dev.sh --sdk python --game flappy_bird    # Python Flappy Bird
+./dev.sh --sdk python --game sandbox        # Python sandbox parity app
 ./dev.sh --sdk typescript --game flappy_bird  # TypeScript Flappy Bird (desktop)
 ./dev.sh --sdk typescript --game feature_lab  # TypeScript Feature Lab (desktop)
+./dev.sh --sdk typescript --game sandbox      # TypeScript Sandbox (desktop)
 cargo run -p flappy-bird                      # Rust Flappy Bird
+cargo run -p sandbox                          # Rust Sandbox
 ```
 
 ### TypeScript Web Target
 
 ```bash
-cd examples/typescript/feature_lab
+cd examples/typescript/sandbox
 npm run build:web        # Compile TS to dist/
 npm run web              # Start local server on port 8765
-# Open http://localhost:8765/examples/typescript/feature_lab/web/index.html
+# Open http://localhost:8765/examples/typescript/sandbox/web/index.html
 ```
 
 ## Rules
@@ -43,7 +47,8 @@ npm run web              # Start local server on port 8765
 - Examples demonstrate engine features — keep code readable and well-commented
 - Python Flappy Bird mirrors C# flappy_goud for SDK parity testing
 - TypeScript Flappy Bird mirrors C# and Python versions with shared game logic across desktop/web
-- TypeScript Feature Lab extends wrapper/API coverage for ALPHA-001 verification
+- Sandbox is the public parity app across all supported targets
+- TypeScript Feature Lab extends wrapper/API smoke coverage for ALPHA-001 verification
 - Rust Flappy Bird (`examples/rust/flappy_bird/`) mirrors all other implementations
 
 ## Game constants

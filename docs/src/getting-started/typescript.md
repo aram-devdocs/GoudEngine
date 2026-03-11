@@ -163,7 +163,11 @@ cd GoudEngine
 # Web (browser, serves on localhost)
 ./dev.sh --sdk typescript --game flappy_bird_web
 
-# Feature Lab parity smoke (desktop + web)
+# Sandbox parity app (desktop + web)
+./dev.sh --sdk typescript --game sandbox
+./dev.sh --sdk typescript --game sandbox_web
+
+# Supplemental smoke coverage
 ./dev.sh --sdk typescript --game feature_lab
 ./dev.sh --sdk typescript --game feature_lab_web
 ```

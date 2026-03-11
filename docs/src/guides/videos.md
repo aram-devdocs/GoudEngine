@@ -14,8 +14,8 @@ Version marker: `GoudEngine 0.0.828`
 - Covered commands:
   - `cd sdks/typescript && npm ci`
   - `./dev.sh --sdk typescript --game flappy_bird_web`
-  - `./dev.sh --sdk typescript --game feature_lab_web`
-  - `cd examples/typescript/feature_lab && npm run smoke:web-network`
+  - `./dev.sh --sdk typescript --game sandbox_web`
+  - `cd examples/typescript/sandbox && npm run build:web`
 - Scope: browser/WASM getting-started workflow for the current alpha branch
 - Public host: `goudengine.aramhammoudeh.com`
 - Captions: bundled beside the video on the docs site

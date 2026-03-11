@@ -19,9 +19,21 @@ Flappy Bird is the behavior baseline across SDKs.
 | Flappy Bird | TypeScript | Web | `examples/typescript/flappy_bird/web` | `./dev.sh --sdk typescript --game flappy_bird_web` | TypeScript web parity baseline. | ![Flappy Bird TypeScript web preview](../generated/showcase/flappy-bird-typescript-web.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/typescript/flappy_bird/web) |
 | Flappy Bird | Rust | Desktop | `examples/rust/flappy_bird` | `cargo run -p flappy-bird` | Native Rust parity baseline. | ![Flappy Bird Rust desktop preview](../generated/showcase/flappy-bird-rust-desktop.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/rust/flappy_bird) |
 
-## Feature Lab parity smoke
+## Sandbox parity app
 
-Feature Lab validates broader API surface than Flappy Bird.
+Sandbox is the flagship cross-language example for exploring the broader Alpha-001 feature surface.
+
+| Example | SDK | Target | Path | Run command | Description | Media | Source |
+|---|---|---|---|---|---|---|---|
+| Sandbox | C# | Desktop | `examples/csharp/sandbox` | `./dev.sh --game sandbox` | Interactive parity sandbox for 2D, 3D, diagnostics, UI, and localhost networking. | ![Sandbox C# desktop preview](../generated/showcase/sandbox-csharp-desktop.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/csharp/sandbox) |
+| Sandbox | Python | Desktop | `examples/python/sandbox.py` | `./dev.sh --sdk python --game sandbox` | Interactive parity sandbox for the generated Python SDK. | ![Sandbox Python desktop preview](../generated/showcase/sandbox-python-desktop.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/blob/main/examples/python/sandbox.py) |
+| Sandbox | TypeScript | Desktop | `examples/typescript/sandbox/desktop.ts` | `./dev.sh --sdk typescript --game sandbox` | Interactive parity sandbox for the desktop TypeScript runtime. | ![Sandbox TypeScript desktop preview](../generated/showcase/sandbox-typescript-desktop.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/blob/main/examples/typescript/sandbox/desktop.ts) |
+| Sandbox | TypeScript | Web | `examples/typescript/sandbox/web` | `./dev.sh --sdk typescript --game sandbox_web` | Browser/WASM sandbox with the same layout and explicit capability gating. | ![Sandbox TypeScript web preview](../generated/showcase/sandbox-typescript-web.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/typescript/sandbox/web) |
+| Sandbox | Rust | Desktop | `examples/rust/sandbox` | `cargo run -p sandbox` | Interactive Rust sandbox using the shared sandbox asset pack. | ![Sandbox Rust desktop preview](../generated/showcase/sandbox-rust-desktop.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/rust/sandbox) |
+
+## Feature Lab smoke coverage
+
+Feature Lab stays in the repo as a supplemental smoke harness for wrapper and provider coverage.
 
 | Example | SDK | Target | Path | Run command | Description | Media | Source |
 |---|---|---|---|---|---|---|---|

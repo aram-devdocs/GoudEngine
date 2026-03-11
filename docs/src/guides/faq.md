@@ -287,6 +287,7 @@ Fix:
 2. Point it at a browser-reachable `ws://` or `wss://` URL
 3. Wait for `peerCount() > 0` before first send
 4. Validate with:
+   - `./dev.sh --sdk typescript --game sandbox_web`
    - `cd examples/typescript/feature_lab`
    - `npm run smoke:web-network`
 
@@ -301,8 +302,9 @@ Verification:
 Use this order:
 
 1. Flappy Bird for baseline behavior parity.
-2. Feature Lab for broader API smoke.
-3. C# specialization demos for renderer/gameplay patterns.
+2. Sandbox for the full cross-language feature tour.
+3. Feature Lab for supplemental smoke coverage.
+4. C# specialization demos for renderer/gameplay patterns.
 
 Reference:
 

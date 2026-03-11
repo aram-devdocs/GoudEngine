@@ -69,9 +69,76 @@
       ]
     },
     {
+      "id": "sandbox-parity",
+      "title": "Sandbox parity app",
+      "description": "Sandbox is the flagship cross-language example for exploring the broader Alpha-001 feature surface.",
+      "entries": [
+        {
+          "name": "Sandbox",
+          "sdk": "C#",
+          "target": "Desktop",
+          "path": "examples/csharp/sandbox",
+          "run": "./dev.sh --game sandbox",
+          "description": "Interactive parity sandbox for 2D, 3D, diagnostics, UI, and localhost networking.",
+          "media": {
+            "path": "docs/src/generated/showcase/sandbox-csharp-desktop.png",
+            "alt": "Sandbox C# desktop preview"
+          }
+        },
+        {
+          "name": "Sandbox",
+          "sdk": "Python",
+          "target": "Desktop",
+          "path": "examples/python/sandbox.py",
+          "run": "./dev.sh --sdk python --game sandbox",
+          "description": "Interactive parity sandbox for the generated Python SDK.",
+          "media": {
+            "path": "docs/src/generated/showcase/sandbox-python-desktop.png",
+            "alt": "Sandbox Python desktop preview"
+          }
+        },
+        {
+          "name": "Sandbox",
+          "sdk": "TypeScript",
+          "target": "Desktop",
+          "path": "examples/typescript/sandbox/desktop.ts",
+          "run": "./dev.sh --sdk typescript --game sandbox",
+          "description": "Interactive parity sandbox for the desktop TypeScript runtime.",
+          "media": {
+            "path": "docs/src/generated/showcase/sandbox-typescript-desktop.png",
+            "alt": "Sandbox TypeScript desktop preview"
+          }
+        },
+        {
+          "name": "Sandbox",
+          "sdk": "TypeScript",
+          "target": "Web",
+          "path": "examples/typescript/sandbox/web",
+          "run": "./dev.sh --sdk typescript --game sandbox_web",
+          "description": "Browser/WASM sandbox with the same layout and explicit capability gating.",
+          "media": {
+            "path": "docs/src/generated/showcase/sandbox-typescript-web.png",
+            "alt": "Sandbox TypeScript web preview"
+          }
+        },
+        {
+          "name": "Sandbox",
+          "sdk": "Rust",
+          "target": "Desktop",
+          "path": "examples/rust/sandbox",
+          "run": "cargo run -p sandbox",
+          "description": "Interactive Rust sandbox using the shared sandbox asset pack.",
+          "media": {
+            "path": "docs/src/generated/showcase/sandbox-rust-desktop.png",
+            "alt": "Sandbox Rust desktop preview"
+          }
+        }
+      ]
+    },
+    {
       "id": "feature-lab",
-      "title": "Feature Lab parity smoke",
-      "description": "Feature Lab validates broader API surface than Flappy Bird.",
+      "title": "Feature Lab smoke coverage",
+      "description": "Feature Lab stays in the repo as a supplemental smoke harness for wrapper and provider coverage.",
       "entries": [
         {
           "name": "Feature Lab",

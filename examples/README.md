@@ -17,6 +17,11 @@ Related docs:
 | Flappy Bird | TypeScript | Desktop | `examples/typescript/flappy_bird/desktop.ts` | `./dev.sh --sdk typescript --game flappy_bird` |
 | Flappy Bird | TypeScript | Web | `examples/typescript/flappy_bird/web` | `./dev.sh --sdk typescript --game flappy_bird_web` |
 | Flappy Bird | Rust | Desktop | `examples/rust/flappy_bird` | `cargo run -p flappy-bird` |
+| Sandbox | C# | Desktop | `examples/csharp/sandbox` | `./dev.sh --game sandbox` |
+| Sandbox | Python | Desktop | `examples/python/sandbox.py` | `./dev.sh --sdk python --game sandbox` |
+| Sandbox | TypeScript | Desktop | `examples/typescript/sandbox/desktop.ts` | `./dev.sh --sdk typescript --game sandbox` |
+| Sandbox | TypeScript | Web | `examples/typescript/sandbox/web` | `./dev.sh --sdk typescript --game sandbox_web` |
+| Sandbox | Rust | Desktop | `examples/rust/sandbox` | `cargo run -p sandbox` |
 | Feature Lab | C# | Headless | `examples/csharp/feature_lab` | `./dev.sh --game feature_lab` |
 | Feature Lab | Python | Headless | `examples/python/feature_lab.py` | `python3 examples/python/feature_lab.py` |
 | Feature Lab | TypeScript | Desktop | `examples/typescript/feature_lab/desktop.ts` | `./dev.sh --sdk typescript --game feature_lab` |
@@ -31,7 +36,8 @@ Related docs:
 ## Notes
 
 - Flappy Bird is the parity baseline across C#, Python, TypeScript, and Rust.
-- Feature Lab is the broader API smoke path across all supported SDK targets.
+- Sandbox is the flagship parity app across all supported SDK targets.
+- Feature Lab remains as supplemental smoke coverage.
 
 ## Regeneration
 

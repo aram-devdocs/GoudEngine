@@ -134,7 +134,7 @@ Use these before debugging your own browser build:
 
 ```bash
 ./dev.sh --sdk typescript --game flappy_bird_web
-./dev.sh --sdk typescript --game feature_lab_web
+./dev.sh --sdk typescript --game sandbox_web
 ```
 
 If both run cleanly, your environment, asset serving, and WASM packaging path are probably fine.
