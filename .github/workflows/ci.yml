@@ -720,12 +720,12 @@ jobs:
     - name: Run smoke tests (Ubuntu with virtual display)
       if: matrix.os == 'ubuntu-latest'
       working-directory: sdks/typescript
-      run: xvfb-run npm test
+      run: xvfb-run npm run test:native
 
     - name: Generate TypeScript coverage report
       if: matrix.os == 'ubuntu-latest'
       working-directory: sdks/typescript
-      run: xvfb-run npx c8 --reporter=text-summary --reporter=cobertura --report-dir coverage --check-coverage --lines 80 npm test
+      run: xvfb-run npx c8 --reporter=text-summary --reporter=cobertura --report-dir coverage --check-coverage --lines 80 npm run test:native
 
     - name: Run smoke tests (macOS/Windows — skip GLFW window tests in headless CI)
       if: matrix.os != 'ubuntu-latest'
@@ -854,6 +854,8 @@ jobs:
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-unknown-unknown
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -873,6 +875,20 @@ jobs:
         cache-dependency-path: |
           sdks/typescript/package-lock.json
           examples/typescript/feature_lab/package-lock.json
+
+    - name: Install pinned wasm-pack
+      env:
+        WASM_PACK_VERSION: "0.13.1"
+      run: |
+        if [[ "$(uname -m)" == "arm64" ]]; then
+          WASM_PACK_ARCHIVE="aarch64-apple-darwin"
+        else
+          WASM_PACK_ARCHIVE="x86_64-apple-darwin"
+        fi
+        curl -sSfL "https://github.com/rustwasm/wasm-pack/releases/download/v${WASM_PACK_VERSION}/wasm-pack-v${WASM_PACK_VERSION}-${WASM_PACK_ARCHIVE}.tar.gz" -o /tmp/wasm-pack.tar.gz
+        tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
+        sudo install /tmp/wasm-pack-v${WASM_PACK_VERSION}-${WASM_PACK_ARCHIVE}/wasm-pack /usr/local/bin/wasm-pack
+        wasm-pack --version
 
     - name: Run Rust Feature Lab
       run: cargo run -p feature-lab

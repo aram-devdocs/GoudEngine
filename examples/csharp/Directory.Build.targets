@@ -1,0 +1,6 @@
+<Project>
+
+  <Import Project="../../sdks/csharp/build/GoudEngine.targets"
+          Condition="Exists('../../sdks/csharp/build/GoudEngine.targets')" />
+
+</Project>
