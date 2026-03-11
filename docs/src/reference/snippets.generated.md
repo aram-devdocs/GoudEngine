@@ -10,14 +10,14 @@ This page is generated from validated sources:
 Source: `examples/rust/sandbox/src/main.rs`
 
 ```rust
-    let mut game = GoudGame::with_platform(GameConfig::new("GoudEngine Sandbox - Rust", WINDOW_WIDTH, WINDOW_HEIGHT))
-        .expect("failed to create game");
+    let mut game = GoudGame::with_platform(GameConfig::new(
+        "GoudEngine Sandbox - Rust",
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+    ))
+    .expect("failed to create game");
 
     let background = game.load("examples/shared/sandbox/sprites/background-day.png");
-    let sprite = game.load("examples/shared/sandbox/sprites/yellowbird-midflap.png");
-    let accent = game.load("examples/shared/sandbox/sprites/pipe-green.png");
-    let texture3d = game.load("examples/shared/sandbox/textures/default_grey.png") as u32;
-
 ```
 
 ## C# Sandbox Setup
