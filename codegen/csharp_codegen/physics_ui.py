@@ -1,8 +1,10 @@
 """Physics world, engine config, and UI manager generation."""
 
-from sdk_common import HEADER_COMMENT, write_generated
+from sdk_common import HEADER_COMMENT, to_pascal, write_generated
 from .context import NS, OUT, mapping, schema
-from .helpers import _ffi_fn_def
+from .helpers import _ffi_fn_def, _ffi_param_type_at, cs_type
+from .method_body import _gen_method_body
+from .param_strings import _safe_param_strs
 
 def gen_physics_world_2d():
     if "PhysicsWorld2D" not in schema.get("tools", {}) or "PhysicsWorld2D" not in mapping.get("tools", {}):
@@ -407,5 +409,4 @@ def gen_ui_manager():
         "",
     ]
     write_generated(OUT / "Core" / "UiManager.g.cs", "\n".join(lines))
-
 

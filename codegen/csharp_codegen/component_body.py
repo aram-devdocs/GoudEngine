@@ -1,8 +1,8 @@
 """Component body generation helpers for tool wrappers."""
 
-from sdk_common import to_pascal
-from .context import mapping, _FFI_TO_SDK_RETURN
-from .helpers import _cs_value_param_ffi_setup, _ffi_param_type_at
+from sdk_common import to_pascal, to_snake
+from .context import mapping, _FFI_TO_SDK_FIELDS
+from .helpers import _type_hash
 
 def _gen_component_body(mm: dict, ret: str, L: list):
     """Generate method body for component FFI strategies in GoudGame/GoudContext."""
@@ -119,5 +119,4 @@ _WINDOWED_BODIES: dict = {
                        f"{_I}_frameCount++;",
                        f"{_I}_totalTime += dt;"],
 }
-
 

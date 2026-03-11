@@ -1,12 +1,16 @@
 """Method body generation helpers for tool wrappers."""
 
-from sdk_common import to_pascal
+from sdk_common import CSHARP_TYPES, to_pascal
 from .context import schema, mapping, _FFI_TO_SDK_RETURN
+from .component_body import _WINDOWED_BODIES, _gen_component_body
 from .helpers import (
+    cs_type,
     _cs_identifier,
     _cs_default_value,
+    _cs_out_var_type,
     _cs_value_param_ffi_setup,
     _ffi_fn_def,
+    _ffi_return_type,
     _ffi_uses_ptr_len,
     _ffi_param_type_at,
     _cs_len_cast_expr,

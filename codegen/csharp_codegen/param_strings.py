@@ -1,8 +1,7 @@
 """Parameter string helpers for tool wrapper generation."""
 
 from .context import schema
-from .helpers import cs_type
-from .method_body import _enum_cs_name
+from .helpers import cs_type, _enum_cs_name
 
 
 def _cs_enum_default(enum_key: str, default) -> str:
