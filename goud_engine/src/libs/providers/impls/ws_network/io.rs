@@ -85,10 +85,8 @@ where
                 match write_rx.try_recv() {
                     Ok(data) => {
                         if let Err(e) = ws.send(Message::Binary(data.into())) {
-                            let _ = event_tx.send(InternalWsEvent::Error(
-                                cid,
-                                format!("write: {}", e),
-                            ));
+                            let _ =
+                                event_tx.send(InternalWsEvent::Error(cid, format!("write: {}", e)));
                             return;
                         }
                     }

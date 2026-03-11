@@ -217,20 +217,19 @@ impl NetworkProvider for WsNetProvider {
                             continue;
                         }
                         if let Some(tls_config) = &tls_config {
-                            let server_conn = match rustls::ServerConnection::new(tls_config.clone())
-                            {
-                                Ok(conn) => conn,
-                                Err(e) => {
-                                    log::warn!("WS TLS server connection setup failed: {}", e);
-                                    continue;
-                                }
-                            };
+                            let server_conn =
+                                match rustls::ServerConnection::new(tls_config.clone()) {
+                                    Ok(conn) => conn,
+                                    Err(e) => {
+                                        log::warn!("WS TLS server connection setup failed: {}", e);
+                                        continue;
+                                    }
+                                };
                             let tls_stream = rustls::StreamOwned::new(server_conn, stream);
                             match tungstenite::accept(tls_stream) {
                                 Ok(ws) => {
                                     let _ = ws.get_ref().sock.set_read_timeout(Some(READ_TIMEOUT));
-                                    let id =
-                                        ConnectionId(next_id.fetch_add(1, Ordering::Relaxed));
+                                    let id = ConnectionId(next_id.fetch_add(1, Ordering::Relaxed));
                                     conn_count.fetch_add(1, Ordering::Relaxed);
                                     let wtx =
                                         spawn_io_thread(id, ws, event_tx.clone(), running.clone());
