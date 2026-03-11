@@ -25,6 +25,15 @@ def _has_required_symbol(lib_path: Path, symbol: str) -> bool:
         return True
     return True
 
+def _env_library_candidates(name: str):
+    raw = os.environ.get("GOUD_ENGINE_LIB", "").strip()
+    if not raw:
+        return []
+    path = Path(raw)
+    if path.is_file():
+        return [path]
+    return [path / name]
+
 def _load_library():
     """Load the GoudEngine shared library."""
     system = platform.system()
@@ -39,7 +48,7 @@ def _load_library():
 
     name = f"{prefix}goud_engine{ext}"
     search = [
-        Path(os.environ.get("GOUD_ENGINE_LIB", "")) / name,
+        *_env_library_candidates(name),
         Path(__file__).parent / name,
         Path(__file__).parent.parent / name,
         Path(__file__).parent.parent.parent.parent.parent / "target" / "debug" / name,

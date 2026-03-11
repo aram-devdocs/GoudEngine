@@ -16,6 +16,12 @@ SMOKE_SECONDS="${GOUD_SANDBOX_SMOKE_SECONDS:-6}"
 LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/goud-sandbox-peer-XXXXXX")"
 RUST_LOG="$LOG_DIR/rust-host.log"
 PY_LOG="$LOG_DIR/python-client.log"
+case "$(uname -s)" in
+  Linux*)  PY_NATIVE_LIB="$ROOT_DIR/target/debug/libgoud_engine.so" ;;
+  Darwin*) PY_NATIVE_LIB="$ROOT_DIR/target/debug/libgoud_engine.dylib" ;;
+  MINGW*|MSYS*|CYGWIN*) PY_NATIVE_LIB="$ROOT_DIR/target/debug/goud_engine.dll" ;;
+  *)       PY_NATIVE_LIB="$ROOT_DIR/target/debug/libgoud_engine.so" ;;
+esac
 
 RUNNER=()
 if command -v xvfb-run >/dev/null 2>&1; then
@@ -34,8 +40,12 @@ trap cleanup EXIT
 
 echo "Running sandbox peer smoke on port $PORT (logs: $LOG_DIR)"
 
-echo "Prebuilding Rust sandbox binary for deterministic host startup..."
-cargo build -p sandbox >/dev/null
+echo "Prebuilding Python native library and Rust sandbox binary for deterministic startup..."
+cargo build -p goud-engine-core -p sandbox >/dev/null
+if [[ ! -f "$PY_NATIVE_LIB" ]]; then
+  echo "Missing Python native library after build: $PY_NATIVE_LIB"
+  exit 1
+fi
 
 (
   export GOUD_SANDBOX_NETWORK_PORT="$PORT"
@@ -81,7 +91,7 @@ echo "Rust host is ready; starting Python client."
   export GOUD_SANDBOX_EXIT_ON_PEER=1
   export GOUD_SANDBOX_EXPECT_PEER=1
   export GOUD_SANDBOX_SMOKE_SECONDS="$SMOKE_SECONDS"
-  export GOUD_ENGINE_LIB="$ROOT_DIR/target/debug"
+  export GOUD_ENGINE_LIB="$PY_NATIVE_LIB"
   export PYTHONPATH="$ROOT_DIR/sdks/python"
   if [[ "${#RUNNER[@]}" -gt 0 ]]; then
     "${RUNNER[@]}" python3 "$PY_SANDBOX"

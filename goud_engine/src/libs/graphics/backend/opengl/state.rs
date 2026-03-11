@@ -34,6 +34,10 @@ impl RenderBackend for OpenGLBackend {
     fn bind_default_vertex_array(&mut self) {
         self.bind_default_vao();
     }
+
+    fn validate_text_draw_state(&self) -> Result<(), String> {
+        self.validate_bound_text_draw_state()
+    }
 }
 
 // ============================================================================

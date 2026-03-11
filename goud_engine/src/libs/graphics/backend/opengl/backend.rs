@@ -202,6 +202,38 @@ impl OpenGLBackend {
         }
         gl_check_debug!("bind_default_vao");
     }
+
+    pub(crate) fn validate_bound_text_draw_state(&self) -> Result<(), String> {
+        let mut bound_vao = 0i32;
+        let mut bound_vbo = 0i32;
+        let mut bound_ibo = 0i32;
+        let mut bound_program = 0i32;
+
+        // SAFETY: These OpenGL state queries are read-only and run with the
+        // caller's active context during native text draws.
+        unsafe {
+            gl::GetIntegerv(gl::VERTEX_ARRAY_BINDING, &mut bound_vao);
+            gl::GetIntegerv(gl::ARRAY_BUFFER_BINDING, &mut bound_vbo);
+            gl::GetIntegerv(gl::ELEMENT_ARRAY_BUFFER_BINDING, &mut bound_ibo);
+            gl::GetIntegerv(gl::CURRENT_PROGRAM, &mut bound_program);
+        }
+
+        if bound_vao == 0 || bound_vbo == 0 || bound_ibo == 0 {
+            return Err(format!(
+                "text draw state incomplete: vao={bound_vao} vbo={bound_vbo} ibo={bound_ibo}"
+            ));
+        }
+
+        // SAFETY: Querying object validity is safe with the current OpenGL context.
+        let vao_valid = unsafe { gl::IsVertexArray(bound_vao as u32) == gl::TRUE };
+        if !vao_valid || bound_program == 0 {
+            return Err(format!(
+                "text draw state invalid: vao={bound_vao} vao_valid={vao_valid} program={bound_program}"
+            ));
+        }
+
+        Ok(())
+    }
 }
 
 impl Drop for OpenGLBackend {

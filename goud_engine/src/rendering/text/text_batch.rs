@@ -11,7 +11,7 @@ use crate::ecs::query::Query;
 use crate::ecs::{Entity, World};
 use crate::libs::graphics::backend::render_backend::RenderBackend;
 use crate::libs::graphics::backend::types::{
-    BufferHandle, BufferType, BufferUsage, PrimitiveTopology, ShaderHandle, TextureHandle,
+    BufferHandle, PrimitiveTopology, ShaderHandle, TextureHandle,
 };
 use crate::rendering::sprite_batch::types::SpriteVertex;
 
@@ -22,6 +22,9 @@ use super::layout::{layout_text, TextLayoutConfig};
 use super::shader;
 use super::{layout_shaped_text, shape_text, TextDirection};
 pub use crate::rendering::text::text_batch_requests::DirectTextDrawRequest;
+
+#[path = "text_batch_upload.rs"]
+mod upload;
 
 /// A single draw batch for glyphs sharing the same atlas texture.
 #[derive(Debug)]
@@ -343,33 +346,7 @@ impl TextBatch {
                 .bind_buffer(ibo)
                 .map_err(|e| format!("text IBO bind failed: {e}"))?;
         }
-
-        #[cfg(feature = "native")]
-        {
-            let mut bound_vao = 0i32;
-            let mut bound_vbo = 0i32;
-            let mut bound_ibo = 0i32;
-            let mut bound_program = 0i32;
-            // SAFETY: These OpenGL state queries are read-only and valid with an active context.
-            unsafe {
-                gl::GetIntegerv(gl::VERTEX_ARRAY_BINDING, &mut bound_vao);
-                gl::GetIntegerv(gl::ARRAY_BUFFER_BINDING, &mut bound_vbo);
-                gl::GetIntegerv(gl::ELEMENT_ARRAY_BUFFER_BINDING, &mut bound_ibo);
-                gl::GetIntegerv(gl::CURRENT_PROGRAM, &mut bound_program);
-            }
-            if bound_vao == 0 || bound_vbo == 0 || bound_ibo == 0 {
-                return Err(format!(
-                    "text draw state incomplete: vao={bound_vao} vbo={bound_vbo} ibo={bound_ibo}"
-                ));
-            }
-            // SAFETY: Querying object validity is safe with an active context.
-            let vao_valid = unsafe { gl::IsVertexArray(bound_vao as u32) == gl::TRUE };
-            if !vao_valid || bound_program == 0 {
-                return Err(format!(
-                    "text draw state invalid: vao={bound_vao} vao_valid={vao_valid} program={bound_program}"
-                ));
-            }
-        }
+        backend.validate_text_draw_state()?;
 
         // Collect draw data to avoid borrow conflict with backend.
         let draw_calls: Vec<(TextureHandle, u32, u32)> = self
@@ -457,43 +434,6 @@ impl TextBatch {
         self.indices
             .extend_from_slice(&[base, base + 1, base + 2, base + 2, base + 3, base]);
     }
-
-    /// Uploads vertex and index data to the GPU.
-    fn upload_buffers(&mut self, backend: &mut dyn RenderBackend) -> Result<(), String> {
-        let vert_bytes = vertex_slice_as_bytes(&self.vertices);
-
-        match self.vertex_buffer {
-            Some(buf) => {
-                backend
-                    .update_buffer(buf, 0, vert_bytes)
-                    .map_err(|e| format!("text VBO update failed: {e}"))?;
-            }
-            None => {
-                let buf = backend
-                    .create_buffer(BufferType::Vertex, BufferUsage::Dynamic, vert_bytes)
-                    .map_err(|e| format!("text VBO create failed: {e}"))?;
-                self.vertex_buffer = Some(buf);
-            }
-        }
-
-        let idx_bytes = index_slice_as_bytes(&self.indices);
-
-        match self.index_buffer {
-            Some(buf) => {
-                backend
-                    .update_buffer(buf, 0, idx_bytes)
-                    .map_err(|e| format!("text IBO update failed: {e}"))?;
-            }
-            None => {
-                let buf = backend
-                    .create_buffer(BufferType::Index, BufferUsage::Dynamic, idx_bytes)
-                    .map_err(|e| format!("text IBO create failed: {e}"))?;
-                self.index_buffer = Some(buf);
-            }
-        }
-
-        Ok(())
-    }
 }
 
 impl Default for TextBatch {
@@ -510,18 +450,6 @@ impl std::fmt::Debug for TextBatch {
             .field("batches", &self.batches.len())
             .finish()
     }
-}
-
-/// Reinterprets a `&[SpriteVertex]` as `&[u8]` for GPU upload.
-fn vertex_slice_as_bytes(vertices: &[SpriteVertex]) -> &[u8] {
-    // SAFETY: SpriteVertex is #[repr(C)] with no padding invariants.
-    unsafe { std::slice::from_raw_parts(vertices.as_ptr().cast(), std::mem::size_of_val(vertices)) }
-}
-
-/// Reinterprets a `&[u32]` as `&[u8]` for GPU upload.
-fn index_slice_as_bytes(indices: &[u32]) -> &[u8] {
-    // SAFETY: u32 has no alignment/validity invariants beyond its size.
-    unsafe { std::slice::from_raw_parts(indices.as_ptr().cast(), std::mem::size_of_val(indices)) }
 }
 
 #[cfg(test)]

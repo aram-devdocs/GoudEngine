@@ -893,9 +893,14 @@ jobs:
         GOUD_SANDBOX_SMOKE_SECONDS: "1"
       run: xvfb-run -a cargo run -p sandbox
 
+    - name: Build native Python library for sandbox smoke
+      run: |
+        cargo build -p goud-engine-core
+        test -f target/debug/libgoud_engine.so
+
     - name: Run Python Sandbox (default smoke)
       env:
-        GOUD_ENGINE_LIB: ${{ github.workspace }}/target/debug
+        GOUD_ENGINE_LIB: ${{ github.workspace }}/target/debug/libgoud_engine.so
         GOUD_SANDBOX_SMOKE_SECONDS: "1"
         PYTHONPATH: ${{ github.workspace }}/sdks/python
       run: xvfb-run -a python3 examples/python/sandbox.py
