@@ -96,7 +96,11 @@ if [[ "$INCLUDE_DOCS" -eq 1 ]]; then
   zip -qr docs/src/generated/downloads/flappy-rust.zip examples/rust/flappy_bird
 fi
 
-bash scripts/check-generated-artifacts.sh
+if [[ "$INCLUDE_DOCS" -eq 1 ]]; then
+  bash scripts/check-generated-artifacts.sh --docs
+else
+  bash scripts/check-generated-artifacts.sh
+fi
 
 if [[ "$INCLUDE_DOCS" -eq 1 ]]; then
   python3 scripts/generate-doc-snippets.py

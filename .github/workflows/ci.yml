@@ -275,13 +275,8 @@ jobs:
     - name: Build (generates ffi_manifest.json)
       run: cargo build
 
-    - name: Run all codegen scripts
-      run: |
-        python codegen/gen_csharp.py
-        python codegen/gen_python.py
-        python codegen/gen_ts_node.py
-        python codegen/gen_ts_web.py
-        cargo fmt --all
+    - name: Run full codegen pipeline
+      run: ./codegen.sh
 
     - name: Validate codegen
       run: |

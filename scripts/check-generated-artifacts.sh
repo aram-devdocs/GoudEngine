@@ -4,35 +4,16 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-required_paths=(
+INCLUDE_DOCS=0
+if [[ "${1:-}" == "--docs" ]]; then
+  INCLUDE_DOCS=1
+elif [[ "${1:-}" != "" ]]; then
+  echo "Usage: $0 [--docs]"
+  exit 1
+fi
+
+base_required_paths=(
   "codegen/ffi_manifest.json"
-  "docs/src/generated/showcase/flappy-goud-csharp-desktop.png"
-  "docs/src/generated/showcase/flappy-bird-python-desktop.png"
-  "docs/src/generated/showcase/flappy-bird-typescript-desktop.png"
-  "docs/src/generated/showcase/flappy-bird-typescript-web.png"
-  "docs/src/generated/showcase/flappy-bird-rust-desktop.png"
-  "docs/src/generated/showcase/feature-lab-csharp-headless.png"
-  "docs/src/generated/showcase/feature-lab-python-headless.png"
-  "docs/src/generated/showcase/feature-lab-typescript-desktop.png"
-  "docs/src/generated/showcase/feature-lab-typescript-web.png"
-  "docs/src/generated/showcase/feature-lab-rust-headless.png"
-  "docs/src/generated/showcase/3d-cube-csharp-desktop.png"
-  "docs/src/generated/showcase/goud-jumper-csharp-desktop.png"
-  "docs/src/generated/showcase/isometric-rpg-csharp-desktop.png"
-  "docs/src/generated/showcase/hello-ecs-csharp-desktop.png"
-  "docs/src/generated/showcase/python-sdk-demo-python-desktop.png"
-  "docs/src/generated/downloads/flappy-csharp.zip"
-  "docs/src/generated/downloads/flappy-python.zip"
-  "docs/src/generated/downloads/flappy-typescript.zip"
-  "docs/src/generated/downloads/flappy-rust.zip"
-  "docs/src/generated/media/getting-started-typescript-web.webm"
-  "docs/src/generated/media/getting-started-typescript-web.vtt"
-  "docs/src/generated/snippets/csharp/first-project.md"
-  "docs/src/generated/snippets/python/first-project.md"
-  "docs/src/generated/snippets/rust/first-project.md"
-  "docs/src/generated/snippets/typescript/first-project-desktop.md"
-  "docs/src/guides/showcase.md"
-  "examples/README.md"
   "sdks/csharp/generated/NativeMethods.g.cs"
   "sdks/csharp/GoudEngine.csproj"
   "sdks/csharp/build/GoudEngine.targets"
@@ -67,6 +48,41 @@ required_paths=(
   "sdks/typescript/native/src/types.g.rs"
 )
 
+docs_required_paths=(
+  "docs/src/generated/showcase/flappy-goud-csharp-desktop.png"
+  "docs/src/generated/showcase/flappy-bird-python-desktop.png"
+  "docs/src/generated/showcase/flappy-bird-typescript-desktop.png"
+  "docs/src/generated/showcase/flappy-bird-typescript-web.png"
+  "docs/src/generated/showcase/flappy-bird-rust-desktop.png"
+  "docs/src/generated/showcase/feature-lab-csharp-headless.png"
+  "docs/src/generated/showcase/feature-lab-python-headless.png"
+  "docs/src/generated/showcase/feature-lab-typescript-desktop.png"
+  "docs/src/generated/showcase/feature-lab-typescript-web.png"
+  "docs/src/generated/showcase/feature-lab-rust-headless.png"
+  "docs/src/generated/showcase/3d-cube-csharp-desktop.png"
+  "docs/src/generated/showcase/goud-jumper-csharp-desktop.png"
+  "docs/src/generated/showcase/isometric-rpg-csharp-desktop.png"
+  "docs/src/generated/showcase/hello-ecs-csharp-desktop.png"
+  "docs/src/generated/showcase/python-sdk-demo-python-desktop.png"
+  "docs/src/generated/downloads/flappy-csharp.zip"
+  "docs/src/generated/downloads/flappy-python.zip"
+  "docs/src/generated/downloads/flappy-typescript.zip"
+  "docs/src/generated/downloads/flappy-rust.zip"
+  "docs/src/generated/media/getting-started-typescript-web.webm"
+  "docs/src/generated/media/getting-started-typescript-web.vtt"
+  "docs/src/generated/snippets/csharp/first-project.md"
+  "docs/src/generated/snippets/python/first-project.md"
+  "docs/src/generated/snippets/rust/first-project.md"
+  "docs/src/generated/snippets/typescript/first-project-desktop.md"
+  "docs/src/guides/showcase.md"
+  "examples/README.md"
+)
+
+required_paths=("${base_required_paths[@]}")
+if [[ "$INCLUDE_DOCS" -eq 1 ]]; then
+  required_paths+=("${docs_required_paths[@]}")
+fi
+
 missing=0
 for path in "${required_paths[@]}"; do
   if [[ ! -e "$path" ]]; then
@@ -79,12 +95,8 @@ if [[ "$missing" -ne 0 ]]; then
   exit 1
 fi
 
-tracked_diff_paths=(
+base_tracked_diff_paths=(
   "codegen/ffi_manifest.json"
-  "docs/src/generated/showcase"
-  "docs/src/generated/snippets"
-  "docs/src/guides/showcase.md"
-  "examples/README.md"
   "sdks/csharp/generated"
   "sdks/csharp/GoudEngine.csproj"
   "sdks/csharp/build/GoudEngine.targets"
@@ -115,6 +127,18 @@ tracked_diff_paths=(
   "sdks/typescript/native/src/types.g.rs"
 )
 
+docs_tracked_diff_paths=(
+  "docs/src/generated/showcase"
+  "docs/src/generated/snippets"
+  "docs/src/guides/showcase.md"
+  "examples/README.md"
+)
+
+tracked_diff_paths=("${base_tracked_diff_paths[@]}")
+if [[ "$INCLUDE_DOCS" -eq 1 ]]; then
+  tracked_diff_paths+=("${docs_tracked_diff_paths[@]}")
+fi
+
 generated_scan_paths=(
   "docs/src/generated/showcase"
   "docs/src/generated/snippets"
@@ -127,13 +151,15 @@ generated_scan_paths=(
 echo "Checking tracked generated drift..."
 git diff --exit-code -- "${tracked_diff_paths[@]}"
 
-echo "Skipping byte-for-byte drift on generated downloads/media..."
-echo "Download bundles and captured media are still required above, but their"
-echo "archive/video containers are not stable enough to diff across clean-room runs."
-echo "Those binaries are also ignored in Git so clean-room docs runs do not dirty the tree."
+if [[ "$INCLUDE_DOCS" -eq 1 ]]; then
+  echo "Skipping byte-for-byte drift on generated downloads/media..."
+  echo "Download bundles and captured media are still required above, but their"
+  echo "archive/video containers are not stable enough to diff across clean-room runs."
+  echo "Those binaries are also ignored in Git so clean-room docs runs do not dirty the tree."
 
-echo "Checking generated showcase docs drift..."
-python3 scripts/generate-showcase-docs.py --check
+  echo "Checking generated showcase docs drift..."
+  python3 scripts/generate-showcase-docs.py --check
+fi
 
 echo "Checking for ignored or untracked generated artifacts..."
 untracked_generated=()

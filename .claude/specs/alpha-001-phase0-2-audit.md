@@ -108,6 +108,8 @@
   - `/Users/aramhammoudeh/dev/game/GoudEngine/.github/workflows/release.yml` no longer manufactures a synthetic `CI Success` check.
   - `scripts/check-generated-artifacts.sh` now covers the generated networking wrappers, TypeScript native/lib outputs, and the generated package/build scaffolding files that were previously handwritten.
   - Generated docs download/media binaries are now treated as pure generated outputs: required for docs builds, but ignored in Git because their archive/video containers are nondeterministic across clean-room runs.
+  - `scripts/check-generated-artifacts.sh` now has a split contract: default mode validates fresh-checkout SDK/codegen outputs, and `--docs` adds showcase/download/media/docs proof for the hosted docs path.
+  - The docs workflow now generates the downloadable Flappy bundles before publishing and validates the full docs artifact set with `bash scripts/check-generated-artifacts.sh --docs`.
 - Feature Lab parity:
   - Added `/Users/aramhammoudeh/dev/game/GoudEngine/examples/rust/feature_lab`.
   - Added `/Users/aramhammoudeh/dev/game/GoudEngine/examples/python/feature_lab.py`.

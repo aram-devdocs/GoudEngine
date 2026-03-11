@@ -76,11 +76,7 @@ jobs:
 
       # ── Run codegen (generates SDK files with doc comments) ────────
       - name: Run codegen
-        run: |
-          python3 codegen/gen_csharp.py
-          python3 codegen/gen_python.py
-          python3 codegen/gen_ts_node.py
-          python3 codegen/gen_ts_web.py
+        run: ./codegen.sh
 
       # ── Python API docs ────────────────────────────────────────────
       - name: Build native library for Python docs
@@ -114,8 +110,14 @@ jobs:
       - name: Generate showcase docs
         run: python3 scripts/generate-showcase-docs.py
 
-      - name: Generate docs snippets
-        run: python3 scripts/generate-doc-snippets.py
+      - name: Generate download bundles
+        run: |
+          mkdir -p docs/src/generated/downloads
+          rm -f docs/src/generated/downloads/*.zip
+          zip -qr docs/src/generated/downloads/flappy-csharp.zip examples/csharp/flappy_goud
+          zip -qr docs/src/generated/downloads/flappy-python.zip examples/python/flappy_bird.py
+          zip -qr docs/src/generated/downloads/flappy-typescript.zip examples/typescript/flappy_bird
+          zip -qr docs/src/generated/downloads/flappy-rust.zip examples/rust/flappy_bird
 
       # ── Build mdBook site ──────────────────────────────────────────
       - name: Build mdBook
@@ -147,6 +149,9 @@ jobs:
           dotnet build -c Release --no-restore
           docfx build docfx.json
           cp -r _site ../../docs/book/api/csharp
+
+      - name: Validate generated docs artifacts
+        run: bash scripts/check-generated-artifacts.sh --docs
 
       # ── Finalize ───────────────────────────────────────────────────
       - name: Copy CNAME
