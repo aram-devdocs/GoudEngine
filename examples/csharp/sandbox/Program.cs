@@ -156,7 +156,11 @@ internal static class Program
         string PacketVersion,
         string Tagline,
         string[] Overview,
-        string[] NextSteps
+        string[] NextSteps,
+        string[] StatusRows,
+        string[] NextStepDynamicRows,
+        string WebNetworkingBlocker,
+        string WebRendererBlocker
     );
 
     private static void Main()
@@ -255,7 +259,7 @@ internal static class Program
             {
                 game.EnableDepthTest();
                 game.SetCameraPosition3D(0f, 2.2f, currentMode == "3D" ? -7.0f : -7.8f);
-                game.SetCameraRotation3D(-7f, angle * 15f, 0f);
+                game.SetCameraRotation3D(-7f, currentMode == "3D" ? 0f : 8f, 0f);
                 game.SetObjectPosition(cube, 0.85f, 1.2f + 0.26f * MathF.Sin(angle * 2f), 2.1f);
                 game.SetObjectRotation(cube, 20f, angle * 46f, 0f);
                 game.SetObjectPosition(plane, 0f, -1.2f, 2.5f);
@@ -303,7 +307,7 @@ internal static class Program
             var overviewLines = new List<(string Text, float Size, Color Color)>();
             AppendWrappedLimited(overviewLines, assets.OverviewTitle, 40f, 30, new Color(1f, 1f, 1f, 1f), 1);
             AppendWrappedLimited(overviewLines, assets.Tagline, 24f, 34, new Color(1f, 1f, 1f, 1f), 3);
-            for (var i = 0; i < assets.Overview.Length && i < 3; i++)
+            for (var i = 0; i < assets.Overview.Length && i < 4; i++)
             {
                 AppendWrappedLimited(overviewLines, assets.Overview[i], 19f, 36, new Color(0.94f, 0.97f, 1f, 1f), 12);
             }
@@ -311,12 +315,11 @@ internal static class Program
             var statusLines = new List<(string Text, float Size, Color Color)>
             {
                 (assets.StatusTitle, 30f, new Color(0.95f, 0.90f, 0.40f, 1f)),
-                ($"Mode {currentMode}  (1/2/3)", 19f, new Color(0.94f, 0.97f, 1f, 1f)),
-                ($"Mouse {mouse.X:0}, {mouse.Y:0}", 19f, new Color(0.94f, 0.97f, 1f, 1f)),
-                ($"Render tex={caps.MaxTextureSize} inst={caps.SupportsInstancing}", 19f, new Color(0.94f, 0.97f, 1f, 1f)),
-                ($"Physics max={physics.MaxBodies}  audio ch={audio.MaxChannels}", 19f, new Color(0.94f, 0.97f, 1f, 1f)),
-                ($"Net {network.Role}/{network.Label} peers={network.PeerCount} cap={(networkCaps?.MaxConnections.ToString() ?? "n/a")}", 19f, new Color(0.94f, 0.97f, 1f, 1f)),
             };
+            foreach (var row in assets.StatusRows)
+            {
+                statusLines.Add((RenderStatusRow(row, assets, currentMode, modeIndex, mouse, caps, physics, audio, network, networkCaps), 18f, new Color(0.94f, 0.97f, 1f, 1f)));
+            }
 
             var nextStepLines = new List<(string Text, float Size, Color Color)>();
             AppendWrappedLimited(nextStepLines, assets.NextStepsTitle, 32f, 30, new Color(0.95f, 0.90f, 0.40f, 1f), 1);
@@ -324,17 +327,17 @@ internal static class Program
             {
                 AppendWrappedLimited(nextStepLines, assets.NextSteps[i], 19f, 64, new Color(0.94f, 0.97f, 1f, 1f), 7);
             }
-            AppendWrappedLimited(nextStepLines, $"Audio: {(audioActivated ? "active" : "press SPACE to activate")}", 19f, 64, new Color(0.94f, 0.97f, 1f, 1f), 8);
-            AppendWrappedLimited(
-                nextStepLines,
-                network.HasRemoteState
-                    ? $"Peer sprite live at ({network.RemoteX:0}, {network.RemoteY:0})"
-                    : $"Networking: {network.Detail}",
-                19f,
-                64,
-                new Color(0.94f, 0.97f, 1f, 1f),
-                9
-            );
+            foreach (var row in assets.NextStepDynamicRows)
+            {
+                AppendWrappedLimited(
+                    nextStepLines,
+                    RenderNextStepRow(row, network, audioActivated),
+                    19f,
+                    64,
+                    new Color(0.94f, 0.97f, 1f, 1f),
+                    9
+                );
+            }
 
             var overviewY = 52f;
             foreach (var line in overviewLines)
@@ -346,8 +349,8 @@ internal static class Program
             var statusY = 52f;
             foreach (var line in statusLines)
             {
-                game.DrawText(font, line.Text, 768f, statusY, line.Size, TextAlignment.Left, 0f, 1.12f, TextDirection.Auto, line.Color);
-                statusY += line.Size >= 30f ? 38f : 27f;
+                game.DrawText(font, line.Text, 754f, statusY, line.Size, TextAlignment.Left, 472f, 1.10f, TextDirection.Auto, line.Color);
+                statusY += line.Size >= 30f ? 38f : 24f;
             }
 
             var nextY = 526f;
@@ -415,6 +418,8 @@ internal static class Program
         var root = doc.RootElement;
         var assets = root.GetProperty("assets");
         var hud = root.GetProperty("hud");
+        using var contract = JsonDocument.Parse(File.ReadAllText(Path.Combine(repoRoot, "examples", "shared", "sandbox", "contract.json")));
+        var contractRoot = contract.RootElement;
         return new SandboxAssets(
             root.GetProperty("title").GetString() ?? "GoudEngine Sandbox",
             hud.GetProperty("overview_title").GetString() ?? "Overview",
@@ -431,9 +436,53 @@ internal static class Program
                 ? version.GetString() ?? "v1"
                 : "v1",
             hud.GetProperty("tagline").GetString() ?? string.Empty,
-            ReadStringArray(hud.GetProperty("overview")),
-            ReadStringArray(hud.GetProperty("next_steps"))
+            ReadStringArray(contractRoot.GetProperty("overview_items")),
+            ReadStringArray(contractRoot.GetProperty("next_step_items")),
+            ReadStringArray(contractRoot.GetProperty("status_rows")),
+            ReadStringArray(contractRoot.GetProperty("next_step_dynamic_rows")),
+            contractRoot.GetProperty("web_blockers").GetProperty("networking").GetString() ?? string.Empty,
+            contractRoot.GetProperty("web_blockers").GetProperty("renderer").GetString() ?? string.Empty
         );
+    }
+
+    private static string RenderStatusRow(
+        string row,
+        SandboxAssets assets,
+        string currentMode,
+        int modeIndex,
+        Vec2 mouse,
+        RenderCapabilities caps,
+        PhysicsCapabilities physics,
+        AudioCapabilities audio,
+        NetworkState network,
+        NetworkCapabilities? networkCaps
+    )
+    {
+        return row switch
+        {
+            "scene" => $"Scene: {currentMode} scene ({modeIndex + 1} to switch)",
+            "mouse" => $"Mouse marker: ({mouse.X:0}, {mouse.Y:0})",
+            "render_caps" => $"Render caps: tex={caps.MaxTextureSize} inst={caps.SupportsInstancing}",
+            "physics_caps" => $"Physics caps: joints={physics.SupportsJoints} max={physics.MaxBodies}",
+            "audio_caps" => $"Audio caps: spatial={audio.SupportsSpatial} channels={audio.MaxChannels}",
+            "scene_count" => "Scene count: 3 active modes",
+            "target" => "Target: desktop",
+            "network_role" => $"Network role: {network.Role} peers={network.PeerCount} label={network.Label}",
+            "network_detail" => $"Network detail: {network.Detail}",
+            _ => row,
+        };
+    }
+
+    private static string RenderNextStepRow(string row, NetworkState network, bool audioActivated)
+    {
+        return row switch
+        {
+            "audio_status" => $"Audio: {(audioActivated ? "active" : "press SPACE to activate")}",
+            "network_probe" => network.HasRemoteState
+                ? $"Peer sprite live at ({network.RemoteX:0}, {network.RemoteY:0})"
+                : "Networking: open a second native sandbox to confirm peer sync.",
+            _ => row,
+        };
     }
 
     private static void AppendWrapped(

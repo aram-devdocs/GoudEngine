@@ -13,6 +13,28 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SDK_ROOT = REPO_ROOT / "sdks" / "python"
+
+
+def _normalize_goud_engine_lib() -> None:
+    raw = os.environ.get("GOUD_ENGINE_LIB", "").strip()
+    if not raw:
+        return
+    path = Path(raw)
+    if not path.is_dir():
+        return
+    suffix = {
+        "darwin": "libgoud_engine.dylib",
+        "linux": "libgoud_engine.so",
+        "win32": "goud_engine.dll",
+    }.get(sys.platform)
+    if not suffix:
+        return
+    candidate = path / suffix
+    if candidate.exists():
+        os.environ["GOUD_ENGINE_LIB"] = str(candidate)
+
+
+_normalize_goud_engine_lib()
 sys.path.insert(0, str(SDK_ROOT))
 
 from goud_engine import (  # noqa: E402
@@ -57,6 +79,16 @@ class SandboxHud:
 
 
 @dataclass
+class SandboxContract:
+    overview_items: list[str]
+    status_rows: list[str]
+    next_step_items: list[str]
+    next_step_dynamic_rows: list[str]
+    web_networking_blocker: str
+    web_renderer_blocker: str
+
+
+@dataclass
 class SceneInfo:
     key: str
     mode: str
@@ -70,6 +102,7 @@ class SandboxManifest:
     packet_version: str
     assets: SandboxAssets
     hud: SandboxHud
+    contract: SandboxContract
     scenes: list[SceneInfo]
     web_networking_copy: str
     web_renderer_copy: str
@@ -92,6 +125,8 @@ def _load_manifest() -> SandboxManifest:
     )
     assets = manifest["assets"]
     hud = manifest["hud"]
+    contract_path = REPO_ROOT / manifest.get("contract", "examples/shared/sandbox/contract.json")
+    contract = json.loads(contract_path.read_text(encoding="utf-8"))
     network = manifest.get("network", {})
     audio_path = REPO_ROOT / assets["audio"]
     scenes = [
@@ -126,6 +161,14 @@ def _load_manifest() -> SandboxManifest:
             tagline=str(hud["tagline"]),
             overview=[str(line) for line in hud["overview"]],
             next_steps=[str(line) for line in hud["next_steps"]],
+        ),
+        contract=SandboxContract(
+            overview_items=[str(line) for line in contract["overview_items"]],
+            status_rows=[str(line) for line in contract["status_rows"]],
+            next_step_items=[str(line) for line in contract["next_step_items"]],
+            next_step_dynamic_rows=[str(line) for line in contract["next_step_dynamic_rows"]],
+            web_networking_blocker=str(contract["web_blockers"]["networking"]),
+            web_renderer_blocker=str(contract["web_blockers"]["renderer"]),
         ),
         scenes=scenes,
         web_networking_copy=str(manifest["capability_gates"]["web_networking"]),
@@ -293,6 +336,50 @@ def _draw_lines(
         current_y += 26 if size >= 18 else 21
 
 
+def _status_row(
+    row: str,
+    manifest: SandboxManifest,
+    current_mode: str,
+    mouse_x: float,
+    mouse_y: float,
+    caps,
+    physics,
+    audio,
+    network: NetworkState,
+) -> str:
+    if row == "scene":
+        return f"Scene: {manifest.scenes[[scene.mode for scene in manifest.scenes].index(current_mode)].label} ({manifest.scenes[[scene.mode for scene in manifest.scenes].index(current_mode)].key} to switch)"
+    if row == "mouse":
+        return f"Mouse marker: ({mouse_x:.0f}, {mouse_y:.0f})"
+    if row == "render_caps":
+        return f"Render caps: tex={caps.max_texture_size} instancing={caps.supports_instancing}"
+    if row == "physics_caps":
+        return f"Physics caps: joints={physics.supports_joints} maxBodies={physics.max_bodies}"
+    if row == "audio_caps":
+        return f"Audio caps: spatial={audio.supports_spatial} channels={audio.max_channels}"
+    if row == "scene_count":
+        return f"Scene count: {len(manifest.scenes)} active mode={current_mode}"
+    if row == "target":
+        return "Target: desktop"
+    if row == "network_role":
+        return f"Network role: {network.role} peers={network.peer_count} label={network.label}"
+    if row == "network_detail":
+        return f"Network detail: {network.last_detail}"
+    return row
+
+
+def _next_step_row(row: str, manifest: SandboxManifest, network: NetworkState, audio_activated: bool) -> str:
+    if row == "audio_status":
+        return f"Audio status: {'active' if audio_activated else 'press SPACE to activate'}"
+    if row == "network_probe":
+        return (
+            f"Peer sprite live at ({network.remote_x:.0f}, {network.remote_y:.0f})"
+            if network.has_remote_state
+            else "Networking: open a second native sandbox to confirm peer sync."
+        )
+    return row
+
+
 def main() -> int:
     manifest = _load_manifest()
     game = GoudGame(WINDOW_WIDTH, WINDOW_HEIGHT, "GoudEngine Sandbox - Python")
@@ -313,8 +400,10 @@ def main() -> int:
 
     cube = game.create_cube(texture3d, 1.2, 1.2, 1.2)
     plane = game.create_plane(texture3d, 8.0, 8.0)
-    game.add_light(0, 4.0, 6.0, -4.0, 0.0, -1.0, 0.0, 1.0, 0.95, 0.8, 4.0, 25.0, 0.0)
-    game.set_object_position(plane, 0.0, -1.0, 0.0)
+    game.add_light(0, 4.0, 6.0, -4.0, 0.0, -1.0, 0.0, 1.0, 0.95, 0.80, 5.0, 28.0, 0.0)
+    game.add_light(0, -3.5, 3.5, -2.0, 0.0, -0.65, 0.35, 0.70, 0.85, 1.0, 2.5, 18.0, 0.0)
+    game.add_light(0, 0.0, 2.4, 7.0, 0.0, -0.25, -1.0, 0.55, 0.65, 0.90, 1.8, 20.0, 0.0)
+    game.set_object_position(plane, 0.0, -1.2, 2.5)
     game.configure_grid(True, 12.0, 12)
 
     mode_index = 0
@@ -362,16 +451,28 @@ def main() -> int:
         game.begin_frame(0.07, 0.10, 0.14, 1.0)
 
         if current_mode in ("3D", "Hybrid"):
-            game.set_camera_position3_d(0.0, 3.0, -9.5)
-            game.set_camera_rotation3_d(-10.0, angle * 20.0, 0.0)
-            game.set_object_position(cube, 0.0, 1.0 + 0.35 * math.sin(angle * 2.0), 0.0)
-            game.set_object_rotation(cube, 0.0, angle * 55.0, 0.0)
+            game.enable_depth_test()
+            game.set_camera_position3_d(0.0, 2.2, -7.0 if current_mode == "3D" else -7.8)
+            game.set_camera_rotation3_d(-7.0, 0.0 if current_mode == "3D" else 8.0, 0.0)
+            game.set_object_position(cube, 0.85, 1.2 + 0.26 * math.sin(angle * 2.0), 2.1)
+            game.set_object_rotation(cube, 20.0, angle * 46.0, 0.0)
             game.render3_d()
+            game.disable_depth_test()
 
-        if current_mode in ("2D", "Hybrid"):
+        if current_mode == "2D":
             game.draw_sprite(background, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, WINDOW_WIDTH, WINDOW_HEIGHT)
             game.draw_sprite(sprite, player_x, player_y, 64, 64, angle * 0.25)
             game.draw_sprite(accent_sprite, 1040, 420, 72, 240, 0.0)
+            game.draw_quad(920.0, 260.0, 180.0, 40.0, Color(0.20, 0.55, 0.95, 0.80))
+
+        if current_mode == "Hybrid":
+            game.draw_quad(640.0, 360.0, 1280.0, 720.0, Color(0.08, 0.17, 0.24, 0.10))
+            game.draw_quad(640.0, 654.0, 1280.0, 132.0, Color(0.03, 0.10, 0.12, 0.18))
+            game.draw_sprite(sprite, player_x, player_y, 72, 72, angle * 0.25)
+            game.draw_sprite(accent_sprite, 1044, 420, 78, 250, 0.0)
+            game.draw_quad(920.0, 260.0, 180.0, 40.0, Color(0.20, 0.55, 0.95, 0.62))
+
+        if current_mode in ("2D", "Hybrid"):
             if network.has_remote_state:
                 game.draw_quad(
                     network.remote_x,
@@ -394,9 +495,11 @@ def main() -> int:
                 )
                 game.draw_sprite(sprite, network.remote_x, network.remote_y, 52, 52, -angle * 0.18)
 
-        game.draw_quad(*PANEL_OVERVIEW, Color(0.05, 0.08, 0.12, 0.92))
-        game.draw_quad(*PANEL_STATUS, Color(0.08, 0.12, 0.18, 0.92))
-        game.draw_quad(*PANEL_NEXT, Color(0.05, 0.08, 0.12, 0.94))
+        panel_alpha = 0.62 if current_mode in ("3D", "Hybrid") else 0.92
+        bottom_alpha = 0.70 if current_mode in ("3D", "Hybrid") else 0.94
+        game.draw_quad(*PANEL_OVERVIEW, Color(0.05, 0.08, 0.12, panel_alpha))
+        game.draw_quad(*PANEL_STATUS, Color(0.08, 0.12, 0.18, panel_alpha))
+        game.draw_quad(*PANEL_NEXT, Color(0.05, 0.08, 0.12, bottom_alpha))
         game.draw_quad(*SCENE_BADGE, Color(0.20, 0.55, 0.95, 0.84))
         game.draw_quad(mouse.x, mouse.y, 14, 14, Color(0.95, 0.85, 0.20, 0.95))
 
@@ -412,31 +515,32 @@ def main() -> int:
         overview_lines = [
             manifest.hud.overview_title,
             manifest.hud.tagline,
-            *manifest.hud.overview,
+            *manifest.contract.overview_items,
         ]
         status_lines = [
             manifest.hud.status_title,
-            f"Scene: {scene_labels[current_mode]} ({manifest.scenes[mode_index].key} to switch)",
-            f"Mouse marker: ({mouse.x:.0f}, {mouse.y:.0f})",
-            f"Render caps: tex={caps.max_texture_size} instancing={caps.supports_instancing}",
-            f"Physics caps: joints={physics.supports_joints} maxBodies={physics.max_bodies}",
-            f"Audio caps: spatial={audio.supports_spatial} channels={audio.max_channels}",
-            f"Scene count: {len(manifest.scenes)} active mode={current_mode}",
-            f"UI nodes: {ui.node_count()}",
-            f"Target: desktop",
-            f"Network role: {network.role} peers={network.peer_count} label={network.label}",
-            f"Network detail: {network.last_detail}",
-            f"Network caps: {network_caps.max_connections if network_caps else 'unsupported'}",
+            *[
+                _status_row(
+                    row,
+                    manifest,
+                    current_mode,
+                    mouse.x,
+                    mouse.y,
+                    caps,
+                    physics,
+                    audio,
+                    network,
+                )
+                for row in manifest.contract.status_rows
+            ],
         ]
         next_step_lines = [
             manifest.hud.next_steps_title,
-            *manifest.hud.next_steps,
-            f"Audio status: {'active' if audio_activated else 'press SPACE to activate'}",
-            (
-                f"Peer sprite live at ({network.remote_x:.0f}, {network.remote_y:.0f})"
-                if network.has_remote_state
-                else "Networking: open a second native sandbox to confirm peer sync."
-            ),
+            *manifest.contract.next_step_items,
+            *[
+                _next_step_row(row, manifest, network, audio_activated)
+                for row in manifest.contract.next_step_dynamic_rows
+            ],
         ]
 
         _draw_lines(

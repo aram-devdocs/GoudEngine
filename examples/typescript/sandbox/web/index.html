@@ -42,8 +42,8 @@
   </script>
 
   <script type="module">
-    import { GoudGame, UiManager } from 'goudengine/web';
-    import { DisabledNetworkState, SandboxApp, loadSandboxManifest } from '../dist/sandbox.js';
+    import { GoudGame, NetworkManager, NetworkProtocol, UiManager } from 'goudengine/web';
+    import { DisabledNetworkState, SandboxApp, WebSocketNetworkState, loadSandboxManifest } from '../dist/sandbox.js';
 
     window.__goudSandboxSmoke = {
       status: 'booting',
@@ -60,8 +60,10 @@
     try {
       const canvas = document.getElementById('c');
       const hint = document.getElementById('hint');
+      const params = new URLSearchParams(window.location.search);
+      const wsUrl = params.get('ws');
       const config = await loadSandboxManifest('web');
-      hint.textContent = config.capabilityGates.webNetworking;
+      hint.textContent = wsUrl ? `WebSocket networking enabled: ${wsUrl}` : config.contract.webBlockers.networking;
       const game = await GoudGame.create({
         width: 1280,
         height: 720,
@@ -78,7 +80,11 @@
       ui.setLabelText(title, 'Sandbox Widgets');
       ui.setButtonEnabled(button, false);
 
-      const app = await SandboxApp.create(game, ui, 'web', config, new DisabledNetworkState(config.capabilityGates.webNetworking), {
+      const networkState = wsUrl
+        ? new WebSocketNetworkState(game, NetworkManager, NetworkProtocol, wsUrl)
+        : new DisabledNetworkState(config.contract.webBlockers.networking);
+
+      const app = await SandboxApp.create(game, ui, 'web', config, networkState, {
         maxRuntimeSec: smokeSeconds(),
       });
 
@@ -94,7 +100,7 @@
         if (app.shouldQuit()) {
           window.__goudSandboxSmoke.status = 'passed';
           window.__goudSandboxSmoke.detail = 'smoke complete';
-          hint.textContent = config.capabilityGates.webNetworking;
+          hint.textContent = wsUrl ? `WebSocket networking enabled: ${wsUrl}` : config.contract.webBlockers.networking;
           game.close();
         }
       });
@@ -105,7 +111,7 @@
         const config = await loadSandboxManifest('web');
         window.__goudSandboxSmoke.status = 'passed';
         window.__goudSandboxSmoke.detail = `renderer capability-gated: ${detail}`;
-        hint.textContent = config.capabilityGates.webRenderer;
+        hint.textContent = config.contract.webBlockers.renderer;
       } else {
         window.__goudSandboxSmoke.status = 'failed';
         window.__goudSandboxSmoke.detail = detail;

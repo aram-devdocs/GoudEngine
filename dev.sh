@@ -51,6 +51,74 @@ csharp_example_uses_project_reference() {
     [ -f "$project_file" ] && rg -q "<ProjectReference " "$project_file"
 }
 
+native_lib_name() {
+    case "$(uname -s)" in
+    Darwin) echo "libgoud_engine.dylib" ;;
+    Linux) echo "libgoud_engine.so" ;;
+    MINGW*|MSYS*|CYGWIN*) echo "goud_engine.dll" ;;
+    *) echo "libgoud_engine.so" ;;
+    esac
+}
+
+rust_sources_newer_than() {
+    local artifact="$1"
+    [ -f "$artifact" ] || return 0
+    find \
+        "$SCRIPT_DIR/Cargo.toml" \
+        "$SCRIPT_DIR/Cargo.lock" \
+        "$SCRIPT_DIR/goud_engine" \
+        "$SCRIPT_DIR/goud_engine_macros" \
+        -type f \
+        \( -name '*.rs' -o -name '*.toml' \) \
+        -newer "$artifact" \
+        -print -quit | grep -q .
+}
+
+typescript_sources_newer_than() {
+    local artifact="$1"
+    [ -f "$artifact" ] || return 0
+    find \
+        "$SCRIPT_DIR/codegen" \
+        "$SCRIPT_DIR/sdks/typescript" \
+        "$SCRIPT_DIR/goud_engine" \
+        -type f \
+        \( -name '*.py' -o -name '*.json' -o -name '*.ts' -o -name '*.rs' -o -name '*.toml' \) \
+        -not -path '*/node_modules/*' \
+        -not -path '*/dist/*' \
+        -not -path '*/wasm/*' \
+        -newer "$artifact" \
+        -print -quit | grep -q .
+}
+
+python_release_artifact_fresh() {
+    local artifact="$SCRIPT_DIR/target/release/$(native_lib_name)"
+    [ -f "$artifact" ] && ! rust_sources_newer_than "$artifact"
+}
+
+typescript_native_artifacts_fresh() {
+    local node_artifact
+    node_artifact="$(find "$SCRIPT_DIR/sdks/typescript" -maxdepth 2 -type f -name '*.node' | head -n 1)"
+    [ -n "$node_artifact" ] || return 1
+    [ -f "$SCRIPT_DIR/sdks/typescript/dist/node/index.js" ] || return 1
+    ! typescript_sources_newer_than "$node_artifact"
+}
+
+typescript_web_artifacts_fresh() {
+    [ -f "$SCRIPT_DIR/sdks/typescript/wasm/goud_engine_bg.wasm" ] || return 1
+    [ -f "$SCRIPT_DIR/sdks/typescript/dist/web/web/index.js" ] || return 1
+    ! typescript_sources_newer_than "$SCRIPT_DIR/sdks/typescript/wasm/goud_engine_bg.wasm"
+}
+
+ensure_example_node_modules() {
+    local example_dir="$1"
+    if [ -d "$example_dir/node_modules" ]; then
+        echo "Skipping npm install; example dependencies already present in $example_dir/node_modules"
+        return 0
+    fi
+    echo "Installing example dependencies..."
+    cd "$example_dir" && npm install
+}
+
 # Parse command line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -185,18 +253,28 @@ if [ "$SKIP_BUILD" = false ]; then
             bash "$SCRIPT_DIR/package.sh" --local
         fi
     elif [ "$SDK_TYPE" = "typescript" ]; then
-        echo "Running codegen..."
-        python3 "$SCRIPT_DIR/codegen/gen_ts_node.py"
-        python3 "$SCRIPT_DIR/codegen/gen_ts_web.py"
-
         if [ "$GAME" = "flappy_bird_web" ] || [ "$GAME" = "feature_lab_web" ] || [ "$GAME" = "sandbox_web" ]; then
-            echo "Building TypeScript web SDK (wasm)..."
-            cd "$SCRIPT_DIR/sdks/typescript" && npm run build:web
-            cd "$SCRIPT_DIR"
+            if typescript_web_artifacts_fresh; then
+                echo "Skipping TypeScript web SDK rebuild; wasm artifacts are fresh."
+            else
+                echo "Running codegen..."
+                python3 "$SCRIPT_DIR/codegen/gen_ts_node.py"
+                python3 "$SCRIPT_DIR/codegen/gen_ts_web.py"
+                echo "Building TypeScript web SDK (wasm)..."
+                cd "$SCRIPT_DIR/sdks/typescript" && npm run build:web
+                cd "$SCRIPT_DIR"
+            fi
         else
-            echo "Building TypeScript native SDK..."
-            cd "$SCRIPT_DIR/sdks/typescript" && npm run build:native && npm run build:ts
-            cd "$SCRIPT_DIR"
+            if typescript_native_artifacts_fresh; then
+                echo "Skipping TypeScript native SDK rebuild; native artifacts are fresh."
+            else
+                echo "Running codegen..."
+                python3 "$SCRIPT_DIR/codegen/gen_ts_node.py"
+                python3 "$SCRIPT_DIR/codegen/gen_ts_web.py"
+                echo "Building TypeScript native SDK..."
+                cd "$SCRIPT_DIR/sdks/typescript" && npm run build:native && npm run build:ts
+                cd "$SCRIPT_DIR"
+            fi
         fi
 
         TS_EXAMPLE_DIR="flappy_bird"
@@ -209,13 +287,16 @@ if [ "$SKIP_BUILD" = false ]; then
             ;;
         esac
 
-        echo "Installing example dependencies..."
-        cd "$SCRIPT_DIR/examples/typescript/$TS_EXAMPLE_DIR" && npm install
+        ensure_example_node_modules "$SCRIPT_DIR/examples/typescript/$TS_EXAMPLE_DIR"
         cd "$SCRIPT_DIR"
     else
         # For Python and Rust, just build the native library
-        echo "Building native library..."
-        cargo build --release
+        if [ "$SDK_TYPE" = "python" ] && python_release_artifact_fresh; then
+            echo "Skipping native rebuild; release Python artifact is fresh."
+        else
+            echo "Building native library..."
+            cargo build --release
+        fi
     fi
 fi
 
@@ -262,8 +343,10 @@ case $SDK_TYPE in
     # Set library path for native bindings
     if [[ "$OSTYPE" == "darwin"* ]]; then
         export DYLD_LIBRARY_PATH="$SCRIPT_DIR/target/release:$DYLD_LIBRARY_PATH"
+        export GOUD_ENGINE_LIB="${GOUD_ENGINE_LIB:-$SCRIPT_DIR/target/release/$(native_lib_name)}"
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         export LD_LIBRARY_PATH="$SCRIPT_DIR/target/release:$LD_LIBRARY_PATH"
+        export GOUD_ENGINE_LIB="${GOUD_ENGINE_LIB:-$SCRIPT_DIR/target/release/$(native_lib_name)}"
     fi
     
     cd "$SCRIPT_DIR/examples/python"

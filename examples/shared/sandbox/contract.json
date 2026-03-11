@@ -1,0 +1,37 @@
+{
+  "panels": [
+    "overview",
+    "status",
+    "next_steps"
+  ],
+  "overview_items": [
+    "Press 1, 2, or 3 to switch between the 2D, 3D, and Hybrid scenes.",
+    "Move with WASD or the arrow keys to verify input, motion, and sprite updates.",
+    "Press SPACE to unlock audio and play the shared sandbox tone.",
+    "Open a second sandbox instance to watch localhost networking discover a peer."
+  ],
+  "status_rows": [
+    "scene",
+    "mouse",
+    "render_caps",
+    "physics_caps",
+    "audio_caps",
+    "scene_count",
+    "target",
+    "network_role",
+    "network_detail"
+  ],
+  "next_step_items": [
+    "Top-right shows live capabilities, scene state, networking, and backend details.",
+    "Bottom panel tells you what to try next instead of leaving the scene unexplained.",
+    "Web keeps unsupported desktop controls visible only when a real browser blocker remains."
+  ],
+  "next_step_dynamic_rows": [
+    "audio_status",
+    "network_probe"
+  ],
+  "web_blockers": {
+    "networking": "Browser sandbox uses WebSocket client mode only. Pass ?ws=ws://127.0.0.1:PORT to a bridge or host for real networking proof; browser hosting/listening is not available.",
+    "renderer": "Browser sandbox can only prove 3D when the runtime exposes a compatible renderer. If rendering never initializes, Sandbox reports that exact renderer blocker instead of faking 3D parity."
+  }
+}

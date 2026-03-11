@@ -16,6 +16,18 @@ export interface SandboxHud {
   nextSteps: string[];
 }
 
+export interface SandboxContract {
+  panels: string[];
+  overviewItems: string[];
+  statusRows: string[];
+  nextStepItems: string[];
+  nextStepDynamicRows: string[];
+  webBlockers: {
+    networking: string;
+    renderer: string;
+  };
+}
+
 export interface SandboxCapabilityGates {
   webNetworking: string;
   webRenderer: string;
@@ -32,6 +44,7 @@ export interface SandboxConfig {
   networkPort: number;
   packetVersion: string;
   hud: SandboxHud;
+  contract: SandboxContract;
   scenes: SandboxScene[];
   capabilityGates: SandboxCapabilityGates;
 }
@@ -60,7 +73,10 @@ export interface SandboxGame {
   setCameraPosition3D(x: number, y: number, z: number): boolean;
   setCameraRotation3D(pitch: number, yaw: number, roll: number): boolean;
   configureGrid(enabled: boolean, size: number, divisions: number): boolean;
+  enableDepthTest(): void;
+  disableDepthTest(): void;
   render3D(): boolean;
+  addLight(lightType: number, x: number, y: number, z: number, dirX: number, dirY: number, dirZ: number, colorR: number, colorG: number, colorB: number, intensity: number, range: number, angle: number): number;
   audioActivate?(): number;
   audioPlay?(data: Uint8Array): number;
 }
@@ -118,6 +134,7 @@ const SCENE_BADGE = { x: 980, y: 268, width: 190, height: 42 };
 
 interface ManifestJson {
   title: string;
+  contract?: string;
   network?: { port?: number; packet_version?: string };
   network_port?: number;
   assets: {
@@ -143,21 +160,37 @@ interface ManifestJson {
   };
 }
 
+interface ContractJson {
+  panels: string[];
+  overview_items: string[];
+  status_rows: string[];
+  next_step_items: string[];
+  next_step_dynamic_rows: string[];
+  web_blockers: {
+    networking: string;
+    renderer: string;
+  };
+}
+
 function assetPath(target: SandboxTarget, manifestPath: string): string {
   const relativePath = manifestPath.replace(/^examples\/shared\/sandbox\//, '');
   const root = target === 'web' ? '/examples/shared/sandbox' : '../../shared/sandbox';
   return `${root}/${relativePath}`;
 }
 
+async function loadJson<T>(target: SandboxTarget, path: string): Promise<T> {
+  if (target === 'web') {
+    return (await (await fetch(path)).json()) as T;
+  }
+  const { readFile } = await import('node:fs/promises');
+  return JSON.parse(await readFile(path, 'utf8')) as T;
+}
+
 export async function loadSandboxManifest(target: SandboxTarget): Promise<SandboxConfig> {
   const manifestPath = target === 'web' ? '/examples/shared/sandbox/manifest.json' : '../../shared/sandbox/manifest.json';
-  let manifest: ManifestJson;
-  if (target === 'web') {
-    manifest = (await (await fetch(manifestPath)).json()) as ManifestJson;
-  } else {
-    const { readFile } = await import('node:fs/promises');
-    manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as ManifestJson;
-  }
+  const manifest = await loadJson<ManifestJson>(target, manifestPath);
+  const contractPath = assetPath(target, manifest.contract ?? 'examples/shared/sandbox/contract.json');
+  const contract = await loadJson<ContractJson>(target, contractPath);
 
   const audioPath = assetPath(target, manifest.assets.audio);
   let audio: Uint8Array;
@@ -185,6 +218,14 @@ export async function loadSandboxManifest(target: SandboxTarget): Promise<Sandbo
       tagline: manifest.hud.tagline,
       overview: manifest.hud.overview,
       nextSteps: manifest.hud.next_steps,
+    },
+    contract: {
+      panels: contract.panels,
+      overviewItems: contract.overview_items,
+      statusRows: contract.status_rows,
+      nextStepItems: contract.next_step_items,
+      nextStepDynamicRows: contract.next_step_dynamic_rows,
+      webBlockers: contract.web_blockers,
     },
     scenes: manifest.scenes,
     capabilityGates: {
@@ -370,6 +411,68 @@ export class DisabledNetworkState implements NetworkStateLike {
   destroy(): void {}
 }
 
+export class WebSocketNetworkState implements NetworkStateLike {
+  role = 'websocket-client';
+  label = 'connecting';
+  peerCount = 0;
+  detail: string;
+  hasRemoteState = false;
+  remoteX = 0;
+  remoteY = 0;
+  remoteMode: SandboxMode = '2D';
+  remoteLabel = 'waiting';
+  exitRequested = false;
+  private readonly endpoint: any;
+  private heartbeatTimer = 0;
+  private connected = false;
+
+  constructor(game: any, managerCtor: any, protocol: any, wsUrl: string) {
+    this.detail = `Connecting to ${wsUrl}`;
+    this.endpoint = new managerCtor(game).connect(protocol.WebSocket, wsUrl, 0);
+  }
+
+  update(dt: number, state: NetworkUpdateState): void {
+    this.endpoint.poll();
+    this.peerCount = this.endpoint.peerCount();
+    if (this.peerCount > 0) {
+      this.connected = true;
+      this.label = 'connected';
+    }
+    const packet = this.endpoint.receive();
+    if (packet) {
+      const parsed = parseSandboxPayload(packet.data);
+      if (parsed) {
+        this.hasRemoteState = true;
+        this.remoteX = parsed.x;
+        this.remoteY = parsed.y;
+        this.remoteMode = parsed.mode;
+        this.remoteLabel = parsed.label;
+        this.detail = `Peer synced in ${parsed.mode} mode`;
+      } else {
+        this.detail = `Received ${packet.data.length} bytes from websocket peer`;
+      }
+    }
+    this.heartbeatTimer += dt;
+    if (this.connected && this.heartbeatTimer >= 1) {
+      this.heartbeatTimer = 0;
+      const payload = new TextEncoder().encode(
+        `sandbox|${state.packetVersion}|${this.role}|${state.mode}|${state.x.toFixed(1)}|${state.y.toFixed(1)}|${this.label}`,
+      );
+      try {
+        this.endpoint.send(payload);
+      } catch (error) {
+        this.detail = error instanceof Error ? error.message : String(error);
+      }
+    }
+  }
+
+  destroy(): void {
+    try {
+      this.endpoint?.disconnect();
+    } catch {}
+  }
+}
+
 export class SandboxApp {
   private modeIndex = 0;
   private readonly modes: SandboxMode[] = ['2D', '3D', 'Hybrid'];
@@ -423,9 +526,12 @@ export class SandboxApp {
       const texture3d = await game.loadTexture(config.texture3d);
       game.configureGrid(true, 12, 12);
       const plane = game.createPlane(texture3d, 8, 8);
-      game.setObjectPosition(plane, 0, -1, 0);
+      game.setObjectPosition(plane, 0, -1.2, 2.5);
       cube = game.createCube(texture3d, 1.2, 1.2, 1.2);
-      game.setObjectPosition(cube, 0, 1, 0);
+      game.setObjectPosition(cube, 0.85, 1.2, 2.1);
+      game.addLight(0, 4, 6, -4, 0, -1, 0, 1, 0.95, 0.80, 5, 28, 0);
+      game.addLight(0, -3.5, 3.5, -2, 0, -0.65, 0.35, 0.70, 0.85, 1, 2.5, 18, 0);
+      game.addLight(0, 0, 2.4, 7, 0, -0.25, -1, 0.55, 0.65, 0.90, 1.8, 20, 0);
     }
     return new SandboxApp(game, ui, target, config, network, options?.maxRuntimeSec ?? 0, {
       background,
@@ -465,17 +571,31 @@ export class SandboxApp {
     });
 
     if (mode !== '2D' && this.canRender3d) {
-      this.game.setCameraPosition3D(0, 3, -9.5);
-      this.game.setCameraRotation3D(-10, this.angle * 20, 0);
-      this.game.setObjectPosition(this.cube, 0, 1 + 0.35 * Math.sin(this.angle * 2), 0);
-      this.game.setObjectRotation(this.cube, 0, this.angle * 55, 0);
+      this.game.enableDepthTest();
+      this.game.setCameraPosition3D(0, 2.2, mode === '3D' ? -7.0 : -7.8);
+      this.game.setCameraRotation3D(-7, mode === '3D' ? 0 : 8, 0);
+      this.game.setObjectPosition(this.cube, 0.85, 1.2 + 0.26 * Math.sin(this.angle * 2), 2.1);
+      this.game.setObjectRotation(this.cube, 20, this.angle * 46, 0);
       this.game.render3D();
+      this.game.disableDepthTest();
     }
 
-    if (mode !== '3D') {
+    if (mode === '2D') {
       this.game.drawSprite(this.background, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, WINDOW_WIDTH, WINDOW_HEIGHT);
       this.game.drawSprite(this.sprite, this.playerX, this.playerY, 64, 64, this.angle * 0.25);
       this.game.drawSprite(this.accentSprite, 1040, 420, 72, 240, 0);
+      this.game.drawQuad(920, 260, 180, 40, { r: 0.20, g: 0.55, b: 0.95, a: 0.80 });
+    }
+
+    if (mode === 'Hybrid') {
+      this.game.drawQuad(640, 360, 1280, 720, { r: 0.08, g: 0.17, b: 0.24, a: 0.10 });
+      this.game.drawQuad(640, 654, 1280, 132, { r: 0.03, g: 0.10, b: 0.12, a: 0.18 });
+      this.game.drawSprite(this.sprite, this.playerX, this.playerY, 72, 72, this.angle * 0.25);
+      this.game.drawSprite(this.accentSprite, 1044, 420, 78, 250, 0);
+      this.game.drawQuad(920, 260, 180, 40, { r: 0.20, g: 0.55, b: 0.95, a: 0.62 });
+    }
+
+    if (mode !== '3D') {
       if (this.network.hasRemoteState) {
         this.game.drawQuad(this.network.remoteX, this.network.remoteY - 48, 108, 20, { r: 0.96, g: 0.70, b: 0.20, a: 0.92 });
         this.game.drawText(this.font, `Peer ${this.network.remoteMode}`, this.network.remoteX - 40, this.network.remoteY - 54, 14, 0, 0, 1, 0, { r: 0.04, g: 0.05, b: 0.08, a: 1 });
@@ -483,9 +603,12 @@ export class SandboxApp {
       }
     }
 
-    this.game.drawQuad(PANEL_OVERVIEW.x, PANEL_OVERVIEW.y, PANEL_OVERVIEW.width, PANEL_OVERVIEW.height, { r: 0.05, g: 0.08, b: 0.12, a: 0.92 });
-    this.game.drawQuad(PANEL_STATUS.x, PANEL_STATUS.y, PANEL_STATUS.width, PANEL_STATUS.height, { r: 0.08, g: 0.12, b: 0.18, a: 0.92 });
-    this.game.drawQuad(PANEL_NEXT.x, PANEL_NEXT.y, PANEL_NEXT.width, PANEL_NEXT.height, { r: 0.05, g: 0.08, b: 0.12, a: 0.94 });
+    const is3DFamilyMode = mode !== '2D';
+    const panelAlpha = is3DFamilyMode ? 0.62 : 0.88;
+    const bottomAlpha = is3DFamilyMode ? 0.70 : 0.94;
+    this.game.drawQuad(PANEL_OVERVIEW.x, PANEL_OVERVIEW.y, PANEL_OVERVIEW.width, PANEL_OVERVIEW.height, { r: 0.05, g: 0.08, b: 0.12, a: panelAlpha });
+    this.game.drawQuad(PANEL_STATUS.x, PANEL_STATUS.y, PANEL_STATUS.width, PANEL_STATUS.height, { r: 0.08, g: 0.12, b: 0.18, a: panelAlpha });
+    this.game.drawQuad(PANEL_NEXT.x, PANEL_NEXT.y, PANEL_NEXT.width, PANEL_NEXT.height, { r: 0.05, g: 0.08, b: 0.12, a: bottomAlpha });
     this.game.drawQuad(SCENE_BADGE.x, SCENE_BADGE.y, SCENE_BADGE.width, SCENE_BADGE.height, { r: 0.20, g: 0.55, b: 0.95, a: 0.84 });
     this.game.drawQuad(mouse.x, mouse.y, 14, 14, { r: 0.95, g: 0.85, b: 0.2, a: 0.95 });
 
@@ -496,31 +619,16 @@ export class SandboxApp {
     const overviewLines = [
       this.config.hud.overviewTitle,
       this.config.hud.tagline,
-      ...this.config.hud.overview,
+      ...this.config.contract.overviewItems,
     ];
     const statusLines = [
       this.config.hud.statusTitle,
-      `Scene: ${this.sceneLookup[mode].label} (${this.sceneLookup[mode].key} to switch)`,
-      `Mouse marker: (${mouse.x.toFixed(0)}, ${mouse.y.toFixed(0)})`,
-      `Render caps: tex=${renderCaps.maxTextureSize} instancing=${String(renderCaps.supportsInstancing)}`,
-      `Physics caps: joints=${String(physicsCaps.supportsJoints)} maxBodies=${physicsCaps.maxBodies}`,
-      `Audio caps: spatial=${String(audioCaps.supportsSpatial)} channels=${audioCaps.maxChannels}`,
-      `Scene count: ${this.config.scenes.length} active mode=${mode}`,
-      `UI nodes: ${this.ui.nodeCount()}`,
-      `Target: ${this.target}${this.canRender3d ? '' : ' (renderer capability-gated)'}`,
-      `Network role: ${this.network.role} peers=${this.network.peerCount} label=${this.network.label}`,
-      `Network detail: ${this.network.detail}`,
-      `Network caps: ${networkCaps?.maxConnections ?? 'unsupported'}`,
+      ...this.config.contract.statusRows.map((row) => this.renderStatusRow(row, mode, mouse, renderCaps, physicsCaps, audioCaps, networkCaps)),
     ];
     const nextStepLines = [
       this.config.hud.nextStepsTitle,
-      ...this.config.hud.nextSteps,
-      `Audio status: ${this.audioActivated ? 'active' : 'press SPACE to activate'}`,
-      this.network.hasRemoteState
-        ? `Peer sprite live at (${this.network.remoteX.toFixed(0)}, ${this.network.remoteY.toFixed(0)})`
-        : this.target === 'web'
-          ? this.config.capabilityGates.webNetworking
-          : 'Networking: open a second native sandbox to confirm peer sync.',
+      ...this.config.contract.nextStepItems,
+      ...this.config.contract.nextStepDynamicRows.map((row) => this.renderNextStepRow(row)),
     ];
 
     drawTextLines(this.game, this.font, overviewLines, 48, 52, [22, 16, 14], 380, { r: 1, g: 1, b: 1, a: 1 });
@@ -542,6 +650,54 @@ export class SandboxApp {
       return this.game.getNetworkCapabilities();
     } catch {
       return null;
+    }
+  }
+
+  private renderStatusRow(
+    row: string,
+    mode: SandboxMode,
+    mouse: { x: number; y: number },
+    renderCaps: any,
+    physicsCaps: any,
+    audioCaps: any,
+    networkCaps: any | null,
+  ): string {
+    switch (row) {
+      case 'scene':
+        return `Scene: ${this.sceneLookup[mode].label} (${this.sceneLookup[mode].key} to switch)`;
+      case 'mouse':
+        return `Mouse marker: (${mouse.x.toFixed(0)}, ${mouse.y.toFixed(0)})`;
+      case 'render_caps':
+        return `Render caps: tex=${renderCaps.maxTextureSize} instancing=${String(renderCaps.supportsInstancing)}`;
+      case 'physics_caps':
+        return `Physics caps: joints=${String(physicsCaps.supportsJoints)} maxBodies=${physicsCaps.maxBodies}`;
+      case 'audio_caps':
+        return `Audio caps: spatial=${String(audioCaps.supportsSpatial)} channels=${audioCaps.maxChannels}`;
+      case 'scene_count':
+        return `Scene count: ${this.config.scenes.length} active mode=${mode}`;
+      case 'target':
+        return `Target: ${this.target}${this.canRender3d ? '' : ' (renderer gated by browser backend)'}`;
+      case 'network_role':
+        return `Network role: ${this.network.role} peers=${this.network.peerCount} label=${this.network.label}`;
+      case 'network_detail':
+        return `Network detail: ${this.network.detail}${networkCaps ? ` (cap=${networkCaps.maxConnections})` : ''}`;
+      default:
+        return row;
+    }
+  }
+
+  private renderNextStepRow(row: string): string {
+    switch (row) {
+      case 'audio_status':
+        return `Audio status: ${this.audioActivated ? 'active' : 'press SPACE to activate'}`;
+      case 'network_probe':
+        return this.network.hasRemoteState
+          ? `Peer sprite live at (${this.network.remoteX.toFixed(0)}, ${this.network.remoteY.toFixed(0)})`
+          : this.target === 'web'
+            ? this.config.contract.webBlockers.networking
+            : 'Networking: open a second native sandbox to confirm peer sync.';
+      default:
+        return row;
     }
   }
 }

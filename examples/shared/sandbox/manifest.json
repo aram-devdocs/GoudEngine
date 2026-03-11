@@ -1,5 +1,6 @@
 {
   "title": "GoudEngine Sandbox",
+  "contract": "examples/shared/sandbox/contract.json",
   "network": {
     "port": 38491,
     "packet_version": "v1"
@@ -48,8 +49,8 @@
     }
   ],
   "capability_gates": {
-    "web_networking": "Browser/WASM keeps the networking panel visible, but localhost host/client parity is not faked here.",
-    "web_renderer": "This browser/runtime did not expose a WebGPU adapter, so Sandbox is running in renderer capability-gated mode."
+    "web_networking": "Browser sandbox uses WebSocket client mode only. Pass ?ws=ws://127.0.0.1:PORT to a bridge or host for real networking proof; browser hosting/listening is not available.",
+    "web_renderer": "Browser sandbox can only prove 3D when the runtime exposes a compatible renderer. If rendering never initializes, Sandbox reports that exact renderer blocker instead of faking 3D parity."
   },
   "panels": [
     "overview",
