@@ -8,9 +8,14 @@ plan_mode_reasoning_effort = "xhigh"
 multi_agent = true
 
 [agents]
-max_threads = 5
+max_threads = 6
 max_depth = 2
 job_max_runtime_seconds = 1800
+
+# Shared orchestration policy (catalog source of truth)
+# shared_team_mode = "single-lead"
+# shared_max_specialists_per_lead = 2
+# shared_fallback_mode = "single-agent"
 
 [agents.default]
 description = "General-purpose fallback role for orchestration and synthesis."

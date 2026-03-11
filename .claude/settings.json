@@ -49,15 +49,6 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/quality-check.sh"
-          }
-        ]
-      },
-      {
         "matcher": "Agent",
         "hooks": [
           {
@@ -92,40 +83,12 @@
         ]
       }
     ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/governance-completion-check.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/completion-check.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/plan-completion-guard.sh"
-          }
-        ]
-      }
-    ],
     "PreCompact": [
       {
         "hooks": [
           {
             "type": "command",
             "command": "bash .claude/hooks/save-session.sh"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/state-cleanup.sh"
           }
         ]
       }

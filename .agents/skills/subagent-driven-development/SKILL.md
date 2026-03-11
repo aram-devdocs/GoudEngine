@@ -7,22 +7,23 @@ user-invocable: true
 
 # Subagent-Driven Development
 
-Three-tier agent orchestration with challenge protocol and hook-enforced governance.
+Bounded multi-agent orchestration with shared Claude/Codex policy and hook-enforced governance where available.
 
 ## When to Use
 
-Invoke this skill for any non-trivial implementation task that touches multiple files or modules. Single-file fixes use `quick-fix` directly — no orchestration needed.
+Invoke this skill for any non-trivial implementation task that touches multiple files or modules. Single-file fixes use `quick-fix` directly.
 
-## Three-Tier Dispatch Model
+## Shared Team Shape
 
 ```
 Tier 0: ORCHESTRATOR (you)
-  ├── engine-lead     — Rust core, graphics, ECS, assets
-  ├── integration-lead — FFI, C# SDK, Python SDK
-  └── quality-lead    — reviews, testing, validation
+  ├── engine-lead      — one active Rust/core implementation workstream
+  ├── integration-lead — one active FFI/SDK implementation workstream
+  ├── direct reviewers — spec-reviewer -> code-quality-reviewer -> architecture-validator
+  └── quality-lead     — exceptional audit-heavy path only
 ```
 
-The orchestrator dispatches **team leads**, not individual specialists. Team leads manage their own specialist waves internally.
+The orchestrator runs exactly one active implementation team at a time. A lead may use at most one specialist wave, capped at 2 specialists total for that batch.
 
 ## Workflow
 
@@ -30,50 +31,51 @@ The orchestrator dispatches **team leads**, not individual specialists. Team lea
 
 Classify the work:
 - **Engine-only**: Dispatch engine-lead
-- **FFI + SDK**: Dispatch integration-lead (or engine-lead + integration-lead if Rust core also changes)
-- **Cross-cutting**: Dispatch engine-lead AND integration-lead in parallel, then quality-lead for review
+- **FFI + SDK**: Dispatch integration-lead
+- **Cross-cutting**: Dispatch the first implementation lead, wait for completion, then dispatch the next lead if still needed
 - **Trivial fix**: Dispatch quick-fix directly
 
 ### 2. Dispatch Team Leads
 
 Team leads receive the objective and decompose it independently. They:
 - Explore relevant code
-- Dispatch specialists (parallel if independent, sequential if dependent)
+- Dispatch at most one specialist wave (max 2 specialists total)
+- Keep dependent work sequential
 - Question specialist output before reporting
 - Run verification (cargo check, cargo test)
 - Report concise summary
 
 ### 3. Team Lead Internal Waves
 
-Each team lead manages their own wave plan. Example for engine-lead:
+Each team lead manages one bounded wave plan. Example for engine-lead:
 
 ```
-Internal Wave 1 (parallel):
+Specialist Wave (optional, bounded):
   - implementer: Rust core implementation
   - test-first-implementer: Write failing tests
-
-Internal Wave 2 (sequential):
+Follow-up (sequential):
   - test-runner: Verify tests pass
   - debugger: If tests fail, diagnose
 ```
 
-### 4. Quality Gate (via quality-lead)
+### 4. Default Review Gate (direct from root)
 
-After implementation is complete, dispatch quality-lead:
+After implementation is complete, root dispatches reviewers directly:
 
 ```
-Quality Wave 1:
-  - spec-reviewer (MUST run first, MUST APPROVE before next step)
-
-Quality Wave 2:
-  - code-quality-reviewer (only after spec-reviewer APPROVED)
-  - architecture-validator (parallel with code-quality-reviewer)
-
-Quality Wave 3 (conditional):
-  - security-auditor (only if FFI/unsafe touched, ALWAYS sequential)
+Review 1:
+  - spec-reviewer
+Review 2:
+  - code-quality-reviewer
+Review 3:
+  - architecture-validator
+Review 4 (conditional):
+  - security-auditor
 ```
 
 The spec-reviewer -> code-quality-reviewer gate is hook-enforced (review-gate-guard.sh).
+
+Use `quality-lead` only when the session genuinely needs an aggregated audit or a dedicated testing/review sub-orchestrator.
 
 ### 5. Challenge Protocol
 
@@ -87,13 +89,21 @@ This is injected automatically via challenge-injector.sh (SubagentStart hook).
 
 ### 6. Verification
 
-After all team leads report:
+After implementation and direct reviews report:
 
 ```bash
 cargo test                              # All Rust tests
 cargo clippy -- -D warnings             # Lint check
 python3 sdks/python/test_bindings.py    # Python SDK tests
 ```
+
+## Failure Ladder
+
+When agent dispatch fails due to capacity, timeout, or hang:
+1. Stop nested dispatch immediately
+2. Do not retry the same fan-out shape
+3. Fall back to `quick-fix` for single-file work, or one direct worker/specialist from root
+4. Continue the direct root review sequence after implementation completes
 
 ## Model Tier Selection
 
@@ -103,7 +113,7 @@ Provider-specific model assignments live in `.agents/agent-catalog.toml` and the
 |------|--------|---------|
 | Fast | quick-fix, architecture-validator, explorer, monitor, domain experts | Single-file fixes, read-heavy scans, lightweight validation |
 | Standard | implementer, ffi-implementer, sdk-implementer, test-first-implementer, spec-reviewer, code-quality-reviewer, test-runner, debugger, worker, documentation-writer | Implementation, reviews, testing, and debugging |
-| High | engine-lead, integration-lead, quality-lead, security-auditor, default | Sub-orchestration, security review, and highest-judgment work |
+| High | engine-lead, integration-lead, quality-lead, security-auditor, default | Bounded sub-orchestration, security review, and highest-judgment work |
 
 ## Governance (Hook-Enforced)
 
@@ -114,20 +124,22 @@ Provider-specific model assignments live in `.agents/agent-catalog.toml` and the
 | Reviewers must produce a verdict | review-verdict-validator.sh | HARD BLOCK |
 | Challenge protocol injected | challenge-injector.sh | DETERMINISTIC |
 | Delegation audit trail | delegation-tracker.sh | DETERMINISTIC |
-| Governance violations block session end | governance-completion-check.sh | HARD BLOCK |
 
 ## Batch Size Limits
 
-- Maximum 3-5 tasks per parallel batch within a team lead
+- Maximum 1 specialist wave per lead
+- Maximum 2 specialists total within that wave
 - Security-sensitive work (FFI, unsafe) is ALWAYS sequential
+- Root runs one implementation lead at a time
 - Review agents run sequentially (spec-reviewer THEN code-quality-reviewer)
 
 ## Anti-Patterns
 
 - Orchestrator implementing directly (hook-blocked)
-- Dispatching specialists directly instead of team leads (for non-trivial work)
+- Running multiple implementation leads in parallel by default
+- Retrying the same nested fan-out after a capacity failure
 - Running code-quality-reviewer before spec-reviewer (hook-blocked)
 - Running security-auditor in parallel with other agents
 - Rubber-stamping reviews without analysis (hook-blocked)
-- Batches larger than 5 tasks
+- Specialist waves larger than 2 agents
 - Team leads passing specialist output through uncritically
