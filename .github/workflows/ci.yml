@@ -913,6 +913,7 @@ jobs:
     - name: Run C# Sandbox (2D/3D/Hybrid smoke)
       env:
         GOUD_SANDBOX_SMOKE_SECONDS: "1"
+        LD_LIBRARY_PATH: ${{ github.workspace }}/target/debug:${{ env.LD_LIBRARY_PATH }}
       run: |
         cd examples/csharp/sandbox
         dotnet build
