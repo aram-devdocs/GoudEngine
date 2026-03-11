@@ -60,8 +60,10 @@ if (target === 'web' && !needsWebBuild) {
 run('npm', ['ci'], sdkDir);
 
 if (target === 'node') {
-  run('npm', ['run', 'build'], sdkDir);
+  run('npm', ['run', 'build:native:debug'], sdkDir);
+  run('npm', ['run', 'build:ts'], sdkDir);
 } else {
+  run('npm', ['run', 'build:native:debug'], sdkDir);
   run('npm', ['run', 'build:ts'], sdkDir);
   run('npm', ['run', 'build:web'], sdkDir);
 }
