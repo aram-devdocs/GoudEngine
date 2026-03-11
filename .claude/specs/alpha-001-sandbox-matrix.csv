@@ -1,16 +1,16 @@
-feature_name,source_of_truth,sandbox_scene_or_panel,rust,csharp,python,typescript_desktop,typescript_web,unsupported_reason
-scene_switching,docs/src/guides/showcase.md,global navigation,planned,planned,planned,planned,planned,
-ecs_spawn_mutate,codegen/goud_sdk.schema.json,diagnostics + all scenes,planned,planned,planned,planned,planned,
-sprites,codegen/goud_sdk.schema.json,2D,planned,planned,planned,planned,planned,
-runtime_shapes,codegen/goud_sdk.schema.json,2D + Hybrid,planned,planned,planned,planned,planned,
-text_rendering,docs/src/architecture/deep-dive.md,2D + diagnostics,planned,planned,planned,planned,planned,
-ui_controls,docs/src/architecture/deep-dive.md,capability + networking + diagnostics,planned,planned,planned,planned,planned,
-render_3d,codegen/goud_sdk.schema.json,3D,planned,planned,planned,planned,planned,
-hybrid_2d_3d,docs/src/architecture/deep-dive.md,Hybrid,planned,planned,planned,planned,planned,
-asset_loading,examples/shared/sandbox,all scenes,planned,planned,planned,planned,planned,
-animation,codegen/goud_sdk.schema.json,2D,planned,planned,planned,planned,planned,
-physics,docs/src/architecture/deep-dive.md,Hybrid + diagnostics,planned,planned,planned,planned,planned,
-audio,codegen/goud_sdk.schema.json,diagnostics + global controls,planned,planned,planned,planned,planned,
-input,codegen/goud_sdk.schema.json,global controls,planned,planned,planned,planned,planned,
-diagnostics,docs/src/architecture/deep-dive.md,Diagnostics,planned,planned,planned,planned,planned,
-networking,docs/src/architecture/deep-dive.md,Networking,planned,planned,planned,planned,planned,Web may be capability-gated for host/server paths but not faked
+feature,scene,control_or_probe,rust,csharp,python,ts_desktop,ts_web,unsupported_reason,docs_proof
+scene_switching,global navigation,Press 1/2/3 and confirm scene badge + current scene status,implemented,implemented,implemented,implemented,implemented,,docs/src/guides/sandbox.md
+ecs_spawn_mutate,status panel,Scene create/current scene + live entity behavior in sandbox loop,implemented,implemented,implemented,implemented,implemented,,docs/src/guides/sandbox.md
+sprites,2D,Move local bird with WASD/arrows and confirm remote bird appears after peer sync,implemented,implemented,implemented,implemented,implemented,,docs/src/guides/sandbox.md
+runtime_shapes,overview + hybrid,Panel chrome quads, mouse marker, and scene badge stay visible,implemented,implemented,implemented,implemented,implemented,,docs/src/guides/sandbox.md
+text_rendering,all HUD panels,Shared sandbox font renders overview/status/next-step copy readably,implemented,implemented,implemented,implemented,implemented,,docs/src/guides/sandbox.md
+ui_controls,status panel,UI widget tree exists and node count is reported in status panel,implemented,implemented,implemented,implemented,implemented,,docs/src/guides/sandbox.md
+render_3d,3D,Switch to 3D scene and confirm cube/plane render with live camera motion,implemented,implemented,implemented,implemented,gated,TypeScript web keeps renderer status visible but gates 3D when no WebGPU adapter is available.,docs/src/guides/sandbox.md
+hybrid_2d_3d,Hybrid,Switch to Hybrid and confirm 2D sprite + 3D object coexist,implemented,implemented,implemented,implemented,gated,TypeScript web keeps the layout and status panel but does not fake unsupported renderer availability.,docs/src/guides/sandbox.md
+asset_loading,all scenes,All runtimes load assets and copy from examples/shared/sandbox/manifest.json,implemented,implemented,implemented,implemented,implemented,,docs/src/guides/sandbox.md
+animation,2D,Local bird rotation + 3D cube motion animate during play,implemented,implemented,implemented,implemented,implemented,,docs/src/guides/sandbox.md
+physics,status panel,Physics capabilities are visible in the live status panel,implemented,implemented,implemented,implemented,implemented,,docs/src/guides/sandbox.md
+audio,overview + next steps,Press SPACE to activate audio and play the shared tone,implemented,implemented,implemented,implemented,implemented,,docs/src/guides/sandbox.md
+input,global controls,Keyboard motion and mouse marker respond immediately,implemented,implemented,implemented,implemented,implemented,,docs/src/guides/sandbox.md
+diagnostics,status panel,Live status panel reports scene/runtime/capability/network detail,implemented,implemented,implemented,implemented,implemented,,docs/src/guides/sandbox.md
+networking,network status + peer rendering,Run rust host + python client via scripts/sandbox-peer-smoke.sh and confirm peer discovery,implemented,implemented,implemented,implemented,gated,TypeScript web keeps the networking panel visible but does not fake host/client peer discovery in browser mode.,scripts/sandbox-peer-smoke.sh

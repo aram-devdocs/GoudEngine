@@ -1,20 +1,59 @@
 {
   "title": "GoudEngine Sandbox",
+  "network": {
+    "port": 38491,
+    "packet_version": "v1"
+  },
   "network_port": 38491,
   "assets": {
     "background": "examples/shared/sandbox/sprites/background-day.png",
     "sprite": "examples/shared/sandbox/sprites/yellowbird-midflap.png",
     "accent_sprite": "examples/shared/sandbox/sprites/pipe-green.png",
     "texture3d": "examples/shared/sandbox/textures/default_grey.png",
-    "font": "examples/shared/sandbox/fonts/test_font.ttf",
+    "font": "examples/shared/sandbox/fonts/AtkinsonHyperlegible-Regular.ttf",
     "audio": "examples/shared/sandbox/audio/sandbox-tone.wav"
   },
+  "hud": {
+    "overview_title": "GoudEngine Sandbox",
+    "status_title": "Live status",
+    "next_steps_title": "Try this next",
+    "tagline": "One shared sandbox: same assets, same controls, same feature probes in every SDK.",
+    "overview": [
+      "Press 1, 2, or 3 to switch between the 2D, 3D, and Hybrid scenes.",
+      "Move with WASD or the arrow keys to verify input, motion, and sprite updates.",
+      "Press SPACE to unlock audio and play the shared sandbox tone.",
+      "Open a second sandbox instance to watch localhost networking discover a peer."
+    ],
+    "next_steps": [
+      "Top-right shows live capabilities, scene state, networking, and backend details.",
+      "Bottom panel tells you what to try next instead of leaving the scene unexplained.",
+      "Web keeps unsupported desktop controls visible and explicitly capability-gated."
+    ]
+  },
+  "scenes": [
+    {
+      "key": "1",
+      "mode": "2D",
+      "label": "2D scene"
+    },
+    {
+      "key": "2",
+      "mode": "3D",
+      "label": "3D scene"
+    },
+    {
+      "key": "3",
+      "mode": "Hybrid",
+      "label": "Hybrid scene"
+    }
+  ],
+  "capability_gates": {
+    "web_networking": "Browser/WASM keeps the networking panel visible, but localhost host/client parity is not faked here.",
+    "web_renderer": "This browser/runtime did not expose a WebGPU adapter, so Sandbox is running in renderer capability-gated mode."
+  },
   "panels": [
-    "2D",
-    "3D",
-    "Hybrid",
-    "Diagnostics",
-    "Networking",
-    "Capability"
+    "overview",
+    "status",
+    "next_steps"
   ]
 }

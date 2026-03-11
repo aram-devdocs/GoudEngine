@@ -3778,6 +3778,8 @@ name = "sandbox"
 version = "0.1.0"
 dependencies = [
  "goud-engine",
+ "goud-engine-core",
+ "serde_json",
 ]
 
 [[package]]

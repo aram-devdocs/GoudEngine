@@ -184,7 +184,7 @@ void main() {
 
         if !text_requests.is_empty() {
             self.text_render_system
-                .run_requests(&text_requests, asset_server, backend)
+                .run_requests(&text_requests, asset_server, backend, viewport)
                 .map_err(GoudError::InvalidState)?;
             let text_stats: TextRenderStats = self.text_render_system.stats();
             self.stats.text_glyph_count = text_stats.glyph_count;

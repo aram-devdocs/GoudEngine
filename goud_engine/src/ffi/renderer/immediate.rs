@@ -114,6 +114,20 @@ void main() {
 }
 "#;
 
+/// Reinstalls the immediate-mode vertex attribute layout on the currently bound VAO/VBO.
+pub(super) fn configure_immediate_vertex_layout() {
+    // SAFETY: The caller guarantees that the immediate-mode VAO and vertex buffer are
+    // bound, and the attribute layout matches `QuadVertex`.
+    unsafe {
+        gl::EnableVertexAttribArray(0);
+        gl::VertexAttribPointer(0, 2, gl::FLOAT, gl::FALSE, 16, std::ptr::null());
+        gl::EnableVertexAttribArray(1);
+        gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, 16, 8 as *const std::ffi::c_void);
+        gl::DisableVertexAttribArray(2);
+        gl::VertexAttrib4f(2, 1.0, 1.0, 1.0, 1.0);
+    }
+}
+
 // ============================================================================
 // Initialization
 // ============================================================================
@@ -209,29 +223,7 @@ pub(super) fn ensure_immediate_state(context_id: GoudContextId) -> Result<(), Go
             // Stride is 16 bytes (2 floats for position + 2 floats for texcoord)
             // SAFETY: VAO is bound above, vertex buffer is bound, and attribute locations
             // 0 and 1 are valid for the shader created in this function.
-            unsafe {
-                // Position attribute (location 0)
-                gl::EnableVertexAttribArray(0);
-                gl::VertexAttribPointer(
-                    0,                // location
-                    2,                // component count (vec2)
-                    gl::FLOAT,        // type
-                    gl::FALSE,        // normalized
-                    16,               // stride (4 floats * 4 bytes)
-                    std::ptr::null(), // offset 0
-                );
-
-                // TexCoord attribute (location 1)
-                gl::EnableVertexAttribArray(1);
-                gl::VertexAttribPointer(
-                    1,                            // location
-                    2,                            // component count (vec2)
-                    gl::FLOAT,                    // type
-                    gl::FALSE,                    // normalized
-                    16,                           // stride
-                    8 as *const std::ffi::c_void, // offset 8 bytes (after position)
-                );
-            }
+            configure_immediate_vertex_layout();
 
             // Create index buffer (two triangles)
             let indices: [u32; 6] = [0, 1, 2, 2, 3, 0];

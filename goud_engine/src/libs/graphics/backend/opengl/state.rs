@@ -20,6 +20,10 @@ impl RenderBackend for OpenGLBackend {
     fn info(&self) -> &BackendInfo {
         &self.info
     }
+
+    fn bind_default_vertex_array(&mut self) {
+        self.bind_default_vao();
+    }
 }
 
 // ============================================================================

@@ -43,7 +43,7 @@
 
   <script type="module">
     import { GoudGame, UiManager } from 'goudengine/web';
-    import { DisabledNetworkState, SandboxApp, loadSandboxAssets } from '../dist/sandbox.js';
+    import { DisabledNetworkState, SandboxApp, loadSandboxManifest } from '../dist/sandbox.js';
 
     window.__goudSandboxSmoke = {
       status: 'booting',
@@ -60,6 +60,8 @@
     try {
       const canvas = document.getElementById('c');
       const hint = document.getElementById('hint');
+      const config = await loadSandboxManifest('web');
+      hint.textContent = config.capabilityGates.webNetworking;
       const game = await GoudGame.create({
         width: 1280,
         height: 720,
@@ -76,8 +78,7 @@
       ui.setLabelText(title, 'Sandbox Widgets');
       ui.setButtonEnabled(button, false);
 
-      const assets = await loadSandboxAssets('web');
-      const app = await SandboxApp.create(game, ui, 'web', assets, new DisabledNetworkState(), {
+      const app = await SandboxApp.create(game, ui, 'web', config, new DisabledNetworkState(config.capabilityGates.webNetworking), {
         maxRuntimeSec: smokeSeconds(),
       });
 
@@ -93,7 +94,7 @@
         if (app.shouldQuit()) {
           window.__goudSandboxSmoke.status = 'passed';
           window.__goudSandboxSmoke.detail = 'smoke complete';
-          hint.textContent = 'Sandbox web smoke completed. Networking remains capability-gated in browser mode.';
+          hint.textContent = config.capabilityGates.webNetworking;
           game.close();
         }
       });
@@ -101,9 +102,10 @@
       const hint = document.getElementById('hint');
       const detail = error instanceof Error ? error.message : String(error);
       if (detail.includes('Rendering not initialized')) {
+        const config = await loadSandboxManifest('web');
         window.__goudSandboxSmoke.status = 'passed';
         window.__goudSandboxSmoke.detail = `renderer capability-gated: ${detail}`;
-        hint.textContent = 'Sandbox web is running in capability-gated fallback mode because this browser/runtime did not expose a WebGPU adapter.';
+        hint.textContent = config.capabilityGates.webRenderer;
       } else {
         window.__goudSandboxSmoke.status = 'failed';
         window.__goudSandboxSmoke.detail = detail;

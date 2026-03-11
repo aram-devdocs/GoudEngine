@@ -161,6 +161,7 @@ Use the example workflow above as the portable template, and treat the checked-i
 - Serve all assets over HTTP(S).
 - Keep import-map paths stable across local and deployed environments.
 - Ship the public Sandbox web directory alongside Flappy Bird if you want a full feature tour in browser-safe mode.
+- Use [Sandbox Guide](sandbox.md) as the source of truth for the web HUD, capability-gating copy, and parity checks.
 
 ## Pre-release checklist
 

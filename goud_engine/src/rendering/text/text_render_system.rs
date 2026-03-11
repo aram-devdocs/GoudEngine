@@ -39,10 +39,11 @@ impl TextRenderSystem {
         world: &World,
         asset_server: &AssetServer,
         backend: &mut dyn RenderBackend,
+        viewport: (u32, u32),
     ) -> Result<(), String> {
         self.text_batch.begin();
         self.text_batch.draw_text(world, asset_server, backend)?;
-        self.text_batch.end(backend)?;
+        self.text_batch.end(backend, viewport)?;
         Ok(())
     }
 
@@ -52,11 +53,12 @@ impl TextRenderSystem {
         requests: &[DirectTextDrawRequest],
         asset_server: &AssetServer,
         backend: &mut dyn RenderBackend,
+        viewport: (u32, u32),
     ) -> Result<(), String> {
         self.text_batch.begin();
         self.text_batch
             .draw_text_requests(requests, asset_server, backend)?;
-        self.text_batch.end(backend)?;
+        self.text_batch.end(backend, viewport)?;
         Ok(())
     }
 

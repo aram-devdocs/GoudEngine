@@ -138,3 +138,5 @@ Use these before debugging your own browser build:
 ```
 
 If both run cleanly, your environment, asset serving, and WASM packaging path are probably fine.
+
+For the expected Sandbox HUD, networking copy, and browser-safe limitations, use [Sandbox Guide](sandbox.md).

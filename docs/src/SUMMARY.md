@@ -37,6 +37,7 @@
 # Guides
 
 - [Build Your First Game](guides/build-your-first-game.md)
+- [Sandbox Guide](guides/sandbox.md)
 - [Cross-Platform Deployment](guides/deployment.md)
 - [Web Platform Gotchas](guides/web-platform-gotchas.md)
 - [FAQ and Troubleshooting](guides/faq.md)

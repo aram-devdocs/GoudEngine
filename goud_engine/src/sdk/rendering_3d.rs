@@ -9,13 +9,32 @@
 //! This module requires the `native` feature (desktop platform with OpenGL).
 
 use super::GoudGame;
+#[cfg(feature = "native")]
+use crate::libs::graphics::backend::opengl::OpenGLBackend;
 use crate::libs::graphics::renderer3d::{
     FogConfig, GridConfig, Light, LightType, PrimitiveCreateInfo, PrimitiveType, SkyboxConfig,
+    TextureManagerTrait,
 };
 use cgmath::{Vector3, Vector4};
 
 /// Sentinel value for invalid object handles.
 const INVALID_OBJECT: u32 = u32::MAX;
+
+#[cfg(feature = "native")]
+struct BackendTextureBridge {
+    backend: *mut OpenGLBackend,
+}
+
+#[cfg(feature = "native")]
+impl TextureManagerTrait for BackendTextureBridge {
+    fn bind_texture(&self, texture_id: u32, slot: u32) {
+        // SAFETY: The bridge is created from a live mutable backend reference in
+        // `GoudGame::render()` and is used only for the duration of that call.
+        unsafe {
+            let _ = (*self.backend).bind_texture_by_index(texture_id, slot);
+        }
+    }
+}
 
 // =============================================================================
 // 3D Rendering (annotated for FFI generation)
@@ -90,7 +109,7 @@ impl GoudGame {
     pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         match &mut self.renderer_3d {
             Some(renderer) => renderer.set_object_position(id, x, y, z),
-            None => false,
+            _ => false,
         }
     }
 
@@ -98,7 +117,7 @@ impl GoudGame {
     pub fn set_object_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         match &mut self.renderer_3d {
             Some(renderer) => renderer.set_object_rotation(id, x, y, z),
-            None => false,
+            _ => false,
         }
     }
 
@@ -297,12 +316,15 @@ impl GoudGame {
 
     /// Renders all 3D objects in the scene.
     pub fn render(&mut self) -> bool {
-        match &mut self.renderer_3d {
-            Some(renderer) => {
-                renderer.render(None);
+        match (&mut self.renderer_3d, &mut self.render_backend) {
+            (Some(renderer), Some(backend)) => {
+                let texture_bridge = BackendTextureBridge {
+                    backend: backend as *mut OpenGLBackend,
+                };
+                renderer.render(Some(&texture_bridge));
                 true
             }
-            None => false,
+            _ => false,
         }
     }
 

@@ -59,6 +59,10 @@ pub trait RenderBackend:
     /// Returns information about this backend implementation.
     fn info(&self) -> &BackendInfo;
 
+    /// Rebinds the backend's default vertex array state when the underlying API
+    /// requires one for vertex attribute setup and indexed draws.
+    fn bind_default_vertex_array(&mut self) {}
+
     /// Returns the capabilities of this backend.
     fn capabilities(&self) -> &BackendCapabilities {
         &self.info().capabilities

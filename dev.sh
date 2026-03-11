@@ -46,6 +46,11 @@ pick_web_port() {
     return 1
 }
 
+csharp_example_uses_project_reference() {
+    local project_file="$SCRIPT_DIR/examples/csharp/$1/$1.csproj"
+    [ -f "$project_file" ] && rg -q "<ProjectReference " "$project_file"
+}
+
 # Parse command line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -66,7 +71,7 @@ while [[ "$#" -gt 0 ]]; do
         echo "Options:"
         echo "  --game <name>    Game to run (default: flappy_goud)"
         echo "  --sdk <type>     SDK type: csharp, python, rust, typescript (default: csharp)"
-        echo "  --local          Use local NuGet feed"
+        echo "  --local          Use local feed when needed; direct-project C# examples use a fast local path"
         echo "  --skipBuild      Skip build step"
         echo "  --next           Run version increment and rebuild"
         echo "  -h, --help       Show this help message"
@@ -86,6 +91,7 @@ while [[ "$#" -gt 0 ]]; do
         echo "  ./dev.sh --sdk typescript --game feature_lab      # TS Feature Lab desktop"
         echo "  ./dev.sh --sdk typescript --game feature_lab_web  # TS Feature Lab web"
         echo "  ./dev.sh --game sandbox                           # C# Sandbox desktop"
+        echo "  ./dev.sh --game sandbox --local                   # C# Sandbox desktop with fast local project-reference path"
         echo "  ./dev.sh --sdk python --game sandbox             # Python Sandbox desktop"
         echo "  ./dev.sh --sdk typescript --game sandbox         # TS Sandbox desktop"
         echo "  ./dev.sh --sdk typescript --game sandbox_web     # TS Sandbox web"
@@ -170,7 +176,10 @@ if [ "$SKIP_BUILD" = false ]; then
         # Ensure local NuGet feed directory exists
         mkdir -p "$HOME/nuget-local"
 
-        if [ "$LOCAL" = false ]; then
+        if [ "$LOCAL" = true ] && csharp_example_uses_project_reference "$GAME"; then
+            echo "Using fast local C# path for project-reference example: $GAME"
+            bash "$SCRIPT_DIR/build.sh" --local --core-only --host-runtime-only --skip-csharp-sdk-build
+        elif [ "$LOCAL" = false ]; then
             bash "$SCRIPT_DIR/package.sh" --prod
         else
             bash "$SCRIPT_DIR/package.sh" --local
@@ -234,10 +243,15 @@ case $SDK_TYPE in
         fi
     fi
 
-    # Optimize dotnet commands
-    "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" clean --nologo
-    "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" restore --source "$HOME/nuget-local" --source https://api.nuget.org/v3/index.json --nologo
-    "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" build --no-restore --nologo
+    # Direct-project examples do not need local package publish or feed restore churn.
+    if [ "$LOCAL" = true ] && csharp_example_uses_project_reference "$GAME"; then
+        "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" restore --nologo
+        "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" build --no-restore --nologo -p:GeneratePackageOnBuild=false
+    else
+        "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" clean --nologo
+        "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" restore --source "$HOME/nuget-local" --source https://api.nuget.org/v3/index.json --nologo
+        "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" build --no-restore --nologo
+    fi
     "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" run --no-build --nologo
     ;;
 

@@ -19,6 +19,7 @@ use super::atlas_cache::GlyphAtlasCache;
 use super::bitmap_atlas::BitmapGlyphAtlas;
 use super::glyph_atlas::UvRect;
 use super::layout::{layout_text, TextLayoutConfig};
+use super::shader;
 use super::{layout_shaped_text, shape_text, TextDirection};
 pub use crate::rendering::text::text_batch_requests::DirectTextDrawRequest;
 
@@ -302,18 +303,33 @@ impl TextBatch {
     /// # Errors
     ///
     /// Returns an error if GPU buffer creation or draw operations fail.
-    pub fn end(&mut self, backend: &mut dyn RenderBackend) -> Result<(), String> {
+    pub fn end(
+        &mut self,
+        backend: &mut dyn RenderBackend,
+        viewport: (u32, u32),
+    ) -> Result<(), String> {
         if self.batches.is_empty() {
             return Ok(());
         }
 
         self.upload_buffers(backend)?;
+        let shader = shader::ensure_shader(&mut self.shader, backend)?;
 
-        if let Some(shader) = self.shader {
-            backend
-                .bind_shader(shader)
-                .map_err(|e| format!("text shader bind failed: {e}"))?;
+        backend
+            .bind_shader(shader)
+            .map_err(|e| format!("text shader bind failed: {e}"))?;
+        backend.enable_blending();
+
+        if let Some(location) = backend.get_uniform_location(shader, "u_texture") {
+            backend.set_uniform_int(location, 0);
         }
+        if let Some(location) = backend.get_uniform_location(shader, "u_viewport") {
+            backend.set_uniform_vec2(location, viewport.0.max(1) as f32, viewport.1.max(1) as f32);
+        }
+
+        // Keep the caller's current VAO binding.
+        // `GoudGame::draw_text` binds the immediate VAO before entering this path,
+        // and forcing a backend default VAO here can invalidate per-VAO element/index state.
 
         if let Some(vbo) = self.vertex_buffer {
             backend
@@ -326,6 +342,33 @@ impl TextBatch {
             backend
                 .bind_buffer(ibo)
                 .map_err(|e| format!("text IBO bind failed: {e}"))?;
+        }
+
+        #[cfg(feature = "native")]
+        {
+            let mut bound_vao = 0i32;
+            let mut bound_vbo = 0i32;
+            let mut bound_ibo = 0i32;
+            let mut bound_program = 0i32;
+            // SAFETY: These OpenGL state queries are read-only and valid with an active context.
+            unsafe {
+                gl::GetIntegerv(gl::VERTEX_ARRAY_BINDING, &mut bound_vao);
+                gl::GetIntegerv(gl::ARRAY_BUFFER_BINDING, &mut bound_vbo);
+                gl::GetIntegerv(gl::ELEMENT_ARRAY_BUFFER_BINDING, &mut bound_ibo);
+                gl::GetIntegerv(gl::CURRENT_PROGRAM, &mut bound_program);
+            }
+            if bound_vao == 0 || bound_vbo == 0 || bound_ibo == 0 {
+                return Err(format!(
+                    "text draw state incomplete: vao={bound_vao} vbo={bound_vbo} ibo={bound_ibo}"
+                ));
+            }
+            // SAFETY: Querying object validity is safe with an active context.
+            let vao_valid = unsafe { gl::IsVertexArray(bound_vao as u32) == gl::TRUE };
+            if !vao_valid || bound_program == 0 {
+                return Err(format!(
+                    "text draw state invalid: vao={bound_vao} vao_valid={vao_valid} program={bound_program}"
+                ));
+            }
         }
 
         // Collect draw data to avoid borrow conflict with backend.
@@ -344,7 +387,7 @@ impl TextBatch {
                 .draw_indexed(
                     PrimitiveTopology::Triangles,
                     index_count,
-                    index_start as usize,
+                    (index_start as usize) * std::mem::size_of::<u32>(),
                 )
                 .map_err(|e| format!("text draw_indexed failed: {e}"))?;
         }

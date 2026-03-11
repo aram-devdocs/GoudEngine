@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
+using System.Text;
 using GoudEngine;
 
 internal static class Program
@@ -19,8 +21,14 @@ internal static class Program
         private float _heartbeatTimer;
 
         public string Role { get; private set; } = "offline";
+        public string Label { get; private set; } = "solo";
         public int PeerCount { get; private set; }
         public string Detail { get; private set; } = "No network provider";
+        public bool HasRemoteState { get; private set; }
+        public float RemoteX { get; private set; }
+        public float RemoteY { get; private set; }
+        public string RemoteMode { get; private set; } = "2D";
+        public string RemoteLabel { get; private set; } = "waiting";
 
         public NetworkState(ushort port)
         {
@@ -28,6 +36,7 @@ internal static class Program
             {
                 _endpoint = new NetworkManager(_context).Host(NetworkProtocol.Tcp, port);
                 Role = "host";
+                Label = "waiting";
                 Detail = $"Hosting localhost:{port}";
             }
             catch
@@ -36,6 +45,7 @@ internal static class Program
                 {
                     _endpoint = new NetworkManager(_context).Connect(NetworkProtocol.Tcp, "127.0.0.1", port);
                     Role = "client";
+                    Label = "connected";
                     Detail = $"Connected to localhost:{port}";
                 }
                 catch (Exception ex)
@@ -45,7 +55,7 @@ internal static class Program
             }
         }
 
-        public void Update(float dt)
+        public void Update(float dt, float playerX, float playerY, string mode, string packetVersion)
         {
             if (_endpoint is null)
             {
@@ -54,11 +64,19 @@ internal static class Program
 
             _endpoint.Poll();
             PeerCount = _endpoint.PeerCount();
+            Label = Role switch
+            {
+                "host" when PeerCount <= 0 => "waiting",
+                "host" => "connected",
+                "client" => "connected",
+                _ => "solo",
+            };
             var packet = _endpoint.Receive();
             if (packet.HasValue)
             {
                 _knownPeerId = packet.Value.PeerId;
-                Detail = $"Received {packet.Value.Data.Length} bytes from peer {packet.Value.PeerId}";
+                ParseRemoteState(packet.Value.Data);
+                Detail = $"Peer {packet.Value.PeerId} synced in {RemoteMode} ({RemoteLabel})";
             }
 
             _heartbeatTimer += dt;
@@ -68,7 +86,12 @@ internal static class Program
             }
 
             _heartbeatTimer = 0f;
-            var payload = System.Text.Encoding.UTF8.GetBytes($"sandbox:{Role}:{PeerCount}");
+            var payload = Encoding.UTF8.GetBytes(
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"sandbox|{packetVersion}|{Role}|{mode}|{playerX:0.0}|{playerY:0.0}|{Label}"
+                )
+            );
             try
             {
                 if (_endpoint.DefaultPeerId.HasValue)
@@ -86,6 +109,25 @@ internal static class Program
             }
         }
 
+        private void ParseRemoteState(byte[] payload)
+        {
+            var parts = Encoding.UTF8.GetString(payload).Split('|', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length != 7 || parts[0] != "sandbox" || parts[1] != "v1")
+            {
+                return;
+            }
+
+            if (float.TryParse(parts[4], NumberStyles.Float, CultureInfo.InvariantCulture, out var x) &&
+                float.TryParse(parts[5], NumberStyles.Float, CultureInfo.InvariantCulture, out var y))
+            {
+                HasRemoteState = true;
+                RemoteX = x;
+                RemoteY = y;
+                RemoteMode = parts[3];
+                RemoteLabel = parts[6];
+            }
+        }
+
         public void Dispose()
         {
             try
@@ -100,13 +142,21 @@ internal static class Program
     }
 
     private readonly record struct SandboxAssets(
+        string Title,
+        string OverviewTitle,
+        string StatusTitle,
+        string NextStepsTitle,
         string Background,
         string Sprite,
         string AccentSprite,
         string Texture3D,
         string Font,
         byte[] Audio,
-        ushort Port
+        ushort Port,
+        string PacketVersion,
+        string Tagline,
+        string[] Overview,
+        string[] NextSteps
     );
 
     private static void Main()
@@ -114,7 +164,7 @@ internal static class Program
         var repoRoot = FindRepoRoot(AppContext.BaseDirectory);
         var assets = LoadAssets(repoRoot);
 
-        using var game = new GoudGame(WindowWidth, WindowHeight, "GoudEngine Sandbox - C#");
+        using var game = new GoudGame(WindowWidth, WindowHeight, $"{assets.Title} - C#");
         using var sceneContext = new GoudContext();
         using var network = new NetworkState(assets.Port);
         using var ui = BuildUi();
@@ -122,6 +172,7 @@ internal static class Program
         var scene2D = sceneContext.SceneCreate("sandbox-2d");
         var scene3D = sceneContext.SceneCreate("sandbox-3d");
         var sceneHybrid = sceneContext.SceneCreate("sandbox-hybrid");
+        _ = sceneContext.SceneSetCurrent(scene2D);
 
         var background = (ulong)game.LoadTexture(assets.Background);
         var sprite = (ulong)game.LoadTexture(assets.Sprite);
@@ -135,7 +186,7 @@ internal static class Program
         game.SetObjectPosition(plane, 0f, -1f, 0f);
         game.ConfigureGrid(true, 12f, 12);
 
-        var modeIndex = 0;
+        var modeIndex = ParseStartMode();
         var modes = new[] { "2D", "3D", "Hybrid" };
         var playerX = 250f;
         var playerY = 300f;
@@ -190,64 +241,116 @@ internal static class Program
             }
 
             var currentMode = modes[modeIndex];
-            _ = currentMode switch
-            {
-                "2D" => sceneContext.SceneSetCurrent(scene2D),
-                "3D" => sceneContext.SceneSetCurrent(scene3D),
-                _ => sceneContext.SceneSetCurrent(sceneHybrid),
-            };
 
-            network.Update(dt);
+            network.Update(dt, playerX, playerY, currentMode, assets.PacketVersion);
             var mouse = game.GetMousePosition();
 
             game.BeginFrame(0.07f, 0.10f, 0.14f, 1f);
-            game.DrawSprite(background, WindowWidth / 2f, WindowHeight / 2f, WindowWidth, WindowHeight);
-            game.DrawQuad(210f, 110f, 320f, 110f, new Color(0.05f, 0.08f, 0.12f, 0.88f));
-            game.DrawQuad(620f, 110f, 560f, 110f, new Color(0.08f, 0.12f, 0.18f, 0.88f));
-            game.DrawQuad(620f, 630f, 560f, 120f, new Color(0.05f, 0.08f, 0.12f, 0.90f));
-            game.DrawQuad(mouse.X, mouse.Y, 14f, 14f, new Color(0.95f, 0.85f, 0.20f, 0.95f));
-
-            if (currentMode is "2D" or "Hybrid")
-            {
-                game.DrawQuad(920f, 260f, 180f, 40f, new Color(0.20f, 0.55f, 0.95f, 0.80f));
-                game.DrawSprite(sprite, playerX, playerY, 64f, 64f, angle * 0.25f);
-                game.DrawSprite(accentSprite, 1040f, 420f, 72f, 240f);
-            }
 
             if (currentMode is "3D" or "Hybrid")
             {
-                game.SetCameraPosition3D(0f, 3f, -9.5f);
-                game.SetCameraRotation3D(-10f, angle * 20f, 0f);
-                game.SetObjectPosition(cube, 0f, 1f + 0.35f * MathF.Sin(angle * 2f), 0f);
-                game.SetObjectRotation(cube, 0f, angle * 55f, 0f);
+                game.EnableDepthTest();
+                game.SetCameraPosition3D(0f, 2.1f, currentMode == "3D" ? -7.4f : -8.2f);
+                game.SetCameraRotation3D(-8f, angle * 14f, 0f);
+                game.SetObjectPosition(cube, 0.8f, 1.15f + 0.28f * MathF.Sin(angle * 2f), 2.2f);
+                game.SetObjectRotation(cube, 18f, angle * 42f, 0f);
+                game.SetObjectPosition(plane, 0f, -1.2f, 2.5f);
                 game.Render3D();
+                game.DisableDepthTest();
             }
+
+            if (currentMode == "2D")
+            {
+                game.DrawSprite(background, WindowWidth / 2f, WindowHeight / 2f, WindowWidth, WindowHeight);
+                game.DrawSprite(sprite, playerX, playerY, 64f, 64f, angle * 0.25f);
+                game.DrawSprite(accentSprite, 1040f, 420f, 72f, 240f);
+                game.DrawQuad(920f, 260f, 180f, 40f, new Color(0.20f, 0.55f, 0.95f, 0.80f));
+            }
+
+            if (currentMode == "Hybrid")
+            {
+                game.DrawSprite(background, WindowWidth / 2f, WindowHeight / 2f, WindowWidth, WindowHeight, 0f, new Color(1f, 1f, 1f, 0.42f));
+                game.DrawQuad(640f, 360f, 1280f, 720f, new Color(0.09f, 0.18f, 0.26f, 0.16f));
+                game.DrawQuad(640f, 654f, 1280f, 132f, new Color(0.03f, 0.10f, 0.12f, 0.26f));
+                game.DrawSprite(sprite, playerX, playerY, 72f, 72f, angle * 0.25f);
+                game.DrawSprite(accentSprite, 1044f, 420f, 78f, 250f);
+                game.DrawQuad(920f, 260f, 180f, 40f, new Color(0.20f, 0.55f, 0.95f, 0.62f));
+            }
+
+            if (currentMode is "2D" or "Hybrid" && network.HasRemoteState)
+            {
+                game.DrawQuad(network.RemoteX, network.RemoteY - 50f, 84f, 18f, new Color(0.96f, 0.70f, 0.20f, 0.92f));
+                game.DrawText(font, $"Peer {network.RemoteMode}", network.RemoteX - 32f, network.RemoteY - 56f, 13f, TextAlignment.Left, 0f, 1f, TextDirection.Auto, new Color(0.04f, 0.05f, 0.08f, 1f));
+                game.DrawSprite(sprite, network.RemoteX, network.RemoteY, 52f, 52f, -angle * 0.18f);
+            }
+
+            game.DrawQuad(332f, 192f, 620f, 318f, new Color(0.05f, 0.08f, 0.12f, 0.88f));
+            game.DrawQuad(1006f, 192f, 520f, 318f, new Color(0.08f, 0.12f, 0.18f, 0.88f));
+            game.DrawQuad(640f, 620f, 1168f, 182f, new Color(0.05f, 0.08f, 0.12f, 0.92f));
+            game.DrawQuad(980f, 312f, 220f, 42f, new Color(0.20f, 0.55f, 0.95f, 0.84f));
+            game.DrawQuad(mouse.X, mouse.Y, 12f, 12f, new Color(0.95f, 0.85f, 0.20f, 0.95f));
 
             var caps = game.GetRenderCapabilities();
             var physics = game.GetPhysicsCapabilities();
             var audio = game.GetAudioCapabilities();
             var networkCaps = TryGetNetworkCaps(game);
-            var lines = new[]
+            var overviewLines = new List<(string Text, float Size, Color Color)>();
+            AppendWrappedLimited(overviewLines, assets.OverviewTitle, 40f, 30, new Color(1f, 1f, 1f, 1f), 1);
+            AppendWrappedLimited(overviewLines, assets.Tagline, 24f, 34, new Color(1f, 1f, 1f, 1f), 3);
+            for (var i = 0; i < assets.Overview.Length && i < 3; i++)
             {
-                "GoudEngine Sandbox",
-                $"Mode: {currentMode}  (1/2/3 to switch)",
-                "Movement: WASD / Arrows",
-                "Audio: SPACE",
-                $"Mouse marker: ({mouse.X:0}, {mouse.Y:0})",
-                $"Render caps: tex={caps.MaxTextureSize} instancing={caps.SupportsInstancing}",
-                $"Physics caps: joints={physics.SupportsJoints} maxBodies={physics.MaxBodies}",
-                $"Audio caps: spatial={audio.SupportsSpatial} channels={audio.MaxChannels}",
-                $"Scene count: {sceneContext.SceneCount()} current={sceneContext.SceneGetCurrent()}",
-                $"UI nodes: {ui.NodeCount()}",
-                $"Network role: {network.Role} peers={network.PeerCount}",
-                $"Network detail: {network.Detail}",
-                $"Network caps: {(networkCaps?.MaxConnections.ToString() ?? "unsupported")}",
+                AppendWrappedLimited(overviewLines, assets.Overview[i], 19f, 36, new Color(0.94f, 0.97f, 1f, 1f), 12);
+            }
+
+            var statusLines = new List<(string Text, float Size, Color Color)>
+            {
+                (assets.StatusTitle, 30f, new Color(0.95f, 0.90f, 0.40f, 1f)),
+                ($"Mode {currentMode}  (1/2/3)", 19f, new Color(0.94f, 0.97f, 1f, 1f)),
+                ($"Mouse {mouse.X:0}, {mouse.Y:0}", 19f, new Color(0.94f, 0.97f, 1f, 1f)),
+                ($"Render tex={caps.MaxTextureSize} inst={caps.SupportsInstancing}", 19f, new Color(0.94f, 0.97f, 1f, 1f)),
+                ($"Physics max={physics.MaxBodies}  audio ch={audio.MaxChannels}", 19f, new Color(0.94f, 0.97f, 1f, 1f)),
+                ($"Net {network.Role}/{network.Label} peers={network.PeerCount} cap={(networkCaps?.MaxConnections.ToString() ?? "n/a")}", 19f, new Color(0.94f, 0.97f, 1f, 1f)),
             };
 
-            for (var i = 0; i < lines.Length; i++)
+            var nextStepLines = new List<(string Text, float Size, Color Color)>();
+            AppendWrappedLimited(nextStepLines, assets.NextStepsTitle, 32f, 30, new Color(0.95f, 0.90f, 0.40f, 1f), 1);
+            for (var i = 0; i < assets.NextSteps.Length && i < 3; i++)
             {
-                game.DrawText(font, lines[i], 40f, 40f + i * 22f, 18f, TextAlignment.Left, 0f, 1f, TextDirection.Auto, new Color(1f, 1f, 1f, 1f));
+                AppendWrappedLimited(nextStepLines, assets.NextSteps[i], 19f, 64, new Color(0.94f, 0.97f, 1f, 1f), 7);
             }
+            AppendWrappedLimited(nextStepLines, $"Audio: {(audioActivated ? "active" : "press SPACE to activate")}", 19f, 64, new Color(0.94f, 0.97f, 1f, 1f), 8);
+            AppendWrappedLimited(
+                nextStepLines,
+                network.HasRemoteState
+                    ? $"Peer sprite live at ({network.RemoteX:0}, {network.RemoteY:0})"
+                    : $"Networking: {network.Detail}",
+                19f,
+                64,
+                new Color(0.94f, 0.97f, 1f, 1f),
+                9
+            );
+
+            var overviewY = 52f;
+            foreach (var line in overviewLines)
+            {
+                game.DrawText(font, line.Text, 60f, overviewY, line.Size, TextAlignment.Left, 0f, 1.12f, TextDirection.Auto, line.Color);
+                overviewY += line.Size >= 38f ? 44f : (line.Size >= 24f ? 30f : 24f);
+            }
+
+            var statusY = 52f;
+            foreach (var line in statusLines)
+            {
+                game.DrawText(font, line.Text, 768f, statusY, line.Size, TextAlignment.Left, 0f, 1.12f, TextDirection.Auto, line.Color);
+                statusY += line.Size >= 30f ? 38f : 27f;
+            }
+
+            var nextY = 526f;
+            foreach (var line in nextStepLines)
+            {
+                game.DrawText(font, line.Text, 94f, nextY, line.Size, TextAlignment.Left, 0f, 1.12f, TextDirection.Auto, line.Color);
+                nextY += line.Size >= 32f ? 38f : 25f;
+            }
+            game.DrawText(font, $"{currentMode} scene", 900f, 320f, 20f, TextAlignment.Left, 190f, 1.1f, TextDirection.Auto, new Color(1f, 1f, 1f, 1f));
 
             ui.Update();
             ui.Render();
@@ -272,19 +375,134 @@ internal static class Program
             : 0f;
     }
 
+    private static int ParseStartMode()
+    {
+        var raw = Environment.GetEnvironmentVariable("GOUD_SANDBOX_START_MODE");
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return 0;
+        }
+
+        if (int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var numeric))
+        {
+            return numeric switch
+            {
+                1 => 0,
+                2 => 1,
+                3 => 2,
+                _ => 0,
+            };
+        }
+
+        return raw.Trim().ToLowerInvariant() switch
+        {
+            "2d" => 0,
+            "3d" => 1,
+            "hybrid" => 2,
+            _ => 0,
+        };
+    }
+
     private static SandboxAssets LoadAssets(string repoRoot)
     {
         using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(repoRoot, "examples", "shared", "sandbox", "manifest.json")));
-        var assets = doc.RootElement.GetProperty("assets");
+        var root = doc.RootElement;
+        var assets = root.GetProperty("assets");
+        var hud = root.GetProperty("hud");
         return new SandboxAssets(
+            root.GetProperty("title").GetString() ?? "GoudEngine Sandbox",
+            hud.GetProperty("overview_title").GetString() ?? "Overview",
+            hud.GetProperty("status_title").GetString() ?? "Live status",
+            hud.GetProperty("next_steps_title").GetString() ?? "Try this next",
             Path.Combine(repoRoot, assets.GetProperty("background").GetString()!),
             Path.Combine(repoRoot, assets.GetProperty("sprite").GetString()!),
             Path.Combine(repoRoot, assets.GetProperty("accent_sprite").GetString()!),
             Path.Combine(repoRoot, assets.GetProperty("texture3d").GetString()!),
             Path.Combine(repoRoot, assets.GetProperty("font").GetString()!),
             File.ReadAllBytes(Path.Combine(repoRoot, assets.GetProperty("audio").GetString()!)),
-            checked((ushort)doc.RootElement.GetProperty("network_port").GetInt32())
+            checked((ushort)root.GetProperty("network_port").GetInt32()),
+            root.TryGetProperty("network", out var network) && network.TryGetProperty("packet_version", out var version)
+                ? version.GetString() ?? "v1"
+                : "v1",
+            hud.GetProperty("tagline").GetString() ?? string.Empty,
+            ReadStringArray(hud.GetProperty("overview")),
+            ReadStringArray(hud.GetProperty("next_steps"))
         );
+    }
+
+    private static void AppendWrapped(
+        List<(string Text, float Size, Color Color)> output,
+        string text,
+        float size,
+        int maxChars,
+        Color color
+    )
+    {
+        foreach (var line in WrapForHud(text, maxChars))
+        {
+            output.Add((line, size, color));
+        }
+    }
+
+    private static void AppendWrappedLimited(
+        List<(string Text, float Size, Color Color)> output,
+        string text,
+        float size,
+        int maxChars,
+        Color color,
+        int maxLines
+    )
+    {
+        foreach (var line in WrapForHud(text, maxChars))
+        {
+            if (output.Count >= maxLines)
+            {
+                break;
+            }
+            output.Add((line, size, color));
+        }
+    }
+
+    private static IEnumerable<string> WrapForHud(string text, int maxChars)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            yield break;
+        }
+
+        var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var line = new StringBuilder();
+        foreach (var word in words)
+        {
+            var candidateLength = line.Length == 0 ? word.Length : line.Length + 1 + word.Length;
+            if (candidateLength > maxChars && line.Length > 0)
+            {
+                yield return line.ToString();
+                line.Clear();
+            }
+
+            if (line.Length > 0)
+            {
+                line.Append(' ');
+            }
+            line.Append(word);
+        }
+
+        if (line.Length > 0)
+        {
+            yield return line.ToString();
+        }
+    }
+
+    private static string[] ReadStringArray(JsonElement array)
+    {
+        var items = new string[array.GetArrayLength()];
+        var index = 0;
+        foreach (var item in array.EnumerateArray())
+        {
+            items[index++] = item.GetString() ?? string.Empty;
+        }
+        return items;
     }
 
     private static string FindRepoRoot(string startDirectory)

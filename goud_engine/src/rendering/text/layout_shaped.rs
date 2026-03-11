@@ -194,7 +194,9 @@ fn shape_line_auto(face: &Face<'_>, line: &str, scale: f32) -> Vec<ShapedGlyph> 
         let (levels, runs) = bidi_info.visual_runs(paragraph, paragraph.range.clone());
         for run in runs {
             let run_start = run.start;
-            let run_text = &line[run];
+            let Some(run_text) = line.get(run.clone()) else {
+                continue;
+            };
             let is_rtl = levels
                 .get(run_start)
                 .map(|level| level.is_rtl())
@@ -291,6 +293,15 @@ fn wrap_line(glyphs: Vec<PlacedGlyph>, max_width: f32) -> Vec<Vec<PlacedGlyph>> 
 
         if cursor_x > max_width && !current.is_empty() {
             if let Some((break_idx, break_x)) = last_break {
+                if break_idx >= current.len() {
+                    // The wrap-triggering glyph is itself a whitespace break that has not
+                    // been pushed into `current` yet. Drop that trailing break and wrap the
+                    // existing line instead of splitting past the end.
+                    wrapped.push(trim_trailing_whitespace(std::mem::take(&mut current)));
+                    cursor_x = 0.0;
+                    last_break = None;
+                    continue;
+                }
                 let break_advance = current
                     .get(break_idx)
                     .map(|g: &PlacedGlyph| g.advance)
@@ -413,5 +424,27 @@ mod tests {
         let rtl_ids: Vec<u16> = auto.lines[0].glyphs.iter().map(|g| g.glyph_id).collect();
         let ltr_ids: Vec<u16> = ltr.lines[0].glyphs.iter().map(|g| g.glyph_id).collect();
         assert_ne!(rtl_ids, ltr_ids);
+    }
+
+    #[test]
+    fn wrapping_whitespace_break_at_overflow_does_not_panic() {
+        let bytes = include_bytes!("../../../test_assets/fonts/test_font.ttf");
+        let font = parse_font(bytes);
+        let mut atlas = GlyphAtlas::generate(&font, 16.0).expect("atlas generation");
+        let text =
+            "One shared sandbox: same assets, same controls, same feature probes in every SDK.";
+        let shaped = shape_text(text, bytes, 16.0, TextDirection::Auto).expect("shape");
+        atlas
+            .ensure_glyph_indices(&font, shaped.glyph_indices())
+            .expect("ensure glyphs");
+
+        let config = TextLayoutConfig {
+            max_width: Some(430.0),
+            ..TextLayoutConfig::default()
+        };
+
+        let layout = layout_shaped_text(&shaped, &atlas, 16.0, &config);
+        assert!(layout.line_count > 1);
+        assert!(!layout.glyphs.is_empty());
     }
 }

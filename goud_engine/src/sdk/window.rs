@@ -194,12 +194,12 @@ impl GoudGame {
 
     /// Clears the window with the specified color.
     ///
-    /// Sets the clear color and clears the color buffer using the
+    /// Sets the clear color and clears both color and depth buffers using the
     /// render backend.
     pub fn clear(&mut self, r: f32, g: f32, b: f32, a: f32) {
         if let Some(backend) = &mut self.render_backend {
             backend.set_clear_color(r, g, b, a);
-            backend.clear_color();
+            backend.clear();
         }
     }
 

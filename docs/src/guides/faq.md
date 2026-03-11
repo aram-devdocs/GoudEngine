@@ -309,6 +309,7 @@ Use this order:
 Reference:
 
 - `examples/README.md`
+- [Sandbox Guide](sandbox.md)
 - [Example Showcase](showcase.md)
 
 ### [Tutorial] Need the final code for Build Your First Game

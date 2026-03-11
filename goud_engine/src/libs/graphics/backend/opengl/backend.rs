@@ -1,7 +1,8 @@
 //! OpenGL backend struct definition, constructor, and cleanup.
 
 use super::{
-    super::BackendCapabilities, super::BackendInfo, BufferMetadata, ShaderMetadata, TextureMetadata,
+    super::BackendCapabilities, super::BackendInfo, gl_check_debug, BufferMetadata, ShaderMetadata,
+    TextureMetadata,
 };
 use crate::core::handle::HandleAllocator;
 use crate::libs::error::{GoudError, GoudResult};
@@ -168,6 +169,27 @@ impl OpenGLBackend {
             bound_shader: None,
             default_vao,
         })
+    }
+
+    /// Binds a tracked texture by handle index when legacy callers only retain
+    /// the index portion of the engine texture handle.
+    pub(crate) fn bind_texture_by_index(&mut self, index: u32, unit: u32) -> GoudResult<()> {
+        let handle = self
+            .textures
+            .keys()
+            .copied()
+            .find(|handle| handle.index() == index)
+            .ok_or(GoudError::InvalidHandle)?;
+        super::texture_ops::bind_texture(self, handle, unit)
+    }
+
+    pub(crate) fn bind_default_vao(&mut self) {
+        // SAFETY: `default_vao` is created during backend initialization and
+        // remains valid until this backend is dropped.
+        unsafe {
+            gl::BindVertexArray(self.default_vao);
+        }
+        gl_check_debug!("bind_default_vao");
     }
 }
 

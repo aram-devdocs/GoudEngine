@@ -36,7 +36,7 @@ Related docs:
 ## Notes
 
 - Flappy Bird is the parity baseline across C#, Python, TypeScript, and Rust.
-- Sandbox is the flagship parity app across all supported SDK targets.
+- Sandbox is the shared parity target on this branch while the remaining recovery rows are closed.
 - Feature Lab remains as supplemental smoke coverage.
 
 ## Regeneration

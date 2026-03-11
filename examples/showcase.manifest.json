@@ -70,8 +70,8 @@
     },
     {
       "id": "sandbox-parity",
-      "title": "Sandbox parity app",
-      "description": "Sandbox is the flagship cross-language example for exploring the broader Alpha-001 feature surface.",
+      "title": "Sandbox parity target",
+      "description": "Sandbox is the shared cross-language app for the broader Alpha-001 feature surface. This branch is still closing the remaining recovery rows, so treat the execution CSV as the live truth source.",
       "entries": [
         {
           "name": "Sandbox",
@@ -79,7 +79,7 @@
           "target": "Desktop",
           "path": "examples/csharp/sandbox",
           "run": "./dev.sh --game sandbox",
-          "description": "Interactive parity sandbox for 2D, 3D, diagnostics, UI, and localhost networking.",
+          "description": "Manifest-driven desktop sandbox with the shared HUD and localhost peer contract. Current branch truth still tracks the remaining scene-flow recovery rows in the execution CSV.",
           "media": {
             "path": "docs/src/generated/showcase/sandbox-csharp-desktop.png",
             "alt": "Sandbox C# desktop preview"
@@ -91,7 +91,7 @@
           "target": "Desktop",
           "path": "examples/python/sandbox.py",
           "run": "./dev.sh --sdk python --game sandbox",
-          "description": "Interactive parity sandbox for the generated Python SDK.",
+          "description": "Manifest-driven Python sandbox following the shared asset pack, three-panel HUD, and peer packet contract on this branch.",
           "media": {
             "path": "docs/src/generated/showcase/sandbox-python-desktop.png",
             "alt": "Sandbox Python desktop preview"
@@ -103,7 +103,7 @@
           "target": "Desktop",
           "path": "examples/typescript/sandbox/desktop.ts",
           "run": "./dev.sh --sdk typescript --game sandbox",
-          "description": "Interactive parity sandbox for the desktop TypeScript runtime.",
+          "description": "Manifest-driven TypeScript desktop sandbox following the shared HUD and peer packet contract on this branch.",
           "media": {
             "path": "docs/src/generated/showcase/sandbox-typescript-desktop.png",
             "alt": "Sandbox TypeScript desktop preview"
@@ -115,7 +115,7 @@
           "target": "Web",
           "path": "examples/typescript/sandbox/web",
           "run": "./dev.sh --sdk typescript --game sandbox_web",
-          "description": "Browser/WASM sandbox with the same layout and explicit capability gating.",
+          "description": "Browser/WASM sandbox with the same HUD structure and explicit capability-gated networking and renderer copy.",
           "media": {
             "path": "docs/src/generated/showcase/sandbox-typescript-web.png",
             "alt": "Sandbox TypeScript web preview"
@@ -127,7 +127,7 @@
           "target": "Desktop",
           "path": "examples/rust/sandbox",
           "run": "cargo run -p sandbox",
-          "description": "Interactive Rust sandbox using the shared sandbox asset pack.",
+          "description": "Manifest-driven Rust sandbox using the shared asset pack and `GoudGame::draw_text(...)` for the branch's recovered native HUD path.",
           "media": {
             "path": "docs/src/generated/showcase/sandbox-rust-desktop.png",
             "alt": "Sandbox Rust desktop preview"

@@ -5,24 +5,58 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_MODE="debug"
 TARGET_DIR="target/debug"
 CARGO_MODE_ARGS=()
+BUILD_SCOPE="workspace"
+HOST_RUNTIME_ONLY=false
+SKIP_CSHARP_SDK_BUILD=false
 
-if [[ "$1" == "--release" || "$1" == "--prod" ]]; then
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+        --release|--prod)
+            BUILD_MODE="release"
+            TARGET_DIR="target/release"
+            CARGO_MODE_ARGS=(--release)
+            ;;
+        --local)
+            BUILD_MODE="debug"
+            TARGET_DIR="target/debug"
+            CARGO_MODE_ARGS=()
+            ;;
+        --core-only)
+            BUILD_SCOPE="core"
+            ;;
+        --host-runtime-only)
+            HOST_RUNTIME_ONLY=true
+            ;;
+        --skip-csharp-sdk-build)
+            SKIP_CSHARP_SDK_BUILD=true
+            ;;
+        *)
+            echo "Unknown parameter: $1"
+            echo "Usage: ./build.sh [--release|--prod|--local] [--core-only] [--host-runtime-only] [--skip-csharp-sdk-build]"
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+if [[ "$BUILD_MODE" == "release" ]]; then
     echo "Building the project in release mode..."
-    cargo build --release --workspace
-    BUILD_MODE="release"
-    TARGET_DIR="target/release"
-    CARGO_MODE_ARGS=(--release)
+    if [[ "$BUILD_SCOPE" == "core" ]]; then
+        cargo build --release -p goud-engine-core
+    else
+        cargo build --release --workspace
+    fi
 
     # Package assets into a single archive for distribution.
     # Games can also call goud_engine::assets::packager::package_directory() directly.
-    if [ -d "assets" ]; then
+    if [ -d "assets" ] && [[ "$BUILD_SCOPE" != "core" ]]; then
         echo "Packaging assets..."
         cargo run --release --example package_assets 2>/dev/null || echo "Note: Asset packager example not found, skipping asset bundling"
     fi
-elif [[ "$1" == "--local" ]]; then
-    echo "Building the project in local mode..."
-    cargo build --workspace
-else
+elif [[ "$BUILD_SCOPE" == "core" ]]; then
+    echo "Building the project in local core-only mode..."
+    cargo build -p goud-engine-core
+elif [[ "$BUILD_MODE" == "debug" ]]; then
     echo "Building the project in debug mode..."
     cargo build --workspace
 fi
@@ -44,10 +78,10 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
       SECONDARY_TARGET="aarch64-apple-darwin"
     fi
 
-    if [ -n "$SECONDARY_TARGET" ] && rustup target list --installed | grep -qx "$SECONDARY_TARGET"; then
+    if [ "$HOST_RUNTIME_ONLY" = false ] && [ -n "$SECONDARY_TARGET" ] && rustup target list --installed | grep -qx "$SECONDARY_TARGET"; then
       echo "Building secondary macOS target for C# runtime packaging: $SECONDARY_TARGET"
       cargo build "${CARGO_MODE_ARGS[@]}" -p goud-engine-core --target "$SECONDARY_TARGET"
-    elif [ -n "$SECONDARY_TARGET" ]; then
+    elif [ "$HOST_RUNTIME_ONLY" = false ] && [ -n "$SECONDARY_TARGET" ]; then
       echo "  warning: Rust target '$SECONDARY_TARGET' is not installed; only the host macOS runtime will be refreshed."
     fi
 
@@ -64,7 +98,13 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     }
 
     COPIED=0
-    if [ "$HOST_ARCH" = "x86_64" ]; then
+    if [ "$HOST_RUNTIME_ONLY" = true ]; then
+      if [ "$HOST_ARCH" = "x86_64" ]; then
+        copy_if_exists "$TARGET_DIR/libgoud_engine.dylib" "sdks/csharp/runtimes/osx-x64/native" "host-only (x86_64)" && COPIED=1 || true
+      elif [ "$HOST_ARCH" = "arm64" ]; then
+        copy_if_exists "$TARGET_DIR/libgoud_engine.dylib" "sdks/csharp/runtimes/osx-arm64/native" "host-only (arm64)" && COPIED=1 || true
+      fi
+    elif [ "$HOST_ARCH" = "x86_64" ]; then
       copy_if_exists "$TARGET_DIR/libgoud_engine.dylib" "sdks/csharp/runtimes/osx-x64/native" "host (x86_64)" && COPIED=1 || true
       copy_if_exists "$TARGET_MODE_DIR/x86_64-apple-darwin/$BUILD_MODE/libgoud_engine.dylib" "sdks/csharp/runtimes/osx-x64/native" "cross x86_64 target" && COPIED=1 || true
       copy_if_exists "$TARGET_MODE_DIR/aarch64-apple-darwin/$BUILD_MODE/libgoud_engine.dylib" "sdks/csharp/runtimes/osx-arm64/native" "cross arm64 target" && COPIED=1 || true
@@ -92,20 +132,21 @@ elif [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then
     cp "$TARGET_DIR/goud_engine.dll" sdks/csharp/runtimes/win-x64/native/ 2>/dev/null || echo "Warning: .dll not found"
 fi
 
-cd sdks/csharp
+if [ "$SKIP_CSHARP_SDK_BUILD" = false ]; then
+    cd sdks/csharp
 
-if [[ "$1" == "--release" || "$1" == "--prod" ]]; then
-    echo "Building the project in release mode..."
-    dotnet build -c Release
-elif [[ "$1" == "--local" ]]; then
-    echo "Building the project in local mode..."
-    dotnet build -c Debug
+    if [[ "$BUILD_MODE" == "release" ]]; then
+        echo "Building the project in release mode..."
+        dotnet build -c Release
+    else
+        echo "Building the project in debug mode..."
+        dotnet build -c Debug
+    fi
+
+    echo "Build complete."
 else
-    echo "Building the project in debug mode..."
-    dotnet build -c Debug
+    echo "Skipping sdks/csharp build because the caller is using a direct project-reference fast path."
 fi
-
-echo "Build complete."
 
 # Clean old .nupkg files from package output (keep only latest)
 NUPKG_DIR="$SCRIPT_DIR/sdks/nuget_package_output"

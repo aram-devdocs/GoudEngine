@@ -9,10 +9,14 @@
 //! This module requires the `native` feature (desktop platform with OpenGL).
 
 use super::GoudGame;
+use crate::assets::loaders::FontAsset;
 use crate::core::error::{GoudError, GoudResult};
+use crate::core::math::{Color, Vec2};
+use crate::core::types::TextAlignment;
 use crate::libs::graphics::backend::{
-    ClearOps, DrawOps, FrameOps, ShaderOps, StateOps, TextureOps,
+    BlendFactor, BufferOps, ClearOps, DrawOps, FrameOps, ShaderOps, StateOps, TextureOps,
 };
+use crate::rendering::text::{DirectTextDrawRequest, TextBatch};
 
 // Re-export rendering types for SDK users
 pub use crate::rendering::sprite_batch::SpriteBatchConfig;
@@ -35,10 +39,10 @@ pub use crate::libs::graphics::renderer3d::{
 pub struct ImmediateRenderState {
     /// Shader program for sprite rendering
     pub(crate) shader: crate::libs::graphics::backend::types::ShaderHandle,
-    /// Vertex buffer for quad rendering (reserved for future immediate-mode draw calls)
-    pub(crate) _vertex_buffer: crate::libs::graphics::backend::types::BufferHandle,
-    /// Index buffer for quad rendering (reserved for future immediate-mode draw calls)
-    pub(crate) _index_buffer: crate::libs::graphics::backend::types::BufferHandle,
+    /// Vertex buffer for quad rendering.
+    pub(crate) vertex_buffer: crate::libs::graphics::backend::types::BufferHandle,
+    /// Index buffer for quad rendering.
+    pub(crate) index_buffer: crate::libs::graphics::backend::types::BufferHandle,
     /// Vertex Array Object (required for macOS Core Profile)
     pub(crate) vao: u32,
     /// Cached uniform locations
@@ -49,6 +53,122 @@ pub struct ImmediateRenderState {
     pub(crate) u_texture: i32,
     pub(crate) u_uv_offset: i32,
     pub(crate) u_uv_scale: i32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct ImmediateQuadVertex {
+    position: [f32; 2],
+    tex_coords: [f32; 2],
+}
+
+// SAFETY: ImmediateQuadVertex is plain-old vertex data.
+unsafe impl bytemuck::Pod for ImmediateQuadVertex {}
+unsafe impl bytemuck::Zeroable for ImmediateQuadVertex {}
+
+pub(crate) fn create_immediate_render_state(
+    backend: &mut crate::libs::graphics::backend::opengl::OpenGLBackend,
+) -> GoudResult<ImmediateRenderState> {
+    use crate::libs::graphics::backend::types::{BufferType, BufferUsage};
+
+    let shader = backend.create_shader(SPRITE_VERTEX_SHADER, SPRITE_FRAGMENT_SHADER)?;
+
+    let u_projection = backend
+        .get_uniform_location(shader, "u_projection")
+        .unwrap_or(-1);
+    let u_model = backend
+        .get_uniform_location(shader, "u_model")
+        .unwrap_or(-1);
+    let u_color = backend
+        .get_uniform_location(shader, "u_color")
+        .unwrap_or(-1);
+    let u_use_texture = backend
+        .get_uniform_location(shader, "u_use_texture")
+        .unwrap_or(-1);
+    let u_texture = backend
+        .get_uniform_location(shader, "u_texture")
+        .unwrap_or(-1);
+    let u_uv_offset = backend
+        .get_uniform_location(shader, "u_uv_offset")
+        .unwrap_or(-1);
+    let u_uv_scale = backend
+        .get_uniform_location(shader, "u_uv_scale")
+        .unwrap_or(-1);
+
+    let mut vao = 0u32;
+    // SAFETY: An OpenGL context is current for the backend lifetime. The stack
+    // variable is valid output storage and the generated VAO is immediately bound.
+    unsafe {
+        gl::GenVertexArrays(1, &mut vao);
+        gl::BindVertexArray(vao);
+    }
+
+    let vertices: [ImmediateQuadVertex; 4] = [
+        ImmediateQuadVertex {
+            position: [-0.5, -0.5],
+            tex_coords: [0.0, 0.0],
+        },
+        ImmediateQuadVertex {
+            position: [0.5, -0.5],
+            tex_coords: [1.0, 0.0],
+        },
+        ImmediateQuadVertex {
+            position: [0.5, 0.5],
+            tex_coords: [1.0, 1.0],
+        },
+        ImmediateQuadVertex {
+            position: [-0.5, 0.5],
+            tex_coords: [0.0, 1.0],
+        },
+    ];
+    let vertex_buffer = backend.create_buffer(
+        BufferType::Vertex,
+        BufferUsage::Static,
+        bytemuck::cast_slice(&vertices),
+    )?;
+    backend.bind_buffer(vertex_buffer)?;
+
+    configure_immediate_vertex_layout();
+
+    let indices: [u32; 6] = [0, 1, 2, 2, 3, 0];
+    let index_buffer = backend.create_buffer(
+        BufferType::Index,
+        BufferUsage::Static,
+        bytemuck::cast_slice(&indices),
+    )?;
+    backend.bind_buffer(index_buffer)?;
+
+    // SAFETY: Binding VAO 0 unbinds the current vertex array in OpenGL.
+    unsafe {
+        gl::BindVertexArray(0);
+    }
+
+    Ok(ImmediateRenderState {
+        shader,
+        vertex_buffer,
+        index_buffer,
+        vao,
+        u_projection,
+        u_model,
+        u_color,
+        u_use_texture,
+        u_texture,
+        u_uv_offset,
+        u_uv_scale,
+    })
+}
+
+fn configure_immediate_vertex_layout() {
+    // SAFETY: The immediate-mode VAO and vertex buffer are already bound by the caller,
+    // and this layout matches `ImmediateQuadVertex`.
+    unsafe {
+        gl::EnableVertexAttribArray(0);
+        gl::VertexAttribPointer(0, 2, gl::FLOAT, gl::FALSE, 16, std::ptr::null());
+        gl::EnableVertexAttribArray(1);
+        gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, 16, 8 as *const std::ffi::c_void);
+        gl::DisableVertexAttribArray(2);
+        gl::VertexAttrib4f(2, 1.0, 1.0, 1.0, 1.0);
+    }
 }
 
 // =============================================================================
@@ -226,6 +346,9 @@ impl GoudGame {
     ) -> bool {
         use crate::libs::graphics::backend::types::{PrimitiveTopology, TextureHandle};
 
+        if !self.ensure_immediate_state() {
+            return false;
+        }
         let state = match &self.immediate_state {
             Some(s) => s,
             None => return false,
@@ -246,17 +369,27 @@ impl GoudGame {
             state.u_uv_offset,
             state.u_uv_scale,
         );
+        let vertex_buffer = state.vertex_buffer;
+        let index_buffer = state.index_buffer;
 
         let backend = match self.render_backend.as_mut() {
             Some(b) => b,
             None => return false,
         };
 
+        backend.enable_blending();
+        backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
+        if backend.bind_buffer(vertex_buffer).is_err() || backend.bind_buffer(index_buffer).is_err()
+        {
+            return false;
+        }
+
         // SAFETY: OpenGL calls require a current context.
         unsafe {
             gl::Viewport(0, 0, fb_w as i32, fb_h as i32);
             gl::BindVertexArray(vao);
         }
+        configure_immediate_vertex_layout();
 
         let projection = ortho_matrix(0.0, win_w as f32, win_h as f32, 0.0);
         let model = model_matrix(x, y, width, height, rotation);
@@ -299,6 +432,9 @@ impl GoudGame {
     ) -> bool {
         use crate::libs::graphics::backend::types::PrimitiveTopology;
 
+        if !self.ensure_immediate_state() {
+            return false;
+        }
         let state = match &self.immediate_state {
             Some(s) => s,
             None => return false,
@@ -315,17 +451,27 @@ impl GoudGame {
             state.u_color,
             state.u_use_texture,
         );
+        let vertex_buffer = state.vertex_buffer;
+        let index_buffer = state.index_buffer;
 
         let backend = match self.render_backend.as_mut() {
             Some(b) => b,
             None => return false,
         };
 
+        backend.enable_blending();
+        backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
+        if backend.bind_buffer(vertex_buffer).is_err() || backend.bind_buffer(index_buffer).is_err()
+        {
+            return false;
+        }
+
         // SAFETY: OpenGL calls require a current context.
         unsafe {
             gl::Viewport(0, 0, fb_w as i32, fb_h as i32);
             gl::BindVertexArray(vao);
         }
+        configure_immediate_vertex_layout();
 
         let projection = ortho_matrix(0.0, win_w as f32, win_h as f32, 0.0);
         let model = model_matrix(x, y, width, height, 0.0);
@@ -341,6 +487,78 @@ impl GoudGame {
         backend
             .draw_indexed(PrimitiveTopology::Triangles, 6, 0)
             .is_ok()
+    }
+
+    /// Draws UTF-8 text using a native font asset path.
+    ///
+    /// `max_width <= 0.0` disables wrapping. Alignment is currently left-only.
+    #[allow(clippy::too_many_arguments)]
+    pub fn draw_text(
+        &mut self,
+        font_path: &str,
+        text: &str,
+        x: f32,
+        y: f32,
+        font_size: f32,
+        max_width: f32,
+        line_spacing: f32,
+        r: f32,
+        g: f32,
+        b: f32,
+        a: f32,
+    ) -> bool {
+        if text.is_empty() || font_size <= 0.0 || line_spacing <= 0.0 {
+            return false;
+        }
+
+        let viewport = self.get_window_size();
+        if !self.ensure_immediate_state() {
+            return false;
+        }
+        let vao = match &self.immediate_state {
+            Some(state) => state.vao,
+            None => return false,
+        };
+        let asset_server = match self.asset_server.as_mut() {
+            Some(server) => server,
+            None => return false,
+        };
+        let backend = match self.render_backend.as_mut() {
+            Some(backend) => backend,
+            None => return false,
+        };
+
+        crate::rendering::ensure_ui_asset_loaders(asset_server);
+        let font_handle = asset_server.load::<FontAsset>(font_path);
+        if !asset_server.is_loaded(&font_handle) {
+            return false;
+        }
+
+        let request = DirectTextDrawRequest {
+            content: text.to_string(),
+            position: Vec2::new(x, y),
+            font_handle,
+            font_size,
+            color: Color::new(r, g, b, a),
+            alignment: TextAlignment::Left,
+            max_width: (max_width > 0.0).then_some(max_width),
+            line_spacing,
+        };
+
+        let batch = self.text_batch.get_or_insert_with(TextBatch::new);
+        batch.begin();
+        backend.disable_depth_test();
+        backend.enable_blending();
+        backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
+        // SAFETY: The native OpenGL context is current for this frame and `vao`
+        // is owned by the live immediate render state initialized above.
+        unsafe {
+            gl::BindVertexArray(vao);
+        }
+        batch
+            .draw_text_requests(&[request], asset_server, backend)
+            .is_ok()
+            && batch.end(backend, viewport).is_ok()
     }
 
     /// Gets rendering statistics for the current frame.
@@ -364,6 +582,27 @@ impl GoudGame {
             *out_stats = crate::ffi::renderer::GoudRenderStats::default();
         }
         true
+    }
+}
+
+impl GoudGame {
+    fn ensure_immediate_state(&mut self) -> bool {
+        if self.immediate_state.is_some() {
+            return true;
+        }
+
+        let backend = match self.render_backend.as_mut() {
+            Some(backend) => backend,
+            None => return false,
+        };
+
+        match create_immediate_render_state(backend) {
+            Ok(state) => {
+                self.immediate_state = Some(state);
+                true
+            }
+            Err(_) => false,
+        }
     }
 }
 
@@ -418,6 +657,45 @@ fn model_matrix(x: f32, y: f32, width: f32, height: f32, rotation: f32) -> [f32;
         1.0,
     ]
 }
+
+const SPRITE_VERTEX_SHADER: &str = r#"
+#version 330 core
+
+layout(location = 0) in vec2 a_position;
+layout(location = 1) in vec2 a_texcoord;
+
+uniform mat4 u_projection;
+uniform mat4 u_model;
+uniform vec2 u_uv_offset;
+uniform vec2 u_uv_scale;
+
+out vec2 v_texcoord;
+
+void main() {
+    gl_Position = u_projection * u_model * vec4(a_position, 0.0, 1.0);
+    v_texcoord = a_texcoord * u_uv_scale + u_uv_offset;
+}
+"#;
+
+const SPRITE_FRAGMENT_SHADER: &str = r#"
+#version 330 core
+
+in vec2 v_texcoord;
+
+uniform vec4 u_color;
+uniform bool u_use_texture;
+uniform sampler2D u_texture;
+
+out vec4 FragColor;
+
+void main() {
+    if (u_use_texture) {
+        FragColor = texture(u_texture, v_texcoord) * u_color;
+    } else {
+        FragColor = u_color;
+    }
+}
+"#;
 
 // =============================================================================
 // Tests

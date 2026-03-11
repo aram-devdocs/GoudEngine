@@ -28,3 +28,4 @@ Version marker: `GoudEngine 0.0.828`
 - [TypeScript SDK](../getting-started/typescript.md)
 - [Build Your First Game](build-your-first-game.md)
 - [Example Showcase](showcase.md)
+- [Sandbox Guide](sandbox.md)
