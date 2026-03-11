@@ -877,6 +877,9 @@ jobs:
     - name: Run Rust Feature Lab
       run: cargo run -p feature-lab
 
+    - name: Build native library for Python Feature Lab
+      run: cargo build -p goud-engine-core
+
     - name: Run Python Feature Lab
       env:
         GOUD_ENGINE_LIB: ${{ github.workspace }}/target/debug

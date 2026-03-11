@@ -220,7 +220,7 @@ def gen_typescript_scaffolding() -> None:
             "build": "npm run build:native && npm run build:ts",
             "build:all": "npm run build && npm run build:web",
             "clean": "rm -rf dist wasm *.node",
-            "pretest": "npm run build:native:debug && npm run build:ts",
+            "pretest": "npm run build:native:debug && npm run build:ts && npm run build:web",
             "typecheck": "tsc --noEmit && tsc -p tsconfig.web.json --noEmit",
             "test": "node --test test/*.test.mjs",
             "test:web-runtime": "node --test test/web-network-runtime-smoke.test.mjs",
