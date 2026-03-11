@@ -11,6 +11,7 @@ __pycache__/
 # Node.js
 node_modules/
 package-lock.json
+!examples/typescript/feature_lab/package-lock.json
 
 # IDE/Editor files
 *.swp
