@@ -23,6 +23,7 @@ use std::collections::HashMap;
 pub struct OpenGLBackend {
     pub(super) info: BackendInfo,
     pub(super) clear_color: [f32; 4],
+    pub(super) line_width_range: [f32; 2],
 
     // Buffer management
     pub(super) buffer_allocator: HandleAllocator<BufferMarker>,
@@ -112,6 +113,7 @@ impl OpenGLBackend {
         let mut max_texture_size: i32 = 0;
         let mut max_vertex_attribs: i32 = 0;
         let mut max_uniform_buffer_size: i32 = 0;
+        let mut line_width_range = [1.0_f32, 1.0_f32];
 
         // SAFETY: GL context is active; output variables are stack-allocated integers with correct size for GetIntegerv.
         unsafe {
@@ -119,6 +121,14 @@ impl OpenGLBackend {
             gl::GetIntegerv(gl::MAX_TEXTURE_SIZE, &mut max_texture_size);
             gl::GetIntegerv(gl::MAX_VERTEX_ATTRIBS, &mut max_vertex_attribs);
             gl::GetIntegerv(gl::MAX_UNIFORM_BLOCK_SIZE, &mut max_uniform_buffer_size);
+            gl::GetFloatv(gl::ALIASED_LINE_WIDTH_RANGE, line_width_range.as_mut_ptr());
+        }
+        if !line_width_range[0].is_finite()
+            || !line_width_range[1].is_finite()
+            || line_width_range[0] <= 0.0
+            || line_width_range[1] <= 0.0
+        {
+            line_width_range = [1.0, 1.0];
         }
 
         let capabilities = BackendCapabilities {
@@ -156,6 +166,7 @@ impl OpenGLBackend {
         Ok(Self {
             info,
             clear_color: [0.0, 0.0, 0.0, 1.0],
+            line_width_range,
             buffer_allocator: HandleAllocator::new(),
             buffers: HashMap::new(),
             bound_vertex_buffer: None,

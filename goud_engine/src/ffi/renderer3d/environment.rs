@@ -4,8 +4,8 @@ use super::state::{ensure_renderer3d_state, with_renderer};
 use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
-use crate::libs::graphics::renderer3d::{FogConfig, GridConfig, SkyboxConfig};
 use crate::libs::graphics::renderer3d::TextureManagerTrait;
+use crate::libs::graphics::renderer3d::{FogConfig, GridConfig, SkyboxConfig};
 use cgmath::{Vector3, Vector4};
 
 struct WindowTextureBridge {
