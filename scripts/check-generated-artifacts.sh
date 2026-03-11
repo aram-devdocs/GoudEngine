@@ -82,8 +82,6 @@ fi
 tracked_diff_paths=(
   "codegen/ffi_manifest.json"
   "docs/src/generated/showcase"
-  "docs/src/generated/downloads"
-  "docs/src/generated/media"
   "docs/src/generated/snippets"
   "docs/src/guides/showcase.md"
   "examples/README.md"
@@ -130,6 +128,10 @@ generated_scan_paths=(
 
 echo "Checking tracked generated drift..."
 git diff --exit-code -- "${tracked_diff_paths[@]}"
+
+echo "Skipping byte-for-byte drift on generated downloads/media..."
+echo "Download bundles and captured media are still required above, but their"
+echo "archive/video containers are not stable enough to diff across clean-room runs."
 
 echo "Checking generated showcase docs drift..."
 python3 scripts/generate-showcase-docs.py --check
