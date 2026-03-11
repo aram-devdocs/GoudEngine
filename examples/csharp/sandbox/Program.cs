@@ -182,7 +182,10 @@ internal static class Program
 
         var cube = game.CreateCube(texture3D, 1.2f, 1.2f, 1.2f);
         var plane = game.CreatePlane(texture3D, 8f, 8f);
-        _ = game.AddLight(0, 4f, 6f, -4f, 0f, -1f, 0f, 1f, 0.95f, 0.8f, 4f, 25f, 0f);
+        // Key + fill + rim lights keep textured 3D content readable in modes 2/3.
+        _ = game.AddLight(0, 4f, 6f, -4f, 0f, -1f, 0f, 1f, 0.95f, 0.80f, 5f, 28f, 0f);
+        _ = game.AddLight(0, -3.5f, 3.5f, -2f, 0f, -0.65f, 0.35f, 0.70f, 0.85f, 1f, 2.5f, 18f, 0f);
+        _ = game.AddLight(0, 0f, 2.4f, 7f, 0f, -0.25f, -1f, 0.55f, 0.65f, 0.90f, 1.8f, 20f, 0f);
         game.SetObjectPosition(plane, 0f, -1f, 0f);
         game.ConfigureGrid(true, 12f, 12);
 
@@ -241,19 +244,20 @@ internal static class Program
             }
 
             var currentMode = modes[modeIndex];
+            var is3DFamilyMode = currentMode is "3D" or "Hybrid";
 
             network.Update(dt, playerX, playerY, currentMode, assets.PacketVersion);
             var mouse = game.GetMousePosition();
 
             game.BeginFrame(0.07f, 0.10f, 0.14f, 1f);
 
-            if (currentMode is "3D" or "Hybrid")
+            if (is3DFamilyMode)
             {
                 game.EnableDepthTest();
-                game.SetCameraPosition3D(0f, 2.1f, currentMode == "3D" ? -7.4f : -8.2f);
-                game.SetCameraRotation3D(-8f, angle * 14f, 0f);
-                game.SetObjectPosition(cube, 0.8f, 1.15f + 0.28f * MathF.Sin(angle * 2f), 2.2f);
-                game.SetObjectRotation(cube, 18f, angle * 42f, 0f);
+                game.SetCameraPosition3D(0f, 2.2f, currentMode == "3D" ? -7.0f : -7.8f);
+                game.SetCameraRotation3D(-7f, angle * 15f, 0f);
+                game.SetObjectPosition(cube, 0.85f, 1.2f + 0.26f * MathF.Sin(angle * 2f), 2.1f);
+                game.SetObjectRotation(cube, 20f, angle * 46f, 0f);
                 game.SetObjectPosition(plane, 0f, -1.2f, 2.5f);
                 game.Render3D();
                 game.DisableDepthTest();
@@ -269,9 +273,9 @@ internal static class Program
 
             if (currentMode == "Hybrid")
             {
-                game.DrawSprite(background, WindowWidth / 2f, WindowHeight / 2f, WindowWidth, WindowHeight, 0f, new Color(1f, 1f, 1f, 0.42f));
-                game.DrawQuad(640f, 360f, 1280f, 720f, new Color(0.09f, 0.18f, 0.26f, 0.16f));
-                game.DrawQuad(640f, 654f, 1280f, 132f, new Color(0.03f, 0.10f, 0.12f, 0.26f));
+                game.DrawSprite(background, WindowWidth / 2f, WindowHeight / 2f, WindowWidth, WindowHeight, 0f, new Color(1f, 1f, 1f, 0.26f));
+                game.DrawQuad(640f, 360f, 1280f, 720f, new Color(0.08f, 0.17f, 0.24f, 0.10f));
+                game.DrawQuad(640f, 654f, 1280f, 132f, new Color(0.03f, 0.10f, 0.12f, 0.18f));
                 game.DrawSprite(sprite, playerX, playerY, 72f, 72f, angle * 0.25f);
                 game.DrawSprite(accentSprite, 1044f, 420f, 78f, 250f);
                 game.DrawQuad(920f, 260f, 180f, 40f, new Color(0.20f, 0.55f, 0.95f, 0.62f));
@@ -284,9 +288,11 @@ internal static class Program
                 game.DrawSprite(sprite, network.RemoteX, network.RemoteY, 52f, 52f, -angle * 0.18f);
             }
 
-            game.DrawQuad(332f, 192f, 620f, 318f, new Color(0.05f, 0.08f, 0.12f, 0.88f));
-            game.DrawQuad(1006f, 192f, 520f, 318f, new Color(0.08f, 0.12f, 0.18f, 0.88f));
-            game.DrawQuad(640f, 620f, 1168f, 182f, new Color(0.05f, 0.08f, 0.12f, 0.92f));
+            var panelAlpha = is3DFamilyMode ? 0.62f : 0.88f;
+            var bottomAlpha = is3DFamilyMode ? 0.70f : 0.92f;
+            game.DrawQuad(332f, 192f, 620f, 318f, new Color(0.05f, 0.08f, 0.12f, panelAlpha));
+            game.DrawQuad(1006f, 192f, 520f, 318f, new Color(0.08f, 0.12f, 0.18f, panelAlpha));
+            game.DrawQuad(640f, 620f, 1168f, 182f, new Color(0.05f, 0.08f, 0.12f, bottomAlpha));
             game.DrawQuad(980f, 312f, 220f, 42f, new Color(0.20f, 0.55f, 0.95f, 0.84f));
             game.DrawQuad(mouse.X, mouse.Y, 12f, 12f, new Color(0.95f, 0.85f, 0.20f, 0.95f));
 
