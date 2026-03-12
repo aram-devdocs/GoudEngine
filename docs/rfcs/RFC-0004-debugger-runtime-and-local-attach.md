@@ -1,7 +1,7 @@
 ---
 rfc: "0004"
 title: "Debugger Runtime, Snapshot Contract, and Local Attach Model"
-status: proposed
+status: accepted
 created: 2026-03-12
 authors: ["aram-devdocs"]
 tracking-issue: "#511"
