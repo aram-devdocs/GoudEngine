@@ -53,7 +53,9 @@ mod state;
 
 // Re-export the public surface so callers using `ffi::window::*` see the
 // same symbols as before the split.
-pub use state::{set_window_state, with_window_state, WindowState};
+pub use state::{
+    read_default_framebuffer_rgba8_for_context, set_window_state, with_window_state, WindowState,
+};
 
 // FFI functions are `#[no_mangle]` and therefore globally visible, but we
 // also re-export them so that `pub mod window` keeps them reachable via the

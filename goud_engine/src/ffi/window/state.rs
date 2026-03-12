@@ -9,9 +9,9 @@ use crate::core::debugger::{self, RuntimeRouteId};
 use crate::core::error::GoudError;
 use crate::core::math::Vec2;
 use crate::ecs::InputManager;
-use crate::ffi::context::GoudContextId;
+use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::libs::graphics::backend::opengl::OpenGLBackend;
-use crate::libs::graphics::backend::StateOps;
+use crate::libs::graphics::backend::{RenderBackend, StateOps};
 use crate::libs::platform::glfw_platform::GlfwPlatform;
 use crate::libs::platform::PlatformBackend;
 use crate::sdk::debug_overlay::DebugOverlay;
@@ -286,4 +286,23 @@ where
         let route_id = state.debugger_route.clone();
         Some(debugger::scoped_route(route_id, || f(state)))
     })
+}
+
+/// Reads the default framebuffer for one context as RGBA8 bytes.
+pub fn read_default_framebuffer_rgba8_for_context(
+    context_id: GoudContextId,
+    width: u32,
+    height: u32,
+) -> Result<Vec<u8>, GoudError> {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        return Err(GoudError::InvalidContext);
+    }
+
+    with_window_state(context_id, |state| {
+        state
+            .backend_mut()
+            .read_default_framebuffer_rgba8(width, height)
+    })
+    .ok_or(GoudError::InvalidContext)?
+    .map_err(GoudError::InvalidState)
 }

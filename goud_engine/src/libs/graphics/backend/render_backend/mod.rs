@@ -71,6 +71,19 @@ pub trait RenderBackend:
         Ok(())
     }
 
+    /// Reads the default framebuffer into RGBA8 bytes.
+    ///
+    /// Returned pixels are expected to be in row-major order with a top-left
+    /// origin. Backends that do not support readback may keep the default
+    /// implementation.
+    fn read_default_framebuffer_rgba8(
+        &mut self,
+        _width: u32,
+        _height: u32,
+    ) -> Result<Vec<u8>, String> {
+        Err("default framebuffer readback is not supported by this backend".to_string())
+    }
+
     /// Returns the capabilities of this backend.
     fn capabilities(&self) -> &BackendCapabilities {
         &self.info().capabilities
