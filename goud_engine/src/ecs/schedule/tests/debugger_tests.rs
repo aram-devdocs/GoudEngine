@@ -1,4 +1,4 @@
-use crate::context_registry::GoudContextId;
+use crate::core::context_id::GoudContextId;
 use crate::core::debugger::{
     active_route_count, begin_frame, register_context, reset_for_tests, scoped_route,
     set_profiling_enabled_for_context, snapshot_for_context, test_lock, DebuggerConfig,
