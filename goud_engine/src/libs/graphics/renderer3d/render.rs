@@ -190,6 +190,53 @@ impl Renderer3D {
         }
 
         self.backend.unbind_shader();
+
+        if self.debug_draw_vertex_count > 0 {
+            let _ = self.backend.bind_shader(self.grid_shader_handle);
+
+            self.backend
+                .set_uniform_mat4(self.grid_uniforms.view, &view_arr);
+            self.backend
+                .set_uniform_mat4(self.grid_uniforms.projection, &proj_arr);
+            self.backend.set_uniform_vec3(
+                self.grid_uniforms.view_pos,
+                self.camera.position.x,
+                self.camera.position.y,
+                self.camera.position.z,
+            );
+            self.backend
+                .set_uniform_float(self.grid_uniforms.alpha, 1.0);
+            self.backend.set_uniform_int(
+                self.grid_uniforms.fog_enabled,
+                i32::from(self.fog_config.enabled),
+            );
+            self.backend.set_uniform_vec3(
+                self.grid_uniforms.fog_color,
+                self.fog_config.color.x,
+                self.fog_config.color.y,
+                self.fog_config.color.z,
+            );
+            self.backend
+                .set_uniform_float(self.grid_uniforms.fog_density, self.fog_config.density);
+
+            self.backend.enable_blending();
+            self.backend
+                .set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
+            self.backend.set_depth_mask(false);
+
+            let _ = self.backend.bind_buffer(self.debug_draw_buffer);
+            self.backend.set_vertex_attributes(&self.grid_layout);
+            let _ = self.backend.draw_arrays(
+                PrimitiveTopology::Lines,
+                0,
+                self.debug_draw_vertex_count as u32,
+            );
+
+            self.backend.set_depth_mask(true);
+            self.backend.disable_blending();
+            self.backend.unbind_shader();
+        }
+
         self.backend.disable_culling();
     }
 

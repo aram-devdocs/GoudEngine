@@ -2,9 +2,13 @@
 
 use std::collections::HashMap;
 
+use crate::core::providers::types::DebugShape3D;
 use crate::libs::graphics::backend::BufferHandle;
+use crate::libs::graphics::backend::BufferType;
+use crate::libs::graphics::backend::BufferUsage;
 use crate::libs::graphics::backend::{RenderBackend, VertexLayout};
 
+use super::debug_draw::build_debug_draw_vertices;
 use super::mesh::{create_axis_mesh, create_grid_mesh, grid_vertex_layout, object_vertex_layout};
 use super::mesh::{
     generate_cube_vertices, generate_cylinder_vertices, generate_plane_vertices,
@@ -38,6 +42,9 @@ pub struct Renderer3D {
     pub(super) grid_vertex_count: i32,
     pub(super) axis_buffer: BufferHandle,
     pub(super) axis_vertex_count: i32,
+    pub(super) debug_draw_buffer: BufferHandle,
+    pub(super) debug_draw_buffer_capacity_bytes: usize,
+    pub(super) debug_draw_vertex_count: i32,
     pub(super) objects: HashMap<u32, Object3D>,
     pub(super) lights: HashMap<u32, Light>,
     pub(super) next_object_id: u32,
@@ -83,6 +90,9 @@ impl Renderer3D {
             grid_vertex_count,
             axis_buffer,
             axis_vertex_count,
+            debug_draw_buffer: BufferHandle::INVALID,
+            debug_draw_buffer_capacity_bytes: 0,
+            debug_draw_vertex_count: 0,
             objects: HashMap::new(),
             lights: HashMap::new(),
             next_object_id: 1,
@@ -264,6 +274,53 @@ impl Renderer3D {
     pub fn set_fog_enabled(&mut self, enabled: bool) {
         self.fog_config.enabled = enabled;
     }
+
+    /// Upload debug draw shapes as line vertices (position + color) for rendering.
+    pub fn set_debug_draw_shapes(&mut self, shapes: &[DebugShape3D]) {
+        let vertices = build_debug_draw_vertices(shapes);
+        if vertices.is_empty() {
+            self.debug_draw_vertex_count = 0;
+            return;
+        }
+
+        let vertex_bytes = bytemuck::cast_slice(vertices.as_slice());
+        let required_bytes = vertex_bytes.len();
+
+        let needs_new_buffer = !self.backend.is_buffer_valid(self.debug_draw_buffer)
+            || self.debug_draw_buffer_capacity_bytes < required_bytes;
+
+        if needs_new_buffer {
+            if self.backend.is_buffer_valid(self.debug_draw_buffer) {
+                self.backend.destroy_buffer(self.debug_draw_buffer);
+                self.debug_draw_buffer = BufferHandle::INVALID;
+                self.debug_draw_buffer_capacity_bytes = 0;
+            }
+
+            match self
+                .backend
+                .create_buffer(BufferType::Vertex, BufferUsage::Dynamic, vertex_bytes)
+            {
+                Ok(buffer) => {
+                    self.debug_draw_buffer = buffer;
+                    self.debug_draw_buffer_capacity_bytes = required_bytes;
+                }
+                Err(e) => {
+                    log::error!("Failed to create debug draw buffer: {e}");
+                    self.debug_draw_vertex_count = 0;
+                    return;
+                }
+            }
+        } else if let Err(e) = self
+            .backend
+            .update_buffer(self.debug_draw_buffer, 0, vertex_bytes)
+        {
+            log::error!("Failed to update debug draw buffer: {e}");
+            self.debug_draw_vertex_count = 0;
+            return;
+        }
+
+        self.debug_draw_vertex_count = (vertices.len() / 6) as i32;
+    }
 }
 
 impl Drop for Renderer3D {
@@ -273,6 +330,9 @@ impl Drop for Renderer3D {
         }
         self.backend.destroy_buffer(self.grid_buffer);
         self.backend.destroy_buffer(self.axis_buffer);
+        if self.backend.is_buffer_valid(self.debug_draw_buffer) {
+            self.backend.destroy_buffer(self.debug_draw_buffer);
+        }
         self.backend.destroy_shader(self.shader_handle);
         self.backend.destroy_shader(self.grid_shader_handle);
     }
