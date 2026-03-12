@@ -5,8 +5,11 @@ use crate::core::context_id::GoudContextId;
 /// Stable route identity for a debuggable context within one process lifetime.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct RuntimeRouteId {
+    /// Per-process nonce used to distinguish routes across restarts.
     pub process_nonce: u64,
+    /// Packed context identifier `(generation << 32) | index`.
     pub context_id: u64,
+    /// Surface kind served by this route.
     pub surface_kind: RuntimeSurfaceKind,
 }
 
@@ -28,8 +31,11 @@ impl RuntimeRouteId {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RuntimeSurfaceKind {
+    /// Route backed by a windowed game instance.
     WindowedGame,
+    /// Route backed by a headless context.
     HeadlessContext,
+    /// Route backed by an editor or tooling context.
     ToolContext,
 }
 
@@ -37,9 +43,13 @@ pub enum RuntimeSurfaceKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CapabilityStateV1 {
+    /// Feature or service is available now.
     Ready,
+    /// Feature or service exists but is turned off.
     Disabled,
+    /// Feature or service is not implemented on this route.
     Unavailable,
+    /// Feature or service hit an error.
     Faulted,
 }
 
