@@ -15,85 +15,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v6
-
-    - name: Collect stats and update README
+    - name: Validate push token
       env:
-        GH_TOKEN: ${{ github.token }}
+        COMMUNITY_STATS_PUSH_TOKEN: ${{ secrets.COMMUNITY_STATS_PUSH_TOKEN }}
       run: |
-        # Fetch registry download counts
-        CRATES_DOWNLOADS=$(curl -sf https://crates.io/api/v1/crates/goud-engine | jq '.crate.downloads // 0')
-        NUGET_DOWNLOADS=$(curl -sf "https://api.nuget.org/v3/registration5-gz-semver2/goudengine/index.json" | jq '[.items[].items[]?.catalogEntry.downloads // 0] | add // 0' 2>/dev/null || echo "0")
-        PYPI_DOWNLOADS=$(curl -sf https://pypistats.org/api/packages/goudengine/overall | jq '[.data[].downloads] | add // 0')
-        NPM_DOWNLOADS=$(curl -sf "https://api.npmjs.org/downloads/range/2020-01-01:2099-12-31/goudengine" | jq '[.downloads[].downloads] | add // 0')
-
-        # Fallback for NuGet — use search API if registration returns 0
-        if [ "$NUGET_DOWNLOADS" = "0" ] || [ -z "$NUGET_DOWNLOADS" ]; then
-          NUGET_DOWNLOADS=$(curl -sf "https://azuresearch-usnc.nuget.org/query?q=packageid:GoudEngine&prerelease=false" | jq '.data[0].totalDownloads // 0')
+        if [ -z "$COMMUNITY_STATS_PUSH_TOKEN" ]; then
+          echo "::error::COMMUNITY_STATS_PUSH_TOKEN is required because main is protected and the workflow must push with an admin token."
+          exit 1
         fi
 
-        # Ensure all counts default to 0 if API calls fail
-        CRATES_DOWNLOADS=${CRATES_DOWNLOADS:-0}
-        NUGET_DOWNLOADS=${NUGET_DOWNLOADS:-0}
-        PYPI_DOWNLOADS=${PYPI_DOWNLOADS:-0}
-        NPM_DOWNLOADS=${NPM_DOWNLOADS:-0}
+    - uses: actions/checkout@v6
+      with:
+        token: ${{ secrets.COMMUNITY_STATS_PUSH_TOKEN }}
 
-        # Append to history
-        DATE=$(date -u '+%Y-%m-%d')
-        python3 -c "
-        import json
-        h = json.loads(open('.github/stats/history.json').read())
-        total = $CRATES_DOWNLOADS + $NUGET_DOWNLOADS + $PYPI_DOWNLOADS + $NPM_DOWNLOADS
-        entry = {'date': '$DATE', 'crates_io': $CRATES_DOWNLOADS, 'nuget': $NUGET_DOWNLOADS, 'pypi': $PYPI_DOWNLOADS, 'npm': $NPM_DOWNLOADS, 'total': total}
-        # Replace if same date exists, otherwise append
-        h = [e for e in h if e['date'] != '$DATE'] + [entry]
-        h.sort(key=lambda e: e['date'])
-        open('.github/stats/history.json', 'w').write(json.dumps(h, indent=2) + '\n')
-        "
-
-        # Generate downloads chart
-        python3 .github/stats/generate_chart.py
-
-        STATS_BLOCK="<!-- COMMUNITY-STATS:START -->
-        | | Stars | Forks | Contributors |
-        |--|-------|-------|--------------|
-        | **GitHub** | ![stars](https://img.shields.io/github/stars/aram-devdocs/GoudEngine) | ![forks](https://img.shields.io/github/forks/aram-devdocs/GoudEngine) | ![contributors](https://img.shields.io/github/contributors/aram-devdocs/GoudEngine) |
-
-        ### Downloads
-
-        | Registry | Total Downloads |
-        |----------|-----------------|
-        | crates.io | [![crates.io](https://img.shields.io/crates/d/goud-engine)](https://crates.io/crates/goud-engine) |
-        | NuGet | [![NuGet](https://img.shields.io/nuget/dt/GoudEngine)](https://www.nuget.org/packages/GoudEngine/) |
-        | PyPI | [![PyPI](https://img.shields.io/pypi/dm/goudengine)](https://pypi.org/project/goudengine/) |
-        | npm | [![npm](https://img.shields.io/npm/dt/goudengine)](https://www.npmjs.com/package/goudengine) |
-
-        ![Total Downloads Over Time](.github/stats/downloads.svg)
-
-        [![Star History Chart](https://api.star-history.com/svg?repos=aram-devdocs/GoudEngine&type=Date)](https://star-history.com/#aram-devdocs/GoudEngine&Date)
-
-        <sub>Last updated: $(date -u '+%Y-%m-%d') via [GitHub Action](.github/workflows/community-stats.yml)</sub>
-        <!-- COMMUNITY-STATS:END -->"
-
-        # Remove leading whitespace from heredoc-style indentation
-        STATS_BLOCK=$(echo "$STATS_BLOCK" | sed 's/^        //')
-
-        # Replace content between markers
-        python3 -c "
-        import re, sys
-        readme = open('README.md').read()
-        pattern = r'<!-- COMMUNITY-STATS:START -->.*?<!-- COMMUNITY-STATS:END -->'
-        replacement = open('/dev/stdin').read().split('<!-- COMMUNITY-STATS:START -->')[1].split('<!-- COMMUNITY-STATS:END -->')[0]
-        replacement = '<!-- COMMUNITY-STATS:START -->' + replacement + '<!-- COMMUNITY-STATS:END -->'
-        updated = re.sub(pattern, replacement, readme, flags=re.DOTALL)
-        open('README.md', 'w').write(updated)
-        " <<< "$STATS_BLOCK"
+    - name: Collect stats and update README
+      run: python3 .github/stats/update_stats.py
 
     - name: Commit if changed
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add README.md .github/stats/history.json .github/stats/downloads.svg
+        git add README.md .github/stats/history.json .github/stats/pypi_daily.json .github/stats/downloads.svg
         git diff --cached --quiet && exit 0
         git commit -m "chore: update community stats [skip ci]"
         git push

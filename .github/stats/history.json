@@ -1,10 +1,10 @@
 [
   {
-    "date": "2026-03-06",
-    "crates_io": 9,
-    "nuget": 483,
-    "pypi": 5358,
-    "npm": 513,
-    "total": 6363
+    "date": "2026-03-12",
+    "crates_io": 36,
+    "nuget": 932,
+    "pypi": 2138,
+    "npm": 837,
+    "total": 3943
   }
 ]

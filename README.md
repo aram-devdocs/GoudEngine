@@ -153,16 +153,18 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 
 | Registry | Total Downloads |
 |----------|-----------------|
-| crates.io | [![crates.io](https://img.shields.io/crates/d/goud-engine)](https://crates.io/crates/goud-engine) |
-| NuGet | [![NuGet](https://img.shields.io/nuget/dt/GoudEngine)](https://www.nuget.org/packages/GoudEngine/) |
-| PyPI | [![PyPI](https://img.shields.io/pypi/dm/goudengine)](https://pypi.org/project/goudengine/) |
-| npm | [![npm](https://img.shields.io/npm/dt/goudengine)](https://www.npmjs.com/package/goudengine) |
+| crates.io | [36](https://crates.io/crates/goud-engine) |
+| NuGet | [932](https://www.nuget.org/packages/GoudEngine/) |
+| PyPI | [2,138](https://pypi.org/project/goudengine/) |
+| npm | [837](https://www.npmjs.com/package/goudengine) |
+
+<sub>PyPI totals exclude mirrors.</sub>
 
 ![Total Downloads Over Time](.github/stats/downloads.svg)
 
 [![Star History Chart](https://api.star-history.com/svg?repos=aram-devdocs/GoudEngine&type=Date)](https://star-history.com/#aram-devdocs/GoudEngine&Date)
 
-<sub>Last updated: daily via [GitHub Action](.github/workflows/community-stats.yml)</sub>
+<sub>Last updated: 2026-03-12 via [GitHub Action](.github/workflows/community-stats.yml)</sub>
 <!-- COMMUNITY-STATS:END -->
 
 ## License
