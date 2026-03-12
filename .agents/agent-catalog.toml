@@ -35,12 +35,12 @@ role_order = [
 # - fast tier roles use gpt-5.3-codex-spark
 root_model = "gpt-5.4"
 root_plan_mode_reasoning_effort = "xhigh"
-codex_max_threads = 6
+codex_max_threads = 2
 codex_max_depth = 2
 shared_team_mode = "single-lead"
 shared_max_specialists_per_lead = 2
 shared_fallback_mode = "single-agent"
-job_max_runtime_seconds = 1800
+job_max_runtime_seconds = 3600
 
 [roles.default]
 description = "General-purpose fallback role for orchestration and synthesis."

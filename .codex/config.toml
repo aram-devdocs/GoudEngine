@@ -8,9 +8,11 @@ plan_mode_reasoning_effort = "xhigh"
 multi_agent = true
 
 [agents]
-max_threads = 6
+# Per-session caps for this Codex run.
+# Unset max_threads to remove the thread bound.
+max_threads = 2
 max_depth = 2
-job_max_runtime_seconds = 1800
+job_max_runtime_seconds = 3600
 
 # Shared orchestration policy (catalog source of truth)
 # shared_team_mode = "single-lead"

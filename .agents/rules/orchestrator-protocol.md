@@ -49,6 +49,7 @@ Select the right tier for the task. Provider-specific model assignments live in 
 | High | Bounded sub-orchestration, security audits, and highest-judgment work |
 
 Implementation leads stay in the high tier because they manage a small bounded specialist wave. `quality-lead` is retained for exceptional sessions, not the default path.
+When multiple Codex sessions overlap, prefer stability over opportunistic parallelism.
 
 ## Mandatory Skills
 
@@ -72,11 +73,12 @@ Agents SHOULD load these skills at session start when available:
 All non-trivial implementation MUST go through the shared bounded hierarchy:
 1. Orchestrator chooses exactly one active implementation workstream
 2. Orchestrator dispatches exactly one implementation lead
-3. The lead may use one specialist wave, capped at 2 specialists total
-4. The lead questions specialist output before reporting
-5. Orchestrator dispatches direct reviewers in order: spec-reviewer, then code-quality-reviewer, then architecture-validator
-6. Security-auditor runs if FFI/unsafe touched (sequential only)
-7. Orchestrator dispatches another implementation lead only after the active team has completed
+3. The lead may use one specialist wave, capped at 2 specialists total, with one active specialist at a time
+4. A second specialist is allowed only after the first specialist finishes
+5. The lead questions specialist output before reporting
+6. Orchestrator dispatches direct reviewers in order: spec-reviewer, then code-quality-reviewer, then architecture-validator
+7. Security-auditor runs if FFI/unsafe touched (sequential only)
+8. Orchestrator dispatches another implementation lead only after the active team has completed
 
 Agents MUST NOT skip the spec-reviewer gate before running the code-quality-reviewer.
 Security-sensitive work (FFI, unsafe blocks) MUST NOT be parallelized.
@@ -121,7 +123,7 @@ When a team lead reports back:
 - Were specialists' outputs questioned?
 - Were verification steps (cargo check, cargo test) actually run?
 - Are there cross-team impacts not addressed?
-- Did the lead stay within the bounded policy (one wave, max 2 specialists)?
+- Did the lead stay within the bounded policy (one wave, max 2 specialists, sequential specialists)?
 
 If a report is vague or uncritical, send the team lead back for specifics.
 

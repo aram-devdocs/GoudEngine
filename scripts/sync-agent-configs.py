@@ -353,6 +353,8 @@ def render_codex_config(catalog: dict[str, Any]) -> str:
             "multi_agent = true",
             "",
             "[agents]",
+            "# Per-session caps for this Codex run.",
+            "# Unset max_threads to remove the thread bound.",
             f"max_threads = {settings['codex_max_threads']}",
             f"max_depth = {settings['codex_max_depth']}",
             f"job_max_runtime_seconds = {settings['job_max_runtime_seconds']}",

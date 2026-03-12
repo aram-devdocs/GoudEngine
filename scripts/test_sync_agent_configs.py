@@ -48,8 +48,11 @@ class SyncAgentConfigsTests(unittest.TestCase):
                 "settings": {
                     "root_model": "gpt-5.4",
                     "root_plan_mode_reasoning_effort": "xhigh",
-                    "max_threads": 5,
-                    "max_depth": 2,
+                    "codex_max_threads": 5,
+                    "codex_max_depth": 2,
+                    "shared_team_mode": "single-lead",
+                    "shared_max_specialists_per_lead": 2,
+                    "shared_fallback_mode": "single-agent",
                     "job_max_runtime_seconds": 1800,
                 },
                 "role_order": ["default"],
@@ -75,8 +78,11 @@ class SyncAgentConfigsTests(unittest.TestCase):
             "settings": {
                 "root_model": "gpt-5.4",
                 "root_plan_mode_reasoning_effort": "xhigh",
-                "max_threads": 5,
-                "max_depth": 2,
+                "codex_max_threads": 5,
+                "codex_max_depth": 2,
+                "shared_team_mode": "single-lead",
+                "shared_max_specialists_per_lead": 2,
+                "shared_fallback_mode": "single-agent",
                 "job_max_runtime_seconds": 1800,
             },
             "role_order": ["default"],
@@ -89,6 +95,11 @@ class SyncAgentConfigsTests(unittest.TestCase):
         }
 
         rendered = SYNC.render_codex_config(catalog)
+        self.assertIn("# Per-session caps for this Codex run.", rendered)
+        self.assertIn("# Unset max_threads to remove the thread bound.", rendered)
+        self.assertIn("max_threads = 5", rendered)
+        self.assertIn("max_depth = 2", rendered)
+        self.assertIn("job_max_runtime_seconds = 1800", rendered)
         self.assertIn('config_file = "agents/default.toml"', rendered)
         self.assertIn('nickname_candidates = ["Northstar"]', rendered)
 

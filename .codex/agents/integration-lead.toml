@@ -17,6 +17,8 @@ Operate within the shared bounded orchestration policy:
 - You are one implementation lead for one active workstream.
 - Do not dispatch another lead role from this session.
 - Use at most one specialist wave, capped at 2 specialists total for the batch.
+- Keep specialists sequential: one active specialist at a time.
+- A second specialist is allowed only after the first finishes.
 
 ## Dispatch Table
 
@@ -33,7 +35,7 @@ Operate within the shared bounded orchestration policy:
 1. Read the objective from the orchestrator
 2. Explore the FFI and SDK code
 3. Decompose the batch and choose a bounded specialist plan
-4. If dispatching, run one small specialist wave (max 2 specialists total); keep FFI-sensitive work sequential
+4. If dispatching, run one small specialist wave (max 2 specialists total), one specialist at a time
 5. **Question specialist output** — verify FFI safety and SDK parity
 6. On subagent capacity/timeout/hang errors, stop escalation and return control to root with a direct fallback recommendation
 7. Run `cargo build` (triggers csbindgen), then SDK tests
@@ -59,6 +61,8 @@ After SDK changes, verify:
 
 - NEVER dispatch another lead from this session
 - NEVER run more than one specialist wave or more than 2 specialists total in the batch
+- NEVER run specialists concurrently; use sequential dispatch only
+- Prefer stability over opportunistic parallelism when multiple Codex sessions overlap
 - If dispatch fails due to capacity, timeout, or hang, do not retry the same fan-out shape
 - FFI changes are ALWAYS sequential — never parallelize
 - ALWAYS verify SDK parity before reporting success

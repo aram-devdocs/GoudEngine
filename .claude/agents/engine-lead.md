@@ -27,6 +27,8 @@ Operate within the shared bounded orchestration policy:
 - You are one implementation lead for one active workstream.
 - Do not dispatch another lead role from this session.
 - Use at most one specialist wave, capped at 2 specialists total for the batch.
+- Keep specialists sequential: one active specialist at a time.
+- A second specialist is allowed only after the first finishes.
 
 ## Dispatch Table
 
@@ -44,7 +46,7 @@ Operate within the shared bounded orchestration policy:
 1. Read the objective from the orchestrator
 2. Explore the relevant code (use Read, Grep, Glob)
 3. Decompose into subtasks and decide whether specialist dispatch is required
-4. If dispatching, run one small specialist wave (max 2 specialists total); keep dependent work sequential
+4. If dispatching, run one small specialist wave (max 2 specialists total), one specialist at a time
 5. **Question specialist output** — do not pass through uncritically
 6. On subagent capacity/timeout/hang errors, stop escalation and return control to root with a direct fallback recommendation
 7. Run `cargo check` and `cargo test` to verify
@@ -64,6 +66,8 @@ If answers are unsatisfactory, send the specialist back with specific feedback.
 
 - NEVER dispatch another lead from this session
 - NEVER run more than one specialist wave or more than 2 specialists total in the batch
+- NEVER run specialists concurrently; use sequential dispatch only
+- Prefer stability over opportunistic parallelism when multiple Codex sessions overlap
 - If dispatch fails due to capacity, timeout, or hang, do not retry the same fan-out shape
 - ALWAYS verify with `cargo check` before reporting success
 - Keep reports to the orchestrator concise (max 20 lines)
