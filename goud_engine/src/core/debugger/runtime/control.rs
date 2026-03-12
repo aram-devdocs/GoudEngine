@@ -2,6 +2,7 @@ use serde_json::{json, Value};
 
 use super::super::snapshot::DebuggerSnapshotV1;
 use super::super::types::CapabilityStateV1;
+use super::metrics::{empty_metrics_export, metrics_trace_json_for_route};
 use super::state::{
     lock_runtime, set_route_capability, set_service_state, sync_debugger_state, FrameControlPlanV1,
     RouteControlStateV1, SyntheticInputEventV1,
@@ -58,6 +59,34 @@ fn snapshot_value(snapshot: &DebuggerSnapshotV1) -> Value {
     serde_json::to_value(snapshot).unwrap_or_else(|_| json!({}))
 }
 
+fn metrics_trace_response_for_route(route_id: &RuntimeRouteId, request: &Value) -> Value {
+    if let Some(metrics_json) = metrics_trace_json_for_route(route_id) {
+        if let Ok(parsed) = serde_json::from_str::<Value>(&metrics_json) {
+            return ok_response(request, parsed);
+        }
+    }
+
+    let has_route = {
+        let guard = lock_runtime();
+        guard
+            .as_ref()
+            .and_then(|runtime| runtime.routes.get(&route_id.context_id))
+            .is_some()
+    };
+
+    if has_route {
+        return ok_response(request, json!(empty_metrics_export(route_id)));
+    }
+
+    error_response(
+        request,
+        "route_not_found",
+        "debugger route is no longer available".to_string(),
+        None,
+        None,
+    )
+}
+
 /// Returns the current route-local debugger control state.
 pub fn control_state_for_route(route_id: &RuntimeRouteId) -> Option<RouteControlStateV1> {
     let guard = lock_runtime();
@@ -84,6 +113,14 @@ pub fn dispatch_request_json_for_route(
     request_json: &str,
 ) -> Result<Value, serde_json::Error> {
     let request: Value = serde_json::from_str(request_json)?;
+    let verb = request
+        .get("verb")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    if verb == "get_metrics_trace" {
+        return Ok(metrics_trace_response_for_route(route_id, &request));
+    }
     let mut should_publish_manifest = false;
 
     let response = {
@@ -106,12 +143,6 @@ pub fn dispatch_request_json_for_route(
                 None,
             ));
         };
-
-        let verb = request
-            .get("verb")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string();
 
         let response = match verb.as_str() {
             "get_snapshot" => ok_response(&request, snapshot_value(&route.snapshot)),
@@ -216,7 +247,6 @@ pub fn dispatch_request_json_for_route(
                 }
                 ok_response(&request, json!(route.control.snapshot()))
             }
-            "get_metrics_trace" => ok_response(&request, json!(route.snapshot.profiler_samples)),
             "get_replay_status" => {
                 let service = route
                     .snapshot

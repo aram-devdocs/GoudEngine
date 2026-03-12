@@ -9,6 +9,7 @@ mod artifacts;
 mod attach;
 mod control;
 mod debug_draw;
+mod metrics;
 mod state;
 
 pub use attach::{AttachAcceptedV1, AttachHelloV1};
@@ -24,6 +25,7 @@ pub use debug_draw::{
 };
 pub use state::{FrameControlPlanV1, RouteControlStateV1, SyntheticInputEventV1};
 
+use metrics::record_metrics_frame;
 use state::*;
 
 thread_local! {
@@ -175,6 +177,7 @@ pub fn end_frame(route_id: &RuntimeRouteId) {
         route.snapshot.stats.memory.tracked_bytes =
             route.snapshot.memory_summary.total_current_bytes;
         route.snapshot.stats.memory.peak_bytes = route.snapshot.memory_summary.total_peak_bytes;
+        record_metrics_frame(route);
     });
 }
 

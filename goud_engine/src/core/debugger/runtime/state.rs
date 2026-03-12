@@ -14,6 +14,7 @@ use super::super::snapshot::{
 };
 use super::super::types::{CapabilityStateV1, RuntimeRouteId, RuntimeSurfaceKind};
 use super::debug_draw::DebugDrawPayloadV1;
+use super::metrics::RouteMetricsState;
 
 /// One normalized synthetic input event queued by the debugger runtime.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -153,6 +154,7 @@ pub(super) struct RouteState {
     pub(super) capabilities: BTreeMap<String, CapabilityStateV1>,
     pub(super) fps_stats: RuntimeFpsStats,
     pub(super) control: RouteControlState,
+    pub(super) metrics: RouteMetricsState,
     pub(super) attached_clients: u32,
 }
 
@@ -333,6 +335,7 @@ pub(super) fn initialize_route_state(
         capabilities,
         fps_stats: RuntimeFpsStats::default(),
         control: RouteControlState::new(),
+        metrics: RouteMetricsState::default(),
         attached_clients: 0,
     };
     sync_debugger_state(&mut route);
