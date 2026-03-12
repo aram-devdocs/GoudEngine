@@ -12,6 +12,8 @@ pub use crate::context_registry::{
     GOUD_INVALID_CONTEXT_ID,
 };
 
+#[cfg(test)]
+mod debugger_tests;
 mod lifecycle;
 #[cfg(test)]
 mod tests;
