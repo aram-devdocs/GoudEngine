@@ -15,9 +15,10 @@ use super::super::snapshot::{
 use super::super::types::{CapabilityStateV1, RuntimeRouteId, RuntimeSurfaceKind};
 use super::debug_draw::DebugDrawPayloadV1;
 use super::metrics::RouteMetricsState;
+use super::replay::RouteReplayState;
 
 /// One normalized synthetic input event queued by the debugger runtime.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SyntheticInputEventV1 {
     /// Input device family such as `keyboard` or `mouse`.
     pub device: String,
@@ -27,6 +28,10 @@ pub struct SyntheticInputEventV1 {
     pub key: Option<String>,
     /// Stable button name when the event targets a mouse button.
     pub button: Option<String>,
+    /// Normalized absolute pointer position for mouse movement events.
+    pub position: Option<[f32; 2]>,
+    /// Normalized movement or scroll delta payload.
+    pub delta: Option<[f32; 2]>,
 }
 
 /// Route-local control state surfaced to debugger clients.
@@ -154,6 +159,7 @@ pub(super) struct RouteState {
     pub(super) capabilities: BTreeMap<String, CapabilityStateV1>,
     pub(super) fps_stats: RuntimeFpsStats,
     pub(super) control: RouteControlState,
+    pub(super) replay: RouteReplayState,
     pub(super) metrics: RouteMetricsState,
     pub(super) attached_clients: u32,
 }
@@ -287,6 +293,7 @@ pub(super) fn initialize_route_state(
     capabilities.insert("entity_inspection".to_string(), CapabilityStateV1::Ready);
     capabilities.insert("memory_stats".to_string(), CapabilityStateV1::Ready);
     capabilities.insert("control_plane".to_string(), CapabilityStateV1::Ready);
+    capabilities.insert("replay".to_string(), CapabilityStateV1::Ready);
     capabilities.insert(
         "render_stats".to_string(),
         match surface_kind {
@@ -325,6 +332,15 @@ pub(super) fn initialize_route_state(
         },
         None,
     );
+    set_service_state(
+        &mut snapshot,
+        "replay",
+        CapabilityStateV1::Ready,
+        Some(
+            "idle; normalized input timing only; physics and render output can still diverge by platform/frame pacing"
+                .to_string(),
+        ),
+    );
 
     let mut route = RouteState {
         label: config.route_label.clone(),
@@ -335,6 +351,7 @@ pub(super) fn initialize_route_state(
         capabilities,
         fps_stats: RuntimeFpsStats::default(),
         control: RouteControlState::new(),
+        replay: RouteReplayState::default(),
         metrics: RouteMetricsState::default(),
         attached_clients: 0,
     };

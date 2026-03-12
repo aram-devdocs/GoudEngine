@@ -154,10 +154,9 @@ fn test_unsupported_commands_are_capability_gated_and_service_health_driven() {
     assert_eq!(capture["error"]["code"], "unsupported");
     assert_eq!(capture["error"]["capability"], "capture");
 
-    let replay = dispatch(&route, json!({ "verb": "start_replay" }));
-    assert_eq!(replay["ok"], false);
-    assert_eq!(replay["error"]["code"], "unsupported");
-    assert_eq!(replay["error"]["service"], "replay");
+    let replay = dispatch(&route, json!({ "verb": "get_replay_status" }));
+    assert_eq!(replay["ok"], true);
+    assert_eq!(replay["result"]["mode"], "idle");
 
     let snapshot = dispatch(&route, json!({ "verb": "get_snapshot" }));
     assert_eq!(snapshot["ok"], true);

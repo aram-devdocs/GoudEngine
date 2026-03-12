@@ -5,6 +5,7 @@ use glfw::{Key, MouseButton};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};
 
+use crate::core::debugger::{self, SyntheticInputEventV1};
 use crate::core::math::Vec2;
 
 use super::types::{BufferedInput, GamepadState, InputBinding};
@@ -122,11 +123,31 @@ impl InputManager {
             self.buffer_input(InputBinding::Key(key));
         }
         self.keys_current.insert(key);
+        if let Some(key_name) = normalized_key_name(key) {
+            record_debugger_input_event(SyntheticInputEventV1 {
+                device: "keyboard".to_string(),
+                action: "press".to_string(),
+                key: Some(key_name.to_string()),
+                button: None,
+                position: None,
+                delta: None,
+            });
+        }
     }
 
     /// Sets a key as released.
     pub fn release_key(&mut self, key: Key) {
         self.keys_current.remove(&key);
+        if let Some(key_name) = normalized_key_name(key) {
+            record_debugger_input_event(SyntheticInputEventV1 {
+                device: "keyboard".to_string(),
+                action: "release".to_string(),
+                key: Some(key_name.to_string()),
+                button: None,
+                position: None,
+                delta: None,
+            });
+        }
     }
 
     /// Returns true if the key is currently pressed.
@@ -166,11 +187,31 @@ impl InputManager {
             self.buffer_input(InputBinding::MouseButton(button));
         }
         self.mouse_buttons_current.insert(button);
+        if let Some(button_name) = normalized_mouse_button_name(button) {
+            record_debugger_input_event(SyntheticInputEventV1 {
+                device: "mouse".to_string(),
+                action: "press".to_string(),
+                key: None,
+                button: Some(button_name.to_string()),
+                position: None,
+                delta: None,
+            });
+        }
     }
 
     /// Sets a mouse button as released.
     pub fn release_mouse_button(&mut self, button: MouseButton) {
         self.mouse_buttons_current.remove(&button);
+        if let Some(button_name) = normalized_mouse_button_name(button) {
+            record_debugger_input_event(SyntheticInputEventV1 {
+                device: "mouse".to_string(),
+                action: "release".to_string(),
+                key: None,
+                button: Some(button_name.to_string()),
+                position: None,
+                delta: None,
+            });
+        }
     }
 
     /// Returns true if the mouse button is currently pressed.
@@ -204,6 +245,14 @@ impl InputManager {
     pub fn set_mouse_position(&mut self, position: Vec2) {
         self.mouse_delta = position - self.mouse_position;
         self.mouse_position = position;
+        record_debugger_input_event(SyntheticInputEventV1 {
+            device: "mouse".to_string(),
+            action: "move".to_string(),
+            key: None,
+            button: None,
+            position: Some([self.mouse_position.x, self.mouse_position.y]),
+            delta: Some([self.mouse_delta.x, self.mouse_delta.y]),
+        });
     }
 
     /// Returns the current mouse position in screen coordinates.
@@ -221,6 +270,14 @@ impl InputManager {
     /// Updates the mouse scroll delta.
     pub fn add_scroll_delta(&mut self, delta: Vec2) {
         self.scroll_delta = self.scroll_delta + delta;
+        record_debugger_input_event(SyntheticInputEventV1 {
+            device: "mouse".to_string(),
+            action: "scroll".to_string(),
+            key: None,
+            button: None,
+            position: None,
+            delta: Some([delta.x, delta.y]),
+        });
     }
 
     /// Returns the mouse scroll delta for this frame.
@@ -294,5 +351,36 @@ impl InputManager {
 impl Default for InputManager {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+fn record_debugger_input_event(event: SyntheticInputEventV1) {
+    debugger::record_synthetic_input_for_current_route(event);
+}
+
+fn normalized_key_name(key: Key) -> Option<&'static str> {
+    match key {
+        Key::Space => Some("space"),
+        Key::Enter => Some("enter"),
+        Key::Escape => Some("escape"),
+        Key::Tab => Some("tab"),
+        Key::Left => Some("left"),
+        Key::Right => Some("right"),
+        Key::Up => Some("up"),
+        Key::Down => Some("down"),
+        Key::A => Some("a"),
+        Key::D => Some("d"),
+        Key::S => Some("s"),
+        Key::W => Some("w"),
+        _ => None,
+    }
+}
+
+fn normalized_mouse_button_name(button: MouseButton) -> Option<&'static str> {
+    match button {
+        MouseButton::Button1 => Some("left"),
+        MouseButton::Button2 => Some("right"),
+        MouseButton::Button3 => Some("middle"),
+        _ => None,
     }
 }

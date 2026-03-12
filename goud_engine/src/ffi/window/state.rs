@@ -7,6 +7,7 @@
 
 use crate::core::debugger::{self, RuntimeRouteId};
 use crate::core::error::GoudError;
+use crate::core::math::Vec2;
 use crate::ecs::InputManager;
 use crate::ffi::context::GoudContextId;
 use crate::libs::graphics::backend::opengl::OpenGLBackend;
@@ -189,6 +190,16 @@ fn apply_synthetic_inputs(input: &mut InputManager, events: &[debugger::Syntheti
             ("mouse", "release", _, Some(button)) => {
                 if let Some(button) = parse_mouse_button(button) {
                     input.release_mouse_button(button);
+                }
+            }
+            ("mouse", "move", _, _) => {
+                if let Some([x, y]) = event.position {
+                    input.set_mouse_position(Vec2::new(x, y));
+                }
+            }
+            ("mouse", "scroll", _, _) => {
+                if let Some([x, y]) = event.delta {
+                    input.add_scroll_delta(Vec2::new(x, y));
                 }
             }
             _ => {}

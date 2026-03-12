@@ -10,6 +10,7 @@ mod attach;
 mod control;
 mod debug_draw;
 mod metrics;
+mod replay;
 mod state;
 
 pub use attach::{AttachAcceptedV1, AttachHelloV1};
@@ -432,6 +433,17 @@ pub fn record_phase_duration(name: &str, duration_cpu_micros: u64) {
             CapabilityStateV1::Ready,
             None,
         );
+    });
+}
+
+/// Records one normalized synthetic input event on the current scoped route.
+pub fn record_synthetic_input_for_current_route(event: SyntheticInputEventV1) {
+    let Some(route_id) = current_route() else {
+        return;
+    };
+
+    let _ = with_route_state_mut(&route_id, |route| {
+        replay::record_normalized_input_event(route, event);
     });
 }
 

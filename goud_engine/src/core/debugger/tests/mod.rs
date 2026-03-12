@@ -4,3 +4,4 @@ mod basics;
 mod control;
 mod debug_draw;
 mod metrics;
+mod replay;

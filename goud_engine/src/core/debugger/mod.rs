@@ -48,6 +48,8 @@ pub use runtime::profiler_enabled_for_route;
 #[doc(inline)]
 pub use runtime::record_phase_duration;
 #[doc(inline)]
+pub use runtime::record_synthetic_input_for_current_route;
+#[doc(inline)]
 pub use runtime::register_context;
 #[doc(inline)]
 pub use runtime::replace_provider_debug_draw_2d_for_context;

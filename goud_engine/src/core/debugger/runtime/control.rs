@@ -3,11 +3,20 @@ use serde_json::{json, Value};
 use super::super::snapshot::DebuggerSnapshotV1;
 use super::super::types::CapabilityStateV1;
 use super::metrics::{empty_metrics_export, metrics_trace_json_for_route};
+use super::replay;
 use super::state::{
     lock_runtime, set_route_capability, set_service_state, sync_debugger_state, FrameControlPlanV1,
     RouteControlStateV1, SyntheticInputEventV1,
 };
 use crate::core::debugger::RuntimeRouteId;
+
+fn parse_vec2(value: Option<&Value>) -> Option<[f32; 2]> {
+    let values = value?.as_array()?;
+    if values.len() != 2 {
+        return None;
+    }
+    Some([values[0].as_f64()? as f32, values[1].as_f64()? as f32])
+}
 
 fn parse_input_event(value: &Value) -> Option<SyntheticInputEventV1> {
     Some(SyntheticInputEventV1 {
@@ -18,7 +27,20 @@ fn parse_input_event(value: &Value) -> Option<SyntheticInputEventV1> {
             .get("button")
             .and_then(Value::as_str)
             .map(str::to_string),
+        position: parse_vec2(value.get("position")),
+        delta: parse_vec2(value.get("delta")),
     })
+}
+
+fn parse_bytes(value: &Value) -> Option<Vec<u8>> {
+    match value {
+        Value::Array(items) => items
+            .iter()
+            .map(|item| item.as_u64().and_then(|v| u8::try_from(v).ok()))
+            .collect(),
+        Value::String(text) => Some(text.as_bytes().to_vec()),
+        _ => None,
+    }
 }
 
 fn ok_response(request: &Value, result: Value) -> Value {
@@ -102,7 +124,10 @@ pub fn take_frame_control_for_route(
     let mut guard = lock_runtime();
     let runtime = guard.as_mut()?;
     let route = runtime.routes.get_mut(&route_id.context_id)?;
-    let plan = route.control.take_frame_plan(raw_delta_seconds);
+    let mut plan = route.control.take_frame_plan(raw_delta_seconds);
+    let target_frame_index = route.snapshot.frame.index.saturating_add(1);
+    let replay_events = replay::take_replay_events_for_frame(route, target_frame_index);
+    plan.synthetic_inputs.extend(replay_events);
     sync_debugger_state(route);
     Some(plan)
 }
@@ -247,20 +272,7 @@ pub fn dispatch_request_json_for_route(
                 }
                 ok_response(&request, json!(route.control.snapshot()))
             }
-            "get_replay_status" => {
-                let service = route
-                    .snapshot
-                    .services
-                    .iter()
-                    .find(|service| service.name == "replay");
-                ok_response(
-                    &request,
-                    json!({
-                        "state": service.map(|service| service.state),
-                        "detail": service.and_then(|service| service.detail.clone()),
-                    }),
-                )
-            }
+            "get_replay_status" => ok_response(&request, replay::replay_status_json(route)),
             "capture_frame" => error_response(
                 &request,
                 "unsupported",
@@ -268,14 +280,44 @@ pub fn dispatch_request_json_for_route(
                 Some("capture"),
                 Some("capture"),
             ),
-            "start_recording" | "stop_recording" | "start_replay" | "stop_replay" => {
-                error_response(
-                    &request,
-                    "unsupported",
-                    "replay controls are not available for this route".to_string(),
-                    Some("replay"),
-                    Some("replay"),
-                )
+            "start_recording" => {
+                replay::start_recording(route);
+                ok_response(&request, replay::replay_status_json(route))
+            }
+            "stop_recording" => {
+                let export = replay::stop_recording(route);
+                ok_response(&request, json!(export))
+            }
+            "start_replay" => {
+                let Some(data_value) = request.get("data") else {
+                    return Ok(error_response(
+                        &request,
+                        "protocol_error",
+                        "start_replay requires replay data bytes".to_string(),
+                        None,
+                        None,
+                    ));
+                };
+                let Some(data) = parse_bytes(data_value) else {
+                    return Ok(error_response(
+                        &request,
+                        "protocol_error",
+                        "start_replay data must be a byte array or string".to_string(),
+                        None,
+                        None,
+                    ));
+                };
+
+                match replay::start_replay(route, &data) {
+                    Ok(()) => ok_response(&request, replay::replay_status_json(route)),
+                    Err(message) => {
+                        error_response(&request, "protocol_error", message, None, Some("replay"))
+                    }
+                }
+            }
+            "stop_replay" => {
+                replay::stop_replay(route);
+                ok_response(&request, replay::replay_status_json(route))
             }
             _ => error_response(
                 &request,
