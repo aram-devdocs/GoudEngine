@@ -53,6 +53,8 @@ pub use physics2d_material::{
 #[cfg(feature = "rapier2d")]
 pub use physics2d_state::CollisionCallback;
 #[cfg(feature = "rapier3d")]
+pub(crate) use physics3d::debug_shapes_for_context as physics3d_debug_shapes;
+#[cfg(feature = "rapier3d")]
 pub use physics3d::{
     goud_physics3d_add_collider, goud_physics3d_add_rigid_body, goud_physics3d_add_rigid_body_ex,
     goud_physics3d_apply_force, goud_physics3d_apply_impulse, goud_physics3d_create,

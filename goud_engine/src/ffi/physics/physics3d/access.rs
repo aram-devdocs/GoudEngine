@@ -1,4 +1,5 @@
 use crate::core::error::{set_last_error, GoudError, ERR_INTERNAL_ERROR};
+use crate::core::providers::types::DebugShape3D;
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 
 use super::super::get_physics_registry_3d;
@@ -65,5 +66,40 @@ where
             set_last_error(GoudError::NotInitialized);
             R::from(GoudError::NotInitialized.error_code())
         }
+    }
+}
+
+/// Returns a snapshot of provider-owned 3D debug draw shapes for one context.
+///
+/// This helper is intentionally non-fallible for render integration: invalid
+/// contexts, lock failures, missing providers, and provider errors all resolve
+/// to an empty list without mutating global FFI error state.
+pub(crate) fn debug_shapes_for_context(ctx: GoudContextId) -> Vec<DebugShape3D> {
+    if ctx == GOUD_INVALID_CONTEXT_ID {
+        return Vec::new();
+    }
+
+    let registry = match get_physics_registry_3d().lock() {
+        Ok(r) => r,
+        Err(_) => return Vec::new(),
+    };
+
+    let Some(provider) = registry.providers.get(&ctx) else {
+        return Vec::new();
+    };
+
+    provider.debug_shapes()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::debug_shapes_for_context;
+    use crate::core::context_id::GoudContextId;
+    use crate::ffi::context::GOUD_INVALID_CONTEXT_ID;
+
+    #[test]
+    fn test_debug_shapes_for_context_returns_empty_when_context_or_provider_is_missing() {
+        assert!(debug_shapes_for_context(GOUD_INVALID_CONTEXT_ID).is_empty());
+        assert!(debug_shapes_for_context(GoudContextId::new(9001, 1)).is_empty());
     }
 }

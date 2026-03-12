@@ -28,6 +28,37 @@ impl TextureManagerTrait for WindowTextureBridge {
     }
 }
 
+fn resolved_runtime_debug_draw_shapes(
+    context_id: GoudContextId,
+) -> Vec<crate::core::providers::types::DebugShape3D> {
+    let Some(route_id) = debugger::route_for_context(context_id) else {
+        return Vec::new();
+    };
+    let Some(control) = debugger::control_state_for_route(&route_id) else {
+        return Vec::new();
+    };
+    if !control.debug_draw_enabled {
+        return Vec::new();
+    }
+
+    #[cfg(feature = "rapier3d")]
+    let provider_shapes = crate::ffi::physics::physics3d_debug_shapes(context_id);
+    #[cfg(not(feature = "rapier3d"))]
+    let provider_shapes: Vec<crate::core::providers::types::DebugShape3D> = Vec::new();
+    let _ = debugger::replace_provider_debug_draw_3d_for_context(context_id, &provider_shapes);
+
+    let Some(payload) = debugger::debug_draw_payload_for_route(&route_id) else {
+        return Vec::new();
+    };
+
+    payload
+        .provider_3d
+        .into_iter()
+        .chain(payload.transient_3d)
+        .map(|entry| entry.shape)
+        .collect()
+}
+
 // ============================================================================
 // FFI: Grid
 // ============================================================================
@@ -193,9 +224,20 @@ pub extern "C" fn goud_renderer3d_render(context_id: GoudContextId) -> bool {
         return false;
     }
 
+    let route_id = debugger::route_for_context(context_id);
+
     let rendered = with_renderer(context_id, |renderer| {
         let texture_bridge = WindowTextureBridge { context_id };
-        renderer.render(Some(&texture_bridge));
+
+        if let Some(route_id) = route_id.as_ref() {
+            debugger::scoped_route(Some(route_id.clone()), || {
+                renderer.set_debug_draw_shapes(&resolved_runtime_debug_draw_shapes(context_id));
+                renderer.render(Some(&texture_bridge));
+            });
+        } else {
+            renderer.set_debug_draw_shapes(&[]);
+            renderer.render(Some(&texture_bridge));
+        }
         true
     })
     .unwrap_or(false);
@@ -211,4 +253,71 @@ pub extern "C" fn goud_renderer3d_render(context_id: GoudContextId) -> bool {
 #[no_mangle]
 pub extern "C" fn goud_renderer3d_render_all(context_id: GoudContextId) -> bool {
     goud_renderer3d_render(context_id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::resolved_runtime_debug_draw_shapes;
+    use crate::core::debugger::{
+        self, dispatch_request_json_for_route, register_context, DebuggerConfig, RuntimeSurfaceKind,
+    };
+    use crate::ffi::context::GoudContextId;
+    #[cfg(feature = "rapier3d")]
+    use crate::ffi::physics::{
+        goud_physics3d_add_collider, goud_physics3d_add_rigid_body, goud_physics3d_create,
+        goud_physics3d_destroy,
+    };
+    use serde_json::json;
+
+    #[test]
+    fn resolved_runtime_debug_draw_shapes_returns_empty_until_debug_draw_enabled() {
+        let _guard = debugger::test_lock();
+        debugger::reset_for_tests();
+
+        let context_id = GoudContextId::new(761, 1);
+        let route = register_context(
+            context_id,
+            RuntimeSurfaceKind::HeadlessContext,
+            &DebuggerConfig {
+                enabled: true,
+                publish_local_attach: true,
+                route_label: Some("renderer3d-debug-draw".to_string()),
+            },
+        );
+
+        #[cfg(feature = "rapier3d")]
+        {
+            assert_eq!(goud_physics3d_create(context_id, 0.0, -9.8, 0.0), 0);
+            let body = goud_physics3d_add_rigid_body(context_id, 1, 0.0, 0.0, 0.0, 1.0);
+            assert!(body > 0);
+            let collider = goud_physics3d_add_collider(
+                context_id,
+                body as u64,
+                1,
+                1.0,
+                1.0,
+                1.0,
+                0.0,
+                0.5,
+                0.0,
+            );
+            assert!(collider > 0);
+        }
+
+        assert!(resolved_runtime_debug_draw_shapes(context_id).is_empty());
+
+        let response = dispatch_request_json_for_route(
+            &route,
+            &json!({ "verb": "set_debug_draw_enabled", "enabled": true }).to_string(),
+        )
+        .expect("dispatcher should return JSON");
+        assert_eq!(response["ok"], true);
+
+        #[cfg(feature = "rapier3d")]
+        assert_eq!(resolved_runtime_debug_draw_shapes(context_id).len(), 1);
+        #[cfg(not(feature = "rapier3d"))]
+        assert!(resolved_runtime_debug_draw_shapes(context_id).is_empty());
+        #[cfg(feature = "rapier3d")]
+        assert_eq!(goud_physics3d_destroy(context_id), 0);
+    }
 }
