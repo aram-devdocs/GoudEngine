@@ -6,6 +6,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::os::raw::c_char;
 
+use crate::core::debugger;
 use crate::core::error::{set_last_error, GoudError};
 use crate::core::handle::{Handle, HandleMap};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
@@ -295,7 +296,10 @@ pub unsafe extern "C" fn goud_renderer_draw_text(
     });
 
     match draw_result {
-        Some(Ok(())) => true,
+        Some(Ok(())) => {
+            let _ = debugger::update_render_stats_for_context(context_id, 1, 2, 1, 1);
+            true
+        }
         Some(Err(err)) => {
             set_last_error(err);
             false

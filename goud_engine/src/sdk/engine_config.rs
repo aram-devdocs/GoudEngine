@@ -18,6 +18,7 @@
 //! assert_eq!(game_config.title, "My Game");
 //! ```
 
+use crate::core::debugger::DebuggerConfig;
 use crate::core::providers::audio::AudioProvider;
 use crate::core::providers::input::InputProvider;
 use crate::core::providers::physics::PhysicsProvider;
@@ -107,6 +108,12 @@ impl EngineConfig {
         self
     }
 
+    /// Replaces the debugger runtime configuration carried by the inner [`GameConfig`].
+    pub fn with_debugger(mut self, debugger: DebuggerConfig) -> Self {
+        self.game_config = self.game_config.with_debugger(debugger);
+        self
+    }
+
     // Provider Selection (delegated to ProviderRegistryBuilder)
 
     /// Sets the render provider.
@@ -185,6 +192,7 @@ impl Default for EngineConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::debugger::DebuggerConfig;
     use crate::core::providers::impls::{
         NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullRenderProvider,
     };
@@ -200,6 +208,34 @@ mod tests {
         assert_eq!(providers.physics.name(), "null");
         assert_eq!(providers.audio.name(), "null");
         assert_eq!(providers.input.name(), "null");
+    }
+
+    #[test]
+    fn test_debugger_game_config_default_is_disabled() {
+        let config = GameConfig::default();
+        assert!(!config.debugger.enabled);
+        assert!(!config.debugger.publish_local_attach);
+        assert_eq!(config.debugger.route_label, None);
+    }
+
+    #[test]
+    fn test_debugger_engine_config_default_preserves_game_config_defaults() {
+        let config = EngineConfig::new();
+        assert!(!config.game_config().debugger.enabled);
+        assert!(!config.game_config().debugger.publish_local_attach);
+    }
+
+    #[test]
+    fn test_debugger_engine_config_with_debugger_propagates_through_build() {
+        let debugger = DebuggerConfig {
+            enabled: true,
+            publish_local_attach: true,
+            route_label: Some("feature-lab".to_string()),
+        };
+
+        let (game_config, _) = EngineConfig::new().with_debugger(debugger.clone()).build();
+
+        assert_eq!(game_config.debugger, debugger);
     }
 
     #[test]

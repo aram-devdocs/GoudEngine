@@ -8,6 +8,7 @@ use std::collections::HashSet;
 
 use crate::context_registry::scene::transition::{TransitionComplete, TransitionType};
 use crate::context_registry::scene::{SceneId, SceneLoader, SceneManager};
+use crate::core::debugger::{ContextConfig, DebuggerConfig, RuntimeRouteId};
 use crate::ecs::World;
 
 /// A single engine context containing scene management and associated state.
@@ -40,6 +41,12 @@ pub struct GoudContext {
     /// trait system which operates at compile time.
     registered_plugins: HashSet<String>,
 
+    /// Debugger configuration captured at context creation time.
+    debugger: DebuggerConfig,
+
+    /// Registered debugger route, when debugger mode is enabled.
+    debugger_route: Option<RuntimeRouteId>,
+
     /// Thread ID that created this context (for validation in test builds).
     #[cfg(test)]
     owner_thread: std::thread::ThreadId,
@@ -47,7 +54,13 @@ pub struct GoudContext {
 
 impl GoudContext {
     /// Creates a new context with the given generation.
+    #[cfg(test)]
     pub(crate) fn new(generation: u32) -> Self {
+        Self::new_with_config(generation, ContextConfig::default())
+    }
+
+    /// Creates a new context with the given configuration.
+    pub(crate) fn new_with_config(generation: u32, config: ContextConfig) -> Self {
         let scene_manager = SceneManager::new();
         let current_scene = scene_manager.default_scene();
         Self {
@@ -55,6 +68,8 @@ impl GoudContext {
             current_scene,
             generation,
             registered_plugins: HashSet::new(),
+            debugger: config.debugger,
+            debugger_route: None,
             #[cfg(test)]
             owner_thread: std::thread::current().id(),
         }
@@ -222,6 +237,16 @@ impl GoudContext {
         self.generation
     }
 
+    /// Returns the registered debugger route, if any.
+    pub(crate) fn debugger_route(&self) -> Option<&RuntimeRouteId> {
+        self.debugger_route.as_ref()
+    }
+
+    /// Stores the runtime-owned debugger route for this context.
+    pub(crate) fn set_debugger_route(&mut self, route: Option<RuntimeRouteId>) {
+        self.debugger_route = route;
+    }
+
     /// Validates that this context is being accessed from the correct thread.
     ///
     /// Panics if called from a different thread than the one that created the context.
@@ -244,6 +269,7 @@ impl std::fmt::Debug for GoudContext {
             .field("scene_manager", &self.scene_manager)
             .field("current_scene", &self.current_scene)
             .field("generation", &self.generation)
+            .field("debugger", &self.debugger)
             .finish()
     }
 }

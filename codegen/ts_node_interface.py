@@ -8,6 +8,7 @@ from ts_node_shared import (
     mapping,
     schema,
     to_camel,
+    ts_param_name,
     ts_iface_type,
     write_generated,
 )
@@ -48,6 +49,33 @@ def gen_interface():
     if schema["types"]["FpsStats"].get("doc"):
         lines.append(f"/** {schema['types']['FpsStats']['doc']} */")
     lines.append(f"export interface IFpsStats {{ {fps_str}; }}")
+    dbg_cfg_fields = []
+    for f in schema["types"]["DebuggerConfig"]["fields"]:
+        ts_ft = "boolean" if f["type"] == "bool" else "string"
+        dbg_cfg_fields.append(f"{to_camel(f['name'])}: {ts_ft}")
+    if schema["types"]["DebuggerConfig"].get("doc"):
+        lines.append(f"/** {schema['types']['DebuggerConfig']['doc']} */")
+    lines.append(f"export interface IDebuggerConfig {{ {'; '.join(dbg_cfg_fields)}; }}")
+    ctx_cfg_fields = []
+    for f in schema["types"]["ContextConfig"]["fields"]:
+        ts_ft = ts_iface_type(f["type"]) if f["type"] in schema["types"] else "number"
+        ctx_cfg_fields.append(f"{to_camel(f['name'])}: {ts_ft}")
+    if schema["types"]["ContextConfig"].get("doc"):
+        lines.append(f"/** {schema['types']['ContextConfig']['doc']} */")
+    lines.append(f"export interface IContextConfig {{ {'; '.join(ctx_cfg_fields)}; }}")
+    mem_cat_fields = "; ".join(
+        f"{to_camel(f['name'])}: number" for f in schema["types"]["MemoryCategoryStats"]["fields"]
+    )
+    if schema["types"]["MemoryCategoryStats"].get("doc"):
+        lines.append(f"/** {schema['types']['MemoryCategoryStats']['doc']} */")
+    lines.append(f"export interface IMemoryCategoryStats {{ {mem_cat_fields}; }}")
+    mem_summary_fields = []
+    for f in schema["types"]["MemorySummary"]["fields"]:
+        ts_ft = "IMemoryCategoryStats" if f["type"] == "MemoryCategoryStats" else "number"
+        mem_summary_fields.append(f"{to_camel(f['name'])}: {ts_ft}")
+    if schema["types"]["MemorySummary"].get("doc"):
+        lines.append(f"/** {schema['types']['MemorySummary']['doc']} */")
+    lines.append(f"export interface IMemorySummary {{ {'; '.join(mem_summary_fields)}; }}")
     ns_fields = schema["types"]["NetworkStats"]["fields"]
     ns_str = "; ".join(f"{to_camel(f['name'])}: number" for f in ns_fields)
     if schema["types"]["NetworkStats"].get("doc"):
@@ -196,7 +224,7 @@ def gen_interface():
 
         param_strs = []
         for i, p in enumerate(params):
-            pn = to_camel(p["name"])
+            pn = ts_param_name(p["name"])
             pt = p["type"]
             opt = "?" if can_be_optional[i] else ""
             if pt == "callback(f32)":
@@ -256,6 +284,12 @@ def gen_interface():
     lines.append("  clearNetworkSimulation(handle: number): number;")
     lines.append("  setNetworkOverlayHandle(handle: number): number;")
     lines.append("  clearNetworkOverlayHandle(): number;")
+    lines.append("  getDebuggerSnapshotJson(): string;")
+    lines.append("  getDebuggerManifestJson(): string;")
+    lines.append("  setDebuggerProfilingEnabled(enabled: boolean): void;")
+    lines.append("  setDebuggerSelectedEntity(entityId: number): void;")
+    lines.append("  clearDebuggerSelectedEntity(): void;")
+    lines.append("  getMemorySummary(): IMemorySummary;")
     lines.append("}")
     lines.append("")
     lines.append("/** Data for a fired animation event */")
@@ -285,7 +319,10 @@ def gen_interface():
             elif mn == "destroy":
                 lines.append("  destroy(): void;")
             else:
-                ps = ", ".join(f"{to_camel(p['name'])}: {ts_iface_type(p['type'])}" for p in params)
+                ps = ", ".join(
+                    f"{ts_param_name(p['name'])}: {ts_iface_type(p['type'])}"
+                    for p in params
+                )
                 lines.append(f"  {mn}({ps}): IEngineConfig;")
         lines.append("}")
         lines.append("")
@@ -301,7 +338,10 @@ def gen_interface():
             ret = method.get("returns", "void")
             if method.get("doc"):
                 lines.append(f"  /** {method['doc']} */")
-            ps = ", ".join(f"{to_camel(p['name'])}: {ts_iface_type(p['type'])}" for p in params)
+            ps = ", ".join(
+                f"{ts_param_name(p['name'])}: {ts_iface_type(p['type'])}"
+                for p in params
+            )
             lines.append(f"  {mn}({ps}): {ts_iface_type(ret)};")
         lines.append("}")
         lines.append("")
@@ -317,7 +357,10 @@ def gen_interface():
             ret = method.get("returns", "void")
             if method.get("doc"):
                 lines.append(f"  /** {method['doc']} */")
-            ps = ", ".join(f"{to_camel(p['name'])}: {ts_iface_type(p['type'])}" for p in params)
+            ps = ", ".join(
+                f"{ts_param_name(p['name'])}: {ts_iface_type(p['type'])}"
+                for p in params
+            )
             lines.append(f"  {mn}({ps}): {ts_iface_type(ret)};")
         lines.append("}")
         lines.append("")

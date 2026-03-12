@@ -80,6 +80,20 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
         getMousePosition: () => [3, 4],
         getMouseDelta: () => [5, 6],
         getScrollDelta: () => [7, 8],
+        getDebuggerSnapshotJson: () => '{"version":1}',
+        getDebuggerManifestJson: () => '{"manifest_version":1}',
+        getMemorySummary: () => ({
+          rendering: { current_bytes: 1, peak_bytes: 2 },
+          assets: { current_bytes: 3, peak_bytes: 4 },
+          ecs: { current_bytes: 5, peak_bytes: 6 },
+          ui: { current_bytes: 7, peak_bytes: 8 },
+          audio: { current_bytes: 9, peak_bytes: 10 },
+          network: { current_bytes: 11, peak_bytes: 12 },
+          debugger: { current_bytes: 13, peak_bytes: 14 },
+          other: { current_bytes: 15, peak_bytes: 16 },
+          total_current_bytes: 64,
+          total_peak_bytes: 72,
+        }),
         spawnBatch: () => [11, 12, 13],
         getSprite: () => ({ flipX: true, flipY: false }),
         networkSend(handle, peerId, data, channel) {
@@ -241,6 +255,23 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
     assert.equal(game.clearNetworkSimulation(9), 0);
     assert.equal(game.setNetworkOverlayHandle(9), 0);
     assert.equal(game.clearNetworkOverlayHandle(), 0);
+    assert.equal(game.getDebuggerSnapshotJson(), '{"version":1}');
+    assert.equal(game.getDebuggerManifestJson(), '{"manifest_version":1}');
+    game.setDebuggerProfilingEnabled(true);
+    game.setDebuggerSelectedEntity(77);
+    game.clearDebuggerSelectedEntity();
+    assert.deepEqual(game.getMemorySummary(), {
+      rendering: { currentBytes: 1, peakBytes: 2 },
+      assets: { currentBytes: 3, peakBytes: 4 },
+      ecs: { currentBytes: 5, peakBytes: 6 },
+      ui: { currentBytes: 7, peakBytes: 8 },
+      audio: { currentBytes: 9, peakBytes: 10 },
+      network: { currentBytes: 11, peakBytes: 12 },
+      debugger: { currentBytes: 13, peakBytes: 14 },
+      other: { currentBytes: 15, peakBytes: 16 },
+      totalCurrentBytes: 64,
+      totalPeakBytes: 72,
+    });
 
     assert.equal(game.audioPlay(Buffer.from([1])), 0);
     assert.equal(game.audioPlayOnChannel(Buffer.from([1]), 2), 0);
@@ -338,6 +369,20 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
     const calls = [];
     const native = makeProxyNative(
       {
+        getDebuggerSnapshotJson: () => '{"context":true}',
+        getDebuggerManifestJson: () => '{"manifest":true}',
+        getMemorySummary: () => ({
+          rendering: { current_bytes: 2, peak_bytes: 3 },
+          assets: { current_bytes: 4, peak_bytes: 5 },
+          ecs: { current_bytes: 6, peak_bytes: 7 },
+          ui: { current_bytes: 8, peak_bytes: 9 },
+          audio: { current_bytes: 10, peak_bytes: 11 },
+          network: { current_bytes: 12, peak_bytes: 13 },
+          debugger: { current_bytes: 14, peak_bytes: 15 },
+          other: { current_bytes: 16, peak_bytes: 17 },
+          total_current_bytes: 72,
+          total_peak_bytes: 80,
+        }),
         networkSend(handle, peerId, data, channel) {
           calls.push(['networkSend', [handle, peerId, data, channel]]);
           return channel;
@@ -370,6 +415,23 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
     assert.equal(ctx.clearNetworkSimulation(9), 0);
     assert.equal(ctx.setNetworkOverlayHandle(9), 0);
     assert.equal(ctx.clearNetworkOverlayHandle(), 0);
+    assert.equal(ctx.getDebuggerSnapshotJson(), '{"context":true}');
+    assert.equal(ctx.getDebuggerManifestJson(), '{"manifest":true}');
+    ctx.setDebuggerProfilingEnabled(false);
+    ctx.setDebuggerSelectedEntity(19);
+    ctx.clearDebuggerSelectedEntity();
+    assert.deepEqual(ctx.getMemorySummary(), {
+      rendering: { currentBytes: 2, peakBytes: 3 },
+      assets: { currentBytes: 4, peakBytes: 5 },
+      ecs: { currentBytes: 6, peakBytes: 7 },
+      ui: { currentBytes: 8, peakBytes: 9 },
+      audio: { currentBytes: 10, peakBytes: 11 },
+      network: { currentBytes: 12, peakBytes: 13 },
+      debugger: { currentBytes: 14, peakBytes: 15 },
+      other: { currentBytes: 16, peakBytes: 17 },
+      totalCurrentBytes: 72,
+      totalPeakBytes: 80,
+    });
 
     const sendCall = calls.find(([name]) => name === 'networkSend');
     assert.ok(Buffer.isBuffer(sendCall[1][2]));
@@ -458,6 +520,7 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
       setFpsOverlay: () => {},
       setPhysicsDebug: () => {},
       setPhysicsBackend2D: () => {},
+      setDebugger: () => {},
       build: () => fakeBuiltNative,
       destroy: () => {},
     };
@@ -470,6 +533,7 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
     assert.equal(config.setFpsOverlay(true), config);
     assert.equal(config.setPhysicsDebug(false), config);
     assert.equal(config.setPhysicsBackend2D(1), config);
+    assert.equal(config.setDebugger({ enabled: true, publishLocalAttach: false, routeLabel: 'test' }), config);
 
     const builtGame = config.build();
     assert.equal(Object.getPrototypeOf(builtGame), GoudGame.prototype);

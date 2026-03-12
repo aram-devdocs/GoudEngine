@@ -327,6 +327,66 @@ describe('Generated web UiManager bindings', () => {
       'public web UiManager API should keep the object-shaped setStyle signature with UiNodeId typing',
     );
 
+    assert.ok(
+      nodeSrc.includes('interface NativeBindings {'),
+      'generated node wrapper should declare a typed native bindings helper interface',
+    );
+    assert.ok(
+      nodeSrc.includes("function getNativeBindings(): NativeBindings {"),
+      'generated node wrapper should type the native bindings loader',
+    );
+    assert.ok(
+      nodeSrc.includes("return eval('require')(\"../../../index\") as NativeBindings;"),
+      'generated node wrapper should lazy-load the native addon entrypoint with a typed assertion',
+    );
+
+    for (const fragment of [
+      'export interface IDebuggerConfig { enabled: boolean; publishLocalAttach: boolean; routeLabel: string; }',
+      'export interface IContextConfig { debugger: IDebuggerConfig; }',
+      'export interface IMemorySummary {',
+      'getDebuggerSnapshotJson(): string;',
+      'getDebuggerManifestJson(): string;',
+      'setDebuggerProfilingEnabled(enabled: boolean): void;',
+      'setDebuggerSelectedEntity(entityId: number): void;',
+      'clearDebuggerSelectedEntity(): void;',
+      'getMemorySummary(): IMemorySummary;',
+      'setDebugger(debuggerConfig: IDebuggerConfig): IEngineConfig;',
+    ]) {
+      assert.ok(
+        typesSrc.includes(fragment),
+        `generated engine types missing debugger fragment: ${fragment}`,
+      );
+    }
+
+    for (const fragment of [
+      'constructor(config?: IContextConfig) {',
+      'this.native = new (getNativeBindings().GoudContext)(nativeConfig as Record<string, unknown>);',
+      'getDebuggerSnapshotJson(): string {',
+      'getDebuggerManifestJson(): string {',
+      'setDebuggerProfilingEnabled(enabled: boolean): void {',
+      'setDebuggerSelectedEntity(entityId: number): void {',
+      'clearDebuggerSelectedEntity(): void {',
+      'getMemorySummary(): IMemorySummary {',
+      'setDebugger(debuggerConfig: IDebuggerConfig): EngineConfig {',
+    ]) {
+      assert.ok(
+        nodeSrc.includes(fragment),
+        `generated node debugger wrapper missing fragment: ${fragment}`,
+      );
+    }
+
+    for (const fragment of [
+      "function debuggerUnsupported(): never {",
+      "throw new Error('Debugger runtime is not supported in WASM mode');",
+      'getDebuggerSnapshotJson(): string { return debuggerUnsupported(); }',
+      'setDebugger(_debugger: IDebuggerConfig): EngineConfig {',
+    ]) {
+      assert.ok(
+        webSrc.includes(fragment),
+        `generated web debugger surface missing fragment: ${fragment}`,
+      );
+    }
+
     for (const fragment of [
       'createNode(componentType: number): UiNodeId { return this.handle.create_node(componentType); }',
       'removeNode(nodeId: UiNodeId): number { return this.handle.remove_node(toWasmUiNodeId(nodeId)); }',

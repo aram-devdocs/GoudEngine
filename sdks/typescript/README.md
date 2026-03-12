@@ -100,6 +100,37 @@ const endpoint = new NetworkManager(game).connect(
 Browser-specific limitations and workarounds are documented in the Web Platform Gotchas guide:
 [`docs/src/guides/web-platform-gotchas.md`](../../docs/src/guides/web-platform-gotchas.md).
 
+## Debugger Runtime
+
+The debugger runtime is available on the desktop Node target. Enable it through `GoudContext` config, then use the raw JSON accessors or the thin parsed helpers from `goudengine/node`.
+
+```typescript
+import {
+  GoudContext,
+  parseDebuggerSnapshot,
+} from "goudengine/node";
+
+const ctx = new GoudContext({
+  debugger: {
+    enabled: true,
+    publishLocalAttach: true,
+    routeLabel: "ts-demo",
+  },
+});
+
+ctx.setDebuggerProfilingEnabled(true);
+
+const snapshot = parseDebuggerSnapshot(ctx);
+const manifestJson = ctx.getDebuggerManifestJson();
+const memory = ctx.getMemorySummary();
+
+ctx.setDebuggerSelectedEntity(42);
+ctx.clearDebuggerSelectedEntity();
+ctx.destroy();
+```
+
+`goudengine/web` does not expose the debugger runtime in this batch. The browser build throws an explicit unsupported error instead of silently no-oping.
+
 ## Features
 
 - 2D and 3D rendering with runtime renderer selection

@@ -3,6 +3,8 @@
 //! `ParallelSystemStage` analyzes system access patterns to determine which
 //! systems can safely run concurrently and groups them into batches.
 
+mod execution;
+
 use std::collections::HashMap;
 use std::fmt;
 
@@ -10,13 +12,12 @@ use crate::ecs::system::{BoxedSystem, IntoSystem, SystemId};
 use crate::ecs::World;
 
 use super::core_stage::CoreStage;
-#[cfg(feature = "native")]
-use super::parallel_types::UnsafePtr;
 use super::parallel_types::{ParallelBatch, ParallelExecutionConfig, ParallelExecutionStats};
 use super::stage::Stage;
 use super::stage_label::StageLabel;
 use super::system_ordering::SystemOrdering;
-use super::topological_sort::TopologicalSorter;
+
+mod batching;
 
 /// A stage that executes non-conflicting systems in parallel.
 ///
@@ -276,78 +277,7 @@ impl ParallelSystemStage {
 
     /// Rebuilds the parallel execution batches.
     pub fn rebuild_batches(&mut self) -> Result<(), super::topological_sort::OrderingCycleError> {
-        self.batches.clear();
-        if self.systems.is_empty() {
-            self.dirty = false;
-            return Ok(());
-        }
-        let execution_order = if self.config.respect_ordering && !self.orderings.is_empty() {
-            let mut sorter =
-                TopologicalSorter::with_capacity(self.systems.len(), self.orderings.len());
-            for system in &self.systems {
-                sorter.add_system(system.id(), system.name());
-            }
-            for ordering in &self.orderings {
-                sorter.add_system_ordering(*ordering);
-            }
-            sorter.sort()?
-        } else {
-            self.systems.iter().map(|s| s.id()).collect()
-        };
-        let mut direct_predecessors: HashMap<SystemId, Vec<SystemId>> = HashMap::new();
-        if self.config.respect_ordering {
-            for ordering in &self.orderings {
-                direct_predecessors
-                    .entry(ordering.second())
-                    .or_default()
-                    .push(ordering.first());
-            }
-        }
-        let mut system_batch_index: HashMap<SystemId, usize> = HashMap::new();
-        for system_id in execution_order {
-            let system_idx = self.system_indices[&system_id];
-            let system = &self.systems[system_idx];
-            let system_access = system.component_access();
-            let system_read_only = system.is_read_only();
-            let min_batch_idx = if self.config.respect_ordering {
-                direct_predecessors
-                    .get(&system_id)
-                    .map(|preds| {
-                        preds
-                            .iter()
-                            .filter_map(|pred| system_batch_index.get(pred))
-                            .max()
-                            .map(|&max| max + 1)
-                            .unwrap_or(0)
-                    })
-                    .unwrap_or(0)
-            } else {
-                0
-            };
-            let mut assigned = false;
-            for batch_idx in min_batch_idx..self.batches.len() {
-                let batch = &self.batches[batch_idx];
-                let has_conflict = batch.system_ids.iter().any(|&bid| {
-                    let bidx = self.system_indices[&bid];
-                    system_access.conflicts_with(&self.systems[bidx].component_access())
-                });
-                if !has_conflict {
-                    self.batches[batch_idx].add(system_id, system_read_only);
-                    system_batch_index.insert(system_id, batch_idx);
-                    assigned = true;
-                    break;
-                }
-            }
-            if !assigned {
-                let new_batch_idx = self.batches.len();
-                let mut batch = ParallelBatch::with_capacity(4);
-                batch.add(system_id, system_read_only);
-                self.batches.push(batch);
-                system_batch_index.insert(system_id, new_batch_idx);
-            }
-        }
-        self.dirty = false;
-        Ok(())
+        batching::rebuild_batches(self)
     }
 
     /// Forces a rebuild of parallel batches on next run.
@@ -360,83 +290,6 @@ impl ParallelSystemStage {
     #[inline]
     pub fn is_dirty(&self) -> bool {
         self.dirty
-    }
-
-    /// Runs all systems using parallel execution.
-    pub fn run_parallel(&mut self, world: &mut World) {
-        if (self.dirty || self.batches.is_empty()) && self.config.auto_rebuild {
-            if let Err(err) = self.rebuild_batches() {
-                log::warn!(
-                    "ParallelSystemStage '{}': ordering cycle detected, batches may be stale: {err}",
-                    self.name
-                );
-            }
-        }
-        if !self.initialized {
-            for system in &mut self.systems {
-                system.initialize(world);
-            }
-            self.initialized = true;
-        }
-        let mut stats = ParallelExecutionStats {
-            batch_count: self.batches.len(),
-            system_count: self.systems.len(),
-            ..Default::default()
-        };
-        for batch in &self.batches {
-            if batch.is_empty() {
-                continue;
-            }
-            let runnable: Vec<usize> = batch
-                .system_ids
-                .iter()
-                .filter_map(|&id| {
-                    let idx = self.system_indices[&id];
-                    if self.systems[idx].should_run(world) {
-                        Some(idx)
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-            if runnable.is_empty() {
-                continue;
-            }
-            if runnable.len() == 1 {
-                self.systems[runnable[0]].run(world);
-                stats.sequential_systems += 1;
-            } else {
-                stats.parallel_systems += runnable.len();
-                if runnable.len() > stats.max_parallelism {
-                    stats.max_parallelism = runnable.len();
-                }
-                #[cfg(feature = "native")]
-                {
-                    // SAFETY: Batch computation ensures non-conflicting access.
-                    let systems_ptr = UnsafePtr(self.systems.as_mut_ptr());
-                    let world_ptr = UnsafePtr(world as *mut World);
-                    rayon::scope(|s| {
-                        for &idx in &runnable {
-                            s.spawn(move |_| {
-                                // SAFETY: Each system accesses disjoint data.
-                                unsafe {
-                                    let sys = &mut *systems_ptr.get().add(idx);
-                                    let w = &mut *world_ptr.get();
-                                    sys.run(w);
-                                }
-                            });
-                        }
-                    });
-                }
-                #[cfg(not(feature = "native"))]
-                {
-                    for &idx in &runnable {
-                        self.systems[idx].run(world);
-                    }
-                }
-            }
-        }
-        self.last_stats = stats;
     }
 }
 

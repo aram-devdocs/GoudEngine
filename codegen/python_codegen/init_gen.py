@@ -46,6 +46,7 @@ def gen_init() -> None:
         if name in schema.get("types", {})
     ]
     has_networking_wrappers = (OUT.parent / "networking.py").exists()
+    has_debugger_helpers = (OUT.parent / "debugger.py").exists()
 
     lines = [
         f'"""{HEADER_COMMENT}"""',
@@ -87,11 +88,17 @@ def gen_init() -> None:
         ])
     if has_networking_wrappers:
         root_init.append("from .networking import NetworkManager, NetworkEndpoint  # noqa: F401")
+    if has_debugger_helpers:
+        root_init.append(
+            "from .debugger import parse_debugger_manifest, parse_debugger_snapshot  # noqa: F401"
+        )
     root_init.append("")
 
     extra_exports: list[str] = []
     if has_networking_wrappers:
         extra_exports.extend(["NetworkManager", "NetworkEndpoint"])
+    if has_debugger_helpers:
+        extra_exports.extend(["parse_debugger_manifest", "parse_debugger_snapshot"])
     extra_exports.extend(networking_type_exports)
 
     if "errors" in schema:

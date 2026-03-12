@@ -84,9 +84,26 @@ def py_value_param_ffi_setup(param: dict) -> tuple[list[str], str] | None:
     param_name = to_snake(param["name"])
     local_name = f"_{param_name}_ffi"
     lines = [f"        {local_name} = _ffi_module.{ffi_name}()"]
-    for field in type_def.get("fields", []):
-        field_name = to_snake(field["name"])
-        lines.append(f"        {local_name}.{field_name} = {param_name}.{field_name}")
+
+    def emit_value_assignments(target_expr: str, value_expr: str, schema_type: str) -> None:
+        nested_def = schema.get("types", {}).get(schema_type, {})
+        for field in nested_def.get("fields", []):
+            field_name = to_snake(field["name"])
+            field_type = field.get("type", "f32")
+            source_expr = f"{value_expr}.{field_name}"
+            target_field = f"{target_expr}.{field_name}"
+            if field_type == "string":
+                lines.append(f"        {target_field} = {source_expr}.encode('utf-8')")
+            elif (
+                field_type in schema.get("types", {})
+                and schema["types"][field_type].get("kind") == "value"
+                and field_type in mapping.get("ffi_types", {})
+            ):
+                emit_value_assignments(target_field, source_expr, field_type)
+            else:
+                lines.append(f"        {target_field} = {source_expr}")
+
+    emit_value_assignments(local_name, param_name, raw_type)
     return lines, local_name
 
 
@@ -100,6 +117,8 @@ def py_field_type(field: dict) -> str:
     t = field.get("type", "f32")
     if t == "bool":
         return "bool"
+    if t == "string":
+        return "str"
     if t in ("bytes", "u8[]"):
         return "bytes"
     if t in ("u8", "u16", "u32", "i8", "i16", "i32", "u64", "i64", "usize", "ptr"):
@@ -114,6 +133,8 @@ def py_field_default_expr(field: dict) -> str:
     t = field.get("type", "f32")
     if t == "bool":
         return "False"
+    if t == "string":
+        return '""'
     if t in ("bytes", "u8[]"):
         return "b''"
     if t in ("u8", "u16", "u32", "i8", "i16", "i32", "u64", "i64", "usize", "ptr"):

@@ -77,6 +77,38 @@ Networking note:
 - Desktop supports the full current wrapper path.
 - Web supports browser WebSocket client connections only.
 - On the web target, use `NetworkProtocol.WebSocket` and wait until `peerCount() > 0` before sending your first packet.
+- The debugger runtime is desktop-only in this batch. `goudengine/web` does not support debugger attach, snapshot, or manifest APIs.
+
+---
+
+## Debugger Runtime (Desktop Only)
+
+Use `GoudContext` config to opt into the shared debugger runtime before startup, then read the raw JSON or parse it with the built-in helper:
+
+```typescript
+import {
+  GoudContext,
+  parseDebuggerSnapshot,
+} from "goudengine/node";
+
+const ctx = new GoudContext({
+  debugger: {
+    enabled: true,
+    publishLocalAttach: true,
+    routeLabel: "getting-started",
+  },
+});
+
+ctx.setDebuggerProfilingEnabled(true);
+
+const snapshot = parseDebuggerSnapshot(ctx);
+const manifestJson = ctx.getDebuggerManifestJson();
+const memory = ctx.getMemorySummary();
+
+ctx.setDebuggerSelectedEntity(42);
+ctx.clearDebuggerSelectedEntity();
+ctx.destroy();
+```
 
 ---
 

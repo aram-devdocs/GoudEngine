@@ -5,6 +5,7 @@
 //! [`OpenGLBackend`] into a single per-context object, and the thread-local
 //! storage helpers used to access it from FFI functions.
 
+use crate::core::debugger::{self, RuntimeRouteId};
 use crate::core::error::GoudError;
 use crate::ecs::InputManager;
 use crate::ffi::context::GoudContextId;
@@ -15,6 +16,7 @@ use crate::libs::platform::PlatformBackend;
 use crate::sdk::debug_overlay::DebugOverlay;
 use crate::sdk::network_debug_overlay::NetworkOverlayState;
 use std::cell::RefCell;
+use std::time::Instant;
 
 // ============================================================================
 // Window State
@@ -43,6 +45,9 @@ pub struct WindowState {
 
     /// Runtime state for the network debug overlay in this context.
     pub(crate) network_overlay: NetworkOverlayState,
+
+    /// Route registered with the debugger runtime for this window, if enabled.
+    pub(crate) debugger_route: Option<RuntimeRouteId>,
 }
 
 impl WindowState {
@@ -51,6 +56,7 @@ impl WindowState {
         platform: GlfwPlatform,
         backend: OpenGLBackend,
         physics_debug_enabled: bool,
+        debugger_route: Option<RuntimeRouteId>,
     ) -> Self {
         Self {
             platform,
@@ -59,6 +65,7 @@ impl WindowState {
             delta_time: 0.0,
             debug_overlay: DebugOverlay::new(0.5),
             network_overlay: NetworkOverlayState::default(),
+            debugger_route,
         }
     }
 
@@ -73,23 +80,50 @@ impl WindowState {
     }
 
     /// Polls events, updates input state, and syncs the viewport on resize.
-    pub fn poll_events(&mut self, input: &mut InputManager) -> f32 {
+    pub fn poll_events(&mut self, context_id: GoudContextId, input: &mut InputManager) -> f32 {
         let old_size = self.platform.get_size();
+        let started_at = Instant::now();
         self.delta_time = self.platform.poll_events(input);
+        debugger::record_phase_duration("window_events", started_at.elapsed().as_micros() as u64);
         let new_size = self.platform.get_size();
 
         if old_size != new_size {
             self.backend.set_viewport(0, 0, new_size.0, new_size.1);
         }
 
+        if let Some(route_id) = self.debugger_route.as_ref() {
+            let (next_index, total_seconds) = debugger::snapshot_for_route(route_id)
+                .map(|snapshot| {
+                    (
+                        snapshot.frame.index.saturating_add(1),
+                        snapshot.frame.total_seconds + self.delta_time as f64,
+                    )
+                })
+                .unwrap_or((1, self.delta_time as f64));
+            debugger::begin_frame(route_id, next_index, self.delta_time, total_seconds);
+        }
         self.debug_overlay.update(self.delta_time);
+        let stats = self.debug_overlay.stats();
+        let _ = debugger::update_fps_stats_for_context(
+            context_id,
+            stats.current_fps,
+            stats.min_fps,
+            stats.max_fps,
+            stats.avg_fps,
+            stats.frame_time_ms,
+        );
 
         self.delta_time
     }
 
     /// Swaps the front and back buffers.
     pub fn swap_buffers(&mut self) {
+        let started_at = Instant::now();
         self.platform.swap_buffers();
+        debugger::record_phase_duration("frame_present", started_at.elapsed().as_micros() as u64);
+        if let Some(route_id) = self.debugger_route.as_ref() {
+            debugger::end_frame(route_id);
+        }
     }
 
     /// Gets window size (logical).
@@ -159,6 +193,8 @@ where
     WINDOW_STATES.with(|cell| {
         let mut states = cell.borrow_mut();
         let index = context_id.index() as usize;
-        states.get_mut(index).and_then(|opt| opt.as_mut()).map(f)
+        let state = states.get_mut(index).and_then(|opt| opt.as_mut())?;
+        let route_id = state.debugger_route.clone();
+        Some(debugger::scoped_route(route_id, || f(state)))
     })
 }

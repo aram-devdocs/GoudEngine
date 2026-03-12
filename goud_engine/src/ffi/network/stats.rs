@@ -1,3 +1,4 @@
+use crate::core::debugger;
 use crate::core::error::{set_last_error, GoudError, ERR_INVALID_STATE};
 use crate::core::providers::network_types::NetworkStats;
 use crate::ffi::context::GoudContextId;
@@ -77,6 +78,11 @@ pub unsafe extern "C" fn goud_network_get_stats(
 
     let result = with_instance(handle, |inst| {
         let stats = inst.provider.stats();
+        let _ = debugger::set_snapshot_network_stats_for_context(
+            _context_id,
+            stats.bytes_sent,
+            stats.bytes_received,
+        );
         {
             // SAFETY: Caller guarantees all four output pointers are valid writable storage.
             unsafe {
@@ -111,6 +117,11 @@ pub unsafe extern "C" fn goud_network_get_stats_v2(
 
     let result = with_instance(handle, |inst| {
         let stats = FfiNetworkStats::from(inst.provider.stats());
+        let _ = debugger::set_snapshot_network_stats_for_context(
+            _context_id,
+            stats.bytes_sent,
+            stats.bytes_received,
+        );
         {
             // SAFETY: Caller guarantees `out_stats` points to writable storage.
             unsafe {

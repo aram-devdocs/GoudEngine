@@ -4,6 +4,28 @@ from .context import mapping, schema, to_snake
 from .shared_helpers import ffi_uses_ptr_len, py_out_var_ctype, py_value_param_ffi_setup
 
 
+def _py_sdk_value_expr(value_expr: str, schema_type: str) -> str:
+    """Build a Python SDK value-constructor expression from an FFI value expression."""
+    type_def = schema.get("types", {}).get(schema_type, {})
+    if type_def.get("kind") != "value":
+        return value_expr
+
+    field_exprs: list[str] = []
+    for field in type_def.get("fields", []):
+        field_name = to_snake(field["name"])
+        field_type = field.get("type", "f32")
+        access_expr = f"{value_expr}.{field_name}"
+        if field_type in schema.get("types", {}) and schema["types"][field_type].get("kind") == "value":
+            field_exprs.append(_py_sdk_value_expr(access_expr, field_type))
+        elif field_type == "string":
+            field_exprs.append(
+                f"{access_expr}.decode('utf-8') if isinstance({access_expr}, (bytes, bytearray)) else {access_expr}"
+            )
+        else:
+            field_exprs.append(access_expr)
+    return f"{schema_type}({', '.join(field_exprs)})"
+
+
 def gen_component_strategy(strategy: str, comp_type: str, mmap: dict, lines: list[str]) -> None:
     """Generate real FFI calls for component_add/get/set/has/remove."""
     ffi_type_info = mapping.get("ffi_types", {}).get(comp_type, {})
@@ -217,12 +239,14 @@ def emit_tool_method_body(
         struct_name = mmap["returns_struct"]
         rs_fields = schema["types"][struct_name]["fields"]
         op0_type = out_params[0]["type"]
-        if len(out_params) == 1 and (op0_type in schema.get("types", {}) or op0_type.startswith("Ffi") or op0_type.startswith("Goud")):
+        if len(out_params) == 1 and (
+            op0_type in schema.get("types", {}) or op0_type.startswith("Ffi") or op0_type.startswith("Goud")
+        ):
             src = f"_{to_snake(out_params[0]['name'])}"
-            field_args = ", ".join(f"{src}.{to_snake(f['name'])}" for f in rs_fields)
+            lines.append(f"        return {_py_sdk_value_expr(src, struct_name)}")
         else:
             field_args = ", ".join(f"_{to_snake(op['name'])}.value" for op in out_params)
-        lines.append(f"        return {struct_name}({field_args})")
+            lines.append(f"        return {struct_name}({field_args})")
     else:
         _emit_tool_method_body_tail(mmap, params, ret, lines, uses_network_status_errors)
 
@@ -265,11 +289,43 @@ def _emit_tool_method_body_tail(
         lines.append(f"        return Vec2({out_vals})")
     elif mmap.get("out_buffer"):
         _emit_out_buffer_method(mmap, params, lines, uses_network_status_errors)
+    elif mmap.get("buffer_protocol"):
+        _emit_buffer_protocol_method(mmap, params, lines)
     elif "enum_params" in mmap:
         enum_arg = list(mmap["enum_params"].keys())[0]
         lines.append(f"        return self._lib.{mmap['ffi']}(self._ctx, int({to_snake(enum_arg)}))")
     elif "ffi" in mmap:
         _emit_plain_ffi_method(mmap, params, ret, lines)
+
+
+def _emit_buffer_protocol_method(mmap: dict, params: list[dict], lines: list[str]) -> None:
+    ffi_fn = mmap["ffi"]
+    no_ctx = mmap.get("no_context", False)
+    entity_set = set(mmap.get("entity_params", []))
+    enum_set = set((mmap.get("enum_params") or {}).keys())
+
+    ffi_parts = [] if no_ctx else ["self._ctx"]
+    for param in params:
+        param_name = param["name"]
+        snake_name = to_snake(param_name)
+        if param_name in entity_set:
+            ffi_parts.append(f"{snake_name}._bits")
+        elif param_name in enum_set or param["type"] in schema.get("enums", {}):
+            ffi_parts.append(f"int({snake_name})")
+        else:
+            value_setup = py_value_param_ffi_setup(param)
+            if value_setup:
+                value_lines, value_arg = value_setup
+                lines.extend(value_lines)
+                ffi_parts.append(value_arg)
+            else:
+                ffi_parts.append(snake_name)
+    ffi_parts.extend(["_buf", "_buf_len"])
+    lines.append("        return _read_string_buffer(")
+    lines.append(
+        f"            lambda _buf, _buf_len: self._lib.{ffi_fn}({', '.join(ffi_parts)})"
+    )
+    lines.append("        )")
 
 
 def _emit_out_buffer_method(mmap: dict, params: list[dict], lines: list[str], uses_network_status_errors: bool) -> None:

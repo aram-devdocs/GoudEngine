@@ -58,6 +58,15 @@ GoudEngine is working toward an alpha release. The full plan covers physics, aud
 - Cross-platform window management via GLFW
 - OpenGL rendering backend
 
+## Debugger Runtime
+
+Desktop/native SDKs now expose the shared debugger runtime surface for snapshots, manifest discovery, profiler toggles, memory summaries, and entity inspection.
+
+- Enable it through config before creating the game or headless context.
+- Use the raw JSON accessors for the full snapshot/manifest payload.
+- Use the thin helpers to toggle profiling, select an entity, or read aggregate memory stats.
+- TypeScript browser/WASM builds do not support the debugger runtime in this batch.
+
 ## Architecture
 
 ```

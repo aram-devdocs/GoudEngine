@@ -8,7 +8,11 @@ use std::os::raw::c_char;
 
 use crate::core::error::{set_last_error, GoudError};
 use crate::core::providers::types::PhysicsBackend2D;
+use crate::ffi::context::GoudDebuggerConfig;
 use crate::sdk::engine_config::EngineConfig;
+
+#[cfg(feature = "native")]
+use crate::core::debugger::{self, ContextConfig, RuntimeSurfaceKind};
 
 /// Opaque handle to an `EngineConfig` on the heap.
 type EngineConfigHandle = *mut std::ffi::c_void;
@@ -246,6 +250,56 @@ pub unsafe extern "C" fn goud_engine_config_set_physics_backend_2d(
     true
 }
 
+/// Configures debugger runtime startup for engines built from this `EngineConfig`.
+///
+/// # Safety
+/// - `handle` must be a valid `EngineConfig` handle.
+/// - `debugger` must be null or point to a valid [`GoudDebuggerConfig`] for the duration of this call.
+#[no_mangle]
+pub unsafe extern "C" fn goud_engine_config_set_debugger(
+    handle: EngineConfigHandle,
+    debugger: *const GoudDebuggerConfig,
+) -> bool {
+    if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
+        return false;
+    }
+
+    let debugger = if debugger.is_null() {
+        crate::core::debugger::DebuggerConfig::default()
+    } else {
+        // SAFETY: `debugger` is validated non-null above and only read for the duration of this call.
+        let debugger = unsafe { &*debugger };
+        let route_label = if debugger.route_label.is_null() {
+            None
+        } else {
+            // SAFETY: Caller guarantees `route_label` is null or a valid null-terminated UTF-8 string.
+            match unsafe { CStr::from_ptr(debugger.route_label) }.to_str() {
+                Ok(label) => Some(label.to_string()),
+                Err(_) => {
+                    set_last_error(GoudError::InvalidState(
+                        "route_label is not valid UTF-8".to_string(),
+                    ));
+                    return false;
+                }
+            }
+        };
+
+        crate::core::debugger::DebuggerConfig {
+            enabled: debugger.enabled,
+            publish_local_attach: debugger.publish_local_attach,
+            route_label,
+        }
+    };
+
+    // SAFETY: Caller guarantees handle points to a valid EngineConfig.
+    let config = unsafe { &mut *(handle as *mut EngineConfig) };
+    config.game_config_mut().debugger = debugger;
+    true
+}
+
 /// Consumes an `EngineConfig` handle and creates a windowed engine context.
 ///
 /// This follows the same pattern as
@@ -325,7 +379,12 @@ pub unsafe extern "C" fn goud_engine_create(
             }
         };
 
-        match registry.create() {
+        match registry.create_with_config(
+            ContextConfig {
+                debugger: game_config.debugger.clone(),
+            },
+            RuntimeSurfaceKind::WindowedGame,
+        ) {
             Ok(id) => id,
             Err(e) => {
                 set_last_error(e);
@@ -367,7 +426,12 @@ pub unsafe extern "C" fn goud_engine_create(
 
     // Physics debug overlay uses providers created from EngineConfig / ProviderRegistry.
     // It does not read worlds created with standalone FFI `goud_physics_*_create` calls.
-    let window_state = WindowState::new(platform, backend, game_config.physics_debug.enabled);
+    let window_state = WindowState::new(
+        platform,
+        backend,
+        game_config.physics_debug.enabled,
+        debugger::route_for_context(context_id),
+    );
 
     if let Err(e) = set_window_state(context_id, window_state) {
         if let Ok(mut registry) = get_context_registry().lock() {

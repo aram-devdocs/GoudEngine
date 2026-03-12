@@ -10,6 +10,7 @@ from .generated._types import (  # noqa: F401
     NetworkStats,
 )
 from .networking import NetworkManager, NetworkEndpoint  # noqa: F401
+from .debugger import parse_debugger_manifest, parse_debugger_snapshot  # noqa: F401
 
 from .generated._errors import (  # noqa: F401
     GoudError,
@@ -27,6 +28,8 @@ from .generated._errors import (  # noqa: F401
 __all__ = list(_generated_all) + [
     "NetworkManager",
     "NetworkEndpoint",
+    "parse_debugger_manifest",
+    "parse_debugger_snapshot",
     "NetworkCapabilities",
     "NetworkConnectResult",
     "NetworkPacket",

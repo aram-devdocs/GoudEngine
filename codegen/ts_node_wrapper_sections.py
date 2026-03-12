@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """Shared section builders for the TypeScript Node wrapper generator."""
 
-from ts_node_shared import mapping, schema, to_camel, ts_iface_type
+from ts_node_shared import mapping, schema, to_camel, ts_iface_type, ts_param_name
 
 
 def append_animation_wrappers(lines):
     anim_wrappers = [
-        ("animationLayerStackCreate", "entity: IEntity", "return (this.native as any).animationLayerStackCreate(entity as unknown as NativeEntity);", "number"),
-        ("animationLayerAdd", "entity: IEntity, name: string, blendMode: number", "return (this.native as any).animationLayerAdd(entity as unknown as NativeEntity, name, blendMode);", "number"),
-        ("animationLayerSetWeight", "entity: IEntity, layerIndex: number, weight: number", "return (this.native as any).animationLayerSetWeight(entity as unknown as NativeEntity, layerIndex, weight);", "number"),
-        ("animationLayerPlay", "entity: IEntity, layerIndex: number", "return (this.native as any).animationLayerPlay(entity as unknown as NativeEntity, layerIndex);", "number"),
-        ("animationLayerSetClip", "entity: IEntity, layerIndex: number, frameCount: number, frameDuration: number, mode: number", "return (this.native as any).animationLayerSetClip(entity as unknown as NativeEntity, layerIndex, frameCount, frameDuration, mode);", "number"),
-        ("animationLayerAddFrame", "entity: IEntity, layerIndex: number, x: number, y: number, w: number, h: number", "return (this.native as any).animationLayerAddFrame(entity as unknown as NativeEntity, layerIndex, x, y, w, h);", "number"),
-        ("animationLayerReset", "entity: IEntity, layerIndex: number", "return (this.native as any).animationLayerReset(entity as unknown as NativeEntity, layerIndex);", "number"),
-        ("animationClipAddEvent", "entity: IEntity, frameIndex: number, name: string, payloadType: number, payloadInt: number, payloadFloat: number, payloadString?: string | null", "return (this.native as any).animationClipAddEvent(entity as unknown as NativeEntity, frameIndex, name, payloadType, payloadInt, payloadFloat, payloadString ?? null);", "number"),
+        ("animationLayerStackCreate", "entity: IEntity", "return (this.native as any).animationLayerStackCreate(entity as any);", "number"),
+        ("animationLayerAdd", "entity: IEntity, name: string, blendMode: number", "return (this.native as any).animationLayerAdd(entity as any, name, blendMode);", "number"),
+        ("animationLayerSetWeight", "entity: IEntity, layerIndex: number, weight: number", "return (this.native as any).animationLayerSetWeight(entity as any, layerIndex, weight);", "number"),
+        ("animationLayerPlay", "entity: IEntity, layerIndex: number", "return (this.native as any).animationLayerPlay(entity as any, layerIndex);", "number"),
+        ("animationLayerSetClip", "entity: IEntity, layerIndex: number, frameCount: number, frameDuration: number, mode: number", "return (this.native as any).animationLayerSetClip(entity as any, layerIndex, frameCount, frameDuration, mode);", "number"),
+        ("animationLayerAddFrame", "entity: IEntity, layerIndex: number, x: number, y: number, w: number, h: number", "return (this.native as any).animationLayerAddFrame(entity as any, layerIndex, x, y, w, h);", "number"),
+        ("animationLayerReset", "entity: IEntity, layerIndex: number", "return (this.native as any).animationLayerReset(entity as any, layerIndex);", "number"),
+        ("animationClipAddEvent", "entity: IEntity, frameIndex: number, name: string, payloadType: number, payloadInt: number, payloadFloat: number, payloadString?: string | null", "return (this.native as any).animationClipAddEvent(entity as any, frameIndex, name, payloadType, payloadInt, payloadFloat, payloadString ?? null);", "number"),
         ("animationEventsCount", "", "return (this.native as any).animationEventsCount();", "number"),
         ("animationEventsRead", "index: number", "return (this.native as any).animationEventsRead(index) as unknown as IAnimationEventData;", "IAnimationEventData"),
     ]
@@ -28,10 +28,17 @@ def append_context_wrapper(lines):
     lines += [
         "/** Headless engine context exposing low-level networking APIs for Node-only tests. */",
         "export class GoudContext implements IGoudContext {",
-        "  private native: NativeGoudContext;",
+        "  private native: any;",
         "",
-        "  constructor() {",
-        "    this.native = new NativeGoudContext();",
+        "  constructor(config?: IContextConfig) {",
+        "    const nativeConfig = config ? {",
+        "      debugger: {",
+        "        enabled: config.debugger.enabled,",
+        "        publish_local_attach: config.debugger.publishLocalAttach,",
+        "        route_label: config.debugger.routeLabel,",
+        "      },",
+        "    } : undefined;",
+        "    this.native = new (getNativeBindings().GoudContext)(nativeConfig as Record<string, unknown>);",
         "  }",
         "",
         "  destroy(): boolean {",
@@ -105,6 +112,30 @@ def append_context_wrapper(lines):
         "  clearNetworkOverlayHandle(): number {",
         "    return this.native.clearNetworkOverlayHandle();",
         "  }",
+        "",
+        "  getDebuggerSnapshotJson(): string {",
+        "    return this.native.getDebuggerSnapshotJson();",
+        "  }",
+        "",
+        "  getDebuggerManifestJson(): string {",
+        "    return this.native.getDebuggerManifestJson();",
+        "  }",
+        "",
+        "  setDebuggerProfilingEnabled(enabled: boolean): void {",
+        "    this.native.setDebuggerProfilingEnabled(enabled);",
+        "  }",
+        "",
+        "  setDebuggerSelectedEntity(entityId: number): void {",
+        "    this.native.setDebuggerSelectedEntity(entityId);",
+        "  }",
+        "",
+        "  clearDebuggerSelectedEntity(): void {",
+        "    this.native.clearDebuggerSelectedEntity();",
+        "  }",
+        "",
+        "  getMemorySummary(): IMemorySummary {",
+        "    return mapMemorySummary(this.native.getMemorySummary());",
+        "  }",
         "}",
         "",
     ]
@@ -118,10 +149,10 @@ def _append_physics_world_methods(lines, tool):
         if method.get("doc"):
             lines.append(f"  /** {method['doc']} */")
         param_signature = ", ".join(
-            f"{to_camel(param['name'])}: {ts_iface_type(param['type'])}"
+            f"{ts_param_name(param['name'])}: {ts_iface_type(param['type'])}"
             for param in params
         )
-        call_args = ", ".join(to_camel(param["name"]) for param in params)
+        call_args = ", ".join(ts_param_name(param["name"]) for param in params)
         lines.append(f"  {method_name}({param_signature}): {ts_iface_type(return_type)} {{")
         if return_type == "void":
             lines.append(f"    this.native.{method_name}({call_args});")
@@ -140,8 +171,7 @@ def append_physics_world_2d_wrapper(lines):
         "  private native: any;",
         "",
         "  constructor(gravityX: number, gravityY: number, backend: number = 0) {",
-        "    const { NativePhysicsWorld2D } = require('../../../index');",
-        "    this.native = new NativePhysicsWorld2D(gravityX, gravityY, backend);",
+        "    this.native = new (getNativeBindings().NativePhysicsWorld2D)(gravityX, gravityY, backend);",
         "  }",
         "",
     ]
@@ -158,8 +188,7 @@ def append_physics_world_3d_wrapper(lines):
         "  private native: any;",
         "",
         "  constructor(gravityX: number, gravityY: number, gravityZ: number) {",
-        "    const { NativePhysicsWorld3D } = require('../../../index');",
-        "    this.native = new NativePhysicsWorld3D(gravityX, gravityY, gravityZ);",
+        "    this.native = new (getNativeBindings().NativePhysicsWorld3D)(gravityX, gravityY, gravityZ);",
         "  }",
         "",
     ]
@@ -177,8 +206,7 @@ def append_engine_config_wrapper(lines):
         "  private native: any;",
         "",
         "  constructor() {",
-        "    const { NativeEngineConfig } = require('../../../index');",
-        "    this.native = new NativeEngineConfig();",
+        "    this.native = new (getNativeBindings().NativeEngineConfig)();",
         "  }",
         "",
     ]
@@ -198,12 +226,23 @@ def append_engine_config_wrapper(lines):
             ]
         elif method_name == "destroy":
             lines += ["  destroy(): void {", "    this.native.destroy();", "  }"]
+        elif method_name == "setDebugger":
+            lines += [
+                "  setDebugger(debuggerConfig: IDebuggerConfig): EngineConfig {",
+                "    this.native.setDebugger({",
+                "      enabled: debuggerConfig.enabled,",
+                "      publish_local_attach: debuggerConfig.publishLocalAttach,",
+                "      route_label: debuggerConfig.routeLabel,",
+                "    });",
+                "    return this;",
+                "  }",
+            ]
         else:
             param_signature = ", ".join(
-                f"{to_camel(param['name'])}: {ts_iface_type(param['type'])}"
+                f"{ts_param_name(param['name'])}: {ts_iface_type(param['type'])}"
                 for param in params
             )
-            call_args = ", ".join(to_camel(param["name"]) for param in params)
+            call_args = ", ".join(ts_param_name(param["name"]) for param in params)
             lines += [
                 f"  {method_name}({param_signature}): EngineConfig {{",
                 f"    this.native.{method_name}({call_args});",
@@ -222,10 +261,10 @@ def append_ui_manager_wrapper(lines):
         "}",
         "",
         "export class UiManager implements IUiManager {",
-        "  private native: NativeUiManager;",
+        "  private native: any;",
         "",
         "  constructor() {",
-        "    this.native = new NativeUiManager();",
+        "    this.native = new (getNativeBindings().UiManager)();",
         "  }",
         "",
     ]

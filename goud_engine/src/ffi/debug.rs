@@ -2,6 +2,7 @@
 //!
 //! FFI functions for querying FPS statistics and controlling the debug overlay.
 
+use crate::core::debugger;
 use crate::core::error::{
     is_diagnostic_enabled, last_error_backtrace, set_diagnostic_enabled, set_last_error, GoudError,
 };
@@ -9,10 +10,14 @@ use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
 use crate::sdk::debug_overlay::{FpsStats, OverlayCorner};
 
-// ============================================================================
-// FFI Functions
-// ============================================================================
+mod debugger_runtime;
 
+pub use debugger_runtime::{
+    goud_debugger_clear_selected_entity, goud_debugger_get_manifest_json,
+    goud_debugger_get_memory_summary, goud_debugger_get_snapshot_json,
+    goud_debugger_set_profiling_enabled, goud_debugger_set_selected_entity,
+    GoudMemoryCategoryStats, GoudMemorySummary,
+};
 /// Retrieves the current FPS statistics from the debug overlay.
 ///
 /// # Arguments
@@ -46,7 +51,15 @@ pub unsafe extern "C" fn goud_debug_get_fps_stats(
     }
 
     with_window_state(context_id, |state| {
-        let stats = state.debug_overlay.stats();
+        let stats = debugger::fps_stats_for_context(context_id)
+            .map(|stats| FpsStats {
+                current_fps: stats[0],
+                min_fps: stats[1],
+                max_fps: stats[2],
+                avg_fps: stats[3],
+                frame_time_ms: stats[4],
+            })
+            .unwrap_or_else(|| state.debug_overlay.stats());
         // SAFETY: Caller guarantees out_stats is a valid, aligned pointer.
         // We write a Copy type so no drop concerns.
         *out_stats = stats;

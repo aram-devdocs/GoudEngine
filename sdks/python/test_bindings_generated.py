@@ -300,6 +300,39 @@ def test_generated_ui_manager_wrapper_api_names():
     return True
 
 
+def test_generated_debugger_wrapper_api_names():
+    """Validate generated debugger wrapper methods and helper exports."""
+    print("Testing generated debugger wrapper API names...")
+
+    game_src = (_GENERATED_DIR / "_game.py").read_text()
+    ffi_src = (_GENERATED_DIR / "_ffi.py").read_text()
+    root_init_src = (_GENERATED_DIR.parent / "__init__.py").read_text()
+
+    expected_methods = [
+        "def get_debugger_snapshot_json(self):",
+        "def get_debugger_manifest_json(self):",
+        "def set_debugger_profiling_enabled(self, enabled):",
+        "def set_debugger_selected_entity(self, entity_id):",
+        "def clear_debugger_selected_entity(self):",
+        "def get_memory_summary(self):",
+        "def set_debugger(self, debugger):",
+    ]
+    for signature in expected_methods:
+        assert signature in game_src, f"missing generated debugger wrapper: {signature}"
+
+    assert "_lib.goud_debugger_get_snapshot_json.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]" in ffi_src
+    assert "_lib.goud_debugger_get_manifest_json.argtypes = [ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]" in ffi_src
+    assert "_lib.goud_debugger_get_memory_summary.argtypes = [GoudContextId, ctypes.POINTER(GoudMemorySummary)]" in ffi_src
+    assert "_lib.goud_engine_config_set_debugger.argtypes = [ctypes.c_void_p, ctypes.POINTER(GoudDebuggerConfig)]" in ffi_src
+    assert '("route_label", ctypes.c_char_p)' in ffi_src
+    assert "def __init__(self, config: 'ContextConfig' = None):" in game_src
+    assert "self._ctx = lib.goud_context_create_with_config(ctypes.byref(_config_ffi))" in game_src
+    assert "from .debugger import parse_debugger_manifest, parse_debugger_snapshot" in root_init_src
+
+    print("  Debugger wrapper API name tests passed")
+    return True
+
+
 def test_generated_ui_style_color_contract():
     """Ensure generated UiStyle color fields match UiManager.set_style expectations."""
     print("Testing generated UiStyle color contract...")
@@ -400,6 +433,17 @@ def test_generated_game_runtime_with_fake_lib():
         def goud_context_create(self):
             return self.ffi.GoudContextId(22)
 
+        def goud_context_create_with_config(self, config_ptr):
+            config = ctypes.cast(config_ptr, ctypes.POINTER(self.ffi.GoudContextConfig)).contents
+            route_label = config.debugger.route_label.decode("utf-8") if config.debugger.route_label else ""
+            self.calls.append((
+                "goud_context_create_with_config",
+                config.debugger.enabled,
+                config.debugger.publish_local_attach,
+                route_label,
+            ))
+            return self.ffi.GoudContextId(23)
+
         def goud_window_get_size(self, ctx, w_ptr, h_ptr):
             _write(w_ptr, ctypes.c_uint32, 1280)
             _write(h_ptr, ctypes.c_uint32, 720)
@@ -497,6 +541,28 @@ def test_generated_game_runtime_with_fake_lib():
         def goud_engine_create(self, handle):
             return self.ffi.GoudContextId(33)
 
+        def goud_debugger_get_snapshot_json(self, ctx, out_buf, out_len):
+            payload = b'{"route":"ok"}'
+            if not out_buf or out_len == 0:
+                return -(len(payload) + 1)
+            ctypes.memmove(out_buf, payload, len(payload))
+            return len(payload)
+
+        def goud_debugger_get_manifest_json(self, out_buf, out_len):
+            payload = b'{"routes":[]}'
+            if not out_buf or out_len == 0:
+                return -(len(payload) + 1)
+            ctypes.memmove(out_buf, payload, len(payload))
+            return len(payload)
+
+        def goud_debugger_get_memory_summary(self, ctx, summary_ptr):
+            summary = ctypes.cast(summary_ptr, ctypes.POINTER(self.ffi.GoudMemorySummary)).contents
+            summary.rendering.current_bytes = 11
+            summary.rendering.peak_bytes = 22
+            summary.total_current_bytes = 11
+            summary.total_peak_bytes = 22
+            return 0
+
         def __getattr__(self, name):
             return lambda *args: self._record(name, *args)
 
@@ -572,6 +638,13 @@ def test_generated_game_runtime_with_fake_lib():
     game.set_fps_overlay_enabled(True)
     game.set_fps_update_interval(0.25)
     _ = game.set_fps_overlay_corner(0)
+    assert game.get_debugger_snapshot_json() == '{"route":"ok"}'
+    assert game.get_debugger_manifest_json() == '{"routes":[]}'
+    game.set_debugger_profiling_enabled(True)
+    game.set_debugger_selected_entity(99)
+    game.clear_debugger_selected_entity()
+    memory = game.get_memory_summary()
+    assert memory.rendering.current_bytes == 11 and memory.total_peak_bytes == 22
     _ = game.map_action_key("jump", 32)
     _ = game.is_action_pressed("jump")
     _ = game.is_action_just_pressed("jump")
@@ -641,6 +714,12 @@ def test_generated_game_runtime_with_fake_lib():
     _ = ctx.clear_network_simulation(conn2.handle)
     _ = ctx.set_network_overlay_handle(conn2.handle)
     _ = ctx.clear_network_overlay_handle()
+    assert ctx.get_debugger_snapshot_json() == '{"route":"ok"}'
+    assert ctx.get_debugger_manifest_json() == '{"routes":[]}'
+    ctx.set_debugger_profiling_enabled(False)
+    ctx.set_debugger_selected_entity(7)
+    ctx.clear_debugger_selected_entity()
+    assert ctx.get_memory_summary().rendering.peak_bytes == 22
     e2 = ctx.spawn_empty()
     _ = ctx.spawn_batch(1)
     _ = ctx.despawn_batch((ctypes.c_uint64 * 1)(e2.to_bits()))
@@ -678,9 +757,23 @@ def test_generated_game_runtime_with_fake_lib():
     _ = ctx.scene_transition_tick(0.016)
     ctx.destroy()
 
+    cfg_ctx = game_mod.GoudContext(
+        _types_mod.ContextConfig(
+            debugger=_types_mod.DebuggerConfig(
+                enabled=True,
+                publish_local_attach=True,
+                route_label="ctx-route",
+            )
+        )
+    )
+    assert cfg_ctx._ctx._bits == 23
+    assert ("goud_context_create_with_config", True, True, "ctx-route") in lib.calls
+    cfg_ctx.destroy()
+
     cfg = game_mod.EngineConfig()
     cfg.set_title("T").set_size(800, 600).set_vsync(True).set_fullscreen(False)
     cfg.set_target_fps(60).set_fps_overlay(True).set_physics_debug(False).set_physics_backend2_d(0)
+    cfg.set_debugger(_types_mod.DebuggerConfig(enabled=True, publish_local_attach=True, route_label="cov"))
     built = cfg.build()
     assert built._ctx._bits == 33
     cfg.destroy()

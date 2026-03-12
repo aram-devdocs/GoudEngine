@@ -101,6 +101,45 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct GoudDebuggerConfig
+    {
+        [MarshalAs(UnmanagedType.U1)]
+        public bool Enabled;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool PublishLocalAttach;
+        [MarshalAs(UnmanagedType.LPUTF8Str)]
+        public string RouteLabel;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GoudContextConfig
+    {
+        public GoudDebuggerConfig Debugger;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GoudMemoryCategoryStats
+    {
+        public ulong CurrentBytes;
+        public ulong PeakBytes;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GoudMemorySummary
+    {
+        public GoudMemoryCategoryStats Rendering;
+        public GoudMemoryCategoryStats Assets;
+        public GoudMemoryCategoryStats Ecs;
+        public GoudMemoryCategoryStats Ui;
+        public GoudMemoryCategoryStats Audio;
+        public GoudMemoryCategoryStats Network;
+        public GoudMemoryCategoryStats Debugger;
+        public GoudMemoryCategoryStats Other;
+        public ulong TotalCurrentBytes;
+        public ulong TotalPeakBytes;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct GoudContact
     {
         public float PointX;
@@ -332,11 +371,18 @@ namespace GoudEngine
         public static extern bool goud_engine_config_set_physics_backend_2d(IntPtr handle, uint backend);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_debugger(IntPtr handle, ref GoudDebuggerConfig debugger);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern GoudContextId goud_engine_create(IntPtr handle);
 
         // context
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern GoudContextId goud_context_create();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern GoudContextId goud_context_create_with_config(ref GoudContextConfig config);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
@@ -499,6 +545,24 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_debug_set_fps_overlay_corner(GoudContextId context_id, int corner);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_get_snapshot_json(GoudContextId context_id, IntPtr buf, nuint buf_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_get_manifest_json(IntPtr buf, nuint buf_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_set_profiling_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_set_selected_entity(GoudContextId context_id, ulong entity_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_clear_selected_entity(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_get_memory_summary(GoudContextId context_id, ref GoudMemorySummary out_summary);
 
         // renderer_3d
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

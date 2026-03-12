@@ -123,6 +123,8 @@ def gen_ffi() -> None:
                 if ft in schema.get("enums", {}):
                     underlying = schema["enums"][ft].get("underlying", "i32")
                     ct = CTYPES_MAP.get(underlying, "ctypes.c_int32")
+                elif ft == "string":
+                    ct = "ctypes.c_char_p"
                 elif ft in mapping.get("ffi_types", {}):
                     ct = mapping["ffi_types"][ft].get("ffi_name", "ctypes.c_float")
                 else:
