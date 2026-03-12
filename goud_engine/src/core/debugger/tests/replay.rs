@@ -11,6 +11,8 @@ use crate::ecs::InputManager;
 use glfw::Key;
 use serde::Deserialize;
 use serde_json::{json, Value};
+use std::fs;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Deserialize)]
 struct RecordedInputEvent {
@@ -21,6 +23,14 @@ struct RecordedInputEvent {
 fn dispatch(route_id: &RuntimeRouteId, request: Value) -> Value {
     dispatch_request_json_for_route(route_id, &request.to_string())
         .expect("dispatcher should return JSON")
+}
+
+fn test_runtime_dir(prefix: &str) -> String {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    format!("/tmp/goud-debugger-{prefix}-{}-{nanos}", std::process::id())
 }
 
 fn result_data_bytes(response: &Value) -> Vec<u8> {
@@ -39,13 +49,17 @@ fn result_data_bytes(response: &Value) -> Vec<u8> {
 fn test_recording_captures_key_and_mouse_move_and_exports_data() {
     let _guard = test_lock();
     reset_for_tests();
+    let runtime_dir = test_runtime_dir("replay");
+    let _ = fs::remove_dir_all(&runtime_dir);
+    fs::create_dir_all(&runtime_dir).expect("runtime dir should be created");
+    std::env::set_var("GOUDENGINE_DEBUGGER_RUNTIME_DIR", &runtime_dir);
 
     let route = register_context(
         GoudContextId::new(81, 1),
         RuntimeSurfaceKind::HeadlessContext,
         &DebuggerConfig {
             enabled: true,
-            publish_local_attach: false,
+            publish_local_attach: true,
             route_label: Some("replay-record".to_string()),
         },
     );
@@ -58,7 +72,12 @@ fn test_recording_captures_key_and_mouse_move_and_exports_data() {
     });
 
     let response = dispatch(&route, json!({ "verb": "stop_recording" }));
+    std::env::remove_var("GOUDENGINE_DEBUGGER_RUNTIME_DIR");
     assert_eq!(response["ok"], true);
+    let artifact_id = response["result"]["artifact_id"]
+        .as_str()
+        .expect("stop_recording should include artifact_id");
+    assert!(!artifact_id.is_empty());
     let manifest_json = response["result"]["manifest_json"]
         .as_str()
         .expect("manifest_json should be a string");
@@ -77,6 +96,11 @@ fn test_recording_captures_key_and_mouse_move_and_exports_data() {
         && event.event.device == "mouse"
         && event.event.action == "move"
         && event.event.position == Some([320.0, 240.0])));
+
+    let route_bucket = format!("route-{}", route.context_id);
+    let artifact_dir = format!("{runtime_dir}/artifacts/{route_bucket}/recording/{artifact_id}");
+    assert!(fs::metadata(format!("{artifact_dir}/manifest.json")).is_ok());
+    assert!(fs::metadata(format!("{artifact_dir}/data.bin")).is_ok());
 }
 
 #[test]

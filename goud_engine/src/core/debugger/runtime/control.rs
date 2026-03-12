@@ -84,8 +84,10 @@ fn snapshot_value(snapshot: &DebuggerSnapshotV1) -> Value {
 
 fn metrics_trace_response_for_route(route_id: &RuntimeRouteId, request: &Value) -> Value {
     if let Some(metrics_json) = metrics_trace_json_for_route(route_id) {
-        if let Ok(parsed) = serde_json::from_str::<Value>(&metrics_json) {
-            return ok_response(request, parsed);
+        let artifact_id = super::artifacts::store_metrics_trace_for_route(route_id, &metrics_json);
+        if let Ok(Value::Object(mut parsed)) = serde_json::from_str::<Value>(&metrics_json) {
+            parsed.insert("artifact_id".to_string(), json!(artifact_id));
+            return ok_response(request, Value::Object(parsed));
         }
     }
 
@@ -98,7 +100,15 @@ fn metrics_trace_response_for_route(route_id: &RuntimeRouteId, request: &Value) 
     };
 
     if has_route {
-        return ok_response(request, json!(empty_metrics_export(route_id)));
+        let empty_export = empty_metrics_export(route_id);
+        let metrics_json =
+            serde_json::to_string(&empty_export).unwrap_or_else(|_| "{}".to_string());
+        let artifact_id = super::artifacts::store_metrics_trace_for_route(route_id, &metrics_json);
+        let mut result = serde_json::to_value(empty_export).unwrap_or_else(|_| json!({}));
+        if let Value::Object(ref mut object) = result {
+            object.insert("artifact_id".to_string(), json!(artifact_id));
+        }
+        return ok_response(request, result);
     }
 
     error_response(
@@ -146,7 +156,12 @@ fn capture_frame_response_for_route(route_id: &RuntimeRouteId, request: &Value) 
 
     match capture_frame_for_route(route_id) {
         Ok(artifact) => {
-            let artifact_json = serde_json::to_value(artifact).unwrap_or_else(|_| json!({}));
+            let artifact_id =
+                super::artifacts::store_capture_artifact_for_route(route_id, &artifact);
+            let mut artifact_json = serde_json::to_value(artifact).unwrap_or_else(|_| json!({}));
+            if let Value::Object(ref mut object) = artifact_json {
+                object.insert("artifact_id".to_string(), json!(artifact_id));
+            }
             ok_response(request, artifact_json)
         }
         Err(CaptureFrameError::RouteNotFound) => error_response(
@@ -346,7 +361,16 @@ pub fn dispatch_request_json_for_route(
             }
             "stop_recording" => {
                 let export = replay::stop_recording(route);
-                ok_response(&request, json!(export))
+                let artifact_id = super::artifacts::store_recording_artifact_in_state(
+                    runtime.artifacts.as_mut(),
+                    &route.snapshot.route_id,
+                    &export,
+                );
+                let mut result = json!(export);
+                if let Value::Object(ref mut object) = result {
+                    object.insert("artifact_id".to_string(), json!(artifact_id));
+                }
+                ok_response(&request, result)
             }
             "start_replay" => {
                 let Some(data_value) = request.get("data") else {

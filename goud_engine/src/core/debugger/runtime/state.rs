@@ -169,8 +169,12 @@ pub(super) struct RouteState {
 #[derive(Debug, Clone)]
 pub(super) struct RuntimeArtifactsState {
     pub(super) runtime_dir: PathBuf,
+    pub(super) artifacts_root_dir: PathBuf,
     pub(super) manifest_path: PathBuf,
     pub(super) endpoint: LocalEndpointV1,
+    pub(super) next_artifact_sequence: u64,
+    pub(super) artifact_paths: HashMap<String, PathBuf>,
+    pub(super) route_buckets: HashMap<(u64, String), VecDeque<String>>,
 }
 
 #[derive(Debug)]
