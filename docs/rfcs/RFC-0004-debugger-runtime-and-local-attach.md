@@ -1,19 +1,16 @@
 ---
 rfc: "0004"
 title: "Debugger Runtime, Snapshot Contract, and Local Attach Model"
-status: draft
+status: proposed
 created: 2026-03-12
 authors: ["aram-devdocs"]
 tracking-issue: "#511"
+related-issues: ["#513", "#517", "#520"]
 ---
-
 # RFC-0004: Debugger Runtime, Snapshot Contract, and Local Attach Model
 
 ## 1. Summary
-
 Phase 2.5.1 needs a fixed contract for GoudEngine's debugger stack. This RFC sets the runtime topology to one Rust-owned debugger service per process in dev mode, one out-of-process `goudengine-mcp` bridge that speaks MCP over stdio, one shared snapshot and service-health schema, one local-only attach model, and one debugger enablement contract that spans `GameConfig`, `EngineConfig`, and a future config-based `GoudContext` path. The batch only sets the contract. It does not implement the debugger runtime, FFI, SDK rollout, capture, replay, or the MCP bridge.
-
----
 
 ## 2. Motivation
 
@@ -37,8 +34,6 @@ The document resolves four blocking issues:
 - `#513` snapshot schema and service-health model,
 - `#517` local transport, attach protocol, and local-only security policy,
 - `#520` shared debugger enablement contract.
-
----
 
 ## 3. Design
 
@@ -74,15 +69,7 @@ Topology rules:
 - `goudengine-mcp` is thin. It translates MCP requests into debugger attach, snapshot, inspection, control, capture, and replay requests. It does not own engine state.
 - The game process does not implement MCP directly and never opens a stdio MCP endpoint for agents.
 
-Conceptual flow:
-
-```text
-agent <-> stdio <-> goudengine-mcp <-> local socket/pipe <-> DebuggerRuntime
-                                                         |- overlays
-                                                         |- FFI exports
-                                                         |- SDK convenience APIs
-                                                         |- Feature Lab
-```
+Conceptual flow: `agent <-> stdio <-> goudengine-mcp <-> local socket/pipe <-> DebuggerRuntime`, with overlays, FFI exports, SDK convenience APIs, and Feature Lab all consuming the same runtime contract.
 
 ### 3.3 Route Identity and Lifecycle
 
@@ -105,7 +92,7 @@ pub enum RuntimeSurfaceKind {
 Rules:
 - `process_nonce` is generated once at runtime-service startup and changes on each process start.
 - `context_id` maps to the existing engine context identity used by runtime code and FFI.
-- `surface_kind` disambiguates windowed and headless flows that may share engine infrastructure.
+- `surface_kind` disambiguates windowed and headless flows that may share engine infrastructure. Wire serialization of `RuntimeSurfaceKind` must use `"windowed_game"`, `"headless_context"`, and `"tool_context"`, and parsers must reject other spellings such as `WindowedGame`.
 - A route is stable until that context detaches or the process exits.
 - A detached route disappears from discovery and returns an attach error if selected later.
 
@@ -113,10 +100,10 @@ Lifecycle:
 1. Debugger mode is enabled during engine/context creation.
 2. The process creates or reuses the process-wide `DebuggerRuntime`.
 3. Each eligible context registers a `RuntimeRouteId` with the runtime.
-4. The runtime publishes discovery metadata for the process and its routes.
+4. The runtime publishes discovery metadata for the process and its routes only when `publish_local_attach = true` and at least one attachable route exists.
 5. Local tools attach to one route at a time.
 6. Context shutdown removes that route.
-7. Process shutdown removes discovery metadata and closes the local transport endpoint.
+7. Process shutdown removes discovery metadata and closes any published local transport endpoint.
 
 ### 3.4 Capability Surface
 
@@ -133,7 +120,9 @@ The debugger runtime exposes one canonical capability surface. Later batches may
 | Control plane | overlays, MCP, SDK helpers | debugger runtime control layer |
 | Replay | MCP, SDK helpers | replay subsystem through debugger runtime |
 | Capture | MCP, SDK helpers | capture subsystem through debugger runtime |
-| SDK knowledge | MCP resources/prompts | `goudengine-mcp`, backed by the runtime contract |
+| SDK knowledge | MCP resources/prompts | `goudengine-mcp` bridge only; not route-scoped |
+
+Route wire keys are `snapshots`, `profiling`, `render_stats`, `memory_stats`, `entity_inspection`, `debug_draw`, `control_plane`, `replay`, and `capture`. `sdk_knowledge` is a bridge-only capability key and is not part of runtime-published route capability maps.
 
 Control plane scope in this phase covers pause/resume, single-step, time-scale changes, route selection, entity selection, debug toggle state, and input injection where supported by later implementation work.
 
@@ -189,9 +178,21 @@ Compatibility rules:
 
 ### 3.7 Local Discovery Contract
 
-Discovery is manifest-based. Each process with debugger mode enabled publishes one manifest that describes the local attach endpoint and the routes available in that process.
+Discovery is manifest-based and snapshot-oriented, not streaming. Each process with debugger mode enabled and `publish_local_attach = true` publishes one manifest while at least one attachable route exists.
 
 ```rust
+pub struct LocalEndpointV1 {
+    pub transport: String,
+    pub location: String,
+}
+
+pub struct RouteSummaryV1 {
+    pub route_id: RuntimeRouteId,
+    pub label: Option<String>,
+    pub attachable: bool,
+    pub capabilities: std::collections::BTreeMap<String, CapabilityStateV1>,
+}
+
 pub struct RuntimeManifestV1 {
     pub manifest_version: u32,
     pub pid: u32,
@@ -203,36 +204,33 @@ pub struct RuntimeManifestV1 {
 }
 ```
 
-Route summaries include:
-- `RuntimeRouteId`,
-- display label,
-- `surface_kind`,
-- whether the route is currently attachable,
-- declared capability states for the route.
+`LocalEndpointV1.transport` is `"unix"` on macOS/Linux and `"named_pipe"` on Windows. `location` is an absolute socket path or a full pipe name. `RouteSummaryV1.route_id.surface_kind` is the only surface discriminator. `RouteSummaryV1.capabilities` must include every route-scoped wire key from Section 3.4 and use the states from Section 3.10.1; unsupported features stay present with `disabled` or `unavailable` instead of omission. `sdk_knowledge` is bridge-only and excluded from runtime-published route maps. `RuntimeManifestV1.manifest_version` is fixed to `1` in this phase.
 
 Manifest placement:
 - macOS/Linux: publish in `$XDG_RUNTIME_DIR/goudengine/` when available, otherwise `/tmp/goudengine-<uid>/`.
 - Windows: publish in `%LOCALAPPDATA%\\GoudEngine\\runtime\\`.
-
+- If a Unix socket path would exceed platform limits, implementations must fall back to a hashed basename under a short root such as `/tmp/goudengine-<uid>/s/`, while still encoding `pid` and `process_nonce` in the manifest `location`.
 Operational rules:
-- One manifest per process, not per context.
-- The manifest lists all current routes for that process.
-- Stale manifests are ignored when `pid` is gone or the attach handshake fails.
+- One manifest per process, not per context, and no manifest when `publish_local_attach = false` or no attachable routes exist.
+- The manifest lists all current routes for that process and is rewritten with a new, strictly monotonic `published_at_unix_ms = max(now_ms, last_published_at_unix_ms + 1)` on any manifest field change.
+- Manifest updates must use atomic replace semantics, such as write-temp-then-rename, so tools never observe partial files.
+- For the same `pid` and `process_nonce`, the highest `published_at_unix_ms` is authoritative; if multiple updates fall in the same millisecond, the runtime must increment the value to preserve strict monotonicity, and older copies are stale.
+- Manifest filenames and `LocalEndpointV1.location` must include both `pid` and `process_nonce`.
+- Readers must treat manifests as stale when the `pid` is no longer live.
+- An endpoint-open failure requires exactly one local retry after 100 ms before the manifest is ignored for the current discovery invocation. Readers SHOULD perform that retry asynchronously, and any success from that retry may appear only on the next explicit manifest-directory scan rather than mutating results already returned. Pruning is reserved for dead-`pid` cases.
 - The manifest is local developer metadata only. It is never a remote discovery protocol.
 
 ### 3.8 Local Attach Transport and Handshake
 
-Transport is OS-local IPC:
-- macOS/Linux: Unix domain sockets.
-- Windows: named pipes.
-
-Out of scope for this phase:
-- TCP listen sockets,
-- WebSocket listeners,
-- remote host binding,
-- or any release gate that depends on cross-machine attach.
-
-The attach transport carries framed UTF-8 JSON messages. The first request/response pair uses:
+Transport is OS-local IPC: Unix domain sockets on macOS/Linux and named pipes on Windows. Out of scope for this phase: TCP listen sockets, WebSocket listeners, remote host binding, and any release gate that depends on cross-machine attach.
+- Frame taxonomy: v1 allows only client requests, runtime responses, `{"type":"heartbeat"}`, and `{"type":"heartbeat_ack"}`. Unsolicited runtime->client notifications are forbidden.
+- Framing: every message is one 4-byte little-endian length prefix plus one UTF-8 JSON object, with a 1 MiB maximum frame size. Lengths above the limit must return `protocol_error` and immediately close the session without draining the frame.
+- Versioning: `AttachHelloV1.protocol_version` and `AttachAcceptedV1.protocol_version` are fixed to `1` in this phase.
+- Heartbeat sender: `goudengine-mcp` sends `{"type":"heartbeat"}` and the runtime only replies with `{"type":"heartbeat_ack"}`; heartbeat frames are out-of-band and do not count against the one in-flight request limit.
+- Heartbeat interval: if `heartbeat_interval_ms` is `0`, heartbeats are disabled. Otherwise the client sends a heartbeat after one idle interval without client->runtime traffic.
+- Heartbeat timeout: a sent heartbeat is satisfied only by `{"type":"heartbeat_ack"}`; other runtime->client frames do not clear it. The client closes when a sent heartbeat is not acknowledged within exactly `2 * heartbeat_interval_ms`, measured from send time on a monotonic clock rather than wall time.
+- Error handling: attach sessions allow only one in-flight request at a time, and a pipelined request before the active response completes is `protocol_error` plus immediate session close. Failures use `{"type":"error","code":"...","message":"..."}` with codes from `protocol_error`, `version_mismatch`, `route_not_found`, `route_not_attachable`, and `attach_disabled`; unknown codes are extensions and still fail the active request.
+The first request/response pair uses:
 
 ```rust
 pub struct AttachHelloV1 {
@@ -276,6 +274,9 @@ Trust boundaries:
 Required behavior:
 - Release-oriented builds may ignore debugger enablement or compile out discovery publication.
 - Local attach is disabled unless debugger mode is enabled.
+- Manifest directories must be owner-only where the OS supports it: `0700` directories and `0600` manifest files on Unix-like systems, restrictive per-user ACLs under `%LOCALAPPDATA%` on Windows.
+- Unix socket endpoints must live inside an owner-only directory; the runtime must refuse to publish a socket in a broader directory.
+- Windows named pipes must grant access only to the current user, `SYSTEM`, and local Administrators; the runtime must refuse broader pipe ACLs.
 - Future remote attach, auth, or sandboxing work is follow-up scope and must not be backported into this phase as an implicit gate.
 
 ### 3.10 Snapshot and Service-Health Schema
@@ -305,13 +306,13 @@ pub struct ServiceHealthV1 {
 }
 ```
 
-Expected services: `renderer`, `physics`, `audio`, `network`, `window`, `assets`, `capture`, `replay`, and `debugger`.
+`services` must include exactly one entry for each of `renderer`, `memory`, `profiling`, `physics`, `audio`, `network`, `window`, `assets`, `capture`, `replay`, and `debugger`, using `disabled`, `unavailable`, or `faulted` instead of omission.
 
-`owner` names the subsystem that produces that section, such as `renderer-provider`, `network-provider`, `asset-manager`, or `debugger-runtime`.
+`owner` is a closed wire-literal set: `renderer_adapter`, `memory_adapter`, `physics_adapter`, `audio_adapter`, `network_adapter`, `window_adapter`, `asset_manager`, `capture_subsystem`, `replay_subsystem`, and `debugger_runtime`. Required mappings are `renderer -> renderer_adapter`, `memory -> memory_adapter`, `physics -> physics_adapter`, `audio -> audio_adapter`, `network -> network_adapter`, `window -> window_adapter`, `assets -> asset_manager`, `capture -> capture_subsystem`, `replay -> replay_subsystem`, and `debugger -> debugger_runtime`.
 
 #### 3.10.3 Snapshot shape
 
-`DebuggerSnapshotV1` is the canonical semantic view of one route:
+`DebuggerSnapshotV1` is the canonical semantic view of one route. `snapshot_version` is fixed to `1` in this phase:
 
 ```rust
 pub struct DebuggerSnapshotV1 {
@@ -328,14 +329,30 @@ pub struct DebuggerSnapshotV1 {
 }
 ```
 
+```rust
+pub struct FrameStateV1 { pub index: u64, pub delta_seconds: f32, pub total_seconds: f64 }
+pub struct SelectionStateV1 { pub scene_id: String, pub entity_id: Option<u64> }
+pub struct SceneStateV1 { pub active_scene: String, pub entity_count: u32 }
+pub struct EntityStateV1 { pub entity_id: u64, pub name: Option<String>, pub components: std::collections::BTreeMap<String, serde_json::Value> }
+pub struct RenderStatsV1 { pub draw_calls: u32 }
+pub struct MemoryStatsV1 { pub tracked_bytes: u64 }
+pub struct NetworkStatsV1 { pub bytes_sent: u64, pub bytes_received: u64 }
+pub struct SnapshotStatsV1 { pub render: RenderStatsV1, pub memory: MemoryStatsV1, pub network: NetworkStatsV1 }
+pub struct DiagnosticsStateV1 { pub errors: Vec<String>, pub last_fault: Option<String> }
+pub struct DebuggerStateV1 { pub paused: bool, pub time_scale: f32, pub attached_clients: u32 }
+```
+
+All fields are required unless wrapped in `Option<T>`; `entities` and `components` maps may be empty, but required `services` and capability maps must be present, complete, and unique by name/key.
 Field ownership:
 
 | Snapshot section | Produced by |
 |---|---|
-| `route_id`, `debugger` | debugger runtime |
+| `route_id`, `debugger`, `services.debugger` | debugger runtime |
 | `frame` | debugger runtime frame coordinator |
 | `selection`, `scene`, `entities` | scene/entity inspector |
 | `services.renderer`, `stats.render` | renderer adapter |
+| `services.memory`, `stats.memory` | memory/statistics adapter |
+| `services.profiling` | profiler subsystem through debugger runtime |
 | `services.physics` | physics adapter |
 | `services.audio` | audio adapter |
 | `services.network`, `stats.network` | network adapter |
@@ -344,8 +361,7 @@ Field ownership:
 | `services.capture` | capture subsystem |
 | `services.replay` | replay subsystem |
 | `diagnostics` | error/diagnostic subsystem plus debugger runtime aggregation |
-
-Minimum semantic coverage includes frame timing and frame index, selected scene/entity state, inspected component state for the current entity selection, provider capability and health, render/memory/network stats, replay and capture status, debugger health, and current errors or diagnostics suitable for agent consumption.
+Minimum semantic coverage includes frame timing and frame index, selected scene/entity state, inspected component state for the current entity selection, provider capability and health, render/memory/network stats, replay and capture status, debugger health, and current errors or diagnostics suitable for agent consumption. When one of the modeled stats producers (`render`, `memory`, or `network`) is `disabled` or `unavailable`, its stats object remains present with zero/default values and the service state is authoritative.
 
 #### 3.10.4 JSON example: `ServiceHealthV1`
 
@@ -353,21 +369,21 @@ Minimum semantic coverage includes frame timing and frame index, selected scene/
 {
   "name": "renderer",
   "state": "ready",
-  "owner": "renderer-adapter",
+  "owner": "renderer_adapter",
   "detail": null,
   "updated_frame": 4812
 }
 ```
 
-#### 3.10.5 JSON example: `DebuggerSnapshotV1`
-
+#### 3.10.5 JSON excerpt: `DebuggerSnapshotV1`
+The `services` array below is abbreviated for brevity; conforming snapshots still include exactly one entry for every required service name.
 ```json
 {
   "snapshot_version": 1,
   "route_id": {
     "process_nonce": 44199288,
     "context_id": 3,
-    "surface_kind": "WindowedGame"
+    "surface_kind": "windowed_game"
   },
   "frame": {
     "index": 4812,
@@ -402,14 +418,14 @@ Minimum semantic coverage includes frame timing and frame index, selected scene/
     {
       "name": "renderer",
       "state": "ready",
-      "owner": "renderer-adapter",
+      "owner": "renderer_adapter",
       "detail": null,
       "updated_frame": 4812
     },
     {
       "name": "replay",
       "state": "disabled",
-      "owner": "replay-subsystem",
+      "owner": "replay_subsystem",
       "detail": "replay not active for this route",
       "updated_frame": 4812
     }
@@ -470,8 +486,6 @@ Rejected because the acceptance criteria only require local developer attach and
 5. Separate schema file in this batch.
 Rejected because this batch is a contract gate, not an implementation batch. A structured appendix in the RFC is enough to unblock runtime, FFI, SDK, and MCP work without adding a second source of truth yet.
 
----
-
 ## 5. Impact
 
 - This RFC is docs only. No engine, FFI, SDK, codegen, or example behavior changes land in this batch.
@@ -480,9 +494,6 @@ Rejected because this batch is a contract gate, not an implementation batch. A s
 - Standalone `GoudContext` will need a future config-based constructor path, while existing bare constructors remain valid with debugger disabled by default.
 - Desktop native flows are the Phase 2.5 gate. TypeScript web/browser attach remains follow-up work.
 
----
-
 ## 6. Open Questions
 
 1. Should future attach sessions expose one multiplexed connection per process or keep one session per route even after the bridge supports route switching?
-2. Should the runtime publish manifest files only while an attachable route exists, or for the full debugger-runtime lifetime when at least one route may appear later?
