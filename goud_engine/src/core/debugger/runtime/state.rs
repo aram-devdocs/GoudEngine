@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
-use std::sync::{Mutex, MutexGuard, OnceLock};
+use std::sync::atomic::AtomicBool;
+use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
+use std::thread::JoinHandle;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
@@ -171,6 +173,13 @@ pub(super) struct RuntimeArtifactsState {
     pub(super) endpoint: LocalEndpointV1,
 }
 
+#[derive(Debug)]
+pub(super) struct AttachServerState {
+    pub(super) endpoint_location: String,
+    pub(super) shutdown: Arc<AtomicBool>,
+    pub(super) accept_thread: Option<JoinHandle<()>>,
+}
+
 #[cfg_attr(not(test), allow(dead_code))]
 #[derive(Debug, Clone)]
 pub(super) struct AttachSessionState {
@@ -187,6 +196,7 @@ pub(super) struct DebuggerRuntimeState {
     #[cfg_attr(not(test), allow(dead_code))]
     pub(super) next_session_id: u64,
     pub(super) artifacts: Option<RuntimeArtifactsState>,
+    pub(super) attach_server: Option<AttachServerState>,
 }
 
 static DEBUGGER_RUNTIME: OnceLock<Mutex<Option<DebuggerRuntimeState>>> = OnceLock::new();
@@ -408,6 +418,7 @@ impl DebuggerRuntimeState {
             published_at_unix_ms: 0,
             next_session_id: 1,
             artifacts: None,
+            attach_server: None,
         }
     }
 

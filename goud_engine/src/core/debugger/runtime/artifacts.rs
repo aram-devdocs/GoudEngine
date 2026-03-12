@@ -37,10 +37,9 @@ fn runtime_root_dir() -> PathBuf {
 fn short_socket_root(base: &Path) -> PathBuf {
     #[cfg(not(windows))]
     {
-        base.join("s")
-            .parent()
-            .map(PathBuf::from)
-            .unwrap_or_else(|| std::env::temp_dir().join("goudengine").join("s"))
+        let mut hasher = DefaultHasher::new();
+        base.hash(&mut hasher);
+        std::env::temp_dir().join(format!("ge-{:x}", hasher.finish() & 0xffff))
     }
 
     #[cfg(windows)]

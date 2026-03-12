@@ -89,11 +89,13 @@ pub fn unregister_context(context_id: GoudContextId) {
     runtime.routes.remove(&route_key);
 
     if runtime.routes.is_empty() {
+        attach::stop_local_attach_server(runtime);
         artifacts::cleanup(runtime);
         *guard = None;
     } else {
         runtime.touch_manifest();
         artifacts::sync_manifest(runtime);
+        attach::ensure_local_attach_server(runtime);
     }
 }
 
@@ -475,6 +477,7 @@ pub(crate) use attach::{
 pub(crate) fn reset_for_tests() {
     let mut guard = lock_runtime();
     if let Some(runtime) = guard.as_mut() {
+        attach::stop_local_attach_server(runtime);
         artifacts::cleanup(runtime);
     }
     *guard = None;
