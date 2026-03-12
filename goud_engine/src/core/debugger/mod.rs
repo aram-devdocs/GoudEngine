@@ -20,6 +20,8 @@ pub use runtime::active_route_count;
 #[doc(inline)]
 pub use runtime::begin_frame;
 #[doc(inline)]
+pub use runtime::capture_frame_for_route;
+#[doc(inline)]
 pub use runtime::clear_debug_draw_transient_for_route;
 #[doc(inline)]
 pub use runtime::control_state_for_route;
@@ -49,6 +51,8 @@ pub use runtime::profiler_enabled_for_route;
 pub use runtime::record_phase_duration;
 #[doc(inline)]
 pub use runtime::record_synthetic_input_for_current_route;
+#[doc(inline)]
+pub use runtime::register_capture_hook_for_route;
 #[doc(inline)]
 pub use runtime::register_context;
 #[doc(inline)]
@@ -82,6 +86,8 @@ pub use runtime::snapshot_json_for_context;
 #[doc(inline)]
 pub use runtime::take_frame_control_for_route;
 #[doc(inline)]
+pub use runtime::unregister_capture_hook_for_route;
+#[doc(inline)]
 pub use runtime::unregister_context;
 #[doc(inline)]
 pub use runtime::update_fps_stats_for_context;
@@ -103,6 +109,8 @@ pub use runtime::DebugDrawShape2DV1;
 pub use runtime::DebugDrawShape3DV1;
 #[doc(inline)]
 pub use runtime::FrameControlPlanV1;
+#[doc(inline)]
+pub use runtime::RawFramebufferReadbackV1;
 #[doc(inline)]
 pub use runtime::RouteControlStateV1;
 #[doc(inline)]

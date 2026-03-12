@@ -295,6 +295,13 @@ pub(super) fn initialize_route_state(
     capabilities.insert("control_plane".to_string(), CapabilityStateV1::Ready);
     capabilities.insert("replay".to_string(), CapabilityStateV1::Ready);
     capabilities.insert(
+        "capture".to_string(),
+        match surface_kind {
+            RuntimeSurfaceKind::WindowedGame => CapabilityStateV1::Ready,
+            _ => CapabilityStateV1::Unavailable,
+        },
+    );
+    capabilities.insert(
         "render_stats".to_string(),
         match surface_kind {
             RuntimeSurfaceKind::WindowedGame => CapabilityStateV1::Ready,
@@ -340,6 +347,20 @@ pub(super) fn initialize_route_state(
             "idle; normalized input timing only; physics and render output can still diverge by platform/frame pacing"
                 .to_string(),
         ),
+    );
+    set_service_state(
+        &mut snapshot,
+        "capture",
+        match surface_kind {
+            RuntimeSurfaceKind::WindowedGame => CapabilityStateV1::Ready,
+            _ => CapabilityStateV1::Unavailable,
+        },
+        Some(match surface_kind {
+            RuntimeSurfaceKind::WindowedGame => {
+                "framebuffer capture ready for this route".to_string()
+            }
+            _ => "capture is unavailable for this route surface".to_string(),
+        }),
     );
 
     let mut route = RouteState {

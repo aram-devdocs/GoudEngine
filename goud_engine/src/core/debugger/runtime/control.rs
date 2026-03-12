@@ -2,6 +2,7 @@ use serde_json::{json, Value};
 
 use super::super::snapshot::DebuggerSnapshotV1;
 use super::super::types::CapabilityStateV1;
+use super::capture::{capture_frame_for_route, CaptureFrameError};
 use super::metrics::{empty_metrics_export, metrics_trace_json_for_route};
 use super::replay;
 use super::state::{
@@ -109,6 +110,69 @@ fn metrics_trace_response_for_route(route_id: &RuntimeRouteId, request: &Value) 
     )
 }
 
+fn capture_frame_response_for_route(route_id: &RuntimeRouteId, request: &Value) -> Value {
+    let route_capture_state = {
+        let guard = lock_runtime();
+        let Some(runtime) = guard.as_ref() else {
+            return error_response(
+                request,
+                "route_not_found",
+                "debugger route is no longer available".to_string(),
+                None,
+                None,
+            );
+        };
+        let Some(route) = runtime.routes.get(&route_id.context_id) else {
+            return error_response(
+                request,
+                "route_not_found",
+                "debugger route is no longer available".to_string(),
+                None,
+                None,
+            );
+        };
+        route.capabilities.get("capture").copied()
+    };
+
+    if route_capture_state != Some(CapabilityStateV1::Ready) {
+        return error_response(
+            request,
+            "unsupported",
+            "capture is not available for this route".to_string(),
+            Some("capture"),
+            Some("capture"),
+        );
+    }
+
+    match capture_frame_for_route(route_id) {
+        Ok(artifact) => {
+            let artifact_json = serde_json::to_value(artifact).unwrap_or_else(|_| json!({}));
+            ok_response(request, artifact_json)
+        }
+        Err(CaptureFrameError::RouteNotFound) => error_response(
+            request,
+            "route_not_found",
+            "debugger route is no longer available".to_string(),
+            None,
+            None,
+        ),
+        Err(CaptureFrameError::Unsupported(message)) => error_response(
+            request,
+            "unsupported",
+            message,
+            Some("capture"),
+            Some("capture"),
+        ),
+        Err(CaptureFrameError::CaptureFailed(message)) => error_response(
+            request,
+            "capture_failed",
+            message,
+            Some("capture"),
+            Some("capture"),
+        ),
+    }
+}
+
 /// Returns the current route-local debugger control state.
 pub fn control_state_for_route(route_id: &RuntimeRouteId) -> Option<RouteControlStateV1> {
     let guard = lock_runtime();
@@ -145,6 +209,9 @@ pub fn dispatch_request_json_for_route(
         .to_string();
     if verb == "get_metrics_trace" {
         return Ok(metrics_trace_response_for_route(route_id, &request));
+    }
+    if verb == "capture_frame" {
+        return Ok(capture_frame_response_for_route(route_id, &request));
     }
     let mut should_publish_manifest = false;
 
@@ -273,13 +340,6 @@ pub fn dispatch_request_json_for_route(
                 ok_response(&request, json!(route.control.snapshot()))
             }
             "get_replay_status" => ok_response(&request, replay::replay_status_json(route)),
-            "capture_frame" => error_response(
-                &request,
-                "unsupported",
-                "capture is not available for this route".to_string(),
-                Some("capture"),
-                Some("capture"),
-            ),
             "start_recording" => {
                 replay::start_recording(route);
                 ok_response(&request, replay::replay_status_json(route))

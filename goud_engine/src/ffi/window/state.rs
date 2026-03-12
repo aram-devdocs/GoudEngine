@@ -254,6 +254,27 @@ pub fn set_window_state(context_id: GoudContextId, state: WindowState) -> Result
             states.push(None);
         }
 
+        if let Some(previous) = states[index].take() {
+            if let Some(route_id) = previous.debugger_route.as_ref() {
+                debugger::unregister_capture_hook_for_route(route_id);
+            }
+        }
+
+        if let Some(route_id) = state.debugger_route.clone() {
+            debugger::register_capture_hook_for_route(route_id, move || {
+                let (width, height) =
+                    with_window_state(context_id, |window| window.get_framebuffer_size())
+                        .ok_or_else(|| "window state is not available for capture".to_string())?;
+                let rgba8 = read_default_framebuffer_rgba8_for_context(context_id, width, height)
+                    .map_err(|err| format!("framebuffer readback failed: {err}"))?;
+                Ok(debugger::RawFramebufferReadbackV1 {
+                    width,
+                    height,
+                    rgba8,
+                })
+            });
+        }
+
         states[index] = Some(state);
         Ok(())
     })
@@ -265,7 +286,11 @@ pub fn remove_window_state(context_id: GoudContextId) {
         let mut states = cell.borrow_mut();
         let index = context_id.index() as usize;
         if index < states.len() {
-            states[index] = None;
+            if let Some(previous) = states[index].take() {
+                if let Some(route_id) = previous.debugger_route.as_ref() {
+                    debugger::unregister_capture_hook_for_route(route_id);
+                }
+            }
         }
     });
 }
