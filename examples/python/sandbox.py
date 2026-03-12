@@ -9,6 +9,7 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -52,10 +53,53 @@ from goud_engine import (  # noqa: E402
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
 MOVE_SPEED = 220.0
-PANEL_OVERVIEW = (250.0, 156.0, 420.0, 228.0)
-PANEL_STATUS = (980.0, 156.0, 500.0, 228.0)
-PANEL_NEXT = (640.0, 620.0, 1180.0, 140.0)
-SCENE_BADGE = (980.0, 268.0, 190.0, 42.0)
+
+
+@dataclass
+class HudRect:
+    x: float
+    y: float
+    width: float
+    height: float
+
+
+@dataclass
+class OverviewTextLayout:
+    x: float
+    title_y: float
+    tagline_y: float
+
+
+@dataclass
+class StatusTextLayout:
+    x: float
+    title_y: float
+    max_width: float
+
+
+@dataclass
+class NextTextLayout:
+    x: float
+    title_y: float
+
+
+@dataclass
+class SceneLabelLayout:
+    x: float
+    y: float
+    max_width: float
+
+
+@dataclass
+class HudLayout:
+    overview_panel: HudRect
+    status_panel: HudRect
+    next_panel: HudRect
+    scene_badge: HudRect
+    overview_text: OverviewTextLayout
+    status_text: StatusTextLayout
+    next_text: NextTextLayout
+    scene_label: SceneLabelLayout
 
 
 @dataclass
@@ -84,6 +128,7 @@ class SandboxContract:
     status_rows: list[str]
     next_step_items: list[str]
     next_step_dynamic_rows: list[str]
+    layout: HudLayout
     web_networking_blocker: str
     web_renderer_blocker: str
 
@@ -127,6 +172,7 @@ def _load_manifest() -> SandboxManifest:
     hud = manifest["hud"]
     contract_path = REPO_ROOT / manifest.get("contract", "examples/shared/sandbox/contract.json")
     contract = json.loads(contract_path.read_text(encoding="utf-8"))
+    layout = contract["layout"]
     network = manifest.get("network", {})
     audio_path = REPO_ROOT / assets["audio"]
     scenes = [
@@ -167,6 +213,16 @@ def _load_manifest() -> SandboxManifest:
             status_rows=[str(line) for line in contract["status_rows"]],
             next_step_items=[str(line) for line in contract["next_step_items"]],
             next_step_dynamic_rows=[str(line) for line in contract["next_step_dynamic_rows"]],
+            layout=HudLayout(
+                overview_panel=HudRect(**layout["overview_panel"]),
+                status_panel=HudRect(**layout["status_panel"]),
+                next_panel=HudRect(**layout["next_panel"]),
+                scene_badge=HudRect(**layout["scene_badge"]),
+                overview_text=OverviewTextLayout(**layout["overview_text"]),
+                status_text=StatusTextLayout(**layout["status_text"]),
+                next_text=NextTextLayout(**layout["next_text"]),
+                scene_label=SceneLabelLayout(**layout["scene_label"]),
+            ),
             web_networking_blocker=str(contract["web_blockers"]["networking"]),
             web_renderer_blocker=str(contract["web_blockers"]["renderer"]),
         ),
@@ -317,6 +373,7 @@ def _draw_lines(
     sizes: list[float],
     color: Color,
     max_width: float = 0.0,
+    advance: Callable[[float], float] | None = None,
 ) -> None:
     current_y = y
     for index, line in enumerate(lines):
@@ -333,7 +390,32 @@ def _draw_lines(
             0,
             color,
         )
-        current_y += 26 if size >= 18 else 21
+        if advance is not None:
+            current_y += advance(size)
+        else:
+            current_y += 26 if size >= 18 else 21
+
+
+def _overview_advance(size: float) -> float:
+    if size >= 38:
+        return 44
+    if size >= 24:
+        return 30
+    return 24
+
+
+def _status_advance(size: float) -> float:
+    return 38 if size >= 30 else 24
+
+
+def _next_advance(size: float) -> float:
+    return 38 if size >= 32 else 25
+
+
+def _max_width_from_panel(panel: HudRect, text_x: float, margin: float) -> float:
+    right = panel.x + panel.width * 0.5
+    max_width = right - text_x - margin
+    return max_width if max_width > 64 else 64
 
 
 def _status_row(
@@ -495,12 +577,37 @@ def main() -> int:
                 )
                 game.draw_sprite(sprite, network.remote_x, network.remote_y, 52, 52, -angle * 0.18)
 
+        layout = manifest.contract.layout
         panel_alpha = 0.62 if current_mode in ("3D", "Hybrid") else 0.92
         bottom_alpha = 0.70 if current_mode in ("3D", "Hybrid") else 0.94
-        game.draw_quad(*PANEL_OVERVIEW, Color(0.05, 0.08, 0.12, panel_alpha))
-        game.draw_quad(*PANEL_STATUS, Color(0.08, 0.12, 0.18, panel_alpha))
-        game.draw_quad(*PANEL_NEXT, Color(0.05, 0.08, 0.12, bottom_alpha))
-        game.draw_quad(*SCENE_BADGE, Color(0.20, 0.55, 0.95, 0.84))
+        game.draw_quad(
+            layout.overview_panel.x,
+            layout.overview_panel.y,
+            layout.overview_panel.width,
+            layout.overview_panel.height,
+            Color(0.05, 0.08, 0.12, panel_alpha),
+        )
+        game.draw_quad(
+            layout.status_panel.x,
+            layout.status_panel.y,
+            layout.status_panel.width,
+            layout.status_panel.height,
+            Color(0.08, 0.12, 0.18, panel_alpha),
+        )
+        game.draw_quad(
+            layout.next_panel.x,
+            layout.next_panel.y,
+            layout.next_panel.width,
+            layout.next_panel.height,
+            Color(0.05, 0.08, 0.12, bottom_alpha),
+        )
+        game.draw_quad(
+            layout.scene_badge.x,
+            layout.scene_badge.y,
+            layout.scene_badge.width,
+            layout.scene_badge.height,
+            Color(0.20, 0.55, 0.95, 0.84),
+        )
         game.draw_quad(mouse.x, mouse.y, 14, 14, Color(0.95, 0.85, 0.20, 0.95))
 
         caps = game.get_render_capabilities()
@@ -512,6 +619,8 @@ def main() -> int:
         except Exception:
             network_caps = None
 
+        overview_max_width = _max_width_from_panel(layout.overview_panel, layout.overview_text.x, 24.0)
+        next_max_width = _max_width_from_panel(layout.next_panel, layout.next_text.x, 24.0)
         overview_lines = [
             manifest.hud.overview_title,
             manifest.hud.tagline,
@@ -547,41 +656,44 @@ def main() -> int:
             game,
             font,
             overview_lines,
-            48,
-            52,
-            [22, 16, 14],
+            layout.overview_text.x,
+            layout.overview_text.title_y,
+            [40, 24, 19],
             Color.white(),
-            380,
+            overview_max_width,
+            _overview_advance,
         )
         _draw_lines(
             game,
             font,
             status_lines,
-            742,
-            52,
-            [14],
+            layout.status_text.x,
+            layout.status_text.title_y,
+            [30, 18],
             Color(0.94, 0.97, 1.0, 1.0),
-            460,
+            layout.status_text.max_width,
+            _status_advance,
         )
         _draw_lines(
             game,
             font,
             next_step_lines,
-            78,
-            556,
-            [18, 14],
+            layout.next_text.x,
+            layout.next_text.title_y,
+            [32, 19],
             Color(0.94, 0.97, 1.0, 1.0),
-            1120,
+            next_max_width,
+            _next_advance,
         )
         game.draw_text(
             font,
             scene_labels[current_mode],
-            914,
-            279,
-            15,
+            layout.scene_label.x,
+            layout.scene_label.y,
+            20,
             TextAlignment.LEFT,
-            170,
-            1.0,
+            layout.scene_label.max_width,
+            1.10,
             0,
             Color.white(),
         )

@@ -17,8 +17,62 @@ pub(crate) struct HudConfig {
     pub(crate) status_title: String,
     pub(crate) next_steps_title: String,
     pub(crate) tagline: String,
-    pub(crate) overview: Vec<String>,
-    pub(crate) next_steps: Vec<String>,
+    pub(crate) contract: HudContract,
+}
+
+#[derive(Clone)]
+pub(crate) struct HudContract {
+    pub(crate) overview_items: Vec<String>,
+    pub(crate) status_rows: Vec<String>,
+    pub(crate) next_step_items: Vec<String>,
+    pub(crate) next_step_dynamic_rows: Vec<String>,
+    pub(crate) layout: HudLayout,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct HudRect {
+    pub(crate) x: f32,
+    pub(crate) y: f32,
+    pub(crate) width: f32,
+    pub(crate) height: f32,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct OverviewTextLayout {
+    pub(crate) x: f32,
+    pub(crate) title_y: f32,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct StatusTextLayout {
+    pub(crate) x: f32,
+    pub(crate) title_y: f32,
+    pub(crate) max_width: f32,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct NextTextLayout {
+    pub(crate) x: f32,
+    pub(crate) title_y: f32,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct SceneLabelLayout {
+    pub(crate) x: f32,
+    pub(crate) y: f32,
+    pub(crate) max_width: f32,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct HudLayout {
+    pub(crate) overview_panel: HudRect,
+    pub(crate) status_panel: HudRect,
+    pub(crate) next_panel: HudRect,
+    pub(crate) scene_badge: HudRect,
+    pub(crate) overview_text: OverviewTextLayout,
+    pub(crate) status_text: StatusTextLayout,
+    pub(crate) next_text: NextTextLayout,
+    pub(crate) scene_label: SceneLabelLayout,
 }
 
 #[derive(Clone)]
@@ -51,6 +105,14 @@ pub(crate) fn read_manifest() -> SandboxConfig {
     let raw = fs::read_to_string(path).unwrap_or_else(|e| panic!("failed to read {path}: {e}"));
     let root: Value =
         serde_json::from_str(&raw).unwrap_or_else(|e| panic!("failed to parse {path}: {e}"));
+    let contract_path = root
+        .get("contract")
+        .and_then(Value::as_str)
+        .unwrap_or("examples/shared/sandbox/contract.json");
+    let contract_raw = fs::read_to_string(contract_path)
+        .unwrap_or_else(|e| panic!("failed to read {contract_path}: {e}"));
+    let contract: Value = serde_json::from_str(&contract_raw)
+        .unwrap_or_else(|e| panic!("failed to parse {contract_path}: {e}"));
     let assets = root
         .get("assets")
         .and_then(Value::as_object)
@@ -63,6 +125,13 @@ pub(crate) fn read_manifest() -> SandboxConfig {
         .get("hud")
         .and_then(Value::as_object)
         .unwrap_or_else(|| panic!("missing hud in {path}"));
+    let contract_obj = contract
+        .as_object()
+        .unwrap_or_else(|| panic!("invalid contract root in {contract_path}"));
+    let layout = contract_obj
+        .get("layout")
+        .and_then(Value::as_object)
+        .unwrap_or_else(|| panic!("missing layout in {contract_path}"));
     let scenes = root
         .get("scenes")
         .and_then(Value::as_array)
@@ -101,18 +170,24 @@ pub(crate) fn read_manifest() -> SandboxConfig {
             status_title: value_str_obj(hud, "status_title"),
             next_steps_title: value_str_obj(hud, "next_steps_title"),
             tagline: value_str_obj(hud, "tagline"),
-            overview: value_str_array_obj(hud, "overview"),
-            next_steps: value_str_array_obj(hud, "next_steps"),
+            contract: HudContract {
+                overview_items: value_str_array_obj(contract_obj, "overview_items"),
+                status_rows: value_str_array_obj(contract_obj, "status_rows"),
+                next_step_items: value_str_array_obj(contract_obj, "next_step_items"),
+                next_step_dynamic_rows: value_str_array_obj(contract_obj, "next_step_dynamic_rows"),
+                layout: HudLayout {
+                    overview_panel: value_rect_obj(layout, "overview_panel"),
+                    status_panel: value_rect_obj(layout, "status_panel"),
+                    next_panel: value_rect_obj(layout, "next_panel"),
+                    scene_badge: value_rect_obj(layout, "scene_badge"),
+                    overview_text: value_overview_text_obj(layout, "overview_text"),
+                    status_text: value_status_text_obj(layout, "status_text"),
+                    next_text: value_next_text_obj(layout, "next_text"),
+                    scene_label: value_scene_label_obj(layout, "scene_label"),
+                },
+            },
         },
         scenes: scene_entries,
-    }
-}
-
-pub(crate) fn mode_color(mode: &str) -> (f32, f32, f32, f32) {
-    match mode {
-        "2D" => (0.20, 0.55, 0.95, 0.85),
-        "3D" => (0.62, 0.35, 0.90, 0.85),
-        _ => (0.30, 0.72, 0.50, 0.85),
     }
 }
 
@@ -142,4 +217,63 @@ fn value_str_array_obj(root: &serde_json::Map<String, Value>, key: &str) -> Vec<
                 .to_string()
         })
         .collect()
+}
+
+fn value_rect_obj(root: &serde_json::Map<String, Value>, key: &str) -> HudRect {
+    let rect = value_obj(root, key);
+    HudRect {
+        x: value_f32_obj(rect, "x"),
+        y: value_f32_obj(rect, "y"),
+        width: value_f32_obj(rect, "width"),
+        height: value_f32_obj(rect, "height"),
+    }
+}
+
+fn value_overview_text_obj(root: &serde_json::Map<String, Value>, key: &str) -> OverviewTextLayout {
+    let layout = value_obj(root, key);
+    OverviewTextLayout {
+        x: value_f32_obj(layout, "x"),
+        title_y: value_f32_obj(layout, "title_y"),
+    }
+}
+
+fn value_status_text_obj(root: &serde_json::Map<String, Value>, key: &str) -> StatusTextLayout {
+    let layout = value_obj(root, key);
+    StatusTextLayout {
+        x: value_f32_obj(layout, "x"),
+        title_y: value_f32_obj(layout, "title_y"),
+        max_width: value_f32_obj(layout, "max_width"),
+    }
+}
+
+fn value_next_text_obj(root: &serde_json::Map<String, Value>, key: &str) -> NextTextLayout {
+    let layout = value_obj(root, key);
+    NextTextLayout {
+        x: value_f32_obj(layout, "x"),
+        title_y: value_f32_obj(layout, "title_y"),
+    }
+}
+
+fn value_scene_label_obj(root: &serde_json::Map<String, Value>, key: &str) -> SceneLabelLayout {
+    let layout = value_obj(root, key);
+    SceneLabelLayout {
+        x: value_f32_obj(layout, "x"),
+        y: value_f32_obj(layout, "y"),
+        max_width: value_f32_obj(layout, "max_width"),
+    }
+}
+
+fn value_obj<'a>(
+    root: &'a serde_json::Map<String, Value>,
+    key: &str,
+) -> &'a serde_json::Map<String, Value> {
+    root.get(key)
+        .and_then(Value::as_object)
+        .unwrap_or_else(|| panic!("missing object key {key}"))
+}
+
+fn value_f32_obj(root: &serde_json::Map<String, Value>, key: &str) -> f32 {
+    root.get(key)
+        .and_then(Value::as_f64)
+        .unwrap_or_else(|| panic!("missing float key {key}")) as f32
 }

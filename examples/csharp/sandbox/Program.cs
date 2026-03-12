@@ -160,7 +160,29 @@ internal static class Program
         string[] StatusRows,
         string[] NextStepDynamicRows,
         string WebNetworkingBlocker,
-        string WebRendererBlocker
+        string WebRendererBlocker,
+        HudLayout Layout
+    );
+
+    private readonly record struct HudRect(float X, float Y, float Width, float Height);
+
+    private readonly record struct OverviewTextLayout(float X, float TitleY, float TaglineY);
+
+    private readonly record struct StatusTextLayout(float X, float TitleY, float MaxWidth);
+
+    private readonly record struct NextTextLayout(float X, float TitleY);
+
+    private readonly record struct SceneLabelLayout(float X, float Y, float MaxWidth);
+
+    private readonly record struct HudLayout(
+        HudRect OverviewPanel,
+        HudRect StatusPanel,
+        HudRect NextPanel,
+        HudRect SceneBadge,
+        OverviewTextLayout OverviewText,
+        StatusTextLayout StatusText,
+        NextTextLayout NextText,
+        SceneLabelLayout SceneLabel
     );
 
     private static void Main()
@@ -294,72 +316,71 @@ internal static class Program
 
             var panelAlpha = is3DFamilyMode ? 0.62f : 0.88f;
             var bottomAlpha = is3DFamilyMode ? 0.70f : 0.92f;
-            game.DrawQuad(332f, 192f, 620f, 318f, new Color(0.05f, 0.08f, 0.12f, panelAlpha));
-            game.DrawQuad(1006f, 192f, 520f, 318f, new Color(0.08f, 0.12f, 0.18f, panelAlpha));
-            game.DrawQuad(640f, 620f, 1168f, 182f, new Color(0.05f, 0.08f, 0.12f, bottomAlpha));
-            game.DrawQuad(980f, 312f, 220f, 42f, new Color(0.20f, 0.55f, 0.95f, 0.84f));
+            game.DrawQuad(assets.Layout.OverviewPanel.X, assets.Layout.OverviewPanel.Y, assets.Layout.OverviewPanel.Width, assets.Layout.OverviewPanel.Height, new Color(0.05f, 0.08f, 0.12f, panelAlpha));
+            game.DrawQuad(assets.Layout.StatusPanel.X, assets.Layout.StatusPanel.Y, assets.Layout.StatusPanel.Width, assets.Layout.StatusPanel.Height, new Color(0.08f, 0.12f, 0.18f, panelAlpha));
+            game.DrawQuad(assets.Layout.NextPanel.X, assets.Layout.NextPanel.Y, assets.Layout.NextPanel.Width, assets.Layout.NextPanel.Height, new Color(0.05f, 0.08f, 0.12f, bottomAlpha));
+            game.DrawQuad(assets.Layout.SceneBadge.X, assets.Layout.SceneBadge.Y, assets.Layout.SceneBadge.Width, assets.Layout.SceneBadge.Height, new Color(0.20f, 0.55f, 0.95f, 0.84f));
             game.DrawQuad(mouse.X, mouse.Y, 12f, 12f, new Color(0.95f, 0.85f, 0.20f, 0.95f));
 
             var caps = game.GetRenderCapabilities();
             var physics = game.GetPhysicsCapabilities();
             var audio = game.GetAudioCapabilities();
             var networkCaps = TryGetNetworkCaps(game);
-            var overviewLines = new List<(string Text, float Size, Color Color)>();
-            AppendWrappedLimited(overviewLines, assets.OverviewTitle, 40f, 30, new Color(1f, 1f, 1f, 1f), 1);
-            AppendWrappedLimited(overviewLines, assets.Tagline, 24f, 34, new Color(1f, 1f, 1f, 1f), 3);
-            for (var i = 0; i < assets.Overview.Length && i < 4; i++)
+            var overviewMaxWidth = MaxWidthFromPanel(assets.Layout.OverviewPanel, assets.Layout.OverviewText.X, 24f);
+            var nextMaxWidth = MaxWidthFromPanel(assets.Layout.NextPanel, assets.Layout.NextText.X, 24f);
+            var overviewLines = new List<(string Text, float Size, Color Color, float MaxWidth)>
             {
-                AppendWrappedLimited(overviewLines, assets.Overview[i], 19f, 36, new Color(0.94f, 0.97f, 1f, 1f), 12);
+                (assets.OverviewTitle, 40f, new Color(1f, 1f, 1f, 1f), 0f),
+                (assets.Tagline, 24f, new Color(1f, 1f, 1f, 1f), overviewMaxWidth),
+            };
+            foreach (var line in assets.Overview)
+            {
+                overviewLines.Add((line, 19f, new Color(0.94f, 0.97f, 1f, 1f), overviewMaxWidth));
             }
 
-            var statusLines = new List<(string Text, float Size, Color Color)>
+            var statusLines = new List<(string Text, float Size, Color Color, float MaxWidth)>
             {
-                (assets.StatusTitle, 30f, new Color(0.95f, 0.90f, 0.40f, 1f)),
+                (assets.StatusTitle, 30f, new Color(0.95f, 0.90f, 0.40f, 1f), 0f),
             };
             foreach (var row in assets.StatusRows)
             {
-                statusLines.Add((RenderStatusRow(row, assets, currentMode, modeIndex, mouse, caps, physics, audio, network, networkCaps), 18f, new Color(0.94f, 0.97f, 1f, 1f)));
+                statusLines.Add((RenderStatusRow(row, assets, currentMode, modeIndex, mouse, caps, physics, audio, network, networkCaps), 18f, new Color(0.94f, 0.97f, 1f, 1f), assets.Layout.StatusText.MaxWidth));
             }
 
-            var nextStepLines = new List<(string Text, float Size, Color Color)>();
-            AppendWrappedLimited(nextStepLines, assets.NextStepsTitle, 32f, 30, new Color(0.95f, 0.90f, 0.40f, 1f), 1);
-            for (var i = 0; i < assets.NextSteps.Length && i < 3; i++)
+            var nextStepLines = new List<(string Text, float Size, Color Color, float MaxWidth)>
             {
-                AppendWrappedLimited(nextStepLines, assets.NextSteps[i], 19f, 64, new Color(0.94f, 0.97f, 1f, 1f), 7);
+                (assets.NextStepsTitle, 32f, new Color(0.95f, 0.90f, 0.40f, 1f), 0f),
+            };
+            foreach (var line in assets.NextSteps)
+            {
+                nextStepLines.Add((line, 19f, new Color(0.94f, 0.97f, 1f, 1f), nextMaxWidth));
             }
             foreach (var row in assets.NextStepDynamicRows)
             {
-                AppendWrappedLimited(
-                    nextStepLines,
-                    RenderNextStepRow(row, network, audioActivated),
-                    19f,
-                    64,
-                    new Color(0.94f, 0.97f, 1f, 1f),
-                    9
-                );
+                nextStepLines.Add((RenderNextStepRow(row, network, audioActivated), 19f, new Color(0.94f, 0.97f, 1f, 1f), nextMaxWidth));
             }
 
-            var overviewY = 52f;
+            var overviewY = assets.Layout.OverviewText.TitleY;
             foreach (var line in overviewLines)
             {
-                game.DrawText(font, line.Text, 60f, overviewY, line.Size, TextAlignment.Left, 0f, 1.12f, TextDirection.Auto, line.Color);
+                game.DrawText(font, line.Text, assets.Layout.OverviewText.X, overviewY, line.Size, TextAlignment.Left, line.MaxWidth, 1.12f, TextDirection.Auto, line.Color);
                 overviewY += line.Size >= 38f ? 44f : (line.Size >= 24f ? 30f : 24f);
             }
 
-            var statusY = 52f;
+            var statusY = assets.Layout.StatusText.TitleY;
             foreach (var line in statusLines)
             {
-                game.DrawText(font, line.Text, 754f, statusY, line.Size, TextAlignment.Left, 472f, 1.10f, TextDirection.Auto, line.Color);
+                game.DrawText(font, line.Text, assets.Layout.StatusText.X, statusY, line.Size, TextAlignment.Left, line.MaxWidth, 1.10f, TextDirection.Auto, line.Color);
                 statusY += line.Size >= 30f ? 38f : 24f;
             }
 
-            var nextY = 526f;
+            var nextY = assets.Layout.NextText.TitleY;
             foreach (var line in nextStepLines)
             {
-                game.DrawText(font, line.Text, 94f, nextY, line.Size, TextAlignment.Left, 0f, 1.12f, TextDirection.Auto, line.Color);
+                game.DrawText(font, line.Text, assets.Layout.NextText.X, nextY, line.Size, TextAlignment.Left, line.MaxWidth, 1.12f, TextDirection.Auto, line.Color);
                 nextY += line.Size >= 32f ? 38f : 25f;
             }
-            game.DrawText(font, $"{currentMode} scene", 900f, 320f, 20f, TextAlignment.Left, 190f, 1.1f, TextDirection.Auto, new Color(1f, 1f, 1f, 1f));
+            game.DrawText(font, $"{currentMode} scene", assets.Layout.SceneLabel.X, assets.Layout.SceneLabel.Y, 20f, TextAlignment.Left, assets.Layout.SceneLabel.MaxWidth, 1.1f, TextDirection.Auto, new Color(1f, 1f, 1f, 1f));
 
             ui.Update();
             ui.Render();
@@ -420,6 +441,7 @@ internal static class Program
         var hud = root.GetProperty("hud");
         using var contract = JsonDocument.Parse(File.ReadAllText(Path.Combine(repoRoot, "examples", "shared", "sandbox", "contract.json")));
         var contractRoot = contract.RootElement;
+        var layoutRoot = contractRoot.GetProperty("layout");
         return new SandboxAssets(
             root.GetProperty("title").GetString() ?? "GoudEngine Sandbox",
             hud.GetProperty("overview_title").GetString() ?? "Overview",
@@ -441,7 +463,8 @@ internal static class Program
             ReadStringArray(contractRoot.GetProperty("status_rows")),
             ReadStringArray(contractRoot.GetProperty("next_step_dynamic_rows")),
             contractRoot.GetProperty("web_blockers").GetProperty("networking").GetString() ?? string.Empty,
-            contractRoot.GetProperty("web_blockers").GetProperty("renderer").GetString() ?? string.Empty
+            contractRoot.GetProperty("web_blockers").GetProperty("renderer").GetString() ?? string.Empty,
+            ReadHudLayout(layoutRoot)
         );
     }
 
@@ -483,70 +506,6 @@ internal static class Program
                 : "Networking: open a second native sandbox to confirm peer sync.",
             _ => row,
         };
-    }
-
-    private static void AppendWrapped(
-        List<(string Text, float Size, Color Color)> output,
-        string text,
-        float size,
-        int maxChars,
-        Color color
-    )
-    {
-        foreach (var line in WrapForHud(text, maxChars))
-        {
-            output.Add((line, size, color));
-        }
-    }
-
-    private static void AppendWrappedLimited(
-        List<(string Text, float Size, Color Color)> output,
-        string text,
-        float size,
-        int maxChars,
-        Color color,
-        int maxLines
-    )
-    {
-        foreach (var line in WrapForHud(text, maxChars))
-        {
-            if (output.Count >= maxLines)
-            {
-                break;
-            }
-            output.Add((line, size, color));
-        }
-    }
-
-    private static IEnumerable<string> WrapForHud(string text, int maxChars)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            yield break;
-        }
-
-        var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var line = new StringBuilder();
-        foreach (var word in words)
-        {
-            var candidateLength = line.Length == 0 ? word.Length : line.Length + 1 + word.Length;
-            if (candidateLength > maxChars && line.Length > 0)
-            {
-                yield return line.ToString();
-                line.Clear();
-            }
-
-            if (line.Length > 0)
-            {
-                line.Append(' ');
-            }
-            line.Append(word);
-        }
-
-        if (line.Length > 0)
-        {
-            yield return line.ToString();
-        }
     }
 
     private static string[] ReadStringArray(JsonElement array)
@@ -601,5 +560,71 @@ internal static class Program
         {
             return null;
         }
+    }
+
+    private static HudLayout ReadHudLayout(JsonElement layoutRoot)
+    {
+        return new HudLayout(
+            ReadRect(layoutRoot.GetProperty("overview_panel")),
+            ReadRect(layoutRoot.GetProperty("status_panel")),
+            ReadRect(layoutRoot.GetProperty("next_panel")),
+            ReadRect(layoutRoot.GetProperty("scene_badge")),
+            ReadOverviewText(layoutRoot.GetProperty("overview_text")),
+            ReadStatusText(layoutRoot.GetProperty("status_text")),
+            ReadNextText(layoutRoot.GetProperty("next_text")),
+            ReadSceneLabel(layoutRoot.GetProperty("scene_label"))
+        );
+    }
+
+    private static HudRect ReadRect(JsonElement element)
+    {
+        return new HudRect(
+            (float)element.GetProperty("x").GetDouble(),
+            (float)element.GetProperty("y").GetDouble(),
+            (float)element.GetProperty("width").GetDouble(),
+            (float)element.GetProperty("height").GetDouble()
+        );
+    }
+
+    private static OverviewTextLayout ReadOverviewText(JsonElement element)
+    {
+        return new OverviewTextLayout(
+            (float)element.GetProperty("x").GetDouble(),
+            (float)element.GetProperty("title_y").GetDouble(),
+            (float)element.GetProperty("tagline_y").GetDouble()
+        );
+    }
+
+    private static StatusTextLayout ReadStatusText(JsonElement element)
+    {
+        return new StatusTextLayout(
+            (float)element.GetProperty("x").GetDouble(),
+            (float)element.GetProperty("title_y").GetDouble(),
+            (float)element.GetProperty("max_width").GetDouble()
+        );
+    }
+
+    private static NextTextLayout ReadNextText(JsonElement element)
+    {
+        return new NextTextLayout(
+            (float)element.GetProperty("x").GetDouble(),
+            (float)element.GetProperty("title_y").GetDouble()
+        );
+    }
+
+    private static SceneLabelLayout ReadSceneLabel(JsonElement element)
+    {
+        return new SceneLabelLayout(
+            (float)element.GetProperty("x").GetDouble(),
+            (float)element.GetProperty("y").GetDouble(),
+            (float)element.GetProperty("max_width").GetDouble()
+        );
+    }
+
+    private static float MaxWidthFromPanel(HudRect panel, float textX, float margin)
+    {
+        var right = panel.X + panel.Width * 0.5f;
+        var maxWidth = right - textX - margin;
+        return maxWidth > 64f ? maxWidth : 64f;
     }
 }

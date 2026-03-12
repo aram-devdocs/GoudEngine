@@ -22,6 +22,7 @@ export interface SandboxContract {
   statusRows: string[];
   nextStepItems: string[];
   nextStepDynamicRows: string[];
+  layout: HudLayout;
   webBlockers: {
     networking: string;
     renderer: string;
@@ -127,10 +128,47 @@ const KEY_3 = 51;
 const WINDOW_WIDTH = 1280;
 const WINDOW_HEIGHT = 720;
 const MOVE_SPEED = 220;
-const PANEL_OVERVIEW = { x: 250, y: 156, width: 420, height: 228 };
-const PANEL_STATUS = { x: 980, y: 156, width: 500, height: 228 };
-const PANEL_NEXT = { x: 640, y: 620, width: 1180, height: 140 };
-const SCENE_BADGE = { x: 980, y: 268, width: 190, height: 42 };
+
+interface HudRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface OverviewTextLayout {
+  x: number;
+  titleY: number;
+  taglineY: number;
+}
+
+interface StatusTextLayout {
+  x: number;
+  titleY: number;
+  maxWidth: number;
+}
+
+interface NextTextLayout {
+  x: number;
+  titleY: number;
+}
+
+interface SceneLabelLayout {
+  x: number;
+  y: number;
+  maxWidth: number;
+}
+
+interface HudLayout {
+  overviewPanel: HudRect;
+  statusPanel: HudRect;
+  nextPanel: HudRect;
+  sceneBadge: HudRect;
+  overviewText: OverviewTextLayout;
+  statusText: StatusTextLayout;
+  nextText: NextTextLayout;
+  sceneLabel: SceneLabelLayout;
+}
 
 interface ManifestJson {
   title: string;
@@ -166,6 +204,16 @@ interface ContractJson {
   status_rows: string[];
   next_step_items: string[];
   next_step_dynamic_rows: string[];
+  layout: {
+    overview_panel: HudRect;
+    status_panel: HudRect;
+    next_panel: HudRect;
+    scene_badge: HudRect;
+    overview_text: { x: number; title_y: number; tagline_y: number };
+    status_text: { x: number; title_y: number; max_width: number };
+    next_text: { x: number; title_y: number };
+    scene_label: { x: number; y: number; max_width: number };
+  };
   web_blockers: {
     networking: string;
     renderer: string;
@@ -225,6 +273,31 @@ export async function loadSandboxManifest(target: SandboxTarget): Promise<Sandbo
       statusRows: contract.status_rows,
       nextStepItems: contract.next_step_items,
       nextStepDynamicRows: contract.next_step_dynamic_rows,
+      layout: {
+        overviewPanel: contract.layout.overview_panel,
+        statusPanel: contract.layout.status_panel,
+        nextPanel: contract.layout.next_panel,
+        sceneBadge: contract.layout.scene_badge,
+        overviewText: {
+          x: contract.layout.overview_text.x,
+          titleY: contract.layout.overview_text.title_y,
+          taglineY: contract.layout.overview_text.tagline_y,
+        },
+        statusText: {
+          x: contract.layout.status_text.x,
+          titleY: contract.layout.status_text.title_y,
+          maxWidth: contract.layout.status_text.max_width,
+        },
+        nextText: {
+          x: contract.layout.next_text.x,
+          titleY: contract.layout.next_text.title_y,
+        },
+        sceneLabel: {
+          x: contract.layout.scene_label.x,
+          y: contract.layout.scene_label.y,
+          maxWidth: contract.layout.scene_label.max_width,
+        },
+      },
       webBlockers: contract.web_blockers,
     },
     scenes: manifest.scenes,
@@ -262,13 +335,34 @@ function drawTextLines(
   sizes: number[],
   maxWidth: number,
   color: { r: number; g: number; b: number; a: number },
+  advance: (size: number) => number,
 ): void {
   let currentY = y;
   lines.forEach((line, index) => {
     const size = sizes[index] ?? sizes[sizes.length - 1];
     game.drawText(font, line, x, currentY, size, 0, maxWidth, 1, 0, color);
-    currentY += size >= 18 ? 26 : 21;
+    currentY += advance(size);
   });
+}
+
+function overviewAdvance(size: number): number {
+  if (size >= 38) return 44;
+  if (size >= 24) return 30;
+  return 24;
+}
+
+function statusAdvance(size: number): number {
+  return size >= 30 ? 38 : 24;
+}
+
+function nextAdvance(size: number): number {
+  return size >= 32 ? 38 : 25;
+}
+
+function maxWidthFromPanel(panel: HudRect, textX: number, margin: number): number {
+  const right = panel.x + panel.width * 0.5;
+  const width = right - textX - margin;
+  return width > 64 ? width : 64;
 }
 
 export interface DesktopNetworkOptions {
@@ -485,6 +579,7 @@ export class SandboxApp {
   private readonly accentSprite: number;
   private readonly font: number;
   private readonly cube: number;
+  private readonly plane: number;
   private readonly canRender3d: boolean;
   private readonly sceneLookup: Record<SandboxMode, SandboxScene>;
   private audioActivated = false;
@@ -496,14 +591,15 @@ export class SandboxApp {
     private readonly config: SandboxConfig,
     private readonly network: NetworkStateLike,
     private readonly maxRuntimeSec: number,
-    handles: { background: number; sprite: number; accentSprite: number; font: number; cube: number },
+    handles: { background: number; sprite: number; accentSprite: number; font: number; cube: number; plane: number; canRender3d: boolean },
   ) {
     this.background = handles.background;
     this.sprite = handles.sprite;
     this.accentSprite = handles.accentSprite;
     this.font = handles.font;
     this.cube = handles.cube;
-    this.canRender3d = this.target === 'desktop';
+    this.plane = handles.plane;
+    this.canRender3d = handles.canRender3d;
     this.sceneLookup = Object.fromEntries(
       this.config.scenes.map((scene) => [scene.mode, scene]),
     ) as Record<SandboxMode, SandboxScene>;
@@ -522,23 +618,28 @@ export class SandboxApp {
     const accentSprite = await game.loadTexture(config.accentSprite);
     const font = await game.loadFont(config.font);
     let cube = 0;
-    if (target === 'desktop') {
+    let plane = 0;
+    let canRender3d = false;
+    try {
       const texture3d = await game.loadTexture(config.texture3d);
       game.configureGrid(true, 12, 12);
-      const plane = game.createPlane(texture3d, 8, 8);
+      plane = game.createPlane(texture3d, 8, 8);
       game.setObjectPosition(plane, 0, -1.2, 2.5);
       cube = game.createCube(texture3d, 1.2, 1.2, 1.2);
       game.setObjectPosition(cube, 0.85, 1.2, 2.1);
       game.addLight(0, 4, 6, -4, 0, -1, 0, 1, 0.95, 0.80, 5, 28, 0);
       game.addLight(0, -3.5, 3.5, -2, 0, -0.65, 0.35, 0.70, 0.85, 1, 2.5, 18, 0);
       game.addLight(0, 0, 2.4, 7, 0, -0.25, -1, 0.55, 0.65, 0.90, 1.8, 20, 0);
-    }
+      canRender3d = cube !== 0;
+    } catch {}
     return new SandboxApp(game, ui, target, config, network, options?.maxRuntimeSec ?? 0, {
       background,
       sprite,
       accentSprite,
       font,
       cube,
+      plane,
+      canRender3d,
     });
   }
 
@@ -574,6 +675,7 @@ export class SandboxApp {
       this.game.enableDepthTest();
       this.game.setCameraPosition3D(0, 2.2, mode === '3D' ? -7.0 : -7.8);
       this.game.setCameraRotation3D(-7, mode === '3D' ? 0 : 8, 0);
+      this.game.setObjectPosition(this.plane, 0, -1.2, 2.5);
       this.game.setObjectPosition(this.cube, 0.85, 1.2 + 0.26 * Math.sin(this.angle * 2), 2.1);
       this.game.setObjectRotation(this.cube, 20, this.angle * 46, 0);
       this.game.render3D();
@@ -606,10 +708,11 @@ export class SandboxApp {
     const is3DFamilyMode = mode !== '2D';
     const panelAlpha = is3DFamilyMode ? 0.62 : 0.88;
     const bottomAlpha = is3DFamilyMode ? 0.70 : 0.94;
-    this.game.drawQuad(PANEL_OVERVIEW.x, PANEL_OVERVIEW.y, PANEL_OVERVIEW.width, PANEL_OVERVIEW.height, { r: 0.05, g: 0.08, b: 0.12, a: panelAlpha });
-    this.game.drawQuad(PANEL_STATUS.x, PANEL_STATUS.y, PANEL_STATUS.width, PANEL_STATUS.height, { r: 0.08, g: 0.12, b: 0.18, a: panelAlpha });
-    this.game.drawQuad(PANEL_NEXT.x, PANEL_NEXT.y, PANEL_NEXT.width, PANEL_NEXT.height, { r: 0.05, g: 0.08, b: 0.12, a: bottomAlpha });
-    this.game.drawQuad(SCENE_BADGE.x, SCENE_BADGE.y, SCENE_BADGE.width, SCENE_BADGE.height, { r: 0.20, g: 0.55, b: 0.95, a: 0.84 });
+    const layout = this.config.contract.layout;
+    this.game.drawQuad(layout.overviewPanel.x, layout.overviewPanel.y, layout.overviewPanel.width, layout.overviewPanel.height, { r: 0.05, g: 0.08, b: 0.12, a: panelAlpha });
+    this.game.drawQuad(layout.statusPanel.x, layout.statusPanel.y, layout.statusPanel.width, layout.statusPanel.height, { r: 0.08, g: 0.12, b: 0.18, a: panelAlpha });
+    this.game.drawQuad(layout.nextPanel.x, layout.nextPanel.y, layout.nextPanel.width, layout.nextPanel.height, { r: 0.05, g: 0.08, b: 0.12, a: bottomAlpha });
+    this.game.drawQuad(layout.sceneBadge.x, layout.sceneBadge.y, layout.sceneBadge.width, layout.sceneBadge.height, { r: 0.20, g: 0.55, b: 0.95, a: 0.84 });
     this.game.drawQuad(mouse.x, mouse.y, 14, 14, { r: 0.95, g: 0.85, b: 0.2, a: 0.95 });
 
     const renderCaps = this.game.getRenderCapabilities();
@@ -631,10 +734,40 @@ export class SandboxApp {
       ...this.config.contract.nextStepDynamicRows.map((row) => this.renderNextStepRow(row)),
     ];
 
-    drawTextLines(this.game, this.font, overviewLines, 48, 52, [22, 16, 14], 380, { r: 1, g: 1, b: 1, a: 1 });
-    drawTextLines(this.game, this.font, statusLines, 742, 52, [14], 460, { r: 0.94, g: 0.97, b: 1, a: 1 });
-    drawTextLines(this.game, this.font, nextStepLines, 78, 556, [18, 14], 1120, { r: 0.94, g: 0.97, b: 1, a: 1 });
-    this.game.drawText(this.font, this.sceneLookup[mode].label, 914, 279, 15, 0, 170, 1, 0, { r: 1, g: 1, b: 1, a: 1 });
+    drawTextLines(
+      this.game,
+      this.font,
+      overviewLines,
+      layout.overviewText.x,
+      layout.overviewText.titleY,
+      [40, 24, 19],
+      maxWidthFromPanel(layout.overviewPanel, layout.overviewText.x, 24),
+      { r: 1, g: 1, b: 1, a: 1 },
+      overviewAdvance,
+    );
+    drawTextLines(
+      this.game,
+      this.font,
+      statusLines,
+      layout.statusText.x,
+      layout.statusText.titleY,
+      [30, 18],
+      layout.statusText.maxWidth,
+      { r: 0.94, g: 0.97, b: 1, a: 1 },
+      statusAdvance,
+    );
+    drawTextLines(
+      this.game,
+      this.font,
+      nextStepLines,
+      layout.nextText.x,
+      layout.nextText.titleY,
+      [32, 19],
+      maxWidthFromPanel(layout.nextPanel, layout.nextText.x, 24),
+      { r: 0.94, g: 0.97, b: 1, a: 1 },
+      nextAdvance,
+    );
+    this.game.drawText(this.font, this.sceneLookup[mode].label, layout.sceneLabel.x, layout.sceneLabel.y, 20, 0, layout.sceneLabel.maxWidth, 1, 0, { r: 1, g: 1, b: 1, a: 1 });
   }
 
   shouldQuit(): boolean {

@@ -38,13 +38,13 @@ pub(crate) struct NetworkState {
     handle: Option<i64>,
     pub(crate) role: Role,
     pub(crate) label: String,
+    detail: String,
     pub(crate) peer_count: u32,
     default_peer_id: Option<u64>,
     known_peer_id: Option<u64>,
     pub(crate) remote: Option<RemoteState>,
     send_timer: f32,
     packet_version: String,
-    port: u16,
     exit_on_peer: bool,
     expect_peer: bool,
 }
@@ -88,13 +88,13 @@ impl NetworkState {
             handle: Some(handle),
             role: Role::Host,
             label: "waiting".to_string(),
+            detail: format!("Hosting localhost:{port}"),
             peer_count: 0,
             default_peer_id: None,
             known_peer_id: None,
             remote: None,
             send_timer: 0.0,
             packet_version: packet_version.to_string(),
-            port,
             exit_on_peer: false,
             expect_peer: false,
         })
@@ -128,31 +128,31 @@ impl NetworkState {
             handle: Some(handle),
             role: Role::Client,
             label: "connected".to_string(),
+            detail: format!("Connected to localhost:{port}"),
             peer_count: 0,
             default_peer_id: Some(peer_id),
             known_peer_id: None,
             remote: None,
             send_timer: 0.0,
             packet_version: packet_version.to_string(),
-            port,
             exit_on_peer: false,
             expect_peer: false,
         })
     }
 
-    fn offline(context_id: GoudContextId, port: u16, packet_version: &str) -> Self {
+    fn offline(context_id: GoudContextId, _port: u16, packet_version: &str) -> Self {
         Self {
             context_id,
             handle: None,
             role: Role::Offline,
             label: "offline".to_string(),
+            detail: "No network provider".to_string(),
             peer_count: 0,
             default_peer_id: None,
             known_peer_id: None,
             remote: None,
             send_timer: 0.0,
             packet_version: packet_version.to_string(),
-            port,
             exit_on_peer: false,
             expect_peer: false,
         }
@@ -197,6 +197,7 @@ impl NetworkState {
                 self.known_peer_id = Some(peer_id);
                 self.peer_count = self.peer_count.max(1);
                 self.label = "connected".to_string();
+                self.detail = format!("Peer {peer_id} synced in {} ({})", remote.mode, self.label);
                 self.remote = Some(remote);
                 self.send_timer = NETWORK_SEND_INTERVAL;
             }
@@ -254,11 +255,7 @@ impl NetworkState {
     }
 
     pub(crate) fn detail(&self) -> String {
-        match self.role {
-            Role::Host => format!("host:{} ({})", self.port, self.label),
-            Role::Client => format!("client:{} ({})", self.port, self.label),
-            Role::Offline => "offline".to_string(),
-        }
+        self.detail.clone()
     }
 }
 

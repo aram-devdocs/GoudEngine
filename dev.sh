@@ -234,8 +234,16 @@ if [ "$SKIP_BUILD" = false ]; then
         find "$SCRIPT_DIR/target/debug/incremental" -maxdepth 1 -type d -mtime +7 -exec rm -rf {} + 2>/dev/null
     fi
 
-    # Run cargo check first to catch compilation errors early
-    if ! cargo check; then
+    FAST_LOCAL_CSHARP_PATH=false
+    if [ "$SDK_TYPE" = "csharp" ] && [ "$LOCAL" = true ] && csharp_example_uses_project_reference "$GAME"; then
+        FAST_LOCAL_CSHARP_PATH=true
+    fi
+
+    # Skip the preflight check on the direct project-reference fast path.
+    # build.sh will compile the core once, so running cargo check here just duplicates the work.
+    if [ "$FAST_LOCAL_CSHARP_PATH" = true ]; then
+        echo "Skipping preflight cargo check for fast local C# path; the core build below will validate and compile once."
+    elif ! cargo check; then
         echo "Cargo check failed. Fixing errors before proceeding with full build."
         exit 1
     fi
@@ -244,7 +252,7 @@ if [ "$SKIP_BUILD" = false ]; then
         # Ensure local NuGet feed directory exists
         mkdir -p "$HOME/nuget-local"
 
-        if [ "$LOCAL" = true ] && csharp_example_uses_project_reference "$GAME"; then
+        if [ "$FAST_LOCAL_CSHARP_PATH" = true ]; then
             echo "Using fast local C# path for project-reference example: $GAME"
             bash "$SCRIPT_DIR/build.sh" --local --core-only --host-runtime-only --skip-csharp-sdk-build
         elif [ "$LOCAL" = false ]; then

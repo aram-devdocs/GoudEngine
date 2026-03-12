@@ -1,10 +1,12 @@
 mod config;
+mod hud;
 mod network;
 
 use std::path::Path;
 
-use config::{mode_color, parse_start_mode, read_manifest};
+use config::{parse_start_mode, read_manifest};
 use goudengine::{input::Key, GameConfig, GoudGame};
+use hud::{draw as draw_hud, HudSnapshot};
 use network::NetworkState;
 
 const WINDOW_WIDTH: u32 = 1280;
@@ -74,6 +76,7 @@ fn main() {
     let mut player_y = 300.0f32;
     let mut elapsed = 0.0f32;
     let mut last_report_mode = String::new();
+    let mut audio_activated = false;
 
     while !game.should_close() {
         let dt = game.poll_events().unwrap_or(0.016);
@@ -103,6 +106,9 @@ fn main() {
         if game.is_key_pressed(Key::S) || game.is_key_pressed(Key::Down) {
             player_y += MOVE_SPEED * dt;
         }
+        if game.is_key_just_pressed(Key::Space) {
+            audio_activated = true;
+        }
 
         let current_mode = mode_order
             .get(mode_index)
@@ -114,11 +120,6 @@ fn main() {
             .get(mode_index)
             .map(|s| format!("{} {}", s.key, s.label))
             .unwrap_or_else(|| current_mode.to_string());
-        let scene_name = config
-            .scenes
-            .get(mode_index)
-            .map(|s| s.label.as_str())
-            .unwrap_or(current_mode);
         if current_mode != last_report_mode {
             println!(
                 "Mode {} ({}) -- role={} peers={}",
@@ -146,12 +147,12 @@ fn main() {
 
         let bob_phase = (elapsed * 2.0).rem_euclid(std::f32::consts::TAU);
         let sprite_rotation = (elapsed * 0.25).rem_euclid(std::f32::consts::TAU);
-        let camera_yaw = (elapsed * 15.0).rem_euclid(360.0);
         let cube_yaw = (elapsed * 46.0).rem_euclid(360.0);
 
         if is_3d_family_mode {
+            game.enable_depth_test();
             game.set_camera_position(0.0, 2.2, if current_mode == "3D" { -7.0 } else { -7.8 });
-            game.set_camera_rotation(-7.0, camera_yaw, 0.0);
+            game.set_camera_rotation(-7.0, if current_mode == "3D" { 0.0 } else { 8.0 }, 0.0);
             game.set_object_position(cube, 0.85, 1.2 + 0.26 * bob_phase.sin(), 2.1);
             game.set_object_rotation(cube, 20.0, cube_yaw, 0.0);
             game.set_object_position(plane, 0.0, -1.2, 2.5);
@@ -259,188 +260,29 @@ fn main() {
             }
         }
 
-        let panel_alpha = if is_3d_family_mode { 0.62 } else { 0.88 };
-        let bottom_alpha = if is_3d_family_mode { 0.70 } else { 0.92 };
-        game.draw_quad(332.0, 192.0, 620.0, 318.0, 0.05, 0.08, 0.12, panel_alpha);
-        game.draw_quad(1006.0, 192.0, 520.0, 318.0, 0.08, 0.12, 0.18, panel_alpha);
-        game.draw_quad(640.0, 620.0, 1168.0, 182.0, 0.05, 0.08, 0.12, bottom_alpha);
-
-        let (mr, mg, mb, ma) = mode_color(current_mode);
-        game.draw_quad(980.0, 312.0, 220.0, 42.0, mr, mg, mb, ma);
-        game.draw_quad(
-            1040.0,
-            210.0,
-            28.0 + (network.peer_count as f32 * 10.0),
-            16.0,
-            0.96,
-            0.74,
-            0.20,
-            0.9,
-        );
-
         let (mx, my) = game.mouse_position();
-        game.draw_quad(mx, my, 12.0, 12.0, 0.95, 0.85, 0.20, 0.95);
-
-        let render_texture_size = game.render_capabilities().max_texture_size;
-        let render_supports_instancing = game.render_capabilities().supports_instancing;
-        let physics_max_bodies = game.physics_capabilities().max_bodies;
-        let audio_max_channels = game.audio_capabilities().max_channels;
-        let network_cap = game
-            .network_capabilities()
-            .map(|caps| caps.max_connections.to_string())
-            .unwrap_or_else(|| "n/a".to_string());
-
-        let _ = game.draw_text(
+        let render_caps = game.render_capabilities();
+        let physics_caps = game.physics_capabilities();
+        let audio_caps = game.audio_capabilities();
+        let hud_snapshot = HudSnapshot {
+            current_mode: current_mode.to_string(),
+            mode_index,
+            mouse_x: mx,
+            mouse_y: my,
+            render_texture_size: render_caps.max_texture_size,
+            render_supports_instancing: render_caps.supports_instancing,
+            physics_supports_joints: physics_caps.supports_joints,
+            physics_max_bodies: physics_caps.max_bodies,
+            audio_supports_spatial: audio_caps.supports_spatial,
+            audio_max_channels: audio_caps.max_channels,
+            audio_activated,
+        };
+        draw_hud(
+            &mut game,
             &config.assets.font,
-            &config.hud.overview_title,
-            60.0,
-            52.0,
-            30.0,
-            0.0,
-            1.12,
-            1.0,
-            1.0,
-            1.0,
-            1.0,
-        );
-        let _ = game.draw_text(
-            &config.assets.font,
-            &config.hud.tagline,
-            60.0,
-            96.0,
-            18.0,
-            520.0,
-            1.12,
-            0.94,
-            0.97,
-            1.0,
-            1.0,
-        );
-
-        let mut overview_y = 142.0;
-        for line in config.hud.overview.iter().take(3) {
-            let _ = game.draw_text(
-                &config.assets.font,
-                line,
-                60.0,
-                overview_y,
-                15.0,
-                520.0,
-                1.12,
-                0.94,
-                0.97,
-                1.0,
-                1.0,
-            );
-            overview_y += 27.0;
-        }
-
-        let _ = game.draw_text(
-            &config.assets.font,
-            &config.hud.status_title,
-            768.0,
-            52.0,
-            26.0,
-            0.0,
-            1.12,
-            0.95,
-            0.90,
-            0.40,
-            1.0,
-        );
-        let status_lines = [
-            format!("Mode {current_mode}  (1/2/3)"),
-            format!("Mouse {:.0}, {:.0}", mx, my),
-            format!(
-                "Render tex={} inst={}",
-                render_texture_size, render_supports_instancing
-            ),
-            format!(
-                "Physics max={}  audio ch={}",
-                physics_max_bodies, audio_max_channels
-            ),
-            format!(
-                "Net {}/{} peers={} cap={}",
-                network.role.as_str(),
-                network.label,
-                network.peer_count,
-                network_cap
-            ),
-            format!("Networking: {}", network.detail()),
-        ];
-        let mut status_y = 90.0;
-        for line in &status_lines {
-            let _ = game.draw_text(
-                &config.assets.font,
-                line,
-                768.0,
-                status_y,
-                15.0,
-                430.0,
-                1.12,
-                0.94,
-                0.97,
-                1.0,
-                1.0,
-            );
-            status_y += 27.0;
-        }
-
-        let _ = game.draw_text(
-            &config.assets.font,
-            &config.hud.next_steps_title,
-            94.0,
-            526.0,
-            26.0,
-            0.0,
-            1.12,
-            0.95,
-            0.90,
-            0.40,
-            1.0,
-        );
-        let mut next_y = 564.0;
-        for line in config.hud.next_steps.iter().take(3) {
-            let _ = game.draw_text(
-                &config.assets.font,
-                line,
-                94.0,
-                next_y,
-                15.0,
-                1060.0,
-                1.12,
-                0.94,
-                0.97,
-                1.0,
-                1.0,
-            );
-            next_y += 25.0;
-        }
-        let _ = game.draw_text(
-            &config.assets.font,
-            &format!("Networking: {}", network.detail()),
-            94.0,
-            next_y,
-            15.0,
-            1060.0,
-            1.12,
-            0.94,
-            0.97,
-            1.0,
-            1.0,
-        );
-        let _ = game.draw_text(
-            &config.assets.font,
-            scene_name,
-            900.0,
-            320.0,
-            20.0,
-            190.0,
-            1.10,
-            1.0,
-            1.0,
-            1.0,
-            1.0,
+            &config,
+            &network,
+            &hud_snapshot,
         );
 
         game.end_render();
