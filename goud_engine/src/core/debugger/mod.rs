@@ -20,11 +20,19 @@ pub use runtime::active_route_count;
 #[doc(inline)]
 pub use runtime::begin_frame;
 #[doc(inline)]
+pub use runtime::clear_debug_draw_transient_for_route;
+#[doc(inline)]
 pub use runtime::control_state_for_route;
 #[doc(inline)]
 pub use runtime::current_manifest;
 #[doc(inline)]
 pub use runtime::current_route;
+#[doc(inline)]
+pub use runtime::debug_draw_payload_for_route;
+#[doc(inline)]
+pub use runtime::debug_draw_shapes_2d_for_context;
+#[doc(inline)]
+pub use runtime::debug_draw_shapes_2d_for_route;
 #[doc(inline)]
 pub use runtime::dispatch_request_json_for_route;
 #[doc(inline)]
@@ -41,6 +49,14 @@ pub use runtime::profiler_enabled_for_route;
 pub use runtime::record_phase_duration;
 #[doc(inline)]
 pub use runtime::register_context;
+#[doc(inline)]
+pub use runtime::replace_provider_debug_draw_2d_for_context;
+#[doc(inline)]
+pub use runtime::replace_provider_debug_draw_2d_for_route;
+#[doc(inline)]
+pub use runtime::replace_provider_debug_draw_3d_for_context;
+#[doc(inline)]
+pub use runtime::replace_provider_debug_draw_3d_for_route;
 #[doc(inline)]
 pub use runtime::route_for_context;
 #[doc(inline)]
@@ -77,6 +93,12 @@ pub use runtime::with_snapshot_mut;
 pub use runtime::AttachAcceptedV1;
 #[doc(inline)]
 pub use runtime::AttachHelloV1;
+#[doc(inline)]
+pub use runtime::DebugDrawPayloadV1;
+#[doc(inline)]
+pub use runtime::DebugDrawShape2DV1;
+#[doc(inline)]
+pub use runtime::DebugDrawShape3DV1;
 #[doc(inline)]
 pub use runtime::FrameControlPlanV1;
 #[doc(inline)]

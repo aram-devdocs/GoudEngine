@@ -8,11 +8,19 @@ use crate::core::context_id::GoudContextId;
 mod artifacts;
 mod attach;
 mod control;
+mod debug_draw;
 mod state;
 
 pub use attach::{AttachAcceptedV1, AttachHelloV1};
 pub use control::{
     control_state_for_route, dispatch_request_json_for_route, take_frame_control_for_route,
+};
+pub use debug_draw::{
+    clear_debug_draw_transient_for_route, debug_draw_payload_for_route,
+    debug_draw_shapes_2d_for_context, debug_draw_shapes_2d_for_route,
+    replace_provider_debug_draw_2d_for_context, replace_provider_debug_draw_2d_for_route,
+    replace_provider_debug_draw_3d_for_context, replace_provider_debug_draw_3d_for_route,
+    DebugDrawPayloadV1, DebugDrawShape2DV1, DebugDrawShape3DV1,
 };
 pub use state::{FrameControlPlanV1, RouteControlStateV1, SyntheticInputEventV1};
 
