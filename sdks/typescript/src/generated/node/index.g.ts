@@ -35,8 +35,23 @@ export interface IGoudContext {
   getMemorySummary(): IMemorySummary;
 }
 
-function getNativeBindings(): any {
-  return eval('require')("../../../index");
+interface NativeEngineConfigBinding {
+  build(): unknown;
+  destroy(): void;
+  setDebugger(debuggerConfig: IDebuggerConfig): unknown;
+}
+
+interface NativeBindings {
+  GoudGame: new (config?: { width?: number; height?: number; title?: string }) => IGoudGame;
+  GoudContext: new (config?: Record<string, unknown>) => IGoudContext;
+  NativePhysicsWorld2D: new (gravityX: number, gravityY: number, backend?: number) => IPhysicsWorld2D;
+  NativePhysicsWorld3D: new (gravityX: number, gravityY: number, gravityZ: number) => IPhysicsWorld3D;
+  NativeEngineConfig: new () => NativeEngineConfigBinding;
+  UiManager: new () => IUiManager;
+}
+
+function getNativeBindings(): NativeBindings {
+  return eval('require')("../../../index") as NativeBindings;
 }
 
 const PRELOAD_TEXTURE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'tga', 'dds']);
@@ -88,7 +103,7 @@ export class GoudGame implements IGoudGame {
   private preloadInFlight = false;
 
   constructor(config?: { width?: number; height?: number; title?: string }) {
-    this.native = new (getNativeBindings().GoudGame as any)(config as any);
+    this.native = new (getNativeBindings().GoudGame)(config as any);
   }
 
   static async create(config?: { width?: number; height?: number; title?: string }): Promise<GoudGame> {
@@ -1003,7 +1018,7 @@ export class GoudContext implements IGoudContext {
         route_label: config.debugger.routeLabel,
       },
     } : undefined;
-    this.native = new (getNativeBindings().GoudContext as any)(nativeConfig as any);
+    this.native = new (getNativeBindings().GoudContext)(nativeConfig as Record<string, unknown>);
   }
 
   destroy(): boolean {
@@ -1108,7 +1123,7 @@ export class PhysicsWorld2D implements IPhysicsWorld2D {
   private native: any;
 
   constructor(gravityX: number, gravityY: number, backend: number = 0) {
-    this.native = new (getNativeBindings().NativePhysicsWorld2D as any)(gravityX, gravityY, backend);
+    this.native = new (getNativeBindings().NativePhysicsWorld2D)(gravityX, gravityY, backend);
   }
 
   /** Creates a 2D physics world with given gravity */
@@ -1283,7 +1298,7 @@ export class PhysicsWorld3D implements IPhysicsWorld3D {
   private native: any;
 
   constructor(gravityX: number, gravityY: number, gravityZ: number) {
-    this.native = new (getNativeBindings().NativePhysicsWorld3D as any)(gravityX, gravityY, gravityZ);
+    this.native = new (getNativeBindings().NativePhysicsWorld3D)(gravityX, gravityY, gravityZ);
   }
 
   /** Creates a 3D physics world with given gravity */
@@ -1410,7 +1425,7 @@ export class EngineConfig implements IEngineConfig {
   private native: any;
 
   constructor() {
-    this.native = new (getNativeBindings().NativeEngineConfig as any)();
+    this.native = new (getNativeBindings().NativeEngineConfig)();
   }
 
   /** Sets the window title */
@@ -1494,7 +1509,7 @@ export class UiManager implements IUiManager {
   private native: any;
 
   constructor() {
-    this.native = new (getNativeBindings().UiManager as any)();
+    this.native = new (getNativeBindings().UiManager)();
   }
 
   /** Runs the UI layout update tick */

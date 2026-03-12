@@ -147,7 +147,7 @@ pub(crate) unsafe fn write_string_result(value: &str, buf: *mut u8, buf_len: usi
         std::ptr::copy_nonoverlapping(bytes.as_ptr(), buf, bytes.len());
         *buf.add(bytes.len()) = 0;
     }
-    bytes.len() as i32
+    i32::try_from(bytes.len()).unwrap_or(i32::MAX)
 }
 
 /// Writes the latest debugger snapshot JSON into a caller-owned buffer.

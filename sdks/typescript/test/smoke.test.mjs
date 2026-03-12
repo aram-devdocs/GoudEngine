@@ -328,12 +328,16 @@ describe('Generated web UiManager bindings', () => {
     );
 
     assert.ok(
-      nodeSrc.includes("function getNativeBindings(): any {"),
-      'generated node wrapper should resolve native bindings through the local helper',
+      nodeSrc.includes('interface NativeBindings {'),
+      'generated node wrapper should declare a typed native bindings helper interface',
     );
     assert.ok(
-      nodeSrc.includes("return eval('require')(\"../../../index\");"),
-      'generated node wrapper should lazy-load the native addon entrypoint without depending on src/index.ts typings',
+      nodeSrc.includes("function getNativeBindings(): NativeBindings {"),
+      'generated node wrapper should type the native bindings loader',
+    );
+    assert.ok(
+      nodeSrc.includes("return eval('require')(\"../../../index\") as NativeBindings;"),
+      'generated node wrapper should lazy-load the native addon entrypoint with a typed assertion',
     );
 
     for (const fragment of [
@@ -356,7 +360,7 @@ describe('Generated web UiManager bindings', () => {
 
     for (const fragment of [
       'constructor(config?: IContextConfig) {',
-      'this.native = new (getNativeBindings().GoudContext as any)(nativeConfig as any);',
+      'this.native = new (getNativeBindings().GoudContext)(nativeConfig as Record<string, unknown>);',
       'getDebuggerSnapshotJson(): string {',
       'getDebuggerManifestJson(): string {',
       'setDebuggerProfilingEnabled(enabled: boolean): void {',

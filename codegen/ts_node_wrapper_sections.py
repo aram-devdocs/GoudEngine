@@ -38,7 +38,7 @@ def append_context_wrapper(lines):
         "        route_label: config.debugger.routeLabel,",
         "      },",
         "    } : undefined;",
-        "    this.native = new (getNativeBindings().GoudContext as any)(nativeConfig as any);",
+        "    this.native = new (getNativeBindings().GoudContext)(nativeConfig as Record<string, unknown>);",
         "  }",
         "",
         "  destroy(): boolean {",
@@ -171,7 +171,7 @@ def append_physics_world_2d_wrapper(lines):
         "  private native: any;",
         "",
         "  constructor(gravityX: number, gravityY: number, backend: number = 0) {",
-        "    this.native = new (getNativeBindings().NativePhysicsWorld2D as any)(gravityX, gravityY, backend);",
+        "    this.native = new (getNativeBindings().NativePhysicsWorld2D)(gravityX, gravityY, backend);",
         "  }",
         "",
     ]
@@ -188,7 +188,7 @@ def append_physics_world_3d_wrapper(lines):
         "  private native: any;",
         "",
         "  constructor(gravityX: number, gravityY: number, gravityZ: number) {",
-        "    this.native = new (getNativeBindings().NativePhysicsWorld3D as any)(gravityX, gravityY, gravityZ);",
+        "    this.native = new (getNativeBindings().NativePhysicsWorld3D)(gravityX, gravityY, gravityZ);",
         "  }",
         "",
     ]
@@ -206,7 +206,7 @@ def append_engine_config_wrapper(lines):
         "  private native: any;",
         "",
         "  constructor() {",
-        "    this.native = new (getNativeBindings().NativeEngineConfig as any)();",
+        "    this.native = new (getNativeBindings().NativeEngineConfig)();",
         "  }",
         "",
     ]
@@ -264,7 +264,7 @@ def append_ui_manager_wrapper(lines):
         "  private native: any;",
         "",
         "  constructor() {",
-        "    this.native = new (getNativeBindings().UiManager as any)();",
+        "    this.native = new (getNativeBindings().UiManager)();",
         "  }",
         "",
     ]
