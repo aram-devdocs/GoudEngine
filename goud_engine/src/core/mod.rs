@@ -18,6 +18,7 @@ pub mod handle;
 pub mod math;
 pub mod types;
 
+pub mod debugger;
 pub mod networking;
 pub mod providers;
 pub mod serialization;

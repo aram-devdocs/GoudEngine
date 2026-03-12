@@ -71,6 +71,7 @@ pub mod component_ops;
 pub mod components;
 pub mod components_sprite;
 pub mod components_transform2d;
+pub mod context;
 pub mod debug_overlay;
 pub mod engine_config;
 pub mod entity;
@@ -96,6 +97,8 @@ pub use crate::core::math::{Color, Rect, Vec2, Vec3, Vec4};
 pub use crate::ecs::{Component, Entity, EntityAllocator, SparseSet, World};
 
 // Re-export SDK types from sub-modules so public API paths are preserved
+pub use crate::core::debugger::DebuggerConfig;
+pub use context::{Context, ContextConfig};
 pub use engine_config::EngineConfig;
 pub use entity_builder::EntityBuilder;
 pub use game::GoudGame;
@@ -149,8 +152,8 @@ pub mod prelude {
 
     // SDK types
     pub use super::{
-        EngineConfig, EntityBuilder, GameConfig, GameContext, GoudError, GoudGame, GoudResult,
-        SceneId, SceneManager,
+        Context, ContextConfig, DebuggerConfig, EngineConfig, EntityBuilder, GameConfig,
+        GameContext, GoudError, GoudGame, GoudResult, SceneId, SceneManager,
     };
 
     // Components - explicitly list to avoid shadowing

@@ -934,6 +934,14 @@
       "return_type": "GoudContextId",
       "is_unsafe": false
     },
+    "goud_context_create_with_config": {
+      "source_file": "ffi/context/lifecycle.rs",
+      "params": [
+        "config: *const GoudContextConfig"
+      ],
+      "return_type": "GoudContextId",
+      "is_unsafe": true
+    },
     "goud_context_destroy": {
       "source_file": "ffi/context/lifecycle.rs",
       "params": [
@@ -4246,5 +4254,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 424
+  "total_count": 425
 }

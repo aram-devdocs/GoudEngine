@@ -3,6 +3,8 @@
 //! Contains [`GameConfig`] for initialization settings and [`GameContext`]
 //! for per-frame runtime state passed to update callbacks.
 
+use crate::core::debugger::DebuggerConfig;
+
 // =============================================================================
 // Game Configuration
 // =============================================================================
@@ -69,6 +71,9 @@ pub struct GameConfig {
 
     /// Enable diagnostic mode for detailed engine telemetry and error reporting.
     pub diagnostic_mode: bool,
+
+    /// Debugger runtime configuration.
+    pub debugger: DebuggerConfig,
 }
 
 impl Default for GameConfig {
@@ -86,6 +91,7 @@ impl Default for GameConfig {
             physics_debug: PhysicsDebugConfig::default(),
             fps_update_interval: 0.5,
             diagnostic_mode: false,
+            debugger: DebuggerConfig::default(),
         }
     }
 }
@@ -161,6 +167,12 @@ impl GameConfig {
     /// Enables or disables diagnostic mode for detailed engine telemetry.
     pub fn with_diagnostic_mode(mut self, enabled: bool) -> Self {
         self.diagnostic_mode = enabled;
+        self
+    }
+
+    /// Replaces the debugger runtime configuration.
+    pub fn with_debugger(mut self, debugger: DebuggerConfig) -> Self {
+        self.debugger = debugger;
         self
     }
 }

@@ -7,6 +7,7 @@
 
 #![allow(clippy::arc_with_non_send_sync)]
 
+use crate::core::debugger::{self, ContextConfig, RuntimeSurfaceKind};
 use crate::core::error::GoudError;
 use std::sync::{Arc, Mutex, OnceLock, RwLock};
 
@@ -62,8 +63,20 @@ impl GoudContextRegistry {
 
     /// Allocates a new context and returns its ID.
     pub fn create(&mut self) -> Result<GoudContextId, GoudError> {
+        self.create_with_config(
+            ContextConfig::default(),
+            RuntimeSurfaceKind::HeadlessContext,
+        )
+    }
+
+    /// Allocates a new context and applies the provided debugger configuration.
+    pub fn create_with_config(
+        &mut self,
+        config: ContextConfig,
+        surface_kind: RuntimeSurfaceKind,
+    ) -> Result<GoudContextId, GoudError> {
         // Try to reuse a free slot first
-        if let Some(index) = self.free_list.pop() {
+        let id = if let Some(index) = self.free_list.pop() {
             let generation = match &self.slots[index as usize] {
                 ContextSlot::Free { next_generation } => *next_generation,
                 ContextSlot::Occupied(_) => {
@@ -73,10 +86,10 @@ impl GoudContextRegistry {
                 }
             };
 
-            let context = GoudContext::new(generation);
+            let context = GoudContext::new_with_config(generation, config.clone());
             self.slots[index as usize] = ContextSlot::Occupied(Box::new(context));
 
-            Ok(GoudContextId::new(index, generation))
+            GoudContextId::new(index, generation)
         } else {
             // Allocate new slot
             let index = self.slots.len() as u32;
@@ -87,11 +100,20 @@ impl GoudContextRegistry {
             }
 
             let generation = 1; // Generation 0 reserved for "never allocated"
-            let context = GoudContext::new(generation);
+            let context = GoudContext::new_with_config(generation, config.clone());
             self.slots.push(ContextSlot::Occupied(Box::new(context)));
 
-            Ok(GoudContextId::new(index, generation))
+            GoudContextId::new(index, generation)
+        };
+
+        if config.debugger.enabled {
+            let route = debugger::register_context(id, surface_kind, &config.debugger);
+            if let Some(context) = self.get_mut(id) {
+                context.set_debugger_route(Some(route));
+            }
         }
+
+        Ok(id)
     }
 
     /// Destroys a context and frees its slot for reuse.
@@ -111,11 +133,17 @@ impl GoudContextRegistry {
                     return Err(GoudError::InvalidContext);
                 }
 
+                let route_to_remove = context.debugger_route().cloned();
+
                 // Increment generation for next allocation
                 let next_generation = context.generation().checked_add(1).unwrap_or(1);
 
                 self.slots[index] = ContextSlot::Free { next_generation };
                 self.free_list.push(id.index());
+
+                if route_to_remove.is_some() {
+                    debugger::unregister_context(id);
+                }
 
                 Ok(())
             }

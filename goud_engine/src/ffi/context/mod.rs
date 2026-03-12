@@ -16,4 +16,7 @@ mod lifecycle;
 #[cfg(test)]
 mod tests;
 
-pub use lifecycle::{goud_context_create, goud_context_destroy, goud_context_is_valid};
+pub use lifecycle::{
+    goud_context_create, goud_context_create_with_config, goud_context_destroy,
+    goud_context_is_valid, GoudContextConfig, GoudDebuggerConfig,
+};
