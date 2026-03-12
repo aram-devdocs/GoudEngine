@@ -140,6 +140,38 @@ class GoudFpsStats(ctypes.Structure):
         ("frame_time_ms", ctypes.c_float)
     ]
 
+class GoudDebuggerConfig(ctypes.Structure):
+    _fields_ = [
+        ("enabled", ctypes.c_bool),
+        ("publish_local_attach", ctypes.c_bool),
+        ("route_label", ctypes.c_char_p)
+    ]
+
+class GoudContextConfig(ctypes.Structure):
+    _fields_ = [
+        ("debugger", GoudDebuggerConfig)
+    ]
+
+class GoudMemoryCategoryStats(ctypes.Structure):
+    _fields_ = [
+        ("current_bytes", ctypes.c_uint64),
+        ("peak_bytes", ctypes.c_uint64)
+    ]
+
+class GoudMemorySummary(ctypes.Structure):
+    _fields_ = [
+        ("rendering", GoudMemoryCategoryStats),
+        ("assets", GoudMemoryCategoryStats),
+        ("ecs", GoudMemoryCategoryStats),
+        ("ui", GoudMemoryCategoryStats),
+        ("audio", GoudMemoryCategoryStats),
+        ("network", GoudMemoryCategoryStats),
+        ("debugger", GoudMemoryCategoryStats),
+        ("other", GoudMemoryCategoryStats),
+        ("total_current_bytes", ctypes.c_uint64),
+        ("total_peak_bytes", ctypes.c_uint64)
+    ]
+
 class GoudContact(ctypes.Structure):
     _fields_ = [
         ("point_x", ctypes.c_float),
@@ -316,12 +348,16 @@ def _setup():
     _lib.goud_engine_config_set_physics_debug.restype = ctypes.c_bool
     _lib.goud_engine_config_set_physics_backend_2d.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
     _lib.goud_engine_config_set_physics_backend_2d.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_debugger.argtypes = [ctypes.c_void_p, ctypes.POINTER(GoudDebuggerConfig)]
+    _lib.goud_engine_config_set_debugger.restype = ctypes.c_bool
     _lib.goud_engine_create.argtypes = [ctypes.c_void_p]
     _lib.goud_engine_create.restype = GoudContextId
 
     # context
     _lib.goud_context_create.argtypes = []
     _lib.goud_context_create.restype = GoudContextId
+    _lib.goud_context_create_with_config.argtypes = [ctypes.POINTER(GoudContextConfig)]
+    _lib.goud_context_create_with_config.restype = GoudContextId
     _lib.goud_context_destroy.argtypes = [GoudContextId]
     _lib.goud_context_destroy.restype = ctypes.c_bool
     _lib.goud_context_is_valid.argtypes = [GoudContextId]
@@ -424,6 +460,18 @@ def _setup():
     _lib.goud_debug_set_fps_update_interval.restype = ctypes.c_int32
     _lib.goud_debug_set_fps_overlay_corner.argtypes = [GoudContextId, ctypes.c_int32]
     _lib.goud_debug_set_fps_overlay_corner.restype = ctypes.c_int32
+    _lib.goud_debugger_get_snapshot_json.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_debugger_get_snapshot_json.restype = ctypes.c_int32
+    _lib.goud_debugger_get_manifest_json.argtypes = [ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_debugger_get_manifest_json.restype = ctypes.c_int32
+    _lib.goud_debugger_set_profiling_enabled.argtypes = [GoudContextId, ctypes.c_bool]
+    _lib.goud_debugger_set_profiling_enabled.restype = ctypes.c_int32
+    _lib.goud_debugger_set_selected_entity.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_debugger_set_selected_entity.restype = ctypes.c_int32
+    _lib.goud_debugger_clear_selected_entity.argtypes = [GoudContextId]
+    _lib.goud_debugger_clear_selected_entity.restype = ctypes.c_int32
+    _lib.goud_debugger_get_memory_summary.argtypes = [GoudContextId, ctypes.POINTER(GoudMemorySummary)]
+    _lib.goud_debugger_get_memory_summary.restype = ctypes.c_int32
 
     # renderer_3d
     _lib.goud_renderer3d_create_cube.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float]

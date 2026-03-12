@@ -81,6 +81,42 @@
         "frame_time_ms"
       ]
     },
+    "DebuggerConfig": {
+      "ffi_name": "GoudDebuggerConfig",
+      "fields": [
+        "enabled",
+        "publish_local_attach",
+        "route_label"
+      ]
+    },
+    "ContextConfig": {
+      "ffi_name": "GoudContextConfig",
+      "fields": [
+        "debugger"
+      ]
+    },
+    "MemoryCategoryStats": {
+      "ffi_name": "GoudMemoryCategoryStats",
+      "fields": [
+        "current_bytes",
+        "peak_bytes"
+      ]
+    },
+    "MemorySummary": {
+      "ffi_name": "GoudMemorySummary",
+      "fields": [
+        "rendering",
+        "assets",
+        "ecs",
+        "ui",
+        "audio",
+        "network",
+        "debugger",
+        "other",
+        "total_current_bytes",
+        "total_peak_bytes"
+      ]
+    },
     "Contact": {
       "ffi_name": "GoudContact",
       "fields": [
@@ -346,10 +382,12 @@
       "goud_engine_config_set_fps_overlay": {},
       "goud_engine_config_set_physics_debug": {},
       "goud_engine_config_set_physics_backend_2d": {},
+      "goud_engine_config_set_debugger": {},
       "goud_engine_create": {}
     },
     "context": {
       "goud_context_create": {},
+      "goud_context_create_with_config": {},
       "goud_context_destroy": {},
       "goud_context_is_valid": {}
     },
@@ -406,7 +444,13 @@
       "goud_debug_get_fps_stats": {},
       "goud_debug_set_fps_overlay_enabled": {},
       "goud_debug_set_fps_update_interval": {},
-      "goud_debug_set_fps_overlay_corner": {}
+      "goud_debug_set_fps_overlay_corner": {},
+      "goud_debugger_get_snapshot_json": {},
+      "goud_debugger_get_manifest_json": {},
+      "goud_debugger_set_profiling_enabled": {},
+      "goud_debugger_set_selected_entity": {},
+      "goud_debugger_clear_selected_entity": {},
+      "goud_debugger_get_memory_summary": {}
     },
     "renderer_3d": {
       "goud_renderer3d_create_cube": {},

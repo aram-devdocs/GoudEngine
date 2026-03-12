@@ -2205,6 +2205,110 @@
         }
       ]
     },
+    "DebuggerConfig": {
+      "kind": "value",
+      "doc": "Pre-init debugger runtime configuration for desktop contexts.",
+      "fields": [
+        {
+          "name": "enabled",
+          "type": "bool",
+          "doc": "Enables the debugger runtime for the created game or context."
+        },
+        {
+          "name": "publishLocalAttach",
+          "type": "bool",
+          "doc": "Publishes the local attach manifest and endpoint when at least one route is attachable."
+        },
+        {
+          "name": "routeLabel",
+          "type": "string",
+          "doc": "Optional debugger route label. Use an empty string to clear it."
+        }
+      ]
+    },
+    "ContextConfig": {
+      "kind": "value",
+      "doc": "Pre-init configuration for headless context creation.",
+      "fields": [
+        {
+          "name": "debugger",
+          "type": "DebuggerConfig",
+          "doc": "Debugger runtime settings for the created context."
+        }
+      ]
+    },
+    "MemoryCategoryStats": {
+      "kind": "value",
+      "doc": "Tracked current and peak bytes for one debugger memory category.",
+      "fields": [
+        {
+          "name": "currentBytes",
+          "type": "u64",
+          "doc": "Current tracked bytes for the category."
+        },
+        {
+          "name": "peakBytes",
+          "type": "u64",
+          "doc": "Peak tracked bytes for the category."
+        }
+      ]
+    },
+    "MemorySummary": {
+      "kind": "value",
+      "doc": "Debugger-owned aggregate memory summary for one route.",
+      "fields": [
+        {
+          "name": "rendering",
+          "type": "MemoryCategoryStats",
+          "doc": "Tracked memory for rendering resources."
+        },
+        {
+          "name": "assets",
+          "type": "MemoryCategoryStats",
+          "doc": "Tracked memory for asset storage."
+        },
+        {
+          "name": "ecs",
+          "type": "MemoryCategoryStats",
+          "doc": "Tracked memory for ECS state and snapshots."
+        },
+        {
+          "name": "ui",
+          "type": "MemoryCategoryStats",
+          "doc": "Tracked memory for UI state."
+        },
+        {
+          "name": "audio",
+          "type": "MemoryCategoryStats",
+          "doc": "Tracked memory for audio resources."
+        },
+        {
+          "name": "network",
+          "type": "MemoryCategoryStats",
+          "doc": "Tracked memory for network buffers and state."
+        },
+        {
+          "name": "debugger",
+          "type": "MemoryCategoryStats",
+          "doc": "Tracked memory used by the debugger runtime."
+        },
+        {
+          "name": "other",
+          "type": "MemoryCategoryStats",
+          "doc": "Tracked memory not assigned to a specific category."
+        },
+        {
+          "name": "totalCurrentBytes",
+          "type": "u64",
+          "doc": "Sum of current bytes across all categories."
+        },
+        {
+          "name": "totalPeakBytes",
+          "type": "u64",
+          "doc": "Sum of peak bytes across all categories."
+        }
+      ]
+    },
     "PhysicsWorld2D": {
       "kind": "handle",
       "doc": "2D physics simulation world",
@@ -4594,6 +4698,54 @@
           "returns": "void"
         },
         {
+          "name": "getDebuggerSnapshotJson",
+          "doc": "Returns the latest debugger snapshot JSON for this route.",
+          "params": [],
+          "returns": "string",
+          "buffer_protocol": true
+        },
+        {
+          "name": "getDebuggerManifestJson",
+          "doc": "Returns the current process-wide debugger manifest JSON.",
+          "params": [],
+          "returns": "string",
+          "buffer_protocol": true
+        },
+        {
+          "name": "setDebuggerProfilingEnabled",
+          "doc": "Enables or disables per-system debugger profiling for this route.",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "setDebuggerSelectedEntity",
+          "doc": "Selects one entity for expanded debugger inspector output.",
+          "params": [
+            {
+              "name": "entityId",
+              "type": "u64"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "clearDebuggerSelectedEntity",
+          "doc": "Clears the selected debugger inspector entity for this route.",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "getMemorySummary",
+          "doc": "Returns debugger-owned aggregate memory statistics for this route.",
+          "params": [],
+          "returns": "MemorySummary"
+        },
+        {
           "name": "mapActionKey",
           "doc": "Maps an action name to a key",
           "params": [
@@ -6136,6 +6288,17 @@
           "returns": "bool"
         },
         {
+          "name": "setDebugger",
+          "doc": "Configures debugger runtime startup for the created game.",
+          "params": [
+            {
+              "name": "debugger",
+              "type": "DebuggerConfig"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
           "name": "build",
           "doc": "Consumes the config and creates a windowed GoudGame instance",
           "params": [],
@@ -6355,6 +6518,54 @@
           "doc": "Clears the explicit network-overlay handle override for this context.",
           "params": [],
           "returns": "i32"
+        },
+        {
+          "name": "getDebuggerSnapshotJson",
+          "doc": "Returns the latest debugger snapshot JSON for this route.",
+          "params": [],
+          "returns": "string",
+          "buffer_protocol": true
+        },
+        {
+          "name": "getDebuggerManifestJson",
+          "doc": "Returns the current process-wide debugger manifest JSON.",
+          "params": [],
+          "returns": "string",
+          "buffer_protocol": true
+        },
+        {
+          "name": "setDebuggerProfilingEnabled",
+          "doc": "Enables or disables per-system debugger profiling for this route.",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "setDebuggerSelectedEntity",
+          "doc": "Selects one entity for expanded debugger inspector output.",
+          "params": [
+            {
+              "name": "entityId",
+              "type": "u64"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "clearDebuggerSelectedEntity",
+          "doc": "Clears the selected debugger inspector entity for this route.",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "getMemorySummary",
+          "doc": "Returns debugger-owned aggregate memory statistics for this route.",
+          "params": [],
+          "returns": "MemorySummary"
         },
         {
           "$ref": "EcsMethods",
@@ -9324,6 +9535,35 @@
             "corner": "i32"
           }
         },
+        "getDebuggerSnapshotJson": {
+          "ffi": "goud_debugger_get_snapshot_json",
+          "buffer_protocol": true
+        },
+        "getDebuggerManifestJson": {
+          "ffi": "goud_debugger_get_manifest_json",
+          "buffer_protocol": true,
+          "no_context": true
+        },
+        "setDebuggerProfilingEnabled": {
+          "ffi": "goud_debugger_set_profiling_enabled"
+        },
+        "setDebuggerSelectedEntity": {
+          "ffi": "goud_debugger_set_selected_entity"
+        },
+        "clearDebuggerSelectedEntity": {
+          "ffi": "goud_debugger_clear_selected_entity"
+        },
+        "getMemorySummary": {
+          "ffi": "goud_debugger_get_memory_summary",
+          "out_params": [
+            {
+              "name": "summary",
+              "type": "MemorySummary"
+            }
+          ],
+          "status_struct": true,
+          "returns_struct": "MemorySummary"
+        },
         "mapActionKey": {
           "ffi": "goud_input_map_action_key",
           "string_params": [
@@ -9795,6 +10035,9 @@
             "backend": "PhysicsBackend2D"
           }
         },
+        "setDebugger": {
+          "ffi": "goud_engine_config_set_debugger"
+        },
         "build": {
           "ffi": "goud_engine_create",
           "returns_context": true
@@ -9899,6 +10142,35 @@
         },
         "clearNetworkOverlayHandle": {
           "ffi": "goud_network_clear_overlay_handle"
+        },
+        "getDebuggerSnapshotJson": {
+          "ffi": "goud_debugger_get_snapshot_json",
+          "buffer_protocol": true
+        },
+        "getDebuggerManifestJson": {
+          "ffi": "goud_debugger_get_manifest_json",
+          "buffer_protocol": true,
+          "no_context": true
+        },
+        "setDebuggerProfilingEnabled": {
+          "ffi": "goud_debugger_set_profiling_enabled"
+        },
+        "setDebuggerSelectedEntity": {
+          "ffi": "goud_debugger_set_selected_entity"
+        },
+        "clearDebuggerSelectedEntity": {
+          "ffi": "goud_debugger_clear_selected_entity"
+        },
+        "getMemorySummary": {
+          "ffi": "goud_debugger_get_memory_summary",
+          "out_params": [
+            {
+              "name": "summary",
+              "type": "MemorySummary"
+            }
+          ],
+          "status_struct": true,
+          "returns_struct": "MemorySummary"
         },
         "spawnEmpty": {
           "ffi": "goud_entity_spawn_empty",

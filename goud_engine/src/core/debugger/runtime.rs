@@ -1,9 +1,11 @@
 use std::cell::RefCell;
 
 use super::config::DebuggerConfig;
-use super::snapshot::{DebuggerSnapshotV1, MemorySummaryV1, ProfilerSampleV1, RouteSummaryV1, RuntimeManifestV1};
+use super::snapshot::{
+    DebuggerSnapshotV1, MemorySummaryV1, ProfilerSampleV1, RouteSummaryV1, RuntimeManifestV1,
+};
 use super::types::{CapabilityStateV1, RuntimeRouteId, RuntimeSurfaceKind};
-use crate::context_registry::GoudContextId;
+use crate::core::context_id::GoudContextId;
 
 mod state;
 use state::*;
@@ -12,15 +14,23 @@ thread_local! {
     static CURRENT_ROUTE: RefCell<Option<RuntimeRouteId>> = const { RefCell::new(None) };
 }
 
+struct ScopedRouteReset(Option<RuntimeRouteId>);
+
+impl Drop for ScopedRouteReset {
+    fn drop(&mut self) {
+        CURRENT_ROUTE.with(|cell| {
+            cell.replace(self.0.take());
+        });
+    }
+}
+
 /// Registers a debugger route for one context when debugger mode is enabled.
 pub fn register_context(
     context_id: GoudContextId,
     surface_kind: RuntimeSurfaceKind,
     config: &DebuggerConfig,
 ) -> RuntimeRouteId {
-    let mut guard = runtime_cell()
-        .lock()
-        .expect("debugger runtime mutex poisoned");
+    let mut guard = lock_runtime();
     let runtime = guard.get_or_insert_with(DebuggerRuntimeState::new);
     let route_id = RuntimeRouteId::for_context(runtime.process_nonce, context_id, surface_kind);
     runtime
@@ -33,9 +43,7 @@ pub fn register_context(
 
 /// Removes a debugger route and tears the process-wide runtime down when empty.
 pub fn unregister_context(context_id: GoudContextId) {
-    let mut guard = runtime_cell()
-        .lock()
-        .expect("debugger runtime mutex poisoned");
+    let mut guard = lock_runtime();
     let Some(runtime) = guard.as_mut() else {
         return;
     };
@@ -58,41 +66,38 @@ pub fn current_route() -> Option<RuntimeRouteId> {
 pub fn scoped_route<R>(route_id: Option<RuntimeRouteId>, f: impl FnOnce() -> R) -> R {
     CURRENT_ROUTE.with(|cell| {
         let previous = cell.replace(route_id);
-        let result = f();
-        cell.replace(previous);
-        result
+        let _reset = ScopedRouteReset(previous);
+        f()
     })
 }
 
 /// Returns the registered route for a context, if one exists.
 pub fn route_for_context(context_id: GoudContextId) -> Option<RuntimeRouteId> {
-    runtime_cell().lock().ok().and_then(|guard| {
-        guard
-            .as_ref()?
-            .routes
-            .get(&raw_context_key(context_id))
-            .map(|route| route.snapshot.route_id.clone())
-    })
+    let guard = lock_runtime();
+    guard
+        .as_ref()?
+        .routes
+        .get(&raw_context_key(context_id))
+        .map(|route| route.snapshot.route_id.clone())
 }
 
 /// Returns the number of currently registered routes.
 pub fn active_route_count() -> usize {
-    runtime_cell()
-        .lock()
-        .ok()
-        .and_then(|guard| guard.as_ref().map(|runtime| runtime.routes.len()))
+    let guard = lock_runtime();
+    guard
+        .as_ref()
+        .map(|runtime| runtime.routes.len())
         .unwrap_or(0)
 }
 
 /// Returns a cloned snapshot for one route.
 pub fn snapshot_for_route(route_id: &RuntimeRouteId) -> Option<DebuggerSnapshotV1> {
-    runtime_cell().lock().ok().and_then(|guard| {
-        guard
-            .as_ref()?
-            .routes
-            .get(&route_id.context_id)
-            .map(|route| route.snapshot.clone())
-    })
+    let guard = lock_runtime();
+    guard
+        .as_ref()?
+        .routes
+        .get(&route_id.context_id)
+        .map(|route| route.snapshot.clone())
 }
 
 /// Returns a cloned snapshot for one context, if registered.
@@ -134,7 +139,8 @@ pub fn end_frame(route_id: &RuntimeRouteId) {
         debugger.current_bytes = debugger_bytes;
         debugger.peak_bytes = debugger.peak_bytes.max(debugger_bytes);
         recalculate_memory_totals(&mut route.snapshot.memory_summary);
-        route.snapshot.stats.memory.tracked_bytes = route.snapshot.memory_summary.total_current_bytes;
+        route.snapshot.stats.memory.tracked_bytes =
+            route.snapshot.memory_summary.total_current_bytes;
         route.snapshot.stats.memory.peak_bytes = route.snapshot.memory_summary.total_peak_bytes;
     });
 }
@@ -204,12 +210,9 @@ pub fn fps_stats_for_context(context_id: GoudContextId) -> Option<[f32; 5]> {
 }
 
 /// Sets the currently selected entity for one context.
-pub fn set_selected_entity_for_context(
-    context_id: GoudContextId,
-    entity_id: Option<u64>,
-) -> bool {
+pub fn set_selected_entity_for_context(context_id: GoudContextId, entity_id: Option<u64>) -> bool {
     with_route_state_mut_by_context(context_id, |route| {
-        if route.snapshot.selection.scene_id.is_empty() {
+        if !route.snapshot.scene.active_scene.is_empty() {
             route.snapshot.selection.scene_id = route.snapshot.scene.active_scene.clone();
         }
         route.snapshot.selection.entity_id = entity_id;
@@ -252,7 +255,12 @@ pub fn update_render_stats_for_context(
             .shader_binds
             .saturating_add(shader_binds);
         set_route_capability(route, "render_stats", CapabilityStateV1::Ready);
-        set_service_state(&mut route.snapshot, "renderer", CapabilityStateV1::Ready, None);
+        set_service_state(
+            &mut route.snapshot,
+            "renderer",
+            CapabilityStateV1::Ready,
+            None,
+        );
         true
     })
     .unwrap_or(false)
@@ -265,17 +273,24 @@ pub fn update_memory_category_for_context(
     current_bytes: u64,
 ) -> bool {
     with_route_state_mut_by_context(context_id, |route| {
-        let Some(category_stats) = memory_category_mut(&mut route.snapshot.memory_summary, category)
+        let Some(category_stats) =
+            memory_category_mut(&mut route.snapshot.memory_summary, category)
         else {
             return false;
         };
         category_stats.current_bytes = current_bytes;
         category_stats.peak_bytes = category_stats.peak_bytes.max(current_bytes);
         recalculate_memory_totals(&mut route.snapshot.memory_summary);
-        route.snapshot.stats.memory.tracked_bytes = route.snapshot.memory_summary.total_current_bytes;
+        route.snapshot.stats.memory.tracked_bytes =
+            route.snapshot.memory_summary.total_current_bytes;
         route.snapshot.stats.memory.peak_bytes = route.snapshot.memory_summary.total_peak_bytes;
         set_route_capability(route, "memory_stats", CapabilityStateV1::Ready);
-        set_service_state(&mut route.snapshot, "memory", CapabilityStateV1::Ready, None);
+        set_service_state(
+            &mut route.snapshot,
+            "memory",
+            CapabilityStateV1::Ready,
+            None,
+        );
         true
     })
     .unwrap_or(false)
@@ -295,7 +310,12 @@ pub fn set_snapshot_network_stats_for_context(
     with_route_state_mut_by_context(context_id, |route| {
         route.snapshot.stats.network.bytes_sent = bytes_sent;
         route.snapshot.stats.network.bytes_received = bytes_received;
-        set_service_state(&mut route.snapshot, "network", CapabilityStateV1::Ready, None);
+        set_service_state(
+            &mut route.snapshot,
+            "network",
+            CapabilityStateV1::Ready,
+            None,
+        );
         true
     })
     .unwrap_or(false)
@@ -333,7 +353,12 @@ pub fn set_system_sample(
             duration_cpu_micros,
         });
         set_route_capability(route, "profiling", CapabilityStateV1::Ready);
-        set_service_state(&mut route.snapshot, "profiling", CapabilityStateV1::Ready, None);
+        set_service_state(
+            &mut route.snapshot,
+            "profiling",
+            CapabilityStateV1::Ready,
+            None,
+        );
     });
 }
 
@@ -354,13 +379,18 @@ pub fn record_phase_duration(name: &str, duration_cpu_micros: u64) {
             duration_cpu_micros,
         });
         set_route_capability(route, "profiling", CapabilityStateV1::Ready);
-        set_service_state(&mut route.snapshot, "profiling", CapabilityStateV1::Ready, None);
+        set_service_state(
+            &mut route.snapshot,
+            "profiling",
+            CapabilityStateV1::Ready,
+            None,
+        );
     });
 }
 
 /// Returns the current manifest when at least one route is attachable.
 pub fn current_manifest() -> Option<RuntimeManifestV1> {
-    let guard = runtime_cell().lock().ok()?;
+    let guard = lock_runtime();
     let runtime = guard.as_ref()?;
     if !runtime.routes.values().any(|route| route.attachable) {
         return None;
@@ -396,9 +426,8 @@ pub fn current_manifest() -> Option<RuntimeManifestV1> {
 
 #[cfg(test)]
 pub(crate) fn reset_for_tests() {
-    if let Ok(mut guard) = runtime_cell().lock() {
-        *guard = None;
-    }
+    let mut guard = lock_runtime();
+    *guard = None;
     CURRENT_ROUTE.with(|cell| {
         cell.replace(None);
     });

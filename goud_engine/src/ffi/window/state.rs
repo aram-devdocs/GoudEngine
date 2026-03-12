@@ -5,8 +5,8 @@
 //! [`OpenGLBackend`] into a single per-context object, and the thread-local
 //! storage helpers used to access it from FFI functions.
 
-use crate::core::error::GoudError;
 use crate::core::debugger::{self, RuntimeRouteId};
+use crate::core::error::GoudError;
 use crate::ecs::InputManager;
 use crate::ffi::context::GoudContextId;
 use crate::libs::graphics::backend::opengl::OpenGLBackend;

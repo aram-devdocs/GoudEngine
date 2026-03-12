@@ -1106,6 +1106,15 @@
       "return_type": "()",
       "is_unsafe": true
     },
+    "goud_engine_config_set_debugger": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "debugger: *const GoudDebuggerConfig"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
     "goud_engine_config_set_fps_overlay": {
       "source_file": "ffi/engine_config.rs",
       "params": [
@@ -4308,5 +4317,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 431
+  "total_count": 432
 }

@@ -1,7 +1,8 @@
 use crate::context_registry::GoudContextId;
 use crate::core::debugger::{
-    begin_frame, register_context, reset_for_tests, scoped_route, set_profiling_enabled_for_context,
-    snapshot_for_context, test_lock, DebuggerConfig, RuntimeSurfaceKind,
+    active_route_count, begin_frame, register_context, reset_for_tests, scoped_route,
+    set_profiling_enabled_for_context, snapshot_for_context, test_lock, DebuggerConfig,
+    RuntimeSurfaceKind,
 };
 use crate::ecs::schedule::{ParallelSystemStage, Stage, SystemStage};
 use crate::ecs::system::System;
@@ -38,12 +39,10 @@ fn test_system_stage_debugger_samples_only_when_profiling_enabled() {
 
     begin_frame(&route, 1, 0.016, 0.016);
     scoped_route(Some(route.clone()), || stage.run(&mut world));
-    assert!(
-        snapshot_for_context(context_id)
-            .expect("snapshot should exist")
-            .profiler_samples
-            .is_empty()
-    );
+    assert!(snapshot_for_context(context_id)
+        .expect("snapshot should exist")
+        .profiler_samples
+        .is_empty());
 
     assert!(set_profiling_enabled_for_context(context_id, true));
     begin_frame(&route, 2, 0.016, 0.032);
@@ -92,4 +91,19 @@ fn test_parallel_stage_debugger_samples_capture_each_system_name() {
         .profiler_samples
         .iter()
         .all(|sample| sample.stage == "Update" && sample.sample_kind == "system"));
+}
+
+#[test]
+fn test_system_stage_without_debugger_route_keeps_runtime_empty() {
+    let _guard = test_lock();
+    reset_for_tests();
+
+    let mut stage = SystemStage::new("Update");
+    stage.add_system(NamedSystem("ExampleSystem"));
+    let mut world = World::new();
+
+    scoped_route(None, || stage.run(&mut world));
+
+    assert_eq!(active_route_count(), 0);
+    assert!(snapshot_for_context(GoudContextId::new(999, 1)).is_none());
 }

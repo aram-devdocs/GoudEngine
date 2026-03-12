@@ -81,6 +81,20 @@ namespace GoudEngine
             return this;
         }
 
+        /// <summary>Configures debugger runtime startup for the created game.</summary>
+        public EngineConfig SetDebugger(DebuggerConfig debugger)
+        {
+            if (_handle == IntPtr.Zero) throw new ObjectDisposedException("EngineConfig");
+            var _debuggerFfi = new GoudDebuggerConfig
+            {
+                Enabled = debugger.Enabled,
+                PublishLocalAttach = debugger.PublishLocalAttach,
+                RouteLabel = debugger.RouteLabel
+            };
+            NativeMethods.goud_engine_config_set_debugger(_handle, ref _debuggerFfi);
+            return this;
+        }
+
         /// <summary>Consumes the config and creates a windowed GoudGame instance</summary>
         public GoudGame Build()
         {

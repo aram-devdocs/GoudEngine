@@ -1,8 +1,8 @@
 use std::collections::{BTreeMap, HashMap};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Mutex, MutexGuard, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::context_registry::GoudContextId;
+use crate::core::context_id::GoudContextId;
 
 use super::super::config::DebuggerConfig;
 use super::super::snapshot::{
@@ -70,6 +70,12 @@ static PROCESS_NONCE: OnceLock<u64> = OnceLock::new();
 
 pub(super) fn runtime_cell() -> &'static Mutex<Option<DebuggerRuntimeState>> {
     DEBUGGER_RUNTIME.get_or_init(|| Mutex::new(None))
+}
+
+pub(super) fn lock_runtime() -> MutexGuard<'static, Option<DebuggerRuntimeState>> {
+    runtime_cell()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 fn process_nonce() -> u64 {
@@ -239,10 +245,9 @@ pub(super) fn with_route_state_mut<R>(
     route_id: &RuntimeRouteId,
     f: impl FnOnce(&mut RouteState) -> R,
 ) -> Option<R> {
-    runtime_cell().lock().ok().and_then(|mut guard| {
-        let route = guard.as_mut()?.routes.get_mut(&route_id.context_id)?;
-        Some(f(route))
-    })
+    let mut guard = lock_runtime();
+    let route = guard.as_mut()?.routes.get_mut(&route_id.context_id)?;
+    Some(f(route))
 }
 
 pub(super) fn with_route_state_mut_by_context<R>(
@@ -250,10 +255,9 @@ pub(super) fn with_route_state_mut_by_context<R>(
     f: impl FnOnce(&mut RouteState) -> R,
 ) -> Option<R> {
     let key = raw_context_key(context_id);
-    runtime_cell().lock().ok().and_then(|mut guard| {
-        let route = guard.as_mut()?.routes.get_mut(&key)?;
-        Some(f(route))
-    })
+    let mut guard = lock_runtime();
+    let route = guard.as_mut()?.routes.get_mut(&key)?;
+    Some(f(route))
 }
 
 impl DebuggerRuntimeState {

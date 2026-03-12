@@ -202,7 +202,9 @@ impl DebuggerSnapshotV1 {
     }
 
     pub fn service_mut(&mut self, name: &str) -> Option<&mut ServiceHealthV1> {
-        self.services.iter_mut().find(|service| service.name == name)
+        self.services
+            .iter_mut()
+            .find(|service| service.name == name)
     }
 }
 

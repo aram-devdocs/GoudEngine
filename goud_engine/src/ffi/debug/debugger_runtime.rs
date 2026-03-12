@@ -67,8 +67,6 @@ impl From<debugger::MemorySummaryV1> for GoudMemorySummary {
 
 pub(crate) fn refresh_debugger_snapshot(context_id: GoudContextId) -> Result<(), GoudError> {
     let route_id = debugger::route_for_context(context_id).ok_or(GoudError::InvalidContext)?;
-    let selected_entity = debugger::snapshot_for_route(&route_id)
-        .and_then(|snapshot| snapshot.selection.entity_id);
 
     let registry = get_context_registry()
         .lock()
@@ -79,6 +77,16 @@ pub(crate) fn refresh_debugger_snapshot(context_id: GoudContextId) -> Result<(),
         .get_scene_name(context.current_scene())
         .unwrap_or("default")
         .to_string();
+    let selected_entity = debugger::snapshot_for_route(&route_id).and_then(|snapshot| {
+        snapshot.selection.entity_id.map(|entity_id| {
+            let scene_id = if snapshot.selection.scene_id.is_empty() {
+                active_scene_name.clone()
+            } else {
+                snapshot.selection.scene_id.clone()
+            };
+            (scene_id, entity_id)
+        })
+    });
 
     let mut entities = Vec::new();
     let mut entity_count = 0usize;
@@ -95,7 +103,9 @@ pub(crate) fn refresh_debugger_snapshot(context_id: GoudContextId) -> Result<(),
         let scene_entities = crate::context_registry::scene::collect_debugger_entities(
             world,
             scene_name,
-            selected_entity,
+            selected_entity
+                .as_ref()
+                .map(|(scene_id, entity_id)| (scene_id.as_str(), *entity_id)),
         );
         ecs_bytes = ecs_bytes.saturating_add(
             serde_json::to_vec(&scene_entities)
@@ -108,30 +118,36 @@ pub(crate) fn refresh_debugger_snapshot(context_id: GoudContextId) -> Result<(),
     let _ = debugger::with_snapshot_mut(&route_id, |snapshot| {
         snapshot.scene.active_scene = active_scene_name.clone();
         snapshot.scene.entity_count = entity_count as u32;
-        snapshot.selection.scene_id = active_scene_name;
+        if snapshot.selection.entity_id.is_none() || snapshot.selection.scene_id.is_empty() {
+            snapshot.selection.scene_id = active_scene_name;
+        }
         snapshot.entities = entities;
     });
     let _ = debugger::update_memory_category_for_context(context_id, "ecs", ecs_bytes);
-    let _ =
-        debugger::set_service_state_for_context(context_id, "debugger", CapabilityStateV1::Ready, None);
+    let _ = debugger::set_service_state_for_context(
+        context_id,
+        "debugger",
+        CapabilityStateV1::Ready,
+        None,
+    );
     Ok(())
 }
 
 pub(crate) unsafe fn write_string_result(value: &str, buf: *mut u8, buf_len: usize) -> i32 {
-    if buf.is_null() || buf_len == 0 {
-        return i32::try_from(value.len().saturating_add(1))
+    let required_len = value.len().saturating_add(1);
+    if buf.is_null() || buf_len == 0 || buf_len < required_len {
+        return i32::try_from(required_len)
             .map(|len| -len)
             .unwrap_or(i32::MIN);
     }
 
     let bytes = value.as_bytes();
-    let copy_len = bytes.len().min(buf_len - 1);
     // SAFETY: Caller guarantees buf is valid for buf_len bytes.
     unsafe {
-        std::ptr::copy_nonoverlapping(bytes.as_ptr(), buf, copy_len);
-        *buf.add(copy_len) = 0;
+        std::ptr::copy_nonoverlapping(bytes.as_ptr(), buf, bytes.len());
+        *buf.add(bytes.len()) = 0;
     }
-    copy_len as i32
+    bytes.len() as i32
 }
 
 /// Writes the latest debugger snapshot JSON into a caller-owned buffer.
@@ -273,4 +289,27 @@ pub unsafe extern "C" fn goud_debugger_get_memory_summary(
         *out_summary = summary.into();
     }
     0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::write_string_result;
+
+    #[test]
+    fn test_write_string_result_reports_required_size_for_null_buffer() {
+        // SAFETY: Passing a null buffer with zero length is the supported size-query path.
+        let written = unsafe { write_string_result("hello", std::ptr::null_mut(), 0) };
+        assert_eq!(written, -6);
+    }
+
+    #[test]
+    fn test_write_string_result_rejects_undersized_non_null_buffer_without_truncation() {
+        let mut buf = [b'x'; 4];
+
+        // SAFETY: `buf` points to valid writable storage for `buf.len()` bytes.
+        let written = unsafe { write_string_result("hello", buf.as_mut_ptr(), buf.len()) };
+
+        assert_eq!(written, -6);
+        assert_eq!(buf, [b'x'; 4]);
+    }
 }

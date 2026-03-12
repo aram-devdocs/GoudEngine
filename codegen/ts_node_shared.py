@@ -33,6 +33,10 @@ IFACE_TYPES = {
     "Rect": "IRect",
     "RenderStats": "IRenderStats",
     "FpsStats": "IFpsStats",
+    "DebuggerConfig": "IDebuggerConfig",
+    "ContextConfig": "IContextConfig",
+    "MemoryCategoryStats": "IMemoryCategoryStats",
+    "MemorySummary": "IMemorySummary",
     "Contact": "IContact",
     "PhysicsRaycastHit2D": "IPhysicsRaycastHit2D",
     "PhysicsCollisionEvent2D": "IPhysicsCollisionEvent2D",
@@ -102,6 +106,10 @@ AUDIO_CONTROLS_FNS = {
     "goud_audio_activate",
 }
 
+TS_RESERVED_PARAM_NAMES = {
+    "debugger": "debuggerConfig",
+}
+
 
 def ts_type(t: str) -> str:
     base = t.rstrip("?")
@@ -118,6 +126,12 @@ def ts_iface_type(t: str) -> str:
     if t.endswith("?"):
         return f"{mapped} | null"
     return mapped
+
+
+def ts_param_name(name: str) -> str:
+    """Return a safe TypeScript parameter name for generated wrappers."""
+    param_name = to_camel(name)
+    return TS_RESERVED_PARAM_NAMES.get(param_name, param_name)
 
 
 def _napi_type(schema_type: str) -> str:

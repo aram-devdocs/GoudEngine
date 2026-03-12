@@ -56,6 +56,8 @@ def gen_native_methods():
                     cs = "float"
             if ft == "bool":
                 lines.append("        [MarshalAs(UnmanagedType.U1)]")
+            elif ft == "string":
+                lines.append("        [MarshalAs(UnmanagedType.LPUTF8Str)]")
             lines.append(f"        public {cs} {to_pascal(f['name'])};")
         lines += ["    }", ""]
 

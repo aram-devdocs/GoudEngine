@@ -371,8 +371,7 @@ impl Stage for SystemStage {
     }
 
     fn run(&mut self, world: &mut World) {
-        let profiler_route = debugger::current_route()
-            .filter(debugger::profiler_enabled_for_route);
+        let profiler_route = debugger::current_route().filter(debugger::profiler_enabled_for_route);
 
         if self.order_dirty {
             // Merge named-set orderings into the stage's orderings.

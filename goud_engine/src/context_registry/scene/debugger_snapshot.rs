@@ -24,7 +24,7 @@ fn entity_components(world: &World, entity: Entity) -> BTreeMap<String, serde_js
 pub fn collect_debugger_entities(
     world: &World,
     scene_id: impl Into<String>,
-    selected_entity: Option<u64>,
+    selected_entity: Option<(&str, u64)>,
 ) -> Vec<EntityStateV1> {
     let scene_id = scene_id.into();
     let mut entities = Vec::new();
@@ -42,7 +42,12 @@ pub fn collect_debugger_entities(
                 entity_name(&components),
                 component_types,
             );
-            if Some(entity_id) == selected_entity {
+            if selected_entity
+                .as_ref()
+                .is_some_and(|(selected_scene_id, selected_entity_id)| {
+                    selected_scene_id == &scene_id && *selected_entity_id == entity_id
+                })
+            {
                 entity_state.components = components;
             }
             entities.push(entity_state);
@@ -67,23 +72,42 @@ mod tests {
 
         let hero = world.spawn_empty();
         world.insert(hero, Name::new("hero"));
-        world.insert(hero, Transform2D::new(Vec2::new(1.0, 2.0), 0.0, Vec2::one()));
+        world.insert(
+            hero,
+            Transform2D::new(Vec2::new(1.0, 2.0), 0.0, Vec2::one()),
+        );
 
         let npc = world.spawn_empty();
         world.insert(npc, Name::new("npc"));
 
-        let entities = collect_debugger_entities(&world, "default", Some(hero.to_bits()));
+        let entities =
+            collect_debugger_entities(&world, "default", Some(("default", hero.to_bits())));
         assert_eq!(entities.len(), 2);
         assert!(!entities[0].component_types.is_empty());
-        assert!(
-            entities
-                .iter()
-                .any(|entity| entity.entity_id == hero.to_bits() && !entity.components.is_empty())
+        assert!(entities
+            .iter()
+            .any(|entity| entity.entity_id == hero.to_bits() && !entity.components.is_empty()));
+        assert!(entities
+            .iter()
+            .any(|entity| entity.entity_id == npc.to_bits() && entity.components.is_empty()));
+    }
+
+    #[test]
+    fn test_collect_debugger_entities_does_not_expand_selected_entity_from_other_scene() {
+        let mut world = World::new();
+        world.register_builtin_serializables();
+
+        let hero = world.spawn_empty();
+        world.insert(hero, Name::new("hero"));
+        world.insert(
+            hero,
+            Transform2D::new(Vec2::new(1.0, 2.0), 0.0, Vec2::one()),
         );
-        assert!(
-            entities
-                .iter()
-                .any(|entity| entity.entity_id == npc.to_bits() && entity.components.is_empty())
-        );
+
+        let entities =
+            collect_debugger_entities(&world, "default", Some(("other-scene", hero.to_bits())));
+
+        assert_eq!(entities.len(), 1);
+        assert!(entities[0].components.is_empty());
     }
 }

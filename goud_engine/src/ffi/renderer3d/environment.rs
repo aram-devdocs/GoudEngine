@@ -1,8 +1,8 @@
 //! FFI functions for environment features: grid, skybox, fog, and the render call.
 
 use super::state::{ensure_renderer3d_state, with_renderer};
-use crate::core::error::{set_last_error, GoudError};
 use crate::core::debugger;
+use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
 use crate::libs::graphics::renderer3d::TextureManagerTrait;

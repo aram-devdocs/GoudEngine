@@ -1248,7 +1248,7 @@ class SpriteAnimatorBuilder:
 
 class AnimationEventData:
     """Data for a fired animation event read from the event queue"""
-    def __init__(self, entity: int = 0, name: float = 0.0, frame_index: int = 0, payload_type: int = 0, payload_int: int = 0, payload_float: float = 0.0, payload_string: float = 0.0):
+    def __init__(self, entity: int = 0, name: str = "", frame_index: int = 0, payload_type: int = 0, payload_int: int = 0, payload_float: float = 0.0, payload_string: str = ""):
         self.entity = entity
         self.name = name
         self.frame_index = frame_index
@@ -1360,6 +1360,50 @@ class FpsStats:
 
     def __repr__(self):
         return f"FpsStats(current_fps={self.current_fps}, min_fps={self.min_fps}, max_fps={self.max_fps}, avg_fps={self.avg_fps}, frame_time_ms={self.frame_time_ms})"
+
+class DebuggerConfig:
+    """Pre-init debugger runtime configuration for desktop contexts."""
+    def __init__(self, enabled: bool = False, publish_local_attach: bool = False, route_label: str = ""):
+        self.enabled = enabled
+        self.publish_local_attach = publish_local_attach
+        self.route_label = route_label
+
+    def __repr__(self):
+        return f"DebuggerConfig(enabled={self.enabled}, publish_local_attach={self.publish_local_attach}, route_label={self.route_label})"
+
+class ContextConfig:
+    """Pre-init configuration for headless context creation."""
+    def __init__(self, debugger: 'DebuggerConfig' = None):
+        self.debugger = debugger if debugger is not None else DebuggerConfig()
+
+    def __repr__(self):
+        return f"ContextConfig(debugger={self.debugger})"
+
+class MemoryCategoryStats:
+    """Tracked current and peak bytes for one debugger memory category."""
+    def __init__(self, current_bytes: int = 0, peak_bytes: int = 0):
+        self.current_bytes = current_bytes
+        self.peak_bytes = peak_bytes
+
+    def __repr__(self):
+        return f"MemoryCategoryStats(current_bytes={self.current_bytes}, peak_bytes={self.peak_bytes})"
+
+class MemorySummary:
+    """Debugger-owned aggregate memory summary for one route."""
+    def __init__(self, rendering: 'MemoryCategoryStats' = None, assets: 'MemoryCategoryStats' = None, ecs: 'MemoryCategoryStats' = None, ui: 'MemoryCategoryStats' = None, audio: 'MemoryCategoryStats' = None, network: 'MemoryCategoryStats' = None, debugger: 'MemoryCategoryStats' = None, other: 'MemoryCategoryStats' = None, total_current_bytes: int = 0, total_peak_bytes: int = 0):
+        self.rendering = rendering if rendering is not None else MemoryCategoryStats()
+        self.assets = assets if assets is not None else MemoryCategoryStats()
+        self.ecs = ecs if ecs is not None else MemoryCategoryStats()
+        self.ui = ui if ui is not None else MemoryCategoryStats()
+        self.audio = audio if audio is not None else MemoryCategoryStats()
+        self.network = network if network is not None else MemoryCategoryStats()
+        self.debugger = debugger if debugger is not None else MemoryCategoryStats()
+        self.other = other if other is not None else MemoryCategoryStats()
+        self.total_current_bytes = total_current_bytes
+        self.total_peak_bytes = total_peak_bytes
+
+    def __repr__(self):
+        return f"MemorySummary(rendering={self.rendering}, assets={self.assets}, ecs={self.ecs}, ui={self.ui}, audio={self.audio}, network={self.network}, debugger={self.debugger}, other={self.other}, total_current_bytes={self.total_current_bytes}, total_peak_bytes={self.total_peak_bytes})"
 
 class PhysicsWorld2D:
     """2D physics simulation world"""

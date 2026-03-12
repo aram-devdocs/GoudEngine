@@ -1,5 +1,5 @@
-use crate::core::error::{set_last_error, GoudError, ERR_INVALID_STATE};
 use crate::core::debugger;
+use crate::core::error::{set_last_error, GoudError, ERR_INVALID_STATE};
 use crate::core::providers::network_types::NetworkStats;
 use crate::ffi::context::GoudContextId;
 

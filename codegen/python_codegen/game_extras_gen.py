@@ -1,6 +1,7 @@
 """Extra class generators for `_game.py` (EngineConfig, UiManager)."""
 
 from .context import mapping, schema, to_snake
+from .shared_helpers import py_value_param_ffi_setup
 
 
 def gen_engine_config(lines: list[str]) -> None:
@@ -73,7 +74,16 @@ def gen_engine_config(lines: list[str]) -> None:
             ffi_call_args = []
             for p in params:
                 pn = to_snake(p["name"])
-                ffi_call_args.append(f"int({pn})" if p["type"] in schema.get("enums", {}) else pn)
+                if p["type"] in schema.get("enums", {}):
+                    ffi_call_args.append(f"int({pn})")
+                    continue
+                value_setup = py_value_param_ffi_setup(p)
+                if value_setup:
+                    value_lines, value_arg = value_setup
+                    lines.extend(value_lines)
+                    ffi_call_args.append(value_arg)
+                else:
+                    ffi_call_args.append(pn)
             ffi_args = ", ".join(["self._handle"] + ffi_call_args)
             lines.append(f"        self._lib.{ffi_fn}({ffi_args})")
             lines.append("        return self")

@@ -20,6 +20,14 @@ export interface IPhysicsRaycastHit2D { bodyHandle: number; colliderHandle: numb
 export interface IPhysicsCollisionEvent2D { bodyA: number; bodyB: number; kind: number; }
 /** Frame timing statistics from the debug overlay rolling window */
 export interface IFpsStats { currentFps: number; minFps: number; maxFps: number; avgFps: number; frameTimeMs: number; }
+/** Pre-init debugger runtime configuration for desktop contexts. */
+export interface IDebuggerConfig { enabled: boolean; publishLocalAttach: boolean; routeLabel: string; }
+/** Pre-init configuration for headless context creation. */
+export interface IContextConfig { debugger: IDebuggerConfig; }
+/** Tracked current and peak bytes for one debugger memory category. */
+export interface IMemoryCategoryStats { currentBytes: number; peakBytes: number; }
+/** Debugger-owned aggregate memory summary for one route. */
+export interface IMemorySummary { rendering: IMemoryCategoryStats; assets: IMemoryCategoryStats; ecs: IMemoryCategoryStats; ui: IMemoryCategoryStats; audio: IMemoryCategoryStats; network: IMemoryCategoryStats; debugger: IMemoryCategoryStats; other: IMemoryCategoryStats; totalCurrentBytes: number; totalPeakBytes: number; }
 /** Aggregate network statistics for a network handle */
 export interface INetworkStats { bytesSent: number; bytesReceived: number; packetsSent: number; packetsReceived: number; packetsLost: number; rttMs: number; sendBandwidthBytesPerSec: number; receiveBandwidthBytesPerSec: number; packetLossPercent: number; jitterMs: number; }
 /** Debug-only network simulation settings for a network handle */
@@ -295,6 +303,18 @@ export interface IGoudGame {
   setFpsUpdateInterval(interval: number): void;
   /** Sets the screen corner where the FPS overlay is displayed */
   setFpsOverlayCorner(corner: number): void;
+  /** Returns the latest debugger snapshot JSON for this route. */
+  getDebuggerSnapshotJson(): string;
+  /** Returns the current process-wide debugger manifest JSON. */
+  getDebuggerManifestJson(): string;
+  /** Enables or disables per-system debugger profiling for this route. */
+  setDebuggerProfilingEnabled(enabled: boolean): void;
+  /** Selects one entity for expanded debugger inspector output. */
+  setDebuggerSelectedEntity(entityId: number): void;
+  /** Clears the selected debugger inspector entity for this route. */
+  clearDebuggerSelectedEntity(): void;
+  /** Returns debugger-owned aggregate memory statistics for this route. */
+  getMemorySummary(): IMemorySummary;
   /** Maps an action name to a key */
   mapActionKey(action: string, key: number): boolean;
   /** Returns true if the action is currently pressed */
@@ -455,6 +475,12 @@ export interface IGoudContext {
   clearNetworkSimulation(handle: number): number;
   setNetworkOverlayHandle(handle: number): number;
   clearNetworkOverlayHandle(): number;
+  getDebuggerSnapshotJson(): string;
+  getDebuggerManifestJson(): string;
+  setDebuggerProfilingEnabled(enabled: boolean): void;
+  setDebuggerSelectedEntity(entityId: number): void;
+  clearDebuggerSelectedEntity(): void;
+  getMemorySummary(): IMemorySummary;
 }
 
 /** Data for a fired animation event */
@@ -486,6 +512,8 @@ export interface IEngineConfig {
   setPhysicsDebug(enabled: boolean): IEngineConfig;
   /** Selects the 2D physics backend used by the built game */
   setPhysicsBackend2D(backend: PhysicsBackend2D): IEngineConfig;
+  /** Configures debugger runtime startup for the created game. */
+  setDebugger(debuggerConfig: IDebuggerConfig): IEngineConfig;
   /** Consumes the config and creates a windowed GoudGame instance */
   build(): IGoudGame;
   /** Frees the config without building */

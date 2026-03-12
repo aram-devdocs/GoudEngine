@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::context_registry::GoudContextId;
+use crate::core::context_id::GoudContextId;
 
 /// Stable route identity for a debuggable context within one process lifetime.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

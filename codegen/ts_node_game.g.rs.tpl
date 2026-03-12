@@ -21,12 +21,17 @@ use goud_engine::ffi::collision::{
     GoudContact,
 };
 use goud_engine::ffi::context::{
-    goud_context_create, goud_context_destroy, goud_context_is_valid, GoudContextId,
+    goud_context_create, goud_context_create_with_config, goud_context_destroy,
+    goud_context_is_valid, GoudContextConfig, GoudContextId, GoudDebuggerConfig,
     GOUD_INVALID_CONTEXT_ID,
 };
 use goud_engine::ffi::debug::{
     goud_debug_get_fps_stats, goud_debug_set_fps_overlay_corner,
     goud_debug_set_fps_overlay_enabled, goud_debug_set_fps_update_interval,
+    goud_debugger_clear_selected_entity, goud_debugger_get_manifest_json,
+    goud_debugger_get_memory_summary, goud_debugger_get_snapshot_json,
+    goud_debugger_set_profiling_enabled, goud_debugger_set_selected_entity,
+    GoudMemoryCategoryStats, GoudMemorySummary,
 };
 use goud_engine::ffi::entity::{
     goud_entity_count, goud_entity_despawn, goud_entity_is_alive, goud_entity_spawn_batch,
@@ -118,6 +123,7 @@ use goud_engine::ui::UiManager as EngineUiManager;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::ffi::CString;
+use std::ptr;
 
 // =============================================================================
 // GameConfig
@@ -182,6 +188,42 @@ pub struct NapiFpsStats {
     pub max_fps: f64,
     pub avg_fps: f64,
     pub frame_time_ms: f64,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiDebuggerConfig {
+    pub enabled: bool,
+    pub publish_local_attach: bool,
+    pub route_label: String,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiContextConfig {
+    pub debugger: NapiDebuggerConfig,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiMemoryCategoryStats {
+    pub current_bytes: f64,
+    pub peak_bytes: f64,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiMemorySummary {
+    pub rendering: NapiMemoryCategoryStats,
+    pub assets: NapiMemoryCategoryStats,
+    pub ecs: NapiMemoryCategoryStats,
+    pub ui: NapiMemoryCategoryStats,
+    pub audio: NapiMemoryCategoryStats,
+    pub network: NapiMemoryCategoryStats,
+    pub debugger: NapiMemoryCategoryStats,
+    pub other: NapiMemoryCategoryStats,
+    pub total_current_bytes: f64,
+    pub total_peak_bytes: f64,
 }
 
 // =============================================================================
@@ -288,6 +330,72 @@ fn map_network_stats(stats: FfiNetworkStats) -> NapiNetworkStats {
         receive_bandwidth_bytes_per_sec: stats.receive_bandwidth_bytes_per_sec as f64,
         packet_loss_percent: stats.packet_loss_percent as f64,
         jitter_ms: stats.jitter_ms as f64,
+    }
+}
+
+fn map_memory_category_stats(stats: GoudMemoryCategoryStats) -> NapiMemoryCategoryStats {
+    NapiMemoryCategoryStats {
+        current_bytes: stats.current_bytes as f64,
+        peak_bytes: stats.peak_bytes as f64,
+    }
+}
+
+fn map_memory_summary(summary: GoudMemorySummary) -> NapiMemorySummary {
+    NapiMemorySummary {
+        rendering: map_memory_category_stats(summary.rendering),
+        assets: map_memory_category_stats(summary.assets),
+        ecs: map_memory_category_stats(summary.ecs),
+        ui: map_memory_category_stats(summary.ui),
+        audio: map_memory_category_stats(summary.audio),
+        network: map_memory_category_stats(summary.network),
+        debugger: map_memory_category_stats(summary.debugger),
+        other: map_memory_category_stats(summary.other),
+        total_current_bytes: summary.total_current_bytes as f64,
+        total_peak_bytes: summary.total_peak_bytes as f64,
+    }
+}
+
+fn read_debugger_json(
+    mut reader: impl FnMut(*mut u8, usize) -> i32,
+    name: &str,
+) -> Result<String> {
+    let required = reader(ptr::null_mut(), 0);
+    if required == -1 {
+        return Err(Error::from_reason(format!("{name} failed")));
+    }
+    if required == 0 {
+        return Ok(String::new());
+    }
+
+    let mut buffer_len = if required < 0 {
+        (-required) as usize
+    } else {
+        required as usize + 1
+    };
+
+    loop {
+        let mut buffer = vec![0u8; buffer_len];
+        let written = reader(buffer.as_mut_ptr(), buffer.len());
+        if written == -1 {
+            return Err(Error::from_reason(format!("{name} failed")));
+        }
+        if written < 0 {
+            buffer_len = (-written) as usize;
+            continue;
+        }
+        buffer.truncate(written as usize);
+        return String::from_utf8(buffer)
+            .map_err(|err| Error::from_reason(format!("{name} returned invalid UTF-8: {err}")));
+    }
+}
+
+fn debugger_status_result(status: i32, name: &str) -> Result<()> {
+    if status < 0 {
+        Err(Error::from_reason(format!(
+            "{name} failed with status {status}"
+        )))
+    } else {
+        Ok(())
     }
 }
 
@@ -611,6 +719,59 @@ impl GoudGame {
     #[napi]
     pub fn set_fps_overlay_corner(&self, corner: i32) {
         goud_debug_set_fps_overlay_corner(self.context_id, corner);
+    }
+
+    #[napi]
+    pub fn get_debugger_snapshot_json(&self) -> Result<String> {
+        read_debugger_json(
+            |buf, buf_len| unsafe { goud_debugger_get_snapshot_json(self.context_id, buf, buf_len) },
+            "goud_debugger_get_snapshot_json",
+        )
+    }
+
+    #[napi]
+    pub fn get_debugger_manifest_json(&self) -> Result<String> {
+        read_debugger_json(
+            |buf, buf_len| unsafe { goud_debugger_get_manifest_json(buf, buf_len) },
+            "goud_debugger_get_manifest_json",
+        )
+    }
+
+    #[napi]
+    pub fn set_debugger_profiling_enabled(&self, enabled: bool) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_set_profiling_enabled(self.context_id, enabled),
+            "goud_debugger_set_profiling_enabled",
+        )
+    }
+
+    #[napi]
+    pub fn set_debugger_selected_entity(&self, entity_id: f64) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_set_selected_entity(self.context_id, entity_id as u64),
+            "goud_debugger_set_selected_entity",
+        )
+    }
+
+    #[napi]
+    pub fn clear_debugger_selected_entity(&self) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_clear_selected_entity(self.context_id),
+            "goud_debugger_clear_selected_entity",
+        )
+    }
+
+    #[napi]
+    pub fn get_memory_summary(&self) -> Result<NapiMemorySummary> {
+        let mut summary = GoudMemorySummary::default();
+        let rc = unsafe { goud_debugger_get_memory_summary(self.context_id, &mut summary) };
+        if rc < 0 {
+            return Err(Error::from_reason(format!(
+                "goud_debugger_get_memory_summary failed with status {}",
+                rc
+            )));
+        }
+        Ok(map_memory_summary(summary))
     }
 
     // =========================================================================
@@ -2023,8 +2184,21 @@ pub struct GoudContext {
 #[napi]
 impl GoudContext {
     #[napi(constructor)]
-    pub fn new() -> Result<Self> {
-        let context_id = goud_context_create();
+    pub fn new(config: Option<NapiContextConfig>) -> Result<Self> {
+        let context_id = if let Some(config) = config {
+            let route_label = CString::new(config.debugger.route_label)
+                .map_err(|_| Error::from_reason("Debugger route label contains interior null byte"))?;
+            let ffi_config = GoudContextConfig {
+                debugger: GoudDebuggerConfig {
+                    enabled: config.debugger.enabled,
+                    publish_local_attach: config.debugger.publish_local_attach,
+                    route_label: route_label.as_ptr(),
+                },
+            };
+            unsafe { goud_context_create_with_config(&ffi_config) }
+        } else {
+            goud_context_create()
+        };
         if context_id == GOUD_INVALID_CONTEXT_ID {
             return Err(Error::from_reason("Failed to create headless context"));
         }
@@ -2230,6 +2404,59 @@ impl GoudContext {
     #[napi]
     pub fn clear_network_overlay_handle(&self) -> i32 {
         goud_network_clear_overlay_handle(self.context_id)
+    }
+
+    #[napi]
+    pub fn get_debugger_snapshot_json(&self) -> Result<String> {
+        read_debugger_json(
+            |buf, buf_len| unsafe { goud_debugger_get_snapshot_json(self.context_id, buf, buf_len) },
+            "goud_debugger_get_snapshot_json",
+        )
+    }
+
+    #[napi]
+    pub fn get_debugger_manifest_json(&self) -> Result<String> {
+        read_debugger_json(
+            |buf, buf_len| unsafe { goud_debugger_get_manifest_json(buf, buf_len) },
+            "goud_debugger_get_manifest_json",
+        )
+    }
+
+    #[napi]
+    pub fn set_debugger_profiling_enabled(&self, enabled: bool) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_set_profiling_enabled(self.context_id, enabled),
+            "goud_debugger_set_profiling_enabled",
+        )
+    }
+
+    #[napi]
+    pub fn set_debugger_selected_entity(&self, entity_id: f64) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_set_selected_entity(self.context_id, entity_id as u64),
+            "goud_debugger_set_selected_entity",
+        )
+    }
+
+    #[napi]
+    pub fn clear_debugger_selected_entity(&self) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_clear_selected_entity(self.context_id),
+            "goud_debugger_clear_selected_entity",
+        )
+    }
+
+    #[napi]
+    pub fn get_memory_summary(&self) -> Result<NapiMemorySummary> {
+        let mut summary = GoudMemorySummary::default();
+        let rc = unsafe { goud_debugger_get_memory_summary(self.context_id, &mut summary) };
+        if rc < 0 {
+            return Err(Error::from_reason(format!(
+                "goud_debugger_get_memory_summary failed with status {}",
+                rc
+            )));
+        }
+        Ok(map_memory_summary(summary))
     }
 }
 
@@ -3073,6 +3300,28 @@ impl NativeEngineConfig {
             goud_engine::ffi::engine_config::goud_engine_config_set_physics_backend_2d(
                 self.handle,
                 backend,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn set_debugger(&self, debugger: NapiDebuggerConfig) -> bool {
+        if self.handle.is_null() {
+            return false;
+        }
+        let route_label = match CString::new(debugger.route_label) {
+            Ok(label) => label,
+            Err(_) => return false,
+        };
+        let ffi_debugger = GoudDebuggerConfig {
+            enabled: debugger.enabled,
+            publish_local_attach: debugger.publish_local_attach,
+            route_label: route_label.as_ptr(),
+        };
+        unsafe {
+            goud_engine::ffi::engine_config::goud_engine_config_set_debugger(
+                self.handle,
+                &ffi_debugger,
             )
         }
     }

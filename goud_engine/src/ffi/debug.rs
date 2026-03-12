@@ -2,17 +2,22 @@
 //!
 //! FFI functions for querying FPS statistics and controlling the debug overlay.
 
+use crate::core::debugger;
 use crate::core::error::{
     is_diagnostic_enabled, last_error_backtrace, set_diagnostic_enabled, set_last_error, GoudError,
 };
-use crate::core::debugger;
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
 use crate::sdk::debug_overlay::{FpsStats, OverlayCorner};
 
 mod debugger_runtime;
 
-pub use debugger_runtime::{GoudMemoryCategoryStats, GoudMemorySummary};
+pub use debugger_runtime::{
+    goud_debugger_clear_selected_entity, goud_debugger_get_manifest_json,
+    goud_debugger_get_memory_summary, goud_debugger_get_snapshot_json,
+    goud_debugger_set_profiling_enabled, goud_debugger_set_selected_entity,
+    GoudMemoryCategoryStats, GoudMemorySummary,
+};
 /// Retrieves the current FPS statistics from the debug overlay.
 ///
 /// # Arguments
@@ -65,7 +70,6 @@ pub unsafe extern "C" fn goud_debug_get_fps_stats(
         -1
     })
 }
-
 
 /// Enables or disables the FPS overlay.
 ///

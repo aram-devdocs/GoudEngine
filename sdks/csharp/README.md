@@ -60,6 +60,29 @@ while (true)
 }
 ```
 
+## Debugger Runtime
+
+The desktop C# SDK can opt into the shared Rust-owned debugger runtime before startup. Once enabled, you can read the raw snapshot/manifest JSON, toggle profiling, and inspect aggregate memory totals without creating any SDK-local debugger state.
+
+```csharp
+using GoudEngine;
+
+using var config = new EngineConfig()
+    .SetTitle("Debugger Demo")
+    .SetDebugger(new DebuggerConfig(true, true, "csharp-demo"));
+
+var game = config.Build();
+game.SetDebuggerProfilingEnabled(true);
+
+using var snapshot = game.ParseDebuggerSnapshot();
+string manifestJson = game.GetDebuggerManifestJson();
+MemorySummary memory = game.GetMemorySummary();
+
+game.SetDebuggerSelectedEntity(42);
+game.ClearDebuggerSelectedEntity();
+game.Destroy();
+```
+
 ## Flappy Bird Example
 
 A condensed view of the Flappy Bird clone showing how the main patterns fit together.

@@ -8,6 +8,7 @@ use std::os::raw::c_char;
 
 use crate::core::error::{set_last_error, GoudError};
 use crate::core::providers::types::PhysicsBackend2D;
+use crate::ffi::context::GoudDebuggerConfig;
 use crate::sdk::engine_config::EngineConfig;
 
 #[cfg(feature = "native")]
@@ -246,6 +247,56 @@ pub unsafe extern "C" fn goud_engine_config_set_physics_backend_2d(
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.
     let config = &mut *(handle as *mut EngineConfig);
     config.set_physics_backend_2d(backend);
+    true
+}
+
+/// Configures debugger runtime startup for engines built from this `EngineConfig`.
+///
+/// # Safety
+/// - `handle` must be a valid `EngineConfig` handle.
+/// - `debugger` must be null or point to a valid [`GoudDebuggerConfig`] for the duration of this call.
+#[no_mangle]
+pub unsafe extern "C" fn goud_engine_config_set_debugger(
+    handle: EngineConfigHandle,
+    debugger: *const GoudDebuggerConfig,
+) -> bool {
+    if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
+        return false;
+    }
+
+    let debugger = if debugger.is_null() {
+        crate::core::debugger::DebuggerConfig::default()
+    } else {
+        // SAFETY: `debugger` is validated non-null above and only read for the duration of this call.
+        let debugger = unsafe { &*debugger };
+        let route_label = if debugger.route_label.is_null() {
+            None
+        } else {
+            // SAFETY: Caller guarantees `route_label` is null or a valid null-terminated UTF-8 string.
+            match unsafe { CStr::from_ptr(debugger.route_label) }.to_str() {
+                Ok(label) => Some(label.to_string()),
+                Err(_) => {
+                    set_last_error(GoudError::InvalidState(
+                        "route_label is not valid UTF-8".to_string(),
+                    ));
+                    return false;
+                }
+            }
+        };
+
+        crate::core::debugger::DebuggerConfig {
+            enabled: debugger.enabled,
+            publish_local_attach: debugger.publish_local_attach,
+            route_label,
+        }
+    };
+
+    // SAFETY: Caller guarantees handle points to a valid EngineConfig.
+    let config = unsafe { &mut *(handle as *mut EngineConfig) };
+    config.game_config_mut().debugger = debugger;
     true
 }
 

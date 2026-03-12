@@ -710,6 +710,114 @@ namespace GoudEngine
             NativeMethods.goud_debug_set_fps_overlay_corner(_ctx, (int)corner);
         }
 
+        /// <summary>Returns the latest debugger snapshot JSON for this route.</summary>
+        public string GetDebuggerSnapshotJson()
+        {
+            unsafe
+            {
+                int _required = NativeMethods.goud_debugger_get_snapshot_json(_ctx, IntPtr.Zero, (nuint)0);
+                if (_required == -1)
+                {
+                    var _ex = GoudException.FromLastError();
+                    if (_ex != null) throw _ex;
+                    throw new InvalidOperationException("goud_debugger_get_snapshot_json failed.");
+                }
+                if (_required == 0) return string.Empty;
+                int _bufferSize = _required < 0 ? -_required : _required + 1;
+                while (true)
+                {
+                    var _buf = new byte[_bufferSize];
+                    fixed (byte* _ptr = _buf)
+                    {
+                        int _written = NativeMethods.goud_debugger_get_snapshot_json(_ctx, (IntPtr)_ptr, (nuint)_buf.Length);
+                        if (_written == -1)
+                        {
+                            var _ex = GoudException.FromLastError();
+                            if (_ex != null) throw _ex;
+                            throw new InvalidOperationException("goud_debugger_get_snapshot_json failed.");
+                        }
+                        if (_written < 0)
+                        {
+                            _bufferSize = -_written;
+                            continue;
+                        }
+                        if (_written == 0) return string.Empty;
+                        return System.Text.Encoding.UTF8.GetString(_buf, 0, _written);
+                    }
+                }
+            }
+        }
+
+        /// <summary>Returns the current process-wide debugger manifest JSON.</summary>
+        public string GetDebuggerManifestJson()
+        {
+            unsafe
+            {
+                int _required = NativeMethods.goud_debugger_get_manifest_json(IntPtr.Zero, (nuint)0);
+                if (_required == -1)
+                {
+                    var _ex = GoudException.FromLastError();
+                    if (_ex != null) throw _ex;
+                    throw new InvalidOperationException("goud_debugger_get_manifest_json failed.");
+                }
+                if (_required == 0) return string.Empty;
+                int _bufferSize = _required < 0 ? -_required : _required + 1;
+                while (true)
+                {
+                    var _buf = new byte[_bufferSize];
+                    fixed (byte* _ptr = _buf)
+                    {
+                        int _written = NativeMethods.goud_debugger_get_manifest_json((IntPtr)_ptr, (nuint)_buf.Length);
+                        if (_written == -1)
+                        {
+                            var _ex = GoudException.FromLastError();
+                            if (_ex != null) throw _ex;
+                            throw new InvalidOperationException("goud_debugger_get_manifest_json failed.");
+                        }
+                        if (_written < 0)
+                        {
+                            _bufferSize = -_written;
+                            continue;
+                        }
+                        if (_written == 0) return string.Empty;
+                        return System.Text.Encoding.UTF8.GetString(_buf, 0, _written);
+                    }
+                }
+            }
+        }
+
+        /// <summary>Enables or disables per-system debugger profiling for this route.</summary>
+        public void SetDebuggerProfilingEnabled(bool enabled)
+        {
+            NativeMethods.goud_debugger_set_profiling_enabled(_ctx, enabled);
+        }
+
+        /// <summary>Selects one entity for expanded debugger inspector output.</summary>
+        public void SetDebuggerSelectedEntity(ulong entityId)
+        {
+            NativeMethods.goud_debugger_set_selected_entity(_ctx, entityId);
+        }
+
+        /// <summary>Clears the selected debugger inspector entity for this route.</summary>
+        public void ClearDebuggerSelectedEntity()
+        {
+            NativeMethods.goud_debugger_clear_selected_entity(_ctx);
+        }
+
+        /// <summary>Returns debugger-owned aggregate memory statistics for this route.</summary>
+        public MemorySummary GetMemorySummary()
+        {
+            GoudMemorySummary _summary = default;
+            var _status = NativeMethods.goud_debugger_get_memory_summary(_ctx, ref _summary);
+            if (_status < 0)
+            {
+                var _ex = GoudException.FromLastError();
+                if (_ex != null) throw _ex;
+                throw new InvalidOperationException($"goud_debugger_get_memory_summary failed with status {_status}.");
+            }
+            return new MemorySummary(new MemoryCategoryStats(_summary.Rendering.CurrentBytes, _summary.Rendering.PeakBytes), new MemoryCategoryStats(_summary.Assets.CurrentBytes, _summary.Assets.PeakBytes), new MemoryCategoryStats(_summary.Ecs.CurrentBytes, _summary.Ecs.PeakBytes), new MemoryCategoryStats(_summary.Ui.CurrentBytes, _summary.Ui.PeakBytes), new MemoryCategoryStats(_summary.Audio.CurrentBytes, _summary.Audio.PeakBytes), new MemoryCategoryStats(_summary.Network.CurrentBytes, _summary.Network.PeakBytes), new MemoryCategoryStats(_summary.Debugger.CurrentBytes, _summary.Debugger.PeakBytes), new MemoryCategoryStats(_summary.Other.CurrentBytes, _summary.Other.PeakBytes), _summary.TotalCurrentBytes, _summary.TotalPeakBytes);
+        }
+
         /// <summary>Maps an action name to a key</summary>
         public bool MapActionKey(string action, Keys key)
         {

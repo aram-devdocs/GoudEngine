@@ -156,7 +156,7 @@ def gen_web_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
+        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "import { PhysicsBackend2D } from '../types/input.g.js';",
         "import { attachInputHandlers } from './input.g.js';",
@@ -164,7 +164,7 @@ def gen_web_wrapper():
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';",
         "export { Rect } from '../types/math.g.js';",
-        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
+        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
         "",
         "const PRELOAD_TEXTURE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'tga', 'dds']);",
         "const PRELOAD_FONT_EXTENSIONS = new Set(['ttf', 'otf', 'woff', 'woff2', 'fnt']);",
@@ -361,6 +361,10 @@ def gen_web_wrapper():
     lines.append("export interface WebGameConfig {")
     lines.append("  width?: number; height?: number; title?: string;")
     lines.append("  canvas?: HTMLCanvasElement; wasmUrl?: string;")
+    lines.append("}")
+    lines.append("")
+    lines.append("function debuggerUnsupported(): never {")
+    lines.append("  throw new Error('Debugger runtime is not supported in WASM mode');")
     lines.append("}")
     lines.append("")
 
@@ -1001,6 +1005,12 @@ def gen_web_wrapper():
     lines.append("  setFpsOverlayEnabled(_enabled: boolean): void {}")
     lines.append("  setFpsUpdateInterval(_interval: number): void {}")
     lines.append("  setFpsOverlayCorner(_corner: number): void {}")
+    lines.append("  getDebuggerSnapshotJson(): string { return debuggerUnsupported(); }")
+    lines.append("  getDebuggerManifestJson(): string { return debuggerUnsupported(); }")
+    lines.append("  setDebuggerProfilingEnabled(_enabled: boolean): void { debuggerUnsupported(); }")
+    lines.append("  setDebuggerSelectedEntity(_entityId: number): void { debuggerUnsupported(); }")
+    lines.append("  clearDebuggerSelectedEntity(): void { debuggerUnsupported(); }")
+    lines.append("  getMemorySummary(): IMemorySummary { return debuggerUnsupported(); }")
     lines.append("")
     lines.append("  // TODO: wasm animation -- these stub methods satisfy the IGoudGame interface")
     lines.append("  play(_entity: IEntity): number { return 0; }")
@@ -1085,6 +1095,10 @@ def gen_web_wrapper():
                 lines.append("  setFpsOverlay(_enabled: boolean): EngineConfig {")
                 lines.append("    // FPS overlay is not yet supported in WASM; accepted for API parity.")
                 lines.append("    return this;")
+                lines.append("  }")
+            elif mn == "setDebugger":
+                lines.append("  setDebugger(_debugger: IDebuggerConfig): EngineConfig {")
+                lines.append("    debuggerUnsupported();")
                 lines.append("  }")
             else:
                 ps = ", ".join(f"_{to_camel(p['name'])}: {ts_type(p['type'])}" for p in params)

@@ -16,6 +16,24 @@ from .helpers import (
     _cs_len_cast_expr,
 )
 
+
+def _cs_sdk_value_expr(source_expr: str, schema_type: str) -> str:
+    """Build a C# SDK value-constructor expression from an FFI value expression."""
+    type_def = schema.get("types", {}).get(schema_type, {})
+    if type_def.get("kind") != "value":
+        return source_expr
+
+    field_exprs = []
+    for field in type_def.get("fields", []):
+        field_type = field["type"]
+        access_expr = f"{source_expr}.{to_pascal(field['name'])}"
+        if field_type in schema.get("types", {}) and schema["types"][field_type].get("kind") == "value":
+            field_exprs.append(_cs_sdk_value_expr(access_expr, field_type))
+        else:
+            field_exprs.append(access_expr)
+    return f"new {schema_type}({', '.join(field_exprs)})"
+
+
 def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_windowed: bool):
     """Emit the body statements for one method into list L."""
     if mn == "Destroy":
@@ -246,13 +264,12 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
             else:
                 L.append(f"            NativeMethods.{ffi_fn}({', '.join(ffi_parts)});")
 
-        rs_fields = schema["types"][struct_name]["fields"]
         if len(out_params) == 1 and out_params[0]["type"] not in CSHARP_TYPES:
             src = out_locals[0]
-            field_args = ", ".join(f"{src}.{to_pascal(f['name'])}" for f in rs_fields)
+            L.append(f"            return {_cs_sdk_value_expr(src, struct_name)};")
         else:
             field_args = ", ".join(out_locals)
-        L.append(f"            return new {struct_name}({field_args});")
+            L.append(f"            return new {struct_name}({field_args});")
         return
     if "out_params" in mm and "returns_scalar" in mm:
         ffi_fn = mm["ffi"]
@@ -332,6 +349,73 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
             L.append("                    return result;")
         L.append("                }")
         L.append("            }")
+        return
+    if mm.get("buffer_protocol"):
+        ffi_fn = mm["ffi"]
+        no_ctx = mm.get("no_context", False)
+        entity_set = set(mm.get("entity_params", []))
+        enum_set = set(mm.get("enum_params", {}).keys())
+        ffi_args_parts = []
+        ffi_param_index = 0 if no_ctx else 1
+        for p in params:
+            pname = p["name"]
+            if pname in entity_set:
+                ffi_args_parts.append(f"{pname}.ToBits()")
+            elif pname in enum_set or p["type"] in schema.get("enums", {}):
+                expected = _ffi_param_type_at(ffi_fn, ffi_param_index)
+                if expected.startswith("Ffi") and expected[3:] in schema.get("enums", {}):
+                    ffi_args_parts.append(pname)
+                else:
+                    underlying = schema["enums"][p["type"]].get("underlying", "i32")
+                    ffi_args_parts.append(f"({cs_type(underlying)}){pname}")
+            else:
+                ffi_args_parts.append(pname)
+            ffi_param_index += 1
+
+        def _buffer_call(ptr_expr: str, len_expr: str) -> str:
+            prefix = "" if no_ctx else "_ctx, "
+            arg_prefix = ", ".join(ffi_args_parts)
+            args = prefix
+            if arg_prefix:
+                args += f"{arg_prefix}, "
+            args += f"{ptr_expr}, {len_expr}"
+            return f"NativeMethods.{ffi_fn}({args})"
+
+        L += [
+            "            unsafe",
+            "            {",
+            f"                int _required = {_buffer_call('IntPtr.Zero', '(nuint)0')};",
+            "                if (_required == -1)",
+            "                {",
+            "                    var _ex = GoudException.FromLastError();",
+            "                    if (_ex != null) throw _ex;",
+            f'                    throw new InvalidOperationException("{ffi_fn} failed.");',
+            "                }",
+            "                if (_required == 0) return string.Empty;",
+            "                int _bufferSize = _required < 0 ? -_required : _required + 1;",
+            "                while (true)",
+            "                {",
+            "                    var _buf = new byte[_bufferSize];",
+            "                    fixed (byte* _ptr = _buf)",
+            "                    {",
+            f"                        int _written = {_buffer_call('(IntPtr)_ptr', '(nuint)_buf.Length')};",
+            "                        if (_written == -1)",
+            "                        {",
+            "                            var _ex = GoudException.FromLastError();",
+            "                            if (_ex != null) throw _ex;",
+            f'                            throw new InvalidOperationException("{ffi_fn} failed.");',
+            "                        }",
+            "                        if (_written < 0)",
+            "                        {",
+            "                            _bufferSize = -_written;",
+            "                            continue;",
+            "                        }",
+            "                        if (_written == 0) return string.Empty;",
+            "                        return System.Text.Encoding.UTF8.GetString(_buf, 0, _written);",
+            "                    }",
+            "                }",
+            "            }",
+        ]
         return
     if "out_params" in mm:
         for op in mm["out_params"]:

@@ -5,8 +5,8 @@ use crate::ecs::World;
 
 #[cfg(feature = "native")]
 use super::super::parallel_types::UnsafePtr;
-use super::ParallelSystemStage;
 use super::ParallelExecutionStats;
+use super::ParallelSystemStage;
 
 impl ParallelSystemStage {
     /// Runs all systems using parallel execution.

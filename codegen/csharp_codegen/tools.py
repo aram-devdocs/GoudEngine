@@ -78,6 +78,26 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
         "        }", "",
     ]
 
+    if class_name == "GoudContext":
+        lines += [
+            "        public GoudContext(ContextConfig config)",
+            "        {",
+            "            var _debuggerFfi = new GoudDebuggerConfig",
+            "            {",
+            "                Enabled = config.Debugger.Enabled,",
+            "                PublishLocalAttach = config.Debugger.PublishLocalAttach,",
+            "                RouteLabel = config.Debugger.RouteLabel,",
+            "            };",
+            "            var _configFfi = new GoudContextConfig",
+            "            {",
+            "                Debugger = _debuggerFfi,",
+            "            };",
+            "            _ctx = NativeMethods.goud_context_create_with_config(ref _configFfi);",
+            '            if (!_ctx.IsValid) throw new Exception("Failed to create headless context");',
+            "        }",
+            "",
+        ]
+
     # Internal constructor for EngineConfig.Build() to construct from pre-created context
     if is_windowed:
         lines += [

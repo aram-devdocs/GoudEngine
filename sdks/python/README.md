@@ -89,6 +89,38 @@ host_ctx.destroy()
 client_ctx.destroy()
 ```
 
+## Debugger Runtime
+
+The Python desktop bindings can enable the shared debugger runtime through pre-init config on `GoudContext`, then read JSON snapshots or aggregate memory data through thin helpers.
+
+```python
+from goud_engine import (
+    ContextConfig,
+    DebuggerConfig,
+    GoudContext,
+    parse_debugger_snapshot,
+)
+
+ctx = GoudContext(
+    ContextConfig(
+        debugger=DebuggerConfig(
+            enabled=True,
+            publish_local_attach=True,
+            route_label="python-demo",
+        )
+    )
+)
+
+ctx.set_debugger_profiling_enabled(True)
+snapshot = parse_debugger_snapshot(ctx)
+manifest_json = ctx.get_debugger_manifest_json()
+memory = ctx.get_memory_summary()
+
+ctx.set_debugger_selected_entity(42)
+ctx.clear_debugger_selected_entity()
+ctx.destroy()
+```
+
 ## Features
 
 - 2D and 3D rendering with runtime renderer selection

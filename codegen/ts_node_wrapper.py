@@ -9,6 +9,7 @@ from ts_node_shared import (
     mapping,
     schema,
     to_camel,
+    ts_param_name,
     ts_iface_type,
     ts_type,
     write_generated,
@@ -40,6 +41,9 @@ NATIVE_KNOWN_METHODS = {
     "drawSpriteRect", "setViewport", "enableDepthTest", "disableDepthTest",
     "clearDepth", "disableBlending", "getRenderStats",
     "getFpsStats", "setFpsOverlayEnabled", "setFpsUpdateInterval", "setFpsOverlayCorner",
+    "getDebuggerSnapshotJson", "getDebuggerManifestJson",
+    "setDebuggerProfilingEnabled", "setDebuggerSelectedEntity", "clearDebuggerSelectedEntity",
+    "getMemorySummary",
     "mapActionKey", "isActionPressed", "isActionJustPressed", "isActionJustReleased",
     "collisionAabbAabb", "collisionCircleCircle", "collisionCircleAabb",
     "pointInRect", "pointInCircle", "aabbOverlap", "circleOverlap",
@@ -73,20 +77,12 @@ def gen_node_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import {",
-        "  GoudGame as NativeGoudGame,",
-        "  GoudContext as NativeGoudContext,",
-        "  UiManager as NativeUiManager,",
-        "  Entity as NativeEntity,",
-        "  type GameConfig,",
-        "} from '../../../index';",
-        "",
-        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
+        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
         "import { PhysicsBackend2D } from '../types/input.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';",
-        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';",
+        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';",
         "",
         "export interface INetworkConnectResult { handle: number; peerId: number; }",
         "export interface INetworkPacket { peerId: number; data: Uint8Array; }",
@@ -108,6 +104,16 @@ def gen_node_wrapper():
         "  clearNetworkSimulation(handle: number): number;",
         "  setNetworkOverlayHandle(handle: number): number;",
         "  clearNetworkOverlayHandle(): number;",
+        "  getDebuggerSnapshotJson(): string;",
+        "  getDebuggerManifestJson(): string;",
+        "  setDebuggerProfilingEnabled(enabled: boolean): void;",
+        "  setDebuggerSelectedEntity(entityId: number): void;",
+        "  clearDebuggerSelectedEntity(): void;",
+        "  getMemorySummary(): IMemorySummary;",
+        "}",
+        "",
+        "function getNativeBindings(): any {",
+        "  return eval('require')(\"../../../index\");",
         "}",
         "",
         "const PRELOAD_TEXTURE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'tga', 'dds']);",
@@ -127,12 +133,34 @@ def gen_node_wrapper():
         "  return { path: asset.path, kind: asset.kind ?? detectPreloadKind(asset.path) };",
         "}",
         "",
+        "function mapMemoryCategoryStats(stats: any): IMemoryCategoryStats {",
+        "  return {",
+        "    currentBytes: stats.current_bytes ?? stats.currentBytes ?? 0,",
+        "    peakBytes: stats.peak_bytes ?? stats.peakBytes ?? 0,",
+        "  };",
+        "}",
+        "",
+        "function mapMemorySummary(summary: any): IMemorySummary {",
+        "  return {",
+        "    rendering: mapMemoryCategoryStats(summary.rendering),",
+        "    assets: mapMemoryCategoryStats(summary.assets),",
+        "    ecs: mapMemoryCategoryStats(summary.ecs),",
+        "    ui: mapMemoryCategoryStats(summary.ui),",
+        "    audio: mapMemoryCategoryStats(summary.audio),",
+        "    network: mapMemoryCategoryStats(summary.network),",
+        "    debugger: mapMemoryCategoryStats(summary.debugger),",
+        "    other: mapMemoryCategoryStats(summary.other),",
+        "    totalCurrentBytes: summary.total_current_bytes ?? summary.totalCurrentBytes ?? 0,",
+        "    totalPeakBytes: summary.total_peak_bytes ?? summary.totalPeakBytes ?? 0,",
+        "  };",
+        "}",
+        "",
     ]
     if tool.get("doc"):
         lines.append(f"/** {tool['doc']} */")
     lines += [
         "export class GoudGame implements IGoudGame {",
-        "  private native: NativeGoudGame;",
+        "  private native: any;",
         "  private readonly preloadedTextures = new Map<string, number>();",
         "  private readonly preloadedFonts = new Map<string, number>();",
         "  private readonly texturePathByHandle = new Map<number, string>();",
@@ -140,7 +168,7 @@ def gen_node_wrapper():
         "  private preloadInFlight = false;",
         "",
         "  constructor(config?: { width?: number; height?: number; title?: string }) {",
-        "    this.native = new NativeGoudGame(config as GameConfig);",
+        "    this.native = new (getNativeBindings().GoudGame as any)(config as any);",
         "  }",
         "",
         "  static async create(config?: { width?: number; height?: number; title?: string }): Promise<GoudGame> {",
@@ -173,7 +201,7 @@ def gen_node_wrapper():
         param_strs = []
         call_args = []
         for i, p in enumerate(params):
-            pn = to_camel(p["name"])
+            pn = ts_param_name(p["name"])
             pt = p["type"]
             opt = "?" if can_be_optional[i] else ""
             if pt == "callback(f32)":
@@ -217,53 +245,58 @@ def gen_node_wrapper():
             lines.append("    const c = color ?? Color.white();")
             lines.append("    return this.native.drawText(fontHandle, text, x, y, fontSize, alignment, maxWidth, lineSpacing, direction, c.r, c.g, c.b, c.a);")
         elif mn in ("getMousePosition", "getMouseDelta", "getScrollDelta"):
-            lines.append(f"    const arr = this.native.{mn}();")
-            lines.append("    return { x: arr[0], y: arr[1] };")
+            lines.append(f"    const value = this.native.{mn}();")
+            lines.append("    if (value && typeof value === 'object' && 'x' in value && 'y' in value) {")
+            lines.append("      return { x: Number(value.x), y: Number(value.y) };")
+            lines.append("    }")
+            lines.append("    return { x: value[0], y: value[1] };")
         elif mn == "spawnEmpty":
             lines.append("    return this.native.spawnEmpty() as unknown as IEntity;")
         elif mn == "spawnBatch":
             lines.append("    const arr = this.native.spawnBatch(count);")
             lines.append("    return Array.from(arr) as unknown as IEntity[];")
         elif mn == "despawn":
-            lines.append("    return this.native.despawn(entity as unknown as NativeEntity);")
+            lines.append("    return this.native.despawn(entity as any);")
         elif mn == "despawnBatch":
-            lines.append("    return (this.native as any).despawnBatch(entities as unknown as NativeEntity[]);")
+            lines.append("    return (this.native as any).despawnBatch(entities as any);")
         elif mn == "isAlive":
-            lines.append("    return this.native.isAlive(entity as unknown as NativeEntity);")
+            lines.append("    return this.native.isAlive(entity as any);")
         elif mn == "addTransform2d":
-            lines.append("    this.native.addTransform2D(entity as unknown as NativeEntity, transform as any);")
+            lines.append("    this.native.addTransform2d(entity as any, transform as any);")
         elif mn == "getTransform2d":
-            lines.append("    return this.native.getTransform2D(entity as unknown as NativeEntity) ?? null;")
+            lines.append("    return this.native.getTransform2d(entity as any) ?? null;")
         elif mn == "setTransform2d":
-            lines.append("    this.native.setTransform2D(entity as unknown as NativeEntity, transform as any);")
+            lines.append("    this.native.setTransform2d(entity as any, transform as any);")
         elif mn == "hasTransform2d":
-            lines.append("    return this.native.hasTransform2D(entity as unknown as NativeEntity);")
+            lines.append("    return this.native.hasTransform2d(entity as any);")
         elif mn == "removeTransform2d":
-            lines.append("    return this.native.removeTransform2D(entity as unknown as NativeEntity);")
+            lines.append("    return this.native.removeTransform2d(entity as any);")
         elif mn == "addSprite":
-            lines.append("    this.native.addSprite(entity as unknown as NativeEntity, sprite as any);")
+            lines.append("    this.native.addSprite(entity as any, sprite as any);")
         elif mn == "getSprite":
-            lines.append("    const raw = this.native.getSprite(entity as unknown as NativeEntity);")
+            lines.append("    const raw = this.native.getSprite(entity as any);")
             lines.append("    if (!raw) return null;")
             lines.append("    return raw as unknown as ISpriteData;")
         elif mn == "setSprite":
-            lines.append("    this.native.setSprite(entity as unknown as NativeEntity, sprite as any);")
+            lines.append("    this.native.setSprite(entity as any, sprite as any);")
         elif mn == "hasSprite":
-            lines.append("    return this.native.hasSprite(entity as unknown as NativeEntity);")
+            lines.append("    return this.native.hasSprite(entity as any);")
         elif mn == "removeSprite":
-            lines.append("    return this.native.removeSprite(entity as unknown as NativeEntity);")
+            lines.append("    return this.native.removeSprite(entity as any);")
         elif mn == "addName":
-            lines.append("    this.native.addName(entity as unknown as NativeEntity, name);")
+            lines.append("    this.native.addName(entity as any, name);")
         elif mn == "getName":
-            lines.append("    return this.native.getName(entity as unknown as NativeEntity) ?? null;")
+            lines.append("    return this.native.getName(entity as any) ?? null;")
         elif mn == "hasName":
-            lines.append("    return this.native.hasName(entity as unknown as NativeEntity);")
+            lines.append("    return this.native.hasName(entity as any);")
         elif mn == "removeName":
-            lines.append("    return this.native.removeName(entity as unknown as NativeEntity);")
+            lines.append("    return this.native.removeName(entity as any);")
         elif mn == "getRenderStats":
             lines.append("    return this.native.getRenderStats() as unknown as IRenderStats;")
         elif mn == "getFpsStats":
             lines.append("    return this.native.getFpsStats() as unknown as IFpsStats;")
+        elif mn == "getMemorySummary":
+            lines.append("    return mapMemorySummary(this.native.getMemorySummary());")
         elif mn == "getNetworkStats":
             lines.append("    return this.native.getNetworkStats(handle) as unknown as INetworkStats;")
         elif mn == "networkConnectWithPeer":
@@ -530,7 +563,7 @@ def gen_entry():
         f"// {HEADER_COMMENT}",
         "",
         f"export {{ GoudGame, GoudContext{ec_export}{ui_export}{pw2d_export}{pw3d_export}, Color, Vec2, Vec3, Key, MouseButton, PhysicsBackend2D }} from './node/index.g.js';",
-        f"export type {{ IGoudGame{ec_type_export}{ui_type_export}{pw2d_type_export}{pw3d_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig }} from './types/engine.g.js';",
+        f"export type {{ IGoudGame{ec_type_export}{ui_type_export}{pw2d_type_export}{pw3d_type_export}, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig }} from './types/engine.g.js';",
         "export type { IGoudContext, INetworkConnectResult, INetworkPacket } from './node/index.g.js';",
         "export type { Rect } from './types/math.g.js';",
         f"export {{ {', '.join(error_names)} }} from './errors.g.js';",
@@ -546,6 +579,7 @@ def gen_public_entrypoints():
         TS / "src" / "index.ts": [
             f"// {HEADER_COMMENT}",
             "export * from './generated/index.g.js';",
+            "export { parseDebuggerManifest, parseDebuggerSnapshot } from './shared/debugger.js';",
             "export { NetworkManager, NetworkEndpoint } from './shared/network.js';",
             "export type { NetworkContextLike } from './shared/network.js';",
             "export { NetworkProtocol } from './generated/types/input.g.js';",
@@ -554,6 +588,7 @@ def gen_public_entrypoints():
         TS / "src" / "node" / "index.ts": [
             f"// {HEADER_COMMENT}",
             "export * from '../generated/node/index.g.js';",
+            "export { parseDebuggerManifest, parseDebuggerSnapshot } from '../shared/debugger.js';",
             "export { NetworkManager, NetworkEndpoint } from '../shared/network.js';",
             "export type { NetworkContextLike } from '../shared/network.js';",
             "export { NetworkProtocol } from '../generated/types/input.g.js';",
@@ -562,6 +597,7 @@ def gen_public_entrypoints():
         TS / "src" / "web" / "index.ts": [
             f"// {HEADER_COMMENT}",
             "export * from '../generated/web/index.g.js';",
+            "export { parseDebuggerManifest, parseDebuggerSnapshot } from '../shared/debugger.js';",
             "export { NetworkManager, NetworkEndpoint } from '../shared/network.js';",
             "export type { NetworkContextLike } from '../shared/network.js';",
             "export { NetworkProtocol } from '../generated/types/input.g.js';",

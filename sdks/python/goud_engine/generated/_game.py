@@ -5,16 +5,38 @@ from . import _ffi as _ffi_module
 from ._ffi import (get_lib, GoudContextId, FfiVec2, FfiTransform2D, FfiSprite, FfiColor, FfiUiStyle, FfiUiEvent,
     FfiRenderCapabilities, FfiPhysicsCapabilities, FfiAudioCapabilities,
     FfiInputCapabilities, FfiNetworkCapabilities, FfiNetworkStats,
-    FfiNetworkSimulationConfig, GoudRenderStats, GoudContact)
+    FfiNetworkSimulationConfig, GoudRenderStats, GoudContact,
+    GoudMemoryCategoryStats, GoudMemorySummary)
 from ._types import (Entity, Vec2, Color, Transform2D, Sprite, RenderStats, UiStyle, UiEvent,
     RenderCapabilities, PhysicsCapabilities, AudioCapabilities, InputCapabilities, NetworkStats,
-    NetworkSimulationConfig, NetworkConnectResult, NetworkPacket, NetworkCapabilities)
+    NetworkSimulationConfig, NetworkConnectResult, NetworkPacket, NetworkCapabilities,
+    DebuggerConfig, ContextConfig, MemoryCategoryStats, MemorySummary)
 from ._errors import GoudError
 from ._keys import Key, MouseButton, PhysicsBackend2D
 
 # Type IDs for built-in component types (hash of type name)
 _TYPEID_TRANSFORM2D = hash('Transform2D') & 0xFFFFFFFFFFFFFFFF
 _TYPEID_SPRITE = hash('Sprite') & 0xFFFFFFFFFFFFFFFF
+
+def _read_string_buffer(call):
+    """Read a string from a negative-required-size buffer-protocol FFI function."""
+    required = call(None, 0)
+    if required == 0:
+        return ""
+    if required == -1:
+        raise RuntimeError('buffer-protocol FFI call failed')
+    buf_len = -required if required < 0 else required + 1
+    while True:
+        buf = (ctypes.c_uint8 * buf_len)()
+        written = call(ctypes.cast(buf, ctypes.POINTER(ctypes.c_uint8)), buf_len)
+        if written == -1:
+            raise RuntimeError('buffer-protocol FFI call failed')
+        if written < 0:
+            buf_len = -written
+            continue
+        if written == 0:
+            return ""
+        return bytes(buf[:written]).decode("utf-8", errors="replace")
 
 class GoudGame:
     """Main game engine instance. Creates a window, manages rendering, input, and ECS."""
@@ -451,6 +473,38 @@ class GoudGame:
         """Sets the screen corner where the FPS overlay is displayed"""
         return self._lib.goud_debug_set_fps_overlay_corner(self._ctx, int(corner))
 
+    def get_debugger_snapshot_json(self):
+        """Returns the latest debugger snapshot JSON for this route."""
+        return _read_string_buffer(
+            lambda _buf, _buf_len: self._lib.goud_debugger_get_snapshot_json(self._ctx, _buf, _buf_len)
+        )
+
+    def get_debugger_manifest_json(self):
+        """Returns the current process-wide debugger manifest JSON."""
+        return _read_string_buffer(
+            lambda _buf, _buf_len: self._lib.goud_debugger_get_manifest_json(_buf, _buf_len)
+        )
+
+    def set_debugger_profiling_enabled(self, enabled):
+        """Enables or disables per-system debugger profiling for this route."""
+        self._lib.goud_debugger_set_profiling_enabled(self._ctx, enabled)
+
+    def set_debugger_selected_entity(self, entity_id):
+        """Selects one entity for expanded debugger inspector output."""
+        self._lib.goud_debugger_set_selected_entity(self._ctx, entity_id)
+
+    def clear_debugger_selected_entity(self):
+        """Clears the selected debugger inspector entity for this route."""
+        self._lib.goud_debugger_clear_selected_entity(self._ctx)
+
+    def get_memory_summary(self):
+        """Returns debugger-owned aggregate memory statistics for this route."""
+        _summary = GoudMemorySummary()
+        _status = self._lib.goud_debugger_get_memory_summary(self._ctx, ctypes.byref(_summary))
+        if _status < 0:
+            raise RuntimeError(f'goud_debugger_get_memory_summary failed with status {_status}')
+        return MemorySummary(MemoryCategoryStats(_summary.rendering.current_bytes, _summary.rendering.peak_bytes), MemoryCategoryStats(_summary.assets.current_bytes, _summary.assets.peak_bytes), MemoryCategoryStats(_summary.ecs.current_bytes, _summary.ecs.peak_bytes), MemoryCategoryStats(_summary.ui.current_bytes, _summary.ui.peak_bytes), MemoryCategoryStats(_summary.audio.current_bytes, _summary.audio.peak_bytes), MemoryCategoryStats(_summary.network.current_bytes, _summary.network.peak_bytes), MemoryCategoryStats(_summary.debugger.current_bytes, _summary.debugger.peak_bytes), MemoryCategoryStats(_summary.other.current_bytes, _summary.other.peak_bytes), _summary.total_current_bytes, _summary.total_peak_bytes)
+
     def map_action_key(self, action, key):
         """Maps an action name to a key"""
         return self._lib.goud_input_map_action_key(self._ctx, int(key))
@@ -833,10 +887,24 @@ class GoudContext:
             raise error
         raise RuntimeError(message)
 
-    def __init__(self):
+    def __init__(self, config: 'ContextConfig' = None):
         lib = get_lib()
         self._lib = lib
-        self._ctx = lib.goud_context_create()
+        if config is None:
+            self._ctx = lib.goud_context_create()
+        else:
+            _config_ffi = _ffi_module.GoudContextConfig()
+            _config_ffi.debugger.enabled = config.debugger.enabled
+            _config_ffi.debugger.publish_local_attach = config.debugger.publish_local_attach
+            _route_label_bytes = None
+            if config.debugger.route_label:
+                _route_label_bytes = config.debugger.route_label.encode('utf-8')
+                _config_ffi.debugger.route_label = _route_label_bytes
+            else:
+                _config_ffi.debugger.route_label = None
+            self._ctx = lib.goud_context_create_with_config(ctypes.byref(_config_ffi))
+        if self._ctx._bits == 0xFFFFFFFFFFFFFFFF:
+            raise RuntimeError('Failed to create headless context')
 
     def __del__(self):
         self.destroy()
@@ -948,6 +1016,38 @@ class GoudContext:
     def clear_network_overlay_handle(self):
         """Clears the explicit network-overlay handle override for this context."""
         return self._lib.goud_network_clear_overlay_handle(self._ctx)
+
+    def get_debugger_snapshot_json(self):
+        """Returns the latest debugger snapshot JSON for this route."""
+        return _read_string_buffer(
+            lambda _buf, _buf_len: self._lib.goud_debugger_get_snapshot_json(self._ctx, _buf, _buf_len)
+        )
+
+    def get_debugger_manifest_json(self):
+        """Returns the current process-wide debugger manifest JSON."""
+        return _read_string_buffer(
+            lambda _buf, _buf_len: self._lib.goud_debugger_get_manifest_json(_buf, _buf_len)
+        )
+
+    def set_debugger_profiling_enabled(self, enabled):
+        """Enables or disables per-system debugger profiling for this route."""
+        self._lib.goud_debugger_set_profiling_enabled(self._ctx, enabled)
+
+    def set_debugger_selected_entity(self, entity_id):
+        """Selects one entity for expanded debugger inspector output."""
+        self._lib.goud_debugger_set_selected_entity(self._ctx, entity_id)
+
+    def clear_debugger_selected_entity(self):
+        """Clears the selected debugger inspector entity for this route."""
+        self._lib.goud_debugger_clear_selected_entity(self._ctx)
+
+    def get_memory_summary(self):
+        """Returns debugger-owned aggregate memory statistics for this route."""
+        _summary = GoudMemorySummary()
+        _status = self._lib.goud_debugger_get_memory_summary(self._ctx, ctypes.byref(_summary))
+        if _status < 0:
+            raise RuntimeError(f'goud_debugger_get_memory_summary failed with status {_status}')
+        return MemorySummary(MemoryCategoryStats(_summary.rendering.current_bytes, _summary.rendering.peak_bytes), MemoryCategoryStats(_summary.assets.current_bytes, _summary.assets.peak_bytes), MemoryCategoryStats(_summary.ecs.current_bytes, _summary.ecs.peak_bytes), MemoryCategoryStats(_summary.ui.current_bytes, _summary.ui.peak_bytes), MemoryCategoryStats(_summary.audio.current_bytes, _summary.audio.peak_bytes), MemoryCategoryStats(_summary.network.current_bytes, _summary.network.peak_bytes), MemoryCategoryStats(_summary.debugger.current_bytes, _summary.debugger.peak_bytes), MemoryCategoryStats(_summary.other.current_bytes, _summary.other.peak_bytes), _summary.total_current_bytes, _summary.total_peak_bytes)
 
     def spawn_empty(self):
         """Creates a new empty entity"""
@@ -1557,6 +1657,17 @@ class EngineConfig:
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
         self._lib.goud_engine_config_set_physics_backend_2d(self._handle, int(backend))
+        return self
+
+    def set_debugger(self, debugger):
+        """Configures debugger runtime startup for the created game."""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
+        _debugger_ffi = _ffi_module.GoudDebuggerConfig()
+        _debugger_ffi.enabled = debugger.enabled
+        _debugger_ffi.publish_local_attach = debugger.publish_local_attach
+        _debugger_ffi.route_label = debugger.route_label.encode('utf-8')
+        self._lib.goud_engine_config_set_debugger(self._handle, _debugger_ffi)
         return self
 
     def build(self):

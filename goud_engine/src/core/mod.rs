@@ -11,6 +11,7 @@
 //! These utilities form the foundation for all other engine subsystems and
 //! provide consistent patterns for cross-language interoperability.
 
+pub mod context_id;
 pub mod error;
 pub mod event;
 pub mod events;

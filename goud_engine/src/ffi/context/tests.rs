@@ -272,6 +272,31 @@ fn test_debugger_ffi_context_create_with_config_registers_route() {
 }
 
 #[test]
+fn test_debugger_ffi_context_create_with_disabled_config_keeps_runtime_unpublished() {
+    let _guard = test_lock();
+    reset_for_tests();
+
+    let label = CString::new("disabled-ffi-context").unwrap();
+    let config = GoudContextConfig {
+        debugger: GoudDebuggerConfig {
+            enabled: false,
+            publish_local_attach: true,
+            route_label: label.as_ptr(),
+        },
+    };
+
+    // SAFETY: `config` points to a valid FFI struct for the duration of the call.
+    let context_id = unsafe { goud_context_create_with_config(&config) };
+    assert!(!context_id.is_invalid());
+    assert_eq!(active_route_count(), 0);
+    assert!(current_manifest().is_none());
+
+    assert!(goud_context_destroy(context_id));
+    assert_eq!(active_route_count(), 0);
+    assert!(current_manifest().is_none());
+}
+
+#[test]
 fn test_registry_debug() {
     let mut registry = GoudContextRegistry::new();
     registry.create().unwrap();

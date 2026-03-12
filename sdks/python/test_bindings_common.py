@@ -179,6 +179,36 @@ def _new_fake_generated_package(package_name, fake_lib):
             ("packet_loss_percent", ctypes.c_float),
         ]
 
+    class GoudDebuggerConfig(ctypes.Structure):
+        _fields_ = [
+            ("enabled", ctypes.c_bool),
+            ("publish_local_attach", ctypes.c_bool),
+            ("route_label", ctypes.c_char_p),
+        ]
+
+    class GoudContextConfig(ctypes.Structure):
+        _fields_ = [("debugger", GoudDebuggerConfig)]
+
+    class GoudMemoryCategoryStats(ctypes.Structure):
+        _fields_ = [
+            ("current_bytes", ctypes.c_uint64),
+            ("peak_bytes", ctypes.c_uint64),
+        ]
+
+    class GoudMemorySummary(ctypes.Structure):
+        _fields_ = [
+            ("rendering", GoudMemoryCategoryStats),
+            ("assets", GoudMemoryCategoryStats),
+            ("ecs", GoudMemoryCategoryStats),
+            ("ui", GoudMemoryCategoryStats),
+            ("audio", GoudMemoryCategoryStats),
+            ("network", GoudMemoryCategoryStats),
+            ("debugger", GoudMemoryCategoryStats),
+            ("other", GoudMemoryCategoryStats),
+            ("total_current_bytes", ctypes.c_uint64),
+            ("total_peak_bytes", ctypes.c_uint64),
+        ]
+
     class FfiMat3x3(ctypes.Structure):
         _fields_ = [("m", ctypes.c_float * 9)]
 
@@ -216,6 +246,10 @@ def _new_fake_generated_package(package_name, fake_lib):
     ffi_mod.FfiNetworkCapabilities = FfiNetworkCapabilities
     ffi_mod.FfiNetworkStats = FfiNetworkStats
     ffi_mod.FfiNetworkSimulationConfig = FfiNetworkSimulationConfig
+    ffi_mod.GoudDebuggerConfig = GoudDebuggerConfig
+    ffi_mod.GoudContextConfig = GoudContextConfig
+    ffi_mod.GoudMemoryCategoryStats = GoudMemoryCategoryStats
+    ffi_mod.GoudMemorySummary = GoudMemorySummary
     ffi_mod.FfiMat3x3 = FfiMat3x3
     ffi_mod.GoudRenderStats = GoudRenderStats
     ffi_mod.GoudContact = GoudContact

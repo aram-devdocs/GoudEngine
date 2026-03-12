@@ -2,8 +2,8 @@
 //!
 //! Opaque handle types for shaders and buffers, rendering statistics.
 
-use crate::core::error::{set_last_error, GoudError};
 use crate::core::debugger;
+use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 
 // ============================================================================

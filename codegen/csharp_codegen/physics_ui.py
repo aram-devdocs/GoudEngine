@@ -2,7 +2,7 @@
 
 from sdk_common import HEADER_COMMENT, to_pascal, write_generated
 from .context import NS, OUT, mapping, schema
-from .helpers import _ffi_fn_def, _ffi_param_type_at, cs_type
+from .helpers import _cs_value_param_ffi_setup, _ffi_fn_def, _ffi_param_type_at, cs_type
 from .method_body import _gen_method_body
 from .param_strings import _safe_param_strs
 
@@ -208,6 +208,7 @@ def gen_engine_config():
             ]
         else:
             cs_params = ", ".join(f"{cs_type(p['type'])} {p['name']}" for p in params)
+            setup_lines = []
             ffi_params = []
             ffi_fn_param_index = 1  # _handle is first
             for p in params:
@@ -219,13 +220,24 @@ def gen_engine_config():
                         underlying = schema["enums"][p["type"]].get("underlying", "i32")
                         ffi_params.append(f"({cs_type(underlying)}){p['name']}")
                 else:
-                    ffi_params.append(p["name"])
+                    value_setup = _cs_value_param_ffi_setup(p["type"], p["name"])
+                    if value_setup:
+                        value_lines, value_arg = value_setup
+                        setup_lines.extend(value_lines)
+                        expected = _ffi_param_type_at(ffi_fn, ffi_fn_param_index)
+                        if expected.startswith("*mut ") or expected.startswith("*const "):
+                            ffi_params.append(f"ref {value_arg}")
+                        else:
+                            ffi_params.append(value_arg)
+                    else:
+                        ffi_params.append(p["name"])
                 ffi_fn_param_index += 1
             ffi_args = ", ".join(["_handle"] + ffi_params)
             lines += [
                 f"        public EngineConfig {cs_mn}({cs_params})",
                 "        {",
                 "            if (_handle == IntPtr.Zero) throw new ObjectDisposedException(\"EngineConfig\");",
+                *setup_lines,
                 f"            NativeMethods.{ffi_fn}({ffi_args});",
                 "            return this;",
                 "        }", "",
@@ -409,4 +421,3 @@ def gen_ui_manager():
         "",
     ]
     write_generated(OUT / "Core" / "UiManager.g.cs", "\n".join(lines))
-
