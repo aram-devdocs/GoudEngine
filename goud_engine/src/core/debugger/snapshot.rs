@@ -328,7 +328,7 @@ pub fn default_capabilities() -> BTreeMap<String, CapabilityStateV1> {
         .map(|key| {
             let state = match key {
                 "snapshots" => CapabilityStateV1::Ready,
-                "debug_draw" | "replay" | "capture" => CapabilityStateV1::Unavailable,
+                "replay" | "capture" => CapabilityStateV1::Unavailable,
                 _ => CapabilityStateV1::Disabled,
             };
             (key.to_string(), state)

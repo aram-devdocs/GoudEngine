@@ -1,13 +1,21 @@
 use std::cell::RefCell;
 
 use super::config::DebuggerConfig;
-use super::snapshot::{
-    DebuggerSnapshotV1, MemorySummaryV1, ProfilerSampleV1, RouteSummaryV1, RuntimeManifestV1,
-};
+use super::snapshot::{DebuggerSnapshotV1, MemorySummaryV1, ProfilerSampleV1, RuntimeManifestV1};
 use super::types::{CapabilityStateV1, RuntimeRouteId, RuntimeSurfaceKind};
 use crate::core::context_id::GoudContextId;
 
+mod artifacts;
+mod attach;
+mod control;
 mod state;
+
+pub use attach::{AttachAcceptedV1, AttachHelloV1};
+pub use control::{
+    control_state_for_route, dispatch_request_json_for_route, take_frame_control_for_route,
+};
+pub use state::{FrameControlPlanV1, RouteControlStateV1, SyntheticInputEventV1};
+
 use state::*;
 
 thread_local! {
@@ -24,20 +32,32 @@ impl Drop for ScopedRouteReset {
     }
 }
 
+fn republish_manifest() {
+    let mut guard = lock_runtime();
+    if let Some(runtime) = guard.as_mut() {
+        artifacts::sync_manifest(runtime);
+        attach::ensure_local_attach_server(runtime);
+    }
+}
+
 /// Registers a debugger route for one context when debugger mode is enabled.
 pub fn register_context(
     context_id: GoudContextId,
     surface_kind: RuntimeSurfaceKind,
     config: &DebuggerConfig,
 ) -> RuntimeRouteId {
-    let mut guard = lock_runtime();
-    let runtime = guard.get_or_insert_with(DebuggerRuntimeState::new);
-    let route_id = RuntimeRouteId::for_context(runtime.process_nonce, context_id, surface_kind);
-    runtime
-        .routes
-        .entry(route_id.context_id)
-        .or_insert_with(|| initialize_route_state(route_id.clone(), surface_kind, config));
-    runtime.touch_manifest();
+    let route_id = {
+        let mut guard = lock_runtime();
+        let runtime = guard.get_or_insert_with(DebuggerRuntimeState::new);
+        let route_id = RuntimeRouteId::for_context(runtime.process_nonce, context_id, surface_kind);
+        runtime
+            .routes
+            .entry(route_id.context_id)
+            .or_insert_with(|| initialize_route_state(route_id.clone(), surface_kind, config));
+        runtime.touch_manifest();
+        route_id
+    };
+    republish_manifest();
     route_id
 }
 
@@ -48,12 +68,16 @@ pub fn unregister_context(context_id: GoudContextId) {
         return;
     };
 
-    runtime.routes.remove(&raw_context_key(context_id));
+    let route_key = raw_context_key(context_id);
+    attach::detach_sessions_for_route(runtime, route_key);
+    runtime.routes.remove(&route_key);
 
     if runtime.routes.is_empty() {
+        artifacts::cleanup(runtime);
         *guard = None;
     } else {
         runtime.touch_manifest();
+        artifacts::sync_manifest(runtime);
     }
 }
 
@@ -126,6 +150,7 @@ pub fn begin_frame(route_id: &RuntimeRouteId, index: u64, delta_seconds: f32, to
         route.snapshot.frame.total_seconds = total_seconds;
         route.snapshot.profiler_samples.clear();
         route.snapshot.stats.render = Default::default();
+        sync_debugger_state(route);
     });
 }
 
@@ -157,7 +182,7 @@ pub fn profiler_enabled_for_route(route_id: &RuntimeRouteId) -> bool {
 
 /// Enables or disables route-local profiling for a context.
 pub fn set_profiling_enabled_for_context(context_id: GoudContextId, enabled: bool) -> bool {
-    with_route_state_mut_by_context(context_id, |route| {
+    let changed = with_route_state_mut_by_context(context_id, |route| {
         route.profiling_enabled = enabled;
         set_route_capability(
             route,
@@ -184,7 +209,18 @@ pub fn set_profiling_enabled_for_context(context_id: GoudContextId, enabled: boo
         );
         true
     })
-    .unwrap_or(false)
+    .unwrap_or(false);
+
+    if changed {
+        let mut guard = lock_runtime();
+        if let Some(runtime) = guard.as_mut() {
+            runtime.touch_manifest();
+        }
+        drop(guard);
+        republish_manifest();
+    }
+
+    changed
 }
 
 /// Stores the current FPS overlay statistics for a route-backed context.
@@ -392,41 +428,27 @@ pub fn record_phase_duration(name: &str, duration_cpu_micros: u64) {
 pub fn current_manifest() -> Option<RuntimeManifestV1> {
     let guard = lock_runtime();
     let runtime = guard.as_ref()?;
-    if !runtime.routes.values().any(|route| route.attachable) {
-        return None;
-    }
-
-    let executable = std::env::current_exe()
-        .ok()
-        .map(|path| path.display().to_string())
-        .unwrap_or_else(|| "unknown".to_string());
-
-    let mut routes: Vec<RouteSummaryV1> = runtime
-        .routes
-        .values()
-        .map(|route| RouteSummaryV1 {
-            route_id: route.snapshot.route_id.clone(),
-            label: route.label.clone(),
-            attachable: route.attachable,
-            capabilities: route.capabilities.clone(),
-        })
-        .collect();
-    routes.sort_by_key(|route| route.route_id.context_id);
-
-    Some(RuntimeManifestV1 {
-        manifest_version: 1,
-        pid: std::process::id(),
-        process_nonce: runtime.process_nonce,
-        executable,
-        endpoint: endpoint_for_process(runtime.process_nonce),
-        routes,
-        published_at_unix_ms: runtime.published_at_unix_ms,
-    })
+    artifacts::current_manifest(runtime)
 }
+
+#[cfg(test)]
+pub(crate) fn manifest_artifact_path_for_tests() -> Option<std::path::PathBuf> {
+    let guard = lock_runtime();
+    let runtime = guard.as_ref()?;
+    artifacts::manifest_path(runtime)
+}
+
+#[cfg(test)]
+pub(crate) use attach::{
+    attach_hello_for_tests, attach_request_json_for_tests, attach_session_heartbeat_for_tests,
+};
 
 #[cfg(test)]
 pub(crate) fn reset_for_tests() {
     let mut guard = lock_runtime();
+    if let Some(runtime) = guard.as_mut() {
+        artifacts::cleanup(runtime);
+    }
     *guard = None;
     CURRENT_ROUTE.with(|cell| {
         cell.replace(None);

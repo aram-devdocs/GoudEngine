@@ -18,6 +18,9 @@ use crate::sdk::network_debug_overlay::NetworkOverlayState;
 use std::cell::RefCell;
 use std::time::Instant;
 
+#[cfg(feature = "native")]
+use glfw::{Key, MouseButton};
+
 // ============================================================================
 // Window State
 // ============================================================================
@@ -36,6 +39,9 @@ pub struct WindowState {
 
     /// Whether the physics debug overlay should render for this context.
     pub(crate) physics_debug_enabled: bool,
+
+    /// Route-independent physics debug setting from the window config.
+    pub(crate) base_physics_debug_enabled: bool,
 
     /// Delta time from last frame
     delta_time: f32,
@@ -62,6 +68,7 @@ impl WindowState {
             platform,
             backend,
             physics_debug_enabled,
+            base_physics_debug_enabled: physics_debug_enabled,
             delta_time: 0.0,
             debug_overlay: DebugOverlay::new(0.5),
             network_overlay: NetworkOverlayState::default(),
@@ -83,7 +90,7 @@ impl WindowState {
     pub fn poll_events(&mut self, context_id: GoudContextId, input: &mut InputManager) -> f32 {
         let old_size = self.platform.get_size();
         let started_at = Instant::now();
-        self.delta_time = self.platform.poll_events(input);
+        let raw_delta = self.platform.poll_events(input);
         debugger::record_phase_duration("window_events", started_at.elapsed().as_micros() as u64);
         let new_size = self.platform.get_size();
 
@@ -92,6 +99,12 @@ impl WindowState {
         }
 
         if let Some(route_id) = self.debugger_route.as_ref() {
+            let frame_control =
+                debugger::take_frame_control_for_route(route_id, raw_delta).unwrap_or_default();
+            apply_synthetic_inputs(input, &frame_control.synthetic_inputs);
+            self.physics_debug_enabled =
+                self.base_physics_debug_enabled || frame_control.debug_draw_enabled;
+            self.delta_time = frame_control.effective_delta_seconds;
             let (next_index, total_seconds) = debugger::snapshot_for_route(route_id)
                 .map(|snapshot| {
                     (
@@ -101,6 +114,8 @@ impl WindowState {
                 })
                 .unwrap_or((1, self.delta_time as f64));
             debugger::begin_frame(route_id, next_index, self.delta_time, total_seconds);
+        } else {
+            self.delta_time = raw_delta;
         }
         self.debug_overlay.update(self.delta_time);
         let stats = self.debug_overlay.stats();
@@ -144,6 +159,69 @@ impl WindowState {
     /// Gets the delta time.
     pub fn delta_time(&self) -> f32 {
         self.delta_time
+    }
+}
+
+#[cfg(feature = "native")]
+fn apply_synthetic_inputs(input: &mut InputManager, events: &[debugger::SyntheticInputEventV1]) {
+    for event in events {
+        match (
+            event.device.as_str(),
+            event.action.as_str(),
+            event.key.as_deref(),
+            event.button.as_deref(),
+        ) {
+            ("keyboard", "press", Some(key), _) => {
+                if let Some(key) = parse_key(key) {
+                    input.press_key(key);
+                }
+            }
+            ("keyboard", "release", Some(key), _) => {
+                if let Some(key) = parse_key(key) {
+                    input.release_key(key);
+                }
+            }
+            ("mouse", "press", _, Some(button)) => {
+                if let Some(button) = parse_mouse_button(button) {
+                    input.press_mouse_button(button);
+                }
+            }
+            ("mouse", "release", _, Some(button)) => {
+                if let Some(button) = parse_mouse_button(button) {
+                    input.release_mouse_button(button);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+#[cfg(feature = "native")]
+fn parse_key(key: &str) -> Option<Key> {
+    match key.to_ascii_lowercase().as_str() {
+        "space" => Some(Key::Space),
+        "enter" => Some(Key::Enter),
+        "escape" => Some(Key::Escape),
+        "tab" => Some(Key::Tab),
+        "left" => Some(Key::Left),
+        "right" => Some(Key::Right),
+        "up" => Some(Key::Up),
+        "down" => Some(Key::Down),
+        "a" => Some(Key::A),
+        "d" => Some(Key::D),
+        "s" => Some(Key::S),
+        "w" => Some(Key::W),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "native")]
+fn parse_mouse_button(button: &str) -> Option<MouseButton> {
+    match button.to_ascii_lowercase().as_str() {
+        "left" => Some(MouseButton::Button1),
+        "right" => Some(MouseButton::Button2),
+        "middle" => Some(MouseButton::Button3),
+        _ => None,
     }
 }
 

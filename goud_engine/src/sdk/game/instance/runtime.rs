@@ -26,6 +26,7 @@ impl GoudGame {
         // For now, just run a few frames to demonstrate the API
         // Real implementation would integrate with windowing system
         while self.context.is_running() {
+            let frame_time = self.prepare_runtime_frame(frame_time);
             self.context.update(frame_time);
             self.debug_overlay.update(frame_time);
 
@@ -55,6 +56,7 @@ impl GoudGame {
 
             // Render UI manager after updates (before buffer swap).
             self.ui_manager.render();
+            self.finish_runtime_frame();
 
             // Safety: Limit iterations in tests/examples without actual window
             if self.context.frame_count() > 10000 {
@@ -68,6 +70,7 @@ impl GoudGame {
     where
         F: FnMut(&mut GameContext, &mut World),
     {
+        let delta_time = self.prepare_runtime_frame(delta_time);
         self.context.update(delta_time);
         self.debug_overlay.update(delta_time);
 
@@ -96,6 +99,7 @@ impl GoudGame {
 
         // Render UI manager after updates (before buffer swap).
         self.ui_manager.render();
+        self.finish_runtime_frame();
     }
 
     /// Returns the current FPS statistics from the debug overlay.

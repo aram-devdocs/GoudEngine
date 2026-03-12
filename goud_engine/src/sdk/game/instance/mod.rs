@@ -2,7 +2,11 @@
 
 mod ecs_scene;
 
+use std::sync::atomic::{AtomicU32, Ordering};
+
 use crate::context_registry::scene::SceneManager;
+use crate::core::context_id::GoudContextId;
+use crate::core::debugger::{self, RuntimeRouteId, RuntimeSurfaceKind, SyntheticInputEventV1};
 use crate::core::error::GoudResult;
 use crate::core::providers::types::DebugShape;
 use crate::core::providers::ProviderRegistry;
@@ -58,8 +62,14 @@ pub struct GoudGame {
     /// Provider registry for subsystem backends (render, physics, audio, input).
     pub(crate) providers: ProviderRegistry,
 
+    /// Route registered with the debugger runtime for this game, if enabled.
+    pub(crate) debugger_route: Option<RuntimeRouteId>,
+
     /// Cached physics debug shapes for the most recent frame.
     pub(crate) physics_debug_shapes: Vec<DebugShape>,
+
+    /// Whether debugger runtime control enabled debug draw for the current frame.
+    pub(crate) runtime_debug_draw_enabled: bool,
 
     /// Stores the result of the most recent transition completion, if any.
     /// Use [`take_transition_complete`](Self::take_transition_complete) to consume it.
@@ -124,11 +134,125 @@ fn init_engine_diagnostics(config: &GameConfig) {
 }
 
 impl GoudGame {
+    fn next_debugger_context_id() -> GoudContextId {
+        static NEXT_ID: AtomicU32 = AtomicU32::new(1_000_000);
+        GoudContextId::new(NEXT_ID.fetch_add(1, Ordering::Relaxed), 1)
+    }
+
+    fn register_debugger_route(
+        config: &GameConfig,
+        surface: RuntimeSurfaceKind,
+    ) -> Option<RuntimeRouteId> {
+        config.debugger.enabled.then(|| {
+            debugger::register_context(Self::next_debugger_context_id(), surface, &config.debugger)
+        })
+    }
+
+    #[cfg(feature = "native")]
+    pub(crate) fn apply_synthetic_inputs(&mut self, events: &[SyntheticInputEventV1]) {
+        use glfw::{Key, MouseButton};
+
+        fn parse_key(key: &str) -> Option<Key> {
+            match key.to_ascii_lowercase().as_str() {
+                "space" => Some(Key::Space),
+                "enter" => Some(Key::Enter),
+                "escape" => Some(Key::Escape),
+                "tab" => Some(Key::Tab),
+                "left" => Some(Key::Left),
+                "right" => Some(Key::Right),
+                "up" => Some(Key::Up),
+                "down" => Some(Key::Down),
+                "a" => Some(Key::A),
+                "d" => Some(Key::D),
+                "s" => Some(Key::S),
+                "w" => Some(Key::W),
+                _ => None,
+            }
+        }
+
+        fn parse_mouse_button(button: &str) -> Option<MouseButton> {
+            match button.to_ascii_lowercase().as_str() {
+                "left" => Some(MouseButton::Button1),
+                "right" => Some(MouseButton::Button2),
+                "middle" => Some(MouseButton::Button3),
+                _ => None,
+            }
+        }
+
+        for event in events {
+            match (
+                event.device.as_str(),
+                event.action.as_str(),
+                event.key.as_deref(),
+                event.button.as_deref(),
+            ) {
+                ("keyboard", "press", Some(key), _) => {
+                    if let Some(key) = parse_key(key) {
+                        self.input_manager.press_key(key);
+                    }
+                }
+                ("keyboard", "release", Some(key), _) => {
+                    if let Some(key) = parse_key(key) {
+                        self.input_manager.release_key(key);
+                    }
+                }
+                ("mouse", "press", _, Some(button)) => {
+                    if let Some(button) = parse_mouse_button(button) {
+                        self.input_manager.press_mouse_button(button);
+                    }
+                }
+                ("mouse", "release", _, Some(button)) => {
+                    if let Some(button) = parse_mouse_button(button) {
+                        self.input_manager.release_mouse_button(button);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    #[cfg(not(feature = "native"))]
+    pub(crate) fn apply_synthetic_inputs(&mut self, _events: &[SyntheticInputEventV1]) {}
+
+    pub(crate) fn prepare_runtime_frame(&mut self, raw_delta_seconds: f32) -> f32 {
+        let Some(route_id) = self.debugger_route.clone() else {
+            self.runtime_debug_draw_enabled = false;
+            return raw_delta_seconds;
+        };
+
+        let frame_plan = debugger::take_frame_control_for_route(&route_id, raw_delta_seconds)
+            .unwrap_or_default();
+        self.runtime_debug_draw_enabled = frame_plan.debug_draw_enabled;
+        self.apply_synthetic_inputs(&frame_plan.synthetic_inputs);
+
+        let (next_index, total_seconds) = debugger::snapshot_for_route(&route_id)
+            .map(|snapshot| {
+                (
+                    snapshot.frame.index.saturating_add(1),
+                    snapshot.frame.total_seconds + frame_plan.effective_delta_seconds as f64,
+                )
+            })
+            .unwrap_or((1, frame_plan.effective_delta_seconds as f64));
+        debugger::begin_frame(
+            &route_id,
+            next_index,
+            frame_plan.effective_delta_seconds,
+            total_seconds,
+        );
+        frame_plan.effective_delta_seconds
+    }
+
+    pub(crate) fn finish_runtime_frame(&mut self) {
+        if let Some(route_id) = self.debugger_route.as_ref() {
+            debugger::end_frame(route_id);
+        }
+    }
+
     /// Updates cached physics debug shapes according to runtime config.
     ///
     /// When disabled, this avoids querying the physics provider entirely.
     pub(crate) fn update_physics_debug_shapes(&mut self) {
-        if !self.config.physics_debug.enabled {
+        if !self.config.physics_debug.enabled && !self.runtime_debug_draw_enabled {
             self.physics_debug_shapes.clear();
             return;
         }
@@ -147,6 +271,8 @@ impl GoudGame {
         let window_size = (config.width, config.height);
         let mut debug_overlay = DebugOverlay::new(config.fps_update_interval);
         debug_overlay.set_enabled(config.show_fps_overlay);
+        let debugger_route =
+            Self::register_debugger_route(&config, RuntimeSurfaceKind::HeadlessContext);
         Ok(Self {
             scene_manager: SceneManager::new(),
             config,
@@ -154,7 +280,9 @@ impl GoudGame {
             initialized: false,
             debug_overlay,
             providers: ProviderRegistry::default(),
+            debugger_route,
             physics_debug_shapes: Vec::new(),
+            runtime_debug_draw_enabled: false,
             last_transition_complete: None,
             ui_manager: UiManager::new(),
             #[cfg(feature = "native")]
@@ -221,6 +349,8 @@ impl GoudGame {
                 .map_err(crate::core::error::GoudError::InitializationFailed)?;
 
         let audio_manager = crate::assets::AudioManager::new().ok();
+        let debugger_route =
+            Self::register_debugger_route(&config, RuntimeSurfaceKind::WindowedGame);
 
         Ok(Self {
             scene_manager: SceneManager::new(),
@@ -229,7 +359,9 @@ impl GoudGame {
             initialized: false,
             debug_overlay,
             providers: ProviderRegistry::default(),
+            debugger_route,
             physics_debug_shapes: Vec::new(),
+            runtime_debug_draw_enabled: false,
             last_transition_complete: None,
             ui_manager: UiManager::new(),
             platform: Some(Box::new(platform)),
@@ -261,6 +393,17 @@ impl GoudGame {
     #[inline]
     pub fn window_size(&self) -> (u32, u32) {
         (self.config.width, self.config.height)
+    }
+}
+
+impl Drop for GoudGame {
+    fn drop(&mut self) {
+        if let Some(route_id) = self.debugger_route.take() {
+            debugger::unregister_context(GoudContextId::new(
+                route_id.context_id as u32,
+                (route_id.context_id >> 32) as u32,
+            ));
+        }
     }
 }
 

@@ -20,9 +20,13 @@ pub use runtime::active_route_count;
 #[doc(inline)]
 pub use runtime::begin_frame;
 #[doc(inline)]
+pub use runtime::control_state_for_route;
+#[doc(inline)]
 pub use runtime::current_manifest;
 #[doc(inline)]
 pub use runtime::current_route;
+#[doc(inline)]
+pub use runtime::dispatch_request_json_for_route;
 #[doc(inline)]
 pub use runtime::end_frame;
 #[doc(inline)]
@@ -58,6 +62,8 @@ pub use runtime::snapshot_for_route;
 #[doc(inline)]
 pub use runtime::snapshot_json_for_context;
 #[doc(inline)]
+pub use runtime::take_frame_control_for_route;
+#[doc(inline)]
 pub use runtime::unregister_context;
 #[doc(inline)]
 pub use runtime::update_fps_stats_for_context;
@@ -67,6 +73,16 @@ pub use runtime::update_memory_category_for_context;
 pub use runtime::update_render_stats_for_context;
 #[doc(inline)]
 pub use runtime::with_snapshot_mut;
+#[doc(inline)]
+pub use runtime::AttachAcceptedV1;
+#[doc(inline)]
+pub use runtime::AttachHelloV1;
+#[doc(inline)]
+pub use runtime::FrameControlPlanV1;
+#[doc(inline)]
+pub use runtime::RouteControlStateV1;
+#[doc(inline)]
+pub use runtime::SyntheticInputEventV1;
 #[doc(inline)]
 pub use snapshot::default_capabilities;
 #[doc(inline)]
@@ -118,6 +134,14 @@ pub use types::REQUIRED_SERVICE_OWNERS;
 #[doc(inline)]
 pub use types::ROUTE_CAPABILITY_KEYS;
 
+#[cfg(test)]
+pub(crate) use runtime::attach_hello_for_tests;
+#[cfg(test)]
+pub(crate) use runtime::attach_request_json_for_tests;
+#[cfg(test)]
+pub(crate) use runtime::attach_session_heartbeat_for_tests;
+#[cfg(test)]
+pub(crate) use runtime::manifest_artifact_path_for_tests;
 #[cfg(test)]
 pub(crate) use runtime::reset_for_tests;
 
