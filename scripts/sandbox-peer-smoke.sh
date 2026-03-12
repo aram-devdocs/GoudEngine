@@ -14,8 +14,9 @@ fi
 PORT="${GOUD_SANDBOX_NETWORK_PORT:-39591}"
 SMOKE_SECONDS="${GOUD_SANDBOX_SMOKE_SECONDS:-6}"
 LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/goud-sandbox-peer-XXXXXX")"
-RUST_LOG="$LOG_DIR/rust-host.log"
-PY_LOG="$LOG_DIR/python-client.log"
+RUST_LOG_FILE="$LOG_DIR/rust-host.log"
+PY_LOG_FILE="$LOG_DIR/python-client.log"
+HOST_BIN="$ROOT_DIR/target/debug/sandbox"
 case "$(uname -s)" in
   Linux*)  PY_NATIVE_LIB="$ROOT_DIR/target/debug/libgoud_engine.so" ;;
   Darwin*) PY_NATIVE_LIB="$ROOT_DIR/target/debug/libgoud_engine.dylib" ;;
@@ -38,10 +39,26 @@ cleanup() {
 }
 trap cleanup EXIT
 
+host_is_ready() {
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1
+    return $?
+  fi
+  if command -v ss >/dev/null 2>&1; then
+    ss -H -ltn "sport = :$PORT" 2>/dev/null | grep -q ":$PORT"
+    return $?
+  fi
+  return 1
+}
+
 echo "Running sandbox peer smoke on port $PORT (logs: $LOG_DIR)"
 
 echo "Prebuilding Python native library and Rust sandbox binary for deterministic startup..."
 cargo build -p goud-engine-core -p sandbox >/dev/null
+if [[ ! -x "$HOST_BIN" ]]; then
+  echo "Missing Rust sandbox binary after build: $HOST_BIN"
+  exit 1
+fi
 if [[ ! -f "$PY_NATIVE_LIB" ]]; then
   echo "Missing Python native library after build: $PY_NATIVE_LIB"
   exit 1
@@ -54,11 +71,11 @@ fi
   export GOUD_SANDBOX_EXPECT_PEER=1
   export GOUD_SANDBOX_SMOKE_SECONDS="$SMOKE_SECONDS"
   if [[ "${#RUNNER[@]}" -gt 0 ]]; then
-    "${RUNNER[@]}" cargo run -p sandbox
+    "${RUNNER[@]}" "$HOST_BIN"
   else
-    cargo run -p sandbox
+    "$HOST_BIN"
   fi
-) >"$RUST_LOG" 2>&1 &
+) >"$RUST_LOG_FILE" 2>&1 &
 RUST_PID=$!
 
 HOST_READY=0
@@ -66,10 +83,10 @@ for _ in $(seq 1 120); do
   if ! kill -0 "$RUST_PID" >/dev/null 2>&1; then
     echo "Rust host exited before readiness."
     echo "--- Rust host log ---"
-    sed -n '1,200p' "$RUST_LOG"
+    sed -n '1,200p' "$RUST_LOG_FILE"
     exit 1
   fi
-  if grep -q "Network host:$PORT" "$RUST_LOG"; then
+  if host_is_ready; then
     HOST_READY=1
     break
   fi
@@ -79,7 +96,7 @@ done
 if [[ "$HOST_READY" -ne 1 ]]; then
   echo "Timed out waiting for Rust host readiness on port $PORT."
   echo "--- Rust host log ---"
-  sed -n '1,200p' "$RUST_LOG"
+  sed -n '1,200p' "$RUST_LOG_FILE"
   exit 1
 fi
 
@@ -98,7 +115,7 @@ echo "Rust host is ready; starting Python client."
   else
     python3 "$PY_SANDBOX"
   fi
-) >"$PY_LOG" 2>&1 &
+) >"$PY_LOG_FILE" 2>&1 &
 PY_PID=$!
 
 HOST_STATUS=0
@@ -109,9 +126,9 @@ wait "$PY_PID" || CLIENT_STATUS=$?
 if [[ "$HOST_STATUS" -ne 0 || "$CLIENT_STATUS" -ne 0 ]]; then
   echo "Sandbox peer smoke failed (rust=$HOST_STATUS python=$CLIENT_STATUS)"
   echo "--- Rust host log ---"
-  sed -n '1,200p' "$RUST_LOG"
+  sed -n '1,200p' "$RUST_LOG_FILE"
   echo "--- Python client log ---"
-  sed -n '1,200p' "$PY_LOG"
+  sed -n '1,200p' "$PY_LOG_FILE"
   exit 1
 fi
 
