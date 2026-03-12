@@ -7,7 +7,7 @@ use crate::core::types::TextAlignment;
 use crate::libs::graphics::backend::{
     BlendFactor, BufferOps, ClearOps, DrawOps, FrameOps, ShaderOps, StateOps, TextureOps,
 };
-use crate::rendering::text::{DirectTextDrawRequest, TextBatch};
+use crate::rendering::text::{TextBatch, TextLayoutConfig};
 use crate::sdk::GoudGame;
 
 // NOTE: FFI wrappers are hand-written in ffi/renderer.rs. The `#[goud_api]`
@@ -153,15 +153,16 @@ impl GoudGame {
 
         backend.enable_blending();
         backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-        if backend.bind_buffer(vertex_buffer).is_err() || backend.bind_buffer(index_buffer).is_err()
-        {
-            return false;
-        }
-
         // SAFETY: OpenGL calls require a current context.
         unsafe {
             gl::Viewport(0, 0, fb_w as i32, fb_h as i32);
             gl::BindVertexArray(vao);
+        }
+        // Element array buffer binding is VAO state in OpenGL core profiles.
+        // Bind the VAO first so VBO/IBO attachments land on the correct VAO.
+        if backend.bind_buffer(vertex_buffer).is_err() || backend.bind_buffer(index_buffer).is_err()
+        {
+            return false;
         }
         configure_immediate_vertex_layout();
 
@@ -235,15 +236,16 @@ impl GoudGame {
 
         backend.enable_blending();
         backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-        if backend.bind_buffer(vertex_buffer).is_err() || backend.bind_buffer(index_buffer).is_err()
-        {
-            return false;
-        }
-
         // SAFETY: OpenGL calls require a current context.
         unsafe {
             gl::Viewport(0, 0, fb_w as i32, fb_h as i32);
             gl::BindVertexArray(vao);
+        }
+        // Element array buffer binding is VAO state in OpenGL core profiles.
+        // Bind the VAO first so VBO/IBO attachments land on the correct VAO.
+        if backend.bind_buffer(vertex_buffer).is_err() || backend.bind_buffer(index_buffer).is_err()
+        {
+            return false;
         }
         configure_immediate_vertex_layout();
 
@@ -286,13 +288,6 @@ impl GoudGame {
         }
 
         let viewport = self.get_window_size();
-        if !self.ensure_immediate_state() {
-            return false;
-        }
-        let vao = match &self.immediate_state {
-            Some(state) => state.vao,
-            None => return false,
-        };
         let asset_server = match self.asset_server.as_mut() {
             Some(server) => server,
             None => return false,
@@ -308,31 +303,37 @@ impl GoudGame {
             return false;
         }
 
-        let request = DirectTextDrawRequest {
-            content: text.to_string(),
-            position: Vec2::new(x, y),
-            font_handle,
-            font_size,
-            color: Color::new(r, g, b, a),
-            alignment: TextAlignment::Left,
+        let config = TextLayoutConfig {
             max_width: (max_width > 0.0).then_some(max_width),
             line_spacing,
+            alignment: TextAlignment::Left,
         };
+        let transform = crate::ecs::components::Transform2D::from_position(Vec2::new(x, y));
+        let color = Color::new(r, g, b, a);
 
         let batch = self.text_batch.get_or_insert_with(TextBatch::new);
-        batch.begin();
         backend.disable_depth_test();
         backend.enable_blending();
         backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-        // SAFETY: The native OpenGL context is current for this frame and `vao`
-        // is owned by the live immediate render state initialized above.
-        unsafe {
-            gl::BindVertexArray(vao);
+        let Some((layout, texture)) = (match batch.resolve_truetype_font(
+            text,
+            font_size,
+            &config,
+            &font_handle,
+            asset_server,
+            backend,
+        ) {
+            Ok(result) => result,
+            Err(_) => return false,
+        }) else {
+            return false;
+        };
+        if layout.glyphs.is_empty() {
+            return true;
         }
         batch
-            .draw_text_requests(&[request], asset_server, backend)
+            .draw_prepared_layout_frame(backend, viewport, &layout, color, &transform, texture)
             .is_ok()
-            && batch.end(backend, viewport).is_ok()
     }
 
     /// Gets rendering statistics for the current frame.

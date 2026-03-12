@@ -11,7 +11,7 @@ use crate::core::handle::{Handle, HandleMap};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
 use crate::libs::graphics::backend::TextureOps;
-use crate::rendering::text::{GlyphAtlas, TextLayoutConfig};
+use crate::rendering::text::{GlyphAtlas, TextBatch, TextLayoutConfig};
 
 mod draw_impl;
 mod parse;
@@ -38,12 +38,14 @@ struct LoadedFont {
 
 struct ContextFontState {
     fonts: HandleMap<FontMarker, LoadedFont>,
+    text_batch: TextBatch,
 }
 
 impl ContextFontState {
     fn new() -> Self {
         Self {
             fonts: HandleMap::new(),
+            text_batch: TextBatch::new(),
         }
     }
 }

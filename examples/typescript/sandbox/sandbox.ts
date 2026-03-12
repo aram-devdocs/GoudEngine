@@ -23,6 +23,7 @@ export interface SandboxContract {
   nextStepItems: string[];
   nextStepDynamicRows: string[];
   layout: HudLayout;
+  typography: HudTypography;
   webBlockers: {
     networking: string;
     renderer: string;
@@ -140,6 +141,7 @@ interface OverviewTextLayout {
   x: number;
   titleY: number;
   taglineY: number;
+  maxWidth: number;
 }
 
 interface StatusTextLayout {
@@ -151,6 +153,7 @@ interface StatusTextLayout {
 interface NextTextLayout {
   x: number;
   titleY: number;
+  maxWidth: number;
 }
 
 interface SceneLabelLayout {
@@ -168,6 +171,56 @@ interface HudLayout {
   statusText: StatusTextLayout;
   nextText: NextTextLayout;
   sceneLabel: SceneLabelLayout;
+}
+
+interface OverviewLineAdvances {
+  title: number;
+  tagline: number;
+  body: number;
+}
+
+interface StatusLineAdvances {
+  title: number;
+  body: number;
+}
+
+interface NextLineAdvances {
+  title: number;
+  body: number;
+}
+
+interface OverviewTypography {
+  titleSize: number;
+  taglineSize: number;
+  bodySize: number;
+  lineSpacing: number;
+  lineAdvances: OverviewLineAdvances;
+}
+
+interface StatusTypography {
+  titleSize: number;
+  bodySize: number;
+  lineSpacing: number;
+  lineAdvances: StatusLineAdvances;
+}
+
+interface NextTypography {
+  titleSize: number;
+  bodySize: number;
+  lineSpacing: number;
+  lineAdvances: NextLineAdvances;
+}
+
+interface SceneLabelTypography {
+  size: number;
+  lineSpacing: number;
+}
+
+interface HudTypography {
+  overview: OverviewTypography;
+  status: StatusTypography;
+  next: NextTypography;
+  sceneLabel: SceneLabelTypography;
 }
 
 interface ManifestJson {
@@ -209,10 +262,35 @@ interface ContractJson {
     status_panel: HudRect;
     next_panel: HudRect;
     scene_badge: HudRect;
-    overview_text: { x: number; title_y: number; tagline_y: number };
+    overview_text: { x: number; title_y: number; tagline_y: number; max_width: number };
     status_text: { x: number; title_y: number; max_width: number };
-    next_text: { x: number; title_y: number };
+    next_text: { x: number; title_y: number; max_width: number };
     scene_label: { x: number; y: number; max_width: number };
+  };
+  typography: {
+    overview: {
+      title_size: number;
+      tagline_size: number;
+      body_size: number;
+      line_spacing: number;
+      line_advances: { title: number; tagline: number; body: number };
+    };
+    status: {
+      title_size: number;
+      body_size: number;
+      line_spacing: number;
+      line_advances: { title: number; body: number };
+    };
+    next: {
+      title_size: number;
+      body_size: number;
+      line_spacing: number;
+      line_advances: { title: number; body: number };
+    };
+    scene_label: {
+      size: number;
+      line_spacing: number;
+    };
   };
   web_blockers: {
     networking: string;
@@ -282,6 +360,7 @@ export async function loadSandboxManifest(target: SandboxTarget): Promise<Sandbo
           x: contract.layout.overview_text.x,
           titleY: contract.layout.overview_text.title_y,
           taglineY: contract.layout.overview_text.tagline_y,
+          maxWidth: contract.layout.overview_text.max_width,
         },
         statusText: {
           x: contract.layout.status_text.x,
@@ -291,11 +370,37 @@ export async function loadSandboxManifest(target: SandboxTarget): Promise<Sandbo
         nextText: {
           x: contract.layout.next_text.x,
           titleY: contract.layout.next_text.title_y,
+          maxWidth: contract.layout.next_text.max_width,
         },
         sceneLabel: {
           x: contract.layout.scene_label.x,
           y: contract.layout.scene_label.y,
           maxWidth: contract.layout.scene_label.max_width,
+        },
+      },
+      typography: {
+        overview: {
+          titleSize: contract.typography.overview.title_size,
+          taglineSize: contract.typography.overview.tagline_size,
+          bodySize: contract.typography.overview.body_size,
+          lineSpacing: contract.typography.overview.line_spacing,
+          lineAdvances: contract.typography.overview.line_advances,
+        },
+        status: {
+          titleSize: contract.typography.status.title_size,
+          bodySize: contract.typography.status.body_size,
+          lineSpacing: contract.typography.status.line_spacing,
+          lineAdvances: contract.typography.status.line_advances,
+        },
+        next: {
+          titleSize: contract.typography.next.title_size,
+          bodySize: contract.typography.next.body_size,
+          lineSpacing: contract.typography.next.line_spacing,
+          lineAdvances: contract.typography.next.line_advances,
+        },
+        sceneLabel: {
+          size: contract.typography.scene_label.size,
+          lineSpacing: contract.typography.scene_label.line_spacing,
         },
       },
       webBlockers: contract.web_blockers,
@@ -333,36 +438,51 @@ function drawTextLines(
   x: number,
   y: number,
   sizes: number[],
+  kinds: string[],
   maxWidth: number,
+  lineSpacing: number,
+  advances: Record<string, number>,
   color: { r: number; g: number; b: number; a: number },
-  advance: (size: number) => number,
 ): void {
   let currentY = y;
   lines.forEach((line, index) => {
     const size = sizes[index] ?? sizes[sizes.length - 1];
-    game.drawText(font, line, x, currentY, size, 0, maxWidth, 1, 0, color);
-    currentY += advance(size);
+    const kind = kinds[index] ?? 'body';
+    game.drawText(font, line, x, currentY, size, 0, maxWidth, lineSpacing, 0, color);
+    const baseAdvance = advances[kind] ?? advances.body ?? 24;
+    currentY += baseAdvance * estimateWrappedLineCount(line, size, maxWidth);
   });
 }
 
-function overviewAdvance(size: number): number {
-  if (size >= 38) return 44;
-  if (size >= 24) return 30;
-  return 24;
-}
-
-function statusAdvance(size: number): number {
-  return size >= 30 ? 38 : 24;
-}
-
-function nextAdvance(size: number): number {
-  return size >= 32 ? 38 : 25;
-}
-
-function maxWidthFromPanel(panel: HudRect, textX: number, margin: number): number {
-  const right = panel.x + panel.width * 0.5;
-  const width = right - textX - margin;
-  return width > 64 ? width : 64;
+function estimateWrappedLineCount(text: string, fontSize: number, maxWidth: number): number {
+  if (!text.trim() || maxWidth <= 0) return 1;
+  const approxGlyphWidth = Math.max(fontSize * 0.52, 1);
+  const maxChars = Math.max(1, Math.floor(maxWidth / approxGlyphWidth));
+  let total = 0;
+  for (const rawLine of text.split('\n')) {
+    const words = rawLine.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) {
+      total += 1;
+      continue;
+    }
+    let wrapped = 1;
+    let current = 0;
+    for (const word of words) {
+      const length = Array.from(word).length;
+      if (current === 0) {
+        current = length;
+        continue;
+      }
+      if (current + 1 + length <= maxChars) {
+        current += 1 + length;
+      } else {
+        wrapped += 1;
+        current = length;
+      }
+    }
+    total += wrapped;
+  }
+  return Math.max(1, total);
 }
 
 export interface DesktopNetworkOptions {
@@ -707,17 +827,9 @@ export class SandboxApp {
       this.game.drawQuad(920, 260, 180, 40, { r: 0.20, g: 0.55, b: 0.95, a: 0.62 });
     }
 
-    if (mode !== '3D') {
-      if (this.network.hasRemoteState) {
-        this.game.drawQuad(this.network.remoteX, this.network.remoteY - 48, 108, 20, { r: 0.96, g: 0.70, b: 0.20, a: 0.92 });
-        this.game.drawText(this.font, `Peer ${this.network.remoteMode}`, this.network.remoteX - 40, this.network.remoteY - 54, 14, 0, 0, 1, 0, { r: 0.04, g: 0.05, b: 0.08, a: 1 });
-        this.game.drawSprite(this.sprite, this.network.remoteX, this.network.remoteY, 52, 52, -this.angle * 0.18);
-      }
-    }
-
     const is3DFamilyMode = mode !== '2D';
-    const panelAlpha = is3DFamilyMode ? 0.62 : 0.88;
-    const bottomAlpha = is3DFamilyMode ? 0.70 : 0.94;
+    const panelAlpha = is3DFamilyMode ? 0.48 : 0.72;
+    const bottomAlpha = is3DFamilyMode ? 0.55 : 0.78;
     const layout = this.config.contract.layout;
     this.game.drawQuad(layout.overviewPanel.x, layout.overviewPanel.y, layout.overviewPanel.width, layout.overviewPanel.height, { r: 0.05, g: 0.08, b: 0.12, a: panelAlpha });
     this.game.drawQuad(layout.statusPanel.x, layout.statusPanel.y, layout.statusPanel.width, layout.statusPanel.height, { r: 0.08, g: 0.12, b: 0.18, a: panelAlpha });
@@ -743,6 +855,35 @@ export class SandboxApp {
       ...this.config.contract.nextStepItems,
       ...this.config.contract.nextStepDynamicRows.map((row) => this.renderNextStepRow(row)),
     ];
+    const typography = this.config.contract.typography;
+    const overviewSizes = [
+      typography.overview.titleSize,
+      typography.overview.taglineSize,
+      ...this.config.contract.overviewItems.map(() => typography.overview.bodySize),
+    ];
+    const overviewKinds = [
+      'title',
+      'tagline',
+      ...this.config.contract.overviewItems.map(() => 'body'),
+    ];
+    const statusSizes = [
+      typography.status.titleSize,
+      ...this.config.contract.statusRows.map(() => typography.status.bodySize),
+    ];
+    const statusKinds = [
+      'title',
+      ...this.config.contract.statusRows.map(() => 'body'),
+    ];
+    const nextBodyCount =
+      this.config.contract.nextStepItems.length + this.config.contract.nextStepDynamicRows.length;
+    const nextSizes = [
+      typography.next.titleSize,
+      ...Array.from({ length: nextBodyCount }, () => typography.next.bodySize),
+    ];
+    const nextKinds = [
+      'title',
+      ...Array.from({ length: nextBodyCount }, () => 'body'),
+    ];
 
     drawTextLines(
       this.game,
@@ -750,10 +891,16 @@ export class SandboxApp {
       overviewLines,
       layout.overviewText.x,
       layout.overviewText.titleY,
-      [40, 24, 19],
-      maxWidthFromPanel(layout.overviewPanel, layout.overviewText.x, 24),
+      overviewSizes,
+      overviewKinds,
+      layout.overviewText.maxWidth,
+      typography.overview.lineSpacing,
+      {
+        title: typography.overview.lineAdvances.title,
+        tagline: typography.overview.lineAdvances.tagline,
+        body: typography.overview.lineAdvances.body,
+      },
       { r: 1, g: 1, b: 1, a: 1 },
-      overviewAdvance,
     );
     drawTextLines(
       this.game,
@@ -761,10 +908,15 @@ export class SandboxApp {
       statusLines,
       layout.statusText.x,
       layout.statusText.titleY,
-      [30, 18],
+      statusSizes,
+      statusKinds,
       layout.statusText.maxWidth,
+      typography.status.lineSpacing,
+      {
+        title: typography.status.lineAdvances.title,
+        body: typography.status.lineAdvances.body,
+      },
       { r: 0.94, g: 0.97, b: 1, a: 1 },
-      statusAdvance,
     );
     drawTextLines(
       this.game,
@@ -772,12 +924,33 @@ export class SandboxApp {
       nextStepLines,
       layout.nextText.x,
       layout.nextText.titleY,
-      [32, 19],
-      maxWidthFromPanel(layout.nextPanel, layout.nextText.x, 24),
+      nextSizes,
+      nextKinds,
+      layout.nextText.maxWidth,
+      typography.next.lineSpacing,
+      {
+        title: typography.next.lineAdvances.title,
+        body: typography.next.lineAdvances.body,
+      },
       { r: 0.94, g: 0.97, b: 1, a: 1 },
-      nextAdvance,
     );
-    this.game.drawText(this.font, this.sceneLookup[mode].label, layout.sceneLabel.x, layout.sceneLabel.y, 20, 0, layout.sceneLabel.maxWidth, 1, 0, { r: 1, g: 1, b: 1, a: 1 });
+    this.game.drawText(
+      this.font,
+      this.sceneLookup[mode].label,
+      layout.sceneLabel.x,
+      layout.sceneLabel.y,
+      typography.sceneLabel.size,
+      0,
+      layout.sceneLabel.maxWidth,
+      typography.sceneLabel.lineSpacing,
+      0,
+      { r: 1, g: 1, b: 1, a: 1 },
+    );
+    if (mode !== '3D' && this.network.hasRemoteState) {
+      this.game.drawQuad(this.network.remoteX, this.network.remoteY - 48, 108, 20, { r: 0.96, g: 0.70, b: 0.20, a: 0.92 });
+      this.game.drawText(this.font, `Peer ${this.network.remoteMode}`, this.network.remoteX - 40, this.network.remoteY - 54, 14, 0, 0, 1, 0, { r: 0.04, g: 0.05, b: 0.08, a: 1 });
+      this.game.drawSprite(this.sprite, this.network.remoteX, this.network.remoteY, 52, 52, -this.angle * 0.18);
+    }
   }
 
   shouldQuit(): boolean {

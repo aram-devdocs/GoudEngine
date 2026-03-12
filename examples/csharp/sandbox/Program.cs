@@ -162,18 +162,19 @@ internal static class Program
         SceneEntry[] Scenes,
         string WebNetworkingBlocker,
         string WebRendererBlocker,
-        HudLayout Layout
+        HudLayout Layout,
+        HudTypography Typography
     );
 
     private readonly record struct SceneEntry(string Key, string Mode, string Label);
 
     private readonly record struct HudRect(float X, float Y, float Width, float Height);
 
-    private readonly record struct OverviewTextLayout(float X, float TitleY, float TaglineY);
+    private readonly record struct OverviewTextLayout(float X, float TitleY, float TaglineY, float MaxWidth);
 
     private readonly record struct StatusTextLayout(float X, float TitleY, float MaxWidth);
 
-    private readonly record struct NextTextLayout(float X, float TitleY);
+    private readonly record struct NextTextLayout(float X, float TitleY, float MaxWidth);
 
     private readonly record struct SceneLabelLayout(float X, float Y, float MaxWidth);
 
@@ -186,6 +187,27 @@ internal static class Program
         StatusTextLayout StatusText,
         NextTextLayout NextText,
         SceneLabelLayout SceneLabel
+    );
+
+    private readonly record struct OverviewLineAdvances(float Title, float Tagline, float Body);
+
+    private readonly record struct StatusLineAdvances(float Title, float Body);
+
+    private readonly record struct NextLineAdvances(float Title, float Body);
+
+    private readonly record struct OverviewTypography(float TitleSize, float TaglineSize, float BodySize, float LineSpacing, OverviewLineAdvances LineAdvances);
+
+    private readonly record struct StatusTypography(float TitleSize, float BodySize, float LineSpacing, StatusLineAdvances LineAdvances);
+
+    private readonly record struct NextTypography(float TitleSize, float BodySize, float LineSpacing, NextLineAdvances LineAdvances);
+
+    private readonly record struct SceneLabelTypography(float Size, float LineSpacing);
+
+    private readonly record struct HudTypography(
+        OverviewTypography Overview,
+        StatusTypography Status,
+        NextTypography Next,
+        SceneLabelTypography SceneLabel
     );
 
     private static void Main()
@@ -332,15 +354,8 @@ internal static class Program
                 game.DrawQuad(920f, 260f, 180f, 40f, new Color(0.20f, 0.55f, 0.95f, 0.62f));
             }
 
-            if (currentMode is "2D" or "Hybrid" && network.HasRemoteState)
-            {
-                game.DrawQuad(network.RemoteX, network.RemoteY - 50f, 84f, 18f, new Color(0.96f, 0.70f, 0.20f, 0.92f));
-                game.DrawText(font, $"Peer {network.RemoteMode}", network.RemoteX - 32f, network.RemoteY - 56f, 13f, TextAlignment.Left, 0f, 1f, TextDirection.Auto, new Color(0.04f, 0.05f, 0.08f, 1f));
-                game.DrawSprite(sprite, network.RemoteX, network.RemoteY, 52f, 52f, -angle * 0.18f);
-            }
-
-            var panelAlpha = is3DFamilyMode ? 0.62f : 0.88f;
-            var bottomAlpha = is3DFamilyMode ? 0.70f : 0.92f;
+            var panelAlpha = is3DFamilyMode ? 0.48f : 0.72f;
+            var bottomAlpha = is3DFamilyMode ? 0.55f : 0.78f;
             game.DrawQuad(assets.Layout.OverviewPanel.X, assets.Layout.OverviewPanel.Y, assets.Layout.OverviewPanel.Width, assets.Layout.OverviewPanel.Height, new Color(0.05f, 0.08f, 0.12f, panelAlpha));
             game.DrawQuad(assets.Layout.StatusPanel.X, assets.Layout.StatusPanel.Y, assets.Layout.StatusPanel.Width, assets.Layout.StatusPanel.Height, new Color(0.08f, 0.12f, 0.18f, panelAlpha));
             game.DrawQuad(assets.Layout.NextPanel.X, assets.Layout.NextPanel.Y, assets.Layout.NextPanel.Width, assets.Layout.NextPanel.Height, new Color(0.05f, 0.08f, 0.12f, bottomAlpha));
@@ -351,61 +366,66 @@ internal static class Program
             var physics = game.GetPhysicsCapabilities();
             var audio = game.GetAudioCapabilities();
             var networkCaps = TryGetNetworkCaps(game);
-            var overviewMaxWidth = MaxWidthFromPanel(assets.Layout.OverviewPanel, assets.Layout.OverviewText.X, 24f);
-            var nextMaxWidth = MaxWidthFromPanel(assets.Layout.NextPanel, assets.Layout.NextText.X, 24f);
-            var overviewLines = new List<(string Text, float Size, Color Color, float MaxWidth)>
+            var typography = assets.Typography;
+            var overviewLines = new List<(string Text, float Size, Color Color, float MaxWidth, float BaseAdvance)>
             {
-                (assets.OverviewTitle, 40f, new Color(1f, 1f, 1f, 1f), 0f),
-                (assets.Tagline, 24f, new Color(1f, 1f, 1f, 1f), overviewMaxWidth),
+                (assets.OverviewTitle, typography.Overview.TitleSize, new Color(1f, 1f, 1f, 1f), assets.Layout.OverviewText.MaxWidth, typography.Overview.LineAdvances.Title),
+                (assets.Tagline, typography.Overview.TaglineSize, new Color(1f, 1f, 1f, 1f), assets.Layout.OverviewText.MaxWidth, typography.Overview.LineAdvances.Tagline),
             };
             foreach (var line in assets.Overview)
             {
-                overviewLines.Add((line, 19f, new Color(0.94f, 0.97f, 1f, 1f), overviewMaxWidth));
+                overviewLines.Add((line, typography.Overview.BodySize, new Color(0.94f, 0.97f, 1f, 1f), assets.Layout.OverviewText.MaxWidth, typography.Overview.LineAdvances.Body));
             }
 
-            var statusLines = new List<(string Text, float Size, Color Color, float MaxWidth)>
+            var statusLines = new List<(string Text, float Size, Color Color, float MaxWidth, float BaseAdvance)>
             {
-                (assets.StatusTitle, 30f, new Color(0.95f, 0.90f, 0.40f, 1f), 0f),
+                (assets.StatusTitle, typography.Status.TitleSize, new Color(0.95f, 0.90f, 0.40f, 1f), assets.Layout.StatusText.MaxWidth, typography.Status.LineAdvances.Title),
             };
             foreach (var row in assets.StatusRows)
             {
-                statusLines.Add((RenderStatusRow(row, assets, sceneEntry, currentMode, mouse, caps, physics, audio, network, networkCaps), 18f, new Color(0.94f, 0.97f, 1f, 1f), assets.Layout.StatusText.MaxWidth));
+                statusLines.Add((RenderStatusRow(row, assets, sceneEntry, currentMode, mouse, caps, physics, audio, network, networkCaps), typography.Status.BodySize, new Color(0.94f, 0.97f, 1f, 1f), assets.Layout.StatusText.MaxWidth, typography.Status.LineAdvances.Body));
             }
 
-            var nextStepLines = new List<(string Text, float Size, Color Color, float MaxWidth)>
+            var nextStepLines = new List<(string Text, float Size, Color Color, float MaxWidth, float BaseAdvance)>
             {
-                (assets.NextStepsTitle, 32f, new Color(0.95f, 0.90f, 0.40f, 1f), 0f),
+                (assets.NextStepsTitle, typography.Next.TitleSize, new Color(0.95f, 0.90f, 0.40f, 1f), assets.Layout.NextText.MaxWidth, typography.Next.LineAdvances.Title),
             };
             foreach (var line in assets.NextSteps)
             {
-                nextStepLines.Add((line, 19f, new Color(0.94f, 0.97f, 1f, 1f), nextMaxWidth));
+                nextStepLines.Add((line, typography.Next.BodySize, new Color(0.94f, 0.97f, 1f, 1f), assets.Layout.NextText.MaxWidth, typography.Next.LineAdvances.Body));
             }
             foreach (var row in assets.NextStepDynamicRows)
             {
-                nextStepLines.Add((RenderNextStepRow(row, network, audioActivated), 19f, new Color(0.94f, 0.97f, 1f, 1f), nextMaxWidth));
+                nextStepLines.Add((RenderNextStepRow(row, network, audioActivated), typography.Next.BodySize, new Color(0.94f, 0.97f, 1f, 1f), assets.Layout.NextText.MaxWidth, typography.Next.LineAdvances.Body));
             }
 
             var overviewY = assets.Layout.OverviewText.TitleY;
             foreach (var line in overviewLines)
             {
-                game.DrawText(font, line.Text, assets.Layout.OverviewText.X, overviewY, line.Size, TextAlignment.Left, line.MaxWidth, 1.12f, TextDirection.Auto, line.Color);
-                overviewY += line.Size >= 38f ? 44f : (line.Size >= 24f ? 30f : 24f);
+                game.DrawText(font, line.Text, assets.Layout.OverviewText.X, overviewY, line.Size, TextAlignment.Left, line.MaxWidth, typography.Overview.LineSpacing, TextDirection.Auto, line.Color);
+                overviewY += EffectiveAdvance(line.Text, line.Size, line.MaxWidth, line.BaseAdvance);
             }
 
             var statusY = assets.Layout.StatusText.TitleY;
             foreach (var line in statusLines)
             {
-                game.DrawText(font, line.Text, assets.Layout.StatusText.X, statusY, line.Size, TextAlignment.Left, line.MaxWidth, 1.10f, TextDirection.Auto, line.Color);
-                statusY += line.Size >= 30f ? 38f : 24f;
+                game.DrawText(font, line.Text, assets.Layout.StatusText.X, statusY, line.Size, TextAlignment.Left, line.MaxWidth, typography.Status.LineSpacing, TextDirection.Auto, line.Color);
+                statusY += EffectiveAdvance(line.Text, line.Size, line.MaxWidth, line.BaseAdvance);
             }
 
             var nextY = assets.Layout.NextText.TitleY;
             foreach (var line in nextStepLines)
             {
-                game.DrawText(font, line.Text, assets.Layout.NextText.X, nextY, line.Size, TextAlignment.Left, line.MaxWidth, 1.12f, TextDirection.Auto, line.Color);
-                nextY += line.Size >= 32f ? 38f : 25f;
+                game.DrawText(font, line.Text, assets.Layout.NextText.X, nextY, line.Size, TextAlignment.Left, line.MaxWidth, typography.Next.LineSpacing, TextDirection.Auto, line.Color);
+                nextY += EffectiveAdvance(line.Text, line.Size, line.MaxWidth, line.BaseAdvance);
             }
-            game.DrawText(font, sceneEntry.Label, assets.Layout.SceneLabel.X, assets.Layout.SceneLabel.Y, 20f, TextAlignment.Left, assets.Layout.SceneLabel.MaxWidth, 1.1f, TextDirection.Auto, new Color(1f, 1f, 1f, 1f));
+            game.DrawText(font, sceneEntry.Label, assets.Layout.SceneLabel.X, assets.Layout.SceneLabel.Y, typography.SceneLabel.Size, TextAlignment.Left, assets.Layout.SceneLabel.MaxWidth, typography.SceneLabel.LineSpacing, TextDirection.Auto, new Color(1f, 1f, 1f, 1f));
+            if (currentMode is "2D" or "Hybrid" && network.HasRemoteState)
+            {
+                game.DrawQuad(network.RemoteX, network.RemoteY - 50f, 84f, 18f, new Color(0.96f, 0.70f, 0.20f, 0.92f));
+                game.DrawText(font, $"Peer {network.RemoteMode}", network.RemoteX - 32f, network.RemoteY - 56f, 13f, TextAlignment.Left, 0f, 1f, TextDirection.Auto, new Color(0.04f, 0.05f, 0.08f, 1f));
+                game.DrawSprite(sprite, network.RemoteX, network.RemoteY, 52f, 52f, -angle * 0.18f);
+            }
 
             ui.Update();
             ui.Render();
@@ -458,6 +478,58 @@ internal static class Program
         };
     }
 
+    private static float EffectiveAdvance(string text, float fontSize, float maxWidth, float baseAdvance)
+    {
+        return baseAdvance * EstimateWrappedLineCount(text, fontSize, maxWidth);
+    }
+
+    private static int EstimateWrappedLineCount(string text, float fontSize, float maxWidth)
+    {
+        if (string.IsNullOrWhiteSpace(text) || maxWidth <= 0f)
+        {
+            return 1;
+        }
+
+        var approxGlyphWidth = MathF.Max(fontSize * 0.52f, 1f);
+        var maxChars = Math.Max(1, (int)MathF.Floor(maxWidth / approxGlyphWidth));
+        var total = 0;
+        foreach (var rawLine in text.Split('\n'))
+        {
+            var words = rawLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 0)
+            {
+                total += 1;
+                continue;
+            }
+
+            var wrapped = 1;
+            var current = 0;
+            foreach (var word in words)
+            {
+                var length = word.Length;
+                if (current == 0)
+                {
+                    current = length;
+                    continue;
+                }
+
+                if (current + 1 + length <= maxChars)
+                {
+                    current += 1 + length;
+                }
+                else
+                {
+                    wrapped += 1;
+                    current = length;
+                }
+            }
+
+            total += wrapped;
+        }
+
+        return Math.Max(1, total);
+    }
+
     private static SandboxAssets LoadAssets(string repoRoot)
     {
         using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(repoRoot, "examples", "shared", "sandbox", "manifest.json")));
@@ -467,6 +539,7 @@ internal static class Program
         using var contract = JsonDocument.Parse(File.ReadAllText(Path.Combine(repoRoot, "examples", "shared", "sandbox", "contract.json")));
         var contractRoot = contract.RootElement;
         var layoutRoot = contractRoot.GetProperty("layout");
+        var typographyRoot = contractRoot.GetProperty("typography");
         var scenes = ReadScenes(root.GetProperty("scenes"));
         return new SandboxAssets(
             root.GetProperty("title").GetString() ?? "GoudEngine Sandbox",
@@ -491,7 +564,8 @@ internal static class Program
             scenes,
             contractRoot.GetProperty("web_blockers").GetProperty("networking").GetString() ?? string.Empty,
             contractRoot.GetProperty("web_blockers").GetProperty("renderer").GetString() ?? string.Empty,
-            ReadHudLayout(layoutRoot)
+            ReadHudLayout(layoutRoot),
+            ReadHudTypography(typographyRoot)
         );
     }
 
@@ -651,7 +725,8 @@ internal static class Program
         return new OverviewTextLayout(
             (float)element.GetProperty("x").GetDouble(),
             (float)element.GetProperty("title_y").GetDouble(),
-            (float)element.GetProperty("tagline_y").GetDouble()
+            (float)element.GetProperty("tagline_y").GetDouble(),
+            (float)element.GetProperty("max_width").GetDouble()
         );
     }
 
@@ -668,7 +743,8 @@ internal static class Program
     {
         return new NextTextLayout(
             (float)element.GetProperty("x").GetDouble(),
-            (float)element.GetProperty("title_y").GetDouble()
+            (float)element.GetProperty("title_y").GetDouble(),
+            (float)element.GetProperty("max_width").GetDouble()
         );
     }
 
@@ -681,10 +757,65 @@ internal static class Program
         );
     }
 
-    private static float MaxWidthFromPanel(HudRect panel, float textX, float margin)
+    private static HudTypography ReadHudTypography(JsonElement typographyRoot)
     {
-        var right = panel.X + panel.Width * 0.5f;
-        var maxWidth = right - textX - margin;
-        return maxWidth > 64f ? maxWidth : 64f;
+        return new HudTypography(
+            ReadOverviewTypography(typographyRoot.GetProperty("overview")),
+            ReadStatusTypography(typographyRoot.GetProperty("status")),
+            ReadNextTypography(typographyRoot.GetProperty("next")),
+            ReadSceneLabelTypography(typographyRoot.GetProperty("scene_label"))
+        );
+    }
+
+    private static OverviewTypography ReadOverviewTypography(JsonElement element)
+    {
+        var advances = element.GetProperty("line_advances");
+        return new OverviewTypography(
+            (float)element.GetProperty("title_size").GetDouble(),
+            (float)element.GetProperty("tagline_size").GetDouble(),
+            (float)element.GetProperty("body_size").GetDouble(),
+            (float)element.GetProperty("line_spacing").GetDouble(),
+            new OverviewLineAdvances(
+                (float)advances.GetProperty("title").GetDouble(),
+                (float)advances.GetProperty("tagline").GetDouble(),
+                (float)advances.GetProperty("body").GetDouble()
+            )
+        );
+    }
+
+    private static StatusTypography ReadStatusTypography(JsonElement element)
+    {
+        var advances = element.GetProperty("line_advances");
+        return new StatusTypography(
+            (float)element.GetProperty("title_size").GetDouble(),
+            (float)element.GetProperty("body_size").GetDouble(),
+            (float)element.GetProperty("line_spacing").GetDouble(),
+            new StatusLineAdvances(
+                (float)advances.GetProperty("title").GetDouble(),
+                (float)advances.GetProperty("body").GetDouble()
+            )
+        );
+    }
+
+    private static NextTypography ReadNextTypography(JsonElement element)
+    {
+        var advances = element.GetProperty("line_advances");
+        return new NextTypography(
+            (float)element.GetProperty("title_size").GetDouble(),
+            (float)element.GetProperty("body_size").GetDouble(),
+            (float)element.GetProperty("line_spacing").GetDouble(),
+            new NextLineAdvances(
+                (float)advances.GetProperty("title").GetDouble(),
+                (float)advances.GetProperty("body").GetDouble()
+            )
+        );
+    }
+
+    private static SceneLabelTypography ReadSceneLabelTypography(JsonElement element)
+    {
+        return new SceneLabelTypography(
+            (float)element.GetProperty("size").GetDouble(),
+            (float)element.GetProperty("line_spacing").GetDouble()
+        );
     }
 }

@@ -301,6 +301,24 @@ impl TextBatch {
         });
     }
 
+    /// Draws a single prepared layout as one native text frame.
+    ///
+    /// This is the shared immediate/native helper used by both SDK and FFI
+    /// text paths after shaping/layout and atlas texture resolution.
+    pub fn draw_prepared_layout_frame(
+        &mut self,
+        backend: &mut dyn RenderBackend,
+        viewport: (u32, u32),
+        layout: &super::layout::TextLayoutResult,
+        color: Color,
+        transform: &Transform2D,
+        texture: TextureHandle,
+    ) -> Result<(), String> {
+        self.begin();
+        self.append_glyph_batch(layout, color, transform, texture);
+        self.end(backend, viewport)
+    }
+
     /// Uploads geometry to the GPU and issues draw calls.
     ///
     /// # Errors
@@ -330,9 +348,10 @@ impl TextBatch {
             backend.set_uniform_vec2(location, viewport.0.max(1) as f32, viewport.1.max(1) as f32);
         }
 
-        // Keep the caller's current VAO binding.
-        // `GoudGame::draw_text` binds the immediate VAO before entering this path,
-        // and forcing a backend default VAO here can invalidate per-VAO element/index state.
+        // Native OpenGL requires a valid VAO for vertex attribute setup and indexed draws.
+        // Always bind the backend-owned default VAO so immediate text draws do not depend
+        // on ambient VAO state from unrelated render paths.
+        backend.bind_default_vertex_array();
 
         if let Some(vbo) = self.vertex_buffer {
             backend

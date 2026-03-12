@@ -2,6 +2,13 @@ use super::*;
 use crate::core::error::{
     clear_last_error, last_error_code, ERR_INVALID_HANDLE, ERR_INVALID_STATE,
 };
+use crate::core::math::{Color, Vec2};
+use crate::ecs::components::Transform2D;
+use crate::libs::graphics::backend::null::NullBackend;
+use crate::libs::graphics::backend::types::{TextureFilter, TextureFormat, TextureWrap};
+use crate::libs::graphics::backend::TextureOps;
+use crate::rendering::text::TextBatch;
+use crate::rendering::text::{LayoutGlyph, TextBoundingBox, TextLayoutResult, UvRect};
 use std::os::raw::c_char;
 
 fn fake_context() -> GoudContextId {
@@ -91,4 +98,79 @@ fn draw_text_rejects_invalid_utf8_before_gl() {
     };
     assert!(!ok);
     assert_eq!(last_error_code(), ERR_INVALID_STATE);
+}
+
+#[test]
+fn context_font_state_keeps_persistent_text_batch() {
+    let mut state = ContextFontState::new();
+    let first_ptr = (&state.text_batch as *const TextBatch) as usize;
+    state.text_batch.begin();
+    let second_ptr = (&state.text_batch as *const TextBatch) as usize;
+    assert_eq!(first_ptr, second_ptr);
+}
+
+#[test]
+fn context_font_state_reuses_text_batch_shader_across_draws() {
+    let mut state = ContextFontState::new();
+    let mut backend = NullBackend::new();
+    let texture = backend
+        .create_texture(
+            2,
+            2,
+            TextureFormat::RGBA8,
+            TextureFilter::Linear,
+            TextureWrap::ClampToEdge,
+            &[255u8; 16],
+        )
+        .expect("null texture creation");
+    let layout = TextLayoutResult {
+        glyphs: vec![LayoutGlyph {
+            x: 1.0,
+            y: 2.0,
+            character: 'x',
+            uv_rect: UvRect {
+                u_min: 0.0,
+                v_min: 0.0,
+                u_max: 1.0,
+                v_max: 1.0,
+            },
+            size_x: 8.0,
+            size_y: 8.0,
+        }],
+        bounding_box: TextBoundingBox {
+            width: 8.0,
+            height: 8.0,
+        },
+        line_count: 1,
+    };
+    let transform = Transform2D::from_position(Vec2::new(12.0, 24.0));
+
+    state
+        .text_batch
+        .draw_prepared_layout_frame(
+            &mut backend,
+            (1280, 720),
+            &layout,
+            Color::WHITE,
+            &transform,
+            texture,
+        )
+        .expect("first text frame");
+    state
+        .text_batch
+        .draw_prepared_layout_frame(
+            &mut backend,
+            (1280, 720),
+            &layout,
+            Color::WHITE,
+            &transform,
+            texture,
+        )
+        .expect("second text frame");
+
+    assert_eq!(
+        backend.shader_create_calls(),
+        1,
+        "persistent FFI text batch should reuse compiled text shader state"
+    );
 }

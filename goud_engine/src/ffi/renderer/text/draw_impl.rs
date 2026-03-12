@@ -68,11 +68,23 @@ pub(super) fn draw_text_internal(
         let texture = atlas
             .ensure_gpu_texture(window_state.backend_mut())
             .map_err(GoudError::TextureCreationFailed)?;
-        draw_layout(window_state, texture, &layout, x, y, r, g, b, a)
+        draw_layout(
+            &mut state.text_batch,
+            window_state,
+            texture,
+            &layout,
+            x,
+            y,
+            r,
+            g,
+            b,
+            a,
+        )
     })
 }
 
 fn draw_layout(
+    text_batch: &mut TextBatch,
     window_state: &mut WindowState,
     texture: TextureHandle,
     layout: &crate::rendering::text::TextLayoutResult,
@@ -83,12 +95,34 @@ fn draw_layout(
     b: f32,
     a: f32,
 ) -> Result<(), GoudError> {
-    let mut text_batch = TextBatch::new();
     let transform = Transform2D::from_position(Vec2::new(x, y));
     let color = Color::new(r, g, b, a);
-    let viewport = window_state.get_framebuffer_size();
-    text_batch.append_glyph_batch(layout, color, &transform, texture);
+    let viewport =
+        select_text_viewport(window_state.get_size(), window_state.get_framebuffer_size());
     text_batch
-        .end(window_state.backend_mut(), viewport)
+        .draw_prepared_layout_frame(
+            window_state.backend_mut(),
+            viewport,
+            layout,
+            color,
+            &transform,
+            texture,
+        )
         .map_err(GoudError::DrawCallFailed)
+}
+
+fn select_text_viewport(logical_size: (u32, u32), _framebuffer_size: (u32, u32)) -> (u32, u32) {
+    logical_size
+}
+
+#[cfg(test)]
+mod tests {
+    use super::select_text_viewport;
+
+    #[test]
+    fn ffi_text_viewport_uses_logical_window_size() {
+        let logical = (1280, 720);
+        let framebuffer = (2560, 1440);
+        assert_eq!(select_text_viewport(logical, framebuffer), logical);
+    }
 }

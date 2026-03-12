@@ -58,7 +58,8 @@
     "overview_text": {
       "x": 60.0,
       "title_y": 52.0,
-      "tagline_y": 96.0
+      "tagline_y": 96.0,
+      "max_width": 558.0
     },
     "status_text": {
       "x": 754.0,
@@ -67,12 +68,48 @@
     },
     "next_text": {
       "x": 94.0,
-      "title_y": 526.0
+      "title_y": 526.0,
+      "max_width": 1106.0
     },
     "scene_label": {
       "x": 900.0,
       "y": 320.0,
       "max_width": 190.0
+    }
+  },
+  "typography": {
+    "overview": {
+      "title_size": 40.0,
+      "tagline_size": 24.0,
+      "body_size": 19.0,
+      "line_spacing": 1.12,
+      "line_advances": {
+        "title": 44.0,
+        "tagline": 30.0,
+        "body": 24.0
+      }
+    },
+    "status": {
+      "title_size": 30.0,
+      "body_size": 18.0,
+      "line_spacing": 1.10,
+      "line_advances": {
+        "title": 38.0,
+        "body": 24.0
+      }
+    },
+    "next": {
+      "title_size": 32.0,
+      "body_size": 19.0,
+      "line_spacing": 1.12,
+      "line_advances": {
+        "title": 38.0,
+        "body": 25.0
+      }
+    },
+    "scene_label": {
+      "size": 20.0,
+      "line_spacing": 1.10
     }
   },
   "web_blockers": {

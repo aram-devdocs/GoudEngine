@@ -97,13 +97,14 @@ pub(crate) fn draw_sprite_rect_internal(
 
     backend.enable_blending();
     backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-    backend.bind_buffer(vertex_buffer)?;
-    backend.bind_buffer(index_buffer)?;
-
     // SAFETY: vao was created by ensure_immediate_state and is valid for this context.
     unsafe {
         gl::BindVertexArray(vao);
     }
+    // Element array buffer binding is VAO state in OpenGL core profiles.
+    // Bind the VAO first so VBO/IBO attachments land on the correct VAO.
+    backend.bind_buffer(vertex_buffer)?;
+    backend.bind_buffer(index_buffer)?;
     configure_immediate_vertex_layout();
 
     backend.bind_shader(shader)?;
@@ -192,13 +193,14 @@ pub(crate) fn draw_quad_rotated_internal(
 
     backend.enable_blending();
     backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-    backend.bind_buffer(vertex_buffer)?;
-    backend.bind_buffer(index_buffer)?;
-
     // SAFETY: vao was created by ensure_immediate_state and is valid for this context.
     unsafe {
         gl::BindVertexArray(vao);
     }
+    // Element array buffer binding is VAO state in OpenGL core profiles.
+    // Bind the VAO first so VBO/IBO attachments land on the correct VAO.
+    backend.bind_buffer(vertex_buffer)?;
+    backend.bind_buffer(index_buffer)?;
     configure_immediate_vertex_layout();
 
     backend.bind_shader(shader)?;

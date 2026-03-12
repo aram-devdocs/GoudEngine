@@ -9,7 +9,6 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -68,6 +67,7 @@ class OverviewTextLayout:
     x: float
     title_y: float
     tagline_y: float
+    max_width: float
 
 
 @dataclass
@@ -81,6 +81,7 @@ class StatusTextLayout:
 class NextTextLayout:
     x: float
     title_y: float
+    max_width: float
 
 
 @dataclass
@@ -100,6 +101,64 @@ class HudLayout:
     status_text: StatusTextLayout
     next_text: NextTextLayout
     scene_label: SceneLabelLayout
+
+
+@dataclass
+class OverviewLineAdvances:
+    title: float
+    tagline: float
+    body: float
+
+
+@dataclass
+class StatusLineAdvances:
+    title: float
+    body: float
+
+
+@dataclass
+class NextLineAdvances:
+    title: float
+    body: float
+
+
+@dataclass
+class OverviewTypography:
+    title_size: float
+    tagline_size: float
+    body_size: float
+    line_spacing: float
+    line_advances: OverviewLineAdvances
+
+
+@dataclass
+class StatusTypography:
+    title_size: float
+    body_size: float
+    line_spacing: float
+    line_advances: StatusLineAdvances
+
+
+@dataclass
+class NextTypography:
+    title_size: float
+    body_size: float
+    line_spacing: float
+    line_advances: NextLineAdvances
+
+
+@dataclass
+class SceneLabelTypography:
+    size: float
+    line_spacing: float
+
+
+@dataclass
+class HudTypography:
+    overview: OverviewTypography
+    status: StatusTypography
+    next: NextTypography
+    scene_label: SceneLabelTypography
 
 
 @dataclass
@@ -129,6 +188,7 @@ class SandboxContract:
     next_step_items: list[str]
     next_step_dynamic_rows: list[str]
     layout: HudLayout
+    typography: HudTypography
     web_networking_blocker: str
     web_renderer_blocker: str
 
@@ -222,6 +282,34 @@ def _load_manifest() -> SandboxManifest:
                 status_text=StatusTextLayout(**layout["status_text"]),
                 next_text=NextTextLayout(**layout["next_text"]),
                 scene_label=SceneLabelLayout(**layout["scene_label"]),
+            ),
+            typography=HudTypography(
+                overview=OverviewTypography(
+                    title_size=float(contract["typography"]["overview"]["title_size"]),
+                    tagline_size=float(contract["typography"]["overview"]["tagline_size"]),
+                    body_size=float(contract["typography"]["overview"]["body_size"]),
+                    line_spacing=float(contract["typography"]["overview"]["line_spacing"]),
+                    line_advances=OverviewLineAdvances(
+                        **contract["typography"]["overview"]["line_advances"],
+                    ),
+                ),
+                status=StatusTypography(
+                    title_size=float(contract["typography"]["status"]["title_size"]),
+                    body_size=float(contract["typography"]["status"]["body_size"]),
+                    line_spacing=float(contract["typography"]["status"]["line_spacing"]),
+                    line_advances=StatusLineAdvances(
+                        **contract["typography"]["status"]["line_advances"],
+                    ),
+                ),
+                next=NextTypography(
+                    title_size=float(contract["typography"]["next"]["title_size"]),
+                    body_size=float(contract["typography"]["next"]["body_size"]),
+                    line_spacing=float(contract["typography"]["next"]["line_spacing"]),
+                    line_advances=NextLineAdvances(
+                        **contract["typography"]["next"]["line_advances"],
+                    ),
+                ),
+                scene_label=SceneLabelTypography(**contract["typography"]["scene_label"]),
             ),
             web_networking_blocker=str(contract["web_blockers"]["networking"]),
             web_renderer_blocker=str(contract["web_blockers"]["renderer"]),
@@ -371,13 +459,17 @@ def _draw_lines(
     x: float,
     y: float,
     sizes: list[float],
+    kinds: list[str],
     color: Color,
     max_width: float = 0.0,
-    advance: Callable[[float], float] | None = None,
+    line_spacing: float = 1.0,
+    advances: dict[str, float] | None = None,
 ) -> None:
+    advances = advances or {"body": 24.0}
     current_y = y
     for index, line in enumerate(lines):
         size = sizes[index] if index < len(sizes) else sizes[-1]
+        kind = kinds[index] if index < len(kinds) else "body"
         game.draw_text(
             font,
             line,
@@ -386,36 +478,42 @@ def _draw_lines(
             size,
             TextAlignment.LEFT,
             max_width,
-            1.0,
+            line_spacing,
             0,
             color,
         )
-        if advance is not None:
-            current_y += advance(size)
-        else:
-            current_y += 26 if size >= 18 else 21
+        base_advance = advances.get(kind, advances.get("body", 24.0))
+        current_y += base_advance * _estimate_wrapped_line_count(line, size, max_width)
 
 
-def _overview_advance(size: float) -> float:
-    if size >= 38:
-        return 44
-    if size >= 24:
-        return 30
-    return 24
+def _estimate_wrapped_line_count(text: str, font_size: float, max_width: float) -> int:
+    if not text.strip() or max_width <= 0.0:
+        return 1
 
+    approx_glyph_width = max(font_size * 0.52, 1.0)
+    max_chars = max(1, int(max_width // approx_glyph_width))
+    total_lines = 0
+    for raw_line in text.split("\n"):
+        words = raw_line.split()
+        if not words:
+            total_lines += 1
+            continue
 
-def _status_advance(size: float) -> float:
-    return 38 if size >= 30 else 24
+        wrapped = 1
+        current = 0
+        for word in words:
+            length = len(word)
+            if current == 0:
+                current = length
+                continue
+            if current + 1 + length <= max_chars:
+                current += 1 + length
+            else:
+                wrapped += 1
+                current = length
+        total_lines += wrapped
 
-
-def _next_advance(size: float) -> float:
-    return 38 if size >= 32 else 25
-
-
-def _max_width_from_panel(panel: HudRect, text_x: float, margin: float) -> float:
-    right = panel.x + panel.width * 0.5
-    max_width = right - text_x - margin
-    return max_width if max_width > 64 else 64
+    return max(1, total_lines)
 
 
 def _status_row(
@@ -566,32 +664,9 @@ def main() -> int:
             game.draw_sprite(accent_sprite, 1044, 420, 78, 250, 0.0)
             game.draw_quad(920.0, 260.0, 180.0, 40.0, Color(0.20, 0.55, 0.95, 0.62))
 
-        if current_mode in ("2D", "Hybrid"):
-            if network.has_remote_state:
-                game.draw_quad(
-                    network.remote_x,
-                    network.remote_y - 48,
-                    108,
-                    20,
-                    Color(0.96, 0.70, 0.20, 0.92),
-                )
-                game.draw_text(
-                    font,
-                    f"Peer {network.remote_mode}",
-                    network.remote_x - 40,
-                    network.remote_y - 54,
-                    14,
-                    TextAlignment.LEFT,
-                    0,
-                    1.0,
-                    0,
-                    Color(0.04, 0.05, 0.08, 1.0),
-                )
-                game.draw_sprite(sprite, network.remote_x, network.remote_y, 52, 52, -angle * 0.18)
-
         layout = manifest.contract.layout
-        panel_alpha = 0.62 if current_mode in ("3D", "Hybrid") else 0.92
-        bottom_alpha = 0.70 if current_mode in ("3D", "Hybrid") else 0.94
+        panel_alpha = 0.48 if current_mode in ("3D", "Hybrid") else 0.72
+        bottom_alpha = 0.55 if current_mode in ("3D", "Hybrid") else 0.78
         game.draw_quad(
             layout.overview_panel.x,
             layout.overview_panel.y,
@@ -631,12 +706,21 @@ def main() -> int:
         except Exception:
             network_caps = None
 
-        overview_max_width = _max_width_from_panel(layout.overview_panel, layout.overview_text.x, 24.0)
-        next_max_width = _max_width_from_panel(layout.next_panel, layout.next_text.x, 24.0)
+        typography = manifest.contract.typography
         overview_lines = [
             manifest.hud.overview_title,
             manifest.hud.tagline,
             *manifest.contract.overview_items,
+        ]
+        overview_sizes = [
+            typography.overview.title_size,
+            typography.overview.tagline_size,
+            *[typography.overview.body_size for _ in manifest.contract.overview_items],
+        ]
+        overview_kinds = [
+            "title",
+            "tagline",
+            *["body" for _ in manifest.contract.overview_items],
         ]
         status_lines = [
             manifest.hud.status_title,
@@ -655,12 +739,40 @@ def main() -> int:
                 for row in manifest.contract.status_rows
             ],
         ]
+        status_sizes = [
+            typography.status.title_size,
+            *[typography.status.body_size for _ in manifest.contract.status_rows],
+        ]
+        status_kinds = [
+            "title",
+            *["body" for _ in manifest.contract.status_rows],
+        ]
         next_step_lines = [
             manifest.hud.next_steps_title,
             *manifest.contract.next_step_items,
             *[
                 _next_step_row(row, manifest, network, audio_activated)
                 for row in manifest.contract.next_step_dynamic_rows
+            ],
+        ]
+        next_sizes = [
+            typography.next.title_size,
+            *[
+                typography.next.body_size
+                for _ in (
+                    manifest.contract.next_step_items
+                    + manifest.contract.next_step_dynamic_rows
+                )
+            ],
+        ]
+        next_kinds = [
+            "title",
+            *[
+                "body"
+                for _ in (
+                    manifest.contract.next_step_items
+                    + manifest.contract.next_step_dynamic_rows
+                )
             ],
         ]
 
@@ -670,10 +782,16 @@ def main() -> int:
             overview_lines,
             layout.overview_text.x,
             layout.overview_text.title_y,
-            [40, 24, 19],
+            overview_sizes,
+            overview_kinds,
             Color.white(),
-            overview_max_width,
-            _overview_advance,
+            layout.overview_text.max_width,
+            typography.overview.line_spacing,
+            {
+                "title": typography.overview.line_advances.title,
+                "tagline": typography.overview.line_advances.tagline,
+                "body": typography.overview.line_advances.body,
+            },
         )
         _draw_lines(
             game,
@@ -681,10 +799,15 @@ def main() -> int:
             status_lines,
             layout.status_text.x,
             layout.status_text.title_y,
-            [30, 18],
+            status_sizes,
+            status_kinds,
             Color(0.94, 0.97, 1.0, 1.0),
             layout.status_text.max_width,
-            _status_advance,
+            typography.status.line_spacing,
+            {
+                "title": typography.status.line_advances.title,
+                "body": typography.status.line_advances.body,
+            },
         )
         _draw_lines(
             game,
@@ -692,23 +815,49 @@ def main() -> int:
             next_step_lines,
             layout.next_text.x,
             layout.next_text.title_y,
-            [32, 19],
+            next_sizes,
+            next_kinds,
             Color(0.94, 0.97, 1.0, 1.0),
-            next_max_width,
-            _next_advance,
+            layout.next_text.max_width,
+            typography.next.line_spacing,
+            {
+                "title": typography.next.line_advances.title,
+                "body": typography.next.line_advances.body,
+            },
         )
         game.draw_text(
             font,
             scene_labels[current_mode],
             layout.scene_label.x,
             layout.scene_label.y,
-            20,
+            typography.scene_label.size,
             TextAlignment.LEFT,
             layout.scene_label.max_width,
-            1.10,
+            typography.scene_label.line_spacing,
             0,
             Color.white(),
         )
+        if current_mode in ("2D", "Hybrid") and network.has_remote_state:
+            game.draw_quad(
+                network.remote_x,
+                network.remote_y - 48,
+                108,
+                20,
+                Color(0.96, 0.70, 0.20, 0.92),
+            )
+            game.draw_text(
+                font,
+                f"Peer {network.remote_mode}",
+                network.remote_x - 40,
+                network.remote_y - 54,
+                14,
+                TextAlignment.LEFT,
+                0,
+                1.0,
+                0,
+                Color(0.04, 0.05, 0.08, 1.0),
+            )
+            game.draw_sprite(sprite, network.remote_x, network.remote_y, 52, 52, -angle * 0.18)
 
         ui.update()
         ui.render()

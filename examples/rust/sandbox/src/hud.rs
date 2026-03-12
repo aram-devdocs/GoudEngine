@@ -26,6 +26,7 @@ struct HudLine {
     size: f32,
     max_width: f32,
     line_spacing: f32,
+    line_advance: f32,
     color: (f32, f32, f32, f32),
 }
 
@@ -38,14 +39,14 @@ pub(crate) fn draw(
 ) {
     let layout = &config.hud.contract.layout;
     let panel_alpha = if matches!(snapshot.current_mode.as_str(), "3D" | "Hybrid") {
-        0.62
+        0.48
     } else {
-        0.88
+        0.72
     };
     let bottom_alpha = if matches!(snapshot.current_mode.as_str(), "3D" | "Hybrid") {
-        0.70
+        0.55
     } else {
-        0.92
+        0.78
     };
 
     game.draw_quad(
@@ -109,7 +110,6 @@ pub(crate) fn draw(
         layout.overview_text.x,
         layout.overview_text.title_y,
         &overview,
-        overview_advance,
     );
     draw_block(
         game,
@@ -117,7 +117,6 @@ pub(crate) fn draw(
         layout.status_text.x,
         layout.status_text.title_y,
         &status,
-        status_advance,
     );
     draw_block(
         game,
@@ -125,18 +124,18 @@ pub(crate) fn draw(
         layout.next_text.x,
         layout.next_text.title_y,
         &next_steps,
-        next_advance,
     );
 
     let scene_label = current_scene_label(config, snapshot.mode_index);
+    let scene_type = config.hud.contract.typography.scene_label;
     let _ = game.draw_text(
         font_path,
         &scene_label,
         layout.scene_label.x,
         layout.scene_label.y,
-        20.0,
+        scene_type.size,
         layout.scene_label.max_width,
-        1.10,
+        scene_type.line_spacing,
         TITLE_COLOR.0,
         TITLE_COLOR.1,
         TITLE_COLOR.2,
@@ -145,27 +144,34 @@ pub(crate) fn draw(
 }
 
 fn build_overview_lines(config: &SandboxConfig) -> Vec<HudLine> {
-    let mut lines = Vec::new();
-    append_wrapped(
-        &mut lines,
-        &config.hud.overview_title,
-        40.0,
-        30,
-        TITLE_COLOR,
-        0.0,
-        1.12,
-    );
-    append_wrapped(
-        &mut lines,
-        &config.hud.tagline,
-        24.0,
-        34,
-        TITLE_COLOR,
-        0.0,
-        1.12,
-    );
+    let type_scale = config.hud.contract.typography.overview;
+    let mut lines = vec![
+        HudLine {
+            text: config.hud.overview_title.clone(),
+            size: type_scale.title_size,
+            max_width: config.hud.contract.layout.overview_text.max_width,
+            line_spacing: type_scale.line_spacing,
+            line_advance: type_scale.line_advances.title,
+            color: TITLE_COLOR,
+        },
+        HudLine {
+            text: config.hud.tagline.clone(),
+            size: type_scale.tagline_size,
+            max_width: config.hud.contract.layout.overview_text.max_width,
+            line_spacing: type_scale.line_spacing,
+            line_advance: type_scale.line_advances.tagline,
+            color: TITLE_COLOR,
+        },
+    ];
     for item in &config.hud.contract.overview_items {
-        append_wrapped(&mut lines, item, 19.0, 36, BODY_COLOR, 0.0, 1.12);
+        lines.push(HudLine {
+            text: item.clone(),
+            size: type_scale.body_size,
+            max_width: config.hud.contract.layout.overview_text.max_width,
+            line_spacing: type_scale.line_spacing,
+            line_advance: type_scale.line_advances.body,
+            color: BODY_COLOR,
+        });
     }
     lines
 }
@@ -175,19 +181,22 @@ fn build_status_lines(
     network: &NetworkState,
     snapshot: &HudSnapshot,
 ) -> Vec<HudLine> {
+    let type_scale = config.hud.contract.typography.status;
     let mut lines = vec![HudLine {
         text: config.hud.status_title.clone(),
-        size: 30.0,
-        max_width: 0.0,
-        line_spacing: 1.10,
+        size: type_scale.title_size,
+        max_width: config.hud.contract.layout.status_text.max_width,
+        line_spacing: type_scale.line_spacing,
+        line_advance: type_scale.line_advances.title,
         color: SECTION_COLOR,
     }];
     for row in &config.hud.contract.status_rows {
         lines.push(HudLine {
             text: render_status_row(config, network, snapshot, row),
-            size: 18.0,
+            size: type_scale.body_size,
             max_width: config.hud.contract.layout.status_text.max_width,
-            line_spacing: 1.10,
+            line_spacing: type_scale.line_spacing,
+            line_advance: type_scale.line_advances.body,
             color: BODY_COLOR,
         });
     }
@@ -199,41 +208,39 @@ fn build_next_step_lines(
     network: &NetworkState,
     audio_activated: bool,
 ) -> Vec<HudLine> {
-    let mut lines = Vec::new();
-    append_wrapped(
-        &mut lines,
-        &config.hud.next_steps_title,
-        32.0,
-        30,
-        SECTION_COLOR,
-        0.0,
-        1.12,
-    );
+    let type_scale = config.hud.contract.typography.next;
+    let mut lines = vec![HudLine {
+        text: config.hud.next_steps_title.clone(),
+        size: type_scale.title_size,
+        max_width: config.hud.contract.layout.next_text.max_width,
+        line_spacing: type_scale.line_spacing,
+        line_advance: type_scale.line_advances.title,
+        color: SECTION_COLOR,
+    }];
     for item in &config.hud.contract.next_step_items {
-        append_wrapped(&mut lines, item, 19.0, 64, BODY_COLOR, 0.0, 1.12);
+        lines.push(HudLine {
+            text: item.clone(),
+            size: type_scale.body_size,
+            max_width: config.hud.contract.layout.next_text.max_width,
+            line_spacing: type_scale.line_spacing,
+            line_advance: type_scale.line_advances.body,
+            color: BODY_COLOR,
+        });
     }
     for row in &config.hud.contract.next_step_dynamic_rows {
-        append_wrapped(
-            &mut lines,
-            &render_next_step_row(network, audio_activated, row),
-            19.0,
-            64,
-            BODY_COLOR,
-            0.0,
-            1.12,
-        );
+        lines.push(HudLine {
+            text: render_next_step_row(network, audio_activated, row),
+            size: type_scale.body_size,
+            max_width: config.hud.contract.layout.next_text.max_width,
+            line_spacing: type_scale.line_spacing,
+            line_advance: type_scale.line_advances.body,
+            color: BODY_COLOR,
+        });
     }
     lines
 }
 
-fn draw_block(
-    game: &mut GoudGame,
-    font_path: &str,
-    x: f32,
-    start_y: f32,
-    lines: &[HudLine],
-    advance: fn(f32) -> f32,
-) {
+fn draw_block(game: &mut GoudGame, font_path: &str, x: f32, start_y: f32, lines: &[HudLine]) {
     let mut y = start_y;
     for line in lines {
         let _ = game.draw_text(
@@ -249,8 +256,44 @@ fn draw_block(
             line.color.2,
             line.color.3,
         );
-        y += advance(line.size);
+        y += line.line_advance * wrapped_line_count(&line.text, line.max_width, line.size) as f32;
     }
+}
+
+fn wrapped_line_count(text: &str, max_width: f32, font_size: f32) -> usize {
+    if text.trim().is_empty() || max_width <= 0.0 {
+        return 1;
+    }
+
+    let approx_glyph_width = (font_size * 0.52).max(1.0);
+    let max_chars = (max_width / approx_glyph_width).floor().max(1.0) as usize;
+    let mut total_lines = 0usize;
+
+    for raw_line in text.split('\n') {
+        let words: Vec<&str> = raw_line.split_whitespace().collect();
+        if words.is_empty() {
+            total_lines += 1;
+            continue;
+        }
+        let mut current_len = 0usize;
+        let mut wrapped = 1usize;
+        for word in words {
+            let word_len = word.chars().count();
+            if current_len == 0 {
+                current_len = word_len;
+                continue;
+            }
+            if current_len + 1 + word_len <= max_chars {
+                current_len += 1 + word_len;
+            } else {
+                wrapped += 1;
+                current_len = word_len;
+            }
+        }
+        total_lines += wrapped;
+    }
+
+    total_lines.max(1)
 }
 
 fn render_status_row(
@@ -319,53 +362,6 @@ fn render_next_step_row(network: &NetworkState, audio_activated: bool, row: &str
     }
 }
 
-fn append_wrapped(
-    output: &mut Vec<HudLine>,
-    text: &str,
-    size: f32,
-    max_chars: usize,
-    color: (f32, f32, f32, f32),
-    max_width: f32,
-    line_spacing: f32,
-) {
-    for line in wrap_for_hud(text, max_chars) {
-        output.push(HudLine {
-            text: line,
-            size,
-            max_width,
-            line_spacing,
-            color,
-        });
-    }
-}
-
-fn wrap_for_hud(text: &str, max_chars: usize) -> Vec<String> {
-    if text.trim().is_empty() {
-        return Vec::new();
-    }
-
-    let mut lines = Vec::new();
-    let mut line = String::new();
-    for word in text.split_whitespace() {
-        let candidate_len = if line.is_empty() {
-            word.len()
-        } else {
-            line.len() + 1 + word.len()
-        };
-        if candidate_len > max_chars && !line.is_empty() {
-            lines.push(std::mem::take(&mut line));
-        }
-        if !line.is_empty() {
-            line.push(' ');
-        }
-        line.push_str(word);
-    }
-    if !line.is_empty() {
-        lines.push(line);
-    }
-    lines
-}
-
 fn current_scene(config: &SandboxConfig, mode_index: usize) -> &crate::config::SceneEntry {
     config
         .scenes
@@ -385,28 +381,29 @@ fn bool_word(value: bool) -> &'static str {
     }
 }
 
-fn overview_advance(size: f32) -> f32 {
-    if size >= 38.0 {
-        44.0
-    } else if size >= 24.0 {
-        30.0
-    } else {
-        24.0
-    }
-}
+#[cfg(test)]
+mod tests {
+    use super::build_overview_lines;
+    use crate::config::read_manifest_from;
+    use std::path::PathBuf;
 
-fn status_advance(size: f32) -> f32 {
-    if size >= 30.0 {
-        38.0
-    } else {
-        24.0
-    }
-}
-
-fn next_advance(size: f32) -> f32 {
-    if size >= 32.0 {
-        38.0
-    } else {
-        25.0
+    #[test]
+    fn overview_lines_keep_full_contract_strings_without_manual_prerender_wrap() {
+        let manifest_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../shared/sandbox/manifest.json")
+            .to_string_lossy()
+            .into_owned();
+        let config = read_manifest_from(&manifest_path);
+        let lines = build_overview_lines(&config);
+        assert_eq!(lines.len(), config.hud.contract.overview_items.len() + 2);
+        assert_eq!(lines[0].text, config.hud.overview_title);
+        assert_eq!(lines[1].text, config.hud.tagline);
+        for (line, source) in lines
+            .iter()
+            .skip(2)
+            .zip(config.hud.contract.overview_items.iter())
+        {
+            assert_eq!(&line.text, source);
+        }
     }
 }

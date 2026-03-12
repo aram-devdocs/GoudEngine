@@ -234,6 +234,30 @@ fn main() {
             game.draw_quad(920.0, 260.0, 180.0, 40.0, 0.20, 0.55, 0.95, 0.62);
         }
 
+        let (mx, my) = game.mouse_position();
+        let render_caps = game.render_capabilities();
+        let physics_caps = game.physics_capabilities();
+        let audio_caps = game.audio_capabilities();
+        let hud_snapshot = HudSnapshot {
+            current_mode: current_mode.to_string(),
+            mode_index,
+            mouse_x: mx,
+            mouse_y: my,
+            render_texture_size: render_caps.max_texture_size,
+            render_supports_instancing: render_caps.supports_instancing,
+            physics_supports_joints: physics_caps.supports_joints,
+            physics_max_bodies: physics_caps.max_bodies,
+            audio_supports_spatial: audio_caps.supports_spatial,
+            audio_max_channels: audio_caps.max_channels,
+            audio_activated,
+        };
+        draw_hud(
+            &mut game,
+            &config.assets.font,
+            &config,
+            &network,
+            &hud_snapshot,
+        );
         if current_mode != "3D" {
             if let Some(remote) = &network.remote {
                 game.draw_quad(
@@ -273,31 +297,6 @@ fn main() {
                 );
             }
         }
-
-        let (mx, my) = game.mouse_position();
-        let render_caps = game.render_capabilities();
-        let physics_caps = game.physics_capabilities();
-        let audio_caps = game.audio_capabilities();
-        let hud_snapshot = HudSnapshot {
-            current_mode: current_mode.to_string(),
-            mode_index,
-            mouse_x: mx,
-            mouse_y: my,
-            render_texture_size: render_caps.max_texture_size,
-            render_supports_instancing: render_caps.supports_instancing,
-            physics_supports_joints: physics_caps.supports_joints,
-            physics_max_bodies: physics_caps.max_bodies,
-            audio_supports_spatial: audio_caps.supports_spatial,
-            audio_max_channels: audio_caps.max_channels,
-            audio_activated,
-        };
-        draw_hud(
-            &mut game,
-            &config.assets.font,
-            &config,
-            &network,
-            &hud_snapshot,
-        );
 
         game.end_render();
         game.swap_buffers().expect("swap buffers");

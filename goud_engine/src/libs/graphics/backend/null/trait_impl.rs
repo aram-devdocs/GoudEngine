@@ -269,6 +269,7 @@ impl ShaderOps for NullBackend {
         _vertex_src: &str,
         _fragment_src: &str,
     ) -> GoudResult<ShaderHandle> {
+        self.shader_create_calls += 1;
         let handle = self.shader_allocator.allocate();
         Ok(handle)
     }
