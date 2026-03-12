@@ -6,11 +6,22 @@ use crate::libs::graphics::backend::types::{PrimitiveTopology, VertexLayout};
 
 /// Sets up vertex attribute pointers for the currently bound vertex buffer.
 pub(super) fn set_vertex_attributes(layout: &VertexLayout) {
+    let mut max_vertex_attribs = 0i32;
+    // SAFETY: Querying OpenGL limits is read-only and valid with an active context.
+    unsafe {
+        gl::GetIntegerv(gl::MAX_VERTEX_ATTRIBS, &mut max_vertex_attribs);
+    }
+    let max_vertex_attribs = max_vertex_attribs.max(0) as u32;
+    let mut enabled_locations = vec![false; max_vertex_attribs as usize];
+
     // SAFETY: Attribute location and type values come from validated VertexLayout;
     // a VAO/VBO must be bound by the caller before this is invoked.
     unsafe {
         for attr in &layout.attributes {
             gl::EnableVertexAttribArray(attr.location);
+            if (attr.location as usize) < enabled_locations.len() {
+                enabled_locations[attr.location as usize] = true;
+            }
 
             let gl_type = conversions::attribute_type_to_gl_type(attr.attribute_type);
             let component_count = attr.attribute_type.component_count() as i32;
@@ -23,6 +34,14 @@ pub(super) fn set_vertex_attributes(layout: &VertexLayout) {
                 layout.stride as i32,
                 attr.offset as *const _,
             );
+        }
+
+        // Ensure stale vertex-array state from prior pipelines does not leak into
+        // this draw layout on shared VAOs.
+        for location in 0..max_vertex_attribs {
+            if !enabled_locations[location as usize] {
+                gl::DisableVertexAttribArray(location);
+            }
         }
     }
     gl_check_debug!("set_vertex_attributes");

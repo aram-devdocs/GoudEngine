@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feature Lab (ALPHA-001) -- GoudEngine Web</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 20% 20%, #25374b, #0b1118);
+      color: #dbe7f5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    canvas {
+      display: block;
+      border-radius: 8px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+    }
+    .hint {
+      position: fixed;
+      left: 16px;
+      bottom: 16px;
+      font-size: 12px;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <p class="hint">Open devtools console for Feature Lab probe output.</p>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "goudengine/web": "/sdks/typescript/dist/web/web/index.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { GoudGame } from 'goudengine/web';
+    import { createFeatureLab } from '../dist/lab.js';
+
+    const canvas = document.getElementById('c');
+
+    const game = await GoudGame.create({
+      width: 960,
+      height: 540,
+      title: 'Feature Lab (ALPHA-001) -- Web',
+      canvas,
+      wasmUrl: '/sdks/typescript/wasm/goud_engine_bg.wasm',
+    });
+
+    const lab = createFeatureLab(game, {
+      mode: 'web',
+      log: (line) => console.log(line),
+    });
+
+    game.setClearColor(0.08, 0.11, 0.14, 1.0);
+    game.run((dt) => {
+      lab.update(dt);
+      if (lab.shouldQuit()) {
+        game.close();
+      }
+    });
+  </script>
+</body>
+</html>

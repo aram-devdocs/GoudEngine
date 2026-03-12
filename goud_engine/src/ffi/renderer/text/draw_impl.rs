@@ -1,20 +1,19 @@
 use crate::core::error::GoudError;
 use crate::core::handle::Handle;
+use crate::core::math::{Color, Vec2};
+use crate::ecs::components::Transform2D;
 use crate::ffi::context::GoudContextId;
 use crate::ffi::window::WindowState;
 use crate::libs::graphics::backend::types::TextureHandle;
 use crate::rendering::text::{
-    layout_shaped_text, shape_text, GlyphAtlas, TextDirection, TextLayoutConfig,
+    layout_shaped_text, shape_text, GlyphAtlas, TextBatch, TextDirection, TextLayoutConfig,
 };
 
-use super::super::draw::draw_sprite_rect_internal;
-use super::super::immediate::{ImmediateStateData, IMMEDIATE_STATE};
 use super::{FontMarker, GoudFontHandle, FONT_STATES};
 
 pub(super) fn draw_text_internal(
     window_state: &mut WindowState,
     context_id: GoudContextId,
-    state_data: ImmediateStateData,
     font_handle: GoudFontHandle,
     text: &str,
     x: f32,
@@ -69,13 +68,24 @@ pub(super) fn draw_text_internal(
         let texture = atlas
             .ensure_gpu_texture(window_state.backend_mut())
             .map_err(GoudError::TextureCreationFailed)?;
-        draw_layout(window_state, state_data, texture, &layout, x, y, r, g, b, a)
+        draw_layout(
+            &mut state.text_batch,
+            window_state,
+            texture,
+            &layout,
+            x,
+            y,
+            r,
+            g,
+            b,
+            a,
+        )
     })
 }
 
 fn draw_layout(
+    text_batch: &mut TextBatch,
     window_state: &mut WindowState,
-    state_data: ImmediateStateData,
     texture: TextureHandle,
     layout: &crate::rendering::text::TextLayoutResult,
     x: f32,
@@ -85,56 +95,34 @@ fn draw_layout(
     b: f32,
     a: f32,
 ) -> Result<(), GoudError> {
-    let texture_handle = texture.to_u64();
-
-    for glyph in &layout.glyphs {
-        if glyph.size_x <= 0.0 || glyph.size_y <= 0.0 {
-            continue;
-        }
-
-        let center_x = x + glyph.x + glyph.size_x * 0.5;
-        let center_y = y + glyph.y + glyph.size_y * 0.5;
-        draw_sprite_rect_internal(
-            window_state,
-            state_data,
-            texture_handle,
-            center_x,
-            center_y,
-            glyph.size_x,
-            glyph.size_y,
-            0.0,
-            glyph.uv_rect.u_min,
-            glyph.uv_rect.v_min,
-            glyph.uv_rect.u_max - glyph.uv_rect.u_min,
-            glyph.uv_rect.v_max - glyph.uv_rect.v_min,
-            r,
-            g,
-            b,
-            a,
-        )?;
-    }
-
-    Ok(())
+    let transform = Transform2D::from_position(Vec2::new(x, y));
+    let color = Color::new(r, g, b, a);
+    let viewport =
+        select_text_viewport(window_state.get_size(), window_state.get_framebuffer_size());
+    text_batch
+        .draw_prepared_layout_frame(
+            window_state.backend_mut(),
+            viewport,
+            layout,
+            color,
+            &transform,
+            texture,
+        )
+        .map_err(GoudError::DrawCallFailed)
 }
 
-pub(super) fn extract_state(context_id: GoudContextId) -> Option<ImmediateStateData> {
-    let context_key = (context_id.index(), context_id.generation());
-    IMMEDIATE_STATE.with(|cell| {
-        let states = cell.borrow();
-        states.get(&context_key).map(|s| {
-            (
-                s.shader,
-                s.vertex_buffer,
-                s.index_buffer,
-                s.vao,
-                s.u_projection,
-                s.u_model,
-                s.u_color,
-                s.u_use_texture,
-                s.u_texture,
-                s.u_uv_offset,
-                s.u_uv_scale,
-            )
-        })
-    })
+fn select_text_viewport(logical_size: (u32, u32), _framebuffer_size: (u32, u32)) -> (u32, u32) {
+    logical_size
+}
+
+#[cfg(test)]
+mod tests {
+    use super::select_text_viewport;
+
+    #[test]
+    fn ffi_text_viewport_uses_logical_window_size() {
+        let logical = (1280, 720);
+        let framebuffer = (2560, 1440);
+        assert_eq!(select_text_viewport(logical, framebuffer), logical);
+    }
 }

@@ -10,7 +10,6 @@ use wasm_bindgen_futures::JsFuture;
 use super::sprite_renderer::{create_texture_entry, TextureEntry};
 
 /// Fetches raw bytes from a URL using the browser Fetch API.
-#[allow(dead_code)]
 pub async fn fetch_bytes(url: &str) -> Result<Vec<u8>, JsValue> {
     let window = web_sys::window().ok_or_else(|| JsValue::from_str("no global window"))?;
     let resp_val = JsFuture::from(window.fetch_with_str(url)).await?;
@@ -37,7 +36,6 @@ pub async fn fetch_bytes(url: &str) -> Result<Vec<u8>, JsValue> {
 ///
 /// Returns a [`TextureEntry`] containing the wgpu texture view and a
 /// pre-built bind group ready for use with the sprite renderer.
-#[allow(dead_code)]
 pub async fn load_texture_from_url(
     device: &wgpu::Device,
     queue: &wgpu::Queue,

@@ -1,7 +1,7 @@
 //! Access conflict reporting types for the query system.
 //!
 //! These types describe which components and resources cause conflicts between
-//! two [`Access`](super::types::Access) descriptors.
+//! two [`Access`] descriptors.
 
 use std::fmt;
 
@@ -166,7 +166,8 @@ impl fmt::Display for NonSendConflictInfo {
 
 /// Detailed information about all conflicts between two access patterns.
 ///
-/// This struct is returned by [`Access::get_conflicts()`] when there are
+/// This struct is returned by
+/// [`Access::get_conflicts`](super::types::Access::get_conflicts) when there are
 /// conflicting accesses. It contains separate lists of component, resource,
 /// and non-send resource conflicts.
 ///

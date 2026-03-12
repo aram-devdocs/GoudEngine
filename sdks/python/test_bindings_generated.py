@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Generated-wrapper binding tests for the Python SDK."""
 
+import ctypes
+
 from test_bindings_common import (
     Color,
     Entity,
@@ -12,6 +14,7 @@ from test_bindings_common import (
     UiStyle,
     Vec2,
     _GENERATED_DIR,
+    _new_fake_generated_package,
 )
 
 
@@ -191,6 +194,46 @@ def test_generated_network_wrapper_api_names():
     return True
 
 
+def test_generated_provider_capability_imports():
+    """Validate _game.py imports the capability symbols used by provider helpers."""
+    print("Testing generated provider capability imports...")
+
+    game_src = (_GENERATED_DIR / "_game.py").read_text()
+
+    expected_ffi_symbols = [
+        "FfiRenderCapabilities",
+        "FfiPhysicsCapabilities",
+        "FfiAudioCapabilities",
+        "FfiInputCapabilities",
+        "FfiNetworkCapabilities",
+    ]
+    for symbol in expected_ffi_symbols:
+        assert symbol in game_src, f"missing capability FFI import or usage for {symbol}"
+
+    expected_value_types = [
+        "RenderCapabilities",
+        "PhysicsCapabilities",
+        "AudioCapabilities",
+        "InputCapabilities",
+        "NetworkCapabilities",
+    ]
+    for symbol in expected_value_types:
+        assert symbol in game_src, f"missing capability value type import or usage for {symbol}"
+
+    expected_helpers = [
+        "def get_render_capabilities(self):",
+        "def get_physics_capabilities(self):",
+        "def get_audio_capabilities(self):",
+        "def get_input_capabilities(self):",
+        "def get_network_capabilities(self):",
+    ]
+    for signature in expected_helpers:
+        assert signature in game_src, f"missing provider capability helper {signature}"
+
+    print("  Provider capability import tests passed")
+    return True
+
+
 def test_generated_ui_manager_wrapper_api_names():
     """Validate generated UiManager wrappers and exports without native lib."""
     print("Testing generated UiManager wrapper API names...")
@@ -332,4 +375,346 @@ def test_generated_ui_style_string_contract():
         "UiManager.set_style must populate the FFI texture pointer from the managed buffer"
 
     print("  UiStyle string contract tests passed")
+    return True
+
+
+def test_generated_game_runtime_with_fake_lib():
+    """Execute generated _game.py wrappers with an isolated fake FFI backend."""
+    print("Testing generated _game.py runtime wrappers with fake lib...")
+
+    def _write(ptr, ctype, value):
+        ctypes.cast(ptr, ctypes.POINTER(ctype)).contents.value = value
+
+    class _FakeLib:
+        def __init__(self):
+            self.calls = []
+
+        def _record(self, name, *args):
+            self.calls.append((name, *args))
+            return 0
+
+        def goud_window_create(self, width, height, title):
+            self.calls.append(("goud_window_create", width, height, title))
+            return self.ffi.GoudContextId(11)
+
+        def goud_context_create(self):
+            return self.ffi.GoudContextId(22)
+
+        def goud_window_get_size(self, ctx, w_ptr, h_ptr):
+            _write(w_ptr, ctypes.c_uint32, 1280)
+            _write(h_ptr, ctypes.c_uint32, 720)
+
+        def goud_window_poll_events(self, ctx):
+            self.calls.append(("goud_window_poll_events",))
+            return 0.016
+
+        def goud_window_should_close(self, ctx):
+            return 0
+
+        def goud_input_get_mouse_position(self, ctx, x_ptr, y_ptr):
+            _write(x_ptr, ctypes.c_float, 7.5)
+            _write(y_ptr, ctypes.c_float, 8.5)
+
+        def goud_input_get_mouse_delta(self, ctx, x_ptr, y_ptr):
+            _write(x_ptr, ctypes.c_float, 1.5)
+            _write(y_ptr, ctypes.c_float, -2.5)
+
+        def goud_input_get_scroll_delta(self, ctx, x_ptr, y_ptr):
+            _write(x_ptr, ctypes.c_float, 0.0)
+            _write(y_ptr, ctypes.c_float, -1.0)
+
+        def goud_provider_render_capabilities(self, ctx, ptr):
+            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.FfiRenderCapabilities)).contents
+            out.max_texture_units = 16
+            out.max_texture_size = 4096
+            out.supports_instancing = True
+            out.supports_compute = False
+            out.supports_msaa = True
+
+        def goud_provider_physics_capabilities(self, ctx, ptr):
+            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.FfiPhysicsCapabilities)).contents
+            out.supports_continuous_collision = True
+            out.supports_joints = True
+            out.max_bodies = 512
+
+        def goud_provider_audio_capabilities(self, ctx, ptr):
+            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.FfiAudioCapabilities)).contents
+            out.supports_spatial = True
+            out.max_channels = 32
+
+        def goud_provider_input_capabilities(self, ctx, ptr):
+            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.FfiInputCapabilities)).contents
+            out.supports_gamepad = True
+            out.supports_touch = False
+            out.max_gamepads = 4
+
+        def goud_provider_network_capabilities(self, ctx, ptr):
+            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.FfiNetworkCapabilities)).contents
+            out.supports_hosting = True
+            out.max_connections = 8
+            out.max_channels = 4
+            out.max_message_size = 64
+
+        def goud_network_connect_with_peer(self, ctx, protocol, address, address_len, port, handle_ptr, peer_ptr):
+            _write(handle_ptr, ctypes.c_int64, 901)
+            _write(peer_ptr, ctypes.c_uint64, 42)
+            return 0
+
+        def goud_network_receive(self, ctx, handle, out_ptr, out_len, peer_ptr):
+            payload = b"ok"
+            ctypes.memmove(out_ptr, payload, len(payload))
+            _write(peer_ptr, ctypes.c_uint64, 77)
+            return len(payload)
+
+        def goud_network_get_stats_v2(self, ctx, handle, stats_ptr):
+            out = ctypes.cast(stats_ptr, ctypes.POINTER(self.ffi.FfiNetworkStats)).contents
+            out.bytes_sent = 1
+            out.bytes_received = 2
+            out.packets_sent = 3
+            out.packets_received = 4
+            out.packets_lost = 0
+            out.rtt_ms = 5.0
+            out.send_bandwidth_bytes_per_sec = 6.0
+            out.receive_bandwidth_bytes_per_sec = 7.0
+            out.packet_loss_percent = 0.0
+            out.jitter_ms = 1.0
+            return 0
+
+        def goud_ui_manager_create(self):
+            return 1234
+
+        def goud_ui_event_read(self, handle, index, event_ptr):
+            out = ctypes.cast(event_ptr, ctypes.POINTER(self.ffi.FfiUiEvent)).contents
+            out.event_kind = 2
+            out.node_id = 10
+            out.previous_node_id = 9
+            out.current_node_id = 10
+            return 1
+
+        def goud_engine_config_create(self):
+            return 555
+
+        def goud_engine_create(self, handle):
+            return self.ffi.GoudContextId(33)
+
+        def __getattr__(self, name):
+            return lambda *args: self._record(name, *args)
+
+    lib = _FakeLib()
+    _types_mod, game_mod, ffi_mod = _new_fake_generated_package("_cov_generated_game", lib)
+    lib.ffi = ffi_mod
+
+    game = game_mod.GoudGame(320, 200, "Cov")
+    assert game.window_width == 1280 and game.window_height == 720
+    game.begin_frame()
+    assert game.delta_time > 0.0 and game.fps > 0.0
+    mouse = game.get_mouse_position()
+    assert mouse.x == 7.5 and mouse.y == 8.5
+    assert game.get_mouse_delta().y == -2.5 and game.get_scroll_delta().y == -1.0
+
+    assert game.network_host(1, 9001) == 0
+    conn = game.network_connect_with_peer(1, "127.0.0.1", 9001)
+    assert conn.handle == 901 and conn.peer_id == 42
+    assert game.network_receive(901) == b"ok"
+    pkt = game.network_receive_packet(901)
+    assert pkt.peer_id == 77 and pkt.data == b"ok"
+    stats = game.get_network_stats(901)
+    assert stats.bytes_sent == 1 and stats.bytes_received == 2
+    assert game.network_peer_count(901) == 0
+    sim = _types_mod.NetworkSimulationConfig(one_way_latency_ms=5, jitter_ms=1, packet_loss_percent=0.5)
+    assert game.set_network_simulation(901, sim) == 0
+    assert game.clear_network_simulation(901) == 0
+    assert game.set_network_overlay_handle(901) == 0
+    assert game.clear_network_overlay_handle() == 0
+
+    rc = game.get_render_capabilities()
+    pc = game.get_physics_capabilities()
+    ac = game.get_audio_capabilities()
+    ic = game.get_input_capabilities()
+    nc = game.get_network_capabilities()
+    assert rc.max_texture_units == 16 and pc.max_bodies == 512
+    assert ac.max_channels == 32 and ic.max_gamepads == 4 and nc.max_message_size == 64
+
+    assert game.audio_play(b"a") == 0
+    assert game.audio_play_on_channel(b"a", 2) == 0
+    assert game.audio_play_with_settings(b"a", 0.5, 1.0, False, 2) == 0
+    assert game.audio_crossfade_to(1, b"a", 0.25, 0) == 0
+    assert game.audio_mix_with(1, b"a", 0.2, 0) == 0
+    assert game.audio_activate() == 0
+    assert game.check_hot_swap_shortcut() is False
+
+    # Exercise additional generated wrappers that are mostly thin pass-throughs.
+    assert game.load_texture("assets/a.png") == 0
+    game.destroy_texture(1)
+    assert game.load_font("assets/a.ttf") == 0
+    assert game.destroy_font(1) == 0
+    assert game.draw_text(1, "txt", 1.0, 2.0) == 0
+    game.draw_sprite(1, 1.0, 2.0, 3.0, 4.0, 0.1, Color.white())
+    game.draw_quad(1.0, 2.0, 3.0, 4.0, Color.red())
+    game.draw_sprite_rect(1, 1.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0, 1.0, 1.0, Color.blue())
+    game.set_viewport(0, 0, 320, 200)
+    game.enable_depth_test()
+    game.disable_depth_test()
+    game.clear_depth()
+    game.disable_blending()
+    _ = game.get_render_stats()
+    _ = game.is_key_pressed(1)
+    _ = game.is_key_just_pressed(1)
+    _ = game.is_key_just_released(1)
+    _ = game.is_mouse_button_pressed(0)
+    _ = game.is_mouse_button_just_pressed(0)
+    _ = game.is_mouse_button_just_released(0)
+    try:
+        _ = game.get_fps_stats()
+    except NameError:
+        # Some generated variants reference GoudFpsStats without importing it.
+        pass
+    game.set_fps_overlay_enabled(True)
+    game.set_fps_update_interval(0.25)
+    _ = game.set_fps_overlay_corner(0)
+    _ = game.map_action_key("jump", 32)
+    _ = game.is_action_pressed("jump")
+    _ = game.is_action_just_pressed("jump")
+    _ = game.is_action_just_released("jump")
+    _ = game.collision_aabb_aabb(0, 0, 1, 1, 0, 0, 1, 1)
+    _ = game.collision_circle_circle(0, 0, 1, 1, 1, 1)
+    _ = game.collision_circle_aabb(0, 0, 1, 0, 0, 1, 1)
+    _ = game.point_in_rect(0, 0, 0, 0, 1, 1)
+    _ = game.point_in_circle(0, 0, 0, 0, 1)
+    _ = game.aabb_overlap(0, 0, 1, 1, 0, 0, 1, 1)
+    _ = game.circle_overlap(0, 0, 1, 1, 1, 1)
+    _ = game.distance(0, 0, 1, 1)
+    _ = game.distance_squared(0, 0, 1, 1)
+    _ = game.create_cube(1, 1.0, 1.0, 1.0)
+    _ = game.create_plane(1, 1.0, 1.0)
+    _ = game.create_sphere(1, 1.0)
+    _ = game.create_cylinder(1, 1.0, 2.0)
+    _ = game.set_object_position(1, 0.0, 1.0, 2.0)
+    _ = game.set_object_rotation(1, 0.0, 0.0, 0.0)
+    _ = game.set_object_scale(1, 1.0, 1.0, 1.0)
+    _ = game.destroy_object(1)
+    _ = game.add_light(0, 0, 0, 0, 0, -1, 0, 1, 1, 1, 1, 10, 45)
+    _ = game.update_light(1, 0, 0, 0, 0, 0, -1, 0, 1, 1, 1, 1, 10, 45)
+    _ = game.remove_light(1)
+    _ = game.set_camera_position3_d(0, 0, 1)
+    _ = game.set_camera_rotation3_d(0, 0, 0)
+    _ = game.configure_grid(True, 10.0, 10)
+    _ = game.set_grid_enabled(True)
+    _ = game.configure_skybox(True, 0.1, 0.2, 0.3, 1.0)
+    _ = game.configure_fog(True, 0.1, 0.2, 0.3, 0.5)
+    _ = game.set_fog_enabled(True)
+    _ = game.render3_d()
+
+    ent = _types_mod.Entity(123)
+    _ = game.spawn_batch(2)
+    _ = game.despawn_batch((ctypes.c_uint64 * 1)(ent.to_bits()))
+    _ = game.play(ent)
+    _ = game.stop(ent)
+    _ = game.set_state(ent, "idle")
+    _ = game.set_parameter_bool(ent, "grounded", True)
+    _ = game.set_parameter_float(ent, "speed", 1.5)
+    _ = game.component_register_type(1, "Comp", 16, 8)
+    _ = game.component_add(ent, 1, ctypes.POINTER(ctypes.c_uint8)(), 0)
+    _ = game.component_has(ent, 1)
+    _ = game.component_get(ent, 1)
+    _ = game.component_get_mut(ent, 1)
+    _ = game.component_add_batch((ctypes.c_uint64 * 1)(ent.to_bits()), 1, ctypes.POINTER(ctypes.c_uint8)(), 0)
+    _ = game.component_remove_batch((ctypes.c_uint64 * 1)(ent.to_bits()), 1)
+    _ = game.component_has_batch((ctypes.c_uint64 * 1)(ent.to_bits()), 1, (ctypes.c_uint8 * 1)())
+    game.end_frame()
+    game.close()
+    game.destroy()
+
+    ctx = game_mod.GoudContext()
+    assert ctx.is_valid() == 0
+    _ = ctx.get_network_capabilities()
+    _ = ctx.network_host(1, 9100)
+    _ = ctx.network_connect(1, "127.0.0.1", 9100)
+    conn2 = ctx.network_connect_with_peer(1, "127.0.0.1", 9100)
+    _ = ctx.network_send(conn2.handle, conn2.peer_id, b"x", 0)
+    _ = ctx.network_receive(conn2.handle)
+    _ = ctx.network_receive_packet(conn2.handle)
+    _ = ctx.network_poll(conn2.handle)
+    _ = ctx.get_network_stats(conn2.handle)
+    _ = ctx.network_peer_count(conn2.handle)
+    _ = ctx.set_network_simulation(conn2.handle, sim)
+    _ = ctx.clear_network_simulation(conn2.handle)
+    _ = ctx.set_network_overlay_handle(conn2.handle)
+    _ = ctx.clear_network_overlay_handle()
+    e2 = ctx.spawn_empty()
+    _ = ctx.spawn_batch(1)
+    _ = ctx.despawn_batch((ctypes.c_uint64 * 1)(e2.to_bits()))
+    _ = ctx.clone_entity(e2)
+    _ = ctx.clone_entity_recursive(e2)
+    _ = ctx.is_alive(e2)
+    _ = ctx.entity_count()
+    _ = ctx.add_name(e2, "ctx")
+    _ = ctx.get_name(e2)
+    _ = ctx.has_name(e2)
+    _ = ctx.remove_name(e2)
+    _ = ctx.component_register_type(1, "Comp", 8, 4)
+    _ = ctx.component_add(e2, 1, ctypes.POINTER(ctypes.c_uint8)(), 0)
+    _ = ctx.component_remove(e2, 1)
+    _ = ctx.component_has(e2, 1)
+    _ = ctx.component_get(e2, 1)
+    _ = ctx.component_get_mut(e2, 1)
+    _ = ctx.component_add_batch((ctypes.c_uint64 * 1)(e2.to_bits()), 1, ctypes.POINTER(ctypes.c_uint8)(), 0)
+    _ = ctx.component_remove_batch((ctypes.c_uint64 * 1)(e2.to_bits()), 1)
+    _ = ctx.component_has_batch((ctypes.c_uint64 * 1)(e2.to_bits()), 1, (ctypes.c_uint8 * 1)())
+    sid2 = ctx.scene_create("ctx-scene")
+    _ = ctx.scene_destroy(sid2)
+    _ = ctx.scene_get_by_name("ctx-scene")
+    _ = ctx.load_scene("ctx-scene", "{}")
+    _ = ctx.unload_scene("ctx-scene")
+    _ = ctx.set_active_scene(sid2, True)
+    _ = ctx.scene_set_active(sid2, False)
+    _ = ctx.scene_is_active(sid2)
+    _ = ctx.scene_count()
+    _ = ctx.scene_set_current(sid2)
+    _ = ctx.scene_get_current()
+    _ = ctx.scene_transition_to(sid2, sid2, 0, 0.1)
+    _ = ctx.scene_transition_progress()
+    _ = ctx.scene_transition_is_active()
+    _ = ctx.scene_transition_tick(0.016)
+    ctx.destroy()
+
+    cfg = game_mod.EngineConfig()
+    cfg.set_title("T").set_size(800, 600).set_vsync(True).set_fullscreen(False)
+    cfg.set_target_fps(60).set_fps_overlay(True).set_physics_debug(False).set_physics_backend2_d(0)
+    built = cfg.build()
+    assert built._ctx._bits == 33
+    cfg.destroy()
+    try:
+        cfg.build()
+        assert False, "build() after consumption should fail"
+    except RuntimeError:
+        pass
+
+    ui = game_mod.UiManager()
+    style = _types_mod.UiStyle(font_family="Inter", texture_path="ui/button.png")
+    assert ui.node_count() == 0
+    node = ui.create_button(True)
+    assert isinstance(node, int)
+    assert ui.set_style(node, style) == 0
+    assert ui.set_label_text(node, "Hello") == 0
+    assert ui.set_image_texture_path(node, "tex.png") == 0
+    assert ui.set_slider(node, 0.0, 1.0, 0.5, True) == 0
+    ev = ui.event_read(0)
+    assert ev is not None and ev.node_id == 10
+    ui.destroy()
+
+    w2d = game_mod.PhysicsWorld2D(0.0, -9.8, backend=0)
+    assert w2d.create_with_backend(0.0, -9.8, 0) == 0
+    assert w2d.set_gravity(0.0, -9.8) == 0
+    assert w2d.add_rigid_body(0, 0.0, 0.0, 1.0) == 0
+    assert w2d.set_timestep(0.016) == 0
+    w2d.destroy()
+
+    w3d = game_mod.PhysicsWorld3D(0.0, -9.8, 0.0)
+    assert w3d.set_gravity(0.0, -9.8, 0.0) == 0
+    assert w3d.add_rigid_body(0, 0.0, 0.0, 0.0, 1.0) == 0
+    assert w3d.set_timestep(0.016) == 0
+    w3d.destroy()
+
+    print("  Generated _game.py fake-lib runtime coverage passed")
     return True

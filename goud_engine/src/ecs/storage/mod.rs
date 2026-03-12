@@ -2,7 +2,8 @@
 //!
 //! This module defines the [`ComponentStorage`] trait, which provides an abstract
 //! interface for component storage backends. The primary implementation is
-//! [`SparseSet`], but the trait allows for alternative storage strategies in the future.
+//! [`SparseSet`](crate::ecs::SparseSet), but the trait allows for alternative
+//! storage strategies in the future.
 //!
 //! # Design Philosophy
 //!

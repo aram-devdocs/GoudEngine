@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GoudEngine Web Network Smoke</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #0b1118;
+      color: #dbe7f5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    canvas {
+      display: block;
+      border-radius: 8px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "goudengine/web": "/sdks/typescript/dist/web/web/index.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { GoudGame, NetworkManager, NetworkProtocol } from 'goudengine/web';
+
+    window.__goudNetworkSmoke = { status: 'booting' };
+
+    const fail = (detail) => {
+      window.__goudNetworkSmoke = { status: 'failed', detail };
+      throw new Error(detail);
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const wsUrl = params.get('ws');
+    if (!wsUrl) {
+      fail('missing ws query parameter');
+    }
+
+    const canvas = document.getElementById('c');
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    const game = await GoudGame.create({
+      width: 320,
+      height: 180,
+      title: 'GoudEngine Web Network Smoke',
+      canvas,
+      wasmUrl: '/sdks/typescript/wasm/goud_engine_bg.wasm',
+    });
+
+    const endpoint = new NetworkManager(game).connect(
+      NetworkProtocol.WebSocket,
+      wsUrl,
+      0,
+    );
+
+    const startedAt = performance.now();
+    let sent = false;
+
+    game.setClearColor(0.08, 0.11, 0.14, 1.0);
+    game.run(() => {
+      endpoint.poll();
+
+      if (!sent && endpoint.peerCount() > 0) {
+        const rc = endpoint.send(encoder.encode('ping'));
+        if (rc < 0) {
+          fail(`send failed with status ${rc}`);
+        }
+        sent = true;
+      }
+
+      const packet = endpoint.receive();
+      if (packet) {
+        const payload = decoder.decode(packet.data);
+        if (payload !== 'pong') {
+          fail(`unexpected payload: ${payload}`);
+        }
+        window.__goudNetworkSmoke = {
+          status: 'passed',
+          peerCount: endpoint.peerCount(),
+          payload,
+        };
+        endpoint.disconnect();
+        game.close();
+        return;
+      }
+
+      if (performance.now() - startedAt > 8000) {
+        fail('timed out waiting for browser websocket roundtrip');
+      }
+    });
+  </script>
+</body>
+</html>

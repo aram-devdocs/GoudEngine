@@ -69,7 +69,7 @@ impl SceneManager {
 
     /// Advances the active transition by `delta_time` seconds.
     ///
-    /// Returns [`Some(TransitionComplete)`] when the transition finishes.
+    /// Returns `Some(TransitionComplete)` when the transition finishes.
     /// On completion the source scene is deactivated and the transition
     /// state is cleared.
     pub fn tick_transition(&mut self, delta_time: f32) -> Option<TransitionComplete> {

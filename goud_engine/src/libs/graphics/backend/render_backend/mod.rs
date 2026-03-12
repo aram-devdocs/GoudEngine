@@ -59,6 +59,18 @@ pub trait RenderBackend:
     /// Returns information about this backend implementation.
     fn info(&self) -> &BackendInfo;
 
+    /// Rebinds the backend's default vertex array state when the underlying API
+    /// requires one for vertex attribute setup and indexed draws.
+    fn bind_default_vertex_array(&mut self) {}
+
+    /// Validates backend-specific state required for native text drawing.
+    ///
+    /// Backends that do not need extra validation, including headless test
+    /// backends, can keep the default no-op implementation.
+    fn validate_text_draw_state(&self) -> Result<(), String> {
+        Ok(())
+    }
+
     /// Returns the capabilities of this backend.
     fn capabilities(&self) -> &BackendCapabilities {
         &self.info().capabilities

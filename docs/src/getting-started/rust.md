@@ -64,25 +64,7 @@ goud-engine = "0.0.825"
 This opens a window, clears it to a blue-grey color each frame, and exits when
 the window is closed.
 
-```rust
-use goudengine::{GameConfig, GoudGame};
-
-fn main() {
-    let config = GameConfig::new("My Game", 800, 600);
-    let mut game = GoudGame::with_platform(config).expect("Failed to create game");
-
-    game.enable_blending();
-
-    while !game.should_close() {
-        let _dt = game.poll_events().unwrap_or(0.016);
-        game.begin_render();
-        game.clear(0.2, 0.3, 0.4, 1.0); // RGBA: dark blue-grey
-
-        game.end_render();
-        game.swap_buffers().expect("swap_buffers failed");
-    }
-}
-```
+{{#include ../generated/snippets/rust/first-project.md}}
 
 `GameConfig::new` takes window title, width, and height. `GoudGame::with_platform`
 creates the window and OpenGL context. `poll_events` returns the elapsed time in
@@ -94,39 +76,7 @@ seconds since the last frame, which you use to scale physics and animations.
 
 Load a texture once before the loop, then call `draw_sprite` each frame.
 
-```rust
-use goudengine::{GameConfig, GoudGame};
-
-fn main() {
-    let config = GameConfig::new("Sprite Demo", 800, 600);
-    let mut game = GoudGame::with_platform(config).expect("Failed to create game");
-
-    game.enable_blending();
-
-    // Load returns an opaque u64 handle. Keep it for the lifetime of the game.
-    let texture = game.load("assets/sprite.png");
-
-    while !game.should_close() {
-        let _dt = game.poll_events().unwrap_or(0.016);
-        game.begin_render();
-        game.clear(0.2, 0.3, 0.4, 1.0);
-
-        // draw_sprite(texture, center_x, center_y, width, height,
-        //             rotation_radians, scale_x, scale_y, r, g, b, a)
-        game.draw_sprite(
-            texture,
-            400.0, 300.0, // center position
-            64.0,  64.0,  // size
-            0.0,          // rotation (radians)
-            1.0, 1.0,     // scale
-            1.0, 1.0, 1.0, 1.0, // color tint (white = no tint)
-        );
-
-        game.end_render();
-        game.swap_buffers().expect("swap_buffers failed");
-    }
-}
-```
+{{#include ../generated/snippets/rust/drawing-a-sprite.md}}
 
 Positions are in pixels from the top-left corner. The `center_x`/`center_y`
 arguments are the sprite's center, not its top-left corner.
@@ -137,38 +87,7 @@ arguments are the sprite's center, not its top-left corner.
 
 Query key state inside the game loop with `is_key_pressed`.
 
-```rust
-use goudengine::{GameConfig, GoudGame};
-use goudengine::input::Key;
-
-fn main() {
-    let config = GameConfig::new("Input Demo", 800, 600);
-    let mut game = GoudGame::with_platform(config).expect("Failed to create game");
-
-    game.enable_blending();
-
-    let mut x = 400.0_f32;
-
-    while !game.should_close() {
-        let dt = game.poll_events().unwrap_or(0.016);
-        game.begin_render();
-        game.clear(0.2, 0.3, 0.4, 1.0);
-
-        if game.is_key_pressed(Key::Escape) {
-            break;
-        }
-        if game.is_key_pressed(Key::Left) {
-            x -= 200.0 * dt;
-        }
-        if game.is_key_pressed(Key::Right) {
-            x += 200.0 * dt;
-        }
-
-        game.end_render();
-        game.swap_buffers().expect("swap_buffers failed");
-    }
-}
-```
+{{#include ../generated/snippets/rust/handling-input.md}}
 
 `is_key_pressed` returns `true` as long as the key is held down. Mouse buttons
 use `is_mouse_button_pressed(MouseButton::Button1)`.
@@ -185,6 +104,7 @@ input handling across multiple modules.
 git clone https://github.com/aram-devdocs/GoudEngine.git
 cd GoudEngine
 cargo run -p flappy-bird
+cargo run -p feature-lab
 ```
 
 Controls: Space or left click to flap, R to restart, Escape to quit.
@@ -198,5 +118,9 @@ The game reuses the shared asset directory at `examples/csharp/flappy_goud/asset
 
 - [Rust SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/rust/) — crate design and re-export structure
 - [Rust examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/rust/) — flappy_bird source code
+- [Build Your First Game](../guides/build-your-first-game.md) — end-to-end minimal game walkthrough
+- [Example Showcase](../guides/showcase.md) — current cross-language parity matrix
+- [Cross-Platform Deployment](../guides/deployment.md) — packaging and release workflow
+- [FAQ and Troubleshooting](../guides/faq.md) — common runtime and build issues
 - [Architecture](../architecture/sdk-first.md) — layer design and engine internals
 - [Development guide](../development/guide.md) — building from source, running tests

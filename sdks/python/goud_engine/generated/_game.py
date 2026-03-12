@@ -3,8 +3,12 @@
 import ctypes
 from . import _ffi as _ffi_module
 from ._ffi import (get_lib, GoudContextId, FfiVec2, FfiTransform2D, FfiSprite, FfiColor, FfiUiStyle, FfiUiEvent,
-    FfiNetworkStats, FfiNetworkSimulationConfig, GoudRenderStats, GoudContact)
-from ._types import (Entity, Vec2, Color, Transform2D, Sprite, RenderStats, UiStyle, UiEvent, NetworkStats, NetworkSimulationConfig, NetworkConnectResult, NetworkPacket, NetworkCapabilities)
+    FfiRenderCapabilities, FfiPhysicsCapabilities, FfiAudioCapabilities,
+    FfiInputCapabilities, FfiNetworkCapabilities, FfiNetworkStats,
+    FfiNetworkSimulationConfig, GoudRenderStats, GoudContact)
+from ._types import (Entity, Vec2, Color, Transform2D, Sprite, RenderStats, UiStyle, UiEvent,
+    RenderCapabilities, PhysicsCapabilities, AudioCapabilities, InputCapabilities, NetworkStats,
+    NetworkSimulationConfig, NetworkConnectResult, NetworkPacket, NetworkCapabilities)
 from ._errors import GoudError
 from ._keys import Key, MouseButton, PhysicsBackend2D
 

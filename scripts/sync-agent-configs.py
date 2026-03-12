@@ -62,6 +62,8 @@ EXPECTED_TIERS = {
 
 ALLOWED_SANDBOX_MODES = {"read-only", "workspace-write", "danger-full-access"}
 EDIT_TOOLS = {"Edit", "Write"}
+ALLOWED_SHARED_TEAM_MODES = {"single-lead"}
+ALLOWED_SHARED_FALLBACK_MODES = {"single-agent"}
 
 
 class CatalogError(RuntimeError):
@@ -148,8 +150,11 @@ def validate_catalog(catalog: dict[str, Any]) -> dict[str, Any]:
     for field in (
         "root_model",
         "root_plan_mode_reasoning_effort",
-        "max_threads",
-        "max_depth",
+        "codex_max_threads",
+        "codex_max_depth",
+        "shared_team_mode",
+        "shared_max_specialists_per_lead",
+        "shared_fallback_mode",
         "job_max_runtime_seconds",
     ):
         if field not in settings:
@@ -162,10 +167,31 @@ def validate_catalog(catalog: dict[str, Any]) -> dict[str, Any]:
         "settings",
     )
 
-    for number_field in ("max_threads", "max_depth", "job_max_runtime_seconds"):
+    for number_field in (
+        "codex_max_threads",
+        "codex_max_depth",
+        "shared_max_specialists_per_lead",
+        "job_max_runtime_seconds",
+    ):
         value = settings[number_field]
         if not isinstance(value, int) or value <= 0:
             raise CatalogError(f"settings.{number_field} must be a positive integer")
+
+    shared_team_mode = ensure_non_empty_string(
+        settings["shared_team_mode"], "shared_team_mode", "settings"
+    )
+    if shared_team_mode not in ALLOWED_SHARED_TEAM_MODES:
+        raise CatalogError(
+            f"settings.shared_team_mode must be one of {sorted(ALLOWED_SHARED_TEAM_MODES)}"
+        )
+
+    shared_fallback_mode = ensure_non_empty_string(
+        settings["shared_fallback_mode"], "shared_fallback_mode", "settings"
+    )
+    if shared_fallback_mode not in ALLOWED_SHARED_FALLBACK_MODES:
+        raise CatalogError(
+            f"settings.shared_fallback_mode must be one of {sorted(ALLOWED_SHARED_FALLBACK_MODES)}"
+        )
 
     role_order = catalog.get("role_order")
     if not isinstance(role_order, list) or not role_order:
@@ -327,9 +353,16 @@ def render_codex_config(catalog: dict[str, Any]) -> str:
             "multi_agent = true",
             "",
             "[agents]",
-            f"max_threads = {settings['max_threads']}",
-            f"max_depth = {settings['max_depth']}",
+            "# Per-session caps for this Codex run.",
+            "# Unset max_threads to remove the thread bound.",
+            f"max_threads = {settings['codex_max_threads']}",
+            f"max_depth = {settings['codex_max_depth']}",
             f"job_max_runtime_seconds = {settings['job_max_runtime_seconds']}",
+            "",
+            "# Shared orchestration policy (catalog source of truth)",
+            f"# shared_team_mode = {toml_string(settings['shared_team_mode'])}",
+            f"# shared_max_specialists_per_lead = {settings['shared_max_specialists_per_lead']}",
+            f"# shared_fallback_mode = {toml_string(settings['shared_fallback_mode'])}",
         ]
     )
 

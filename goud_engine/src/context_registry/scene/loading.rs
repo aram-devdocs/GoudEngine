@@ -48,7 +48,7 @@ impl SceneLoader {
     /// Unloads a scene by name.
     ///
     /// Looks up the scene by name and destroys it. Dropping the
-    /// [`World`] cleans up all entities and components.
+    /// [`World`](crate::ecs::World) cleans up all entities and components.
     ///
     /// # Errors
     ///

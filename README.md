@@ -120,6 +120,7 @@ See [examples/README.md](examples/README.md) for the full list with run commands
 ```sh
 ./dev.sh --game flappy_goud                          # C# Flappy Bird
 ./dev.sh --game 3d_cube                              # C# 3D demo
+./dev.sh --game feature_lab                          # C# headless feature lab
 ./dev.sh --sdk python --game flappy_bird             # Python Flappy Bird
 ./dev.sh --sdk typescript --game flappy_bird         # TypeScript desktop
 ./dev.sh --sdk typescript --game flappy_bird_web     # TypeScript web

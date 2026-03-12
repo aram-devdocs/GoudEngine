@@ -1,0 +1,18 @@
+using GoudEngine;
+
+using var game = new GoudGame(800, 600, "My Game");
+
+while (!game.ShouldClose())
+{
+    game.BeginFrame(0.2f, 0.3f, 0.4f, 1.0f);
+
+    float dt = game.DeltaTime;
+
+    if (game.IsKeyPressed(Keys.Escape))
+    {
+        game.Close();
+        continue;
+    }
+
+    game.EndFrame();
+}

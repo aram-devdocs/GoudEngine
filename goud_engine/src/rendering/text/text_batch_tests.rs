@@ -133,3 +133,67 @@ fn test_draw_text_with_world_and_null_backend_counts_glyphs() {
         "expected 5 glyphs for 'Hello'"
     );
 }
+
+#[test]
+fn test_text_batch_reuses_shader_across_frames() {
+    use crate::core::math::Color;
+    use crate::core::math::Vec2;
+    use crate::ecs::components::Transform2D;
+    use crate::libs::graphics::backend::null::NullBackend;
+    use crate::libs::graphics::backend::types::{TextureFilter, TextureFormat, TextureWrap};
+    use crate::libs::graphics::backend::TextureOps;
+    use crate::rendering::text::{LayoutGlyph, TextBoundingBox, TextLayoutResult, UvRect};
+
+    let mut backend = NullBackend::new();
+    let mut batch = TextBatch::new();
+    let texture = backend
+        .create_texture(
+            2,
+            2,
+            TextureFormat::RGBA8,
+            TextureFilter::Linear,
+            TextureWrap::ClampToEdge,
+            &[255u8; 16],
+        )
+        .expect("null texture creation");
+
+    let layout = TextLayoutResult {
+        glyphs: vec![LayoutGlyph {
+            x: 10.0,
+            y: 20.0,
+            character: 'A',
+            uv_rect: UvRect {
+                u_min: 0.0,
+                v_min: 0.0,
+                u_max: 1.0,
+                v_max: 1.0,
+            },
+            size_x: 8.0,
+            size_y: 12.0,
+        }],
+        bounding_box: TextBoundingBox {
+            width: 8.0,
+            height: 12.0,
+        },
+        line_count: 1,
+    };
+    let transform = Transform2D::from_position(Vec2::new(0.0, 0.0));
+
+    batch.begin();
+    batch.append_glyph_batch(&layout, Color::WHITE, &transform, texture);
+    batch
+        .end(&mut backend, (1280, 720))
+        .expect("first text frame");
+
+    batch.begin();
+    batch.append_glyph_batch(&layout, Color::WHITE, &transform, texture);
+    batch
+        .end(&mut backend, (1280, 720))
+        .expect("second text frame");
+
+    assert_eq!(
+        backend.shader_create_calls(),
+        1,
+        "text shader should be created once and reused across frames"
+    );
+}

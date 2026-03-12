@@ -47,10 +47,14 @@
 //!
 //! ## Module Organization
 //!
-//! - [`components`]: Re-exports of all ECS components (Transform2D, Sprite, etc.)
-//! - [`GoudGame`]: High-level game abstraction managing world, window, and loop
-//! - [`EntityBuilder`]: Fluent builder for spawning entities with components
-//! - [`GameContext`]: Runtime context passed to update callbacks
+//! - [`components`](crate::sdk::components): Re-exports of all ECS components
+//!   (Transform2D, Sprite, etc.)
+//! - [`GoudGame`](crate::sdk::GoudGame): High-level game abstraction managing world,
+//!   window, and loop
+//! - [`EntityBuilder`](crate::sdk::EntityBuilder): Fluent builder for spawning
+//!   entities with components
+//! - [`GameContext`](crate::sdk::GameContext): Runtime context passed to update
+//!   callbacks
 //!
 //! ## Comparison with FFI Layer
 //!

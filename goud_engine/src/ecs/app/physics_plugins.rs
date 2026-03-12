@@ -2,7 +2,8 @@
 //!
 //! These plugins register the necessary resources for physics synchronization.
 //! The physics step systems must be added separately because they require
-//! ownership of a [`PhysicsProvider`] instance, and [`Plugin::build`] takes
+//! ownership of a [`PhysicsProvider`](crate::core::providers::physics::PhysicsProvider)
+//! instance, and [`Plugin::build`] takes
 //! `&self` (preventing move semantics).
 //!
 //! # Usage

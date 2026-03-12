@@ -28,8 +28,7 @@ impl GlfwWindowProvider {
     }
 
     /// Returns a reference to the underlying platform.
-    #[allow(dead_code)]
-    pub(crate) fn platform(&self) -> &GlfwPlatform {
+    pub fn platform(&self) -> &GlfwPlatform {
         &self.platform
     }
 
@@ -37,8 +36,7 @@ impl GlfwWindowProvider {
     ///
     /// Used by Layer 2 code to bridge platform event polling with input
     /// managers and other Layer 2 systems.
-    #[allow(dead_code)]
-    pub(crate) fn platform_mut(&mut self) -> &mut GlfwPlatform {
+    pub fn platform_mut(&mut self) -> &mut GlfwPlatform {
         &mut self.platform
     }
 }

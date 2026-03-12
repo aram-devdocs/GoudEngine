@@ -6,7 +6,7 @@
 //!
 //! # ID Packing
 //!
-//! [`UiNodeId`](crate::ui::UiNodeId) is packed into a `u64` for the FFI
+//! [`UiNodeId`] is packed into a `u64` for the FFI
 //! boundary:
 //!
 //! ```text

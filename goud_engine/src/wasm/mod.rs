@@ -16,6 +16,7 @@ mod audio;
 mod collision;
 mod ecs_ops;
 mod input;
+mod network;
 mod rendering;
 mod sprite_renderer;
 mod texture_loader;
@@ -26,6 +27,7 @@ mod ui;
 mod tests;
 
 pub use collision::WasmContact;
+pub use texture_loader::{fetch_bytes, load_texture_from_url};
 pub use ui::{WasmUiEvent, WasmUiManager};
 
 use std::collections::{HashMap, HashSet};
@@ -183,6 +185,9 @@ pub struct WasmGame {
 
     // WebAudio runtime state.
     audio_state: audio::WasmAudioState,
+
+    // Browser WebSocket networking runtime state.
+    network_state: network::WasmNetworkState,
 }
 
 #[wasm_bindgen]
@@ -225,6 +230,7 @@ impl WasmGame {
             fonts: Vec::new(),
             render_state: None,
             audio_state: audio::WasmAudioState::new(),
+            network_state: network::WasmNetworkState::new(),
         }
     }
 
@@ -326,6 +332,7 @@ impl WasmGame {
             fonts: Vec::new(),
             render_state: Some(render_state),
             audio_state: audio::WasmAudioState::new(),
+            network_state: network::WasmNetworkState::new(),
         })
     }
 

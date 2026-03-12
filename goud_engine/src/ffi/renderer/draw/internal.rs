@@ -1,8 +1,12 @@
 use crate::core::error::GoudError;
 use crate::ffi::window::WindowState;
-use crate::libs::graphics::backend::{DrawOps, ShaderOps, TextureOps};
+use crate::libs::graphics::backend::{
+    BlendFactor, BufferOps, DrawOps, ShaderOps, StateOps, TextureOps,
+};
 
-use super::super::immediate::{model_matrix, ortho_matrix, ImmediateStateData};
+use super::super::immediate::{
+    configure_immediate_vertex_layout, model_matrix, ortho_matrix, ImmediateStateData,
+};
 use super::super::texture::GoudTextureHandle;
 
 /// Internal function to draw a sprite (delegates to `draw_sprite_rect_internal` with full UV).
@@ -63,8 +67,8 @@ pub(crate) fn draw_sprite_rect_internal(
 
     let (
         shader,
-        _vertex_buffer,
-        _index_buffer,
+        vertex_buffer,
+        index_buffer,
         vao,
         u_projection,
         u_model,
@@ -91,10 +95,17 @@ pub(crate) fn draw_sprite_rect_internal(
     let tex_generation = ((texture >> 32) & 0xFFFFFFFF) as u32;
     let tex_handle = TextureHandle::new(tex_index, tex_generation);
 
+    backend.enable_blending();
+    backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
     // SAFETY: vao was created by ensure_immediate_state and is valid for this context.
     unsafe {
         gl::BindVertexArray(vao);
     }
+    // Element array buffer binding is VAO state in OpenGL core profiles.
+    // Bind the VAO first so VBO/IBO attachments land on the correct VAO.
+    backend.bind_buffer(vertex_buffer)?;
+    backend.bind_buffer(index_buffer)?;
+    configure_immediate_vertex_layout();
 
     backend.bind_shader(shader)?;
     backend.set_uniform_mat4(u_projection, &projection);
@@ -156,8 +167,8 @@ pub(crate) fn draw_quad_rotated_internal(
 
     let (
         shader,
-        _vertex_buffer,
-        _index_buffer,
+        vertex_buffer,
+        index_buffer,
         vao,
         u_projection,
         u_model,
@@ -180,10 +191,17 @@ pub(crate) fn draw_quad_rotated_internal(
     let projection = ortho_matrix(0.0, win_width as f32, win_height as f32, 0.0);
     let model = model_matrix(x, y, width, height, rotation);
 
+    backend.enable_blending();
+    backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
     // SAFETY: vao was created by ensure_immediate_state and is valid for this context.
     unsafe {
         gl::BindVertexArray(vao);
     }
+    // Element array buffer binding is VAO state in OpenGL core profiles.
+    // Bind the VAO first so VBO/IBO attachments land on the correct VAO.
+    backend.bind_buffer(vertex_buffer)?;
+    backend.bind_buffer(index_buffer)?;
+    configure_immediate_vertex_layout();
 
     backend.bind_shader(shader)?;
     backend.set_uniform_mat4(u_projection, &projection);

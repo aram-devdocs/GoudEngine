@@ -4,8 +4,6 @@
 //! textures, and shaders. These types are backend-agnostic and provide
 //! a safe, typed interface for working with GPU objects.
 
-#![allow(dead_code)] // Will be used in Step 5.1.3+ when implementing buffer/texture/shader operations
-
 use crate::core::handle::Handle;
 
 // ============================================================================

@@ -1,7 +1,7 @@
 {
   "name": "goudengine",
   "version": "0.0.828",
-  "description": "GoudEngine — build 2D and 3D games with TypeScript for Node.js and web",
+  "description": "GoudEngine - build 2D and 3D games with TypeScript for Node.js and web",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "sideEffects": false,
@@ -36,14 +36,17 @@
     "build:ts": "tsc",
     "build:ts:web": "tsc -p tsconfig.web.json",
     "build:wasm": "wasm-pack build ../../goud_engine --target web --out-dir ../sdks/typescript/wasm --features web --no-default-features",
-    "build:wasm:opt": "wasm-opt -Oz --enable-bulk-memory -o wasm/goud_engine_bg.wasm wasm/goud_engine_bg.wasm 2>/dev/null || echo 'wasm-opt not found — skipping optimization'",
-    "build:web": "npm run build:wasm && npm run build:wasm:opt && npm run build:ts:web",
+    "build:web": "npm run build:wasm && npm run build:ts:web",
     "build": "npm run build:native && npm run build:ts",
     "build:all": "npm run build && npm run build:web",
     "clean": "rm -rf dist wasm *.node",
     "pretest": "npm run build:native:debug && npm run build:ts",
+    "pretest:web-runtime": "npm run build:web",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.web.json --noEmit",
-    "test": "node --test test/*.test.mjs",
+    "test:native": "node --test test/errors.test.mjs test/generated-node-wrapper-coverage.test.mjs test/network-api.test.mjs test/network-loopback.test.mjs test/smoke.test.mjs",
+    "test": "npm run test:native",
+    "test:all": "npm run test:native && npm run test:web-runtime",
+    "test:web-runtime": "node --test test/web-network-runtime-smoke.test.mjs",
     "prepublishOnly": "npm run clean && npm run build:all",
     "size": "node -e \"const fs=require('fs');try{const s=fs.statSync('wasm/goud_engine_bg.wasm');console.log((s.size/1024).toFixed(1)+'KB')}catch{console.log('No wasm build found')}\""
   },
@@ -82,6 +85,7 @@
   "devDependencies": {
     "@napi-rs/cli": "^3.5.1",
     "@types/node": "^20.0.0",
+    "playwright": "^1.52.0",
     "typescript": "^5.0.0"
   },
   "engines": {
@@ -98,5 +102,6 @@
   ],
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "x-generatedBy": "GoudEngine codegen"
 }

@@ -21,7 +21,7 @@ TS = SDKS_DIR / "typescript"
 GEN = TS / "src" / "generated"
 NATIVE_SRC = TS / "native" / "src"
 schema = load_schema()
-mapping = load_ffi_mapping()
+mapping = load_ffi_mapping(schema)
 
 IFACE_TYPES = {
     "Entity": "IEntity",

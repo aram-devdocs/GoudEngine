@@ -17,7 +17,8 @@ impl AssetServer {
     /// Loads an asset asynchronously using a background thread.
     ///
     /// Returns a handle immediately in the `Loading` state. The actual file I/O
-    /// and parsing happen on a rayon thread pool. Call [`process_loads`] each
+    /// and parsing happen on a rayon thread pool. Call
+    /// [`AssetServer::process_loads`](super::core::AssetServer::process_loads) each
     /// frame to drain completed results and transition handles to `Loaded` or
     /// `Failed`.
     ///

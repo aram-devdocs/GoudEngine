@@ -1,6 +1,6 @@
 //! # SDK Entity Operations API
 //!
-//! Provides methods on [`GoudGame`](super::GoudGame) for entity lifecycle
+//! Provides methods on [`GoudGame`] for entity lifecycle
 //! management: spawning, despawning, and querying entity state.
 //!
 //! These methods are annotated with `#[goud_api]` to auto-generate FFI

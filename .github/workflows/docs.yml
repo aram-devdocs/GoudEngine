@@ -61,10 +61,7 @@ jobs:
           tag=$(curl -sI https://github.com/rust-lang/mdBook/releases/latest | grep -i '^location:' | sed 's|.*/tag/||;s/\r//')
           curl -sSL "https://github.com/rust-lang/mdBook/releases/download/${tag}/mdbook-${tag}-x86_64-unknown-linux-gnu.tar.gz" \
             | tar -xz -C "$HOME/.cargo/bin"
-
-      # ── Build mdBook site ──────────────────────────────────────────
-      - name: Build mdBook
-        run: mdbook build
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       # ── Rust API docs ──────────────────────────────────────────────
       - name: Build Rust API docs
@@ -79,11 +76,7 @@ jobs:
 
       # ── Run codegen (generates SDK files with doc comments) ────────
       - name: Run codegen
-        run: |
-          python3 codegen/gen_csharp.py
-          python3 codegen/gen_python.py
-          python3 codegen/gen_ts_node.py
-          python3 codegen/gen_ts_web.py
+        run: ./codegen.sh
 
       # ── Python API docs ────────────────────────────────────────────
       - name: Build native library for Python docs
@@ -97,6 +90,8 @@ jobs:
           pdoc --output-dir docs/book/api/python sdks/python/goud_engine
         env:
           LD_LIBRARY_PATH: ${{ github.workspace }}/target/release
+          GOUD_ENGINE_LIB: ${{ github.workspace }}/target/release
+          PDOC_ALLOW_EXEC: "1"
           PYTHONPATH: ${{ github.workspace }}/sdks/python
 
       # ── TypeScript API docs ────────────────────────────────────────
@@ -104,29 +99,59 @@ jobs:
         working-directory: sdks/typescript
         run: npm ci
 
+      - name: Install Playwright Chromium
+        working-directory: sdks/typescript
+        run: npx playwright install --with-deps chromium
+
+      - name: Generate showcase media
+        working-directory: sdks/typescript
+        run: node scripts/generate-doc-media.mjs
+
+      - name: Generate showcase docs
+        run: python3 scripts/generate-showcase-docs.py
+
+      - name: Generate download bundles
+        run: |
+          mkdir -p docs/src/generated/downloads
+          rm -f docs/src/generated/downloads/*.zip
+          zip -qr docs/src/generated/downloads/flappy-csharp.zip examples/csharp/flappy_goud
+          zip -qr docs/src/generated/downloads/flappy-python.zip examples/python/flappy_bird.py
+          zip -qr docs/src/generated/downloads/flappy-typescript.zip examples/typescript/flappy_bird
+          zip -qr docs/src/generated/downloads/flappy-rust.zip examples/rust/flappy_bird
+
+      # ── Build mdBook site ──────────────────────────────────────────
+      - name: Build mdBook
+        run: mdbook build
+
       - name: Build TypeScript SDK
         working-directory: sdks/typescript
-        run: npm run build:ts || true
+        run: npm run build:ts
 
       - name: Build TypeScript API docs
         working-directory: sdks/typescript
         run: |
           npx typedoc \
+            --tsconfig tsconfig.typedoc.json \
             --entryPoints src/generated/node/index.g.ts src/generated/web/index.g.ts src/generated/types/engine.g.ts src/generated/types/math.g.ts \
             --out ../../docs/book/api/typescript \
-            --skipErrorChecking \
             --name "GoudEngine TypeScript SDK"
 
       # ── C# API docs ───────────────────────────────────────────────
       - name: Install DocFX
-        run: dotnet tool install -g docfx
+        run: |
+          dotnet tool install -g docfx
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
 
       - name: Build C# API docs
         working-directory: sdks/csharp
         run: |
-          dotnet build -c Release --no-restore || true
-          docfx build docfx.json || echo "DocFX build completed with warnings"
-          cp -r _site ../../docs/book/api/csharp || true
+          dotnet restore GoudEngine.csproj
+          dotnet build -c Release --no-restore
+          docfx build docfx.json
+          cp -r _site ../../docs/book/api/csharp
+
+      - name: Validate generated docs artifacts
+        run: bash scripts/check-generated-artifacts.sh --docs
 
       # ── Finalize ───────────────────────────────────────────────────
       - name: Copy CNAME

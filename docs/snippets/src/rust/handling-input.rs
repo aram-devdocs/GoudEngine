@@ -1,0 +1,30 @@
+use goudengine::input::Key;
+use goudengine::{GameConfig, GoudGame};
+
+fn main() {
+    let config = GameConfig::new("Input Demo", 800, 600);
+    let mut game = GoudGame::with_platform(config).expect("Failed to create game");
+
+    game.enable_blending();
+
+    let mut x = 400.0_f32;
+
+    while !game.should_close() {
+        let dt = game.poll_events().unwrap_or(0.016);
+        game.begin_render();
+        game.clear(0.2, 0.3, 0.4, 1.0);
+
+        if game.is_key_pressed(Key::Escape) {
+            break;
+        }
+        if game.is_key_pressed(Key::Left) {
+            x -= 200.0 * dt;
+        }
+        if game.is_key_pressed(Key::Right) {
+            x += 200.0 * dt;
+        }
+
+        game.end_render();
+        game.swap_buffers().expect("swap_buffers failed");
+    }
+}

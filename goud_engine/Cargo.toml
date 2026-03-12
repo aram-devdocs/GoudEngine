@@ -15,7 +15,7 @@ default = ["native"]
 native = ["dep:gl", "dep:glfw", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj", "net-udp", "net-tcp", "net-ws"]
 net-udp = []
 net-tcp = []
-net-ws = ["dep:tungstenite"]
+net-ws = ["dep:tungstenite", "dep:rustls"]
 wgpu-backend = ["dep:wgpu", "dep:winit", "dep:naga", "dep:pollster"]
 web = ["wgpu-backend", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:web-sys", "dep:js-sys"]
 rapier2d = ["dep:rapier2d"]
@@ -45,7 +45,8 @@ rapier3d = { version = "0.22", optional = true }
 notify = { version = "8", optional = true }
 rodio = { version = "0.22", optional = true }
 bincode = "1"
-tungstenite = { version = "0.26", optional = true }
+tungstenite = { version = "0.26", optional = true, features = ["rustls-tls-native-roots"] }
+rustls = { version = "0.23", optional = true, default-features = false, features = ["ring", "std", "tls12"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 toml = { version = "0.8", optional = true }
@@ -65,6 +66,7 @@ web-sys = { version = "0.3", optional = true, features = [
     "Document", "HtmlCanvasElement", "Element",
     "Performance",
     "console",
+    "WebSocket", "BinaryType", "MessageEvent", "CloseEvent", "ErrorEvent", "Event",
     "AudioContext", "AudioContextState", "AudioBuffer", "AudioBufferSourceNode",
     "AudioNode", "AudioParam",
     "GainNode", "StereoPannerNode", "MediaElementAudioSourceNode",
@@ -88,6 +90,7 @@ bytemuck = "1.14"
 criterion = { version = "0.5", features = ["html_reports"] }
 hound = "3.5"
 proptest = "1"
+rcgen = "0.13"
 
 [[bench]]
 name = "ecs_benchmarks"

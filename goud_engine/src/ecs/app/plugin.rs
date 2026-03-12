@@ -1,7 +1,7 @@
 //! Plugin and PluginGroup traits for modular app composition.
 //!
 //! Plugins encapsulate reusable bundles of systems, resources, and configuration
-//! that can be added to an [`App`](super::App).
+//! that can be added to an [`App`].
 
 use std::any::TypeId;
 

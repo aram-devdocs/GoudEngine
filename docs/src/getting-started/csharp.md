@@ -35,26 +35,7 @@ Open `MyGame.csproj` and add `<AllowUnsafeBlocks>true</AllowUnsafeBlocks>`. The 
 
 Replace `Program.cs` with a minimal window that closes on Escape:
 
-```csharp
-using GoudEngine;
-
-using var game = new GoudGame(800, 600, "My Game");
-
-while (!game.ShouldClose())
-{
-    game.BeginFrame(0.2f, 0.3f, 0.4f, 1.0f); // RGBA clear color
-
-    float dt = game.DeltaTime;
-
-    if (game.IsKeyPressed(Keys.Escape))
-    {
-        game.Close();
-        continue;
-    }
-
-    game.EndFrame();
-}
-```
+{{#include ../generated/snippets/csharp/first-project.md}}
 
 `BeginFrame` clears the screen to the given color and prepares the frame. `EndFrame` swaps buffers and polls events. `DeltaTime` gives seconds since the last frame — use it to keep movement frame-rate independent.
 
@@ -74,27 +55,7 @@ using var game = new GoudGame(800, 600, "3D Game", RendererType.Renderer3D);
 
 Load textures once before the loop. Drawing happens inside the loop between `BeginFrame` and `EndFrame`.
 
-```csharp
-using GoudEngine;
-
-using var game = new GoudGame(800, 600, "My Game");
-
-ulong textureId = game.LoadTexture("assets/sprite.png");
-
-float x = 100f, y = 100f;
-float width = 64f, height = 64f;
-
-while (!game.ShouldClose())
-{
-    game.BeginFrame(0.1f, 0.1f, 0.1f, 1.0f);
-
-    if (game.IsKeyPressed(Keys.Escape)) { game.Close(); continue; }
-
-    game.DrawSprite(textureId, x, y, width, height);
-
-    game.EndFrame();
-}
-```
+{{#include ../generated/snippets/csharp/drawing-a-sprite.md}}
 
 To draw a colored quad without a texture:
 
@@ -108,28 +69,7 @@ Put your image files in an `assets/` folder next to the project. The path is rel
 
 `IsKeyPressed` returns true every frame the key is held. Use it for movement. For one-shot actions, track state yourself.
 
-```csharp
-float speed = 200f;
-
-while (!game.ShouldClose())
-{
-    game.BeginFrame(0.1f, 0.1f, 0.1f, 1.0f);
-
-    float dt = game.DeltaTime;
-
-    if (game.IsKeyPressed(Keys.Escape)) { game.Close(); continue; }
-
-    if (game.IsKeyPressed(Keys.Left))  x -= speed * dt;
-    if (game.IsKeyPressed(Keys.Right)) x += speed * dt;
-    if (game.IsKeyPressed(Keys.Up))    y -= speed * dt;
-    if (game.IsKeyPressed(Keys.Down))  y += speed * dt;
-    if (game.IsKeyPressed(Keys.Space)) { /* fire, jump, etc. */ }
-
-    game.DrawSprite(textureId, x, y, width, height);
-
-    game.EndFrame();
-}
-```
+{{#include ../generated/snippets/csharp/handling-input.md}}
 
 Mouse input follows the same pattern:
 
@@ -148,10 +88,12 @@ The repository includes several complete C# games. Clone and run them directly:
 git clone https://github.com/aram-devdocs/GoudEngine.git
 cd GoudEngine
 ./dev.sh --game flappy_goud     # Flappy Bird clone
+./dev.sh --game sandbox         # Full feature sandbox
 ./dev.sh --game goud_jumper     # Platformer
 ./dev.sh --game 3d_cube         # 3D rendering demo
 ./dev.sh --game isometric_rpg   # Isometric RPG
 ./dev.sh --game hello_ecs       # ECS basics
+./dev.sh --game feature_lab     # Supplemental smoke coverage
 ```
 
 `dev.sh` builds the engine and runs the example in one step. Source for each example is in [`examples/csharp/`](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/csharp/).
@@ -168,6 +110,10 @@ To use a locally built version of the engine instead of the published NuGet pack
 
 - [C# SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/csharp/) — full API reference
 - [C# examples source](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/csharp/) — complete game source code
+- [Build Your First Game](../guides/build-your-first-game.md) — end-to-end minimal game walkthrough
+- [Example Showcase](../guides/showcase.md) — current cross-language parity matrix
+- [Cross-Platform Deployment](../guides/deployment.md) — packaging and release workflow
+- [FAQ and Troubleshooting](../guides/faq.md) — common runtime and build issues
 - [SDK-first architecture](../architecture/sdk-first.md) — how the engine layers fit together
 - [Development guide](../development/guide.md) — building from source, version management, git hooks
 - Other getting started guides: [Python](python.md) · [TypeScript](typescript.md) · [Rust](rust.md)

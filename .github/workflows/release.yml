@@ -14,7 +14,6 @@ permissions:
   contents: write
   pull-requests: write
   id-token: write
-  checks: write
 
 concurrency:
   group: release-pipeline
@@ -52,35 +51,6 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag_name=v${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Using fallback version: ${VERSION}"
-
-      # GitHub suppresses pull_request events for GITHUB_TOKEN-created PRs,
-      # so CI never runs on release-please PRs. We satisfy the required
-      # "CI Success" check by creating a check run directly, then enable
-      # auto-merge. Runs on every push to main (handles both PR creation
-      # and subsequent PR updates from new merges).
-      - name: Auto-merge release PR
-        if: steps.release.outputs.release_created != 'true'
-        run: |
-          PR_NUMBER=$(gh pr list --label "autorelease: pending" --json number -q '.[0].number' --repo ${{ github.repository }} 2>/dev/null || true)
-          if [ -z "$PR_NUMBER" ]; then
-            echo "No open release PR found, skipping"
-            exit 0
-          fi
-
-          SHA=$(gh pr view "${PR_NUMBER}" --json headRefOid -q .headRefOid --repo ${{ github.repository }})
-          echo "Creating CI Success check on release PR #${PR_NUMBER} (SHA: ${SHA})"
-          gh api "repos/${{ github.repository }}/check-runs" \
-            -f "name=CI Success" \
-            -f "head_sha=${SHA}" \
-            -f "status=completed" \
-            -f "conclusion=success" \
-            -f "output[title]=Release PR" \
-            -f "output[summary]=CI bypassed for release-please version bump"
-
-          echo "Enabling auto-merge on release PR #${PR_NUMBER}"
-          gh pr merge "${PR_NUMBER}" --auto --squash --repo ${{ github.repository }} || true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ── Step 2a: Build native libraries for all platforms ──
   build-native-libs:
@@ -235,16 +205,20 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Install pinned wasm-pack
+        env:
+          WASM_PACK_VERSION: "0.13.1"
+        run: |
+          curl -sSfL "https://github.com/rustwasm/wasm-pack/releases/download/v${WASM_PACK_VERSION}/wasm-pack-v${WASM_PACK_VERSION}-x86_64-unknown-linux-musl.tar.gz" -o /tmp/wasm-pack.tar.gz
+          tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
+          sudo install /tmp/wasm-pack-v${WASM_PACK_VERSION}-x86_64-unknown-linux-musl/wasm-pack /usr/local/bin/wasm-pack
+          wasm-pack --version
 
       - name: Build WASM
         working-directory: sdks/typescript
+        # wasm-pack already optimizes this bundle; do not run a second manual
+        # wasm-opt pass or the browser runtime smoke can regress.
         run: npm run build:wasm
-
-      - name: Optimize WASM
-        working-directory: sdks/typescript
-        run: npm run build:wasm:opt
 
       - uses: actions/upload-artifact@v4
         with:
@@ -280,16 +254,11 @@ jobs:
             libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev \
             libasound2-dev
 
-      - name: Run codegen
-        run: |
-          cd codegen
-          python3 gen_csharp.py
-          python3 gen_python.py
-          python3 gen_ts_node.py
-          python3 gen_ts_web.py
+      - name: Run full codegen pipeline
+        run: ./codegen.sh
 
       - name: Check for drift
-        run: git diff --exit-code -- sdks/
+        run: bash scripts/check-generated-artifacts.sh
 
       - name: Run validators
         run: |

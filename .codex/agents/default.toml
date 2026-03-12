@@ -18,6 +18,10 @@ You are the default orchestrator role.
 ## Rules
 
 - Prefer role-specific subagents for implementation, deep review, and long-running monitoring.
+- Stability first: keep one active lead from root at a time.
+- Leads run specialists sequentially: one active specialist at a time, up to 2 specialists total per batch.
+- Allow a second specialist only after the first specialist finishes.
+- When multiple Codex sessions overlap, prioritize stability over opportunistic parallelism.
 - Keep context lean by summarizing subagent outputs.
 - Escalate high-risk FFI and unsafe concerns to security-focused roles.
 """

@@ -13,6 +13,26 @@ testing. Uses a shared `game.ts` with platform-specific entry points.
 
 Controls: Space/Left Click to jump, R to restart, Escape to quit (desktop).
 
+### Feature Lab (`feature_lab/`)
+
+ALPHA-001 wrapper surface lab with shared desktop/web layout. It intentionally
+probes wrapper APIs beyond Flappy Bird:
+
+- Provider capability queries (`get*Capabilities`)
+- Scene wrapper calls (`loadScene`, `setActiveScene`, `unloadScene`)
+- Desktop-only UI wrapper usage (`UiManager`)
+- Networking wrapper access (`NetworkManager`)
+- Browser networking smoke coverage via `npm run smoke:web-network`
+
+### Sandbox (`sandbox/`)
+
+Sandbox is the main parity app for the TypeScript SDK.
+
+- Desktop and web use the same shared sandbox module
+- Shared asset pack under `examples/shared/sandbox/`
+- Visible 2D, 3D, hybrid, diagnostics, capability, and networking panels
+- Web keeps unsupported desktop-only paths visible and capability-gated
+
 ## Running -- Desktop
 
 Prerequisites: build the TypeScript SDK native addon first.
@@ -33,6 +53,8 @@ Or use the dev script from the repository root:
 
 ```bash
 ./dev.sh --sdk typescript --game flappy_bird
+./dev.sh --sdk typescript --game sandbox
+./dev.sh --sdk typescript --game feature_lab
 ```
 
 ## Running -- Web
@@ -53,6 +75,37 @@ npm run web              # Start local server on port 8765
 
 Open `http://localhost:8765/examples/typescript/flappy_bird/web/index.html`
 in a browser.
+
+Feature Lab web entry:
+
+```bash
+cd examples/typescript/feature_lab
+npm run build:web
+npm run web
+```
+
+Open `http://localhost:8765/examples/typescript/feature_lab/web/index.html`.
+
+Sandbox web entry:
+
+```bash
+cd examples/typescript/sandbox
+npm run build:web
+npm run web
+```
+
+Open `http://localhost:8765/examples/typescript/sandbox/web/index.html`.
+
+Dedicated browser networking smoke:
+
+```bash
+cd examples/typescript/feature_lab
+npx playwright install chromium
+npm run smoke:web-network
+```
+
+This opens headless Chromium, connects the web SDK to a local WebSocket echo server,
+waits for `peerCount() > 0`, sends `ping`, and requires `pong` before passing.
 
 ## Architecture
 

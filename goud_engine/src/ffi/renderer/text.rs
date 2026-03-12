@@ -11,9 +11,7 @@ use crate::core::handle::{Handle, HandleMap};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
 use crate::libs::graphics::backend::TextureOps;
-use crate::rendering::text::{GlyphAtlas, TextLayoutConfig};
-
-use super::immediate::ensure_immediate_state;
+use crate::rendering::text::{GlyphAtlas, TextBatch, TextLayoutConfig};
 
 mod draw_impl;
 mod parse;
@@ -21,7 +19,7 @@ mod parse;
 #[cfg(test)]
 mod tests;
 
-use draw_impl::{draw_text_internal, extract_state};
+use draw_impl::draw_text_internal;
 use parse::{parse_text_alignment, parse_text_direction, read_utf8_cstr};
 
 /// Opaque font handle for native FFI text rendering.
@@ -40,12 +38,14 @@ struct LoadedFont {
 
 struct ContextFontState {
     fonts: HandleMap<FontMarker, LoadedFont>,
+    text_batch: TextBatch,
 }
 
 impl ContextFontState {
     fn new() -> Self {
         Self {
             fonts: HandleMap::new(),
+            text_batch: TextBatch::new(),
         }
     }
 }
@@ -266,19 +266,6 @@ pub unsafe extern "C" fn goud_renderer_draw_text(
         }
     };
 
-    if let Err(err) = ensure_immediate_state(context_id) {
-        set_last_error(err);
-        return false;
-    }
-
-    let state_data = match extract_state(context_id) {
-        Some(data) => data,
-        None => {
-            set_last_error(GoudError::InvalidContext);
-            return false;
-        }
-    };
-
     let config = TextLayoutConfig {
         max_width: if max_width > 0.0 {
             Some(max_width)
@@ -293,7 +280,6 @@ pub unsafe extern "C" fn goud_renderer_draw_text(
         draw_text_internal(
             window_state,
             context_id,
-            state_data,
             font_handle,
             &text_str,
             x,

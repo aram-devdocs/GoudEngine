@@ -50,6 +50,7 @@ pub struct NullBackend {
 
     // Shader management
     pub(super) shader_allocator: HandleAllocator<ShaderMarker>,
+    pub(super) shader_create_calls: usize,
 }
 
 // SAFETY: NullBackend contains only pure Rust data (no raw pointers,
@@ -96,7 +97,13 @@ impl NullBackend {
             texture_allocator: HandleAllocator::new(),
             textures: HashMap::new(),
             shader_allocator: HandleAllocator::new(),
+            shader_create_calls: 0,
         }
+    }
+
+    /// Returns how many shader creation calls have occurred.
+    pub fn shader_create_calls(&self) -> usize {
+        self.shader_create_calls
     }
 }
 

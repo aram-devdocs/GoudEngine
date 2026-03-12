@@ -1,0 +1,11 @@
+[package]
+name = "sandbox"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+goud-engine = { path = "../../../sdks/rust" }
+goud_engine = { package = "goud-engine-core", path = "../../../goud_engine" }
+serde_json = "1"

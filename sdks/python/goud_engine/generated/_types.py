@@ -714,8 +714,9 @@ class Sprite:
         """Gets the source rectangle"""
         _ensure_ffi()
         self._sync_to_ffi()
-        ffi = _lib.goud_sprite_get_source_rect(ctypes.byref(self._ffi))
-        return Rect(ffi.x, ffi.y, ffi.width, ffi.height)
+        _out_rect = FfiRect()
+        _lib.goud_sprite_get_source_rect(ctypes.byref(self._ffi), ctypes.byref(_out_rect))
+        return Rect(_out_rect.x, _out_rect.y, _out_rect.width, _out_rect.height)
 
     def has_source_rect(self) -> bool:
         """Returns true if a source rectangle is set"""
@@ -829,8 +830,9 @@ class Sprite:
         """Gets the custom size"""
         _ensure_ffi()
         self._sync_to_ffi()
-        ffi = _lib.goud_sprite_get_custom_size(ctypes.byref(self._ffi))
-        return Vec2(ffi.x, ffi.y)
+        _out_size = FfiVec2()
+        _lib.goud_sprite_get_custom_size(ctypes.byref(self._ffi), ctypes.byref(_out_size))
+        return Vec2(_out_size.x, _out_size.y)
 
     def has_custom_size(self) -> bool:
         """Returns true if custom size is set"""
@@ -890,7 +892,7 @@ class SpriteBuilder:
     def with_texture(self, handle: int) -> 'SpriteBuilder':
         """Sets texture handle"""
         _ensure_ffi()
-        self._ptr = _lib.goud_sprite_builder_with_texture(self._ptr, handle)
+        self._ptr = _lib.goud_sprite_builder_with_texture(self._ptr, texture_handle)
         return self
 
     def with_color(self, r: float, g: float, b: float, a: float) -> 'SpriteBuilder':
@@ -1087,7 +1089,7 @@ class Text:
         _lib.goud_text_set_alignment(ctypes.byref(self._ffi), alignment)
         self._sync_from_ffi()
 
-    def get_alignment(self) -> 'Text':
+    def get_alignment(self) -> int:
         """Gets the horizontal text alignment"""
         _ensure_ffi()
         self._sync_to_ffi()

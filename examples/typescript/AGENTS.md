@@ -8,6 +8,8 @@ and web (WASM) targets from the same game logic.
 ## Structure
 
 - `flappy_bird/` -- Flappy Bird clone, mirrors C#/Python versions for SDK parity testing
+- `sandbox/` -- Flagship parity sandbox (desktop + web entrypoints, shared asset pack)
+- `feature_lab/` -- Supplemental wrapper/network smoke lab (desktop + web entrypoints)
 
 ## Running
 
@@ -28,6 +30,13 @@ cd examples/typescript/flappy_bird
 npm run build:web        # Compile TS to dist/
 npm run web              # Start local server on port 8765
 # Open http://localhost:8765/examples/typescript/flappy_bird/web/index.html
+```
+
+Sandbox parity app:
+
+```bash
+./dev.sh --sdk typescript --game sandbox
+./dev.sh --sdk typescript --game sandbox_web
 ```
 
 Requires the WASM build: see `sdks/typescript/wasm/`.

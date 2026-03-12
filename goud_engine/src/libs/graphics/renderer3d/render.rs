@@ -6,7 +6,7 @@
 use cgmath::{perspective, Deg, Matrix, Matrix4};
 
 use crate::libs::graphics::backend::{
-    BlendFactor, CullFace, DepthFunc, FrontFace, PrimitiveTopology,
+    types::TextureHandle, BlendFactor, CullFace, DepthFunc, FrontFace, PrimitiveTopology,
 };
 
 use super::core::Renderer3D;
@@ -169,6 +169,9 @@ impl Renderer3D {
             if obj.texture_id > 0 {
                 if let Some(tm) = texture_manager {
                     tm.bind_texture(obj.texture_id, 0);
+                } else {
+                    let texture_handle = TextureHandle::new(obj.texture_id, 1);
+                    let _ = self.backend.bind_texture(texture_handle, 0);
                 }
                 self.backend.set_uniform_int(self.uniforms.use_texture, 1);
                 self.backend
@@ -187,6 +190,7 @@ impl Renderer3D {
         }
 
         self.backend.unbind_shader();
+        self.backend.disable_culling();
     }
 
     /// Build a TRS (translate-rotate-scale) model matrix from object components.

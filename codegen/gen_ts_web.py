@@ -14,11 +14,12 @@ from sdk_common import (
     HEADER_COMMENT, SDKS_DIR, load_schema, load_ffi_mapping, load_errors,
     to_camel, to_pascal, to_snake, write_generated, TYPESCRIPT_TYPES,
 )
+from ts_node_wrapper import gen_network_shared_wrapper
 
 TS = SDKS_DIR / "typescript"
 GEN = TS / "src" / "generated"
 schema = load_schema()
-mapping = load_ffi_mapping()
+mapping = load_ffi_mapping(schema)
 
 
 def emit_jsdoc(lines: list, doc: str | None, indent: str = "  ") -> None:
@@ -155,7 +156,7 @@ def gen_web_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket } from '../types/engine.g.js';",
+        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "import { PhysicsBackend2D } from '../types/input.g.js';",
         "import { attachInputHandlers } from './input.g.js';",
@@ -163,7 +164,29 @@ def gen_web_wrapper():
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';",
         "export { Rect } from '../types/math.g.js';",
-        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket } from '../types/engine.g.js';",
+        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
+        "",
+        "const PRELOAD_TEXTURE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'tga', 'dds']);",
+        "const PRELOAD_FONT_EXTENSIONS = new Set(['ttf', 'otf', 'woff', 'woff2', 'fnt']);",
+        "",
+        "function detectPreloadKind(path: string): PreloadAssetKind {",
+        "  const ext = path.split('.').pop()?.toLowerCase() ?? '';",
+        "  if (PRELOAD_TEXTURE_EXTENSIONS.has(ext)) return 'texture';",
+        "  if (PRELOAD_FONT_EXTENSIONS.has(ext)) return 'font';",
+        "  throw new Error(`Unsupported preload asset type for path: ${path}`);",
+        "}",
+        "",
+        "function normalizePreloadAsset(asset: PreloadAssetInput): Required<IPreloadAssetRequest> {",
+        "  if (typeof asset === 'string') {",
+        "    return { path: asset, kind: detectPreloadKind(asset) };",
+        "  }",
+        "  return { path: asset.path, kind: asset.kind ?? detectPreloadKind(asset.path) };",
+        "}",
+        "",
+        "const WEB_RENDER_CAPABILITIES: IRenderCapabilities = { maxTextureUnits: 0, maxTextureSize: 0, supportsInstancing: false, supportsCompute: false, supportsMsaa: false };",
+        "const WEB_PHYSICS_CAPABILITIES: IPhysicsCapabilities = { supportsContinuousCollision: false, supportsJoints: false, maxBodies: 0 };",
+        "const WEB_AUDIO_CAPABILITIES: IAudioCapabilities = { supportsSpatial: true, maxChannels: 32 };",
+        "const WEB_INPUT_CAPABILITIES: IInputCapabilities = { supportsGamepad: false, supportsTouch: true, maxGamepads: 0 };",
         "",
     ]
 
@@ -181,8 +204,57 @@ def gen_web_wrapper():
             sig = method.get("wasm_signature", "")
             if sig:
                 lines.append(f"  {sig};")
+    lines.extend([
+        "  network_host(protocol: number, port: number): number;",
+        "  network_connect(protocol: number, address: string, port: number): number;",
+        "  network_connect_with_peer(protocol: number, address: string, port: number): WasmNetworkConnectResult;",
+        "  network_disconnect(handle: number): number;",
+        "  network_send(handle: number, peer_id: bigint, data: Uint8Array, channel: number): number;",
+        "  network_receive(handle: number): Uint8Array;",
+        "  network_receive_packet(handle: number): WasmNetworkPacket | undefined;",
+        "  network_poll(handle: number): number;",
+        "  get_network_stats(handle: number): WasmNetworkStats;",
+        "  get_network_capabilities(): WasmNetworkCapabilities;",
+        "  network_peer_count(handle: number): number;",
+        "  set_network_simulation(handle: number, one_way_latency_ms: number, jitter_ms: number, packet_loss_percent: number): number;",
+        "  clear_network_simulation(handle: number): number;",
+        "  set_network_overlay_handle(handle: number): number;",
+        "  clear_network_overlay_handle(): number;",
+    ])
     lines.append("}")
     lines.append("")
+    lines.extend([
+        "interface WasmNetworkConnectResult {",
+        "  handle: number;",
+        "  peer_id: bigint | number;",
+        "}",
+        "",
+        "interface WasmNetworkPacket {",
+        "  peer_id: bigint | number;",
+        "  data: Uint8Array;",
+        "}",
+        "",
+        "interface WasmNetworkStats {",
+        "  bytes_sent: bigint | number;",
+        "  bytes_received: bigint | number;",
+        "  packets_sent: bigint | number;",
+        "  packets_received: bigint | number;",
+        "  packets_lost: bigint | number;",
+        "  rtt_ms: number;",
+        "  send_bandwidth_bytes_per_sec: number;",
+        "  receive_bandwidth_bytes_per_sec: number;",
+        "  packet_loss_percent: number;",
+        "  jitter_ms: number;",
+        "}",
+        "",
+        "interface WasmNetworkCapabilities {",
+        "  supports_hosting: boolean;",
+        "  max_connections: number;",
+        "  max_channels: number;",
+        "  max_message_size: number;",
+        "}",
+        "",
+    ])
 
     lines.append("interface WasmExports {")
     lines.append("  WasmGame: {")
@@ -305,6 +377,11 @@ def gen_web_wrapper():
     lines.append("  private _audioGlobalVolume = 1;")
     lines.append("  private _audioChannelVolumes = new Map<number, number>();")
     lines.append("  private _activeAudioPlayers = new Set<number>();")
+    lines.append("  private readonly preloadedTextures = new Map<string, number>();")
+    lines.append("  private readonly preloadedFonts = new Map<string, number>();")
+    lines.append("  private readonly texturePathByHandle = new Map<number, string>();")
+    lines.append("  private readonly fontPathByHandle = new Map<number, string>();")
+    lines.append("  private preloadInFlight = false;")
     lines.append("")
     lines.append("  private constructor(handle: WasmGameHandle, canvas: HTMLCanvasElement) {")
     lines.append("    this.handle = handle; this.canvas = canvas;")
@@ -366,7 +443,11 @@ def gen_web_wrapper():
     emit_jsdoc(lines, _method_docs.get("close"))
     lines.append("  close(): void { this._shouldClose = true; this.stop(); }")
     emit_jsdoc(lines, _method_docs.get("destroy"))
-    lines.append("  destroy(): void { this.stop(); this._activeAudioPlayers.clear(); this.handle.free(); }")
+    lines.append("  destroy(): void {")
+    lines.append("    this.stop();")
+    lines.append("    this._activeAudioPlayers.clear();")
+    lines.append("    this.handle.free();")
+    lines.append("  }")
     lines.append("")
     emit_jsdoc(lines, _method_docs.get("begin_frame"))
     lines.append("  beginFrame(r = 0, g = 0, b = 0, a = 1): void {")
@@ -384,6 +465,9 @@ def gen_web_wrapper():
     emit_jsdoc(lines, _method_docs.get("run"))
     lines.append("  run(update: (dt: number) => void): void {")
     lines.append("    if (this.running) return;")
+    lines.append("    if (this.preloadInFlight) {")
+    lines.append("      throw new Error('game.preload(...) must finish before game.run() starts.');")
+    lines.append("    }")
     lines.append("    if (update.constructor.name === 'AsyncFunction') {")
     lines.append("      console.warn('GoudEngine: game.run() callback should be synchronous. Async callbacks may cause borrow conflicts in WASM.');")
     lines.append("    }")
@@ -430,22 +514,81 @@ def gen_web_wrapper():
 
     emit_jsdoc(lines, _method_docs.get("load_texture"))
     lines.append("  async loadTexture(path: string): Promise<number> {")
+    lines.append("    const cached = this.preloadedTextures.get(path);")
+    lines.append("    if (cached !== undefined) {")
+    lines.append("      return cached;")
+    lines.append("    }")
     lines.append("    const resp = await fetch(path);")
     lines.append("    if (!resp.ok) throw new Error(`Failed to load texture: ${path} (HTTP ${resp.status})`);")
     lines.append("    const bytes = new Uint8Array(await resp.arrayBuffer());")
-    lines.append("    return this.handle.register_texture_from_bytes(bytes);")
+    lines.append("    const handle = this.handle.register_texture_from_bytes(bytes);")
+    lines.append("    this.preloadedTextures.set(path, handle);")
+    lines.append("    this.texturePathByHandle.set(handle, path);")
+    lines.append("    return handle;")
     lines.append("  }")
     emit_jsdoc(lines, _method_docs.get("destroy_texture"))
-    lines.append("  destroyTexture(handle: number): void { this.handle.destroy_texture(handle); }")
+    lines.append("  destroyTexture(handle: number): void {")
+    lines.append("    const path = this.texturePathByHandle.get(handle);")
+    lines.append("    if (path !== undefined) {")
+    lines.append("      this.texturePathByHandle.delete(handle);")
+    lines.append("      this.preloadedTextures.delete(path);")
+    lines.append("    }")
+    lines.append("    this.handle.destroy_texture(handle);")
+    lines.append("  }")
     emit_jsdoc(lines, _method_docs.get("load_font"))
     lines.append("  async loadFont(path: string): Promise<number> {")
+    lines.append("    const cached = this.preloadedFonts.get(path);")
+    lines.append("    if (cached !== undefined) {")
+    lines.append("      return cached;")
+    lines.append("    }")
     lines.append("    const resp = await fetch(path);")
     lines.append("    if (!resp.ok) throw new Error(`Failed to load font: ${path} (HTTP ${resp.status})`);")
     lines.append("    const bytes = new Uint8Array(await resp.arrayBuffer());")
-    lines.append("    return this.handle.register_font_from_bytes(bytes);")
+    lines.append("    const handle = this.handle.register_font_from_bytes(bytes);")
+    lines.append("    this.preloadedFonts.set(path, handle);")
+    lines.append("    this.fontPathByHandle.set(handle, path);")
+    lines.append("    return handle;")
     lines.append("  }")
     emit_jsdoc(lines, _method_docs.get("destroy_font"))
-    lines.append("  destroyFont(handle: number): boolean { return this.handle.destroy_font(handle); }")
+    lines.append("  destroyFont(handle: number): boolean {")
+    lines.append("    const path = this.fontPathByHandle.get(handle);")
+    lines.append("    if (path !== undefined) {")
+    lines.append("      this.fontPathByHandle.delete(handle);")
+    lines.append("      this.preloadedFonts.delete(path);")
+    lines.append("    }")
+    lines.append("    return this.handle.destroy_font(handle);")
+    lines.append("  }")
+    lines.append("  async preload(assets: PreloadAssetInput[], options: IPreloadOptions = {}): Promise<Record<string, number>> {")
+    lines.append("    if (this.preloadInFlight) {")
+    lines.append("      throw new Error('game.preload(...) is already in progress.');")
+    lines.append("    }")
+    lines.append("    this.preloadInFlight = true;")
+    lines.append("    const handles: Record<string, number> = {};")
+    lines.append("    try {")
+    lines.append("      const normalized = assets.map(normalizePreloadAsset);")
+    lines.append("      const total = normalized.length;")
+    lines.append("      let loaded = 0;")
+    lines.append("      for (const asset of normalized) {")
+    lines.append("        const handle = asset.kind === 'font'")
+    lines.append("          ? await this.loadFont(asset.path)")
+    lines.append("          : await this.loadTexture(asset.path);")
+    lines.append("        handles[asset.path] = handle;")
+    lines.append("        loaded += 1;")
+    lines.append("        const update: IPreloadProgress = {")
+    lines.append("          loaded,")
+    lines.append("          total,")
+    lines.append("          progress: total === 0 ? 1 : loaded / total,")
+    lines.append("          path: asset.path,")
+    lines.append("          kind: asset.kind,")
+    lines.append("          handle,")
+    lines.append("        };")
+    lines.append("        options.onProgress?.(update);")
+    lines.append("      }")
+    lines.append("      return handles;")
+    lines.append("    } finally {")
+    lines.append("      this.preloadInFlight = false;")
+    lines.append("    }")
+    lines.append("  }")
     emit_jsdoc(lines, _method_docs.get("draw_text"))
     lines.append("  drawText(fontHandle: number, text: string, x: number, y: number, fontSize = 16, alignment = 0, maxWidth = 0, lineSpacing = 1, direction = 0, color?: IColor): boolean {")
     lines.append("    const c = color ?? Color.white();")
@@ -731,20 +874,63 @@ def gen_web_wrapper():
     lines.append("    throw new Error('Not supported in WASM mode');")
     lines.append("  }")
     lines.append("")
-    lines.append("  networkHost(_protocol: number, _port: number): number { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  networkConnect(_protocol: number, _address: string, _port: number): number { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  networkConnectWithPeer(_protocol: number, _address: string, _port: number): INetworkConnectResult { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  networkDisconnect(_handle: number): number { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  networkSend(_handle: number, _peerId: number, _data: Uint8Array, _channel: number): number { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  networkReceive(_handle: number): Uint8Array { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  networkReceivePacket(_handle: number): INetworkPacket | null { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  networkPoll(_handle: number): number { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  getNetworkStats(_handle: number): INetworkStats { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  networkPeerCount(_handle: number): number { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  setNetworkSimulation(_handle: number, _config: INetworkSimulationConfig): number { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  clearNetworkSimulation(_handle: number): number { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  setNetworkOverlayHandle(_handle: number): number { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  clearNetworkOverlayHandle(): number { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  networkHost(protocol: number, port: number): number {")
+    lines.append("    return this.handle.network_host(protocol, port);")
+    lines.append("  }")
+    lines.append("  networkConnect(protocol: number, address: string, port: number): number {")
+    lines.append("    return this.handle.network_connect(protocol, address, port);")
+    lines.append("  }")
+    lines.append("  networkConnectWithPeer(protocol: number, address: string, port: number): INetworkConnectResult {")
+    lines.append("    const result = this.handle.network_connect_with_peer(protocol, address, port);")
+    lines.append("    return { handle: result.handle, peerId: Number(result.peer_id) };")
+    lines.append("  }")
+    lines.append("  networkDisconnect(handle: number): number {")
+    lines.append("    return this.handle.network_disconnect(handle);")
+    lines.append("  }")
+    lines.append("  networkSend(handle: number, peerId: number, data: Uint8Array, channel: number): number {")
+    lines.append("    return this.handle.network_send(handle, BigInt(peerId), data, channel);")
+    lines.append("  }")
+    lines.append("  networkReceive(handle: number): Uint8Array {")
+    lines.append("    return this.handle.network_receive(handle);")
+    lines.append("  }")
+    lines.append("  networkReceivePacket(handle: number): INetworkPacket | null {")
+    lines.append("    const packet = this.handle.network_receive_packet(handle);")
+    lines.append("    if (!packet) return null;")
+    lines.append("    return { peerId: Number(packet.peer_id), data: packet.data };")
+    lines.append("  }")
+    lines.append("  networkPoll(handle: number): number {")
+    lines.append("    return this.handle.network_poll(handle);")
+    lines.append("  }")
+    lines.append("  getNetworkStats(handle: number): INetworkStats {")
+    lines.append("    const stats = this.handle.get_network_stats(handle);")
+    lines.append("    return {")
+    lines.append("      bytesSent: Number(stats.bytes_sent),")
+    lines.append("      bytesReceived: Number(stats.bytes_received),")
+    lines.append("      packetsSent: Number(stats.packets_sent),")
+    lines.append("      packetsReceived: Number(stats.packets_received),")
+    lines.append("      packetsLost: Number(stats.packets_lost),")
+    lines.append("      rttMs: stats.rtt_ms,")
+    lines.append("      sendBandwidthBytesPerSec: stats.send_bandwidth_bytes_per_sec,")
+    lines.append("      receiveBandwidthBytesPerSec: stats.receive_bandwidth_bytes_per_sec,")
+    lines.append("      packetLossPercent: stats.packet_loss_percent,")
+    lines.append("      jitterMs: stats.jitter_ms,")
+    lines.append("    };")
+    lines.append("  }")
+    lines.append("  networkPeerCount(handle: number): number {")
+    lines.append("    return this.handle.network_peer_count(handle);")
+    lines.append("  }")
+    lines.append("  setNetworkSimulation(handle: number, config: INetworkSimulationConfig): number {")
+    lines.append("    return this.handle.set_network_simulation(handle, config.oneWayLatencyMs, config.jitterMs, config.packetLossPercent);")
+    lines.append("  }")
+    lines.append("  clearNetworkSimulation(handle: number): number {")
+    lines.append("    return this.handle.clear_network_simulation(handle);")
+    lines.append("  }")
+    lines.append("  setNetworkOverlayHandle(handle: number): number {")
+    lines.append("    return this.handle.set_network_overlay_handle(handle);")
+    lines.append("  }")
+    lines.append("  clearNetworkOverlayHandle(): number {")
+    lines.append("    return this.handle.clear_network_overlay_handle();")
+    lines.append("  }")
     lines.append("")
 
     # Collision methods
@@ -839,12 +1025,20 @@ def gen_web_wrapper():
     lines.append("  physicsCollisionEventsRead(_index: number): IPhysicsCollisionEvent2D | null { return null; }")
     emit_jsdoc(lines, _method_docs.get("physics_set_collision_callback"))
     lines.append("  physicsSetCollisionCallback(_callbackPtr: number, _userData: number): number { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  // Provider capability queries -- not available in WASM mode")
-    lines.append("  getRenderCapabilities(): IRenderCapabilities { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  getPhysicsCapabilities(): IPhysicsCapabilities { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  getAudioCapabilities(): IAudioCapabilities { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  getInputCapabilities(): IInputCapabilities { throw new Error('Not supported in WASM mode'); }")
-    lines.append("  getNetworkCapabilities(): INetworkCapabilities { throw new Error('Not supported in WASM mode'); }")
+    lines.append("  // Provider capability queries")
+    lines.append("  getRenderCapabilities(): IRenderCapabilities { return WEB_RENDER_CAPABILITIES; }")
+    lines.append("  getPhysicsCapabilities(): IPhysicsCapabilities { return WEB_PHYSICS_CAPABILITIES; }")
+    lines.append("  getAudioCapabilities(): IAudioCapabilities { return WEB_AUDIO_CAPABILITIES; }")
+    lines.append("  getInputCapabilities(): IInputCapabilities { return WEB_INPUT_CAPABILITIES; }")
+    lines.append("  getNetworkCapabilities(): INetworkCapabilities {")
+    lines.append("    const caps = this.handle.get_network_capabilities();")
+    lines.append("    return {")
+    lines.append("      supportsHosting: caps.supports_hosting,")
+    lines.append("      maxConnections: caps.max_connections,")
+    lines.append("      maxChannels: caps.max_channels,")
+    lines.append("      maxMessageSize: caps.max_message_size,")
+    lines.append("    };")
+    lines.append("  }")
     lines.append("")
     emit_jsdoc(lines, _method_docs.get("check_hot_swap_shortcut"))
     lines.append("  checkHotSwapShortcut(): boolean { throw new Error('Not supported in WASM mode'); }")
@@ -1027,6 +1221,7 @@ def gen_errors():
 
 if __name__ == "__main__":
     print("Generating TypeScript Web SDK...")
+    gen_network_shared_wrapper()
     gen_web_input()
     gen_web_wrapper()
     gen_errors()

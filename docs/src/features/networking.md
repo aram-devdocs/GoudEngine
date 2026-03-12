@@ -65,7 +65,7 @@ while True:
     break
 ```
 
-## TypeScript
+## TypeScript Desktop
 
 ```typescript
 import { GoudContext, NetworkManager, NetworkProtocol } from "goudengine/node";
@@ -96,4 +96,39 @@ while (true) {
 }
 ```
 
-TypeScript networking is Node-only today (`goudengine/node`), including loopback/headless usage. `goudengine/web` exports the wrappers for type parity, but networking calls still throw `Not supported in WASM mode`.
+## TypeScript Web
+
+Browser networking is available through `goudengine/web` as a WebSocket client path.
+
+- Use `NetworkProtocol.WebSocket` on the web target.
+- Browser hosting is not supported; `host()` returns a negative handle and the shared wrapper throws.
+- `connect()` returns immediately, but the browser socket still opens asynchronously. Poll until `peerCount() > 0` before treating the connection as live.
+
+```typescript
+import { GoudGame, NetworkManager, NetworkProtocol } from "goudengine/web";
+
+const game = await GoudGame.create({ width: 800, height: 600, title: "Web Net" });
+const endpoint = new NetworkManager(game).connect(
+  NetworkProtocol.WebSocket,
+  "ws://127.0.0.1:9001",
+  9001,
+);
+
+game.run(() => {
+  endpoint.poll();
+
+  if (endpoint.peerCount() > 0) {
+    endpoint.send(new TextEncoder().encode("ping"));
+  }
+
+  const packet = endpoint.receive();
+  if (packet) {
+    console.log(new TextDecoder().decode(packet.data));
+  }
+});
+```
+
+Current limitation:
+
+- Browser networking is client-only.
+- Web target networking currently uses the generated browser backend, not the native loopback path used by `goudengine/node`.

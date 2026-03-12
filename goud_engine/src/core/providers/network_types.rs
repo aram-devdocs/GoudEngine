@@ -247,7 +247,6 @@ pub struct ConnectionStats {
 }
 
 // This helper is consumed only by feature-gated native transport backends.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 struct TimedValue {
     at: Instant,
@@ -255,7 +254,6 @@ struct TimedValue {
 }
 
 /// Rolling statistics accumulator shared by network providers.
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub(crate) struct NetworkStatsTracker {
     total_bytes_sent: u64,
@@ -277,7 +275,6 @@ impl Default for NetworkStatsTracker {
     }
 }
 
-#[allow(dead_code)]
 impl NetworkStatsTracker {
     const BANDWIDTH_WINDOW: Duration = Duration::from_secs(1);
     const RTT_SAMPLE_CAPACITY: usize = 32;

@@ -175,6 +175,22 @@ game.Run();
 
 Native libraries are bundled in the NuGet package and copied to your output directory automatically.
 
+## Running Tests
+
+Run the C# SDK tests locally:
+
+```bash
+DOTNET_ROOT_X64=/usr/local/share/dotnet/x64 /usr/local/share/dotnet/x64/dotnet test sdks/csharp.tests/GoudEngine.Tests.csproj -v minimal
+```
+
+Generate a local coverage artifact:
+
+```bash
+DOTNET_ROOT_X64=/usr/local/share/dotnet/x64 /usr/local/share/dotnet/x64/dotnet test sdks/csharp.tests/GoudEngine.Tests.csproj -c Release -v minimal /p:CollectCoverage=true /p:CoverletOutput=sdks/csharp.tests/TestResults/coverage/ /p:CoverletOutputFormat=cobertura
+```
+
+Coverage reports are written under `sdks/csharp.tests/TestResults/`.
+
 ## Links
 
 - [Repository](https://github.com/aram-devdocs/GoudEngine)

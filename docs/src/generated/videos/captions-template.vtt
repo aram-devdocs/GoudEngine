@@ -1,0 +1,13 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:04.000
+[Intro: video title, SDK, and release version]
+
+00:00:04.000 --> 00:00:10.000
+[Describe setup command and what appears in terminal]
+
+00:00:10.000 --> 00:00:18.000
+[Describe project files shown and first run result]
+
+00:00:18.000 --> 00:00:30.000
+[Describe troubleshooting or expected output]

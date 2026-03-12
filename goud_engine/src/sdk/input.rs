@@ -1,6 +1,6 @@
 //! # SDK Input API
 //!
-//! Provides methods on [`GoudGame`](super::GoudGame) for querying input state:
+//! Provides methods on [`GoudGame`] for querying input state:
 //! keyboard, mouse, and action mapping.
 //!
 //! The input system is built on the [`InputManager`] ECS resource. The SDK

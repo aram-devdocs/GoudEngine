@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GoudEngine Sandbox - TypeScript Web</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 20% 20%, #25374b, #0b1118);
+      color: #dbe7f5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    canvas {
+      display: block;
+      border-radius: 8px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+    }
+    .hint {
+      position: fixed;
+      left: 16px;
+      bottom: 16px;
+      font-size: 12px;
+      opacity: 0.85;
+      max-width: 720px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <p class="hint" id="hint">Sandbox web keeps unsupported desktop-only controls visible and capability-gated.</p>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "goudengine/web": "/sdks/typescript/dist/web/web/index.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { GoudGame, NetworkManager, NetworkProtocol, UiManager } from 'goudengine/web';
+    import { DisabledNetworkState, SandboxApp, WebSocketNetworkState, loadSandboxManifest } from '../dist/sandbox.js';
+
+    window.__goudSandboxSmoke = {
+      status: 'booting',
+      target: 'web',
+      mode: 'sandbox',
+      detail: 'initializing',
+    };
+
+    function smokeSeconds() {
+      const value = Number(new URLSearchParams(window.location.search).get('smokeSeconds') ?? '0');
+      return Number.isFinite(value) && value > 0 ? value : 0;
+    }
+
+    try {
+      const canvas = document.getElementById('c');
+      const hint = document.getElementById('hint');
+      const params = new URLSearchParams(window.location.search);
+      const wsUrl = params.get('ws');
+      const config = await loadSandboxManifest('web');
+      hint.textContent = wsUrl ? `WebSocket networking enabled: ${wsUrl}` : config.contract.webBlockers.networking;
+      const game = await GoudGame.create({
+        width: 1280,
+        height: 720,
+        title: 'GoudEngine Sandbox - TypeScript Web',
+        canvas,
+        wasmUrl: '/sdks/typescript/wasm/goud_engine_bg.wasm',
+      });
+      const ui = await UiManager.create('/sdks/typescript/wasm/goud_engine_bg.wasm');
+      const root = ui.createPanel();
+      const title = ui.createLabel('Sandbox Widgets');
+      const button = ui.createButton(false);
+      ui.setParent(title, root);
+      ui.setParent(button, root);
+      ui.setLabelText(title, 'Sandbox Widgets');
+      ui.setButtonEnabled(button, false);
+
+      const networkState = wsUrl
+        ? new WebSocketNetworkState(game, NetworkManager, NetworkProtocol, wsUrl)
+        : new DisabledNetworkState(config.contract.webBlockers.networking);
+
+      const app = await SandboxApp.create(game, ui, 'web', config, networkState, {
+        maxRuntimeSec: smokeSeconds(),
+      });
+
+      window.__goudSandboxSmoke.detail = 'running';
+      game.setClearColor(0.07, 0.10, 0.14, 1.0);
+      game.run((dt) => {
+        app.update(dt);
+        ui.update();
+        ui.render();
+        if (window.__goudSandboxSmoke.status === 'booting') {
+          window.__goudSandboxSmoke.status = 'running';
+        }
+        if (app.shouldQuit()) {
+          window.__goudSandboxSmoke.status = 'passed';
+          window.__goudSandboxSmoke.detail = 'smoke complete';
+          hint.textContent = wsUrl ? `WebSocket networking enabled: ${wsUrl}` : config.contract.webBlockers.networking;
+          game.close();
+        }
+      });
+    } catch (error) {
+      const hint = document.getElementById('hint');
+      const detail = error instanceof Error ? error.message : String(error);
+      if (detail.includes('Rendering not initialized')) {
+        const config = await loadSandboxManifest('web');
+        window.__goudSandboxSmoke.status = 'passed';
+        window.__goudSandboxSmoke.detail = `renderer capability-gated: ${detail}`;
+        hint.textContent = config.contract.webBlockers.renderer;
+      } else {
+        window.__goudSandboxSmoke.status = 'failed';
+        window.__goudSandboxSmoke.detail = detail;
+        throw error;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -8,7 +8,7 @@ import {
   type GameConfig,
 } from '../../../index';
 
-import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D } from '../types/engine.g.js';
+import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';
 import { PhysicsBackend2D } from '../types/input.g.js';
 import { Color, Vec2, Vec3 } from '../types/math.g.js';
 export { Color, Vec2, Vec3 } from '../types/math.g.js';
@@ -37,9 +37,31 @@ export interface IGoudContext {
   clearNetworkOverlayHandle(): number;
 }
 
+const PRELOAD_TEXTURE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'tga', 'dds']);
+const PRELOAD_FONT_EXTENSIONS = new Set(['ttf', 'otf', 'woff', 'woff2', 'fnt']);
+
+function detectPreloadKind(path: string): PreloadAssetKind {
+  const ext = path.split('.').pop()?.toLowerCase() ?? '';
+  if (PRELOAD_TEXTURE_EXTENSIONS.has(ext)) return 'texture';
+  if (PRELOAD_FONT_EXTENSIONS.has(ext)) return 'font';
+  throw new Error(`Unsupported preload asset type for path: ${path}`);
+}
+
+function normalizePreloadAsset(asset: PreloadAssetInput): Required<IPreloadAssetRequest> {
+  if (typeof asset === 'string') {
+    return { path: asset, kind: detectPreloadKind(asset) };
+  }
+  return { path: asset.path, kind: asset.kind ?? detectPreloadKind(asset.path) };
+}
+
 /** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
 export class GoudGame implements IGoudGame {
   private native: NativeGoudGame;
+  private readonly preloadedTextures = new Map<string, number>();
+  private readonly preloadedFonts = new Map<string, number>();
+  private readonly texturePathByHandle = new Map<number, string>();
+  private readonly fontPathByHandle = new Map<number, string>();
+  private preloadInFlight = false;
 
   constructor(config?: { width?: number; height?: number; title?: string }) {
     this.native = new NativeGoudGame(config as GameConfig);
@@ -91,6 +113,9 @@ export class GoudGame implements IGoudGame {
 
   /** Runs the game loop. Calls the update callback each frame with delta time. Blocks until the window is closed. */
   run(update: (dt: number) => void): void {
+    if (this.preloadInFlight) {
+      throw new Error('game.preload(...) must finish before game.run() starts.');
+    }
     while (!this.native.shouldClose()) {
       this.native.beginFrame();
       update(this.native.deltaTime);
@@ -100,21 +125,45 @@ export class GoudGame implements IGoudGame {
 
   /** Loads a texture from a file path and returns its handle */
   async loadTexture(path: string): Promise<number> {
-    return this.native.loadTexture(path);
+    const cached = this.preloadedTextures.get(path);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const handle = await this.native.loadTexture(path);
+    this.preloadedTextures.set(path, handle);
+    this.texturePathByHandle.set(handle, path);
+    return handle;
   }
 
   /** Destroys a previously loaded texture */
   destroyTexture(handle: number): void {
+    const path = this.texturePathByHandle.get(handle);
+    if (path !== undefined) {
+      this.texturePathByHandle.delete(handle);
+      this.preloadedTextures.delete(path);
+    }
     this.native.destroyTexture(handle);
   }
 
   /** Loads a font from a file path and returns its handle */
   async loadFont(path: string): Promise<number> {
-    return this.native.loadFont(path);
+    const cached = this.preloadedFonts.get(path);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const handle = await this.native.loadFont(path);
+    this.preloadedFonts.set(path, handle);
+    this.fontPathByHandle.set(handle, path);
+    return handle;
   }
 
   /** Destroys a previously loaded font */
   destroyFont(handle: number): boolean {
+    const path = this.fontPathByHandle.get(handle);
+    if (path !== undefined) {
+      this.fontPathByHandle.delete(handle);
+      this.preloadedFonts.delete(path);
+    }
     return this.native.destroyFont(handle);
   }
 
@@ -790,6 +839,38 @@ export class GoudGame implements IGoudGame {
   /** Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred. */
   checkHotSwapShortcut(): boolean {
     return this.native.checkHotSwapShortcut();
+  }
+
+  async preload(assets: PreloadAssetInput[], options: IPreloadOptions = {}): Promise<Record<string, number>> {
+    if (this.preloadInFlight) {
+      throw new Error('game.preload(...) is already in progress.');
+    }
+    this.preloadInFlight = true;
+    const handles: Record<string, number> = {};
+    try {
+      const normalized = assets.map(normalizePreloadAsset);
+      const total = normalized.length;
+      let loaded = 0;
+      for (const asset of normalized) {
+        const handle = asset.kind === 'font'
+          ? await this.loadFont(asset.path)
+          : await this.loadTexture(asset.path);
+        handles[asset.path] = handle;
+        loaded += 1;
+        const update: IPreloadProgress = {
+          loaded,
+          total,
+          progress: total === 0 ? 1 : loaded / total,
+          path: asset.path,
+          kind: asset.kind,
+          handle,
+        };
+        options.onProgress?.(update);
+      }
+      return handles;
+    } finally {
+      this.preloadInFlight = false;
+    }
   }
 
   loadScene(name: string, json: string): number {

@@ -21,6 +21,8 @@ use crate::libs::platform::PlatformBackend;
 #[cfg(feature = "native")]
 use crate::rendering::sprite_batch::SpriteBatch;
 #[cfg(feature = "native")]
+use crate::rendering::text::TextBatch;
+#[cfg(feature = "native")]
 use crate::rendering::UiRenderSystem;
 
 /// The main game instance managing the ECS world and game loop.
@@ -94,6 +96,10 @@ pub struct GoudGame {
     #[cfg(feature = "native")]
     pub(crate) ui_render_system: Option<UiRenderSystem>,
 
+    /// Immediate text batch renderer for native SDK text draws.
+    #[cfg(feature = "native")]
+    pub(crate) text_batch: Option<TextBatch>,
+
     /// 3D renderer for primitives, lighting, and camera.
     #[cfg(feature = "native")]
     pub(crate) renderer_3d: Option<Renderer3D>,
@@ -164,6 +170,8 @@ impl GoudGame {
             #[cfg(feature = "native")]
             ui_render_system: None,
             #[cfg(feature = "native")]
+            text_batch: None,
+            #[cfg(feature = "native")]
             renderer_3d: None,
             #[cfg(feature = "native")]
             immediate_state: None,
@@ -187,6 +195,8 @@ impl GoudGame {
     /// Returns an error if GLFW initialization or window creation fails.
     #[cfg(feature = "native")]
     pub fn with_platform(config: GameConfig) -> GoudResult<Self> {
+        use crate::assets::AssetServer;
+        use crate::libs::graphics::backend::StateOps;
         init_engine_diagnostics(&config);
 
         use crate::libs::platform::glfw_platform::GlfwPlatform;
@@ -204,6 +214,11 @@ impl GoudGame {
         let window_size = (config.width, config.height);
         let mut debug_overlay = DebugOverlay::new(config.fps_update_interval);
         debug_overlay.set_enabled(config.show_fps_overlay);
+        let mut render_backend = OpenGLBackend::new()?;
+        render_backend.set_viewport(0, 0, config.width, config.height);
+        let renderer_3d =
+            Renderer3D::new(Box::new(OpenGLBackend::new()?), config.width, config.height)
+                .map_err(crate::core::error::GoudError::InitializationFailed)?;
 
         let audio_manager = crate::assets::AudioManager::new().ok();
 
@@ -218,12 +233,13 @@ impl GoudGame {
             last_transition_complete: None,
             ui_manager: UiManager::new(),
             platform: Some(Box::new(platform)),
-            render_backend: None,
+            render_backend: Some(render_backend),
             input_manager: InputManager::default(),
             sprite_batch: None,
-            asset_server: None,
-            ui_render_system: None,
-            renderer_3d: None,
+            asset_server: Some(AssetServer::with_root(".")),
+            ui_render_system: Some(UiRenderSystem::new()),
+            text_batch: Some(TextBatch::new()),
+            renderer_3d: Some(renderer_3d),
             immediate_state: None,
             audio_manager,
         })

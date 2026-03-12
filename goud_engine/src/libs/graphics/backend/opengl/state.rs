@@ -12,6 +12,16 @@ use super::{
 use crate::libs::error::GoudResult;
 use crate::libs::graphics::backend::types::{DepthFunc, FrontFace};
 
+fn clamp_line_width(width: f32, supported_range: [f32; 2]) -> Option<f32> {
+    if !width.is_finite() || width <= 0.0 {
+        return None;
+    }
+
+    let min = supported_range[0].max(1.0);
+    let max = supported_range[1].max(min);
+    Some(width.clamp(min, max))
+}
+
 // ============================================================================
 // RenderBackend (supertrait -- lifecycle & info only)
 // ============================================================================
@@ -19,6 +29,14 @@ use crate::libs::graphics::backend::types::{DepthFunc, FrontFace};
 impl RenderBackend for OpenGLBackend {
     fn info(&self) -> &BackendInfo {
         &self.info
+    }
+
+    fn bind_default_vertex_array(&mut self) {
+        self.bind_default_vao();
+    }
+
+    fn validate_text_draw_state(&self) -> Result<(), String> {
+        self.validate_bound_text_draw_state()
     }
 }
 
@@ -192,6 +210,9 @@ impl StateOps for OpenGLBackend {
     }
 
     fn set_line_width(&mut self, width: f32) {
+        let Some(width) = clamp_line_width(width, self.line_width_range) else {
+            return;
+        };
         // SAFETY: Positive float passed to LineWidth
         unsafe {
             gl::LineWidth(width);
@@ -441,5 +462,23 @@ impl DrawOps for OpenGLBackend {
         instance_count: u32,
     ) -> GoudResult<()> {
         super::draw_calls::draw_indexed_instanced(self, topology, count, offset, instance_count)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::clamp_line_width;
+
+    #[test]
+    fn clamp_line_width_respects_supported_range() {
+        assert_eq!(clamp_line_width(3.0, [1.0, 1.0]), Some(1.0));
+        assert_eq!(clamp_line_width(0.5, [1.0, 4.0]), Some(1.0));
+        assert_eq!(clamp_line_width(2.0, [1.0, 4.0]), Some(2.0));
+    }
+
+    #[test]
+    fn clamp_line_width_rejects_invalid_values() {
+        assert_eq!(clamp_line_width(0.0, [1.0, 4.0]), None);
+        assert_eq!(clamp_line_width(f32::NAN, [1.0, 4.0]), None);
     }
 }

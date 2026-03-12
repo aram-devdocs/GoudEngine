@@ -1,7 +1,8 @@
 //! # Window Lifecycle FFI
 //!
 //! FFI functions for creating and destroying windowed contexts:
-//! [`goud_window_create`] and [`goud_window_destroy`].
+//! [`goud_window_create`](self::goud_window_create) and
+//! [`goud_window_destroy`](super::destroy::goud_window_destroy).
 
 use crate::assets::AudioManager;
 use crate::core::error::{set_last_error, GoudError};

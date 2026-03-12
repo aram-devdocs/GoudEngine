@@ -65,6 +65,19 @@ const RESET_WAV_BYTES = new Uint8Array([
   115, 115, 115, 116, 118, 119, 121, 123, 125, 127, 128, 130, 130, 131, 130, 130, 129, 129, 128, 127, 127, 127,
 ]);
 
+export function flappyBirdAssetManifest(assetBase: string): string[] {
+  const digits = Array.from({ length: 10 }, (_, index) => `${assetBase}/${index}.png`);
+  return [
+    `${assetBase}/background-day.png`,
+    `${assetBase}/base.png`,
+    `${assetBase}/pipe-green.png`,
+    `${assetBase}/bluebird-downflap.png`,
+    `${assetBase}/bluebird-midflap.png`,
+    `${assetBase}/bluebird-upflap.png`,
+    ...digits,
+  ];
+}
+
 // ---------------------------------------------------------------------------
 // Movement — gravity, jump with cooldown, rotation smoothing
 // ---------------------------------------------------------------------------
@@ -303,6 +316,7 @@ export class FlappyBirdGame {
   private audioActivated = false;
 
   async init(game: IGoudGame, assetBase: string): Promise<void> {
+    await game.preload(flappyBirdAssetManifest(assetBase));
     this.bgTexture = await game.loadTexture(`${assetBase}/background-day.png`);
     this.baseTexture = await game.loadTexture(`${assetBase}/base.png`);
     this.pipeTexture = await game.loadTexture(`${assetBase}/pipe-green.png`);

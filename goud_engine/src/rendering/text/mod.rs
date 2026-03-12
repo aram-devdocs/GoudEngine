@@ -20,6 +20,7 @@ pub mod glyph_provider;
 pub mod layout;
 pub mod layout_shaped;
 pub mod rasterizer;
+pub(crate) mod shader;
 pub mod text_batch;
 pub mod text_batch_requests;
 pub mod text_render_system;

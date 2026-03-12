@@ -327,7 +327,16 @@ For contributors building from source:
 ```bash
 cargo build --release
 python3 sdks/python/test_bindings.py
+python3 sdks/python/test_network_loopback.py
+python3 -m coverage erase
+python3 -m coverage run --source=sdks/python/goud_engine sdks/python/test_bindings.py
+python3 -m coverage run --append --source=sdks/python/goud_engine sdks/python/test_network_loopback.py
+python3 -m coverage report
+python3 -m coverage xml -o sdks/python/coverage.xml
 ```
+
+The Python SDK CI gate expects at least `80%` line coverage across
+`sdks/python/goud_engine`.
 
 ## Links
 

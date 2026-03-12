@@ -2267,15 +2267,12 @@ impl NativePhysicsWorld2D {
         if context_id == GOUD_INVALID_CONTEXT_ID {
             return Err(Error::from_reason("Failed to create headless context"));
         }
-        // SAFETY: context_id is valid and all parameters are plain values.
-        let status = unsafe {
-            goud_physics_create_with_backend(
-                context_id,
-                gravity_x as f32,
-                gravity_y as f32,
-                backend.unwrap_or(0),
-            )
-        };
+        let status = goud_physics_create_with_backend(
+            context_id,
+            gravity_x as f32,
+            gravity_y as f32,
+            backend.unwrap_or(0),
+        );
         if status != 0 {
             let _ = goud_context_destroy(context_id);
             return Err(Error::from_reason(format!(
@@ -2291,20 +2288,17 @@ impl NativePhysicsWorld2D {
 
     #[napi]
     pub fn create(&self, gravity_x: f64, gravity_y: f64) -> i32 {
-        unsafe { goud_physics_create(self.context_id, gravity_x as f32, gravity_y as f32) }
+        goud_physics_create(self.context_id, gravity_x as f32, gravity_y as f32)
     }
 
     #[napi]
     pub fn create_with_backend(&self, gravity_x: f64, gravity_y: f64, backend: u32) -> i32 {
-        // SAFETY: context_id is valid and all parameters are plain values.
-        unsafe {
-            goud_physics_create_with_backend(
-                self.context_id,
-                gravity_x as f32,
-                gravity_y as f32,
-                backend,
-            )
-        }
+        goud_physics_create_with_backend(
+            self.context_id,
+            gravity_x as f32,
+            gravity_y as f32,
+            backend,
+        )
     }
 
     #[napi]
@@ -2312,7 +2306,7 @@ impl NativePhysicsWorld2D {
         if self.destroyed {
             return 0;
         }
-        let status = unsafe { goud_physics_destroy(self.context_id) };
+        let status = goud_physics_destroy(self.context_id);
         let _ = goud_context_destroy(self.context_id);
         self.destroyed = true;
         status
@@ -2320,20 +2314,18 @@ impl NativePhysicsWorld2D {
 
     #[napi]
     pub fn set_gravity(&self, x: f64, y: f64) -> i32 {
-        unsafe { goud_physics_set_gravity(self.context_id, x as f32, y as f32) }
+        goud_physics_set_gravity(self.context_id, x as f32, y as f32)
     }
 
     #[napi]
     pub fn add_rigid_body(&self, body_type: u32, x: f64, y: f64, gravity_scale: f64) -> f64 {
-        unsafe {
-            goud_physics_add_rigid_body(
-                self.context_id,
-                body_type,
-                x as f32,
-                y as f32,
-                gravity_scale as f32,
-            ) as f64
-        }
+        goud_physics_add_rigid_body(
+            self.context_id,
+            body_type,
+            x as f32,
+            y as f32,
+            gravity_scale as f32,
+        ) as f64
     }
 
     #[napi]
@@ -2345,16 +2337,14 @@ impl NativePhysicsWorld2D {
         gravity_scale: f64,
         ccd_enabled: bool,
     ) -> f64 {
-        unsafe {
-            goud_physics_add_rigid_body_ex(
-                self.context_id,
-                body_type,
-                x as f32,
-                y as f32,
-                gravity_scale as f32,
-                ccd_enabled,
-            ) as f64
-        }
+        goud_physics_add_rigid_body_ex(
+            self.context_id,
+            body_type,
+            x as f32,
+            y as f32,
+            gravity_scale as f32,
+            ccd_enabled,
+        ) as f64
     }
 
     #[napi]
@@ -2368,18 +2358,16 @@ impl NativePhysicsWorld2D {
         friction: f64,
         restitution: f64,
     ) -> f64 {
-        unsafe {
-            goud_physics_add_collider(
-                self.context_id,
-                body_handle as u64,
-                shape_type,
-                width as f32,
-                height as f32,
-                radius as f32,
-                friction as f32,
-                restitution as f32,
-            ) as f64
-        }
+        goud_physics_add_collider(
+            self.context_id,
+            body_handle as u64,
+            shape_type,
+            width as f32,
+            height as f32,
+            radius as f32,
+            friction as f32,
+            restitution as f32,
+        ) as f64
     }
 
     #[napi]
@@ -2396,26 +2384,24 @@ impl NativePhysicsWorld2D {
         layer: u32,
         mask: u32,
     ) -> f64 {
-        unsafe {
-            goud_physics_add_collider_ex(
-                self.context_id,
-                body_handle as u64,
-                shape_type,
-                width as f32,
-                height as f32,
-                radius as f32,
-                friction as f32,
-                restitution as f32,
-                is_sensor,
-                layer,
-                mask,
-            ) as f64
-        }
+        goud_physics_add_collider_ex(
+            self.context_id,
+            body_handle as u64,
+            shape_type,
+            width as f32,
+            height as f32,
+            radius as f32,
+            friction as f32,
+            restitution as f32,
+            is_sensor,
+            layer,
+            mask,
+        ) as f64
     }
 
     #[napi]
     pub fn remove_body(&self, handle: f64) -> i32 {
-        unsafe { goud_physics_remove_body(self.context_id, handle as u64) }
+        goud_physics_remove_body(self.context_id, handle as u64)
     }
 
     #[napi]
@@ -2437,36 +2423,34 @@ impl NativePhysicsWorld2D {
         motor_target_velocity: f64,
         motor_max_force: f64,
     ) -> f64 {
-        unsafe {
-            goud_physics_create_joint(
-                self.context_id,
-                body_a as u64,
-                body_b as u64,
-                kind,
-                anchor_ax as f32,
-                anchor_ay as f32,
-                anchor_bx as f32,
-                anchor_by as f32,
-                axis_x as f32,
-                axis_y as f32,
-                has_limits,
-                limit_min as f32,
-                limit_max as f32,
-                has_motor,
-                motor_target_velocity as f32,
-                motor_max_force as f32,
-            ) as f64
-        }
+        goud_physics_create_joint(
+            self.context_id,
+            body_a as u64,
+            body_b as u64,
+            kind,
+            anchor_ax as f32,
+            anchor_ay as f32,
+            anchor_bx as f32,
+            anchor_by as f32,
+            axis_x as f32,
+            axis_y as f32,
+            has_limits,
+            limit_min as f32,
+            limit_max as f32,
+            has_motor,
+            motor_target_velocity as f32,
+            motor_max_force as f32,
+        ) as f64
     }
 
     #[napi]
     pub fn remove_joint(&self, handle: f64) -> i32 {
-        unsafe { goud_physics_remove_joint(self.context_id, handle as u64) }
+        goud_physics_remove_joint(self.context_id, handle as u64)
     }
 
     #[napi]
     pub fn step(&self, dt: f64) -> i32 {
-        unsafe { goud_physics_step(self.context_id, dt as f32) }
+        goud_physics_step(self.context_id, dt as f32)
     }
 
     #[napi]
@@ -2497,17 +2481,17 @@ impl NativePhysicsWorld2D {
 
     #[napi]
     pub fn set_velocity(&self, handle: f64, vx: f64, vy: f64) -> i32 {
-        unsafe { goud_physics_set_velocity(self.context_id, handle as u64, vx as f32, vy as f32) }
+        goud_physics_set_velocity(self.context_id, handle as u64, vx as f32, vy as f32)
     }
 
     #[napi]
     pub fn apply_force(&self, handle: f64, fx: f64, fy: f64) -> i32 {
-        unsafe { goud_physics_apply_force(self.context_id, handle as u64, fx as f32, fy as f32) }
+        goud_physics_apply_force(self.context_id, handle as u64, fx as f32, fy as f32)
     }
 
     #[napi]
     pub fn apply_impulse(&self, handle: f64, ix: f64, iy: f64) -> i32 {
-        unsafe { goud_physics_apply_impulse(self.context_id, handle as u64, ix as f32, iy as f32) }
+        goud_physics_apply_impulse(self.context_id, handle as u64, ix as f32, iy as f32)
     }
 
     #[napi]
@@ -2669,7 +2653,7 @@ impl NativePhysicsWorld2D {
 
     #[napi]
     pub fn set_body_gravity_scale(&self, handle: f64, scale: f64) -> i32 {
-        unsafe { goud_physics_set_body_gravity_scale(self.context_id, handle as u64, scale as f32) }
+        goud_physics_set_body_gravity_scale(self.context_id, handle as u64, scale as f32)
     }
 
     #[napi]
@@ -2684,9 +2668,7 @@ impl NativePhysicsWorld2D {
 
     #[napi]
     pub fn set_collider_friction(&self, handle: f64, friction: f64) -> i32 {
-        unsafe {
-            goud_physics_set_collider_friction(self.context_id, handle as u64, friction as f32)
-        }
+        goud_physics_set_collider_friction(self.context_id, handle as u64, friction as f32)
     }
 
     #[napi]
@@ -2701,13 +2683,11 @@ impl NativePhysicsWorld2D {
 
     #[napi]
     pub fn set_collider_restitution(&self, handle: f64, restitution: f64) -> i32 {
-        unsafe {
-            goud_physics_set_collider_restitution(
-                self.context_id,
-                handle as u64,
-                restitution as f32,
-            )
-        }
+        goud_physics_set_collider_restitution(
+            self.context_id,
+            handle as u64,
+            restitution as f32,
+        )
     }
 
     #[napi]
@@ -2726,7 +2706,7 @@ impl NativePhysicsWorld2D {
 
     #[napi]
     pub fn set_timestep(&self, dt: f64) -> i32 {
-        unsafe { goud_physics_set_timestep(self.context_id, dt as f32) }
+        goud_physics_set_timestep(self.context_id, dt as f32)
     }
 
     #[napi]
@@ -2756,15 +2736,12 @@ impl NativePhysicsWorld3D {
         if context_id == GOUD_INVALID_CONTEXT_ID {
             return Err(Error::from_reason("Failed to create headless context"));
         }
-        // SAFETY: context_id is valid and all parameters are plain values.
-        let status = unsafe {
-            goud_physics3d_create(
-                context_id,
-                gravity_x as f32,
-                gravity_y as f32,
-                gravity_z as f32,
-            )
-        };
+        let status = goud_physics3d_create(
+            context_id,
+            gravity_x as f32,
+            gravity_y as f32,
+            gravity_z as f32,
+        );
         if status != 0 {
             let _ = goud_context_destroy(context_id);
             return Err(Error::from_reason(format!(
@@ -2780,14 +2757,12 @@ impl NativePhysicsWorld3D {
 
     #[napi]
     pub fn create(&self, gravity_x: f64, gravity_y: f64, gravity_z: f64) -> i32 {
-        unsafe {
-            goud_physics3d_create(
-                self.context_id,
-                gravity_x as f32,
-                gravity_y as f32,
-                gravity_z as f32,
-            )
-        }
+        goud_physics3d_create(
+            self.context_id,
+            gravity_x as f32,
+            gravity_y as f32,
+            gravity_z as f32,
+        )
     }
 
     #[napi]
@@ -2795,7 +2770,7 @@ impl NativePhysicsWorld3D {
         if self.destroyed {
             return 0;
         }
-        let status = unsafe { goud_physics3d_destroy(self.context_id) };
+        let status = goud_physics3d_destroy(self.context_id);
         let _ = goud_context_destroy(self.context_id);
         self.destroyed = true;
         status
@@ -2803,7 +2778,7 @@ impl NativePhysicsWorld3D {
 
     #[napi]
     pub fn set_gravity(&self, x: f64, y: f64, z: f64) -> i32 {
-        unsafe { goud_physics3d_set_gravity(self.context_id, x as f32, y as f32, z as f32) }
+        goud_physics3d_set_gravity(self.context_id, x as f32, y as f32, z as f32)
     }
 
     #[napi]
@@ -2815,16 +2790,14 @@ impl NativePhysicsWorld3D {
         z: f64,
         gravity_scale: f64,
     ) -> f64 {
-        unsafe {
-            goud_physics3d_add_rigid_body(
-                self.context_id,
-                body_type,
-                x as f32,
-                y as f32,
-                z as f32,
-                gravity_scale as f32,
-            ) as f64
-        }
+        goud_physics3d_add_rigid_body(
+            self.context_id,
+            body_type,
+            x as f32,
+            y as f32,
+            z as f32,
+            gravity_scale as f32,
+        ) as f64
     }
 
     #[napi]
@@ -2839,29 +2812,27 @@ impl NativePhysicsWorld3D {
         friction: f64,
         restitution: f64,
     ) -> f64 {
-        unsafe {
-            goud_physics3d_add_collider(
-                self.context_id,
-                body_handle as u64,
-                shape_type,
-                width as f32,
-                height as f32,
-                depth as f32,
-                radius as f32,
-                friction as f32,
-                restitution as f32,
-            ) as f64
-        }
+        goud_physics3d_add_collider(
+            self.context_id,
+            body_handle as u64,
+            shape_type,
+            width as f32,
+            height as f32,
+            depth as f32,
+            radius as f32,
+            friction as f32,
+            restitution as f32,
+        ) as f64
     }
 
     #[napi]
     pub fn remove_body(&self, handle: f64) -> i32 {
-        unsafe { goud_physics3d_remove_body(self.context_id, handle as u64) }
+        goud_physics3d_remove_body(self.context_id, handle as u64)
     }
 
     #[napi]
     pub fn step(&self, dt: f64) -> i32 {
-        unsafe { goud_physics3d_step(self.context_id, dt as f32) }
+        goud_physics3d_step(self.context_id, dt as f32)
     }
 
     #[napi]
@@ -2882,41 +2853,35 @@ impl NativePhysicsWorld3D {
 
     #[napi]
     pub fn set_velocity(&self, handle: f64, vx: f64, vy: f64, vz: f64) -> i32 {
-        unsafe {
-            goud_physics3d_set_velocity(
-                self.context_id,
-                handle as u64,
-                vx as f32,
-                vy as f32,
-                vz as f32,
-            )
-        }
+        goud_physics3d_set_velocity(
+            self.context_id,
+            handle as u64,
+            vx as f32,
+            vy as f32,
+            vz as f32,
+        )
     }
 
     #[napi]
     pub fn apply_force(&self, handle: f64, fx: f64, fy: f64, fz: f64) -> i32 {
-        unsafe {
-            goud_physics3d_apply_force(
-                self.context_id,
-                handle as u64,
-                fx as f32,
-                fy as f32,
-                fz as f32,
-            )
-        }
+        goud_physics3d_apply_force(
+            self.context_id,
+            handle as u64,
+            fx as f32,
+            fy as f32,
+            fz as f32,
+        )
     }
 
     #[napi]
     pub fn apply_impulse(&self, handle: f64, ix: f64, iy: f64, iz: f64) -> i32 {
-        unsafe {
-            goud_physics3d_apply_impulse(
-                self.context_id,
-                handle as u64,
-                ix as f32,
-                iy as f32,
-                iz as f32,
-            )
-        }
+        goud_physics3d_apply_impulse(
+            self.context_id,
+            handle as u64,
+            ix as f32,
+            iy as f32,
+            iz as f32,
+        )
     }
 
     #[napi]
@@ -2935,9 +2900,7 @@ impl NativePhysicsWorld3D {
 
     #[napi]
     pub fn set_body_gravity_scale(&self, handle: f64, scale: f64) -> i32 {
-        unsafe {
-            goud_physics3d_set_body_gravity_scale(self.context_id, handle as u64, scale as f32)
-        }
+        goud_physics3d_set_body_gravity_scale(self.context_id, handle as u64, scale as f32)
     }
 
     #[napi]
@@ -2952,9 +2915,7 @@ impl NativePhysicsWorld3D {
 
     #[napi]
     pub fn set_collider_friction(&self, handle: f64, friction: f64) -> i32 {
-        unsafe {
-            goud_physics3d_set_collider_friction(self.context_id, handle as u64, friction as f32)
-        }
+        goud_physics3d_set_collider_friction(self.context_id, handle as u64, friction as f32)
     }
 
     #[napi]
@@ -2969,13 +2930,11 @@ impl NativePhysicsWorld3D {
 
     #[napi]
     pub fn set_collider_restitution(&self, handle: f64, restitution: f64) -> i32 {
-        unsafe {
-            goud_physics3d_set_collider_restitution(
-                self.context_id,
-                handle as u64,
-                restitution as f32,
-            )
-        }
+        goud_physics3d_set_collider_restitution(
+            self.context_id,
+            handle as u64,
+            restitution as f32,
+        )
     }
 
     #[napi]
@@ -2994,7 +2953,7 @@ impl NativePhysicsWorld3D {
 
     #[napi]
     pub fn set_timestep(&self, dt: f64) -> i32 {
-        unsafe { goud_physics3d_set_timestep(self.context_id, dt as f32) }
+        goud_physics3d_set_timestep(self.context_id, dt as f32)
     }
 
     #[napi]

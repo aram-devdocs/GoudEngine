@@ -1,0 +1,17 @@
+import { GoudGame } from 'goudengine';
+
+const game = new GoudGame({ width: 800, height: 600, title: 'My Game' });
+
+while (!game.shouldClose()) {
+  game.beginFrame(0.2, 0.3, 0.4, 1.0);
+
+  const dt = game.deltaTime;
+
+  if (game.isKeyPressed(256)) {
+    break;
+  }
+
+  game.endFrame();
+}
+
+game.destroy();

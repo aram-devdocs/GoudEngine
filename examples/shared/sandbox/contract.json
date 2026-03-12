@@ -1,0 +1,119 @@
+{
+  "panels": [
+    "overview",
+    "status",
+    "next_steps"
+  ],
+  "overview_items": [
+    "Press 1, 2, or 3 to switch between the 2D, 3D, and Hybrid scenes.",
+    "Move with WASD or the arrow keys to verify input, motion, and sprite updates.",
+    "Press SPACE to unlock audio and play the shared sandbox tone.",
+    "Open a second sandbox instance to watch localhost networking discover a peer."
+  ],
+  "status_rows": [
+    "scene",
+    "mouse",
+    "render_caps",
+    "physics_caps",
+    "audio_caps",
+    "scene_count",
+    "target",
+    "network_role",
+    "network_detail"
+  ],
+  "next_step_items": [
+    "Top-right shows live capabilities, scene state, networking, and backend details.",
+    "Bottom panel tells you what to try next instead of leaving the scene unexplained.",
+    "Web keeps unsupported desktop controls visible only when a real browser blocker remains."
+  ],
+  "next_step_dynamic_rows": [
+    "audio_status",
+    "network_probe"
+  ],
+  "layout": {
+    "overview_panel": {
+      "x": 332.0,
+      "y": 192.0,
+      "width": 620.0,
+      "height": 318.0
+    },
+    "status_panel": {
+      "x": 1006.0,
+      "y": 192.0,
+      "width": 520.0,
+      "height": 318.0
+    },
+    "next_panel": {
+      "x": 640.0,
+      "y": 620.0,
+      "width": 1168.0,
+      "height": 182.0
+    },
+    "scene_badge": {
+      "x": 980.0,
+      "y": 312.0,
+      "width": 220.0,
+      "height": 42.0
+    },
+    "overview_text": {
+      "x": 60.0,
+      "title_y": 52.0,
+      "tagline_y": 96.0,
+      "max_width": 558.0
+    },
+    "status_text": {
+      "x": 754.0,
+      "title_y": 52.0,
+      "max_width": 472.0
+    },
+    "next_text": {
+      "x": 94.0,
+      "title_y": 526.0,
+      "max_width": 1106.0
+    },
+    "scene_label": {
+      "x": 900.0,
+      "y": 320.0,
+      "max_width": 190.0
+    }
+  },
+  "typography": {
+    "overview": {
+      "title_size": 40.0,
+      "tagline_size": 24.0,
+      "body_size": 19.0,
+      "line_spacing": 1.12,
+      "line_advances": {
+        "title": 44.0,
+        "tagline": 30.0,
+        "body": 24.0
+      }
+    },
+    "status": {
+      "title_size": 30.0,
+      "body_size": 18.0,
+      "line_spacing": 1.10,
+      "line_advances": {
+        "title": 38.0,
+        "body": 24.0
+      }
+    },
+    "next": {
+      "title_size": 32.0,
+      "body_size": 19.0,
+      "line_spacing": 1.12,
+      "line_advances": {
+        "title": 38.0,
+        "body": 25.0
+      }
+    },
+    "scene_label": {
+      "size": 20.0,
+      "line_spacing": 1.10
+    }
+  },
+  "web_blockers": {
+    "networking": "Browser sandbox uses WebSocket client mode only. Pass ?ws=ws://127.0.0.1:PORT to a bridge or host for real networking proof; browser hosting/listening is not available.",
+    "renderer": "Browser sandbox can only prove 3D when the runtime exposes a compatible renderer. If rendering never initializes, Sandbox reports that exact renderer blocker instead of faking 3D parity."
+  }
+}

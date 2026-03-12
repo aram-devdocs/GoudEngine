@@ -188,6 +188,28 @@ Generated outputs:
 - `.codex/agents/*.toml`
 - `.claude/agents/*.md`
 
+### Default Orchestration Workflow
+Use one active implementation team at a time across Codex and Claude:
+1. Root chooses exactly one workstream
+2. Root dispatches exactly one implementation lead (`engine-lead` or `integration-lead`)
+3. That lead MAY use one small specialist wave, capped at 2 specialists total for the batch
+4. The lead reports back before root dispatches another implementation team
+5. Root runs review agents directly in sequence:
+   - `spec-reviewer`
+   - `code-quality-reviewer`
+   - `architecture-validator`
+   - `security-auditor` only if FFI or unsafe code changed
+
+This is the default path. Do NOT treat parallel `engine-lead` + `integration-lead` plus nested fan-out as the normal workflow.
+
+Fallback ladder when agent dispatch fails due to capacity, timeout, or hang:
+1. Stop nested dispatch immediately
+2. Do not retry the same fan-out shape
+3. Fall back to `quick-fix` for single-file work, or one direct worker/specialist from root
+4. Continue the review sequence from root after implementation completes
+
+`quality-lead` remains available for exceptional audit-heavy sessions. It is not part of the default execution path.
+
 ### Module Dependencies
 Generate visual dependency graph:
 ```bash
@@ -240,13 +262,13 @@ When executing a plan (from `.claude/plans/`, `.codex/plans/`, `.agents/runs/gh-
    plan and its sibling `state.json` as the canonical execution contract across Claude and Codex.
    Runner-local state supplements it; it does not replace it.
 3. **You are the ORCHESTRATOR** -- you MUST NOT write .rs/.cs/.py files directly.
-   Dispatch subagents (engine-lead, integration-lead, quick-fix). The delegation-guard
-   hook WILL block direct writes.
+   Dispatch one implementation lead at a time (`engine-lead` or `integration-lead`) or
+   `quick-fix` for a trivial single-file change. The default review path is direct
+   root-dispatched reviewers, not `quality-lead`.
 4. **Subagent dispatch steps** in the plan contain literal prompts. Use them verbatim.
 5. **Review gates are sequential** -- spec-reviewer MUST approve before code-quality-reviewer.
    The review-gate-guard hook enforces this.
-6. **Check off `- [ ]` items** as you complete them. plan-completion-guard blocks session
-   end if unchecked items remain.
+6. **Check off `- [ ]` items** as you complete them.
 7. **The plan references the skill that created it** -- read that skill's SKILL.md if you
    need additional context about the workflow pattern.
 8. **PR creation uses `.github/pull_request_template.md`** -- read it and fill in all sections.
@@ -256,26 +278,31 @@ When executing a plan (from `.claude/plans/`, `.codex/plans/`, `.agents/runs/gh-
 
 | Role | Model | Dispatched By | Use For |
 |------|-------|---------------|---------|
-| engine-lead | opus | Orchestrator | Rust core, graphics, ECS, assets (manages implementers) |
-| integration-lead | opus | Orchestrator | FFI, SDKs, codegen (manages ffi/sdk-implementers) |
-| quality-lead | opus | Orchestrator | Reviews, testing, validation (manages reviewers) |
+| engine-lead | opus | Orchestrator | One active Rust/core implementation workstream at a time |
+| integration-lead | opus | Orchestrator | One active FFI/SDK/codegen workstream at a time |
+| quality-lead | opus | Orchestrator | Exceptional audit-heavy review/testing session |
 | quick-fix | haiku | Any lead or orchestrator | Single-file trivial fixes |
 | implementer | sonnet | engine-lead | General Rust implementation |
 | test-first-implementer | sonnet | engine-lead | TDD red-green-refactor |
 | ffi-implementer | sonnet | integration-lead | FFI boundary changes |
 | sdk-implementer | sonnet | integration-lead | SDK wrapper development |
-| spec-reviewer | sonnet | quality-lead or orchestrator | Validates impl matches spec |
-| code-quality-reviewer | sonnet | quality-lead or orchestrator | Code quality, patterns |
-| architecture-validator | haiku | quality-lead or orchestrator | Layer hierarchy check |
-| debugger | sonnet | engine-lead, integration-lead, or quality-lead | Root-cause analysis for failures |
-| security-auditor | opus | quality-lead or orchestrator | FFI/unsafe audit (SEQUENTIAL ONLY) |
-| test-runner | sonnet | quality-lead or orchestrator | Run and analyze tests |
+| spec-reviewer | sonnet | Orchestrator or quality-lead | First review gate |
+| code-quality-reviewer | sonnet | Orchestrator or quality-lead | Second review gate |
+| architecture-validator | haiku | Orchestrator or quality-lead | Layer hierarchy check |
+| debugger | sonnet | engine-lead, integration-lead, or orchestrator | Root-cause analysis for failures |
+| security-auditor | opus | Orchestrator or quality-lead | FFI/unsafe audit (SEQUENTIAL ONLY) |
+| test-runner | sonnet | Orchestrator or quality-lead | Run and analyze tests |
 
 When dispatching, ALWAYS include in the prompt:
 - Absolute working directory path (worktree or repo root)
 - Specific files to examine/modify
 - Verification commands to run (`cargo check`, `cargo test`, etc.)
 - What to report back (files changed, test results, verdict)
+
+Implementation-team defaults:
+- Root runs one implementation lead at a time
+- A lead MAY use one specialist wave with at most 2 specialists total
+- If dispatch capacity is tight, root falls back to `quick-fix` or one direct worker/specialist instead of retrying nested fan-out
 
 ## Example Games
 
@@ -287,6 +314,7 @@ Examples are organized by SDK language:
 - `goud_jumper/` -- Platformer game
 - `isometric_rpg/` -- Isometric RPG demo
 - `hello_ecs/` -- ECS basics
+- `feature_lab/` -- Headless feature-lab smoke checks
 
 **Python Examples** (`examples/python/`):
 - `main.py` -- Python SDK demo

@@ -149,6 +149,28 @@ def gen_interface():
     lines.append("  currentNodeId: UiNodeId;")
     lines.append("}")
     lines.append("")
+    lines.append("export type PreloadAssetKind = 'texture' | 'font';")
+    lines.append("")
+    lines.append("export interface IPreloadAssetRequest {")
+    lines.append("  path: string;")
+    lines.append("  kind?: PreloadAssetKind;")
+    lines.append("}")
+    lines.append("")
+    lines.append("export interface IPreloadProgress {")
+    lines.append("  loaded: number;")
+    lines.append("  total: number;")
+    lines.append("  progress: number;")
+    lines.append("  path: string;")
+    lines.append("  kind: PreloadAssetKind;")
+    lines.append("  handle: number;")
+    lines.append("}")
+    lines.append("")
+    lines.append("export interface IPreloadOptions {")
+    lines.append("  onProgress?: (update: IPreloadProgress) => void;")
+    lines.append("}")
+    lines.append("")
+    lines.append("export type PreloadAssetInput = string | IPreloadAssetRequest;")
+    lines.append("")
 
     if tool.get("doc"):
         lines.append(f"/** {tool['doc']} */")
@@ -192,6 +214,9 @@ def gen_interface():
             lines.append(f"  {mn}({sig}): Promise<{ts_ret}>;")
         else:
             lines.append(f"  {mn}({sig}): {ts_ret};")
+
+    lines.append("  /** Preloads textures/fonts before `run()` starts and reports coarse per-asset progress. */")
+    lines.append("  preload(assets: PreloadAssetInput[], options?: IPreloadOptions): Promise<Record<string, number>>;")
 
     _anim_iface = [
         ("animationLayerStackCreate", [("entity", "IEntity")], "number"),

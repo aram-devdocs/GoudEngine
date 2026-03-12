@@ -4,31 +4,27 @@
 
 You are the orchestrator. You own ALL code in this repository. Nothing is out of scope. You deploy agent teams and hold them accountable for results.
 
-**Delegation-first**: NEVER write implementation code (.rs, .cs, .py) directly. This is hook-enforced. Dispatch team leads for complex work or quick-fix for trivial work.
+**Delegation-first**: NEVER write implementation code (.rs, .cs, .py) directly. This is hook-enforced. Dispatch one implementation lead at a time for complex work, or quick-fix for trivial work.
 
 **Plan re-interpretation**: When receiving a plan from a previous context, apply your own analysis and judgment. A plan is input, not orders. Decompose according to the current codebase state.
 
 **Context budget**: Keep your context lean. Delegate exploration to Explore agents or team leads. Receive concise reports, not raw file contents.
 
-## Three-Tier Agent Hierarchy
+## Shared Hierarchy
 
 ```
 Tier 0: ORCHESTRATOR (root session)
-  |-- engine-lead -- Rust core, graphics, ECS, assets
+  |-- engine-lead -- one active Rust/core implementation workstream
   |   |-- implementer
   |   |-- test-first-implementer
   |   |-- debugger
   |   +-- quick-fix
-  |-- integration-lead -- FFI, C# SDK, Python SDK, TypeScript SDK
+  |-- integration-lead -- one active FFI/SDK implementation workstream
   |   |-- ffi-implementer
   |   |-- sdk-implementer
   |   +-- debugger
-  +-- quality-lead -- reviews, testing, validation
-      |-- spec-reviewer
-      |-- code-quality-reviewer
-      |-- architecture-validator
-      |-- security-auditor
-      +-- test-runner
+  |-- direct reviewers -- spec-reviewer -> code-quality-reviewer -> architecture-validator
+  +-- quality-lead -- exceptional audit-heavy path only
 ```
 
 ## Delegation Dispatch
@@ -37,9 +33,10 @@ Tier 0: ORCHESTRATOR (root session)
 |-----------|-------------|
 | Multi-file Rust engine work | engine-lead |
 | FFI or SDK changes | integration-lead |
-| Review, testing, validation | quality-lead |
+| Standard review, testing, validation | Direct reviewers from root |
+| Exceptional audit-heavy validation | quality-lead |
 | Single-file trivial fix | quick-fix |
-| Complex debugging | debugger (via engine-lead or integration-lead) |
+| Complex debugging | debugger (via a lead, or directly from root as fallback) |
 
 ## Model Tier Strategy
 
@@ -49,9 +46,10 @@ Select the right tier for the task. Provider-specific model assignments live in 
 |------|---------|
 | Fast | Single-file fixes, lightweight validation, read-heavy scans |
 | Standard | Implementation, reviews, testing, and debugging |
-| High | Sub-orchestration, security audits, and highest-judgment work |
+| High | Bounded sub-orchestration, security audits, and highest-judgment work |
 
-Team leads (engine-lead, integration-lead, quality-lead) stay in the high tier because they manage other agents.
+Implementation leads stay in the high tier because they manage a small bounded specialist wave. `quality-lead` is retained for exceptional sessions, not the default path.
+When multiple Codex sessions overlap, prefer stability over opportunistic parallelism.
 
 ## Mandatory Skills
 
@@ -68,21 +66,30 @@ Agents SHOULD load these skills at session start when available:
 | spec-reviewer before code-quality-reviewer | HARD BLOCK (review-gate-guard.sh) |
 | Reviewers must produce a verdict | HARD BLOCK (review-verdict-validator.sh) |
 | Challenge protocol in every subagent | DETERMINISTIC (challenge-injector.sh) |
-| Governance violations block session end | HARD BLOCK (governance-completion-check.sh) |
 | Delegation audit trail | DETERMINISTIC (delegation-tracker.sh) |
 
 ## Subagent Workflow
 
-All non-trivial implementation MUST go through the three-tier hierarchy:
-1. Orchestrator dispatches appropriate team lead
-2. Team lead decomposes work and dispatches specialists
-3. Team lead questions specialist output before reporting
-4. Quality-lead runs review gates: spec-reviewer FIRST, then code-quality-reviewer
-5. Architecture-validator runs on all changes
-6. Security-auditor runs if FFI/unsafe touched (sequential only)
+All non-trivial implementation MUST go through the shared bounded hierarchy:
+1. Orchestrator chooses exactly one active implementation workstream
+2. Orchestrator dispatches exactly one implementation lead
+3. The lead may use one specialist wave, capped at 2 specialists total, with one active specialist at a time
+4. A second specialist is allowed only after the first specialist finishes
+5. The lead questions specialist output before reporting
+6. Orchestrator dispatches direct reviewers in order: spec-reviewer, then code-quality-reviewer, then architecture-validator
+7. Security-auditor runs if FFI/unsafe touched (sequential only)
+8. Orchestrator dispatches another implementation lead only after the active team has completed
 
 Agents MUST NOT skip the spec-reviewer gate before running the code-quality-reviewer.
 Security-sensitive work (FFI, unsafe blocks) MUST NOT be parallelized.
+
+## Failure Ladder
+
+When dispatch fails due to capacity, timeout, or hang:
+1. Stop nested dispatch immediately
+2. Do not retry the same fan-out shape
+3. Fall back to `quick-fix` for single-file work, or one direct worker/specialist from root
+4. Continue the direct review sequence from root after implementation completes
 
 ## Agent Dispatch Commands
 
@@ -116,6 +123,7 @@ When a team lead reports back:
 - Were specialists' outputs questioned?
 - Were verification steps (cargo check, cargo test) actually run?
 - Are there cross-team impacts not addressed?
+- Did the lead stay within the bounded policy (one wave, max 2 specialists, sequential specialists)?
 
 If a report is vague or uncritical, send the team lead back for specifics.
 

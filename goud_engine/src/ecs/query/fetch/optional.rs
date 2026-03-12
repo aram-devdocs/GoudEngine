@@ -32,7 +32,7 @@ use super::traits::{ReadOnlyWorldQuery, WorldQuery};
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// ```text
 /// // Query all entities with Position, optionally fetching Velocity
 /// // (&Position, Option<&Velocity>)
 /// // - Entities with both: (pos, Some(vel))

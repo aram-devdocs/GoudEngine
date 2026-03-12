@@ -2,6 +2,21 @@ use super::*;
 use crate::core::providers::network::NetworkProvider;
 use crate::core::providers::network_types::{Channel, ConnectionState, HostConfig, NetworkEvent};
 use crate::core::providers::{Provider, ProviderLifecycle};
+use std::fs;
+use std::sync::Mutex;
+use std::time::Duration;
+
+static TLS_ENV_MUTEX: Mutex<()> = Mutex::new(());
+
+fn host_config() -> HostConfig {
+    HostConfig {
+        bind_address: "127.0.0.1".to_string(),
+        port: 0,
+        max_connections: 16,
+        tls_cert_path: None,
+        tls_key_path: None,
+    }
+}
 
 #[test]
 fn test_ws_construction() {
@@ -28,13 +43,7 @@ fn test_ws_construction() {
 #[test]
 fn test_ws_host_and_connect() {
     let mut host = WsNetProvider::new();
-    let config = HostConfig {
-        bind_address: "127.0.0.1".to_string(),
-        port: 0,
-        max_connections: 16,
-        tls_cert_path: None,
-        tls_key_path: None,
-    };
+    let config = host_config();
     host.host(&config).unwrap();
     assert!(host.local_addr().is_some());
 
@@ -88,13 +97,7 @@ fn test_ws_host_and_connect() {
 #[test]
 fn test_ws_send_receive() {
     let mut host = WsNetProvider::new();
-    let config = HostConfig {
-        bind_address: "127.0.0.1".to_string(),
-        port: 0,
-        max_connections: 16,
-        tls_cert_path: None,
-        tls_key_path: None,
-    };
+    let config = host_config();
     host.host(&config).unwrap();
     let addr = host.local_addr().unwrap();
 
@@ -174,13 +177,7 @@ fn test_ws_send_receive() {
 #[test]
 fn test_ws_disconnect() {
     let mut host = WsNetProvider::new();
-    let config = HostConfig {
-        bind_address: "127.0.0.1".to_string(),
-        port: 0,
-        max_connections: 16,
-        tls_cert_path: None,
-        tls_key_path: None,
-    };
+    let config = host_config();
     host.host(&config).unwrap();
     let addr = host.local_addr().unwrap();
 
@@ -219,6 +216,101 @@ fn test_ws_disconnect() {
         ConnectionState::Disconnected
     );
 
+    host.shutdown();
+    client.shutdown();
+}
+
+#[test]
+fn test_ws_host_rejects_partial_tls_config() {
+    let mut host = WsNetProvider::new();
+    let mut config = host_config();
+    config.tls_cert_path = Some("cert.pem".to_string());
+    let err = host
+        .host(&config)
+        .expect_err("host should reject a TLS cert without key");
+    assert!(format!("{}", err).contains("tls_cert_path and tls_key_path"));
+
+    let mut host = WsNetProvider::new();
+    let mut config = host_config();
+    config.tls_key_path = Some("key.pem".to_string());
+    let err = host
+        .host(&config)
+        .expect_err("host should reject a TLS key without cert");
+    assert!(format!("{}", err).contains("tls_cert_path and tls_key_path"));
+}
+
+#[test]
+fn test_wss_host_and_connect_with_custom_ca() {
+    let _guard = TLS_ENV_MUTEX.lock().expect("mutex should lock");
+    let cert_dir = tempfile::tempdir().expect("tempdir should be created");
+    let cert_path = cert_dir.path().join("localhost-cert.pem");
+    let key_path = cert_dir.path().join("localhost-key.pem");
+
+    let cert = rcgen::generate_simple_self_signed(vec!["localhost".to_string()])
+        .expect("self-signed cert should generate");
+    fs::write(&cert_path, cert.cert.pem()).expect("cert file should be written");
+    fs::write(&key_path, cert.key_pair.serialize_pem()).expect("key file should be written");
+
+    let mut host = WsNetProvider::new();
+    let mut config = host_config();
+    config.tls_cert_path = Some(cert_path.to_string_lossy().into_owned());
+    config.tls_key_path = Some(key_path.to_string_lossy().into_owned());
+    host.host(&config).unwrap();
+    let addr = host.local_addr().expect("host should have local address");
+    let client_url = format!("wss://localhost:{}", addr.port());
+
+    std::env::set_var("GOUD_WS_CA_CERT_PATH", cert_path.to_string_lossy().as_ref());
+    let mut client = WsNetProvider::new();
+    let conn_id = client.connect(&client_url).unwrap();
+
+    let mut host_connected = false;
+    let mut client_connected = false;
+    for _ in 0..120 {
+        std::thread::sleep(Duration::from_millis(50));
+        host.update(0.0).unwrap();
+        client.update(0.0).unwrap();
+        host_connected |= host
+            .drain_events()
+            .into_iter()
+            .any(|e| matches!(e, NetworkEvent::Connected { .. }));
+        client_connected = client.connection_state(conn_id) == ConnectionState::Connected;
+        if host_connected && client_connected {
+            break;
+        }
+    }
+
+    let client_events = client.drain_events();
+    assert!(
+        host_connected,
+        "host should observe wss connection; client_state={:?}; client_events={:?}",
+        client.connection_state(conn_id),
+        client_events
+    );
+    assert!(
+        client_connected,
+        "client should connect over wss; client_state={:?}; client_events={:?}",
+        client.connection_state(conn_id),
+        client_events
+    );
+
+    client.send(conn_id, Channel(0), b"hello over wss").unwrap();
+    let mut received = false;
+    for _ in 0..120 {
+        std::thread::sleep(Duration::from_millis(25));
+        host.update(0.0).unwrap();
+        received |= host.drain_events().into_iter().any(|event| {
+            matches!(
+                event,
+                NetworkEvent::Received { ref data, .. } if data == b"hello over wss"
+            )
+        });
+        if received {
+            break;
+        }
+    }
+    assert!(received, "host should receive payload over wss");
+
+    std::env::remove_var("GOUD_WS_CA_CERT_PATH");
     host.shutdown();
     client.shutdown();
 }

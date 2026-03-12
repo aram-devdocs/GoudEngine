@@ -37,24 +37,7 @@ For the browser, import from the `goudengine/web` sub-path (see the web section 
 
 Create `game.ts`:
 
-```typescript
-import { GoudGame } from 'goudengine';
-
-const game = new GoudGame({ width: 800, height: 600, title: 'My Game' });
-
-while (!game.shouldClose()) {
-    game.beginFrame(0.2, 0.3, 0.4, 1.0);  // RGBA clear color
-
-    const dt = game.deltaTime;
-
-    // Press Escape to exit
-    if (game.isKeyPressed(256)) { break; }
-
-    game.endFrame();
-}
-
-game.destroy();
-```
+{{#include ../generated/snippets/typescript/first-project-desktop.md}}
 
 Run it:
 
@@ -72,46 +55,7 @@ elapsed since the last frame.
 
 Create `index.html`:
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>My Game</title>
-</head>
-<body>
-<canvas id="canvas" width="800" height="600"></canvas>
-
-<script type="importmap">
-{
-  "imports": {
-    "goudengine/web": "/node_modules/goudengine/dist/web/generated/web/index.g.js"
-  }
-}
-</script>
-
-<script type="module">
-import { GoudGame } from 'goudengine/web';
-
-const canvas = document.getElementById('canvas');
-
-const game = await GoudGame.create({
-    width: 800,
-    height: 600,
-    title: 'My Game',
-    canvas,
-    wasmUrl: '/node_modules/goudengine/wasm/goud_engine_bg.wasm'
-});
-
-game.setClearColor(0.2, 0.3, 0.4, 1.0);
-
-game.run((dt) => {
-    // Game logic here — dt is seconds since last frame
-});
-</script>
-</body>
-</html>
-```
+{{#include ../generated/snippets/typescript/first-project-web.md}}
 
 Serve the directory (the importmap requires a real HTTP server, not `file://`):
 
@@ -128,6 +72,12 @@ Key differences from the Node.js version:
 | Game loop | `while (!game.shouldClose())` | `game.run((dt) => { ... })` |
 | Clear color | `beginFrame(r, g, b, a)` | `setClearColor(r, g, b, a)` |
 
+Networking note:
+
+- Desktop supports the full current wrapper path.
+- Web supports browser WebSocket client connections only.
+- On the web target, use `NetworkProtocol.WebSocket` and wait until `peerCount() > 0` before sending your first packet.
+
 ---
 
 ## Drawing a Sprite
@@ -135,16 +85,7 @@ Key differences from the Node.js version:
 `loadTexture` is asynchronous on both targets — it returns a `Promise<number>`.
 The returned number is a texture handle you pass to `drawSprite`.
 
-```typescript
-// Load before the game loop
-const textureId = await game.loadTexture('assets/player.png');
-
-// Inside the game loop
-game.drawSprite(textureId, x, y, width, height);
-
-// Optional: draw with rotation (radians)
-game.drawSprite(textureId, x, y, width, height, Math.PI / 4);
-```
+{{#include ../generated/snippets/typescript/drawing-a-sprite.md}}
 
 The `x` and `y` coordinates are the center of the sprite. All numeric parameters
 are `f64` at the JavaScript boundary; the engine converts to `f32` internally.
@@ -201,21 +142,7 @@ Use `isKeyPressed` with GLFW key codes. Common codes:
 
 For mouse input, use `isMouseButtonPressed`. Button `0` is the left mouse button.
 
-```typescript
-while (!game.shouldClose()) {
-    game.beginFrame(0.1, 0.1, 0.1, 1.0);
-
-    if (game.isKeyPressed(256)) { break; }          // Escape: quit
-    if (game.isKeyPressed(32) ||
-        game.isMouseButtonPressed(0)) {
-        // Space or left-click: jump
-    }
-    if (game.isKeyPressed(263)) { /* move left */ }
-    if (game.isKeyPressed(262)) { /* move right */ }
-
-    game.endFrame();
-}
-```
+{{#include ../generated/snippets/typescript/handling-input.md}}
 
 On the web target, `isKeyPressed` and `isMouseButtonPressed` work the same way.
 The WASM backend handles browser keyboard and mouse events internally.
@@ -235,6 +162,14 @@ cd GoudEngine
 
 # Web (browser, serves on localhost)
 ./dev.sh --sdk typescript --game flappy_bird_web
+
+# Sandbox parity app (desktop + web)
+./dev.sh --sdk typescript --game sandbox
+./dev.sh --sdk typescript --game sandbox_web
+
+# Supplemental smoke coverage
+./dev.sh --sdk typescript --game feature_lab
+./dev.sh --sdk typescript --game feature_lab_web
 ```
 
 `dev.sh` handles building the SDK and running the example in one step.
@@ -264,5 +199,10 @@ Controls: `Space` or left-click to flap, `R` to restart, `Escape` to quit (deskt
 
 - [TypeScript SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/typescript/) — full API reference and build instructions
 - [TypeScript examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/typescript/) — Flappy Bird source with shared desktop/web logic
+- [Build Your First Game](../guides/build-your-first-game.md) — end-to-end minimal game walkthrough
+- [Example Showcase](../guides/showcase.md) — current cross-language parity matrix
+- [Cross-Platform Deployment](../guides/deployment.md) — packaging and release workflow
+- [Web Platform Gotchas](../guides/web-platform-gotchas.md) — browser-specific limitations and workarounds
+- [FAQ and Troubleshooting](../guides/faq.md) — common runtime and build issues
 - [Architecture overview](../architecture/sdk-first.md) — layer design and codegen pipeline
 - [Development guide](../development/guide.md) — build system, git hooks, version management

@@ -1,7 +1,7 @@
 //! Query system for the ECS.
 //!
 //! The query module provides type-safe access to component data stored in the
-//! [`World`]. Queries are the primary way systems interact
+//! [`World`](crate::ecs::World). Queries are the primary way systems interact
 //! with entities and their components.
 //!
 //! # Architecture

@@ -3,8 +3,29 @@
 use super::state::{ensure_renderer3d_state, with_renderer};
 use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
+use crate::ffi::window::with_window_state;
+use crate::libs::graphics::renderer3d::TextureManagerTrait;
 use crate::libs::graphics::renderer3d::{FogConfig, GridConfig, SkyboxConfig};
 use cgmath::{Vector3, Vector4};
+
+struct WindowTextureBridge {
+    context_id: GoudContextId,
+}
+
+impl TextureManagerTrait for WindowTextureBridge {
+    fn bind_texture(&self, texture_id: u32, slot: u32) {
+        let _ = with_window_state(self.context_id, |state| {
+            if let Err(err) = state.backend_mut().bind_texture_by_index(texture_id, slot) {
+                log::warn!(
+                    "ffi renderer3d failed to bind texture index {} on slot {}: {}",
+                    texture_id,
+                    slot,
+                    err
+                );
+            }
+        });
+    }
+}
 
 // ============================================================================
 // FFI: Grid
@@ -172,7 +193,8 @@ pub extern "C" fn goud_renderer3d_render(context_id: GoudContextId) -> bool {
     }
 
     with_renderer(context_id, |renderer| {
-        renderer.render(None);
+        let texture_bridge = WindowTextureBridge { context_id };
+        renderer.render(Some(&texture_bridge));
         true
     })
     .unwrap_or(false)

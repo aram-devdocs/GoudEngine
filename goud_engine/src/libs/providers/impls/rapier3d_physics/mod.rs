@@ -60,8 +60,7 @@ pub struct Rapier3DPhysicsProvider {
     collision_recv: Receiver<rapier3d::geometry::CollisionEvent>,
     // Stored to keep the channel alive; contact force events are drained
     // to prevent unbounded growth but processed via narrow_phase directly.
-    #[allow(dead_code)]
-    contact_recv: Receiver<ContactForceEvent>,
+    _contact_recv: Receiver<ContactForceEvent>,
     event_handler: ChannelEventCollector,
 }
 
@@ -102,7 +101,7 @@ impl Rapier3DPhysicsProvider {
 
             collision_events: Vec::new(),
             collision_recv,
-            contact_recv,
+            _contact_recv: contact_recv,
             event_handler,
         }
     }

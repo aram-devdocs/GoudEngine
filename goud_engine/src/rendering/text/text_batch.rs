@@ -11,7 +11,7 @@ use crate::ecs::query::Query;
 use crate::ecs::{Entity, World};
 use crate::libs::graphics::backend::render_backend::RenderBackend;
 use crate::libs::graphics::backend::types::{
-    BufferHandle, BufferType, BufferUsage, PrimitiveTopology, ShaderHandle, TextureHandle,
+    BufferHandle, PrimitiveTopology, ShaderHandle, TextureHandle,
 };
 use crate::rendering::sprite_batch::types::SpriteVertex;
 
@@ -19,8 +19,12 @@ use super::atlas_cache::GlyphAtlasCache;
 use super::bitmap_atlas::BitmapGlyphAtlas;
 use super::glyph_atlas::UvRect;
 use super::layout::{layout_text, TextLayoutConfig};
+use super::shader;
 use super::{layout_shaped_text, shape_text, TextDirection};
 pub use crate::rendering::text::text_batch_requests::DirectTextDrawRequest;
+
+#[path = "text_batch_upload.rs"]
+mod upload;
 
 /// A single draw batch for glyphs sharing the same atlas texture.
 #[derive(Debug)]
@@ -297,23 +301,57 @@ impl TextBatch {
         });
     }
 
+    /// Draws a single prepared layout as one native text frame.
+    ///
+    /// This is the shared immediate/native helper used by both SDK and FFI
+    /// text paths after shaping/layout and atlas texture resolution.
+    pub fn draw_prepared_layout_frame(
+        &mut self,
+        backend: &mut dyn RenderBackend,
+        viewport: (u32, u32),
+        layout: &super::layout::TextLayoutResult,
+        color: Color,
+        transform: &Transform2D,
+        texture: TextureHandle,
+    ) -> Result<(), String> {
+        self.begin();
+        self.append_glyph_batch(layout, color, transform, texture);
+        self.end(backend, viewport)
+    }
+
     /// Uploads geometry to the GPU and issues draw calls.
     ///
     /// # Errors
     ///
     /// Returns an error if GPU buffer creation or draw operations fail.
-    pub fn end(&mut self, backend: &mut dyn RenderBackend) -> Result<(), String> {
+    pub fn end(
+        &mut self,
+        backend: &mut dyn RenderBackend,
+        viewport: (u32, u32),
+    ) -> Result<(), String> {
         if self.batches.is_empty() {
             return Ok(());
         }
 
         self.upload_buffers(backend)?;
+        let shader = shader::ensure_shader(&mut self.shader, backend)?;
 
-        if let Some(shader) = self.shader {
-            backend
-                .bind_shader(shader)
-                .map_err(|e| format!("text shader bind failed: {e}"))?;
+        backend
+            .bind_shader(shader)
+            .map_err(|e| format!("text shader bind failed: {e}"))?;
+        backend.enable_blending();
+
+        if let Some(location) = backend.get_uniform_location(shader, "u_texture") {
+            backend.set_uniform_int(location, 0);
         }
+        if let Some(location) = backend.get_uniform_location(shader, "u_viewport") {
+            backend.set_uniform_vec2(location, viewport.0.max(1) as f32, viewport.1.max(1) as f32);
+        }
+
+        // Native OpenGL requires a valid VAO for vertex attribute setup and indexed draws.
+        // Always bind the backend-owned default VAO so immediate text draws do not depend
+        // on ambient VAO state from unrelated render paths.
+        backend.bind_default_vertex_array();
 
         if let Some(vbo) = self.vertex_buffer {
             backend
@@ -327,6 +365,7 @@ impl TextBatch {
                 .bind_buffer(ibo)
                 .map_err(|e| format!("text IBO bind failed: {e}"))?;
         }
+        backend.validate_text_draw_state()?;
 
         // Collect draw data to avoid borrow conflict with backend.
         let draw_calls: Vec<(TextureHandle, u32, u32)> = self
@@ -344,7 +383,7 @@ impl TextBatch {
                 .draw_indexed(
                     PrimitiveTopology::Triangles,
                     index_count,
-                    index_start as usize,
+                    (index_start as usize) * std::mem::size_of::<u32>(),
                 )
                 .map_err(|e| format!("text draw_indexed failed: {e}"))?;
         }
@@ -414,43 +453,6 @@ impl TextBatch {
         self.indices
             .extend_from_slice(&[base, base + 1, base + 2, base + 2, base + 3, base]);
     }
-
-    /// Uploads vertex and index data to the GPU.
-    fn upload_buffers(&mut self, backend: &mut dyn RenderBackend) -> Result<(), String> {
-        let vert_bytes = vertex_slice_as_bytes(&self.vertices);
-
-        match self.vertex_buffer {
-            Some(buf) => {
-                backend
-                    .update_buffer(buf, 0, vert_bytes)
-                    .map_err(|e| format!("text VBO update failed: {e}"))?;
-            }
-            None => {
-                let buf = backend
-                    .create_buffer(BufferType::Vertex, BufferUsage::Dynamic, vert_bytes)
-                    .map_err(|e| format!("text VBO create failed: {e}"))?;
-                self.vertex_buffer = Some(buf);
-            }
-        }
-
-        let idx_bytes = index_slice_as_bytes(&self.indices);
-
-        match self.index_buffer {
-            Some(buf) => {
-                backend
-                    .update_buffer(buf, 0, idx_bytes)
-                    .map_err(|e| format!("text IBO update failed: {e}"))?;
-            }
-            None => {
-                let buf = backend
-                    .create_buffer(BufferType::Index, BufferUsage::Dynamic, idx_bytes)
-                    .map_err(|e| format!("text IBO create failed: {e}"))?;
-                self.index_buffer = Some(buf);
-            }
-        }
-
-        Ok(())
-    }
 }
 
 impl Default for TextBatch {
@@ -467,18 +469,6 @@ impl std::fmt::Debug for TextBatch {
             .field("batches", &self.batches.len())
             .finish()
     }
-}
-
-/// Reinterprets a `&[SpriteVertex]` as `&[u8]` for GPU upload.
-fn vertex_slice_as_bytes(vertices: &[SpriteVertex]) -> &[u8] {
-    // SAFETY: SpriteVertex is #[repr(C)] with no padding invariants.
-    unsafe { std::slice::from_raw_parts(vertices.as_ptr().cast(), std::mem::size_of_val(vertices)) }
-}
-
-/// Reinterprets a `&[u32]` as `&[u8]` for GPU upload.
-fn index_slice_as_bytes(indices: &[u32]) -> &[u8] {
-    // SAFETY: u32 has no alignment/validity invariants beyond its size.
-    unsafe { std::slice::from_raw_parts(indices.as_ptr().cast(), std::mem::size_of_val(indices)) }
 }
 
 #[cfg(test)]
