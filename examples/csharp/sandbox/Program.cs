@@ -159,10 +159,13 @@ internal static class Program
         string[] NextSteps,
         string[] StatusRows,
         string[] NextStepDynamicRows,
+        SceneEntry[] Scenes,
         string WebNetworkingBlocker,
         string WebRendererBlocker,
         HudLayout Layout
     );
+
+    private readonly record struct SceneEntry(string Key, string Mode, string Label);
 
     private readonly record struct HudRect(float X, float Y, float Width, float Height);
 
@@ -203,17 +206,38 @@ internal static class Program
         var background = (ulong)game.LoadTexture(assets.Background);
         var sprite = (ulong)game.LoadTexture(assets.Sprite);
         var accentSprite = (ulong)game.LoadTexture(assets.AccentSprite);
-        var texture3D = (uint)game.LoadTexture(assets.Texture3D);
         var font = (ulong)game.LoadFont(assets.Font);
 
-        var cube = game.CreateCube(texture3D, 1.2f, 1.2f, 1.2f);
-        var plane = game.CreatePlane(texture3D, 8f, 8f);
-        // Key + fill + rim lights keep textured 3D content readable in modes 2/3.
-        _ = game.AddLight(0, 4f, 6f, -4f, 0f, -1f, 0f, 1f, 0.95f, 0.80f, 5f, 28f, 0f);
-        _ = game.AddLight(0, -3.5f, 3.5f, -2f, 0f, -0.65f, 0.35f, 0.70f, 0.85f, 1f, 2.5f, 18f, 0f);
-        _ = game.AddLight(0, 0f, 2.4f, 7f, 0f, -0.25f, -1f, 0.55f, 0.65f, 0.90f, 1.8f, 20f, 0f);
-        game.SetObjectPosition(plane, 0f, -1f, 0f);
-        game.ConfigureGrid(true, 12f, 12);
+        var cube = 0u;
+        var plane = 0u;
+        var has3DSetup = false;
+        bool Ensure3DSetup()
+        {
+            if (has3DSetup)
+            {
+                return true;
+            }
+
+            try
+            {
+                var texture3D = (uint)game.LoadTexture(assets.Texture3D);
+                cube = game.CreateCube(texture3D, 1.2f, 1.2f, 1.2f);
+                plane = game.CreatePlane(texture3D, 8f, 8f);
+                // Key + fill + rim lights keep textured 3D content readable in modes 2/3.
+                _ = game.AddLight(0, 4f, 6f, -4f, 0f, -1f, 0f, 1f, 0.95f, 0.80f, 5f, 28f, 0f);
+                _ = game.AddLight(0, -3.5f, 3.5f, -2f, 0f, -0.65f, 0.35f, 0.70f, 0.85f, 1f, 2.5f, 18f, 0f);
+                _ = game.AddLight(0, 0f, 2.4f, 7f, 0f, -0.25f, -1f, 0.55f, 0.65f, 0.90f, 1.8f, 20f, 0f);
+                game.SetObjectPosition(plane, 0f, -1f, 0f);
+                game.ConfigureGrid(true, 12f, 12);
+                has3DSetup = cube != 0 && plane != 0;
+            }
+            catch
+            {
+                has3DSetup = false;
+            }
+
+            return has3DSetup;
+        }
 
         var modeIndex = ParseStartMode();
         var modes = new[] { "2D", "3D", "Hybrid" };
@@ -271,13 +295,14 @@ internal static class Program
 
             var currentMode = modes[modeIndex];
             var is3DFamilyMode = currentMode is "3D" or "Hybrid";
+            var sceneEntry = CurrentScene(assets, modeIndex, currentMode);
 
             network.Update(dt, playerX, playerY, currentMode, assets.PacketVersion);
             var mouse = game.GetMousePosition();
 
             game.BeginFrame(0.07f, 0.10f, 0.14f, 1f);
 
-            if (is3DFamilyMode)
+            if (is3DFamilyMode && Ensure3DSetup())
             {
                 game.EnableDepthTest();
                 game.SetCameraPosition3D(0f, 2.2f, currentMode == "3D" ? -7.0f : -7.8f);
@@ -344,7 +369,7 @@ internal static class Program
             };
             foreach (var row in assets.StatusRows)
             {
-                statusLines.Add((RenderStatusRow(row, assets, currentMode, modeIndex, mouse, caps, physics, audio, network, networkCaps), 18f, new Color(0.94f, 0.97f, 1f, 1f), assets.Layout.StatusText.MaxWidth));
+                statusLines.Add((RenderStatusRow(row, assets, sceneEntry, currentMode, mouse, caps, physics, audio, network, networkCaps), 18f, new Color(0.94f, 0.97f, 1f, 1f), assets.Layout.StatusText.MaxWidth));
             }
 
             var nextStepLines = new List<(string Text, float Size, Color Color, float MaxWidth)>
@@ -380,7 +405,7 @@ internal static class Program
                 game.DrawText(font, line.Text, assets.Layout.NextText.X, nextY, line.Size, TextAlignment.Left, line.MaxWidth, 1.12f, TextDirection.Auto, line.Color);
                 nextY += line.Size >= 32f ? 38f : 25f;
             }
-            game.DrawText(font, $"{currentMode} scene", assets.Layout.SceneLabel.X, assets.Layout.SceneLabel.Y, 20f, TextAlignment.Left, assets.Layout.SceneLabel.MaxWidth, 1.1f, TextDirection.Auto, new Color(1f, 1f, 1f, 1f));
+            game.DrawText(font, sceneEntry.Label, assets.Layout.SceneLabel.X, assets.Layout.SceneLabel.Y, 20f, TextAlignment.Left, assets.Layout.SceneLabel.MaxWidth, 1.1f, TextDirection.Auto, new Color(1f, 1f, 1f, 1f));
 
             ui.Update();
             ui.Render();
@@ -442,6 +467,7 @@ internal static class Program
         using var contract = JsonDocument.Parse(File.ReadAllText(Path.Combine(repoRoot, "examples", "shared", "sandbox", "contract.json")));
         var contractRoot = contract.RootElement;
         var layoutRoot = contractRoot.GetProperty("layout");
+        var scenes = ReadScenes(root.GetProperty("scenes"));
         return new SandboxAssets(
             root.GetProperty("title").GetString() ?? "GoudEngine Sandbox",
             hud.GetProperty("overview_title").GetString() ?? "Overview",
@@ -462,6 +488,7 @@ internal static class Program
             ReadStringArray(contractRoot.GetProperty("next_step_items")),
             ReadStringArray(contractRoot.GetProperty("status_rows")),
             ReadStringArray(contractRoot.GetProperty("next_step_dynamic_rows")),
+            scenes,
             contractRoot.GetProperty("web_blockers").GetProperty("networking").GetString() ?? string.Empty,
             contractRoot.GetProperty("web_blockers").GetProperty("renderer").GetString() ?? string.Empty,
             ReadHudLayout(layoutRoot)
@@ -471,8 +498,8 @@ internal static class Program
     private static string RenderStatusRow(
         string row,
         SandboxAssets assets,
+        SceneEntry sceneEntry,
         string currentMode,
-        int modeIndex,
         Vec2 mouse,
         RenderCapabilities caps,
         PhysicsCapabilities physics,
@@ -483,15 +510,15 @@ internal static class Program
     {
         return row switch
         {
-            "scene" => $"Scene: {currentMode} scene ({modeIndex + 1} to switch)",
+            "scene" => $"Scene: {sceneEntry.Label} ({sceneEntry.Key} to switch)",
             "mouse" => $"Mouse marker: ({mouse.X:0}, {mouse.Y:0})",
-            "render_caps" => $"Render caps: tex={caps.MaxTextureSize} inst={caps.SupportsInstancing}",
-            "physics_caps" => $"Physics caps: joints={physics.SupportsJoints} max={physics.MaxBodies}",
+            "render_caps" => $"Render caps: tex={caps.MaxTextureSize} instancing={caps.SupportsInstancing}",
+            "physics_caps" => $"Physics caps: joints={physics.SupportsJoints} maxBodies={physics.MaxBodies}",
             "audio_caps" => $"Audio caps: spatial={audio.SupportsSpatial} channels={audio.MaxChannels}",
-            "scene_count" => "Scene count: 3 active modes",
+            "scene_count" => $"Scene count: {assets.Scenes.Length} active mode={currentMode}",
             "target" => "Target: desktop",
             "network_role" => $"Network role: {network.Role} peers={network.PeerCount} label={network.Label}",
-            "network_detail" => $"Network detail: {network.Detail}",
+            "network_detail" => $"Network detail: {network.Detail}{(networkCaps is null ? string.Empty : $" (cap={networkCaps.Value.MaxConnections})")}",
             _ => row,
         };
     }
@@ -500,12 +527,45 @@ internal static class Program
     {
         return row switch
         {
-            "audio_status" => $"Audio: {(audioActivated ? "active" : "press SPACE to activate")}",
+            "audio_status" => $"Audio status: {(audioActivated ? "active" : "press SPACE to activate")}",
             "network_probe" => network.HasRemoteState
                 ? $"Peer sprite live at ({network.RemoteX:0}, {network.RemoteY:0})"
                 : "Networking: open a second native sandbox to confirm peer sync.",
             _ => row,
         };
+    }
+
+    private static SceneEntry[] ReadScenes(JsonElement scenes)
+    {
+        var entries = new SceneEntry[scenes.GetArrayLength()];
+        var index = 0;
+        foreach (var scene in scenes.EnumerateArray())
+        {
+            entries[index++] = new SceneEntry(
+                scene.GetProperty("key").GetString() ?? string.Empty,
+                scene.GetProperty("mode").GetString() ?? string.Empty,
+                scene.GetProperty("label").GetString() ?? string.Empty
+            );
+        }
+        return entries;
+    }
+
+    private static SceneEntry CurrentScene(SandboxAssets assets, int modeIndex, string currentMode)
+    {
+        if ((uint)modeIndex < (uint)assets.Scenes.Length)
+        {
+            return assets.Scenes[modeIndex];
+        }
+
+        foreach (var scene in assets.Scenes)
+        {
+            if (string.Equals(scene.Mode, currentMode, StringComparison.Ordinal))
+            {
+                return scene;
+            }
+        }
+
+        return new SceneEntry("?", currentMode, $"{currentMode} scene");
     }
 
     private static string[] ReadStringArray(JsonElement array)

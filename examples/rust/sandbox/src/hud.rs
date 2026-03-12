@@ -267,12 +267,12 @@ fn render_status_row(
             snapshot.mouse_x, snapshot.mouse_y
         ),
         "render_caps" => format!(
-            "Render caps: tex={} inst={}",
+            "Render caps: tex={} instancing={}",
             snapshot.render_texture_size,
             bool_word(snapshot.render_supports_instancing)
         ),
         "physics_caps" => format!(
-            "Physics caps: joints={} max={}",
+            "Physics caps: joints={} maxBodies={}",
             bool_word(snapshot.physics_supports_joints),
             snapshot.physics_max_bodies
         ),
@@ -281,7 +281,11 @@ fn render_status_row(
             bool_word(snapshot.audio_supports_spatial),
             snapshot.audio_max_channels
         ),
-        "scene_count" => format!("Scene count: {} active modes", config.scenes.len()),
+        "scene_count" => format!(
+            "Scene count: {} active mode={}",
+            config.scenes.len(),
+            snapshot.current_mode
+        ),
         "target" => "Target: desktop".to_string(),
         "network_role" => format!(
             "Network role: {} peers={} label={}",
@@ -297,7 +301,7 @@ fn render_status_row(
 fn render_next_step_row(network: &NetworkState, audio_activated: bool, row: &str) -> String {
     match row {
         "audio_status" => format!(
-            "Audio: {}",
+            "Audio status: {}",
             if audio_activated {
                 "active"
             } else {

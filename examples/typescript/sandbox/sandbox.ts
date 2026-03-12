@@ -578,9 +578,11 @@ export class SandboxApp {
   private readonly sprite: number;
   private readonly accentSprite: number;
   private readonly font: number;
-  private readonly cube: number;
-  private readonly plane: number;
-  private readonly canRender3d: boolean;
+  private cube = 0;
+  private plane = 0;
+  private canRender3d = false;
+  private tried3dSetup = false;
+  private setup3dPromise: Promise<void> | null = null;
   private readonly sceneLookup: Record<SandboxMode, SandboxScene>;
   private audioActivated = false;
 
@@ -591,15 +593,12 @@ export class SandboxApp {
     private readonly config: SandboxConfig,
     private readonly network: NetworkStateLike,
     private readonly maxRuntimeSec: number,
-    handles: { background: number; sprite: number; accentSprite: number; font: number; cube: number; plane: number; canRender3d: boolean },
+    handles: { background: number; sprite: number; accentSprite: number; font: number },
   ) {
     this.background = handles.background;
     this.sprite = handles.sprite;
     this.accentSprite = handles.accentSprite;
     this.font = handles.font;
-    this.cube = handles.cube;
-    this.plane = handles.plane;
-    this.canRender3d = handles.canRender3d;
     this.sceneLookup = Object.fromEntries(
       this.config.scenes.map((scene) => [scene.mode, scene]),
     ) as Record<SandboxMode, SandboxScene>;
@@ -617,30 +616,37 @@ export class SandboxApp {
     const sprite = await game.loadTexture(config.sprite);
     const accentSprite = await game.loadTexture(config.accentSprite);
     const font = await game.loadFont(config.font);
-    let cube = 0;
-    let plane = 0;
-    let canRender3d = false;
-    try {
-      const texture3d = await game.loadTexture(config.texture3d);
-      game.configureGrid(true, 12, 12);
-      plane = game.createPlane(texture3d, 8, 8);
-      game.setObjectPosition(plane, 0, -1.2, 2.5);
-      cube = game.createCube(texture3d, 1.2, 1.2, 1.2);
-      game.setObjectPosition(cube, 0.85, 1.2, 2.1);
-      game.addLight(0, 4, 6, -4, 0, -1, 0, 1, 0.95, 0.80, 5, 28, 0);
-      game.addLight(0, -3.5, 3.5, -2, 0, -0.65, 0.35, 0.70, 0.85, 1, 2.5, 18, 0);
-      game.addLight(0, 0, 2.4, 7, 0, -0.25, -1, 0.55, 0.65, 0.90, 1.8, 20, 0);
-      canRender3d = cube !== 0;
-    } catch {}
     return new SandboxApp(game, ui, target, config, network, options?.maxRuntimeSec ?? 0, {
       background,
       sprite,
       accentSprite,
       font,
-      cube,
-      plane,
-      canRender3d,
     });
+  }
+
+  private ensure3dSetup(): void {
+    if (this.canRender3d || this.tried3dSetup || this.setup3dPromise) {
+      return;
+    }
+    this.setup3dPromise = (async () => {
+      this.tried3dSetup = true;
+      try {
+        const texture3d = await this.game.loadTexture(this.config.texture3d);
+        this.game.configureGrid(true, 12, 12);
+        this.plane = this.game.createPlane(texture3d, 8, 8);
+        this.game.setObjectPosition(this.plane, 0, -1.2, 2.5);
+        this.cube = this.game.createCube(texture3d, 1.2, 1.2, 1.2);
+        this.game.setObjectPosition(this.cube, 0.85, 1.2, 2.1);
+        this.game.addLight(0, 4, 6, -4, 0, -1, 0, 1, 0.95, 0.80, 5, 28, 0);
+        this.game.addLight(0, -3.5, 3.5, -2, 0, -0.65, 0.35, 0.70, 0.85, 1, 2.5, 18, 0);
+        this.game.addLight(0, 0, 2.4, 7, 0, -0.25, -1, 0.55, 0.65, 0.90, 1.8, 20, 0);
+        this.canRender3d = this.cube !== 0 && this.plane !== 0;
+      } catch {
+        this.canRender3d = false;
+      } finally {
+        this.setup3dPromise = null;
+      }
+    })();
   }
 
   update(dt: number): void {
@@ -670,6 +676,10 @@ export class SandboxApp {
       y: this.playerY,
       packetVersion: this.config.packetVersion,
     });
+
+    if (mode !== '2D') {
+      this.ensure3dSetup();
+    }
 
     if (mode !== '2D' && this.canRender3d) {
       this.game.enableDepthTest();

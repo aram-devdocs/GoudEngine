@@ -477,16 +477,28 @@ def main() -> int:
     background = game.load_texture(manifest.assets.background)
     sprite = game.load_texture(manifest.assets.sprite)
     accent_sprite = game.load_texture(manifest.assets.accent_sprite)
-    texture3d = game.load_texture(manifest.assets.texture3d)
     font = game.load_font(manifest.assets.font)
+    cube = 0
+    plane = 0
+    has_3d_setup = False
 
-    cube = game.create_cube(texture3d, 1.2, 1.2, 1.2)
-    plane = game.create_plane(texture3d, 8.0, 8.0)
-    game.add_light(0, 4.0, 6.0, -4.0, 0.0, -1.0, 0.0, 1.0, 0.95, 0.80, 5.0, 28.0, 0.0)
-    game.add_light(0, -3.5, 3.5, -2.0, 0.0, -0.65, 0.35, 0.70, 0.85, 1.0, 2.5, 18.0, 0.0)
-    game.add_light(0, 0.0, 2.4, 7.0, 0.0, -0.25, -1.0, 0.55, 0.65, 0.90, 1.8, 20.0, 0.0)
-    game.set_object_position(plane, 0.0, -1.2, 2.5)
-    game.configure_grid(True, 12.0, 12)
+    def ensure_3d_setup() -> bool:
+        nonlocal cube, plane, has_3d_setup
+        if has_3d_setup:
+            return True
+        try:
+            texture3d = game.load_texture(manifest.assets.texture3d)
+            cube = game.create_cube(texture3d, 1.2, 1.2, 1.2)
+            plane = game.create_plane(texture3d, 8.0, 8.0)
+            game.add_light(0, 4.0, 6.0, -4.0, 0.0, -1.0, 0.0, 1.0, 0.95, 0.80, 5.0, 28.0, 0.0)
+            game.add_light(0, -3.5, 3.5, -2.0, 0.0, -0.65, 0.35, 0.70, 0.85, 1.0, 2.5, 18.0, 0.0)
+            game.add_light(0, 0.0, 2.4, 7.0, 0.0, -0.25, -1.0, 0.55, 0.65, 0.90, 1.8, 20.0, 0.0)
+            game.set_object_position(plane, 0.0, -1.2, 2.5)
+            game.configure_grid(True, 12.0, 12)
+            has_3d_setup = cube != 0 and plane != 0
+        except Exception:
+            has_3d_setup = False
+        return has_3d_setup
 
     mode_index = 0
     mode_names = [scene.mode for scene in manifest.scenes]
@@ -532,7 +544,7 @@ def main() -> int:
 
         game.begin_frame(0.07, 0.10, 0.14, 1.0)
 
-        if current_mode in ("3D", "Hybrid"):
+        if current_mode in ("3D", "Hybrid") and ensure_3d_setup():
             game.enable_depth_test()
             game.set_camera_position3_d(0.0, 2.2, -7.0 if current_mode == "3D" else -7.8)
             game.set_camera_rotation3_d(-7.0, 0.0 if current_mode == "3D" else 8.0, 0.0)

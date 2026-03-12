@@ -13,6 +13,29 @@ const WINDOW_WIDTH: u32 = 1280;
 const WINDOW_HEIGHT: u32 = 720;
 const MOVE_SPEED: f32 = 220.0;
 
+fn setup_3d_once(game: &mut GoudGame, texture_path: &str) -> Option<(u32, u32)> {
+    let texture3d = game.load(texture_path) as u32;
+    let cube = game.create_cube(texture3d, 1.2, 1.2, 1.2);
+    let plane = game.create_plane(texture3d, 8.0, 8.0);
+    let _ = game.add_light(
+        0, 4.0, 6.0, -4.0, 0.0, -1.0, 0.0, 1.0, 0.95, 0.80, 5.0, 28.0, 0.0,
+    );
+    let _ = game.add_light(
+        0, -3.5, 3.5, -2.0, 0.0, -0.65, 0.35, 0.70, 0.85, 1.0, 2.5, 18.0, 0.0,
+    );
+    let _ = game.add_light(
+        0, 0.0, 2.4, 7.0, 0.0, -0.25, -1.0, 0.55, 0.65, 0.90, 1.8, 20.0, 0.0,
+    );
+    game.set_object_position(plane, 0.0, -1.0, 0.0);
+    game.configure_grid(true, 12.0, 12);
+
+    if cube != 0 && plane != 0 {
+        Some((cube, plane))
+    } else {
+        None
+    }
+}
+
 fn main() {
     let root = Path::new("examples/shared/sandbox");
     if !root.exists() {
@@ -29,10 +52,6 @@ fn main() {
         .unwrap_or(0.0);
 
     println!("{}", config.title);
-    println!(
-        "Controls: 1/2/3 scene switch, WASD/arrows move, Esc quits. Network {}",
-        network.detail()
-    );
 
     let mut game = GoudGame::with_platform(GameConfig::new(
         "GoudEngine Sandbox - Rust",
@@ -44,22 +63,9 @@ fn main() {
     let background = game.load(&config.assets.background);
     let sprite = game.load(&config.assets.sprite);
     let accent = game.load(&config.assets.accent);
-    let texture3d = game.load(&config.assets.texture3d) as u32;
-
-    let cube = game.create_cube(texture3d, 1.2, 1.2, 1.2);
-    let plane = game.create_plane(texture3d, 8.0, 8.0);
-    let _ = game.add_light(
-        0, 4.0, 6.0, -4.0, 0.0, -1.0, 0.0, 1.0, 0.95, 0.80, 5.0, 28.0, 0.0,
-    );
-    let _ = game.add_light(
-        0, -3.5, 3.5, -2.0, 0.0, -0.65, 0.35, 0.70, 0.85, 1.0, 2.5, 18.0, 0.0,
-    );
-    let _ = game.add_light(
-        0, 0.0, 2.4, 7.0, 0.0, -0.25, -1.0, 0.55, 0.65, 0.90, 1.8, 20.0, 0.0,
-    );
+    let mut scene3d: Option<(u32, u32)> = None;
+    let mut has_3d_setup = false;
     game.enable_blending();
-    game.set_object_position(plane, 0.0, -1.0, 0.0);
-    game.configure_grid(true, 12.0, 12);
 
     let mode_order = if config.scenes.len() == 3 {
         config
@@ -150,6 +156,14 @@ fn main() {
         let cube_yaw = (elapsed * 46.0).rem_euclid(360.0);
 
         if is_3d_family_mode {
+            if !has_3d_setup {
+                scene3d = setup_3d_once(&mut game, &config.assets.texture3d);
+                has_3d_setup = scene3d.is_some();
+            }
+        }
+
+        if is_3d_family_mode && has_3d_setup {
+            let (cube, plane) = scene3d.expect("3D setup promised handles");
             game.enable_depth_test();
             game.set_camera_position(0.0, 2.2, if current_mode == "3D" { -7.0 } else { -7.8 });
             game.set_camera_rotation(-7.0, if current_mode == "3D" { 0.0 } else { 8.0 }, 0.0);
