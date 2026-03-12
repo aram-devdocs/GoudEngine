@@ -53,3 +53,5 @@ Acceptance requires at least one PR review approval from a maintainer. The `prop
 |---|---|---|
 | [RFC-0001](RFC-0001-provider-trait-pattern.md) | Provider Trait Pattern | proposed |
 | [RFC-0002](RFC-0002-network-provider-trait.md) | NetworkProvider Trait Design | accepted |
+| [RFC-0003](RFC-0003-ui-layout-and-input.md) | UI Layout and Input Behavior | draft |
+| [RFC-0004](RFC-0004-debugger-runtime-and-local-attach.md) | Debugger Runtime, Snapshot Contract, and Local Attach Model | draft |
