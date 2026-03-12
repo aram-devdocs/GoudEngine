@@ -3,6 +3,7 @@
 //! Opaque handle types for shaders and buffers, rendering statistics.
 
 use crate::core::error::{set_last_error, GoudError};
+use crate::core::debugger;
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 
 // ============================================================================
@@ -73,8 +74,16 @@ pub unsafe extern "C" fn goud_renderer_get_stats(
         return false;
     }
 
-    // SAFETY: caller guarantees out_stats is a valid non-null pointer
-    // For now, return empty stats (will be populated when we have a proper stats tracking)
-    *out_stats = GoudRenderStats::default();
+    let stats = debugger::snapshot_for_context(context_id)
+        .map(|snapshot| GoudRenderStats {
+            draw_calls: snapshot.stats.render.draw_calls,
+            triangles: snapshot.stats.render.triangles,
+            texture_binds: snapshot.stats.render.texture_binds,
+            shader_binds: snapshot.stats.render.shader_binds,
+        })
+        .unwrap_or_default();
+
+    // SAFETY: caller guarantees out_stats is a valid non-null pointer.
+    *out_stats = stats;
     true
 }

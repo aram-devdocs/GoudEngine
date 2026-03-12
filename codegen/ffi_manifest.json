@@ -994,6 +994,60 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_debugger_clear_selected_entity": {
+      "source_file": "ffi/debug/debugger_runtime.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_debugger_get_manifest_json": {
+      "source_file": "ffi/debug/debugger_runtime.rs",
+      "params": [
+        "buf: *mut u8",
+        "buf_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_debugger_get_memory_summary": {
+      "source_file": "ffi/debug/debugger_runtime.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out_summary: *mut GoudMemorySummary"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_debugger_get_snapshot_json": {
+      "source_file": "ffi/debug/debugger_runtime.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "buf: *mut u8",
+        "buf_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_debugger_set_profiling_enabled": {
+      "source_file": "ffi/debug/debugger_runtime.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_debugger_set_selected_entity": {
+      "source_file": "ffi/debug/debugger_runtime.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "entity_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_diagnostic_is_enabled": {
       "source_file": "ffi/debug.rs",
       "params": [],
@@ -4254,5 +4308,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 425
+  "total_count": 431
 }

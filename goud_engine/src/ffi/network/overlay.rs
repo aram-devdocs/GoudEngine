@@ -1,3 +1,4 @@
+use crate::core::debugger;
 use crate::ffi::context::GoudContextId;
 use crate::sdk::network_debug_overlay::NetworkOverlayMetrics;
 
@@ -55,6 +56,11 @@ pub(crate) fn network_overlay_snapshot_for_context(
         };
 
         let stats = instance.provider.stats();
+        let _ = debugger::set_snapshot_network_stats_for_context(
+            context_id,
+            stats.bytes_sent,
+            stats.bytes_received,
+        );
         Ok(Some(NetworkOverlaySnapshot {
             handle,
             metrics: NetworkOverlayMetrics {

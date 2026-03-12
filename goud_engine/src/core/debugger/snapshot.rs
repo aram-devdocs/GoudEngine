@@ -52,20 +52,74 @@ pub struct SceneStateV1 {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EntityStateV1 {
     pub entity_id: u64,
+    pub scene_id: String,
     pub name: Option<String>,
+    pub component_types: Vec<String>,
     pub components: BTreeMap<String, serde_json::Value>,
+}
+
+impl EntityStateV1 {
+    pub fn summary_only(
+        entity_id: u64,
+        scene_id: impl Into<String>,
+        name: Option<String>,
+        component_types: Vec<String>,
+    ) -> Self {
+        Self {
+            entity_id,
+            scene_id: scene_id.into(),
+            name,
+            component_types,
+            components: BTreeMap::new(),
+        }
+    }
 }
 
 /// Aggregated render statistics.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RenderStatsV1 {
     pub draw_calls: u32,
+    pub triangles: u32,
+    pub texture_binds: u32,
+    pub shader_binds: u32,
 }
 
 /// Aggregated memory statistics.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MemoryStatsV1 {
     pub tracked_bytes: u64,
+    pub peak_bytes: u64,
+}
+
+/// Memory usage for one debugger-owned category.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MemoryCategoryStatsV1 {
+    pub current_bytes: u64,
+    pub peak_bytes: u64,
+}
+
+/// Snapshot-friendly memory usage totals grouped by subsystem.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MemorySummaryV1 {
+    pub rendering: MemoryCategoryStatsV1,
+    pub assets: MemoryCategoryStatsV1,
+    pub ecs: MemoryCategoryStatsV1,
+    pub ui: MemoryCategoryStatsV1,
+    pub audio: MemoryCategoryStatsV1,
+    pub network: MemoryCategoryStatsV1,
+    pub debugger: MemoryCategoryStatsV1,
+    pub other: MemoryCategoryStatsV1,
+    pub total_current_bytes: u64,
+    pub total_peak_bytes: u64,
+}
+
+/// One CPU timing sample emitted by the runtime profiler.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProfilerSampleV1 {
+    pub sample_kind: String,
+    pub stage: String,
+    pub name: String,
+    pub duration_cpu_micros: u64,
 }
 
 /// Aggregated network statistics.
@@ -117,8 +171,10 @@ pub struct DebuggerSnapshotV1 {
     pub selection: SelectionStateV1,
     pub scene: SceneStateV1,
     pub entities: Vec<EntityStateV1>,
+    pub profiler_samples: Vec<ProfilerSampleV1>,
     pub services: Vec<ServiceHealthV1>,
     pub stats: SnapshotStatsV1,
+    pub memory_summary: MemorySummaryV1,
     pub diagnostics: DiagnosticsStateV1,
     pub debugger: DebuggerStateV1,
 }
@@ -132,8 +188,10 @@ impl DebuggerSnapshotV1 {
             selection: SelectionStateV1::default(),
             scene: SceneStateV1::default(),
             entities: Vec::new(),
+            profiler_samples: Vec::new(),
             services: default_services(),
             stats: SnapshotStatsV1::default(),
+            memory_summary: MemorySummaryV1::default(),
             diagnostics: DiagnosticsStateV1::default(),
             debugger: DebuggerStateV1::default(),
         }
@@ -141,6 +199,10 @@ impl DebuggerSnapshotV1 {
 
     pub fn to_json(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string(self)
+    }
+
+    pub fn service_mut(&mut self, name: &str) -> Option<&mut ServiceHealthV1> {
+        self.services.iter_mut().find(|service| service.name == name)
     }
 }
 

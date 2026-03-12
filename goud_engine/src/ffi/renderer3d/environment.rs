@@ -2,6 +2,7 @@
 
 use super::state::{ensure_renderer3d_state, with_renderer};
 use crate::core::error::{set_last_error, GoudError};
+use crate::core::debugger;
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
 use crate::libs::graphics::renderer3d::TextureManagerTrait;
@@ -192,12 +193,18 @@ pub extern "C" fn goud_renderer3d_render(context_id: GoudContextId) -> bool {
         return false;
     }
 
-    with_renderer(context_id, |renderer| {
+    let rendered = with_renderer(context_id, |renderer| {
         let texture_bridge = WindowTextureBridge { context_id };
         renderer.render(Some(&texture_bridge));
         true
     })
-    .unwrap_or(false)
+    .unwrap_or(false);
+
+    if rendered {
+        let _ = debugger::update_render_stats_for_context(context_id, 1, 0, 0, 1);
+    }
+
+    rendered
 }
 
 /// Renders all 3D objects (alias for goud_renderer3d_render).

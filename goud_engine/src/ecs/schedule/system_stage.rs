@@ -2,7 +2,9 @@
 
 use std::collections::HashMap;
 use std::fmt;
+use std::time::Instant;
 
+use crate::core::debugger;
 use crate::ecs::system::{BoxedSystem, IntoSystem, SystemId};
 use crate::ecs::World;
 
@@ -369,6 +371,9 @@ impl Stage for SystemStage {
     }
 
     fn run(&mut self, world: &mut World) {
+        let profiler_route = debugger::current_route()
+            .filter(debugger::profiler_enabled_for_route);
+
         if self.order_dirty {
             // Merge named-set orderings into the stage's orderings.
             for ordering in self.named_sets.resolve_orderings() {
@@ -392,7 +397,18 @@ impl Stage for SystemStage {
         }
         for system in &mut self.systems {
             if system.should_run(world) {
-                system.run(world);
+                if let Some(route_id) = profiler_route.as_ref() {
+                    let started_at = Instant::now();
+                    system.run(world);
+                    debugger::set_system_sample(
+                        route_id,
+                        &self.name,
+                        system.name(),
+                        started_at.elapsed().as_micros() as u64,
+                    );
+                } else {
+                    system.run(world);
+                }
             }
         }
     }

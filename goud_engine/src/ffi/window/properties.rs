@@ -108,7 +108,7 @@ pub extern "C" fn goud_window_poll_events(context_id: GoudContextId) -> f32 {
                 // pointer obtained above. No other code accesses it concurrently
                 // because GLFW and this module are single-threaded.
                 let input = unsafe { &mut *input_ptr };
-                window_state.poll_events(input)
+                window_state.poll_events(context_id, input)
             }
             None => {
                 set_last_error(GoudError::InvalidContext);

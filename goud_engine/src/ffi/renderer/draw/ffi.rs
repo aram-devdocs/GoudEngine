@@ -1,3 +1,4 @@
+use crate::core::debugger;
 use crate::core::error::set_last_error;
 use crate::ffi::context::GoudContextId;
 use crate::ffi::window::with_window_state;
@@ -64,7 +65,11 @@ pub extern "C" fn goud_renderer_draw_sprite(
         )
     });
 
-    map_draw_result(result)
+    let ok = map_draw_result(result);
+    if ok {
+        let _ = debugger::update_render_stats_for_context(context_id, 1, 2, 1, 1);
+    }
+    ok
 }
 
 /// Draws a textured sprite with a source rectangle for sprite sheet animation.
@@ -144,7 +149,11 @@ pub extern "C" fn goud_renderer_draw_sprite_rect(
         )
     });
 
-    map_draw_result(result)
+    let ok = map_draw_result(result);
+    if ok {
+        let _ = debugger::update_render_stats_for_context(context_id, 1, 2, 1, 1);
+    }
+    ok
 }
 
 /// Draws a colored quad (no texture) at the given position.
@@ -188,5 +197,9 @@ pub extern "C" fn goud_renderer_draw_quad(
         draw_quad_internal(window_state, state_data, x, y, width, height, r, g, b, a)
     });
 
-    map_draw_result(result)
+    let ok = map_draw_result(result);
+    if ok {
+        let _ = debugger::update_render_stats_for_context(context_id, 1, 2, 0, 1);
+    }
+    ok
 }

@@ -10,6 +10,9 @@ use crate::core::error::{set_last_error, GoudError};
 use crate::core::providers::types::PhysicsBackend2D;
 use crate::sdk::engine_config::EngineConfig;
 
+#[cfg(feature = "native")]
+use crate::core::debugger::{self, ContextConfig, RuntimeSurfaceKind};
+
 /// Opaque handle to an `EngineConfig` on the heap.
 type EngineConfigHandle = *mut std::ffi::c_void;
 
@@ -325,7 +328,12 @@ pub unsafe extern "C" fn goud_engine_create(
             }
         };
 
-        match registry.create() {
+        match registry.create_with_config(
+            ContextConfig {
+                debugger: game_config.debugger.clone(),
+            },
+            RuntimeSurfaceKind::WindowedGame,
+        ) {
             Ok(id) => id,
             Err(e) => {
                 set_last_error(e);
@@ -367,7 +375,12 @@ pub unsafe extern "C" fn goud_engine_create(
 
     // Physics debug overlay uses providers created from EngineConfig / ProviderRegistry.
     // It does not read worlds created with standalone FFI `goud_physics_*_create` calls.
-    let window_state = WindowState::new(platform, backend, game_config.physics_debug.enabled);
+    let window_state = WindowState::new(
+        platform,
+        backend,
+        game_config.physics_debug.enabled,
+        debugger::route_for_context(context_id),
+    );
 
     if let Err(e) = set_window_state(context_id, window_state) {
         if let Ok(mut registry) = get_context_registry().lock() {
