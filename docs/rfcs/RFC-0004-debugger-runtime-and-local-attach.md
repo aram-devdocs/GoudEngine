@@ -13,7 +13,6 @@ related-issues: ["#513", "#517", "#520"]
 Phase 2.5.1 needs a fixed contract for GoudEngine's debugger stack. This RFC sets the runtime topology to one Rust-owned debugger service per process in dev mode, one out-of-process `goudengine-mcp` bridge that speaks MCP over stdio, one shared snapshot and service-health schema, one local-only attach model, and one debugger enablement contract that spans `GameConfig`, `EngineConfig`, and a future config-based `GoudContext` path. The batch only sets the contract. It does not implement the debugger runtime, FFI, SDK rollout, capture, replay, or the MCP bridge.
 
 ## 2. Motivation
-
 Phase 2.5 pulls debugger, profiling, replay, observability, and AI-agent runtime tooling into Alpha v1. The later implementation batches need a fixed contract before code lands. Without that contract, the runtime service, FFI layer, SDK wrappers, overlays, Feature Lab, and `goudengine-mcp` bridge can drift into incompatible shapes.
 
 The current codebase already exposes several narrow debug surfaces:
@@ -361,6 +360,7 @@ Field ownership:
 | `services.capture` | capture subsystem |
 | `services.replay` | replay subsystem |
 | `diagnostics` | error/diagnostic subsystem plus debugger runtime aggregation |
+
 Minimum semantic coverage includes frame timing and frame index, selected scene/entity state, inspected component state for the current entity selection, provider capability and health, render/memory/network stats, replay and capture status, debugger health, and current errors or diagnostics suitable for agent consumption. When one of the modeled stats producers (`render`, `memory`, or `network`) is `disabled` or `unavailable`, its stats object remains present with zero/default values and the service state is authoritative.
 
 #### 3.10.4 JSON example: `ServiceHealthV1`
