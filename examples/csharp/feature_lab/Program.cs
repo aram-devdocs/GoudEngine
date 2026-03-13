@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using GoudEngine;
 
 internal static class Program
 {
+    private const string DebuggerRouteLabel = "feature-lab-csharp-headless";
     private readonly record struct CheckResult(string Name, bool Passed);
 
     private static void Main()
@@ -36,7 +38,22 @@ internal static class Program
 
     private static void RunContextChecks(List<CheckResult> results)
     {
-        using var ctx = new GoudContext();
+        using var ctx = new GoudContext(
+            new ContextConfig(new DebuggerConfig(true, true, DebuggerRouteLabel))
+        );
+        ctx.SetDebuggerProfilingEnabled(true);
+
+        Record(
+            results,
+            "debugger manifest publishes the stable attach route label",
+            DebuggerManifestPublishesRoute(ctx)
+        );
+        Record(
+            results,
+            "debugger snapshot json is available for the headless route",
+            DebuggerSnapshotIsAvailable(ctx)
+        );
+        PrintManualAttachWorkflow();
 
         var probe = ctx.SpawnEmpty();
         Record(results, "headless context spawns entities", ctx.IsValid() && ctx.IsAlive(probe) && ctx.EntityCount() == 1);
@@ -126,5 +143,64 @@ internal static class Program
         {
             return false;
         }
+    }
+
+    private static bool DebuggerManifestPublishesRoute(GoudContext ctx)
+    {
+        string manifestJson = ctx.GetDebuggerManifestJson();
+        if (string.IsNullOrWhiteSpace(manifestJson))
+        {
+            return false;
+        }
+
+        using JsonDocument manifest = JsonDocument.Parse(manifestJson);
+        if (!manifest.RootElement.TryGetProperty("routes", out JsonElement routes) ||
+            routes.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        foreach (JsonElement route in routes.EnumerateArray())
+        {
+            if (!route.TryGetProperty("label", out JsonElement label) ||
+                label.ValueKind != JsonValueKind.String)
+            {
+                continue;
+            }
+
+            bool attachable = route.TryGetProperty("attachable", out JsonElement attachFlag) &&
+                              attachFlag.ValueKind == JsonValueKind.True;
+            if (label.GetString() == DebuggerRouteLabel && attachable)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool DebuggerSnapshotIsAvailable(GoudContext ctx)
+    {
+        string snapshotJson = ctx.GetDebuggerSnapshotJson();
+        if (string.IsNullOrWhiteSpace(snapshotJson))
+        {
+            return false;
+        }
+
+        using JsonDocument snapshot = JsonDocument.Parse(snapshotJson);
+        return snapshot.RootElement.TryGetProperty("snapshot_version", out JsonElement version) &&
+               version.ValueKind == JsonValueKind.Number &&
+               version.GetInt32() >= 1 &&
+               snapshot.RootElement.TryGetProperty("route_id", out JsonElement routeId) &&
+               routeId.ValueKind == JsonValueKind.Object;
+    }
+
+    private static void PrintManualAttachWorkflow()
+    {
+        Console.WriteLine($"Debugger route label: {DebuggerRouteLabel}");
+        Console.WriteLine("Manual attach workflow:");
+        Console.WriteLine("1. start `cargo run -p goudengine-mcp`");
+        Console.WriteLine("2. call `goudengine.list_contexts`");
+        Console.WriteLine("3. call `goudengine.attach_context`");
     }
 }

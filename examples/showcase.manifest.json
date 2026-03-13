@@ -138,7 +138,7 @@
     {
       "id": "feature-lab",
       "title": "Feature Lab smoke coverage",
-      "description": "Feature Lab stays in the repo as a supplemental smoke harness for wrapper and provider coverage.",
+      "description": "Feature Lab stays in the repo as a supplemental smoke harness for wrapper and provider coverage, debugger enablement, and local attach workflow coverage.",
       "entries": [
         {
           "name": "Feature Lab",
@@ -146,7 +146,7 @@
           "target": "Headless",
           "path": "examples/csharp/feature_lab",
           "run": "./dev.sh --game feature_lab",
-          "description": "Headless smoke for ECS and provider wrappers.",
+          "description": "Headless smoke for ECS and provider wrappers with debugger mode enabled and stable local attach coverage.",
           "media": {
             "path": "docs/src/generated/showcase/feature-lab-csharp-headless.png",
             "alt": "Feature Lab C# headless preview"
@@ -158,7 +158,7 @@
           "target": "Headless",
           "path": "examples/python/feature_lab.py",
           "run": "python3 examples/python/feature_lab.py",
-          "description": "Headless smoke for generated wrappers.",
+          "description": "Headless smoke for generated wrappers with debugger mode enabled and stable local attach coverage.",
           "media": {
             "path": "docs/src/generated/showcase/feature-lab-python-headless.png",
             "alt": "Feature Lab Python headless preview"
@@ -170,7 +170,7 @@
           "target": "Desktop",
           "path": "examples/typescript/feature_lab/desktop.ts",
           "run": "./dev.sh --sdk typescript --game feature_lab",
-          "description": "Desktop smoke for SDK capability probes.",
+          "description": "Desktop smoke for SDK capability probes plus debugger manifest, snapshot, and local attach coverage.",
           "media": {
             "path": "docs/src/generated/showcase/feature-lab-typescript-desktop.png",
             "alt": "Feature Lab TypeScript desktop preview"
@@ -182,7 +182,7 @@
           "target": "Web",
           "path": "examples/typescript/feature_lab/web",
           "run": "./dev.sh --sdk typescript --game feature_lab_web",
-          "description": "Web smoke with browser/WASM coverage.",
+          "description": "Web smoke with browser/WASM coverage. Debugger attach remains desktop-only in this batch.",
           "media": {
             "path": "docs/src/generated/showcase/feature-lab-typescript-web.png",
             "alt": "Feature Lab TypeScript web preview"
@@ -194,7 +194,7 @@
           "target": "Headless",
           "path": "examples/rust/feature_lab",
           "run": "cargo run -p feature-lab",
-          "description": "Native Rust smoke for SDK coverage.",
+          "description": "Native Rust headless smoke for SDK coverage with debugger enablement and stable local attach coverage.",
           "media": {
             "path": "docs/src/generated/showcase/feature-lab-rust-headless.png",
             "alt": "Feature Lab Rust headless preview"

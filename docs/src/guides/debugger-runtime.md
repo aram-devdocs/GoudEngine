@@ -22,6 +22,13 @@ What is out of scope in this batch:
 
 Enable debugger mode in config before creating the game or context. The runtime publishes one local manifest per process when `publish_local_attach` is enabled and at least one route is attachable.
 
+Shipped config surfaces:
+
+- C# headless: `new GoudContext(new ContextConfig(new DebuggerConfig(true, true, "...")))`
+- Python headless: `GoudContext(ContextConfig(debugger=DebuggerConfig(...)))`
+- Rust headless: `Context::create_with_config(ContextConfig { debugger: ... })`
+- TypeScript desktop: use `./dev.sh --sdk typescript --game feature_lab` as the shipped reference route in this batch
+
 The runtime is Rust-owned. SDKs only forward control calls and return raw JSON or byte envelopes.
 
 ## Control and Debug Draw
@@ -87,6 +94,23 @@ Start it from the workspace root:
 ```bash
 cargo run -p goudengine-mcp
 ```
+
+## Feature Lab Reference Routes
+
+The owned Feature Lab examples are the reference rollout for local attach smoke
+coverage. Each one enables debugger mode and prints the same attach workflow
+locally. The C#, Python, and TypeScript desktop paths also exercise raw
+manifest/snapshot access through the SDK helpers they already expose.
+
+| SDK | Target | Run | Stable route label |
+|---|---|---|---|
+| C# | Headless | `./dev.sh --game feature_lab` | `feature-lab-csharp-headless` |
+| Python | Headless | `python3 examples/python/feature_lab.py` | `feature-lab-python-headless` |
+| Rust | Headless | `cargo run -p feature-lab` | `feature-lab-rust-headless` |
+| TypeScript | Desktop | `./dev.sh --sdk typescript --game feature_lab` | `feature-lab-typescript-desktop` |
+
+`feature_lab_web` stays in the repo for browser/WASM smoke coverage only. It
+does not publish a debugger route.
 
 Typical workflow:
 

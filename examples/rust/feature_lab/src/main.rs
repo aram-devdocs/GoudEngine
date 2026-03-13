@@ -11,8 +11,10 @@ use goudengine::{
         SpriteAnimator, Transform2D,
     },
     input::{Key, MouseButton},
-    GameConfig, GoudGame, Rect, Vec2,
+    Context, ContextConfig, DebuggerConfig, GameConfig, GoudGame, Rect, Vec2,
 };
+
+const DEBUGGER_ROUTE_LABEL: &str = "feature-lab-rust-headless";
 
 struct CheckResult {
     name: &'static str,
@@ -24,13 +26,15 @@ fn record(results: &mut Vec<CheckResult>, name: &'static str, passed: bool) {
 }
 
 fn main() {
+    let mut results = Vec::new();
+    run_debugger_runtime_checks(&mut results);
+
     let config = GameConfig::new("Rust Feature Lab", 1280, 720)
         .with_target_fps(120)
         .with_fps_overlay(true)
         .with_physics_debug(true);
     let mut game = GoudGame::new(config).expect("failed to create headless game");
 
-    let mut results = Vec::new();
     run_feature_surface_checks(&mut game, &mut results);
 
     let pass_count = results.iter().filter(|result| result.passed).count();
@@ -45,6 +49,43 @@ fn main() {
     if fail_count > 0 {
         std::process::exit(1);
     }
+}
+
+fn debugger_config() -> DebuggerConfig {
+    DebuggerConfig {
+        enabled: true,
+        publish_local_attach: true,
+        route_label: Some(DEBUGGER_ROUTE_LABEL.to_string()),
+    }
+}
+
+fn run_debugger_runtime_checks(results: &mut Vec<CheckResult>) {
+    let context_id = Context::create_with_config(ContextConfig {
+        debugger: debugger_config(),
+    });
+    record(
+        results,
+        "headless debugger context creates successfully",
+        Context::is_valid(context_id),
+    );
+    if !Context::is_valid(context_id) {
+        return;
+    }
+
+    print_manual_attach_workflow();
+    record(
+        results,
+        "debugger context destroys cleanly",
+        Context::destroy(context_id) && !Context::is_valid(context_id),
+    );
+}
+
+fn print_manual_attach_workflow() {
+    println!("Debugger route label: {DEBUGGER_ROUTE_LABEL}");
+    println!("Manual attach workflow:");
+    println!("1. start `cargo run -p goudengine-mcp`");
+    println!("2. call `goudengine.list_contexts`");
+    println!("3. call `goudengine.attach_context`");
 }
 
 fn run_feature_surface_checks(game: &mut GoudGame, results: &mut Vec<CheckResult>) {

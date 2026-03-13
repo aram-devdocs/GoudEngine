@@ -35,6 +35,40 @@ A window opens at 800x600 and closes when you press Escape.
 
 `begin_frame()` polls events and clears the screen. `end_frame()` presents the frame. Everything you draw goes between those two calls.
 
+## Debugger Runtime
+
+Enable debugger mode before creating the headless context:
+
+```python
+from goud_engine import (
+    GoudContext,
+)
+from goud_engine.generated._types import ContextConfig, DebuggerConfig
+
+ctx = GoudContext(
+    ContextConfig(
+        debugger=DebuggerConfig(
+            enabled=True,
+            publish_local_attach=True,
+            route_label="getting-started-python",
+        )
+    )
+)
+
+ctx.set_debugger_profiling_enabled(True)
+snapshot_json = ctx.get_debugger_snapshot_json()
+manifest_json = ctx.get_debugger_manifest_json()
+ctx.destroy()
+```
+
+For a ready-made headless route, run `python3 examples/python/feature_lab.py`.
+The example publishes `feature-lab-python-headless`, confirms manifest and
+snapshot access, and prints the manual attach steps:
+
+1. start `cargo run -p goudengine-mcp`
+2. call `goudengine.list_contexts`
+3. call `goudengine.attach_context`
+
 ## Drawing a Sprite
 
 Load textures once before the game loop, then draw each frame.
@@ -121,6 +155,7 @@ cargo build --release
 - [Python examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/python/) — source code for `main.py`, `flappy_bird.py`, and `sandbox.py`
 - [Python SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/python/) — full API reference
 - [Build Your First Game](../guides/build-your-first-game.md) — end-to-end minimal game walkthrough
+- [Debugger Runtime](../guides/debugger-runtime.md) — local attach, capture, replay, and metrics workflow
 - [Example Showcase](../guides/showcase.md) — current cross-language parity matrix
 - [Cross-Platform Deployment](../guides/deployment.md) — packaging and release workflow
 - [FAQ and Troubleshooting](../guides/faq.md) — common runtime and build issues

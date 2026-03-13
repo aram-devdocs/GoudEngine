@@ -26,7 +26,12 @@ from goud_engine import (  # noqa: E402
     NetworkProtocol,
     Transform2D,
     UiManager,
+    parse_debugger_manifest,
+    parse_debugger_snapshot,
 )
+from goud_engine.generated._types import ContextConfig, DebuggerConfig  # noqa: E402
+
+DEBUGGER_ROUTE_LABEL = "feature-lab-python-headless"
 
 
 @dataclass
@@ -73,6 +78,8 @@ def _run_skippable_check(name: str, fn: Callable[[], tuple[bool, str]]) -> Check
     try:
         ok, detail = fn()
         return CheckResult(name, "PASS" if ok else "FAIL", detail)
+    except OSError as exc:
+        return CheckResult(name, "SKIP", str(exc))
     except (RuntimeError, GoudError) as exc:
         return CheckResult(name, "SKIP", str(exc))
     except NameError as exc:
@@ -151,6 +158,29 @@ def check_network_capabilities(ctx: GoudContext) -> tuple[bool, str]:
     return ok, detail
 
 
+def check_debugger_runtime(ctx: GoudContext) -> tuple[bool, str]:
+    ctx.set_debugger_profiling_enabled(True)
+    manifest = parse_debugger_manifest(ctx)
+    snapshot = parse_debugger_snapshot(ctx)
+
+    routes = manifest.get("routes", [])
+    route_ok = any(
+        route.get("label") == DEBUGGER_ROUTE_LABEL and route.get("attachable") is True
+        for route in routes
+        if isinstance(route, dict)
+    )
+    snapshot_ok = (
+        isinstance(snapshot, dict)
+        and int(snapshot.get("snapshot_version", 0)) >= 1
+        and isinstance(snapshot.get("route_id"), dict)
+    )
+    detail = (
+        f"route_label={DEBUGGER_ROUTE_LABEL}, routes={len(routes)}, "
+        f"snapshot_version={snapshot.get('snapshot_version', 'missing')}"
+    )
+    return route_ok and snapshot_ok, detail
+
+
 def check_network_wrapper_and_fallback(ctx: GoudContext) -> tuple[bool, str]:
     manager = NetworkManager(ctx)
     endpoint = manager.host(NetworkProtocol.TCP, _reserve_port())
@@ -200,6 +230,14 @@ def check_ui_manager_basics() -> tuple[bool, str]:
         ui.destroy()
 
 
+def print_manual_attach_workflow() -> None:
+    print(f"Debugger route label: {DEBUGGER_ROUTE_LABEL}")
+    print("Manual attach workflow:")
+    print("1. start `cargo run -p goudengine-mcp`")
+    print("2. call `goudengine.list_contexts`")
+    print("3. call `goudengine.attach_context`")
+
+
 def main() -> int:
     print("=" * 64)
     print(" GoudEngine Python Feature Lab (ALPHA-001)")
@@ -209,9 +247,19 @@ def main() -> int:
     ctx = None
 
     try:
-        ctx = GoudContext()
+        ctx = GoudContext(
+            ContextConfig(
+                debugger=DebuggerConfig(
+                    enabled=True,
+                    publish_local_attach=True,
+                    route_label=DEBUGGER_ROUTE_LABEL,
+                )
+            )
+        )
+        print_manual_attach_workflow()
 
         results.append(_run_check("headless context is valid", lambda: (bool(ctx.is_valid()), "")))
+        results.append(_run_check("debugger manifest and snapshot are available", lambda: check_debugger_runtime(ctx)))
         results.append(_run_check("scene lifecycle operations", lambda: check_scene_lifecycle(ctx)))
         results.append(_run_check("entity lifecycle + clone operations", lambda: check_entity_lifecycle(ctx)))
         results.append(_run_skippable_check("network capability query", lambda: check_network_capabilities(ctx)))

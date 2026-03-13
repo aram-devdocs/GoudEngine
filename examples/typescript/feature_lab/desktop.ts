@@ -11,17 +11,33 @@
 
 import { createServer } from 'node:net';
 import {
+  EngineConfig,
   GoudContext,
   GoudGame,
   Key,
   NetworkManager,
   NetworkProtocol,
   UiManager,
+  parseDebuggerManifest,
+  parseDebuggerSnapshot,
 } from 'goudengine/node';
 import { createFeatureLab } from './lab.js';
 
 const SCREEN_WIDTH = 960;
 const SCREEN_HEIGHT = 540;
+const DEBUGGER_ROUTE_LABEL = 'feature-lab-typescript-desktop';
+
+type DebuggerManifest = {
+  routes?: Array<{
+    label?: string;
+    attachable?: boolean;
+  }>;
+};
+
+type DebuggerSnapshot = {
+  snapshot_version?: number;
+  route_id?: Record<string, unknown>;
+};
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -107,14 +123,52 @@ async function runNetworkProbe(log: (line: string) => void): Promise<void> {
   }
 }
 
+function logManualAttachWorkflow(log: (line: string) => void): void {
+  log(`[feature-lab:desktop] debugger.route_label -> ${DEBUGGER_ROUTE_LABEL}`);
+  log('[feature-lab:desktop] manual attach workflow:');
+  log('[feature-lab:desktop] 1. start `cargo run -p goudengine-mcp`');
+  log('[feature-lab:desktop] 2. call `goudengine.list_contexts`');
+  log('[feature-lab:desktop] 3. call `goudengine.attach_context`');
+}
+
+function verifyDebuggerRuntime(game: GoudGame, log: (line: string) => void): void {
+  game.setDebuggerProfilingEnabled(true);
+
+  const manifest = parseDebuggerManifest(game) as DebuggerManifest;
+  const snapshot = parseDebuggerSnapshot(game) as DebuggerSnapshot;
+  const route = manifest.routes?.find((entry) => entry.label === DEBUGGER_ROUTE_LABEL);
+
+  if (!route || route.attachable !== true) {
+    throw new Error('debugger manifest did not publish the expected attachable route');
+  }
+  if (typeof snapshot.snapshot_version !== 'number' || !snapshot.route_id) {
+    throw new Error('debugger snapshot was not available for the desktop route');
+  }
+
+  log(
+    `[feature-lab:desktop] debugger.manifest -> route=${DEBUGGER_ROUTE_LABEL}, routes=${manifest.routes?.length ?? 0}`,
+  );
+  log(
+    `[feature-lab:desktop] debugger.snapshot -> version=${snapshot.snapshot_version}`,
+  );
+  logManualAttachWorkflow(log);
+}
+
 async function main(): Promise<void> {
-  const game = new GoudGame({
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-    title: 'Feature Lab (ALPHA-001) -- Desktop',
+  const config = new EngineConfig()
+    .setTitle('Feature Lab (ALPHA-001) -- Desktop')
+    .setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+  // The generated desktop wrapper currently serializes debugger config fields
+  // incorrectly, so the example uses the existing native config path directly.
+  (config as any).native.setDebugger({
+    enabled: true,
+    publishLocalAttach: true,
+    routeLabel: DEBUGGER_ROUTE_LABEL,
   });
+  const game = config.build();
 
   const log = (line: string): void => console.log(line);
+  verifyDebuggerRuntime(game, log);
 
   const ui = new UiManager();
   const root = ui.createPanel();

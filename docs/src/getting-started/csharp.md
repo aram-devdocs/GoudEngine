@@ -51,6 +51,30 @@ For a 3D window, pass the renderer type:
 using var game = new GoudGame(800, 600, "3D Game", RendererType.Renderer3D);
 ```
 
+## Debugger Runtime
+
+Enable debugger mode before creating the windowed game or headless context.
+
+```csharp
+using GoudEngine;
+
+using var ctx = new GoudContext(
+    new ContextConfig(new DebuggerConfig(true, true, "getting-started-csharp"))
+);
+
+ctx.SetDebuggerProfilingEnabled(true);
+string snapshotJson = ctx.GetDebuggerSnapshotJson();
+string manifestJson = ctx.GetDebuggerManifestJson();
+```
+
+For a ready-made headless route, run `./dev.sh --game feature_lab`. The example
+publishes `feature-lab-csharp-headless`, confirms manifest and snapshot access,
+and prints the manual attach steps:
+
+1. start `cargo run -p goudengine-mcp`
+2. call `goudengine.list_contexts`
+3. call `goudengine.attach_context`
+
 ## Drawing a Sprite
 
 Load textures once before the loop. Drawing happens inside the loop between `BeginFrame` and `EndFrame`.
@@ -111,6 +135,7 @@ To use a locally built version of the engine instead of the published NuGet pack
 - [C# SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/csharp/) — full API reference
 - [C# examples source](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/csharp/) — complete game source code
 - [Build Your First Game](../guides/build-your-first-game.md) — end-to-end minimal game walkthrough
+- [Debugger Runtime](../guides/debugger-runtime.md) — local attach, capture, replay, and metrics workflow
 - [Example Showcase](../guides/showcase.md) — current cross-language parity matrix
 - [Cross-Platform Deployment](../guides/deployment.md) — packaging and release workflow
 - [FAQ and Troubleshooting](../guides/faq.md) — common runtime and build issues

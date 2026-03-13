@@ -134,14 +134,21 @@ export function createFeatureLab(game: FeatureLabGameContext, options: FeatureLa
   }
 
   const marker = game.spawnEmpty();
+  const nativeGame = (game as any).native as Record<string, unknown>;
+  const supportsTransformComponent =
+    typeof nativeGame.addTransform2d === 'function'
+    && typeof nativeGame.getTransform2d === 'function'
+    && typeof nativeGame.setTransform2d === 'function';
   game.addName(marker, `feature_lab_${options.mode}`);
-  game.addTransform2d(marker, {
-    positionX: 64,
-    positionY: 64,
-    rotation: 0,
-    scaleX: 1,
-    scaleY: 1,
-  });
+  if (supportsTransformComponent) {
+    game.addTransform2d(marker, {
+      positionX: 64,
+      positionY: 64,
+      rotation: 0,
+      scaleX: 1,
+      scaleY: 1,
+    });
+  }
 
   let elapsed = 0;
   let pulse = 0;
@@ -157,10 +164,12 @@ export function createFeatureLab(game: FeatureLabGameContext, options: FeatureLa
       game.drawQuad(120, 90, 220, 120, { r: 0.07, g: 0.12, b: 0.19, a: 0.95 });
       game.drawQuad(x, y, 24, 24, { r: 0.9, g: 0.25, b: 0.2, a: 1.0 });
 
-      const transform = game.getTransform2d(marker);
-      if (transform) {
-        transform.rotation += dt;
-        game.setTransform2d(marker, transform);
+      if (supportsTransformComponent) {
+        const transform = game.getTransform2d(marker);
+        if (transform) {
+          transform.rotation += dt;
+          game.setTransform2d(marker, transform);
+        }
       }
     },
 
