@@ -24,6 +24,40 @@ fn main() {
 }
 ```
 
+## Debugger Runtime
+
+The Rust SDK is the reference implementation of the shared debugger contract.
+Enable debugger mode before startup through `DebuggerConfig`, then let
+`goudengine-mcp` discover the route by setting `publish_local_attach = true`.
+
+```rust
+use goudengine::{Context, ContextConfig, DebuggerConfig, EngineConfig};
+
+let debugger = DebuggerConfig {
+    enabled: true,
+    publish_local_attach: true,
+    route_label: Some("rust-demo".to_string()),
+};
+
+let _engine = EngineConfig::new()
+    .with_title("Rust Debugger Demo")
+    .with_debugger(debugger.clone());
+
+let context = Context::create_with_config(ContextConfig { debugger });
+assert!(Context::is_valid(context));
+Context::destroy(context);
+```
+
+Typical local workflow:
+
+1. Start the app with debugger mode enabled.
+2. Run `cargo run -p goudengine-mcp` from the repository root.
+3. Use `goudengine.list_contexts` and `goudengine.attach_context`.
+4. Inspect or control the route through snapshot, metrics, capture, replay, and pause/step tools.
+
+The Rust surface does not create a Rust-only debugger model. It talks directly to
+the same runtime contract that powers FFI, generated SDKs, and the MCP bridge.
+
 ## Flappy Bird Example
 
 A complete Flappy Bird game is included in [`examples/rust/flappy_bird/`](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/rust/flappy_bird). Run it with:
@@ -147,5 +181,6 @@ pub use goud_engine::sdk::*;
 ## Links
 
 - [Repository](https://github.com/aram-devdocs/GoudEngine)
+- [Debugger Runtime Guide](https://github.com/aram-devdocs/GoudEngine/blob/main/docs/src/guides/debugger-runtime.md)
 - [Rust Examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/rust)
 - [License: MIT](https://github.com/aram-devdocs/GoudEngine/blob/main/LICENSE)

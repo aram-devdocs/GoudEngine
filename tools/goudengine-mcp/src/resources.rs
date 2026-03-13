@@ -15,6 +15,11 @@ use crate::discovery::{
 
 pub const SDK_KNOWLEDGE_URI: &str = "goudengine://knowledge/sdk-contract";
 pub const MCP_WORKFLOW_URI: &str = "goudengine://knowledge/mcp-workflow";
+pub const RUST_SDK_KNOWLEDGE_URI: &str = "goudengine://knowledge/sdk-rust";
+pub const CSHARP_SDK_KNOWLEDGE_URI: &str = "goudengine://knowledge/sdk-csharp";
+pub const PYTHON_SDK_KNOWLEDGE_URI: &str = "goudengine://knowledge/sdk-python";
+pub const TYPESCRIPT_DESKTOP_SDK_KNOWLEDGE_URI: &str =
+    "goudengine://knowledge/sdk-typescript-desktop";
 
 const SDK_KNOWLEDGE_TEXT: &str = r#"# GoudEngine Debugger Contract
 
@@ -38,19 +43,98 @@ Typical flow:
 The bridge stays out of the game process. It only translates MCP requests into local debugger attach requests.
 "#;
 
+const RUST_SDK_KNOWLEDGE_TEXT: &str = r#"# Rust SDK Debugger Flow
+
+- Use `DebuggerConfig` as the single debugger enablement model.
+- Windowed flows enable debugger mode through `GameConfig` or `EngineConfig::with_debugger(...)`.
+- Headless flows enable debugger mode through `ContextConfig` and `Context::create_with_config(...)`.
+- Set `publish_local_attach = true` when the route should be discoverable by `goudengine-mcp`.
+- Keep Rust as the reference implementation of the shared contract. Do not invent Rust-only debugger semantics.
+"#;
+
+const CSHARP_SDK_KNOWLEDGE_TEXT: &str = r#"# C# SDK Debugger Flow
+
+- Use `DebuggerConfig` and `ContextConfig` from the generated C# surface.
+- Enable debugger mode before startup through `EngineConfig.SetDebugger(...)` or `new GoudContext(new ContextConfig(...))`.
+- Keep the managed layer thin: debugger state, snapshot, replay, capture, and metrics remain Rust-owned.
+- Use the same local `goudengine-mcp` attach workflow as every other native desktop SDK.
+"#;
+
+const PYTHON_SDK_KNOWLEDGE_TEXT: &str = r#"# Python SDK Debugger Flow
+
+- Use `DebuggerConfig` and `ContextConfig` from the Python package.
+- Enable debugger mode before startup with `GoudContext(ContextConfig(...))`.
+- Set `publish_local_attach=True` when the route should be discoverable.
+- The Python helpers parse raw JSON but do not define a Python-only debugger protocol.
+- Use the same local `goudengine-mcp` attach workflow as the other desktop SDKs.
+"#;
+
+const TYPESCRIPT_DESKTOP_SDK_KNOWLEDGE_TEXT: &str = r#"# TypeScript Desktop Debugger Flow
+
+- This pack applies to the desktop Node/N-API target only.
+- Enable debugger mode through the shared config object passed to `GoudContext` or `EngineConfig`.
+- Use `publishLocalAttach: true` when the route should be discoverable by `goudengine-mcp`.
+- The desktop TypeScript surface stays aligned with the Rust-owned contract.
+- Browser/WASM debugger attach is explicitly unsupported in this batch.
+"#;
+
+struct StaticResourceDef {
+    uri: &'static str,
+    name: &'static str,
+    description: &'static str,
+    text: &'static str,
+}
+
+const STATIC_RESOURCE_DEFS: &[StaticResourceDef] = &[
+    StaticResourceDef {
+        uri: SDK_KNOWLEDGE_URI,
+        name: "goudengine-sdk-contract",
+        description: "Debugger runtime contract and shared SDK scope notes.",
+        text: SDK_KNOWLEDGE_TEXT,
+    },
+    StaticResourceDef {
+        uri: MCP_WORKFLOW_URI,
+        name: "goudengine-mcp-workflow",
+        description: "Bridge-first workflow for discovery, attach, and artifact reads.",
+        text: MCP_WORKFLOW_TEXT,
+    },
+    StaticResourceDef {
+        uri: RUST_SDK_KNOWLEDGE_URI,
+        name: "goudengine-sdk-rust",
+        description: "Rust SDK debugger enablement and attach guidance.",
+        text: RUST_SDK_KNOWLEDGE_TEXT,
+    },
+    StaticResourceDef {
+        uri: CSHARP_SDK_KNOWLEDGE_URI,
+        name: "goudengine-sdk-csharp",
+        description: "C# SDK debugger enablement and attach guidance.",
+        text: CSHARP_SDK_KNOWLEDGE_TEXT,
+    },
+    StaticResourceDef {
+        uri: PYTHON_SDK_KNOWLEDGE_URI,
+        name: "goudengine-sdk-python",
+        description: "Python SDK debugger enablement and attach guidance.",
+        text: PYTHON_SDK_KNOWLEDGE_TEXT,
+    },
+    StaticResourceDef {
+        uri: TYPESCRIPT_DESKTOP_SDK_KNOWLEDGE_URI,
+        name: "goudengine-sdk-typescript-desktop",
+        description: "TypeScript desktop debugger enablement and browser/WASM scope notes.",
+        text: TYPESCRIPT_DESKTOP_SDK_KNOWLEDGE_TEXT,
+    },
+];
+
 pub fn static_resources() -> Vec<Resource> {
-    vec![
-        RawResource::new(SDK_KNOWLEDGE_URI, "goudengine-sdk-contract")
-            .with_description("Debugger runtime contract and SDK scope notes.")
-            .with_mime_type("text/markdown")
-            .with_size(SDK_KNOWLEDGE_TEXT.len() as u32)
-            .no_annotation(),
-        RawResource::new(MCP_WORKFLOW_URI, "goudengine-mcp-workflow")
-            .with_description("Bridge-first workflow for discovery, attach, and artifact reads.")
-            .with_mime_type("text/markdown")
-            .with_size(MCP_WORKFLOW_TEXT.len() as u32)
-            .no_annotation(),
-    ]
+    STATIC_RESOURCE_DEFS
+        .iter()
+        .map(|resource| {
+            RawResource::new(resource.uri, resource.name)
+                .with_description(resource.description)
+                .with_mime_type("text/markdown")
+                .with_size(resource.text.len() as u32)
+                .no_annotation()
+        })
+        .collect()
 }
 
 pub fn resource_templates() -> Vec<ResourceTemplate> {
@@ -88,12 +172,18 @@ pub fn add_resource_uri(kind: ArtifactKind, value: &mut serde_json::Value) {
 
 pub fn read_resource(uri: &str, runtime_root: &Path) -> Result<Vec<ResourceContents>> {
     match uri {
-        SDK_KNOWLEDGE_URI => Ok(vec![
-            ResourceContents::text(SDK_KNOWLEDGE_TEXT, uri).with_mime_type("text/markdown")
-        ]),
-        MCP_WORKFLOW_URI => Ok(vec![
-            ResourceContents::text(MCP_WORKFLOW_TEXT, uri).with_mime_type("text/markdown")
-        ]),
+        _ if STATIC_RESOURCE_DEFS
+            .iter()
+            .any(|resource| resource.uri == uri) =>
+        {
+            let resource = STATIC_RESOURCE_DEFS
+                .iter()
+                .find(|resource| resource.uri == uri)
+                .expect("static resource lookup should match");
+            Ok(vec![
+                ResourceContents::text(resource.text, uri).with_mime_type("text/markdown")
+            ])
+        }
         _ => {
             if let Some(artifact_id) = artifact_id_from_uri(uri, ArtifactKind::Capture) {
                 return read_capture_resource(uri, runtime_root, &artifact_id);

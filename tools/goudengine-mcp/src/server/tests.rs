@@ -14,6 +14,7 @@ use goud_engine::core::debugger::{
 use interprocess::local_socket::GenericNamespaced;
 use interprocess::local_socket::{prelude::*, GenericFilePath, ListenerOptions, Stream};
 use rmcp::handler::server::wrapper::{Json, Parameters};
+use rmcp::ServerHandler;
 use serde_json::{json, Value};
 use tempfile::TempDir;
 
@@ -25,6 +26,7 @@ use super::{
     GoudEngineMcpServer,
 };
 use crate::discovery;
+use crate::prompts;
 use crate::resources;
 
 static TEST_SOCKET_SEQUENCE: AtomicU64 = AtomicU64::new(1);
@@ -282,6 +284,68 @@ fn discovery_and_knowledge_resources_work() {
         resources::read_resource(resources::MCP_WORKFLOW_URI, harness.runtime_root.path())
             .expect("workflow knowledge should load");
     assert_eq!(workflow_resource.len(), 1);
+
+    let rust_resource = resources::read_resource(
+        resources::RUST_SDK_KNOWLEDGE_URI,
+        harness.runtime_root.path(),
+    )
+    .expect("rust sdk knowledge should load");
+    assert_eq!(rust_resource.len(), 1);
+
+    let csharp_resource = resources::read_resource(
+        resources::CSHARP_SDK_KNOWLEDGE_URI,
+        harness.runtime_root.path(),
+    )
+    .expect("csharp sdk knowledge should load");
+    assert_eq!(csharp_resource.len(), 1);
+
+    let python_resource = resources::read_resource(
+        resources::PYTHON_SDK_KNOWLEDGE_URI,
+        harness.runtime_root.path(),
+    )
+    .expect("python sdk knowledge should load");
+    assert_eq!(python_resource.len(), 1);
+
+    let typescript_resource = resources::read_resource(
+        resources::TYPESCRIPT_DESKTOP_SDK_KNOWLEDGE_URI,
+        harness.runtime_root.path(),
+    )
+    .expect("typescript sdk knowledge should load");
+    assert_eq!(typescript_resource.len(), 1);
+}
+
+#[tokio::test]
+async fn prompt_listing_and_lookup_work() {
+    let server = GoudEngineMcpServer::new();
+    let info = server.get_info();
+    assert!(info.capabilities.prompts.is_some());
+
+    let listed = prompts::static_prompts();
+    assert_eq!(listed.len(), 3);
+    assert_eq!(listed[0].name, prompts::SAFE_ATTACH_PROMPT);
+    assert_eq!(listed[1].name, prompts::INSPECT_RUNTIME_PROMPT);
+    assert_eq!(listed[2].name, prompts::TROUBLESHOOT_ATTACH_PROMPT);
+
+    let prompt = prompts::get_prompt_result(prompts::SAFE_ATTACH_PROMPT)
+        .expect("safe attach prompt should load");
+    assert_eq!(prompt.messages.len(), 2);
+
+    let instructions = match &prompt.messages[1].content {
+        rmcp::model::PromptMessageContent::Text { text } => text.as_str(),
+        other => panic!("expected text prompt content, got {other:?}"),
+    };
+    assert!(instructions.contains("goudengine.list_contexts"));
+    assert!(instructions.contains(resources::RUST_SDK_KNOWLEDGE_URI));
+    assert!(instructions.contains(resources::TYPESCRIPT_DESKTOP_SDK_KNOWLEDGE_URI));
+
+    let troubleshoot = prompts::get_prompt_result(prompts::TROUBLESHOOT_ATTACH_PROMPT)
+        .expect("troubleshoot prompt should exist");
+    let troubleshoot_text = match &troubleshoot.messages[1].content {
+        rmcp::model::PromptMessageContent::Text { text } => text.as_str(),
+        other => panic!("expected text prompt content, got {other:?}"),
+    };
+    assert!(troubleshoot_text.contains("publish_local_attach"));
+    assert!(troubleshoot_text.contains("goudengine/web"));
 }
 
 fn spawn_fake_attach_server(

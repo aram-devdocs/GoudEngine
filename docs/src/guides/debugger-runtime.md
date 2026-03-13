@@ -80,7 +80,7 @@ The runtime keeps 300 frames of history per route so export cost stays predictab
 
 ## MCP Bridge Workflow
 
-`goudengine-mcp` is a separate local process. It reads manifests, attaches to one route over local IPC, and exposes MCP tools plus artifact resources.
+`goudengine-mcp` is a separate local process. It reads manifests, attaches to one route over local IPC, and exposes MCP tools, prompt bundles, SDK knowledge resources, and artifact resources.
 
 Start it from the workspace root:
 
@@ -93,7 +93,18 @@ Typical workflow:
 1. Call `goudengine.list_contexts`.
 2. Call `goudengine.attach_context`.
 3. Use snapshot, control, capture, replay, and metrics tools against that route.
-4. Read stored artifacts through:
+4. Use prompt bundles such as:
+   - `goudengine.safe_attach`
+   - `goudengine.inspect_runtime`
+   - `goudengine.troubleshoot_attach`
+5. Read knowledge resources such as:
+   - `goudengine://knowledge/sdk-contract`
+   - `goudengine://knowledge/mcp-workflow`
+   - `goudengine://knowledge/sdk-rust`
+   - `goudengine://knowledge/sdk-csharp`
+   - `goudengine://knowledge/sdk-python`
+   - `goudengine://knowledge/sdk-typescript-desktop`
+6. Read stored artifacts through:
    - `goudengine://capture/{id}`
    - `goudengine://metrics/{id}`
    - `goudengine://recording/{id}`

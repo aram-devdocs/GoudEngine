@@ -6,8 +6,9 @@ use base64::Engine;
 use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::handler::server::wrapper::{Json, Parameters};
 use rmcp::model::{
-    ListResourceTemplatesResult, ListResourcesResult, ReadResourceRequestParams,
-    ReadResourceResult, ServerCapabilities, ServerInfo,
+    GetPromptRequestParams, GetPromptResult, ListPromptsResult, ListResourceTemplatesResult,
+    ListResourcesResult, PaginatedRequestParams, ReadResourceRequestParams, ReadResourceResult,
+    ServerCapabilities, ServerInfo,
 };
 use rmcp::ErrorData as McpError;
 use rmcp::{tool, tool_handler, tool_router, ServerHandler};
@@ -15,6 +16,7 @@ use serde_json::{json, Value};
 
 use crate::attach_client::{AttachClient, AttachError, AttachedRoute};
 use crate::discovery::{self, ArtifactKind, DiscoveredContext};
+use crate::prompts;
 use crate::resources;
 
 mod types;
@@ -364,10 +366,33 @@ impl ServerHandler for GoudEngineMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo::new(
             ServerCapabilities::builder()
+                .enable_prompts()
                 .enable_tools()
                 .enable_resources()
                 .build(),
         )
+    }
+
+    async fn get_prompt(
+        &self,
+        request: GetPromptRequestParams,
+        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<GetPromptResult, McpError> {
+        prompts::get_prompt_result(&request.name).ok_or_else(|| {
+            McpError::invalid_request(format!("unknown prompt: {}", request.name), None)
+        })
+    }
+
+    async fn list_prompts(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<ListPromptsResult, McpError> {
+        Ok(ListPromptsResult {
+            prompts: prompts::static_prompts(),
+            next_cursor: None,
+            meta: None,
+        })
     }
 
     async fn list_resources(
