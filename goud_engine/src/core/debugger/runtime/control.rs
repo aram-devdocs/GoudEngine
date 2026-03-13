@@ -295,6 +295,64 @@ pub fn dispatch_request_json_for_route(
             serde_json::to_value(entities).unwrap_or_default(),
         ));
     }
+    if verb == "start_diagnostics_recording" {
+        let duration_seconds = request
+            .get("duration_seconds")
+            .and_then(Value::as_f64)
+            .unwrap_or(0.0) as f32;
+        let max_frames = request
+            .get("max_frames")
+            .and_then(Value::as_u64)
+            .unwrap_or(3600) as usize;
+        let result = super::state::with_route_state_mut(route_id, |route| {
+            let recording_id =
+                super::metrics::start_diagnostics_recording(route, duration_seconds, max_frames);
+            let status = super::metrics::diagnostics_recording_status(route);
+            json!({ "recording_id": recording_id, "status": status })
+        });
+        return Ok(ok_response(
+            &request,
+            result.unwrap_or_else(|| json!({ "error": "route not found" })),
+        ));
+    }
+    if verb == "stop_diagnostics_recording" {
+        let result = super::state::with_route_state_mut(route_id, |route| {
+            let recording_id = super::metrics::stop_diagnostics_recording(route);
+            let frame_count = route.diagnostics_recording.frames.len();
+            json!({ "recording_id": recording_id, "frame_count": frame_count })
+        });
+        return Ok(ok_response(
+            &request,
+            result.unwrap_or_else(|| json!({ "error": "route not found" })),
+        ));
+    }
+    if verb == "get_diagnostics_recording" {
+        let slice_count = request
+            .get("slice_count")
+            .and_then(Value::as_u64)
+            .unwrap_or(100)
+            .clamp(1, 1000) as u32;
+        let guard = lock_runtime();
+        let export = guard
+            .as_ref()
+            .and_then(|rt| rt.routes.get(&route_id.context_id))
+            .and_then(|route| {
+                super::metrics::export_diagnostics_recording_sliced(route, slice_count)
+            });
+        return Ok(match export {
+            Some(export) => ok_response(
+                &request,
+                serde_json::to_value(export).unwrap_or_default(),
+            ),
+            None => error_response(
+                &request,
+                "no_recording",
+                "no diagnostics recording data available".to_string(),
+                None,
+                None,
+            ),
+        });
+    }
     let mut should_publish_manifest = false;
 
     let response = {

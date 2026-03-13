@@ -6,7 +6,7 @@ user-invocable: true
 
 # GoudEngine Debugging
 
-Use this skill to diagnose runtime issues in a running GoudEngine game through the MCP debugger bridge. The workflow relies on the 18 MCP tools exposed by `goudengine-mcp`.
+Use this skill to diagnose runtime issues in a running GoudEngine game through the MCP debugger bridge. The workflow relies on the 20 MCP tools exposed by `goudengine-mcp`.
 
 ## When to Use
 
@@ -28,9 +28,10 @@ Follow these steps in order. Stop and investigate if any step returns an error.
 
 1. `goudengine.get_subsystem_diagnostics` with key `render` -- check `draw_calls` and `fps`.
 2. `goudengine.get_subsystem_diagnostics` with key `sprite_batch` -- check `batch_ratio` (draw calls / sprite count). A ratio close to 1.0 means batching is not working.
-3. `goudengine.get_metrics_trace` -- export the full profiler trace and look for frame time outliers.
-4. `goudengine.get_snapshot` -- check entity count. A very high entity count may indicate leaked entities.
-5. If needed, `goudengine.set_paused` to freeze the game, then `goudengine.step` frame-by-frame to isolate which frame is slow.
+3. `goudengine.record_diagnostics` with `durationSeconds: 10, sliceCount: 100` -- record 10 seconds of diagnostics and analyze FPS trends across 100 time-slices to identify drops.
+4. `goudengine.get_metrics_trace` -- export the full profiler trace and look for frame time outliers.
+5. `goudengine.get_snapshot` -- check entity count. A very high entity count may indicate leaked entities.
+6. If needed, `goudengine.set_paused` to freeze the game, then `goudengine.step` frame-by-frame to isolate which frame is slow.
 
 ### Wrong Visuals / Rendering Bugs
 
@@ -69,7 +70,7 @@ Follow these steps in order. Stop and investigate if any step returns an error.
 
 ## Tool Reference
 
-All 18 MCP tools available through the `goudengine-mcp` server:
+All 20 MCP tools available through the `goudengine-mcp` server:
 
 | Tool | Purpose |
 |------|---------|
@@ -91,6 +92,8 @@ All 18 MCP tools available through the `goudengine-mcp` server:
 | `goudengine.get_subsystem_diagnostics` | Diagnostics for one subsystem key |
 | `goudengine.get_logs` | Recent engine log entries, optionally filtered by frame |
 | `goudengine.get_scene_hierarchy` | Entity tree with parent/child relationships |
+| `goudengine.record_diagnostics` | Record diagnostics for a duration, return time-sliced aggregates |
+| `goudengine.get_diagnostics_recording` | Retrieve previously recorded diagnostics as time-sliced data |
 
 ## Prerequisites
 

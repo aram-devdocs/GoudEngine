@@ -194,6 +194,10 @@ pub fn end_frame(route_id: &RuntimeRouteId) {
             route.snapshot.memory_summary.total_current_bytes;
         route.snapshot.stats.memory.peak_bytes = route.snapshot.memory_summary.total_peak_bytes;
         record_metrics_frame(route);
+        // Diagnostics recording capture (runs after snapshot is fully updated)
+        if route.diagnostics_recording.active {
+            metrics::record_diagnostics_frame(route);
+        }
     });
 }
 

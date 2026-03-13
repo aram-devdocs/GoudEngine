@@ -77,6 +77,22 @@ pub(super) struct GetLogsParams {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
+pub(super) struct RecordDiagnosticsParams {
+    /// Duration in seconds to record. 0 means manual stop.
+    pub(super) duration_seconds: f32,
+    /// Number of time-slices to return in the export.
+    pub(super) slice_count: u32,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct GetDiagnosticsRecordingParams {
+    /// Number of time-slices to aggregate frames into.
+    pub(super) slice_count: u32,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub(super) struct StartReplayParams {
     pub(super) artifact_id: Option<String>,
     pub(super) resource_uri: Option<String>,

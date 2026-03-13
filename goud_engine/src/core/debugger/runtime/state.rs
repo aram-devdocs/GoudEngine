@@ -163,6 +163,7 @@ pub(super) struct RouteState {
     pub(super) control: RouteControlState,
     pub(super) replay: RouteReplayState,
     pub(super) metrics: RouteMetricsState,
+    pub(super) diagnostics_recording: super::metrics::RouteDiagnosticsRecordingState,
     pub(super) attached_clients: u32,
 }
 
@@ -388,6 +389,7 @@ pub(super) fn initialize_route_state(
         control: RouteControlState::new(),
         replay: RouteReplayState::default(),
         metrics: RouteMetricsState::default(),
+        diagnostics_recording: Default::default(),
         attached_clients: 0,
     };
     sync_debugger_state(&mut route);

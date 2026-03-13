@@ -310,3 +310,30 @@ async fn test_get_scene_hierarchy_returns_entities() {
         "entities should have child_entity_ids field"
     );
 }
+
+// =========================================================================
+// Focused tests for diagnostics recording tools
+// =========================================================================
+
+#[tokio::test]
+async fn test_get_diagnostics_recording_returns_slices() {
+    let harness = TestHarness::new();
+    let server = harness.server();
+    let _ = support::attach_context(
+        &server,
+        harness.route.context_id,
+        harness.route.process_nonce,
+    )
+    .await;
+
+    let recording = support::get_diagnostics_recording(&server, 10).await;
+    assert_eq!(recording["version"], 1);
+    assert_eq!(recording["recording_id"], "diag-rec-54-100");
+    assert_eq!(recording["total_frames"], 60);
+    let slices = recording["slices"]
+        .as_array()
+        .expect("slices should be an array");
+    assert_eq!(slices.len(), 10);
+    assert_eq!(slices[0]["slice_index"], 0);
+    assert_eq!(slices[0]["frame_count"], 6);
+}

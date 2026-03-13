@@ -6,7 +6,7 @@ MCP (Model Context Protocol) server that bridges AI agent tool calls to a runnin
 
 `goudengine-mcp` is a stdio-based MCP server. It discovers local GoudEngine processes that have published debugger manifests, attaches to one route-scoped context, and translates MCP tool calls into debugger protocol requests. The server runs entirely outside the game process and never modifies game state except through explicit control-plane tools.
 
-The server exposes 18 tools, 6 static knowledge resources, 3 artifact resource templates, and 3 guided prompts.
+The server exposes 20 tools, 6 static knowledge resources, 3 artifact resource templates, and 3 guided prompts.
 
 ## Building
 
@@ -234,6 +234,25 @@ Return entities with parent/child relationships for the attached route.
 
 - **Parameters**: none
 - **Returns**: hierarchical entity tree
+
+### Diagnostics Timeline
+
+#### `goudengine.record_diagnostics`
+
+Record diagnostics for a specified duration then return time-sliced aggregated results. Blocks until recording completes.
+
+- **Parameters**:
+  - `durationSeconds` (f32, required) -- how many seconds to record (must be positive)
+  - `sliceCount` (u32, required) -- number of time-slices to aggregate frames into
+- **Returns**: sliced export with per-slice averages for render stats, FPS, and provider diagnostics
+
+#### `goudengine.get_diagnostics_recording`
+
+Retrieve a previously recorded diagnostics session as time-sliced aggregated data. Use after manual start/stop workflow via IPC.
+
+- **Parameters**:
+  - `sliceCount` (u32, required) -- number of time-slices to aggregate frames into (clamped 1-1000)
+- **Returns**: sliced export with frame ranges, time ranges, averages, and provider diagnostics per slice
 
 ## Resources
 

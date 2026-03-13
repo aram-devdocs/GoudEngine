@@ -22,9 +22,10 @@ use crate::resources;
 mod types;
 
 use self::types::{
-    structured_response, AttachContextParams, BridgeResponse, GetLogsParams,
-    GetSubsystemDiagnosticsParams, InjectInputParams, InspectEntityParams, McpDebuggerStepKind,
-    SetPausedParams, SetTimeScaleParams, StartReplayParams, StepParams,
+    structured_response, AttachContextParams, BridgeResponse, GetDiagnosticsRecordingParams,
+    GetLogsParams, GetSubsystemDiagnosticsParams, InjectInputParams, InspectEntityParams,
+    McpDebuggerStepKind, RecordDiagnosticsParams, SetPausedParams, SetTimeScaleParams,
+    StartReplayParams, StepParams,
 };
 
 struct BridgeState {
@@ -403,6 +404,60 @@ impl GoudEngineMcpServer {
     )]
     pub async fn get_scene_hierarchy(&self) -> Result<Json<BridgeResponse>, McpError> {
         structured_response(self.request_attached(json!({ "verb": "get_scene_hierarchy" }))?)
+    }
+
+    #[tool(
+        name = "goudengine.record_diagnostics",
+        description = "Record diagnostics for a specified duration then return time-sliced aggregated results. Blocks until recording completes."
+    )]
+    pub async fn record_diagnostics(
+        &self,
+        Parameters(params): Parameters<RecordDiagnosticsParams>,
+    ) -> Result<Json<BridgeResponse>, McpError> {
+        // Start recording
+        let start_result = self.request_attached(json!({
+            "verb": "start_diagnostics_recording",
+            "duration_seconds": params.duration_seconds,
+        }))?;
+
+        // Wait for the recording duration
+        let duration = if params.duration_seconds > 0.0 {
+            params.duration_seconds
+        } else {
+            return Err(McpError::invalid_request(
+                "record_diagnostics requires a positive duration_seconds",
+                None,
+            ));
+        };
+        tokio::time::sleep(std::time::Duration::from_secs_f32(duration + 0.1)).await;
+
+        // Stop recording
+        let _ = self.request_attached(json!({ "verb": "stop_diagnostics_recording" }))?;
+
+        // Get the sliced export
+        let export = self.request_attached(json!({
+            "verb": "get_diagnostics_recording",
+            "slice_count": params.slice_count,
+        }))?;
+
+        structured_response(json!({
+            "start": start_result,
+            "export": export,
+        }))
+    }
+
+    #[tool(
+        name = "goudengine.get_diagnostics_recording",
+        description = "Retrieve a previously recorded diagnostics session as time-sliced aggregated data. Use after manual start/stop workflow."
+    )]
+    pub async fn get_diagnostics_recording(
+        &self,
+        Parameters(params): Parameters<GetDiagnosticsRecordingParams>,
+    ) -> Result<Json<BridgeResponse>, McpError> {
+        structured_response(self.request_attached(json!({
+            "verb": "get_diagnostics_recording",
+            "slice_count": params.slice_count,
+        }))?)
     }
 }
 

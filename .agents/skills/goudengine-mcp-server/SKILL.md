@@ -115,7 +115,7 @@ Equivalent configuration exists for C#, Python, and TypeScript desktop SDKs. Set
 | 13 | `goudengine.start_replay` | `artifactId` (string, optional), `resourceUri` (string, optional), `dataBase64` (string, optional) | Start replay from a stored recording artifact, a resource URI, or raw base64 data. Exactly one source must be provided. |
 | 14 | `goudengine.stop_replay` | none | Stop an active replay on the attached route. |
 
-### Diagnostics (Phase 6)
+### Diagnostics
 
 | # | Tool | Parameters | Description |
 |---|------|-----------|-------------|
@@ -123,6 +123,13 @@ Equivalent configuration exists for C#, Python, and TypeScript desktop SDKs. Set
 | 16 | `goudengine.get_subsystem_diagnostics` | `key` (string) | Return diagnostics for a single subsystem. Known keys: `render`, `physics_2d`, `audio`, `input`, `sprite_batch`, `assets`, `window`. |
 | 17 | `goudengine.get_logs` | `sinceFrame` (u64, optional) | Return recent engine log entries. When `sinceFrame` is provided, only entries from that frame onward are returned. |
 | 18 | `goudengine.get_scene_hierarchy` | none | Return entities with parent/child relationships for the attached route. |
+
+### Diagnostics Timeline
+
+| # | Tool | Parameters | Description |
+|---|------|-----------|-------------|
+| 19 | `goudengine.record_diagnostics` | `durationSeconds` (f32), `sliceCount` (u32) | Record diagnostics for a duration then return time-sliced aggregated results. Blocks until recording completes. |
+| 20 | `goudengine.get_diagnostics_recording` | `sliceCount` (u32) | Retrieve a previously recorded diagnostics session as time-sliced aggregated data. |
 
 ### Resources
 
