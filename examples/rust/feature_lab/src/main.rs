@@ -27,7 +27,20 @@ fn record(results: &mut Vec<CheckResult>, name: &'static str, passed: bool) {
 
 fn main() {
     let mut results = Vec::new();
-    run_debugger_runtime_checks(&mut results);
+    let debugger_context = Context::create_with_config(ContextConfig {
+        debugger: debugger_config(),
+    });
+    record(
+        &mut results,
+        "headless debugger context creates successfully",
+        Context::is_valid(debugger_context),
+    );
+    let debugger_context = if Context::is_valid(debugger_context) {
+        print_manual_attach_workflow();
+        Some(debugger_context)
+    } else {
+        None
+    };
 
     let config = GameConfig::new("Rust Feature Lab", 1280, 720)
         .with_target_fps(120)
@@ -36,6 +49,13 @@ fn main() {
     let mut game = GoudGame::new(config).expect("failed to create headless game");
 
     run_feature_surface_checks(&mut game, &mut results);
+    if let Some(context_id) = debugger_context {
+        record(
+            &mut results,
+            "debugger context destroys cleanly",
+            Context::destroy(context_id) && !Context::is_valid(context_id),
+        );
+    }
 
     let pass_count = results.iter().filter(|result| result.passed).count();
     let fail_count = results.len() - pass_count;
@@ -57,27 +77,6 @@ fn debugger_config() -> DebuggerConfig {
         publish_local_attach: true,
         route_label: Some(DEBUGGER_ROUTE_LABEL.to_string()),
     }
-}
-
-fn run_debugger_runtime_checks(results: &mut Vec<CheckResult>) {
-    let context_id = Context::create_with_config(ContextConfig {
-        debugger: debugger_config(),
-    });
-    record(
-        results,
-        "headless debugger context creates successfully",
-        Context::is_valid(context_id),
-    );
-    if !Context::is_valid(context_id) {
-        return;
-    }
-
-    print_manual_attach_workflow();
-    record(
-        results,
-        "debugger context destroys cleanly",
-        Context::destroy(context_id) && !Context::is_valid(context_id),
-    );
 }
 
 fn print_manual_attach_workflow() {
