@@ -107,6 +107,10 @@ Attach workflow:
 The runtime stays Rust-owned. SDK helpers and MCP clients only forward requests
 through the shared local contract.
 
+For a ready-made headless route, run `cargo run -p feature-lab`. The example
+publishes `feature-lab-rust-headless`, enables the shared debugger config path,
+and prints the same three manual attach steps before its smoke results.
+
 ---
 
 ## Drawing a Sprite

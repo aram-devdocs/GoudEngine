@@ -22,7 +22,13 @@ probes wrapper APIs beyond Flappy Bird:
 - Scene wrapper calls (`loadScene`, `setActiveScene`, `unloadScene`)
 - Desktop-only UI wrapper usage (`UiManager`)
 - Networking wrapper access (`NetworkManager`)
+- Desktop debugger enablement with a stable local attach route label
 - Browser networking smoke coverage via `npm run smoke:web-network`
+
+The desktop entry now publishes `feature-lab-typescript-desktop`, confirms
+manifest and snapshot access through the shipped debugger APIs, and prints the
+manual `goudengine-mcp` attach workflow. The web entry stays browser-only and
+does not publish a debugger route in this batch.
 
 ### Sandbox (`sandbox/`)
 

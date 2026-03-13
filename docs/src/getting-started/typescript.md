@@ -83,32 +83,22 @@ Networking note:
 
 ## Debugger Runtime (Desktop Only)
 
-Use `GoudContext` config to opt into the shared debugger runtime before startup, then read the raw JSON or parse it with the built-in helper:
+For this rollout, the shipped TypeScript desktop reference path is the Feature
+Lab example:
 
-```typescript
-import {
-  GoudContext,
-  parseDebuggerSnapshot,
-} from "goudengine/node";
-
-const ctx = new GoudContext({
-  debugger: {
-    enabled: true,
-    publishLocalAttach: true,
-    routeLabel: "getting-started",
-  },
-});
-
-ctx.setDebuggerProfilingEnabled(true);
-
-const snapshot = parseDebuggerSnapshot(ctx);
-const manifestJson = ctx.getDebuggerManifestJson();
-const memory = ctx.getMemorySummary();
-
-ctx.setDebuggerSelectedEntity(42);
-ctx.clearDebuggerSelectedEntity();
-ctx.destroy();
+```bash
+./dev.sh --sdk typescript --game feature_lab
 ```
+
+That example publishes `feature-lab-typescript-desktop`, confirms manifest and
+snapshot access, and prints the manual attach steps:
+
+1. start `cargo run -p goudengine-mcp`
+2. call `goudengine.list_contexts`
+3. call `goudengine.attach_context`
+
+The web entry `feature_lab_web` stays outside the debugger rollout in this
+batch.
 
 ---
 

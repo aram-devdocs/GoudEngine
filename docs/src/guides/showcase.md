@@ -33,15 +33,15 @@ Sandbox is the shared cross-language app for the broader Alpha-001 feature surfa
 
 ## Feature Lab smoke coverage
 
-Feature Lab stays in the repo as a supplemental smoke harness for wrapper and provider coverage.
+Feature Lab stays in the repo as a supplemental smoke harness for wrapper and provider coverage, debugger enablement, and local attach workflow coverage.
 
 | Example | SDK | Target | Path | Run command | Description | Media | Source |
 |---|---|---|---|---|---|---|---|
-| Feature Lab | C# | Headless | `examples/csharp/feature_lab` | `./dev.sh --game feature_lab` | Headless smoke for ECS and provider wrappers. | ![Feature Lab C# headless preview](../generated/showcase/feature-lab-csharp-headless.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/csharp/feature_lab) |
-| Feature Lab | Python | Headless | `examples/python/feature_lab.py` | `python3 examples/python/feature_lab.py` | Headless smoke for generated wrappers. | ![Feature Lab Python headless preview](../generated/showcase/feature-lab-python-headless.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/blob/main/examples/python/feature_lab.py) |
-| Feature Lab | TypeScript | Desktop | `examples/typescript/feature_lab/desktop.ts` | `./dev.sh --sdk typescript --game feature_lab` | Desktop smoke for SDK capability probes. | ![Feature Lab TypeScript desktop preview](../generated/showcase/feature-lab-typescript-desktop.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/blob/main/examples/typescript/feature_lab/desktop.ts) |
-| Feature Lab | TypeScript | Web | `examples/typescript/feature_lab/web` | `./dev.sh --sdk typescript --game feature_lab_web` | Web smoke with browser/WASM coverage. | ![Feature Lab TypeScript web preview](../generated/showcase/feature-lab-typescript-web.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/typescript/feature_lab/web) |
-| Feature Lab | Rust | Headless | `examples/rust/feature_lab` | `cargo run -p feature-lab` | Native Rust smoke for SDK coverage. | ![Feature Lab Rust headless preview](../generated/showcase/feature-lab-rust-headless.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/rust/feature_lab) |
+| Feature Lab | C# | Headless | `examples/csharp/feature_lab` | `./dev.sh --game feature_lab` | Headless smoke for ECS and provider wrappers with debugger mode enabled and stable local attach coverage. | ![Feature Lab C# headless preview](../generated/showcase/feature-lab-csharp-headless.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/csharp/feature_lab) |
+| Feature Lab | Python | Headless | `examples/python/feature_lab.py` | `python3 examples/python/feature_lab.py` | Headless smoke for generated wrappers with debugger mode enabled and stable local attach coverage. | ![Feature Lab Python headless preview](../generated/showcase/feature-lab-python-headless.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/blob/main/examples/python/feature_lab.py) |
+| Feature Lab | TypeScript | Desktop | `examples/typescript/feature_lab/desktop.ts` | `./dev.sh --sdk typescript --game feature_lab` | Desktop smoke for SDK capability probes plus debugger manifest, snapshot, and local attach coverage. | ![Feature Lab TypeScript desktop preview](../generated/showcase/feature-lab-typescript-desktop.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/blob/main/examples/typescript/feature_lab/desktop.ts) |
+| Feature Lab | TypeScript | Web | `examples/typescript/feature_lab/web` | `./dev.sh --sdk typescript --game feature_lab_web` | Web smoke with browser/WASM coverage. Debugger attach remains desktop-only in this batch. | ![Feature Lab TypeScript web preview](../generated/showcase/feature-lab-typescript-web.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/typescript/feature_lab/web) |
+| Feature Lab | Rust | Headless | `examples/rust/feature_lab` | `cargo run -p feature-lab` | Native Rust headless smoke for SDK coverage with debugger enablement and stable local attach coverage. | ![Feature Lab Rust headless preview](../generated/showcase/feature-lab-rust-headless.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/rust/feature_lab) |
 
 ## C# specialization demos
 

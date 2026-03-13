@@ -43,6 +43,28 @@ This repository includes configuration for AI coding assistants (Claude Code, Co
 | `GEMINI.md` | Symlink to `AGENTS.md` (Gemini compatibility) |
 | `.cursorignore` | Excludes build artifacts from Cursor indexing |
 
+## Local Debugger Attach
+
+The shipped local attach flow is debugger-runtime-first. Enable debugger mode in
+the app process, then let your assistant attach through `goudengine-mcp`.
+
+The fastest repo-owned validation paths are the Feature Lab examples:
+
+- C# headless: `./dev.sh --game feature_lab`
+- Python headless: `python3 examples/python/feature_lab.py`
+- Rust headless: `cargo run -p feature-lab`
+- TypeScript desktop: `./dev.sh --sdk typescript --game feature_lab`
+
+Those examples now enable debugger mode with stable route labels and print the
+manual attach steps. The SDKs that already expose raw manifest/snapshot helpers
+also exercise those paths directly:
+
+1. start `cargo run -p goudengine-mcp`
+2. call `goudengine.list_contexts`
+3. call `goudengine.attach_context`
+
+TypeScript web remains out of scope for debugger attach in this batch.
+
 ## Distributed AGENTS.md
 
 Each subdirectory with non-trivial logic has its own `AGENTS.md` providing module-specific context to agents working in that area. A `CLAUDE.md` symlink exists alongside each for Claude Code compatibility. Key locations:

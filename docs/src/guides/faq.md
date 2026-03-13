@@ -89,6 +89,30 @@ Verification:
 
 ## Runtime issues
 
+### [Runtime] `goudengine.list_contexts` returns no attachable routes
+
+Symptoms:
+
+- `cargo run -p goudengine-mcp` starts, but `goudengine.list_contexts` returns an empty list.
+
+Cause:
+
+- The target process was started without debugger mode enabled, or you launched a browser/WASM target that does not publish debugger routes in this batch.
+
+Fix:
+
+1. Start a desktop or headless process with debugger mode enabled before creation.
+2. Use one of the shipped Feature Lab examples if you want a known-good route:
+   - `./dev.sh --game feature_lab`
+   - `python3 examples/python/feature_lab.py`
+   - `cargo run -p feature-lab`
+   - `./dev.sh --sdk typescript --game feature_lab`
+3. Re-run `cargo run -p goudengine-mcp`, then call `goudengine.list_contexts` and `goudengine.attach_context`.
+
+Verification:
+
+- `goudengine.list_contexts` shows one of the stable Feature Lab labels such as `feature-lab-csharp-headless`, `feature-lab-python-headless`, `feature-lab-rust-headless`, or `feature-lab-typescript-desktop`.
+
 ### [Runtime] Python bindings fail with symbol/load errors
 
 Symptoms:

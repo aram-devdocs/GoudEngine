@@ -14,14 +14,12 @@ Run it from the repository root. The process prints PASS/FAIL lines for each exe
 
 ## Debugger Note
 
-`feature-lab` is the reference headless Rust example for exercising SDK surfaces
-without a window. It does not enable debugger mode automatically, but the intended
-Rust attach path is the same one used by the rest of the public rollout:
+`feature-lab` now auto-enables debugger mode for one headless route labeled
+`feature-lab-rust-headless`, then prints the manual attach flow:
 
-- build a `DebuggerConfig` with `enabled: true` and `publish_local_attach: true`
-- pass it through `ContextConfig` for headless flows
-- start `cargo run -p goudengine-mcp`
-- attach with `goudengine.list_contexts` and `goudengine.attach_context`
+1. start `cargo run -p goudengine-mcp`
+2. call `goudengine.list_contexts`
+3. call `goudengine.attach_context`
 
-Use the Rust getting-started guide and debugger runtime guide for the full config
-and inspection workflow.
+Use the Rust getting-started guide and debugger runtime guide for the full
+desktop/headless config variants and the rest of the inspection workflow.
