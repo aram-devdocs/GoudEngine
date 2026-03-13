@@ -29,6 +29,7 @@ mod ui;
 mod tests;
 
 pub use collision::WasmContact;
+pub(self) use lifecycle::WasmFontAtlas;
 pub use texture_loader::{fetch_bytes, load_texture_from_url};
 pub use types::{WasmRenderStats, WasmSprite, WasmTransform2D};
 pub use ui::{WasmUiEvent, WasmUiManager};
