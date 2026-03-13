@@ -11,12 +11,22 @@ impl TextBatch {
     /// old buffer is destroyed and a new, correctly sized one is created.
     pub(super) fn upload_buffers(&mut self, backend: &mut dyn RenderBackend) -> Result<(), String> {
         let vert_bytes = vertex_slice_as_bytes(&self.vertices);
-        self.vertex_buffer =
-            Some(upload_or_grow(backend, self.vertex_buffer, BufferType::Vertex, vert_bytes, "VBO")?);
+        self.vertex_buffer = Some(upload_or_grow(
+            backend,
+            self.vertex_buffer,
+            BufferType::Vertex,
+            vert_bytes,
+            "VBO",
+        )?);
 
         let idx_bytes = index_slice_as_bytes(&self.indices);
-        self.index_buffer =
-            Some(upload_or_grow(backend, self.index_buffer, BufferType::Index, idx_bytes, "IBO")?);
+        self.index_buffer = Some(upload_or_grow(
+            backend,
+            self.index_buffer,
+            BufferType::Index,
+            idx_bytes,
+            "IBO",
+        )?);
 
         Ok(())
     }

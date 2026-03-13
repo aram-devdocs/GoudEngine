@@ -35,7 +35,8 @@ where
     }
 }
 
-// SAFETY: QuerySystemParamState is Send + Sync if the underlying states are
+// SAFETY: QuerySystemParamState is Send if the underlying query and filter states are Send.
+// The struct contains only those states and no thread-local or non-Send data of its own.
 unsafe impl<Q: WorldQuery, F: WorldQuery> Send for QuerySystemParamState<Q, F>
 where
     Q::State: Send,
@@ -43,6 +44,8 @@ where
 {
 }
 
+// SAFETY: QuerySystemParamState is Sync if the underlying query and filter states are Sync.
+// The struct contains only those states and no interior mutability of its own.
 unsafe impl<Q: WorldQuery, F: WorldQuery> Sync for QuerySystemParamState<Q, F>
 where
     Q::State: Sync,

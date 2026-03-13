@@ -42,7 +42,7 @@ use `--lang cython` for that.
 
 See `cbindgen --help` for more options.
 
-[Get a template cbindgen.toml here.](template.toml)
+[Get a template cbindgen.toml here.](https://github.com/mozilla/cbindgen/blob/master/template.toml)
 
 
 
@@ -121,7 +121,7 @@ If a type is determined to have a guaranteed layout, a full definition will be e
 
 It would be really nice to have some curated and clean examples, but we don't have those yet.
 
-[The README has some useful links though](README.md#examples).
+[The README has some useful links though](https://github.com/mozilla/cbindgen#examples).
 
 
 

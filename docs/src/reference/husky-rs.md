@@ -88,28 +88,28 @@ NO_HUSKY_HOOKS=1 cargo build
 
 ## Development
 
-For information on setting up the development environment, running tests, and contributing to the project, please refer to our [Development Guide](docs/development.md).
+For information on setting up the development environment, running tests, and contributing to the project, please refer to our [Development Guide](https://github.com/pplmx/husky-rs/blob/main/docs/development.md).
 
 ## Troubleshooting
 
-If you encounter any issues while using `husky-rs`, please check our [Troubleshooting Guide](docs/troubleshooting.md) for common problems and their solutions. If you can't find a solution to your problem, please [open an issue](https://github.com/pplmx/husky-rs/issues) on our GitHub repository.
+If you encounter any issues while using `husky-rs`, please check our [Troubleshooting Guide](https://github.com/pplmx/husky-rs/blob/main/docs/troubleshooting.md) for common problems and their solutions. If you can't find a solution to your problem, please [open an issue](https://github.com/pplmx/husky-rs/issues) on our GitHub repository.
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on how to submit pull requests, report issues, or suggest improvements.
+We welcome contributions! Please see our [Contributing Guide](https://github.com/pplmx/husky-rs/blob/main/CONTRIBUTING.md) for details on how to submit pull requests, report issues, or suggest improvements.
 
 ## License
 
 This project is licensed under either of:
 
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
-- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+- Apache License, Version 2.0 ([LICENSE-APACHE](https://github.com/pplmx/husky-rs/blob/main/LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+- MIT license ([LICENSE-MIT](https://github.com/pplmx/husky-rs/blob/main/LICENSE-MIT) or http://opensource.org/licenses/MIT)
 
 at your option.
 
 ## Changelog
 
-For a detailed history of changes to this project, please refer to our [CHANGELOG.md](CHANGELOG.md).
+For a detailed history of changes to this project, please refer to our [CHANGELOG.md](https://github.com/pplmx/husky-rs/blob/main/CHANGELOG.md).
 
 ## Acknowledgments
 

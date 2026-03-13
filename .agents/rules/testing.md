@@ -35,7 +35,7 @@ cargo bench                      # Benchmarks
 - Follow Arrange-Act-Assert pattern
 - One logical assertion per test (multiple `assert!` calls for the same concept are fine)
 - Meaningful test names: `test_transform2d_translate_updates_position`, not `test1`
-- No `#[ignore]` in committed code
+- No `#[ignore]` in committed code **except** for GL-context-dependent tests (OpenGL, audio, sprite batch, render system) that cannot run in headless CI. These tests require a live GPU context provided by `test_helpers::init_test_context()` and are marked `#[ignore]` so `cargo test` passes in CI. Run them locally with `cargo test -- --ignored`.
 - No `todo!()` or `unimplemented!()` in test helpers
 
 ## Coverage Targets

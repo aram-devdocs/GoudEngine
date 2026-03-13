@@ -4,6 +4,7 @@ use std::io::{self, ErrorKind, Read, Write};
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
+use std::sync::mpsc::sync_channel;
 use std::thread;
 
 use goud_engine::core::debugger::{
@@ -64,12 +65,16 @@ impl TestHarness {
         let requests = Arc::new(Mutex::new(Vec::new()));
         let shutdown = Arc::new(std::sync::atomic::AtomicBool::new(false));
         let server_thread = start_server.then(|| {
-            spawn_fake_attach_server(
+            let (ready_tx, ready_rx) = sync_channel::<()>(0);
+            let handle = spawn_fake_attach_server(
                 endpoint.location.clone(),
                 route.clone(),
                 requests.clone(),
                 shutdown.clone(),
-            )
+                ready_tx,
+            );
+            ready_rx.recv().expect("fake server should signal ready");
+            handle
         });
 
         Self {
@@ -260,12 +265,15 @@ fn spawn_fake_attach_server(
     route: RuntimeRouteId,
     requests: Arc<Mutex<Vec<Value>>>,
     shutdown: Arc<std::sync::atomic::AtomicBool>,
+    ready_tx: std::sync::mpsc::SyncSender<()>,
 ) -> thread::JoinHandle<()> {
     thread::spawn(move || {
         let listener = ListenerOptions::new()
             .name(local_socket_name(&endpoint_location).expect("listener name"))
             .create_sync()
             .expect("listener should bind");
+        // Signal the test harness that the socket is bound and ready to accept.
+        let _ = ready_tx.send(());
         let mut stream = listener.accept().expect("client should connect");
 
         let hello = match read_frame(&mut stream) {

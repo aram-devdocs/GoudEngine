@@ -30,7 +30,8 @@ pub(super) fn create_shader(
     let fragment_shader = match compile_shader(gl::FRAGMENT_SHADER, fragment_src) {
         Ok(shader) => shader,
         Err(e) => {
-            // Clean up vertex shader on fragment compilation failure
+            // SAFETY: vertex_shader is a valid shader ID returned by compile_shader above.
+            // Cleaning up on error to prevent GPU resource leak.
             unsafe {
                 gl::DeleteShader(vertex_shader);
             }
@@ -38,9 +39,12 @@ pub(super) fn create_shader(
         }
     };
 
-    // Link shader program
+    // SAFETY: Valid GL context is guaranteed by the renderer initialization.
+    // CreateProgram returns 0 on failure, which is checked below.
     let program_id = unsafe { gl::CreateProgram() };
     if program_id == 0 {
+        // SAFETY: vertex_shader and fragment_shader are valid shader IDs from compile_shader.
+        // Cleaning up on error to prevent GPU resource leak.
         unsafe {
             gl::DeleteShader(vertex_shader);
             gl::DeleteShader(fragment_shader);
@@ -50,6 +54,9 @@ pub(super) fn create_shader(
         ));
     }
 
+    // SAFETY: program_id is a valid non-zero program ID from CreateProgram.
+    // vertex_shader and fragment_shader are valid compiled shader IDs.
+    // Link status is checked after LinkProgram; shaders are cleaned up in all paths.
     unsafe {
         gl::AttachShader(program_id, vertex_shader);
         gl::AttachShader(program_id, fragment_shader);
@@ -101,6 +108,8 @@ pub(super) fn create_shader(
 /// Destroys a shader program and frees GPU memory.
 pub(super) fn destroy_shader(backend: &mut OpenGLBackend, handle: ShaderHandle) -> bool {
     if let Some(metadata) = backend.shaders.remove(&handle) {
+        // SAFETY: metadata.gl_id is a valid linked program ID created by create_shader.
+        // Deleting it releases GPU resources. The handle is removed from the map above.
         unsafe {
             gl::DeleteProgram(metadata.gl_id);
         }
@@ -258,6 +267,8 @@ pub(super) fn set_uniform_mat4(location: i32, matrix: &[f32; 16]) {
 ///
 /// Returns the OpenGL shader ID on success, or an error with compilation message.
 pub(super) fn compile_shader(shader_type: u32, source: &str) -> GoudResult<u32> {
+    // SAFETY: Valid GL context is guaranteed by the renderer initialization.
+    // shader_type is a valid GL shader type enum (VERTEX_SHADER, FRAGMENT_SHADER, etc.).
     let shader_id = unsafe { gl::CreateShader(shader_type) };
     if shader_id == 0 {
         return Err(GoudError::ShaderCompilationFailed(
@@ -270,6 +281,9 @@ pub(super) fn compile_shader(shader_type: u32, source: &str) -> GoudResult<u32> 
         GoudError::ShaderCompilationFailed("Shader source contains null byte".to_string())
     })?;
 
+    // SAFETY: shader_id is a valid non-zero shader ID from CreateShader above.
+    // c_source is a valid CString; its pointer remains valid for this block.
+    // Compilation status is checked and errors reported with the info log.
     unsafe {
         gl::ShaderSource(shader_id, 1, &c_source.as_ptr(), std::ptr::null());
         gl::CompileShader(shader_id);
