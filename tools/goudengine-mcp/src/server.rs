@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use anyhow::Result;
@@ -10,15 +9,21 @@ use rmcp::model::{
     ListResourceTemplatesResult, ListResourcesResult, ReadResourceRequestParams,
     ReadResourceResult, ServerCapabilities, ServerInfo,
 };
-use rmcp::schemars::JsonSchema;
 use rmcp::ErrorData as McpError;
 use rmcp::{tool, tool_handler, tool_router, ServerHandler};
-use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 use crate::attach_client::{AttachClient, AttachError, AttachedRoute};
 use crate::discovery::{self, ArtifactKind, DiscoveredContext};
 use crate::resources;
+
+mod types;
+
+use self::types::{
+    structured_response, AttachContextParams, BridgeResponse, InjectInputParams,
+    InspectEntityParams, McpDebuggerStepKind, SetPausedParams, SetTimeScaleParams,
+    StartReplayParams, StepParams,
+};
 
 struct BridgeState {
     runtime_root: std::path::PathBuf,
@@ -29,99 +34,6 @@ struct BridgeState {
 pub struct GoudEngineMcpServer {
     state: Arc<Mutex<BridgeState>>,
     tool_router: ToolRouter<Self>,
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-struct AttachContextParams {
-    context_id: u64,
-    process_nonce: Option<u64>,
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-enum McpDebuggerStepKind {
-    Frame,
-    Tick,
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-struct StepParams {
-    kind: McpDebuggerStepKind,
-    count: u32,
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-struct SetPausedParams {
-    paused: bool,
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-struct SetTimeScaleParams {
-    scale: f32,
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-struct InspectEntityParams {
-    entity_id: u64,
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-struct InputEventParams {
-    device: String,
-    action: String,
-    key: Option<String>,
-    button: Option<String>,
-    position: Option<[f32; 2]>,
-    delta: Option<[f32; 2]>,
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-struct InjectInputParams {
-    events: Vec<InputEventParams>,
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-struct StartReplayParams {
-    artifact_id: Option<String>,
-    resource_uri: Option<String>,
-    data_base64: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
-struct BridgeResponse {
-    #[serde(flatten)]
-    data: BTreeMap<String, Value>,
-}
-
-impl BridgeResponse {
-    fn from_value(value: Value) -> Result<Self, McpError> {
-        let Value::Object(object) = value else {
-            return Err(McpError::internal_error(
-                "bridge tools require object-shaped debugger responses",
-                None,
-            ));
-        };
-        Ok(Self {
-            data: object.into_iter().collect(),
-        })
-    }
-
-    #[cfg(test)]
-    fn into_value(self) -> Value {
-        Value::Object(self.data.into_iter().collect())
-    }
-}
-
-fn structured_response(value: Value) -> Result<Json<BridgeResponse>, McpError> {
-    Ok(Json(BridgeResponse::from_value(value)?))
 }
 
 impl GoudEngineMcpServer {

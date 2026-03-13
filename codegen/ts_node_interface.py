@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Interface and math generation helpers for the TypeScript Node SDK."""
 
+from ts_node_debugger_interface import append_debugger_context_methods
 from ts_node_shared import (
     GEN,
     HEADER_COMMENT,
@@ -290,27 +291,7 @@ def gen_interface():
     lines.append("  clearNetworkSimulation(handle: number): number;")
     lines.append("  setNetworkOverlayHandle(handle: number): number;")
     lines.append("  clearNetworkOverlayHandle(): number;")
-    lines.append("  getDebuggerSnapshotJson(): string;")
-    lines.append("  getDebuggerManifestJson(): string;")
-    lines.append("  setDebuggerPaused(paused: boolean): void;")
-    lines.append("  stepDebugger(kind: number, count: number): void;")
-    lines.append("  setDebuggerTimeScale(scale: number): void;")
-    lines.append("  setDebuggerDebugDrawEnabled(enabled: boolean): void;")
-    lines.append("  injectDebuggerKeyEvent(key: number, pressed: boolean): void;")
-    lines.append("  injectDebuggerMouseButton(button: number, pressed: boolean): void;")
-    lines.append("  injectDebuggerMousePosition(position: IVec2): void;")
-    lines.append("  injectDebuggerScroll(delta: IVec2): void;")
-    lines.append("  setDebuggerProfilingEnabled(enabled: boolean): void;")
-    lines.append("  setDebuggerSelectedEntity(entityId: number): void;")
-    lines.append("  clearDebuggerSelectedEntity(): void;")
-    lines.append("  getMemorySummary(): IMemorySummary;")
-    lines.append("  captureDebuggerFrame(): IDebuggerCapture;")
-    lines.append("  startDebuggerRecording(): void;")
-    lines.append("  stopDebuggerRecording(): IDebuggerReplayArtifact;")
-    lines.append("  startDebuggerReplay(recording: Uint8Array): void;")
-    lines.append("  stopDebuggerReplay(): void;")
-    lines.append("  getDebuggerReplayStatusJson(): string;")
-    lines.append("  getDebuggerMetricsTraceJson(): string;")
+    append_debugger_context_methods(lines)
     lines.append("}")
     lines.append("")
     lines.append("/** Data for a fired animation event */")

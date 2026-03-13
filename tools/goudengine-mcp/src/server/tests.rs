@@ -18,8 +18,11 @@ use serde_json::{json, Value};
 use tempfile::TempDir;
 
 use super::{
-    AttachContextParams, GoudEngineMcpServer, InjectInputParams, InputEventParams, SetPausedParams,
-    SetTimeScaleParams, StartReplayParams, StepParams,
+    types::{
+        AttachContextParams, InjectInputParams, InputEventParams, SetPausedParams,
+        SetTimeScaleParams, StartReplayParams, StepParams,
+    },
+    GoudEngineMcpServer,
 };
 use crate::discovery;
 use crate::resources;
