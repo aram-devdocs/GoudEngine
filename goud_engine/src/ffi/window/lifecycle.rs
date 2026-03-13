@@ -123,7 +123,7 @@ pub unsafe extern "C" fn goud_window_create(
         }
     }
 
-    let window_state = WindowState::new(platform, backend, false, None);
+    let window_state = WindowState::new(platform, backend, false, None, None);
 
     if let Err(e) = set_window_state(context_id, window_state) {
         if let Ok(mut registry) = get_context_registry().lock() {

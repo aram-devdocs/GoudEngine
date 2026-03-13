@@ -17,6 +17,10 @@ pub use config::ContextConfig;
 #[doc(inline)]
 pub use config::DebuggerConfig;
 #[doc(inline)]
+pub use log_capture::LogCaptureSink;
+#[doc(inline)]
+pub use log_capture::LogEntryV1;
+#[doc(inline)]
 pub use runtime::active_route_count;
 #[doc(inline)]
 pub use runtime::begin_frame;
@@ -57,6 +61,8 @@ pub use runtime::register_capture_hook_for_route;
 #[doc(inline)]
 pub use runtime::register_context;
 #[doc(inline)]
+pub use runtime::register_snapshot_refresh_hook_for_route;
+#[doc(inline)]
 pub use runtime::replace_provider_debug_draw_2d_for_context;
 #[doc(inline)]
 pub use runtime::replace_provider_debug_draw_2d_for_route;
@@ -87,13 +93,11 @@ pub use runtime::snapshot_json_for_context;
 #[doc(inline)]
 pub use runtime::take_frame_control_for_route;
 #[doc(inline)]
-pub use runtime::register_snapshot_refresh_hook_for_route;
-#[doc(inline)]
 pub use runtime::unregister_capture_hook_for_route;
 #[doc(inline)]
-pub use runtime::unregister_snapshot_refresh_hook_for_route;
-#[doc(inline)]
 pub use runtime::unregister_context;
+#[doc(inline)]
+pub use runtime::unregister_snapshot_refresh_hook_for_route;
 #[doc(inline)]
 pub use runtime::update_fps_stats_for_context;
 #[doc(inline)]
@@ -120,10 +124,6 @@ pub use runtime::RawFramebufferReadbackV1;
 pub use runtime::RouteControlStateV1;
 #[doc(inline)]
 pub use runtime::SyntheticInputEventV1;
-#[doc(inline)]
-pub use log_capture::LogCaptureSink;
-#[doc(inline)]
-pub use log_capture::LogEntryV1;
 #[doc(inline)]
 pub use snapshot::default_capabilities;
 #[doc(inline)]

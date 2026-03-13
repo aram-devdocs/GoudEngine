@@ -37,9 +37,7 @@ pub fn collect_debugger_entities(
             let mut component_types: Vec<String> = components.keys().cloned().collect();
             component_types.sort();
 
-            let parent_entity_id = world
-                .get::<Parent>(*entity)
-                .map(|p| p.get().to_bits());
+            let parent_entity_id = world.get::<Parent>(*entity).map(|p| p.get().to_bits());
             let child_entity_ids = world
                 .get::<Children>(*entity)
                 .map(|c| c.iter().map(|e| e.to_bits()).collect::<Vec<_>>())

@@ -12,6 +12,9 @@ use serde_json::Value;
 pub(super) struct AttachContextParams {
     pub(super) context_id: u64,
     pub(super) process_nonce: Option<u64>,
+    /// WebSocket relay route id. When provided, attaches to a browser route
+    /// via the WebSocket relay instead of a local Unix socket.
+    pub(super) ws_route_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]

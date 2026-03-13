@@ -853,9 +853,9 @@ export class GoudGame implements IGoudGame {
   /** Applies debug-only latency, jitter, and packet-loss simulation to a network handle. */
   setNetworkSimulation(handle: number, config: INetworkSimulationConfig): number {
     return this.native.setNetworkSimulation(handle, {
-      one_way_latency_ms: config.oneWayLatencyMs,
-      jitter_ms: config.jitterMs,
-      packet_loss_percent: config.packetLossPercent,
+      oneWayLatencyMs: config.oneWayLatencyMs,
+      jitterMs: config.jitterMs,
+      packetLossPercent: config.packetLossPercent,
     } as unknown as INetworkSimulationConfig);
   }
 
@@ -1104,8 +1104,8 @@ export class GoudContext implements IGoudContext {
     const nativeConfig = config ? {
       debugger: {
         enabled: config.debugger.enabled,
-        publish_local_attach: config.debugger.publishLocalAttach,
-        route_label: config.debugger.routeLabel,
+        publishLocalAttach: config.debugger.publishLocalAttach,
+        routeLabel: config.debugger.routeLabel,
       },
     } : undefined;
     this.native = new (getNativeBindings().GoudContext)(nativeConfig as Record<string, unknown>);
@@ -1165,9 +1165,9 @@ export class GoudContext implements IGoudContext {
 
   setNetworkSimulation(handle: number, config: INetworkSimulationConfig): number {
     return this.native.setNetworkSimulation(handle, {
-      one_way_latency_ms: config.oneWayLatencyMs,
-      jitter_ms: config.jitterMs,
-      packet_loss_percent: config.packetLossPercent,
+      oneWayLatencyMs: config.oneWayLatencyMs,
+      jitterMs: config.jitterMs,
+      packetLossPercent: config.packetLossPercent,
     } as unknown as INetworkSimulationConfig);
   }
 
@@ -1632,8 +1632,8 @@ export class EngineConfig implements IEngineConfig {
   setDebugger(debuggerConfig: IDebuggerConfig): EngineConfig {
     this.native.setDebugger({
       enabled: debuggerConfig.enabled,
-      publish_local_attach: debuggerConfig.publishLocalAttach,
-      route_label: debuggerConfig.routeLabel,
+      publishLocalAttach: debuggerConfig.publishLocalAttach,
+      routeLabel: debuggerConfig.routeLabel,
     });
     return this;
   }
@@ -1643,6 +1643,11 @@ export class EngineConfig implements IEngineConfig {
     const ctx = this.native.build();
     const game = Object.create(GoudGame.prototype);
     game.native = ctx;
+    (game as any).preloadedTextures = new Map<string, number>();
+    (game as any).preloadedFonts = new Map<string, number>();
+    (game as any).texturePathByHandle = new Map<number, string>();
+    (game as any).fontPathByHandle = new Map<number, string>();
+    (game as any).preloadInFlight = false;
     return game;
   }
 

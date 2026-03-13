@@ -259,16 +259,10 @@ pub fn dispatch_request_json_for_route(
             .and_then(|rt| rt.routes.get(&route_id.context_id))
             .map(|route| route.snapshot.provider_diagnostics.clone())
             .unwrap_or_default();
-        return Ok(ok_response(
-            &request,
-            serde_json::to_value(diag).unwrap_or_default(),
-        ));
+        return Ok(ok_response(&request, json!({ "diagnostics": diag })));
     }
     if verb == "get_diagnostics_for" {
-        let key = request
-            .get("key")
-            .and_then(Value::as_str)
-            .unwrap_or("");
+        let key = request.get("key").and_then(Value::as_str).unwrap_or("");
         super::snapshot_refresh::refresh_snapshot_for_route(route_id);
         let guard = lock_runtime();
         let val = guard
@@ -276,7 +270,10 @@ pub fn dispatch_request_json_for_route(
             .and_then(|rt| rt.routes.get(&route_id.context_id))
             .and_then(|route| route.snapshot.provider_diagnostics.get(key).cloned())
             .unwrap_or(Value::Null);
-        return Ok(ok_response(&request, val));
+        return Ok(ok_response(
+            &request,
+            json!({ "key": key, "diagnostics": val }),
+        ));
     }
     if verb == "get_logs" {
         // Log capture will be fully wired in a later phase.
@@ -290,10 +287,7 @@ pub fn dispatch_request_json_for_route(
             .and_then(|rt| rt.routes.get(&route_id.context_id))
             .map(|route| route.snapshot.entities.clone())
             .unwrap_or_default();
-        return Ok(ok_response(
-            &request,
-            serde_json::to_value(entities).unwrap_or_default(),
-        ));
+        return Ok(ok_response(&request, json!({ "entities": entities })));
     }
     if verb == "start_diagnostics_recording" {
         let duration_seconds = request
@@ -340,10 +334,7 @@ pub fn dispatch_request_json_for_route(
                 super::metrics::export_diagnostics_recording_sliced(route, slice_count)
             });
         return Ok(match export {
-            Some(export) => ok_response(
-                &request,
-                serde_json::to_value(export).unwrap_or_default(),
-            ),
+            Some(export) => ok_response(&request, serde_json::to_value(export).unwrap_or_default()),
             None => error_response(
                 &request,
                 "no_recording",

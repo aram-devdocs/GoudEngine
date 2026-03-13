@@ -361,9 +361,9 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
 
     const simCall = calls.find(([name]) => name === 'setNetworkSimulation');
     assert.deepEqual(simCall[1][1], {
-      one_way_latency_ms: 10,
-      jitter_ms: 2,
-      packet_loss_percent: 1,
+      oneWayLatencyMs: 10,
+      jitterMs: 2,
+      packetLossPercent: 1,
     });
 
     const replayStartCall = calls.find(([name]) => name === 'startDebuggerReplay');
@@ -519,9 +519,9 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
 
     const simCall = calls.find(([name]) => name === 'setNetworkSimulation');
     assert.deepEqual(simCall[1][1], {
-      one_way_latency_ms: 5,
-      jitter_ms: 1,
-      packet_loss_percent: 0,
+      oneWayLatencyMs: 5,
+      jitterMs: 1,
+      packetLossPercent: 0,
     });
 
     const contextReplayStartCall = calls.find(([name]) => name === 'startDebuggerReplay');

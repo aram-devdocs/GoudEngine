@@ -33,6 +33,7 @@ pub use ui::{WasmUiEvent, WasmUiManager};
 use std::collections::{HashMap, HashSet};
 use wasm_bindgen::prelude::*;
 
+use crate::core::debugger::{self, DebuggerConfig, RuntimeRouteId, RuntimeSurfaceKind};
 use crate::ecs::World;
 use crate::rendering::text::GlyphAtlas;
 
@@ -188,6 +189,9 @@ pub struct WasmGame {
 
     // Browser WebSocket networking runtime state.
     network_state: network::WasmNetworkState,
+
+    /// Route registered with the debugger runtime, if enabled.
+    debugger_route: Option<RuntimeRouteId>,
 }
 
 #[wasm_bindgen]
@@ -231,6 +235,7 @@ impl WasmGame {
             render_state: None,
             audio_state: audio::WasmAudioState::new(),
             network_state: network::WasmNetworkState::new(),
+            debugger_route: None,
         }
     }
 
@@ -333,6 +338,7 @@ impl WasmGame {
             render_state: Some(render_state),
             audio_state: audio::WasmAudioState::new(),
             network_state: network::WasmNetworkState::new(),
+            debugger_route: None,
         })
     }
 
@@ -354,6 +360,15 @@ impl WasmGame {
         self.total_time += delta_time;
         self.frame_count += 1;
 
+        if let Some(ref route_id) = self.debugger_route {
+            debugger::begin_frame(
+                route_id,
+                self.frame_count,
+                self.delta_time,
+                self.total_time as f64,
+            );
+        }
+
         if let Some(rs) = &mut self.render_state {
             rs.renderer.begin_frame();
             if let Ok(frame) = rs.surface.get_current_texture() {
@@ -370,6 +385,10 @@ impl WasmGame {
     ///
     /// Call this at the end of each `requestAnimationFrame` callback.
     pub fn end_frame(&mut self) {
+        if let Some(ref route_id) = self.debugger_route {
+            debugger::end_frame(route_id);
+        }
+
         if let Some(rs) = &mut self.render_state {
             if let Some(view) = rs.current_view.take() {
                 rs.renderer.flush(
@@ -462,6 +481,65 @@ impl WasmGame {
     /// construction time).
     pub fn has_renderer(&self) -> bool {
         self.render_state.is_some()
+    }
+
+    // ======================================================================
+    // Debugger support
+    // ======================================================================
+
+    /// Initialize the debugger route for this game instance.
+    /// Call this once after construction to enable debugger support.
+    #[wasm_bindgen(js_name = "initDebugger")]
+    pub fn init_debugger(&mut self, route_label: &str) {
+        if self.debugger_route.is_some() {
+            return; // Already initialized
+        }
+        let config = DebuggerConfig {
+            enabled: true,
+            publish_local_attach: false,
+            route_label: Some(route_label.to_string()),
+        };
+        let context_id = crate::core::context_id::GoudContextId::new(
+            (self.frame_count as u32).wrapping_add(1),
+            1,
+        );
+        let route_id =
+            debugger::register_context(context_id, RuntimeSurfaceKind::WindowedGame, &config);
+        self.debugger_route = Some(route_id);
+    }
+
+    /// Dispatch a JSON debugger request and return the JSON response.
+    /// Used by the WebSocket relay to forward IPC verbs.
+    #[wasm_bindgen(js_name = "dispatchDebuggerRequest")]
+    pub fn dispatch_debugger_request(&self, json: &str) -> String {
+        let Some(ref route_id) = self.debugger_route else {
+            return r#"{"ok":false,"error":{"code":"attach_disabled","message":"debugger not initialized"}}"#.to_string();
+        };
+        match debugger::dispatch_request_json_for_route(route_id, json) {
+            Ok(value) => serde_json::to_string(&value).unwrap_or_else(|_| "{}".to_string()),
+            Err(err) => format!(
+                r#"{{"ok":false,"error":{{"code":"protocol_error","message":"{}"}}}}"#,
+                err
+            ),
+        }
+    }
+
+    /// Get the debugger snapshot as JSON.
+    #[wasm_bindgen(js_name = "getDebuggerSnapshotJson")]
+    pub fn get_debugger_snapshot_json(&self) -> String {
+        let Some(ref route_id) = self.debugger_route else {
+            return "{}".to_string();
+        };
+        debugger::snapshot_for_route(route_id)
+            .and_then(|s| serde_json::to_string(&s).ok())
+            .unwrap_or_else(|| "{}".to_string())
+    }
+
+    /// Capture the canvas as a base64-encoded PNG data URL.
+    /// The actual canvas capture is done in JS via canvas.toDataURL().
+    #[wasm_bindgen(js_name = "captureCanvasBase64")]
+    pub fn capture_canvas_base64(&self) -> Result<String, JsValue> {
+        Ok(String::new())
     }
 }
 

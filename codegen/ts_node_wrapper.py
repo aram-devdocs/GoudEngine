@@ -342,9 +342,9 @@ def gen_node_wrapper():
             lines.append("    return this.native.networkReceivePacket(handle) as unknown as INetworkPacket | null;")
         elif mn == "setNetworkSimulation":
             lines.append("    return this.native.setNetworkSimulation(handle, {")
-            lines.append("      one_way_latency_ms: config.oneWayLatencyMs,")
-            lines.append("      jitter_ms: config.jitterMs,")
-            lines.append("      packet_loss_percent: config.packetLossPercent,")
+            lines.append("      oneWayLatencyMs: config.oneWayLatencyMs,")
+            lines.append("      jitterMs: config.jitterMs,")
+            lines.append("      packetLossPercent: config.packetLossPercent,")
             lines.append("    } as unknown as INetworkSimulationConfig);")
         elif mn == "loadTexture":
             lines.append("    const cached = this.preloadedTextures.get(path);")

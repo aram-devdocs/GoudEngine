@@ -120,6 +120,7 @@ pub async fn attach_context(
         .attach_context(Parameters(AttachContextParams {
             context_id,
             process_nonce: Some(process_nonce),
+            ws_route_id: None,
         }))
         .await
         .expect("context should attach");

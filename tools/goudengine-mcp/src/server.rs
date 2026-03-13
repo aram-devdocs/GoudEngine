@@ -18,6 +18,7 @@ use crate::attach_client::{AttachClient, AttachError, AttachedRoute};
 use crate::discovery::{self, ArtifactKind, DiscoveredContext};
 use crate::prompts;
 use crate::resources;
+use crate::ws_relay::WsRelayState;
 
 mod types;
 
@@ -31,12 +32,15 @@ use self::types::{
 struct BridgeState {
     runtime_root: std::path::PathBuf,
     attached: Option<AttachedRoute>,
+    /// When attached to a WebSocket browser route, holds the relay route id.
+    ws_route_id: Option<String>,
 }
 
 #[derive(Clone)]
 pub struct GoudEngineMcpServer {
     state: Arc<Mutex<BridgeState>>,
     tool_router: ToolRouter<Self>,
+    ws_relay: WsRelayState,
 }
 
 impl Default for GoudEngineMcpServer {
@@ -55,9 +59,16 @@ impl GoudEngineMcpServer {
             state: Arc::new(Mutex::new(BridgeState {
                 runtime_root: runtime_root.into(),
                 attached: None,
+                ws_route_id: None,
             })),
             tool_router: Self::tool_router(),
+            ws_relay: WsRelayState::new(),
         }
+    }
+
+    /// Returns a reference to the WebSocket relay state for spawning the relay.
+    pub fn ws_relay(&self) -> &WsRelayState {
+        &self.ws_relay
     }
 
     fn state(&self) -> Result<MutexGuard<'_, BridgeState>, McpError> {
@@ -94,6 +105,23 @@ impl GoudEngineMcpServer {
                 Err(map_attach_error(error))
             }
         }
+    }
+
+    /// Sends an IPC request through the WebSocket relay if a browser route is
+    /// attached, otherwise falls back to the local Unix socket client.
+    async fn request_attached_or_ws(&self, request: Value) -> Result<Value, McpError> {
+        let ws_route_id = {
+            let state = self.state()?;
+            state.ws_route_id.clone()
+        };
+        if let Some(route_id) = ws_route_id {
+            return self
+                .ws_relay
+                .request(&route_id, request)
+                .await
+                .map_err(|e| McpError::internal_error(e, None));
+        }
+        self.request_attached(request)
     }
 
     fn with_selection_restored(&self, entity_id: u64) -> Result<Value, McpError> {
@@ -159,11 +187,20 @@ impl GoudEngineMcpServer {
         description = "Discover debugger contexts published by local GoudEngine processes."
     )]
     pub async fn list_contexts(&self) -> Result<Json<BridgeResponse>, McpError> {
-        let state = self.state()?;
-        let contexts = discovery::discover_contexts(&state.runtime_root);
+        let (contexts, attached_summary, ws_route_id) = {
+            let state = self.state()?;
+            let contexts = discovery::discover_contexts(&state.runtime_root);
+            let attached_summary = Self::current_attached_summary(&state);
+            let ws_route_id = state.ws_route_id.clone();
+            (contexts, attached_summary, ws_route_id)
+        };
+
+        let ws_routes = self.ws_relay.list_routes().await;
         structured_response(json!({
             "contexts": contexts,
-            "attached_context": Self::current_attached_summary(&state),
+            "attached_context": attached_summary,
+            "ws_route_id": ws_route_id,
+            "browser_routes": ws_routes,
         }))
     }
 
@@ -175,6 +212,28 @@ impl GoudEngineMcpServer {
         &self,
         Parameters(params): Parameters<AttachContextParams>,
     ) -> Result<Json<BridgeResponse>, McpError> {
+        // WebSocket browser route attach path.
+        if let Some(ws_id) = params.ws_route_id {
+            let ws_routes = self.ws_relay.list_routes().await;
+            let route = ws_routes
+                .iter()
+                .find(|r| r.route_id == ws_id)
+                .ok_or_else(|| {
+                    McpError::invalid_request(
+                        format!("browser route '{ws_id}' is not connected"),
+                        None,
+                    )
+                })?;
+            let mut state = self.state()?;
+            state.attached = None;
+            state.ws_route_id = Some(ws_id.clone());
+            return structured_response(json!({
+                "ws_route": route,
+                "session": { "transport": "websocket" },
+            }));
+        }
+
+        // Local Unix socket attach path.
         let mut state = self.state()?;
         let context =
             discovery::find_context(&state.runtime_root, params.context_id, params.process_nonce)
@@ -195,6 +254,7 @@ impl GoudEngineMcpServer {
             "session": attached.accepted,
         });
         state.attached = Some(attached);
+        state.ws_route_id = None;
         structured_response(response)
     }
 
@@ -203,7 +263,10 @@ impl GoudEngineMcpServer {
         description = "Fetch the current debugger snapshot for the attached route."
     )]
     pub async fn get_snapshot(&self) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({ "verb": "get_snapshot" }))?)
+        structured_response(
+            self.request_attached_or_ws(json!({ "verb": "get_snapshot" }))
+                .await?,
+        )
     }
 
     #[tool(
@@ -238,7 +301,9 @@ impl GoudEngineMcpServer {
         description = "Export the current versioned debugger metrics trace for the attached route."
     )]
     pub async fn get_metrics_trace(&self) -> Result<Json<BridgeResponse>, McpError> {
-        let mut result = self.request_attached(json!({ "verb": "get_metrics_trace" }))?;
+        let mut result = self
+            .request_attached_or_ws(json!({ "verb": "get_metrics_trace" }))
+            .await?;
         resources::add_resource_uri(ArtifactKind::Metrics, &mut result);
         structured_response(result)
     }
@@ -248,7 +313,9 @@ impl GoudEngineMcpServer {
         description = "Capture the current framebuffer plus debugger metadata attachments for the attached route."
     )]
     pub async fn capture_frame(&self) -> Result<Json<BridgeResponse>, McpError> {
-        let mut result = self.request_attached(json!({ "verb": "capture_frame" }))?;
+        let mut result = self
+            .request_attached_or_ws(json!({ "verb": "capture_frame" }))
+            .await?;
         resources::add_resource_uri(ArtifactKind::Capture, &mut result);
         structured_response(result)
     }
@@ -258,7 +325,10 @@ impl GoudEngineMcpServer {
         description = "Start normalized input recording for the attached route."
     )]
     pub async fn start_recording(&self) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({ "verb": "start_recording" }))?)
+        structured_response(
+            self.request_attached_or_ws(json!({ "verb": "start_recording" }))
+                .await?,
+        )
     }
 
     #[tool(
@@ -266,7 +336,9 @@ impl GoudEngineMcpServer {
         description = "Stop recording and export the replay artifact for the attached route."
     )]
     pub async fn stop_recording(&self) -> Result<Json<BridgeResponse>, McpError> {
-        let mut result = self.request_attached(json!({ "verb": "stop_recording" }))?;
+        let mut result = self
+            .request_attached_or_ws(json!({ "verb": "stop_recording" }))
+            .await?;
         resources::add_resource_uri(ArtifactKind::Recording, &mut result);
         structured_response(result)
     }
@@ -280,10 +352,13 @@ impl GoudEngineMcpServer {
         Parameters(params): Parameters<StartReplayParams>,
     ) -> Result<Json<BridgeResponse>, McpError> {
         let bytes = self.replay_bytes(params)?;
-        structured_response(self.request_attached(json!({
-            "verb": "start_replay",
-            "data": bytes,
-        }))?)
+        structured_response(
+            self.request_attached_or_ws(json!({
+                "verb": "start_replay",
+                "data": bytes,
+            }))
+            .await?,
+        )
     }
 
     #[tool(
@@ -291,7 +366,10 @@ impl GoudEngineMcpServer {
         description = "Stop replay for the attached route."
     )]
     pub async fn stop_replay(&self) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({ "verb": "stop_replay" }))?)
+        structured_response(
+            self.request_attached_or_ws(json!({ "verb": "stop_replay" }))
+                .await?,
+        )
     }
 
     #[tool(
@@ -302,10 +380,13 @@ impl GoudEngineMcpServer {
         &self,
         Parameters(params): Parameters<SetPausedParams>,
     ) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({
-            "verb": "set_paused",
-            "paused": params.paused,
-        }))?)
+        structured_response(
+            self.request_attached_or_ws(json!({
+                "verb": "set_paused",
+                "paused": params.paused,
+            }))
+            .await?,
+        )
     }
 
     #[tool(
@@ -322,7 +403,7 @@ impl GoudEngineMcpServer {
                 json!({ "verb": "step", "frames": 0, "ticks": params.count })
             }
         };
-        structured_response(self.request_attached(request)?)
+        structured_response(self.request_attached_or_ws(request).await?)
     }
 
     #[tool(
@@ -333,10 +414,13 @@ impl GoudEngineMcpServer {
         &self,
         Parameters(params): Parameters<SetTimeScaleParams>,
     ) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({
-            "verb": "set_time_scale",
-            "time_scale": params.scale,
-        }))?)
+        structured_response(
+            self.request_attached_or_ws(json!({
+                "verb": "set_time_scale",
+                "time_scale": params.scale,
+            }))
+            .await?,
+        )
     }
 
     #[tool(
@@ -361,10 +445,13 @@ impl GoudEngineMcpServer {
                 })
             })
             .collect();
-        structured_response(self.request_attached(json!({
-            "verb": "inject_input",
-            "events": events,
-        }))?)
+        structured_response(
+            self.request_attached_or_ws(json!({
+                "verb": "inject_input",
+                "events": events,
+            }))
+            .await?,
+        )
     }
 
     #[tool(
@@ -372,7 +459,10 @@ impl GoudEngineMcpServer {
         description = "Return the full provider diagnostics map from the current snapshot for the attached route."
     )]
     pub async fn get_diagnostics(&self) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({ "verb": "get_diagnostics" }))?)
+        structured_response(
+            self.request_attached_or_ws(json!({ "verb": "get_diagnostics" }))
+                .await?,
+        )
     }
 
     #[tool(
@@ -383,10 +473,13 @@ impl GoudEngineMcpServer {
         &self,
         Parameters(params): Parameters<GetSubsystemDiagnosticsParams>,
     ) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({
-            "verb": "get_diagnostics_for",
-            "key": params.key,
-        }))?)
+        structured_response(
+            self.request_attached_or_ws(json!({
+                "verb": "get_diagnostics_for",
+                "key": params.key,
+            }))
+            .await?,
+        )
     }
 
     #[tool(
@@ -401,7 +494,7 @@ impl GoudEngineMcpServer {
         if let Some(since_frame) = params.since_frame {
             request["since_frame"] = json!(since_frame);
         }
-        structured_response(self.request_attached(request)?)
+        structured_response(self.request_attached_or_ws(request).await?)
     }
 
     #[tool(
@@ -409,7 +502,10 @@ impl GoudEngineMcpServer {
         description = "Return entities with parent/child relationships for the attached route."
     )]
     pub async fn get_scene_hierarchy(&self) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({ "verb": "get_scene_hierarchy" }))?)
+        structured_response(
+            self.request_attached_or_ws(json!({ "verb": "get_scene_hierarchy" }))
+                .await?,
+        )
     }
 
     #[tool(
@@ -421,10 +517,12 @@ impl GoudEngineMcpServer {
         Parameters(params): Parameters<RecordDiagnosticsParams>,
     ) -> Result<Json<BridgeResponse>, McpError> {
         // Start recording
-        let start_result = self.request_attached(json!({
-            "verb": "start_diagnostics_recording",
-            "duration_seconds": params.duration_seconds,
-        }))?;
+        let start_result = self
+            .request_attached_or_ws(json!({
+                "verb": "start_diagnostics_recording",
+                "duration_seconds": params.duration_seconds,
+            }))
+            .await?;
 
         // Wait for the recording duration
         let duration = if params.duration_seconds > 0.0 {
@@ -438,13 +536,17 @@ impl GoudEngineMcpServer {
         tokio::time::sleep(std::time::Duration::from_secs_f32(duration + 0.1)).await;
 
         // Stop recording
-        let _ = self.request_attached(json!({ "verb": "stop_diagnostics_recording" }))?;
+        let _ = self
+            .request_attached_or_ws(json!({ "verb": "stop_diagnostics_recording" }))
+            .await?;
 
         // Get the sliced export
-        let export = self.request_attached(json!({
-            "verb": "get_diagnostics_recording",
-            "slice_count": params.slice_count,
-        }))?;
+        let export = self
+            .request_attached_or_ws(json!({
+                "verb": "get_diagnostics_recording",
+                "slice_count": params.slice_count,
+            }))
+            .await?;
 
         structured_response(json!({
             "start": start_result,
@@ -460,10 +562,13 @@ impl GoudEngineMcpServer {
         &self,
         Parameters(params): Parameters<GetDiagnosticsRecordingParams>,
     ) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({
-            "verb": "get_diagnostics_recording",
-            "slice_count": params.slice_count,
-        }))?)
+        structured_response(
+            self.request_attached_or_ws(json!({
+                "verb": "get_diagnostics_recording",
+                "slice_count": params.slice_count,
+            }))
+            .await?,
+        )
     }
 }
 

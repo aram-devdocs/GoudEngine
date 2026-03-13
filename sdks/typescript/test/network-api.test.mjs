@@ -53,7 +53,7 @@ describe('Generated network SDK surface', () => {
     assert.ok(nodeSrc.includes('return this.native.getNetworkStats(handle) as unknown as INetworkStats;'));
     assert.ok(nodeSrc.includes('return this.native.networkConnectWithPeer(protocol, address, port) as unknown as INetworkConnectResult;'));
     assert.ok(nodeSrc.includes('return this.native.networkReceivePacket(handle) as unknown as INetworkPacket | null;'));
-    assert.ok(nodeSrc.includes('one_way_latency_ms: config.oneWayLatencyMs,'));
+    assert.ok(nodeSrc.includes('oneWayLatencyMs: config.oneWayLatencyMs,'));
   });
 
   it('exposes matching native napi methods', () => {
@@ -100,7 +100,9 @@ describe('Generated network SDK surface', () => {
       assert.ok(webSrc.includes(line), `missing generated WASM networking backend line: ${line}`);
     }
 
-    assert.ok(!webSrc.includes("new WebSocket("), 'web backend must not implement transport in TypeScript');
+    // Network transport must not use WebSocket — the debugger relay does, but network methods must delegate to WASM.
+    const networkMethodsSection = webSrc.split('networkHost(')[1]?.split('connectDebugger')[0] ?? '';
+    assert.ok(!networkMethodsSection.includes("new WebSocket("), 'web network backend must not implement transport in TypeScript');
   });
 
   it('exports generated wrapper entrypoints for default, node, and web builds', () => {

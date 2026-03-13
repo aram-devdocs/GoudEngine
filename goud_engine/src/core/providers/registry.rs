@@ -278,7 +278,10 @@ mod tests {
     fn test_collect_provider_diagnostics_has_expected_keys() {
         let registry = ProviderRegistry::default();
         let diag = registry.collect_provider_diagnostics();
-        assert!(diag.contains_key("render"), "diagnostics should contain render");
+        assert!(
+            diag.contains_key("render"),
+            "diagnostics should contain render"
+        );
         assert!(
             diag.contains_key("physics_2d"),
             "diagnostics should contain physics_2d"
@@ -287,8 +290,14 @@ mod tests {
             diag.contains_key("physics_3d"),
             "diagnostics should contain physics_3d"
         );
-        assert!(diag.contains_key("audio"), "diagnostics should contain audio");
-        assert!(diag.contains_key("input"), "diagnostics should contain input");
+        assert!(
+            diag.contains_key("audio"),
+            "diagnostics should contain audio"
+        );
+        assert!(
+            diag.contains_key("input"),
+            "diagnostics should contain input"
+        );
     }
 
     #[test]
@@ -541,7 +550,9 @@ mod tests {
             fn set_camera(&mut self, _: &CameraData) {}
             fn set_render_target(&mut self, _: Option<RenderTargetHandle>) {}
             fn clear(&mut self, _: [f32; 4]) {}
-            fn render_diagnostics(&self) -> crate::core::providers::diagnostics::RenderDiagnosticsV1 {
+            fn render_diagnostics(
+                &self,
+            ) -> crate::core::providers::diagnostics::RenderDiagnosticsV1 {
                 Default::default()
             }
         }

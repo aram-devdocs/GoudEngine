@@ -24,9 +24,6 @@ pub use capture::{
     capture_frame_for_route, register_capture_hook_for_route, unregister_capture_hook_for_route,
     RawFramebufferReadbackV1,
 };
-pub use snapshot_refresh::{
-    register_snapshot_refresh_hook_for_route, unregister_snapshot_refresh_hook_for_route,
-};
 pub use control::{
     control_state_for_route, dispatch_request_json_for_route, take_frame_control_for_route,
 };
@@ -36,6 +33,9 @@ pub use debug_draw::{
     replace_provider_debug_draw_2d_for_context, replace_provider_debug_draw_2d_for_route,
     replace_provider_debug_draw_3d_for_context, replace_provider_debug_draw_3d_for_route,
     DebugDrawPayloadV1, DebugDrawShape2DV1, DebugDrawShape3DV1,
+};
+pub use snapshot_refresh::{
+    register_snapshot_refresh_hook_for_route, unregister_snapshot_refresh_hook_for_route,
 };
 pub use state::{FrameControlPlanV1, RouteControlStateV1, SyntheticInputEventV1};
 

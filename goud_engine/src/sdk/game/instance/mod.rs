@@ -2,9 +2,9 @@
 
 mod ecs_scene;
 
-use std::sync::atomic::{AtomicU32, Ordering};
 #[cfg(feature = "native")]
 use std::sync::atomic::AtomicU64;
+use std::sync::atomic::{AtomicU32, Ordering};
 #[cfg(feature = "native")]
 use std::sync::{Arc, Condvar, Mutex};
 
@@ -393,14 +393,13 @@ impl GoudGame {
                 .get_scene_name(*scene_id)
                 .unwrap_or("unknown")
                 .to_string();
-            let scene_entities =
-                crate::context_registry::scene::collect_debugger_entities(
-                    world,
-                    scene_name,
-                    selected_entity
-                        .as_ref()
-                        .map(|(scene_id, entity_id)| (scene_id.as_str(), *entity_id)),
-                );
+            let scene_entities = crate::context_registry::scene::collect_debugger_entities(
+                world,
+                scene_name,
+                selected_entity
+                    .as_ref()
+                    .map(|(scene_id, entity_id)| (scene_id.as_str(), *entity_id)),
+            );
             entities.extend(scene_entities);
         }
 

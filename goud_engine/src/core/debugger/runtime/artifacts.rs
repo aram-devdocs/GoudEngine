@@ -80,10 +80,7 @@ fn socket_path(root: &Path, process_nonce: u64) -> PathBuf {
         }
         let mut hasher = DefaultHasher::new();
         candidate.hash(&mut hasher);
-        short_socket_root(root).join(format!(
-            "g-{:x}.sock",
-            hasher.finish()
-        ))
+        short_socket_root(root).join(format!("g-{:x}.sock", hasher.finish()))
     }
 }
 

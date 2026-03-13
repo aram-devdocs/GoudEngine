@@ -10,7 +10,7 @@ use interprocess::local_socket::{prelude::*, GenericFilePath, Stream};
 use serde_json::Value;
 use thiserror::Error;
 
-const MAX_FRAME_BYTES: usize = 1024 * 1024;
+const MAX_FRAME_BYTES: usize = 16 * 1024 * 1024;
 
 #[derive(Debug)]
 pub struct AttachedRoute {
