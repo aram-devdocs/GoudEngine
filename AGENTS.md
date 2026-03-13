@@ -82,6 +82,17 @@ This repo still supports multi-agent work, but the default shape is intentionall
 
 Do not stack multiple review gates or nested specialist waves by default.
 
+### Subagent Dispatch Reference
+
+| Role | Model | Use For |
+|------|-------|---------|
+| engine-lead | opus | Direct implementation for Rust engine and core modules |
+| integration-lead | opus | Direct implementation for FFI, SDK, and codegen work |
+| quick-fix | haiku | Tightly scoped low-risk fixes |
+| reviewer | sonnet | Single review pass for requirements, tests, and major regressions |
+| security-auditor | opus | FFI, unsafe, pointer, and ownership-boundary review |
+| debugger | sonnet | Root-cause analysis for failing verification or runtime issues |
+
 ## `/gh-issue`
 
 - `/gh-issue` is opt-in.
