@@ -166,7 +166,7 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 | Registry | Total Downloads |
 |----------|-----------------|
 | crates.io | [36](https://crates.io/crates/goud-engine) |
-| NuGet | [932](https://www.nuget.org/packages/GoudEngine/) |
+| NuGet | [933](https://www.nuget.org/packages/GoudEngine/) |
 | PyPI | [2,138](https://pypi.org/project/goudengine/) |
 | npm | [837](https://www.npmjs.com/package/goudengine) |
 
@@ -176,7 +176,7 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 
 [![Star History Chart](https://api.star-history.com/svg?repos=aram-devdocs/GoudEngine&type=Date)](https://star-history.com/#aram-devdocs/GoudEngine&Date)
 
-<sub>Last updated: 2026-03-12 via [GitHub Action](.github/workflows/community-stats.yml)</sub>
+<sub>Last updated: 2026-03-13 via [GitHub Action](.github/workflows/community-stats.yml)</sub>
 <!-- COMMUNITY-STATS:END -->
 
 ## License
