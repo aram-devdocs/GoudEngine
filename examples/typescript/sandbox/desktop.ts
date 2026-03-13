@@ -1,4 +1,4 @@
-import { GoudContext, GoudGame, NetworkManager, NetworkProtocol, UiManager } from 'goudengine/node';
+import { EngineConfig, GoudContext, GoudGame, NetworkManager, NetworkProtocol, UiManager } from 'goudengine/node';
 import { DesktopNetworkState, SandboxApp, loadSandboxManifest } from './sandbox.js';
 
 function smokeSeconds(): number {
@@ -22,7 +22,11 @@ function envPort(name: string, fallback: number): number {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
-const game = new GoudGame({ width: 1280, height: 720, title: 'GoudEngine Sandbox - TypeScript' });
+const game = new EngineConfig()
+  .setTitle('GoudEngine Sandbox - TypeScript')
+  .setSize(1280, 720)
+  .setDebugger({ enabled: true, publishLocalAttach: true, routeLabel: 'sandbox-typescript-desktop' })
+  .build();
 const ui = new UiManager();
 const root = ui.createPanel();
 const title = ui.createLabel('Sandbox Widgets');
