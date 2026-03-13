@@ -1,6 +1,6 @@
 [package]
 name = "goud-engine-core"
-version = "0.0.828" # x-release-please-version
+version = "0.0.829" # x-release-please-version
 edition = "2021"
 license = "MIT"
 description = "GoudEngine core — internal implementation crate. Use goud-engine for the public API."
@@ -53,7 +53,7 @@ toml = { version = "0.8", optional = true }
 gltf = { version = "1.4", optional = true }
 tobj = { version = "4.0", optional = true, features = ["ahash"] }
 bytemuck = "1.14"
-goud_engine_macros = { version = "=0.0.828", path = "../goud_engine_macros" } # x-release-please-version
+goud_engine_macros = { version = "=0.0.829", path = "../goud_engine_macros" } # x-release-please-version
 wgpu = { version = "28", optional = true }
 winit = { version = "0.30", optional = true }
 naga = { version = "28", optional = true, features = ["glsl-in", "wgsl-out"] }
