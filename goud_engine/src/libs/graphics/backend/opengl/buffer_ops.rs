@@ -16,6 +16,8 @@ pub(super) fn create_buffer(
     data: &[u8],
 ) -> GoudResult<BufferHandle> {
     let mut gl_id: u32 = 0;
+    // SAFETY: Valid GL context is guaranteed by the renderer initialization.
+    // gl_id is a valid stack-allocated output variable for GenBuffers.
     unsafe {
         gl::GenBuffers(1, &mut gl_id);
         if gl_id == 0 {
@@ -28,7 +30,9 @@ pub(super) fn create_buffer(
     let target = buffer_type_to_gl_target(buffer_type);
     let gl_usage = buffer_usage_to_gl_usage(usage);
 
-    // Bind and upload data
+    // SAFETY: Valid GL context is guaranteed by the renderer initialization.
+    // target and gl_usage are valid GL enums from conversion functions; data.as_ptr()
+    // points to a valid byte slice for data.len() bytes.
     unsafe {
         gl::BindBuffer(target, gl_id);
         gl::BufferData(
@@ -93,6 +97,8 @@ pub(super) fn update_buffer(
     let gl_id = metadata.gl_id;
     let buf_type = metadata.buffer_type;
 
+    // SAFETY: Valid GL context is guaranteed by the renderer initialization. gl_id is a
+    // live buffer object looked up from the backend. Offset and data length are bounds-checked above.
     unsafe {
         gl::BindBuffer(target, gl_id);
         gl::BufferSubData(
@@ -121,6 +127,8 @@ pub(super) fn update_buffer(
 /// Destroys a buffer and frees GPU memory.
 pub(super) fn destroy_buffer(backend: &mut OpenGLBackend, handle: BufferHandle) -> bool {
     if let Some(metadata) = backend.buffers.remove(&handle) {
+        // SAFETY: metadata.gl_id is a valid GL buffer name that was created by create_buffer.
+        // Deleting it releases GPU memory. The handle is removed from the map above.
         unsafe {
             gl::DeleteBuffers(1, &metadata.gl_id);
         }

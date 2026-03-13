@@ -29,6 +29,8 @@ pub(super) fn create_texture(
     }
 
     let mut gl_id: u32 = 0;
+    // SAFETY: Valid GL context is guaranteed by the renderer initialization.
+    // gl_id is a valid stack-allocated output variable for GenTextures.
     unsafe {
         gl::GenTextures(1, &mut gl_id);
         if gl_id == 0 {
@@ -42,7 +44,10 @@ pub(super) fn create_texture(
     let filter_gl = texture_filter_to_gl(filter);
     let wrap_gl = texture_wrap_to_gl(wrap);
 
-    // Bind and upload data
+    // SAFETY: Valid GL context is guaranteed by the renderer initialization.
+    // gl_id is a live texture object. Format, filter, and wrap enums are valid GL values
+    // from conversion functions. data_ptr is either null (for empty data) or a valid pointer
+    // to the pixel data slice.
     unsafe {
         gl::BindTexture(gl::TEXTURE_2D, gl_id);
 
@@ -143,6 +148,9 @@ pub(super) fn update_texture(
     let (_, pixel_format, pixel_type) = texture_format_to_gl(metadata.format);
     let gl_id = metadata.gl_id;
 
+    // SAFETY: Valid GL context is guaranteed by the renderer initialization.
+    // gl_id is a live texture object from the backend. Region bounds and data size
+    // are validated above. Format enums come from the stored metadata.
     unsafe {
         // Bind texture
         gl::BindTexture(gl::TEXTURE_2D, gl_id);
@@ -179,6 +187,8 @@ pub(super) fn update_texture(
 /// Destroys a texture and frees GPU memory.
 pub(super) fn destroy_texture(backend: &mut OpenGLBackend, handle: TextureHandle) -> bool {
     if let Some(metadata) = backend.textures.remove(&handle) {
+        // SAFETY: metadata.gl_id is a valid GL texture name created by create_texture.
+        // Deleting it releases GPU memory. The handle is removed from the map above.
         unsafe {
             gl::DeleteTextures(1, &metadata.gl_id);
         }
