@@ -7,6 +7,7 @@
 //! cadence and can be mocked without a real window (e.g., test harnesses
 //! injecting synthetic events).
 
+use super::diagnostics::InputDiagnosticsV1;
 use super::types::{
     GamepadAxis, GamepadButton, GamepadId, InputCapabilities, KeyCode, MouseButton,
 };
@@ -68,4 +69,11 @@ pub trait InputProvider: Provider {
 
     /// Returns true if a gamepad button is currently held down.
     fn gamepad_button_pressed(&self, id: GamepadId, button: GamepadButton) -> bool;
+
+    // -------------------------------------------------------------------------
+    // Diagnostics
+    // -------------------------------------------------------------------------
+
+    /// Returns a snapshot of input diagnostics.
+    fn input_diagnostics(&self) -> InputDiagnosticsV1;
 }

@@ -215,7 +215,11 @@ internal static class Program
         var repoRoot = FindRepoRoot(AppContext.BaseDirectory);
         var assets = LoadAssets(repoRoot);
 
-        using var game = new GoudGame(WindowWidth, WindowHeight, $"{assets.Title} - C#");
+        using var engineConfig = new EngineConfig()
+            .SetTitle($"{assets.Title} - C#")
+            .SetSize(WindowWidth, WindowHeight)
+            .SetDebugger(new DebuggerConfig(true, true, "sandbox-csharp"));
+        using var game = engineConfig.Build();
         using var sceneContext = new GoudContext();
         using var network = new NetworkState(assets.Port);
         using var ui = BuildUi();

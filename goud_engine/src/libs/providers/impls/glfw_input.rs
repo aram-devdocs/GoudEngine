@@ -8,6 +8,7 @@
 
 use std::collections::HashSet;
 
+use crate::core::providers::diagnostics::InputDiagnosticsV1;
 use crate::libs::error::GoudResult;
 use crate::libs::providers::input::InputProvider;
 use crate::libs::providers::types::{
@@ -159,6 +160,20 @@ impl InputProvider for GlfwInputProvider {
 
     fn gamepad_button_pressed(&self, _id: GamepadId, _button: GamepadButton) -> bool {
         false
+    }
+
+    fn input_diagnostics(&self) -> InputDiagnosticsV1 {
+        InputDiagnosticsV1 {
+            pressed_keys: self.keys_current.iter().map(|k| format!("{}", k)).collect(),
+            mouse_position: self.mouse_position,
+            mouse_buttons_pressed: self
+                .mouse_buttons_current
+                .iter()
+                .map(|b| format!("{}", b))
+                .collect(),
+            connected_gamepads: 0,
+            scroll_delta: self.scroll_delta,
+        }
     }
 }
 

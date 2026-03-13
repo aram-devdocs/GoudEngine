@@ -3,6 +3,7 @@
 //! The `AudioProvider` trait abstracts the audio backend, enabling
 //! runtime selection between Rodio, WebAudio, or null (silent).
 
+use super::diagnostics::AudioDiagnosticsV1;
 use super::types::{AudioCapabilities, AudioChannel, PlayConfig, PlaybackId, SoundHandle};
 use super::{Provider, ProviderLifecycle};
 use crate::core::error::GoudResult;
@@ -70,4 +71,11 @@ pub trait AudioProvider: Provider + ProviderLifecycle {
 
     /// Set the position of a playing sound source as [x, y, z].
     fn set_source_position(&mut self, id: PlaybackId, pos: [f32; 3]) -> GoudResult<()>;
+
+    // -------------------------------------------------------------------------
+    // Diagnostics
+    // -------------------------------------------------------------------------
+
+    /// Returns a snapshot of audio diagnostics.
+    fn audio_diagnostics(&self) -> AudioDiagnosticsV1;
 }

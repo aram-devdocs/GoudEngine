@@ -6,7 +6,7 @@
 //! # Architecture
 //!
 //! ```text
-//! Browser JS  ──▶  wasm_bindgen exports  ──▶  ECS World + wgpu renderer
+//! Browser JS  -->  wasm_bindgen exports  -->  ECS World + wgpu renderer
 //!   (input,          (this module)            (entities, components,
 //!    rAF loop,                                 sprites, textures)
 //!    canvas)
@@ -16,10 +16,12 @@ mod audio;
 mod collision;
 mod ecs_ops;
 mod input;
+mod lifecycle;
 mod network;
 mod rendering;
 mod sprite_renderer;
 mod texture_loader;
+mod types;
 mod ui;
 
 #[cfg(all(test, target_arch = "wasm32"))]
@@ -27,110 +29,18 @@ mod ui;
 mod tests;
 
 pub use collision::WasmContact;
+pub(self) use lifecycle::WasmFontAtlas;
 pub use texture_loader::{fetch_bytes, load_texture_from_url};
+pub use types::{WasmRenderStats, WasmSprite, WasmTransform2D};
 pub use ui::{WasmUiEvent, WasmUiManager};
 
 use std::collections::{HashMap, HashSet};
 use wasm_bindgen::prelude::*;
 
+use crate::core::debugger::{self, DebuggerConfig, RuntimeRouteId, RuntimeSurfaceKind};
 use crate::ecs::World;
-use crate::rendering::text::GlyphAtlas;
 
-use sprite_renderer::{TextureEntry, WgpuSpriteRenderer};
-
-// ---------------------------------------------------------------------------
-// Transform2D data transfer object
-// ---------------------------------------------------------------------------
-
-/// A plain-data snapshot of a `Transform2D` component, safe to pass across
-/// the wasm-bindgen boundary.
-#[wasm_bindgen]
-#[derive(Debug, Clone, Copy)]
-pub struct WasmTransform2D {
-    /// X position.
-    pub position_x: f32,
-    /// Y position.
-    pub position_y: f32,
-    /// Rotation in radians.
-    pub rotation: f32,
-    /// X scale.
-    pub scale_x: f32,
-    /// Y scale.
-    pub scale_y: f32,
-}
-
-// ---------------------------------------------------------------------------
-// Sprite data transfer object
-// ---------------------------------------------------------------------------
-
-/// A plain-data snapshot of a `Sprite` component, safe to pass across
-/// the wasm-bindgen boundary.
-#[wasm_bindgen]
-#[derive(Debug, Clone, Copy)]
-pub struct WasmSprite {
-    /// Texture handle backing this sprite.
-    pub texture_handle: u32,
-    /// Red channel tint.
-    pub r: f32,
-    /// Green channel tint.
-    pub g: f32,
-    /// Blue channel tint.
-    pub b: f32,
-    /// Alpha channel tint.
-    pub a: f32,
-    /// Horizontal texture flip flag.
-    pub flip_x: bool,
-    /// Vertical texture flip flag.
-    pub flip_y: bool,
-    /// X anchor in normalized sprite space.
-    pub anchor_x: f32,
-    /// Y anchor in normalized sprite space.
-    pub anchor_y: f32,
-}
-
-// ---------------------------------------------------------------------------
-// Render statistics data transfer object
-// ---------------------------------------------------------------------------
-
-/// Per-frame rendering statistics exposed to JavaScript.
-#[wasm_bindgen]
-#[derive(Debug, Clone, Copy)]
-pub struct WasmRenderStats {
-    /// Number of draw calls submitted this frame.
-    pub draw_calls: u32,
-    /// Number of triangles submitted this frame.
-    pub triangles: u32,
-    /// Number of texture bind switches this frame.
-    pub texture_binds: u32,
-}
-
-// ---------------------------------------------------------------------------
-// wgpu rendering state (owned by WasmGame when canvas is provided)
-// ---------------------------------------------------------------------------
-
-struct WgpuRenderState {
-    device: wgpu::Device,
-    queue: wgpu::Queue,
-    surface: wgpu::Surface<'static>,
-    surface_config: wgpu::SurfaceConfiguration,
-    renderer: WgpuSpriteRenderer,
-    textures: Vec<Option<TextureEntry>>,
-    clear_color: [f64; 4],
-    current_frame: Option<wgpu::SurfaceTexture>,
-    current_view: Option<wgpu::TextureView>,
-}
-
-struct WasmFontAtlas {
-    atlas: GlyphAtlas,
-    texture_handle: Option<u32>,
-    synced_version: u64,
-}
-
-struct WasmFontEntry {
-    font: fontdue::Font,
-    bytes: Vec<u8>,
-    atlases: HashMap<u32, WasmFontAtlas>,
-}
+use lifecycle::{WasmFontEntry, WgpuRenderState};
 
 // ---------------------------------------------------------------------------
 // Main game handle exposed to JavaScript
@@ -174,7 +84,7 @@ pub struct WasmGame {
     frame_mouse_just_pressed: HashSet<u32>,
     frame_mouse_just_released: HashSet<u32>,
 
-    // Action map: action name → list of bound key codes
+    // Action map: action name -> list of bound key codes
     action_map: HashMap<String, Vec<u32>>,
 
     // Loaded runtime fonts (1-based handles for JS API).
@@ -188,6 +98,9 @@ pub struct WasmGame {
 
     // Browser WebSocket networking runtime state.
     network_state: network::WasmNetworkState,
+
+    /// Route registered with the debugger runtime, if enabled.
+    debugger_route: Option<RuntimeRouteId>,
 }
 
 #[wasm_bindgen]
@@ -231,109 +144,8 @@ impl WasmGame {
             render_state: None,
             audio_state: audio::WasmAudioState::new(),
             network_state: network::WasmNetworkState::new(),
+            debugger_route: None,
         }
-    }
-
-    /// Creates a game instance with wgpu rendering attached to a canvas.
-    #[wasm_bindgen(js_name = "createWithCanvas")]
-    pub async fn create_with_canvas(
-        canvas: web_sys::HtmlCanvasElement,
-        width: u32,
-        height: u32,
-        title: &str,
-    ) -> Result<WasmGame, JsValue> {
-        #[cfg(feature = "web")]
-        {
-            std::panic::set_hook(Box::new(console_error_panic_hook));
-        }
-
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::BROWSER_WEBGPU | wgpu::Backends::GL,
-            ..Default::default()
-        });
-
-        let surface = instance
-            .create_surface(wgpu::SurfaceTarget::Canvas(canvas))
-            .map_err(|e| JsValue::from_str(&format!("Surface creation failed: {}", e)))?;
-
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                compatible_surface: Some(&surface),
-                ..Default::default()
-            })
-            .await
-            .map_err(|e| JsValue::from_str(&format!("No suitable GPU adapter found: {}", e)))?;
-
-        let (device, queue): (wgpu::Device, wgpu::Queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor::default())
-            .await
-            .map_err(|e| JsValue::from_str(&format!("Device request failed: {}", e)))?;
-
-        let caps = surface.get_capabilities(&adapter);
-        let format = caps
-            .formats
-            .first()
-            .copied()
-            .ok_or_else(|| JsValue::from_str("No surface format available"))?;
-
-        let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format,
-            width,
-            height,
-            present_mode: wgpu::PresentMode::AutoVsync,
-            desired_maximum_frame_latency: 2,
-            alpha_mode: caps
-                .alpha_modes
-                .first()
-                .copied()
-                .unwrap_or(wgpu::CompositeAlphaMode::Auto),
-            view_formats: vec![],
-        };
-        surface.configure(&device, &config);
-
-        let renderer = WgpuSpriteRenderer::new(&device, &queue, format);
-
-        let render_state = WgpuRenderState {
-            device,
-            queue,
-            surface,
-            surface_config: config,
-            renderer,
-            textures: Vec::new(),
-            clear_color: [0.0, 0.0, 0.0, 1.0],
-            current_frame: None,
-            current_view: None,
-        };
-
-        Ok(Self {
-            world: World::new(),
-            delta_time: 0.0,
-            total_time: 0.0,
-            frame_count: 0,
-            width,
-            height,
-            title: title.to_string(),
-            keys_current: HashSet::new(),
-            mouse_buttons_current: HashSet::new(),
-            mouse_x: 0.0,
-            mouse_y: 0.0,
-            scroll_dx: 0.0,
-            scroll_dy: 0.0,
-            keys_pressed_buffer: HashSet::new(),
-            keys_released_buffer: HashSet::new(),
-            mouse_pressed_buffer: HashSet::new(),
-            mouse_released_buffer: HashSet::new(),
-            frame_keys_just_pressed: HashSet::new(),
-            frame_keys_just_released: HashSet::new(),
-            frame_mouse_just_pressed: HashSet::new(),
-            frame_mouse_just_released: HashSet::new(),
-            action_map: HashMap::new(),
-            fonts: Vec::new(),
-            render_state: Some(render_state),
-            audio_state: audio::WasmAudioState::new(),
-            network_state: network::WasmNetworkState::new(),
-        })
     }
 
     // ======================================================================
@@ -354,6 +166,15 @@ impl WasmGame {
         self.total_time += delta_time;
         self.frame_count += 1;
 
+        if let Some(ref route_id) = self.debugger_route {
+            debugger::begin_frame(
+                route_id,
+                self.frame_count,
+                self.delta_time,
+                self.total_time as f64,
+            );
+        }
+
         if let Some(rs) = &mut self.render_state {
             rs.renderer.begin_frame();
             if let Ok(frame) = rs.surface.get_current_texture() {
@@ -370,6 +191,10 @@ impl WasmGame {
     ///
     /// Call this at the end of each `requestAnimationFrame` callback.
     pub fn end_frame(&mut self) {
+        if let Some(ref route_id) = self.debugger_route {
+            debugger::end_frame(route_id);
+        }
+
         if let Some(rs) = &mut self.render_state {
             if let Some(view) = rs.current_view.take() {
                 rs.renderer.flush(
@@ -463,10 +288,69 @@ impl WasmGame {
     pub fn has_renderer(&self) -> bool {
         self.render_state.is_some()
     }
+
+    // ======================================================================
+    // Debugger support
+    // ======================================================================
+
+    /// Initialize the debugger route for this game instance.
+    /// Call this once after construction to enable debugger support.
+    #[wasm_bindgen(js_name = "initDebugger")]
+    pub fn init_debugger(&mut self, route_label: &str) {
+        if self.debugger_route.is_some() {
+            return; // Already initialized
+        }
+        let config = DebuggerConfig {
+            enabled: true,
+            publish_local_attach: false,
+            route_label: Some(route_label.to_string()),
+        };
+        let context_id = crate::core::context_id::GoudContextId::new(
+            (self.frame_count as u32).wrapping_add(1),
+            1,
+        );
+        let route_id =
+            debugger::register_context(context_id, RuntimeSurfaceKind::WindowedGame, &config);
+        self.debugger_route = Some(route_id);
+    }
+
+    /// Dispatch a JSON debugger request and return the JSON response.
+    /// Used by the WebSocket relay to forward IPC verbs.
+    #[wasm_bindgen(js_name = "dispatchDebuggerRequest")]
+    pub fn dispatch_debugger_request(&self, json: &str) -> String {
+        let Some(ref route_id) = self.debugger_route else {
+            return r#"{"ok":false,"error":{"code":"attach_disabled","message":"debugger not initialized"}}"#.to_string();
+        };
+        match debugger::dispatch_request_json_for_route(route_id, json) {
+            Ok(value) => serde_json::to_string(&value).unwrap_or_else(|_| "{}".to_string()),
+            Err(err) => format!(
+                r#"{{"ok":false,"error":{{"code":"protocol_error","message":"{}"}}}}"#,
+                err
+            ),
+        }
+    }
+
+    /// Get the debugger snapshot as JSON.
+    #[wasm_bindgen(js_name = "getDebuggerSnapshotJson")]
+    pub fn get_debugger_snapshot_json(&self) -> String {
+        let Some(ref route_id) = self.debugger_route else {
+            return "{}".to_string();
+        };
+        debugger::snapshot_for_route(route_id)
+            .and_then(|s| serde_json::to_string(&s).ok())
+            .unwrap_or_else(|| "{}".to_string())
+    }
+
+    /// Capture the canvas as a base64-encoded PNG data URL.
+    /// The actual canvas capture is done in JS via canvas.toDataURL().
+    #[wasm_bindgen(js_name = "captureCanvasBase64")]
+    pub fn capture_canvas_base64(&self) -> Result<String, JsValue> {
+        Ok(String::new())
+    }
 }
 
 // ---------------------------------------------------------------------------
-// Panic hook — routes Rust panics to `console.error`
+// Panic hook -- routes Rust panics to `console.error`
 // ---------------------------------------------------------------------------
 
 fn console_error_panic_hook(info: &std::panic::PanicHookInfo<'_>) {

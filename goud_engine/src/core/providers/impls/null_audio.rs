@@ -2,6 +2,7 @@
 
 use crate::core::error::GoudResult;
 use crate::core::providers::audio::AudioProvider;
+use crate::core::providers::diagnostics::AudioDiagnosticsV1;
 use crate::core::providers::types::{
     AudioCapabilities, AudioChannel, PlayConfig, PlaybackId, SoundHandle,
 };
@@ -98,6 +99,10 @@ impl AudioProvider for NullAudioProvider {
 
     fn set_source_position(&mut self, _id: PlaybackId, _pos: [f32; 3]) -> GoudResult<()> {
         Ok(())
+    }
+
+    fn audio_diagnostics(&self) -> AudioDiagnosticsV1 {
+        AudioDiagnosticsV1::default()
     }
 }
 

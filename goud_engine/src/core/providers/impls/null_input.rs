@@ -1,6 +1,7 @@
 //! Null input provider -- silent no-op for headless testing.
 
 use crate::core::error::GoudResult;
+use crate::core::providers::diagnostics::InputDiagnosticsV1;
 use crate::core::providers::input::InputProvider;
 use crate::core::providers::types::{
     GamepadAxis, GamepadButton, GamepadId, InputCapabilities, KeyCode, MouseButton,
@@ -93,6 +94,10 @@ impl InputProvider for NullInputProvider {
 
     fn gamepad_button_pressed(&self, _id: GamepadId, _button: GamepadButton) -> bool {
         false
+    }
+
+    fn input_diagnostics(&self) -> InputDiagnosticsV1 {
+        InputDiagnosticsV1::default()
     }
 }
 

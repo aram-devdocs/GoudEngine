@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::core::debugger::EntityStateV1;
+use crate::ecs::components::hierarchy::{Children, Parent};
 use crate::ecs::{Entity, World};
 
 fn entity_name(components: &BTreeMap<String, serde_json::Value>) -> Option<String> {
@@ -36,12 +37,20 @@ pub fn collect_debugger_entities(
             let mut component_types: Vec<String> = components.keys().cloned().collect();
             component_types.sort();
 
+            let parent_entity_id = world.get::<Parent>(*entity).map(|p| p.get().to_bits());
+            let child_entity_ids = world
+                .get::<Children>(*entity)
+                .map(|c| c.iter().map(|e| e.to_bits()).collect::<Vec<_>>())
+                .unwrap_or_default();
+
             let mut entity_state = EntityStateV1::summary_only(
                 entity_id,
                 scene_id.clone(),
                 entity_name(&components),
                 component_types,
             );
+            entity_state.parent_entity_id = parent_entity_id;
+            entity_state.child_entity_ids = child_entity_ids;
             if selected_entity
                 .as_ref()
                 .is_some_and(|(selected_scene_id, selected_entity_id)| {

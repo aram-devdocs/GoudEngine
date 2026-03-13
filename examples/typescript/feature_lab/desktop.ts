@@ -157,14 +157,8 @@ function verifyDebuggerRuntime(game: GoudGame, log: (line: string) => void): voi
 async function main(): Promise<void> {
   const config = new EngineConfig()
     .setTitle('Feature Lab (ALPHA-001) -- Desktop')
-    .setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
-  // The generated desktop wrapper currently serializes debugger config fields
-  // incorrectly, so the example uses the existing native config path directly.
-  (config as any).native.setDebugger({
-    enabled: true,
-    publishLocalAttach: true,
-    routeLabel: DEBUGGER_ROUTE_LABEL,
-  });
+    .setSize(SCREEN_WIDTH, SCREEN_HEIGHT)
+    .setDebugger({ enabled: true, publishLocalAttach: true, routeLabel: DEBUGGER_ROUTE_LABEL });
   const game = config.build();
 
   const log = (line: string): void => console.log(line);

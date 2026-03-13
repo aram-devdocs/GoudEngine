@@ -1,192 +1,16 @@
 use serde_json::{json, Value};
 
-use super::super::snapshot::DebuggerSnapshotV1;
 use super::super::types::CapabilityStateV1;
-use super::capture::{capture_frame_for_route, CaptureFrameError};
-use super::metrics::{empty_metrics_export, metrics_trace_json_for_route};
+use super::dispatch::{
+    capture_frame_response_for_route, error_response, metrics_trace_response_for_route,
+    ok_response, parse_bytes, parse_input_event, snapshot_value,
+};
 use super::replay;
 use super::state::{
-    lock_runtime, set_route_capability, set_service_state, sync_debugger_state, FrameControlPlanV1,
-    RouteControlStateV1, SyntheticInputEventV1,
+    lock_runtime, set_route_capability, set_service_state, sync_debugger_state,
+    with_route_state_mut, FrameControlPlanV1, RouteControlStateV1,
 };
 use crate::core::debugger::RuntimeRouteId;
-
-fn parse_vec2(value: Option<&Value>) -> Option<[f32; 2]> {
-    let values = value?.as_array()?;
-    if values.len() != 2 {
-        return None;
-    }
-    Some([values[0].as_f64()? as f32, values[1].as_f64()? as f32])
-}
-
-fn parse_input_event(value: &Value) -> Option<SyntheticInputEventV1> {
-    Some(SyntheticInputEventV1 {
-        device: value.get("device")?.as_str()?.to_string(),
-        action: value.get("action")?.as_str()?.to_string(),
-        key: value.get("key").and_then(Value::as_str).map(str::to_string),
-        button: value
-            .get("button")
-            .and_then(Value::as_str)
-            .map(str::to_string),
-        position: parse_vec2(value.get("position")),
-        delta: parse_vec2(value.get("delta")),
-    })
-}
-
-fn parse_bytes(value: &Value) -> Option<Vec<u8>> {
-    match value {
-        Value::Array(items) => items
-            .iter()
-            .map(|item| item.as_u64().and_then(|v| u8::try_from(v).ok()))
-            .collect(),
-        Value::String(text) => Some(text.as_bytes().to_vec()),
-        _ => None,
-    }
-}
-
-fn ok_response(request: &Value, result: Value) -> Value {
-    let mut response = json!({ "ok": true, "result": result });
-    if let Some(request_id) = request.get("request_id") {
-        response["request_id"] = request_id.clone();
-    }
-    response
-}
-
-fn error_response(
-    request: &Value,
-    code: &str,
-    message: String,
-    capability: Option<&str>,
-    service: Option<&str>,
-) -> Value {
-    let mut response = json!({
-        "ok": false,
-        "error": {
-            "code": code,
-            "message": message,
-        }
-    });
-    if let Some(capability) = capability {
-        response["error"]["capability"] = json!(capability);
-    }
-    if let Some(service) = service {
-        response["error"]["service"] = json!(service);
-    }
-    if let Some(request_id) = request.get("request_id") {
-        response["request_id"] = request_id.clone();
-    }
-    response
-}
-
-fn snapshot_value(snapshot: &DebuggerSnapshotV1) -> Value {
-    serde_json::to_value(snapshot).unwrap_or_else(|_| json!({}))
-}
-
-fn metrics_trace_response_for_route(route_id: &RuntimeRouteId, request: &Value) -> Value {
-    if let Some(metrics_json) = metrics_trace_json_for_route(route_id) {
-        let artifact_id = super::artifacts::store_metrics_trace_for_route(route_id, &metrics_json);
-        if let Ok(Value::Object(mut parsed)) = serde_json::from_str::<Value>(&metrics_json) {
-            parsed.insert("artifact_id".to_string(), json!(artifact_id));
-            return ok_response(request, Value::Object(parsed));
-        }
-    }
-
-    let has_route = {
-        let guard = lock_runtime();
-        guard
-            .as_ref()
-            .and_then(|runtime| runtime.routes.get(&route_id.context_id))
-            .is_some()
-    };
-
-    if has_route {
-        let empty_export = empty_metrics_export(route_id);
-        let metrics_json =
-            serde_json::to_string(&empty_export).unwrap_or_else(|_| "{}".to_string());
-        let artifact_id = super::artifacts::store_metrics_trace_for_route(route_id, &metrics_json);
-        let mut result = serde_json::to_value(empty_export).unwrap_or_else(|_| json!({}));
-        if let Value::Object(ref mut object) = result {
-            object.insert("artifact_id".to_string(), json!(artifact_id));
-        }
-        return ok_response(request, result);
-    }
-
-    error_response(
-        request,
-        "route_not_found",
-        "debugger route is no longer available".to_string(),
-        None,
-        None,
-    )
-}
-
-fn capture_frame_response_for_route(route_id: &RuntimeRouteId, request: &Value) -> Value {
-    let route_capture_state = {
-        let guard = lock_runtime();
-        let Some(runtime) = guard.as_ref() else {
-            return error_response(
-                request,
-                "route_not_found",
-                "debugger route is no longer available".to_string(),
-                None,
-                None,
-            );
-        };
-        let Some(route) = runtime.routes.get(&route_id.context_id) else {
-            return error_response(
-                request,
-                "route_not_found",
-                "debugger route is no longer available".to_string(),
-                None,
-                None,
-            );
-        };
-        route.capabilities.get("capture").copied()
-    };
-
-    if route_capture_state != Some(CapabilityStateV1::Ready) {
-        return error_response(
-            request,
-            "unsupported",
-            "capture is not available for this route".to_string(),
-            Some("capture"),
-            Some("capture"),
-        );
-    }
-
-    match capture_frame_for_route(route_id) {
-        Ok(artifact) => {
-            let artifact_id =
-                super::artifacts::store_capture_artifact_for_route(route_id, &artifact);
-            let mut artifact_json = serde_json::to_value(artifact).unwrap_or_else(|_| json!({}));
-            if let Value::Object(ref mut object) = artifact_json {
-                object.insert("artifact_id".to_string(), json!(artifact_id));
-            }
-            ok_response(request, artifact_json)
-        }
-        Err(CaptureFrameError::RouteNotFound) => error_response(
-            request,
-            "route_not_found",
-            "debugger route is no longer available".to_string(),
-            None,
-            None,
-        ),
-        Err(CaptureFrameError::Unsupported(message)) => error_response(
-            request,
-            "unsupported",
-            message,
-            Some("capture"),
-            Some("capture"),
-        ),
-        Err(CaptureFrameError::CaptureFailed(message)) => error_response(
-            request,
-            "capture_failed",
-            message,
-            Some("capture"),
-            Some("capture"),
-        ),
-    }
-}
 
 /// Returns the current route-local debugger control state.
 pub fn control_state_for_route(route_id: &RuntimeRouteId) -> Option<RouteControlStateV1> {
@@ -228,6 +52,122 @@ pub fn dispatch_request_json_for_route(
     if verb == "capture_frame" {
         return Ok(capture_frame_response_for_route(route_id, &request));
     }
+    if verb == "get_snapshot" {
+        super::snapshot_refresh::refresh_snapshot_for_route(route_id);
+        let guard = lock_runtime();
+        let Some(runtime) = guard.as_ref() else {
+            return Ok(error_response(
+                &request,
+                "route_not_found",
+                "debugger route is no longer available".to_string(),
+                None,
+                None,
+            ));
+        };
+        let Some(route) = runtime.routes.get(&route_id.context_id) else {
+            return Ok(error_response(
+                &request,
+                "route_not_found",
+                "debugger route is no longer available".to_string(),
+                None,
+                None,
+            ));
+        };
+        return Ok(ok_response(&request, snapshot_value(&route.snapshot)));
+    }
+    if verb == "get_diagnostics" {
+        super::snapshot_refresh::refresh_snapshot_for_route(route_id);
+        let guard = lock_runtime();
+        let diag = guard
+            .as_ref()
+            .and_then(|rt| rt.routes.get(&route_id.context_id))
+            .map(|route| route.snapshot.provider_diagnostics.clone())
+            .unwrap_or_default();
+        return Ok(ok_response(&request, json!({ "diagnostics": diag })));
+    }
+    if verb == "get_diagnostics_for" {
+        let key = request.get("key").and_then(Value::as_str).unwrap_or("");
+        super::snapshot_refresh::refresh_snapshot_for_route(route_id);
+        let guard = lock_runtime();
+        let val = guard
+            .as_ref()
+            .and_then(|rt| rt.routes.get(&route_id.context_id))
+            .and_then(|route| route.snapshot.provider_diagnostics.get(key).cloned())
+            .unwrap_or(Value::Null);
+        return Ok(ok_response(
+            &request,
+            json!({ "key": key, "diagnostics": val }),
+        ));
+    }
+    if verb == "get_logs" {
+        // Log capture will be fully wired in a later phase.
+        return Ok(ok_response(&request, json!({ "entries": [] })));
+    }
+    if verb == "get_scene_hierarchy" {
+        super::snapshot_refresh::refresh_snapshot_for_route(route_id);
+        let guard = lock_runtime();
+        let entities = guard
+            .as_ref()
+            .and_then(|rt| rt.routes.get(&route_id.context_id))
+            .map(|route| route.snapshot.entities.clone())
+            .unwrap_or_default();
+        return Ok(ok_response(&request, json!({ "entities": entities })));
+    }
+    if verb == "start_diagnostics_recording" {
+        let duration_seconds = request
+            .get("duration_seconds")
+            .and_then(Value::as_f64)
+            .unwrap_or(0.0) as f32;
+        let max_frames = request
+            .get("max_frames")
+            .and_then(Value::as_u64)
+            .unwrap_or(3600) as usize;
+        let result = with_route_state_mut(route_id, |route| {
+            let recording_id =
+                super::metrics::start_diagnostics_recording(route, duration_seconds, max_frames);
+            let status = super::metrics::diagnostics_recording_status(route);
+            json!({ "recording_id": recording_id, "status": status })
+        });
+        return Ok(ok_response(
+            &request,
+            result.unwrap_or_else(|| json!({ "error": "route not found" })),
+        ));
+    }
+    if verb == "stop_diagnostics_recording" {
+        let result = with_route_state_mut(route_id, |route| {
+            let recording_id = super::metrics::stop_diagnostics_recording(route);
+            let frame_count = route.diagnostics_recording.frames.len();
+            json!({ "recording_id": recording_id, "frame_count": frame_count })
+        });
+        return Ok(ok_response(
+            &request,
+            result.unwrap_or_else(|| json!({ "error": "route not found" })),
+        ));
+    }
+    if verb == "get_diagnostics_recording" {
+        let slice_count = request
+            .get("slice_count")
+            .and_then(Value::as_u64)
+            .unwrap_or(100)
+            .clamp(1, 1000) as u32;
+        let guard = lock_runtime();
+        let export = guard
+            .as_ref()
+            .and_then(|rt| rt.routes.get(&route_id.context_id))
+            .and_then(|route| {
+                super::metrics::export_diagnostics_recording_sliced(route, slice_count)
+            });
+        return Ok(match export {
+            Some(export) => ok_response(&request, serde_json::to_value(export).unwrap_or_default()),
+            None => error_response(
+                &request,
+                "no_recording",
+                "no diagnostics recording data available".to_string(),
+                None,
+                None,
+            ),
+        });
+    }
     let mut should_publish_manifest = false;
 
     let response = {
@@ -252,7 +192,6 @@ pub fn dispatch_request_json_for_route(
         };
 
         let response = match verb.as_str() {
-            "get_snapshot" => ok_response(&request, snapshot_value(&route.snapshot)),
             "set_selected_entity" => {
                 let entity_id = request.get("entity_id").and_then(Value::as_u64);
                 if !route.snapshot.scene.active_scene.is_empty() {

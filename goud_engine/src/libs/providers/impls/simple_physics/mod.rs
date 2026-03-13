@@ -3,6 +3,7 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::core::error::{GoudError, GoudResult};
+use crate::core::providers::diagnostics::PhysicsDiagnosticsV1;
 use crate::core::providers::physics::PhysicsProvider;
 use crate::core::providers::types::{
     BodyDesc, BodyHandle, ColliderDesc, ColliderHandle, CollisionEvent, ContactPair, DebugShape,
@@ -413,5 +414,16 @@ impl PhysicsProvider for SimplePhysicsProvider {
                 })
             })
             .collect()
+    }
+
+    fn physics_diagnostics(&self) -> PhysicsDiagnosticsV1 {
+        PhysicsDiagnosticsV1 {
+            body_count: self.bodies.len() as u32,
+            collider_count: self.colliders.len() as u32,
+            joint_count: 0,
+            contact_pair_count: self.contacts.len() as u32,
+            gravity: self.gravity,
+            timestep: self.timestep,
+        }
     }
 }

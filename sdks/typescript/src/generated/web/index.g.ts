@@ -147,6 +147,9 @@ interface WasmGameHandle {
   clear_network_simulation(handle: number): number;
   set_network_overlay_handle(handle: number): number;
   clear_network_overlay_handle(): number;
+  initDebugger(label: string): void;
+  dispatchDebuggerRequest(json: string): string;
+  getDebuggerSnapshotJson(): string;
 }
 
 interface WasmNetworkConnectResult {
@@ -300,10 +303,6 @@ class WebEntity implements IEntity {
 export interface WebGameConfig {
   width?: number; height?: number; title?: string;
   canvas?: HTMLCanvasElement; wasmUrl?: string;
-}
-
-function debuggerUnsupported(): never {
-  throw new Error('Debugger runtime is not supported in WASM mode');
 }
 
 /** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
@@ -908,27 +907,38 @@ export class GoudGame implements IGoudGame {
   setFpsOverlayEnabled(_enabled: boolean): void {}
   setFpsUpdateInterval(_interval: number): void {}
   setFpsOverlayCorner(_corner: number): void {}
-  getDebuggerSnapshotJson(): string { return debuggerUnsupported(); }
-  getDebuggerManifestJson(): string { return debuggerUnsupported(); }
-  setDebuggerPaused(_paused: boolean): void { debuggerUnsupported(); }
-  stepDebugger(_kind: number, _count: number): void { debuggerUnsupported(); }
-  setDebuggerTimeScale(_scale: number): void { debuggerUnsupported(); }
-  setDebuggerDebugDrawEnabled(_enabled: boolean): void { debuggerUnsupported(); }
-  injectDebuggerKeyEvent(_key: number, _pressed: boolean): void { debuggerUnsupported(); }
-  injectDebuggerMouseButton(_button: number, _pressed: boolean): void { debuggerUnsupported(); }
-  injectDebuggerMousePosition(_position: IVec2): void { debuggerUnsupported(); }
-  injectDebuggerScroll(_delta: IVec2): void { debuggerUnsupported(); }
-  setDebuggerProfilingEnabled(_enabled: boolean): void { debuggerUnsupported(); }
-  setDebuggerSelectedEntity(_entityId: number): void { debuggerUnsupported(); }
-  clearDebuggerSelectedEntity(): void { debuggerUnsupported(); }
-  getMemorySummary(): IMemorySummary { return debuggerUnsupported(); }
-  captureDebuggerFrame(): IDebuggerCapture { return debuggerUnsupported(); }
-  startDebuggerRecording(): void { debuggerUnsupported(); }
-  stopDebuggerRecording(): IDebuggerReplayArtifact { return debuggerUnsupported(); }
-  startDebuggerReplay(_recording: Uint8Array): void { debuggerUnsupported(); }
-  stopDebuggerReplay(): void { debuggerUnsupported(); }
-  getDebuggerReplayStatusJson(): string { return debuggerUnsupported(); }
-  getDebuggerMetricsTraceJson(): string { return debuggerUnsupported(); }
+  getDebuggerSnapshotJson(): string { return this.handle.getDebuggerSnapshotJson(); }
+  getDebuggerManifestJson(): string { return '{}'; }
+  setDebuggerPaused(paused: boolean): void { this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'set_paused', paused })); }
+  stepDebugger(kind: number, count: number): void { this.handle.dispatchDebuggerRequest(JSON.stringify(kind === 0 ? { verb: 'step', frames: count } : { verb: 'step', frames: 0, ticks: count })); }
+  setDebuggerTimeScale(scale: number): void { this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'set_time_scale', time_scale: scale })); }
+  setDebuggerDebugDrawEnabled(enabled: boolean): void { this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'set_debug_draw_enabled', enabled })); }
+  injectDebuggerKeyEvent(key: number, pressed: boolean): void { this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'inject_input', events: [{ device: 'keyboard', action: pressed ? 'press' : 'release', key: String(key) }] })); }
+  injectDebuggerMouseButton(button: number, pressed: boolean): void { this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'inject_input', events: [{ device: 'mouse', action: pressed ? 'press' : 'release', button: String(button) }] })); }
+  injectDebuggerMousePosition(position: IVec2): void { this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'inject_input', events: [{ device: 'mouse', action: 'move', position: [position.x, position.y] }] })); }
+  injectDebuggerScroll(delta: IVec2): void { this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'inject_input', events: [{ device: 'mouse', action: 'scroll', delta: [delta.x, delta.y] }] })); }
+  setDebuggerProfilingEnabled(enabled: boolean): void { this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'set_profiling_enabled', enabled })); }
+  setDebuggerSelectedEntity(entityId: number): void { this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'set_selected_entity', entity_id: entityId })); }
+  clearDebuggerSelectedEntity(): void { this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'clear_selected_entity' })); }
+  getMemorySummary(): IMemorySummary { return { rendering: { currentBytes: 0, peakBytes: 0 }, assets: { currentBytes: 0, peakBytes: 0 }, ecs: { currentBytes: 0, peakBytes: 0 }, ui: { currentBytes: 0, peakBytes: 0 }, audio: { currentBytes: 0, peakBytes: 0 }, network: { currentBytes: 0, peakBytes: 0 }, debugger: { currentBytes: 0, peakBytes: 0 }, other: { currentBytes: 0, peakBytes: 0 }, totalCurrentBytes: 0, totalPeakBytes: 0 }; }
+  captureDebuggerFrame(): IDebuggerCapture {
+    const snapshot = this.handle.getDebuggerSnapshotJson();
+    let imagePng = new Uint8Array(0);
+    try {
+      const dataUrl = this.canvas.toDataURL('image/png');
+      const base64 = dataUrl.split(',')[1] ?? '';
+      const binary = atob(base64);
+      imagePng = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) imagePng[i] = binary.charCodeAt(i);
+    } catch {}
+    return { imagePng, metadataJson: '{}', snapshotJson: snapshot, metricsTraceJson: '{}' };
+  }
+  startDebuggerRecording(): void { this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'start_recording' })); }
+  stopDebuggerRecording(): IDebuggerReplayArtifact { const r = this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'stop_recording' })); const parsed = JSON.parse(r); return { manifestJson: parsed?.result?.manifest_json ?? '{}', data: new Uint8Array(parsed?.result?.data ?? []) }; }
+  startDebuggerReplay(recording: Uint8Array): void { this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'start_replay', data: Array.from(recording) })); }
+  stopDebuggerReplay(): void { this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'stop_replay' })); }
+  getDebuggerReplayStatusJson(): string { return this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'get_replay_status' })); }
+  getDebuggerMetricsTraceJson(): string { return this.handle.dispatchDebuggerRequest(JSON.stringify({ verb: 'get_metrics_trace' })); }
 
   // TODO: wasm animation -- these stub methods satisfy the IGoudGame interface
   play(_entity: IEntity): number { return 0; }
@@ -970,6 +980,29 @@ export class GoudGame implements IGoudGame {
 
   /** Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred. */
   checkHotSwapShortcut(): boolean { throw new Error('Not supported in WASM mode'); }
+
+  /** Connect to a WebSocket debugger relay for MCP tool support. */
+  connectDebugger(wsUrl?: string): void {
+    const url = wsUrl ?? 'ws://127.0.0.1:9229';
+    (this.handle as any).initDebugger?.('web-game');
+    const ws = new WebSocket(url);
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ route_label: 'web-game', surface_kind: 'wasm_browser', capabilities: ['capture', 'control_plane', 'replay'] }));
+    };
+    ws.onmessage = (event) => {
+      const request = JSON.parse(event.data);
+      if (request.type === 'registration_ack') return;
+      if (request.verb === 'capture_frame') {
+        const snapshot = (this.handle as any).getDebuggerSnapshotJson?.() ?? '{}';
+        let imagePngBase64 = '';
+        try { imagePngBase64 = this.canvas.toDataURL('image/png').split(',')[1] ?? ''; } catch {}
+        ws.send(JSON.stringify({ ok: true, result: { image_png_base64: imagePngBase64, snapshot_json: snapshot, metadata_json: '{}', metrics_trace_json: '{}' } }));
+        return;
+      }
+      const response = (this.handle as any).dispatchDebuggerRequest?.(JSON.stringify(request)) ?? '{}';
+      ws.send(response);
+    };
+  }
 }
 
 /** Builder for configuring and creating a GoudGame instance with provider selection. */
@@ -1010,13 +1043,18 @@ export class EngineConfig {
   }
 
   /** Configures debugger runtime startup for the created game. */
-  setDebugger(_debugger: IDebuggerConfig): EngineConfig {
-    debuggerUnsupported();
+  setDebugger(debuggerConfig: IDebuggerConfig): EngineConfig {
+    (this._config as any).debugger = debuggerConfig;
+    return this;
   }
 
   /** Consumes the config and creates a windowed GoudGame instance */
   async build(): Promise<GoudGame> {
-    return GoudGame.create(this._config);
+    const game = await GoudGame.create(this._config);
+    if ((this._config as any).debugger?.enabled) {
+      (game as any).handle.initDebugger?.((this._config as any).debugger.routeLabel ?? 'web');
+    }
+    return game;
   }
 
   /** Frees the config without building */

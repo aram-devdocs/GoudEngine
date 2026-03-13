@@ -39,6 +39,7 @@ sys.path.insert(0, str(SDK_ROOT))
 
 from goud_engine import (  # noqa: E402
     Color,
+    EngineConfig,
     GoudContext,
     GoudGame,
     Key,
@@ -47,6 +48,7 @@ from goud_engine import (  # noqa: E402
     TextAlignment,
     UiManager,
 )
+from goud_engine.generated._types import DebuggerConfig  # noqa: E402
 
 
 WINDOW_WIDTH = 1280
@@ -562,7 +564,15 @@ def _next_step_row(row: str, manifest: SandboxManifest, network: NetworkState, a
 
 def main() -> int:
     manifest = _load_manifest()
-    game = GoudGame(WINDOW_WIDTH, WINDOW_HEIGHT, "GoudEngine Sandbox - Python")
+    config = EngineConfig()
+    config.set_title("GoudEngine Sandbox - Python")
+    config.set_size(WINDOW_WIDTH, WINDOW_HEIGHT)
+    config.set_debugger(DebuggerConfig(
+        enabled=True,
+        publish_local_attach=True,
+        route_label="sandbox-python",
+    ))
+    game = config.build()
     ui = _make_ui()
     scene_context = GoudContext()
     _try_scene_setup(scene_context)

@@ -431,6 +431,7 @@ pub unsafe extern "C" fn goud_engine_create(
         backend,
         game_config.physics_debug.enabled,
         debugger::route_for_context(context_id),
+        None,
     );
 
     if let Err(e) = set_window_state(context_id, window_state) {

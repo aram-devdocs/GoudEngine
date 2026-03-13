@@ -276,3 +276,16 @@ impl fmt::Debug for AssetServer {
             .finish()
     }
 }
+
+impl AssetServer {
+    /// Collects asset server diagnostics as a JSON value.
+    ///
+    /// This is provided as a method rather than a `DiagnosticsSource` impl
+    /// because `AssetServer` is not `Sync` (it contains an `mpsc::Receiver`).
+    pub fn collect_diagnostics(&self) -> serde_json::Value {
+        serde_json::json!({
+            "total_loaded": self.storage.total_len(),
+            "registered_types": self.storage.type_count(),
+        })
+    }
+}

@@ -12,6 +12,9 @@ use serde_json::Value;
 pub(super) struct AttachContextParams {
     pub(super) context_id: u64,
     pub(super) process_nonce: Option<u64>,
+    /// WebSocket relay route id. When provided, attaches to a browser route
+    /// via the WebSocket relay instead of a local Unix socket.
+    pub(super) ws_route_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -61,6 +64,34 @@ pub(super) struct InputEventParams {
 #[serde(rename_all = "camelCase")]
 pub(super) struct InjectInputParams {
     pub(super) events: Vec<InputEventParams>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct GetSubsystemDiagnosticsParams {
+    pub(super) key: String,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct GetLogsParams {
+    pub(super) since_frame: Option<u64>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct RecordDiagnosticsParams {
+    /// Duration in seconds to record. 0 means manual stop.
+    pub(super) duration_seconds: f32,
+    /// Number of time-slices to return in the export.
+    pub(super) slice_count: u32,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct GetDiagnosticsRecordingParams {
+    /// Number of time-slices to aggregate frames into.
+    pub(super) slice_count: u32,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]

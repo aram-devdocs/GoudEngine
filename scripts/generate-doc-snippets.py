@@ -46,14 +46,14 @@ REFERENCE_SPECS = [
         title="C# Sandbox Setup",
         source=ROOT / "examples" / "csharp" / "sandbox" / "Program.cs",
         language="csharp",
-        start_pattern=r"^\s*using var game = new GoudGame",
+        start_pattern=r"^\s*using var engineConfig = new EngineConfig",
         line_count=8,
     ),
     SnippetSpec(
         title="Python Sandbox Startup",
         source=ROOT / "examples" / "python" / "sandbox.py",
         language="python",
-        start_pattern=r"^\s*game = GoudGame",
+        start_pattern=r"^\s*config = EngineConfig",
         line_count=8,
     ),
     SnippetSpec(

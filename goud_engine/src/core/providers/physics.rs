@@ -3,6 +3,7 @@
 //! The `PhysicsProvider` trait abstracts the physics engine, enabling
 //! runtime selection between Rapier2D, a simple AABB engine, or null (no-op).
 
+use super::diagnostics::PhysicsDiagnosticsV1;
 use super::types::{
     BodyDesc, BodyHandle, ColliderDesc, ColliderHandle, CollisionEvent, ContactPair, DebugShape,
     JointDesc, JointHandle, PhysicsCapabilities, RaycastHit,
@@ -159,4 +160,11 @@ pub trait PhysicsProvider: Provider + ProviderLifecycle {
 
     /// Return debug visualization shapes for rendering physics debug overlays.
     fn debug_shapes(&self) -> Vec<DebugShape>;
+
+    // -------------------------------------------------------------------------
+    // Diagnostics
+    // -------------------------------------------------------------------------
+
+    /// Returns a snapshot of 2D physics diagnostics.
+    fn physics_diagnostics(&self) -> PhysicsDiagnosticsV1;
 }

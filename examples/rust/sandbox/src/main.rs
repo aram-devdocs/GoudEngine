@@ -5,7 +5,7 @@ mod network;
 use std::path::Path;
 
 use config::{parse_start_mode, read_manifest};
-use goudengine::{input::Key, GameConfig, GoudGame};
+use goudengine::{input::Key, DebuggerConfig, GameConfig, GoudGame};
 use hud::{draw as draw_hud, HudSnapshot};
 use network::NetworkState;
 
@@ -53,11 +53,15 @@ fn main() {
 
     println!("{}", config.title);
 
-    let mut game = GoudGame::with_platform(GameConfig::new(
-        "GoudEngine Sandbox - Rust",
-        WINDOW_WIDTH,
-        WINDOW_HEIGHT,
-    ))
+    let mut game = GoudGame::with_platform(
+        GameConfig::new("GoudEngine Sandbox - Rust", WINDOW_WIDTH, WINDOW_HEIGHT).with_debugger(
+            DebuggerConfig {
+                enabled: true,
+                publish_local_attach: true,
+                route_label: Some("sandbox-rust".to_string()),
+            },
+        ),
+    )
     .expect("failed to create game");
 
     let background = game.load(&config.assets.background);
@@ -155,11 +159,9 @@ fn main() {
         let sprite_rotation = (elapsed * 0.25).rem_euclid(std::f32::consts::TAU);
         let cube_yaw = (elapsed * 46.0).rem_euclid(360.0);
 
-        if is_3d_family_mode {
-            if !has_3d_setup {
-                scene3d = setup_3d_once(&mut game, &config.assets.texture3d);
-                has_3d_setup = scene3d.is_some();
-            }
+        if is_3d_family_mode && !has_3d_setup {
+            scene3d = setup_3d_once(&mut game, &config.assets.texture3d);
+            has_3d_setup = scene3d.is_some();
         }
 
         if is_3d_family_mode && has_3d_setup {

@@ -11,7 +11,7 @@ use crate::ffi::window::with_window_state;
 use crate::sdk::debug_overlay::{FpsStats, OverlayCorner};
 
 mod debugger_control;
-mod debugger_runtime;
+pub(crate) mod debugger_runtime;
 
 #[cfg(test)]
 mod debugger_control_tests;

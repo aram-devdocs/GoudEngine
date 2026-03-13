@@ -376,10 +376,9 @@ describe('Generated web UiManager bindings', () => {
     }
 
     for (const fragment of [
-      "function debuggerUnsupported(): never {",
-      "throw new Error('Debugger runtime is not supported in WASM mode');",
-      'getDebuggerSnapshotJson(): string { return debuggerUnsupported(); }',
-      'setDebugger(_debugger: IDebuggerConfig): EngineConfig {',
+      'getDebuggerSnapshotJson(): string { return this.handle.getDebuggerSnapshotJson(); }',
+      "setDebuggerPaused(paused: boolean): void { this.handle.dispatchDebuggerRequest(",
+      'setDebugger(debuggerConfig: IDebuggerConfig): EngineConfig {',
     ]) {
       assert.ok(
         webSrc.includes(fragment),

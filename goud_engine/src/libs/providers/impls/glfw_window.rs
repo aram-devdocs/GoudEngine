@@ -1,5 +1,6 @@
 //! GLFW window provider -- wraps `GlfwPlatform` for the provider API.
 
+use crate::core::providers::diagnostics::WindowDiagnosticsV1;
 use crate::libs::error::GoudResult;
 use crate::libs::platform::glfw_platform::GlfwPlatform;
 use crate::libs::platform::PlatformBackend;
@@ -80,6 +81,15 @@ impl WindowProvider for GlfwWindowProvider {
 
     fn get_framebuffer_size(&self) -> (u32, u32) {
         self.platform.get_framebuffer_size()
+    }
+
+    fn window_diagnostics(&self) -> WindowDiagnosticsV1 {
+        let (w, h) = self.platform.get_size();
+        let (fw, fh) = self.platform.get_framebuffer_size();
+        WindowDiagnosticsV1 {
+            size: [w, h],
+            framebuffer_size: [fw, fh],
+        }
     }
 }
 

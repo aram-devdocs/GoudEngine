@@ -53,6 +53,8 @@ find .agents/skills/ -name "SKILL.md" -type f 2>/dev/null
 | `/find-skills` | Discover available skills (this skill) | Yes |
 | `/sdk-parity-check` | Verify FFI exports have matching C# and Python SDK wrappers | Yes |
 | `/session-continuity` | Manage session state across context compactions | Yes |
+| `/goudengine-debugging` | Debugging workflow and diagnostic checklists for runtime via MCP tools | Yes |
+| `/goudengine-mcp-server` | Setup, tool reference, and troubleshooting for the MCP debugger server | Yes |
 
 ## Matching Skills to Tasks
 
@@ -67,6 +69,8 @@ find .agents/skills/ -name "SKILL.md" -type f 2>/dev/null
 | Writing documentation | `/humanizer` |
 | Adding FFI functions | `/sdk-parity-check` |
 | Starting/resuming a session | `/session-continuity` |
+| Debugging a running game | `/goudengine-debugging` |
+| Setting up MCP server | `/goudengine-mcp-server` |
 | Finding a skill | `/find-skills` (this one) |
 
 ## Adding New Skills

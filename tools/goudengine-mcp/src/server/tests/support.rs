@@ -17,11 +17,13 @@ use rmcp::handler::server::wrapper::{Json, Parameters};
 use serde_json::{json, Value};
 use tempfile::TempDir;
 
+use crate::server::types::McpDebuggerStepKind;
 use crate::server::types::{
-    AttachContextParams, InjectInputParams, InputEventParams, SetPausedParams, SetTimeScaleParams,
-    StartReplayParams, StepParams,
+    AttachContextParams, GetDiagnosticsRecordingParams, GetLogsParams,
+    GetSubsystemDiagnosticsParams, InjectInputParams, InputEventParams, RecordDiagnosticsParams,
+    SetPausedParams, SetTimeScaleParams, StartReplayParams, StepParams,
 };
-use crate::server::{GoudEngineMcpServer, McpDebuggerStepKind};
+use crate::server::GoudEngineMcpServer;
 
 static TEST_SOCKET_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
@@ -119,6 +121,7 @@ pub async fn attach_context(
         .attach_context(Parameters(AttachContextParams {
             context_id,
             process_nonce: Some(process_nonce),
+            ws_route_id: None,
         }))
         .await
         .expect("context should attach");
@@ -198,6 +201,48 @@ pub async fn stop_recording(server: &GoudEngineMcpServer) -> Value {
     response.into_value()
 }
 
+pub async fn get_diagnostics(server: &GoudEngineMcpServer) -> Value {
+    let Json(response) = server
+        .get_diagnostics()
+        .await
+        .expect("diagnostics should load");
+    response.into_value()
+}
+
+pub async fn get_subsystem_diagnostics(server: &GoudEngineMcpServer, key: &str) -> Value {
+    let Json(response) = server
+        .get_subsystem_diagnostics(Parameters(GetSubsystemDiagnosticsParams {
+            key: key.to_string(),
+        }))
+        .await
+        .expect("subsystem diagnostics should load");
+    response.into_value()
+}
+
+pub async fn get_logs(server: &GoudEngineMcpServer, since_frame: Option<u64>) -> Value {
+    let Json(response) = server
+        .get_logs(Parameters(GetLogsParams { since_frame }))
+        .await
+        .expect("logs should load");
+    response.into_value()
+}
+
+pub async fn get_scene_hierarchy(server: &GoudEngineMcpServer) -> Value {
+    let Json(response) = server
+        .get_scene_hierarchy()
+        .await
+        .expect("scene hierarchy should load");
+    response.into_value()
+}
+
+pub async fn get_diagnostics_recording(server: &GoudEngineMcpServer, slice_count: u32) -> Value {
+    let Json(response) = server
+        .get_diagnostics_recording(Parameters(GetDiagnosticsRecordingParams { slice_count }))
+        .await
+        .expect("diagnostics recording should load");
+    response.into_value()
+}
+
 pub async fn start_replay(server: &GoudEngineMcpServer, artifact_id: String) -> Value {
     let Json(response) = server
         .start_replay(Parameters(StartReplayParams {
@@ -247,7 +292,7 @@ fn spawn_fake_attach_server(
         )
         .expect("attach acceptance should write");
 
-        while requests.lock().expect("request log").len() < 9 {
+        while requests.lock().expect("request log").len() < 20 {
             let request = match read_frame(&mut stream) {
                 Ok(request) => request,
                 Err(err) if err.kind() == ErrorKind::UnexpectedEof => break,
@@ -271,6 +316,54 @@ fn spawn_fake_attach_server(
                 "capture_frame" => json!({ "artifact_id": "capture-54-0000000000000001" }),
                 "stop_recording" => json!({ "artifact_id": "recording-54-0000000000000002" }),
                 "start_replay" => json!({ "status": "replaying" }),
+                "get_diagnostics" => json!({
+                    "diagnostics": {
+                        "render": { "draw_calls": 42 },
+                        "audio": { "active_sources": 3 },
+                    }
+                }),
+                "get_diagnostics_for" => {
+                    let key = request["key"].as_str().unwrap_or("unknown");
+                    json!({ "key": key, "diagnostics": { "draw_calls": 42 } })
+                }
+                "get_logs" => json!({
+                    "logs": [
+                        { "timestamp_ms": 1000, "level": "INFO", "message": "tick", "target": "engine" }
+                    ]
+                }),
+                "get_scene_hierarchy" => json!({
+                    "entities": [
+                        { "entity_id": 1, "name": "Root", "parent_entity_id": null, "child_entity_ids": [2, 3] },
+                        { "entity_id": 2, "name": "Child1", "parent_entity_id": 1, "child_entity_ids": [] },
+                        { "entity_id": 3, "name": "Child2", "parent_entity_id": 1, "child_entity_ids": [] },
+                    ]
+                }),
+                "start_diagnostics_recording" => json!({
+                    "recording_id": "diag-rec-54-100",
+                    "status": { "active": true, "frame_count": 0, "recording_id": "diag-rec-54-100" }
+                }),
+                "stop_diagnostics_recording" => json!({
+                    "recording_id": "diag-rec-54-100",
+                    "frame_count": 60
+                }),
+                "get_diagnostics_recording" => {
+                    let slice_count = request["slice_count"].as_u64().unwrap_or(10);
+                    json!({
+                        "version": 1,
+                        "recording_id": "diag-rec-54-100",
+                        "total_frames": 60,
+                        "total_duration_seconds": 1.0,
+                        "requested_slices": slice_count,
+                        "slices": (0..slice_count).map(|i| json!({
+                            "slice_index": i,
+                            "frame_range": [i * 6, (i + 1) * 6 - 1],
+                            "time_range": [i as f64 * 0.1, (i + 1) as f64 * 0.1],
+                            "frame_count": 6,
+                            "avg_delta_seconds": 0.0166,
+                            "avg_fps": 60.0,
+                        })).collect::<Vec<_>>()
+                    })
+                }
                 other => panic!("unexpected debugger verb: {other}"),
             };
             write_frame(&mut stream, &json!({ "ok": true, "result": result }))

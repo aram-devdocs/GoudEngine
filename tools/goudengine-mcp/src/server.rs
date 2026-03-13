@@ -4,38 +4,44 @@ use anyhow::Result;
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
 use base64::Engine;
 use rmcp::handler::server::router::tool::ToolRouter;
-use rmcp::handler::server::wrapper::{Json, Parameters};
 use rmcp::model::{
     GetPromptRequestParams, GetPromptResult, ListPromptsResult, ListResourceTemplatesResult,
     ListResourcesResult, PaginatedRequestParams, ReadResourceRequestParams, ReadResourceResult,
     ServerCapabilities, ServerInfo,
 };
 use rmcp::ErrorData as McpError;
-use rmcp::{tool, tool_handler, tool_router, ServerHandler};
+use rmcp::{tool_handler, ServerHandler};
 use serde_json::{json, Value};
 
-use crate::attach_client::{AttachClient, AttachError, AttachedRoute};
+use crate::attach_client::{AttachError, AttachedRoute};
 use crate::discovery::{self, ArtifactKind, DiscoveredContext};
 use crate::prompts;
 use crate::resources;
+use crate::ws_relay::WsRelayState;
 
+mod tools;
 mod types;
 
-use self::types::{
-    structured_response, AttachContextParams, BridgeResponse, InjectInputParams,
-    InspectEntityParams, McpDebuggerStepKind, SetPausedParams, SetTimeScaleParams,
-    StartReplayParams, StepParams,
-};
+use self::types::StartReplayParams;
 
 struct BridgeState {
     runtime_root: std::path::PathBuf,
     attached: Option<AttachedRoute>,
+    /// When attached to a WebSocket browser route, holds the relay route id.
+    ws_route_id: Option<String>,
 }
 
 #[derive(Clone)]
 pub struct GoudEngineMcpServer {
     state: Arc<Mutex<BridgeState>>,
     tool_router: ToolRouter<Self>,
+    ws_relay: WsRelayState,
+}
+
+impl Default for GoudEngineMcpServer {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl GoudEngineMcpServer {
@@ -48,9 +54,16 @@ impl GoudEngineMcpServer {
             state: Arc::new(Mutex::new(BridgeState {
                 runtime_root: runtime_root.into(),
                 attached: None,
+                ws_route_id: None,
             })),
-            tool_router: Self::tool_router(),
+            tool_router: Self::create_tool_router(),
+            ws_relay: WsRelayState::new(),
         }
+    }
+
+    /// Returns a reference to the WebSocket relay state for spawning the relay.
+    pub fn ws_relay(&self) -> &WsRelayState {
+        &self.ws_relay
     }
 
     fn state(&self) -> Result<MutexGuard<'_, BridgeState>, McpError> {
@@ -87,6 +100,23 @@ impl GoudEngineMcpServer {
                 Err(map_attach_error(error))
             }
         }
+    }
+
+    /// Sends an IPC request through the WebSocket relay if a browser route is
+    /// attached, otherwise falls back to the local Unix socket client.
+    async fn request_attached_or_ws(&self, request: Value) -> Result<Value, McpError> {
+        let ws_route_id = {
+            let state = self.state()?;
+            state.ws_route_id.clone()
+        };
+        if let Some(route_id) = ws_route_id {
+            return self
+                .ws_relay
+                .request(&route_id, request)
+                .await
+                .map_err(|e| McpError::internal_error(e, None));
+        }
+        self.request_attached(request)
     }
 
     fn with_selection_restored(&self, entity_id: u64) -> Result<Value, McpError> {
@@ -142,222 +172,6 @@ impl GoudEngineMcpServer {
             "start_replay requires artifactId, resourceUri, or dataBase64",
             None,
         ))
-    }
-}
-
-#[tool_router(router = tool_router)]
-impl GoudEngineMcpServer {
-    #[tool(
-        name = "goudengine.list_contexts",
-        description = "Discover debugger contexts published by local GoudEngine processes."
-    )]
-    pub async fn list_contexts(&self) -> Result<Json<BridgeResponse>, McpError> {
-        let state = self.state()?;
-        let contexts = discovery::discover_contexts(&state.runtime_root);
-        structured_response(json!({
-            "contexts": contexts,
-            "attached_context": Self::current_attached_summary(&state),
-        }))
-    }
-
-    #[tool(
-        name = "goudengine.attach_context",
-        description = "Attach the MCP bridge to one route-scoped debugger context."
-    )]
-    pub async fn attach_context(
-        &self,
-        Parameters(params): Parameters<AttachContextParams>,
-    ) -> Result<Json<BridgeResponse>, McpError> {
-        let mut state = self.state()?;
-        let context =
-            discovery::find_context(&state.runtime_root, params.context_id, params.process_nonce)
-                .map_err(|err| McpError::invalid_request(err.to_string(), None))?;
-        let manifest = goud_engine::core::debugger::RuntimeManifestV1 {
-            manifest_version: 1,
-            pid: context.pid,
-            process_nonce: context.process_nonce,
-            executable: context.executable.clone(),
-            endpoint: context.endpoint.clone(),
-            routes: vec![context.route.clone()],
-            published_at_unix_ms: context.published_at_unix_ms,
-        };
-        let attached =
-            AttachClient::connect(manifest, context.route.clone()).map_err(map_attach_error)?;
-        let response = json!({
-            "context": context,
-            "session": attached.accepted,
-        });
-        state.attached = Some(attached);
-        structured_response(response)
-    }
-
-    #[tool(
-        name = "goudengine.get_snapshot",
-        description = "Fetch the current debugger snapshot for the attached route."
-    )]
-    pub async fn get_snapshot(&self) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({ "verb": "get_snapshot" }))?)
-    }
-
-    #[tool(
-        name = "goudengine.inspect_entity",
-        description = "Select one entity, fetch its expanded debugger snapshot entry, then restore the previous selection."
-    )]
-    pub async fn inspect_entity(
-        &self,
-        Parameters(params): Parameters<InspectEntityParams>,
-    ) -> Result<Json<BridgeResponse>, McpError> {
-        let snapshot = self.with_selection_restored(params.entity_id)?;
-        let entity = snapshot
-            .get("entities")
-            .and_then(Value::as_array)
-            .and_then(|entities| {
-                entities.iter().find(|entity| {
-                    entity.get("entity_id").and_then(Value::as_u64) == Some(params.entity_id)
-                })
-            })
-            .cloned()
-            .ok_or_else(|| {
-                McpError::invalid_request("entity was not present in the debugger snapshot", None)
-            })?;
-        structured_response(json!({
-            "entity": entity,
-            "snapshot": snapshot,
-        }))
-    }
-
-    #[tool(
-        name = "goudengine.get_metrics_trace",
-        description = "Export the current versioned debugger metrics trace for the attached route."
-    )]
-    pub async fn get_metrics_trace(&self) -> Result<Json<BridgeResponse>, McpError> {
-        let mut result = self.request_attached(json!({ "verb": "get_metrics_trace" }))?;
-        resources::add_resource_uri(ArtifactKind::Metrics, &mut result);
-        structured_response(result)
-    }
-
-    #[tool(
-        name = "goudengine.capture_frame",
-        description = "Capture the current framebuffer plus debugger metadata attachments for the attached route."
-    )]
-    pub async fn capture_frame(&self) -> Result<Json<BridgeResponse>, McpError> {
-        let mut result = self.request_attached(json!({ "verb": "capture_frame" }))?;
-        resources::add_resource_uri(ArtifactKind::Capture, &mut result);
-        structured_response(result)
-    }
-
-    #[tool(
-        name = "goudengine.start_recording",
-        description = "Start normalized input recording for the attached route."
-    )]
-    pub async fn start_recording(&self) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({ "verb": "start_recording" }))?)
-    }
-
-    #[tool(
-        name = "goudengine.stop_recording",
-        description = "Stop recording and export the replay artifact for the attached route."
-    )]
-    pub async fn stop_recording(&self) -> Result<Json<BridgeResponse>, McpError> {
-        let mut result = self.request_attached(json!({ "verb": "stop_recording" }))?;
-        resources::add_resource_uri(ArtifactKind::Recording, &mut result);
-        structured_response(result)
-    }
-
-    #[tool(
-        name = "goudengine.start_replay",
-        description = "Start replay for the attached route from a stored recording artifact or base64 payload."
-    )]
-    pub async fn start_replay(
-        &self,
-        Parameters(params): Parameters<StartReplayParams>,
-    ) -> Result<Json<BridgeResponse>, McpError> {
-        let bytes = self.replay_bytes(params)?;
-        structured_response(self.request_attached(json!({
-            "verb": "start_replay",
-            "data": bytes,
-        }))?)
-    }
-
-    #[tool(
-        name = "goudengine.stop_replay",
-        description = "Stop replay for the attached route."
-    )]
-    pub async fn stop_replay(&self) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({ "verb": "stop_replay" }))?)
-    }
-
-    #[tool(
-        name = "goudengine.set_paused",
-        description = "Pause or resume the attached route."
-    )]
-    pub async fn set_paused(
-        &self,
-        Parameters(params): Parameters<SetPausedParams>,
-    ) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({
-            "verb": "set_paused",
-            "paused": params.paused,
-        }))?)
-    }
-
-    #[tool(
-        name = "goudengine.step",
-        description = "Spend frame or tick debugger step budget on the attached route."
-    )]
-    pub async fn step(
-        &self,
-        Parameters(params): Parameters<StepParams>,
-    ) -> Result<Json<BridgeResponse>, McpError> {
-        let request = match params.kind {
-            McpDebuggerStepKind::Frame => json!({ "verb": "step", "frames": params.count }),
-            McpDebuggerStepKind::Tick => {
-                json!({ "verb": "step", "frames": 0, "ticks": params.count })
-            }
-        };
-        structured_response(self.request_attached(request)?)
-    }
-
-    #[tool(
-        name = "goudengine.set_time_scale",
-        description = "Set the debugger-owned time scale on the attached route."
-    )]
-    pub async fn set_time_scale(
-        &self,
-        Parameters(params): Parameters<SetTimeScaleParams>,
-    ) -> Result<Json<BridgeResponse>, McpError> {
-        structured_response(self.request_attached(json!({
-            "verb": "set_time_scale",
-            "time_scale": params.scale,
-        }))?)
-    }
-
-    #[tool(
-        name = "goudengine.inject_input",
-        description = "Inject one or more normalized debugger input events into the attached route."
-    )]
-    pub async fn inject_input(
-        &self,
-        Parameters(params): Parameters<InjectInputParams>,
-    ) -> Result<Json<BridgeResponse>, McpError> {
-        let events: Vec<Value> = params
-            .events
-            .into_iter()
-            .map(|event| {
-                json!({
-                    "device": event.device,
-                    "action": event.action,
-                    "key": event.key,
-                    "button": event.button,
-                    "position": event.position,
-                    "delta": event.delta,
-                })
-            })
-            .collect();
-        structured_response(self.request_attached(json!({
-            "verb": "inject_input",
-            "events": events,
-        }))?)
     }
 }
 

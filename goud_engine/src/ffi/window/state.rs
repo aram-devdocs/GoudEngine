@@ -17,10 +17,27 @@ use crate::libs::platform::PlatformBackend;
 use crate::sdk::debug_overlay::DebugOverlay;
 use crate::sdk::network_debug_overlay::NetworkOverlayState;
 use std::cell::RefCell;
+use std::sync::{Arc, Condvar, Mutex};
 use std::time::Instant;
 
 #[cfg(feature = "native")]
 use glfw::{Key, MouseButton};
+
+// ============================================================================
+// Deferred Capture
+// ============================================================================
+
+/// Shared state for deferred framebuffer capture (FFI path).
+///
+/// The IPC handler thread sets `requested = true` and waits on the condvar.
+/// The main thread (in `swap_buffers`) checks `requested`, does the GL readback,
+/// stores the result, and notifies the condvar.
+pub(crate) struct DeferredCaptureState {
+    requested: bool,
+    result: Option<Result<debugger::RawFramebufferReadbackV1, String>>,
+}
+
+type DeferredCapture = Arc<(Mutex<DeferredCaptureState>, Condvar)>;
 
 // ============================================================================
 // Window State
@@ -55,15 +72,19 @@ pub struct WindowState {
 
     /// Route registered with the debugger runtime for this window, if enabled.
     pub(crate) debugger_route: Option<RuntimeRouteId>,
+
+    /// Deferred capture coordination between IPC thread and main GL thread.
+    pub(crate) deferred_capture: Option<DeferredCapture>,
 }
 
 impl WindowState {
     /// Creates a new [`WindowState`] from the given platform and backend.
-    pub fn new(
+    pub(crate) fn new(
         platform: GlfwPlatform,
         backend: OpenGLBackend,
         physics_debug_enabled: bool,
         debugger_route: Option<RuntimeRouteId>,
+        deferred_capture: Option<DeferredCapture>,
     ) -> Self {
         Self {
             platform,
@@ -74,6 +95,7 @@ impl WindowState {
             debug_overlay: DebugOverlay::new(0.5),
             network_overlay: NetworkOverlayState::default(),
             debugger_route,
+            deferred_capture,
         }
     }
 
@@ -132,8 +154,37 @@ impl WindowState {
         self.delta_time
     }
 
+    /// Services a pending deferred capture request by performing the GL
+    /// readback on the current (main) thread, then notifying the waiting IPC thread.
+    fn service_deferred_capture(&mut self) {
+        let Some(ref deferred) = self.deferred_capture else {
+            return;
+        };
+        let (lock, cvar) = &**deferred;
+        let mut guard = match lock.lock() {
+            Ok(g) => g,
+            Err(poisoned) => poisoned.into_inner(),
+        };
+        if !guard.requested {
+            return;
+        }
+        let (w, h) = self.get_framebuffer_size();
+        let result = self
+            .backend
+            .read_default_framebuffer_rgba8(w, h)
+            .map(|rgba8| debugger::RawFramebufferReadbackV1 {
+                width: w,
+                height: h,
+                rgba8,
+            })
+            .map_err(|e| format!("framebuffer readback failed: {e}"));
+        guard.result = Some(result);
+        cvar.notify_all();
+    }
+
     /// Swaps the front and back buffers.
     pub fn swap_buffers(&mut self) {
+        self.service_deferred_capture();
         let started_at = Instant::now();
         self.platform.swap_buffers();
         debugger::record_phase_duration("frame_present", started_at.elapsed().as_micros() as u64);
@@ -245,7 +296,10 @@ thread_local! {
 }
 
 /// Stores the given [`WindowState`] for the specified context.
-pub fn set_window_state(context_id: GoudContextId, state: WindowState) -> Result<(), GoudError> {
+pub fn set_window_state(
+    context_id: GoudContextId,
+    mut state: WindowState,
+) -> Result<(), GoudError> {
     WINDOW_STATES.with(|cell| {
         let mut states = cell.borrow_mut();
         let index = context_id.index() as usize;
@@ -260,20 +314,47 @@ pub fn set_window_state(context_id: GoudContextId, state: WindowState) -> Result
             }
         }
 
-        if let Some(route_id) = state.debugger_route.clone() {
-            debugger::register_capture_hook_for_route(route_id, move || {
-                let (width, height) =
-                    with_window_state(context_id, |window| window.get_framebuffer_size())
-                        .ok_or_else(|| "window state is not available for capture".to_string())?;
-                let rgba8 = read_default_framebuffer_rgba8_for_context(context_id, width, height)
-                    .map_err(|err| format!("framebuffer readback failed: {err}"))?;
-                Ok(debugger::RawFramebufferReadbackV1 {
-                    width,
-                    height,
-                    rgba8,
-                })
+        let deferred_capture = if let Some(ref route_id) = state.debugger_route {
+            let deferred: DeferredCapture = Arc::new((
+                Mutex::new(DeferredCaptureState {
+                    requested: false,
+                    result: None,
+                }),
+                Condvar::new(),
+            ));
+            let deferred_clone = Arc::clone(&deferred);
+            debugger::register_capture_hook_for_route(route_id.clone(), move || {
+                let (lock, cvar) = &*deferred_clone;
+                let mut guard = lock
+                    .lock()
+                    .map_err(|e| format!("capture lock poisoned: {e}"))?;
+                guard.requested = true;
+                guard.result = None;
+                // Wait up to 5 seconds for the main thread to service the readback.
+                let timeout = std::time::Duration::from_secs(5);
+                loop {
+                    let (new_guard, wait_result) = cvar
+                        .wait_timeout(guard, timeout)
+                        .map_err(|e| format!("capture condvar error: {e}"))?;
+                    guard = new_guard;
+                    if guard.result.is_some() {
+                        break;
+                    }
+                    if wait_result.timed_out() {
+                        guard.requested = false;
+                        return Err(
+                            "capture timed out waiting for main thread readback".to_string()
+                        );
+                    }
+                }
+                guard.requested = false;
+                guard.result.take().unwrap()
             });
-        }
+            Some(deferred)
+        } else {
+            None
+        };
+        state.deferred_capture = deferred_capture;
 
         states[index] = Some(state);
         Ok(())

@@ -9,6 +9,7 @@
 //! window calls on the main thread. The engine enforces this by storing
 //! `WindowProvider` outside `ProviderRegistry`, directly in `GoudGame`.
 
+use super::diagnostics::WindowDiagnosticsV1;
 use crate::core::error::GoudResult;
 
 /// Trait for windowing backends.
@@ -50,4 +51,11 @@ pub trait WindowProvider: 'static {
     ///
     /// May differ from `get_size()` on high-DPI displays.
     fn get_framebuffer_size(&self) -> (u32, u32);
+
+    // -------------------------------------------------------------------------
+    // Diagnostics
+    // -------------------------------------------------------------------------
+
+    /// Returns a snapshot of window diagnostics.
+    fn window_diagnostics(&self) -> WindowDiagnosticsV1;
 }

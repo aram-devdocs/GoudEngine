@@ -107,6 +107,10 @@ impl NetworkProvider for RecordingProvider {
     fn connection_stats(&self, _conn: ConnectionId) -> Option<ConnectionStats> {
         Some(ConnectionStats::default())
     }
+
+    fn network_diagnostics(&self) -> crate::core::providers::diagnostics::NetworkDiagnosticsV1 {
+        Default::default()
+    }
 }
 
 fn host_config() -> HostConfig {

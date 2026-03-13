@@ -15,6 +15,7 @@
 //! main-thread access.
 
 pub mod audio;
+pub mod diagnostics;
 pub mod impls;
 pub mod input;
 pub mod input_types;
@@ -31,6 +32,10 @@ mod builder;
 mod registry;
 
 pub use builder::ProviderRegistryBuilder;
+pub use diagnostics::{
+    AudioDiagnosticsV1, DiagnosticsSource, InputDiagnosticsV1, NetworkDiagnosticsV1,
+    Physics3DDiagnosticsV1, PhysicsDiagnosticsV1, RenderDiagnosticsV1, WindowDiagnosticsV1,
+};
 pub use registry::ProviderRegistry;
 
 use crate::core::error::GoudResult;

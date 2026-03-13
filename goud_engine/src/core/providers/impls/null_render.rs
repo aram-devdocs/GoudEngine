@@ -1,6 +1,7 @@
 //! Null render provider -- silent no-op for headless testing.
 
 use crate::core::error::GoudResult;
+use crate::core::providers::diagnostics::RenderDiagnosticsV1;
 use crate::core::providers::render::RenderProvider;
 use crate::core::providers::types::{
     BufferDesc, BufferHandle, CameraData, DrawCommand, FrameContext, MeshDrawCommand,
@@ -136,6 +137,10 @@ impl RenderProvider for NullRenderProvider {
     fn set_render_target(&mut self, _handle: Option<RenderTargetHandle>) {}
 
     fn clear(&mut self, _color: [f32; 4]) {}
+
+    fn render_diagnostics(&self) -> RenderDiagnosticsV1 {
+        RenderDiagnosticsV1::default()
+    }
 }
 
 #[cfg(test)]

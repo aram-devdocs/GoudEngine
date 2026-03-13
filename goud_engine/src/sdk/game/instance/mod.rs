@@ -1,12 +1,16 @@
 //! [`GoudGame`] struct definition, construction, and core API.
 
+mod capture;
+mod debugger_frame;
 mod ecs_scene;
 
-use std::sync::atomic::{AtomicU32, Ordering};
+#[cfg(feature = "native")]
+use std::sync::atomic::AtomicU64;
+#[cfg(feature = "native")]
+use std::sync::{Arc, Condvar, Mutex};
 
 use crate::context_registry::scene::SceneManager;
-use crate::core::context_id::GoudContextId;
-use crate::core::debugger::{self, RuntimeRouteId, RuntimeSurfaceKind, SyntheticInputEventV1};
+use crate::core::debugger::{self, RuntimeRouteId, RuntimeSurfaceKind};
 use crate::core::error::GoudResult;
 use crate::core::providers::types::DebugShape;
 use crate::core::providers::ProviderRegistry;
@@ -28,6 +32,9 @@ use crate::rendering::sprite_batch::SpriteBatch;
 use crate::rendering::text::TextBatch;
 #[cfg(feature = "native")]
 use crate::rendering::UiRenderSystem;
+
+#[cfg(feature = "native")]
+pub(crate) use capture::{DeferredCapture, DeferredCaptureState};
 
 /// The main game instance managing the ECS world and game loop.
 ///
@@ -121,6 +128,16 @@ pub struct GoudGame {
     /// Centralized audio playback manager.
     #[cfg(feature = "native")]
     pub(crate) audio_manager: Option<crate::assets::AudioManager>,
+
+    /// Shared framebuffer dimensions for the debugger capture hook.
+    /// Packed as `(width << 32) | height`. Read by the capture hook closure.
+    #[cfg(feature = "native")]
+    #[allow(dead_code)]
+    pub(crate) capture_dimensions: Option<Arc<AtomicU64>>,
+
+    /// Deferred capture coordination between IPC thread and main GL thread.
+    #[cfg(feature = "native")]
+    pub(crate) deferred_capture: Option<DeferredCapture>,
 }
 
 /// Initializes the logger, diagnostic mode from environment, and optionally
@@ -134,132 +151,6 @@ fn init_engine_diagnostics(config: &GameConfig) {
 }
 
 impl GoudGame {
-    fn next_debugger_context_id() -> GoudContextId {
-        static NEXT_ID: AtomicU32 = AtomicU32::new(1_000_000);
-        GoudContextId::new(NEXT_ID.fetch_add(1, Ordering::Relaxed), 1)
-    }
-
-    fn register_debugger_route(
-        config: &GameConfig,
-        surface: RuntimeSurfaceKind,
-    ) -> Option<RuntimeRouteId> {
-        config.debugger.enabled.then(|| {
-            debugger::register_context(Self::next_debugger_context_id(), surface, &config.debugger)
-        })
-    }
-
-    #[cfg(feature = "native")]
-    pub(crate) fn apply_synthetic_inputs(&mut self, events: &[SyntheticInputEventV1]) {
-        use glfw::{Key, MouseButton};
-
-        fn parse_key(key: &str) -> Option<Key> {
-            match key.to_ascii_lowercase().as_str() {
-                "space" => Some(Key::Space),
-                "enter" => Some(Key::Enter),
-                "escape" => Some(Key::Escape),
-                "tab" => Some(Key::Tab),
-                "left" => Some(Key::Left),
-                "right" => Some(Key::Right),
-                "up" => Some(Key::Up),
-                "down" => Some(Key::Down),
-                "a" => Some(Key::A),
-                "d" => Some(Key::D),
-                "s" => Some(Key::S),
-                "w" => Some(Key::W),
-                _ => None,
-            }
-        }
-
-        fn parse_mouse_button(button: &str) -> Option<MouseButton> {
-            match button.to_ascii_lowercase().as_str() {
-                "left" => Some(MouseButton::Button1),
-                "right" => Some(MouseButton::Button2),
-                "middle" => Some(MouseButton::Button3),
-                _ => None,
-            }
-        }
-
-        for event in events {
-            match (
-                event.device.as_str(),
-                event.action.as_str(),
-                event.key.as_deref(),
-                event.button.as_deref(),
-            ) {
-                ("keyboard", "press", Some(key), _) => {
-                    if let Some(key) = parse_key(key) {
-                        self.input_manager.press_key(key);
-                    }
-                }
-                ("keyboard", "release", Some(key), _) => {
-                    if let Some(key) = parse_key(key) {
-                        self.input_manager.release_key(key);
-                    }
-                }
-                ("mouse", "press", _, Some(button)) => {
-                    if let Some(button) = parse_mouse_button(button) {
-                        self.input_manager.press_mouse_button(button);
-                    }
-                }
-                ("mouse", "release", _, Some(button)) => {
-                    if let Some(button) = parse_mouse_button(button) {
-                        self.input_manager.release_mouse_button(button);
-                    }
-                }
-                _ => {}
-            }
-        }
-    }
-
-    #[cfg(not(feature = "native"))]
-    pub(crate) fn apply_synthetic_inputs(&mut self, _events: &[SyntheticInputEventV1]) {}
-
-    pub(crate) fn prepare_runtime_frame(&mut self, raw_delta_seconds: f32) -> f32 {
-        let Some(route_id) = self.debugger_route.clone() else {
-            self.runtime_debug_draw_enabled = false;
-            return raw_delta_seconds;
-        };
-
-        let frame_plan = debugger::take_frame_control_for_route(&route_id, raw_delta_seconds)
-            .unwrap_or_default();
-        self.runtime_debug_draw_enabled = frame_plan.debug_draw_enabled;
-        self.apply_synthetic_inputs(&frame_plan.synthetic_inputs);
-
-        let (next_index, total_seconds) = debugger::snapshot_for_route(&route_id)
-            .map(|snapshot| {
-                (
-                    snapshot.frame.index.saturating_add(1),
-                    snapshot.frame.total_seconds + frame_plan.effective_delta_seconds as f64,
-                )
-            })
-            .unwrap_or((1, frame_plan.effective_delta_seconds as f64));
-        debugger::begin_frame(
-            &route_id,
-            next_index,
-            frame_plan.effective_delta_seconds,
-            total_seconds,
-        );
-        frame_plan.effective_delta_seconds
-    }
-
-    pub(crate) fn finish_runtime_frame(&mut self) {
-        if let Some(route_id) = self.debugger_route.as_ref() {
-            debugger::end_frame(route_id);
-        }
-    }
-
-    /// Updates cached physics debug shapes according to runtime config.
-    ///
-    /// When disabled, this avoids querying the physics provider entirely.
-    pub(crate) fn update_physics_debug_shapes(&mut self) {
-        if !self.config.physics_debug.enabled && !self.runtime_debug_draw_enabled {
-            self.physics_debug_shapes.clear();
-            return;
-        }
-
-        self.physics_debug_shapes = self.providers.physics.debug_shapes();
-    }
-
     /// Creates a new game instance with the given configuration.
     ///
     /// This creates a headless game instance suitable for testing and
@@ -305,6 +196,10 @@ impl GoudGame {
             immediate_state: None,
             #[cfg(feature = "native")]
             audio_manager: None,
+            #[cfg(feature = "native")]
+            capture_dimensions: None,
+            #[cfg(feature = "native")]
+            deferred_capture: None,
         })
     }
 
@@ -352,6 +247,54 @@ impl GoudGame {
         let debugger_route =
             Self::register_debugger_route(&config, RuntimeSurfaceKind::WindowedGame);
 
+        // Register deferred capture hook for framebuffer readback if debugger
+        // is enabled.  The hook is invoked from the IPC thread which has no GL
+        // context, so it signals the main thread (via condvar) to do the actual
+        // glReadPixels in swap_buffers().
+        let (capture_dimensions, deferred_capture) = if let Some(ref route_id) = debugger_route {
+            let dims = Arc::new(AtomicU64::new(
+                ((config.width as u64) << 32) | config.height as u64,
+            ));
+            let deferred: DeferredCapture = Arc::new((
+                Mutex::new(DeferredCaptureState {
+                    requested: false,
+                    result: None,
+                }),
+                Condvar::new(),
+            ));
+            let deferred_clone = Arc::clone(&deferred);
+            debugger::register_capture_hook_for_route(route_id.clone(), move || {
+                let (lock, cvar) = &*deferred_clone;
+                let mut guard = lock
+                    .lock()
+                    .map_err(|e| format!("capture lock poisoned: {e}"))?;
+                guard.requested = true;
+                guard.result = None;
+                // Wait up to 5 seconds for the main thread to service the readback.
+                let timeout = std::time::Duration::from_secs(5);
+                loop {
+                    let (new_guard, wait_result) = cvar
+                        .wait_timeout(guard, timeout)
+                        .map_err(|e| format!("capture condvar error: {e}"))?;
+                    guard = new_guard;
+                    if guard.result.is_some() {
+                        break;
+                    }
+                    if wait_result.timed_out() {
+                        guard.requested = false;
+                        return Err(
+                            "capture timed out waiting for main thread readback".to_string()
+                        );
+                    }
+                }
+                guard.requested = false;
+                guard.result.take().unwrap()
+            });
+            (Some(dims), Some(deferred))
+        } else {
+            (None, None)
+        };
+
         Ok(Self {
             scene_manager: SceneManager::new(),
             config,
@@ -374,6 +317,8 @@ impl GoudGame {
             renderer_3d: Some(renderer_3d),
             immediate_state: None,
             audio_manager,
+            capture_dimensions,
+            deferred_capture,
         })
     }
 
@@ -399,7 +344,8 @@ impl GoudGame {
 impl Drop for GoudGame {
     fn drop(&mut self) {
         if let Some(route_id) = self.debugger_route.take() {
-            debugger::unregister_context(GoudContextId::new(
+            debugger::unregister_capture_hook_for_route(&route_id);
+            debugger::unregister_context(crate::core::context_id::GoudContextId::new(
                 route_id.context_id as u32,
                 (route_id.context_id >> 32) as u32,
             ));

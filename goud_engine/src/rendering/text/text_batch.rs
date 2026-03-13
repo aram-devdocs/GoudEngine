@@ -455,6 +455,20 @@ impl TextBatch {
     }
 }
 
+impl crate::core::providers::diagnostics::DiagnosticsSource for TextBatch {
+    fn diagnostics_key(&self) -> &str {
+        "text_batch"
+    }
+
+    fn collect_diagnostics(&self) -> serde_json::Value {
+        let stats = self.stats();
+        serde_json::json!({
+            "glyph_count": stats.glyph_count,
+            "draw_calls": stats.draw_calls,
+        })
+    }
+}
+
 impl Default for TextBatch {
     fn default() -> Self {
         Self::new()

@@ -91,6 +91,29 @@ async fn list_attach_control_capture_replay_and_resources_work() {
     let replay = support::start_replay(&server, "recording-54-0000000000000002".to_string()).await;
     assert_eq!(replay["status"], "replaying");
 
+    let diagnostics = support::get_diagnostics(&server).await;
+    assert!(diagnostics["diagnostics"]["render"]["draw_calls"] == 42);
+    assert!(diagnostics["diagnostics"]["audio"]["active_sources"] == 3);
+
+    let subsystem = support::get_subsystem_diagnostics(&server, "render").await;
+    assert_eq!(subsystem["key"], "render");
+    assert_eq!(subsystem["diagnostics"]["draw_calls"], 42);
+
+    let logs = support::get_logs(&server, None).await;
+    let log_entries = logs["logs"].as_array().expect("logs should be an array");
+    assert_eq!(log_entries.len(), 1);
+    assert_eq!(log_entries[0]["level"], "INFO");
+    assert_eq!(log_entries[0]["message"], "tick");
+
+    let hierarchy = support::get_scene_hierarchy(&server).await;
+    let entities = hierarchy["entities"]
+        .as_array()
+        .expect("entities should be an array");
+    assert_eq!(entities.len(), 3);
+    assert_eq!(entities[0]["name"], "Root");
+    assert!(entities[0]["child_entity_ids"].as_array().unwrap().len() == 2);
+    assert_eq!(entities[1]["parent_entity_id"], 1);
+
     let requests = harness.requests();
     assert_eq!(requests[0]["verb"], "get_snapshot");
     assert_eq!(requests[1]["verb"], "set_paused");
@@ -106,6 +129,11 @@ async fn list_attach_control_capture_replay_and_resources_work() {
         .as_array()
         .expect("replay bytes should serialize");
     assert_eq!(replay_data.len(), 4);
+    assert_eq!(requests[9]["verb"], "get_diagnostics");
+    assert_eq!(requests[10]["verb"], "get_diagnostics_for");
+    assert_eq!(requests[10]["key"], "render");
+    assert_eq!(requests[11]["verb"], "get_logs");
+    assert_eq!(requests[12]["verb"], "get_scene_hierarchy");
 }
 
 #[test]
@@ -168,4 +196,147 @@ async fn prompt_listing_and_lookup_work() {
     };
     assert!(troubleshoot_text.contains("publish_local_attach"));
     assert!(troubleshoot_text.contains("goudengine/web"));
+}
+
+// =========================================================================
+// Focused tests for diagnostic, log, and scene hierarchy tools (Phase 6)
+// =========================================================================
+
+#[tokio::test]
+async fn test_get_diagnostics_returns_map() {
+    let harness = TestHarness::new();
+    let server = harness.server();
+    let _ = support::attach_context(
+        &server,
+        harness.route.context_id,
+        harness.route.process_nonce,
+    )
+    .await;
+
+    let diagnostics = support::get_diagnostics(&server).await;
+    // The fake server wraps diagnostics under a "diagnostics" key with "render" and "audio"
+    let diag_map = diagnostics
+        .get("diagnostics")
+        .expect("response should contain diagnostics key");
+    assert!(
+        diag_map.get("render").is_some(),
+        "diagnostics should contain render key"
+    );
+    assert!(
+        diag_map.get("audio").is_some(),
+        "diagnostics should contain audio key"
+    );
+}
+
+#[tokio::test]
+async fn test_get_subsystem_diagnostics_valid_key() {
+    let harness = TestHarness::new();
+    let server = harness.server();
+    let _ = support::attach_context(
+        &server,
+        harness.route.context_id,
+        harness.route.process_nonce,
+    )
+    .await;
+
+    let subsystem = support::get_subsystem_diagnostics(&server, "render").await;
+    assert_eq!(subsystem["key"], "render");
+    assert_eq!(subsystem["diagnostics"]["draw_calls"], 42);
+}
+
+#[tokio::test]
+async fn test_get_subsystem_diagnostics_invalid_key() {
+    let harness = TestHarness::new();
+    let server = harness.server();
+    let _ = support::attach_context(
+        &server,
+        harness.route.context_id,
+        harness.route.process_nonce,
+    )
+    .await;
+
+    let subsystem = support::get_subsystem_diagnostics(&server, "nonexistent_subsystem").await;
+    // The fake server returns the key echoed back even for unknown subsystems;
+    // the engine-side IPC would return null, but the MCP layer just forwards.
+    assert_eq!(subsystem["key"], "nonexistent_subsystem");
+}
+
+#[tokio::test]
+async fn test_get_logs_returns_entries() {
+    let harness = TestHarness::new();
+    let server = harness.server();
+    let _ = support::attach_context(
+        &server,
+        harness.route.context_id,
+        harness.route.process_nonce,
+    )
+    .await;
+
+    let logs = support::get_logs(&server, None).await;
+    let entries = logs["logs"]
+        .as_array()
+        .expect("logs response should contain a logs array");
+    assert!(
+        !entries.is_empty(),
+        "logs should contain at least one entry"
+    );
+    assert_eq!(entries[0]["level"], "INFO");
+}
+
+#[tokio::test]
+async fn test_get_scene_hierarchy_returns_entities() {
+    let harness = TestHarness::new();
+    let server = harness.server();
+    let _ = support::attach_context(
+        &server,
+        harness.route.context_id,
+        harness.route.process_nonce,
+    )
+    .await;
+
+    let hierarchy = support::get_scene_hierarchy(&server).await;
+    let entities = hierarchy["entities"]
+        .as_array()
+        .expect("hierarchy response should contain entities array");
+    assert!(!entities.is_empty(), "entities array should not be empty");
+    // Verify parent/child structure
+    assert!(
+        entities[0].get("name").is_some(),
+        "entities should have names"
+    );
+    assert!(
+        entities[0].get("parent_entity_id").is_some(),
+        "entities should have parent_entity_id field"
+    );
+    assert!(
+        entities[0].get("child_entity_ids").is_some(),
+        "entities should have child_entity_ids field"
+    );
+}
+
+// =========================================================================
+// Focused tests for diagnostics recording tools
+// =========================================================================
+
+#[tokio::test]
+async fn test_get_diagnostics_recording_returns_slices() {
+    let harness = TestHarness::new();
+    let server = harness.server();
+    let _ = support::attach_context(
+        &server,
+        harness.route.context_id,
+        harness.route.process_nonce,
+    )
+    .await;
+
+    let recording = support::get_diagnostics_recording(&server, 10).await;
+    assert_eq!(recording["version"], 1);
+    assert_eq!(recording["recording_id"], "diag-rec-54-100");
+    assert_eq!(recording["total_frames"], 60);
+    let slices = recording["slices"]
+        .as_array()
+        .expect("slices should be an array");
+    assert_eq!(slices.len(), 10);
+    assert_eq!(slices[0]["slice_index"], 0);
+    assert_eq!(slices[0]["frame_count"], 6);
 }

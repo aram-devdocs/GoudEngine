@@ -5,6 +5,16 @@ pub(super) fn read_default_framebuffer_rgba8(
     width: u32,
     height: u32,
 ) -> Result<Vec<u8>, String> {
+    read_default_framebuffer_rgba8_standalone(width, height)
+}
+
+/// Reads the default framebuffer as RGBA8 bytes without needing a backend reference.
+///
+/// Requires a current OpenGL context on the calling thread.
+pub(super) fn read_default_framebuffer_rgba8_standalone(
+    width: u32,
+    height: u32,
+) -> Result<Vec<u8>, String> {
     if width == 0 || height == 0 {
         return Ok(Vec::new());
     }
