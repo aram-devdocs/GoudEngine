@@ -17,21 +17,17 @@ use rmcp::handler::server::wrapper::{Json, Parameters};
 use serde_json::{json, Value};
 use tempfile::TempDir;
 
-use super::{
-    types::{
-        AttachContextParams, InjectInputParams, InputEventParams, SetPausedParams,
-        SetTimeScaleParams, StartReplayParams, StepParams,
-    },
-    GoudEngineMcpServer,
+use crate::server::types::{
+    AttachContextParams, InjectInputParams, InputEventParams, SetPausedParams, SetTimeScaleParams,
+    StartReplayParams, StepParams,
 };
-use crate::discovery;
-use crate::resources;
+use crate::server::{GoudEngineMcpServer, McpDebuggerStepKind};
 
 static TEST_SOCKET_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
-struct TestHarness {
-    runtime_root: TempDir,
-    route: RuntimeRouteId,
+pub struct TestHarness {
+    pub runtime_root: TempDir,
+    pub route: RuntimeRouteId,
     endpoint_location: String,
     requests: Arc<Mutex<Vec<Value>>>,
     shutdown: Arc<std::sync::atomic::AtomicBool>,
@@ -39,18 +35,19 @@ struct TestHarness {
 }
 
 impl TestHarness {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self::with_server(true)
     }
 
-    fn manifest_only() -> Self {
+    pub fn manifest_only() -> Self {
         Self::with_server(false)
     }
 
     fn with_server(start_server: bool) -> Self {
-        if !GenericFilePath::is_supported() {
-            panic!("local socket transport is unsupported in this test environment");
-        }
+        assert!(
+            GenericFilePath::is_supported(),
+            "local socket transport is unsupported in this test environment"
+        );
 
         let runtime_root = TempDir::new().expect("temp runtime root should be created");
         let route = RuntimeRouteId {
@@ -83,11 +80,11 @@ impl TestHarness {
         }
     }
 
-    fn server(&self) -> GoudEngineMcpServer {
+    pub fn server(&self) -> GoudEngineMcpServer {
         GoudEngineMcpServer::with_runtime_root(self.runtime_root.path())
     }
 
-    fn requests(&self) -> Vec<Value> {
+    pub fn requests(&self) -> Vec<Value> {
         self.requests.lock().expect("request log lock").clone()
     }
 }
@@ -108,69 +105,60 @@ impl Drop for TestHarness {
     }
 }
 
-#[tokio::test]
-async fn list_attach_control_capture_replay_and_resources_work() {
-    let harness = TestHarness::new();
-    let server = harness.server();
-
+pub async fn list_contexts(server: &GoudEngineMcpServer) -> Value {
     let Json(listed) = server.list_contexts().await.expect("contexts should list");
-    let listed = listed.into_value();
-    let contexts = listed["contexts"]
-        .as_array()
-        .expect("contexts should be an array");
-    assert_eq!(contexts.len(), 1);
-    assert_eq!(
-        contexts[0]["route"]["route_id"]["context_id"],
-        harness.route.context_id
-    );
-    assert!(listed["attached_context"].is_null());
+    listed.into_value()
+}
 
+pub async fn attach_context(
+    server: &GoudEngineMcpServer,
+    context_id: u64,
+    process_nonce: u64,
+) -> Value {
     let Json(attached) = server
         .attach_context(Parameters(AttachContextParams {
-            context_id: harness.route.context_id,
-            process_nonce: Some(harness.route.process_nonce),
+            context_id,
+            process_nonce: Some(process_nonce),
         }))
         .await
         .expect("context should attach");
-    let attached = attached.into_value();
-    assert_eq!(
-        attached["context"]["route"]["route_id"]["context_id"],
-        harness.route.context_id
-    );
-    assert_eq!(
-        attached["session"]["snapshot_schema"],
-        "debugger_snapshot_v1"
-    );
+    attached.into_value()
+}
 
+pub async fn snapshot(server: &GoudEngineMcpServer) -> Value {
     let Json(snapshot) = server.get_snapshot().await.expect("snapshot should load");
-    let snapshot = snapshot.into_value();
-    assert_eq!(snapshot["frame"]["index"], 42);
+    snapshot.into_value()
+}
 
-    let Json(paused) = server
-        .set_paused(Parameters(SetPausedParams { paused: true }))
+pub async fn set_paused(server: &GoudEngineMcpServer, paused: bool) -> Value {
+    let Json(response) = server
+        .set_paused(Parameters(SetPausedParams { paused }))
         .await
         .expect("pause request should succeed");
-    let paused = paused.into_value();
-    assert_eq!(paused["paused"], true);
+    response.into_value()
+}
 
-    let Json(step) = server
+pub async fn step_ticks(server: &GoudEngineMcpServer, count: u32) -> Value {
+    let Json(response) = server
         .step(Parameters(StepParams {
-            kind: super::McpDebuggerStepKind::Tick,
-            count: 3,
+            kind: McpDebuggerStepKind::Tick,
+            count,
         }))
         .await
         .expect("step request should succeed");
-    let step = step.into_value();
-    assert_eq!(step["accepted"], true);
+    response.into_value()
+}
 
-    let Json(time_scale) = server
-        .set_time_scale(Parameters(SetTimeScaleParams { scale: 0.5 }))
+pub async fn set_time_scale(server: &GoudEngineMcpServer, scale: f32) -> Value {
+    let Json(response) = server
+        .set_time_scale(Parameters(SetTimeScaleParams { scale }))
         .await
         .expect("time-scale request should succeed");
-    let time_scale = time_scale.into_value();
-    assert_eq!(time_scale["time_scale"], 0.5);
+    response.into_value()
+}
 
-    let Json(input) = server
+pub async fn inject_mouse_move(server: &GoudEngineMcpServer) -> Value {
+    let Json(response) = server
         .inject_input(Parameters(InjectInputParams {
             events: vec![InputEventParams {
                 device: "mouse".to_string(),
@@ -183,105 +171,43 @@ async fn list_attach_control_capture_replay_and_resources_work() {
         }))
         .await
         .expect("input injection should succeed");
-    let input = input.into_value();
-    assert_eq!(input["accepted"], true);
+    response.into_value()
+}
 
-    let Json(metrics) = server
+pub async fn metrics_trace(server: &GoudEngineMcpServer) -> Value {
+    let Json(response) = server
         .get_metrics_trace()
         .await
         .expect("metrics export should succeed");
-    let metrics = metrics.into_value();
-    assert_eq!(metrics["artifact_id"], "metrics-54-0000000000000003");
-    assert_eq!(
-        metrics["resource_uri"],
-        "goudengine://metrics/metrics-54-0000000000000003"
-    );
+    response.into_value()
+}
 
-    let Json(capture) = server
+pub async fn capture_frame(server: &GoudEngineMcpServer) -> Value {
+    let Json(response) = server
         .capture_frame()
         .await
         .expect("capture should succeed");
-    let capture = capture.into_value();
-    assert_eq!(capture["artifact_id"], "capture-54-0000000000000001");
-    assert_eq!(
-        capture["resource_uri"],
-        "goudengine://capture/capture-54-0000000000000001"
-    );
-    let capture_contents = resources::read_resource(
-        capture["resource_uri"].as_str().expect("capture uri"),
-        harness.runtime_root.path(),
-    )
-    .expect("capture resource should load");
-    assert_eq!(capture_contents.len(), 4);
+    response.into_value()
+}
 
-    let Json(recording) = server
+pub async fn stop_recording(server: &GoudEngineMcpServer) -> Value {
+    let Json(response) = server
         .stop_recording()
         .await
         .expect("recording export should succeed");
-    let recording = recording.into_value();
-    assert_eq!(recording["artifact_id"], "recording-54-0000000000000002");
-    assert_eq!(
-        recording["resource_uri"],
-        "goudengine://recording/recording-54-0000000000000002"
-    );
-    let recording_contents = resources::read_resource(
-        recording["resource_uri"].as_str().expect("recording uri"),
-        harness.runtime_root.path(),
-    )
-    .expect("recording resource should load");
-    assert_eq!(recording_contents.len(), 2);
+    response.into_value()
+}
 
-    let Json(replay) = server
+pub async fn start_replay(server: &GoudEngineMcpServer, artifact_id: String) -> Value {
+    let Json(response) = server
         .start_replay(Parameters(StartReplayParams {
-            artifact_id: Some("recording-54-0000000000000002".to_string()),
+            artifact_id: Some(artifact_id),
             resource_uri: None,
             data_base64: None,
         }))
         .await
         .expect("replay should start");
-    let replay = replay.into_value();
-    assert_eq!(replay["status"], "replaying");
-
-    let requests = harness.requests();
-    assert_eq!(requests[0]["verb"], "get_snapshot");
-    assert_eq!(requests[1]["verb"], "set_paused");
-    assert_eq!(requests[2]["verb"], "step");
-    assert_eq!(requests[2]["ticks"], 3);
-    assert_eq!(requests[3]["verb"], "set_time_scale");
-    assert_eq!(requests[4]["verb"], "inject_input");
-    assert_eq!(requests[5]["verb"], "get_metrics_trace");
-    assert_eq!(requests[6]["verb"], "capture_frame");
-    assert_eq!(requests[7]["verb"], "stop_recording");
-    assert_eq!(requests[8]["verb"], "start_replay");
-    let replay_data = requests[8]["data"]
-        .as_array()
-        .expect("replay bytes should serialize");
-    assert_eq!(replay_data.len(), 4);
-}
-
-#[test]
-fn discovery_and_knowledge_resources_work() {
-    let harness = TestHarness::manifest_only();
-    let contexts = discovery::discover_contexts(harness.runtime_root.path());
-    assert_eq!(contexts.len(), 1);
-
-    let found = discovery::find_context(
-        harness.runtime_root.path(),
-        harness.route.context_id,
-        Some(harness.route.process_nonce),
-    )
-    .expect("context lookup should succeed");
-    assert_eq!(found.route.route_id, harness.route);
-
-    let sdk_resource =
-        resources::read_resource(resources::SDK_KNOWLEDGE_URI, harness.runtime_root.path())
-            .expect("sdk knowledge should load");
-    assert_eq!(sdk_resource.len(), 1);
-
-    let workflow_resource =
-        resources::read_resource(resources::MCP_WORKFLOW_URI, harness.runtime_root.path())
-            .expect("workflow knowledge should load");
-    assert_eq!(workflow_resource.len(), 1);
+    response.into_value()
 }
 
 fn spawn_fake_attach_server(

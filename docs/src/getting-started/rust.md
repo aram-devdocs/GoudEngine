@@ -72,6 +72,43 @@ seconds since the last frame, which you use to scale physics and animations.
 
 ---
 
+## Debugger Runtime
+
+Rust is the reference path for the shared debugger contract. Enable debugger mode
+before startup through `DebuggerConfig`, then expose the route to `goudengine-mcp`
+with `publish_local_attach`.
+
+```rust
+use goudengine::{Context, ContextConfig, DebuggerConfig, EngineConfig};
+
+let debugger = DebuggerConfig {
+    enabled: true,
+    publish_local_attach: true,
+    route_label: Some("getting-started".to_string()),
+};
+
+let _windowed = EngineConfig::new()
+    .with_title("Debugger Demo")
+    .with_debugger(debugger.clone());
+
+let headless = Context::create_with_config(ContextConfig { debugger });
+assert!(Context::is_valid(headless));
+Context::destroy(headless);
+```
+
+Attach workflow:
+
+1. Start the app with debugger mode enabled.
+2. In another terminal, run `cargo run -p goudengine-mcp`.
+3. Call `goudengine.list_contexts`, then `goudengine.attach_context`.
+4. Inspect the route with `goudengine.get_snapshot`, `goudengine.inspect_entity`,
+   `goudengine.get_metrics_trace`, `goudengine.capture_frame`, and replay tools.
+
+The runtime stays Rust-owned. SDK helpers and MCP clients only forward requests
+through the shared local contract.
+
+---
+
 ## Drawing a Sprite
 
 Load a texture once before the loop, then call `draw_sprite` each frame.
@@ -117,6 +154,7 @@ The game reuses the shared asset directory at `examples/csharp/flappy_goud/asset
 ## Next Steps
 
 - [Rust SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/rust/) — crate design and re-export structure
+- [Debugger Runtime](../guides/debugger-runtime.md) — local attach, capture, replay, and metrics workflow
 - [Rust examples](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/rust/) — flappy_bird source code
 - [Build Your First Game](../guides/build-your-first-game.md) — end-to-end minimal game walkthrough
 - [Example Showcase](../guides/showcase.md) — current cross-language parity matrix
