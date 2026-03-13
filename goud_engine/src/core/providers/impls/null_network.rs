@@ -1,6 +1,7 @@
 //! Null network provider -- no-op for games that do not use networking.
 
 use crate::core::error::GoudResult;
+use crate::core::providers::diagnostics::NetworkDiagnosticsV1;
 use crate::core::providers::network::NetworkProvider;
 use crate::core::providers::network_types::{
     Channel, ConnectionId, ConnectionState, ConnectionStats, HostConfig, NetworkCapabilities,
@@ -111,6 +112,10 @@ impl NetworkProvider for NullNetworkProvider {
 
     fn connection_stats(&self, _conn: ConnectionId) -> Option<ConnectionStats> {
         None
+    }
+
+    fn network_diagnostics(&self) -> NetworkDiagnosticsV1 {
+        NetworkDiagnosticsV1::default()
     }
 }
 

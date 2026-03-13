@@ -3,6 +3,7 @@
 //! The `PhysicsProvider3D` trait abstracts the 3D physics engine, enabling
 //! runtime selection between Rapier3D or null (no-op).
 
+use super::diagnostics::Physics3DDiagnosticsV1;
 use super::types::{
     BodyDesc3D, BodyHandle, ColliderDesc3D, ColliderHandle, CollisionEvent, ContactPair3D,
     DebugShape3D, JointDesc3D, JointHandle, PhysicsCapabilities3D, RaycastHit3D,
@@ -152,4 +153,11 @@ pub trait PhysicsProvider3D: Provider + ProviderLifecycle {
 
     /// Return debug visualization shapes for rendering physics debug overlays.
     fn debug_shapes(&self) -> Vec<DebugShape3D>;
+
+    // -------------------------------------------------------------------------
+    // Diagnostics
+    // -------------------------------------------------------------------------
+
+    /// Returns a snapshot of 3D physics diagnostics.
+    fn physics3d_diagnostics(&self) -> Physics3DDiagnosticsV1;
 }

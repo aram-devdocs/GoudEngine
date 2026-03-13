@@ -449,6 +449,18 @@ impl NetworkProvider for MockNetworkProvider {
 
         None
     }
+
+    fn network_diagnostics(&self) -> crate::core::providers::diagnostics::NetworkDiagnosticsV1 {
+        let s = self.stats();
+        crate::core::providers::diagnostics::NetworkDiagnosticsV1 {
+            bytes_sent: s.bytes_sent,
+            bytes_received: s.bytes_received,
+            packets_sent: s.packets_sent,
+            packets_received: s.packets_received,
+            rtt_ms: s.rtt_ms,
+            active_connections: self.connections().len() as u32,
+        }
+    }
 }
 
 pub(super) fn pump(

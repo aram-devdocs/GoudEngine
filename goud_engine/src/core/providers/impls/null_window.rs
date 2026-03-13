@@ -1,6 +1,7 @@
 //! Null window provider -- silent no-op for headless testing.
 
 use crate::core::error::GoudResult;
+use crate::core::providers::diagnostics::WindowDiagnosticsV1;
 use crate::core::providers::window::WindowProvider;
 
 /// A window provider that does nothing. Used for headless testing and as
@@ -53,6 +54,10 @@ impl WindowProvider for NullWindowProvider {
 
     fn get_framebuffer_size(&self) -> (u32, u32) {
         (0, 0)
+    }
+
+    fn window_diagnostics(&self) -> WindowDiagnosticsV1 {
+        WindowDiagnosticsV1::default()
     }
 }
 

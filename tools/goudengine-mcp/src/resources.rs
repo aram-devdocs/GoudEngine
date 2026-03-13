@@ -38,7 +38,10 @@ Typical flow:
 1. Call `goudengine.list_contexts`.
 2. Call `goudengine.attach_context` for the target route.
 3. Use snapshot, control, capture, replay, and metrics tools against the attached route.
-4. Read `goudengine://capture/{id}`, `goudengine://metrics/{id}`, or `goudengine://recording/{id}` resources for stored artifacts.
+4. Use `goudengine.get_diagnostics` or `goudengine.get_subsystem_diagnostics` to inspect provider diagnostics (render, physics_2d, audio, input, sprite_batch, assets, window).
+5. Use `goudengine.get_logs` to retrieve recent engine log entries, optionally filtered by frame number.
+6. Use `goudengine.get_scene_hierarchy` to inspect entities with parent/child relationships.
+7. Read `goudengine://capture/{id}`, `goudengine://metrics/{id}`, or `goudengine://recording/{id}` resources for stored artifacts.
 
 The bridge stays out of the game process. It only translates MCP requests into local debugger attach requests.
 "#;

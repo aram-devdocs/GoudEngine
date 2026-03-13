@@ -3,6 +3,7 @@
 //! The `NetworkProvider` trait abstracts the transport backend, enabling
 //! runtime selection between UDP, WebSocket, or null (no-op).
 
+use super::diagnostics::NetworkDiagnosticsV1;
 #[cfg(any(debug_assertions, test))]
 use super::network_types::NetworkSimulationConfig;
 use super::network_types::{
@@ -101,4 +102,11 @@ pub trait NetworkProvider: Provider + ProviderLifecycle {
     fn simulation_config(&self) -> Option<NetworkSimulationConfig> {
         None
     }
+
+    // -------------------------------------------------------------------------
+    // Diagnostics
+    // -------------------------------------------------------------------------
+
+    /// Returns a snapshot of network diagnostics.
+    fn network_diagnostics(&self) -> NetworkDiagnosticsV1;
 }

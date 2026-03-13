@@ -271,29 +271,67 @@ impl GoudGame {
     }
 
     pub(crate) fn finish_runtime_frame(&mut self) {
-        if let Some(route_id) = self.debugger_route.as_ref() {
-            // Push render stats from sprite batch if available.
-            #[cfg(feature = "native")]
-            if let Some(batch) = &self.sprite_batch {
-                let (sprite_count, batch_count, _ratio) = batch.stats();
-                // Each sprite is a quad = 2 triangles; one draw call per batch.
-                let _ = debugger::update_render_stats_for_context(
-                    GoudContextId::new(
-                        route_id.context_id as u32,
-                        (route_id.context_id >> 32) as u32,
-                    ),
-                    batch_count as u32,
-                    (sprite_count * 2) as u32,
-                    batch_count as u32,
-                    1,
-                );
+        let route_id = match self.debugger_route.as_ref() {
+            Some(r) => r.clone(),
+            None => return,
+        };
+
+        // 1. Collect ALL diagnostics from providers (type-safe, automatic).
+        let mut all_diag = self.providers.collect_provider_diagnostics();
+
+        // 2. Collect non-provider diagnostics.
+        #[cfg(feature = "native")]
+        {
+            use crate::core::providers::diagnostics::DiagnosticsSource;
+
+            if let Some(ref batch) = self.sprite_batch {
+                all_diag.insert("sprite_batch".into(), batch.collect_diagnostics());
             }
-
-            // Eagerly push entity/scene data so IPC snapshots are fresh.
-            self.refresh_debugger_snapshot_data(route_id);
-
-            debugger::end_frame(route_id);
+            if let Some(ref text_batch) = self.text_batch {
+                all_diag.insert("text_batch".into(), text_batch.collect_diagnostics());
+            }
+            if let Some(ref ui_render) = self.ui_render_system {
+                all_diag.insert("ui_render".into(), ui_render.collect_diagnostics());
+            }
+            if let Some(ref asset_server) = self.asset_server {
+                all_diag.insert("assets".into(), asset_server.collect_diagnostics());
+            }
         }
+
+        // 3. Push to snapshot.
+        debugger::with_snapshot_mut(&route_id, |snapshot| {
+            // Backward compat: populate legacy stats.render from provider diagnostics.
+            if let Some(render_val) = all_diag.get("render") {
+                if let Ok(rd) = serde_json::from_value::<
+                    crate::core::providers::diagnostics::RenderDiagnosticsV1,
+                >(render_val.clone())
+                {
+                    snapshot.stats.render = crate::core::debugger::RenderStatsV1 {
+                        draw_calls: rd.draw_calls,
+                        triangles: rd.triangles,
+                        texture_binds: rd.texture_binds,
+                        shader_binds: rd.shader_binds,
+                    };
+                }
+            }
+            // Also populate from sprite batch for backward compat.
+            if let Some(sb_val) = all_diag.get("sprite_batch") {
+                if let (Some(sprites), Some(batches)) = (
+                    sb_val.get("sprite_count").and_then(|v| v.as_u64()),
+                    sb_val.get("batch_count").and_then(|v| v.as_u64()),
+                ) {
+                    snapshot.stats.render.draw_calls = batches as u32;
+                    snapshot.stats.render.triangles = (sprites * 2) as u32;
+                    snapshot.stats.render.texture_binds = batches as u32;
+                    snapshot.stats.render.shader_binds = 1;
+                }
+            }
+            snapshot.provider_diagnostics = all_diag;
+        });
+
+        // 4. Entity/scene data.
+        self.refresh_debugger_snapshot_data(&route_id);
+        debugger::end_frame(&route_id);
     }
 
     /// Services a pending deferred capture request by performing the GL

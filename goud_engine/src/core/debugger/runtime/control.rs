@@ -251,6 +251,50 @@ pub fn dispatch_request_json_for_route(
         };
         return Ok(ok_response(&request, snapshot_value(&route.snapshot)));
     }
+    if verb == "get_diagnostics" {
+        super::snapshot_refresh::refresh_snapshot_for_route(route_id);
+        let guard = lock_runtime();
+        let diag = guard
+            .as_ref()
+            .and_then(|rt| rt.routes.get(&route_id.context_id))
+            .map(|route| route.snapshot.provider_diagnostics.clone())
+            .unwrap_or_default();
+        return Ok(ok_response(
+            &request,
+            serde_json::to_value(diag).unwrap_or_default(),
+        ));
+    }
+    if verb == "get_diagnostics_for" {
+        let key = request
+            .get("key")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        super::snapshot_refresh::refresh_snapshot_for_route(route_id);
+        let guard = lock_runtime();
+        let val = guard
+            .as_ref()
+            .and_then(|rt| rt.routes.get(&route_id.context_id))
+            .and_then(|route| route.snapshot.provider_diagnostics.get(key).cloned())
+            .unwrap_or(Value::Null);
+        return Ok(ok_response(&request, val));
+    }
+    if verb == "get_logs" {
+        // Log capture will be fully wired in a later phase.
+        return Ok(ok_response(&request, json!({ "entries": [] })));
+    }
+    if verb == "get_scene_hierarchy" {
+        super::snapshot_refresh::refresh_snapshot_for_route(route_id);
+        let guard = lock_runtime();
+        let entities = guard
+            .as_ref()
+            .and_then(|rt| rt.routes.get(&route_id.context_id))
+            .map(|route| route.snapshot.entities.clone())
+            .unwrap_or_default();
+        return Ok(ok_response(
+            &request,
+            serde_json::to_value(entities).unwrap_or_default(),
+        ));
+    }
     let mut should_publish_manifest = false;
 
     let response = {

@@ -83,6 +83,43 @@ impl ProviderRegistry {
     pub fn network_capabilities(&self) -> Option<&NetworkCapabilities> {
         self.network.as_ref().map(|n| n.network_capabilities())
     }
+
+    /// Collect diagnostics from all registered providers as a sorted map.
+    ///
+    /// Each provider's diagnostics are serialized to a `serde_json::Value`.
+    /// Network diagnostics are included only when a network provider is installed.
+    pub fn collect_provider_diagnostics(
+        &self,
+    ) -> std::collections::BTreeMap<String, serde_json::Value> {
+        let mut map = std::collections::BTreeMap::new();
+        map.insert(
+            "render".into(),
+            serde_json::to_value(self.render.render_diagnostics()).unwrap_or_default(),
+        );
+        map.insert(
+            "physics_2d".into(),
+            serde_json::to_value(self.physics.physics_diagnostics()).unwrap_or_default(),
+        );
+        map.insert(
+            "physics_3d".into(),
+            serde_json::to_value(self.physics3d.physics3d_diagnostics()).unwrap_or_default(),
+        );
+        map.insert(
+            "audio".into(),
+            serde_json::to_value(self.audio.audio_diagnostics()).unwrap_or_default(),
+        );
+        map.insert(
+            "input".into(),
+            serde_json::to_value(self.input.input_diagnostics()).unwrap_or_default(),
+        );
+        if let Some(ref net) = self.network {
+            map.insert(
+                "network".into(),
+                serde_json::to_value(net.network_diagnostics()).unwrap_or_default(),
+            );
+        }
+        map
+    }
 }
 
 // =============================================================================
@@ -234,6 +271,132 @@ mod tests {
     }
 
     // =========================================================================
+    // Provider diagnostics tests
+    // =========================================================================
+
+    #[test]
+    fn test_collect_provider_diagnostics_has_expected_keys() {
+        let registry = ProviderRegistry::default();
+        let diag = registry.collect_provider_diagnostics();
+        assert!(diag.contains_key("render"), "diagnostics should contain render");
+        assert!(
+            diag.contains_key("physics_2d"),
+            "diagnostics should contain physics_2d"
+        );
+        assert!(
+            diag.contains_key("physics_3d"),
+            "diagnostics should contain physics_3d"
+        );
+        assert!(diag.contains_key("audio"), "diagnostics should contain audio");
+        assert!(diag.contains_key("input"), "diagnostics should contain input");
+    }
+
+    #[test]
+    fn test_collect_provider_diagnostics_all_values_are_valid_json() {
+        let registry = ProviderRegistry::default();
+        let diag = registry.collect_provider_diagnostics();
+        for (key, value) in &diag {
+            assert!(
+                !value.is_null(),
+                "diagnostics value for '{key}' should not be null"
+            );
+            assert!(
+                value.is_object(),
+                "diagnostics value for '{key}' should be a JSON object"
+            );
+        }
+    }
+
+    #[test]
+    fn test_collect_provider_diagnostics_network_absent_without_provider() {
+        let registry = ProviderRegistry::default();
+        let diag = registry.collect_provider_diagnostics();
+        assert!(
+            !diag.contains_key("network"),
+            "network diagnostics should be absent when no network provider is installed"
+        );
+    }
+
+    #[test]
+    fn test_collect_provider_diagnostics_network_present_with_provider() {
+        use crate::core::providers::impls::NullNetworkProvider;
+        let mut registry = ProviderRegistry::default();
+        registry.network = Some(Box::new(NullNetworkProvider::new()));
+        let diag = registry.collect_provider_diagnostics();
+        assert!(
+            diag.contains_key("network"),
+            "network diagnostics should be present when a network provider is installed"
+        );
+        assert!(
+            diag["network"].is_object(),
+            "network diagnostics should be a JSON object"
+        );
+    }
+
+    #[test]
+    fn test_null_render_diagnostics_returns_defaults() {
+        let registry = ProviderRegistry::default();
+        let render_diag = registry.render.render_diagnostics();
+        assert_eq!(render_diag.draw_calls, 0);
+        assert_eq!(render_diag.triangles, 0);
+        assert_eq!(render_diag.texture_binds, 0);
+        assert_eq!(render_diag.shader_binds, 0);
+        assert_eq!(render_diag.active_textures, 0);
+        assert_eq!(render_diag.active_shaders, 0);
+    }
+
+    #[test]
+    fn test_null_physics_diagnostics_returns_defaults() {
+        let registry = ProviderRegistry::default();
+        let phys_diag = registry.physics.physics_diagnostics();
+        assert_eq!(phys_diag.body_count, 0);
+        assert_eq!(phys_diag.collider_count, 0);
+        assert_eq!(phys_diag.joint_count, 0);
+        assert_eq!(phys_diag.contact_pair_count, 0);
+    }
+
+    #[test]
+    fn test_null_physics3d_diagnostics_returns_defaults() {
+        let registry = ProviderRegistry::default();
+        let phys3d_diag = registry.physics3d.physics3d_diagnostics();
+        assert_eq!(phys3d_diag.body_count, 0);
+        assert_eq!(phys3d_diag.collider_count, 0);
+        assert_eq!(phys3d_diag.joint_count, 0);
+        assert_eq!(phys3d_diag.contact_pair_count, 0);
+    }
+
+    #[test]
+    fn test_null_audio_diagnostics_returns_defaults() {
+        let registry = ProviderRegistry::default();
+        let audio_diag = registry.audio.audio_diagnostics();
+        assert_eq!(audio_diag.active_playbacks, 0);
+        assert_eq!(audio_diag.master_volume, 0.0);
+    }
+
+    #[test]
+    fn test_null_input_diagnostics_returns_defaults() {
+        let registry = ProviderRegistry::default();
+        let input_diag = registry.input.input_diagnostics();
+        assert!(input_diag.pressed_keys.is_empty());
+        assert_eq!(input_diag.mouse_position, [0.0, 0.0]);
+        assert!(input_diag.mouse_buttons_pressed.is_empty());
+        assert_eq!(input_diag.connected_gamepads, 0);
+    }
+
+    #[test]
+    fn test_null_network_diagnostics_returns_defaults() {
+        use crate::core::providers::impls::NullNetworkProvider;
+        let provider = NullNetworkProvider::new();
+        let net_diag = provider.network_diagnostics();
+        assert_eq!(net_diag.bytes_sent, 0);
+        assert_eq!(net_diag.bytes_received, 0);
+        assert_eq!(net_diag.packets_sent, 0);
+        assert_eq!(net_diag.packets_received, 0);
+        assert_eq!(net_diag.rtt_ms, 0.0);
+        assert_eq!(net_diag.active_connections, 0);
+    }
+
+    // =========================================================================
     // Hot-swap tests (debug-only)
     // =========================================================================
 
@@ -378,6 +541,9 @@ mod tests {
             fn set_camera(&mut self, _: &CameraData) {}
             fn set_render_target(&mut self, _: Option<RenderTargetHandle>) {}
             fn clear(&mut self, _: [f32; 4]) {}
+            fn render_diagnostics(&self) -> crate::core::providers::diagnostics::RenderDiagnosticsV1 {
+                Default::default()
+            }
         }
 
         #[test]

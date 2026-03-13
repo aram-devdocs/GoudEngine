@@ -73,6 +73,12 @@ pub struct EntityStateV1 {
     pub component_types: Vec<String>,
     /// Full component payloads for the selected entity only.
     pub components: BTreeMap<String, serde_json::Value>,
+    /// Parent entity identifier, if this entity has a `Parent` component.
+    #[serde(default)]
+    pub parent_entity_id: Option<u64>,
+    /// Child entity identifiers, populated from the `Children` component.
+    #[serde(default)]
+    pub child_entity_ids: Vec<u64>,
 }
 
 impl EntityStateV1 {
@@ -89,6 +95,8 @@ impl EntityStateV1 {
             name,
             component_types,
             components: BTreeMap::new(),
+            parent_entity_id: None,
+            child_entity_ids: Vec::new(),
         }
     }
 }
@@ -239,6 +247,9 @@ pub struct DebuggerSnapshotV1 {
     pub diagnostics: DiagnosticsStateV1,
     /// Debugger-owned state for the route.
     pub debugger: DebuggerStateV1,
+    /// Per-subsystem diagnostics collected by the provider and non-provider pipelines.
+    #[serde(default)]
+    pub provider_diagnostics: BTreeMap<String, serde_json::Value>,
 }
 
 impl DebuggerSnapshotV1 {
@@ -257,6 +268,7 @@ impl DebuggerSnapshotV1 {
             memory_summary: MemorySummaryV1::default(),
             diagnostics: DiagnosticsStateV1::default(),
             debugger: DebuggerStateV1::default(),
+            provider_diagnostics: BTreeMap::new(),
         }
     }
 

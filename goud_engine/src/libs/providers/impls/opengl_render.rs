@@ -1,5 +1,6 @@
 //! OpenGL render provider -- wraps `OpenGLBackend` for the provider API.
 
+use crate::core::providers::diagnostics::RenderDiagnosticsV1;
 use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::opengl::OpenGLBackend;
 use crate::libs::graphics::backend::{
@@ -236,6 +237,17 @@ impl RenderProvider for OpenGLRenderProvider {
         self.backend
             .set_clear_color(color[0], color[1], color[2], color[3]);
         self.backend.clear_color();
+    }
+
+    fn render_diagnostics(&self) -> RenderDiagnosticsV1 {
+        RenderDiagnosticsV1 {
+            draw_calls: 0,
+            triangles: 0,
+            texture_binds: 0,
+            shader_binds: 0,
+            active_textures: self.capabilities.max_texture_units,
+            active_shaders: 0,
+        }
     }
 }
 

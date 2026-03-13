@@ -341,6 +341,10 @@ mod tests {
         fn debug_shapes(&self) -> Vec<DebugShape> {
             Vec::new()
         }
+
+        fn physics_diagnostics(&self) -> crate::core::providers::diagnostics::PhysicsDiagnosticsV1 {
+            Default::default()
+        }
     }
 
     #[test]

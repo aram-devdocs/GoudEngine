@@ -392,6 +392,25 @@ void main() {
     }
 }
 
+impl crate::core::providers::diagnostics::DiagnosticsSource for UiRenderSystem {
+    fn diagnostics_key(&self) -> &str {
+        "ui_render"
+    }
+
+    fn collect_diagnostics(&self) -> serde_json::Value {
+        let stats = self.stats();
+        serde_json::json!({
+            "quad_commands": stats.quad_commands,
+            "textured_quad_commands": stats.textured_quad_commands,
+            "text_commands": stats.text_commands,
+            "quad_draw_calls": stats.quad_draw_calls,
+            "quad_index_count": stats.quad_index_count,
+            "text_glyph_count": stats.text_glyph_count,
+            "text_draw_calls": stats.text_draw_calls,
+        })
+    }
+}
+
 impl Default for UiRenderSystem {
     fn default() -> Self {
         Self::new()

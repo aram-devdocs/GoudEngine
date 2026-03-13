@@ -14,6 +14,7 @@ use rapier2d::prelude::*;
 use std::collections::{HashMap, HashSet};
 
 use crate::core::error::{GoudError, GoudResult};
+use crate::core::providers::diagnostics::PhysicsDiagnosticsV1;
 use crate::core::providers::physics::PhysicsProvider;
 use crate::core::providers::types::ColliderHandle as EngineColliderHandle;
 use crate::core::providers::types::CollisionEvent as EngineCollisionEvent;
@@ -442,5 +443,16 @@ impl PhysicsProvider for Rapier2DPhysicsProvider {
 
     fn debug_shapes(&self) -> Vec<DebugShape> {
         self.query_debug_shapes()
+    }
+
+    fn physics_diagnostics(&self) -> PhysicsDiagnosticsV1 {
+        PhysicsDiagnosticsV1 {
+            body_count: self.body_handles.len() as u32,
+            collider_count: self.collider_handles.len() as u32,
+            joint_count: self.joint_handles.len() as u32,
+            contact_pair_count: self.active_collision_pairs.len() as u32,
+            gravity: [self.gravity.x, self.gravity.y],
+            timestep: self.integration_parameters.dt,
+        }
     }
 }

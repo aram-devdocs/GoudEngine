@@ -7,6 +7,7 @@
 use std::sync::{Mutex, MutexGuard, OnceLock};
 
 mod config;
+pub mod log_capture;
 mod runtime;
 mod snapshot;
 mod types;
@@ -119,6 +120,10 @@ pub use runtime::RawFramebufferReadbackV1;
 pub use runtime::RouteControlStateV1;
 #[doc(inline)]
 pub use runtime::SyntheticInputEventV1;
+#[doc(inline)]
+pub use log_capture::LogCaptureSink;
+#[doc(inline)]
+pub use log_capture::LogEntryV1;
 #[doc(inline)]
 pub use snapshot::default_capabilities;
 #[doc(inline)]

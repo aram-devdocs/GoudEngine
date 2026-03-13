@@ -5,6 +5,7 @@
 //! paths continue to work, and hosts the concrete implementations in `impls/`.
 
 pub use crate::core::providers::audio;
+pub use crate::core::providers::diagnostics;
 pub use crate::core::providers::input;
 pub use crate::core::providers::input_types;
 pub use crate::core::providers::network;

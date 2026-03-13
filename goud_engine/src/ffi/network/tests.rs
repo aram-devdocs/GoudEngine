@@ -173,6 +173,10 @@ impl NetworkProvider for FixedStatsProvider {
     fn connection_stats(&self, _conn: ConnectionId) -> Option<ConnectionStats> {
         None
     }
+
+    fn network_diagnostics(&self) -> crate::core::providers::diagnostics::NetworkDiagnosticsV1 {
+        Default::default()
+    }
 }
 
 fn assert_within_5_percent(actual: f32, expected: f32) {

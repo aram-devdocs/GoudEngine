@@ -22,9 +22,9 @@ use crate::resources;
 mod types;
 
 use self::types::{
-    structured_response, AttachContextParams, BridgeResponse, InjectInputParams,
-    InspectEntityParams, McpDebuggerStepKind, SetPausedParams, SetTimeScaleParams,
-    StartReplayParams, StepParams,
+    structured_response, AttachContextParams, BridgeResponse, GetLogsParams,
+    GetSubsystemDiagnosticsParams, InjectInputParams, InspectEntityParams, McpDebuggerStepKind,
+    SetPausedParams, SetTimeScaleParams, StartReplayParams, StepParams,
 };
 
 struct BridgeState {
@@ -358,6 +358,51 @@ impl GoudEngineMcpServer {
             "verb": "inject_input",
             "events": events,
         }))?)
+    }
+
+    #[tool(
+        name = "goudengine.get_diagnostics",
+        description = "Return the full provider diagnostics map from the current snapshot for the attached route."
+    )]
+    pub async fn get_diagnostics(&self) -> Result<Json<BridgeResponse>, McpError> {
+        structured_response(self.request_attached(json!({ "verb": "get_diagnostics" }))?)
+    }
+
+    #[tool(
+        name = "goudengine.get_subsystem_diagnostics",
+        description = "Return diagnostics for a single subsystem key (e.g. render, physics_2d, audio, input, sprite_batch, assets, window)."
+    )]
+    pub async fn get_subsystem_diagnostics(
+        &self,
+        Parameters(params): Parameters<GetSubsystemDiagnosticsParams>,
+    ) -> Result<Json<BridgeResponse>, McpError> {
+        structured_response(self.request_attached(json!({
+            "verb": "get_diagnostics_for",
+            "key": params.key,
+        }))?)
+    }
+
+    #[tool(
+        name = "goudengine.get_logs",
+        description = "Return recent engine log entries, optionally filtered to entries since a given frame number."
+    )]
+    pub async fn get_logs(
+        &self,
+        Parameters(params): Parameters<GetLogsParams>,
+    ) -> Result<Json<BridgeResponse>, McpError> {
+        let mut request = json!({ "verb": "get_logs" });
+        if let Some(since_frame) = params.since_frame {
+            request["since_frame"] = json!(since_frame);
+        }
+        structured_response(self.request_attached(request)?)
+    }
+
+    #[tool(
+        name = "goudengine.get_scene_hierarchy",
+        description = "Return entities with parent/child relationships for the attached route."
+    )]
+    pub async fn get_scene_hierarchy(&self) -> Result<Json<BridgeResponse>, McpError> {
+        structured_response(self.request_attached(json!({ "verb": "get_scene_hierarchy" }))?)
     }
 }
 

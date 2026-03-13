@@ -7,6 +7,7 @@
 
 use std::collections::HashMap;
 
+use crate::core::providers::diagnostics::AudioDiagnosticsV1;
 use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::providers::audio::AudioProvider;
 use crate::libs::providers::types::{
@@ -343,6 +344,13 @@ impl AudioProvider for RodioAudioProvider {
             state.player.set_source_position(pos);
         }
         Ok(())
+    }
+
+    fn audio_diagnostics(&self) -> AudioDiagnosticsV1 {
+        AudioDiagnosticsV1 {
+            active_playbacks: self.players.len() as u32,
+            master_volume: self.master_volume,
+        }
     }
 }
 

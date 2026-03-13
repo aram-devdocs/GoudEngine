@@ -65,6 +65,18 @@ pub(super) struct InjectInputParams {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
+pub(super) struct GetSubsystemDiagnosticsParams {
+    pub(super) key: String,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct GetLogsParams {
+    pub(super) since_frame: Option<u64>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub(super) struct StartReplayParams {
     pub(super) artifact_id: Option<String>,
     pub(super) resource_uri: Option<String>,

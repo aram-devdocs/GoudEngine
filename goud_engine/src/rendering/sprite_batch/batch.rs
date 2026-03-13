@@ -339,3 +339,18 @@ impl<B: RenderBackend> SpriteBatch<B> {
         (self.sprite_count(), self.batch_count(), self.batch_ratio())
     }
 }
+
+impl<B: RenderBackend> crate::core::providers::diagnostics::DiagnosticsSource for SpriteBatch<B> {
+    fn diagnostics_key(&self) -> &str {
+        "sprite_batch"
+    }
+
+    fn collect_diagnostics(&self) -> serde_json::Value {
+        let (sprites, batches, ratio) = self.stats();
+        serde_json::json!({
+            "sprite_count": sprites,
+            "batch_count": batches,
+            "batch_ratio": ratio,
+        })
+    }
+}

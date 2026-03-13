@@ -15,6 +15,7 @@ use rapier3d::na::{Quaternion, UnitQuaternion};
 use rapier3d::prelude::*;
 
 use crate::core::error::{GoudError, GoudResult};
+use crate::core::providers::diagnostics::Physics3DDiagnosticsV1;
 use crate::core::providers::physics3d::PhysicsProvider3D;
 use crate::core::providers::types::ColliderHandle as EngineColliderHandle;
 use crate::core::providers::types::CollisionEvent as EngineCollisionEvent;
@@ -478,5 +479,16 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
 
     fn debug_shapes(&self) -> Vec<DebugShape3D> {
         self.query_debug_shapes()
+    }
+
+    fn physics3d_diagnostics(&self) -> Physics3DDiagnosticsV1 {
+        Physics3DDiagnosticsV1 {
+            body_count: self.body_map.len() as u32,
+            collider_count: self.collider_map.len() as u32,
+            joint_count: self.joint_map.len() as u32,
+            contact_pair_count: 0,
+            gravity: [self.gravity.x, self.gravity.y, self.gravity.z],
+            timestep: self.integration_params.dt,
+        }
     }
 }

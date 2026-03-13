@@ -400,6 +400,10 @@ impl<P: NetworkProvider> NetworkProvider for NetworkSimProvider<P> {
     fn simulation_config(&self) -> Option<NetworkSimulationConfig> {
         self.config
     }
+
+    fn network_diagnostics(&self) -> crate::core::providers::diagnostics::NetworkDiagnosticsV1 {
+        self.inner.network_diagnostics()
+    }
 }
 
 impl<P: std::fmt::Debug> std::fmt::Debug for NetworkSimProvider<P> {

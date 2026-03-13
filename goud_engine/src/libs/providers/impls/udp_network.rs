@@ -6,6 +6,7 @@ use super::udp_reliability::{
     PacketHeader, ReliabilityLayer, HEADER_SIZE, PACKET_CONNECT, PACKET_CONNECT_ACK, PACKET_DATA,
     PACKET_DISCONNECT, PACKET_HEARTBEAT,
 };
+use crate::core::providers::diagnostics::NetworkDiagnosticsV1;
 use crate::core::providers::network::NetworkProvider;
 use crate::core::providers::network_types::{
     Channel, ConnectionId, ConnectionState, ConnectionStats, HostConfig, NetworkCapabilities,
@@ -461,6 +462,18 @@ impl NetworkProvider for UdpNetProvider {
         self.connections
             .get(&conn.0)
             .map(|c| c.metrics.snapshot_connection())
+    }
+
+    fn network_diagnostics(&self) -> NetworkDiagnosticsV1 {
+        let s = self.stats();
+        NetworkDiagnosticsV1 {
+            bytes_sent: s.bytes_sent,
+            bytes_received: s.bytes_received,
+            packets_sent: s.packets_sent,
+            packets_received: s.packets_received,
+            rtt_ms: s.rtt_ms,
+            active_connections: self.connections().len() as u32,
+        }
     }
 }
 impl std::fmt::Debug for UdpNetProvider {

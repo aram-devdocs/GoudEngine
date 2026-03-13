@@ -3,6 +3,7 @@
 //! The `RenderProvider` trait abstracts the rendering backend, enabling
 //! runtime selection between OpenGL, wgpu, or null (headless) renderers.
 
+use super::diagnostics::RenderDiagnosticsV1;
 use super::types::{
     BufferDesc, BufferHandle, CameraData, DrawCommand, FrameContext, MeshDrawCommand,
     ParticleDrawCommand, PipelineDesc, PipelineHandle, RenderCapabilities, RenderTargetDesc,
@@ -113,4 +114,11 @@ pub trait RenderProvider: Provider + ProviderLifecycle {
 
     /// Clear the current render target with the given color [r, g, b, a].
     fn clear(&mut self, color: [f32; 4]);
+
+    // -------------------------------------------------------------------------
+    // Diagnostics
+    // -------------------------------------------------------------------------
+
+    /// Returns a snapshot of render diagnostics for the current frame.
+    fn render_diagnostics(&self) -> RenderDiagnosticsV1;
 }

@@ -61,26 +61,91 @@ wait_for_manifest() {
   return 1
 }
 
-# Send a JSON-RPC request to MCP server via stdin/stdout pipes
-# Uses a co-process with the MCP server binary.
+# FIFOs used by the MCP coprocess for stdin/stdout piping.
+MCP_FIFO_DIR=""
+MCP_SERVER_PID=""
+
+# Start the MCP server with FIFOs for stdin/stdout communication.
+start_mcp_server() {
+  MCP_FIFO_DIR=$(mktemp -d)
+  mkfifo "$MCP_FIFO_DIR/mcp_in"
+  mkfifo "$MCP_FIFO_DIR/mcp_out"
+  "$1" < "$MCP_FIFO_DIR/mcp_in" > "$MCP_FIFO_DIR/mcp_out" &
+  MCP_SERVER_PID=$!
+  # Open write end so the server does not get EOF immediately
+  exec 7>"$MCP_FIFO_DIR/mcp_in"
+  # Open read end for consuming responses
+  exec 8<"$MCP_FIFO_DIR/mcp_out"
+}
+
+stop_mcp_server() {
+  exec 7>&- 2>/dev/null || true
+  exec 8<&- 2>/dev/null || true
+  if [[ -n "$MCP_SERVER_PID" ]]; then
+    kill "$MCP_SERVER_PID" 2>/dev/null || true
+    wait "$MCP_SERVER_PID" 2>/dev/null || true
+    MCP_SERVER_PID=""
+  fi
+  if [[ -n "$MCP_FIFO_DIR" ]]; then
+    rm -rf "$MCP_FIFO_DIR" 2>/dev/null || true
+    MCP_FIFO_DIR=""
+  fi
+}
+
+# Send a JSON-RPC request to MCP server via FIFO pipes.
 mcp_call() {
   local method="$1"
   local params="$2"
   local id="$3"
-  local request
-  request=$(cat <<JSONRPC
-{"jsonrpc":"2.0","id":$id,"method":"$method","params":$params}
-JSONRPC
-)
-  echo "$request" >&"${MCP_COPROC[1]}"
+  local request="{\"jsonrpc\":\"2.0\",\"id\":$id,\"method\":\"$method\",\"params\":$params}"
+  echo "$request" >&7
   # Read response (line-delimited JSON-RPC)
   local response=""
   local read_timeout=10
-  if read -r -t "$read_timeout" response <&"${MCP_COPROC[0]}"; then
+  if read -r -t "$read_timeout" response <&8; then
     echo "$response"
   else
     echo '{"error":"timeout"}'
   fi
+}
+
+# Helper: validate a JSON-RPC response has a result (not an error)
+validate_rpc_result() {
+  local label="$1"
+  local response="$2"
+  local has_result
+  has_result=$(python3 -c "
+import json, sys
+try:
+    r = json.loads(sys.argv[1])
+    if 'result' in r:
+        print('ok')
+    elif 'error' in r:
+        print('error: ' + json.dumps(r['error']))
+    else:
+        print('unknown')
+except Exception as e:
+    print('parse_error: ' + str(e))
+" "$response")
+  if [[ "$has_result" == "ok" ]]; then
+    pass "$label"
+    return 0
+  else
+    fail "$label ($has_result)"
+    return 1
+  fi
+}
+
+# Helper: extract a value from a JSON-RPC result using a Python expression
+extract_from_result() {
+  local response="$1"
+  local py_expr="$2"
+  python3 -c "
+import json, sys
+r = json.loads(sys.argv[1])
+result = r.get('result', {})
+$py_expr
+" "$response" 2>/dev/null
 }
 
 # Build required binaries
@@ -197,6 +262,107 @@ for r in m['routes']:
   else
     fail "Missing control_plane capability"
   fi
+
+  # =========================================================================
+  # MCP server coprocess tests -- exercise the new diagnostic/log/hierarchy
+  # tools via JSON-RPC over stdin/stdout
+  # =========================================================================
+
+  log "Starting MCP server coprocess..."
+  local MCP_BIN="$REPO_ROOT/target/release/goudengine-mcp"
+  if [[ ! -x "$MCP_BIN" ]]; then
+    fail "MCP server binary not found at $MCP_BIN"
+    kill "$SANDBOX_PID" 2>/dev/null || true
+    wait "$SANDBOX_PID" 2>/dev/null || true
+    return
+  fi
+
+  # Start MCP server with FIFO-based stdin/stdout pipes
+  start_mcp_server "$MCP_BIN"
+  log "MCP server PID: $MCP_SERVER_PID"
+
+  # Step 1: MCP initialize handshake
+  local INIT_RESPONSE
+  INIT_RESPONSE=$(mcp_call "initialize" '{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"e2e-test","version":"1.0"}}' 1)
+  if validate_rpc_result "MCP initialize handshake" "$INIT_RESPONSE"; then
+    log "MCP server initialized"
+  else
+    log "MCP initialize failed, skipping MCP tool tests"
+    stop_mcp_server
+    kill "$SANDBOX_PID" 2>/dev/null || true
+    wait "$SANDBOX_PID" 2>/dev/null || true
+    return
+  fi
+
+  # Send initialized notification (no response expected)
+  echo '{"jsonrpc":"2.0","method":"notifications/initialized"}' >&7
+
+  # Step 2: Attach to the sandbox context
+  local ATTACH_RESPONSE
+  ATTACH_RESPONSE=$(mcp_call "tools/call" "{\"name\":\"goudengine.attach_context\",\"arguments\":{\"contextId\":$context_id,\"processNonce\":$process_nonce}}" 2)
+  validate_rpc_result "MCP attach_context tool call" "$ATTACH_RESPONSE"
+
+  # Step 3: get_diagnostics
+  local DIAG_RESPONSE
+  DIAG_RESPONSE=$(mcp_call "tools/call" '{"name":"goudengine.get_diagnostics","arguments":{}}' 3)
+  if validate_rpc_result "MCP get_diagnostics tool call" "$DIAG_RESPONSE"; then
+    local diag_is_object
+    diag_is_object=$(extract_from_result "$DIAG_RESPONSE" "
+content = result.get('content', [])
+if content and isinstance(json.loads(content[0].get('text', '{}')), dict):
+    print('true')
+else:
+    print('false')
+")
+    if [[ "$diag_is_object" == "true" ]]; then
+      pass "get_diagnostics returns object content"
+    else
+      fail "get_diagnostics content is not an object"
+    fi
+  fi
+
+  # Step 4: get_subsystem_diagnostics (valid key: render)
+  local SUBSYS_RESPONSE
+  SUBSYS_RESPONSE=$(mcp_call "tools/call" '{"name":"goudengine.get_subsystem_diagnostics","arguments":{"key":"render"}}' 4)
+  validate_rpc_result "MCP get_subsystem_diagnostics(render) tool call" "$SUBSYS_RESPONSE"
+
+  # Step 5: get_subsystem_diagnostics (invalid key)
+  local SUBSYS_INVALID_RESPONSE
+  SUBSYS_INVALID_RESPONSE=$(mcp_call "tools/call" '{"name":"goudengine.get_subsystem_diagnostics","arguments":{"key":"nonexistent"}}' 5)
+  validate_rpc_result "MCP get_subsystem_diagnostics(nonexistent) tool call" "$SUBSYS_INVALID_RESPONSE"
+
+  # Step 6: get_logs
+  local LOGS_RESPONSE
+  LOGS_RESPONSE=$(mcp_call "tools/call" '{"name":"goudengine.get_logs","arguments":{}}' 6)
+  if validate_rpc_result "MCP get_logs tool call" "$LOGS_RESPONSE"; then
+    local has_entries
+    has_entries=$(extract_from_result "$LOGS_RESPONSE" "
+content = result.get('content', [])
+if content:
+    data = json.loads(content[0].get('text', '{}'))
+    if 'entries' in data:
+        print('true')
+    else:
+        print('false')
+else:
+    print('false')
+")
+    if [[ "$has_entries" == "true" ]]; then
+      pass "get_logs response contains entries array"
+    else
+      fail "get_logs response missing entries array"
+    fi
+  fi
+
+  # Step 7: get_scene_hierarchy
+  local HIERARCHY_RESPONSE
+  HIERARCHY_RESPONSE=$(mcp_call "tools/call" '{"name":"goudengine.get_scene_hierarchy","arguments":{}}' 7)
+  validate_rpc_result "MCP get_scene_hierarchy tool call" "$HIERARCHY_RESPONSE"
+
+  # Clean up MCP server
+  log "Stopping MCP server..."
+  stop_mcp_server
+  log "MCP server stopped"
 
   # Clean up sandbox
   log "Stopping sandbox..."

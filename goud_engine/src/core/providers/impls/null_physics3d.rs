@@ -1,6 +1,7 @@
 //! Null 3D physics provider -- silent no-op for headless testing.
 
 use crate::core::error::GoudResult;
+use crate::core::providers::diagnostics::Physics3DDiagnosticsV1;
 use crate::core::providers::physics3d::PhysicsProvider3D;
 use crate::core::providers::types::{
     BodyDesc3D, BodyHandle, ColliderDesc3D, ColliderHandle, CollisionEvent, ContactPair3D,
@@ -188,6 +189,10 @@ impl PhysicsProvider3D for NullPhysicsProvider3D {
 
     fn debug_shapes(&self) -> Vec<DebugShape3D> {
         Vec::new()
+    }
+
+    fn physics3d_diagnostics(&self) -> Physics3DDiagnosticsV1 {
+        Physics3DDiagnosticsV1::default()
     }
 }
 

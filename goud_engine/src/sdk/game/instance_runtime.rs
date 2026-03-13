@@ -436,6 +436,10 @@ mod tests {
             self.debug_shapes_calls.fetch_add(1, Ordering::SeqCst);
             self.inner.debug_shapes()
         }
+
+        fn physics_diagnostics(&self) -> crate::core::providers::diagnostics::PhysicsDiagnosticsV1 {
+            self.inner.physics_diagnostics()
+        }
     }
 
     #[test]
