@@ -134,20 +134,25 @@ export function createFeatureLab(game: FeatureLabGameContext, options: FeatureLa
   }
 
   const marker = game.spawnEmpty();
-  const nativeGame = (game as any).native as Record<string, unknown>;
-  const supportsTransformComponent =
-    typeof nativeGame.addTransform2d === 'function'
-    && typeof nativeGame.getTransform2d === 'function'
-    && typeof nativeGame.setTransform2d === 'function';
   game.addName(marker, `feature_lab_${options.mode}`);
-  if (supportsTransformComponent) {
-    game.addTransform2d(marker, {
-      positionX: 64,
-      positionY: 64,
-      rotation: 0,
-      scaleX: 1,
-      scaleY: 1,
-    });
+  let supportsTransformComponent = false;
+  if (
+    typeof (game as any).addTransform2d === 'function'
+    && typeof (game as any).getTransform2d === 'function'
+    && typeof (game as any).setTransform2d === 'function'
+  ) {
+    try {
+      game.addTransform2d(marker, {
+        positionX: 64,
+        positionY: 64,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
+      });
+      supportsTransformComponent = true;
+    } catch {
+      supportsTransformComponent = false;
+    }
   }
 
   let elapsed = 0;
@@ -165,10 +170,14 @@ export function createFeatureLab(game: FeatureLabGameContext, options: FeatureLa
       game.drawQuad(x, y, 24, 24, { r: 0.9, g: 0.25, b: 0.2, a: 1.0 });
 
       if (supportsTransformComponent) {
-        const transform = game.getTransform2d(marker);
-        if (transform) {
-          transform.rotation += dt;
-          game.setTransform2d(marker, transform);
+        try {
+          const transform = game.getTransform2d(marker);
+          if (transform) {
+            transform.rotation += dt;
+            game.setTransform2d(marker, transform);
+          }
+        } catch {
+          supportsTransformComponent = false;
         }
       }
     },
