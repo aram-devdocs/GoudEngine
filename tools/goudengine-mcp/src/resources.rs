@@ -171,32 +171,25 @@ pub fn add_resource_uri(kind: ArtifactKind, value: &mut serde_json::Value) {
 }
 
 pub fn read_resource(uri: &str, runtime_root: &Path) -> Result<Vec<ResourceContents>> {
-    match uri {
-        _ if STATIC_RESOURCE_DEFS
-            .iter()
-            .any(|resource| resource.uri == uri) =>
-        {
-            let resource = STATIC_RESOURCE_DEFS
-                .iter()
-                .find(|resource| resource.uri == uri)
-                .expect("static resource lookup should match");
-            Ok(vec![
-                ResourceContents::text(resource.text, uri).with_mime_type("text/markdown")
-            ])
-        }
-        _ => {
-            if let Some(artifact_id) = artifact_id_from_uri(uri, ArtifactKind::Capture) {
-                return read_capture_resource(uri, runtime_root, &artifact_id);
-            }
-            if let Some(artifact_id) = artifact_id_from_uri(uri, ArtifactKind::Metrics) {
-                return read_metrics_resource(uri, runtime_root, &artifact_id);
-            }
-            if let Some(artifact_id) = artifact_id_from_uri(uri, ArtifactKind::Recording) {
-                return read_recording_resource(uri, runtime_root, &artifact_id);
-            }
-            anyhow::bail!("unknown resource uri: {uri}")
-        }
+    if let Some(resource) = STATIC_RESOURCE_DEFS
+        .iter()
+        .find(|resource| resource.uri == uri)
+    {
+        return Ok(vec![
+            ResourceContents::text(resource.text, uri).with_mime_type("text/markdown")
+        ]);
     }
+
+    if let Some(artifact_id) = artifact_id_from_uri(uri, ArtifactKind::Capture) {
+        return read_capture_resource(uri, runtime_root, &artifact_id);
+    }
+    if let Some(artifact_id) = artifact_id_from_uri(uri, ArtifactKind::Metrics) {
+        return read_metrics_resource(uri, runtime_root, &artifact_id);
+    }
+    if let Some(artifact_id) = artifact_id_from_uri(uri, ArtifactKind::Recording) {
+        return read_recording_resource(uri, runtime_root, &artifact_id);
+    }
+    anyhow::bail!("unknown resource uri: {uri}")
 }
 
 fn read_capture_resource(
