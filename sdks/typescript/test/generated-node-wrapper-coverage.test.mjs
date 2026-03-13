@@ -20,7 +20,11 @@ const {
 } = require(path.join(repoRoot, 'dist', 'generated', 'node', 'index.g.js'));
 const { DiagnosticMode } = require(path.join(repoRoot, 'dist', 'generated', 'diagnostic.g.js'));
 const { Color } = require(path.join(repoRoot, 'dist', 'generated', 'types', 'math.g.js'));
-const { NetworkManager } = require(path.join(repoRoot, 'dist', 'index.js'));
+const {
+  NetworkManager,
+  parseDebuggerManifest,
+  parseDebuggerSnapshot,
+} = require(path.join(repoRoot, 'dist', 'index.js'));
 
 function makeProxyNative(overrides = {}, calls = []) {
   return new Proxy(overrides, {
@@ -82,6 +86,18 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
         getScrollDelta: () => [7, 8],
         getDebuggerSnapshotJson: () => '{"version":1}',
         getDebuggerManifestJson: () => '{"manifest_version":1}',
+        captureDebuggerFrame: () => ({
+          imagePng: new Uint8Array([1, 2, 3]),
+          metadataJson: '{"route":"game"}',
+          snapshotJson: '{"frame":7}',
+          metricsTraceJson: '{"version":1}',
+        }),
+        stopDebuggerRecording: () => ({
+          manifestJson: '{"determinism":"limited"}',
+          data: new Uint8Array([9, 8, 7]),
+        }),
+        getDebuggerReplayStatusJson: () => '{"state":"idle"}',
+        getDebuggerMetricsTraceJson: () => '{"frames":[]}',
         getMemorySummary: () => ({
           rendering: { current_bytes: 1, peak_bytes: 2 },
           assets: { current_bytes: 3, peak_bytes: 4 },
@@ -257,9 +273,32 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
     assert.equal(game.clearNetworkOverlayHandle(), 0);
     assert.equal(game.getDebuggerSnapshotJson(), '{"version":1}');
     assert.equal(game.getDebuggerManifestJson(), '{"manifest_version":1}');
+    game.setDebuggerPaused(true);
+    game.stepDebugger(1, 2);
+    game.setDebuggerTimeScale(0.5);
+    game.setDebuggerDebugDrawEnabled(true);
+    game.injectDebuggerKeyEvent(4, true);
+    game.injectDebuggerMouseButton(1, false);
+    game.injectDebuggerMousePosition({ x: 12, y: 13 });
+    game.injectDebuggerScroll({ x: -1, y: 2 });
     game.setDebuggerProfilingEnabled(true);
     game.setDebuggerSelectedEntity(77);
     game.clearDebuggerSelectedEntity();
+    assert.deepEqual(game.captureDebuggerFrame(), {
+      imagePng: new Uint8Array([1, 2, 3]),
+      metadataJson: '{"route":"game"}',
+      snapshotJson: '{"frame":7}',
+      metricsTraceJson: '{"version":1}',
+    });
+    game.startDebuggerRecording();
+    assert.deepEqual(game.stopDebuggerRecording(), {
+      manifestJson: '{"determinism":"limited"}',
+      data: new Uint8Array([9, 8, 7]),
+    });
+    game.startDebuggerReplay(new Uint8Array([5, 4]));
+    game.stopDebuggerReplay();
+    assert.equal(game.getDebuggerReplayStatusJson(), '{"state":"idle"}');
+    assert.equal(game.getDebuggerMetricsTraceJson(), '{"frames":[]}');
     assert.deepEqual(game.getMemorySummary(), {
       rendering: { currentBytes: 1, peakBytes: 2 },
       assets: { currentBytes: 3, peakBytes: 4 },
@@ -326,6 +365,13 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
       jitter_ms: 2,
       packet_loss_percent: 1,
     });
+
+    const replayStartCall = calls.find(([name]) => name === 'startDebuggerReplay');
+    assert.ok(replayStartCall);
+    assert.deepEqual(Array.from(replayStartCall[1][0]), [5, 4]);
+
+    assert.deepEqual(parseDebuggerSnapshot(game), { version: 1 });
+    assert.deepEqual(parseDebuggerManifest(game), { manifest_version: 1 });
   });
 
   it('covers preload normalization and in-flight guards', async () => {
@@ -371,6 +417,18 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
       {
         getDebuggerSnapshotJson: () => '{"context":true}',
         getDebuggerManifestJson: () => '{"manifest":true}',
+        captureDebuggerFrame: () => JSON.stringify({
+          imagePng: [6, 5],
+          metadataJson: '{"route":"context"}',
+          snapshotJson: '{"frame":9}',
+          metricsTraceJson: '{"version":2}',
+        }),
+        stopDebuggerRecording: () => JSON.stringify({
+          manifestJson: '{"determinism":"documented"}',
+          data: [1, 3, 5],
+        }),
+        getDebuggerReplayStatusJson: () => '{"state":"replaying"}',
+        getDebuggerMetricsTraceJson: () => '{"frames":[1]}',
         getMemorySummary: () => ({
           rendering: { current_bytes: 2, peak_bytes: 3 },
           assets: { current_bytes: 4, peak_bytes: 5 },
@@ -417,9 +475,32 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
     assert.equal(ctx.clearNetworkOverlayHandle(), 0);
     assert.equal(ctx.getDebuggerSnapshotJson(), '{"context":true}');
     assert.equal(ctx.getDebuggerManifestJson(), '{"manifest":true}');
+    ctx.setDebuggerPaused(false);
+    ctx.stepDebugger(0, 1);
+    ctx.setDebuggerTimeScale(1.5);
+    ctx.setDebuggerDebugDrawEnabled(false);
+    ctx.injectDebuggerKeyEvent(7, false);
+    ctx.injectDebuggerMouseButton(2, true);
+    ctx.injectDebuggerMousePosition({ x: 4, y: 5 });
+    ctx.injectDebuggerScroll({ x: 0, y: -3 });
     ctx.setDebuggerProfilingEnabled(false);
     ctx.setDebuggerSelectedEntity(19);
     ctx.clearDebuggerSelectedEntity();
+    assert.deepEqual(ctx.captureDebuggerFrame(), {
+      imagePng: new Uint8Array([6, 5]),
+      metadataJson: '{"route":"context"}',
+      snapshotJson: '{"frame":9}',
+      metricsTraceJson: '{"version":2}',
+    });
+    ctx.startDebuggerRecording();
+    assert.deepEqual(ctx.stopDebuggerRecording(), {
+      manifestJson: '{"determinism":"documented"}',
+      data: new Uint8Array([1, 3, 5]),
+    });
+    ctx.startDebuggerReplay(new Uint8Array([2, 4, 6]));
+    ctx.stopDebuggerReplay();
+    assert.equal(ctx.getDebuggerReplayStatusJson(), '{"state":"replaying"}');
+    assert.equal(ctx.getDebuggerMetricsTraceJson(), '{"frames":[1]}');
     assert.deepEqual(ctx.getMemorySummary(), {
       rendering: { currentBytes: 2, peakBytes: 3 },
       assets: { currentBytes: 4, peakBytes: 5 },
@@ -442,6 +523,13 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
       jitter_ms: 1,
       packet_loss_percent: 0,
     });
+
+    const contextReplayStartCall = calls.find(([name]) => name === 'startDebuggerReplay');
+    assert.ok(contextReplayStartCall);
+    assert.deepEqual(Array.from(contextReplayStartCall[1][0]), [2, 4, 6]);
+
+    assert.deepEqual(parseDebuggerSnapshot(ctx), { context: true });
+    assert.deepEqual(parseDebuggerManifest(ctx), { manifest: true });
   });
 
   it('executes PhysicsWorld2D, PhysicsWorld3D, EngineConfig, and UiManager wrappers', () => {

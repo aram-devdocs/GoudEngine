@@ -129,7 +129,11 @@ ctx.clearDebuggerSelectedEntity();
 ctx.destroy();
 ```
 
-`goudengine/web` does not expose the debugger runtime in this batch. The browser build throws an explicit unsupported error instead of silently no-oping.
+The Node target also exposes pause, step, time-scale, debug-draw, input injection, capture, replay, and metrics methods on `GoudGame` and `GoudContext`. Capture, replay, and metrics stay Rust-owned and come back as raw artifact envelopes instead of TypeScript-specific debugger models.
+
+`goudengine/web` does not expose the debugger runtime in this batch. The browser build throws an explicit unsupported error for these methods instead of silently no-oping.
+
+See [`docs/src/guides/debugger-runtime.md`](../../docs/src/guides/debugger-runtime.md) for desktop-only scope, determinism limits, and the `goudengine-mcp` bridge workflow.
 
 ## Features
 

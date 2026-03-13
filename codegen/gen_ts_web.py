@@ -156,7 +156,7 @@ def gen_web_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
+        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "import { PhysicsBackend2D } from '../types/input.g.js';",
         "import { attachInputHandlers } from './input.g.js';",
@@ -164,7 +164,7 @@ def gen_web_wrapper():
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';",
         "export { Rect } from '../types/math.g.js';",
-        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
+        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
         "",
         "const PRELOAD_TEXTURE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'tga', 'dds']);",
         "const PRELOAD_FONT_EXTENSIONS = new Set(['ttf', 'otf', 'woff', 'woff2', 'fnt']);",
@@ -1007,10 +1007,25 @@ def gen_web_wrapper():
     lines.append("  setFpsOverlayCorner(_corner: number): void {}")
     lines.append("  getDebuggerSnapshotJson(): string { return debuggerUnsupported(); }")
     lines.append("  getDebuggerManifestJson(): string { return debuggerUnsupported(); }")
+    lines.append("  setDebuggerPaused(_paused: boolean): void { debuggerUnsupported(); }")
+    lines.append("  stepDebugger(_kind: number, _count: number): void { debuggerUnsupported(); }")
+    lines.append("  setDebuggerTimeScale(_scale: number): void { debuggerUnsupported(); }")
+    lines.append("  setDebuggerDebugDrawEnabled(_enabled: boolean): void { debuggerUnsupported(); }")
+    lines.append("  injectDebuggerKeyEvent(_key: number, _pressed: boolean): void { debuggerUnsupported(); }")
+    lines.append("  injectDebuggerMouseButton(_button: number, _pressed: boolean): void { debuggerUnsupported(); }")
+    lines.append("  injectDebuggerMousePosition(_position: IVec2): void { debuggerUnsupported(); }")
+    lines.append("  injectDebuggerScroll(_delta: IVec2): void { debuggerUnsupported(); }")
     lines.append("  setDebuggerProfilingEnabled(_enabled: boolean): void { debuggerUnsupported(); }")
     lines.append("  setDebuggerSelectedEntity(_entityId: number): void { debuggerUnsupported(); }")
     lines.append("  clearDebuggerSelectedEntity(): void { debuggerUnsupported(); }")
     lines.append("  getMemorySummary(): IMemorySummary { return debuggerUnsupported(); }")
+    lines.append("  captureDebuggerFrame(): IDebuggerCapture { return debuggerUnsupported(); }")
+    lines.append("  startDebuggerRecording(): void { debuggerUnsupported(); }")
+    lines.append("  stopDebuggerRecording(): IDebuggerReplayArtifact { return debuggerUnsupported(); }")
+    lines.append("  startDebuggerReplay(_recording: Uint8Array): void { debuggerUnsupported(); }")
+    lines.append("  stopDebuggerReplay(): void { debuggerUnsupported(); }")
+    lines.append("  getDebuggerReplayStatusJson(): string { return debuggerUnsupported(); }")
+    lines.append("  getDebuggerMetricsTraceJson(): string { return debuggerUnsupported(); }")
     lines.append("")
     lines.append("  // TODO: wasm animation -- these stub methods satisfy the IGoudGame interface")
     lines.append("  play(_entity: IEntity): number { return 0; }")

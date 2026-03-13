@@ -289,11 +289,10 @@ def _emit_tool_method_body_tail(
         lines.append(f"        return Vec2({out_vals})")
     elif mmap.get("out_buffer"):
         _emit_out_buffer_method(mmap, params, lines, uses_network_status_errors)
+    elif mmap.get("json_buffer_struct"):
+        _emit_json_buffer_struct_method(mmap, params, lines)
     elif mmap.get("buffer_protocol"):
         _emit_buffer_protocol_method(mmap, params, lines)
-    elif "enum_params" in mmap:
-        enum_arg = list(mmap["enum_params"].keys())[0]
-        lines.append(f"        return self._lib.{mmap['ffi']}(self._ctx, int({to_snake(enum_arg)}))")
     elif "ffi" in mmap:
         _emit_plain_ffi_method(mmap, params, ret, lines)
 
@@ -326,6 +325,49 @@ def _emit_buffer_protocol_method(mmap: dict, params: list[dict], lines: list[str
         f"            lambda _buf, _buf_len: self._lib.{ffi_fn}({', '.join(ffi_parts)})"
     )
     lines.append("        )")
+
+
+def _emit_json_buffer_struct_method(mmap: dict, params: list[dict], lines: list[str]) -> None:
+    ffi_fn = mmap["ffi"]
+    no_ctx = mmap.get("no_context", False)
+    entity_set = set(mmap.get("entity_params", []))
+    enum_set = set((mmap.get("enum_params") or {}).keys())
+    returns_struct = mmap["json_buffer_struct"]
+
+    ffi_parts = [] if no_ctx else ["self._ctx"]
+    for param in params:
+        param_name = param["name"]
+        snake_name = to_snake(param_name)
+        if param_name in entity_set:
+            ffi_parts.append(f"{snake_name}._bits")
+        elif param_name in enum_set or param["type"] in schema.get("enums", {}):
+            ffi_parts.append(f"int({snake_name})")
+        else:
+            value_setup = py_value_param_ffi_setup(param)
+            if value_setup:
+                value_lines, value_arg = value_setup
+                lines.extend(value_lines)
+                ffi_parts.append(value_arg)
+            else:
+                ffi_parts.append(snake_name)
+    ffi_parts.extend(["_buf", "_buf_len"])
+    lines.append("        _payload = json.loads(_read_string_buffer(")
+    lines.append(
+        f"            lambda _buf, _buf_len: self._lib.{ffi_fn}({', '.join(ffi_parts)})"
+    )
+    lines.append("        ))")
+
+    field_args: list[str] = []
+    for field in schema["types"][returns_struct]["fields"]:
+        field_name = field["name"]
+        field_type = field["type"]
+        if field_type in ("bytes", "u8[]"):
+            field_args.append(f"bytes(_payload.get('{field_name}', []))")
+        elif field_type == "string":
+            field_args.append(f"_payload.get('{field_name}', '')")
+        else:
+            field_args.append(f"_payload.get('{field_name}')")
+    lines.append(f"        return {returns_struct}({', '.join(field_args)})")
 
 
 def _emit_out_buffer_method(mmap: dict, params: list[dict], lines: list[str], uses_network_status_errors: bool) -> None:

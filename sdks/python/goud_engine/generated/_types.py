@@ -1405,6 +1405,26 @@ class MemorySummary:
     def __repr__(self):
         return f"MemorySummary(rendering={self.rendering}, assets={self.assets}, ecs={self.ecs}, ui={self.ui}, audio={self.audio}, network={self.network}, debugger={self.debugger}, other={self.other}, total_current_bytes={self.total_current_bytes}, total_peak_bytes={self.total_peak_bytes})"
 
+class DebuggerCapture:
+    """Debugger frame capture artifact envelope returned directly by SDK calls."""
+    def __init__(self, image_png: bytes = b'', metadata_json: str = "", snapshot_json: str = "", metrics_trace_json: str = ""):
+        self.image_png = image_png
+        self.metadata_json = metadata_json
+        self.snapshot_json = snapshot_json
+        self.metrics_trace_json = metrics_trace_json
+
+    def __repr__(self):
+        return f"DebuggerCapture(image_png={self.image_png}, metadata_json={self.metadata_json}, snapshot_json={self.snapshot_json}, metrics_trace_json={self.metrics_trace_json})"
+
+class DebuggerReplayArtifact:
+    """Debugger replay recording artifact envelope returned directly by SDK calls."""
+    def __init__(self, manifest_json: str = "", data: bytes = b''):
+        self.manifest_json = manifest_json
+        self.data = data
+
+    def __repr__(self):
+        return f"DebuggerReplayArtifact(manifest_json={self.manifest_json}, data={self.data})"
+
 class PhysicsWorld2D:
     """2D physics simulation world"""
     def __init__(self, bits: int):

@@ -14,6 +14,7 @@ from .helpers import (
     _ffi_uses_ptr_len,
     _ffi_param_type_at,
     _cs_len_cast_expr,
+    _cs_ffi_param_type,
 )
 
 
@@ -165,16 +166,6 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                 L.append(f"            return {call}")
             else:
                 L.append(f"            {call}")
-        return
-    if "enum_params" in mm and mm.get("ffi"):
-        ek = list(mm["enum_params"].keys())[0]
-        ffi_fn = mm["ffi"]
-        prefix = "return " if ret != "void" else ""
-        if mm.get("string_params"):
-            sp = mm["string_params"][0]
-            L.append(f"            {prefix}NativeMethods.{ffi_fn}(_ctx, {sp}, (int){ek});")
-        else:
-            L.append(f"            {prefix}NativeMethods.{ffi_fn}(_ctx, (int){ek});")
         return
     if "out_params" in mm and "returns_struct" in mm:
         struct_name = mm["returns_struct"]
@@ -363,7 +354,9 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                 ffi_args_parts.append(f"{pname}.ToBits()")
             elif pname in enum_set or p["type"] in schema.get("enums", {}):
                 expected = _ffi_param_type_at(ffi_fn, ffi_param_index)
-                if expected.startswith("Ffi") and expected[3:] in schema.get("enums", {}):
+                if (
+                    expected.startswith("Ffi") and expected[3:] in schema.get("enums", {})
+                ) or _cs_ffi_param_type(expected) == cs_type(p["type"]):
                     ffi_args_parts.append(pname)
                 else:
                     underlying = schema["enums"][p["type"]].get("underlying", "i32")
@@ -412,6 +405,115 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
             "                        }",
             "                        if (_written == 0) return string.Empty;",
             "                        return System.Text.Encoding.UTF8.GetString(_buf, 0, _written);",
+            "                    }",
+            "                }",
+            "            }",
+        ]
+        return
+    if mm.get("json_buffer_struct"):
+        ffi_fn = mm["ffi"]
+        no_ctx = mm.get("no_context", False)
+        entity_set = set(mm.get("entity_params", []))
+        enum_set = set(mm.get("enum_params", {}).keys())
+        returns_struct = mm["json_buffer_struct"]
+        ffi_args_parts = []
+        ffi_param_index = 0 if no_ctx else 1
+        for p in params:
+            pname = p["name"]
+            if pname in entity_set:
+                ffi_args_parts.append(f"{pname}.ToBits()")
+            elif pname in enum_set or p["type"] in schema.get("enums", {}):
+                expected = _ffi_param_type_at(ffi_fn, ffi_param_index)
+                if (
+                    expected.startswith("Ffi") and expected[3:] in schema.get("enums", {})
+                ) or _cs_ffi_param_type(expected) == cs_type(p["type"]):
+                    ffi_args_parts.append(pname)
+                else:
+                    underlying = schema["enums"][p["type"]].get("underlying", "i32")
+                    ffi_args_parts.append(f"({cs_type(underlying)}){pname}")
+            else:
+                value_setup = _cs_value_param_ffi_setup(p["type"], pname)
+                if value_setup:
+                    value_lines, value_arg = value_setup
+                    L.extend(value_lines)
+                    ffi_args_parts.append(value_arg)
+                else:
+                    ffi_args_parts.append(pname)
+            ffi_param_index += 1
+
+        def _buffer_call(ptr_expr: str, len_expr: str) -> str:
+            prefix = "" if no_ctx else "_ctx, "
+            arg_prefix = ", ".join(ffi_args_parts)
+            args = prefix
+            if arg_prefix:
+                args += f"{arg_prefix}, "
+            args += f"{ptr_expr}, {len_expr}"
+            return f"NativeMethods.{ffi_fn}({args})"
+
+        L += [
+            "            unsafe",
+            "            {",
+            f"                int _required = {_buffer_call('IntPtr.Zero', '(nuint)0')};",
+            "                if (_required == -1)",
+            "                {",
+            "                    var _ex = GoudException.FromLastError();",
+            "                    if (_ex != null) throw _ex;",
+            f'                    throw new InvalidOperationException("{ffi_fn} failed.");',
+            "                }",
+            "                if (_required == 0)",
+            "                {",
+            f"                    return new {returns_struct}();",
+            "                }",
+            "                int _bufferSize = _required < 0 ? -_required : _required + 1;",
+            "                while (true)",
+            "                {",
+            "                    var _buf = new byte[_bufferSize];",
+            "                    fixed (byte* _ptr = _buf)",
+            "                    {",
+            f"                        int _written = {_buffer_call('(IntPtr)_ptr', '(nuint)_buf.Length')};",
+            "                        if (_written == -1)",
+            "                        {",
+            "                            var _ex = GoudException.FromLastError();",
+            "                            if (_ex != null) throw _ex;",
+            f'                            throw new InvalidOperationException("{ffi_fn} failed.");',
+            "                        }",
+            "                        if (_written < 0)",
+            "                        {",
+            "                            _bufferSize = -_written;",
+            "                            continue;",
+            "                        }",
+            "                        if (_written == 0)",
+            "                        {",
+            f"                            return new {returns_struct}();",
+            "                        }",
+            "                        var _json = System.Text.Encoding.UTF8.GetString(_buf, 0, _written);",
+            "                        using var _doc = JsonDocument.Parse(_json);",
+            "                        var _root = _doc.RootElement;",
+        ]
+        ctor_args = []
+        for field in schema["types"][returns_struct]["fields"]:
+            field_name = field["name"]
+            var_name = f"_{field_name[0].lower()}{field_name[1:]}"
+            field_type = field["type"]
+            if field_type in ("bytes", "u8[]"):
+                L.append(
+                    f"                        var {var_name} = _root.GetProperty(\"{field_name}\").EnumerateArray().Select(static value => value.GetByte()).ToArray();"
+                )
+            elif field_type == "string":
+                L.append(
+                    f"                        var {var_name} = _root.GetProperty(\"{field_name}\").GetString() ?? string.Empty;"
+                )
+            elif field_type == "bool":
+                L.append(f"                        var {var_name} = _root.GetProperty(\"{field_name}\").GetBoolean();")
+            elif field_type in ("u32", "i32"):
+                L.append(f"                        var {var_name} = _root.GetProperty(\"{field_name}\").GetInt32();")
+            elif field_type in ("u64", "i64"):
+                L.append(f"                        var {var_name} = _root.GetProperty(\"{field_name}\").GetUInt64();")
+            else:
+                L.append(f"                        var {var_name} = (float)_root.GetProperty(\"{field_name}\").GetDouble();")
+            ctor_args.append(var_name)
+        L += [
+            f"                        return new {returns_struct}({', '.join(ctor_args)});",
             "                    }",
             "                }",
             "            }",
@@ -477,13 +579,21 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                 else:
                     if p["type"] in schema.get("enums", {}):
                         expected = _ffi_param_type_at(ffi_fn, ffi_param_index)
-                        if expected.startswith("Ffi") and expected[3:] in schema.get("enums", {}):
+                        if (
+                            expected.startswith("Ffi") and expected[3:] in schema.get("enums", {})
+                        ) or _cs_ffi_param_type(expected) == cs_type(p["type"]):
                             ffi_arg_parts.append(p["name"])
                         else:
                             underlying = schema["enums"][p["type"]].get("underlying", "i32")
                             ffi_arg_parts.append(f"({cs_type(underlying)}){p['name']}")
                     else:
-                        ffi_arg_parts.append(p["name"])
+                        value_setup = _cs_value_param_ffi_setup(p["type"], p["name"])
+                        if value_setup:
+                            value_lines, value_arg = value_setup
+                            L.extend(value_lines)
+                            ffi_arg_parts.append(value_arg)
+                        else:
+                            ffi_arg_parts.append(p["name"])
                     ffi_param_index += 1
             fixed_expr = "\n                ".join(f"fixed ({fl})" for fl in fixed_lines)
             L.append(f"                {fixed_expr}")
@@ -498,13 +608,21 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         for p in params:
             if p["type"] in schema.get("enums", {}):
                 expected = _ffi_param_type_at(ffi_fn, ffi_param_index)
-                if expected.startswith("Ffi") and expected[3:] in schema.get("enums", {}):
+                if (
+                    expected.startswith("Ffi") and expected[3:] in schema.get("enums", {})
+                ) or _cs_ffi_param_type(expected) == cs_type(p["type"]):
                     ffi_args_parts.append(p["name"])
                 else:
                     underlying = schema["enums"][p["type"]].get("underlying", "i32")
                     ffi_args_parts.append(f"({cs_type(underlying)}){p['name']}")
             else:
-                ffi_args_parts.append(p["name"])
+                value_setup = _cs_value_param_ffi_setup(p["type"], p["name"])
+                if value_setup:
+                    value_lines, value_arg = value_setup
+                    L.extend(value_lines)
+                    ffi_args_parts.append(value_arg)
+                else:
+                    ffi_args_parts.append(p["name"])
             ffi_param_index += 1
         ffi_args = ", ".join(ffi_args_parts)
         all_args = ffi_args if no_ctx else (f"_ctx, {ffi_args}" if ffi_args else "_ctx")

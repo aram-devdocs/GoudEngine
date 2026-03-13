@@ -136,6 +136,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/scene_transition.rs",
     // debug overlay
     "src/ffi/debug.rs",
+    "src/ffi/debug/debugger_control.rs",
     "src/ffi/debug/debugger_runtime.rs",
     // error query module
     "src/ffi/error.rs",

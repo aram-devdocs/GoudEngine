@@ -11,6 +11,7 @@
 //! enabling backend-agnostic rendering (OpenGL, wgpu, etc.).
 
 mod core;
+mod debug_draw;
 mod mesh;
 mod render;
 mod shaders;

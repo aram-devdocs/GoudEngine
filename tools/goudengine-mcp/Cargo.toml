@@ -1,0 +1,21 @@
+[package]
+name = "goudengine-mcp"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+anyhow = "1"
+base64 = "0.22"
+goud_engine = { path = "../../goud_engine", package = "goud-engine-core" }
+interprocess = { git = "https://github.com/kotauskas/interprocess", rev = "41facdd4e7517cae4b99a44b24671603bc65041e" }
+rmcp = { version = "1.2.0", features = ["server", "macros", "transport-io"] }
+schemars = "1.2.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2.0.12"
+tokio = { version = "1", features = ["io-std", "macros", "rt-multi-thread"] }
+
+[dev-dependencies]
+tempfile = "3.8"

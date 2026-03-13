@@ -12,6 +12,8 @@ use super::{
 use crate::libs::error::GoudResult;
 use crate::libs::graphics::backend::types::{DepthFunc, FrontFace};
 
+mod readback;
+
 fn clamp_line_width(width: f32, supported_range: [f32; 2]) -> Option<f32> {
     if !width.is_finite() || width <= 0.0 {
         return None;
@@ -37,6 +39,14 @@ impl RenderBackend for OpenGLBackend {
 
     fn validate_text_draw_state(&self) -> Result<(), String> {
         self.validate_bound_text_draw_state()
+    }
+
+    fn read_default_framebuffer_rgba8(
+        &mut self,
+        width: u32,
+        height: u32,
+    ) -> Result<Vec<u8>, String> {
+        readback::read_default_framebuffer_rgba8(self, width, height)
     }
 }
 

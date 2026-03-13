@@ -10,8 +10,21 @@ use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
 use crate::sdk::debug_overlay::{FpsStats, OverlayCorner};
 
+mod debugger_control;
 mod debugger_runtime;
 
+#[cfg(test)]
+mod debugger_control_tests;
+
+pub use debugger_control::{
+    goud_debugger_capture_frame_json, goud_debugger_get_metrics_trace_json,
+    goud_debugger_get_replay_status_json, goud_debugger_inject_key_event,
+    goud_debugger_inject_mouse_button, goud_debugger_inject_mouse_position,
+    goud_debugger_inject_scroll, goud_debugger_set_debug_draw_enabled, goud_debugger_set_paused,
+    goud_debugger_set_time_scale, goud_debugger_start_recording, goud_debugger_start_replay,
+    goud_debugger_step, goud_debugger_stop_recording_json, goud_debugger_stop_replay,
+    GoudDebuggerStepKind,
+};
 pub use debugger_runtime::{
     goud_debugger_clear_selected_entity, goud_debugger_get_manifest_json,
     goud_debugger_get_memory_summary, goud_debugger_get_snapshot_json,

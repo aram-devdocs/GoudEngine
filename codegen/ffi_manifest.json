@@ -994,6 +994,16 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_debugger_capture_frame_json": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "buf: *mut u8",
+        "buf_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_debugger_clear_selected_entity": {
       "source_file": "ffi/debug/debugger_runtime.rs",
       "params": [
@@ -1020,6 +1030,26 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_debugger_get_metrics_trace_json": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "buf: *mut u8",
+        "buf_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_debugger_get_replay_status_json": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "buf: *mut u8",
+        "buf_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_debugger_get_snapshot_json": {
       "source_file": "ffi/debug/debugger_runtime.rs",
       "params": [
@@ -1029,6 +1059,62 @@
       ],
       "return_type": "i32",
       "is_unsafe": true
+    },
+    "goud_debugger_inject_key_event": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "key: GoudKeyCode",
+        "pressed: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_debugger_inject_mouse_button": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "button: GoudMouseButton",
+        "pressed: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_debugger_inject_mouse_position": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "position: FfiVec2"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_debugger_inject_scroll": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "delta: FfiVec2"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_debugger_set_debug_draw_enabled": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_debugger_set_paused": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "paused: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
     },
     "goud_debugger_set_profiling_enabled": {
       "source_file": "ffi/debug/debugger_runtime.rs",
@@ -1044,6 +1130,61 @@
       "params": [
         "context_id: GoudContextId",
         "entity_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_debugger_set_time_scale": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "scale: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_debugger_start_recording": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_debugger_start_replay": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "data_ptr: *const u8",
+        "data_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_debugger_step": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "kind: GoudDebuggerStepKind",
+        "count: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_debugger_stop_recording_json": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "buf: *mut u8",
+        "buf_len: usize"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_debugger_stop_replay": {
+      "source_file": "ffi/debug/debugger_control.rs",
+      "params": [
+        "context_id: GoudContextId"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -4317,5 +4458,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 432
+  "total_count": 447
 }

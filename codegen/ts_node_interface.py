@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Interface and math generation helpers for the TypeScript Node SDK."""
 
+from ts_node_debugger_interface import append_debugger_context_methods
 from ts_node_shared import (
     GEN,
     HEADER_COMMENT,
@@ -76,6 +77,12 @@ def gen_interface():
     if schema["types"]["MemorySummary"].get("doc"):
         lines.append(f"/** {schema['types']['MemorySummary']['doc']} */")
     lines.append(f"export interface IMemorySummary {{ {'; '.join(mem_summary_fields)}; }}")
+    if schema["types"]["DebuggerCapture"].get("doc"):
+        lines.append(f"/** {schema['types']['DebuggerCapture']['doc']} */")
+    lines.append("export interface IDebuggerCapture { imagePng: Uint8Array; metadataJson: string; snapshotJson: string; metricsTraceJson: string; }")
+    if schema["types"]["DebuggerReplayArtifact"].get("doc"):
+        lines.append(f"/** {schema['types']['DebuggerReplayArtifact']['doc']} */")
+    lines.append("export interface IDebuggerReplayArtifact { manifestJson: string; data: Uint8Array; }")
     ns_fields = schema["types"]["NetworkStats"]["fields"]
     ns_str = "; ".join(f"{to_camel(f['name'])}: number" for f in ns_fields)
     if schema["types"]["NetworkStats"].get("doc"):
@@ -284,12 +291,7 @@ def gen_interface():
     lines.append("  clearNetworkSimulation(handle: number): number;")
     lines.append("  setNetworkOverlayHandle(handle: number): number;")
     lines.append("  clearNetworkOverlayHandle(): number;")
-    lines.append("  getDebuggerSnapshotJson(): string;")
-    lines.append("  getDebuggerManifestJson(): string;")
-    lines.append("  setDebuggerProfilingEnabled(enabled: boolean): void;")
-    lines.append("  setDebuggerSelectedEntity(entityId: number): void;")
-    lines.append("  clearDebuggerSelectedEntity(): void;")
-    lines.append("  getMemorySummary(): IMemorySummary;")
+    append_debugger_context_methods(lines)
     lines.append("}")
     lines.append("")
     lines.append("/** Data for a fired animation event */")

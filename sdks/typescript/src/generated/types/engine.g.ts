@@ -28,6 +28,10 @@ export interface IContextConfig { debugger: IDebuggerConfig; }
 export interface IMemoryCategoryStats { currentBytes: number; peakBytes: number; }
 /** Debugger-owned aggregate memory summary for one route. */
 export interface IMemorySummary { rendering: IMemoryCategoryStats; assets: IMemoryCategoryStats; ecs: IMemoryCategoryStats; ui: IMemoryCategoryStats; audio: IMemoryCategoryStats; network: IMemoryCategoryStats; debugger: IMemoryCategoryStats; other: IMemoryCategoryStats; totalCurrentBytes: number; totalPeakBytes: number; }
+/** Debugger frame capture artifact envelope returned directly by SDK calls. */
+export interface IDebuggerCapture { imagePng: Uint8Array; metadataJson: string; snapshotJson: string; metricsTraceJson: string; }
+/** Debugger replay recording artifact envelope returned directly by SDK calls. */
+export interface IDebuggerReplayArtifact { manifestJson: string; data: Uint8Array; }
 /** Aggregate network statistics for a network handle */
 export interface INetworkStats { bytesSent: number; bytesReceived: number; packetsSent: number; packetsReceived: number; packetsLost: number; rttMs: number; sendBandwidthBytesPerSec: number; receiveBandwidthBytesPerSec: number; packetLossPercent: number; jitterMs: number; }
 /** Debug-only network simulation settings for a network handle */
@@ -307,6 +311,22 @@ export interface IGoudGame {
   getDebuggerSnapshotJson(): string;
   /** Returns the current process-wide debugger manifest JSON. */
   getDebuggerManifestJson(): string;
+  /** Pauses or resumes the route-scoped debugger runtime. */
+  setDebuggerPaused(paused: boolean): void;
+  /** Consumes debugger-controlled frame or tick step budget for this route. */
+  stepDebugger(kind: number, count: number): void;
+  /** Sets the debugger-owned time-scale multiplier for this route. */
+  setDebuggerTimeScale(scale: number): void;
+  /** Enables or disables runtime-owned debug draw for this route. */
+  setDebuggerDebugDrawEnabled(enabled: boolean): void;
+  /** Queues one normalized keyboard event through the debugger control plane. */
+  injectDebuggerKeyEvent(key: number, pressed: boolean): void;
+  /** Queues one normalized mouse-button event through the debugger control plane. */
+  injectDebuggerMouseButton(button: number, pressed: boolean): void;
+  /** Queues one normalized mouse-position event through the debugger control plane. */
+  injectDebuggerMousePosition(position: IVec2): void;
+  /** Queues one normalized scroll event through the debugger control plane. */
+  injectDebuggerScroll(delta: IVec2): void;
   /** Enables or disables per-system debugger profiling for this route. */
   setDebuggerProfilingEnabled(enabled: boolean): void;
   /** Selects one entity for expanded debugger inspector output. */
@@ -315,6 +335,20 @@ export interface IGoudGame {
   clearDebuggerSelectedEntity(): void;
   /** Returns debugger-owned aggregate memory statistics for this route. */
   getMemorySummary(): IMemorySummary;
+  /** Captures the current frame plus debugger-owned metadata attachments for this route. */
+  captureDebuggerFrame(): IDebuggerCapture;
+  /** Starts debugger-owned normalized input recording for this route. */
+  startDebuggerRecording(): void;
+  /** Stops debugger-owned recording and returns the exported replay artifact. */
+  stopDebuggerRecording(): IDebuggerReplayArtifact;
+  /** Starts debugger-owned replay using previously exported recording bytes. */
+  startDebuggerReplay(recording: Uint8Array): void;
+  /** Stops any active debugger-owned replay session for this route. */
+  stopDebuggerReplay(): void;
+  /** Returns the current debugger replay status JSON for this route. */
+  getDebuggerReplayStatusJson(): string;
+  /** Returns the current debugger metrics-trace JSON for this route. */
+  getDebuggerMetricsTraceJson(): string;
   /** Maps an action name to a key */
   mapActionKey(action: string, key: number): boolean;
   /** Returns true if the action is currently pressed */
@@ -477,10 +511,25 @@ export interface IGoudContext {
   clearNetworkOverlayHandle(): number;
   getDebuggerSnapshotJson(): string;
   getDebuggerManifestJson(): string;
+  setDebuggerPaused(paused: boolean): void;
+  stepDebugger(kind: number, count: number): void;
+  setDebuggerTimeScale(scale: number): void;
+  setDebuggerDebugDrawEnabled(enabled: boolean): void;
+  injectDebuggerKeyEvent(key: number, pressed: boolean): void;
+  injectDebuggerMouseButton(button: number, pressed: boolean): void;
+  injectDebuggerMousePosition(position: IVec2): void;
+  injectDebuggerScroll(delta: IVec2): void;
   setDebuggerProfilingEnabled(enabled: boolean): void;
   setDebuggerSelectedEntity(entityId: number): void;
   clearDebuggerSelectedEntity(): void;
   getMemorySummary(): IMemorySummary;
+  captureDebuggerFrame(): IDebuggerCapture;
+  startDebuggerRecording(): void;
+  stopDebuggerRecording(): IDebuggerReplayArtifact;
+  startDebuggerReplay(recording: Uint8Array): void;
+  stopDebuggerReplay(): void;
+  getDebuggerReplayStatusJson(): string;
+  getDebuggerMetricsTraceJson(): string;
 }
 
 /** Data for a fired animation event */

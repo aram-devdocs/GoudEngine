@@ -1,4 +1,4 @@
-use super::{
+use super::super::{
     active_route_count, current_manifest, current_route, default_capabilities, default_services,
     register_context, reset_for_tests, scoped_route, set_profiling_enabled_for_context,
     set_selected_entity_for_context, snapshot_for_context, snapshot_for_route, test_lock,
@@ -106,11 +106,11 @@ fn test_debugger_runtime_collects_per_frame_render_and_memory_stats() {
         },
     );
 
-    super::begin_frame(&route, 1, 0.016, 0.016);
+    super::super::begin_frame(&route, 1, 0.016, 0.016);
     assert!(update_render_stats_for_context(context_id, 2, 6, 3, 1));
     assert!(update_memory_category_for_context(context_id, "ecs", 256));
     assert!(update_memory_category_for_context(context_id, "ecs", 128));
-    super::end_frame(&route);
+    super::super::end_frame(&route);
 
     let snapshot = snapshot_for_context(context_id).expect("snapshot should exist");
     assert_eq!(snapshot.stats.render.draw_calls, 2);
@@ -139,14 +139,14 @@ fn test_debugger_runtime_resets_profiler_samples_each_frame() {
     );
 
     assert!(set_profiling_enabled_for_context(context_id, true));
-    super::begin_frame(&route, 1, 0.016, 0.016);
-    super::set_system_sample(&route, "update", "ExampleSystem", 42);
+    super::super::begin_frame(&route, 1, 0.016, 0.016);
+    super::super::set_system_sample(&route, "update", "ExampleSystem", 42);
     assert_eq!(
         snapshot_for_route(&route).unwrap().profiler_samples.len(),
         1
     );
 
-    super::begin_frame(&route, 2, 0.016, 0.032);
+    super::super::begin_frame(&route, 2, 0.016, 0.032);
     assert!(snapshot_for_route(&route)
         .unwrap()
         .profiler_samples
@@ -170,7 +170,7 @@ fn test_debugger_runtime_records_active_phase_samples_only_when_enabled() {
     );
 
     scoped_route(Some(route.clone()), || {
-        super::record_phase_duration("window_events", 17);
+        super::super::record_phase_duration("window_events", 17);
     });
     assert!(snapshot_for_route(&route)
         .unwrap()
@@ -179,7 +179,7 @@ fn test_debugger_runtime_records_active_phase_samples_only_when_enabled() {
 
     assert!(set_profiling_enabled_for_context(context_id, true));
     scoped_route(Some(route.clone()), || {
-        super::record_phase_duration("window_events", 17);
+        super::super::record_phase_duration("window_events", 17);
     });
     let snapshot = snapshot_for_route(&route).expect("snapshot should exist");
     assert_eq!(snapshot.profiler_samples.len(), 1);
@@ -228,7 +228,7 @@ fn test_debugger_runtime_selection_uses_active_scene_when_available() {
         },
     );
 
-    let _ = super::with_snapshot_mut(&route, |snapshot| {
+    let _ = super::super::with_snapshot_mut(&route, |snapshot| {
         snapshot.scene.active_scene = "secondary".to_string();
     });
 

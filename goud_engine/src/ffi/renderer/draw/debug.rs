@@ -17,14 +17,29 @@ pub(crate) fn render_physics_debug_overlay(
     }
 
     let shapes = crate::ffi::providers::physics_debug_shapes(context_id);
-    if shapes.is_empty() {
+    let _ = crate::core::debugger::replace_provider_debug_draw_2d_for_context(context_id, &shapes);
+
+    let Some(route_id) = crate::core::debugger::route_for_context(context_id) else {
+        return Ok(());
+    };
+
+    let Some(payload) = crate::core::debugger::debug_draw_payload_for_route(&route_id) else {
+        return Ok(());
+    };
+
+    if payload.provider_2d.is_empty() && payload.transient_2d.is_empty() {
         return Ok(());
     }
 
     let state_data = prepare_draw_state(context_id)?;
 
-    for shape in shapes {
-        draw_debug_shape(window_state, state_data, &shape)?;
+    for shape in payload
+        .provider_2d
+        .iter()
+        .chain(payload.transient_2d.iter())
+        .map(|entry| &entry.shape)
+    {
+        draw_debug_shape(window_state, state_data, shape)?;
     }
 
     Ok(())

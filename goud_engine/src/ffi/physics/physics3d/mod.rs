@@ -18,4 +18,6 @@ pub use simulation::{
     goud_physics3d_set_velocity, goud_physics3d_step,
 };
 
-pub(crate) use access::{with_provider, with_provider_mut, INVALID_HANDLE};
+pub(crate) use access::{
+    debug_shapes_for_context, with_provider, with_provider_mut, INVALID_HANDLE,
+};
