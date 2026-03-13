@@ -257,7 +257,7 @@ fn build_line_candidates(line: &ShapedLine, atlas: &impl GlyphInfoProvider) -> V
         out.push(PlacedGlyph {
             glyph: LayoutGlyph {
                 x: cursor_x + shaped.x_offset + info.metrics.bearing_x,
-                y: -info.metrics.bearing_y,
+                y: info.metrics.bearing_y,
                 character: ch,
                 uv_rect: info.uv_rect,
                 size_x: info.metrics.width,

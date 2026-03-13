@@ -123,7 +123,7 @@ pub fn layout_text(
         }
 
         let glyph_x = cursor_x + info.metrics.bearing_x;
-        let glyph_y = -info.metrics.bearing_y;
+        let glyph_y = info.metrics.bearing_y;
 
         let glyph = LayoutGlyph {
             x: glyph_x,
@@ -445,6 +445,40 @@ mod tests {
             y_diff_2x,
             y_diff_1x
         );
+    }
+
+    #[test]
+    fn test_baseline_alignment_across_different_glyphs() {
+        let atlas = test_atlas();
+        let config = TextLayoutConfig::default();
+        let result = layout_text("AaxT", &atlas, 16.0, &config, None);
+
+        assert_eq!(result.glyphs.len(), 4);
+
+        // Non-descender characters should share the same baseline.
+        // baseline = glyph_y + glyph_height (bottom of the glyph bitmap).
+        let baselines: Vec<f32> = result
+            .glyphs
+            .iter()
+            .filter(|g| g.size_y > 0.0)
+            .map(|g| g.y + g.size_y)
+            .collect();
+
+        assert!(
+            !baselines.is_empty(),
+            "should have at least one visible glyph"
+        );
+
+        let first = baselines[0];
+        for (i, &bl) in baselines.iter().enumerate() {
+            assert!(
+                (bl - first).abs() <= 1.0,
+                "glyph {} baseline ({}) differs from first ({}) by more than 1px",
+                i,
+                bl,
+                first
+            );
+        }
     }
 
     #[test]

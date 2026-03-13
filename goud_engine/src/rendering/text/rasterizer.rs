@@ -10,7 +10,7 @@ pub struct GlyphMetrics {
     pub advance_width: f32,
     /// Horizontal bearing from the origin to the left edge of the glyph.
     pub bearing_x: f32,
-    /// Y-offset of the glyph bounding box minimum (fontdue ymin).
+    /// Y offset from line top to glyph top (ascent - (ymin + height)).
     pub bearing_y: f32,
     /// Rasterized glyph width in pixels.
     pub width: f32,
@@ -50,6 +50,11 @@ pub fn rasterize_glyphs(
     size_px: f32,
     chars: &[char],
 ) -> Vec<(char, RasterizedGlyph)> {
+    let ascent = font
+        .horizontal_line_metrics(size_px)
+        .map(|m| m.ascent)
+        .unwrap_or(size_px);
+
     chars
         .iter()
         .map(|&ch| {
@@ -61,7 +66,7 @@ pub fn rasterize_glyphs(
                 metrics: GlyphMetrics {
                     advance_width: metrics.advance_width,
                     bearing_x: metrics.xmin as f32,
-                    bearing_y: metrics.ymin as f32,
+                    bearing_y: ascent - (metrics.ymin as f32 + metrics.height as f32),
                     width: metrics.width as f32,
                     height: metrics.height as f32,
                 },
@@ -80,6 +85,11 @@ pub fn rasterize_glyph_indices(
     size_px: f32,
     glyph_indices: &[u16],
 ) -> Vec<(u16, RasterizedGlyph)> {
+    let ascent = font
+        .horizontal_line_metrics(size_px)
+        .map(|m| m.ascent)
+        .unwrap_or(size_px);
+
     glyph_indices
         .iter()
         .map(|&glyph_index| {
@@ -91,7 +101,7 @@ pub fn rasterize_glyph_indices(
                 metrics: GlyphMetrics {
                     advance_width: metrics.advance_width,
                     bearing_x: metrics.xmin as f32,
-                    bearing_y: metrics.ymin as f32,
+                    bearing_y: ascent - (metrics.ymin as f32 + metrics.height as f32),
                     width: metrics.width as f32,
                     height: metrics.height as f32,
                 },
