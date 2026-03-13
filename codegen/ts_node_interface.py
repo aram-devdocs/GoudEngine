@@ -76,6 +76,12 @@ def gen_interface():
     if schema["types"]["MemorySummary"].get("doc"):
         lines.append(f"/** {schema['types']['MemorySummary']['doc']} */")
     lines.append(f"export interface IMemorySummary {{ {'; '.join(mem_summary_fields)}; }}")
+    if schema["types"]["DebuggerCapture"].get("doc"):
+        lines.append(f"/** {schema['types']['DebuggerCapture']['doc']} */")
+    lines.append("export interface IDebuggerCapture { imagePng: Uint8Array; metadataJson: string; snapshotJson: string; metricsTraceJson: string; }")
+    if schema["types"]["DebuggerReplayArtifact"].get("doc"):
+        lines.append(f"/** {schema['types']['DebuggerReplayArtifact']['doc']} */")
+    lines.append("export interface IDebuggerReplayArtifact { manifestJson: string; data: Uint8Array; }")
     ns_fields = schema["types"]["NetworkStats"]["fields"]
     ns_str = "; ".join(f"{to_camel(f['name'])}: number" for f in ns_fields)
     if schema["types"]["NetworkStats"].get("doc"):
@@ -286,10 +292,25 @@ def gen_interface():
     lines.append("  clearNetworkOverlayHandle(): number;")
     lines.append("  getDebuggerSnapshotJson(): string;")
     lines.append("  getDebuggerManifestJson(): string;")
+    lines.append("  setDebuggerPaused(paused: boolean): void;")
+    lines.append("  stepDebugger(kind: number, count: number): void;")
+    lines.append("  setDebuggerTimeScale(scale: number): void;")
+    lines.append("  setDebuggerDebugDrawEnabled(enabled: boolean): void;")
+    lines.append("  injectDebuggerKeyEvent(key: number, pressed: boolean): void;")
+    lines.append("  injectDebuggerMouseButton(button: number, pressed: boolean): void;")
+    lines.append("  injectDebuggerMousePosition(position: IVec2): void;")
+    lines.append("  injectDebuggerScroll(delta: IVec2): void;")
     lines.append("  setDebuggerProfilingEnabled(enabled: boolean): void;")
     lines.append("  setDebuggerSelectedEntity(entityId: number): void;")
     lines.append("  clearDebuggerSelectedEntity(): void;")
     lines.append("  getMemorySummary(): IMemorySummary;")
+    lines.append("  captureDebuggerFrame(): IDebuggerCapture;")
+    lines.append("  startDebuggerRecording(): void;")
+    lines.append("  stopDebuggerRecording(): IDebuggerReplayArtifact;")
+    lines.append("  startDebuggerReplay(recording: Uint8Array): void;")
+    lines.append("  stopDebuggerReplay(): void;")
+    lines.append("  getDebuggerReplayStatusJson(): string;")
+    lines.append("  getDebuggerMetricsTraceJson(): string;")
     lines.append("}")
     lines.append("")
     lines.append("/** Data for a fired animation event */")

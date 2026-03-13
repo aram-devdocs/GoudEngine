@@ -6,6 +6,7 @@ use crate::ffi::input::{
     KEY_RIGHT, KEY_S, KEY_SPACE, KEY_TAB, KEY_UP, KEY_W, MOUSE_BUTTON_LEFT, MOUSE_BUTTON_MIDDLE,
     MOUSE_BUTTON_RIGHT,
 };
+use crate::ffi::types::FfiVec2;
 use serde_json::{json, Value};
 
 use super::debugger_runtime::write_string_result;
@@ -139,6 +140,52 @@ fn invalid_state(message: impl Into<String>) -> i32 {
     -2
 }
 
+fn missing_result_field(field: &str) -> i32 {
+    set_last_error(GoudError::InternalError(format!(
+        "debugger response missing required field '{field}'"
+    )));
+    -1
+}
+
+fn required_result_field<'a>(result: &'a Value, field: &str) -> Result<&'a Value, i32> {
+    result.get(field).ok_or_else(|| missing_result_field(field))
+}
+
+fn required_result_string<'a>(result: &'a Value, field: &str) -> Result<&'a str, i32> {
+    required_result_field(result, field)?
+        .as_str()
+        .ok_or_else(|| missing_result_field(field))
+}
+
+fn write_transformed_json_result(
+    context_id: GoudContextId,
+    request: Value,
+    buf: *mut u8,
+    buf_len: usize,
+    transform: impl FnOnce(&Value) -> Result<Value, i32>,
+) -> i32 {
+    let result = match dispatch_result(context_id, request) {
+        Ok(result) => result,
+        Err(code) => return code,
+    };
+    let transformed = match transform(&result) {
+        Ok(transformed) => transformed,
+        Err(code) => return code,
+    };
+    let result_json = match serde_json::to_string(&transformed) {
+        Ok(json) => json,
+        Err(err) => {
+            set_last_error(GoudError::InternalError(format!(
+                "failed to encode debugger response: {err}"
+            )));
+            return -1;
+        }
+    };
+
+    // SAFETY: The caller provides a writable buffer or uses the null/zero size query path.
+    unsafe { write_string_result(&result_json, buf, buf_len) }
+}
+
 #[no_mangle]
 /// Sets the debugger paused state for one route-scoped context.
 pub extern "C" fn goud_debugger_set_paused(context_id: GoudContextId, paused: bool) -> i32 {
@@ -235,8 +282,7 @@ pub extern "C" fn goud_debugger_inject_mouse_button(
 /// Injects one normalized mouse move event into the debugger synthetic input queue.
 pub extern "C" fn goud_debugger_inject_mouse_position(
     context_id: GoudContextId,
-    x: f32,
-    y: f32,
+    position: FfiVec2,
 ) -> i32 {
     dispatch_status(
         context_id,
@@ -245,7 +291,7 @@ pub extern "C" fn goud_debugger_inject_mouse_position(
             "events": [{
                 "device": "mouse",
                 "action": "move",
-                "position": [x, y],
+                "position": [position.x, position.y],
             }],
         }),
     )
@@ -253,7 +299,7 @@ pub extern "C" fn goud_debugger_inject_mouse_position(
 
 #[no_mangle]
 /// Injects one normalized scroll event into the debugger synthetic input queue.
-pub extern "C" fn goud_debugger_inject_scroll(context_id: GoudContextId, dx: f32, dy: f32) -> i32 {
+pub extern "C" fn goud_debugger_inject_scroll(context_id: GoudContextId, delta: FfiVec2) -> i32 {
     dispatch_status(
         context_id,
         json!({
@@ -261,7 +307,7 @@ pub extern "C" fn goud_debugger_inject_scroll(context_id: GoudContextId, dx: f32
             "events": [{
                 "device": "mouse",
                 "action": "scroll",
-                "delta": [dx, dy],
+                "delta": [delta.x, delta.y],
             }],
         }),
     )
@@ -306,9 +352,61 @@ pub unsafe extern "C" fn goud_debugger_get_replay_status_json(
 }
 
 #[no_mangle]
+/// Captures the current debugger frame artifact as a JSON envelope.
+///
+/// # Safety
+///
+/// `buf` must be valid for `buf_len` writable bytes, or null with zero length to query size.
+pub unsafe extern "C" fn goud_debugger_capture_frame_json(
+    context_id: GoudContextId,
+    buf: *mut u8,
+    buf_len: usize,
+) -> i32 {
+    write_transformed_json_result(
+        context_id,
+        json!({ "verb": "capture_frame" }),
+        buf,
+        buf_len,
+        |result| {
+            Ok(json!({
+                "imagePng": required_result_field(result, "image_png")?.clone(),
+                "metadataJson": required_result_string(result, "metadata_json")?,
+                "snapshotJson": required_result_string(result, "snapshot_json")?,
+                "metricsTraceJson": required_result_string(result, "metrics_trace_json")?,
+            }))
+        },
+    )
+}
+
+#[no_mangle]
 /// Starts debugger-owned input recording for one route.
 pub extern "C" fn goud_debugger_start_recording(context_id: GoudContextId) -> i32 {
     dispatch_status(context_id, json!({ "verb": "start_recording" }))
+}
+
+#[no_mangle]
+/// Stops debugger-owned input recording and exports the replay artifact as JSON.
+///
+/// # Safety
+///
+/// `buf` must be valid for `buf_len` writable bytes, or null with zero length to query size.
+pub unsafe extern "C" fn goud_debugger_stop_recording_json(
+    context_id: GoudContextId,
+    buf: *mut u8,
+    buf_len: usize,
+) -> i32 {
+    write_transformed_json_result(
+        context_id,
+        json!({ "verb": "stop_recording" }),
+        buf,
+        buf_len,
+        |result| {
+            Ok(json!({
+                "manifestJson": required_result_string(result, "manifest_json")?,
+                "data": required_result_field(result, "data")?.clone(),
+            }))
+        },
+    )
 }
 
 #[no_mangle]

@@ -134,6 +134,12 @@ export enum OverlayCorner {
   BottomRight = 3,
 }
 
+/** Step unit used by the debugger control plane. */
+export enum DebuggerStepKind {
+  Frame = 0,
+  Tick = 1,
+}
+
 /** Animation playback mode */
 export enum PlaybackMode {
   Loop = 0,

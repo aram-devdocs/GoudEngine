@@ -62,7 +62,7 @@ while (true)
 
 ## Debugger Runtime
 
-The desktop C# SDK can opt into the shared Rust-owned debugger runtime before startup. Once enabled, you can read the raw snapshot/manifest JSON, toggle profiling, and inspect aggregate memory totals without creating any SDK-local debugger state.
+The desktop C# SDK can opt into the shared Rust-owned debugger runtime before startup. Once enabled, you can read the raw snapshot and manifest JSON, toggle profiling, inspect aggregate memory totals, pause or step the route, inject input, capture a frame, export metrics, and start or stop replay without creating any SDK-local debugger state.
 
 ```csharp
 using GoudEngine;
@@ -82,6 +82,10 @@ game.SetDebuggerSelectedEntity(42);
 game.ClearDebuggerSelectedEntity();
 game.Destroy();
 ```
+
+Capture, replay, and metrics return thin Rust-owned artifact envelopes instead of SDK-specific object graphs. `CaptureDebuggerFrame()` returns PNG bytes plus JSON attachments. `StopDebuggerRecording()` returns a replay envelope. `GetDebuggerMetricsTraceJson()` returns the versioned trace JSON directly.
+
+See [`docs/src/guides/debugger-runtime.md`](../../docs/src/guides/debugger-runtime.md) for desktop-only scope, determinism limits, and the `goudengine-mcp` bridge workflow.
 
 ## Flappy Bird Example
 

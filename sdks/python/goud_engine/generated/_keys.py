@@ -130,6 +130,11 @@ class OverlayCorner:
     BOTTOM_LEFT = 2
     BOTTOM_RIGHT = 3
 
+class DebuggerStepKind:
+    """Step unit used by the debugger control plane."""
+    FRAME = 0
+    TICK = 1
+
 class PlaybackMode:
     """Animation playback mode"""
     LOOP = 0

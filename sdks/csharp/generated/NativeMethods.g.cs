@@ -547,10 +547,43 @@ namespace GoudEngine
         public static extern int goud_debug_set_fps_overlay_corner(GoudContextId context_id, int corner);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_capture_frame_json(GoudContextId context_id, IntPtr buf, nuint buf_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_debugger_get_snapshot_json(GoudContextId context_id, IntPtr buf, nuint buf_len);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_debugger_get_manifest_json(IntPtr buf, nuint buf_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_get_metrics_trace_json(GoudContextId context_id, IntPtr buf, nuint buf_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_get_replay_status_json(GoudContextId context_id, IntPtr buf, nuint buf_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_inject_key_event(GoudContextId context_id, int key, [MarshalAs(UnmanagedType.U1)] bool pressed);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_inject_mouse_button(GoudContextId context_id, int button, [MarshalAs(UnmanagedType.U1)] bool pressed);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_inject_mouse_position(GoudContextId context_id, FfiVec2 position);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_inject_scroll(GoudContextId context_id, FfiVec2 delta);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_set_paused(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool paused);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_step(GoudContextId context_id, DebuggerStepKind kind, uint count);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_set_time_scale(GoudContextId context_id, float scale);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_set_debug_draw_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_debugger_set_profiling_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
@@ -563,6 +596,18 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_debugger_get_memory_summary(GoudContextId context_id, ref GoudMemorySummary out_summary);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_start_recording(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_stop_recording_json(GoudContextId context_id, IntPtr buf, nuint buf_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_start_replay(GoudContextId context_id, IntPtr data_ptr, nuint data_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_debugger_stop_replay(GoudContextId context_id);
 
         // renderer_3d
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

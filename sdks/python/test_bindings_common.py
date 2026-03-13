@@ -259,6 +259,7 @@ def _new_fake_generated_package(package_name, fake_lib):
     keys_mod = types.ModuleType(f"{package_name}._keys")
     keys_mod.Key = type("Key", (), {"SPACE": 32})
     keys_mod.MouseButton = type("MouseButton", (), {"LEFT": 0})
+    keys_mod.DebuggerStepKind = type("DebuggerStepKind", (), {"FRAME": 0, "TICK": 1})
     keys_mod.PhysicsBackend2D = type("PhysicsBackend2D", (), {"DEFAULT": 0})
     sys.modules[f"{package_name}._keys"] = keys_mod
 

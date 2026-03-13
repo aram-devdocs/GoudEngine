@@ -460,10 +460,32 @@ def _setup():
     _lib.goud_debug_set_fps_update_interval.restype = ctypes.c_int32
     _lib.goud_debug_set_fps_overlay_corner.argtypes = [GoudContextId, ctypes.c_int32]
     _lib.goud_debug_set_fps_overlay_corner.restype = ctypes.c_int32
+    _lib.goud_debugger_capture_frame_json.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_debugger_capture_frame_json.restype = ctypes.c_int32
     _lib.goud_debugger_get_snapshot_json.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
     _lib.goud_debugger_get_snapshot_json.restype = ctypes.c_int32
     _lib.goud_debugger_get_manifest_json.argtypes = [ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
     _lib.goud_debugger_get_manifest_json.restype = ctypes.c_int32
+    _lib.goud_debugger_get_metrics_trace_json.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_debugger_get_metrics_trace_json.restype = ctypes.c_int32
+    _lib.goud_debugger_get_replay_status_json.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_debugger_get_replay_status_json.restype = ctypes.c_int32
+    _lib.goud_debugger_inject_key_event.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_bool]
+    _lib.goud_debugger_inject_key_event.restype = ctypes.c_int32
+    _lib.goud_debugger_inject_mouse_button.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_bool]
+    _lib.goud_debugger_inject_mouse_button.restype = ctypes.c_int32
+    _lib.goud_debugger_inject_mouse_position.argtypes = [GoudContextId, FfiVec2]
+    _lib.goud_debugger_inject_mouse_position.restype = ctypes.c_int32
+    _lib.goud_debugger_inject_scroll.argtypes = [GoudContextId, FfiVec2]
+    _lib.goud_debugger_inject_scroll.restype = ctypes.c_int32
+    _lib.goud_debugger_set_paused.argtypes = [GoudContextId, ctypes.c_bool]
+    _lib.goud_debugger_set_paused.restype = ctypes.c_int32
+    _lib.goud_debugger_step.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_uint32]
+    _lib.goud_debugger_step.restype = ctypes.c_int32
+    _lib.goud_debugger_set_time_scale.argtypes = [GoudContextId, ctypes.c_float]
+    _lib.goud_debugger_set_time_scale.restype = ctypes.c_int32
+    _lib.goud_debugger_set_debug_draw_enabled.argtypes = [GoudContextId, ctypes.c_bool]
+    _lib.goud_debugger_set_debug_draw_enabled.restype = ctypes.c_int32
     _lib.goud_debugger_set_profiling_enabled.argtypes = [GoudContextId, ctypes.c_bool]
     _lib.goud_debugger_set_profiling_enabled.restype = ctypes.c_int32
     _lib.goud_debugger_set_selected_entity.argtypes = [GoudContextId, ctypes.c_uint64]
@@ -472,6 +494,14 @@ def _setup():
     _lib.goud_debugger_clear_selected_entity.restype = ctypes.c_int32
     _lib.goud_debugger_get_memory_summary.argtypes = [GoudContextId, ctypes.POINTER(GoudMemorySummary)]
     _lib.goud_debugger_get_memory_summary.restype = ctypes.c_int32
+    _lib.goud_debugger_start_recording.argtypes = [GoudContextId]
+    _lib.goud_debugger_start_recording.restype = ctypes.c_int32
+    _lib.goud_debugger_stop_recording_json.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_debugger_stop_recording_json.restype = ctypes.c_int32
+    _lib.goud_debugger_start_replay.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]
+    _lib.goud_debugger_start_replay.restype = ctypes.c_int32
+    _lib.goud_debugger_stop_replay.argtypes = [GoudContextId]
+    _lib.goud_debugger_stop_replay.restype = ctypes.c_int32
 
     # renderer_3d
     _lib.goud_renderer3d_create_cube.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float]

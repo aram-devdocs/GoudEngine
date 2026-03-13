@@ -1,18 +1,21 @@
 use super::debugger_control::{
-    goud_debugger_get_metrics_trace_json, goud_debugger_get_replay_status_json,
-    goud_debugger_inject_key_event, goud_debugger_inject_mouse_button,
-    goud_debugger_inject_mouse_position, goud_debugger_inject_scroll,
-    goud_debugger_set_debug_draw_enabled, goud_debugger_set_paused, goud_debugger_set_time_scale,
-    goud_debugger_start_recording, goud_debugger_start_replay, goud_debugger_step,
-    goud_debugger_stop_replay, GoudDebuggerStepKind,
+    goud_debugger_capture_frame_json, goud_debugger_get_metrics_trace_json,
+    goud_debugger_get_replay_status_json, goud_debugger_inject_key_event,
+    goud_debugger_inject_mouse_button, goud_debugger_inject_mouse_position,
+    goud_debugger_inject_scroll, goud_debugger_set_debug_draw_enabled, goud_debugger_set_paused,
+    goud_debugger_set_time_scale, goud_debugger_start_recording, goud_debugger_start_replay,
+    goud_debugger_step, goud_debugger_stop_recording_json, goud_debugger_stop_replay,
+    GoudDebuggerStepKind,
 };
 use crate::core::context_id::GoudContextId;
 use crate::core::debugger::{
-    control_state_for_route, dispatch_request_json_for_route, register_context, reset_for_tests,
-    take_frame_control_for_route, test_lock, DebuggerConfig, RuntimeRouteId, RuntimeSurfaceKind,
+    control_state_for_route, register_capture_hook_for_route, register_context, reset_for_tests,
+    take_frame_control_for_route, test_lock, unregister_capture_hook_for_route, DebuggerConfig,
+    RawFramebufferReadbackV1, RuntimeRouteId, RuntimeSurfaceKind,
 };
 use crate::ffi::input::{KEY_SPACE, MOUSE_BUTTON_LEFT};
-use serde_json::{json, Value};
+use crate::ffi::types::FfiVec2;
+use serde_json::Value;
 
 fn register_test_route(label: &str, index: u32) -> (GoudContextId, RuntimeRouteId) {
     let context_id = GoudContextId::new(index, 1);
@@ -43,7 +46,7 @@ fn read_json(
 }
 
 fn replay_data_bytes(response: &Value) -> Vec<u8> {
-    response["result"]["data"]
+    response["data"]
         .as_array()
         .expect("recording export should include bytes")
         .iter()
@@ -52,6 +55,20 @@ fn replay_data_bytes(response: &Value) -> Vec<u8> {
                 .expect("replay byte should fit into u8")
         })
         .collect()
+}
+
+fn register_windowed_test_route(label: &str, index: u32) -> (GoudContextId, RuntimeRouteId) {
+    let context_id = GoudContextId::new(index, 1);
+    let route = register_context(
+        context_id,
+        RuntimeSurfaceKind::WindowedGame,
+        &DebuggerConfig {
+            enabled: true,
+            publish_local_attach: false,
+            route_label: Some(label.to_string()),
+        },
+    );
+    (context_id, route)
 }
 
 fn assert_single_queued_event(
@@ -118,7 +135,7 @@ fn test_input_injection_exports_queue_one_event_each() {
     );
     assert_single_queued_event(&route, "mouse", "release", None, Some("left"), None, None);
     assert_eq!(
-        goud_debugger_inject_mouse_position(context_id, 320.0, 240.0),
+        goud_debugger_inject_mouse_position(context_id, FfiVec2 { x: 320.0, y: 240.0 }),
         0
     );
     assert_single_queued_event(
@@ -131,7 +148,10 @@ fn test_input_injection_exports_queue_one_event_each() {
         None,
     );
 
-    assert_eq!(goud_debugger_inject_scroll(context_id, 1.5, -2.0), 0);
+    assert_eq!(
+        goud_debugger_inject_scroll(context_id, FfiVec2 { x: 1.5, y: -2.0 }),
+        0
+    );
     assert_single_queued_event(
         &route,
         "mouse",
@@ -155,18 +175,47 @@ fn test_metrics_and_replay_status_json_exports_return_non_empty_json() {
 }
 
 #[test]
+fn test_capture_frame_json_export_returns_expected_envelope() {
+    let _guard = test_lock();
+    reset_for_tests();
+    let (context_id, route) = register_windowed_test_route("ffi-capture", 304);
+    register_capture_hook_for_route(route.clone(), || {
+        Ok(RawFramebufferReadbackV1 {
+            width: 1,
+            height: 1,
+            rgba8: vec![255, 64, 32, 255],
+        })
+    });
+
+    let capture = read_json(goud_debugger_capture_frame_json, context_id);
+    assert!(
+        capture["imagePng"]
+            .as_array()
+            .expect("capture image should be serialized as bytes")
+            .len()
+            > 0
+    );
+    assert!(capture["metadataJson"]
+        .as_str()
+        .expect("capture metadata should be a string")
+        .contains("frame_index"));
+    assert!(capture["snapshotJson"].is_string());
+    assert!(capture["metricsTraceJson"].is_string());
+
+    unregister_capture_hook_for_route(&route);
+}
+
+#[test]
 fn test_recording_and_replay_exports_succeed_for_valid_route() {
     let _guard = test_lock();
     reset_for_tests();
-    let (context_id, route) = register_test_route("ffi-replay", 304);
+    let (context_id, route) = register_test_route("ffi-replay", 305);
 
     assert_eq!(goud_debugger_start_recording(context_id), 0);
     let status = read_json(goud_debugger_get_replay_status_json, context_id);
     assert_eq!(status["mode"], "recording");
-    let recorded =
-        dispatch_request_json_for_route(&route, &json!({ "verb": "stop_recording" }).to_string())
-            .expect("dispatcher should return JSON");
-    assert_eq!(recorded["ok"], true);
+    let recorded = read_json(goud_debugger_stop_recording_json, context_id);
+    assert!(recorded["manifestJson"].is_string());
     let data = replay_data_bytes(&recorded);
     assert!(!data.is_empty());
     // SAFETY: `data` owns a readable byte slice for the duration of the call.

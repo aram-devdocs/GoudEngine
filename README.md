@@ -60,12 +60,15 @@ GoudEngine is working toward an alpha release. The full plan covers physics, aud
 
 ## Debugger Runtime
 
-Desktop/native SDKs now expose the shared debugger runtime surface for snapshots, manifest discovery, profiler toggles, memory summaries, and entity inspection.
+Desktop/native SDKs now expose the shared debugger runtime surface for snapshots, control, debug draw, capture, replay, metrics export, and MCP attach.
 
 - Enable it through config before creating the game or headless context.
-- Use the raw JSON accessors for the full snapshot/manifest payload.
-- Use the thin helpers to toggle profiling, select an entity, or read aggregate memory stats.
+- Use the raw JSON accessors for the full snapshot, capture, replay, and metrics payloads.
+- Use the thin helpers to pause, step, change time scale, inject input, and toggle debug draw.
 - TypeScript browser/WASM builds do not support the debugger runtime in this batch.
+- The runtime is local-only. `goudengine-mcp` attaches over local IPC instead of running inside the game process.
+
+See [Debugger Runtime Guide](docs/src/guides/debugger-runtime.md) for scope, determinism limits, artifact formats, and the MCP workflow.
 
 ## Architecture
 

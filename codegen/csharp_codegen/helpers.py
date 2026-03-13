@@ -134,6 +134,8 @@ def _cs_ffi_param_type(raw: str) -> str:
     }
     if raw in ptr_map:
         return ptr_map[raw]
+    if raw.startswith("Goud") and raw[4:] in schema.get("enums", {}):
+        return to_pascal(raw[4:])
     if raw.startswith("Option<") and raw.endswith(">"):
         inner = raw[len("Option<"):-1]
         if "Callback" in inner:
@@ -170,6 +172,8 @@ def _cs_ffi_ret_type(raw: str) -> str:
     }
     if raw in ret_map:
         return ret_map[raw]
+    if raw.startswith("Goud") and raw[4:] in schema.get("enums", {}):
+        return to_pascal(raw[4:])
     if raw.startswith("*mut ") or raw.startswith("*const "):
         return "IntPtr"
     if raw.startswith("Option<") and raw.endswith(">") and "Callback" in raw:
@@ -247,4 +251,3 @@ def _type_hash(type_name: str) -> str:
 
 
 # ── NativeMethods.g.cs ──────────────────────────────────────────────
-

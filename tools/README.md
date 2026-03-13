@@ -39,3 +39,15 @@ lint-layers runs automatically in two places:
 
 - `codegen.sh` step 2
 - Pre-commit hook (via `.husky/`)
+
+## goudengine-mcp
+
+`goudengine-mcp` is a stdio-first bridge for the shared debugger runtime. It discovers local debugger manifests, attaches to one route over local IPC, exposes MCP tools for snapshot, control, capture, replay, and metrics, and serves stored artifacts through `goudengine://...` resources.
+
+Run it from the workspace root:
+
+```bash
+cargo run -p goudengine-mcp
+```
+
+The bridge stays out of the game process. Use the debugger runtime guide for scope, platform limits, and artifact details.

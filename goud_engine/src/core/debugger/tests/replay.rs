@@ -6,8 +6,8 @@ use super::super::{
     RuntimeSurfaceKind,
 };
 use crate::core::context_id::GoudContextId;
+use crate::core::input_manager::InputManager;
 use crate::core::math::Vec2;
-use crate::ecs::InputManager;
 use glfw::Key;
 use serde::Deserialize;
 use serde_json::{json, Value};

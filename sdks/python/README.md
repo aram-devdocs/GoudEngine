@@ -91,7 +91,7 @@ client_ctx.destroy()
 
 ## Debugger Runtime
 
-The Python desktop bindings can enable the shared debugger runtime through pre-init config on `GoudContext`, then read JSON snapshots or aggregate memory data through thin helpers.
+The Python desktop bindings can enable the shared debugger runtime through pre-init config on `GoudContext`, then read JSON snapshots, pause or step the route, inject input, capture a frame, export metrics, or run replay through thin helpers.
 
 ```python
 from goud_engine import (
@@ -120,6 +120,10 @@ ctx.set_debugger_selected_entity(42)
 ctx.clear_debugger_selected_entity()
 ctx.destroy()
 ```
+
+Capture, replay, and metrics stay Rust-owned. `capture_debugger_frame()` returns PNG bytes plus JSON attachments. `stop_debugger_recording()` returns a replay envelope. `get_debugger_metrics_trace_json()` returns the versioned trace JSON directly.
+
+See [`docs/src/guides/debugger-runtime.md`](../../docs/src/guides/debugger-runtime.md) for desktop-only scope, determinism limits, and the `goudengine-mcp` bridge workflow.
 
 ## Features
 

@@ -66,7 +66,7 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
 
     lines = [
         f"// {HEADER_COMMENT}",
-        "using System;", "using System.Runtime.InteropServices;", "",
+        "using System;", "using System.Linq;", "using System.Runtime.InteropServices;", "using System.Text.Json;", "",
         f"namespace {NS}", "{",
         f"    /// <summary>{tool.get('doc', class_name)}</summary>",
         f"    public class {class_name} : IDisposable", "    {",

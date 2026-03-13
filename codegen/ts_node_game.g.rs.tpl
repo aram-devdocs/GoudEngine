@@ -26,12 +26,20 @@ use goud_engine::ffi::context::{
     GOUD_INVALID_CONTEXT_ID,
 };
 use goud_engine::ffi::debug::{
+    goud_debugger_capture_frame_json, goud_debugger_get_metrics_trace_json,
     goud_debug_get_fps_stats, goud_debug_set_fps_overlay_corner,
     goud_debug_set_fps_overlay_enabled, goud_debug_set_fps_update_interval,
     goud_debugger_clear_selected_entity, goud_debugger_get_manifest_json,
-    goud_debugger_get_memory_summary, goud_debugger_get_snapshot_json,
-    goud_debugger_set_profiling_enabled, goud_debugger_set_selected_entity,
-    GoudMemoryCategoryStats, GoudMemorySummary,
+    goud_debugger_get_memory_summary, goud_debugger_get_replay_status_json,
+    goud_debugger_get_snapshot_json, goud_debugger_inject_key_event,
+    goud_debugger_inject_mouse_button, goud_debugger_inject_mouse_position,
+    goud_debugger_inject_scroll, goud_debugger_set_debug_draw_enabled,
+    goud_debugger_set_paused, goud_debugger_set_profiling_enabled,
+    goud_debugger_set_selected_entity, goud_debugger_set_time_scale,
+    goud_debugger_start_recording, goud_debugger_start_replay,
+    goud_debugger_step, goud_debugger_stop_recording_json,
+    goud_debugger_stop_replay, GoudDebuggerStepKind, GoudMemoryCategoryStats,
+    GoudMemorySummary,
 };
 use goud_engine::ffi::entity::{
     goud_entity_count, goud_entity_despawn, goud_entity_is_alive, goud_entity_spawn_batch,
@@ -79,6 +87,7 @@ use goud_engine::ffi::providers::{
     goud_provider_input_capabilities, goud_provider_network_capabilities,
     goud_provider_physics_capabilities, goud_provider_render_capabilities,
 };
+use goud_engine::ffi::types::FfiVec2;
 use goud_engine::ffi::renderer::{
     goud_font_destroy, goud_font_load, goud_renderer_begin, goud_renderer_clear_depth,
     goud_renderer_disable_blending, goud_renderer_disable_depth_test, goud_renderer_draw_quad,
@@ -396,6 +405,16 @@ fn debugger_status_result(status: i32, name: &str) -> Result<()> {
         )))
     } else {
         Ok(())
+    }
+}
+
+fn debugger_step_kind(kind: i32) -> Result<GoudDebuggerStepKind> {
+    match kind {
+        0 => Ok(GoudDebuggerStepKind::Frame),
+        1 => Ok(GoudDebuggerStepKind::Tick),
+        _ => Err(Error::from_reason(format!(
+            "unsupported debugger step kind {kind}"
+        ))),
     }
 }
 
@@ -738,6 +757,83 @@ impl GoudGame {
     }
 
     #[napi]
+    pub fn set_debugger_paused(&self, paused: bool) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_set_paused(self.context_id, paused),
+            "goud_debugger_set_paused",
+        )
+    }
+
+    #[napi]
+    pub fn step_debugger(&self, kind: i32, count: u32) -> Result<()> {
+        let kind = debugger_step_kind(kind)?;
+        debugger_status_result(
+            goud_debugger_step(self.context_id, kind, count),
+            "goud_debugger_step",
+        )
+    }
+
+    #[napi]
+    pub fn set_debugger_time_scale(&self, scale: f64) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_set_time_scale(self.context_id, scale as f32),
+            "goud_debugger_set_time_scale",
+        )
+    }
+
+    #[napi]
+    pub fn set_debugger_debug_draw_enabled(&self, enabled: bool) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_set_debug_draw_enabled(self.context_id, enabled),
+            "goud_debugger_set_debug_draw_enabled",
+        )
+    }
+
+    #[napi]
+    pub fn inject_debugger_key_event(&self, key: i32, pressed: bool) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_inject_key_event(self.context_id, key, pressed),
+            "goud_debugger_inject_key_event",
+        )
+    }
+
+    #[napi]
+    pub fn inject_debugger_mouse_button(&self, button: i32, pressed: bool) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_inject_mouse_button(self.context_id, button, pressed),
+            "goud_debugger_inject_mouse_button",
+        )
+    }
+
+    #[napi]
+    pub fn inject_debugger_mouse_position(&self, position: crate::types::Vec2) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_inject_mouse_position(
+                self.context_id,
+                FfiVec2 {
+                    x: position.x as f32,
+                    y: position.y as f32,
+                },
+            ),
+            "goud_debugger_inject_mouse_position",
+        )
+    }
+
+    #[napi]
+    pub fn inject_debugger_scroll(&self, delta: crate::types::Vec2) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_inject_scroll(
+                self.context_id,
+                FfiVec2 {
+                    x: delta.x as f32,
+                    y: delta.y as f32,
+                },
+            ),
+            "goud_debugger_inject_scroll",
+        )
+    }
+
+    #[napi]
     pub fn set_debugger_profiling_enabled(&self, enabled: bool) -> Result<()> {
         debugger_status_result(
             goud_debugger_set_profiling_enabled(self.context_id, enabled),
@@ -772,6 +868,70 @@ impl GoudGame {
             )));
         }
         Ok(map_memory_summary(summary))
+    }
+
+    #[napi]
+    pub fn capture_debugger_frame(&self) -> Result<String> {
+        read_debugger_json(
+            |buf, buf_len| unsafe { goud_debugger_capture_frame_json(self.context_id, buf, buf_len) },
+            "goud_debugger_capture_frame_json",
+        )
+    }
+
+    #[napi]
+    pub fn start_debugger_recording(&self) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_start_recording(self.context_id),
+            "goud_debugger_start_recording",
+        )
+    }
+
+    #[napi]
+    pub fn stop_debugger_recording(&self) -> Result<String> {
+        read_debugger_json(
+            |buf, buf_len| unsafe {
+                goud_debugger_stop_recording_json(self.context_id, buf, buf_len)
+            },
+            "goud_debugger_stop_recording_json",
+        )
+    }
+
+    #[napi]
+    pub fn start_debugger_replay(&self, recording: Buffer) -> Result<()> {
+        debugger_status_result(
+            unsafe {
+                goud_debugger_start_replay(self.context_id, recording.as_ptr(), recording.len())
+            },
+            "goud_debugger_start_replay",
+        )
+    }
+
+    #[napi]
+    pub fn stop_debugger_replay(&self) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_stop_replay(self.context_id),
+            "goud_debugger_stop_replay",
+        )
+    }
+
+    #[napi]
+    pub fn get_debugger_replay_status_json(&self) -> Result<String> {
+        read_debugger_json(
+            |buf, buf_len| unsafe {
+                goud_debugger_get_replay_status_json(self.context_id, buf, buf_len)
+            },
+            "goud_debugger_get_replay_status_json",
+        )
+    }
+
+    #[napi]
+    pub fn get_debugger_metrics_trace_json(&self) -> Result<String> {
+        read_debugger_json(
+            |buf, buf_len| unsafe {
+                goud_debugger_get_metrics_trace_json(self.context_id, buf, buf_len)
+            },
+            "goud_debugger_get_metrics_trace_json",
+        )
     }
 
     // =========================================================================
@@ -2423,6 +2583,83 @@ impl GoudContext {
     }
 
     #[napi]
+    pub fn set_debugger_paused(&self, paused: bool) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_set_paused(self.context_id, paused),
+            "goud_debugger_set_paused",
+        )
+    }
+
+    #[napi]
+    pub fn step_debugger(&self, kind: i32, count: u32) -> Result<()> {
+        let kind = debugger_step_kind(kind)?;
+        debugger_status_result(
+            goud_debugger_step(self.context_id, kind, count),
+            "goud_debugger_step",
+        )
+    }
+
+    #[napi]
+    pub fn set_debugger_time_scale(&self, scale: f64) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_set_time_scale(self.context_id, scale as f32),
+            "goud_debugger_set_time_scale",
+        )
+    }
+
+    #[napi]
+    pub fn set_debugger_debug_draw_enabled(&self, enabled: bool) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_set_debug_draw_enabled(self.context_id, enabled),
+            "goud_debugger_set_debug_draw_enabled",
+        )
+    }
+
+    #[napi]
+    pub fn inject_debugger_key_event(&self, key: i32, pressed: bool) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_inject_key_event(self.context_id, key, pressed),
+            "goud_debugger_inject_key_event",
+        )
+    }
+
+    #[napi]
+    pub fn inject_debugger_mouse_button(&self, button: i32, pressed: bool) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_inject_mouse_button(self.context_id, button, pressed),
+            "goud_debugger_inject_mouse_button",
+        )
+    }
+
+    #[napi]
+    pub fn inject_debugger_mouse_position(&self, position: crate::types::Vec2) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_inject_mouse_position(
+                self.context_id,
+                FfiVec2 {
+                    x: position.x as f32,
+                    y: position.y as f32,
+                },
+            ),
+            "goud_debugger_inject_mouse_position",
+        )
+    }
+
+    #[napi]
+    pub fn inject_debugger_scroll(&self, delta: crate::types::Vec2) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_inject_scroll(
+                self.context_id,
+                FfiVec2 {
+                    x: delta.x as f32,
+                    y: delta.y as f32,
+                },
+            ),
+            "goud_debugger_inject_scroll",
+        )
+    }
+
+    #[napi]
     pub fn set_debugger_profiling_enabled(&self, enabled: bool) -> Result<()> {
         debugger_status_result(
             goud_debugger_set_profiling_enabled(self.context_id, enabled),
@@ -2457,6 +2694,70 @@ impl GoudContext {
             )));
         }
         Ok(map_memory_summary(summary))
+    }
+
+    #[napi]
+    pub fn capture_debugger_frame(&self) -> Result<String> {
+        read_debugger_json(
+            |buf, buf_len| unsafe { goud_debugger_capture_frame_json(self.context_id, buf, buf_len) },
+            "goud_debugger_capture_frame_json",
+        )
+    }
+
+    #[napi]
+    pub fn start_debugger_recording(&self) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_start_recording(self.context_id),
+            "goud_debugger_start_recording",
+        )
+    }
+
+    #[napi]
+    pub fn stop_debugger_recording(&self) -> Result<String> {
+        read_debugger_json(
+            |buf, buf_len| unsafe {
+                goud_debugger_stop_recording_json(self.context_id, buf, buf_len)
+            },
+            "goud_debugger_stop_recording_json",
+        )
+    }
+
+    #[napi]
+    pub fn start_debugger_replay(&self, recording: Buffer) -> Result<()> {
+        debugger_status_result(
+            unsafe {
+                goud_debugger_start_replay(self.context_id, recording.as_ptr(), recording.len())
+            },
+            "goud_debugger_start_replay",
+        )
+    }
+
+    #[napi]
+    pub fn stop_debugger_replay(&self) -> Result<()> {
+        debugger_status_result(
+            goud_debugger_stop_replay(self.context_id),
+            "goud_debugger_stop_replay",
+        )
+    }
+
+    #[napi]
+    pub fn get_debugger_replay_status_json(&self) -> Result<String> {
+        read_debugger_json(
+            |buf, buf_len| unsafe {
+                goud_debugger_get_replay_status_json(self.context_id, buf, buf_len)
+            },
+            "goud_debugger_get_replay_status_json",
+        )
+    }
+
+    #[napi]
+    pub fn get_debugger_metrics_trace_json(&self) -> Result<String> {
+        read_debugger_json(
+            |buf, buf_len| unsafe {
+                goud_debugger_get_metrics_trace_json(self.context_id, buf, buf_len)
+            },
+            "goud_debugger_get_metrics_trace_json",
+        )
     }
 }
 

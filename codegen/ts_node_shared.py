@@ -37,6 +37,8 @@ IFACE_TYPES = {
     "ContextConfig": "IContextConfig",
     "MemoryCategoryStats": "IMemoryCategoryStats",
     "MemorySummary": "IMemorySummary",
+    "DebuggerCapture": "IDebuggerCapture",
+    "DebuggerReplayArtifact": "IDebuggerReplayArtifact",
     "Contact": "IContact",
     "PhysicsRaycastHit2D": "IPhysicsRaycastHit2D",
     "PhysicsCollisionEvent2D": "IPhysicsCollisionEvent2D",
