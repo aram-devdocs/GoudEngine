@@ -7,6 +7,7 @@ This file defines the default agent workflow for GoudEngine.
 - Keep ordinary sessions fast and direct.
 - Use multi-agent workflows only when they improve the result.
 - Preserve the engine's real correctness constraints: architecture, FFI safety, SDK parity, and testing.
+- ALWAYS use /find-skills to see what is available, but always use subagent driven development and humanizer.
 
 ## Essential Commands
 
