@@ -92,7 +92,12 @@ fn atomic_write(path: &Path, contents: &str) -> std::io::Result<()> {
 }
 
 fn atomic_write_bytes(path: &Path, contents: &[u8]) -> std::io::Result<()> {
-    let parent = path.parent().expect("manifest path should have a parent");
+    let parent = path.parent().ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "path must have a parent directory",
+        )
+    })?;
     let temp_path = parent.join(format!(
         ".{}.tmp-{}",
         path.file_name()
