@@ -17,12 +17,13 @@ use rmcp::handler::server::wrapper::{Json, Parameters};
 use serde_json::{json, Value};
 use tempfile::TempDir;
 
+use crate::server::types::McpDebuggerStepKind;
 use crate::server::types::{
     AttachContextParams, GetDiagnosticsRecordingParams, GetLogsParams,
     GetSubsystemDiagnosticsParams, InjectInputParams, InputEventParams, RecordDiagnosticsParams,
     SetPausedParams, SetTimeScaleParams, StartReplayParams, StepParams,
 };
-use crate::server::{GoudEngineMcpServer, McpDebuggerStepKind};
+use crate::server::GoudEngineMcpServer;
 
 static TEST_SOCKET_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
