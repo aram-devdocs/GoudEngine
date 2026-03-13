@@ -1,6 +1,4 @@
-use std::collections::hash_map::DefaultHasher;
 use std::fs;
-use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -11,6 +9,10 @@ use super::capture::CaptureArtifactV1;
 use super::replay::ReplayExportEnvelopeV1;
 use super::state::{lock_runtime, DebuggerRuntimeState, RuntimeArtifactsState};
 
+#[cfg(not(windows))]
+use std::collections::hash_map::DefaultHasher;
+#[cfg(not(windows))]
+use std::hash::{Hash, Hasher};
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
@@ -44,6 +46,7 @@ fn runtime_root_dir() -> PathBuf {
     }
 }
 
+#[cfg(not(windows))]
 fn short_socket_root(base: &Path) -> PathBuf {
     #[cfg(target_os = "macos")]
     {
@@ -52,36 +55,24 @@ fn short_socket_root(base: &Path) -> PathBuf {
         PathBuf::from(format!("/tmp/ge-{:x}", hasher.finish() & 0xffff))
     }
 
-    #[cfg(all(not(windows), not(target_os = "macos")))]
+    #[cfg(not(target_os = "macos"))]
     {
         let mut hasher = DefaultHasher::new();
         base.hash(&mut hasher);
         std::env::temp_dir().join(format!("ge-{:x}", hasher.finish() & 0xffff))
     }
-
-    #[cfg(windows)]
-    {
-        base.to_path_buf()
-    }
 }
 
+#[cfg(not(windows))]
 fn socket_path(root: &Path, process_nonce: u64) -> PathBuf {
     let pid = std::process::id();
     let candidate = root.join(format!("goudengine-{pid}-{process_nonce}.sock"));
-    #[cfg(windows)]
-    {
-        candidate
+    if candidate.as_os_str().len() <= 96 {
+        return candidate;
     }
-
-    #[cfg(not(windows))]
-    {
-        if candidate.as_os_str().len() <= 96 {
-            return candidate;
-        }
-        let mut hasher = DefaultHasher::new();
-        candidate.hash(&mut hasher);
-        short_socket_root(root).join(format!("g-{:x}.sock", hasher.finish()))
-    }
+    let mut hasher = DefaultHasher::new();
+    candidate.hash(&mut hasher);
+    short_socket_root(root).join(format!("g-{:x}.sock", hasher.finish()))
 }
 
 fn ensure_runtime_dir(path: &Path) -> std::io::Result<()> {
@@ -309,7 +300,7 @@ pub(super) fn store_metrics_trace_for_route(
 }
 
 fn endpoint_for_runtime(
-    root: &Path,
+    _root: &Path,
     process_nonce: u64,
 ) -> super::super::snapshot::LocalEndpointV1 {
     #[cfg(windows)]
@@ -328,7 +319,7 @@ fn endpoint_for_runtime(
     {
         super::super::snapshot::LocalEndpointV1 {
             transport: "unix".to_string(),
-            location: socket_path(root, process_nonce).display().to_string(),
+            location: socket_path(_root, process_nonce).display().to_string(),
         }
     }
 }
