@@ -1,14 +1,18 @@
-Use this structure for review dispatches:
-
-```text
-Working directory: <absolute worktree or repo path>
+Working directory: <absolute worktree path>
 Diff base: origin/main
 
-Check:
-- requirements coverage
-- code quality and anti-patterns
-- layer boundaries
-- FFI or unsafe handling when relevant
+Check only the gate you were dispatched for:
+- `spec-reviewer`: requirements coverage and behavioral completeness
+- `code-quality-reviewer`: code quality, anti-patterns, and test quality
+- `architecture-validator`: layer boundaries and dependency direction
+- `security-auditor`: FFI safety, unsafe handling, and ownership boundaries
 
-End with a verdict and file references for any problem.
-```
+Requirements:
+- Cite exact files and lines for every issue.
+- End with the gate verdict.
+- Use this report structure:
+  - Task understanding
+  - Findings
+  - Verification examined
+  - Residual risks
+  - Next required action

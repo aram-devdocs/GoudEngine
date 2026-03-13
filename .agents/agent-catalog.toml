@@ -9,6 +9,9 @@ role_order = [
   "integration-lead",
   "quick-fix",
   "reviewer",
+  "spec-reviewer",
+  "code-quality-reviewer",
+  "architecture-validator",
   "security-auditor",
   "debugger",
 ]
@@ -39,7 +42,7 @@ claude_enabled = false
 description = "Direct implementation agent for Rust engine and core modules."
 spec_file = ".agents/role-specs/engine-lead.md"
 tier = "high"
-codex_enabled = false
+codex_enabled = true
 codex_model = "gpt-5.4"
 codex_model_reasoning_effort = "high"
 codex_sandbox_mode = "workspace-write"
@@ -55,7 +58,7 @@ tools = ["Read", "Edit", "Write", "Bash", "Grep", "Glob"]
 description = "Direct implementation agent for FFI, SDKs, and codegen."
 spec_file = ".agents/role-specs/integration-lead.md"
 tier = "high"
-codex_enabled = false
+codex_enabled = true
 codex_model = "gpt-5.4"
 codex_model_reasoning_effort = "high"
 codex_sandbox_mode = "workspace-write"
@@ -99,11 +102,59 @@ model = "sonnet"
 permission_mode = "plan"
 tools = ["Read", "Grep", "Glob"]
 
+[roles.spec-reviewer]
+description = "First strict review gate for requirements coverage."
+spec_file = ".agents/role-specs/spec-reviewer.md"
+tier = "standard"
+codex_enabled = true
+codex_model = "gpt-5.3-codex"
+codex_model_reasoning_effort = "high"
+codex_sandbox_mode = "read-only"
+nickname_candidates = ["SpecGuard", "Coverage"]
+claude_enabled = true
+
+[roles.spec-reviewer.claude]
+model = "sonnet"
+permission_mode = "plan"
+tools = ["Read", "Grep", "Glob"]
+
+[roles.code-quality-reviewer]
+description = "Second strict review gate for code quality and repo anti-patterns."
+spec_file = ".agents/role-specs/code-quality-reviewer.md"
+tier = "standard"
+codex_enabled = true
+codex_model = "gpt-5.3-codex"
+codex_model_reasoning_effort = "high"
+codex_sandbox_mode = "read-only"
+nickname_candidates = ["Refiner", "Lintbrain"]
+claude_enabled = true
+
+[roles.code-quality-reviewer.claude]
+model = "sonnet"
+permission_mode = "plan"
+tools = ["Read", "Grep", "Glob"]
+
+[roles.architecture-validator]
+description = "Strict architecture gate for layer and boundary validation."
+spec_file = ".agents/role-specs/architecture-validator.md"
+tier = "fast"
+codex_enabled = true
+codex_model = "gpt-5.3-codex-spark"
+codex_model_reasoning_effort = "medium"
+codex_sandbox_mode = "read-only"
+nickname_candidates = ["Boundary", "LayerLens"]
+claude_enabled = true
+
+[roles.architecture-validator.claude]
+model = "haiku"
+permission_mode = "plan"
+tools = ["Read", "Grep", "Glob"]
+
 [roles.security-auditor]
 description = "Focused audit for FFI safety, unsafe code, and memory ownership."
 spec_file = ".agents/role-specs/security-auditor.md"
 tier = "high"
-codex_enabled = false
+codex_enabled = true
 codex_model = "gpt-5.4"
 codex_model_reasoning_effort = "high"
 codex_sandbox_mode = "read-only"
@@ -119,7 +170,7 @@ tools = ["Read", "Grep", "Glob"]
 description = "Root-cause analyst for failing tests, runtime errors, and verification gaps."
 spec_file = ".agents/role-specs/debugger.md"
 tier = "standard"
-codex_enabled = false
+codex_enabled = true
 codex_model = "gpt-5.3-codex"
 codex_model_reasoning_effort = "medium"
 codex_sandbox_mode = "read-only"

@@ -25,6 +25,16 @@ description = "General-purpose orchestrator and fallback agent."
 config_file = "agents/default.toml"
 nickname_candidates = ["Northstar", "Beacon"]
 
+[agents.engine-lead]
+description = "Direct implementation agent for Rust engine and core modules."
+config_file = "agents/engine-lead.toml"
+nickname_candidates = ["Forge", "Helmsman"]
+
+[agents.integration-lead]
+description = "Direct implementation agent for FFI, SDKs, and codegen."
+config_file = "agents/integration-lead.toml"
+nickname_candidates = ["Bridge", "Conductor"]
+
 [agents.quick-fix]
 description = "Single-file or tightly scoped fixer for low-risk changes."
 config_file = "agents/quick-fix.toml"
@@ -34,3 +44,28 @@ nickname_candidates = ["Patch", "Needle"]
 description = "Single review pass for requirements, tests, and major quality regressions."
 config_file = "agents/reviewer.toml"
 nickname_candidates = ["Baseline", "Verifier"]
+
+[agents.spec-reviewer]
+description = "First strict review gate for requirements coverage."
+config_file = "agents/spec-reviewer.toml"
+nickname_candidates = ["SpecGuard", "Coverage"]
+
+[agents.code-quality-reviewer]
+description = "Second strict review gate for code quality and repo anti-patterns."
+config_file = "agents/code-quality-reviewer.toml"
+nickname_candidates = ["Refiner", "Lintbrain"]
+
+[agents.architecture-validator]
+description = "Strict architecture gate for layer and boundary validation."
+config_file = "agents/architecture-validator.toml"
+nickname_candidates = ["Boundary", "LayerLens"]
+
+[agents.security-auditor]
+description = "Focused audit for FFI safety, unsafe code, and memory ownership."
+config_file = "agents/security-auditor.toml"
+nickname_candidates = ["Sentry", "Fortress"]
+
+[agents.debugger]
+description = "Root-cause analyst for failing tests, runtime errors, and verification gaps."
+config_file = "agents/debugger.toml"
+nickname_candidates = ["Tracer", "RootCause"]

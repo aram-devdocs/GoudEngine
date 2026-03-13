@@ -33,6 +33,14 @@ Check the changed work for:
 
 ## Output
 
+Use this structure:
+
+- `Task understanding:`
+- `Findings:`
+- `Verification examined:`
+- `Residual risks:`
+- `Next required action:`
+
 End with one of:
 
 - `APPROVED`

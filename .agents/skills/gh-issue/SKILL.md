@@ -1,33 +1,36 @@
 ---
 name: gh-issue
-description: End-to-end GitHub issue workflow with optional worktree isolation and resumable run state
+description: Strict issue-delivery workflow with worktrees, durable run state, sequential review gates, PR template enforcement, Claude review handling, CI follow-through, and cleanup
 argument-hint: "<issue-number> [issue-number...] [--worktree]"
 disable-model-invocation: true
 ---
 
 # `/gh-issue`
 
-Use this skill only when you explicitly want issue-driven work with a resumable run directory and PR tracking.
+Use this skill only when you explicitly want issue-driven work with a canonical run directory and full PR follow-through.
 
 ## Workflow
 
-1. Investigate the issue or issue batch.
-2. Create or refresh the run directory.
-3. Write a compact execution plan.
-4. Implement with one implementation agent.
-5. Verify the branch locally.
-6. Run one `reviewer` pass.
-7. Open or update the PR.
+1. Investigate the issue batch with `gh`.
+2. Create the branch `codex/issue-<primary>-<slug>`.
+3. Create an isolated worktree.
+4. Initialize `plan.md` and `state.json`.
+5. Implement with one lead role.
+6. Verify locally.
+7. Run strict review gates in order.
+8. Create the PR with `.github/pull_request_template.md`.
+9. Wait for GitHub Claude review and handle blockers and warnings.
+10. Wait for CI to go green.
+11. Clean up the local worktree.
 
-Add `security-auditor` only for FFI, unsafe, pointer, or ownership-boundary changes.
+## Defaults
 
-## Important Defaults
-
-- `/gh-issue` is opt-in. Ordinary sessions should not behave like issue runs.
-- Worktree mode is for isolation, not process inflation.
-- Do not require nested implementation waves by default.
-- Do not require multiple review gates by default.
-- Do not idle indefinitely waiting on CI or review. Poll briefly, summarize the state, and stop unless the user explicitly asks you to keep monitoring.
+- `/gh-issue` is opt-in. Ordinary sessions stay on the small default workflow.
+- One implementation lead at a time.
+- `spec-reviewer -> code-quality-reviewer -> architecture-validator` are mandatory.
+- `security-auditor` is mandatory only for FFI, unsafe, pointer, or ownership-boundary changes.
+- Do not stop at PR open, first review, or first CI poll.
+- Do not hand-author PR bodies or review prompts from scratch. Use the prompt assets and PR template.
 
 ## Canonical Run Artifacts
 
@@ -37,10 +40,26 @@ Add `security-auditor` only for FFI, unsafe, pointer, or ownership-boundary chan
   state.json
 ```
 
-Use `python3 .agents/skills/gh-issue/scripts/gh_issue_run.py` to create and update these artifacts.
+Use `python3 .agents/skills/gh-issue/scripts/gh_issue_run.py` to initialize, update, poll, validate, and clean up the run.
+
+## Required References
+
+- `references/workflow-contract.md`
+- `references/resume-contract.md`
+- `references/evals.md`
+- `assets/plan-template.md`
+- `assets/state-template.json`
+- `assets/prompts/lead-dispatch.md`
+- `assets/prompts/review-dispatch.md`
+- `assets/prompts/pr-creation.md`
+- `assets/prompts/feedback-triage.md`
+- `assets/prompts/ci-polling.md`
+- `assets/prompts/cleanup-completion.md`
 
 ## Expectations
 
-- The plan should be concise and action-oriented.
-- The state file should capture the current phase, todos, review status, PR status, and cleanup status.
-- Existing legacy runs can finish as-is. New runs should follow the simplified workflow.
+- `plan.md` is the durable contract for the next session.
+- `state.json` is the mutable source of truth for review gates, PR state, Claude review handling, CI, and cleanup.
+- Branch names must use `codex/issue-<primary>-<slug>`.
+- Commit titles and PR titles must be conventional.
+- PR bodies must be derived from `.github/pull_request_template.md`.

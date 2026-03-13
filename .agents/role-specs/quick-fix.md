@@ -13,4 +13,10 @@ You handle low-risk, tightly scoped fixes.
 1. Read the file.
 2. Make the minimal correct change.
 3. Run the smallest relevant verification command.
-4. Report the edit and the verification result.
+4. End with this structure:
+   - `Task understanding:`
+   - `Assumptions:`
+   - `Files changed:`
+   - `Verification run:`
+   - `Residual risks:`
+   - `Next required action:`

@@ -15,8 +15,26 @@ REQUIRED_FILES = [
     "assets/state-template.json",
     "assets/prompts/lead-dispatch.md",
     "assets/prompts/review-dispatch.md",
+    "assets/prompts/pr-creation.md",
+    "assets/prompts/feedback-triage.md",
+    "assets/prompts/ci-polling.md",
+    "assets/prompts/cleanup-completion.md",
     "scripts/gh_issue_run.py",
     "scripts/gh_issue_workflow.py",
+    "scripts/validate_skill.py",
+]
+REQUIRED_PLAN_SECTIONS = [
+    "## Metadata",
+    "## Non-Negotiables",
+    "## Resume Protocol",
+    "## Issue Summary",
+    "## Implementation Batches",
+    "## Verification Matrix",
+    "## Review Gates",
+    "## PR Creation",
+    "## Claude Review Loop",
+    "## CI Loop",
+    "## Cleanup",
 ]
 
 
@@ -34,61 +52,40 @@ def main() -> int:
 
     skill_path = skill_dir / "SKILL.md"
     if skill_path.exists():
-        lines = skill_path.read_text().splitlines()
-        if len(lines) > 500:
-            errors.append({"SKILL.md": f"too long: {len(lines)} lines"})
-        body = "\n".join(lines)
-
-        # Check that the inline template is present
-        if "### Execution Plan Template" not in body:
-            errors.append({"SKILL.md": "missing inline template marker: ### Execution Plan Template"})
-
-        # Check key template sections are inline
-        for section in [
-            "## Metadata",
-            "## Phase 1: Implementation",
-            "## Phase 2: Verification",
-            "## Phase 3: Review Gates",
-            "## Phase 4: Create PR",
-            "## Phase 6: Cleanup",
-        ]:
-            if section not in body:
-                errors.append({"SKILL.md": f"missing inline template section: {section}"})
-
-        # Check references — accept both direct paths and ${CLAUDE_SKILL_DIR}/ prefixed paths
+        body = skill_path.read_text()
         for expected in [
-            "references/workflow-contract.md",
-            "references/resume-contract.md",
-            "assets/plan-template.md",
-            "assets/state-template.json",
-            "scripts/gh_issue_run.py",
-            "scripts/gh_issue_workflow.py",
-            "scripts/validate_skill.py",
+            "codex/issue-<primary>-<slug>",
+            ".github/pull_request_template.md",
+            "GitHub Claude review",
+            "assets/prompts/pr-creation.md",
+            "assets/prompts/feedback-triage.md",
+            "assets/prompts/ci-polling.md",
+            "assets/prompts/cleanup-completion.md",
         ]:
-            # Match either "references/foo.md" or "${CLAUDE_SKILL_DIR}/references/foo.md"
-            if expected not in body and f"${{CLAUDE_SKILL_DIR}}/{expected}" not in body:
+            if expected not in body:
                 errors.append({"SKILL.md": f"missing reference: {expected}"})
 
     state_template = skill_dir / "assets" / "state-template.json"
     if state_template.exists():
         text = state_template.read_text()
-        for key in ['"schema_version"', '"issues"', '"mode"', '"branch"', '"todos"', '"review_gates"', '"pr"', '"cleanup"']:
+        for key in [
+            '"schema_version"',
+            '"review_gates"',
+            '"naming"',
+            '"pr"',
+            '"claude_review"',
+            '"ci"',
+            '"cleanup"',
+        ]:
             if key not in text:
                 errors.append({"state-template.json": f"missing key: {key}"})
 
     plan_template = skill_dir / "assets" / "plan-template.md"
     if plan_template.exists():
         text = plan_template.read_text()
-        for marker in ["## Metadata", "## Non-Negotiables", "## Resume Protocol", "## Review Gates", "## Cleanup"]:
+        for marker in REQUIRED_PLAN_SECTIONS:
             if marker not in text:
                 errors.append({"plan-template.md": f"missing section: {marker}"})
-        if "## PR Loop" not in text and "## PR and Polling Loop" not in text:
-            errors.append({"plan-template.md": "missing section: ## PR Loop"})
-        # Check expanded template sections
-        if "## Verification" not in text and "## Phase 2: Verification" not in text:
-            errors.append({"plan-template.md": "missing section: ## Verification"})
-        if "## Implementation" not in text:
-            errors.append({"plan-template.md": "missing section: ## Implementation"})
 
     payload = {
         "ok": not errors,

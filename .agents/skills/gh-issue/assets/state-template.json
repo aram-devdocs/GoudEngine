@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "run_id": "",
   "primary_issue": "",
   "issues": [],
@@ -19,43 +19,82 @@
     },
     {
       "id": "bootstrap",
-      "title": "Create plan and state artifacts",
+      "title": "Create the canonical plan and state artifacts",
       "owner": "orchestrator",
       "status": "pending"
     },
     {
       "id": "implementation",
-      "title": "Complete the main implementation pass",
+      "title": "Complete the implementation pass with one lead role",
+      "owner": "orchestrator",
+      "status": "pending"
+    },
+    {
+      "id": "verification",
+      "title": "Run local verification commands",
       "owner": "orchestrator",
       "status": "pending"
     },
     {
       "id": "review",
-      "title": "Run reviewer and optional security audit",
-      "owner": "reviewer",
+      "title": "Run strict review gates",
+      "owner": "spec-reviewer",
       "status": "pending"
     },
     {
       "id": "pr",
-      "title": "Open or update the PR and capture status",
+      "title": "Create or update the PR with template metadata",
+      "owner": "orchestrator",
+      "status": "pending"
+    },
+    {
+      "id": "claude-review",
+      "title": "Handle GitHub Claude review feedback",
+      "owner": "orchestrator",
+      "status": "pending"
+    },
+    {
+      "id": "ci",
+      "title": "Wait for CI to go green",
       "owner": "orchestrator",
       "status": "pending"
     },
     {
       "id": "cleanup",
-      "title": "Remove worktree and close the run",
+      "title": "Remove the worktree and close the run",
       "owner": "orchestrator",
       "status": "pending"
     }
   ],
   "review_gates": {
-    "reviewer": "pending",
+    "spec-reviewer": "pending",
+    "code-quality-reviewer": "pending",
+    "architecture-validator": "pending",
     "security-auditor": "not_required"
+  },
+  "naming": {
+    "branch_valid": false,
+    "pr_title_valid": false,
+    "commit_titles_state": "pending"
   },
   "pr": {
     "number": null,
-    "ci_state": "not_started",
+    "title": "",
+    "template_used": false,
+    "template_sections_complete": false,
     "review_state": "not_started",
+    "last_poll": null
+  },
+  "claude_review": {
+    "status": "pending",
+    "author": null,
+    "last_poll": null,
+    "blockers_status": "pending",
+    "warnings_status": "pending",
+    "justification_recorded": false
+  },
+  "ci": {
+    "status": "not_started",
     "last_poll": null
   },
   "cleanup": {

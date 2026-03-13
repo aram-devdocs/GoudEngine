@@ -14,13 +14,52 @@ class WorkflowCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, expected, msg=result.stderr or result.stdout)
         return json.loads(result.stdout)
 
-    def test_init_run_creates_plan_and_state(self):
+    def init_run(self, repo_root: Path, *, mode: str = "worktree") -> Path:
+        working_directory = repo_root if mode == "in-place" else repo_root / "worktrees/issue-101-fix-bug"
+        payload = self.run_cli(
+            "init-run",
+            "--repo-root",
+            str(repo_root),
+            "--primary",
+            "101",
+            "--slug",
+            "fix-bug",
+            "--branch",
+            "codex/issue-101-fix-bug",
+            "--mode",
+            mode,
+            "--working-directory",
+            str(working_directory),
+            "--main-repo-path",
+            str(repo_root),
+            "--issues",
+            "101",
+            "205",
+            "--issue-title",
+            "#101 fix rendering bug",
+            "--issue-title",
+            "#205 clean shader error path",
+        )
+        return Path(payload["run_dir"])
+
+    def test_init_run_creates_strict_plan_and_state(self):
         with tempfile.TemporaryDirectory() as tmp:
-            repo_root = Path(tmp)
+            run_dir = self.init_run(Path(tmp))
+            plan = (run_dir / "plan.md").read_text()
+            state = json.loads((run_dir / "state.json").read_text())
+            self.assertIn("## Claude Review Loop", plan)
+            self.assertIn("## CI Loop", plan)
+            self.assertTrue(state["naming"]["branch_valid"])
+            self.assertEqual(state["phase"], "bootstrapped")
+            self.assertEqual(state["review_gates"]["spec-reviewer"], "pending")
+            self.assertEqual(state["todos"][1]["status"], "done")
+
+    def test_init_run_rejects_invalid_branch_name(self):
+        with tempfile.TemporaryDirectory() as tmp:
             payload = self.run_cli(
                 "init-run",
                 "--repo-root",
-                str(repo_root),
+                tmp,
                 "--primary",
                 "101",
                 "--slug",
@@ -30,160 +69,74 @@ class WorkflowCliTests(unittest.TestCase):
                 "--mode",
                 "worktree",
                 "--working-directory",
-                str(repo_root / "worktrees/issue-101-fix-bug"),
+                str(Path(tmp) / "worktrees/issue-101-fix-bug"),
                 "--main-repo-path",
-                str(repo_root),
+                tmp,
                 "--issues",
                 "101",
-                "205",
-                "--issue-title",
-                "#101 fix rendering bug",
-                "--issue-title",
-                "#205 clean shader error path",
+                expected=2,
             )
-            run_dir = Path(payload["run_dir"])
-            self.assertTrue((run_dir / "plan.md").exists())
-            self.assertTrue((run_dir / "state.json").exists())
-            state = json.loads((run_dir / "state.json").read_text())
-            self.assertEqual(state["phase"], "bootstrapped")
-            self.assertEqual(state["todos"][1]["status"], "done")
-            self.assertEqual(payload["next_todo"]["id"], "implementation")
+            self.assertFalse(payload["ok"])
+            self.assertIn("codex/issue-<primary>-<slug>", payload["details"][0])
 
-    def test_update_state_changes_todo_and_gate(self):
+    def test_update_state_enforces_review_gate_order(self):
         with tempfile.TemporaryDirectory() as tmp:
-            repo_root = Path(tmp)
-            run_dir = Path(
-                self.run_cli(
-                    "init-run",
-                    "--repo-root",
-                    str(repo_root),
-                    "--primary",
-                    "101",
-                    "--slug",
-                    "fix-bug",
-                    "--branch",
-                    "agent/issue-101-fix-bug",
-                    "--mode",
-                    "in-place",
-                    "--working-directory",
-                    str(repo_root),
-                    "--issues",
-                    "101",
-                )["run_dir"]
-            )
+            run_dir = self.init_run(Path(tmp))
             payload = self.run_cli(
                 "update-state",
                 "--run-dir",
                 str(run_dir),
-                "--phase",
-                "reviewing",
-                "--todo",
-                "implementation=done",
-                "--todo-owner",
-                "review=reviewer",
                 "--review-gate",
-                "reviewer=APPROVED",
-            )
-            state = json.loads((run_dir / "state.json").read_text())
-            self.assertEqual(payload["phase"], "reviewing")
-            self.assertEqual(state["review_gates"]["reviewer"], "APPROVED")
-            self.assertEqual(state["todos"][2]["status"], "done")
-            self.assertEqual(state["todos"][3]["owner"], "reviewer")
-
-    def test_validate_resume_blocks_wrong_branch(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            repo_root = Path(tmp)
-            run_dir = Path(
-                self.run_cli(
-                    "init-run",
-                    "--repo-root",
-                    str(repo_root),
-                    "--primary",
-                    "101",
-                    "--slug",
-                    "fix-bug",
-                    "--branch",
-                    "agent/issue-101-fix-bug",
-                    "--mode",
-                    "in-place",
-                    "--working-directory",
-                    str(repo_root),
-                    "--issues",
-                    "101",
-                )["run_dir"]
-            )
-            payload = self.run_cli(
-                "validate-resume",
-                "--run-dir",
-                str(run_dir),
-                "--branch",
-                "main",
+                "code-quality-reviewer=APPROVED",
                 expected=2,
             )
             self.assertFalse(payload["ok"])
-            self.assertIn("branch mismatch", payload["errors"][0])
+            self.assertIn("code-quality-reviewer cannot run before spec-reviewer", payload["error"])
 
-    def test_validate_resume_blocks_worktree_mismatch(self):
+    def test_update_state_requires_conventional_pr_title_and_justification(self):
         with tempfile.TemporaryDirectory() as tmp:
-            repo_root = Path(tmp)
-            worktree = repo_root / "worktrees/issue-101-fix-bug"
-            run_dir = Path(
-                self.run_cli(
-                    "init-run",
-                    "--repo-root",
-                    str(repo_root),
-                    "--primary",
-                    "101",
-                    "--slug",
-                    "fix-bug",
-                    "--branch",
-                    "agent/issue-101-fix-bug",
-                    "--mode",
-                    "worktree",
-                    "--working-directory",
-                    str(worktree),
-                    "--main-repo-path",
-                    str(repo_root),
-                    "--issues",
-                    "101",
-                )["run_dir"]
-            )
+            run_dir = self.init_run(Path(tmp))
             payload = self.run_cli(
-                "validate-resume",
+                "update-state",
                 "--run-dir",
                 str(run_dir),
-                "--branch",
-                "agent/issue-101-fix-bug",
-                "--cwd",
-                str(repo_root),
+                "--pr-title",
+                "bad title",
                 expected=2,
             )
             self.assertFalse(payload["ok"])
-            self.assertIn("outside worktree", payload["errors"][0])
-
-    def test_poll_pr_updates_state(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            repo_root = Path(tmp)
-            run_dir = Path(
-                self.run_cli(
-                    "init-run",
-                    "--repo-root",
-                    str(repo_root),
-                    "--primary",
-                    "101",
-                    "--slug",
-                    "fix-bug",
-                    "--branch",
-                    "agent/issue-101-fix-bug",
-                    "--mode",
-                    "in-place",
-                    "--working-directory",
-                    str(repo_root),
-                    "--issues",
-                    "101",
-                )["run_dir"]
+            payload = self.run_cli(
+                "update-state",
+                "--run-dir",
+                str(run_dir),
+                "--claude-warnings-status",
+                "justified",
+                expected=2,
             )
-            self.run_cli("update-state", "--run-dir", str(run_dir), "--pr-number", "77")
+            self.assertFalse(payload["ok"])
+
+    def test_poll_pr_advances_to_cleanup_when_strict_requirements_are_met(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self.init_run(Path(tmp))
+            self.run_cli(
+                "update-state",
+                "--run-dir",
+                str(run_dir),
+                "--review-gate",
+                "spec-reviewer=APPROVED",
+                "--review-gate",
+                "code-quality-reviewer=APPROVED",
+                "--review-gate",
+                "architecture-validator=VALID",
+                "--pr-number",
+                "77",
+                "--pr-title",
+                "refactor: tighten gh-issue orchestration",
+                "--pr-template-used",
+                "--pr-template-sections-complete",
+                "--commit-titles-state",
+                "valid",
+            )
             payload = self.run_cli(
                 "poll-pr",
                 "--run-dir",
@@ -194,84 +147,92 @@ class WorkflowCliTests(unittest.TestCase):
                 str(FIXTURES / "reviews-approved.json"),
             )
             state = json.loads((run_dir / "state.json").read_text())
-            self.assertTrue(payload["ready_to_merge"])
+            self.assertTrue(payload["ready_for_cleanup"])
+            self.assertEqual(payload["claude_review_state"], "approved")
             self.assertEqual(state["phase"], "cleanup")
-            self.assertEqual(state["pr"]["ci_state"], "success")
 
-    def test_cleanup_requires_green_state(self):
+    def test_cleanup_stays_blocked_until_ci_and_feedback_are_complete(self):
         with tempfile.TemporaryDirectory() as tmp:
-            repo_root = Path(tmp)
-            worktree = repo_root / "worktrees/issue-101-fix-bug"
-            run_dir = Path(
-                self.run_cli(
-                    "init-run",
-                    "--repo-root",
-                    str(repo_root),
-                    "--primary",
-                    "101",
-                    "--slug",
-                    "fix-bug",
-                    "--branch",
-                    "agent/issue-101-fix-bug",
-                    "--mode",
-                    "worktree",
-                    "--working-directory",
-                    str(worktree),
-                    "--main-repo-path",
-                    str(repo_root),
-                    "--issues",
-                    "101",
-                )["run_dir"]
-            )
-            payload = self.run_cli("cleanup-worktree", "--run-dir", str(run_dir), expected=2)
-            self.assertFalse(payload["ok"])
-            self.assertEqual(payload["error"], "cleanup blocked")
-
-    def test_cleanup_dry_run_succeeds_when_ready(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            repo_root = Path(tmp)
-            worktree = repo_root / "worktrees/issue-101-fix-bug"
-            run_dir = Path(
-                self.run_cli(
-                    "init-run",
-                    "--repo-root",
-                    str(repo_root),
-                    "--primary",
-                    "101",
-                    "--slug",
-                    "fix-bug",
-                    "--branch",
-                    "agent/issue-101-fix-bug",
-                    "--mode",
-                    "worktree",
-                    "--working-directory",
-                    str(worktree),
-                    "--main-repo-path",
-                    str(repo_root),
-                    "--issues",
-                    "101",
-                )["run_dir"]
-            )
+            run_dir = self.init_run(Path(tmp))
             self.run_cli(
                 "update-state",
                 "--run-dir",
                 str(run_dir),
-                "--todo",
-                "implementation=done",
-                "--todo",
-                "review=done",
-                "--todo",
-                "pr=done",
+                "--review-gate",
+                "spec-reviewer=APPROVED",
+                "--review-gate",
+                "code-quality-reviewer=APPROVED",
+                "--review-gate",
+                "architecture-validator=VALID",
                 "--pr-number",
                 "77",
+                "--pr-title",
+                "refactor: tighten gh-issue orchestration",
+                "--pr-template-used",
+                "--pr-template-sections-complete",
+                "--commit-titles-state",
+                "valid",
+            )
+            self.run_cli(
+                "poll-pr",
+                "--run-dir",
+                str(run_dir),
+                "--checks-json-file",
+                str(FIXTURES / "checks-pending.json"),
+                "--reviews-json-file",
+                str(FIXTURES / "reviews-commented.json"),
+            )
+            payload = self.run_cli("cleanup-worktree", "--run-dir", str(run_dir), expected=2)
+            self.assertFalse(payload["ok"])
+            self.assertIn("cleanup blocked", payload["error"])
+
+    def test_cleanup_dry_run_succeeds_when_ready(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self.init_run(Path(tmp))
+            self.run_cli(
+                "update-state",
+                "--run-dir",
+                str(run_dir),
+                "--review-gate",
+                "spec-reviewer=APPROVED",
+                "--review-gate",
+                "code-quality-reviewer=APPROVED",
+                "--review-gate",
+                "architecture-validator=VALID",
+                "--pr-number",
+                "77",
+                "--pr-title",
+                "refactor: tighten gh-issue orchestration",
+                "--pr-template-used",
+                "--pr-template-sections-complete",
+                "--commit-titles-state",
+                "valid",
+                "--claude-review-state",
+                "commented",
+                "--claude-blockers-status",
+                "fixed",
+                "--claude-warnings-status",
+                "justified",
+                "--claude-justification-recorded",
                 "--ci-state",
                 "success",
-                "--review-state",
-                "approved",
             )
             payload = self.run_cli("cleanup-worktree", "--run-dir", str(run_dir))
             self.assertTrue(payload["ok"])
             self.assertTrue(payload["dry_run"])
+
+    def test_validate_resume_blocks_done_without_cleanup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = self.init_run(Path(tmp))
+            payload = self.run_cli(
+                "update-state",
+                "--run-dir",
+                str(run_dir),
+                "--phase",
+                "done",
+                expected=2,
+            )
+            self.assertFalse(payload["ok"])
 
 
 if __name__ == "__main__":

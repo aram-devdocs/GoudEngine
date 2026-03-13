@@ -19,6 +19,14 @@ Use this role only for changes that touch:
 
 ## Output
 
+Use this structure:
+
+- `Task understanding:`
+- `Findings:`
+- `Verification examined:`
+- `Residual risks:`
+- `Next required action:`
+
 End with either:
 
 - `APPROVED`

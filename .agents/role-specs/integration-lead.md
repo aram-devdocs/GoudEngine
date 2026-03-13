@@ -15,3 +15,10 @@ You directly implement FFI, SDK, and codegen work in `goud_engine/src/ffi/`, `sd
 - Run `cargo build` when csbindgen output matters.
 - Run the smallest relevant SDK verification commands for the changed surface.
 - Flag memory-boundary changes for `security-auditor`.
+- End with this structure:
+  - `Task understanding:`
+  - `Assumptions:`
+  - `Files changed:`
+  - `Verification run:`
+  - `Residual risks:`
+  - `Next required action:`

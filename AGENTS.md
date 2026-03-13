@@ -96,7 +96,8 @@ Do not stack multiple review gates or nested specialist waves by default.
 ## `/gh-issue`
 
 - `/gh-issue` is opt-in.
-- It owns worktree/run-state/PR tracking only when explicitly invoked.
+- It is the strict delivery path when explicitly invoked.
+- It owns worktree/run-state/PR tracking, PR template usage, Claude review follow-through, CI waiting, and worktree cleanup only when explicitly invoked.
 - Ordinary sessions should not behave like `/gh-issue` runs.
 
 ## Agent Config Generation

@@ -32,3 +32,4 @@ Do not use it for trivial one-file fixes.
 - One reviewer by default.
 - No mandatory disagreement or forced findings.
 - Do not leave sessions idling on CI or review waits unless the user explicitly asks for monitoring.
+- `/gh-issue` is the exception: it owns the stricter issue-run workflow, specialized review gates, PR follow-through, and cleanup.
