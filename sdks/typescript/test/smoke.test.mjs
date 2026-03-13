@@ -378,7 +378,7 @@ describe('Generated web UiManager bindings', () => {
     for (const fragment of [
       'getDebuggerSnapshotJson(): string { return this.handle.getDebuggerSnapshotJson(); }',
       "setDebuggerPaused(paused: boolean): void { this.handle.dispatchDebuggerRequest(",
-      'setDebugger(debugger: IDebuggerConfig): EngineConfig {',
+      'setDebugger(debuggerConfig: IDebuggerConfig): EngineConfig {',
     ]) {
       assert.ok(
         webSrc.includes(fragment),

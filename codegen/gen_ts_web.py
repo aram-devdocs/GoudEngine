@@ -221,6 +221,11 @@ def gen_web_wrapper():
         "  set_network_overlay_handle(handle: number): number;",
         "  clear_network_overlay_handle(): number;",
     ])
+    lines.extend([
+        "  initDebugger(label: string): void;",
+        "  dispatchDebuggerRequest(json: string): string;",
+        "  getDebuggerSnapshotJson(): string;",
+    ])
     lines.append("}")
     lines.append("")
     lines.extend([
@@ -1147,8 +1152,8 @@ def gen_web_wrapper():
                 lines.append("    return this;")
                 lines.append("  }")
             elif mn == "setDebugger":
-                lines.append("  setDebugger(debugger: IDebuggerConfig): EngineConfig {")
-                lines.append("    (this._config as any).debugger = debugger;")
+                lines.append("  setDebugger(debuggerConfig: IDebuggerConfig): EngineConfig {")
+                lines.append("    (this._config as any).debugger = debuggerConfig;")
                 lines.append("    return this;")
                 lines.append("  }")
             else:

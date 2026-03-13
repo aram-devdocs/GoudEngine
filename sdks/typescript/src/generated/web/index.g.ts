@@ -147,6 +147,9 @@ interface WasmGameHandle {
   clear_network_simulation(handle: number): number;
   set_network_overlay_handle(handle: number): number;
   clear_network_overlay_handle(): number;
+  initDebugger(label: string): void;
+  dispatchDebuggerRequest(json: string): string;
+  getDebuggerSnapshotJson(): string;
 }
 
 interface WasmNetworkConnectResult {
@@ -1040,8 +1043,8 @@ export class EngineConfig {
   }
 
   /** Configures debugger runtime startup for the created game. */
-  setDebugger(debugger: IDebuggerConfig): EngineConfig {
-    (this._config as any).debugger = debugger;
+  setDebugger(debuggerConfig: IDebuggerConfig): EngineConfig {
+    (this._config as any).debugger = debuggerConfig;
     return this;
   }
 
