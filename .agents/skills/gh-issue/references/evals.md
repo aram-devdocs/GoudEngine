@@ -25,7 +25,7 @@ For every prompt above, confirm that the generated run:
 
 - creates `plan.md` and `state.json`
 - records worktree metadata when requested
-- creates todos immediately after plan acceptance
+- creates strict todos immediately after initialization
 - routes non-trivial work through team leads
-- keeps the PR open loop active until checks and reviews are clean
+- keeps the PR open loop active through Claude review and green CI
 - carries enough detail for the next session to resume without re-deriving the rules

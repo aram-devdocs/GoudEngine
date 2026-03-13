@@ -15,7 +15,7 @@ Use this contract whenever a session starts or context clears.
 - mode: `in-place` or `worktree`
 - absolute worktree path when worktree mode is active
 - review gate ordering
-- PR follow-through requirements
+- PR template, Claude review, and CI follow-through requirements
 - cleanup state
 - any allowed deferrals and their tracking issue or PR
 
@@ -28,7 +28,8 @@ Stop and repair the run if any of these are true:
 - branch does not match `state.json`
 - worktree mode is active but the current directory is outside the recorded worktree
 - the plan still has placeholders
-- the run claims `done` while todos or PR state still say otherwise
+- required plan sections are missing
+- the run claims `done` while review, CI, or cleanup state still says otherwise
 
 ## Session Notes
 

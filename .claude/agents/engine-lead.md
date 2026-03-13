@@ -31,4 +31,10 @@ You directly implement Rust engine work in `goud_engine/src/` and `libs/`.
 - Match existing module patterns before editing.
 - Run `cargo check` after changes.
 - Run targeted `cargo test` when the area has relevant coverage.
-- Report what changed, what you verified, and any residual risk.
+- End with this structure:
+  - `Task understanding:`
+  - `Assumptions:`
+  - `Files changed:`
+  - `Verification run:`
+  - `Residual risks:`
+  - `Next required action:`

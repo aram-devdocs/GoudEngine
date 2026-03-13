@@ -8,14 +8,19 @@
   state.json
 ```
 
+`plan.md` is the durable execution contract. `state.json` is the mutable run state.
+
 ## Run Phases
 
 - `investigating`
 - `planning`
+- `bootstrapped`
 - `implementing`
 - `verifying`
 - `reviewing`
 - `pr`
+- `waiting-claude`
+- `waiting-ci`
 - `cleanup`
 - `done`
 
@@ -37,22 +42,31 @@ Allowed statuses:
 
 ## Worktree Rules
 
-- In worktree mode, every command starts with `cd <worktree-path> &&`.
+- The strict `/gh-issue` path uses a worktree by default.
+- In worktree mode, every repo command starts with `cd <worktree-path> &&`.
 - The main repo path is only for worktree lifecycle commands.
-- If the run says `worktree` and the active session is not in that worktree, stop and fix it before implementation continues.
+- If the run says `worktree` and the active session is not in that worktree, stop and repair it before continuing.
 
 ## Orchestration Rules
 
-- Use one implementation agent for the main task.
-- Run one `reviewer` pass after implementation.
-- Add `security-auditor` only when the change touches FFI, unsafe, or ownership boundaries.
+- Use one implementation lead at a time.
+- Review gates run in order:
+  1. `spec-reviewer`
+  2. `code-quality-reviewer`
+  3. `architecture-validator`
+  4. `security-auditor` when required
+- Use `.github/pull_request_template.md` for the PR body.
+- Wait for GitHub Claude review and handle blockers and warnings before cleanup.
+- Wait for CI to be green before cleanup.
 
 ## Completion Rules
 
-The task is complete when:
+The run is complete only when:
 
 - issue requirements are implemented
 - local verification is complete
-- review feedback is handled
-- PR status is captured
-- cleanup is finished or intentionally deferred
+- strict review gates are satisfied
+- PR metadata is recorded
+- Claude review feedback is handled
+- CI is green
+- the worktree is removed or the run is explicitly in in-place mode

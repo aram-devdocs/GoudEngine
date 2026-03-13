@@ -1,13 +1,17 @@
-Use this structure for team lead dispatches:
-
-```text
-Working directory: <absolute worktree or repo path>
+Working directory: <absolute worktree path>
+Branch: codex/issue-<primary>-<slug>
 
 Task:
-<concise batch goal>
+<concise implementation batch goal>
 
-Constraints:
-- Use TDD where practical
-- Keep changes inside the assigned area
-- Report files changed, tests run, verification results, and concerns
-```
+Requirements:
+- Stay inside the assigned area.
+- Match existing module patterns before editing.
+- Run the smallest meaningful verification commands for the changed surface.
+- Report exactly:
+  - Task understanding
+  - Assumptions
+  - Files changed
+  - Verification run
+  - Residual risks
+  - Next required action
