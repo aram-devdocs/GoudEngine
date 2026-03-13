@@ -24,21 +24,14 @@ fn clamp_line_width(width: f32, supported_range: [f32; 2]) -> Option<f32> {
     Some(width.clamp(min, max))
 }
 
-// ============================================================================
-// Standalone framebuffer readback (no backend reference needed)
-// ============================================================================
-
 impl OpenGLBackend {
-    /// Reads the default framebuffer as RGBA8 bytes without needing a mutable
-    /// backend reference. Requires a current OpenGL context on the calling thread.
+    /// Standalone framebuffer readback (no mutable backend reference needed).
     pub fn read_framebuffer_standalone(width: u32, height: u32) -> Result<Vec<u8>, String> {
         readback::read_default_framebuffer_rgba8_standalone(width, height)
     }
 }
 
-// ============================================================================
 // RenderBackend (supertrait -- lifecycle & info only)
-// ============================================================================
 
 impl RenderBackend for OpenGLBackend {
     fn info(&self) -> &BackendInfo {
