@@ -39,6 +39,12 @@ pub struct GoudEngineMcpServer {
     tool_router: ToolRouter<Self>,
 }
 
+impl Default for GoudEngineMcpServer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GoudEngineMcpServer {
     pub fn new() -> Self {
         Self::with_runtime_root(discovery::default_runtime_root())

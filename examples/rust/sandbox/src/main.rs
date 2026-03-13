@@ -54,12 +54,13 @@ fn main() {
     println!("{}", config.title);
 
     let mut game = GoudGame::with_platform(
-        GameConfig::new("GoudEngine Sandbox - Rust", WINDOW_WIDTH, WINDOW_HEIGHT)
-            .with_debugger(DebuggerConfig {
+        GameConfig::new("GoudEngine Sandbox - Rust", WINDOW_WIDTH, WINDOW_HEIGHT).with_debugger(
+            DebuggerConfig {
                 enabled: true,
                 publish_local_attach: true,
                 route_label: Some("sandbox-rust".to_string()),
-            }),
+            },
+        ),
     )
     .expect("failed to create game");
 

@@ -276,7 +276,10 @@ async fn test_get_logs_returns_entries() {
     let entries = logs["logs"]
         .as_array()
         .expect("logs response should contain a logs array");
-    assert!(!entries.is_empty(), "logs should contain at least one entry");
+    assert!(
+        !entries.is_empty(),
+        "logs should contain at least one entry"
+    );
     assert_eq!(entries[0]["level"], "INFO");
 }
 
@@ -295,12 +298,12 @@ async fn test_get_scene_hierarchy_returns_entities() {
     let entities = hierarchy["entities"]
         .as_array()
         .expect("hierarchy response should contain entities array");
-    assert!(
-        !entities.is_empty(),
-        "entities array should not be empty"
-    );
+    assert!(!entities.is_empty(), "entities array should not be empty");
     // Verify parent/child structure
-    assert!(entities[0].get("name").is_some(), "entities should have names");
+    assert!(
+        entities[0].get("name").is_some(),
+        "entities should have names"
+    );
     assert!(
         entities[0].get("parent_entity_id").is_some(),
         "entities should have parent_entity_id field"

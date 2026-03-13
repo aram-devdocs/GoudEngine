@@ -153,8 +153,7 @@ pub(super) fn start_diagnostics_recording(
 ) -> String {
     let recording_id = format!(
         "diag-rec-{}-{}",
-        route.snapshot.route_id.context_id,
-        route.snapshot.frame.index
+        route.snapshot.route_id.context_id, route.snapshot.frame.index
     );
     route.diagnostics_recording = RouteDiagnosticsRecordingState {
         active: true,
@@ -182,8 +181,8 @@ pub(super) fn record_diagnostics_frame(route: &mut RouteState) {
 
     // Auto-stop if duration exceeded
     if route.diagnostics_recording.duration_seconds > 0.0 {
-        let elapsed = route.snapshot.frame.total_seconds
-            - route.diagnostics_recording.start_total_seconds;
+        let elapsed =
+            route.snapshot.frame.total_seconds - route.diagnostics_recording.start_total_seconds;
         if elapsed >= route.diagnostics_recording.duration_seconds as f64 {
             route.diagnostics_recording.active = false;
             return;
@@ -299,8 +298,8 @@ fn average_stats(group: &[DiagnosticsRecordingFrameV1]) -> SnapshotStatsV1 {
 
     // Use last frame's memory stats (not averaged)
     if let Some(last) = group.last() {
-        result.memory = last.stats.memory.clone();
-        result.network = last.stats.network.clone();
+        result.memory = last.stats.memory;
+        result.network = last.stats.network;
     }
     result
 }
@@ -358,8 +357,7 @@ fn try_average_json_objects(values: &[&serde_json::Value]) -> Option<serde_json:
                 continue;
             }
             // Try numeric averaging
-            let numeric_values: Vec<f64> =
-                field_values.iter().filter_map(|v| v.as_f64()).collect();
+            let numeric_values: Vec<f64> = field_values.iter().filter_map(|v| v.as_f64()).collect();
             if numeric_values.len() == field_values.len() && !numeric_values.is_empty() {
                 let avg = numeric_values.iter().sum::<f64>() / numeric_values.len() as f64;
                 result.insert(key.clone(), serde_json::json!(avg));

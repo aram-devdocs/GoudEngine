@@ -109,15 +109,11 @@ impl GoudContextRegistry {
         if config.debugger.enabled {
             let route = debugger::register_context(id, surface_kind, &config.debugger);
             let context_id_for_hook = id;
-            debugger::register_snapshot_refresh_hook_for_route(
-                route.clone(),
-                move |_route_id| {
-                    let _ =
-                        crate::ffi::debug::debugger_runtime::refresh_debugger_snapshot(
-                            context_id_for_hook,
-                        );
-                },
-            );
+            debugger::register_snapshot_refresh_hook_for_route(route.clone(), move |_route_id| {
+                let _ = crate::ffi::debug::debugger_runtime::refresh_debugger_snapshot(
+                    context_id_for_hook,
+                );
+            });
             if let Some(context) = self.get_mut(id) {
                 context.set_debugger_route(Some(route));
             }
