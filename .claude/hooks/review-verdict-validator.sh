@@ -16,9 +16,20 @@ if [[ -z "$LAST_MESSAGE" ]]; then
   exit 2
 fi
 
-if echo "$LAST_MESSAGE" | grep -Eqi '(^|[^A-Z])(APPROVED|REJECTED|CHANGES REQUESTED)($|[^A-Z])'; then
+case "$AGENT_TYPE" in
+  security-auditor)
+    VERDICT_PATTERN='(^|[^A-Z])(APPROVED|CHANGES REQUESTED)($|[^A-Z])'
+    VERDICT_TEXT='APPROVED or CHANGES REQUESTED'
+    ;;
+  *)
+    VERDICT_PATTERN='(^|[^A-Z])(APPROVED|REJECTED|CHANGES REQUESTED)($|[^A-Z])'
+    VERDICT_TEXT='APPROVED, REJECTED, or CHANGES REQUESTED'
+    ;;
+esac
+
+if echo "$LAST_MESSAGE" | grep -Eqi "$VERDICT_PATTERN"; then
   exit 0
 fi
 
-echo "GOVERNANCE: $AGENT_TYPE must end with APPROVED, REJECTED, or CHANGES REQUESTED."
+echo "GOVERNANCE: $AGENT_TYPE must end with $VERDICT_TEXT."
 exit 2

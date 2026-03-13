@@ -42,6 +42,10 @@ class WorkflowCliTests(unittest.TestCase):
         )
         return Path(payload["run_dir"])
 
+    @staticmethod
+    def find_todo(state: dict, todo_id: str) -> dict:
+        return next(todo for todo in state["todos"] if todo["id"] == todo_id)
+
     def test_init_run_creates_strict_plan_and_state(self):
         with tempfile.TemporaryDirectory() as tmp:
             run_dir = self.init_run(Path(tmp))
@@ -52,7 +56,7 @@ class WorkflowCliTests(unittest.TestCase):
             self.assertTrue(state["naming"]["branch_valid"])
             self.assertEqual(state["phase"], "bootstrapped")
             self.assertEqual(state["review_gates"]["spec-reviewer"], "pending")
-            self.assertEqual(state["todos"][1]["status"], "done")
+            self.assertEqual(self.find_todo(state, "bootstrap")["status"], "done")
 
     def test_init_run_rejects_invalid_branch_name(self):
         with tempfile.TemporaryDirectory() as tmp:

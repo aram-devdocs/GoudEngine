@@ -4,6 +4,8 @@ import json
 import sys
 from pathlib import Path
 
+from gh_issue_run import REQUIRED_PLAN_SECTIONS
+
 SCRIPT_PATH = Path(__file__).resolve()
 DEFAULT_SKILL_DIR = SCRIPT_PATH.parent.parent
 REQUIRED_FILES = [
@@ -23,21 +25,6 @@ REQUIRED_FILES = [
     "scripts/gh_issue_workflow.py",
     "scripts/validate_skill.py",
 ]
-REQUIRED_PLAN_SECTIONS = [
-    "## Metadata",
-    "## Non-Negotiables",
-    "## Resume Protocol",
-    "## Issue Summary",
-    "## Implementation Batches",
-    "## Verification Matrix",
-    "## Review Gates",
-    "## PR Creation",
-    "## Claude Review Loop",
-    "## CI Loop",
-    "## Cleanup",
-]
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate the gh-issue skill package structure.")
     parser.add_argument("--skill-dir", default=str(DEFAULT_SKILL_DIR))

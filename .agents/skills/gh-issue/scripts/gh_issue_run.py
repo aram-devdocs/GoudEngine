@@ -185,18 +185,13 @@ def validate_review_gate_order(state: dict) -> list[str]:
 
 def review_gates_complete(state: dict) -> bool:
     gates = state.get("review_gates", {})
-    required = {
-        "spec-reviewer": "APPROVED",
-        "code-quality-reviewer": "APPROVED",
-        "architecture-validator": {"VALID", "APPROVED"},
-    }
-    if gates.get("spec-reviewer") != required["spec-reviewer"]:
+    if not accepted_gate_verdict("spec-reviewer", gates.get("spec-reviewer", "pending")):
         return False
-    if gates.get("code-quality-reviewer") != required["code-quality-reviewer"]:
+    if not accepted_gate_verdict("code-quality-reviewer", gates.get("code-quality-reviewer", "pending")):
         return False
-    if gates.get("architecture-validator") not in required["architecture-validator"]:
+    if not accepted_gate_verdict("architecture-validator", gates.get("architecture-validator", "pending")):
         return False
-    return gates.get("security-auditor", "not_required") in {"APPROVED", "not_required"}
+    return accepted_gate_verdict("security-auditor", gates.get("security-auditor", "not_required"))
 
 
 def claude_feedback_cleared(state: dict) -> bool:
