@@ -80,15 +80,15 @@ class WorkflowCliTests(unittest.TestCase):
                 "--todo",
                 "implementation=done",
                 "--todo-owner",
-                "review=quality-lead",
+                "review=reviewer",
                 "--review-gate",
-                "spec-reviewer=APPROVED",
+                "reviewer=APPROVED",
             )
             state = json.loads((run_dir / "state.json").read_text())
             self.assertEqual(payload["phase"], "reviewing")
-            self.assertEqual(state["review_gates"]["spec-reviewer"], "APPROVED")
+            self.assertEqual(state["review_gates"]["reviewer"], "APPROVED")
             self.assertEqual(state["todos"][2]["status"], "done")
-            self.assertEqual(state["todos"][3]["owner"], "quality-lead")
+            self.assertEqual(state["todos"][3]["owner"], "reviewer")
 
     def test_validate_resume_blocks_wrong_branch(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -261,7 +261,7 @@ class WorkflowCliTests(unittest.TestCase):
                 "--todo",
                 "review=done",
                 "--todo",
-                "pr-loop=done",
+                "pr=done",
                 "--pr-number",
                 "77",
                 "--ci-state",

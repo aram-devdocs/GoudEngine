@@ -8,19 +8,14 @@
   state.json
 ```
 
-`plan.md` is the durable contract. It should be readable by a fresh Claude or Codex session with no extra context. `state.json` tracks mutable run state.
-
 ## Run Phases
 
 - `investigating`
 - `planning`
-- `bootstrapped`
 - `implementing`
 - `verifying`
 - `reviewing`
-- `pr-open`
-- `waiting-ci`
-- `waiting-review`
+- `pr`
 - `cleanup`
 - `done`
 
@@ -40,33 +35,24 @@ Allowed statuses:
 - `blocked`
 - `done`
 
-The orchestrator keeps the plan checkboxes and `state.json` in sync.
-
 ## Worktree Rules
 
 - In worktree mode, every command starts with `cd <worktree-path> &&`.
 - The main repo path is only for worktree lifecycle commands.
-- Subagents always receive the absolute worktree path.
 - If the run says `worktree` and the active session is not in that worktree, stop and fix it before implementation continues.
 
 ## Orchestration Rules
 
-- Use `engine-lead`, `integration-lead`, and `quality-lead` for non-trivial work.
-- Use `quick-fix` directly only for trivial single-file edits.
-- Reviews are sequential:
-  1. `spec-reviewer`
-  2. `code-quality-reviewer`
-  3. `architecture-validator`
-  4. `security-auditor` when FFI or unsafe changes are in play
+- Use one implementation agent for the main task.
+- Run one `reviewer` pass after implementation.
+- Add `security-auditor` only when the change touches FFI, unsafe, or ownership boundaries.
 
 ## Completion Rules
 
-The task is not complete when the PR opens. It is complete when:
+The task is complete when:
 
-- all issue requirements are done
-- related untracked cleanup needed for this ticket is done
+- issue requirements are implemented
+- local verification is complete
 - review feedback is handled
-- CI is green
-- cleanup is finished or explicitly marked safe to defer
-
-Only defer related work if it is already tracked elsewhere and clearly out of scope.
+- PR status is captured
+- cleanup is finished or intentionally deferred

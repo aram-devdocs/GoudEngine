@@ -39,25 +39,10 @@ EXPECTED_TIERS = {
     "default": "high",
     "engine-lead": "high",
     "integration-lead": "high",
-    "quality-lead": "high",
+    "reviewer": "standard",
     "security-auditor": "high",
-    "worker": "standard",
-    "implementer": "standard",
-    "test-first-implementer": "standard",
-    "ffi-implementer": "standard",
-    "sdk-implementer": "standard",
-    "spec-reviewer": "standard",
-    "code-quality-reviewer": "standard",
-    "test-runner": "standard",
     "debugger": "standard",
-    "documentation-writer": "standard",
-    "explorer": "fast",
-    "monitor": "fast",
     "quick-fix": "fast",
-    "architecture-validator": "fast",
-    "graphics-domain-expert": "fast",
-    "ecs-domain-expert": "fast",
-    "ffi-domain-expert": "fast",
 }
 
 ALLOWED_SANDBOX_MODES = {"read-only", "workspace-write", "danger-full-access"}
@@ -223,6 +208,7 @@ def validate_catalog(catalog: dict[str, Any]) -> dict[str, Any]:
             "description",
             "spec_file",
             "tier",
+            "codex_enabled",
             "codex_model",
             "codex_model_reasoning_effort",
             "codex_sandbox_mode",
@@ -235,6 +221,9 @@ def validate_catalog(catalog: dict[str, Any]) -> dict[str, Any]:
         ensure_non_empty_string(role["description"], "description", context)
         spec_file = ensure_non_empty_string(role["spec_file"], "spec_file", context)
         tier = ensure_non_empty_string(role["tier"], "tier", context)
+        codex_enabled = role["codex_enabled"]
+        if not isinstance(codex_enabled, bool):
+            raise CatalogError(f"{context}.codex_enabled must be boolean")
         ensure_non_empty_string(role["codex_model"], "codex_model", context)
         ensure_non_empty_string(
             role["codex_model_reasoning_effort"], "codex_model_reasoning_effort", context
@@ -332,7 +321,7 @@ def resolve_codex_approval_policy(role: dict[str, Any]) -> str:
 def render_codex_config(catalog: dict[str, Any]) -> str:
     settings = catalog["settings"]
     roles = catalog["roles"]
-    role_order = role_ids_in_order(catalog)
+    role_order = [role_id for role_id in role_ids_in_order(catalog) if roles[role_id]["codex_enabled"]]
 
     lines = [
         "#:schema https://developers.openai.com/codex/config-schema.json",
@@ -438,7 +427,8 @@ def generate_outputs(catalog: dict[str, Any]) -> dict[Path, str]:
 
     for role_id in role_ids_in_order(catalog):
         role = roles[role_id]
-        outputs[CODEX_AGENTS_DIR / f"{role_id}.toml"] = render_codex_role_config(role)
+        if role["codex_enabled"]:
+            outputs[CODEX_AGENTS_DIR / f"{role_id}.toml"] = render_codex_role_config(role)
         if role["claude_enabled"]:
             outputs[CLAUDE_AGENTS_DIR / f"{role_id}.md"] = render_claude_wrapper(role_id, role)
 

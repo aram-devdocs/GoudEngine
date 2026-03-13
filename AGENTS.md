@@ -1,347 +1,131 @@
 # AGENTS.md
 
-This file provides guidance to AI coding agents working with GoudEngine.
-The key words MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY are used per RFC 2119.
+This file defines the default agent workflow for GoudEngine.
+
+## Goals
+
+- Keep ordinary sessions fast and direct.
+- Use multi-agent workflows only when they improve the result.
+- Preserve the engine's real correctness constraints: architecture, FFI safety, SDK parity, and testing.
 
 ## Essential Commands
 
-### Building and Testing
 ```bash
-# Quick development with automatic build and run (C# SDK -- default)
-./dev.sh --game flappy_goud       # Run 2D game (default)
-./dev.sh --game 3d_cube          # Run 3D demo
-./dev.sh --game goud_jumper      # Run platform game
-./dev.sh --game <game> --local   # Use local NuGet feed
+# Core build
+cargo build
+cargo build --release
+./build.sh --release
 
-# Python SDK demos
-./dev.sh --sdk python --game python_demo  # Run Python demo
-./dev.sh --sdk python --game flappy_bird  # Run Python Flappy Bird
-
-# TypeScript SDK demos
-./dev.sh --sdk typescript --game flappy_bird      # TS desktop (Node.js)
-./dev.sh --sdk typescript --game flappy_bird_web  # TS web (browser/WASM)
-
-# Rust SDK (runs tests)
-./dev.sh --sdk rust              # Run Rust SDK tests
-
-# Core build commands
-cargo build                      # Debug build
-cargo build --release           # Release build
-./build.sh --release            # Full release build with SDK
-
-# Testing
-cargo test                       # Run all tests
-cargo test -- --nocapture       # Show test output
-cargo test --lib sdk            # Test Rust SDK specifically
-cargo test graphics             # Test specific module
-
-# Python SDK tests
-python3 sdks/python/test_bindings.py  # Run Python SDK tests
-
-# TypeScript SDK tests
-cd sdks/typescript && npm test        # Run TypeScript SDK tests
-
-# Pre-commit checks (MUST pass)
+# Tests
+cargo test
+cargo test -- --nocapture
 cargo check
 cargo fmt --all -- --check
 cargo clippy -- -D warnings
 cargo deny check
+
+# SDK checks
+python3 sdks/python/test_bindings.py
+cd sdks/typescript && npm test
+
+# Examples
+./dev.sh --game flappy_goud
+./dev.sh --game 3d_cube
+./dev.sh --game goud_jumper
+./dev.sh --sdk python --game python_demo
+./dev.sh --sdk typescript --game flappy_bird
 ```
 
-### Version Management (Automated)
-Versioning is handled by **release-please** via conventional commits:
-1. Use conventional commit prefixes (`feat:`, `fix:`, etc.) in PR titles
-2. On merge to main, release-please creates/updates a Release PR
-3. When the Release PR merges, it creates a tag + GitHub release
-4. The tag triggers the publish pipeline (npm, NuGet, PyPI, crates.io)
+## Core Invariants
 
-For local development, `./increment_version.sh` still works but is not required for releases.
+### Rust First
 
-### Local Development Cycle
+- Engine behavior lives in Rust.
+- SDKs are thin wrappers over FFI or generated bindings.
+- Simple generated TypeScript math helpers are the only intentional local-logic exception.
+
+### FFI Safety
+
+- Public FFI exports must be `#[no_mangle] extern "C"`.
+- Shared FFI structs must use `#[repr(C)]`.
+- Pointer parameters need null checks before dereference.
+- Every `unsafe` block needs a `// SAFETY:` comment.
+- Memory ownership across FFI must be explicit.
+
+### Architecture
+
+- Dependency flow stays downward only: `libs -> goud_engine -> ffi -> sdks -> examples`.
+- Do not add upward imports or same-layer cross-module shortcuts.
+- Raw OpenGL calls stay in the graphics backend.
+
+### Generated Code
+
+- Do not hand-edit generated `*.g.rs`, `*.g.ts`, or `*.g.cs` surfaces.
+- Do not commit napi loader outputs such as `index.js` and `index.d.ts`.
+- Update Rust, FFI, schema, and generated SDKs together when public engine APIs change.
+
+## Default Workflow
+
+- Trivial fix: root session or `quick-fix`.
+- Multi-file engine work: `engine-lead`.
+- FFI, SDK, or codegen work: `integration-lead`.
+- Substantive changes get one `reviewer` pass after implementation.
+- Use `security-auditor` only for FFI, unsafe, pointer, or memory-boundary changes.
+- Use `debugger` when failures need focused diagnosis.
+
+This repo still supports multi-agent work, but the default shape is intentionally small:
+
+1. Root scopes the task.
+2. One implementation agent does the work.
+3. One reviewer checks the result.
+4. Security review is added only when the change warrants it.
+
+Do not stack multiple review gates or nested specialist waves by default.
+
+## `/gh-issue`
+
+- `/gh-issue` is opt-in.
+- It owns worktree/run-state/PR tracking only when explicitly invoked.
+- Ordinary sessions should not behave like `/gh-issue` runs.
+
+## Agent Config Generation
+
+Agent wrappers are generated from the canonical catalog:
+
 ```bash
-./build.sh                      # 1. Build everything
-./package.sh --local           # 2. Deploy to local NuGet
-./dev.sh --game <game> --local # 3. Test with example
+python3 scripts/sync-agent-configs.py
+python3 scripts/sync-agent-configs.py --check
 ```
 
-## Architecture Overview
-
-### Design Principle: Rust-First
-**All logic lives in Rust.** SDKs are thin wrappers that marshal data and call FFI functions.
-
-- Component methods (e.g., `Transform2D.translate()`) MUST be implemented in Rust
-- SDKs call FFI functions -- they MUST NOT implement logic
-- New features MUST be added to Rust first, then exposed via FFI
-- **Math-in-SDK exception**: Simple value-type operations (Vec2.add, Color.fromHex, etc.) in the TypeScript SDK are intentionally computed locally for performance. These are generated by codegen for consistency but avoid FFI round-trips for trivial math.
-- **napi f64/f32 design choice**: The TypeScript napi layer accepts f64 at the JS boundary (JavaScript's native number type) and casts to f32 internally where the Rust engine expects f32. This avoids lossy conversions at the API surface.
-
-### Core Structure
-GoudEngine is a Rust game engine with multi-language SDK support:
-- **Rust Core** (`goud_engine/`): Performance-critical engine code
-- **Rust SDK** (`goud_engine/src/sdk/`): Native Rust API (zero FFI overhead)
-- **Rust SDK re-export** (`sdks/rust/`): Convenience crate re-exporting the engine API
-- **C# SDK** (`sdks/csharp/`): User-facing .NET API via FFI
-- **Python SDK** (`sdks/python/`): Python bindings via FFI (ctypes)
-- **TypeScript SDK** (`sdks/typescript/`): Node.js (napi) + Web (WASM) bindings
-- **FFI Layer** (`goud_engine/src/ffi/`): csbindgen-generated bindings
-- **Codegen** (`codegen/`): Unified SDK generation from `goud_sdk.schema.json`
-- **Proc Macros** (`goud_engine_macros/`): Procedural macros for the engine
-- **Tools** (`tools/`): Development utilities (lint-layers for dependency hierarchy checks)
-
-### Layer Architecture
-
-Dependencies flow DOWN only. No upward imports. No same-layer cross-imports.
-
-```
-Layer 1 (Core)   :  libs/  (graphics, platform, ecs, logger)
-Layer 2 (Engine) :  goud_engine/src/  (core, assets, sdk)
-Layer 3 (FFI)    :  goud_engine/src/ffi/
-Layer 4 (SDKs)   :  sdks/  (csharp, python, typescript)
-Layer 5 (Apps)   :  examples/
-```
-
-### Module Organization
-```
-libs/
-|-- graphics/           # Rendering subsystem
-|   |-- renderer/      # Base renderer trait
-|   |-- renderer2d/    # 2D rendering (sprites, 2D camera)
-|   |-- renderer3d/    # 3D rendering (primitives, lighting)
-|   +-- components/    # Shared (shaders, textures, buffers)
-|-- platform/          # Platform layer
-|   +-- window/       # GLFW window management
-|-- ecs/              # Entity Component System
-+-- logger/           # Logging infrastructure
-```
-
-### Renderer Selection
-The engine supports runtime renderer selection:
-- **2D Renderer**: Sprites, 2D camera, Tiled maps
-- **3D Renderer**: Primitives, dynamic lighting, 3D camera
-
-Selected at `GoudGame` initialization:
-```csharp
-new GoudGame(800, 600, "Title", RendererType.Renderer2D)  // 2D
-new GoudGame(800, 600, "Title", RendererType.Renderer3D)  // 3D
-```
-
-## Anti-Patterns
-
-Agents MUST NOT introduce any of the following:
-
-1. Implementing logic in SDKs instead of Rust core
-2. Missing `#[no_mangle]` or `#[repr(C)]` on FFI exports
-3. Using `unsafe` without a `// SAFETY:` comment
-4. Breaking the layer dependency hierarchy (upward imports)
-5. Skipping version increment before packaging
-6. Using `--no-verify` on commits
-7. Adding FFI functions without updating ALL SDKs (C#, Python, TypeScript)
-8. Committing secrets or credentials
-9. Force-pushing to main
-10. Skipping spec-reviewer before code-quality-reviewer
-11. Not running `/humanizer` on documentation changes
-12. Direct implementation without subagent dispatch (for non-trivial tasks)
-13. Files exceeding 500 lines
-14. Raw OpenGL calls outside `graphics/backend/` module
-15. Duplicating types between Rust and SDK (codegen only)
-16. Tests without assertions or with `#[ignore]`/`todo!()`
-17. Committing auto-generated files (napi loader `index.js`/`index.d.ts`, codegen `*.g.*` files)
-18. Hand-writing error classes instead of using codegen from `goud_sdk.schema.json` errors section
-
-## SDK Development Workflow
-
-When adding new features, follow this sequence exactly:
-1. **Implement in Rust first** (`goud_engine/src/`)
-2. **Add FFI exports** (`goud_engine/src/ffi/`)
-3. **Run `cargo build`** -- this triggers csbindgen for C# bindings
-4. **Update codegen schema** (`codegen/goud_sdk.schema.json`)
-5. **Run codegen generators** to update C#, Python, and TypeScript SDKs
-6. **Verify parity** with the `/sdk-parity-check` skill if available
-
-DRY validation: search for method implementations in both Rust and SDK code.
-If logic exists in an SDK, it MUST be moved to Rust.
-
-## Key Development Notes
-
-### Git Hooks
-Two hooks are configured:
-- **pre-commit**: Fast checks (format, clippy, basic tests, Python SDK)
-- **pre-push**: Comprehensive checks (full test suite, doctests, security)
-
-After modifying `.husky/hooks/pre-commit` or `.husky/hooks/pre-push`:
-```bash
-cargo clean && cargo test  # Required for husky-rs to reload
-```
-
-### Agent Config Generation
-Agent wrappers for Codex and Claude are generated from the canonical catalog:
-```bash
-python3 scripts/sync-agent-configs.py          # Regenerate wrappers
-python3 scripts/sync-agent-configs.py --check  # Drift check (non-zero on mismatch)
-```
 Source of truth:
-- `.agents/agent-catalog.toml` -- role metadata, model tiers, sandbox intent
-- `.agents/role-specs/*.md` -- shared role instruction bodies
 
-Generated outputs:
-- `.codex/config.toml`
-- `.codex/agents/*.toml`
-- `.claude/agents/*.md`
+- `.agents/agent-catalog.toml`
+- `.agents/role-specs/*.md`
 
-### Default Orchestration Workflow
-Use one active implementation team at a time across Codex and Claude:
-1. Root chooses exactly one workstream
-2. Root dispatches exactly one implementation lead (`engine-lead` or `integration-lead`)
-3. That lead MAY use one small specialist wave, capped at 2 specialists total for the batch
-4. The lead reports back before root dispatches another implementation team
-5. Root runs review agents directly in sequence:
-   - `spec-reviewer`
-   - `code-quality-reviewer`
-   - `architecture-validator`
-   - `security-auditor` only if FFI or unsafe code changed
+Provider intent:
 
-This is the default path. Do NOT treat parallel `engine-lead` + `integration-lead` plus nested fan-out as the normal workflow.
+- Claude is the primary orchestration target.
+- Codex stays available as a thinner fallback configuration.
 
-Fallback ladder when agent dispatch fails due to capacity, timeout, or hang:
-1. Stop nested dispatch immediately
-2. Do not retry the same fan-out shape
-3. Fall back to `quick-fix` for single-file work, or one direct worker/specialist from root
-4. Continue the review sequence from root after implementation completes
+## Rules Worth Reading
 
-`quality-lead` remains available for exceptional audit-heavy sessions. It is not part of the default execution path.
+Read only the rules that match the area you are changing:
 
-### Module Dependencies
-Generate visual dependency graph:
-```bash
-./graph.sh  # Creates module_graph.png and .pdf
-```
+- `.agents/rules/dependency-hierarchy.md`
+- `.agents/rules/ffi-patterns.md`
+- `.agents/rules/testing.md`
+- `.agents/rules/sdk-development.md`
+- `.agents/rules/graphics-patterns.md`
+- `.agents/rules/ecs-patterns.md`
+- `.agents/rules/asset-patterns.md`
+- `.agents/rules/examples.md`
 
-### Local NuGet Feed
-Location: `$HOME/nuget-local`
+## Local AGENTS Files
 
-### FFI Considerations
-- All public functions in `ffi/` MUST be `#[no_mangle] extern "C"`
-- Structs shared with C#/Python MUST use `#[repr(C)]`
-- Memory management crosses the FFI boundary -- document ownership on every pointer parameter
-- Component FFI exports are in `ffi/component_*.rs` files
+Only a small set of local `AGENTS.md` files should remain:
 
-### Graphics Testing Focus
-Currently improving test coverage for graphics components:
-- Texture system (`texture.rs`, `texture_manager.rs`)
-- Cameras (`camera2d.rs`, `camera3d.rs`)
-- Shader programs (`shader_program.rs`)
-- Tiled map support (`tiled.rs`)
-
-### Testing Graphics Components
-When testing graphics code:
-1. Many tests require OpenGL context (may fail in CI)
-2. Use `test_helpers::init_test_context()` for tests needing GL
-3. Texture tests may need valid image files in `assets/`
-
-### Worktree Execution Protocol
-
-When working in a git worktree (created by `/gh-issue --worktree` or `git worktree add`):
-
-1. **Canonical run directory**: `/gh-issue` stores the shared contract in `.agents/runs/gh-issue/<primary>-<slug>/` with `plan.md` and `state.json`.
-2. **Working directory**: The worktree path is in the plan's Metadata section. ALL
-   Bash commands MUST use `cd <worktree-path> &&` prefix -- cwd resets between calls.
-3. **Branch isolation**: The worktree has its own branch. Never checkout main inside a worktree.
-4. **Parallel safety**: Multiple worktrees run simultaneously. Never modify the main repo
-   working tree from a worktree session.
-5. **Subagent working directory**: When dispatching subagents, ALWAYS include the worktree
-   absolute path in the prompt. Subagents do not inherit your cwd.
-6. **Cleanup**: After PR creation and once the shared run is complete, remove the worktree from the main repo:
-   `cd /path/to/main/repo && git worktree remove <worktree-path>`
-
-### Plan Execution Protocol
-
-When executing a plan (from `.claude/plans/`, `.codex/plans/`, `.agents/runs/gh-issue/*/plan.md`, or any plan file):
-
-1. **Read Metadata first** -- it has your working directory, branch, issues, and mode.
-2. **Shared gh-issue runs**: If `.agents/runs/gh-issue/<primary>-<slug>/plan.md` exists, treat that
-   plan and its sibling `state.json` as the canonical execution contract across Claude and Codex.
-   Runner-local state supplements it; it does not replace it.
-3. **You are the ORCHESTRATOR** -- you MUST NOT write .rs/.cs/.py files directly.
-   Dispatch one implementation lead at a time (`engine-lead` or `integration-lead`) or
-   `quick-fix` for a trivial single-file change. The default review path is direct
-   root-dispatched reviewers, not `quality-lead`.
-4. **Subagent dispatch steps** in the plan contain literal prompts. Use them verbatim.
-5. **Review gates are sequential** -- spec-reviewer MUST approve before code-quality-reviewer.
-   The review-gate-guard hook enforces this.
-6. **Check off `- [ ]` items** as you complete them.
-7. **The plan references the skill that created it** -- read that skill's SKILL.md if you
-   need additional context about the workflow pattern.
-8. **PR creation uses `.github/pull_request_template.md`** -- read it and fill in all sections.
-9. **CI must pass** -- check with `gh pr checks <number>` before finishing.
-
-### Subagent Dispatch Reference
-
-| Role | Model | Dispatched By | Use For |
-|------|-------|---------------|---------|
-| engine-lead | opus | Orchestrator | One active Rust/core implementation workstream at a time |
-| integration-lead | opus | Orchestrator | One active FFI/SDK/codegen workstream at a time |
-| quality-lead | opus | Orchestrator | Exceptional audit-heavy review/testing session |
-| quick-fix | haiku | Any lead or orchestrator | Single-file trivial fixes |
-| implementer | sonnet | engine-lead | General Rust implementation |
-| test-first-implementer | sonnet | engine-lead | TDD red-green-refactor |
-| ffi-implementer | sonnet | integration-lead | FFI boundary changes |
-| sdk-implementer | sonnet | integration-lead | SDK wrapper development |
-| spec-reviewer | sonnet | Orchestrator or quality-lead | First review gate |
-| code-quality-reviewer | sonnet | Orchestrator or quality-lead | Second review gate |
-| architecture-validator | haiku | Orchestrator or quality-lead | Layer hierarchy check |
-| debugger | sonnet | engine-lead, integration-lead, or orchestrator | Root-cause analysis for failures |
-| security-auditor | opus | Orchestrator or quality-lead | FFI/unsafe audit (SEQUENTIAL ONLY) |
-| test-runner | sonnet | Orchestrator or quality-lead | Run and analyze tests |
-
-When dispatching, ALWAYS include in the prompt:
-- Absolute working directory path (worktree or repo root)
-- Specific files to examine/modify
-- Verification commands to run (`cargo check`, `cargo test`, etc.)
-- What to report back (files changed, test results, verdict)
-
-Implementation-team defaults:
-- Root runs one implementation lead at a time
-- A lead MAY use one specialist wave with at most 2 specialists total
-- If dispatch capacity is tight, root falls back to `quick-fix` or one direct worker/specialist instead of retrying nested fan-out
-
-## Example Games
-
-Examples are organized by SDK language:
-
-**C# Examples** (`examples/csharp/`):
-- `flappy_goud/` -- Flappy Bird clone
-- `3d_cube/` -- 3D rendering demo
-- `goud_jumper/` -- Platformer game
-- `isometric_rpg/` -- Isometric RPG demo
-- `hello_ecs/` -- ECS basics
-- `feature_lab/` -- Headless feature-lab smoke checks
-
-**Python Examples** (`examples/python/`):
-- `main.py` -- Python SDK demo
-- `flappy_bird.py` -- Python Flappy Bird clone
-
-**TypeScript Examples** (`examples/typescript/`):
-- `flappy_bird/desktop.ts` -- Flappy Bird (Node.js desktop via napi)
-- `flappy_bird/web/` -- Flappy Bird (browser via WASM)
-
-**Rust Examples** (`examples/rust/`):
-- (Future Rust SDK examples)
-
-The Python and TypeScript Flappy Bird examples mirror the C# version, demonstrating SDK parity.
-
-## Coding Standards & Domain Patterns
-
-Detailed rules live in `.agents/rules/`. Read the relevant file(s) before working in that area:
-
-| Rule File | When to Read |
-|-----------|-------------|
-| `dependency-hierarchy.md` | Any cross-module changes |
-| `ffi-patterns.md` | FFI boundary work |
-| `testing.md` | Writing or modifying tests |
-| `tdd-workflow.md` | New feature implementation |
-| `discovery-first.md` | Before modifying any file |
-| `graphics-patterns.md` | Graphics/rendering changes |
-| `ecs-patterns.md` | ECS/entity/component changes |
-| `asset-patterns.md` | Asset loading/management |
-| `sdk-development.md` | SDK wrapper work |
-| `examples.md` | Example game changes |
+- repo root
+- `codegen/`
+- `goud_engine/src/ffi/`
+- `sdks/typescript/`
+- `examples/`

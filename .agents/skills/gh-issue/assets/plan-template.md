@@ -9,115 +9,30 @@
 - **Canonical run directory**: `${RUN_DIR}`
 - **Created**: ${CREATED_AT}
 
-## Non-Negotiables
-- [ ] Read this file before doing any work.
-- [ ] Read `state.json` before doing any work.
-- [ ] In worktree mode, every command starts with `cd ${WORKING_DIRECTORY} &&`.
-- [ ] Do not implement non-trivial work directly. Dispatch team leads.
-- [ ] Run `spec-reviewer` before `code-quality-reviewer`.
-- [ ] Stay with the PR until checks pass and review feedback is handled.
-- [ ] Do related cleanup now unless it is already tracked elsewhere and out of scope.
-
-## Resume Protocol
-- [ ] Run `python3 .agents/skills/gh-issue/scripts/gh_issue_run.py validate-resume --run-dir ${RUN_DIR} --cwd "$PWD" --branch "$(git branch --show-current)"`
-- [ ] Read the first todo in `state.json` that is not `done`
-- [ ] Confirm branch `${BRANCH}` and working directory `${WORKING_DIRECTORY}` before implementation
-
-## Issue Summary
+## Summary
 ${ISSUE_SUMMARY}
 
-## Run Bootstrap
-- [ ] Create or confirm the branch `${BRANCH}`
-- [ ] Create or confirm the canonical run directory `${RUN_DIR}`
-- [ ] Create or confirm `plan.md` and `state.json`
-- [ ] Update `state.json` phase to `bootstrapped`
+## Workflow
 
-## Implementation
+### Investigate
+- Confirm issue scope, constraints, and related cleanup.
 
-For each non-trivial batch, dispatch the correct team lead:
+### Implement
+- Use one implementation agent for the main change set.
+- Prefer `engine-lead` for engine/core work.
+- Prefer `integration-lead` for FFI/SDK/codegen work.
+- Use `quick-fix` only for tightly scoped follow-up edits.
 
-- [ ] **{{TEAM_LEAD_TYPE}}** — {{TASK_SUMMARY}}
+### Verify
+- Run the smallest command set that proves the changed surface is healthy.
 
-  Dispatch prompt:
-  ```text
-  Working directory: ${WORKING_DIRECTORY}
+### Review
+- Run one `reviewer` pass.
+- Add `security-auditor` only when the change touches FFI, unsafe, or memory ownership.
 
-  Task:
-  {{DETAILED_TASK_DESCRIPTION}}
+### PR
+- Push, open or update the PR, poll briefly, then summarize status instead of idling indefinitely.
 
-  Files to examine/modify:
-  {{FILE_LIST}}
-
-  Constraints:
-  - Use TDD where practical
-  - Keep changes inside the assigned area
-  - Run cargo check and cargo test after changes
-  - Report files changed, tests run, verification results, and concerns
-  ```
-
-- [ ] Keep todos and review gates in `state.json` in sync after every meaningful step
-
-## Verification
-- [ ] `cd ${WORKING_DIRECTORY} && cargo check`
-- [ ] `cd ${WORKING_DIRECTORY} && cargo fmt --all -- --check`
-- [ ] `cd ${WORKING_DIRECTORY} && cargo clippy -- -D warnings`
-- [ ] `cd ${WORKING_DIRECTORY} && cargo test`
-
-## Review Gates
-
-- [ ] **spec-reviewer** (MUST run first)
-
-  ```text
-  Working directory: ${WORKING_DIRECTORY}
-  Diff base: origin/main
-
-  Check:
-  - requirements coverage against issue acceptance criteria
-  - code quality and anti-patterns
-  - layer boundaries
-
-  End with a verdict: APPROVED, REJECTED, or CHANGES REQUESTED.
-  Cite specific files and line numbers for any problem.
-  ```
-
-  Verdict: {{SPEC_VERDICT}}
-
-- [ ] **code-quality-reviewer** (MUST run after spec-reviewer)
-
-  ```text
-  Working directory: ${WORKING_DIRECTORY}
-  Diff base: origin/main
-
-  Check:
-  - code quality, naming, structure
-  - anti-patterns from CLAUDE.md
-  - layer boundaries
-  - FFI or unsafe handling when relevant
-
-  End with a verdict: APPROVED, REJECTED, or CHANGES REQUESTED.
-  Cite specific files and line numbers for any problem.
-  ```
-
-  Verdict: {{QUALITY_VERDICT}}
-
-- [ ] **architecture-validator**
-
-  Verdict: {{ARCH_VERDICT}}
-
-- [ ] **security-auditor** if FFI or unsafe changes are involved (sequential only)
-
-  Verdict: {{SECURITY_VERDICT}}
-
-## PR Loop
-- [ ] Push changes: `cd ${WORKING_DIRECTORY} && git push -u origin ${BRANCH}`
-- [ ] Read PR template: `cat .github/pull_request_template.md`
-- [ ] Create PR: `gh pr create --title "{{PR_TITLE}}" --body "$(cat <<'EOF' ... EOF)"`
-- [ ] Record the PR number in `state.json`
-- [ ] Poll PR status: `gh pr checks {{PR_NUMBER}}`
-- [ ] Address review blockers and warnings — push fixes, re-poll
-- [ ] Update `state.json` after each PR loop pass
-
-## Cleanup
-- [ ] Comment on issue: `gh issue comment ${PRIMARY_ISSUE} --body "Resolved in #{{PR_NUMBER}}"`
-- [ ] Remove finished worktree: `cd ${MAIN_REPO_PATH} && git worktree remove ${WORKING_DIRECTORY}`
-- [ ] Mark cleanup status in `state.json`
+## Notes
+- In worktree mode, commands should start with `cd ${WORKING_DIRECTORY} &&`.
+- Use the run state to resume cleanly after interruptions.

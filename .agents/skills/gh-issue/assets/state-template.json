@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "run_id": "",
   "primary_issue": "",
   "issues": [],
@@ -25,19 +25,19 @@
     },
     {
       "id": "implementation",
-      "title": "Dispatch implementation work",
+      "title": "Complete the main implementation pass",
       "owner": "orchestrator",
       "status": "pending"
     },
     {
       "id": "review",
-      "title": "Run review gates",
-      "owner": "quality-lead",
+      "title": "Run reviewer and optional security audit",
+      "owner": "reviewer",
       "status": "pending"
     },
     {
-      "id": "pr-loop",
-      "title": "Track PR until clean",
+      "id": "pr",
+      "title": "Open or update the PR and capture status",
       "owner": "orchestrator",
       "status": "pending"
     },
@@ -49,9 +49,7 @@
     }
   ],
   "review_gates": {
-    "spec-reviewer": "pending",
-    "code-quality-reviewer": "pending",
-    "architecture-validator": "pending",
+    "reviewer": "pending",
     "security-auditor": "not_required"
   },
   "pr": {
