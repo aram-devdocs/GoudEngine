@@ -1,19 +1,5 @@
 {
   "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/context-loader.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/role-marker.sh"
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
@@ -30,65 +16,17 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/secret-scanner.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/delegation-guard.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Agent",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/review-gate-guard.sh"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Agent",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/delegation-tracker.sh"
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/challenge-injector.sh"
           }
         ]
       }
     ],
     "SubagentStop": [
       {
-        "matcher": "spec-reviewer|code-quality-reviewer",
+        "matcher": "reviewer",
         "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/review-gate-tracker.sh"
-          },
           {
             "type": "command",
             "command": "bash .claude/hooks/review-verdict-validator.sh"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/save-session.sh"
           }
         ]
       }

@@ -328,10 +328,8 @@ def command_poll_pr(args: argparse.Namespace) -> int:
     state["pr"]["last_poll"] = utc_now()
     if ready_to_merge:
         state["phase"] = "cleanup"
-    elif ci_state == "pending":
-        state["phase"] = "waiting-ci"
     else:
-        state["phase"] = "waiting-review"
+        state["phase"] = "pr"
     write_state(state_path, state)
 
     return output({

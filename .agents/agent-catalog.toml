@@ -5,87 +5,41 @@ version = 1
 
 role_order = [
   "default",
-  "worker",
-  "explorer",
-  "monitor",
   "engine-lead",
   "integration-lead",
-  "quality-lead",
-  "implementer",
-  "test-first-implementer",
   "quick-fix",
-  "ffi-implementer",
-  "sdk-implementer",
-  "spec-reviewer",
-  "code-quality-reviewer",
-  "architecture-validator",
+  "reviewer",
   "security-auditor",
-  "test-runner",
   "debugger",
-  "documentation-writer",
-  "graphics-domain-expert",
-  "ecs-domain-expert",
-  "ffi-domain-expert",
 ]
 
 [settings]
-# Codex tier policy:
-# - high tier roles use gpt-5.4
-# - standard tier roles use gpt-5.3-codex
-# - fast tier roles use gpt-5.3-codex-spark
 root_model = "gpt-5.4"
-root_plan_mode_reasoning_effort = "xhigh"
-codex_max_threads = 2
-codex_max_depth = 2
+root_model_reasoning_effort = "high"
+root_plan_mode_reasoning_effort = "high"
+codex_max_threads = 1
+codex_max_depth = 1
 shared_team_mode = "single-lead"
-shared_max_specialists_per_lead = 2
+shared_max_specialists_per_lead = 1
 shared_fallback_mode = "single-agent"
-job_max_runtime_seconds = 3600
+job_max_runtime_seconds = 1800
 
 [roles.default]
-description = "General-purpose fallback role for orchestration and synthesis."
+description = "General-purpose orchestrator and fallback agent."
 spec_file = ".agents/role-specs/default.md"
 tier = "high"
+codex_enabled = true
 codex_model = "gpt-5.4"
 codex_model_reasoning_effort = "high"
 codex_sandbox_mode = "workspace-write"
 nickname_candidates = ["Northstar", "Beacon"]
 claude_enabled = false
 
-[roles.worker]
-description = "Execution-focused role for targeted implementation and fixes."
-spec_file = ".agents/role-specs/worker.md"
-tier = "standard"
-codex_model = "gpt-5.3-codex"
-codex_model_reasoning_effort = "medium"
-codex_sandbox_mode = "workspace-write"
-nickname_candidates = ["Builder", "Fixer"]
-claude_enabled = false
-
-[roles.explorer]
-description = "Read-heavy codebase exploration role for discovery and evidence gathering."
-spec_file = ".agents/role-specs/explorer.md"
-tier = "fast"
-codex_model = "gpt-5.3-codex-spark"
-codex_model_reasoning_effort = "medium"
-codex_sandbox_mode = "read-only"
-nickname_candidates = ["Scout", "Pathfinder"]
-claude_enabled = false
-
-[roles.monitor]
-description = "Long-running command and status monitoring role optimized for polling and waiting."
-spec_file = ".agents/role-specs/monitor.md"
-tier = "fast"
-codex_model = "gpt-5.3-codex-spark"
-codex_model_reasoning_effort = "low"
-codex_sandbox_mode = "read-only"
-nickname_candidates = ["Sentinel", "Watcher"]
-claude_enabled = false
-
 [roles.engine-lead]
-description = "Sub-orchestrator for Rust core engine, graphics, ECS, and asset system"
+description = "Direct implementation agent for Rust engine and core modules."
 spec_file = ".agents/role-specs/engine-lead.md"
 tier = "high"
+codex_enabled = false
 codex_model = "gpt-5.4"
 codex_model_reasoning_effort = "high"
 codex_sandbox_mode = "workspace-write"
@@ -95,12 +49,13 @@ claude_enabled = true
 [roles.engine-lead.claude]
 model = "opus"
 permission_mode = "default"
-tools = ["Read", "Edit", "Write", "Bash", "Grep", "Glob", "Agent"]
+tools = ["Read", "Edit", "Write", "Bash", "Grep", "Glob"]
 
 [roles.integration-lead]
-description = "Sub-orchestrator for FFI boundary, C# SDK, Python SDK, and codegen"
+description = "Direct implementation agent for FFI, SDKs, and codegen."
 spec_file = ".agents/role-specs/integration-lead.md"
 tier = "high"
+codex_enabled = false
 codex_model = "gpt-5.4"
 codex_model_reasoning_effort = "high"
 codex_sandbox_mode = "workspace-write"
@@ -110,57 +65,13 @@ claude_enabled = true
 [roles.integration-lead.claude]
 model = "opus"
 permission_mode = "default"
-tools = ["Read", "Edit", "Write", "Bash", "Grep", "Glob", "Agent"]
-
-[roles.quality-lead]
-description = "Sub-orchestrator for reviews, testing, architecture validation, and security"
-spec_file = ".agents/role-specs/quality-lead.md"
-tier = "high"
-codex_model = "gpt-5.4"
-codex_model_reasoning_effort = "high"
-codex_sandbox_mode = "workspace-write"
-nickname_candidates = ["Gatekeeper", "Verifier"]
-claude_enabled = true
-
-[roles.quality-lead.claude]
-model = "opus"
-permission_mode = "default"
-tools = ["Read", "Edit", "Write", "Bash", "Grep", "Glob", "Agent"]
-
-[roles.implementer]
-description = "General Rust implementation agent for engine core changes"
-spec_file = ".agents/role-specs/implementer.md"
-tier = "standard"
-codex_model = "gpt-5.3-codex"
-codex_model_reasoning_effort = "medium"
-codex_sandbox_mode = "workspace-write"
-nickname_candidates = ["Hammer", "Maker"]
-claude_enabled = true
-
-[roles.implementer.claude]
-model = "sonnet"
-permission_mode = "default"
-tools = ["Read", "Edit", "Write", "Bash", "Grep", "Glob"]
-
-[roles.test-first-implementer]
-description = "TDD RED phase agent -- writes failing tests before implementation"
-spec_file = ".agents/role-specs/test-first-implementer.md"
-tier = "standard"
-codex_model = "gpt-5.3-codex"
-codex_model_reasoning_effort = "medium"
-codex_sandbox_mode = "workspace-write"
-nickname_candidates = ["RedGreen", "Specsmith"]
-claude_enabled = true
-
-[roles.test-first-implementer.claude]
-model = "sonnet"
-permission_mode = "default"
 tools = ["Read", "Edit", "Write", "Bash", "Grep", "Glob"]
 
 [roles.quick-fix]
-description = "Lightweight single-file fixer for trivial changes"
+description = "Single-file or tightly scoped fixer for low-risk changes."
 spec_file = ".agents/role-specs/quick-fix.md"
 tier = "fast"
+codex_enabled = true
 codex_model = "gpt-5.3-codex-spark"
 codex_model_reasoning_effort = "low"
 codex_sandbox_mode = "workspace-write"
@@ -172,85 +83,27 @@ model = "haiku"
 permission_mode = "default"
 tools = ["Read", "Edit", "Bash", "Grep", "Glob"]
 
-[roles.ffi-implementer]
-description = "FFI boundary specialist for cross-language interop"
-spec_file = ".agents/role-specs/ffi-implementer.md"
+[roles.reviewer]
+description = "Single review pass for requirements, tests, and major quality regressions."
+spec_file = ".agents/role-specs/reviewer.md"
 tier = "standard"
-codex_model = "gpt-5.3-codex"
-codex_model_reasoning_effort = "medium"
-codex_sandbox_mode = "workspace-write"
-nickname_candidates = ["ABI", "Interop"]
-claude_enabled = true
-
-[roles.ffi-implementer.claude]
-model = "sonnet"
-permission_mode = "default"
-tools = ["Read", "Edit", "Write", "Bash", "Grep", "Glob"]
-
-[roles.sdk-implementer]
-description = "SDK wrapper development for C# and Python bindings"
-spec_file = ".agents/role-specs/sdk-implementer.md"
-tier = "standard"
-codex_model = "gpt-5.3-codex"
-codex_model_reasoning_effort = "medium"
-codex_sandbox_mode = "workspace-write"
-nickname_candidates = ["Binder", "Wrapper"]
-claude_enabled = true
-
-[roles.sdk-implementer.claude]
-model = "sonnet"
-permission_mode = "default"
-tools = ["Read", "Edit", "Write", "Bash", "Grep", "Glob"]
-
-[roles.spec-reviewer]
-description = "First review gate -- validates implementation matches spec/task"
-spec_file = ".agents/role-specs/spec-reviewer.md"
-tier = "standard"
+codex_enabled = true
 codex_model = "gpt-5.3-codex"
 codex_model_reasoning_effort = "high"
 codex_sandbox_mode = "read-only"
-nickname_candidates = ["SpecGuard", "Baseline"]
+nickname_candidates = ["Baseline", "Verifier"]
 claude_enabled = true
 
-[roles.spec-reviewer.claude]
+[roles.reviewer.claude]
 model = "sonnet"
-permission_mode = "plan"
-tools = ["Read", "Grep", "Glob"]
-
-[roles.code-quality-reviewer]
-description = "Second review gate -- code patterns, anti-patterns, and quality"
-spec_file = ".agents/role-specs/code-quality-reviewer.md"
-tier = "standard"
-codex_model = "gpt-5.3-codex"
-codex_model_reasoning_effort = "high"
-codex_sandbox_mode = "read-only"
-nickname_candidates = ["Lintbrain", "Refiner"]
-claude_enabled = true
-
-[roles.code-quality-reviewer.claude]
-model = "sonnet"
-permission_mode = "plan"
-tools = ["Read", "Grep", "Glob"]
-
-[roles.architecture-validator]
-description = "Layer rule validation and dependency direction checker"
-spec_file = ".agents/role-specs/architecture-validator.md"
-tier = "fast"
-codex_model = "gpt-5.3-codex-spark"
-codex_model_reasoning_effort = "medium"
-codex_sandbox_mode = "read-only"
-nickname_candidates = ["LayerLens", "Boundary"]
-claude_enabled = true
-
-[roles.architecture-validator.claude]
-model = "haiku"
 permission_mode = "plan"
 tools = ["Read", "Grep", "Glob"]
 
 [roles.security-auditor]
-description = "FFI safety, unsafe blocks, and memory ownership auditor"
+description = "Focused audit for FFI safety, unsafe code, and memory ownership."
 spec_file = ".agents/role-specs/security-auditor.md"
 tier = "high"
+codex_enabled = false
 codex_model = "gpt-5.4"
 codex_model_reasoning_effort = "high"
 codex_sandbox_mode = "read-only"
@@ -262,92 +115,18 @@ model = "opus"
 permission_mode = "plan"
 tools = ["Read", "Grep", "Glob"]
 
-[roles.test-runner]
-description = "Test execution, fixture creation, and coverage analysis"
-spec_file = ".agents/role-specs/test-runner.md"
-tier = "standard"
-codex_model = "gpt-5.3-codex"
-codex_model_reasoning_effort = "medium"
-codex_sandbox_mode = "workspace-write"
-nickname_candidates = ["Harness", "Runner"]
-claude_enabled = true
-
-[roles.test-runner.claude]
-model = "sonnet"
-permission_mode = "default"
-tools = ["Read", "Bash", "Grep", "Glob"]
-
 [roles.debugger]
-description = "Root cause analysis for failing tests and runtime errors"
+description = "Root-cause analyst for failing tests, runtime errors, and verification gaps."
 spec_file = ".agents/role-specs/debugger.md"
 tier = "standard"
+codex_enabled = false
 codex_model = "gpt-5.3-codex"
-codex_model_reasoning_effort = "high"
-codex_sandbox_mode = "workspace-write"
+codex_model_reasoning_effort = "medium"
+codex_sandbox_mode = "read-only"
 nickname_candidates = ["Tracer", "RootCause"]
 claude_enabled = true
 
 [roles.debugger.claude]
 model = "sonnet"
-permission_mode = "default"
-tools = ["Read", "Bash", "Grep", "Glob"]
-
-[roles.documentation-writer]
-description = "Documentation and README updates with natural writing style"
-spec_file = ".agents/role-specs/documentation-writer.md"
-tier = "standard"
-codex_model = "gpt-5.3-codex"
-codex_model_reasoning_effort = "medium"
-codex_sandbox_mode = "workspace-write"
-nickname_candidates = ["Scribe", "Docsmith"]
-claude_enabled = true
-
-[roles.documentation-writer.claude]
-model = "sonnet"
-permission_mode = "default"
-tools = ["Read", "Edit", "Write", "Grep", "Glob"]
-
-[roles.graphics-domain-expert]
-description = "OpenGL, rendering pipeline, shader, and camera expertise"
-spec_file = ".agents/role-specs/graphics-domain-expert.md"
-tier = "fast"
-codex_model = "gpt-5.3-codex-spark"
-codex_model_reasoning_effort = "medium"
-codex_sandbox_mode = "read-only"
-nickname_candidates = ["Raster", "Shader"]
-claude_enabled = true
-
-[roles.graphics-domain-expert.claude]
-model = "sonnet"
 permission_mode = "plan"
-tools = ["Read", "Grep", "Glob"]
-
-[roles.ecs-domain-expert]
-description = "Entity-Component-System architecture guidance"
-spec_file = ".agents/role-specs/ecs-domain-expert.md"
-tier = "fast"
-codex_model = "gpt-5.3-codex-spark"
-codex_model_reasoning_effort = "medium"
-codex_sandbox_mode = "read-only"
-nickname_candidates = ["Archetype", "Systemic"]
-claude_enabled = true
-
-[roles.ecs-domain-expert.claude]
-model = "sonnet"
-permission_mode = "plan"
-tools = ["Read", "Grep", "Glob"]
-
-[roles.ffi-domain-expert]
-description = "Cross-language FFI, csbindgen, ctypes, and memory management"
-spec_file = ".agents/role-specs/ffi-domain-expert.md"
-tier = "fast"
-codex_model = "gpt-5.3-codex-spark"
-codex_model_reasoning_effort = "medium"
-codex_sandbox_mode = "read-only"
-nickname_candidates = ["Wireframe", "Bridgeguard"]
-claude_enabled = true
-
-[roles.ffi-domain-expert.claude]
-model = "sonnet"
-permission_mode = "plan"
-tools = ["Read", "Grep", "Glob"]
+tools = ["Read", "Grep", "Glob", "Bash"]
