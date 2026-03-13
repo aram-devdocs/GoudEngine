@@ -108,6 +108,16 @@ impl GoudContextRegistry {
 
         if config.debugger.enabled {
             let route = debugger::register_context(id, surface_kind, &config.debugger);
+            let context_id_for_hook = id;
+            debugger::register_snapshot_refresh_hook_for_route(
+                route.clone(),
+                move |_route_id| {
+                    let _ =
+                        crate::ffi::debug::debugger_runtime::refresh_debugger_snapshot(
+                            context_id_for_hook,
+                        );
+                },
+            );
             if let Some(context) = self.get_mut(id) {
                 context.set_debugger_route(Some(route));
             }
@@ -141,7 +151,8 @@ impl GoudContextRegistry {
                 self.slots[index] = ContextSlot::Free { next_generation };
                 self.free_list.push(id.index());
 
-                if route_to_remove.is_some() {
+                if let Some(ref route_id) = route_to_remove {
+                    debugger::unregister_snapshot_refresh_hook_for_route(route_id);
                     debugger::unregister_context(id);
                 }
 

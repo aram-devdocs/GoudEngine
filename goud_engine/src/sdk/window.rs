@@ -170,9 +170,22 @@ impl GoudGame {
             backend.set_viewport(0, 0, fb_size.0, fb_size.1);
         }
 
+        // Keep capture dimensions in sync with the current framebuffer size.
+        #[cfg(feature = "native")]
+        if let Some(ref dims) = self.capture_dimensions {
+            dims.store(
+                ((fb_size.0 as u64) << 32) | fb_size.1 as u64,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+        }
+
         self.process_ui_frame_with_viewport(fb_size);
-        self.context.update(dt);
-        Ok(dt)
+
+        // Debugger frame lifecycle: begin frame with timing/pause control.
+        let effective_dt = self.prepare_runtime_frame(dt);
+
+        self.context.update(effective_dt);
+        Ok(effective_dt)
     }
 
     /// Presents the rendered frame by swapping front and back buffers.
@@ -183,6 +196,15 @@ impl GoudGame {
     ///
     /// Returns an error if no platform backend is initialized.
     pub fn swap_buffers(&mut self) -> GoudResult<()> {
+        // Service deferred capture before swap (back buffer still valid).
+        #[cfg(feature = "native")]
+        {
+            self.service_deferred_capture();
+        }
+
+        // Debugger frame lifecycle: push render stats, entity data, end frame.
+        self.finish_runtime_frame();
+
         match &mut self.platform {
             Some(platform) => {
                 platform.swap_buffers();

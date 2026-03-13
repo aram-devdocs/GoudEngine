@@ -86,7 +86,11 @@ pub use runtime::snapshot_json_for_context;
 #[doc(inline)]
 pub use runtime::take_frame_control_for_route;
 #[doc(inline)]
+pub use runtime::register_snapshot_refresh_hook_for_route;
+#[doc(inline)]
 pub use runtime::unregister_capture_hook_for_route;
+#[doc(inline)]
+pub use runtime::unregister_snapshot_refresh_hook_for_route;
 #[doc(inline)]
 pub use runtime::unregister_context;
 #[doc(inline)]

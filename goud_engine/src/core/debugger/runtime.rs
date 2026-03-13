@@ -16,12 +16,16 @@ mod control;
 mod debug_draw;
 mod metrics;
 mod replay;
+mod snapshot_refresh;
 mod state;
 
 pub use attach::{AttachAcceptedV1, AttachHelloV1};
 pub use capture::{
     capture_frame_for_route, register_capture_hook_for_route, unregister_capture_hook_for_route,
     RawFramebufferReadbackV1,
+};
+pub use snapshot_refresh::{
+    register_snapshot_refresh_hook_for_route, unregister_snapshot_refresh_hook_for_route,
 };
 pub use control::{
     control_state_for_route, dispatch_request_json_for_route, take_frame_control_for_route,
@@ -489,4 +493,5 @@ pub(crate) fn reset_for_tests() {
         cell.replace(None);
     });
     capture::clear_capture_hooks_for_tests();
+    snapshot_refresh::clear_snapshot_refresh_hooks_for_tests();
 }

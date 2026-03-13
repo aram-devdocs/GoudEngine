@@ -3,6 +3,10 @@
 mod ecs_scene;
 
 use std::sync::atomic::{AtomicU32, Ordering};
+#[cfg(feature = "native")]
+use std::sync::atomic::AtomicU64;
+#[cfg(feature = "native")]
+use std::sync::{Arc, Condvar, Mutex};
 
 use crate::context_registry::scene::SceneManager;
 use crate::core::context_id::GoudContextId;
@@ -28,6 +32,20 @@ use crate::rendering::sprite_batch::SpriteBatch;
 use crate::rendering::text::TextBatch;
 #[cfg(feature = "native")]
 use crate::rendering::UiRenderSystem;
+
+/// Shared state for deferred framebuffer capture.
+///
+/// The IPC handler thread sets `requested = true` and waits on the condvar.
+/// The main thread (in `swap_buffers`) checks `requested`, does the GL readback,
+/// stores the result, and notifies the condvar.
+#[cfg(feature = "native")]
+pub(crate) struct DeferredCaptureState {
+    requested: bool,
+    result: Option<Result<debugger::RawFramebufferReadbackV1, String>>,
+}
+
+#[cfg(feature = "native")]
+type DeferredCapture = Arc<(Mutex<DeferredCaptureState>, Condvar)>;
 
 /// The main game instance managing the ECS world and game loop.
 ///
@@ -121,6 +139,16 @@ pub struct GoudGame {
     /// Centralized audio playback manager.
     #[cfg(feature = "native")]
     pub(crate) audio_manager: Option<crate::assets::AudioManager>,
+
+    /// Shared framebuffer dimensions for the debugger capture hook.
+    /// Packed as `(width << 32) | height`. Read by the capture hook closure.
+    #[cfg(feature = "native")]
+    #[allow(dead_code)]
+    pub(crate) capture_dimensions: Option<Arc<AtomicU64>>,
+
+    /// Deferred capture coordination between IPC thread and main GL thread.
+    #[cfg(feature = "native")]
+    pub(crate) deferred_capture: Option<DeferredCapture>,
 }
 
 /// Initializes the logger, diagnostic mode from environment, and optionally
@@ -244,8 +272,108 @@ impl GoudGame {
 
     pub(crate) fn finish_runtime_frame(&mut self) {
         if let Some(route_id) = self.debugger_route.as_ref() {
+            // Push render stats from sprite batch if available.
+            #[cfg(feature = "native")]
+            if let Some(batch) = &self.sprite_batch {
+                let (sprite_count, batch_count, _ratio) = batch.stats();
+                // Each sprite is a quad = 2 triangles; one draw call per batch.
+                let _ = debugger::update_render_stats_for_context(
+                    GoudContextId::new(
+                        route_id.context_id as u32,
+                        (route_id.context_id >> 32) as u32,
+                    ),
+                    batch_count as u32,
+                    (sprite_count * 2) as u32,
+                    batch_count as u32,
+                    1,
+                );
+            }
+
+            // Eagerly push entity/scene data so IPC snapshots are fresh.
+            self.refresh_debugger_snapshot_data(route_id);
+
             debugger::end_frame(route_id);
         }
+    }
+
+    /// Services a pending deferred capture request by performing the GL
+    /// readback on the current (main) thread, then notifying the waiting
+    /// IPC thread.
+    #[cfg(feature = "native")]
+    pub(crate) fn service_deferred_capture(&self) {
+        let Some(ref deferred) = self.deferred_capture else {
+            return;
+        };
+        let (lock, cvar) = &**deferred;
+        let mut guard = match lock.lock() {
+            Ok(g) => g,
+            Err(poisoned) => poisoned.into_inner(),
+        };
+        if !guard.requested {
+            return;
+        }
+        let (w, h) = self.get_framebuffer_size();
+        let result = OpenGLBackend::read_framebuffer_standalone(w, h)
+            .map(|rgba8| debugger::RawFramebufferReadbackV1 {
+                width: w,
+                height: h,
+                rgba8,
+            })
+            .map_err(|e| format!("framebuffer readback failed: {e}"));
+        guard.result = Some(result);
+        cvar.notify_all();
+    }
+
+    /// Populates the debugger snapshot with current entity and scene data.
+    fn refresh_debugger_snapshot_data(&self, route_id: &RuntimeRouteId) {
+        let active_scene_name = self
+            .scene_manager
+            .get_scene_name(self.scene_manager.default_scene())
+            .unwrap_or("default")
+            .to_string();
+
+        let selected_entity = debugger::snapshot_for_route(route_id).and_then(|snapshot| {
+            snapshot.selection.entity_id.map(|entity_id| {
+                let scene_id = if snapshot.selection.scene_id.is_empty() {
+                    active_scene_name.clone()
+                } else {
+                    snapshot.selection.scene_id.clone()
+                };
+                (scene_id, entity_id)
+            })
+        });
+
+        let mut entities = Vec::new();
+        let mut entity_count = 0usize;
+        for scene_id in self.scene_manager.active_scenes() {
+            let Some(world) = self.scene_manager.get_scene(*scene_id) else {
+                continue;
+            };
+            entity_count = entity_count.saturating_add(world.entity_count());
+            let scene_name = self
+                .scene_manager
+                .get_scene_name(*scene_id)
+                .unwrap_or("unknown")
+                .to_string();
+            let scene_entities =
+                crate::context_registry::scene::collect_debugger_entities(
+                    world,
+                    scene_name,
+                    selected_entity
+                        .as_ref()
+                        .map(|(scene_id, entity_id)| (scene_id.as_str(), *entity_id)),
+                );
+            entities.extend(scene_entities);
+        }
+
+        let _ = debugger::with_snapshot_mut(route_id, |snapshot| {
+            snapshot.scene.active_scene = active_scene_name.clone();
+            snapshot.scene.entity_count = entity_count as u32;
+            if snapshot.selection.entity_id.is_none() || snapshot.selection.scene_id.is_empty() {
+                snapshot.selection.scene_id = active_scene_name;
+            }
+            snapshot.entities = entities;
+        });
     }
 
     /// Updates cached physics debug shapes according to runtime config.
@@ -305,6 +433,10 @@ impl GoudGame {
             immediate_state: None,
             #[cfg(feature = "native")]
             audio_manager: None,
+            #[cfg(feature = "native")]
+            capture_dimensions: None,
+            #[cfg(feature = "native")]
+            deferred_capture: None,
         })
     }
 
@@ -352,6 +484,54 @@ impl GoudGame {
         let debugger_route =
             Self::register_debugger_route(&config, RuntimeSurfaceKind::WindowedGame);
 
+        // Register deferred capture hook for framebuffer readback if debugger
+        // is enabled.  The hook is invoked from the IPC thread which has no GL
+        // context, so it signals the main thread (via condvar) to do the actual
+        // glReadPixels in swap_buffers().
+        let (capture_dimensions, deferred_capture) = if let Some(ref route_id) = debugger_route {
+            let dims = Arc::new(AtomicU64::new(
+                ((config.width as u64) << 32) | config.height as u64,
+            ));
+            let deferred: DeferredCapture = Arc::new((
+                Mutex::new(DeferredCaptureState {
+                    requested: false,
+                    result: None,
+                }),
+                Condvar::new(),
+            ));
+            let deferred_clone = Arc::clone(&deferred);
+            debugger::register_capture_hook_for_route(route_id.clone(), move || {
+                let (lock, cvar) = &*deferred_clone;
+                let mut guard = lock
+                    .lock()
+                    .map_err(|e| format!("capture lock poisoned: {e}"))?;
+                guard.requested = true;
+                guard.result = None;
+                // Wait up to 5 seconds for the main thread to service the readback.
+                let timeout = std::time::Duration::from_secs(5);
+                loop {
+                    let (new_guard, wait_result) = cvar
+                        .wait_timeout(guard, timeout)
+                        .map_err(|e| format!("capture condvar error: {e}"))?;
+                    guard = new_guard;
+                    if guard.result.is_some() {
+                        break;
+                    }
+                    if wait_result.timed_out() {
+                        guard.requested = false;
+                        return Err(
+                            "capture timed out waiting for main thread readback".to_string()
+                        );
+                    }
+                }
+                guard.requested = false;
+                guard.result.take().unwrap()
+            });
+            (Some(dims), Some(deferred))
+        } else {
+            (None, None)
+        };
+
         Ok(Self {
             scene_manager: SceneManager::new(),
             config,
@@ -374,6 +554,8 @@ impl GoudGame {
             renderer_3d: Some(renderer_3d),
             immediate_state: None,
             audio_manager,
+            capture_dimensions,
+            deferred_capture,
         })
     }
 
@@ -399,6 +581,7 @@ impl GoudGame {
 impl Drop for GoudGame {
     fn drop(&mut self) {
         if let Some(route_id) = self.debugger_route.take() {
+            debugger::unregister_capture_hook_for_route(&route_id);
             debugger::unregister_context(GoudContextId::new(
                 route_id.context_id as u32,
                 (route_id.context_id >> 32) as u32,

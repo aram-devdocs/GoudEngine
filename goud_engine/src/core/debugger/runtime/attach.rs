@@ -17,7 +17,7 @@ use crate::core::debugger::RuntimeRouteId;
 
 const SNAPSHOT_SCHEMA: &str = "debugger_snapshot_v1";
 const HEARTBEAT_INTERVAL_MS: u32 = 1_000;
-const MAX_FRAME_BYTES: usize = 1024 * 1024;
+const MAX_FRAME_BYTES: usize = 16 * 1024 * 1024;
 const ACCEPT_POLL_INTERVAL: Duration = Duration::from_millis(15);
 
 /// Initial attach request for one debugger route.
@@ -284,7 +284,10 @@ fn handle_client_connection(mut stream: Stream) -> io::Result<()> {
             .and_then(|error| error.get("code"))
             .and_then(Value::as_str)
             == Some("protocol_error");
-        let _ = write_frame(&mut stream, &response);
+        if let Err(err) = write_frame(&mut stream, &response) {
+            eprintln!("[debugger] write_frame failed: {err}");
+            break;
+        }
         if should_close {
             break;
         }

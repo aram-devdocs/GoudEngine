@@ -228,6 +228,29 @@ pub fn dispatch_request_json_for_route(
     if verb == "capture_frame" {
         return Ok(capture_frame_response_for_route(route_id, &request));
     }
+    if verb == "get_snapshot" {
+        super::snapshot_refresh::refresh_snapshot_for_route(route_id);
+        let guard = lock_runtime();
+        let Some(runtime) = guard.as_ref() else {
+            return Ok(error_response(
+                &request,
+                "route_not_found",
+                "debugger route is no longer available".to_string(),
+                None,
+                None,
+            ));
+        };
+        let Some(route) = runtime.routes.get(&route_id.context_id) else {
+            return Ok(error_response(
+                &request,
+                "route_not_found",
+                "debugger route is no longer available".to_string(),
+                None,
+                None,
+            ));
+        };
+        return Ok(ok_response(&request, snapshot_value(&route.snapshot)));
+    }
     let mut should_publish_manifest = false;
 
     let response = {
@@ -252,7 +275,6 @@ pub fn dispatch_request_json_for_route(
         };
 
         let response = match verb.as_str() {
-            "get_snapshot" => ok_response(&request, snapshot_value(&route.snapshot)),
             "set_selected_entity" => {
                 let entity_id = request.get("entity_id").and_then(Value::as_u64);
                 if !route.snapshot.scene.active_scene.is_empty() {

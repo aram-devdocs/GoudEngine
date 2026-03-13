@@ -45,7 +45,14 @@ fn runtime_root_dir() -> PathBuf {
 }
 
 fn short_socket_root(base: &Path) -> PathBuf {
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
+    {
+        let mut hasher = DefaultHasher::new();
+        base.hash(&mut hasher);
+        PathBuf::from(format!("/tmp/ge-{:x}", hasher.finish() & 0xffff))
+    }
+
+    #[cfg(all(not(windows), not(target_os = "macos")))]
     {
         let mut hasher = DefaultHasher::new();
         base.hash(&mut hasher);
@@ -74,7 +81,7 @@ fn socket_path(root: &Path, process_nonce: u64) -> PathBuf {
         let mut hasher = DefaultHasher::new();
         candidate.hash(&mut hasher);
         short_socket_root(root).join(format!(
-            "g-{pid}-{process_nonce}-{:x}.sock",
+            "g-{:x}.sock",
             hasher.finish()
         ))
     }
