@@ -3,8 +3,8 @@ use std::fs;
 use std::io::{self, ErrorKind, Read, Write};
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
 use std::sync::mpsc::sync_channel;
+use std::sync::{Arc, Mutex};
 use std::thread;
 
 use goud_engine::core::debugger::{
