@@ -1,6 +1,6 @@
 [package]
 name = "goud_engine_macros"
-version = "0.0.830" # x-release-please-version
+version = "0.0.831" # x-release-please-version
 edition = "2021"
 description = "Proc-macro crate for GoudEngine FFI code generation"
 license = "MIT"

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.831](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.830...v0.0.831) (2026-03-14)
+
+
+### Bug Fixes
+
+* resolve Windows CI test flakes ([813d15b](https://github.com/aram-devdocs/GoudEngine/commit/813d15b8f9a2a977bdbe5e058458f54015593db2))
+* resolve Windows CI test flakes in texture and debugger tests ([4c3a3d0](https://github.com/aram-devdocs/GoudEngine/commit/4c3a3d03e0bd58fd1222bc1a2cecdde2145047b9))
+
 ## [0.0.830](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.829...v0.0.830) (2026-03-14)
 
 
