@@ -346,6 +346,14 @@ pub(crate) use attach::{
 };
 
 #[cfg(test)]
+pub(crate) fn stop_attach_server_for_tests() {
+    let mut guard = lock_runtime();
+    if let Some(runtime) = guard.as_mut() {
+        attach::stop_local_attach_server(runtime);
+    }
+}
+
+#[cfg(test)]
 pub(crate) fn reset_for_tests() {
     let mut guard = lock_runtime();
     if let Some(runtime) = guard.as_mut() {

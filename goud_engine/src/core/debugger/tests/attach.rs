@@ -1,7 +1,8 @@
 use super::super::{
     attach_hello_for_tests, attach_request_json_for_tests, attach_session_heartbeat_for_tests,
-    current_manifest, register_context, reset_for_tests, snapshot_for_route, test_lock,
-    AttachAcceptedV1, AttachHelloV1, DebuggerConfig, RuntimeSurfaceKind,
+    current_manifest, register_context, reset_for_tests, snapshot_for_route,
+    stop_attach_server_for_tests, test_lock, AttachAcceptedV1, AttachHelloV1, DebuggerConfig,
+    RuntimeSurfaceKind,
 };
 use crate::core::context_id::GoudContextId;
 use interprocess::local_socket::{prelude::*, GenericFilePath, Stream};
@@ -105,6 +106,9 @@ fn test_attach_session_heartbeat_is_out_of_band() {
             route_label: Some("heartbeat".to_string()),
         },
     );
+    // Stop the IPC server to prevent background thread interference with session state.
+    // This test exercises the direct function-call heartbeat path, not the IPC path.
+    stop_attach_server_for_tests();
 
     let accepted = attach_hello_for_tests(AttachHelloV1 {
         protocol_version: 1,

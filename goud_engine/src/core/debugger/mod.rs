@@ -185,6 +185,8 @@ pub(crate) use runtime::attach_session_heartbeat_for_tests;
 pub(crate) use runtime::manifest_artifact_path_for_tests;
 #[cfg(test)]
 pub(crate) use runtime::reset_for_tests;
+#[cfg(test)]
+pub(crate) use runtime::stop_attach_server_for_tests;
 
 #[cfg(test)]
 pub(crate) fn test_lock() -> MutexGuard<'static, ()> {
