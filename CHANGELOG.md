@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.832](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.831...v0.0.832) (2026-03-14)
+
+
+### Bug Fixes
+
+* eliminate Windows heartbeat test race condition ([7452e23](https://github.com/aram-devdocs/GoudEngine/commit/7452e236a132963f89107222d0e6929076b8db60))
+* prevent IPC server from starting in heartbeat test to eliminate Windows race ([8ed1e6c](https://github.com/aram-devdocs/GoudEngine/commit/8ed1e6cac793efec7cd43016d6cc40b9a32d1c34))
+* remove unused stop_attach_server_for_tests export ([4b9ec22](https://github.com/aram-devdocs/GoudEngine/commit/4b9ec22ed747ef07d66b186eef09343b3e189a8b))
+
 ## [0.0.831](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.830...v0.0.831) (2026-03-14)
 
 
