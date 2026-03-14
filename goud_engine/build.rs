@@ -196,7 +196,6 @@ struct FfiFunction {
 ///
 /// Returns the total number of functions extracted.
 fn generate_ffi_manifest(manifest_dir: &str, output_path: &Path) -> usize {
-    let version = env::var("CARGO_PKG_VERSION").unwrap_or_else(|_| "unknown".to_string());
     let generated_at = "build-time".to_string();
 
     let mut functions: BTreeMap<String, FfiFunction> = BTreeMap::new();
@@ -217,7 +216,7 @@ fn generate_ffi_manifest(manifest_dir: &str, output_path: &Path) -> usize {
     let total_count = functions.len();
 
     // Build JSON manually to avoid adding serde as a build-dependency
-    let json = build_manifest_json(&version, &generated_at, &functions, total_count);
+    let json = build_manifest_json(&generated_at, &functions, total_count);
 
     // Ensure output directory exists
     if let Some(parent) = output_path.parent() {
@@ -408,14 +407,12 @@ fn parse_params(params_str: &str) -> Vec<String> {
 
 /// Builds the manifest JSON string manually (no serde dependency).
 fn build_manifest_json(
-    version: &str,
     generated_at: &str,
     functions: &BTreeMap<String, FfiFunction>,
     total_count: usize,
 ) -> String {
     let mut json = String::with_capacity(64 * 1024);
     json.push_str("{\n");
-    json.push_str(&format!("  \"version\": \"{version}\",\n"));
     json.push_str(&format!("  \"generated_at\": \"{generated_at}\",\n"));
     json.push_str("  \"functions\": {\n");
 
