@@ -30,6 +30,10 @@ README_MARKER_PATTERN = re.compile(
     flags=re.DOTALL,
 )
 
+DOWNLOADS_BADGE_PATTERN = re.compile(
+    r"\[!\[total downloads\]\(https://img\.shields\.io/badge/total_downloads-[^)]+\)\]\(#downloads\)"
+)
+
 
 def fetch_json(url: str, *, retries: int = 1) -> Any:
     last_error: Exception | None = None
@@ -162,11 +166,18 @@ def build_stats_block(entry: dict[str, int | str]) -> str:
     )
 
 
-def rewrite_readme(stats_block: str) -> None:
+def build_downloads_badge(total: int) -> str:
+    label = format_number(total).replace(",", "%2C")
+    return f"[![total downloads](https://img.shields.io/badge/total_downloads-{label}-brightgreen)](#downloads)"
+
+
+def rewrite_readme(stats_block: str, *, total: int) -> None:
     readme = README.read_text()
     if not README_MARKER_PATTERN.search(readme):
         raise RuntimeError("README community stats block markers were not found")
     updated = README_MARKER_PATTERN.sub(stats_block, readme)
+    badge = build_downloads_badge(total)
+    updated = DOWNLOADS_BADGE_PATTERN.sub(badge, updated)
     README.write_text(updated)
 
 
@@ -207,7 +218,7 @@ def main() -> None:
 
     write_json(PYPI_DAILY, merged_pypi_daily)
     write_json(HISTORY, upsert_history(history, entry, reset=bootstrap_history))
-    rewrite_readme(build_stats_block(entry))
+    rewrite_readme(build_stats_block(entry), total=entry["total"])
     generate_chart.main()
 
     print(
