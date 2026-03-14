@@ -70,15 +70,16 @@ impl TextureAsset {
     /// assert_eq!(texture.pixel_count(), 16);
     /// ```
     pub fn new(data: Vec<u8>, width: u32, height: u32, format: TextureFormat) -> Self {
-        assert_eq!(
-            data.len(),
-            (width * height * 4) as usize,
-            "Texture data length mismatch: expected {} bytes for {}x{} RGBA8, got {}",
-            width * height * 4,
-            width,
-            height,
-            data.len()
-        );
+        let expected_len = (width * height * 4) as usize;
+        if data.len() != expected_len {
+            panic!(
+                "Texture data length mismatch: expected {} bytes for {}x{} RGBA8, got {}",
+                expected_len,
+                width,
+                height,
+                data.len()
+            );
+        }
         Self {
             data,
             width,
