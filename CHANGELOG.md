@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.830](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.829...v0.0.830) (2026-03-14)
+
+
+### Bug Fixes
+
+* remove version field from ffi_manifest.json to prevent release-please drift ([#540](https://github.com/aram-devdocs/GoudEngine/issues/540)) ([8e8e3ad](https://github.com/aram-devdocs/GoudEngine/commit/8e8e3ad0b1b5919ea3b188b86f4bbc6d2610c1ba))
+
 ## [0.0.829](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.828...v0.0.829) (2026-03-13)
 
 
