@@ -186,6 +186,8 @@ pub(crate) use runtime::manifest_artifact_path_for_tests;
 #[cfg(test)]
 pub(crate) use runtime::reset_for_tests;
 #[cfg(test)]
+pub(crate) use runtime::set_route_attachable_for_tests;
+#[cfg(test)]
 pub(crate) use runtime::stop_attach_server_for_tests;
 
 #[cfg(test)]

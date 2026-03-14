@@ -354,6 +354,16 @@ pub(crate) fn stop_attach_server_for_tests() {
 }
 
 #[cfg(test)]
+pub(crate) fn set_route_attachable_for_tests(route_id: &RuntimeRouteId, attachable: bool) {
+    let mut guard = lock_runtime();
+    if let Some(runtime) = guard.as_mut() {
+        if let Some(route) = runtime.routes.get_mut(&route_id.context_id) {
+            route.attachable = attachable;
+        }
+    }
+}
+
+#[cfg(test)]
 pub(crate) fn reset_for_tests() {
     let mut guard = lock_runtime();
     if let Some(runtime) = guard.as_mut() {

@@ -1,7 +1,7 @@
 use super::super::{
     attach_hello_for_tests, attach_request_json_for_tests, attach_session_heartbeat_for_tests,
-    current_manifest, register_context, reset_for_tests, snapshot_for_route,
-    stop_attach_server_for_tests, test_lock, AttachAcceptedV1, AttachHelloV1, DebuggerConfig,
+    current_manifest, register_context, reset_for_tests, set_route_attachable_for_tests,
+    snapshot_for_route, test_lock, AttachAcceptedV1, AttachHelloV1, DebuggerConfig,
     RuntimeSurfaceKind,
 };
 use crate::core::context_id::GoudContextId;
@@ -97,18 +97,20 @@ fn test_attach_session_heartbeat_is_out_of_band() {
     let _guard = test_lock();
     reset_for_tests();
 
+    // Register with publish_local_attach=false to prevent the IPC server from starting.
+    // This test exercises the direct function-call heartbeat path, not the IPC path.
+    // The IPC server's background thread can interfere with session state on Windows.
     let route = register_context(
         GoudContextId::new(52, 1),
         RuntimeSurfaceKind::HeadlessContext,
         &DebuggerConfig {
             enabled: true,
-            publish_local_attach: true,
+            publish_local_attach: false,
             route_label: Some("heartbeat".to_string()),
         },
     );
-    // Stop the IPC server to prevent background thread interference with session state.
-    // This test exercises the direct function-call heartbeat path, not the IPC path.
-    stop_attach_server_for_tests();
+    // Force the route attachable so attach_hello_for_tests succeeds.
+    set_route_attachable_for_tests(&route, true);
 
     let accepted = attach_hello_for_tests(AttachHelloV1 {
         protocol_version: 1,
