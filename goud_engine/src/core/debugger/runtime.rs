@@ -346,10 +346,12 @@ pub(crate) use attach::{
 };
 
 #[cfg(test)]
-pub(crate) fn stop_attach_server_for_tests() {
+pub(crate) fn set_route_attachable_for_tests(route_id: &RuntimeRouteId, attachable: bool) {
     let mut guard = lock_runtime();
     if let Some(runtime) = guard.as_mut() {
-        attach::stop_local_attach_server(runtime);
+        if let Some(route) = runtime.routes.get_mut(&route_id.context_id) {
+            route.attachable = attachable;
+        }
     }
 }
 
