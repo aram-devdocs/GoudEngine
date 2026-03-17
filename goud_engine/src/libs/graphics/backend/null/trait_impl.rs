@@ -4,14 +4,16 @@ use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::blend::{BlendFactor, CullFace};
 use crate::libs::graphics::backend::capabilities::BackendInfo;
 use crate::libs::graphics::backend::render_backend::{
-    BufferOps, ClearOps, DrawOps, FrameOps, RenderBackend, ShaderOps, StateOps, TextureOps,
+    BufferOps, ClearOps, DrawOps, FrameOps, RenderBackend, RenderTargetOps, ShaderOps, StateOps,
+    TextureOps,
 };
 use crate::libs::graphics::backend::types::{
-    BufferHandle, BufferType, BufferUsage, DepthFunc, FrontFace, PrimitiveTopology, ShaderHandle,
-    TextureFilter, TextureFormat, TextureHandle, TextureWrap, VertexLayout,
+    BufferHandle, BufferType, BufferUsage, DepthFunc, FrontFace, PrimitiveTopology,
+    RenderTargetDesc, RenderTargetHandle, ShaderHandle, TextureFilter, TextureFormat,
+    TextureHandle, TextureWrap, VertexLayout,
 };
 
-use super::backend::{NullBufferMeta, NullTextureMeta};
+use super::backend::{NullBufferMeta, NullRenderTargetMeta, NullTextureMeta};
 use super::NullBackend;
 
 // ========================================================================
@@ -63,6 +65,9 @@ impl ClearOps for NullBackend {
 impl StateOps for NullBackend {
     fn set_viewport(&mut self, x: i32, y: i32, width: u32, height: u32) {
         self.viewport = (x, y, width, height);
+        if self.active_render_target.is_none() {
+            self.default_viewport = self.viewport;
+        }
     }
 
     fn enable_depth_test(&mut self) {
@@ -256,6 +261,73 @@ impl TextureOps for NullBackend {
         self.textures
             .insert(handle, NullTextureMeta { width, height });
         Ok(handle)
+    }
+}
+
+// ========================================================================
+// RenderTargetOps
+// ========================================================================
+
+impl RenderTargetOps for NullBackend {
+    fn create_render_target(&mut self, desc: &RenderTargetDesc) -> GoudResult<RenderTargetHandle> {
+        let color_texture = self.create_texture(
+            desc.width,
+            desc.height,
+            desc.format,
+            TextureFilter::Linear,
+            TextureWrap::ClampToEdge,
+            &[],
+        )?;
+        let handle = self.render_target_allocator.allocate();
+        self.render_targets.insert(
+            handle,
+            NullRenderTargetMeta {
+                width: desc.width,
+                height: desc.height,
+                color_texture,
+            },
+        );
+        Ok(handle)
+    }
+
+    fn destroy_render_target(&mut self, handle: RenderTargetHandle) -> bool {
+        let Some(metadata) = self.render_targets.remove(&handle) else {
+            return false;
+        };
+        let _ = self.destroy_texture(metadata.color_texture);
+        if self.active_render_target == Some(handle) {
+            self.active_render_target = None;
+            self.viewport = self.default_viewport;
+        }
+        self.render_target_allocator.deallocate(handle)
+    }
+
+    fn is_render_target_valid(&self, handle: RenderTargetHandle) -> bool {
+        self.render_target_allocator.is_alive(handle) && self.render_targets.contains_key(&handle)
+    }
+
+    fn bind_render_target(&mut self, handle: Option<RenderTargetHandle>) -> GoudResult<()> {
+        match handle {
+            Some(handle) => {
+                let metadata = self
+                    .render_targets
+                    .get(&handle)
+                    .ok_or(GoudError::InvalidHandle)?;
+                self.viewport = (0, 0, metadata.width, metadata.height);
+                self.active_render_target = Some(handle);
+            }
+            None => {
+                self.active_render_target = None;
+                self.viewport = self.default_viewport;
+            }
+        }
+        Ok(())
+    }
+
+    fn render_target_texture(&self, handle: RenderTargetHandle) -> Option<TextureHandle> {
+        self.render_targets
+            .get(&handle)
+            .map(|meta| meta.color_texture)
     }
 }
 

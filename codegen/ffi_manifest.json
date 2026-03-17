@@ -3238,6 +3238,15 @@
       "return_type": "*mut FfiSpriteBuilder",
       "is_unsafe": true
     },
+    "goud_sprite_builder_with_z_layer": {
+      "source_file": "ffi/component_sprite/builder.rs",
+      "params": [
+        "builder: *mut FfiSpriteBuilder",
+        "z_layer: i32"
+      ],
+      "return_type": "*mut FfiSpriteBuilder",
+      "is_unsafe": true
+    },
     "goud_sprite_clear_custom_size": {
       "source_file": "ffi/component_sprite/properties.rs",
       "params": [
@@ -3324,6 +3333,14 @@
         "sprite: *const FfiSprite"
       ],
       "return_type": "u64",
+      "is_unsafe": true
+    },
+    "goud_sprite_get_z_layer": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *const FfiSprite"
+      ],
+      "return_type": "i32",
       "is_unsafe": true
     },
     "goud_sprite_has_custom_size": {
@@ -3448,6 +3465,15 @@
       "return_type": "()",
       "is_unsafe": true
     },
+    "goud_sprite_set_z_layer": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: *mut FfiSprite",
+        "z_layer: i32"
+      ],
+      "return_type": "()",
+      "is_unsafe": true
+    },
     "goud_sprite_size_or_rect": {
       "source_file": "ffi/component_sprite/texture.rs",
       "params": [
@@ -3524,6 +3550,15 @@
         "y: f32",
         "width: f32",
         "height: f32"
+      ],
+      "return_type": "FfiSprite",
+      "is_unsafe": false
+    },
+    "goud_sprite_with_z_layer": {
+      "source_file": "ffi/component_sprite/properties.rs",
+      "params": [
+        "sprite: FfiSprite",
+        "z_layer: i32"
       ],
       "return_type": "FfiSprite",
       "is_unsafe": false
@@ -4485,5 +4520,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 450
+  "total_count": 454
 }

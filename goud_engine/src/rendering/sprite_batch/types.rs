@@ -2,11 +2,20 @@
 
 use crate::assets::{loaders::TextureAsset, AssetHandle};
 use crate::core::math::{Color, Rect, Vec2};
-use crate::ecs::components::{Mat3x3, Sprite};
+use crate::ecs::components::Mat3x3;
 use crate::ecs::Entity;
 use crate::libs::graphics::backend::types::{
     TextureHandle, VertexAttribute, VertexAttributeType, VertexLayout,
 };
+
+/// Cached GPU texture plus a content signature for hot-reload detection.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TextureCacheEntry {
+    /// GPU texture handle.
+    pub handle: TextureHandle,
+    /// Signature of the texture asset content used to populate the GPU texture.
+    pub signature: u64,
+}
 
 /// Vertex data for a single sprite corner.
 ///
@@ -65,7 +74,7 @@ pub struct SpriteInstance {
     /// Sprite size
     pub size: Vec2,
     /// Z-layer for sorting
-    pub z_layer: f32,
+    pub z_layer: i32,
     /// Flip horizontally
     pub flip_x: bool,
     /// Flip vertically
@@ -77,21 +86,25 @@ impl SpriteInstance {
     pub fn from_components(
         #[cfg(test)] entity: Entity,
         #[cfg(not(test))] _entity: Entity,
-        sprite: &Sprite,
+        texture: AssetHandle<TextureAsset>,
+        source_rect: Option<Rect>,
         transform_matrix: Mat3x3,
-        z_layer: f32,
+        z_layer: i32,
         size: Vec2,
+        color: Color,
+        flip_x: bool,
+        flip_y: bool,
     ) -> Self {
         Self {
             #[cfg(test)]
             entity,
             transform: transform_matrix,
-            texture: sprite.texture,
-            color: sprite.color,
-            source_rect: sprite.source_rect,
+            texture,
+            color,
+            source_rect,
             size,
-            flip_x: sprite.flip_x,
-            flip_y: sprite.flip_y,
+            flip_x,
+            flip_y,
             z_layer,
         }
     }

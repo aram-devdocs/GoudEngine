@@ -51,4 +51,5 @@ mod tests;
 
 pub use batch::SpriteBatch;
 pub use config::SpriteBatchConfig;
-pub use types::{SpriteBatchEntry, SpriteInstance, SpriteVertex};
+pub(crate) use resources::{ensure_default_sprite_shader_loaded, ensure_sprite_asset_loaders};
+pub use types::{SpriteBatchEntry, SpriteInstance, SpriteVertex, TextureCacheEntry};

@@ -1,11 +1,33 @@
 //! Unit tests for the sprite batch renderer that do not require an OpenGL context.
 
-use crate::assets::AssetHandle;
+use crate::assets::{
+    loaders::{SpriteSheetAsset, TextureAsset},
+    AssetHandle, AssetServer,
+};
 use crate::core::math::{Color, Rect, Vec2};
-use crate::ecs::components::Mat3x3;
+use crate::ecs::components::{Mat3x3, Sprite, Transform2D};
 use crate::ecs::Entity;
+use crate::ecs::World;
+use crate::libs::graphics::backend::null::NullBackend;
+use crate::rendering::sprite_batch::batch::SpriteBatch;
 use crate::rendering::sprite_batch::config::SpriteBatchConfig;
 use crate::rendering::sprite_batch::types::{SpriteBatchEntry, SpriteInstance, SpriteVertex};
+use image::{ImageBuffer, ImageFormat, Rgba};
+
+fn create_test_png(width: u32, height: u32) -> Vec<u8> {
+    let image: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_fn(width, height, |x, y| {
+        if (x + y) % 2 == 0 {
+            Rgba([255, 0, 0, 255])
+        } else {
+            Rgba([0, 255, 0, 255])
+        }
+    });
+    let mut bytes = Vec::new();
+    image::DynamicImage::ImageRgba8(image)
+        .write_to(&mut std::io::Cursor::new(&mut bytes), ImageFormat::Png)
+        .expect("test png encoding should succeed");
+    bytes
+}
 
 #[test]
 fn test_sprite_batch_config_default() {
@@ -14,6 +36,8 @@ fn test_sprite_batch_config_default() {
     assert_eq!(config.max_batch_size, 10000);
     assert!(config.enable_z_sorting);
     assert!(config.enable_batching);
+    assert!(!config.shader_asset.is_valid());
+    assert!(!config.material_asset.is_valid());
 }
 
 #[test]
@@ -32,7 +56,7 @@ fn test_sprite_instance_creation() {
         color: Color::RED,
         source_rect: Some(Rect::new(0.0, 0.0, 32.0, 32.0)),
         size: Vec2::new(64.0, 64.0),
-        z_layer: 100.0,
+        z_layer: 100,
         flip_x: true,
         flip_y: false,
     };
@@ -55,4 +79,35 @@ fn test_sprite_batch_entry_creation() {
     assert_eq!(entry.vertex_start, 0);
     assert_eq!(entry.vertex_count, 24);
     assert!(entry.gpu_texture.is_none());
+}
+
+#[test]
+fn test_gather_sprites_resolves_sprite_sheet_frames() {
+    let mut asset_server = AssetServer::new();
+    super::ensure_sprite_asset_loaders(&mut asset_server);
+    let texture =
+        asset_server.load_from_bytes::<TextureAsset>("textures/player.png", &create_test_png(2, 2));
+    let sheet = asset_server.load_from_bytes::<SpriteSheetAsset>(
+        "sprites/player.sheet.json",
+        br#"{
+            "texture_path": "textures/player.png",
+            "regions": {
+                "idle": { "x": 8.0, "y": 4.0, "width": 16.0, "height": 24.0 }
+            }
+        }"#,
+    );
+
+    let mut world = World::new();
+    let entity = world.spawn_empty();
+    world.insert(entity, Transform2D::default());
+    world.insert(entity, Sprite::from_sprite_sheet(sheet, "idle"));
+
+    let mut batch = SpriteBatch::new(NullBackend::new(), SpriteBatchConfig::default()).unwrap();
+    batch.gather_sprites(&world, &mut asset_server).unwrap();
+
+    assert_eq!(batch.sprites.len(), 1);
+    let sprite = &batch.sprites[0];
+    assert_eq!(sprite.texture, texture);
+    assert_eq!(sprite.source_rect, Some(Rect::new(8.0, 4.0, 16.0, 24.0)));
+    assert_eq!(sprite.size, Vec2::new(16.0, 24.0));
 }

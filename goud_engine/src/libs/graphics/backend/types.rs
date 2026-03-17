@@ -55,6 +55,13 @@ pub struct TextureMarker;
 /// Type-safe handle to a GPU texture.
 pub type TextureHandle = Handle<TextureMarker>;
 
+/// Marker type for render target handles.
+#[derive(Debug)]
+pub struct RenderTargetMarker;
+
+/// Type-safe handle to an offscreen render target.
+pub type RenderTargetHandle = Handle<RenderTargetMarker>;
+
 /// Texture format describing pixel layout and data type.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -109,6 +116,30 @@ pub enum TextureWrap {
     ClampToEdge = 2,
     /// Clamp to border color
     ClampToBorder = 3,
+}
+
+/// Descriptor used to create an offscreen render target.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RenderTargetDesc {
+    /// Width in pixels.
+    pub width: u32,
+    /// Height in pixels.
+    pub height: u32,
+    /// Color attachment format.
+    pub format: TextureFormat,
+    /// Whether to attach a depth buffer.
+    pub has_depth: bool,
+}
+
+impl Default for RenderTargetDesc {
+    fn default() -> Self {
+        Self {
+            width: 1,
+            height: 1,
+            format: TextureFormat::RGBA8,
+            has_depth: false,
+        }
+    }
 }
 
 // ============================================================================

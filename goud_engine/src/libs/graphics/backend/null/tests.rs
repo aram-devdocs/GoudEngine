@@ -2,10 +2,12 @@
 
 use super::NullBackend;
 use crate::libs::graphics::backend::types::{
-    BufferType, BufferUsage, PrimitiveTopology, TextureFilter, TextureFormat, TextureWrap,
+    BufferType, BufferUsage, PrimitiveTopology, RenderTargetDesc, TextureFilter, TextureFormat,
+    TextureWrap,
 };
 use crate::libs::graphics::backend::{
-    BufferOps, ClearOps, DrawOps, FrameOps, RenderBackend, ShaderOps, StateOps, TextureOps,
+    BufferOps, ClearOps, DrawOps, FrameOps, RenderBackend, RenderTargetOps, ShaderOps, StateOps,
+    TextureOps,
 };
 
 #[test]
@@ -203,4 +205,40 @@ fn test_destroyed_handle_operations_return_errors() {
 fn test_default_trait() {
     let backend = NullBackend::default();
     assert_eq!(backend.info().name, "Null");
+}
+
+#[test]
+fn test_render_target_lifecycle() {
+    let mut backend = NullBackend::new();
+    backend.set_viewport(5, 7, 320, 180);
+
+    let render_target = backend
+        .create_render_target(&RenderTargetDesc {
+            width: 128,
+            height: 64,
+            format: TextureFormat::RGBA8,
+            has_depth: true,
+        })
+        .expect("create_render_target should succeed");
+
+    assert!(backend.is_render_target_valid(render_target));
+    let color_texture = backend
+        .render_target_texture(render_target)
+        .expect("render target should expose its color texture");
+    assert!(backend.is_texture_valid(color_texture));
+    assert_eq!(backend.texture_size(color_texture), Some((128, 64)));
+
+    backend
+        .bind_render_target(Some(render_target))
+        .expect("bind_render_target should succeed");
+    assert_eq!(backend.viewport, (0, 0, 128, 64));
+
+    backend
+        .bind_render_target(None)
+        .expect("bind_render_target(None) should succeed");
+    assert_eq!(backend.viewport, (5, 7, 320, 180));
+
+    assert!(backend.destroy_render_target(render_target));
+    assert!(!backend.is_render_target_valid(render_target));
+    assert!(!backend.is_texture_valid(color_texture));
 }

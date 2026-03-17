@@ -5,7 +5,8 @@ use std::collections::HashMap;
 use crate::core::handle::HandleAllocator;
 use crate::libs::graphics::backend::capabilities::{BackendCapabilities, BackendInfo};
 use crate::libs::graphics::backend::types::{
-    BufferHandle, BufferMarker, BufferType, ShaderMarker, TextureHandle, TextureMarker,
+    BufferHandle, BufferMarker, BufferType, RenderTargetHandle, RenderTargetMarker, ShaderMarker,
+    TextureHandle, TextureMarker,
 };
 
 /// Metadata stored for each null buffer.
@@ -20,6 +21,14 @@ pub(super) struct NullBufferMeta {
 pub(super) struct NullTextureMeta {
     pub width: u32,
     pub height: u32,
+}
+
+/// Metadata stored for each null render target.
+#[derive(Debug, Clone)]
+pub(super) struct NullRenderTargetMeta {
+    pub width: u32,
+    pub height: u32,
+    pub color_texture: TextureHandle,
 }
 
 /// A no-op render backend that tracks resource state without GPU access.
@@ -38,6 +47,7 @@ pub struct NullBackend {
     pub(super) culling_enabled: bool,
     pub(super) depth_mask_enabled: bool,
     pub(super) viewport: (i32, i32, u32, u32),
+    pub(super) default_viewport: (i32, i32, u32, u32),
     pub(super) line_width: f32,
 
     // Buffer management
@@ -47,6 +57,11 @@ pub struct NullBackend {
     // Texture management
     pub(super) texture_allocator: HandleAllocator<TextureMarker>,
     pub(super) textures: HashMap<TextureHandle, NullTextureMeta>,
+
+    // Render-target management
+    pub(super) render_target_allocator: HandleAllocator<RenderTargetMarker>,
+    pub(super) render_targets: HashMap<RenderTargetHandle, NullRenderTargetMeta>,
+    pub(super) active_render_target: Option<RenderTargetHandle>,
 
     // Shader management
     pub(super) shader_allocator: HandleAllocator<ShaderMarker>,
@@ -91,11 +106,15 @@ impl NullBackend {
             culling_enabled: false,
             depth_mask_enabled: true,
             viewport: (0, 0, 800, 600),
+            default_viewport: (0, 0, 800, 600),
             line_width: 1.0,
             buffer_allocator: HandleAllocator::new(),
             buffers: HashMap::new(),
             texture_allocator: HandleAllocator::new(),
             textures: HashMap::new(),
+            render_target_allocator: HandleAllocator::new(),
+            render_targets: HashMap::new(),
+            active_render_target: None,
             shader_allocator: HandleAllocator::new(),
             shader_create_calls: 0,
         }

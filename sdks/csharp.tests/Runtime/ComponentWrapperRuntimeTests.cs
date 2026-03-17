@@ -216,6 +216,11 @@ public class ComponentWrapperRuntimeTests
             return 3U;
         }
 
+        if (type == typeof(int))
+        {
+            return 5;
+        }
+
         if (type == typeof(ulong))
         {
             return 4UL;

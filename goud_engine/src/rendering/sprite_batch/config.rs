@@ -1,5 +1,10 @@
 //! Configuration for the sprite batch renderer.
 
+use crate::assets::{
+    loaders::{MaterialAsset, ShaderAsset},
+    AssetHandle,
+};
+
 /// Configuration for sprite batch rendering.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SpriteBatchConfig {
@@ -14,6 +19,12 @@ pub struct SpriteBatchConfig {
 
     /// Enable automatic batching by texture (disable for debugging).
     pub enable_batching: bool,
+
+    /// Optional shader asset used by the batch renderer.
+    pub shader_asset: AssetHandle<ShaderAsset>,
+
+    /// Optional material asset used by the batch renderer.
+    pub material_asset: AssetHandle<MaterialAsset>,
 }
 
 impl Default for SpriteBatchConfig {
@@ -23,6 +34,8 @@ impl Default for SpriteBatchConfig {
             max_batch_size: 10000,  // Flush after 10K sprites
             enable_z_sorting: true, // Sort by Z-layer by default
             enable_batching: true,  // Batch by texture by default
+            shader_asset: AssetHandle::INVALID,
+            material_asset: AssetHandle::INVALID,
         }
     }
 }

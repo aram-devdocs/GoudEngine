@@ -84,7 +84,7 @@ fn test_sprite_batch_sort_z_layer() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 10.0,
+            z_layer: 10,
             flip_x: false,
             flip_y: false,
         },
@@ -95,13 +95,13 @@ fn test_sprite_batch_sort_z_layer() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 5.0,
+            z_layer: 5,
             flip_x: false,
             flip_y: false,
         },
     ];
 
     batch.sort_sprites();
-    assert_eq!(batch.sprites[0].z_layer, 5.0);
-    assert_eq!(batch.sprites[1].z_layer, 10.0);
+    assert_eq!(batch.sprites[0].z_layer, 5);
+    assert_eq!(batch.sprites[1].z_layer, 10);
 }

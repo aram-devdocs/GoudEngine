@@ -7,6 +7,8 @@ use crate::context_registry::scene::SceneId;
 use crate::core::error::GoudResult;
 use crate::core::providers::ProviderRegistry;
 use crate::ecs::World;
+#[cfg(feature = "native")]
+use crate::libs::graphics::backend::StateOps;
 use crate::sdk::debug_overlay::FpsStats;
 use crate::sdk::engine_config::EngineConfig;
 use crate::sdk::game_config::GameContext;
@@ -210,13 +212,20 @@ impl GoudGame {
             let commands = self.ui_manager.build_render_commands();
             #[cfg(test)]
             self.record_last_ui_command_count(commands.len());
-            let viewport = self.context.window_size();
+            let active_viewport = self.render_viewport();
+            let viewport = active_viewport.logical_size();
             if let (Some(system), Some(asset_server), Some(backend)) = (
                 self.ui_render_system.as_mut(),
                 self.asset_server.as_mut(),
                 self.render_backend.as_mut(),
             ) {
                 crate::rendering::ensure_ui_asset_loaders(asset_server);
+                backend.set_viewport(
+                    active_viewport.x,
+                    active_viewport.y,
+                    active_viewport.width,
+                    active_viewport.height,
+                );
                 if let Err(err) = system.run(&commands, asset_server, backend, viewport) {
                     log::warn!("UiRenderSystem frame failed: {err}");
                 }

@@ -3,6 +3,7 @@
 use crate::context_registry::scene::{SceneId, SceneManager};
 use crate::core::error::GoudError;
 use crate::core::providers::ProviderRegistry;
+use crate::core::{event::Events, events::WindowResized};
 use crate::ecs::{Component, Entity, World};
 use crate::sdk::debug_overlay::FpsStats;
 use crate::sdk::entity_builder::EntityBuilder;
@@ -165,7 +166,7 @@ impl GoudGame {
     /// Returns the window dimensions.
     #[inline]
     pub fn window_size(&self) -> (u32, u32) {
-        (self.config.width, self.config.height)
+        self.context.window_size()
     }
 
     /// Returns the current FPS statistics from the debug overlay.
@@ -208,6 +209,18 @@ impl GoudGame {
     #[inline]
     pub fn providers(&self) -> &ProviderRegistry {
         &self.providers
+    }
+
+    /// Returns the queue of window resize events emitted by the runtime.
+    #[inline]
+    pub fn window_resized_events(&self) -> &Events<WindowResized> {
+        &self.window_resized_events
+    }
+
+    /// Returns the queue of window resize events emitted by the runtime.
+    #[inline]
+    pub fn window_resized_events_mut(&mut self) -> &mut Events<WindowResized> {
+        &mut self.window_resized_events
     }
 
     /// Returns a reference to the audio manager, if available.

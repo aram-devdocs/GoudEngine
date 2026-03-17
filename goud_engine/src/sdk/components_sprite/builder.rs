@@ -130,6 +130,19 @@ impl SpriteBuilderOps {
         builder
     }
 
+    /// Sets the render-order layer on the builder.
+    pub fn builder_with_z_layer(
+        builder: *mut FfiSpriteBuilder,
+        z_layer: i32,
+    ) -> *mut FfiSpriteBuilder {
+        if builder.is_null() {
+            return builder;
+        }
+        // SAFETY: Pointer checked non-null above; allocated by builder_new via Box::into_raw.
+        unsafe { (*builder).sprite.z_layer = z_layer };
+        builder
+    }
+
     /// Sets the anchor point on the builder.
     pub fn builder_with_anchor(
         builder: *mut FfiSpriteBuilder,

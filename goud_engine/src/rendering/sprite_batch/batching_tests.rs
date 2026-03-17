@@ -30,7 +30,7 @@ fn test_texture_batching_single_texture() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 0.0,
+            z_layer: 0,
             flip_x: false,
             flip_y: false,
         });
@@ -60,7 +60,7 @@ fn test_texture_batching_multiple_textures() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 0.0,
+            z_layer: 0,
             flip_x: false,
             flip_y: false,
         },
@@ -71,7 +71,7 @@ fn test_texture_batching_multiple_textures() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 0.0,
+            z_layer: 0,
             flip_x: false,
             flip_y: false,
         },
@@ -82,7 +82,7 @@ fn test_texture_batching_multiple_textures() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 0.0,
+            z_layer: 0,
             flip_x: false,
             flip_y: false,
         },
@@ -111,7 +111,7 @@ fn test_texture_batching_sort_by_texture() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 0.0,
+            z_layer: 0,
             flip_x: false,
             flip_y: false,
         },
@@ -122,7 +122,7 @@ fn test_texture_batching_sort_by_texture() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 0.0,
+            z_layer: 0,
             flip_x: false,
             flip_y: false,
         },
@@ -133,7 +133,7 @@ fn test_texture_batching_sort_by_texture() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 0.0,
+            z_layer: 0,
             flip_x: false,
             flip_y: false,
         },
@@ -163,7 +163,7 @@ fn test_texture_batching_with_z_layers() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 10.0,
+            z_layer: 10,
             flip_x: false,
             flip_y: false,
         },
@@ -174,7 +174,7 @@ fn test_texture_batching_with_z_layers() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 5.0,
+            z_layer: 5,
             flip_x: false,
             flip_y: false,
         },
@@ -182,8 +182,8 @@ fn test_texture_batching_with_z_layers() {
 
     batch.sort_sprites();
 
-    assert_eq!(batch.sprites[0].z_layer, 5.0);
-    assert_eq!(batch.sprites[1].z_layer, 10.0);
+    assert_eq!(batch.sprites[0].z_layer, 5);
+    assert_eq!(batch.sprites[1].z_layer, 10);
 }
 
 #[test]
@@ -203,7 +203,7 @@ fn test_texture_batching_same_z_different_texture() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 5.0,
+            z_layer: 5,
             flip_x: false,
             flip_y: false,
         },
@@ -214,7 +214,7 @@ fn test_texture_batching_same_z_different_texture() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 5.0,
+            z_layer: 5,
             flip_x: false,
             flip_y: false,
         },
@@ -225,7 +225,7 @@ fn test_texture_batching_same_z_different_texture() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 5.0,
+            z_layer: 5,
             flip_x: false,
             flip_y: false,
         },
@@ -247,6 +247,7 @@ fn test_texture_batching_disabled() {
         max_batch_size: 10000,
         enable_z_sorting: true,
         enable_batching: false,
+        ..SpriteBatchConfig::default()
     };
     let mut batch = SpriteBatch::new(backend, config).unwrap();
 
@@ -261,7 +262,7 @@ fn test_texture_batching_disabled() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 5.0,
+            z_layer: 5,
             flip_x: false,
             flip_y: false,
         },
@@ -272,7 +273,7 @@ fn test_texture_batching_disabled() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 10.0,
+            z_layer: 10,
             flip_x: false,
             flip_y: false,
         },
@@ -280,8 +281,8 @@ fn test_texture_batching_disabled() {
 
     batch.sort_sprites();
 
-    assert_eq!(batch.sprites[0].z_layer, 5.0);
-    assert_eq!(batch.sprites[1].z_layer, 10.0);
+    assert_eq!(batch.sprites[0].z_layer, 5);
+    assert_eq!(batch.sprites[1].z_layer, 10);
 }
 
 #[test]
@@ -300,7 +301,7 @@ fn test_texture_batching_stress_test() {
                 color: Color::WHITE,
                 source_rect: None,
                 size: Vec2::one(),
-                z_layer: 0.0,
+                z_layer: 0,
                 flip_x: false,
                 flip_y: false,
             });
@@ -335,6 +336,7 @@ fn test_max_batch_size_enforcement() {
         max_batch_size: 5,
         enable_z_sorting: true,
         enable_batching: true,
+        ..SpriteBatchConfig::default()
     };
     let mut batch = SpriteBatch::new(backend, config).unwrap();
 
@@ -347,7 +349,7 @@ fn test_max_batch_size_enforcement() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 0.0,
+            z_layer: 0,
             flip_x: false,
             flip_y: false,
         });
@@ -375,7 +377,7 @@ fn test_interleaved_textures_batching() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 0.0,
+            z_layer: 0,
             flip_x: false,
             flip_y: false,
         });

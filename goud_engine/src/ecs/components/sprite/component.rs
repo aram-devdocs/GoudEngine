@@ -1,6 +1,9 @@
 //! Core [`Sprite`] component type and its builder methods.
 
-use crate::assets::{loaders::TextureAsset, AssetHandle};
+use crate::assets::{
+    loaders::{SpriteSheetAsset, TextureAsset},
+    AssetHandle,
+};
 use crate::core::math::{Color, Rect, Vec2};
 use crate::ecs::Component;
 
@@ -22,6 +25,7 @@ use crate::ecs::Component;
 /// - `source_rect`: Optional UV rectangle for sprite sheets (default: full texture)
 /// - `flip_x`: Flip the sprite horizontally (default: false)
 /// - `flip_y`: Flip the sprite vertically (default: false)
+/// - `z_layer`: Explicit render-order layer (default: 0)
 /// - `anchor`: Normalized anchor point for rotation/positioning (default: center)
 /// - `custom_size`: Optional override for sprite size (default: texture size)
 ///
@@ -83,6 +87,18 @@ pub struct Sprite {
     #[serde(default)]
     pub texture_path: Option<String>,
 
+    /// Optional sprite-sheet descriptor handle for atlas-backed sprites.
+    #[serde(skip)]
+    pub sprite_sheet: AssetHandle<SpriteSheetAsset>,
+
+    /// Optional path to the sprite-sheet descriptor for serialization.
+    #[serde(default)]
+    pub sprite_sheet_path: Option<String>,
+
+    /// Optional named frame inside the sprite sheet.
+    #[serde(default)]
+    pub sprite_frame: Option<String>,
+
     /// Color tint multiplied with texture pixels.
     ///
     /// Each component is in range [0.0, 1.0]. White (1, 1, 1, 1) renders
@@ -107,6 +123,11 @@ pub struct Sprite {
     ///
     /// When true, the texture is mirrored along the X-axis.
     pub flip_y: bool,
+
+    /// Explicit render-order layer for 2D batching.
+    ///
+    /// Lower values draw first, higher values draw later.
+    pub z_layer: i32,
 
     /// Normalized anchor point for rotation and positioning.
     ///
@@ -152,10 +173,14 @@ impl Sprite {
         Self {
             texture,
             texture_path: None,
+            sprite_sheet: AssetHandle::INVALID,
+            sprite_sheet_path: None,
+            sprite_frame: None,
             color: Color::WHITE,
             source_rect: None,
             flip_x: false,
             flip_y: false,
+            z_layer: 0,
             anchor: Vec2::new(0.5, 0.5),
             custom_size: None,
         }
@@ -182,6 +207,56 @@ impl Sprite {
     #[inline]
     pub fn with_texture_path(mut self, path: impl Into<String>) -> Self {
         self.texture_path = Some(path.into());
+        self
+    }
+
+    /// Creates a sprite whose texture and source rectangle are resolved from a
+    /// sprite-sheet descriptor at render time.
+    #[inline]
+    pub fn from_sprite_sheet(
+        sheet: AssetHandle<SpriteSheetAsset>,
+        frame: impl Into<String>,
+    ) -> Self {
+        Self::default().with_sprite_sheet(sheet, frame)
+    }
+
+    /// Sets the sprite-sheet handle and named frame used for atlas resolution.
+    #[inline]
+    pub fn with_sprite_sheet(
+        mut self,
+        sheet: AssetHandle<SpriteSheetAsset>,
+        frame: impl Into<String>,
+    ) -> Self {
+        self.sprite_sheet = sheet;
+        self.sprite_frame = Some(frame.into());
+        self
+    }
+
+    /// Sets the sprite-sheet path and named frame used for serialized scenes.
+    #[inline]
+    pub fn with_sprite_sheet_path(
+        mut self,
+        path: impl Into<String>,
+        frame: impl Into<String>,
+    ) -> Self {
+        self.sprite_sheet_path = Some(path.into());
+        self.sprite_frame = Some(frame.into());
+        self
+    }
+
+    /// Sets or replaces only the named frame for a sprite-sheet-backed sprite.
+    #[inline]
+    pub fn with_sprite_frame(mut self, frame: impl Into<String>) -> Self {
+        self.sprite_frame = Some(frame.into());
+        self
+    }
+
+    /// Removes sprite-sheet-backed atlas resolution from this sprite.
+    #[inline]
+    pub fn without_sprite_sheet(mut self) -> Self {
+        self.sprite_sheet = AssetHandle::INVALID;
+        self.sprite_sheet_path = None;
+        self.sprite_frame = None;
         self
     }
 
@@ -310,6 +385,13 @@ impl Sprite {
     pub fn with_flip(mut self, flip_x: bool, flip_y: bool) -> Self {
         self.flip_x = flip_x;
         self.flip_y = flip_y;
+        self
+    }
+
+    /// Sets the explicit render-order layer.
+    #[inline]
+    pub fn with_z_layer(mut self, z_layer: i32) -> Self {
+        self.z_layer = z_layer;
         self
     }
 
@@ -444,6 +526,13 @@ impl Sprite {
         self.source_rect.is_some()
     }
 
+    /// Returns true if the sprite is configured to resolve from a sprite sheet.
+    #[inline]
+    pub fn has_sprite_sheet(&self) -> bool {
+        (self.sprite_sheet.is_valid() || self.sprite_sheet_path.is_some())
+            && self.sprite_frame.is_some()
+    }
+
     /// Returns true if the sprite has a custom size set.
     #[inline]
     pub fn has_custom_size(&self) -> bool {
@@ -474,10 +563,14 @@ impl Default for Sprite {
         Self {
             texture: AssetHandle::INVALID,
             texture_path: None,
+            sprite_sheet: AssetHandle::INVALID,
+            sprite_sheet_path: None,
+            sprite_frame: None,
             color: Color::WHITE,
             source_rect: None,
             flip_x: false,
             flip_y: false,
+            z_layer: 0,
             anchor: Vec2::new(0.5, 0.5),
             custom_size: None,
         }

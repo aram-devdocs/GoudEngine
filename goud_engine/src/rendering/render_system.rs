@@ -73,7 +73,7 @@ impl<B: RenderBackend> SpriteRenderSystem<B> {
     /// - Shader compilation fails
     /// - Buffer allocation fails
     /// - GPU operations fail
-    pub fn run(&mut self, world: &World, asset_server: &AssetServer) -> GoudResult<()> {
+    pub fn run(&mut self, world: &World, asset_server: &mut AssetServer) -> GoudResult<()> {
         self.sprite_batch.begin();
         self.sprite_batch.draw_sprites(world, asset_server)?;
         self.sprite_batch.end()?;
@@ -155,7 +155,8 @@ mod tests {
             .expect("Failed to add Transform2D");
 
         // Run render system
-        let result = render_system.run(&world, &asset_server);
+        let mut asset_server = asset_server;
+        let result = render_system.run(&world, &mut asset_server);
         assert!(result.is_ok(), "Render system should run successfully");
 
         // Check stats
@@ -172,7 +173,7 @@ mod tests {
             SpriteRenderSystem::new(backend).expect("Failed to create render system");
 
         let mut world = World::new();
-        let asset_server = AssetServer::new();
+        let mut asset_server = AssetServer::new();
 
         // Create texture
         let texture_data = vec![255u8; 64 * 64 * 4];
@@ -196,7 +197,7 @@ mod tests {
 
         // Run render system
         render_system
-            .run(&world, &asset_server)
+            .run(&world, &mut asset_server)
             .expect("Failed to run render system");
 
         // Check stats
@@ -217,10 +218,10 @@ mod tests {
             SpriteRenderSystem::new(backend).expect("Failed to create render system");
 
         let world = World::new();
-        let asset_server = AssetServer::new();
+        let mut asset_server = AssetServer::new();
 
         // Run on empty world
-        let result = render_system.run(&world, &asset_server);
+        let result = render_system.run(&world, &mut asset_server);
         assert!(result.is_ok(), "Should handle empty world gracefully");
 
         let (sprite_count, batch_count, _ratio) = render_system.stats();
@@ -242,7 +243,7 @@ mod tests {
             SpriteRenderSystem::new(backend).expect("Failed to create render system");
 
         let mut world = World::new();
-        let asset_server = AssetServer::new();
+        let mut asset_server = AssetServer::new();
 
         // Create texture
         let texture_data = vec![255u8; 64 * 64 * 4];
@@ -250,11 +251,16 @@ mod tests {
         let mut storage = AssetStorage::new();
         let texture_handle = storage.insert(texture_asset);
 
-        // Spawn sprites with different Y positions (Z-layer)
+        // Spawn sprites with different explicit layers.
         for i in 0..5 {
             let entity = world.spawn_empty();
             world
-                .insert(entity, Sprite::new(texture_handle).with_color(Color::WHITE))
+                .insert(
+                    entity,
+                    Sprite::new(texture_handle)
+                        .with_color(Color::WHITE)
+                        .with_z_layer(i),
+                )
                 .expect("Failed to add Sprite");
             world
                 .insert(
@@ -264,9 +270,9 @@ mod tests {
                 .expect("Failed to add Transform2D");
         }
 
-        // Run render system (should sort by Y position)
+        // Run render system (should sort by explicit z_layer)
         render_system
-            .run(&world, &asset_server)
+            .run(&world, &mut asset_server)
             .expect("Failed to run render system");
 
         let (sprite_count, _batch_count, _ratio) = render_system.stats();

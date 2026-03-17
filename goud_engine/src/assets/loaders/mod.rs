@@ -14,6 +14,7 @@ pub mod mesh;
 #[cfg(feature = "native")]
 mod rodio_integration;
 pub mod shader;
+pub mod sprite_sheet;
 pub mod texture;
 pub mod tiled_map;
 
@@ -24,6 +25,7 @@ pub use texture::{
 pub use shader::{
     ShaderAsset, ShaderFormat, ShaderLoader, ShaderSettings, ShaderSource, ShaderStage,
 };
+pub use sprite_sheet::{SpriteRegion, SpriteSheetAsset, SpriteSheetLoader};
 
 pub use audio::{AudioAsset, AudioFormat, AudioLoader, AudioSettings};
 

@@ -16,6 +16,7 @@ mod buffer_ops;
 mod clear_ops;
 mod draw_ops;
 mod frame_ops;
+mod render_target_ops;
 mod shader_ops;
 mod state_ops;
 mod texture_ops;
@@ -24,6 +25,7 @@ pub use buffer_ops::BufferOps;
 pub use clear_ops::ClearOps;
 pub use draw_ops::DrawOps;
 pub use frame_ops::FrameOps;
+pub use render_target_ops::RenderTargetOps;
 pub use shader_ops::ShaderOps;
 pub use state_ops::StateOps;
 pub use texture_ops::TextureOps;
@@ -38,7 +40,7 @@ use super::capabilities::{BackendCapabilities, BackendInfo};
 ///
 /// Composed from focused sub-traits:
 /// [`FrameOps`], [`ClearOps`], [`StateOps`], [`BufferOps`],
-/// [`TextureOps`], [`ShaderOps`], [`DrawOps`].
+/// [`TextureOps`], [`RenderTargetOps`], [`ShaderOps`], [`DrawOps`].
 ///
 /// # Safety
 ///
@@ -54,7 +56,16 @@ use super::capabilities::{BackendCapabilities, BackendInfo};
 /// - Generic methods for efficient implementations
 /// - Zero-cost abstractions where possible
 pub trait RenderBackend:
-    FrameOps + ClearOps + StateOps + BufferOps + TextureOps + ShaderOps + DrawOps + Send + Sync
+    FrameOps
+    + ClearOps
+    + StateOps
+    + BufferOps
+    + TextureOps
+    + RenderTargetOps
+    + ShaderOps
+    + DrawOps
+    + Send
+    + Sync
 {
     /// Returns information about this backend implementation.
     fn info(&self) -> &BackendInfo;

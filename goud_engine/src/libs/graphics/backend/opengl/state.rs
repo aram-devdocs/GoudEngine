@@ -109,6 +109,9 @@ impl ClearOps for OpenGLBackend {
 
 impl StateOps for OpenGLBackend {
     fn set_viewport(&mut self, x: i32, y: i32, width: u32, height: u32) {
+        if self.active_render_target.is_none() {
+            self.default_viewport = (x, y, width, height);
+        }
         // SAFETY: x, y are signed integers and width/height are cast from valid u32 values.
         unsafe {
             gl::Viewport(x, y, width as i32, height as i32);

@@ -116,6 +116,7 @@ class FfiSprite(ctypes.Structure):
         ("has_source_rect", ctypes.c_bool),
         ("flip_x", ctypes.c_bool),
         ("flip_y", ctypes.c_bool),
+        ("z_layer", ctypes.c_int32),
         ("anchor_x", ctypes.c_float),
         ("anchor_y", ctypes.c_float),
         ("custom_size_x", ctypes.c_float),
@@ -764,6 +765,12 @@ def _setup():
     _lib.goud_sprite_with_flip.restype = FfiSprite
     _lib.goud_sprite_is_flipped.argtypes = [ctypes.POINTER(FfiSprite)]
     _lib.goud_sprite_is_flipped.restype = ctypes.c_bool
+    _lib.goud_sprite_set_z_layer.argtypes = [ctypes.POINTER(FfiSprite), ctypes.c_int32]
+    _lib.goud_sprite_set_z_layer.restype = None
+    _lib.goud_sprite_get_z_layer.argtypes = [ctypes.POINTER(FfiSprite)]
+    _lib.goud_sprite_get_z_layer.restype = ctypes.c_int32
+    _lib.goud_sprite_with_z_layer.argtypes = [FfiSprite, ctypes.c_int32]
+    _lib.goud_sprite_with_z_layer.restype = FfiSprite
     _lib.goud_sprite_set_anchor.argtypes = [ctypes.POINTER(FfiSprite), ctypes.c_float, ctypes.c_float]
     _lib.goud_sprite_set_anchor.restype = None
     _lib.goud_sprite_get_anchor.argtypes = [ctypes.POINTER(FfiSprite)]
@@ -804,6 +811,8 @@ def _setup():
     _lib.goud_sprite_builder_with_flip_y.restype = ctypes.c_void_p
     _lib.goud_sprite_builder_with_flip.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_bool]
     _lib.goud_sprite_builder_with_flip.restype = ctypes.c_void_p
+    _lib.goud_sprite_builder_with_z_layer.argtypes = [ctypes.c_void_p, ctypes.c_int32]
+    _lib.goud_sprite_builder_with_z_layer.restype = ctypes.c_void_p
     _lib.goud_sprite_builder_with_anchor.argtypes = [ctypes.c_void_p, ctypes.c_float, ctypes.c_float]
     _lib.goud_sprite_builder_with_anchor.restype = ctypes.c_void_p
     _lib.goud_sprite_builder_with_custom_size.argtypes = [ctypes.c_void_p, ctypes.c_float, ctypes.c_float]

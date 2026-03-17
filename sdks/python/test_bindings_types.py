@@ -713,10 +713,48 @@ def test_generated_types_ffi_runtime_with_fake_lib():
             return 0
 
         def goud_sprite_new(self, texture_handle):
-            return self.ffi.FfiSprite(texture_handle, 1.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, False, False, False, 0.5, 0.5, 0, 0, False)
+            return self.ffi.FfiSprite(
+                texture_handle,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                0,
+                0,
+                0,
+                0,
+                False,
+                False,
+                False,
+                0,
+                0.5,
+                0.5,
+                0,
+                0,
+                False,
+            )
 
         def goud_sprite_default(self):
-            return self.ffi.FfiSprite(0, 1.0, 1.0, 1.0, 1.0, 0, 0, 0, 0, False, False, False, 0.5, 0.5, 0, 0, False)
+            return self.ffi.FfiSprite(
+                0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                0,
+                0,
+                0,
+                0,
+                False,
+                False,
+                False,
+                0,
+                0.5,
+                0.5,
+                0,
+                0,
+                False,
+            )
 
         def goud_sprite_set_color(self, ptr, r, g, b, a):
             s = self._sp(ptr)

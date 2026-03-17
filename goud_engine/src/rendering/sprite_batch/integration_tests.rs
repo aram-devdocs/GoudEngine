@@ -45,7 +45,7 @@ fn test_gather_sprites_from_world() {
         .expect("Failed to create sprite batch");
 
     batch
-        .gather_sprites(&world)
+        .gather_sprites(&world, &mut asset_server)
         .expect("Failed to gather sprites");
 
     assert_eq!(batch.sprite_count(), 3);
@@ -70,10 +70,10 @@ fn test_gather_sprites_from_world() {
     assert_eq!(source.width, 32.0);
     assert_eq!(source.height, 32.0);
 
-    // Z-layers derive from Y position
-    assert_eq!(sprite1.z_layer, 20.0);
-    assert_eq!(sprite2.z_layer, 40.0);
-    assert_eq!(sprite3.z_layer, 60.0);
+    // Z-layers come from the sprite component, not transform Y position.
+    assert_eq!(sprite1.z_layer, 0);
+    assert_eq!(sprite2.z_layer, 0);
+    assert_eq!(sprite3.z_layer, 0);
 }
 
 #[test]
@@ -83,14 +83,14 @@ fn test_gather_sprites_empty_world() {
     use crate::ecs::World;
 
     let world = World::new();
-    let _asset_server = AssetServer::new();
+    let mut asset_server = AssetServer::new();
 
     let backend = OpenGLBackend::new().expect("Failed to create OpenGL backend");
     let mut batch = SpriteBatch::new(backend, SpriteBatchConfig::default())
         .expect("Failed to create sprite batch");
 
     batch
-        .gather_sprites(&world)
+        .gather_sprites(&world, &mut asset_server)
         .expect("Failed to gather sprites");
     assert_eq!(batch.sprite_count(), 0);
 }
@@ -121,7 +121,7 @@ fn test_gather_sprites_clears_previous_frame() {
     world.insert(e2, Sprite::new(texture));
 
     batch
-        .gather_sprites(&world)
+        .gather_sprites(&world, &mut asset_server)
         .expect("Failed to gather sprites");
     assert_eq!(batch.sprite_count(), 2);
 
@@ -129,7 +129,7 @@ fn test_gather_sprites_clears_previous_frame() {
     world.despawn(e2);
 
     batch
-        .gather_sprites(&world)
+        .gather_sprites(&world, &mut asset_server)
         .expect("Failed to gather sprites");
     // Should only have 1 sprite, not accumulate across frames
     assert_eq!(batch.sprite_count(), 1);

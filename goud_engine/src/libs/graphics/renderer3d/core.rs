@@ -53,6 +53,7 @@ pub struct Renderer3D {
     pub(super) camera: Camera3D,
     pub(super) window_width: u32,
     pub(super) window_height: u32,
+    pub(super) viewport: (i32, i32, u32, u32),
     pub(super) grid_config: GridConfig,
     pub(super) skybox_config: SkyboxConfig,
     pub(super) fog_config: FogConfig,
@@ -113,6 +114,7 @@ impl Renderer3D {
             camera: Camera3D::default(),
             window_width,
             window_height,
+            viewport: (0, 0, window_width.max(1), window_height.max(1)),
             grid_config: GridConfig::default(),
             skybox_config: SkyboxConfig::default(),
             fog_config: FogConfig::default(),
@@ -243,6 +245,17 @@ impl Renderer3D {
     /// Set camera position
     pub fn set_camera_position(&mut self, x: f32, y: f32, z: f32) {
         self.camera.position = Vector3::new(x, y, z);
+    }
+
+    /// Updates the framebuffer dimensions used for projection.
+    pub fn resize(&mut self, width: u32, height: u32) {
+        self.window_width = width.max(1);
+        self.window_height = height.max(1);
+    }
+
+    /// Sets the active viewport rectangle for rendering.
+    pub fn set_viewport(&mut self, x: i32, y: i32, width: u32, height: u32) {
+        self.viewport = (x, y, width.max(1), height.max(1));
     }
 
     /// Set camera rotation (pitch, yaw, roll in degrees)

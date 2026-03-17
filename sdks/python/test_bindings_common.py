@@ -73,6 +73,7 @@ def _new_fake_generated_package(package_name, fake_lib):
             ("has_source_rect", ctypes.c_bool),
             ("flip_x", ctypes.c_bool),
             ("flip_y", ctypes.c_bool),
+            ("z_layer", ctypes.c_int32),
             ("anchor_x", ctypes.c_float),
             ("anchor_y", ctypes.c_float),
             ("custom_size_x", ctypes.c_float),

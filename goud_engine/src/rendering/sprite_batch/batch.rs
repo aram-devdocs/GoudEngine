@@ -1,15 +1,19 @@
 //! Core `SpriteBatch` struct and frame lifecycle implementation.
 
 use super::config::SpriteBatchConfig;
-use super::types::{SpriteBatchEntry, SpriteInstance, SpriteVertex};
-use crate::assets::{loaders::TextureAsset, AssetHandle, AssetServer};
+use super::types::{SpriteBatchEntry, SpriteInstance, SpriteVertex, TextureCacheEntry};
+use crate::assets::{
+    loaders::{SpriteSheetAsset, TextureAsset},
+    AssetHandle, AssetServer,
+};
 use crate::core::error::GoudResult;
 use crate::core::math::{Rect, Vec2};
 use crate::ecs::components::{Sprite, Transform2D};
 use crate::ecs::query::Query;
 use crate::ecs::{Entity, World};
-use crate::libs::graphics::backend::types::{BufferHandle, ShaderHandle, TextureHandle};
+use crate::libs::graphics::backend::types::{BufferHandle, ShaderHandle};
 use crate::libs::graphics::backend::RenderBackend;
+use crate::rendering::RenderViewport;
 use std::collections::HashMap;
 
 /// High-performance sprite batch renderer.
@@ -21,7 +25,7 @@ use std::collections::HashMap;
 ///
 /// ```rust,ignore
 /// batch.begin();           // Start a new frame
-/// batch.draw_sprites(&world, &asset_server);  // Gather and batch sprites
+/// batch.draw_sprites(&world, &mut asset_server);  // Gather and batch sprites
 /// batch.end();             // Flush remaining batches
 /// ```
 pub struct SpriteBatch<B: RenderBackend> {
@@ -44,9 +48,13 @@ pub struct SpriteBatch<B: RenderBackend> {
     /// Prepared batches for rendering
     pub batches: Vec<SpriteBatchEntry>,
     /// Texture handle cache (AssetHandle -> GPU TextureHandle)
-    pub texture_cache: HashMap<AssetHandle<TextureAsset>, TextureHandle>,
+    pub texture_cache: HashMap<AssetHandle<TextureAsset>, TextureCacheEntry>,
     /// Current frame number (for debugging)
     pub frame_count: u64,
+    /// Active viewport used for sprite projection.
+    pub viewport: RenderViewport,
+    /// Signature of the currently compiled shader/material state.
+    pub shader_signature: Option<u64>,
 }
 
 impl<B: RenderBackend> SpriteBatch<B> {
@@ -68,6 +76,8 @@ impl<B: RenderBackend> SpriteBatch<B> {
             batches: Vec::with_capacity(128),
             texture_cache: HashMap::new(),
             frame_count: 0,
+            viewport: RenderViewport::default(),
+            shader_signature: None,
         })
     }
 
@@ -99,15 +109,19 @@ impl<B: RenderBackend> SpriteBatch<B> {
     /// 2. Sorts by Z-layer and texture
     /// 3. Generates batches
     /// 4. Submits draw calls
-    pub fn draw_sprites(&mut self, world: &World, asset_server: &AssetServer) -> GoudResult<()> {
-        self.gather_sprites(world)?;
+    pub fn draw_sprites(
+        &mut self,
+        world: &World,
+        asset_server: &mut AssetServer,
+    ) -> GoudResult<()> {
+        self.gather_sprites(world, asset_server)?;
 
         if self.config.enable_z_sorting {
             self.sort_sprites();
         }
 
         self.generate_batches(asset_server)?;
-        self.render_batches()?;
+        self.render_batches(asset_server)?;
 
         Ok(())
     }
@@ -117,31 +131,102 @@ impl<B: RenderBackend> SpriteBatch<B> {
     // =========================================================================
 
     /// Gathers all sprites from the world into the internal sprite list.
-    pub fn gather_sprites(&mut self, world: &World) -> GoudResult<()> {
+    pub fn gather_sprites(
+        &mut self,
+        world: &World,
+        asset_server: &mut AssetServer,
+    ) -> GoudResult<()> {
         self.sprites.clear();
 
         let query: Query<(Entity, &Sprite, &Transform2D)> = Query::new(world);
 
         for (entity, sprite, transform) in query.iter(world) {
             let matrix = transform.matrix();
+            let (texture, source_rect) = self.resolve_sprite_source(sprite, asset_server)?;
 
             let size = if let Some(custom_size) = sprite.custom_size {
                 custom_size
-            } else if let Some(ref source_rect) = sprite.source_rect {
+            } else if let Some(source_rect) = source_rect {
                 Vec2::new(source_rect.width, source_rect.height)
+            } else if texture.is_valid() {
+                self.get_texture_size(texture, asset_server)
             } else {
-                // Default to texture size (will be obtained from AssetServer once integrated)
                 Vec2::new(64.0, 64.0)
             };
 
-            // Use transform's Y position as Z-layer for 2D sorting
-            let z_layer = transform.position.y;
-
-            let instance = SpriteInstance::from_components(entity, sprite, matrix, z_layer, size);
+            let instance = SpriteInstance::from_components(
+                entity,
+                texture,
+                source_rect,
+                matrix,
+                sprite.z_layer,
+                size,
+                sprite.color,
+                sprite.flip_x,
+                sprite.flip_y,
+            );
             self.sprites.push(instance);
         }
 
         Ok(())
+    }
+
+    fn resolve_sprite_source(
+        &self,
+        sprite: &Sprite,
+        asset_server: &mut AssetServer,
+    ) -> GoudResult<(AssetHandle<TextureAsset>, Option<Rect>)> {
+        if sprite.sprite_sheet.is_valid() {
+            let frame_name = sprite.sprite_frame.as_deref().ok_or_else(|| {
+                crate::core::error::GoudError::InvalidState(
+                    "Sprite sheet handle set without a frame name".to_string(),
+                )
+            })?;
+            let sheet = asset_server.get(&sprite.sprite_sheet).ok_or_else(|| {
+                crate::core::error::GoudError::ResourceNotFound(format!(
+                    "Sprite sheet asset {:?}",
+                    sprite.sprite_sheet
+                ))
+            })?;
+            let texture_path = sheet.texture_path().to_string();
+            let region_rect = sheet
+                .region(frame_name)
+                .ok_or_else(|| {
+                    crate::core::error::GoudError::ResourceNotFound(format!(
+                        "Sprite frame '{frame_name}' not found in sprite sheet"
+                    ))
+                })?
+                .rect;
+            let texture = asset_server.load::<TextureAsset>(&texture_path);
+            return Ok((texture, Some(region_rect)));
+        }
+
+        if let Some(path) = sprite.sprite_sheet_path.as_deref() {
+            let frame_name = sprite.sprite_frame.as_deref().ok_or_else(|| {
+                crate::core::error::GoudError::InvalidState(
+                    "Sprite sheet path set without a frame name".to_string(),
+                )
+            })?;
+            let sheet_handle = asset_server.load::<SpriteSheetAsset>(path);
+            let sheet = asset_server.get(&sheet_handle).ok_or_else(|| {
+                crate::core::error::GoudError::ResourceNotFound(format!(
+                    "Sprite sheet asset path '{path}'"
+                ))
+            })?;
+            let texture_path = sheet.texture_path().to_string();
+            let region_rect = sheet
+                .region(frame_name)
+                .ok_or_else(|| {
+                    crate::core::error::GoudError::ResourceNotFound(format!(
+                        "Sprite frame '{frame_name}' not found in sprite sheet '{path}'"
+                    ))
+                })?
+                .rect;
+            let texture = asset_server.load::<TextureAsset>(&texture_path);
+            return Ok((texture, Some(region_rect)));
+        }
+
+        Ok((sprite.texture, sprite.source_rect))
     }
 
     // =========================================================================
@@ -151,17 +236,13 @@ impl<B: RenderBackend> SpriteBatch<B> {
     /// Sorts sprites by Z-layer (back to front) and texture (for batching).
     pub fn sort_sprites(&mut self) {
         if !self.config.enable_batching {
+            self.sprites.sort_by_key(|sprite| sprite.z_layer);
+        } else {
             self.sprites.sort_by(|a, b| {
                 a.z_layer
-                    .partial_cmp(&b.z_layer)
-                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .cmp(&b.z_layer)
+                    .then_with(|| a.texture.cmp(&b.texture))
             });
-        } else {
-            self.sprites
-                .sort_by(|a, b| match a.z_layer.partial_cmp(&b.z_layer) {
-                    Some(std::cmp::Ordering::Equal) | None => a.texture.cmp(&b.texture),
-                    Some(ord) => ord,
-                });
         }
     }
 
@@ -313,6 +394,11 @@ impl<B: RenderBackend> SpriteBatch<B> {
     /// Returns the current frame number.
     pub fn frame_count(&self) -> u64 {
         self.frame_count
+    }
+
+    /// Sets the active viewport used by this batch.
+    pub fn set_viewport(&mut self, viewport: RenderViewport) {
+        self.viewport = viewport;
     }
 
     /// Returns the batch ratio (sprites per draw call).

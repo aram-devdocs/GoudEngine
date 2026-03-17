@@ -82,6 +82,7 @@ export interface ISpriteData {
   hasSourceRect: boolean;
   flipX: boolean;
   flipY: boolean;
+  zLayer: number;
   anchorX: number;
   anchorY: number;
   customSizeX: number;

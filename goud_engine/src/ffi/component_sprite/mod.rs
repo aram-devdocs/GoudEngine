@@ -69,12 +69,13 @@ pub use color::{
 pub use properties::{
     goud_sprite_clear_custom_size, goud_sprite_clear_source_rect, goud_sprite_get_anchor,
     goud_sprite_get_custom_size, goud_sprite_get_flip_x, goud_sprite_get_flip_y,
-    goud_sprite_get_source_rect, goud_sprite_has_custom_size, goud_sprite_has_source_rect,
-    goud_sprite_is_flipped, goud_sprite_set_anchor, goud_sprite_set_custom_size,
-    goud_sprite_set_flip, goud_sprite_set_flip_x, goud_sprite_set_flip_y,
-    goud_sprite_set_source_rect, goud_sprite_with_anchor, goud_sprite_with_custom_size,
-    goud_sprite_with_flip, goud_sprite_with_flip_x, goud_sprite_with_flip_y,
-    goud_sprite_with_source_rect,
+    goud_sprite_get_source_rect, goud_sprite_get_z_layer, goud_sprite_has_custom_size,
+    goud_sprite_has_source_rect, goud_sprite_is_flipped, goud_sprite_set_anchor,
+    goud_sprite_set_custom_size, goud_sprite_set_flip, goud_sprite_set_flip_x,
+    goud_sprite_set_flip_y, goud_sprite_set_source_rect, goud_sprite_set_z_layer,
+    goud_sprite_with_anchor, goud_sprite_with_custom_size, goud_sprite_with_flip,
+    goud_sprite_with_flip_x, goud_sprite_with_flip_y, goud_sprite_with_source_rect,
+    goud_sprite_with_z_layer,
 };
 
 // Texture handle and utility
@@ -87,5 +88,5 @@ pub use builder::{
     goud_sprite_builder_with_color, goud_sprite_builder_with_custom_size,
     goud_sprite_builder_with_flip, goud_sprite_builder_with_flip_x,
     goud_sprite_builder_with_flip_y, goud_sprite_builder_with_source_rect,
-    goud_sprite_builder_with_texture,
+    goud_sprite_builder_with_texture, goud_sprite_builder_with_z_layer,
 };

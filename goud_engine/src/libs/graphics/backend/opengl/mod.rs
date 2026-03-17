@@ -21,6 +21,7 @@ mod buffer_ops;
 mod conversions;
 mod draw_calls;
 mod gl_tests;
+mod render_target_ops;
 mod shader_ops;
 mod state;
 mod texture_ops;
@@ -60,6 +61,21 @@ struct TextureMetadata {
     _filter: super::types::TextureFilter,
     /// Wrapping mode — reserved for future texture parameter queries
     _wrap: super::types::TextureWrap,
+}
+
+/// Internal render-target metadata stored alongside the OpenGL framebuffer ID.
+#[derive(Debug, Clone)]
+struct RenderTargetMetadata {
+    /// OpenGL framebuffer object ID.
+    framebuffer_id: u32,
+    /// Texture attached to color attachment 0.
+    color_texture: super::types::TextureHandle,
+    /// Optional depth renderbuffer.
+    depth_renderbuffer: Option<u32>,
+    /// Render-target width in pixels.
+    width: u32,
+    /// Render-target height in pixels.
+    height: u32,
 }
 
 /// Internal shader metadata stored alongside the OpenGL shader program ID.

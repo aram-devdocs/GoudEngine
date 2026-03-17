@@ -23,6 +23,7 @@ impl SpriteOps {
             has_source_rect: false,
             flip_x: false,
             flip_y: false,
+            z_layer: 0,
             anchor_x: 0.5,
             anchor_y: 0.5,
             custom_size_x: 0.0,
@@ -82,6 +83,13 @@ impl SpriteOps {
         let mut result = sprite;
         result.flip_x = flip_x;
         result.flip_y = flip_y;
+        result
+    }
+
+    /// Creates a new sprite with the specified render-order layer.
+    pub fn with_z_layer(sprite: FfiSprite, z_layer: i32) -> FfiSprite {
+        let mut result = sprite;
+        result.z_layer = z_layer;
         result
     }
 

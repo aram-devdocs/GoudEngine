@@ -1,5 +1,6 @@
 use super::{BackendInfo, ClearOps, RenderBackend, WgpuBackend};
 use crate::libs::error::{GoudError, GoudResult};
+use crate::libs::graphics::backend::render_backend::RenderTargetOps;
 
 pub(super) struct PendingFrameReadback {
     pub(super) buffer: wgpu::Buffer,
@@ -39,6 +40,8 @@ impl RenderBackend for WgpuBackend {
         }
     }
 }
+
+impl RenderTargetOps for WgpuBackend {}
 
 impl WgpuBackend {
     pub(super) fn prepare_frame_readback(&self) -> PendingFrameReadback {

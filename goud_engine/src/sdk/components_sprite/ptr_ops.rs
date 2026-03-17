@@ -171,6 +171,24 @@ impl SpritePtrOps {
         s.flip_x || s.flip_y
     }
 
+    /// Sets the explicit render-order layer.
+    pub fn set_z_layer(sprite: *mut FfiSprite, z_layer: i32) {
+        if sprite.is_null() {
+            return;
+        }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
+        unsafe { (*sprite).z_layer = z_layer };
+    }
+
+    /// Gets the explicit render-order layer.
+    pub fn get_z_layer(sprite: *const FfiSprite) -> i32 {
+        if sprite.is_null() {
+            return 0;
+        }
+        // SAFETY: Pointer checked non-null above; allocated by the corresponding _create function.
+        unsafe { (*sprite).z_layer }
+    }
+
     /// Sets the anchor point.
     pub fn set_anchor(sprite: *mut FfiSprite, x: f32, y: f32) {
         if sprite.is_null() {

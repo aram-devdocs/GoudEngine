@@ -112,6 +112,11 @@ pub trait RenderProvider: Provider + ProviderLifecycle {
     /// Set the active render target. `None` renders to the default framebuffer.
     fn set_render_target(&mut self, handle: Option<RenderTargetHandle>);
 
+    /// Returns the color texture attached to a render target, if available.
+    fn render_target_texture(&self, _handle: RenderTargetHandle) -> Option<TextureHandle> {
+        None
+    }
+
     /// Clear the current render target with the given color [r, g, b, a].
     fn clear(&mut self, color: [f32; 4]);
 

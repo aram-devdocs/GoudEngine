@@ -14,7 +14,7 @@ use crate::sdk::GoudGame;
 impl GoudGame {
     /// Begins a new rendering frame. Call before any drawing operations.
     pub fn begin_render(&mut self) -> bool {
-        let (fb_w, fb_h) = self.get_framebuffer_size();
+        let viewport = self.render_viewport();
         let backend = match self.render_backend.as_mut() {
             Some(b) => b,
             None => return false,
@@ -22,7 +22,7 @@ impl GoudGame {
         if backend.begin_frame().is_err() {
             return false;
         }
-        backend.set_viewport(0, 0, fb_w, fb_h);
+        backend.set_viewport(viewport.x, viewport.y, viewport.width, viewport.height);
         true
     }
 
@@ -36,8 +36,24 @@ impl GoudGame {
 
     /// Sets the viewport rectangle for rendering.
     pub fn set_viewport(&mut self, x: i32, y: i32, width: u32, height: u32) {
+        let clamped_width = width.max(1);
+        let clamped_height = height.max(1);
+        #[cfg(feature = "native")]
+        {
+            if let Some((_, viewport)) = self.bound_render_target_viewport.as_mut() {
+                viewport.x = x;
+                viewport.y = y;
+                viewport.width = clamped_width;
+                viewport.height = clamped_height;
+            } else {
+                self.render_viewport.x = x;
+                self.render_viewport.y = y;
+                self.render_viewport.width = clamped_width;
+                self.render_viewport.height = clamped_height;
+            }
+        }
         if let Some(backend) = self.render_backend.as_mut() {
-            backend.set_viewport(x, y, width, height);
+            backend.set_viewport(x, y, clamped_width, clamped_height);
         }
     }
 
@@ -125,8 +141,7 @@ impl GoudGame {
             None => return false,
         };
 
-        let (fb_w, fb_h) = self.get_framebuffer_size();
-        let (win_w, win_h) = self.get_window_size();
+        let viewport = self.render_viewport();
 
         let (shader, vertex_layout, u_proj, u_model, u_color, u_use_tex, u_tex, u_uv_off, u_uv_sc) = (
             state.shader,
@@ -149,7 +164,7 @@ impl GoudGame {
 
         backend.enable_blending();
         backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-        backend.set_viewport(0, 0, fb_w, fb_h);
+        backend.set_viewport(viewport.x, viewport.y, viewport.width, viewport.height);
         backend.bind_default_vertex_array();
         if backend.bind_buffer(vertex_buffer).is_err() || backend.bind_buffer(index_buffer).is_err()
         {
@@ -157,7 +172,12 @@ impl GoudGame {
         }
         backend.set_vertex_attributes(&vertex_layout);
 
-        let projection = ortho_matrix(0.0, win_w as f32, win_h as f32, 0.0);
+        let projection = ortho_matrix(
+            0.0,
+            viewport.logical_width as f32,
+            viewport.logical_height as f32,
+            0.0,
+        );
         let model = model_matrix(x, y, width, height, rotation);
 
         let tex_index = (texture & 0xFFFF_FFFF) as u32;
@@ -206,8 +226,7 @@ impl GoudGame {
             None => return false,
         };
 
-        let (fb_w, fb_h) = self.get_framebuffer_size();
-        let (win_w, win_h) = self.get_window_size();
+        let viewport = self.render_viewport();
 
         let (shader, vertex_layout, u_proj, u_model, u_color, u_use_tex) = (
             state.shader,
@@ -227,7 +246,7 @@ impl GoudGame {
 
         backend.enable_blending();
         backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-        backend.set_viewport(0, 0, fb_w, fb_h);
+        backend.set_viewport(viewport.x, viewport.y, viewport.width, viewport.height);
         backend.bind_default_vertex_array();
         if backend.bind_buffer(vertex_buffer).is_err() || backend.bind_buffer(index_buffer).is_err()
         {
@@ -235,7 +254,12 @@ impl GoudGame {
         }
         backend.set_vertex_attributes(&vertex_layout);
 
-        let projection = ortho_matrix(0.0, win_w as f32, win_h as f32, 0.0);
+        let projection = ortho_matrix(
+            0.0,
+            viewport.logical_width as f32,
+            viewport.logical_height as f32,
+            0.0,
+        );
         let model = model_matrix(x, y, width, height, 0.0);
 
         if backend.bind_shader(shader).is_err() {
@@ -273,7 +297,7 @@ impl GoudGame {
             return false;
         }
 
-        let viewport = self.get_window_size();
+        let viewport = self.render_viewport();
         let asset_server = match self.asset_server.as_mut() {
             Some(server) => server,
             None => return false,
@@ -301,6 +325,7 @@ impl GoudGame {
         backend.disable_depth_test();
         backend.enable_blending();
         backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
+        backend.set_viewport(viewport.x, viewport.y, viewport.width, viewport.height);
         let Some((layout, texture)) = (match batch.resolve_truetype_font(
             text,
             font_size,
@@ -318,7 +343,14 @@ impl GoudGame {
             return true;
         }
         batch
-            .draw_prepared_layout_frame(backend, viewport, &layout, color, &transform, texture)
+            .draw_prepared_layout_frame(
+                backend,
+                viewport.logical_size(),
+                &layout,
+                color,
+                &transform,
+                texture,
+            )
             .is_ok()
     }
 
@@ -362,5 +394,54 @@ impl GoudGame {
             }
             Err(_) => false,
         }
+    }
+}
+
+#[cfg(all(test, feature = "native"))]
+mod tests {
+    use super::*;
+    use crate::sdk::game_config::GameConfig;
+
+    #[test]
+    fn set_viewport_updates_render_viewport_state() {
+        let mut game = GoudGame::new(GameConfig::default()).expect("game should construct");
+
+        game.set_viewport(12, 34, 640, 360);
+
+        let viewport = game.render_viewport();
+        assert_eq!(viewport.x, 12);
+        assert_eq!(viewport.y, 34);
+        assert_eq!(viewport.width, 640);
+        assert_eq!(viewport.height, 360);
+        assert_eq!(viewport.logical_size(), (800, 600));
+    }
+
+    #[test]
+    fn set_viewport_updates_bound_render_target_override() {
+        let mut game = GoudGame::new(GameConfig::default()).expect("game should construct");
+        game.bound_render_target_viewport =
+            Some((5, crate::rendering::RenderViewport::fullscreen((64, 32))));
+
+        game.set_viewport(3, 4, 16, 20);
+
+        let viewport = game.render_viewport();
+        assert_eq!(viewport.x, 3);
+        assert_eq!(viewport.y, 4);
+        assert_eq!(viewport.width, 16);
+        assert_eq!(viewport.height, 20);
+        assert_eq!(viewport.logical_size(), (64, 32));
+    }
+
+    #[test]
+    fn set_viewport_clamps_zero_dimensions() {
+        let mut game = GoudGame::new(GameConfig::default()).expect("game should construct");
+
+        game.set_viewport(1, 2, 0, 0);
+
+        let viewport = game.render_viewport();
+        assert_eq!(viewport.x, 1);
+        assert_eq!(viewport.y, 2);
+        assert_eq!(viewport.width, 1);
+        assert_eq!(viewport.height, 1);
     }
 }
