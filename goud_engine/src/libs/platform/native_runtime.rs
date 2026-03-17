@@ -4,9 +4,8 @@ use crate::core::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::native_backend::{
     NativeRenderBackend, SharedNativeRenderBackend,
 };
-use crate::sdk::game_config::{RenderBackendKind, WindowBackendKind};
 
-use super::{PlatformBackend, WindowConfig};
+use super::{PlatformBackend, RenderBackendKind, WindowBackendKind, WindowConfig};
 
 /// Concrete native runtime bundle used by SDK and FFI entry points.
 pub struct NativeRuntime {
@@ -94,14 +93,16 @@ pub fn create_native_runtime(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sdk::game_config::GameConfig;
 
     #[test]
     fn validates_default_native_pair() {
-        let config = GameConfig::default();
-        assert_eq!(config.window_backend, WindowBackendKind::Winit);
-        assert_eq!(config.render_backend, RenderBackendKind::Wgpu);
-        assert!(validate_native_backend_pair(config.window_backend, config.render_backend).is_ok());
+        assert_eq!(WindowBackendKind::default(), WindowBackendKind::Winit);
+        assert_eq!(RenderBackendKind::default(), RenderBackendKind::Wgpu);
+        assert!(validate_native_backend_pair(
+            WindowBackendKind::default(),
+            RenderBackendKind::default()
+        )
+        .is_ok());
     }
 
     #[test]

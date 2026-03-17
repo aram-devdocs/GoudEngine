@@ -4,6 +4,7 @@
 //! for per-frame runtime state passed to update callbacks.
 
 use crate::core::debugger::DebuggerConfig;
+pub use crate::libs::platform::{RenderBackendKind, WindowBackendKind};
 
 // =============================================================================
 // Game Configuration
@@ -31,50 +32,6 @@ use crate::core::debugger::DebuggerConfig;
 pub struct PhysicsDebugConfig {
     /// Enables runtime physics debug visualization and shape collection.
     pub enabled: bool,
-}
-
-/// Native rendering backend selection.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-#[repr(u32)]
-pub enum RenderBackendKind {
-    /// Cross-platform wgpu backend.
-    #[default]
-    Wgpu = 0,
-    /// Legacy OpenGL backend.
-    OpenGlLegacy = 1,
-}
-
-impl RenderBackendKind {
-    /// Converts an FFI/backend code into a render backend.
-    pub fn from_u32(value: u32) -> Option<Self> {
-        match value {
-            0 => Some(Self::Wgpu),
-            1 => Some(Self::OpenGlLegacy),
-            _ => None,
-        }
-    }
-}
-
-/// Native window backend selection.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-#[repr(u32)]
-pub enum WindowBackendKind {
-    /// winit native windowing path.
-    #[default]
-    Winit = 0,
-    /// Legacy GLFW windowing path.
-    GlfwLegacy = 1,
-}
-
-impl WindowBackendKind {
-    /// Converts an FFI/backend code into a window backend.
-    pub fn from_u32(value: u32) -> Option<Self> {
-        match value {
-            0 => Some(Self::Winit),
-            1 => Some(Self::GlfwLegacy),
-            _ => None,
-        }
-    }
 }
 
 /// Configuration for creating a GoudGame instance.
