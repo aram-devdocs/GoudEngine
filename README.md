@@ -13,7 +13,7 @@
 [![NuGet](https://img.shields.io/nuget/v/GoudEngine.svg)](https://www.nuget.org/packages/GoudEngine/)
 [![PyPI](https://img.shields.io/pypi/v/goudengine.svg)](https://pypi.org/project/goudengine/)
 
-[![total downloads](https://img.shields.io/badge/total_downloads-4%2C955-brightgreen)](#downloads)
+[![total downloads](https://img.shields.io/badge/total_downloads-5%2C059-brightgreen)](#downloads)
 
 Game engine written in Rust. Build 2D and 3D games from Rust, C#, Python, or TypeScript.
 
@@ -165,10 +165,10 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 
 | Registry | Total Downloads |
 |----------|-----------------|
-| crates.io | [36](https://crates.io/crates/goud-engine) |
-| NuGet | [1,083](https://www.nuget.org/packages/GoudEngine/) |
-| PyPI | [2,685](https://pypi.org/project/goudengine/) |
-| npm | [1,151](https://www.npmjs.com/package/goudengine) |
+| crates.io | [39](https://crates.io/crates/goud-engine) |
+| NuGet | [1,105](https://www.nuget.org/packages/GoudEngine/) |
+| PyPI | [2,758](https://pypi.org/project/goudengine/) |
+| npm | [1,157](https://www.npmjs.com/package/goudengine) |
 
 <sub>PyPI totals exclude mirrors.</sub>
 
@@ -176,7 +176,7 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 
 [![Star History Chart](https://api.star-history.com/svg?repos=aram-devdocs/GoudEngine&type=Date)](https://star-history.com/#aram-devdocs/GoudEngine&Date)
 
-<sub>Last updated: 2026-03-16 via [GitHub Action](.github/workflows/community-stats.yml)</sub>
+<sub>Last updated: 2026-03-17 via [GitHub Action](.github/workflows/community-stats.yml)</sub>
 <!-- COMMUNITY-STATS:END -->
 
 ## License
