@@ -73,6 +73,7 @@ namespace GoudEngine
         public bool FlipX;
         [MarshalAs(UnmanagedType.U1)]
         public bool FlipY;
+        public int ZLayer;
         public float AnchorX;
         public float AnchorY;
         public float CustomSizeX;
@@ -1033,6 +1034,15 @@ namespace GoudEngine
         public static extern bool goud_sprite_is_flipped(ref FfiSprite sprite);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void goud_sprite_set_z_layer(ref FfiSprite sprite, int z_layer);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_sprite_get_z_layer(ref FfiSprite sprite);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern FfiSprite goud_sprite_with_z_layer(FfiSprite sprite, int z_layer);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void goud_sprite_set_anchor(ref FfiSprite sprite, float x, float y);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -1093,6 +1103,9 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr goud_sprite_builder_with_flip(IntPtr builder, [MarshalAs(UnmanagedType.U1)] bool flip_x, [MarshalAs(UnmanagedType.U1)] bool flip_y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr goud_sprite_builder_with_z_layer(IntPtr builder, int z_layer);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr goud_sprite_builder_with_anchor(IntPtr builder, float x, float y);

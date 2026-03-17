@@ -19,6 +19,7 @@ use crate::ffi::component_sprite::{
         goud_sprite_with_color,
     },
     factory::goud_sprite_new,
+    layering::{goud_sprite_get_z_layer, goud_sprite_set_z_layer, goud_sprite_with_z_layer},
     properties::{
         goud_sprite_get_anchor, goud_sprite_get_custom_size, goud_sprite_get_flip_x,
         goud_sprite_get_flip_y, goud_sprite_get_source_rect, goud_sprite_has_custom_size,
@@ -42,6 +43,7 @@ fn test_ffi_sprite_new() {
     assert!(!s.has_source_rect);
     assert!(!s.flip_x);
     assert!(!s.flip_y);
+    assert_eq!(s.z_layer, 0);
     assert_eq!(s.anchor_x, 0.5);
     assert_eq!(s.anchor_y, 0.5);
     assert!(!s.has_custom_size);
@@ -151,13 +153,25 @@ fn test_ffi_sprite_builder_chain() {
     let s = goud_sprite_new(1);
     let s = goud_sprite_with_color(s, 1.0, 0.0, 0.0, 1.0);
     let s = goud_sprite_with_flip_x(s, true);
+    let s = goud_sprite_with_z_layer(s, 5);
     let s = goud_sprite_with_anchor(s, 0.5, 1.0);
     let s = goud_sprite_with_custom_size(s, 64.0, 64.0);
 
     assert_eq!(s.color_r, 1.0);
     assert!(s.flip_x);
+    assert_eq!(s.z_layer, 5);
     assert_eq!(s.anchor_y, 1.0);
     assert!(s.has_custom_size);
+}
+
+#[test]
+fn test_ffi_sprite_z_layer() {
+    let mut s = goud_sprite_new(1);
+    // SAFETY: s is a valid stack-allocated FfiSprite.
+    unsafe {
+        goud_sprite_set_z_layer(&mut s, 9);
+        assert_eq!(goud_sprite_get_z_layer(&s), 9);
+    }
 }
 
 #[test]

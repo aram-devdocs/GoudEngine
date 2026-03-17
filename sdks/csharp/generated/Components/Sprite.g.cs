@@ -65,6 +65,11 @@ namespace GoudEngine
             get => _inner.FlipY;
             set => _inner.FlipY = value;
         }
+        public int ZLayer
+        {
+            get => _inner.ZLayer;
+            set => _inner.ZLayer = value;
+        }
         public float AnchorX
         {
             get => _inner.AnchorX;
@@ -86,7 +91,7 @@ namespace GoudEngine
             set => _inner.CustomSizeY = value;
         }
 
-        public Sprite(ulong texturehandle, float colorr, float colorg, float colorb, float colora, float sourcerectx, float sourcerecty, float sourcerectwidth, float sourcerectheight, bool hassourcerect, bool flipx, bool flipy, float anchorx, float anchory, float customsizex, float customsizey, bool hascustomsize)
+        public Sprite(ulong texturehandle, float colorr, float colorg, float colorb, float colora, float sourcerectx, float sourcerecty, float sourcerectwidth, float sourcerectheight, bool hassourcerect, bool flipx, bool flipy, int zlayer, float anchorx, float anchory, float customsizex, float customsizey, bool hascustomsize)
         {
             _inner = new FfiSprite();
             _inner.TextureHandle = texturehandle;
@@ -101,6 +106,7 @@ namespace GoudEngine
             _inner.HasSourceRect = hassourcerect;
             _inner.FlipX = flipx;
             _inner.FlipY = flipy;
+            _inner.ZLayer = zlayer;
             _inner.AnchorX = anchorx;
             _inner.AnchorY = anchory;
             _inner.CustomSizeX = customsizex;
@@ -199,6 +205,18 @@ namespace GoudEngine
         public bool IsFlipped()
         { return NativeMethods.goud_sprite_is_flipped(ref _inner); }
 
+        /// <summary>Sets the explicit render-order layer</summary>
+        public void SetZLayer(int zLayer)
+        { NativeMethods.goud_sprite_set_z_layer(ref _inner, zLayer); }
+
+        /// <summary>Gets the explicit render-order layer</summary>
+        public int GetZLayer()
+        { return NativeMethods.goud_sprite_get_z_layer(ref _inner); }
+
+        /// <summary>Returns a copy with a modified render-order layer</summary>
+        public Sprite WithZLayer(int zLayer)
+        { return new Sprite(NativeMethods.goud_sprite_with_z_layer(_inner, zLayer)); }
+
         /// <summary>Sets the anchor point (normalized 0-1)</summary>
         public void SetAnchor(float x, float y)
         { NativeMethods.goud_sprite_set_anchor(ref _inner, x, y); }
@@ -247,7 +265,7 @@ namespace GoudEngine
         public Vec2 SizeOrRect()
         { var __r = NativeMethods.goud_sprite_size_or_rect(ref _inner); return new Vec2(__r.X, __r.Y); }
 
-        public override string ToString() => $"Sprite({TextureHandle}, {ColorR}, {ColorG}, {ColorB}, {ColorA}, {SourceRectX}, {SourceRectY}, {SourceRectWidth}, {SourceRectHeight}, {_inner.HasSourceRect}, {FlipX}, {FlipY}, {AnchorX}, {AnchorY}, {CustomSizeX}, {CustomSizeY}, {_inner.HasCustomSize})";
+        public override string ToString() => $"Sprite({TextureHandle}, {ColorR}, {ColorG}, {ColorB}, {ColorA}, {SourceRectX}, {SourceRectY}, {SourceRectWidth}, {SourceRectHeight}, {_inner.HasSourceRect}, {FlipX}, {FlipY}, {ZLayer}, {AnchorX}, {AnchorY}, {CustomSizeX}, {CustomSizeY}, {_inner.HasCustomSize})";
     }
 
     /// <summary>Fluent builder for constructing Sprite instances</summary>
@@ -290,6 +308,10 @@ namespace GoudEngine
         /// <summary>Sets both flip flags</summary>
         public SpriteBuilder WithFlip(bool flipX, bool flipY)
         { _ptr = NativeMethods.goud_sprite_builder_with_flip(_ptr, flipX, flipY); return this; }
+
+        /// <summary>Sets the explicit render-order layer</summary>
+        public SpriteBuilder WithZLayer(int zLayer)
+        { _ptr = NativeMethods.goud_sprite_builder_with_z_layer(_ptr, zLayer); return this; }
 
         /// <summary>Sets anchor point</summary>
         public SpriteBuilder WithAnchor(float x, float y)

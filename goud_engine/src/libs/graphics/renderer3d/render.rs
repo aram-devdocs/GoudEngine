@@ -16,6 +16,12 @@ use super::types::MAX_LIGHTS;
 impl Renderer3D {
     /// Render the scene — grid, objects, and overlays — using the current camera and light state.
     pub fn render(&mut self, texture_manager: Option<&dyn TextureManagerTrait>) {
+        self.backend.set_viewport(
+            self.viewport.0,
+            self.viewport.1,
+            self.viewport.2,
+            self.viewport.3,
+        );
         self.backend.enable_depth_test();
         self.backend.set_depth_func(DepthFunc::Less);
         self.backend.enable_culling();

@@ -566,7 +566,7 @@ class Transform2DBuilder:
 
 class Sprite:
     """Sprite rendering component"""
-    def __init__(self, texture_handle: int = 0, color_r: float = 0.0, color_g: float = 0.0, color_b: float = 0.0, color_a: float = 0.0, source_rect_x: float = 0.0, source_rect_y: float = 0.0, source_rect_width: float = 0.0, source_rect_height: float = 0.0, has_source_rect: bool = False, flip_x: bool = False, flip_y: bool = False, anchor_x: float = 0.0, anchor_y: float = 0.0, custom_size_x: float = 0.0, custom_size_y: float = 0.0, has_custom_size: bool = False):
+    def __init__(self, texture_handle: int = 0, color_r: float = 0.0, color_g: float = 0.0, color_b: float = 0.0, color_a: float = 0.0, source_rect_x: float = 0.0, source_rect_y: float = 0.0, source_rect_width: float = 0.0, source_rect_height: float = 0.0, has_source_rect: bool = False, flip_x: bool = False, flip_y: bool = False, z_layer: int = 0, anchor_x: float = 0.0, anchor_y: float = 0.0, custom_size_x: float = 0.0, custom_size_y: float = 0.0, has_custom_size: bool = False):
         self.texture_handle = texture_handle
         self.color_r = color_r
         self.color_g = color_g
@@ -579,6 +579,7 @@ class Sprite:
         self.has_source_rect = has_source_rect
         self.flip_x = flip_x
         self.flip_y = flip_y
+        self.z_layer = z_layer
         self.anchor_x = anchor_x
         self.anchor_y = anchor_y
         self.custom_size_x = custom_size_x
@@ -601,6 +602,7 @@ class Sprite:
         obj.has_source_rect = ffi.has_source_rect
         obj.flip_x = ffi.flip_x
         obj.flip_y = ffi.flip_y
+        obj.z_layer = ffi.z_layer
         obj.anchor_x = ffi.anchor_x
         obj.anchor_y = ffi.anchor_y
         obj.custom_size_x = ffi.custom_size_x
@@ -625,6 +627,7 @@ class Sprite:
         self._ffi.has_source_rect = self.has_source_rect
         self._ffi.flip_x = self.flip_x
         self._ffi.flip_y = self.flip_y
+        self._ffi.z_layer = self.z_layer
         self._ffi.anchor_x = self.anchor_x
         self._ffi.anchor_y = self.anchor_y
         self._ffi.custom_size_x = self.custom_size_x
@@ -644,6 +647,7 @@ class Sprite:
         self.has_source_rect = self._ffi.has_source_rect
         self.flip_x = self._ffi.flip_x
         self.flip_y = self._ffi.flip_y
+        self.z_layer = self._ffi.z_layer
         self.anchor_x = self._ffi.anchor_x
         self.anchor_y = self._ffi.anchor_y
         self.custom_size_x = self._ffi.custom_size_x
@@ -791,6 +795,26 @@ class Sprite:
         self._sync_to_ffi()
         return _lib.goud_sprite_is_flipped(ctypes.byref(self._ffi))
 
+    def set_z_layer(self, z_layer: int) -> None:
+        """Sets the explicit render-order layer"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        _lib.goud_sprite_set_z_layer(ctypes.byref(self._ffi), z_layer)
+        self._sync_from_ffi()
+
+    def get_z_layer(self) -> int:
+        """Gets the explicit render-order layer"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        return _lib.goud_sprite_get_z_layer(ctypes.byref(self._ffi))
+
+    def with_z_layer(self, z_layer: int) -> 'Sprite':
+        """Returns a copy with a modified render-order layer"""
+        _ensure_ffi()
+        self._sync_to_ffi()
+        ffi = _lib.goud_sprite_with_z_layer(self._ffi, z_layer)
+        return Sprite._from_ffi(ffi)
+
     def set_anchor(self, x: float, y: float) -> None:
         """Sets the anchor point (normalized 0-1)"""
         _ensure_ffi()
@@ -868,7 +892,7 @@ class Sprite:
         return Vec2(ffi.x, ffi.y)
 
     def __repr__(self):
-        return f"Sprite(texture_handle={self.texture_handle}, color_r={self.color_r}, color_g={self.color_g}, color_b={self.color_b}, color_a={self.color_a}, source_rect_x={self.source_rect_x}, source_rect_y={self.source_rect_y}, source_rect_width={self.source_rect_width}, source_rect_height={self.source_rect_height}, has_source_rect={self.has_source_rect}, flip_x={self.flip_x}, flip_y={self.flip_y}, anchor_x={self.anchor_x}, anchor_y={self.anchor_y}, custom_size_x={self.custom_size_x}, custom_size_y={self.custom_size_y}, has_custom_size={self.has_custom_size})"
+        return f"Sprite(texture_handle={self.texture_handle}, color_r={self.color_r}, color_g={self.color_g}, color_b={self.color_b}, color_a={self.color_a}, source_rect_x={self.source_rect_x}, source_rect_y={self.source_rect_y}, source_rect_width={self.source_rect_width}, source_rect_height={self.source_rect_height}, has_source_rect={self.has_source_rect}, flip_x={self.flip_x}, flip_y={self.flip_y}, z_layer={self.z_layer}, anchor_x={self.anchor_x}, anchor_y={self.anchor_y}, custom_size_x={self.custom_size_x}, custom_size_y={self.custom_size_y}, has_custom_size={self.has_custom_size})"
 
 class SpriteBuilder:
     """Fluent builder for constructing Sprite instances"""
@@ -929,6 +953,12 @@ class SpriteBuilder:
         """Sets both flip flags"""
         _ensure_ffi()
         self._ptr = _lib.goud_sprite_builder_with_flip(self._ptr, flip_x, flip_y)
+        return self
+
+    def with_z_layer(self, z_layer: int) -> 'SpriteBuilder':
+        """Sets the explicit render-order layer"""
+        _ensure_ffi()
+        self._ptr = _lib.goud_sprite_builder_with_z_layer(self._ptr, z_layer)
         return self
 
     def with_anchor(self, x: float, y: float) -> 'SpriteBuilder':

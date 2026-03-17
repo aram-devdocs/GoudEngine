@@ -287,6 +287,10 @@ typedef struct FfiSprite {
      */
     bool flip_y;
     /**
+     * Explicit render-order layer.
+     */
+    int32_t z_layer;
+    /**
      * Anchor point X (normalized 0-1).
      */
     float anchor_x;
@@ -2294,6 +2298,11 @@ struct FfiSpriteBuilder *goud_sprite_builder_with_flip_y(struct FfiSpriteBuilder
 struct FfiSpriteBuilder *goud_sprite_builder_with_flip(struct FfiSpriteBuilder *builder, bool flip_x, bool flip_y);
 
 /**
+ * Sets the render-order layer on the builder.
+ */
+struct FfiSpriteBuilder *goud_sprite_builder_with_z_layer(struct FfiSpriteBuilder *builder, int32_t z_layer);
+
+/**
  * Sets the anchor point on the builder.
  */
 struct FfiSpriteBuilder *goud_sprite_builder_with_anchor(struct FfiSpriteBuilder *builder, float x, float y);
@@ -2347,6 +2356,21 @@ struct FfiSprite goud_sprite_new(uint64_t texture_handle);
  * Creates a default sprite with an invalid texture handle.
  */
 struct FfiSprite goud_sprite_default(void);
+
+/**
+ * Sets the explicit render-order layer.
+ */
+void goud_sprite_set_z_layer(struct FfiSprite *sprite, int32_t z_layer);
+
+/**
+ * Gets the explicit render-order layer.
+ */
+int32_t goud_sprite_get_z_layer(const struct FfiSprite *sprite);
+
+/**
+ * Returns a copy with a modified render-order layer.
+ */
+struct FfiSprite goud_sprite_with_z_layer(struct FfiSprite sprite, int32_t z_layer);
 
 /**
  * Sets the source rectangle for sprite sheet rendering.

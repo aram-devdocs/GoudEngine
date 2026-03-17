@@ -1,6 +1,9 @@
 //! Tests for the [`Sprite`] component.
 
-use crate::assets::{loaders::TextureAsset, AssetHandle};
+use crate::assets::{
+    loaders::{SpriteSheetAsset, TextureAsset},
+    AssetHandle,
+};
 use crate::core::math::{Color, Rect, Vec2};
 use crate::ecs::components::Sprite;
 use crate::ecs::Component;
@@ -10,6 +13,10 @@ fn dummy_handle() -> AssetHandle<TextureAsset> {
     AssetHandle::new(1, 1)
 }
 
+fn dummy_sheet_handle() -> AssetHandle<SpriteSheetAsset> {
+    AssetHandle::new(2, 1)
+}
+
 #[test]
 fn test_sprite_new() {
     let handle = dummy_handle();
@@ -17,9 +24,13 @@ fn test_sprite_new() {
 
     assert_eq!(sprite.texture, handle);
     assert_eq!(sprite.color, Color::WHITE);
+    assert_eq!(sprite.sprite_sheet, AssetHandle::INVALID);
+    assert_eq!(sprite.sprite_sheet_path, None);
+    assert_eq!(sprite.sprite_frame, None);
     assert_eq!(sprite.source_rect, None);
     assert_eq!(sprite.flip_x, false);
     assert_eq!(sprite.flip_y, false);
+    assert_eq!(sprite.z_layer, 0);
     assert_eq!(sprite.anchor, Vec2::new(0.5, 0.5));
     assert_eq!(sprite.custom_size, None);
 }
@@ -30,7 +41,39 @@ fn test_sprite_default() {
 
     assert_eq!(sprite.texture, AssetHandle::INVALID);
     assert_eq!(sprite.color, Color::WHITE);
+    assert_eq!(sprite.sprite_sheet, AssetHandle::INVALID);
     assert_eq!(sprite.anchor, Vec2::new(0.5, 0.5));
+}
+
+#[test]
+fn test_sprite_from_sprite_sheet() {
+    let sprite = Sprite::from_sprite_sheet(dummy_sheet_handle(), "idle");
+
+    assert_eq!(sprite.sprite_sheet, dummy_sheet_handle());
+    assert_eq!(sprite.sprite_frame.as_deref(), Some("idle"));
+    assert!(sprite.has_sprite_sheet());
+}
+
+#[test]
+fn test_sprite_with_sprite_sheet_path() {
+    let sprite = Sprite::default().with_sprite_sheet_path("sprites/player.sheet.json", "run_1");
+
+    assert_eq!(
+        sprite.sprite_sheet_path.as_deref(),
+        Some("sprites/player.sheet.json")
+    );
+    assert_eq!(sprite.sprite_frame.as_deref(), Some("run_1"));
+    assert!(sprite.has_sprite_sheet());
+}
+
+#[test]
+fn test_sprite_without_sprite_sheet() {
+    let sprite = Sprite::from_sprite_sheet(dummy_sheet_handle(), "idle").without_sprite_sheet();
+
+    assert_eq!(sprite.sprite_sheet, AssetHandle::INVALID);
+    assert_eq!(sprite.sprite_sheet_path, None);
+    assert_eq!(sprite.sprite_frame, None);
+    assert!(!sprite.has_sprite_sheet());
 }
 
 #[test]
@@ -112,6 +155,14 @@ fn test_sprite_with_anchor_vec() {
 }
 
 #[test]
+fn test_sprite_with_z_layer() {
+    let handle = dummy_handle();
+    let sprite = Sprite::new(handle).with_z_layer(42);
+
+    assert_eq!(sprite.z_layer, 42);
+}
+
+#[test]
 fn test_sprite_with_custom_size() {
     let handle = dummy_handle();
     let size = Vec2::new(64.0, 64.0);
@@ -187,6 +238,7 @@ fn test_sprite_builder_chain() {
         .with_color(Color::RED)
         .with_source_rect(Rect::new(0.0, 0.0, 32.0, 32.0))
         .with_flip(true, false)
+        .with_z_layer(7)
         .with_anchor(0.5, 1.0)
         .with_custom_size(Vec2::new(64.0, 64.0));
 
@@ -194,6 +246,7 @@ fn test_sprite_builder_chain() {
     assert_eq!(sprite.source_rect, Some(Rect::new(0.0, 0.0, 32.0, 32.0)));
     assert_eq!(sprite.flip_x, true);
     assert_eq!(sprite.flip_y, false);
+    assert_eq!(sprite.z_layer, 7);
     assert_eq!(sprite.anchor, Vec2::new(0.5, 1.0));
     assert_eq!(sprite.custom_size, Some(Vec2::new(64.0, 64.0)));
 }

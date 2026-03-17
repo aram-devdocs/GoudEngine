@@ -1,6 +1,11 @@
 //! Core [`Sprite`] component type and its builder methods.
 
-use crate::assets::{loaders::TextureAsset, AssetHandle};
+mod builders;
+
+use crate::assets::{
+    loaders::{SpriteSheetAsset, TextureAsset},
+    AssetHandle,
+};
 use crate::core::math::{Color, Rect, Vec2};
 use crate::ecs::Component;
 
@@ -22,6 +27,7 @@ use crate::ecs::Component;
 /// - `source_rect`: Optional UV rectangle for sprite sheets (default: full texture)
 /// - `flip_x`: Flip the sprite horizontally (default: false)
 /// - `flip_y`: Flip the sprite vertically (default: false)
+/// - `z_layer`: Explicit render-order layer (default: 0)
 /// - `anchor`: Normalized anchor point for rotation/positioning (default: center)
 /// - `custom_size`: Optional override for sprite size (default: texture size)
 ///
@@ -83,6 +89,18 @@ pub struct Sprite {
     #[serde(default)]
     pub texture_path: Option<String>,
 
+    /// Optional sprite-sheet descriptor handle for atlas-backed sprites.
+    #[serde(skip)]
+    pub sprite_sheet: AssetHandle<SpriteSheetAsset>,
+
+    /// Optional path to the sprite-sheet descriptor for serialization.
+    #[serde(default)]
+    pub sprite_sheet_path: Option<String>,
+
+    /// Optional named frame inside the sprite sheet.
+    #[serde(default)]
+    pub sprite_frame: Option<String>,
+
     /// Color tint multiplied with texture pixels.
     ///
     /// Each component is in range [0.0, 1.0]. White (1, 1, 1, 1) renders
@@ -107,6 +125,11 @@ pub struct Sprite {
     ///
     /// When true, the texture is mirrored along the X-axis.
     pub flip_y: bool,
+
+    /// Explicit render-order layer for 2D batching.
+    ///
+    /// Lower values draw first, higher values draw later.
+    pub z_layer: i32,
 
     /// Normalized anchor point for rotation and positioning.
     ///
@@ -152,308 +175,17 @@ impl Sprite {
         Self {
             texture,
             texture_path: None,
+            sprite_sheet: AssetHandle::INVALID,
+            sprite_sheet_path: None,
+            sprite_frame: None,
             color: Color::WHITE,
             source_rect: None,
             flip_x: false,
             flip_y: false,
+            z_layer: 0,
             anchor: Vec2::new(0.5, 0.5),
             custom_size: None,
         }
-    }
-
-    /// Sets the texture asset path for serialization.
-    ///
-    /// The path is stored alongside the sprite so it survives
-    /// serialization. A higher-level system is responsible for
-    /// resolving it back to an [`AssetHandle`] after deserialization.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::ecs::components::Sprite;
-    /// # use goud_engine::assets::{AssetServer, loaders::TextureAsset};
-    /// # let mut asset_server = AssetServer::new();
-    /// # let texture = asset_server.load::<TextureAsset>("player.png");
-    ///
-    /// let sprite = Sprite::new(texture)
-    ///     .with_texture_path("player.png");
-    /// assert_eq!(sprite.texture_path.as_deref(), Some("player.png"));
-    /// ```
-    #[inline]
-    pub fn with_texture_path(mut self, path: impl Into<String>) -> Self {
-        self.texture_path = Some(path.into());
-        self
-    }
-
-    /// Sets the color tint for this sprite.
-    ///
-    /// The color is multiplied with each texture pixel. Use white (1, 1, 1, 1)
-    /// for no tinting.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::ecs::components::Sprite;
-    /// use goud_engine::core::math::Color;
-    /// # use goud_engine::assets::{AssetServer, loaders::TextureAsset};
-    /// # let mut asset_server = AssetServer::new();
-    /// # let texture = asset_server.load::<TextureAsset>("player.png");
-    ///
-    /// let sprite = Sprite::new(texture)
-    ///     .with_color(Color::rgba(1.0, 0.0, 0.0, 0.5)); // Red, 50% transparent
-    /// ```
-    #[inline]
-    pub fn with_color(mut self, color: Color) -> Self {
-        self.color = color;
-        self
-    }
-
-    /// Sets the source rectangle for sprite sheet rendering.
-    ///
-    /// The rectangle is specified in pixel coordinates relative to the
-    /// top-left corner of the texture.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::ecs::components::Sprite;
-    /// use goud_engine::core::math::Rect;
-    /// # use goud_engine::assets::{AssetServer, loaders::TextureAsset};
-    /// # let mut asset_server = AssetServer::new();
-    /// # let texture = asset_server.load::<TextureAsset>("spritesheet.png");
-    ///
-    /// // Extract a 32x32 tile at position (64, 32)
-    /// let sprite = Sprite::new(texture)
-    ///     .with_source_rect(Rect::new(64.0, 32.0, 32.0, 32.0));
-    /// ```
-    #[inline]
-    pub fn with_source_rect(mut self, rect: Rect) -> Self {
-        self.source_rect = Some(rect);
-        self
-    }
-
-    /// Removes the source rectangle, rendering the full texture.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use goud_engine::ecs::components::Sprite;
-    /// # use goud_engine::core::math::Rect;
-    /// # use goud_engine::assets::{AssetServer, loaders::TextureAsset};
-    /// # let mut asset_server = AssetServer::new();
-    /// # let texture = asset_server.load::<TextureAsset>("spritesheet.png");
-    /// let mut sprite = Sprite::new(texture)
-    ///     .with_source_rect(Rect::new(0.0, 0.0, 32.0, 32.0));
-    ///
-    /// sprite = sprite.without_source_rect();
-    /// assert!(sprite.source_rect.is_none());
-    /// ```
-    #[inline]
-    pub fn without_source_rect(mut self) -> Self {
-        self.source_rect = None;
-        self
-    }
-
-    /// Sets the horizontal flip flag.
-    ///
-    /// When true, the sprite is mirrored along the Y-axis.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::ecs::components::Sprite;
-    /// # use goud_engine::assets::{AssetServer, loaders::TextureAsset};
-    /// # let mut asset_server = AssetServer::new();
-    /// # let texture = asset_server.load::<TextureAsset>("player.png");
-    ///
-    /// let sprite = Sprite::new(texture).with_flip_x(true);
-    /// ```
-    #[inline]
-    pub fn with_flip_x(mut self, flip: bool) -> Self {
-        self.flip_x = flip;
-        self
-    }
-
-    /// Sets the vertical flip flag.
-    ///
-    /// When true, the sprite is mirrored along the X-axis.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::ecs::components::Sprite;
-    /// # use goud_engine::assets::{AssetServer, loaders::TextureAsset};
-    /// # let mut asset_server = AssetServer::new();
-    /// # let texture = asset_server.load::<TextureAsset>("player.png");
-    ///
-    /// let sprite = Sprite::new(texture).with_flip_y(true);
-    /// ```
-    #[inline]
-    pub fn with_flip_y(mut self, flip: bool) -> Self {
-        self.flip_y = flip;
-        self
-    }
-
-    /// Sets both flip flags at once.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::ecs::components::Sprite;
-    /// # use goud_engine::assets::{AssetServer, loaders::TextureAsset};
-    /// # let mut asset_server = AssetServer::new();
-    /// # let texture = asset_server.load::<TextureAsset>("player.png");
-    ///
-    /// let sprite = Sprite::new(texture).with_flip(true, true);
-    /// ```
-    #[inline]
-    pub fn with_flip(mut self, flip_x: bool, flip_y: bool) -> Self {
-        self.flip_x = flip_x;
-        self.flip_y = flip_y;
-        self
-    }
-
-    /// Sets the anchor point with individual coordinates.
-    ///
-    /// Coordinates are normalized in range [0.0, 1.0]:
-    /// - `(0.0, 0.0)` = Top-left
-    /// - `(0.5, 0.5)` = Center
-    /// - `(1.0, 1.0)` = Bottom-right
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::ecs::components::Sprite;
-    /// # use goud_engine::assets::{AssetServer, loaders::TextureAsset};
-    /// # let mut asset_server = AssetServer::new();
-    /// # let texture = asset_server.load::<TextureAsset>("player.png");
-    ///
-    /// // Bottom-center anchor for ground-aligned sprites
-    /// let sprite = Sprite::new(texture).with_anchor(0.5, 1.0);
-    /// ```
-    #[inline]
-    pub fn with_anchor(mut self, x: f32, y: f32) -> Self {
-        self.anchor = Vec2::new(x, y);
-        self
-    }
-
-    /// Sets the anchor point from a Vec2.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::ecs::components::Sprite;
-    /// use goud_engine::core::math::Vec2;
-    /// # use goud_engine::assets::{AssetServer, loaders::TextureAsset};
-    /// # let mut asset_server = AssetServer::new();
-    /// # let texture = asset_server.load::<TextureAsset>("player.png");
-    ///
-    /// let sprite = Sprite::new(texture)
-    ///     .with_anchor_vec(Vec2::new(0.5, 1.0));
-    /// ```
-    #[inline]
-    pub fn with_anchor_vec(mut self, anchor: Vec2) -> Self {
-        self.anchor = anchor;
-        self
-    }
-
-    /// Sets a custom size for the sprite.
-    ///
-    /// When set, the sprite is scaled to this size regardless of the
-    /// texture dimensions.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::ecs::components::Sprite;
-    /// use goud_engine::core::math::Vec2;
-    /// # use goud_engine::assets::{AssetServer, loaders::TextureAsset};
-    /// # let mut asset_server = AssetServer::new();
-    /// # let texture = asset_server.load::<TextureAsset>("player.png");
-    ///
-    /// // Force sprite to 64x64 size
-    /// let sprite = Sprite::new(texture)
-    ///     .with_custom_size(Vec2::new(64.0, 64.0));
-    /// ```
-    #[inline]
-    pub fn with_custom_size(mut self, size: Vec2) -> Self {
-        self.custom_size = Some(size);
-        self
-    }
-
-    /// Removes the custom size, using texture dimensions.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::ecs::components::Sprite;
-    /// use goud_engine::core::math::Vec2;
-    /// # use goud_engine::assets::{AssetServer, loaders::TextureAsset};
-    /// # let mut asset_server = AssetServer::new();
-    /// # let texture = asset_server.load::<TextureAsset>("player.png");
-    ///
-    /// let mut sprite = Sprite::new(texture)
-    ///     .with_custom_size(Vec2::new(64.0, 64.0));
-    ///
-    /// sprite = sprite.without_custom_size();
-    /// assert!(sprite.custom_size.is_none());
-    /// ```
-    #[inline]
-    pub fn without_custom_size(mut self) -> Self {
-        self.custom_size = None;
-        self
-    }
-
-    /// Gets the effective size of the sprite.
-    ///
-    /// Returns the custom size if set, otherwise the source rect size if set,
-    /// otherwise falls back to a default size (requires texture dimensions).
-    ///
-    /// For actual rendering, you'll need to query the texture asset to get
-    /// its dimensions when custom_size and source_rect are both None.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use goud_engine::ecs::components::Sprite;
-    /// use goud_engine::core::math::{Vec2, Rect};
-    /// # use goud_engine::assets::{AssetServer, loaders::TextureAsset};
-    /// # let mut asset_server = AssetServer::new();
-    /// # let texture = asset_server.load::<TextureAsset>("player.png");
-    ///
-    /// let sprite = Sprite::new(texture)
-    ///     .with_source_rect(Rect::new(0.0, 0.0, 32.0, 32.0));
-    ///
-    /// let size = sprite.size_or_rect();
-    /// assert_eq!(size, Vec2::new(32.0, 32.0));
-    /// ```
-    #[inline]
-    pub fn size_or_rect(&self) -> Vec2 {
-        if let Some(size) = self.custom_size {
-            size
-        } else if let Some(rect) = self.source_rect {
-            Vec2::new(rect.width, rect.height)
-        } else {
-            Vec2::zero() // Caller must query texture dimensions
-        }
-    }
-
-    /// Returns true if the sprite has a source rectangle set.
-    #[inline]
-    pub fn has_source_rect(&self) -> bool {
-        self.source_rect.is_some()
-    }
-
-    /// Returns true if the sprite has a custom size set.
-    #[inline]
-    pub fn has_custom_size(&self) -> bool {
-        self.custom_size.is_some()
-    }
-
-    /// Returns true if the sprite is flipped on either axis.
-    #[inline]
-    pub fn is_flipped(&self) -> bool {
-        self.flip_x || self.flip_y
     }
 }
 
@@ -474,10 +206,14 @@ impl Default for Sprite {
         Self {
             texture: AssetHandle::INVALID,
             texture_path: None,
+            sprite_sheet: AssetHandle::INVALID,
+            sprite_sheet_path: None,
+            sprite_frame: None,
             color: Color::WHITE,
             source_rect: None,
             flip_x: false,
             flip_y: false,
+            z_layer: 0,
             anchor: Vec2::new(0.5, 0.5),
             custom_size: None,
         }

@@ -30,6 +30,7 @@
 use super::GoudGame;
 use crate::context_registry::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::core::error::{set_last_error, GoudError, GoudResult};
+use crate::core::events::WindowResized;
 use crate::libs::graphics::backend::{ClearOps, RenderBackend};
 
 // =============================================================================
@@ -156,14 +157,26 @@ impl GoudGame {
     ///
     /// Returns an error if no platform backend is initialized.
     pub fn poll_events(&mut self) -> GoudResult<f32> {
-        let (dt, fb_size) = match &mut self.platform {
+        let (dt, logical_size, fb_size) = match &mut self.platform {
             Some(platform) => {
                 let dt = platform.poll_events(&mut self.input_manager);
+                let logical_size = platform.get_size();
                 let fb_size = platform.get_framebuffer_size();
-                (dt, fb_size)
+                (dt, logical_size, fb_size)
             }
             None => return Err(GoudError::NotInitialized),
         };
+
+        let previous_logical_size = self.context.window_size();
+
+        #[cfg(feature = "native")]
+        self.sync_render_viewport(logical_size, fb_size);
+
+        if previous_logical_size != logical_size {
+            self.window_resized_events
+                .send(WindowResized::new(logical_size.0, logical_size.1));
+        }
+        self.window_resized_events.update();
 
         // Sync the render backend viewport to the current framebuffer size.
         if let Some(backend) = &self.render_backend {
@@ -179,6 +192,9 @@ impl GoudGame {
             );
         }
 
+        #[cfg(feature = "native")]
+        self.process_ui_frame_with_viewport(self.render_viewport.logical_size());
+        #[cfg(not(feature = "native"))]
         self.process_ui_frame_with_viewport(fb_size);
 
         // Debugger frame lifecycle: begin frame with timing/pause control.
@@ -309,6 +325,63 @@ impl GoudGame {
 mod tests {
     use super::*;
     use crate::sdk::GameConfig;
+    #[cfg(feature = "native")]
+    use crate::{core::input_manager::InputManager, libs::platform::PlatformBackend};
+
+    #[cfg(feature = "native")]
+    struct TestPlatform {
+        should_close: bool,
+        logical_size: (u32, u32),
+        framebuffer_size: (u32, u32),
+        first_poll_size: Option<((u32, u32), (u32, u32))>,
+    }
+
+    #[cfg(feature = "native")]
+    impl TestPlatform {
+        fn with_first_poll_size(logical_size: (u32, u32), framebuffer_size: (u32, u32)) -> Self {
+            Self {
+                should_close: false,
+                logical_size: (800, 600),
+                framebuffer_size: (800, 600),
+                first_poll_size: Some((logical_size, framebuffer_size)),
+            }
+        }
+    }
+
+    #[cfg(feature = "native")]
+    impl PlatformBackend for TestPlatform {
+        fn should_close(&self) -> bool {
+            self.should_close
+        }
+
+        fn set_should_close(&mut self, should_close: bool) {
+            self.should_close = should_close;
+        }
+
+        fn poll_events(&mut self, _input: &mut InputManager) -> f32 {
+            if let Some((logical_size, framebuffer_size)) = self.first_poll_size.take() {
+                self.logical_size = logical_size;
+                self.framebuffer_size = framebuffer_size;
+            }
+            1.0 / 60.0
+        }
+
+        fn swap_buffers(&mut self) {}
+
+        fn get_size(&self) -> (u32, u32) {
+            self.logical_size
+        }
+
+        fn request_size(&mut self, width: u32, height: u32) -> bool {
+            self.logical_size = (width, height);
+            self.framebuffer_size = (width, height);
+            true
+        }
+
+        fn get_framebuffer_size(&self) -> (u32, u32) {
+            self.framebuffer_size
+        }
+    }
 
     #[test]
     fn test_should_close_headless() {
@@ -381,6 +454,28 @@ mod tests {
     fn test_read_default_framebuffer_rgba8_headless_returns_error() {
         let mut game = GoudGame::new(GameConfig::default()).unwrap();
         assert!(game.read_default_framebuffer_rgba8().is_err());
+    }
+
+    #[cfg(feature = "native")]
+    #[test]
+    fn test_poll_events_clears_stale_resize_events_on_following_frames() {
+        let mut game = GoudGame::new(GameConfig::default()).unwrap();
+        game.platform = Some(Box::new(TestPlatform::with_first_poll_size(
+            (1024, 768),
+            (1024, 768),
+        )));
+
+        game.poll_events().expect("first poll should succeed");
+        let mut first_reader = game.window_resized_events.reader();
+        let first_events: Vec<_> = first_reader.read().copied().collect();
+        assert_eq!(first_events, vec![WindowResized::new(1024, 768)]);
+
+        game.poll_events().expect("second poll should succeed");
+        let mut second_reader = game.window_resized_events.reader();
+        assert!(
+            second_reader.read().next().is_none(),
+            "resize event should be cleared on the next frame when no new resize occurs"
+        );
     }
 
     #[test]

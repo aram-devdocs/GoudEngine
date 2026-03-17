@@ -44,6 +44,8 @@ pub struct WasmSprite {
     pub flip_x: bool,
     /// Vertical texture flip flag.
     pub flip_y: bool,
+    /// Explicit render-order layer.
+    pub z_layer: i32,
     /// X anchor in normalized sprite space.
     pub anchor_x: f32,
     /// Y anchor in normalized sprite space.

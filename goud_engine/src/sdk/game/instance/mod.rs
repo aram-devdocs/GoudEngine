@@ -3,7 +3,11 @@
 mod capture;
 mod debugger_frame;
 mod ecs_scene;
+#[cfg(test)]
+mod tests;
 
+#[cfg(feature = "native")]
+use std::collections::HashMap;
 #[cfg(feature = "native")]
 use std::sync::atomic::AtomicU64;
 #[cfg(feature = "native")]
@@ -12,8 +16,11 @@ use std::sync::Arc;
 use crate::context_registry::scene::SceneManager;
 use crate::core::debugger::{self, RuntimeRouteId, RuntimeSurfaceKind};
 use crate::core::error::GoudResult;
+use crate::core::event::Events;
+use crate::core::events::WindowResized;
 use crate::core::providers::types::DebugShape;
 use crate::core::providers::ProviderRegistry;
+use crate::rendering::{compute_render_viewport, RenderViewport, ViewportScaleMode};
 use crate::sdk::debug_overlay::DebugOverlay;
 use crate::sdk::game_config::{GameConfig, GameContext};
 use crate::ui::UiManager;
@@ -88,6 +95,9 @@ pub struct GoudGame {
     /// UI manager for immediate-mode UI widgets.
     pub(crate) ui_manager: UiManager,
 
+    /// Window resize events emitted through the runtime path.
+    pub(crate) window_resized_events: Events<WindowResized>,
+
     // =========================================================================
     // Native-only fields (require a desktop windowing and render backend)
     // =========================================================================
@@ -140,6 +150,26 @@ pub struct GoudGame {
     /// Deferred capture coordination between the IPC thread and the main thread.
     #[cfg(feature = "native")]
     pub(crate) deferred_capture: Option<DeferredCapture>,
+
+    /// Logical resolution used for 2D/UI projection and viewport policy.
+    #[cfg(feature = "native")]
+    pub(crate) design_resolution: (u32, u32),
+
+    /// Current viewport scaling policy.
+    #[cfg(feature = "native")]
+    pub(crate) viewport_scale_mode: ViewportScaleMode,
+
+    /// Resolved render viewport for the current framebuffer.
+    #[cfg(feature = "native")]
+    pub(crate) render_viewport: RenderViewport,
+
+    /// Active offscreen render-target viewport override, when bound.
+    #[cfg(feature = "native")]
+    pub(crate) bound_render_target_viewport: Option<(u64, RenderViewport)>,
+
+    /// Packed texture handles owned by active render targets.
+    #[cfg(feature = "native")]
+    pub(crate) render_target_attachment_owners: HashMap<u64, u64>,
 }
 
 /// Initializes the logger, diagnostic mode from environment, and optionally
@@ -178,6 +208,7 @@ impl GoudGame {
             runtime_debug_draw_enabled: false,
             last_transition_complete: None,
             ui_manager: UiManager::new(),
+            window_resized_events: Events::new(),
             #[cfg(feature = "native")]
             platform: None,
             #[cfg(feature = "native")]
@@ -202,6 +233,16 @@ impl GoudGame {
             capture_dimensions: None,
             #[cfg(feature = "native")]
             deferred_capture: None,
+            #[cfg(feature = "native")]
+            design_resolution: window_size,
+            #[cfg(feature = "native")]
+            viewport_scale_mode: ViewportScaleMode::Stretch,
+            #[cfg(feature = "native")]
+            render_viewport: RenderViewport::fullscreen(window_size),
+            #[cfg(feature = "native")]
+            bound_render_target_viewport: None,
+            #[cfg(feature = "native")]
+            render_target_attachment_owners: HashMap::new(),
         })
     }
 
@@ -222,6 +263,9 @@ impl GoudGame {
     pub fn with_platform(config: GameConfig) -> GoudResult<Self> {
         use crate::assets::AssetServer;
         use crate::libs::platform::native_runtime::create_native_runtime;
+        use crate::rendering::sprite_batch::{
+            ensure_default_sprite_shader_loaded, ensure_sprite_asset_loaders,
+        };
         init_engine_diagnostics(&config);
         use crate::libs::platform::WindowConfig;
 
@@ -245,7 +289,19 @@ impl GoudGame {
             config.height,
         )
         .map_err(crate::core::error::GoudError::InitializationFailed)?;
-        let sprite_batch = SpriteBatch::new(render_backend.clone(), SpriteBatchConfig::default())?;
+        let mut asset_server = AssetServer::with_root(".");
+        ensure_sprite_asset_loaders(&mut asset_server);
+        let sprite_shader = ensure_default_sprite_shader_loaded(&mut asset_server);
+        let sprite_batch = SpriteBatch::new(
+            render_backend.clone(),
+            SpriteBatchConfig {
+                shader_asset: sprite_shader,
+                ..SpriteBatchConfig::default()
+            },
+        )?;
+        let framebuffer_size = native_runtime.platform.get_framebuffer_size();
+        let render_viewport =
+            compute_render_viewport(framebuffer_size, window_size, ViewportScaleMode::Stretch);
 
         let audio_manager = crate::assets::AudioManager::new().ok();
         let debugger_route =
@@ -278,11 +334,12 @@ impl GoudGame {
             runtime_debug_draw_enabled: false,
             last_transition_complete: None,
             ui_manager: UiManager::new(),
+            window_resized_events: Events::new(),
             platform: Some(native_runtime.platform),
             render_backend: Some(render_backend),
             input_manager: InputManager::default(),
             sprite_batch: Some(sprite_batch),
-            asset_server: Some(AssetServer::with_root(".")),
+            asset_server: Some(asset_server),
             ui_render_system: Some(UiRenderSystem::new()),
             text_batch: Some(TextBatch::new()),
             renderer_3d: Some(renderer_3d),
@@ -290,6 +347,11 @@ impl GoudGame {
             audio_manager,
             capture_dimensions,
             deferred_capture,
+            design_resolution: window_size,
+            viewport_scale_mode: ViewportScaleMode::Stretch,
+            render_viewport,
+            bound_render_target_viewport: None,
+            render_target_attachment_owners: HashMap::new(),
         })
     }
 
@@ -308,7 +370,38 @@ impl GoudGame {
     /// Returns the window dimensions.
     #[inline]
     pub fn window_size(&self) -> (u32, u32) {
-        (self.config.width, self.config.height)
+        self.context.window_size()
+    }
+
+    #[cfg(feature = "native")]
+    pub(crate) fn sync_render_viewport(
+        &mut self,
+        logical_size: (u32, u32),
+        framebuffer_size: (u32, u32),
+    ) {
+        self.render_viewport = compute_render_viewport(
+            framebuffer_size,
+            self.design_resolution,
+            self.viewport_scale_mode,
+        );
+        self.context.set_window_size(logical_size);
+        self.apply_render_viewport();
+    }
+
+    #[cfg(feature = "native")]
+    pub(crate) fn apply_render_viewport(&mut self) {
+        let viewport = self
+            .bound_render_target_viewport
+            .map(|(_, viewport)| viewport)
+            .unwrap_or(self.render_viewport);
+
+        if let Some(batch) = self.sprite_batch.as_mut() {
+            batch.set_viewport(viewport);
+        }
+        if let Some(renderer) = self.renderer_3d.as_mut() {
+            renderer.resize(viewport.width, viewport.height);
+            renderer.set_viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+        }
     }
 }
 
@@ -337,134 +430,5 @@ impl std::fmt::Debug for GoudGame {
             .field("entity_count", &self.entity_count())
             .field("initialized", &self.initialized)
             .finish()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[cfg(all(feature = "native", not(target_os = "macos")))]
-    use std::path::PathBuf;
-    #[cfg(all(feature = "native", not(target_os = "macos")))]
-    use std::thread;
-    #[cfg(all(feature = "native", not(target_os = "macos")))]
-    use std::time::Duration;
-
-    #[cfg(all(feature = "native", not(target_os = "macos")))]
-    use crate::sdk::{RenderBackendKind, WindowBackendKind};
-
-    #[cfg(all(feature = "native", not(target_os = "macos")))]
-    use super::*;
-
-    #[cfg(all(feature = "native", not(target_os = "macos")))]
-    fn should_skip_native_runtime_test() -> bool {
-        #[cfg(target_os = "linux")]
-        {
-            std::env::var_os("DISPLAY").is_none() && std::env::var_os("WAYLAND_DISPLAY").is_none()
-        }
-
-        #[cfg(not(target_os = "linux"))]
-        {
-            false
-        }
-    }
-
-    #[cfg(all(feature = "native", not(target_os = "macos")))]
-    fn test_font_path() -> String {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("test_assets/fonts/test_font.ttf")
-            .to_string_lossy()
-            .into_owned()
-    }
-
-    #[cfg(all(feature = "native", not(target_os = "macos")))]
-    fn assert_readback_or_unsupported(
-        result: crate::core::error::GoudResult<Vec<u8>>,
-        expected_len: usize,
-    ) {
-        match result {
-            Ok(readback) => assert_eq!(readback.len(), expected_len),
-            Err(error) => {
-                let message = error.to_string();
-                assert!(
-                    message.contains("readback is not supported"),
-                    "unexpected readback error: {message}"
-                );
-            }
-        }
-    }
-
-    // winit requires the macOS main thread, which the unit-test harness does not provide.
-    #[cfg(all(feature = "native", not(target_os = "macos")))]
-    #[test]
-    fn test_with_platform_default_native_stack_initializes_renderers_and_readback() {
-        if should_skip_native_runtime_test() {
-            eprintln!("skipping native runtime unit test: no display available");
-            return;
-        }
-
-        let mut game = GoudGame::with_platform(
-            GameConfig::default().with_title("native-stack-smoke-instance-test"),
-        )
-        .expect("default native stack should initialize");
-
-        assert_eq!(game.config.render_backend, RenderBackendKind::Wgpu);
-        assert_eq!(game.config.window_backend, WindowBackendKind::Winit);
-        assert!(game.has_platform());
-        assert!(game.has_2d_renderer());
-        assert!(game.has_3d_renderer());
-
-        let (fb_width, fb_height) = game.get_framebuffer_size();
-        assert!(fb_width > 0);
-        assert!(fb_height > 0);
-
-        assert!(game.begin_render());
-        game.clear(0.15, 0.25, 0.35, 1.0);
-        assert!(game.begin_2d_render().is_ok());
-        assert!(game.draw_quad(32.0, 32.0, 24.0, 24.0, 1.0, 0.0, 0.0, 1.0));
-        assert!(game.draw_text(
-            &test_font_path(),
-            "wgpu",
-            12.0,
-            18.0,
-            14.0,
-            0.0,
-            1.0,
-            1.0,
-            1.0,
-            1.0,
-            1.0,
-        ));
-        assert!(game.end_2d_render().is_ok());
-        let cube = game.create_cube(0, 1.0, 1.0, 1.0);
-        assert_ne!(cube, u32::MAX);
-        assert!(game.set_object_position(cube, 0.0, 0.0, 0.0));
-        assert!(game.configure_grid(true, 4.0, 4));
-        assert!(game.render());
-        assert!(game.end_render());
-
-        assert_readback_or_unsupported(
-            game.read_default_framebuffer_rgba8(),
-            (fb_width * fb_height * 4) as usize,
-        );
-
-        game.set_window_size(176, 132)
-            .expect("window resize request should succeed");
-        for _ in 0..120 {
-            game.poll_events()
-                .expect("poll after resize should succeed");
-            if game.get_window_size() == (176, 132) {
-                break;
-            }
-            thread::sleep(Duration::from_millis(10));
-        }
-
-        assert_eq!(game.get_window_size(), (176, 132));
-        let (resized_fb_width, resized_fb_height) = game.get_framebuffer_size();
-        assert!(resized_fb_width > 0);
-        assert!(resized_fb_height > 0);
-        assert_readback_or_unsupported(
-            game.read_default_framebuffer_rgba8(),
-            (resized_fb_width * resized_fb_height * 4) as usize,
-        );
     }
 }

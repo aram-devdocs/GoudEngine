@@ -1,13 +1,14 @@
 //! OpenGL backend struct definition, constructor, and cleanup.
 
 use super::{
-    super::BackendCapabilities, super::BackendInfo, gl_check_debug, BufferMetadata, ShaderMetadata,
-    TextureMetadata,
+    super::BackendCapabilities, super::BackendInfo, gl_check_debug, BufferMetadata,
+    RenderTargetMetadata, ShaderMetadata, TextureMetadata,
 };
 use crate::core::handle::HandleAllocator;
 use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::types::{
-    BufferHandle, BufferMarker, ShaderHandle, ShaderMarker, TextureHandle, TextureMarker,
+    BufferHandle, BufferMarker, RenderTargetHandle, RenderTargetMarker, ShaderHandle, ShaderMarker,
+    TextureHandle, TextureMarker,
 };
 use std::collections::HashMap;
 
@@ -40,6 +41,12 @@ pub struct OpenGLBackend {
 
     // Currently bound textures for each unit (typically 16 units)
     pub(super) bound_textures: Vec<Option<u32>>,
+
+    // Render-target management
+    pub(super) render_target_allocator: HandleAllocator<RenderTargetMarker>,
+    pub(super) render_targets: HashMap<RenderTargetHandle, RenderTargetMetadata>,
+    pub(super) active_render_target: Option<RenderTargetHandle>,
+    pub(super) default_viewport: (i32, i32, u32, u32),
 
     // Shader management
     pub(super) shader_allocator: HandleAllocator<ShaderMarker>,
@@ -175,6 +182,10 @@ impl OpenGLBackend {
             texture_allocator: HandleAllocator::new(),
             textures: HashMap::new(),
             bound_textures: vec![None; max_units],
+            render_target_allocator: HandleAllocator::new(),
+            render_targets: HashMap::new(),
+            active_render_target: None,
+            default_viewport: (0, 0, 800, 600),
             shader_allocator: HandleAllocator::new(),
             shaders: HashMap::new(),
             bound_shader: None,
@@ -245,6 +256,12 @@ impl Drop for OpenGLBackend {
             }
             for meta in self.textures.values() {
                 gl::DeleteTextures(1, &meta.gl_id);
+            }
+            for meta in self.render_targets.values() {
+                gl::DeleteFramebuffers(1, &meta.framebuffer_id);
+                if let Some(depth_renderbuffer) = meta.depth_renderbuffer {
+                    gl::DeleteRenderbuffers(1, &depth_renderbuffer);
+                }
             }
             for meta in self.shaders.values() {
                 gl::DeleteProgram(meta.gl_id);

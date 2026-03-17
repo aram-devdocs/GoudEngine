@@ -272,6 +272,23 @@ pub unsafe extern "C" fn goud_sprite_builder_with_flip(
     builder
 }
 
+/// Sets the render-order layer on the builder.
+///
+/// # Safety
+///
+/// - `builder` must be a valid pointer from `goud_sprite_builder_new()` or null
+#[no_mangle]
+pub unsafe extern "C" fn goud_sprite_builder_with_z_layer(
+    builder: *mut FfiSpriteBuilder,
+    z_layer: i32,
+) -> *mut FfiSpriteBuilder {
+    if builder.is_null() {
+        return builder;
+    }
+    (*builder).sprite.z_layer = z_layer;
+    builder
+}
+
 /// Sets the anchor point on the builder.
 ///
 /// # Parameters

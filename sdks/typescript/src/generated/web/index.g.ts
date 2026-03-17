@@ -67,9 +67,9 @@ interface WasmGameHandle {
   set_transform2d(bits: bigint, px: number, py: number, r: number, sx: number, sy: number): void;
   has_transform2d(bits: bigint): boolean;
   remove_transform2d(bits: bigint): boolean;
-  add_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, anchor_x: number, anchor_y: number): void;
-  get_sprite(bits: bigint): { texture_handle: number; r: number; g: number; b: number; a: number; flip_x: boolean; flip_y: boolean; anchor_x: number; anchor_y: number } | undefined;
-  set_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, anchor_x: number, anchor_y: number): void;
+  add_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, z_layer: number, anchor_x: number, anchor_y: number): void;
+  get_sprite(bits: bigint): { texture_handle: number; r: number; g: number; b: number; a: number; flip_x: boolean; flip_y: boolean; z_layer: number; anchor_x: number; anchor_y: number } | undefined;
+  set_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, z_layer: number, anchor_x: number, anchor_y: number): void;
   has_sprite(bits: bigint): boolean;
   remove_sprite(bits: bigint): boolean;
   add_name(bits: bigint, name: string): void;
@@ -760,15 +760,15 @@ export class GoudGame implements IGoudGame {
   removeTransform2d(entity: IEntity): boolean { return this.handle.remove_transform2d(entity.toBits()); }
 
   /** Attaches a Sprite component to the entity */
-  addSprite(entity: IEntity, s: ISpriteData): void { this.handle.add_sprite(entity.toBits(), s.textureHandle, s.colorR, s.colorG, s.colorB, s.colorA, s.flipX, s.flipY, s.anchorX, s.anchorY); }
+  addSprite(entity: IEntity, s: ISpriteData): void { this.handle.add_sprite(entity.toBits(), s.textureHandle, s.colorR, s.colorG, s.colorB, s.colorA, s.flipX, s.flipY, s.zLayer, s.anchorX, s.anchorY); }
   /** Returns the entity's Sprite, or null if absent */
   getSprite(entity: IEntity): ISpriteData | null {
     const s = this.handle.get_sprite(entity.toBits());
     if (!s) return null;
-    return { textureHandle: s.texture_handle, colorR: s.r, colorG: s.g, colorB: s.b, colorA: s.a, sourceRectX: 0, sourceRectY: 0, sourceRectWidth: 0, sourceRectHeight: 0, hasSourceRect: false, flipX: s.flip_x, flipY: s.flip_y, anchorX: s.anchor_x, anchorY: s.anchor_y, customSizeX: 0, customSizeY: 0, hasCustomSize: false };
+    return { textureHandle: s.texture_handle, colorR: s.r, colorG: s.g, colorB: s.b, colorA: s.a, sourceRectX: 0, sourceRectY: 0, sourceRectWidth: 0, sourceRectHeight: 0, hasSourceRect: false, flipX: s.flip_x, flipY: s.flip_y, zLayer: s.z_layer, anchorX: s.anchor_x, anchorY: s.anchor_y, customSizeX: 0, customSizeY: 0, hasCustomSize: false };
   }
   /** Overwrites the entity's Sprite */
-  setSprite(entity: IEntity, s: ISpriteData): void { this.handle.set_sprite(entity.toBits(), s.textureHandle, s.colorR, s.colorG, s.colorB, s.colorA, s.flipX, s.flipY, s.anchorX, s.anchorY); }
+  setSprite(entity: IEntity, s: ISpriteData): void { this.handle.set_sprite(entity.toBits(), s.textureHandle, s.colorR, s.colorG, s.colorB, s.colorA, s.flipX, s.flipY, s.zLayer, s.anchorX, s.anchorY); }
   /** Returns true if the entity has a Sprite */
   hasSprite(entity: IEntity): boolean { return this.handle.has_sprite(entity.toBits()); }
   /** Removes the Sprite from the entity */

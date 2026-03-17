@@ -20,6 +20,18 @@ const INVALID_TEXTURE: u64 = u64::MAX;
 // NOTE: FFI wrappers are hand-written in ffi/texture.rs. The `#[goud_api]`
 // attribute is omitted here to avoid duplicate `#[no_mangle]` symbol conflicts.
 impl GoudGame {
+    fn is_render_target_attachment_texture(&self, texture: u64) -> bool {
+        #[cfg(feature = "native")]
+        {
+            self.render_target_attachment_owners.contains_key(&texture)
+        }
+        #[cfg(not(feature = "native"))]
+        {
+            let _ = texture;
+            false
+        }
+    }
+
     /// Loads a texture from an image file and returns a packed u64 handle.
     ///
     /// Returns `u64::MAX` on error.
@@ -57,6 +69,10 @@ impl GoudGame {
     pub fn destroy(&mut self, texture: u64) -> bool {
         use crate::libs::graphics::backend::types::TextureHandle;
 
+        if self.is_render_target_attachment_texture(texture) {
+            return false;
+        }
+
         let backend = match self.render_backend.as_mut() {
             Some(b) => b,
             None => return false,
@@ -88,5 +104,15 @@ mod tests {
     fn test_texture_destroy_headless() {
         let mut game = GoudGame::new(GameConfig::default()).unwrap();
         assert!(!game.destroy(0));
+    }
+
+    #[cfg(feature = "native")]
+    #[test]
+    fn test_render_target_attachment_texture_is_not_destroyable() {
+        let mut game = GoudGame::new(GameConfig::default()).unwrap();
+        game.render_target_attachment_owners.insert(77, 5);
+
+        assert!(game.is_render_target_attachment_texture(77));
+        assert!(!game.destroy(77));
     }
 }

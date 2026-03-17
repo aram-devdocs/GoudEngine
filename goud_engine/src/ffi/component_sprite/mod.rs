@@ -37,12 +37,14 @@
 //!
 //! - `factory`    — `goud_sprite_new`, `goud_sprite_default`
 //! - `color`      — sprite color/alpha methods and color constant constructors
-//! - `properties` — source rect, flip, anchor, custom size, texture, utility
+//! - `properties` — source rect, flip, anchor, custom size, and utility methods
+//! - `layering`   — explicit sprite z-layer accessors and builders
 //! - `builder`    — heap-allocated `FfiSpriteBuilder` with chaining API
 
 pub mod builder;
 pub mod color;
 pub mod factory;
+pub mod layering;
 pub mod properties;
 pub mod texture;
 
@@ -56,6 +58,7 @@ pub use crate::core::types::{FfiColor, FfiRect, FfiSprite, FfiSpriteBuilder};
 
 // Factory
 pub use factory::{goud_sprite_default, goud_sprite_new};
+pub use layering::{goud_sprite_get_z_layer, goud_sprite_set_z_layer, goud_sprite_with_z_layer};
 
 // Color methods
 pub use color::{
@@ -87,5 +90,5 @@ pub use builder::{
     goud_sprite_builder_with_color, goud_sprite_builder_with_custom_size,
     goud_sprite_builder_with_flip, goud_sprite_builder_with_flip_x,
     goud_sprite_builder_with_flip_y, goud_sprite_builder_with_source_rect,
-    goud_sprite_builder_with_texture,
+    goud_sprite_builder_with_texture, goud_sprite_builder_with_z_layer,
 };

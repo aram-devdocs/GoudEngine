@@ -326,6 +326,11 @@ impl GameContext {
             self.fps = 1.0 / delta_time;
         }
     }
+
+    /// Updates the current logical window size.
+    pub(crate) fn set_window_size(&mut self, window_size: (u32, u32)) {
+        self.window_size = (window_size.0.max(1), window_size.1.max(1));
+    }
 }
 
 // =============================================================================

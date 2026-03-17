@@ -1,16 +1,25 @@
 //! GPU resource management for the sprite batch renderer.
 
 use super::batch::SpriteBatch;
-use super::types::SpriteVertex;
-use crate::assets::{loaders::TextureAsset, AssetHandle, AssetServer};
+use super::types::{SpriteVertex, TextureCacheEntry};
+mod asset_support;
+#[cfg(test)]
+mod tests;
+
+use crate::assets::loaders::{MaterialAsset, ShaderAsset, ShaderStage, TextureAsset};
+use crate::assets::{AssetHandle, AssetServer};
 use crate::core::error::{GoudError, GoudResult};
 use crate::core::math::Vec2;
-use crate::libs::graphics::backend::types::{BufferType, BufferUsage, TextureHandle};
+use crate::libs::graphics::backend::types::{
+    BufferType, BufferUsage, TextureFilter, TextureFormat, TextureHandle, TextureWrap,
+};
 use crate::libs::graphics::backend::RenderBackend;
+pub(crate) use asset_support::{ensure_default_sprite_shader_loaded, ensure_sprite_asset_loaders};
+use asset_support::{shader_signature, texture_signature};
 
 impl<B: RenderBackend> SpriteBatch<B> {
     /// Ensures GPU resources (buffers, shader) are created.
-    pub(super) fn ensure_resources(&mut self) -> GoudResult<()> {
+    pub(super) fn ensure_resources(&mut self, asset_server: &mut AssetServer) -> GoudResult<()> {
         // Create vertex buffer if needed
         if self.vertex_buffer.is_none() || self.vertices.len() > self.vertex_capacity * 4 {
             self.create_vertex_buffer()?;
@@ -21,9 +30,9 @@ impl<B: RenderBackend> SpriteBatch<B> {
             self.create_index_buffer()?;
         }
 
-        // Create shader if needed
-        if self.shader.is_none() {
-            self.create_shader()?;
+        // Create or refresh shader if needed
+        if self.shader_needs_refresh(asset_server)? {
+            self.create_shader(asset_server)?;
         }
 
         Ok(())
@@ -87,12 +96,33 @@ impl<B: RenderBackend> SpriteBatch<B> {
     }
 
     /// Creates the sprite shader program.
-    pub(super) fn create_shader(&mut self) -> GoudResult<()> {
-        // TODO: Load shader from assets or use built-in shader
-        // For now, return error as shader loading isn't implemented yet
-        Err(GoudError::NotImplemented(
-            "Sprite shader creation".to_string(),
-        ))
+    pub(super) fn create_shader(&mut self, asset_server: &mut AssetServer) -> GoudResult<()> {
+        let (shader_handle, material_asset) = self.resolve_shader_inputs(asset_server)?;
+        let shader_asset = asset_server.get(&shader_handle).ok_or_else(|| {
+            GoudError::ResourceNotFound(format!("Sprite shader asset {:?}", shader_handle))
+        })?;
+
+        if let Some(existing_shader) = self.shader.take() {
+            let _ = self.backend.destroy_shader(existing_shader);
+        }
+
+        let vertex_source = shader_asset
+            .get_stage(ShaderStage::Vertex)
+            .ok_or_else(|| GoudError::ShaderCompilationFailed("Missing vertex stage".to_string()))?
+            .source
+            .as_str();
+        let fragment_source = shader_asset
+            .get_stage(ShaderStage::Fragment)
+            .ok_or_else(|| {
+                GoudError::ShaderCompilationFailed("Missing fragment stage".to_string())
+            })?
+            .source
+            .as_str();
+
+        let shader = self.backend.create_shader(vertex_source, fragment_source)?;
+        self.shader = Some(shader);
+        self.shader_signature = Some(shader_signature(shader_asset, material_asset.as_ref()));
+        Ok(())
     }
 
     /// Uploads vertex data to the GPU.
@@ -123,19 +153,39 @@ impl<B: RenderBackend> SpriteBatch<B> {
         asset_handle: AssetHandle<TextureAsset>,
         asset_server: &AssetServer,
     ) -> GoudResult<TextureHandle> {
-        // Check cache first
-        if let Some(&gpu_handle) = self.texture_cache.get(&asset_handle) {
-            return Ok(gpu_handle);
-        }
-
-        // Load texture from asset server
-        let _texture_asset = asset_server.get(&asset_handle).ok_or_else(|| {
+        let texture_asset = asset_server.get(&asset_handle).ok_or_else(|| {
             GoudError::ResourceNotFound(format!("Texture asset {:?}", asset_handle))
         })?;
+        let signature = texture_signature(texture_asset);
 
-        // TODO: Upload texture to GPU and cache handle
-        // For now, return error as texture upload isn't implemented yet
-        Err(GoudError::NotImplemented("Texture upload".to_string()))
+        if let Some(cache_entry) = self.texture_cache.get(&asset_handle).copied() {
+            if cache_entry.signature == signature
+                && self.backend.is_texture_valid(cache_entry.handle)
+            {
+                return Ok(cache_entry.handle);
+            }
+            if self.backend.is_texture_valid(cache_entry.handle) {
+                let _ = self.backend.destroy_texture(cache_entry.handle);
+            }
+            self.texture_cache.remove(&asset_handle);
+        }
+
+        let gpu_handle = self.backend.create_texture(
+            texture_asset.width,
+            texture_asset.height,
+            TextureFormat::RGBA8,
+            TextureFilter::Linear,
+            TextureWrap::ClampToEdge,
+            &texture_asset.data,
+        )?;
+        self.texture_cache.insert(
+            asset_handle,
+            TextureCacheEntry {
+                handle: gpu_handle,
+                signature,
+            },
+        );
+        Ok(gpu_handle)
     }
 
     /// Gets the size of a texture from the asset server.
@@ -154,13 +204,13 @@ impl<B: RenderBackend> SpriteBatch<B> {
     /// Renders all batches to the GPU.
     ///
     /// Called at the end of `draw_sprites` after batches have been assembled.
-    pub(super) fn render_batches(&mut self) -> GoudResult<()> {
+    pub(super) fn render_batches(&mut self, asset_server: &mut AssetServer) -> GoudResult<()> {
         if self.batches.is_empty() {
             return Ok(());
         }
 
         // Ensure GPU resources are created
-        self.ensure_resources()?;
+        self.ensure_resources(asset_server)?;
 
         // Upload vertex data
         self.upload_vertices()?;
@@ -168,8 +218,25 @@ impl<B: RenderBackend> SpriteBatch<B> {
         // Bind shader and set uniforms
         if let Some(shader) = self.shader {
             self.backend.bind_shader(shader)?;
-            // TODO: Set projection matrix uniform
+            if let Some(location) = self.backend.get_uniform_location(shader, "u_texture") {
+                self.backend.set_uniform_int(location, 0);
+            }
+            if let Some(location) = self.backend.get_uniform_location(shader, "u_viewport") {
+                self.backend.set_uniform_vec2(
+                    location,
+                    self.viewport.logical_width.max(1) as f32,
+                    self.viewport.logical_height.max(1) as f32,
+                );
+            }
+            self.apply_material_uniforms(asset_server, shader)?;
         }
+
+        self.backend.set_viewport(
+            self.viewport.x,
+            self.viewport.y,
+            self.viewport.width.max(1),
+            self.viewport.height.max(1),
+        );
 
         // Bind vertex buffer and set attributes
         if let Some(vbo) = self.vertex_buffer {
@@ -213,6 +280,115 @@ impl<B: RenderBackend> SpriteBatch<B> {
                 index_count as u32,
                 index_start,
             )?;
+        }
+
+        Ok(())
+    }
+
+    fn resolve_shader_inputs(
+        &self,
+        asset_server: &mut AssetServer,
+    ) -> GoudResult<(AssetHandle<ShaderAsset>, Option<MaterialAsset>)> {
+        if self.config.material_asset.is_valid() {
+            let shader_path = asset_server
+                .get(&self.config.material_asset)
+                .ok_or_else(|| {
+                    GoudError::ResourceNotFound(format!(
+                        "Sprite material asset {:?}",
+                        self.config.material_asset
+                    ))
+                })?
+                .shader_path()
+                .to_string();
+            let shader_handle = asset_server.load::<ShaderAsset>(&shader_path);
+            let material = asset_server.get(&self.config.material_asset).cloned();
+            return Ok((shader_handle, material));
+        }
+
+        let shader_handle = if self.config.shader_asset.is_valid() {
+            self.config.shader_asset
+        } else {
+            ensure_default_sprite_shader_loaded(asset_server)
+        };
+        Ok((shader_handle, None))
+    }
+
+    fn shader_needs_refresh(&self, asset_server: &mut AssetServer) -> GoudResult<bool> {
+        if self.shader.is_none() {
+            return Ok(true);
+        }
+
+        let (shader_handle, material_asset) = self.resolve_shader_inputs(asset_server)?;
+        let shader_asset = asset_server.get(&shader_handle).ok_or_else(|| {
+            GoudError::ResourceNotFound(format!("Sprite shader asset {:?}", shader_handle))
+        })?;
+        let current_signature = shader_signature(shader_asset, material_asset.as_ref());
+        Ok(self.shader_signature != Some(current_signature))
+    }
+
+    fn apply_material_uniforms(
+        &mut self,
+        asset_server: &mut AssetServer,
+        shader: crate::libs::graphics::backend::types::ShaderHandle,
+    ) -> GoudResult<()> {
+        if !self.config.material_asset.is_valid() {
+            return Ok(());
+        }
+
+        let material = asset_server
+            .get(&self.config.material_asset)
+            .ok_or_else(|| {
+                GoudError::ResourceNotFound(format!(
+                    "Sprite material asset {:?}",
+                    self.config.material_asset
+                ))
+            })?;
+
+        for (name, value) in material.uniforms() {
+            let Some(location) = self.backend.get_uniform_location(shader, name) else {
+                continue;
+            };
+
+            match value {
+                crate::assets::loaders::UniformValue::Float(value) => {
+                    self.backend.set_uniform_float(location, *value);
+                }
+                crate::assets::loaders::UniformValue::Vec2(value) => {
+                    self.backend.set_uniform_vec2(location, value[0], value[1]);
+                }
+                crate::assets::loaders::UniformValue::Vec3(value) => {
+                    self.backend
+                        .set_uniform_vec3(location, value[0], value[1], value[2]);
+                }
+                crate::assets::loaders::UniformValue::Vec4(value) => {
+                    self.backend
+                        .set_uniform_vec4(location, value[0], value[1], value[2], value[3]);
+                }
+                crate::assets::loaders::UniformValue::Int(value) => {
+                    self.backend.set_uniform_int(location, *value);
+                }
+                crate::assets::loaders::UniformValue::Mat4(value) => {
+                    let flattened = [
+                        value[0][0],
+                        value[0][1],
+                        value[0][2],
+                        value[0][3],
+                        value[1][0],
+                        value[1][1],
+                        value[1][2],
+                        value[1][3],
+                        value[2][0],
+                        value[2][1],
+                        value[2][2],
+                        value[2][3],
+                        value[3][0],
+                        value[3][1],
+                        value[3][2],
+                        value[3][3],
+                    ];
+                    self.backend.set_uniform_mat4(location, &flattened);
+                }
+            }
         }
 
         Ok(())

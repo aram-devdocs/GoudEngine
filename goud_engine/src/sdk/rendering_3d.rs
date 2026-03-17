@@ -312,11 +312,13 @@ impl GoudGame {
 
     /// Renders all 3D objects in the scene.
     pub fn render(&mut self) -> bool {
+        let viewport = self.render_viewport();
         match (&mut self.renderer_3d, &mut self.render_backend) {
             (Some(renderer), Some(backend)) => {
                 let texture_bridge = BackendTextureBridge {
                     backend: backend.clone(),
                 };
+                renderer.set_viewport(viewport.x, viewport.y, viewport.width, viewport.height);
                 renderer.render(Some(&texture_bridge));
                 true
             }

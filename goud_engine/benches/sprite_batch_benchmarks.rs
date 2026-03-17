@@ -16,18 +16,19 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use goud_engine::assets::loaders::TextureAsset;
 use goud_engine::assets::AssetHandle;
+use goud_engine::assets::AssetServer;
 use goud_engine::core::error::GoudResult;
 use goud_engine::core::math::Vec2;
 use goud_engine::ecs::components::{Mat3x3, Sprite, Transform2D};
 use goud_engine::ecs::World;
 use goud_engine::libs::graphics::backend::capabilities::{BackendCapabilities, BackendInfo};
 use goud_engine::libs::graphics::backend::types::{
-    BufferHandle, BufferType, BufferUsage, PrimitiveTopology, ShaderHandle, TextureFilter,
-    TextureFormat, TextureHandle, TextureWrap, VertexLayout,
+    BufferHandle, BufferType, BufferUsage, PrimitiveTopology, RenderTargetDesc, RenderTargetHandle,
+    ShaderHandle, TextureFilter, TextureFormat, TextureHandle, TextureWrap, VertexLayout,
 };
 use goud_engine::libs::graphics::backend::{
-    BlendFactor, BufferOps, ClearOps, CullFace, DrawOps, FrameOps, RenderBackend, ShaderOps,
-    StateOps, TextureOps,
+    BlendFactor, BufferOps, ClearOps, CullFace, DrawOps, FrameOps, RenderBackend, RenderTargetOps,
+    ShaderOps, StateOps, TextureOps,
 };
 use goud_engine::rendering::sprite_batch::{SpriteBatch, SpriteBatchConfig, SpriteInstance};
 
@@ -190,6 +191,28 @@ impl TextureOps for NullBackend {
     fn unbind_texture(&mut self, _unit: u32) {}
 }
 
+impl RenderTargetOps for NullBackend {
+    fn create_render_target(&mut self, _desc: &RenderTargetDesc) -> GoudResult<RenderTargetHandle> {
+        Ok(RenderTargetHandle::new(0, 1))
+    }
+
+    fn destroy_render_target(&mut self, _handle: RenderTargetHandle) -> bool {
+        true
+    }
+
+    fn is_render_target_valid(&self, _handle: RenderTargetHandle) -> bool {
+        true
+    }
+
+    fn bind_render_target(&mut self, _handle: Option<RenderTargetHandle>) -> GoudResult<()> {
+        Ok(())
+    }
+
+    fn render_target_texture(&self, _handle: RenderTargetHandle) -> Option<TextureHandle> {
+        Some(TextureHandle::new(0, 1))
+    }
+}
+
 impl ShaderOps for NullBackend {
     fn create_shader(
         &mut self,
@@ -314,15 +337,19 @@ fn create_sprite_instances(n: usize) -> Vec<SpriteInstance> {
             let texture: AssetHandle<TextureAsset> =
                 AssetHandle::new((i % texture_count) as u32, 1);
             let sprite = Sprite::new(texture);
-            let z_layer = (i % 100) as f32;
+            let z_layer = (i % 100) as i32;
             let size = Vec2::new(64.0, 64.0);
 
             SpriteInstance::from_components(
                 goud_engine::ecs::Entity::new(i as u32, 1),
-                &sprite,
+                sprite.texture,
+                sprite.source_rect,
                 Mat3x3::IDENTITY,
                 z_layer,
                 size,
+                sprite.color,
+                sprite.flip_x,
+                sprite.flip_y,
             )
         })
         .collect()
@@ -344,10 +371,11 @@ fn bench_gather_sprites(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("entities", size), &size, |b, &size| {
             let world = create_sprite_world(size);
             let mut batch = create_batch();
+            let mut asset_server = AssetServer::new();
 
             b.iter(|| {
                 batch.begin();
-                batch.gather_sprites(&world).unwrap();
+                batch.gather_sprites(&world, &mut asset_server).unwrap();
                 black_box(batch.sprite_count());
             });
         });
@@ -426,10 +454,11 @@ fn bench_full_cpu_pipeline(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("entities", size), &size, |b, &size| {
             let world = create_sprite_world(size);
             let mut batch = create_batch();
+            let mut asset_server = AssetServer::new();
 
             b.iter(|| {
                 batch.begin();
-                batch.gather_sprites(&world).unwrap();
+                batch.gather_sprites(&world, &mut asset_server).unwrap();
                 batch.sort_sprites();
                 black_box(batch.sprite_count());
             });

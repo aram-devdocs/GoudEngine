@@ -1,10 +1,12 @@
 use crate::libs::error::GoudResult;
 
 use super::NativeRenderBackend;
-use crate::libs::graphics::backend::render_backend::{BufferOps, ShaderOps, TextureOps};
+use crate::libs::graphics::backend::render_backend::{
+    BufferOps, RenderTargetOps, ShaderOps, TextureOps,
+};
 use crate::libs::graphics::backend::types::{
-    BufferHandle, BufferType, BufferUsage, ShaderHandle, TextureFilter, TextureFormat,
-    TextureHandle, TextureWrap,
+    BufferHandle, BufferType, BufferUsage, RenderTargetDesc, RenderTargetHandle, ShaderHandle,
+    TextureFilter, TextureFormat, TextureHandle, TextureWrap,
 };
 
 impl BufferOps for NativeRenderBackend {
@@ -185,6 +187,53 @@ impl TextureOps for NativeRenderBackend {
             Self::Wgpu(backend) => {
                 backend.create_compressed_texture(width, height, format, data, mip_levels)
             }
+        }
+    }
+}
+
+impl RenderTargetOps for NativeRenderBackend {
+    fn create_render_target(&mut self, desc: &RenderTargetDesc) -> GoudResult<RenderTargetHandle> {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(backend) => backend.create_render_target(desc),
+            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            Self::Wgpu(backend) => backend.create_render_target(desc),
+        }
+    }
+
+    fn destroy_render_target(&mut self, handle: RenderTargetHandle) -> bool {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(backend) => backend.destroy_render_target(handle),
+            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            Self::Wgpu(backend) => backend.destroy_render_target(handle),
+        }
+    }
+
+    fn is_render_target_valid(&self, handle: RenderTargetHandle) -> bool {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(backend) => backend.is_render_target_valid(handle),
+            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            Self::Wgpu(backend) => backend.is_render_target_valid(handle),
+        }
+    }
+
+    fn bind_render_target(&mut self, handle: Option<RenderTargetHandle>) -> GoudResult<()> {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(backend) => backend.bind_render_target(handle),
+            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            Self::Wgpu(backend) => backend.bind_render_target(handle),
+        }
+    }
+
+    fn render_target_texture(&self, handle: RenderTargetHandle) -> Option<TextureHandle> {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(backend) => backend.render_target_texture(handle),
+            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            Self::Wgpu(backend) => backend.render_target_texture(handle),
         }
     }
 }

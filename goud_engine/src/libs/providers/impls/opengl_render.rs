@@ -4,7 +4,7 @@ use crate::core::providers::diagnostics::RenderDiagnosticsV1;
 use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::opengl::OpenGLBackend;
 use crate::libs::graphics::backend::{
-    BufferOps, ClearOps, FrameOps, RenderBackend, ShaderOps, StateOps, TextureOps,
+    BufferOps, ClearOps, FrameOps, RenderBackend, RenderTargetOps, ShaderOps, StateOps, TextureOps,
 };
 use crate::libs::providers::render::RenderProvider;
 use crate::libs::providers::types::{
@@ -181,13 +181,34 @@ impl RenderProvider for OpenGLRenderProvider {
 
     fn destroy_pipeline(&mut self, _handle: PipelineHandle) {}
 
-    fn create_render_target(&mut self, _desc: &RenderTargetDesc) -> GoudResult<RenderTargetHandle> {
-        Err(GoudError::NotImplemented(
-            "OpenGL render target creation via provider not yet available".to_string(),
-        ))
+    fn create_render_target(&mut self, desc: &RenderTargetDesc) -> GoudResult<RenderTargetHandle> {
+        use crate::libs::graphics::backend::types::{
+            RenderTargetDesc as BackendRenderTargetDesc, TextureFormat,
+        };
+
+        if desc.color_attachments > 1 {
+            return Err(GoudError::RenderTargetFailed(
+                "OpenGL render provider currently supports one color attachment".to_string(),
+            ));
+        }
+
+        let handle = self
+            .backend
+            .create_render_target(&BackendRenderTargetDesc {
+                width: desc.width,
+                height: desc.height,
+                format: TextureFormat::RGBA8,
+                has_depth: desc.has_depth,
+            })?;
+        Ok(RenderTargetHandle(handle.to_u64()))
     }
 
-    fn destroy_render_target(&mut self, _handle: RenderTargetHandle) {}
+    fn destroy_render_target(&mut self, handle: RenderTargetHandle) {
+        use crate::libs::graphics::backend::types::RenderTargetHandle as BackendRenderTargetHandle;
+
+        let backend_handle = BackendRenderTargetHandle::from_u64(handle.0);
+        self.backend.destroy_render_target(backend_handle);
+    }
 
     fn draw(&mut self, _cmd: &DrawCommand) -> GoudResult<()> {
         Err(GoudError::NotImplemented(
@@ -228,9 +249,19 @@ impl RenderProvider for OpenGLRenderProvider {
         // directly. This will be wired when pipeline state management is added.
     }
 
-    fn set_render_target(&mut self, _handle: Option<RenderTargetHandle>) {
-        // Render target binding requires the FBO abstraction not yet in the
-        // provider layer.
+    fn set_render_target(&mut self, handle: Option<RenderTargetHandle>) {
+        use crate::libs::graphics::backend::types::RenderTargetHandle as BackendRenderTargetHandle;
+
+        let backend_handle = handle.map(|handle| BackendRenderTargetHandle::from_u64(handle.0));
+        let _ = self.backend.bind_render_target(backend_handle);
+    }
+
+    fn render_target_texture(&self, handle: RenderTargetHandle) -> Option<TextureHandle> {
+        use crate::libs::graphics::backend::types::RenderTargetHandle as BackendRenderTargetHandle;
+
+        self.backend
+            .render_target_texture(BackendRenderTargetHandle::from_u64(handle.0))
+            .map(|texture| TextureHandle(texture.to_u64()))
     }
 
     fn clear(&mut self, color: [f32; 4]) {

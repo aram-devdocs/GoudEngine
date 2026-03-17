@@ -1,10 +1,12 @@
 use crate::libs::error::GoudResult;
 
 use super::SharedNativeRenderBackend;
-use crate::libs::graphics::backend::render_backend::{BufferOps, ShaderOps, TextureOps};
+use crate::libs::graphics::backend::render_backend::{
+    BufferOps, RenderTargetOps, ShaderOps, TextureOps,
+};
 use crate::libs::graphics::backend::types::{
-    BufferHandle, BufferType, BufferUsage, ShaderHandle, TextureFilter, TextureFormat,
-    TextureHandle, TextureWrap,
+    BufferHandle, BufferType, BufferUsage, RenderTargetDesc, RenderTargetHandle, ShaderHandle,
+    TextureFilter, TextureFormat, TextureHandle, TextureWrap,
 };
 
 impl BufferOps for SharedNativeRenderBackend {
@@ -104,6 +106,28 @@ impl TextureOps for SharedNativeRenderBackend {
     ) -> GoudResult<TextureHandle> {
         self.lock()
             .create_compressed_texture(width, height, format, data, mip_levels)
+    }
+}
+
+impl RenderTargetOps for SharedNativeRenderBackend {
+    fn create_render_target(&mut self, desc: &RenderTargetDesc) -> GoudResult<RenderTargetHandle> {
+        self.lock().create_render_target(desc)
+    }
+
+    fn destroy_render_target(&mut self, handle: RenderTargetHandle) -> bool {
+        self.lock().destroy_render_target(handle)
+    }
+
+    fn is_render_target_valid(&self, handle: RenderTargetHandle) -> bool {
+        self.lock().is_render_target_valid(handle)
+    }
+
+    fn bind_render_target(&mut self, handle: Option<RenderTargetHandle>) -> GoudResult<()> {
+        self.lock().bind_render_target(handle)
+    }
+
+    fn render_target_texture(&self, handle: RenderTargetHandle) -> Option<TextureHandle> {
+        self.lock().render_target_texture(handle)
     }
 }
 

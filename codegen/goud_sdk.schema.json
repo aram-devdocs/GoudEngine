@@ -1082,6 +1082,10 @@
           "type": "bool"
         },
         {
+          "name": "zLayer",
+          "type": "i32"
+        },
+        {
           "name": "anchorX",
           "type": "f32"
         },
@@ -1351,6 +1355,35 @@
           "returns": "bool"
         },
         {
+          "name": "setZLayer",
+          "doc": "Sets the explicit render-order layer",
+          "params": [
+            {
+              "name": "zLayer",
+              "type": "i32"
+            }
+          ],
+          "returns": "void",
+          "mutates": true
+        },
+        {
+          "name": "getZLayer",
+          "doc": "Gets the explicit render-order layer",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "withZLayer",
+          "doc": "Returns a copy with a modified render-order layer",
+          "params": [
+            {
+              "name": "zLayer",
+              "type": "i32"
+            }
+          ],
+          "returns": "Sprite"
+        },
+        {
           "name": "setAnchor",
           "doc": "Sets the anchor point (normalized 0-1)",
           "params": [
@@ -1583,6 +1616,17 @@
               {
                 "name": "flipY",
                 "type": "bool"
+              }
+            ],
+            "returns": "SpriteBuilder"
+          },
+          {
+            "name": "withZLayer",
+            "doc": "Sets the explicit render-order layer",
+            "params": [
+              {
+                "name": "zLayer",
+                "type": "i32"
               }
             ],
             "returns": "SpriteBuilder"
@@ -3139,7 +3183,7 @@
           ],
           "returns": "void",
           "wasm_name": "add_sprite",
-          "wasm_signature": "add_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, anchor_x: number, anchor_y: number): void"
+          "wasm_signature": "add_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, z_layer: number, anchor_x: number, anchor_y: number): void"
         },
         {
           "name": "addTransform2d",
@@ -3407,7 +3451,7 @@
           "returns": "Sprite?",
           "nullable": true,
           "wasm_name": "get_sprite",
-          "wasm_signature": "get_sprite(bits: bigint): { texture_handle: number; r: number; g: number; b: number; a: number; flip_x: boolean; flip_y: boolean; anchor_x: number; anchor_y: number } | undefined"
+          "wasm_signature": "get_sprite(bits: bigint): { texture_handle: number; r: number; g: number; b: number; a: number; flip_x: boolean; flip_y: boolean; z_layer: number; anchor_x: number; anchor_y: number } | undefined"
         },
         {
           "name": "getTransform2d",
@@ -3544,7 +3588,7 @@
           ],
           "returns": "void",
           "wasm_name": "set_sprite",
-          "wasm_signature": "set_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, anchor_x: number, anchor_y: number): void"
+          "wasm_signature": "set_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, z_layer: number, anchor_x: number, anchor_y: number): void"
         },
         {
           "name": "setTransform2d",
@@ -12092,6 +12136,18 @@
           "ffi": "goud_sprite_is_flipped",
           "self_param": "*const FfiSprite"
         },
+        "setZLayer": {
+          "ffi": "goud_sprite_set_z_layer",
+          "self_param": "*mut FfiSprite"
+        },
+        "getZLayer": {
+          "ffi": "goud_sprite_get_z_layer",
+          "self_param": "*const FfiSprite"
+        },
+        "withZLayer": {
+          "ffi": "goud_sprite_with_z_layer",
+          "self_param": "FfiSprite"
+        },
         "setAnchor": {
           "ffi": "goud_sprite_set_anchor",
           "self_param": "*mut FfiSprite"
@@ -12177,6 +12233,10 @@
         },
         "withFlip": {
           "ffi": "goud_sprite_builder_with_flip",
+          "self_param": "*mut FfiSpriteBuilder"
+        },
+        "withZLayer": {
+          "ffi": "goud_sprite_builder_with_z_layer",
           "self_param": "*mut FfiSpriteBuilder"
         },
         "withAnchor": {

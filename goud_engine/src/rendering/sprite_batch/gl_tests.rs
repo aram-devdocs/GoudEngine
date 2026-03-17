@@ -41,14 +41,16 @@ fn test_sprite_batch_begin_end() {
 #[test]
 #[ignore] // Requires OpenGL context
 fn test_sprite_batch_gather_empty_world() {
+    use crate::assets::AssetServer;
     use crate::ecs::World;
 
     let backend = OpenGLBackend::new().unwrap();
     let mut batch = SpriteBatch::new(backend, SpriteBatchConfig::default()).unwrap();
     let world = World::new();
+    let mut asset_server = AssetServer::new();
 
     batch.begin();
-    let result = batch.gather_sprites(&world);
+    let result = batch.gather_sprites(&world, &mut asset_server);
     assert!(result.is_ok());
     assert_eq!(batch.sprite_count(), 0);
 }
@@ -84,7 +86,7 @@ fn test_sprite_batch_sort_z_layer() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 10.0,
+            z_layer: 10,
             flip_x: false,
             flip_y: false,
         },
@@ -95,13 +97,13 @@ fn test_sprite_batch_sort_z_layer() {
             color: Color::WHITE,
             source_rect: None,
             size: Vec2::one(),
-            z_layer: 5.0,
+            z_layer: 5,
             flip_x: false,
             flip_y: false,
         },
     ];
 
     batch.sort_sprites();
-    assert_eq!(batch.sprites[0].z_layer, 5.0);
-    assert_eq!(batch.sprites[1].z_layer, 10.0);
+    assert_eq!(batch.sprites[0].z_layer, 5);
+    assert_eq!(batch.sprites[1].z_layer, 10);
 }

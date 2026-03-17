@@ -160,6 +160,6 @@ impl GoudGame {
     /// Returns the window dimensions.
     #[inline]
     pub fn window_size(&self) -> (u32, u32) {
-        (self.config.width, self.config.height)
+        self.context.window_size()
     }
 }

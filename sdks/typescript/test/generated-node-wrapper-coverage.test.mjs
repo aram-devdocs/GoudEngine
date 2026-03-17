@@ -111,7 +111,7 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
           total_peak_bytes: 72,
         }),
         spawnBatch: () => [11, 12, 13],
-        getSprite: () => ({ flipX: true, flipY: false }),
+        getSprite: () => ({ flipX: true, flipY: false, zLayer: 7 }),
         networkSend(handle, peerId, data, channel) {
           calls.push(['networkSend', [handle, peerId, data, channel]]);
           return data.length + channel;
@@ -185,7 +185,7 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
     assert.equal(game.removeName(1), 0);
 
     game.addSprite(1, {});
-    assert.deepEqual(game.getSprite(1), { flipX: true, flipY: false });
+    assert.deepEqual(game.getSprite(1), { flipX: true, flipY: false, zLayer: 7 });
     game.setSprite(1, {});
     assert.equal(game.hasSprite(1), 0);
     assert.equal(game.removeSprite(1), 0);

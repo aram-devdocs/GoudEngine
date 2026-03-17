@@ -71,6 +71,9 @@ pub struct FfiSprite {
     /// Flip vertically flag.
     pub flip_y: bool,
 
+    /// Explicit render-order layer.
+    pub z_layer: i32,
+
     /// Anchor point X (normalized 0-1).
     pub anchor_x: f32,
     /// Anchor point Y (normalized 0-1).

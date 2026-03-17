@@ -1449,6 +1449,7 @@ impl GoudGame {
                     ),
                     flip_x: data.flip_x,
                     flip_y: data.flip_y,
+                    z_layer: data.z_layer,
                     anchor: Vec2::new(data.anchor_x as f32, data.anchor_y as f32),
                     custom_size: match (data.custom_width, data.custom_height) {
                         (Some(w), Some(h)) => Some(Vec2::new(w as f32, h as f32)),
@@ -1499,6 +1500,7 @@ impl GoudGame {
                     },
                     flip_x: s.flip_x,
                     flip_y: s.flip_y,
+                    z_layer: s.z_layer,
                     anchor_x: s.anchor.x as f64,
                     anchor_y: s.anchor.y as f64,
                     custom_width: cw,
@@ -1529,6 +1531,7 @@ impl GoudGame {
                 );
                 s.flip_x = data.flip_x;
                 s.flip_y = data.flip_y;
+                s.z_layer = data.z_layer;
                 s.anchor = Vec2::new(data.anchor_x as f32, data.anchor_y as f32);
                 s.custom_size = match (data.custom_width, data.custom_height) {
                     (Some(w), Some(h)) => Some(Vec2::new(w as f32, h as f32)),

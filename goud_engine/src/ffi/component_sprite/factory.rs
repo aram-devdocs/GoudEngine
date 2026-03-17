@@ -36,6 +36,7 @@ pub extern "C" fn goud_sprite_new(texture_handle: u64) -> FfiSprite {
         has_source_rect: false,
         flip_x: false,
         flip_y: false,
+        z_layer: 0,
         anchor_x: 0.5,
         anchor_y: 0.5,
         custom_size_x: 0.0,
