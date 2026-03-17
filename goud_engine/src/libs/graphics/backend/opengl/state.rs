@@ -13,6 +13,8 @@ use crate::libs::error::GoudResult;
 use crate::libs::graphics::backend::types::{DepthFunc, FrontFace};
 
 mod readback;
+#[cfg(test)]
+mod tests;
 
 fn clamp_line_width(width: f32, supported_range: [f32; 2]) -> Option<f32> {
     if !width.is_finite() || width <= 0.0 {
@@ -480,23 +482,5 @@ impl DrawOps for OpenGLBackend {
         instance_count: u32,
     ) -> GoudResult<()> {
         super::draw_calls::draw_indexed_instanced(self, topology, count, offset, instance_count)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::clamp_line_width;
-
-    #[test]
-    fn clamp_line_width_respects_supported_range() {
-        assert_eq!(clamp_line_width(3.0, [1.0, 1.0]), Some(1.0));
-        assert_eq!(clamp_line_width(0.5, [1.0, 4.0]), Some(1.0));
-        assert_eq!(clamp_line_width(2.0, [1.0, 4.0]), Some(2.0));
-    }
-
-    #[test]
-    fn clamp_line_width_rejects_invalid_values() {
-        assert_eq!(clamp_line_width(0.0, [1.0, 4.0]), None);
-        assert_eq!(clamp_line_width(f32::NAN, [1.0, 4.0]), None);
     }
 }

@@ -37,12 +37,14 @@
 //!
 //! - `factory`    — `goud_sprite_new`, `goud_sprite_default`
 //! - `color`      — sprite color/alpha methods and color constant constructors
-//! - `properties` — source rect, flip, anchor, custom size, texture, utility
+//! - `properties` — source rect, flip, anchor, custom size, and utility methods
+//! - `layering`   — explicit sprite z-layer accessors and builders
 //! - `builder`    — heap-allocated `FfiSpriteBuilder` with chaining API
 
 pub mod builder;
 pub mod color;
 pub mod factory;
+pub mod layering;
 pub mod properties;
 pub mod texture;
 
@@ -56,6 +58,7 @@ pub use crate::core::types::{FfiColor, FfiRect, FfiSprite, FfiSpriteBuilder};
 
 // Factory
 pub use factory::{goud_sprite_default, goud_sprite_new};
+pub use layering::{goud_sprite_get_z_layer, goud_sprite_set_z_layer, goud_sprite_with_z_layer};
 
 // Color methods
 pub use color::{
@@ -69,13 +72,12 @@ pub use color::{
 pub use properties::{
     goud_sprite_clear_custom_size, goud_sprite_clear_source_rect, goud_sprite_get_anchor,
     goud_sprite_get_custom_size, goud_sprite_get_flip_x, goud_sprite_get_flip_y,
-    goud_sprite_get_source_rect, goud_sprite_get_z_layer, goud_sprite_has_custom_size,
-    goud_sprite_has_source_rect, goud_sprite_is_flipped, goud_sprite_set_anchor,
-    goud_sprite_set_custom_size, goud_sprite_set_flip, goud_sprite_set_flip_x,
-    goud_sprite_set_flip_y, goud_sprite_set_source_rect, goud_sprite_set_z_layer,
-    goud_sprite_with_anchor, goud_sprite_with_custom_size, goud_sprite_with_flip,
-    goud_sprite_with_flip_x, goud_sprite_with_flip_y, goud_sprite_with_source_rect,
-    goud_sprite_with_z_layer,
+    goud_sprite_get_source_rect, goud_sprite_has_custom_size, goud_sprite_has_source_rect,
+    goud_sprite_is_flipped, goud_sprite_set_anchor, goud_sprite_set_custom_size,
+    goud_sprite_set_flip, goud_sprite_set_flip_x, goud_sprite_set_flip_y,
+    goud_sprite_set_source_rect, goud_sprite_with_anchor, goud_sprite_with_custom_size,
+    goud_sprite_with_flip, goud_sprite_with_flip_x, goud_sprite_with_flip_y,
+    goud_sprite_with_source_rect,
 };
 
 // Texture handle and utility

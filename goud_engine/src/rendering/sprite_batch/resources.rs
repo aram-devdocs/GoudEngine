@@ -2,10 +2,11 @@
 
 use super::batch::SpriteBatch;
 use super::types::{SpriteVertex, TextureCacheEntry};
-use crate::assets::loaders::{
-    MaterialAsset, MaterialLoader, ShaderAsset, ShaderLoader, ShaderStage, SpriteSheetAsset,
-    SpriteSheetLoader, TextureAsset, TextureLoader,
-};
+mod asset_support;
+#[cfg(test)]
+mod tests;
+
+use crate::assets::loaders::{MaterialAsset, ShaderAsset, ShaderStage, TextureAsset};
 use crate::assets::{AssetHandle, AssetServer};
 use crate::core::error::{GoudError, GoudResult};
 use crate::core::math::Vec2;
@@ -13,71 +14,8 @@ use crate::libs::graphics::backend::types::{
     BufferType, BufferUsage, TextureFilter, TextureFormat, TextureHandle, TextureWrap,
 };
 use crate::libs::graphics::backend::RenderBackend;
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
-
-const DEFAULT_SPRITE_SHADER_ASSET_PATH: &str = "engine/shaders/sprite_batch.shader";
-const DEFAULT_SPRITE_SHADER_ASSET_BYTES: &[u8] = br#"#pragma stage vertex
-#version 330 core
-
-layout(location = 0) in vec2 a_position;
-layout(location = 1) in vec2 a_texcoord;
-layout(location = 2) in vec4 a_color;
-
-uniform vec2 u_viewport;
-
-out vec2 v_texcoord;
-out vec4 v_color;
-
-void main() {
-    vec2 safe_viewport = max(u_viewport, vec2(1.0, 1.0));
-    vec2 ndc;
-    ndc.x = (a_position.x / safe_viewport.x) * 2.0 - 1.0;
-    ndc.y = 1.0 - (a_position.y / safe_viewport.y) * 2.0;
-    gl_Position = vec4(ndc, 0.0, 1.0);
-    v_texcoord = a_texcoord;
-    v_color = a_color;
-}
-
-#pragma stage fragment
-#version 330 core
-
-in vec2 v_texcoord;
-in vec4 v_color;
-
-uniform sampler2D u_texture;
-
-out vec4 FragColor;
-
-void main() {
-    FragColor = texture(u_texture, v_texcoord) * v_color;
-}
-"#;
-
-pub(crate) fn ensure_sprite_asset_loaders(asset_server: &mut AssetServer) {
-    if !asset_server.has_loader_for_type::<TextureAsset>() {
-        asset_server.register_loader(TextureLoader);
-    }
-    if !asset_server.has_loader_for_type::<ShaderAsset>() {
-        asset_server.register_loader(ShaderLoader::default());
-    }
-    if !asset_server.has_loader_for_type::<MaterialAsset>() {
-        asset_server.register_loader(MaterialLoader);
-    }
-    if !asset_server.has_loader_for_type::<SpriteSheetAsset>() {
-        asset_server.register_loader(SpriteSheetLoader);
-    }
-}
-
-pub(crate) fn ensure_default_sprite_shader_loaded(
-    asset_server: &mut AssetServer,
-) -> AssetHandle<ShaderAsset> {
-    ensure_sprite_asset_loaders(asset_server);
-    asset_server.load_from_bytes::<ShaderAsset>(
-        DEFAULT_SPRITE_SHADER_ASSET_PATH,
-        DEFAULT_SPRITE_SHADER_ASSET_BYTES,
-    )
-}
+pub(crate) use asset_support::{ensure_default_sprite_shader_loaded, ensure_sprite_asset_loaders};
+use asset_support::{shader_signature, texture_signature};
 
 impl<B: RenderBackend> SpriteBatch<B> {
     /// Ensures GPU resources (buffers, shader) are created.
@@ -454,139 +392,5 @@ impl<B: RenderBackend> SpriteBatch<B> {
         }
 
         Ok(())
-    }
-}
-
-fn shader_signature(shader_asset: &ShaderAsset, material_asset: Option<&MaterialAsset>) -> u64 {
-    let mut hasher = DefaultHasher::new();
-
-    let mut stages: Vec<_> = shader_asset.stages().collect();
-    stages.sort_by_key(|(stage, _)| **stage as u8);
-    for (stage, source) in stages {
-        (*stage as u8).hash(&mut hasher);
-        source.version.hash(&mut hasher);
-        source.source.hash(&mut hasher);
-    }
-
-    if let Some(material) = material_asset {
-        material.shader_path.hash(&mut hasher);
-
-        let mut uniform_names: Vec<_> = material.uniforms().iter().collect();
-        uniform_names.sort_by(|a, b| a.0.cmp(b.0));
-        for (name, value) in uniform_names {
-            name.hash(&mut hasher);
-            hash_uniform_value(value, &mut hasher);
-        }
-
-        let mut texture_slots: Vec<_> = material.texture_slots().iter().collect();
-        texture_slots.sort_by(|a, b| a.0.cmp(b.0));
-        for (slot, path) in texture_slots {
-            slot.hash(&mut hasher);
-            path.hash(&mut hasher);
-        }
-    }
-
-    hasher.finish()
-}
-
-fn texture_signature(texture: &TextureAsset) -> u64 {
-    let mut hasher = DefaultHasher::new();
-    texture.width.hash(&mut hasher);
-    texture.height.hash(&mut hasher);
-    texture.data.hash(&mut hasher);
-    hasher.finish()
-}
-
-fn hash_uniform_value(value: &crate::assets::loaders::UniformValue, hasher: &mut DefaultHasher) {
-    use crate::assets::loaders::UniformValue;
-
-    match value {
-        UniformValue::Float(value) => value.to_bits().hash(hasher),
-        UniformValue::Vec2(value) => value
-            .iter()
-            .for_each(|component| component.to_bits().hash(hasher)),
-        UniformValue::Vec3(value) => value
-            .iter()
-            .for_each(|component| component.to_bits().hash(hasher)),
-        UniformValue::Vec4(value) => value
-            .iter()
-            .for_each(|component| component.to_bits().hash(hasher)),
-        UniformValue::Int(value) => value.hash(hasher),
-        UniformValue::Mat4(value) => value
-            .iter()
-            .flat_map(|row| row.iter())
-            .for_each(|component| component.to_bits().hash(hasher)),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::libs::graphics::backend::null::NullBackend;
-    use crate::libs::graphics::backend::TextureOps;
-    use crate::rendering::sprite_batch::config::SpriteBatchConfig;
-    use image::{ImageBuffer, ImageFormat, Rgba};
-
-    fn create_test_png(width: u32, height: u32) -> Vec<u8> {
-        let image: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::from_fn(width, height, |x, y| {
-            if (x + y) % 2 == 0 {
-                Rgba([255, 0, 0, 255])
-            } else {
-                Rgba([0, 255, 0, 255])
-            }
-        });
-        let mut bytes = Vec::new();
-        image::DynamicImage::ImageRgba8(image)
-            .write_to(&mut std::io::Cursor::new(&mut bytes), ImageFormat::Png)
-            .expect("test png encoding should succeed");
-        bytes
-    }
-
-    #[test]
-    fn test_default_sprite_shader_loads_through_asset_server() {
-        let mut asset_server = AssetServer::new();
-        let handle = ensure_default_sprite_shader_loaded(&mut asset_server);
-        let shader = asset_server
-            .get(&handle)
-            .expect("default sprite shader should be loaded");
-
-        assert!(shader.get_stage(ShaderStage::Vertex).is_some());
-        assert!(shader.get_stage(ShaderStage::Fragment).is_some());
-    }
-
-    #[test]
-    fn test_resolve_texture_reuses_cached_handle_and_reuploads_when_invalidated() {
-        let mut asset_server = AssetServer::new();
-        ensure_sprite_asset_loaders(&mut asset_server);
-        let texture = asset_server
-            .load_from_bytes::<TextureAsset>("tests/sprite.png", &create_test_png(2, 2));
-
-        let mut batch = SpriteBatch::new(NullBackend::new(), SpriteBatchConfig::default()).unwrap();
-
-        let first = batch
-            .resolve_texture(texture, &asset_server)
-            .expect("first texture upload should succeed");
-        let second = batch
-            .resolve_texture(texture, &asset_server)
-            .expect("cached texture lookup should succeed");
-
-        assert_eq!(
-            first, second,
-            "second lookup should reuse the cached GPU handle"
-        );
-
-        assert!(
-            batch.backend.destroy_texture(first),
-            "test should be able to invalidate the cached texture handle"
-        );
-
-        let third = batch
-            .resolve_texture(texture, &asset_server)
-            .expect("invalidated texture should be uploaded again");
-
-        assert_ne!(
-            first, third,
-            "stale cached handles should be replaced after backend invalidation"
-        );
     }
 }

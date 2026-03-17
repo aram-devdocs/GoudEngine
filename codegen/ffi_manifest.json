@@ -3336,7 +3336,7 @@
       "is_unsafe": true
     },
     "goud_sprite_get_z_layer": {
-      "source_file": "ffi/component_sprite/properties.rs",
+      "source_file": "ffi/component_sprite/layering.rs",
       "params": [
         "sprite: *const FfiSprite"
       ],
@@ -3466,7 +3466,7 @@
       "is_unsafe": true
     },
     "goud_sprite_set_z_layer": {
-      "source_file": "ffi/component_sprite/properties.rs",
+      "source_file": "ffi/component_sprite/layering.rs",
       "params": [
         "sprite: *mut FfiSprite",
         "z_layer: i32"
@@ -3555,7 +3555,7 @@
       "is_unsafe": false
     },
     "goud_sprite_with_z_layer": {
-      "source_file": "ffi/component_sprite/properties.rs",
+      "source_file": "ffi/component_sprite/layering.rs",
       "params": [
         "sprite: FfiSprite",
         "z_layer: i32"

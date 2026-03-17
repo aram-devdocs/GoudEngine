@@ -50,6 +50,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/component_sprite/factory.rs",
     "src/ffi/component_sprite/builder.rs",
     "src/ffi/component_sprite/color.rs",
+    "src/ffi/component_sprite/layering.rs",
     "src/ffi/component_sprite/properties.rs",
     "src/ffi/component_sprite/texture.rs",
     // window module
