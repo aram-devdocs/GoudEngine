@@ -77,7 +77,7 @@ pub fn create_native_runtime(
             Ok(NativeRuntime {
                 platform: Box::new(platform),
                 render_backend: SharedNativeRenderBackend::new(NativeRenderBackend::OpenGlLegacy(
-                    backend,
+                    Box::new(backend),
                 )),
             })
         }

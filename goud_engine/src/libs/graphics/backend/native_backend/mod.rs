@@ -24,7 +24,7 @@ use super::wgpu_backend::WgpuBackend;
 pub enum NativeRenderBackend {
     #[cfg(feature = "legacy-glfw-opengl")]
     /// Legacy OpenGL backend selected through the explicit legacy feature gate.
-    OpenGlLegacy(OpenGLBackend),
+    OpenGlLegacy(Box<OpenGLBackend>),
     #[cfg(all(feature = "native", feature = "wgpu-backend"))]
     /// Default wgpu backend used by the native runtime.
     Wgpu(Box<WgpuBackend>),
