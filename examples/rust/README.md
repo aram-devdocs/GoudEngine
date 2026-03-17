@@ -9,7 +9,8 @@ Rust examples are standalone Cargo packages in the workspace.
 | `feature_lab/` | Headless Rust SDK smoke example for scenes, ECS, animation, input, and headless fallbacks | `cargo run -p feature-lab` |
 
 Windowed examples default to `winit + wgpu`.
-Set `GOUD_NATIVE_BACKEND=legacy` to request the explicit `glfw + OpenGL` fallback path.
+To request the explicit legacy pair, set `WindowBackendKind::GlfwLegacy` and
+`RenderBackendKind::OpenGlLegacy` on `GameConfig` or `EngineConfig`.
 
 ## Debugger Attach Reference
 

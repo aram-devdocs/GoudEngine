@@ -27,7 +27,7 @@ pub enum NativeRenderBackend {
     OpenGlLegacy(OpenGLBackend),
     #[cfg(all(feature = "native", feature = "wgpu-backend"))]
     /// Default wgpu backend used by the native runtime.
-    Wgpu(WgpuBackend),
+    Wgpu(Box<WgpuBackend>),
 }
 
 impl NativeRenderBackend {
@@ -83,7 +83,7 @@ impl SharedNativeRenderBackend {
     fn lock(&self) -> MutexGuard<'_, NativeRenderBackend> {
         self.inner
             .lock()
-            .expect("native render backend mutex should not be poisoned")
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
     pub(crate) fn bind_texture_by_index(&self, index: u32, unit: u32) -> GoudResult<()> {

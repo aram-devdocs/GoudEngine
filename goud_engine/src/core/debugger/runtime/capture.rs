@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Condvar, Mutex, OnceLock};
+use std::time::Duration;
 
 use image::codecs::png::PngEncoder;
 use image::{ColorType, ImageEncoder};
@@ -11,6 +12,14 @@ use super::state::lock_runtime;
 use crate::core::debugger::RuntimeRouteId;
 
 type CaptureHook = Arc<dyn Fn() -> Result<RawFramebufferReadbackV1, String> + Send + Sync>;
+
+/// Shared state for deferred framebuffer capture coordination.
+pub(crate) struct DeferredCaptureState {
+    pub(crate) requested: bool,
+    pub(crate) result: Option<Result<RawFramebufferReadbackV1, String>>,
+}
+
+pub(crate) type DeferredCapture = Arc<(Mutex<DeferredCaptureState>, Condvar)>;
 
 /// Raw framebuffer readback payload for one route-local capture.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -73,6 +82,53 @@ pub fn unregister_capture_hook_for_route(route_id: &RuntimeRouteId) {
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner())
         .remove(&packed_route_identity(route_id));
+}
+
+pub(crate) fn new_deferred_capture() -> DeferredCapture {
+    Arc::new((
+        Mutex::new(DeferredCaptureState {
+            requested: false,
+            result: None,
+        }),
+        Condvar::new(),
+    ))
+}
+
+pub(crate) fn register_deferred_capture_hook_for_route(
+    route_id: RuntimeRouteId,
+    deferred: DeferredCapture,
+) {
+    register_capture_hook_for_route(route_id, move || wait_for_deferred_capture(&deferred));
+}
+
+fn wait_for_deferred_capture(
+    deferred: &DeferredCapture,
+) -> Result<RawFramebufferReadbackV1, String> {
+    let (lock, cvar) = &**deferred;
+    let mut guard = lock
+        .lock()
+        .map_err(|e| format!("capture lock poisoned: {e}"))?;
+    guard.requested = true;
+    guard.result = None;
+    let timeout = Duration::from_secs(5);
+    loop {
+        let (new_guard, wait_result) = cvar
+            .wait_timeout(guard, timeout)
+            .map_err(|e| format!("capture condvar error: {e}"))?;
+        guard = new_guard;
+        if guard.result.is_some() {
+            break;
+        }
+        if wait_result.timed_out() {
+            guard.requested = false;
+            return Err("capture timed out waiting for main thread readback".to_string());
+        }
+    }
+    guard.requested = false;
+    guard
+        .result
+        .take()
+        .ok_or_else(|| "capture hook resumed without a readback result".to_string())?
 }
 
 fn validate_readback(readback: &RawFramebufferReadbackV1) -> Result<(), CaptureFrameError> {

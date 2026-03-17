@@ -56,7 +56,9 @@ pub fn create_native_runtime(
             backend.resize(framebuffer_size.0, framebuffer_size.1);
             Ok(NativeRuntime {
                 platform: Box::new(platform),
-                render_backend: SharedNativeRenderBackend::new(NativeRenderBackend::Wgpu(backend)),
+                render_backend: SharedNativeRenderBackend::new(NativeRenderBackend::Wgpu(
+                    Box::new(backend),
+                )),
             })
         }
         #[cfg(not(all(feature = "native", feature = "wgpu-backend")))]

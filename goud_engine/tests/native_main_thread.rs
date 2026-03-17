@@ -1,5 +1,6 @@
 #![cfg(feature = "native")]
 
+use std::path::PathBuf;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -37,6 +38,10 @@ fn pump_until_window_size_sdk(
 }
 
 fn sdk_default_native_smoke() {
+    let test_font_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("test_assets/fonts/test_font.ttf")
+        .to_string_lossy()
+        .into_owned();
     let mut game = GoudGame::with_platform(
         GameConfig::default()
             .with_title("native-main-thread-sdk")
@@ -57,7 +62,7 @@ fn sdk_default_native_smoke() {
     assert!(game.begin_2d_render().is_ok());
     assert!(game.draw_quad(24.0, 24.0, 32.0, 32.0, 1.0, 0.2, 0.2, 1.0));
     assert!(game.draw_text(
-        "/Users/aramhammoudeh/dev/game/GoudEngine-issue-280/goud_engine/test_assets/fonts/test_font.ttf",
+        &test_font_path,
         "sdk",
         8.0,
         20.0,

@@ -24,16 +24,7 @@ mod score;
 
 use constants::*;
 use game_manager::GameManager;
-use goudengine::{GameConfig, GoudGame, RenderBackendKind, WindowBackendKind};
-
-fn configure_native_backends(config: GameConfig) -> GameConfig {
-    match std::env::var("GOUD_NATIVE_BACKEND").ok().as_deref() {
-        Some("legacy") => config
-            .with_window_backend(WindowBackendKind::GlfwLegacy)
-            .with_render_backend(RenderBackendKind::OpenGlLegacy),
-        _ => config,
-    }
-}
+use goudengine::{GameConfig, GoudGame};
 
 fn main() {
     // This binary must be run from the repository root so that relative asset
@@ -49,11 +40,7 @@ fn main() {
 
     // Window height includes the base strip below the playfield.
     let window_height = SCREEN_HEIGHT as u32 + BASE_HEIGHT as u32;
-    let config = configure_native_backends(GameConfig::new(
-        "Flappy Bird",
-        SCREEN_WIDTH as u32,
-        window_height,
-    ));
+    let config = GameConfig::new("Flappy Bird", SCREEN_WIDTH as u32, window_height);
     let mut game = GoudGame::with_platform(config).expect("Failed to create game");
 
     // Assets live in the shared C# example directory.

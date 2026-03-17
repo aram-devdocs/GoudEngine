@@ -7,7 +7,7 @@ mod ecs_scene;
 #[cfg(feature = "native")]
 use std::sync::atomic::AtomicU64;
 #[cfg(feature = "native")]
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::Arc;
 
 use crate::context_registry::scene::SceneManager;
 use crate::core::debugger::{self, RuntimeRouteId, RuntimeSurfaceKind};
@@ -36,7 +36,7 @@ use crate::rendering::text::TextBatch;
 use crate::rendering::UiRenderSystem;
 
 #[cfg(feature = "native")]
-pub(crate) use capture::{DeferredCapture, DeferredCaptureState};
+pub(crate) use crate::core::debugger::DeferredCapture;
 
 /// The main game instance managing the ECS world and game loop.
 ///
@@ -259,41 +259,8 @@ impl GoudGame {
             let dims = Arc::new(AtomicU64::new(
                 ((config.width as u64) << 32) | config.height as u64,
             ));
-            let deferred: DeferredCapture = Arc::new((
-                Mutex::new(DeferredCaptureState {
-                    requested: false,
-                    result: None,
-                }),
-                Condvar::new(),
-            ));
-            let deferred_clone = Arc::clone(&deferred);
-            debugger::register_capture_hook_for_route(route_id.clone(), move || {
-                let (lock, cvar) = &*deferred_clone;
-                let mut guard = lock
-                    .lock()
-                    .map_err(|e| format!("capture lock poisoned: {e}"))?;
-                guard.requested = true;
-                guard.result = None;
-                // Wait up to 5 seconds for the main thread to service the readback.
-                let timeout = std::time::Duration::from_secs(5);
-                loop {
-                    let (new_guard, wait_result) = cvar
-                        .wait_timeout(guard, timeout)
-                        .map_err(|e| format!("capture condvar error: {e}"))?;
-                    guard = new_guard;
-                    if guard.result.is_some() {
-                        break;
-                    }
-                    if wait_result.timed_out() {
-                        guard.requested = false;
-                        return Err(
-                            "capture timed out waiting for main thread readback".to_string()
-                        );
-                    }
-                }
-                guard.requested = false;
-                guard.result.take().unwrap()
-            });
+            let deferred = debugger::new_deferred_capture();
+            debugger::register_deferred_capture_hook_for_route(route_id.clone(), deferred.clone());
             (Some(dims), Some(deferred))
         } else {
             (None, None)
@@ -363,8 +330,20 @@ impl Default for GoudGame {
     }
 }
 
+impl std::fmt::Debug for GoudGame {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GoudGame")
+            .field("config", &self.config)
+            .field("entity_count", &self.entity_count())
+            .field("initialized", &self.initialized)
+            .finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    #[cfg(all(feature = "native", not(target_os = "macos")))]
+    use std::path::PathBuf;
     #[cfg(all(feature = "native", not(target_os = "macos")))]
     use std::thread;
     #[cfg(all(feature = "native", not(target_os = "macos")))]
@@ -375,6 +354,14 @@ mod tests {
 
     #[cfg(all(feature = "native", not(target_os = "macos")))]
     use super::*;
+
+    #[cfg(all(feature = "native", not(target_os = "macos")))]
+    fn test_font_path() -> String {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("test_assets/fonts/test_font.ttf")
+            .to_string_lossy()
+            .into_owned()
+    }
 
     // winit requires the macOS main thread, which the unit-test harness does not provide.
     #[cfg(all(feature = "native", not(target_os = "macos")))]
@@ -400,7 +387,7 @@ mod tests {
         assert!(game.begin_2d_render().is_ok());
         assert!(game.draw_quad(32.0, 32.0, 24.0, 24.0, 1.0, 0.0, 0.0, 1.0));
         assert!(game.draw_text(
-            "/Users/aramhammoudeh/dev/game/GoudEngine-issue-280/goud_engine/test_assets/fonts/test_font.ttf",
+            &test_font_path(),
             "wgpu",
             12.0,
             18.0,
@@ -447,15 +434,5 @@ mod tests {
             resized_readback.len(),
             (resized_fb_width * resized_fb_height * 4) as usize
         );
-    }
-}
-
-impl std::fmt::Debug for GoudGame {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GoudGame")
-            .field("config", &self.config)
-            .field("entity_count", &self.entity_count())
-            .field("initialized", &self.initialized)
-            .finish()
     }
 }

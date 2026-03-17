@@ -184,6 +184,95 @@ impl KeyCode {
         })
     }
 
+    /// Converts a debugger synthetic-input key name into a key code.
+    pub fn from_debugger_name(name: &str) -> Option<Self> {
+        Some(match name.to_ascii_lowercase().as_str() {
+            "space" | "spacebar" => Self::Space,
+            "apostrophe" | "quote" | "singlequote" => Self::Apostrophe,
+            "comma" => Self::Comma,
+            "minus" | "hyphen" => Self::Minus,
+            "period" | "dot" => Self::Period,
+            "slash" | "forwardslash" => Self::Slash,
+            "0" | "num0" => Self::Num0,
+            "1" | "num1" => Self::Num1,
+            "2" | "num2" => Self::Num2,
+            "3" | "num3" => Self::Num3,
+            "4" | "num4" => Self::Num4,
+            "5" | "num5" => Self::Num5,
+            "6" | "num6" => Self::Num6,
+            "7" | "num7" => Self::Num7,
+            "8" | "num8" => Self::Num8,
+            "9" | "num9" => Self::Num9,
+            "semicolon" => Self::Semicolon,
+            "equal" | "equals" => Self::Equal,
+            "a" => Self::A,
+            "b" => Self::B,
+            "c" => Self::C,
+            "d" => Self::D,
+            "e" => Self::E,
+            "f" => Self::F,
+            "g" => Self::G,
+            "h" => Self::H,
+            "i" => Self::I,
+            "j" => Self::J,
+            "k" => Self::K,
+            "l" => Self::L,
+            "m" => Self::M,
+            "n" => Self::N,
+            "o" => Self::O,
+            "p" => Self::P,
+            "q" => Self::Q,
+            "r" => Self::R,
+            "s" => Self::S,
+            "t" => Self::T,
+            "u" => Self::U,
+            "v" => Self::V,
+            "w" => Self::W,
+            "x" => Self::X,
+            "y" => Self::Y,
+            "z" => Self::Z,
+            "escape" | "esc" => Self::Escape,
+            "enter" | "return" => Self::Enter,
+            "kpenter" | "kp_enter" | "numpadenter" | "numpad_enter" => Self::KpEnter,
+            "tab" => Self::Tab,
+            "backspace" => Self::Backspace,
+            "insert" => Self::Insert,
+            "delete" | "del" => Self::Delete,
+            "right" | "arrowright" => Self::Right,
+            "left" | "arrowleft" => Self::Left,
+            "down" | "arrowdown" => Self::Down,
+            "up" | "arrowup" => Self::Up,
+            "pageup" | "page_up" => Self::PageUp,
+            "pagedown" | "page_down" => Self::PageDown,
+            "home" => Self::Home,
+            "end" => Self::End,
+            "f1" => Self::F1,
+            "f2" => Self::F2,
+            "f3" => Self::F3,
+            "f4" => Self::F4,
+            "f5" => Self::F5,
+            "f6" => Self::F6,
+            "f7" => Self::F7,
+            "f8" => Self::F8,
+            "f9" => Self::F9,
+            "f10" => Self::F10,
+            "f11" => Self::F11,
+            "f12" => Self::F12,
+            "leftshift" | "left_shift" | "shift" => Self::LeftShift,
+            "leftcontrol" | "left_control" | "leftctrl" | "left_ctrl" | "control" | "ctrl" => {
+                Self::LeftControl
+            }
+            "leftalt" | "left_alt" | "alt" => Self::LeftAlt,
+            "leftsuper" | "left_super" | "leftmeta" | "left_meta" | "super" | "meta" | "cmd"
+            | "command" => Self::LeftSuper,
+            "rightshift" | "right_shift" => Self::RightShift,
+            "rightcontrol" | "right_control" | "rightctrl" | "right_ctrl" => Self::RightControl,
+            "rightalt" | "right_alt" => Self::RightAlt,
+            "rightsuper" | "right_super" | "rightmeta" | "right_meta" => Self::RightSuper,
+            _ => return None,
+        })
+    }
+
     /// Legacy alias retained while engine-facing code migrates off GLFW symbols.
     pub const KP_ENTER: Self = Self::KpEnter;
 }
@@ -210,6 +299,18 @@ impl MouseButton {
             2 => Self::Middle,
             3 => Self::Button4,
             4 => Self::Button5,
+            _ => return None,
+        })
+    }
+
+    /// Converts a debugger synthetic-input mouse button name into a button.
+    pub fn from_debugger_name(name: &str) -> Option<Self> {
+        Some(match name.to_ascii_lowercase().as_str() {
+            "left" | "button1" => Self::Left,
+            "right" | "button2" => Self::Right,
+            "middle" | "button3" => Self::Middle,
+            "back" | "button4" => Self::Button4,
+            "forward" | "button5" => Self::Button5,
             _ => return None,
         })
     }
@@ -285,6 +386,30 @@ pub enum GamepadButton {
     DPadLeft = 14,
 }
 
+impl GamepadButton {
+    /// Converts a raw engine/FFI gamepad button value into a gamepad button.
+    pub fn from_u32(value: u32) -> Option<Self> {
+        Some(match value {
+            0 => Self::South,
+            1 => Self::East,
+            2 => Self::West,
+            3 => Self::North,
+            4 => Self::LeftBumper,
+            5 => Self::RightBumper,
+            6 => Self::Back,
+            7 => Self::Start,
+            8 => Self::Guide,
+            9 => Self::LeftStick,
+            10 => Self::RightStick,
+            11 => Self::DPadUp,
+            12 => Self::DPadRight,
+            13 => Self::DPadDown,
+            14 => Self::DPadLeft,
+            _ => return None,
+        })
+    }
+}
+
 /// Capabilities reported by an input provider.
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
@@ -295,4 +420,45 @@ pub struct InputCapabilities {
     pub supports_touch: bool,
     /// Maximum number of simultaneous gamepads.
     pub max_gamepads: u32,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{GamepadButton, KeyCode, MouseButton};
+
+    #[test]
+    fn debugger_key_name_mapping_covers_extended_keys() {
+        assert_eq!(KeyCode::from_debugger_name("f12"), Some(KeyCode::F12));
+        assert_eq!(
+            KeyCode::from_debugger_name("page_down"),
+            Some(KeyCode::PageDown)
+        );
+        assert_eq!(
+            KeyCode::from_debugger_name("ctrl"),
+            Some(KeyCode::LeftControl)
+        );
+        assert_eq!(
+            KeyCode::from_debugger_name("kp_enter"),
+            Some(KeyCode::KpEnter)
+        );
+    }
+
+    #[test]
+    fn debugger_mouse_button_mapping_handles_aux_buttons() {
+        assert_eq!(
+            MouseButton::from_debugger_name("button4"),
+            Some(MouseButton::Button4)
+        );
+        assert_eq!(
+            MouseButton::from_debugger_name("forward"),
+            Some(MouseButton::Button5)
+        );
+    }
+
+    #[test]
+    fn gamepad_button_from_u32_matches_known_values() {
+        assert_eq!(GamepadButton::from_u32(0), Some(GamepadButton::South));
+        assert_eq!(GamepadButton::from_u32(14), Some(GamepadButton::DPadLeft));
+        assert_eq!(GamepadButton::from_u32(99), None);
+    }
 }

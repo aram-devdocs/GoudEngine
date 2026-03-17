@@ -26,6 +26,9 @@ pub use capture::{
     capture_frame_for_route, register_capture_hook_for_route, unregister_capture_hook_for_route,
     RawFramebufferReadbackV1,
 };
+pub(crate) use capture::{
+    new_deferred_capture, register_deferred_capture_hook_for_route, DeferredCapture,
+};
 pub use context_updates::{
     fps_stats_for_context, get_memory_summary_for_context, set_selected_entity_for_context,
     set_service_state_for_context, set_snapshot_network_stats_for_context,

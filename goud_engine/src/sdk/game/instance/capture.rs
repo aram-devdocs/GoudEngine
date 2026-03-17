@@ -1,28 +1,11 @@
 //! Deferred framebuffer capture coordination for the debugger.
 
 #[cfg(feature = "native")]
-use std::sync::{Arc, Condvar, Mutex};
-
-#[cfg(feature = "native")]
 use crate::core::debugger;
 #[cfg(feature = "native")]
 use crate::libs::graphics::backend::RenderBackend;
 
 use super::GoudGame;
-
-/// Shared state for deferred framebuffer capture.
-///
-/// The IPC handler thread sets `requested = true` and waits on the condvar.
-/// The main thread (in `swap_buffers`) checks `requested`, does the GL readback,
-/// stores the result, and notifies the condvar.
-#[cfg(feature = "native")]
-pub(crate) struct DeferredCaptureState {
-    pub(crate) requested: bool,
-    pub(crate) result: Option<Result<debugger::RawFramebufferReadbackV1, String>>,
-}
-
-#[cfg(feature = "native")]
-pub(crate) type DeferredCapture = Arc<(Mutex<DeferredCaptureState>, Condvar)>;
 
 impl GoudGame {
     /// Services a pending deferred capture request by performing the GL

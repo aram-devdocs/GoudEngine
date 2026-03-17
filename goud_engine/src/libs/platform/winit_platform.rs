@@ -220,19 +220,19 @@ impl ApplicationHandler for WinitEventHandler<'_> {
             }
             WindowEvent::KeyboardInput { event, .. } => {
                 if let PhysicalKey::Code(keycode) = event.physical_key {
-                    if let Some(glfw_key) = map_keycode(keycode) {
+                    if let Some(engine_key) = map_keycode(keycode) {
                         match event.state {
-                            ElementState::Pressed => self.input.press_key(glfw_key),
-                            ElementState::Released => self.input.release_key(glfw_key),
+                            ElementState::Pressed => self.input.press_key(engine_key),
+                            ElementState::Released => self.input.release_key(engine_key),
                         }
                     }
                 }
             }
             WindowEvent::MouseInput { state, button, .. } => {
-                if let Some(glfw_btn) = map_mouse_button(button) {
+                if let Some(engine_btn) = map_mouse_button(button) {
                     match state {
-                        ElementState::Pressed => self.input.press_mouse_button(glfw_btn),
-                        ElementState::Released => self.input.release_mouse_button(glfw_btn),
+                        ElementState::Pressed => self.input.press_mouse_button(engine_btn),
+                        ElementState::Released => self.input.release_mouse_button(engine_btn),
                     }
                 }
             }

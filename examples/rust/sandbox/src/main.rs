@@ -5,24 +5,13 @@ mod network;
 use std::path::Path;
 
 use config::{parse_start_mode, read_manifest};
-use goudengine::{
-    input::Key, DebuggerConfig, GameConfig, GoudGame, RenderBackendKind, WindowBackendKind,
-};
+use goudengine::{input::Key, DebuggerConfig, GameConfig, GoudGame};
 use hud::{draw as draw_hud, HudSnapshot};
 use network::NetworkState;
 
 const WINDOW_WIDTH: u32 = 1280;
 const WINDOW_HEIGHT: u32 = 720;
 const MOVE_SPEED: f32 = 220.0;
-
-fn configure_native_backends(config: GameConfig) -> GameConfig {
-    match std::env::var("GOUD_NATIVE_BACKEND").ok().as_deref() {
-        Some("legacy") => config
-            .with_window_backend(WindowBackendKind::GlfwLegacy)
-            .with_render_backend(RenderBackendKind::OpenGlLegacy),
-        _ => config,
-    }
-}
 
 fn setup_3d_once(game: &mut GoudGame, texture_path: &str) -> Option<(u32, u32)> {
     let texture3d = game.load(texture_path) as u32;
@@ -64,7 +53,7 @@ fn main() {
 
     println!("{}", config.title);
 
-    let mut game = GoudGame::with_platform(configure_native_backends(
+    let mut game = GoudGame::with_platform(
         GameConfig::new("GoudEngine Sandbox - Rust", WINDOW_WIDTH, WINDOW_HEIGHT).with_debugger(
             DebuggerConfig {
                 enabled: true,
@@ -72,7 +61,7 @@ fn main() {
                 route_label: Some("sandbox-rust".to_string()),
             },
         ),
-    ))
+    )
     .expect("failed to create game");
 
     let background = game.load(&config.assets.background);
