@@ -17,7 +17,12 @@ from ts_node_shared import (
 
 def gen_interface():
     tool = schema["tools"]["GoudGame"]
-    lines = [f"// {HEADER_COMMENT}", "", "import type { PhysicsBackend2D } from './input.g.js';", ""]
+    lines = [
+        f"// {HEADER_COMMENT}",
+        "",
+        "import type { PhysicsBackend2D, RenderBackendKind, WindowBackendKind } from './input.g.js';",
+        "",
+    ]
 
     if schema["types"]["Vec2"].get("doc"):
         lines.append(f"/** {schema['types']['Vec2']['doc']} */")
