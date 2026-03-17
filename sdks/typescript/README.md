@@ -316,12 +316,15 @@ npm run build:all       # Node + Web
 ```bash
 cd sdks/typescript
 npm test                # node --test test/*.test.mjs
-npx c8 --reporter=text-summary npm test
+npm run coverage:native # Node.js coverage gate + Cobertura report
+npm run coverage:web-runtime
 npm run typecheck       # tsc --noEmit for both targets
 ```
 
-The TypeScript SDK CI gate expects at least `80%` line coverage across the
-public SDK surface and publishes a Cobertura report from `c8`.
+The TypeScript SDK CI gate expects at least `80%` line coverage for both the
+native Node.js build and the web/WASM build. Native coverage comes from `c8`.
+Web/WASM coverage comes from the Playwright smoke run and is written as a
+Cobertura report under `coverage/web/`.
 
 ## Codegen
 

@@ -725,7 +725,7 @@ jobs:
     - name: Generate TypeScript coverage report
       if: matrix.os == 'ubuntu-latest'
       working-directory: sdks/typescript
-      run: xvfb-run npx c8 --reporter=text-summary --reporter=cobertura --report-dir coverage --check-coverage --lines 80 npm run test:native
+      run: xvfb-run npm run coverage:native
 
     - name: Run smoke tests (macOS/Windows — skip GLFW window tests in headless CI)
       if: matrix.os != 'ubuntu-latest'
@@ -739,7 +739,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ts-coverage
-        path: sdks/typescript/coverage/cobertura-coverage.xml
+        path: sdks/typescript/coverage/native/cobertura-coverage.xml
         if-no-files-found: error
 
     - name: Upload native addon
@@ -820,9 +820,9 @@ jobs:
       working-directory: sdks/typescript
       run: npx tsc -p tsconfig.web.json --noEmit
 
-    - name: Run browser networking runtime smoke test
+    - name: Generate TypeScript web coverage report
       working-directory: sdks/typescript
-      run: npm run test:web-runtime
+      run: npm run coverage:web-runtime
 
     - name: Verify wasm output structure
       working-directory: sdks/typescript
@@ -833,6 +833,13 @@ jobs:
         find dist/web/ -name "*.js" | head -20 || echo "No JS files in dist/web/"
         test -f wasm/goud_engine_bg.wasm
         test -f wasm/goud_engine.js
+
+    - name: Upload TypeScript web coverage results
+      uses: actions/upload-artifact@v4
+      with:
+        name: ts-web-coverage
+        path: sdks/typescript/coverage/web/cobertura-coverage.xml
+        if-no-files-found: error
 
     - name: Upload wasm artifacts
       uses: actions/upload-artifact@v4
