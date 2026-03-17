@@ -1346,6 +1346,14 @@
       "return_type": "bool",
       "is_unsafe": true
     },
+    "goud_engine_create": {
+      "source_file": "ffi/engine_config/native.rs",
+      "params": [
+        "handle: EngineConfigHandle"
+      ],
+      "return_type": "GoudContextId",
+      "is_unsafe": true
+    },
     "goud_entity_clone": {
       "source_file": "ffi/entity/lifecycle.rs",
       "params": [
@@ -4477,5 +4485,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 449
+  "total_count": 450
 }
