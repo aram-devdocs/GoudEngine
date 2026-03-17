@@ -41,14 +41,16 @@ fn test_sprite_batch_begin_end() {
 #[test]
 #[ignore] // Requires OpenGL context
 fn test_sprite_batch_gather_empty_world() {
+    use crate::assets::AssetServer;
     use crate::ecs::World;
 
     let backend = OpenGLBackend::new().unwrap();
     let mut batch = SpriteBatch::new(backend, SpriteBatchConfig::default()).unwrap();
     let world = World::new();
+    let mut asset_server = AssetServer::new();
 
     batch.begin();
-    let result = batch.gather_sprites(&world);
+    let result = batch.gather_sprites(&world, &mut asset_server);
     assert!(result.is_ok());
     assert_eq!(batch.sprite_count(), 0);
 }

@@ -157,7 +157,7 @@ impl RenderTargetOps for OpenGLBackend {
                 let metadata = self
                     .render_targets
                     .get(&handle)
-                    .ok_or_else(|| GoudError::InvalidHandle)?;
+                    .ok_or(GoudError::InvalidHandle)?;
                 // SAFETY: framebuffer_id is owned by this backend and alive while the metadata is present.
                 unsafe {
                     gl::BindFramebuffer(gl::FRAMEBUFFER, metadata.framebuffer_id);
