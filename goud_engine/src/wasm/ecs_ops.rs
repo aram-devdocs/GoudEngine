@@ -144,6 +144,7 @@ impl WasmGame {
         a: f32,
         flip_x: bool,
         flip_y: bool,
+        z_layer: i32,
         anchor_x: f32,
         anchor_y: f32,
     ) {
@@ -152,6 +153,7 @@ impl WasmGame {
         let sprite = Sprite::new(handle)
             .with_color(Color::rgba(r, g, b, a))
             .with_flip(flip_x, flip_y)
+            .with_z_layer(z_layer)
             .with_anchor(anchor_x, anchor_y);
         self.world.insert(entity, sprite);
     }
@@ -167,6 +169,7 @@ impl WasmGame {
             a: s.color.a,
             flip_x: s.flip_x,
             flip_y: s.flip_y,
+            z_layer: s.z_layer,
             anchor_x: s.anchor.x,
             anchor_y: s.anchor.y,
         })
@@ -183,6 +186,7 @@ impl WasmGame {
         a: f32,
         flip_x: bool,
         flip_y: bool,
+        z_layer: i32,
         anchor_x: f32,
         anchor_y: f32,
     ) {
@@ -192,6 +196,7 @@ impl WasmGame {
             s.color = Color::rgba(r, g, b, a);
             s.flip_x = flip_x;
             s.flip_y = flip_y;
+            s.z_layer = z_layer;
             s.anchor = Vec2::new(anchor_x, anchor_y);
         }
     }

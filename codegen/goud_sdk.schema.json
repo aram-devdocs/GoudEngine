@@ -3183,7 +3183,7 @@
           ],
           "returns": "void",
           "wasm_name": "add_sprite",
-          "wasm_signature": "add_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, anchor_x: number, anchor_y: number): void"
+          "wasm_signature": "add_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, z_layer: number, anchor_x: number, anchor_y: number): void"
         },
         {
           "name": "addTransform2d",
@@ -3451,7 +3451,7 @@
           "returns": "Sprite?",
           "nullable": true,
           "wasm_name": "get_sprite",
-          "wasm_signature": "get_sprite(bits: bigint): { texture_handle: number; r: number; g: number; b: number; a: number; flip_x: boolean; flip_y: boolean; anchor_x: number; anchor_y: number } | undefined"
+          "wasm_signature": "get_sprite(bits: bigint): { texture_handle: number; r: number; g: number; b: number; a: number; flip_x: boolean; flip_y: boolean; z_layer: number; anchor_x: number; anchor_y: number } | undefined"
         },
         {
           "name": "getTransform2d",
@@ -3588,7 +3588,7 @@
           ],
           "returns": "void",
           "wasm_name": "set_sprite",
-          "wasm_signature": "set_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, anchor_x: number, anchor_y: number): void"
+          "wasm_signature": "set_sprite(bits: bigint, texture_handle: number, r: number, g: number, b: number, a: number, flip_x: boolean, flip_y: boolean, z_layer: number, anchor_x: number, anchor_y: number): void"
         },
         {
           "name": "setTransform2d",

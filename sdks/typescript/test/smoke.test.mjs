@@ -143,6 +143,7 @@ describe('GoudGame', () => {
     assert.ok(s !== null);
     assert.equal(s.flipX, false);
     assert.equal(s.flipY, false);
+    assert.equal(s.zLayer, 0);
 
     game.removeSprite(entity);
     assert.ok(!game.hasSprite(entity));
