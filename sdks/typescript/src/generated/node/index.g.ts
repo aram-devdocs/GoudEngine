@@ -53,6 +53,8 @@ export interface IGoudContext {
 interface NativeEngineConfigBinding {
   build(): unknown;
   destroy(): void;
+  setRenderBackend(backend: number): unknown;
+  setWindowBackend(backend: number): unknown;
   setDebugger(debuggerConfig: IDebuggerConfig): unknown;
 }
 

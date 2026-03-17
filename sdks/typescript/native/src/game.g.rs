@@ -3610,6 +3610,34 @@ impl NativeEngineConfig {
     }
 
     #[napi]
+    pub fn set_render_backend(&self, backend: u32) -> bool {
+        if self.handle.is_null() {
+            return false;
+        }
+        // SAFETY: handle is valid.
+        unsafe {
+            goud_engine::ffi::engine_config::goud_engine_config_set_render_backend(
+                self.handle,
+                backend,
+            )
+        }
+    }
+
+    #[napi]
+    pub fn set_window_backend(&self, backend: u32) -> bool {
+        if self.handle.is_null() {
+            return false;
+        }
+        // SAFETY: handle is valid.
+        unsafe {
+            goud_engine::ffi::engine_config::goud_engine_config_set_window_backend(
+                self.handle,
+                backend,
+            )
+        }
+    }
+
+    #[napi]
     pub fn set_debugger(&self, debugger: NapiDebuggerConfig) -> bool {
         if self.handle.is_null() {
             return false;

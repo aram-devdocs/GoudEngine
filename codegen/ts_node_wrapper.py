@@ -135,6 +135,8 @@ def gen_node_wrapper():
         "interface NativeEngineConfigBinding {",
         "  build(): unknown;",
         "  destroy(): void;",
+        "  setRenderBackend(backend: number): unknown;",
+        "  setWindowBackend(backend: number): unknown;",
         "  setDebugger(debuggerConfig: IDebuggerConfig): unknown;",
         "}",
         "",
