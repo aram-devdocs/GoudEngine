@@ -246,10 +246,13 @@ fn test_wss_host_and_connect_with_custom_ca() {
     let cert_path = cert_dir.path().join("localhost-cert.pem");
     let key_path = cert_dir.path().join("localhost-key.pem");
 
-    let cert = rcgen::generate_simple_self_signed(vec!["localhost".to_string()])
+    let key_pair = rcgen::KeyPair::generate().expect("key pair should generate");
+    let cert = rcgen::CertificateParams::new(vec!["localhost".to_string()])
+        .expect("certificate params should generate")
+        .self_signed(&key_pair)
         .expect("self-signed cert should generate");
-    fs::write(&cert_path, cert.cert.pem()).expect("cert file should be written");
-    fs::write(&key_path, cert.key_pair.serialize_pem()).expect("key file should be written");
+    fs::write(&cert_path, cert.pem()).expect("cert file should be written");
+    fs::write(&key_path, key_pair.serialize_pem()).expect("key file should be written");
 
     let mut host = WsNetProvider::new();
     let mut config = host_config();
