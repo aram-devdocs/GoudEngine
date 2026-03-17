@@ -19,6 +19,12 @@ impl RenderBackend for WgpuBackend {
         width: u32,
         height: u32,
     ) -> Result<Vec<u8>, String> {
+        if !self.surface_supports_copy_src {
+            return Err(
+                "default framebuffer readback is not supported by this wgpu surface".into(),
+            );
+        }
+
         match self.last_frame_readback.as_ref() {
             Some((cached_width, cached_height, rgba8))
                 if *cached_width == width && *cached_height == height =>

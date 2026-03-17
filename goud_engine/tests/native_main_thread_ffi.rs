@@ -55,6 +55,22 @@ fn pump_until_window_size_ffi(
     }
 }
 
+fn assert_readback_or_unsupported(
+    result: goud_engine::core::error::GoudResult<Vec<u8>>,
+    expected_len: usize,
+) {
+    match result {
+        Ok(readback) => assert_eq!(readback.len(), expected_len),
+        Err(error) => {
+            let message = error.to_string();
+            assert!(
+                message.contains("readback is not supported"),
+                "unexpected readback error: {message}"
+            );
+        }
+    }
+}
+
 fn ffi_default_native_smoke() {
     let title = CString::new("native-main-thread-ffi").expect("title should be valid");
     let handle = goud_engine_config_create();
@@ -96,9 +112,10 @@ fn ffi_default_native_smoke() {
     assert!(goud_renderer3d_render(context_id));
     assert!(goud_renderer_end(context_id));
 
-    let readback = read_default_framebuffer_rgba8_for_context(context_id, fb_width, fb_height)
-        .expect("FFI framebuffer readback should succeed");
-    assert_eq!(readback.len(), (fb_width * fb_height * 4) as usize);
+    assert_readback_or_unsupported(
+        read_default_framebuffer_rgba8_for_context(context_id, fb_width, fb_height),
+        (fb_width * fb_height * 4) as usize,
+    );
 
     assert!(goud_window_set_size(context_id, 196, 148));
     let (resized_fb_width, resized_fb_height) = pump_until_window_size_ffi(context_id, 196, 148);
@@ -108,12 +125,9 @@ fn ffi_default_native_smoke() {
     assert!(goud_renderer_begin(context_id));
     goud_window_clear(context_id, 0.20, 0.10, 0.05, 1.0);
     assert!(goud_renderer_end(context_id));
-    let resized_readback =
-        read_default_framebuffer_rgba8_for_context(context_id, resized_fb_width, resized_fb_height)
-            .expect("FFI resized framebuffer readback should succeed");
-    assert_eq!(
-        resized_readback.len(),
-        (resized_fb_width * resized_fb_height * 4) as usize
+    assert_readback_or_unsupported(
+        read_default_framebuffer_rgba8_for_context(context_id, resized_fb_width, resized_fb_height),
+        (resized_fb_width * resized_fb_height * 4) as usize,
     );
 
     assert!(

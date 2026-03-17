@@ -5,6 +5,7 @@ Implementation details live in helper modules under `codegen/`.
 """
 
 import sys
+import subprocess
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -34,6 +35,11 @@ def main() -> None:
     gen_napi_rust()
     gen_errors()
     gen_diagnostic()
+    subprocess.run(
+        ["cargo", "fmt", "-p", "goud-engine-node"],
+        check=True,
+        cwd=Path(__file__).resolve().parent.parent,
+    )
     print("TypeScript Node SDK generation complete.")
 
 

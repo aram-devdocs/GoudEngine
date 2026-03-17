@@ -76,7 +76,9 @@ impl FrameOps for WgpuBackend {
 
         self.build_missing_pipelines(&cmd_keys);
 
-        let readback = self.prepare_frame_readback();
+        let readback = self
+            .surface_supports_copy_src
+            .then(|| self.prepare_frame_readback());
 
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -175,30 +177,35 @@ impl FrameOps for WgpuBackend {
             }
         }
 
-        encoder.copy_texture_to_buffer(
-            wgpu::TexelCopyTextureInfo {
-                texture: &frame.surface_texture.texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            wgpu::TexelCopyBufferInfo {
-                buffer: &readback.buffer,
-                layout: wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(readback.padded_bytes_per_row),
-                    rows_per_image: Some(readback.height),
+        if let Some(readback) = readback {
+            encoder.copy_texture_to_buffer(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &frame.surface_texture.texture,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
                 },
-            },
-            wgpu::Extent3d {
-                width: readback.width,
-                height: readback.height,
-                depth_or_array_layers: 1,
-            },
-        );
+                wgpu::TexelCopyBufferInfo {
+                    buffer: &readback.buffer,
+                    layout: wgpu::TexelCopyBufferLayout {
+                        offset: 0,
+                        bytes_per_row: Some(readback.padded_bytes_per_row),
+                        rows_per_image: Some(readback.height),
+                    },
+                },
+                wgpu::Extent3d {
+                    width: readback.width,
+                    height: readback.height,
+                    depth_or_array_layers: 1,
+                },
+            );
 
-        self.queue.submit(std::iter::once(encoder.finish()));
-        self.finish_frame_readback(readback)?;
+            self.queue.submit(std::iter::once(encoder.finish()));
+            self.finish_frame_readback(readback)?;
+        } else {
+            self.queue.submit(std::iter::once(encoder.finish()));
+            self.last_frame_readback = None;
+        }
         frame.surface_texture.present();
         self.draw_commands.clear();
         Ok(())

@@ -56,9 +56,14 @@ impl WgpuBackend {
             .find(|f| f.is_srgb())
             .copied()
             .unwrap_or(caps.formats[0]);
+        let surface_supports_copy_src = caps.usages.contains(wgpu::TextureUsages::COPY_SRC);
 
         let surface_config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            usage: if surface_supports_copy_src {
+                wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC
+            } else {
+                wgpu::TextureUsages::RENDER_ATTACHMENT
+            },
             format: surface_format,
             width: size.width.max(1),
             height: size.height.max(1),
@@ -140,6 +145,7 @@ impl WgpuBackend {
             surface,
             surface_config,
             surface_format,
+            surface_supports_copy_src,
             depth_texture,
             depth_view,
             last_frame_readback: None,

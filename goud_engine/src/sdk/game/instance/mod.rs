@@ -356,6 +356,19 @@ mod tests {
     use super::*;
 
     #[cfg(all(feature = "native", not(target_os = "macos")))]
+    fn should_skip_native_runtime_test() -> bool {
+        #[cfg(target_os = "linux")]
+        {
+            std::env::var_os("DISPLAY").is_none() && std::env::var_os("WAYLAND_DISPLAY").is_none()
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        {
+            false
+        }
+    }
+
+    #[cfg(all(feature = "native", not(target_os = "macos")))]
     fn test_font_path() -> String {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("test_assets/fonts/test_font.ttf")
@@ -363,10 +376,32 @@ mod tests {
             .into_owned()
     }
 
+    #[cfg(all(feature = "native", not(target_os = "macos")))]
+    fn assert_readback_or_unsupported(
+        result: crate::core::error::GoudResult<Vec<u8>>,
+        expected_len: usize,
+    ) {
+        match result {
+            Ok(readback) => assert_eq!(readback.len(), expected_len),
+            Err(error) => {
+                let message = error.to_string();
+                assert!(
+                    message.contains("readback is not supported"),
+                    "unexpected readback error: {message}"
+                );
+            }
+        }
+    }
+
     // winit requires the macOS main thread, which the unit-test harness does not provide.
     #[cfg(all(feature = "native", not(target_os = "macos")))]
     #[test]
     fn test_with_platform_default_native_stack_initializes_renderers_and_readback() {
+        if should_skip_native_runtime_test() {
+            eprintln!("skipping native runtime unit test: no display available");
+            return;
+        }
+
         let mut game = GoudGame::with_platform(
             GameConfig::default().with_title("native-stack-smoke-instance-test"),
         )
@@ -407,10 +442,10 @@ mod tests {
         assert!(game.render());
         assert!(game.end_render());
 
-        let readback = game
-            .read_default_framebuffer_rgba8()
-            .expect("framebuffer readback should succeed");
-        assert_eq!(readback.len(), (fb_width * fb_height * 4) as usize);
+        assert_readback_or_unsupported(
+            game.read_default_framebuffer_rgba8(),
+            (fb_width * fb_height * 4) as usize,
+        );
 
         game.set_window_size(176, 132)
             .expect("window resize request should succeed");
@@ -427,12 +462,9 @@ mod tests {
         let (resized_fb_width, resized_fb_height) = game.get_framebuffer_size();
         assert!(resized_fb_width > 0);
         assert!(resized_fb_height > 0);
-        let resized_readback = game
-            .read_default_framebuffer_rgba8()
-            .expect("resized framebuffer readback should succeed");
-        assert_eq!(
-            resized_readback.len(),
-            (resized_fb_width * resized_fb_height * 4) as usize
+        assert_readback_or_unsupported(
+            game.read_default_framebuffer_rgba8(),
+            (resized_fb_width * resized_fb_height * 4) as usize,
         );
     }
 }

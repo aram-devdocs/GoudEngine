@@ -37,6 +37,22 @@ fn pump_until_window_size_sdk(
     }
 }
 
+fn assert_readback_or_unsupported(
+    result: goud_engine::core::error::GoudResult<Vec<u8>>,
+    expected_len: usize,
+) {
+    match result {
+        Ok(readback) => assert_eq!(readback.len(), expected_len),
+        Err(error) => {
+            let message = error.to_string();
+            assert!(
+                message.contains("readback is not supported"),
+                "unexpected readback error: {message}"
+            );
+        }
+    }
+}
+
 fn sdk_default_native_smoke() {
     let test_font_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("test_assets/fonts/test_font.ttf")
@@ -82,10 +98,10 @@ fn sdk_default_native_smoke() {
     assert!(game.render());
     assert!(game.end_render());
 
-    let readback = game
-        .read_default_framebuffer_rgba8()
-        .expect("SDK framebuffer readback should succeed");
-    assert_eq!(readback.len(), (fb_width * fb_height * 4) as usize);
+    assert_readback_or_unsupported(
+        game.read_default_framebuffer_rgba8(),
+        (fb_width * fb_height * 4) as usize,
+    );
 
     game.set_window_size(196, 148)
         .expect("SDK resize request should succeed");
@@ -96,12 +112,9 @@ fn sdk_default_native_smoke() {
     assert!(game.begin_render());
     game.clear(0.18, 0.10, 0.10, 1.0);
     assert!(game.end_render());
-    let resized_readback = game
-        .read_default_framebuffer_rgba8()
-        .expect("SDK resized framebuffer readback should succeed");
-    assert_eq!(
-        resized_readback.len(),
-        (resized_fb_width * resized_fb_height * 4) as usize
+    assert_readback_or_unsupported(
+        game.read_default_framebuffer_rgba8(),
+        (resized_fb_width * resized_fb_height * 4) as usize,
     );
 }
 

@@ -55,6 +55,7 @@ pub struct WgpuBackend {
     surface: wgpu::Surface<'static>,
     surface_config: wgpu::SurfaceConfiguration,
     surface_format: wgpu::TextureFormat,
+    surface_supports_copy_src: bool,
 
     depth_texture: wgpu::Texture,
     depth_view: wgpu::TextureView,
