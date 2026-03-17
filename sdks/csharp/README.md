@@ -204,15 +204,41 @@ Native libraries are bundled in the NuGet package and copied to your output dire
 
 ## Running Tests
 
-Run the C# SDK tests locally:
+Build the native library first so the test project can copy the right dylib
+into `sdks/csharp.tests/bin/...`.
+
+Apple Silicon with arm64 .NET 8:
 
 ```bash
+cargo build --release
+dotnet test sdks/csharp.tests/GoudEngine.Tests.csproj -v minimal
+```
+
+Apple Silicon with x64 .NET 8 under Rosetta:
+
+```bash
+rustup target add x86_64-apple-darwin
+cargo build --release --target x86_64-apple-darwin
 DOTNET_ROOT_X64=/usr/local/share/dotnet/x64 /usr/local/share/dotnet/x64/dotnet test sdks/csharp.tests/GoudEngine.Tests.csproj -v minimal
 ```
 
-Generate a local coverage artifact:
+If `dotnet --info` reports only .NET 10 runtimes, install the matching .NET 8
+runtime first. The test project targets `net8.0`.
+
+Generate a local coverage artifact with the same architecture pairing:
+
+arm64 .NET 8:
 
 ```bash
+cargo build --release
+dotnet test sdks/csharp.tests/GoudEngine.Tests.csproj -c Release -v minimal /p:CollectCoverage=true /p:CoverletOutput=sdks/csharp.tests/TestResults/coverage/ /p:CoverletOutputFormat=cobertura
+```
+
+x64 .NET 8 under Rosetta:
+
+```bash
+rustup target add x86_64-apple-darwin
+cargo build --release --target x86_64-apple-darwin
 DOTNET_ROOT_X64=/usr/local/share/dotnet/x64 /usr/local/share/dotnet/x64/dotnet test sdks/csharp.tests/GoudEngine.Tests.csproj -c Release -v minimal /p:CollectCoverage=true /p:CoverletOutput=sdks/csharp.tests/TestResults/coverage/ /p:CoverletOutputFormat=cobertura
 ```
 
