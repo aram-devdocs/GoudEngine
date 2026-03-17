@@ -69,6 +69,7 @@ All SDK source files under `sdks/*/generated/` and `sdks/typescript/src/generate
 goud_sdk.schema.json   — universal type/method definitions
 ffi_mapping.json       — maps schema methods → C ABI function names + signatures
 ffi_manifest.json      — auto-extracted from Rust source by build.rs (each cargo build)
+goud_engine.h          — auto-generated C header at codegen/generated/ (each native cargo build)
                                            │
                     ┌──────────────────────┼───────────────────┐
                     ▼                      ▼                   ▼
@@ -84,18 +85,23 @@ Run the full pipeline:
 ./codegen.sh
 ```
 
-The script runs 8 steps in order:
+The script runs 13 steps in order:
 
-1. `cargo build` — builds Rust, triggers csbindgen (C# `NativeMethods.g.cs`) and writes `ffi_manifest.json`
-2. `lint-layers` — validates no upward imports
-3. `validate_coverage.py` — checks every function in `ffi_manifest.json` is covered by `ffi_mapping.json`
-4. `gen_csharp.py` — generates C# SDK wrappers
-5. `gen_python.py` — generates Python SDK wrappers
-6. `gen_ts_node.py` — generates TypeScript Node.js SDK
-7. `gen_ts_web.py` — generates TypeScript Web (WASM) SDK
-8. `validate.py` — schema consistency check
+1. `gen_sdk_scaffolding.py` — regenerates package manifests
+2. `cargo build` — builds Rust, writes `ffi_manifest.json`, and generates `codegen/generated/goud_engine.h`
+3. `validate_c_header.py` — checks header guards, section markers, and deprecation output
+4. `gen_ts_node.py` — bootstraps Node.js SDK sources
+5. `lint-layers` — validates no upward imports
+6. `validate_coverage.py` — checks every function in `ffi_manifest.json` is covered by `ffi_mapping.json`
+7. `gen_csharp.py` — generates C# SDK wrappers
+8. `gen_python.py` — generates Python SDK wrappers
+9. `gen_ts_node.py` — regenerates TypeScript Node.js SDK
+10. `gen_ts_web.py` — generates TypeScript Web (WASM) SDK
+11. `cargo fmt -p goud-engine-node` — formats generated Rust
+12. `validate.py` — schema consistency check
+13. `generate-doc-snippets.py` — refreshes docs snippets
 
-Steps 3 and 8 are validation gates. If either fails, the script exits with an error.
+Steps 3, 5, 6, and 12 are validation gates. If any of them fail, the script exits with an error.
 
 ### Schema Files
 
@@ -129,7 +135,7 @@ All generators import `sdk_common.py` for:
 
 **Single schema, four generators.** Adding a type to `goud_sdk.schema.json` causes it to appear in every SDK on the next codegen run. Naming conventions (PascalCase in C#, snake_case in Python, camelCase in TypeScript) are applied by the generators.
 
-**C# bindings are doubly generated.** `NativeMethods.g.cs` is produced by csbindgen (a Rust build dependency) on every `cargo build`. The higher-level C# wrapper classes in `sdks/csharp/generated/` are produced by `gen_csharp.py`. The two files work together: csbindgen handles the raw `[DllImport]` declarations; the Python generator handles the ergonomic wrapper API.
+**C# bindings are doubly generated.** `NativeMethods.g.cs` is produced by csbindgen on every `cargo build`. The higher-level C# wrapper classes in `sdks/csharp/generated/` are produced by `gen_csharp.py`. The two files work together: csbindgen handles the raw `[DllImport]` declarations, and the Python generator handles the public wrapper API.
 
 **Context handles, not pointers.** All FFI calls take a `GoudContextId` (an opaque `u64`) rather than a raw pointer. The context registry resolves handles to engine instances under a mutex. This prevents use-after-free and type confusion across the FFI boundary.
 

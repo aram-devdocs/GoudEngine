@@ -14,6 +14,7 @@ fi
 
 base_required_paths=(
   "codegen/ffi_manifest.json"
+  "codegen/generated/goud_engine.h"
   "sdks/csharp/generated/NativeMethods.g.cs"
   "sdks/csharp/GoudEngine.csproj"
   "sdks/csharp/build/GoudEngine.targets"
@@ -100,8 +101,12 @@ if [[ "$missing" -ne 0 ]]; then
   exit 1
 fi
 
+echo "Validating generated C header..."
+python3 scripts/validate_c_header.py
+
 base_tracked_diff_paths=(
   "codegen/ffi_manifest.json"
+  "codegen/generated/goud_engine.h"
   "sdks/csharp/generated"
   "sdks/csharp/GoudEngine.csproj"
   "sdks/csharp/build/GoudEngine.targets"
@@ -144,6 +149,7 @@ if [[ "$INCLUDE_DOCS" -eq 1 ]]; then
 fi
 
 generated_scan_paths=(
+  "codegen/generated"
   "docs/src/generated/showcase"
   "docs/src/generated/snippets"
   "sdks/csharp/generated"

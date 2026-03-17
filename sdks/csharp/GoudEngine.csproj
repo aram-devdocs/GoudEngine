@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <None Include="runtimes/**" Pack="true" PackagePath="runtimes/" />
+    <None Include="include/**" Pack="true" PackagePath="include/" />
     <None Include="README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 

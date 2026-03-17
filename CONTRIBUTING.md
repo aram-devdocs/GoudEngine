@@ -26,7 +26,7 @@ If you want to add a feature:
 
 1. Implement it in `goud_engine/src/` or `libs/`
 2. Export it via `goud_engine/src/ffi/`
-3. Run `cargo build` to trigger csbindgen (regenerates C# bindings)
+3. Run `cargo build` to refresh the generated FFI surfaces (`NativeMethods.g.cs`, `ffi_manifest.json`, and `codegen/generated/goud_engine.h`)
 4. Update `codegen/goud_sdk.schema.json`
 5. Run the codegen generators to update C#, Python, and TypeScript SDK wrappers
 6. Write tests for the Rust implementation

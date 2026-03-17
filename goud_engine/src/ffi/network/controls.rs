@@ -104,6 +104,7 @@ pub extern "C" fn goud_network_set_simulation(
 /// Applies a debug-only network simulation config to the provider handle.
 /// Returns `ERR_INVALID_STATE` in release builds because simulation hooks are
 /// not compiled into release networking providers.
+/// cbindgen:ignore
 #[cfg(not(any(debug_assertions, test)))]
 #[no_mangle]
 pub extern "C" fn goud_network_set_simulation(
@@ -134,6 +135,7 @@ pub extern "C" fn goud_network_clear_simulation(_context_id: GoudContextId, hand
 /// Clears any debug-only network simulation config from the provider handle.
 /// Returns `ERR_INVALID_STATE` in release builds because simulation hooks are
 /// not compiled into release networking providers.
+/// cbindgen:ignore
 #[cfg(not(any(debug_assertions, test)))]
 #[no_mangle]
 pub extern "C" fn goud_network_clear_simulation(_context_id: GoudContextId, handle: i64) -> i32 {

@@ -1,5 +1,6 @@
 #!/bin/bash
 # build.sh
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_MODE="debug"
@@ -8,6 +9,7 @@ CARGO_MODE_ARGS=()
 BUILD_SCOPE="workspace"
 HOST_RUNTIME_ONLY=false
 SKIP_CSHARP_SDK_BUILD=false
+HEADER_SOURCE="codegen/generated/goud_engine.h"
 
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
@@ -39,6 +41,18 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
+stage_header_copy() {
+    local destination_dir="$1"
+    if [ ! -f "$HEADER_SOURCE" ]; then
+        echo "Warning: generated header not found at $HEADER_SOURCE"
+        return 1
+    fi
+
+    mkdir -p "$destination_dir"
+    cp "$HEADER_SOURCE" "$destination_dir/goud_engine.h"
+    echo "  staged header: $destination_dir/goud_engine.h"
+}
+
 if [[ "$BUILD_MODE" == "release" ]]; then
     echo "Building the project in release mode..."
     if [[ "$BUILD_SCOPE" == "core" ]]; then
@@ -63,6 +77,11 @@ fi
 
 echo "Build complete."
 
+echo "Staging generated C header..."
+stage_header_copy "$TARGET_DIR/include"
+stage_header_copy "sdks/csharp/include"
+stage_header_copy "sdks/python/goud_engine/include"
+
 # Copy native library based on platform
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Copying libgoud_engine.dylib to sdks/csharp runtimes..."
@@ -80,7 +99,11 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 
     if [ "$HOST_RUNTIME_ONLY" = false ] && [ -n "$SECONDARY_TARGET" ] && rustup target list --installed | grep -qx "$SECONDARY_TARGET"; then
       echo "Building secondary macOS target for C# runtime packaging: $SECONDARY_TARGET"
-      cargo build "${CARGO_MODE_ARGS[@]}" -p goud-engine-core --target "$SECONDARY_TARGET"
+      if [ ${#CARGO_MODE_ARGS[@]} -gt 0 ]; then
+        cargo build "${CARGO_MODE_ARGS[@]}" -p goud-engine-core --target "$SECONDARY_TARGET"
+      else
+        cargo build -p goud-engine-core --target "$SECONDARY_TARGET"
+      fi
     elif [ "$HOST_RUNTIME_ONLY" = false ] && [ -n "$SECONDARY_TARGET" ]; then
       echo "  warning: Rust target '$SECONDARY_TARGET' is not installed; only the host macOS runtime will be refreshed."
     fi
@@ -151,10 +174,13 @@ fi
 # Clean old .nupkg files from package output (keep only latest)
 NUPKG_DIR="$SCRIPT_DIR/sdks/nuget_package_output"
 if [ -d "$NUPKG_DIR" ]; then
-    NUPKG_COUNT=$(ls -1 "$NUPKG_DIR"/*.nupkg 2>/dev/null | wc -l)
-    if [ "$NUPKG_COUNT" -gt 1 ]; then
-        LATEST=$(ls -1t "$NUPKG_DIR"/*.nupkg 2>/dev/null | head -1)
-        for pkg in "$NUPKG_DIR"/*.nupkg; do
+    shopt -s nullglob
+    nupkgs=("$NUPKG_DIR"/*.nupkg)
+    shopt -u nullglob
+
+    if [ "${#nupkgs[@]}" -gt 1 ]; then
+        LATEST=$(ls -1t "${nupkgs[@]}" | head -1)
+        for pkg in "${nupkgs[@]}"; do
             if [ "$pkg" != "$LATEST" ]; then
                 echo "Removing old package: $(basename "$pkg")"
                 rm -f "$pkg"

@@ -45,6 +45,7 @@ def gen_csharp_scaffolding() -> None:
         "",
         "  <ItemGroup>",
         "    <None Include=\"runtimes/**\" Pack=\"true\" PackagePath=\"runtimes/\" />",
+        "    <None Include=\"include/**\" Pack=\"true\" PackagePath=\"include/\" />",
         "    <None Include=\"README.md\" Pack=\"true\" PackagePath=\"/\" />",
         "  </ItemGroup>",
         "",
@@ -156,7 +157,7 @@ def gen_python_scaffolding() -> None:
         'include = ["goud_engine*"]',
         "",
         "[tool.setuptools.package-data]",
-        'goud_engine = ["*.so", "*.dylib", "*.dll"]',
+        'goud_engine = ["*.so", "*.dylib", "*.dll", "include/*.h"]',
         "",
     ])
     write_generated(SDKS_DIR / "python" / "pyproject.toml", pyproject)
@@ -166,6 +167,7 @@ def gen_python_scaffolding() -> None:
         "include goud_engine/*.so",
         "include goud_engine/*.dylib",
         "include goud_engine/*.dll",
+        "include goud_engine/include/*.h",
         "include README.md",
         "",
     ])

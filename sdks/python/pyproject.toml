@@ -36,4 +36,4 @@ Documentation = "https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/pytho
 include = ["goud_engine*"]
 
 [tool.setuptools.package-data]
-goud_engine = ["*.so", "*.dylib", "*.dll"]
+goud_engine = ["*.so", "*.dylib", "*.dll", "include/*.h"]

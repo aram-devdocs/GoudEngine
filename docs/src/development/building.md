@@ -20,7 +20,7 @@ cargo test -- --nocapture   # Tests with output
 ./build.sh --release        # Explicit release flag
 ```
 
-After running, the compiled `.dylib` / `.so` / `.dll` is placed in the appropriate SDK directory. The C# build also triggers csbindgen to regenerate `NativeMethods.g.cs`.
+After running, the compiled `.dylib` / `.so` / `.dll` is placed in the SDK staging directories. The build also refreshes `codegen/generated/goud_engine.h`, copies that header into the C# and Python package staging paths, and regenerates the C# `NativeMethods.g.cs` surface.
 
 ## Packaging
 
