@@ -173,7 +173,7 @@ async fn handle_ws_connection(
         "route_id": route_id,
     });
     ws_tx
-        .send(Message::Text(serde_json::to_string(&ack).unwrap()))
+        .send(Message::Text(serde_json::to_string(&ack).unwrap().into()))
         .await
         .map_err(|e| format!("ws send ack failed: {e}"))?;
 
@@ -183,7 +183,7 @@ async fn handle_ws_connection(
             // MCP server wants to send a request to the browser
             Some((request, resp_tx)) = req_rx.recv() => {
                 let msg = serde_json::to_string(&request).unwrap_or_default();
-                if ws_tx.send(Message::Text(msg)).await.is_err() {
+                if ws_tx.send(Message::Text(msg.into())).await.is_err() {
                     let _ = resp_tx.send(json!({
                         "ok": false,
                         "error": {"code": "protocol_error", "message": "browser disconnected"}
