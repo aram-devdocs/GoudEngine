@@ -15,12 +15,16 @@ pub struct Entity {
 impl Entity {
     #[napi(constructor)]
     pub fn new(index: u32, generation: u32) -> Self {
-        Self { bits: ((generation as u64) << 32) | (index as u64) }
+        Self {
+            bits: ((generation as u64) << 32) | (index as u64),
+        }
     }
 
     #[napi(factory)]
     pub fn placeholder() -> Self {
-        Self { bits: PLACEHOLDER_BITS }
+        Self {
+            bits: PLACEHOLDER_BITS,
+        }
     }
 
     #[napi(factory)]
@@ -30,16 +34,24 @@ impl Entity {
     }
 
     #[napi(getter)]
-    pub fn index(&self) -> u32 { self.bits as u32 }
+    pub fn index(&self) -> u32 {
+        self.bits as u32
+    }
 
     #[napi(getter)]
-    pub fn generation(&self) -> u32 { (self.bits >> 32) as u32 }
+    pub fn generation(&self) -> u32 {
+        (self.bits >> 32) as u32
+    }
 
     #[napi(getter)]
-    pub fn is_placeholder(&self) -> bool { self.bits == PLACEHOLDER_BITS }
+    pub fn is_placeholder(&self) -> bool {
+        self.bits == PLACEHOLDER_BITS
+    }
 
     #[napi]
-    pub fn to_bits(&self) -> BigInt { BigInt::from(self.bits) }
+    pub fn to_bits(&self) -> BigInt {
+        BigInt::from(self.bits)
+    }
 
     #[napi]
     pub fn display(&self) -> String {

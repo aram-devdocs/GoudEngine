@@ -18,7 +18,13 @@ pub struct Transform2DData {
 
 impl Default for Transform2DData {
     fn default() -> Self {
-        Self { position_x: 0.0, position_y: 0.0, rotation: 0.0, scale_x: 1.0, scale_y: 1.0 }
+        Self {
+            position_x: 0.0,
+            position_y: 0.0,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
+        }
     }
 }
 
@@ -45,40 +51,73 @@ pub struct SpriteData {
 impl Default for SpriteData {
     fn default() -> Self {
         Self {
-            color: Color { r: 1.0, g: 1.0, b: 1.0, a: 1.0 },
-            flip_x: false, flip_y: false, anchor_x: 0.5, anchor_y: 0.5,
-            custom_width: None, custom_height: None,
-            source_rect_x: None, source_rect_y: None, source_rect_width: None, source_rect_height: None,
+            color: Color {
+                r: 1.0,
+                g: 1.0,
+                b: 1.0,
+                a: 1.0,
+            },
+            flip_x: false,
+            flip_y: false,
+            anchor_x: 0.5,
+            anchor_y: 0.5,
+            custom_width: None,
+            custom_height: None,
+            source_rect_x: None,
+            source_rect_y: None,
+            source_rect_width: None,
+            source_rect_height: None,
         }
     }
 }
 
 #[napi]
-pub fn transform2d_default() -> Transform2DData { Transform2DData::default() }
+pub fn transform2d_default() -> Transform2DData {
+    Transform2DData::default()
+}
 
 #[napi]
 pub fn transform2d_from_position(x: f64, y: f64) -> Transform2DData {
-    Transform2DData { position_x: x, position_y: y, ..Transform2DData::default() }
+    Transform2DData {
+        position_x: x,
+        position_y: y,
+        ..Transform2DData::default()
+    }
 }
 
 #[napi]
 pub fn transform2d_from_scale(x: f64, y: f64) -> Transform2DData {
-    Transform2DData { scale_x: x, scale_y: y, ..Transform2DData::default() }
+    Transform2DData {
+        scale_x: x,
+        scale_y: y,
+        ..Transform2DData::default()
+    }
 }
 
 #[napi]
 pub fn transform2d_from_rotation(radians: f64) -> Transform2DData {
-    Transform2DData { rotation: radians, ..Transform2DData::default() }
+    Transform2DData {
+        rotation: radians,
+        ..Transform2DData::default()
+    }
 }
 
 #[napi]
-pub fn sprite_default() -> SpriteData { SpriteData::default() }
+pub fn sprite_default() -> SpriteData {
+    SpriteData::default()
+}
 
 #[napi]
-pub fn vec2(x: f64, y: f64) -> crate::types::Vec2 { crate::types::Vec2 { x, y } }
+pub fn vec2(x: f64, y: f64) -> crate::types::Vec2 {
+    crate::types::Vec2 { x, y }
+}
 
 #[napi]
-pub fn vec2_zero() -> crate::types::Vec2 { crate::types::Vec2 { x: 0.0, y: 0.0 } }
+pub fn vec2_zero() -> crate::types::Vec2 {
+    crate::types::Vec2 { x: 0.0, y: 0.0 }
+}
 
 #[napi]
-pub fn vec2_one() -> crate::types::Vec2 { crate::types::Vec2 { x: 1.0, y: 1.0 } }
+pub fn vec2_one() -> crate::types::Vec2 {
+    crate::types::Vec2 { x: 1.0, y: 1.0 }
+}
