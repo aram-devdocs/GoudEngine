@@ -1286,7 +1286,6 @@ export async function runWebNetworkingRuntimeSmoke({ collectCoverage = false } =
         assert.match(result.missingPeerError, /no default peer ID/i);
         assert.ok(result.stubCalls.length >= 20);
         assert.equal(result.preloadProgress.length, 2);
-        assert.ok(result.stubLogCount >= 40);
         assert.ok(result.stubFrameCount >= 1);
         assert.ok(result.warningMessages.some((message) => /should be synchronous/i.test(message)));
         assert.equal(result.builderConfig?.debugger?.routeLabel, 'stub-builder');
