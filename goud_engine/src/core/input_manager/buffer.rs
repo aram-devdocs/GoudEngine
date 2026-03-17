@@ -40,17 +40,17 @@ impl InputManager {
     /// # Example
     ///
     /// ```ignore
+    /// use goud_engine::core::providers::input_types::KeyCode;
     /// use goud_engine::ecs::{InputManager, InputBinding};
-    /// use glfw::Key;
     ///
     /// let mut input = InputManager::new();
     ///
     /// // Detect "Down, Down, Forward, Punch" combo (fighting game)
     /// let combo = vec![
-    ///     InputBinding::Key(Key::Down),
-    ///     InputBinding::Key(Key::Down),
-    ///     InputBinding::Key(Key::Right),
-    ///     InputBinding::Key(Key::Space),
+    ///     InputBinding::Key(KeyCode::Down),
+    ///     InputBinding::Key(KeyCode::Down),
+    ///     InputBinding::Key(KeyCode::Right),
+    ///     InputBinding::Key(KeyCode::Space),
     /// ];
     ///
     /// if input.sequence_detected(&combo) {

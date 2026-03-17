@@ -5,22 +5,11 @@
 
 use super::{
     super::types::{BufferUsage, TextureFilter, TextureFormat, TextureWrap},
-    BackendInfo, BlendFactor, BufferHandle, BufferOps, BufferType, ClearOps, CullFace, DepthFunc,
-    DrawOps, DrawType, FrameOps, FrameState, FrontFace, PipelineKey, PrimitiveTopology,
-    RenderBackend, ShaderHandle, ShaderOps, StateOps, TextureHandle, TextureOps, VertexLayout,
-    WgpuBackend,
+    BlendFactor, BufferHandle, BufferOps, BufferType, CullFace, DepthFunc, DrawOps, DrawType,
+    FrameOps, FrameState, FrontFace, PipelineKey, PrimitiveTopology, ShaderHandle, ShaderOps,
+    StateOps, TextureHandle, TextureOps, VertexLayout, WgpuBackend,
 };
 use crate::libs::error::{GoudError, GoudResult};
-
-// ========================================================================
-// RenderBackend (supertrait)
-// ========================================================================
-
-impl RenderBackend for WgpuBackend {
-    fn info(&self) -> &BackendInfo {
-        &self.info
-    }
-}
 
 // ========================================================================
 // FrameOps
@@ -87,6 +76,10 @@ impl FrameOps for WgpuBackend {
 
         self.build_missing_pipelines(&cmd_keys);
 
+        let readback = self
+            .surface_supports_copy_src
+            .then(|| self.prepare_frame_readback());
+
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
@@ -146,6 +139,9 @@ impl FrameOps for WgpuBackend {
                         });
                         pass.set_bind_group(1, &bg, &[]);
                     }
+                } else {
+                    let fallback_bg = self.fallback_texture_bind_group();
+                    pass.set_bind_group(1, &fallback_bg, &[]);
                 }
 
                 if let Some(ib_handle) = cmd.index_buffer {
@@ -181,33 +177,38 @@ impl FrameOps for WgpuBackend {
             }
         }
 
-        self.queue.submit(std::iter::once(encoder.finish()));
+        if let Some(readback) = readback {
+            encoder.copy_texture_to_buffer(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &frame.surface_texture.texture,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                wgpu::TexelCopyBufferInfo {
+                    buffer: &readback.buffer,
+                    layout: wgpu::TexelCopyBufferLayout {
+                        offset: 0,
+                        bytes_per_row: Some(readback.padded_bytes_per_row),
+                        rows_per_image: Some(readback.height),
+                    },
+                },
+                wgpu::Extent3d {
+                    width: readback.width,
+                    height: readback.height,
+                    depth_or_array_layers: 1,
+                },
+            );
+
+            self.queue.submit(std::iter::once(encoder.finish()));
+            self.finish_frame_readback(readback)?;
+        } else {
+            self.queue.submit(std::iter::once(encoder.finish()));
+            self.last_frame_readback = None;
+        }
         frame.surface_texture.present();
         self.draw_commands.clear();
         Ok(())
-    }
-}
-
-// ========================================================================
-// ClearOps
-// ========================================================================
-
-impl ClearOps for WgpuBackend {
-    fn set_clear_color(&mut self, r: f32, g: f32, b: f32, a: f32) {
-        self.clear_color = wgpu::Color {
-            r: r as f64,
-            g: g as f64,
-            b: b as f64,
-            a: a as f64,
-        };
-    }
-
-    fn clear_color(&mut self) {
-        self.needs_clear = true;
-    }
-
-    fn clear_depth(&mut self) {
-        self.needs_clear = true;
     }
 }
 

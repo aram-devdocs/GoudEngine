@@ -98,6 +98,12 @@ namespace GoudEngine
             NativeMethods.goud_window_set_should_close(_ctx, true);
         }
 
+        /// <summary>Requests a logical resize on the active native window</summary>
+        public bool SetWindowSize(uint width, uint height)
+        {
+            return NativeMethods.goud_window_set_size(_ctx, width, height);
+        }
+
         /// <summary>Releases all engine resources</summary>
         public void Destroy()
         {

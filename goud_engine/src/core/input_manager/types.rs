@@ -1,12 +1,8 @@
 //! Shared input types: `GamepadState`, `BufferedInput`, and `InputBinding`.
 
-#[cfg(feature = "native")]
-use glfw::{Key, MouseButton};
+use crate::core::providers::input_types::{GamepadAxis, KeyCode as Key, MouseButton};
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
-
-#[cfg(feature = "native")]
-use glfw::GamepadAxis;
 
 use super::manager::InputManager;
 
@@ -15,7 +11,7 @@ use super::manager::InputManager;
 /// Tracks buttons, axes (analog sticks, triggers), connection status, and vibration.
 #[derive(Debug, Clone)]
 pub(super) struct GamepadState {
-    /// Currently pressed buttons (using GLFW's button indices)
+    /// Currently pressed buttons using the engine's neutral button indices.
     pub(super) buttons: HashSet<u32>,
     /// Analog axis values (-1.0 to 1.0)
     pub(super) axes: HashMap<GamepadAxis, f32>,

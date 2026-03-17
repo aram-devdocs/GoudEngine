@@ -21,20 +21,20 @@ pub use crate::core::providers::impls::NullPhysicsProvider3D;
 pub use crate::core::providers::impls::NullRenderProvider;
 pub use crate::core::providers::impls::NullWindowProvider;
 
-#[cfg(feature = "native")]
+#[cfg(feature = "legacy-glfw-opengl")]
 pub mod glfw_input;
-#[cfg(feature = "native")]
+#[cfg(feature = "legacy-glfw-opengl")]
 pub mod glfw_window;
-#[cfg(feature = "native")]
+#[cfg(feature = "legacy-glfw-opengl")]
 pub mod opengl_render;
 #[cfg(feature = "native")]
 pub mod rodio_audio;
 
-#[cfg(feature = "native")]
+#[cfg(feature = "legacy-glfw-opengl")]
 pub use glfw_input::GlfwInputProvider;
-#[cfg(feature = "native")]
+#[cfg(feature = "legacy-glfw-opengl")]
 pub use glfw_window::GlfwWindowProvider;
-#[cfg(feature = "native")]
+#[cfg(feature = "legacy-glfw-opengl")]
 pub use opengl_render::OpenGLRenderProvider;
 #[cfg(feature = "native")]
 pub use rodio_audio::RodioAudioProvider;

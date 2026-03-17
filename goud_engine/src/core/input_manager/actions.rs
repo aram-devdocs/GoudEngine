@@ -14,12 +14,12 @@ impl InputManager {
     /// # Example
     ///
     /// ```ignore
+    /// use goud_engine::core::providers::input_types::KeyCode;
     /// use goud_engine::ecs::{InputManager, InputBinding};
-    /// use glfw::Key;
     ///
     /// let mut input = InputManager::new();
-    /// input.map_action("Jump", InputBinding::Key(Key::Space));
-    /// input.map_action("Jump", InputBinding::Key(Key::W)); // Alternative binding
+    /// input.map_action("Jump", InputBinding::Key(KeyCode::Space));
+    /// input.map_action("Jump", InputBinding::Key(KeyCode::W)); // Alternative binding
     /// ```
     pub fn map_action(&mut self, action: impl Into<String>, binding: InputBinding) {
         self.action_mappings

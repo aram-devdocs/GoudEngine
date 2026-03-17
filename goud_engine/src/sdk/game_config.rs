@@ -4,6 +4,7 @@
 //! for per-frame runtime state passed to update callbacks.
 
 use crate::core::debugger::DebuggerConfig;
+pub use crate::libs::platform::{RenderBackendKind, WindowBackendKind};
 
 // =============================================================================
 // Game Configuration
@@ -54,6 +55,12 @@ pub struct GameConfig {
     /// Enable window resizing.
     pub resizable: bool,
 
+    /// Native render backend selection.
+    pub render_backend: RenderBackendKind,
+
+    /// Native window backend selection.
+    pub window_backend: WindowBackendKind,
+
     /// Target frames per second (0 = unlimited).
     pub target_fps: u32,
 
@@ -85,6 +92,8 @@ impl Default for GameConfig {
             vsync: true,
             fullscreen: false,
             resizable: true,
+            render_backend: RenderBackendKind::Wgpu,
+            window_backend: WindowBackendKind::Winit,
             target_fps: 60,
             debug_rendering: false,
             show_fps_overlay: false,
@@ -137,6 +146,18 @@ impl GameConfig {
     /// Enables or disables fullscreen mode.
     pub fn with_fullscreen(mut self, enabled: bool) -> Self {
         self.fullscreen = enabled;
+        self
+    }
+
+    /// Selects the native render backend.
+    pub fn with_render_backend(mut self, backend: RenderBackendKind) -> Self {
+        self.render_backend = backend;
+        self
+    }
+
+    /// Selects the native window backend.
+    pub fn with_window_backend(mut self, backend: WindowBackendKind) -> Self {
+        self.window_backend = backend;
         self
     }
 
@@ -327,6 +348,8 @@ mod tests {
         assert_eq!(config.height, 600);
         assert!(config.vsync);
         assert!(!config.fullscreen);
+        assert_eq!(config.render_backend, RenderBackendKind::Wgpu);
+        assert_eq!(config.window_backend, WindowBackendKind::Winit);
     }
 
     #[test]
@@ -344,6 +367,8 @@ mod tests {
             .with_size(640, 480)
             .with_vsync(false)
             .with_fullscreen(true)
+            .with_render_backend(RenderBackendKind::OpenGlLegacy)
+            .with_window_backend(WindowBackendKind::GlfwLegacy)
             .with_target_fps(144);
 
         assert_eq!(config.title, "Builder Game");
@@ -351,7 +376,32 @@ mod tests {
         assert_eq!(config.height, 480);
         assert!(!config.vsync);
         assert!(config.fullscreen);
+        assert_eq!(config.render_backend, RenderBackendKind::OpenGlLegacy);
+        assert_eq!(config.window_backend, WindowBackendKind::GlfwLegacy);
         assert_eq!(config.target_fps, 144);
+    }
+
+    #[test]
+    fn test_backend_kind_from_u32() {
+        assert_eq!(
+            RenderBackendKind::from_u32(0),
+            Some(RenderBackendKind::Wgpu)
+        );
+        assert_eq!(
+            RenderBackendKind::from_u32(1),
+            Some(RenderBackendKind::OpenGlLegacy)
+        );
+        assert_eq!(RenderBackendKind::from_u32(99), None);
+
+        assert_eq!(
+            WindowBackendKind::from_u32(0),
+            Some(WindowBackendKind::Winit)
+        );
+        assert_eq!(
+            WindowBackendKind::from_u32(1),
+            Some(WindowBackendKind::GlfwLegacy)
+        );
+        assert_eq!(WindowBackendKind::from_u32(99), None);
     }
 
     // =========================================================================

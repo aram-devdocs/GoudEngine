@@ -1,12 +1,12 @@
 //! # SDK Rendering API
 //!
 //! Provides methods on [`GoudGame`] for 2D rendering operations
-//! including frame management, immediate-mode sprite/quad drawing, and render
-//! state control.
+//! including frame management, immediate-mode sprite/quad drawing, text,
+//! and render state control.
 //!
 //! # Availability
 //!
-//! This module requires the `native` feature (desktop platform with OpenGL).
+//! This module requires the `native` feature (desktop windowed rendering).
 
 pub(crate) mod immediate;
 
@@ -24,11 +24,119 @@ pub use crate::libs::graphics::renderer3d::{
     SkyboxConfig,
 };
 
+/// Native 2D renderer facade for sprite batching, immediate drawing, and text.
+pub struct Renderer2D<'a> {
+    game: &'a mut GoudGame,
+}
+
+impl<'a> Renderer2D<'a> {
+    fn new(game: &'a mut GoudGame) -> Self {
+        Self { game }
+    }
+
+    /// Begins a 2D sprite batch pass.
+    pub fn begin(&mut self) -> GoudResult<()> {
+        self.game.begin_2d_render()
+    }
+
+    /// Ends a 2D sprite batch pass.
+    pub fn end(&mut self) -> GoudResult<()> {
+        self.game.end_2d_render()
+    }
+
+    /// Draws ECS-managed sprites through the active 2D renderer.
+    pub fn draw_sprites(&mut self) -> GoudResult<()> {
+        self.game.draw_sprites()
+    }
+
+    /// Returns 2D batch statistics.
+    pub fn stats(&self) -> (usize, usize, f32) {
+        self.game.render_2d_stats()
+    }
+
+    /// Returns `true` when a native 2D renderer is available.
+    pub fn is_available(&self) -> bool {
+        self.game.has_2d_renderer()
+    }
+
+    /// Draws a textured quad immediately.
+    #[allow(clippy::too_many_arguments)]
+    pub fn draw_sprite(
+        &mut self,
+        texture: u64,
+        x: f32,
+        y: f32,
+        width: f32,
+        height: f32,
+        rotation: f32,
+        r: f32,
+        g: f32,
+        b: f32,
+        a: f32,
+    ) -> bool {
+        self.game
+            .draw_sprite(texture, x, y, width, height, rotation, r, g, b, a)
+    }
+
+    /// Draws a solid-color quad immediately.
+    #[allow(clippy::too_many_arguments)]
+    pub fn draw_quad(
+        &mut self,
+        x: f32,
+        y: f32,
+        width: f32,
+        height: f32,
+        r: f32,
+        g: f32,
+        b: f32,
+        a: f32,
+    ) -> bool {
+        self.game.draw_quad(x, y, width, height, r, g, b, a)
+    }
+
+    /// Draws UTF-8 text immediately.
+    #[allow(clippy::too_many_arguments)]
+    pub fn draw_text(
+        &mut self,
+        font_path: &str,
+        text: &str,
+        x: f32,
+        y: f32,
+        font_size: f32,
+        max_width: f32,
+        line_spacing: f32,
+        r: f32,
+        g: f32,
+        b: f32,
+        a: f32,
+    ) -> bool {
+        self.game.draw_text(
+            font_path,
+            text,
+            x,
+            y,
+            font_size,
+            max_width,
+            line_spacing,
+            r,
+            g,
+            b,
+            a,
+        )
+    }
+}
+
 // =============================================================================
 // 2D Rendering -- ECS-based SpriteBatch (not FFI-generated)
 // =============================================================================
 
 impl GoudGame {
+    /// Returns the native 2D renderer facade.
+    #[inline]
+    pub fn renderer_2d(&mut self) -> Renderer2D<'_> {
+        Renderer2D::new(self)
+    }
+
     /// Begins a 2D rendering pass.
     ///
     /// Call this before drawing sprites. Must be paired with
@@ -121,6 +229,15 @@ mod tests {
     fn test_has_2d_renderer_headless() {
         let game = GoudGame::new(GameConfig::default()).unwrap();
         assert!(!game.has_2d_renderer());
+    }
+
+    #[test]
+    fn test_renderer_2d_facade_headless() {
+        let mut game = GoudGame::new(GameConfig::default()).unwrap();
+        let mut renderer = game.renderer_2d();
+        assert!(!renderer.is_available());
+        assert!(renderer.begin().is_err());
+        assert_eq!(renderer.stats(), (0, 0, 0.0));
     }
 
     #[test]

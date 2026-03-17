@@ -372,6 +372,14 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_render_backend(IntPtr handle, uint backend);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_window_backend(IntPtr handle, uint backend);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_engine_config_set_debugger(IntPtr handle, ref GoudDebuggerConfig debugger);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -467,6 +475,10 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_window_get_size(GoudContextId context_id, ref uint out_width, ref uint out_height);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_window_set_size(GoudContextId context_id, uint width, uint height);
 
         // renderer
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

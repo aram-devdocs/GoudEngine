@@ -27,6 +27,7 @@ mod convert;
 mod frame;
 mod init;
 mod pipeline;
+mod readback;
 mod resources;
 mod shader;
 mod texture;
@@ -54,9 +55,11 @@ pub struct WgpuBackend {
     surface: wgpu::Surface<'static>,
     surface_config: wgpu::SurfaceConfiguration,
     surface_format: wgpu::TextureFormat,
+    surface_supports_copy_src: bool,
 
     depth_texture: wgpu::Texture,
     depth_view: wgpu::TextureView,
+    last_frame_readback: Option<(u32, u32, Vec<u8>)>,
 
     clear_color: wgpu::Color,
     needs_clear: bool,

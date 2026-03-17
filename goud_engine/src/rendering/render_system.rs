@@ -106,7 +106,7 @@ impl<B: RenderBackend> std::fmt::Debug for SpriteRenderSystem<B> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy-glfw-opengl"))]
 mod tests {
     use super::*;
     use crate::assets::loaders::{TextureAsset, TextureFormat};

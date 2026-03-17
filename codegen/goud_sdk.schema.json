@@ -3026,6 +3026,22 @@
         "Simple": 2
       }
     },
+    "RenderBackendKind": {
+      "doc": "Native render backend selection",
+      "underlying": "u32",
+      "values": {
+        "Wgpu": 0,
+        "OpenGlLegacy": 1
+      }
+    },
+    "WindowBackendKind": {
+      "doc": "Native window backend selection",
+      "underlying": "u32",
+      "values": {
+        "Winit": 0,
+        "GlfwLegacy": 1
+      }
+    },
     "EasingType": {
       "doc": "Easing function for tweens",
       "values": {
@@ -3652,6 +3668,21 @@
           "doc": "Signals the window to close",
           "params": [],
           "returns": "void"
+        },
+        {
+          "name": "setWindowSize",
+          "doc": "Requests a logical resize on the active native window",
+          "params": [
+            {
+              "name": "width",
+              "type": "u32"
+            },
+            {
+              "name": "height",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
         },
         {
           "name": "destroy",
@@ -6482,6 +6513,28 @@
             {
               "name": "backend",
               "type": "PhysicsBackend2D"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setRenderBackend",
+          "doc": "Selects the native render backend used by the built game",
+          "params": [
+            {
+              "name": "backend",
+              "type": "RenderBackendKind"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setWindowBackend",
+          "doc": "Selects the native window backend used by the built game",
+          "params": [
+            {
+              "name": "backend",
+              "type": "WindowBackendKind"
             }
           ],
           "returns": "bool"
@@ -9371,6 +9424,9 @@
             true
           ]
         },
+        "setWindowSize": {
+          "ffi": "goud_window_set_size"
+        },
         "destroy": {
           "ffi": "goud_window_destroy"
         },
@@ -10439,6 +10495,18 @@
           "ffi": "goud_engine_config_set_physics_backend_2d",
           "enum_params": {
             "backend": "PhysicsBackend2D"
+          }
+        },
+        "setRenderBackend": {
+          "ffi": "goud_engine_config_set_render_backend",
+          "enum_params": {
+            "backend": "RenderBackendKind"
+          }
+        },
+        "setWindowBackend": {
+          "ffi": "goud_engine_config_set_window_backend",
+          "enum_params": {
+            "backend": "WindowBackendKind"
           }
         },
         "setDebugger": {

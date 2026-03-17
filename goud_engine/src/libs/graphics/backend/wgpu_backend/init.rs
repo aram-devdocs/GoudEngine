@@ -2,7 +2,7 @@
 
 use super::{
     BackendCapabilities, BackendInfo, BlendFactor, CullFace, DepthFunc, FrontFace, HashMap,
-    WgpuBackend,
+    TextureOps, WgpuBackend,
 };
 use crate::core::{
     error::{GoudError, GoudResult},
@@ -56,9 +56,14 @@ impl WgpuBackend {
             .find(|f| f.is_srgb())
             .copied()
             .unwrap_or(caps.formats[0]);
+        let surface_supports_copy_src = caps.usages.contains(wgpu::TextureUsages::COPY_SRC);
 
         let surface_config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            usage: if surface_supports_copy_src {
+                wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC
+            } else {
+                wgpu::TextureUsages::RENDER_ATTACHMENT
+            },
             format: surface_format,
             width: size.width.max(1),
             height: size.height.max(1),
@@ -140,8 +145,10 @@ impl WgpuBackend {
             surface,
             surface_config,
             surface_format,
+            surface_supports_copy_src,
             depth_texture,
             depth_view,
+            last_frame_readback: None,
             clear_color: wgpu::Color::BLACK,
             needs_clear: false,
             current_frame: None,
@@ -203,6 +210,16 @@ impl WgpuBackend {
     /// Provides access to the wgpu queue.
     pub fn queue(&self) -> &wgpu::Queue {
         &self.queue
+    }
+
+    pub(crate) fn bind_texture_by_index(&mut self, index: u32, unit: u32) -> GoudResult<()> {
+        let handle = self
+            .textures
+            .keys()
+            .copied()
+            .find(|handle| handle.index() == index)
+            .ok_or(GoudError::InvalidHandle)?;
+        self.bind_texture(handle, unit)
     }
 
     /// Resizes the surface and depth buffer. Call after window resize.

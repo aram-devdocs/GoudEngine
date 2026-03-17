@@ -382,6 +382,8 @@
       "goud_engine_config_set_fps_overlay": {},
       "goud_engine_config_set_physics_debug": {},
       "goud_engine_config_set_physics_backend_2d": {},
+      "goud_engine_config_set_render_backend": {},
+      "goud_engine_config_set_window_backend": {},
       "goud_engine_config_set_debugger": {},
       "goud_engine_create": {}
     },
@@ -416,7 +418,8 @@
       "goud_window_swap_buffers": {},
       "goud_window_clear": {},
       "goud_window_get_delta_time": {},
-      "goud_window_get_size": {}
+      "goud_window_get_size": {},
+      "goud_window_set_size": {}
     },
     "renderer": {
       "goud_renderer_begin": {},

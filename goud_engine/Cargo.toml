@@ -12,7 +12,8 @@ categories = ["game-engines", "graphics", "rendering"]
 
 [features]
 default = ["native"]
-native = ["dep:gl", "dep:glfw", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj", "net-udp", "net-tcp", "net-ws"]
+native = ["wgpu-backend", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj", "net-udp", "net-tcp", "net-ws"]
+legacy-glfw-opengl = ["dep:gl", "dep:glfw"]
 net-udp = []
 net-tcp = []
 net-ws = ["dep:tungstenite", "dep:rustls"]
@@ -110,6 +111,18 @@ harness = false
 [[bench]]
 name = "serialization_benchmarks"
 harness = false
+
+[[test]]
+name = "native_main_thread"
+path = "tests/native_main_thread.rs"
+harness = false
+required-features = ["native"]
+
+[[test]]
+name = "native_main_thread_ffi"
+path = "tests/native_main_thread_ffi.rs"
+harness = false
+required-features = ["native"]
 
 # [[bench]]
 # name = "physics_benchmarks"

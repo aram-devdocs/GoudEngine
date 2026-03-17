@@ -27,34 +27,7 @@ impl GoudGame {
 
     #[cfg(feature = "native")]
     pub(crate) fn apply_synthetic_inputs(&mut self, events: &[SyntheticInputEventV1]) {
-        use glfw::{Key, MouseButton};
-
-        fn parse_key(key: &str) -> Option<Key> {
-            match key.to_ascii_lowercase().as_str() {
-                "space" => Some(Key::Space),
-                "enter" => Some(Key::Enter),
-                "escape" => Some(Key::Escape),
-                "tab" => Some(Key::Tab),
-                "left" => Some(Key::Left),
-                "right" => Some(Key::Right),
-                "up" => Some(Key::Up),
-                "down" => Some(Key::Down),
-                "a" => Some(Key::A),
-                "d" => Some(Key::D),
-                "s" => Some(Key::S),
-                "w" => Some(Key::W),
-                _ => None,
-            }
-        }
-
-        fn parse_mouse_button(button: &str) -> Option<MouseButton> {
-            match button.to_ascii_lowercase().as_str() {
-                "left" => Some(MouseButton::Button1),
-                "right" => Some(MouseButton::Button2),
-                "middle" => Some(MouseButton::Button3),
-                _ => None,
-            }
-        }
+        use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 
         for event in events {
             match (
@@ -64,23 +37,31 @@ impl GoudGame {
                 event.button.as_deref(),
             ) {
                 ("keyboard", "press", Some(key), _) => {
-                    if let Some(key) = parse_key(key) {
+                    if let Some(key) = Key::from_debugger_name(key) {
                         self.input_manager.press_key(key);
+                    } else {
+                        log::warn!("Ignoring unsupported debugger synthetic key '{key}'");
                     }
                 }
                 ("keyboard", "release", Some(key), _) => {
-                    if let Some(key) = parse_key(key) {
+                    if let Some(key) = Key::from_debugger_name(key) {
                         self.input_manager.release_key(key);
+                    } else {
+                        log::warn!("Ignoring unsupported debugger synthetic key '{key}'");
                     }
                 }
                 ("mouse", "press", _, Some(button)) => {
-                    if let Some(button) = parse_mouse_button(button) {
+                    if let Some(button) = MouseButton::from_debugger_name(button) {
                         self.input_manager.press_mouse_button(button);
+                    } else {
+                        log::warn!("Ignoring unsupported debugger mouse button '{button}'");
                     }
                 }
                 ("mouse", "release", _, Some(button)) => {
-                    if let Some(button) = parse_mouse_button(button) {
+                    if let Some(button) = MouseButton::from_debugger_name(button) {
                         self.input_manager.release_mouse_button(button);
+                    } else {
+                        log::warn!("Ignoring unsupported debugger mouse button '{button}'");
                     }
                 }
                 _ => {}

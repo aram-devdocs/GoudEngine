@@ -142,6 +142,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/error.rs",
     // engine config module
     "src/ffi/engine_config.rs",
+    "src/ffi/engine_config/native.rs",
     // physics module
     "src/ffi/physics/physics2d/mod.rs",
     "src/ffi/physics/physics2d/lifecycle.rs",

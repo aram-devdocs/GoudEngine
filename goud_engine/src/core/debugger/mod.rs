@@ -48,6 +48,7 @@ pub use runtime::end_frame;
 pub use runtime::fps_stats_for_context;
 #[doc(inline)]
 pub use runtime::get_memory_summary_for_context;
+pub(crate) use runtime::new_deferred_capture;
 #[doc(inline)]
 pub use runtime::profiler_enabled_for_context;
 #[doc(inline)]
@@ -60,6 +61,7 @@ pub use runtime::record_synthetic_input_for_current_route;
 pub use runtime::register_capture_hook_for_route;
 #[doc(inline)]
 pub use runtime::register_context;
+pub(crate) use runtime::register_deferred_capture_hook_for_route;
 #[doc(inline)]
 pub use runtime::register_snapshot_refresh_hook_for_route;
 #[doc(inline)]
@@ -116,6 +118,7 @@ pub use runtime::DebugDrawPayloadV1;
 pub use runtime::DebugDrawShape2DV1;
 #[doc(inline)]
 pub use runtime::DebugDrawShape3DV1;
+pub(crate) use runtime::DeferredCapture;
 #[doc(inline)]
 pub use runtime::FrameControlPlanV1;
 #[doc(inline)]

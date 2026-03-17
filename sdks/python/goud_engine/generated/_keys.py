@@ -157,6 +157,16 @@ class PhysicsBackend2D:
     RAPIER = 1
     SIMPLE = 2
 
+class RenderBackendKind:
+    """Native render backend selection"""
+    WGPU = 0
+    OPEN_GL_LEGACY = 1
+
+class WindowBackendKind:
+    """Native window backend selection"""
+    WINIT = 0
+    GLFW_LEGACY = 1
+
 class EasingType:
     """Easing function for tweens"""
     LINEAR = 0

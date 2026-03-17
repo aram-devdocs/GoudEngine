@@ -158,11 +158,11 @@ def gen_web_wrapper():
         "",
         "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
-        "import { PhysicsBackend2D } from '../types/input.g.js';",
+        "import { PhysicsBackend2D, RenderBackendKind, WindowBackendKind } from '../types/input.g.js';",
         "import { attachInputHandlers } from './input.g.js';",
         "",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
-        "export { Key, MouseButton, PhysicsBackend2D } from '../types/input.g.js';",
+        "export { Key, MouseButton, PhysicsBackend2D, RenderBackendKind, WindowBackendKind } from '../types/input.g.js';",
         "export { Rect } from '../types/math.g.js';",
         "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
         "",
@@ -447,6 +447,13 @@ def gen_web_wrapper():
     lines.append("  shouldClose(): boolean { return this._shouldClose; }")
     emit_jsdoc(lines, _method_docs.get("close"))
     lines.append("  close(): void { this._shouldClose = true; this.stop(); }")
+    emit_jsdoc(lines, _method_docs.get("set_window_size"))
+    lines.append("  setWindowSize(width: number, height: number): boolean {")
+    lines.append("    this.canvas.width = width;")
+    lines.append("    this.canvas.height = height;")
+    lines.append("    this.handle.set_canvas_size(width, height);")
+    lines.append("    return true;")
+    lines.append("  }")
     emit_jsdoc(lines, _method_docs.get("destroy"))
     lines.append("  destroy(): void {")
     lines.append("    this.stop();")

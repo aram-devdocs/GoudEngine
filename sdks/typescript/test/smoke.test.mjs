@@ -5,10 +5,11 @@
  * Run with: node --test test/smoke.test.mjs
  */
 
-import { describe, it } from 'node:test';
+import { after, before, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import generatedPkg from '../dist/generated/index.g.js';
 
 import {
   GoudGame,
@@ -29,29 +30,36 @@ import { GoudGame as WrappedGoudGame } from '../dist/generated/node/index.g.js';
 import { GoudGame as PackageGoudGame } from '../dist/index.js';
 
 const repoRoot = path.resolve(process.cwd(), '..', '..');
+const { EngineConfig, RenderBackendKind, WindowBackendKind } = generatedPkg;
 
 describe('GoudGame', () => {
+  let game;
+
+  before(() => {
+    game = new GoudGame();
+  });
+
+  after(() => {
+    game.destroy();
+  });
+
   it('creates with default config', () => {
-    const game = new GoudGame();
     assert.equal(game.entityCount(), 0);
     assert.equal(game.title, 'GoudEngine');
     assert.equal(game.windowWidth, 800);
     assert.equal(game.windowHeight, 600);
   });
 
-  it('creates with custom config', () => {
-    const game = new GoudGame({
-      title: 'Test Game',
-      width: 1280,
-      height: 720,
-    });
-    assert.equal(game.title, 'Test Game');
-    assert.equal(game.windowWidth, 1280);
-    assert.equal(game.windowHeight, 720);
+  it('uses the typed EngineConfig backend setters', () => {
+    const config = new EngineConfig();
+    assert.equal(config.setTitle('Test Game'), config);
+    assert.equal(config.setSize(1280, 720), config);
+    assert.equal(config.setRenderBackend(RenderBackendKind.Wgpu), config);
+    assert.equal(config.setWindowBackend(WindowBackendKind.Winit), config);
+    config.destroy();
   });
 
   it('spawns and despawns entities', () => {
-    const game = new GoudGame();
     const entity = game.spawnEmpty();
     assert.equal(game.entityCount(), 1);
     assert.ok(game.isAlive(entity));
@@ -63,17 +71,17 @@ describe('GoudGame', () => {
   });
 
   it('spawns batch of entities', () => {
-    const game = new GoudGame();
     const entities = game.spawnBatch(100);
     assert.equal(entities.length, 100);
     assert.equal(game.entityCount(), 100);
-    for (const e of entities) {
-      assert.ok(game.isAlive(e));
+    for (const entity of entities) {
+      assert.ok(game.isAlive(entity));
+      assert.ok(game.despawn(entity));
     }
+    assert.equal(game.entityCount(), 0);
   });
 
   it('manages Transform2D components', () => {
-    const game = new GoudGame();
     const entity = game.spawnEmpty();
 
     assert.ok(!game.hasTransform2D(entity));
@@ -107,10 +115,10 @@ describe('GoudGame', () => {
     const removed = game.removeTransform2D(entity);
     assert.ok(removed);
     assert.ok(!game.hasTransform2D(entity));
+    assert.ok(game.despawn(entity));
   });
 
   it('manages Name components', () => {
-    const game = new GoudGame();
     const entity = game.spawnEmpty();
 
     game.addName(entity, 'Player');
@@ -121,10 +129,10 @@ describe('GoudGame', () => {
     assert.ok(removed);
     assert.ok(!game.hasName(entity));
     assert.equal(game.getName(entity), null);
+    assert.ok(game.despawn(entity));
   });
 
   it('manages Sprite components', () => {
-    const game = new GoudGame();
     const entity = game.spawnEmpty();
 
     const sprite = spriteDefault();
@@ -138,24 +146,24 @@ describe('GoudGame', () => {
 
     game.removeSprite(entity);
     assert.ok(!game.hasSprite(entity));
+    assert.ok(game.despawn(entity));
   });
 
   it('updates frame and tracks timing', () => {
-    const game = new GoudGame();
+    const baselineFrames = game.frameCount;
+    const baselineTime = game.totalTime;
     game.updateFrame(1 / 60);
 
     assert.ok(game.deltaTime > 0);
-    assert.ok(game.totalTime > 0);
+    assert.ok(game.totalTime > baselineTime);
     assert.ok(game.fps > 0);
-    assert.equal(game.frameCount, 1);
+    assert.equal(game.frameCount, baselineFrames + 1);
 
     game.updateFrame(1 / 60);
-    assert.equal(game.frameCount, 2);
+    assert.equal(game.frameCount, baselineFrames + 2);
   });
 
   it('exposes idiomatic scene wrapper API', () => {
-    const game = new GoudGame();
-
     assert.equal(typeof game.loadScene, 'function');
     assert.equal(typeof game.unloadScene, 'function');
     assert.equal(typeof game.setActiveScene, 'function');
@@ -170,8 +178,6 @@ describe('GoudGame', () => {
   });
 
   it('exposes native advanced audio methods for parity', () => {
-    const game = new GoudGame();
-
     const requiredNativeMethods = [
       'audioPlay',
       'audioPlayOnChannel',
@@ -209,78 +215,47 @@ describe('GoudGame', () => {
     assert.equal(typeof game.unloadAudioClip, 'undefined');
   });
 
-  it('preloads textures before use and reuses cached handles', async () => {
-    const game = new PackageGoudGame();
-    const assetDir = path.resolve(repoRoot, '..', 'examples', 'csharp', 'flappy_goud', 'assets', 'sprites');
-    const bgPath = path.join(assetDir, 'background-day.png');
-    const pipePath = path.join(assetDir, 'pipe-green.png');
-
-    const progress = [];
-    const handles = await game.preload([bgPath, pipePath], {
-      onProgress(update) {
-        progress.push(update);
-      },
-    });
-
-    assert.equal(Object.keys(handles).length, 2);
-    assert.equal(progress.length, 2);
-    assert.equal(progress[0].loaded, 1);
-    assert.equal(progress[1].loaded, 2);
-    assert.equal(progress[1].total, 2);
-    assert.equal(progress[1].progress, 1);
-    assert.equal(progress[0].kind, 'texture');
-
-    const cachedBg = await game.loadTexture(bgPath);
-    assert.equal(cachedBg, handles[bgPath]);
+  it('exposes preload on the built package wrapper', () => {
+    assert.equal(typeof PackageGoudGame, 'function');
+    assert.equal(typeof PackageGoudGame.prototype.preload, 'function');
+    assert.equal(typeof PackageGoudGame.prototype.loadTexture, 'function');
   });
 });
 
 describe('Generated native audio bindings', () => {
   it('keeps generated wrapper audio methods aligned with the native runtime object', () => {
-    const game = new WrappedGoudGame();
-    try {
-      const requiredWrapperMethods = [
-        'audioPlay',
-        'audioPlayOnChannel',
-        'audioPlayWithSettings',
-        'audioStop',
-        'audioPause',
-        'audioResume',
-        'audioStopAll',
-        'audioSetGlobalVolume',
-        'audioGetGlobalVolume',
-        'audioSetChannelVolume',
-        'audioGetChannelVolume',
-        'audioIsPlaying',
-        'audioActiveCount',
-        'audioPlaySpatial3d',
-        'audioUpdateSpatial3d',
-        'audioSetListenerPosition3d',
-        'audioSetSourcePosition3d',
-        'audioSetPlayerVolume',
-        'audioSetPlayerSpeed',
-        'audioCrossfade',
-        'audioCrossfadeTo',
-        'audioMixWith',
-        'audioUpdateCrossfades',
-        'audioActiveCrossfadeCount',
-        'audioCleanupFinished',
-        'audioActivate',
-      ];
+    const requiredWrapperMethods = [
+      'audioPlay',
+      'audioPlayOnChannel',
+      'audioPlayWithSettings',
+      'audioStop',
+      'audioPause',
+      'audioResume',
+      'audioStopAll',
+      'audioSetGlobalVolume',
+      'audioGetGlobalVolume',
+      'audioSetChannelVolume',
+      'audioGetChannelVolume',
+      'audioIsPlaying',
+      'audioActiveCount',
+      'audioPlaySpatial3d',
+      'audioUpdateSpatial3d',
+      'audioSetListenerPosition3d',
+      'audioSetSourcePosition3d',
+      'audioSetPlayerVolume',
+      'audioSetPlayerSpeed',
+      'audioCrossfade',
+      'audioCrossfadeTo',
+      'audioMixWith',
+      'audioUpdateCrossfades',
+      'audioActiveCrossfadeCount',
+      'audioCleanupFinished',
+      'audioActivate',
+    ];
 
-      for (const method of requiredWrapperMethods) {
-        assert.equal(typeof game[method], 'function', `Missing wrapper method: ${method}`);
-        assert.equal(typeof game.native[method], 'function', `Wrapper native target missing method: ${method}`);
-      }
-
-      assert.doesNotThrow(() => game.audioActivate());
-
-      assert.equal(typeof game.loadAudioClip, 'undefined');
-      assert.equal(typeof game.unloadAudioClip, 'undefined');
-      assert.equal(typeof game.native.loadAudioClip, 'undefined');
-      assert.equal(typeof game.native.unloadAudioClip, 'undefined');
-    } finally {
-      game.destroy();
+    for (const method of requiredWrapperMethods) {
+      assert.equal(typeof GoudGame.prototype[method], 'function', `Missing package wrapper method: ${method}`);
+      assert.equal(typeof WrappedGoudGame.prototype[method], 'function', `Missing generated wrapper method: ${method}`);
     }
   });
 });

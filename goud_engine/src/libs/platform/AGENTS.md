@@ -34,8 +34,8 @@ trait PlatformBackend {
 
 - GLFW uses a `thread_local!` singleton -- only one `GlfwPlatform` per thread
 - GLFW must run on the main thread. Neither backend is `Send` or `Sync`
-- `WinitPlatform` maps winit key codes to GLFW key types internally because
-  `InputManager` currently depends on `glfw::Key` / `glfw::MouseButton`
+- `WinitPlatform` maps winit key codes directly to the engine's platform-neutral
+  input enums
 - `WinitPlatform::swap_buffers()` is a no-op -- wgpu handles presentation
 - `get_framebuffer_size()` can differ from `get_size()` on Retina/HiDPI displays
 

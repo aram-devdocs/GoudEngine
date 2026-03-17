@@ -8,21 +8,20 @@ use crate::assets::AudioManager;
 use crate::core::error::{set_last_error, GoudError};
 use crate::ecs::InputManager;
 use crate::ffi::context::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
-use crate::libs::graphics::backend::opengl::OpenGLBackend;
-use crate::libs::graphics::backend::StateOps;
-use crate::libs::platform::glfw_platform::GlfwPlatform;
+use crate::libs::platform::native_runtime::create_native_runtime;
 use crate::libs::platform::WindowConfig;
+use crate::sdk::game_config::{RenderBackendKind, WindowBackendKind};
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
 use super::state::{remove_window_state, set_window_state, WindowState};
 
-/// Creates a new windowed context with OpenGL rendering.
+/// Creates a new windowed context with the default native runtime.
 ///
 /// This creates:
-/// - A GLFW window with the specified dimensions and title
+/// - A native window with the specified dimensions and title
 /// - An ECS World with InputManager resource
-/// - An OpenGL 3.3 Core rendering backend
+/// - The default `winit + wgpu` rendering runtime
 ///
 /// # Arguments
 ///
@@ -66,23 +65,14 @@ pub unsafe extern "C" fn goud_window_create(
         resizable: true,
     };
 
-    let platform = match GlfwPlatform::new(&config) {
-        Ok(p) => p,
-        Err(e) => {
-            set_last_error(e);
-            return GOUD_INVALID_CONTEXT_ID;
-        }
-    };
-
-    let mut backend = match OpenGLBackend::new() {
-        Ok(b) => b,
-        Err(e) => {
-            set_last_error(e);
-            return GOUD_INVALID_CONTEXT_ID;
-        }
-    };
-
-    backend.set_viewport(0, 0, width, height);
+    let native_runtime =
+        match create_native_runtime(&config, WindowBackendKind::Winit, RenderBackendKind::Wgpu) {
+            Ok(runtime) => runtime,
+            Err(e) => {
+                set_last_error(e);
+                return GOUD_INVALID_CONTEXT_ID;
+            }
+        };
 
     let context_id = {
         let mut registry = match get_context_registry().lock() {
@@ -123,7 +113,13 @@ pub unsafe extern "C" fn goud_window_create(
         }
     }
 
-    let window_state = WindowState::new(platform, backend, false, None, None);
+    let window_state = WindowState::new(
+        native_runtime.platform,
+        native_runtime.render_backend,
+        false,
+        None,
+        None,
+    );
 
     if let Err(e) = set_window_state(context_id, window_state) {
         if let Ok(mut registry) = get_context_registry().lock() {

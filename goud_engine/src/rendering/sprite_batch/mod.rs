@@ -40,11 +40,11 @@ pub mod config;
 pub mod resources;
 pub mod types;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy-glfw-opengl"))]
 mod batching_tests;
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy-glfw-opengl"))]
 mod gl_tests;
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy-glfw-opengl"))]
 mod integration_tests;
 #[cfg(test)]
 mod tests;

@@ -11,8 +11,8 @@
 //! because provider calls are coarse-grained (per-frame or per-batch).
 //!
 //! The `Provider` supertrait requires `Send + Sync + 'static` for all providers
-//! except `WindowProvider`, which is `!Send + !Sync` because GLFW requires
-//! main-thread access.
+//! except `WindowProvider`, which is `!Send + !Sync` because native windowing
+//! backends require main-thread access.
 
 pub mod audio;
 pub mod diagnostics;

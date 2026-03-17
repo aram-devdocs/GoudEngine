@@ -204,6 +204,62 @@ void main()
 }
 "#;
 
+pub(super) const VERTEX_SHADER_3D_WGSL: &str = r#"
+struct VertexInput {
+    @location(0) position: vec3<f32>,
+    @location(1) normal: vec3<f32>,
+    @location(2) tex_coord: vec2<f32>,
+};
+
+struct VertexOutput {
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) normal: vec3<f32>,
+};
+
+@vertex
+fn main(input: VertexInput) -> VertexOutput {
+    var output: VertexOutput;
+    output.clip_position = vec4<f32>(input.position, 1.0);
+    output.normal = input.normal;
+    return output;
+}
+"#;
+
+pub(super) const FRAGMENT_SHADER_3D_WGSL: &str = r#"
+@fragment
+fn main(@location(0) normal: vec3<f32>) -> @location(0) vec4<f32> {
+    let lit = 0.35 + 0.65 * abs(normalize(normal).z);
+    return vec4<f32>(lit, lit, lit, 1.0);
+}
+"#;
+
+pub(super) const GRID_VERTEX_SHADER_WGSL: &str = r#"
+struct VertexInput {
+    @location(0) position: vec3<f32>,
+    @location(1) color: vec3<f32>,
+};
+
+struct VertexOutput {
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) color: vec3<f32>,
+};
+
+@vertex
+fn main(input: VertexInput) -> VertexOutput {
+    var output: VertexOutput;
+    output.clip_position = vec4<f32>(input.position, 1.0);
+    output.color = input.color;
+    return output;
+}
+"#;
+
+pub(super) const GRID_FRAGMENT_SHADER_WGSL: &str = r#"
+@fragment
+fn main(@location(0) color: vec3<f32>) -> @location(0) vec4<f32> {
+    return vec4<f32>(color, 1.0);
+}
+"#;
+
 // ============================================================================
 // Cached uniform location structs
 // ============================================================================

@@ -1,43 +1,22 @@
 //! # Window State
 //!
-//! Defines [`WindowState`], which composes a
-//! [`GlfwPlatform`](crate::libs::platform::glfw_platform::GlfwPlatform) and an
-//! [`OpenGLBackend`] into a single per-context object, and the thread-local
+//! Defines [`WindowState`], which composes the selected native platform and
+//! render backend into a single per-context object, and the thread-local
 //! storage helpers used to access it from FFI functions.
 
-use crate::core::debugger::{self, RuntimeRouteId};
+use crate::core::debugger::{self, DeferredCapture, RuntimeRouteId};
 use crate::core::error::GoudError;
 use crate::core::math::Vec2;
+use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 use crate::ecs::InputManager;
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
-use crate::libs::graphics::backend::opengl::OpenGLBackend;
-use crate::libs::graphics::backend::{RenderBackend, StateOps};
-use crate::libs::platform::glfw_platform::GlfwPlatform;
+use crate::libs::graphics::backend::native_backend::SharedNativeRenderBackend;
+use crate::libs::graphics::backend::RenderBackend;
 use crate::libs::platform::PlatformBackend;
 use crate::sdk::debug_overlay::DebugOverlay;
 use crate::sdk::network_debug_overlay::NetworkOverlayState;
 use std::cell::RefCell;
-use std::sync::{Arc, Condvar, Mutex};
 use std::time::Instant;
-
-#[cfg(feature = "native")]
-use glfw::{Key, MouseButton};
-
-// ============================================================================
-// Deferred Capture
-// ============================================================================
-
-/// Shared state for deferred framebuffer capture (FFI path).
-///
-/// The IPC handler thread sets `requested = true` and waits on the condvar.
-/// The main thread (in `swap_buffers`) checks `requested`, does the GL readback,
-/// stores the result, and notifies the condvar.
-pub(crate) struct DeferredCaptureState {
-    requested: bool,
-    result: Option<Result<debugger::RawFramebufferReadbackV1, String>>,
-}
-
-type DeferredCapture = Arc<(Mutex<DeferredCaptureState>, Condvar)>;
 
 // ============================================================================
 // Window State
@@ -45,15 +24,14 @@ type DeferredCapture = Arc<(Mutex<DeferredCaptureState>, Condvar)>;
 
 /// Window state attached to a context.
 ///
-/// Composes a [`GlfwPlatform`](crate::libs::platform::glfw_platform::GlfwPlatform)
-/// (windowing + input) with an [`OpenGLBackend`]
-/// (rendering). The platform backend owns the window handle and event loop;
-/// the render backend is stored alongside it.
+/// Composes a platform backend (windowing + input) with a native render
+/// backend (presentation + GPU resources). The platform backend owns the
+/// window handle and event loop; the render backend is stored alongside it.
 pub struct WindowState {
-    pub(crate) platform: GlfwPlatform,
+    pub(crate) platform: Box<dyn PlatformBackend>,
 
-    /// OpenGL rendering backend
-    pub(crate) backend: OpenGLBackend,
+    /// Active native rendering backend
+    pub(crate) backend: SharedNativeRenderBackend,
 
     /// Whether the physics debug overlay should render for this context.
     pub(crate) physics_debug_enabled: bool,
@@ -73,15 +51,15 @@ pub struct WindowState {
     /// Route registered with the debugger runtime for this window, if enabled.
     pub(crate) debugger_route: Option<RuntimeRouteId>,
 
-    /// Deferred capture coordination between IPC thread and main GL thread.
+    /// Deferred capture coordination between the IPC thread and the main thread.
     pub(crate) deferred_capture: Option<DeferredCapture>,
 }
 
 impl WindowState {
     /// Creates a new [`WindowState`] from the given platform and backend.
     pub(crate) fn new(
-        platform: GlfwPlatform,
-        backend: OpenGLBackend,
+        platform: Box<dyn PlatformBackend>,
+        backend: SharedNativeRenderBackend,
         physics_debug_enabled: bool,
         debugger_route: Option<RuntimeRouteId>,
         deferred_capture: Option<DeferredCapture>,
@@ -111,15 +89,12 @@ impl WindowState {
 
     /// Polls events, updates input state, and syncs the viewport on resize.
     pub fn poll_events(&mut self, context_id: GoudContextId, input: &mut InputManager) -> f32 {
-        let old_size = self.platform.get_size();
         let started_at = Instant::now();
         let raw_delta = self.platform.poll_events(input);
         debugger::record_phase_duration("window_events", started_at.elapsed().as_micros() as u64);
-        let new_size = self.platform.get_size();
-
-        if old_size != new_size {
-            self.backend.set_viewport(0, 0, new_size.0, new_size.1);
-        }
+        let framebuffer_size = self.platform.get_framebuffer_size();
+        self.backend
+            .resize_surface(framebuffer_size.0, framebuffer_size.1);
 
         if let Some(route_id) = self.debugger_route.as_ref() {
             let frame_control =
@@ -154,8 +129,8 @@ impl WindowState {
         self.delta_time
     }
 
-    /// Services a pending deferred capture request by performing the GL
-    /// readback on the current (main) thread, then notifying the waiting IPC thread.
+    /// Services a pending deferred capture request by performing framebuffer
+    /// readback on the current main thread, then notifying the waiting IPC thread.
     fn service_deferred_capture(&mut self) {
         let Some(ref deferred) = self.deferred_capture else {
             return;
@@ -204,7 +179,7 @@ impl WindowState {
     }
 
     /// Gets a mutable reference to the backend.
-    pub fn backend_mut(&mut self) -> &mut OpenGLBackend {
+    pub fn backend_mut(&mut self) -> &mut SharedNativeRenderBackend {
         &mut self.backend
     }
 
@@ -226,21 +201,29 @@ fn apply_synthetic_inputs(input: &mut InputManager, events: &[debugger::Syntheti
             ("keyboard", "press", Some(key), _) => {
                 if let Some(key) = parse_key(key) {
                     input.press_key(key);
+                } else {
+                    log::warn!("Ignoring unsupported debugger synthetic key '{key}'");
                 }
             }
             ("keyboard", "release", Some(key), _) => {
                 if let Some(key) = parse_key(key) {
                     input.release_key(key);
+                } else {
+                    log::warn!("Ignoring unsupported debugger synthetic key '{key}'");
                 }
             }
             ("mouse", "press", _, Some(button)) => {
                 if let Some(button) = parse_mouse_button(button) {
                     input.press_mouse_button(button);
+                } else {
+                    log::warn!("Ignoring unsupported debugger mouse button '{button}'");
                 }
             }
             ("mouse", "release", _, Some(button)) => {
                 if let Some(button) = parse_mouse_button(button) {
                     input.release_mouse_button(button);
+                } else {
+                    log::warn!("Ignoring unsupported debugger mouse button '{button}'");
                 }
             }
             ("mouse", "move", _, _) => {
@@ -260,31 +243,12 @@ fn apply_synthetic_inputs(input: &mut InputManager, events: &[debugger::Syntheti
 
 #[cfg(feature = "native")]
 fn parse_key(key: &str) -> Option<Key> {
-    match key.to_ascii_lowercase().as_str() {
-        "space" => Some(Key::Space),
-        "enter" => Some(Key::Enter),
-        "escape" => Some(Key::Escape),
-        "tab" => Some(Key::Tab),
-        "left" => Some(Key::Left),
-        "right" => Some(Key::Right),
-        "up" => Some(Key::Up),
-        "down" => Some(Key::Down),
-        "a" => Some(Key::A),
-        "d" => Some(Key::D),
-        "s" => Some(Key::S),
-        "w" => Some(Key::W),
-        _ => None,
-    }
+    Key::from_debugger_name(key)
 }
 
 #[cfg(feature = "native")]
 fn parse_mouse_button(button: &str) -> Option<MouseButton> {
-    match button.to_ascii_lowercase().as_str() {
-        "left" => Some(MouseButton::Button1),
-        "right" => Some(MouseButton::Button2),
-        "middle" => Some(MouseButton::Button3),
-        _ => None,
-    }
+    MouseButton::from_debugger_name(button)
 }
 
 // ============================================================================
@@ -315,41 +279,8 @@ pub fn set_window_state(
         }
 
         let deferred_capture = if let Some(ref route_id) = state.debugger_route {
-            let deferred: DeferredCapture = Arc::new((
-                Mutex::new(DeferredCaptureState {
-                    requested: false,
-                    result: None,
-                }),
-                Condvar::new(),
-            ));
-            let deferred_clone = Arc::clone(&deferred);
-            debugger::register_capture_hook_for_route(route_id.clone(), move || {
-                let (lock, cvar) = &*deferred_clone;
-                let mut guard = lock
-                    .lock()
-                    .map_err(|e| format!("capture lock poisoned: {e}"))?;
-                guard.requested = true;
-                guard.result = None;
-                // Wait up to 5 seconds for the main thread to service the readback.
-                let timeout = std::time::Duration::from_secs(5);
-                loop {
-                    let (new_guard, wait_result) = cvar
-                        .wait_timeout(guard, timeout)
-                        .map_err(|e| format!("capture condvar error: {e}"))?;
-                    guard = new_guard;
-                    if guard.result.is_some() {
-                        break;
-                    }
-                    if wait_result.timed_out() {
-                        guard.requested = false;
-                        return Err(
-                            "capture timed out waiting for main thread readback".to_string()
-                        );
-                    }
-                }
-                guard.requested = false;
-                guard.result.take().unwrap()
-            });
+            let deferred = debugger::new_deferred_capture();
+            debugger::register_deferred_capture_hook_for_route(route_id.clone(), deferred.clone());
             Some(deferred)
         } else {
             None

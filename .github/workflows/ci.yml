@@ -131,7 +131,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libxkbcommon-x11-dev
 
     - name: Run clippy (Windows stable)
       if: matrix.run_windows_native_clippy
@@ -326,7 +326,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libxkbcommon-x11-dev
 
     - name: Build native library
       run: cargo build --release
@@ -375,7 +375,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libxkbcommon-x11-dev
     
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
@@ -663,7 +663,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libxkbcommon-x11-dev
 
     - name: Install npm dependencies
       working-directory: sdks/typescript
@@ -855,7 +855,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y xvfb libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+        sudo apt-get install -y xvfb libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libxkbcommon-x11-dev
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable

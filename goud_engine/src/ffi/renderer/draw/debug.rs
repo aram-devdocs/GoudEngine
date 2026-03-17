@@ -39,7 +39,7 @@ pub(crate) fn render_physics_debug_overlay(
         .chain(payload.transient_2d.iter())
         .map(|entry| &entry.shape)
     {
-        draw_debug_shape(window_state, state_data, shape)?;
+        draw_debug_shape(window_state, state_data.clone(), shape)?;
     }
 
     Ok(())
@@ -75,7 +75,7 @@ fn draw_box_outline(
     for segment in corners.windows(2) {
         draw_line_segment(
             window_state,
-            state_data,
+            state_data.clone(),
             segment[0],
             segment[1],
             shape.color,
@@ -85,7 +85,7 @@ fn draw_box_outline(
 
     draw_line_segment(
         window_state,
-        state_data,
+        state_data.clone(),
         corners[3],
         corners[0],
         shape.color,
@@ -113,7 +113,7 @@ fn draw_circle_outline(
         ];
         draw_line_segment(
             window_state,
-            state_data,
+            state_data.clone(),
             previous,
             current,
             shape.color,
@@ -135,7 +135,7 @@ fn draw_line_shape(
     let end = rotate_point([half_length, 0.0], shape.rotation, shape.position);
     draw_line_segment(
         window_state,
-        state_data,
+        state_data.clone(),
         start,
         end,
         shape.color,
@@ -160,7 +160,7 @@ fn draw_line_segment(
 
     draw_quad_rotated_internal(
         window_state,
-        state_data,
+        state_data.clone(),
         (start[0] + end[0]) * 0.5,
         (start[1] + end[1]) * 0.5,
         length,

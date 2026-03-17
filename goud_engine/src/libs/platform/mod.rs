@@ -30,13 +30,59 @@
 //! let mut platform = GlfwPlatform::new(&config)?;
 //! ```
 
-#[cfg(feature = "native")]
+#[cfg(feature = "legacy-glfw-opengl")]
 pub mod glfw_platform;
+#[cfg(feature = "native")]
+pub mod native_runtime;
 #[cfg(all(feature = "wgpu-backend", feature = "native"))]
 pub mod winit_platform;
 
 #[cfg(feature = "native")]
 use crate::core::input_manager::InputManager;
+
+/// Native rendering backend selection.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[repr(u32)]
+pub enum RenderBackendKind {
+    /// Cross-platform wgpu backend.
+    #[default]
+    Wgpu = 0,
+    /// Legacy OpenGL backend.
+    OpenGlLegacy = 1,
+}
+
+impl RenderBackendKind {
+    /// Converts an FFI/backend code into a render backend.
+    pub fn from_u32(value: u32) -> Option<Self> {
+        match value {
+            0 => Some(Self::Wgpu),
+            1 => Some(Self::OpenGlLegacy),
+            _ => None,
+        }
+    }
+}
+
+/// Native window backend selection.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[repr(u32)]
+pub enum WindowBackendKind {
+    /// winit native windowing path.
+    #[default]
+    Winit = 0,
+    /// Legacy GLFW windowing path.
+    GlfwLegacy = 1,
+}
+
+impl WindowBackendKind {
+    /// Converts an FFI/backend code into a window backend.
+    pub fn from_u32(value: u32) -> Option<Self> {
+        match value {
+            0 => Some(Self::Winit),
+            1 => Some(Self::GlfwLegacy),
+            _ => None,
+        }
+    }
+}
 
 /// Configuration for creating a platform window.
 #[derive(Debug, Clone)]
@@ -106,6 +152,11 @@ pub trait PlatformBackend {
 
     /// Returns the logical window size `(width, height)` in screen coordinates.
     fn get_size(&self) -> (u32, u32);
+
+    /// Requests a logical window resize.
+    ///
+    /// The resize may apply asynchronously after the next event pump.
+    fn request_size(&mut self, width: u32, height: u32) -> bool;
 
     /// Returns the physical framebuffer size `(width, height)` in pixels.
     ///

@@ -16,7 +16,7 @@ impl GoudGame {
     {
         self.initialized = true;
 
-        // Simple game loop (actual implementation would use GLFW/window events)
+        // Simple game loop (native builds drive this from the window backend)
         let frame_time = if self.config.target_fps > 0 {
             1.0 / self.config.target_fps as f32
         } else {

@@ -1291,6 +1291,15 @@
       "return_type": "bool",
       "is_unsafe": true
     },
+    "goud_engine_config_set_render_backend": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "backend: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
     "goud_engine_config_set_size": {
       "source_file": "ffi/engine_config.rs",
       "params": [
@@ -1328,12 +1337,21 @@
       "return_type": "bool",
       "is_unsafe": true
     },
-    "goud_engine_create": {
+    "goud_engine_config_set_window_backend": {
       "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "backend: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_engine_create": {
+      "source_file": "ffi/engine_config/native.rs",
       "params": [
         "handle: EngineConfigHandle"
       ],
-      "return_type": "crate::ffi::context::GoudContextId",
+      "return_type": "GoudContextId",
       "is_unsafe": true
     },
     "goud_entity_clone": {
@@ -4440,6 +4458,16 @@
       "return_type": "()",
       "is_unsafe": false
     },
+    "goud_window_set_size": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "width: u32",
+        "height: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
     "goud_window_should_close": {
       "source_file": "ffi/window/properties.rs",
       "params": [
@@ -4457,5 +4485,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 447
+  "total_count": 450
 }

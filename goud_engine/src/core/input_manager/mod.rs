@@ -9,11 +9,11 @@
 //!
 //! # Architecture
 //!
-//! The InputManager sits between the platform layer (GLFW) and the game systems:
+//! The InputManager sits between the native platform event pump and game systems:
 //!
 //! ```text
-//! GLFW Events → InputHandler → InputManager → Game Systems
-//!                (platform)     (ECS resource)   (queries)
+//! Platform Events → InputHandler → InputManager → Game Systems
+//!                   (platform)     (ECS resource)   (queries)
 //! ```
 //!
 //! # Usage
@@ -21,18 +21,18 @@
 //! ## Raw Input Queries
 //!
 //! ```ignore
+//! use goud_engine::core::providers::input_types::KeyCode;
 //! use goud_engine::ecs::{InputManager, Resource};
-//! use glfw::Key;
 //!
 //! // In your setup system:
 //! world.insert_resource(InputManager::new());
 //!
 //! // In a system:
 //! fn player_movement_system(input: Res<InputManager>) {
-//!     if input.key_pressed(Key::W) {
+//!     if input.key_pressed(KeyCode::W) {
 //!         // Move forward continuously while held
 //!     }
-//!     if input.key_just_pressed(Key::Space) {
+//!     if input.key_just_pressed(KeyCode::Space) {
 //!         // Jump only once per press
 //!     }
 //! }
@@ -43,14 +43,14 @@
 //! Action mapping allows semantic names for input, supporting multiple bindings:
 //!
 //! ```ignore
+//! use goud_engine::core::providers::input_types::KeyCode;
 //! use goud_engine::ecs::{InputManager, InputBinding};
-//! use glfw::Key;
 //!
 //! let mut input = InputManager::new();
 //!
 //! // Map "Jump" to Space, W key, or gamepad button 0
-//! input.map_action("Jump", InputBinding::Key(Key::Space));
-//! input.map_action("Jump", InputBinding::Key(Key::W));
+//! input.map_action("Jump", InputBinding::Key(KeyCode::Space));
+//! input.map_action("Jump", InputBinding::Key(KeyCode::W));
 //! input.map_action("Jump", InputBinding::GamepadButton { gamepad_id: 0, button: 0 });
 //!
 //! // Query action state (returns true if ANY binding is pressed)

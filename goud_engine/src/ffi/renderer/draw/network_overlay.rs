@@ -37,13 +37,18 @@ pub(crate) fn render_network_debug_overlay(
     let (_, fb_height) = window_state.get_framebuffer_size();
 
     let panel_height = PANEL_MARGIN + (lines.len() as f32 * LINE_HEIGHT) + 6.0;
-    draw_panel_background(window_state, state_data, fb_height as f32, panel_height)?;
+    draw_panel_background(
+        window_state,
+        state_data.clone(),
+        fb_height as f32,
+        panel_height,
+    )?;
 
     let mut y = fb_height as f32 - PANEL_MARGIN - 18.0;
     for line in &lines {
         draw_embedded_text(
             window_state,
-            state_data,
+            state_data.clone(),
             PANEL_MARGIN + 8.0,
             y,
             line,
@@ -63,7 +68,7 @@ fn draw_panel_background(
 ) -> Result<(), GoudError> {
     draw_quad_rotated_internal(
         window_state,
-        state_data,
+        state_data.clone(),
         PANEL_MARGIN + PANEL_WIDTH * 0.5,
         fb_height - PANEL_MARGIN - panel_height * 0.5,
         PANEL_WIDTH,
@@ -88,7 +93,7 @@ fn draw_embedded_text(
     for ch in text.chars() {
         draw_embedded_char(
             window_state,
-            state_data,
+            state_data.clone(),
             x,
             y,
             ch.to_ascii_uppercase(),
@@ -116,7 +121,7 @@ fn draw_embedded_char(
 
             draw_quad_rotated_internal(
                 window_state,
-                state_data,
+                state_data.clone(),
                 x + (col as f32 * CHAR_SCALE) + (CHAR_SCALE * 0.5),
                 y - (row_index as f32 * CHAR_SCALE) - (CHAR_SCALE * 0.5),
                 CHAR_SCALE,
