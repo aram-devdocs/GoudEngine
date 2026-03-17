@@ -20,6 +20,25 @@ impl RenderBackend for WgpuBackend {
     fn info(&self) -> &BackendInfo {
         &self.info
     }
+
+    fn read_default_framebuffer_rgba8(
+        &mut self,
+        width: u32,
+        height: u32,
+    ) -> Result<Vec<u8>, String> {
+        match self.last_frame_readback.as_ref() {
+            Some((cached_width, cached_height, rgba8))
+                if *cached_width == width && *cached_height == height =>
+            {
+                Ok(rgba8.clone())
+            }
+            Some((cached_width, cached_height, _)) => Err(format!(
+                "framebuffer readback size mismatch: requested {}x{}, last frame was {}x{}",
+                width, height, cached_width, cached_height
+            )),
+            None => Err("no completed wgpu frame is available for readback".to_string()),
+        }
+    }
 }
 
 // ========================================================================
@@ -87,6 +106,20 @@ impl FrameOps for WgpuBackend {
 
         self.build_missing_pipelines(&cmd_keys);
 
+        let readback_width = self.surface_config.width.max(1);
+        let readback_height = self.surface_config.height.max(1);
+        let unpadded_bytes_per_row = readback_width * 4;
+        let padded_bytes_per_row = unpadded_bytes_per_row
+            .div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT)
+            * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+        let readback_buffer_size = padded_bytes_per_row as u64 * readback_height as u64;
+        let readback_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("wgpu-frame-readback"),
+            size: readback_buffer_size,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
@@ -146,6 +179,60 @@ impl FrameOps for WgpuBackend {
                         });
                         pass.set_bind_group(1, &bg, &[]);
                     }
+                } else {
+                    let fallback_texture = self.device.create_texture(&wgpu::TextureDescriptor {
+                        label: Some("wgpu-fallback-texture"),
+                        size: wgpu::Extent3d {
+                            width: 1,
+                            height: 1,
+                            depth_or_array_layers: 1,
+                        },
+                        mip_level_count: 1,
+                        sample_count: 1,
+                        dimension: wgpu::TextureDimension::D2,
+                        format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                        view_formats: &[],
+                    });
+                    let fallback_view =
+                        fallback_texture.create_view(&wgpu::TextureViewDescriptor::default());
+                    let fallback_sampler = self
+                        .device
+                        .create_sampler(&wgpu::SamplerDescriptor::default());
+                    self.queue.write_texture(
+                        wgpu::TexelCopyTextureInfo {
+                            texture: &fallback_texture,
+                            mip_level: 0,
+                            origin: wgpu::Origin3d::ZERO,
+                            aspect: wgpu::TextureAspect::All,
+                        },
+                        &[255, 255, 255, 255],
+                        wgpu::TexelCopyBufferLayout {
+                            offset: 0,
+                            bytes_per_row: Some(4),
+                            rows_per_image: Some(1),
+                        },
+                        wgpu::Extent3d {
+                            width: 1,
+                            height: 1,
+                            depth_or_array_layers: 1,
+                        },
+                    );
+                    let fallback_bg = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                        label: Some("wgpu-fallback-texture-bind-group"),
+                        layout: &self.texture_bind_group_layout,
+                        entries: &[
+                            wgpu::BindGroupEntry {
+                                binding: 0,
+                                resource: wgpu::BindingResource::TextureView(&fallback_view),
+                            },
+                            wgpu::BindGroupEntry {
+                                binding: 1,
+                                resource: wgpu::BindingResource::Sampler(&fallback_sampler),
+                            },
+                        ],
+                    });
+                    pass.set_bind_group(1, &fallback_bg, &[]);
                 }
 
                 if let Some(ib_handle) = cmd.index_buffer {
@@ -181,7 +268,53 @@ impl FrameOps for WgpuBackend {
             }
         }
 
+        encoder.copy_texture_to_buffer(
+            wgpu::TexelCopyTextureInfo {
+                texture: &frame.surface_texture.texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::TexelCopyBufferInfo {
+                buffer: &readback_buffer,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(padded_bytes_per_row),
+                    rows_per_image: Some(readback_height),
+                },
+            },
+            wgpu::Extent3d {
+                width: readback_width,
+                height: readback_height,
+                depth_or_array_layers: 1,
+            },
+        );
+
         self.queue.submit(std::iter::once(encoder.finish()));
+        let buffer_slice = readback_buffer.slice(..);
+        let (tx, rx) = std::sync::mpsc::channel();
+        buffer_slice.map_async(wgpu::MapMode::Read, move |result| {
+            let _ = tx.send(result);
+        });
+        self.device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .map_err(|e| GoudError::InternalError(format!("wgpu readback poll failed: {e}")))?;
+        rx.recv()
+            .map_err(|e| GoudError::InternalError(format!("wgpu readback recv failed: {e}")))?
+            .map_err(|e| GoudError::InternalError(format!("wgpu readback map failed: {e}")))?;
+
+        let mapped = buffer_slice.get_mapped_range();
+        let mut rgba8 = vec![0u8; (readback_width * readback_height * 4) as usize];
+        for row in 0..readback_height as usize {
+            let src_offset = row * padded_bytes_per_row as usize;
+            let dst_offset = row * unpadded_bytes_per_row as usize;
+            let src_end = src_offset + unpadded_bytes_per_row as usize;
+            let dst_end = dst_offset + unpadded_bytes_per_row as usize;
+            rgba8[dst_offset..dst_end].copy_from_slice(&mapped[src_offset..src_end]);
+        }
+        drop(mapped);
+        readback_buffer.unmap();
+        self.last_frame_readback = Some((readback_width, readback_height, rgba8));
         frame.surface_texture.present();
         self.draw_commands.clear();
         Ok(())

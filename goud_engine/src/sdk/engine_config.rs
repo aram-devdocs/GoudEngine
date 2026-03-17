@@ -29,7 +29,7 @@ use crate::core::providers::ProviderRegistryBuilder;
 #[cfg(feature = "rapier2d")]
 use crate::libs::providers::impls::Rapier2DPhysicsProvider;
 use crate::libs::providers::impls::SimplePhysicsProvider;
-use crate::sdk::game_config::GameConfig;
+use crate::sdk::game_config::{GameConfig, RenderBackendKind, WindowBackendKind};
 
 /// Unified engine configuration combining window settings and provider selection.
 ///
@@ -75,6 +75,18 @@ impl EngineConfig {
     /// Enables or disables fullscreen mode.
     pub fn with_fullscreen(mut self, enabled: bool) -> Self {
         self.game_config = self.game_config.with_fullscreen(enabled);
+        self
+    }
+
+    /// Selects the native render backend.
+    pub fn with_render_backend(mut self, backend: RenderBackendKind) -> Self {
+        self.game_config = self.game_config.with_render_backend(backend);
+        self
+    }
+
+    /// Selects the native window backend.
+    pub fn with_window_backend(mut self, backend: WindowBackendKind) -> Self {
+        self.game_config = self.game_config.with_window_backend(backend);
         self
     }
 
@@ -204,6 +216,8 @@ mod tests {
         assert_eq!(game_config.title, "GoudEngine Game");
         assert_eq!(game_config.width, 800);
         assert_eq!(game_config.height, 600);
+        assert_eq!(game_config.render_backend, RenderBackendKind::Wgpu);
+        assert_eq!(game_config.window_backend, WindowBackendKind::Winit);
         assert_eq!(providers.render.name(), "null");
         assert_eq!(providers.physics.name(), "null");
         assert_eq!(providers.audio.name(), "null");
@@ -245,6 +259,8 @@ mod tests {
             .with_size(1920, 1080)
             .with_vsync(false)
             .with_fullscreen(true)
+            .with_render_backend(RenderBackendKind::OpenGlLegacy)
+            .with_window_backend(WindowBackendKind::GlfwLegacy)
             .with_target_fps(144)
             .with_fps_overlay(true)
             .with_physics_debug(true);
@@ -254,6 +270,8 @@ mod tests {
         assert_eq!(gc.height, 1080);
         assert!(!gc.vsync);
         assert!(gc.fullscreen);
+        assert_eq!(gc.render_backend, RenderBackendKind::OpenGlLegacy);
+        assert_eq!(gc.window_backend, WindowBackendKind::GlfwLegacy);
         assert_eq!(gc.target_fps, 144);
         assert!(gc.show_fps_overlay);
         assert!(gc.physics_debug.enabled);

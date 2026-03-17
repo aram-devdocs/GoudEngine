@@ -1,11 +1,11 @@
 use super::*;
 use crate::core::math::{Color, Vec2};
+use crate::core::providers::input_types::MouseButton;
 use crate::ecs::InputManager;
 use crate::ui::{
     resolve_widget_visual, UiComponentVisual, UiImage, UiInteractionState, UiLabel,
     UiRenderCommand, UiSlider, UiStyleOverrides,
 };
-use glfw::MouseButton;
 
 fn quad_commands_for_node(
     commands: &[UiRenderCommand],

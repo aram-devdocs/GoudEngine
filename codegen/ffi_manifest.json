@@ -1291,6 +1291,15 @@
       "return_type": "bool",
       "is_unsafe": true
     },
+    "goud_engine_config_set_render_backend": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "backend: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
     "goud_engine_config_set_size": {
       "source_file": "ffi/engine_config.rs",
       "params": [
@@ -1324,6 +1333,15 @@
       "params": [
         "handle: EngineConfigHandle",
         "enabled: bool"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_engine_config_set_window_backend": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "backend: u32"
       ],
       "return_type": "bool",
       "is_unsafe": true
@@ -4440,6 +4458,16 @@
       "return_type": "()",
       "is_unsafe": false
     },
+    "goud_window_set_size": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "width: u32",
+        "height: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
     "goud_window_should_close": {
       "source_file": "ffi/window/properties.rs",
       "params": [
@@ -4457,5 +4485,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 447
+  "total_count": 450
 }

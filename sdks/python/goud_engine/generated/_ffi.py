@@ -348,6 +348,10 @@ def _setup():
     _lib.goud_engine_config_set_physics_debug.restype = ctypes.c_bool
     _lib.goud_engine_config_set_physics_backend_2d.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
     _lib.goud_engine_config_set_physics_backend_2d.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_render_backend.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_render_backend.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_window_backend.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_window_backend.restype = ctypes.c_bool
     _lib.goud_engine_config_set_debugger.argtypes = [ctypes.c_void_p, ctypes.POINTER(GoudDebuggerConfig)]
     _lib.goud_engine_config_set_debugger.restype = ctypes.c_bool
     _lib.goud_engine_create.argtypes = [ctypes.c_void_p]
@@ -412,6 +416,8 @@ def _setup():
     _lib.goud_window_get_delta_time.restype = ctypes.c_float
     _lib.goud_window_get_size.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32)]
     _lib.goud_window_get_size.restype = ctypes.c_bool
+    _lib.goud_window_set_size.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_window_set_size.restype = ctypes.c_bool
 
     # renderer
     _lib.goud_renderer_begin.argtypes = [GoudContextId]

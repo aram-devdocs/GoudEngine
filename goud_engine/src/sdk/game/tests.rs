@@ -1,12 +1,12 @@
 //! Tests for [`GoudGame`].
 
 use crate::core::math::Vec2;
+use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 use crate::sdk::components::{GlobalTransform2D, Transform2D};
 use crate::sdk::engine_config::EngineConfig;
 use crate::sdk::game::GoudGame;
-use crate::sdk::game_config::GameConfig;
+use crate::sdk::game_config::{GameConfig, RenderBackendKind, WindowBackendKind};
 use crate::ui::{UiAnchor, UiButton, UiComponent, UiImage, UiLabel, UiManager, UiRenderCommand};
-use glfw::{Key, MouseButton};
 
 #[test]
 fn test_goud_game_new() {
@@ -298,6 +298,22 @@ fn test_goud_game_providers_accessible() {
     assert_eq!(providers.physics.name(), "null");
     assert_eq!(providers.audio.name(), "null");
     assert_eq!(providers.input.name(), "null");
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn test_goud_game_with_platform_rejects_mixed_native_backend_pair() {
+    let error = GoudGame::with_platform(
+        GameConfig::default()
+            .with_window_backend(WindowBackendKind::Winit)
+            .with_render_backend(RenderBackendKind::OpenGlLegacy),
+    )
+    .expect_err("mixed native backend pair should fail before window creation");
+
+    assert!(
+        error.to_string().contains("invalid native backend pair"),
+        "unexpected error: {error}"
+    );
 }
 
 #[test]

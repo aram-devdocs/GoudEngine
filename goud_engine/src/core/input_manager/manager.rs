@@ -1,12 +1,11 @@
 //! Core `InputManager` struct: construction, frame update, keyboard, mouse, and clear.
 
-#[cfg(feature = "native")]
-use glfw::{Key, MouseButton};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};
 
 use crate::core::debugger::{self, SyntheticInputEventV1};
 use crate::core::math::Vec2;
+use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 
 use super::types::{BufferedInput, GamepadState, InputBinding};
 
@@ -378,9 +377,9 @@ fn normalized_key_name(key: Key) -> Option<&'static str> {
 
 fn normalized_mouse_button_name(button: MouseButton) -> Option<&'static str> {
     match button {
-        MouseButton::Button1 => Some("left"),
-        MouseButton::Button2 => Some("right"),
-        MouseButton::Button3 => Some("middle"),
+        MouseButton::Left => Some("left"),
+        MouseButton::Right => Some("right"),
+        MouseButton::Middle => Some("middle"),
         _ => None,
     }
 }

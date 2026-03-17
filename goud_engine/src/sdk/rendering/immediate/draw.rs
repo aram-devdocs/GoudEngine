@@ -1,11 +1,10 @@
-use super::{
-    configure_immediate_vertex_layout, create_immediate_render_state, model_matrix, ortho_matrix,
-};
+use super::{create_immediate_render_state, model_matrix, ortho_matrix};
 use crate::assets::loaders::FontAsset;
 use crate::core::math::{Color, Vec2};
 use crate::core::types::TextAlignment;
 use crate::libs::graphics::backend::{
-    BlendFactor, BufferOps, ClearOps, DrawOps, FrameOps, ShaderOps, StateOps, TextureOps,
+    BlendFactor, BufferOps, ClearOps, DrawOps, FrameOps, RenderBackend, ShaderOps, StateOps,
+    TextureOps,
 };
 use crate::rendering::text::{TextBatch, TextLayoutConfig};
 use crate::sdk::GoudGame;
@@ -15,6 +14,7 @@ use crate::sdk::GoudGame;
 impl GoudGame {
     /// Begins a new rendering frame. Call before any drawing operations.
     pub fn begin_render(&mut self) -> bool {
+        let (fb_w, fb_h) = self.get_framebuffer_size();
         let backend = match self.render_backend.as_mut() {
             Some(b) => b,
             None => return false,
@@ -22,11 +22,7 @@ impl GoudGame {
         if backend.begin_frame().is_err() {
             return false;
         }
-        let (fb_w, fb_h) = self.get_framebuffer_size();
-        // SAFETY: OpenGL viewport call is safe when a context is current.
-        unsafe {
-            gl::Viewport(0, 0, fb_w as i32, fb_h as i32);
-        }
+        backend.set_viewport(0, 0, fb_w, fb_h);
         true
     }
 
@@ -132,9 +128,9 @@ impl GoudGame {
         let (fb_w, fb_h) = self.get_framebuffer_size();
         let (win_w, win_h) = self.get_window_size();
 
-        let (shader, vao, u_proj, u_model, u_color, u_use_tex, u_tex, u_uv_off, u_uv_sc) = (
+        let (shader, vertex_layout, u_proj, u_model, u_color, u_use_tex, u_tex, u_uv_off, u_uv_sc) = (
             state.shader,
-            state.vao,
+            state.vertex_layout.clone(),
             state.u_projection,
             state.u_model,
             state.u_color,
@@ -153,18 +149,13 @@ impl GoudGame {
 
         backend.enable_blending();
         backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-        // SAFETY: OpenGL calls require a current context.
-        unsafe {
-            gl::Viewport(0, 0, fb_w as i32, fb_h as i32);
-            gl::BindVertexArray(vao);
-        }
-        // Element array buffer binding is VAO state in OpenGL core profiles.
-        // Bind the VAO first so VBO/IBO attachments land on the correct VAO.
+        backend.set_viewport(0, 0, fb_w, fb_h);
+        backend.bind_default_vertex_array();
         if backend.bind_buffer(vertex_buffer).is_err() || backend.bind_buffer(index_buffer).is_err()
         {
             return false;
         }
-        configure_immediate_vertex_layout();
+        backend.set_vertex_attributes(&vertex_layout);
 
         let projection = ortho_matrix(0.0, win_w as f32, win_h as f32, 0.0);
         let model = model_matrix(x, y, width, height, rotation);
@@ -218,9 +209,9 @@ impl GoudGame {
         let (fb_w, fb_h) = self.get_framebuffer_size();
         let (win_w, win_h) = self.get_window_size();
 
-        let (shader, vao, u_proj, u_model, u_color, u_use_tex) = (
+        let (shader, vertex_layout, u_proj, u_model, u_color, u_use_tex) = (
             state.shader,
-            state.vao,
+            state.vertex_layout.clone(),
             state.u_projection,
             state.u_model,
             state.u_color,
@@ -236,18 +227,13 @@ impl GoudGame {
 
         backend.enable_blending();
         backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-        // SAFETY: OpenGL calls require a current context.
-        unsafe {
-            gl::Viewport(0, 0, fb_w as i32, fb_h as i32);
-            gl::BindVertexArray(vao);
-        }
-        // Element array buffer binding is VAO state in OpenGL core profiles.
-        // Bind the VAO first so VBO/IBO attachments land on the correct VAO.
+        backend.set_viewport(0, 0, fb_w, fb_h);
+        backend.bind_default_vertex_array();
         if backend.bind_buffer(vertex_buffer).is_err() || backend.bind_buffer(index_buffer).is_err()
         {
             return false;
         }
-        configure_immediate_vertex_layout();
+        backend.set_vertex_attributes(&vertex_layout);
 
         let projection = ortho_matrix(0.0, win_w as f32, win_h as f32, 0.0);
         let model = model_matrix(x, y, width, height, 0.0);

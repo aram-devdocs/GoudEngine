@@ -106,7 +106,7 @@ pub extern "C" fn goud_window_poll_events(context_id: GoudContextId) -> f32 {
             Some(window_state) => {
                 // SAFETY: We have exclusive access to InputManager via the raw
                 // pointer obtained above. No other code accesses it concurrently
-                // because GLFW and this module are single-threaded.
+                // because window state access is serialized on the main thread.
                 let input = unsafe { &mut *input_ptr };
                 window_state.poll_events(context_id, input)
             }
@@ -184,6 +184,38 @@ pub unsafe extern "C" fn goud_window_get_size(
             true
         } else {
             false
+        }
+    })
+}
+
+/// Requests a logical window resize.
+///
+/// The resize may apply asynchronously after the next event pump.
+#[no_mangle]
+pub extern "C" fn goud_window_set_size(context_id: GoudContextId, width: u32, height: u32) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+
+    WINDOW_STATES.with(|cell| {
+        let mut states = cell.borrow_mut();
+        let index = context_id.index() as usize;
+        match states.get_mut(index).and_then(|opt| opt.as_mut()) {
+            Some(state) => {
+                if state.platform.request_size(width, height) {
+                    true
+                } else {
+                    set_last_error(GoudError::InvalidState(
+                        "window resize request was rejected".to_string(),
+                    ));
+                    false
+                }
+            }
+            None => {
+                set_last_error(GoudError::InvalidContext);
+                false
+            }
         }
     })
 }

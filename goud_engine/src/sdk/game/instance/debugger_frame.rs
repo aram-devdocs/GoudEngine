@@ -27,7 +27,7 @@ impl GoudGame {
 
     #[cfg(feature = "native")]
     pub(crate) fn apply_synthetic_inputs(&mut self, events: &[SyntheticInputEventV1]) {
-        use glfw::{Key, MouseButton};
+        use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 
         fn parse_key(key: &str) -> Option<Key> {
             match key.to_ascii_lowercase().as_str() {
@@ -49,9 +49,9 @@ impl GoudGame {
 
         fn parse_mouse_button(button: &str) -> Option<MouseButton> {
             match button.to_ascii_lowercase().as_str() {
-                "left" => Some(MouseButton::Button1),
-                "right" => Some(MouseButton::Button2),
-                "middle" => Some(MouseButton::Button3),
+                "left" => Some(MouseButton::Left),
+                "right" => Some(MouseButton::Right),
+                "middle" => Some(MouseButton::Middle),
                 _ => None,
             }
         }

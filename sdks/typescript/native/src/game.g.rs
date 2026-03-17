@@ -2,7 +2,9 @@
 use crate::components::{SpriteData, Transform2DData};
 use crate::entity::Entity;
 use goud_engine::core::providers::input_types::InputCapabilities;
-use goud_engine::core::providers::network_types::{NetworkCapabilities, NetworkSimulationConfig};
+use goud_engine::core::providers::network_types::{
+    NetworkCapabilities, NetworkSimulationConfig,
+};
 use goud_engine::core::providers::types::{
     AudioCapabilities, PhysicsCapabilities, RenderCapabilities,
 };
@@ -24,18 +26,20 @@ use goud_engine::ffi::context::{
     GOUD_INVALID_CONTEXT_ID,
 };
 use goud_engine::ffi::debug::{
+    goud_debugger_capture_frame_json, goud_debugger_get_metrics_trace_json,
     goud_debug_get_fps_stats, goud_debug_set_fps_overlay_corner,
     goud_debug_set_fps_overlay_enabled, goud_debug_set_fps_update_interval,
-    goud_debugger_capture_frame_json, goud_debugger_clear_selected_entity,
-    goud_debugger_get_manifest_json, goud_debugger_get_memory_summary,
-    goud_debugger_get_metrics_trace_json, goud_debugger_get_replay_status_json,
+    goud_debugger_clear_selected_entity, goud_debugger_get_manifest_json,
+    goud_debugger_get_memory_summary, goud_debugger_get_replay_status_json,
     goud_debugger_get_snapshot_json, goud_debugger_inject_key_event,
     goud_debugger_inject_mouse_button, goud_debugger_inject_mouse_position,
-    goud_debugger_inject_scroll, goud_debugger_set_debug_draw_enabled, goud_debugger_set_paused,
-    goud_debugger_set_profiling_enabled, goud_debugger_set_selected_entity,
-    goud_debugger_set_time_scale, goud_debugger_start_recording, goud_debugger_start_replay,
-    goud_debugger_step, goud_debugger_stop_recording_json, goud_debugger_stop_replay,
-    GoudDebuggerStepKind, GoudMemoryCategoryStats, GoudMemorySummary,
+    goud_debugger_inject_scroll, goud_debugger_set_debug_draw_enabled,
+    goud_debugger_set_paused, goud_debugger_set_profiling_enabled,
+    goud_debugger_set_selected_entity, goud_debugger_set_time_scale,
+    goud_debugger_start_recording, goud_debugger_start_replay,
+    goud_debugger_step, goud_debugger_stop_recording_json,
+    goud_debugger_stop_replay, GoudDebuggerStepKind, GoudMemoryCategoryStats,
+    GoudMemorySummary,
 };
 use goud_engine::ffi::entity::{
     goud_entity_count, goud_entity_despawn, goud_entity_is_alive, goud_entity_spawn_batch,
@@ -83,6 +87,7 @@ use goud_engine::ffi::providers::{
     goud_provider_input_capabilities, goud_provider_network_capabilities,
     goud_provider_physics_capabilities, goud_provider_render_capabilities,
 };
+use goud_engine::ffi::types::FfiVec2;
 use goud_engine::ffi::renderer::{
     goud_font_destroy, goud_font_load, goud_renderer_begin, goud_renderer_clear_depth,
     goud_renderer_disable_blending, goud_renderer_disable_depth_test, goud_renderer_draw_quad,
@@ -103,7 +108,11 @@ use goud_engine::ffi::renderer3d::{
 };
 use goud_engine::ffi::scene::goud_scene_set_active;
 use goud_engine::ffi::scene_loading::{goud_scene_load, goud_scene_unload};
-use goud_engine::ffi::types::FfiVec2;
+use goud_engine::ffi::window::{
+    goud_window_clear, goud_window_create, goud_window_destroy, goud_window_get_delta_time,
+    goud_window_get_size, goud_window_poll_events, goud_window_set_should_close,
+    goud_window_should_close, goud_window_swap_buffers,
+};
 use goud_engine::ffi::ui::events::{goud_ui_event_count, goud_ui_event_read};
 use goud_engine::ffi::ui::manager::{
     goud_ui_manager_create, goud_ui_manager_destroy, goud_ui_manager_node_count,
@@ -118,11 +127,6 @@ use goud_engine::ffi::ui::widget::{
     goud_ui_set_slider, goud_ui_set_style, goud_ui_set_widget,
 };
 use goud_engine::ffi::ui::{FfiUiEvent, FfiUiStyle, INVALID_NODE_U64};
-use goud_engine::ffi::window::{
-    goud_window_clear, goud_window_create, goud_window_destroy, goud_window_get_delta_time,
-    goud_window_get_size, goud_window_poll_events, goud_window_set_should_close,
-    goud_window_should_close, goud_window_swap_buffers,
-};
 use goud_engine::sdk::debug_overlay::FpsStats;
 use goud_engine::ui::UiManager as EngineUiManager;
 use napi::bindgen_prelude::*;
@@ -360,7 +364,10 @@ fn map_memory_summary(summary: GoudMemorySummary) -> NapiMemorySummary {
     }
 }
 
-fn read_debugger_json(mut reader: impl FnMut(*mut u8, usize) -> i32, name: &str) -> Result<String> {
+fn read_debugger_json(
+    mut reader: impl FnMut(*mut u8, usize) -> i32,
+    name: &str,
+) -> Result<String> {
     let required = reader(ptr::null_mut(), 0);
     if required == -1 {
         return Err(Error::from_reason(format!("{name} failed")));
@@ -736,9 +743,7 @@ impl GoudGame {
     #[napi]
     pub fn get_debugger_snapshot_json(&self) -> Result<String> {
         read_debugger_json(
-            |buf, buf_len| unsafe {
-                goud_debugger_get_snapshot_json(self.context_id, buf, buf_len)
-            },
+            |buf, buf_len| unsafe { goud_debugger_get_snapshot_json(self.context_id, buf, buf_len) },
             "goud_debugger_get_snapshot_json",
         )
     }
@@ -868,9 +873,7 @@ impl GoudGame {
     #[napi]
     pub fn capture_debugger_frame(&self) -> Result<String> {
         read_debugger_json(
-            |buf, buf_len| unsafe {
-                goud_debugger_capture_frame_json(self.context_id, buf, buf_len)
-            },
+            |buf, buf_len| unsafe { goud_debugger_capture_frame_json(self.context_id, buf, buf_len) },
             "goud_debugger_capture_frame_json",
         )
     }
@@ -1030,12 +1033,7 @@ impl GoudGame {
     }
 
     #[napi]
-    pub fn network_connect_with_peer(
-        &self,
-        protocol: i32,
-        address: String,
-        port: u16,
-    ) -> Result<NapiNetworkConnectResult> {
+    pub fn network_connect_with_peer(&self, protocol: i32, address: String, port: u16) -> Result<NapiNetworkConnectResult> {
         let address_bytes = address.as_bytes();
         let mut handle = 0i64;
         let mut peer_id = 0u64;
@@ -2348,9 +2346,8 @@ impl GoudContext {
     #[napi(constructor)]
     pub fn new(config: Option<NapiContextConfig>) -> Result<Self> {
         let context_id = if let Some(config) = config {
-            let route_label = CString::new(config.debugger.route_label).map_err(|_| {
-                Error::from_reason("Debugger route label contains interior null byte")
-            })?;
+            let route_label = CString::new(config.debugger.route_label)
+                .map_err(|_| Error::from_reason("Debugger route label contains interior null byte"))?;
             let ffi_config = GoudContextConfig {
                 debugger: GoudDebuggerConfig {
                     enabled: config.debugger.enabled,
@@ -2413,12 +2410,7 @@ impl GoudContext {
     }
 
     #[napi]
-    pub fn network_connect_with_peer(
-        &self,
-        protocol: i32,
-        address: String,
-        port: u16,
-    ) -> Result<NapiNetworkConnectResult> {
+    pub fn network_connect_with_peer(&self, protocol: i32, address: String, port: u16) -> Result<NapiNetworkConnectResult> {
         let address_bytes = address.as_bytes();
         let mut handle = 0i64;
         let mut peer_id = 0u64;
@@ -2577,9 +2569,7 @@ impl GoudContext {
     #[napi]
     pub fn get_debugger_snapshot_json(&self) -> Result<String> {
         read_debugger_json(
-            |buf, buf_len| unsafe {
-                goud_debugger_get_snapshot_json(self.context_id, buf, buf_len)
-            },
+            |buf, buf_len| unsafe { goud_debugger_get_snapshot_json(self.context_id, buf, buf_len) },
             "goud_debugger_get_snapshot_json",
         )
     }
@@ -2709,9 +2699,7 @@ impl GoudContext {
     #[napi]
     pub fn capture_debugger_frame(&self) -> Result<String> {
         read_debugger_json(
-            |buf, buf_len| unsafe {
-                goud_debugger_capture_frame_json(self.context_id, buf, buf_len)
-            },
+            |buf, buf_len| unsafe { goud_debugger_capture_frame_json(self.context_id, buf, buf_len) },
             "goud_debugger_capture_frame_json",
         )
     }
@@ -3223,7 +3211,11 @@ impl NativePhysicsWorld2D {
 
     #[napi]
     pub fn set_collider_restitution(&self, handle: f64, restitution: f64) -> i32 {
-        goud_physics_set_collider_restitution(self.context_id, handle as u64, restitution as f32)
+        goud_physics_set_collider_restitution(
+            self.context_id,
+            handle as u64,
+            restitution as f32,
+        )
     }
 
     #[napi]
@@ -3466,7 +3458,11 @@ impl NativePhysicsWorld3D {
 
     #[napi]
     pub fn set_collider_restitution(&self, handle: f64, restitution: f64) -> i32 {
-        goud_physics3d_set_collider_restitution(self.context_id, handle as u64, restitution as f32)
+        goud_physics3d_set_collider_restitution(
+            self.context_id,
+            handle as u64,
+            restitution as f32,
+        )
     }
 
     #[napi]
@@ -3816,39 +3812,31 @@ impl UiManager {
             return -1;
         }
 
-        let font_family = style.font_family.and_then(|v| CString::new(v).ok());
-        let texture_path = style.texture_path.and_then(|v| CString::new(v).ok());
+        let font_family = style
+            .font_family
+            .and_then(|v| CString::new(v).ok());
+        let texture_path = style
+            .texture_path
+            .and_then(|v| CString::new(v).ok());
 
         let ffi_style = FfiUiStyle {
             has_background_color: style.background_color.is_some(),
             background_color: style
                 .background_color
                 .as_ref()
-                .map(|c| {
-                    goud_engine::core::math::Color::new(
-                        c.r as f32, c.g as f32, c.b as f32, c.a as f32,
-                    )
-                })
+                .map(|c| goud_engine::core::math::Color::new(c.r as f32, c.g as f32, c.b as f32, c.a as f32))
                 .unwrap_or(goud_engine::core::math::Color::TRANSPARENT),
             has_foreground_color: style.foreground_color.is_some(),
             foreground_color: style
                 .foreground_color
                 .as_ref()
-                .map(|c| {
-                    goud_engine::core::math::Color::new(
-                        c.r as f32, c.g as f32, c.b as f32, c.a as f32,
-                    )
-                })
+                .map(|c| goud_engine::core::math::Color::new(c.r as f32, c.g as f32, c.b as f32, c.a as f32))
                 .unwrap_or(goud_engine::core::math::Color::TRANSPARENT),
             has_border_color: style.border_color.is_some(),
             border_color: style
                 .border_color
                 .as_ref()
-                .map(|c| {
-                    goud_engine::core::math::Color::new(
-                        c.r as f32, c.g as f32, c.b as f32, c.a as f32,
-                    )
-                })
+                .map(|c| goud_engine::core::math::Color::new(c.r as f32, c.g as f32, c.b as f32, c.a as f32))
                 .unwrap_or(goud_engine::core::math::Color::TRANSPARENT),
             has_border_width: style.border_width.is_some(),
             border_width: style.border_width.unwrap_or(0.0) as f32,
@@ -3954,10 +3942,7 @@ impl UiManager {
         // SAFETY: out pointer references a valid stack value for this call.
         let status = unsafe { goud_ui_event_read(self.ptr, index, &mut event) };
         if status < 0 {
-            return Err(Error::from_reason(format!(
-                "goud_ui_event_read failed with status {}",
-                status
-            )));
+            return Err(Error::from_reason(format!("goud_ui_event_read failed with status {}", status)));
         }
         if status == 0 {
             return Ok(None);

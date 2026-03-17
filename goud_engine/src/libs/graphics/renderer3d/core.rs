@@ -16,7 +16,8 @@ use super::mesh::{
 };
 use super::shaders::{
     resolve_grid_uniforms, resolve_main_uniforms, GridUniforms, MainUniforms, FRAGMENT_SHADER_3D,
-    GRID_FRAGMENT_SHADER, GRID_VERTEX_SHADER, VERTEX_SHADER_3D,
+    FRAGMENT_SHADER_3D_WGSL, GRID_FRAGMENT_SHADER, GRID_FRAGMENT_SHADER_WGSL, GRID_VERTEX_SHADER,
+    GRID_VERTEX_SHADER_WGSL, VERTEX_SHADER_3D, VERTEX_SHADER_3D_WGSL,
 };
 use super::types::{
     Camera3D, FogConfig, GridConfig, Light, Object3D, PrimitiveCreateInfo, PrimitiveType,
@@ -68,13 +69,25 @@ impl Renderer3D {
         window_width: u32,
         window_height: u32,
     ) -> Result<Self, String> {
+        let use_wgpu_shaders = backend.info().name == "wgpu";
+        let (vertex_shader, fragment_shader) = if use_wgpu_shaders {
+            (VERTEX_SHADER_3D_WGSL, FRAGMENT_SHADER_3D_WGSL)
+        } else {
+            (VERTEX_SHADER_3D, FRAGMENT_SHADER_3D)
+        };
+        let (grid_vertex_shader, grid_fragment_shader) = if use_wgpu_shaders {
+            (GRID_VERTEX_SHADER_WGSL, GRID_FRAGMENT_SHADER_WGSL)
+        } else {
+            (GRID_VERTEX_SHADER, GRID_FRAGMENT_SHADER)
+        };
+
         let shader_handle = backend
-            .create_shader(VERTEX_SHADER_3D, FRAGMENT_SHADER_3D)
+            .create_shader(vertex_shader, fragment_shader)
             .map_err(|e| format!("Main 3D shader: {e}"))?;
         let uniforms = resolve_main_uniforms(backend.as_ref(), shader_handle);
 
         let grid_shader_handle = backend
-            .create_shader(GRID_VERTEX_SHADER, GRID_FRAGMENT_SHADER)
+            .create_shader(grid_vertex_shader, grid_fragment_shader)
             .map_err(|e| format!("Grid shader: {e}"))?;
         let grid_uniforms = resolve_grid_uniforms(backend.as_ref(), grid_shader_handle);
 

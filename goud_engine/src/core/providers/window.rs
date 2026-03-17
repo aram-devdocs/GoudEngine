@@ -1,13 +1,13 @@
 //! Window provider trait definition.
 //!
 //! The `WindowProvider` trait abstracts the windowing backend, enabling
-//! runtime selection between GLFW, winit, or null (headless).
+//! runtime selection between native window backends or null (headless).
 //!
 //! # Thread Safety
 //!
-//! `WindowProvider` is intentionally NOT `Send + Sync`. GLFW requires all
-//! window calls on the main thread. The engine enforces this by storing
-//! `WindowProvider` outside `ProviderRegistry`, directly in `GoudGame`.
+//! `WindowProvider` is intentionally NOT `Send + Sync`. Native windowing
+//! backends generally require main-thread access. The engine enforces this by
+//! storing `WindowProvider` outside `ProviderRegistry`, directly in `GoudGame`.
 
 use super::diagnostics::WindowDiagnosticsV1;
 use crate::core::error::GoudResult;
@@ -15,7 +15,7 @@ use crate::core::error::GoudResult;
 /// Trait for windowing backends.
 ///
 /// This trait does NOT extend `Provider` (which requires `Send + Sync`)
-/// because GLFW and similar windowing libraries require main-thread access.
+/// because native windowing libraries require main-thread access.
 /// It includes its own `init()`/`shutdown()` methods matching the
 /// `ProviderLifecycle` contract.
 ///

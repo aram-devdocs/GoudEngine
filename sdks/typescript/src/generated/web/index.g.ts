@@ -1042,6 +1042,16 @@ export class EngineConfig {
     return this;
   }
 
+  /** Selects the native render backend used by the built game */
+  setRenderBackend(_backend: RenderBackendKind): EngineConfig {
+    return this;
+  }
+
+  /** Selects the native window backend used by the built game */
+  setWindowBackend(_backend: WindowBackendKind): EngineConfig {
+    return this;
+  }
+
   /** Configures debugger runtime startup for the created game. */
   setDebugger(debuggerConfig: IDebuggerConfig): EngineConfig {
     (this._config as any).debugger = debuggerConfig;

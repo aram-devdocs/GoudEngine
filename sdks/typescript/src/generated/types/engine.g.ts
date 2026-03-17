@@ -153,6 +153,8 @@ export interface IGoudGame {
   shouldClose(): boolean;
   /** Signals the window to close */
   close(): void;
+  /** Requests a logical resize on the active native window */
+  setWindowSize(width: number, height: number): boolean;
   /** Releases all engine resources */
   destroy(): void;
   /** Starts a new render frame with the given clear color */
@@ -561,6 +563,10 @@ export interface IEngineConfig {
   setPhysicsDebug(enabled: boolean): IEngineConfig;
   /** Selects the 2D physics backend used by the built game */
   setPhysicsBackend2D(backend: PhysicsBackend2D): IEngineConfig;
+  /** Selects the native render backend used by the built game */
+  setRenderBackend(backend: RenderBackendKind): IEngineConfig;
+  /** Selects the native window backend used by the built game */
+  setWindowBackend(backend: WindowBackendKind): IEngineConfig;
   /** Configures debugger runtime startup for the created game. */
   setDebugger(debuggerConfig: IDebuggerConfig): IEngineConfig;
   /** Consumes the config and creates a windowed GoudGame instance */

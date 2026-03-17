@@ -1,30 +1,27 @@
 //! Shared helper utilities for the input FFI layer.
 
+use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 use crate::ecs::InputManager;
 use crate::ffi::context::{get_context_registry, GoudContextId};
-use glfw::{Key, MouseButton};
 
 use super::codes::{GoudKeyCode, GoudMouseButton};
 
-/// Converts an FFI key code to a GLFW Key.
+/// Converts an FFI key code to a platform-neutral key code.
 pub(super) fn key_from_code(code: GoudKeyCode) -> Key {
-    // GLFW Key enum uses the same values as the raw key codes
-    // SAFETY: GoudKeyCode values are defined to match GLFW key discriminants exactly.
+    // SAFETY: GoudKeyCode values are defined to match the platform-neutral key
+    // discriminants used by the engine's input contract.
     unsafe { std::mem::transmute(code) }
 }
 
-/// Converts an FFI mouse button code to a GLFW MouseButton.
+/// Converts an FFI mouse button code to a platform-neutral mouse button.
 pub(super) fn mouse_button_from_code(code: GoudMouseButton) -> MouseButton {
     match code {
-        0 => MouseButton::Button1,
-        1 => MouseButton::Button2,
-        2 => MouseButton::Button3,
+        0 => MouseButton::Left,
+        1 => MouseButton::Right,
+        2 => MouseButton::Middle,
         3 => MouseButton::Button4,
         4 => MouseButton::Button5,
-        5 => MouseButton::Button6,
-        6 => MouseButton::Button7,
-        7 => MouseButton::Button8,
-        _ => MouseButton::Button1, // Default to left button
+        _ => MouseButton::Left,
     }
 }
 

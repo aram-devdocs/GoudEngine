@@ -23,12 +23,14 @@
 
 pub mod blend;
 pub mod capabilities;
-pub mod null;
 #[cfg(feature = "native")]
+pub mod native_backend;
+pub mod null;
+#[cfg(feature = "legacy-glfw-opengl")]
 pub mod opengl;
 pub mod render_backend;
 pub mod types;
-#[cfg(feature = "wgpu-backend")]
+#[cfg(all(feature = "native", feature = "wgpu-backend"))]
 pub mod wgpu_backend;
 
 #[cfg(test)]

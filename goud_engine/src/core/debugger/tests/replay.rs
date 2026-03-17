@@ -8,7 +8,7 @@ use super::super::{
 use crate::core::context_id::GoudContextId;
 use crate::core::input_manager::InputManager;
 use crate::core::math::Vec2;
-use glfw::Key;
+use crate::core::providers::input_types::KeyCode as Key;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::fs;

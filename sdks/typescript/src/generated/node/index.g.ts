@@ -150,6 +150,11 @@ export class GoudGame implements IGoudGame {
     this.native.close();
   }
 
+  /** Requests a logical resize on the active native window */
+  setWindowSize(width: number, height: number): boolean {
+    return (this.native as any).setWindowSize(width, height);
+  }
+
   /** Releases all engine resources */
   destroy(): void {
     this.native.destroy();
@@ -1625,6 +1630,18 @@ export class EngineConfig implements IEngineConfig {
   /** Selects the 2D physics backend used by the built game */
   setPhysicsBackend2D(backend: PhysicsBackend2D): EngineConfig {
     this.native.setPhysicsBackend2D(backend);
+    return this;
+  }
+
+  /** Selects the native render backend used by the built game */
+  setRenderBackend(backend: RenderBackendKind): EngineConfig {
+    this.native.setRenderBackend(backend);
+    return this;
+  }
+
+  /** Selects the native window backend used by the built game */
+  setWindowBackend(backend: WindowBackendKind): EngineConfig {
+    this.native.setWindowBackend(backend);
     return this;
   }
 

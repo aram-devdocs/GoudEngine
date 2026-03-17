@@ -10,7 +10,7 @@
 
 use super::GoudGame;
 #[cfg(feature = "native")]
-use crate::libs::graphics::backend::opengl::OpenGLBackend;
+use crate::libs::graphics::backend::native_backend::SharedNativeRenderBackend;
 use crate::libs::graphics::renderer3d::{
     FogConfig, GridConfig, Light, LightType, PrimitiveCreateInfo, PrimitiveType, SkyboxConfig,
     TextureManagerTrait,
@@ -22,17 +22,13 @@ const INVALID_OBJECT: u32 = u32::MAX;
 
 #[cfg(feature = "native")]
 struct BackendTextureBridge {
-    backend: *mut OpenGLBackend,
+    backend: SharedNativeRenderBackend,
 }
 
 #[cfg(feature = "native")]
 impl TextureManagerTrait for BackendTextureBridge {
     fn bind_texture(&self, texture_id: u32, slot: u32) {
-        // SAFETY: The bridge is created from a live mutable backend reference in
-        // `GoudGame::render()` and is used only for the duration of that call.
-        unsafe {
-            let _ = (*self.backend).bind_texture_by_index(texture_id, slot);
-        }
+        let _ = self.backend.bind_texture_by_index(texture_id, slot);
     }
 }
 
@@ -319,7 +315,7 @@ impl GoudGame {
         match (&mut self.renderer_3d, &mut self.render_backend) {
             (Some(renderer), Some(backend)) => {
                 let texture_bridge = BackendTextureBridge {
-                    backend: backend as *mut OpenGLBackend,
+                    backend: backend.clone(),
                 };
                 renderer.render(Some(&texture_bridge));
                 true

@@ -1,7 +1,6 @@
-use glfw::MouseButton;
-
 use crate::core::input_manager::{InputBinding, InputManager};
 use crate::core::math::Vec2;
+use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 
 #[test]
 fn test_mouse_button_pressed() {
@@ -118,8 +117,6 @@ fn test_input_binding_mouse_button() {
 
 #[test]
 fn test_input_binding_display() {
-    use glfw::Key;
-
     let key_binding = InputBinding::Key(Key::Space);
     let mouse_binding = InputBinding::MouseButton(MouseButton::Button1);
     let gamepad_binding = InputBinding::GamepadButton {
@@ -140,8 +137,6 @@ fn test_input_binding_display() {
 
 #[test]
 fn test_clear() {
-    use glfw::Key;
-
     let mut input = InputManager::new();
 
     // Set various inputs

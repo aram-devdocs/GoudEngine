@@ -193,13 +193,13 @@ pub unsafe extern "C" fn goud_ui_events_read(
 mod tests {
     use super::*;
     use crate::core::math::Vec2;
+    use crate::core::providers::input_types::MouseButton;
     use crate::ecs::InputManager;
     use crate::ffi::ui::manager::{
         goud_ui_manager_create, goud_ui_manager_destroy, goud_ui_manager_update,
     };
     use crate::ffi::ui::node::goud_ui_create_node;
     use crate::ui::{UiAnchor, UiButton, UiComponent};
-    use glfw::MouseButton;
 
     extern "C" fn collect_event(
         node_id: u64,

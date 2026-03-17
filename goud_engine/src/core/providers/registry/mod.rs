@@ -21,7 +21,7 @@ use crate::core::error::GoudResult;
 ///
 /// Each slot holds a boxed trait object for the corresponding subsystem.
 /// `WindowProvider` is intentionally excluded because it is `!Send + !Sync`
-/// (GLFW requires main-thread access) and is stored separately in `GoudGame`.
+/// and requires main-thread access, so it is stored separately in `GoudGame`.
 ///
 /// All providers default to their null (no-op) implementation, making it
 /// safe to construct a `ProviderRegistry` without configuring any backends.
@@ -34,7 +34,7 @@ pub struct ProviderRegistry {
     pub physics3d: Box<dyn PhysicsProvider3D>,
     /// The audio backend (e.g., Rodio, null).
     pub audio: Box<dyn AudioProvider>,
-    /// The input backend (e.g., GLFW input, null).
+    /// The input backend (e.g., native input, null).
     pub input: Box<dyn InputProvider>,
     /// The network backend (e.g., UDP, WebSocket, null). Optional because
     /// most single-player games do not need networking.

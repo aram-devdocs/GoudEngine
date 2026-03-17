@@ -8,15 +8,13 @@
 //!
 //! Window operations are integrated into the context system. When you create a
 //! windowed context, it includes:
-//! - A [`GlfwPlatform`](crate::libs::platform::glfw_platform::GlfwPlatform)
-//!   backend (window + input polling)
-//! - An InputManager (as an ECS resource)
-//! - An OpenGL rendering backend
+//! - A native window backend (default `winit`, optional legacy GLFW)
+//! - An `InputManager` ECS resource
+//! - A native rendering backend (default `wgpu`, optional legacy OpenGL)
 //!
-//! The platform-specific code lives in
-//! [`GlfwPlatform`](crate::libs::platform::glfw_platform::GlfwPlatform); this
-//! module handles
-//! FFI marshalling and context integration.
+//! The concrete platform and render backend selection lives behind the native
+//! runtime abstraction. This module only handles FFI marshalling and context
+//! integration.
 //!
 //! ## Example Usage (C#)
 //!
@@ -63,5 +61,6 @@ pub use state::{
 pub use lifecycle::{goud_window_create, goud_window_destroy};
 pub use properties::{
     goud_window_clear, goud_window_get_delta_time, goud_window_get_size, goud_window_poll_events,
-    goud_window_set_should_close, goud_window_should_close, goud_window_swap_buffers,
+    goud_window_set_should_close, goud_window_set_size, goud_window_should_close,
+    goud_window_swap_buffers,
 };

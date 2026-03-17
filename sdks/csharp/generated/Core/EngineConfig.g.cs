@@ -81,6 +81,22 @@ namespace GoudEngine
             return this;
         }
 
+        /// <summary>Selects the native render backend used by the built game</summary>
+        public EngineConfig SetRenderBackend(RenderBackendKind backend)
+        {
+            if (_handle == IntPtr.Zero) throw new ObjectDisposedException("EngineConfig");
+            NativeMethods.goud_engine_config_set_render_backend(_handle, (uint)backend);
+            return this;
+        }
+
+        /// <summary>Selects the native window backend used by the built game</summary>
+        public EngineConfig SetWindowBackend(WindowBackendKind backend)
+        {
+            if (_handle == IntPtr.Zero) throw new ObjectDisposedException("EngineConfig");
+            NativeMethods.goud_engine_config_set_window_backend(_handle, (uint)backend);
+            return this;
+        }
+
         /// <summary>Configures debugger runtime startup for the created game.</summary>
         public EngineConfig SetDebugger(DebuggerConfig debugger)
         {

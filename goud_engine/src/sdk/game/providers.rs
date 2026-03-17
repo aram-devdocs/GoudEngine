@@ -98,7 +98,7 @@ impl GoudGame {
     #[cfg(all(debug_assertions, feature = "native"))]
     pub fn check_hot_swap_shortcut(&mut self) -> bool {
         use crate::core::providers::impls::NullRenderProvider;
-        use glfw::Key;
+        use crate::core::providers::input_types::KeyCode as Key;
 
         if !self.input_manager.key_just_pressed(Key::F5) {
             return false;

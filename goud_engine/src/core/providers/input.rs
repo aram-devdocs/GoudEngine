@@ -1,7 +1,8 @@
 //! Input provider trait definition.
 //!
 //! The `InputProvider` trait abstracts input handling, enabling runtime
-//! selection between GLFW-based input, synthetic test input, or null (no-op).
+//! selection between native input backends, synthetic test input, or null
+//! (no-op).
 //!
 //! Separated from `WindowProvider` because input has a different update
 //! cadence and can be mocked without a real window (e.g., test harnesses
@@ -17,8 +18,8 @@ use crate::core::error::GoudResult;
 /// Trait for input backends.
 ///
 /// Uses platform-independent enum types defined in `types.rs` rather than
-/// GLFW-specific types, allowing input providers to work without a windowing
-/// dependency.
+/// backend-specific symbols, allowing input providers to work without a
+/// concrete windowing dependency.
 ///
 /// The trait is object-safe and stored as `Box<dyn InputProvider>`.
 pub trait InputProvider: Provider {

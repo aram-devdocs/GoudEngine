@@ -3,7 +3,6 @@
 use crate::core::error::GoudError;
 use crate::ffi::context::GoudContextId;
 use crate::ffi::window::{with_window_state, WindowState};
-use crate::libs::graphics::backend::opengl::OpenGLBackend;
 use crate::libs::graphics::renderer3d::Renderer3D;
 use std::collections::HashMap;
 
@@ -28,10 +27,9 @@ pub(super) fn ensure_renderer3d_state(context_id: GoudContextId) -> Result<(), G
         with_window_state(context_id, |ws: &mut WindowState| ws.get_framebuffer_size())
             .ok_or(GoudError::InvalidContext)?;
 
-    // Create backend and renderer
     let backend = Box::new(
-        OpenGLBackend::new()
-            .map_err(|e| GoudError::InitializationFailed(format!("OpenGL backend: {e}")))?,
+        with_window_state(context_id, |ws: &mut WindowState| ws.backend.clone())
+            .ok_or(GoudError::InvalidContext)?,
     );
     let renderer =
         Renderer3D::new(backend, width, height).map_err(GoudError::InitializationFailed)?;

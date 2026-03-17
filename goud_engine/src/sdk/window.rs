@@ -7,7 +7,7 @@
 //!
 //! # Availability
 //!
-//! This module requires the `native` feature (desktop platform with GLFW).
+//! This module requires the `native` feature (desktop windowing/runtime support).
 //! Window methods are only available when GoudGame has been initialized with
 //! a platform backend (i.e., when running on desktop, not in headless/test mode).
 //!
@@ -30,7 +30,7 @@
 use super::GoudGame;
 use crate::context_registry::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::core::error::{set_last_error, GoudError, GoudResult};
-use crate::libs::graphics::backend::{ClearOps, StateOps};
+use crate::libs::graphics::backend::{ClearOps, RenderBackend};
 
 // =============================================================================
 // Window Lifecycle (static functions for FFI context creation/destruction)
@@ -79,7 +79,7 @@ impl Window {
 
     /// Destroys a windowed context and releases all resources.
     ///
-    /// This destroys the window, OpenGL context, and ECS world.
+    /// This destroys the native window, render backend state, and ECS world.
     ///
     /// Returns `true` on success, `false` on error.
     pub fn destroy(context_id: GoudContextId) -> bool {
@@ -148,8 +148,8 @@ impl GoudGame {
 
     /// Polls platform events and advances input state for the new frame.
     ///
-    /// This processes all pending window/input events, syncs the OpenGL
-    /// viewport on window resize, and returns the delta time (seconds since
+    /// This processes all pending window/input events, syncs the active render
+    /// surface on window resize, and returns the delta time (seconds since
     /// last call). Must be called once per frame before querying input.
     ///
     /// # Errors
@@ -166,8 +166,8 @@ impl GoudGame {
         };
 
         // Sync the render backend viewport to the current framebuffer size.
-        if let Some(backend) = &mut self.render_backend {
-            backend.set_viewport(0, 0, fb_size.0, fb_size.1);
+        if let Some(backend) = &self.render_backend {
+            backend.resize_surface(fb_size.0, fb_size.1);
         }
 
         // Keep capture dimensions in sync with the current framebuffer size.
@@ -270,6 +270,35 @@ impl GoudGame {
             None => (self.config.width, self.config.height),
         }
     }
+
+    /// Requests a logical window resize on the active native platform.
+    ///
+    /// The resize may apply asynchronously after the next event pump.
+    pub fn set_window_size(&mut self, width: u32, height: u32) -> GoudResult<()> {
+        match &mut self.platform {
+            Some(platform) => {
+                if platform.request_size(width, height) {
+                    Ok(())
+                } else {
+                    Err(GoudError::InvalidState(
+                        "window resize request was rejected".to_string(),
+                    ))
+                }
+            }
+            None => Err(GoudError::NotInitialized),
+        }
+    }
+
+    /// Reads the current default framebuffer as RGBA8 bytes.
+    pub fn read_default_framebuffer_rgba8(&mut self) -> GoudResult<Vec<u8>> {
+        let (width, height) = self.get_framebuffer_size();
+        match &mut self.render_backend {
+            Some(backend) => backend
+                .read_default_framebuffer_rgba8(width, height)
+                .map_err(GoudError::InvalidState),
+            None => Err(GoudError::NotInitialized),
+        }
+    }
 }
 
 // =============================================================================
@@ -340,6 +369,18 @@ mod tests {
         let game = GoudGame::new(GameConfig::new("Test", 1920, 1080)).unwrap();
         // No platform => falls back to config size
         assert_eq!(game.get_framebuffer_size(), (1920, 1080));
+    }
+
+    #[test]
+    fn test_set_window_size_headless_returns_error() {
+        let mut game = GoudGame::new(GameConfig::default()).unwrap();
+        assert!(game.set_window_size(640, 480).is_err());
+    }
+
+    #[test]
+    fn test_read_default_framebuffer_rgba8_headless_returns_error() {
+        let mut game = GoudGame::new(GameConfig::default()).unwrap();
+        assert!(game.read_default_framebuffer_rgba8().is_err());
     }
 
     #[test]

@@ -1,6 +1,5 @@
-use glfw::{Key, MouseButton};
-
 use crate::core::math::Vec2;
+use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 use crate::ecs::InputManager;
 
 use super::UiManager;

@@ -102,7 +102,9 @@ pub use context::{Context, ContextConfig};
 pub use engine_config::EngineConfig;
 pub use entity_builder::EntityBuilder;
 pub use game::GoudGame;
-pub use game_config::{GameConfig, GameContext};
+pub use game_config::{GameConfig, GameContext, RenderBackendKind, WindowBackendKind};
+#[cfg(feature = "native")]
+pub use rendering::Renderer2D;
 pub use scene::{SceneId, SceneManager};
 
 // Re-export components module contents at sdk level for convenience
@@ -151,9 +153,12 @@ pub mod prelude {
     pub use crate::ecs::{Component, Entity, World};
 
     // SDK types
+    #[cfg(feature = "native")]
+    pub use super::Renderer2D;
     pub use super::{
         Context, ContextConfig, DebuggerConfig, EngineConfig, EntityBuilder, GameConfig,
-        GameContext, GoudError, GoudGame, GoudResult, SceneId, SceneManager,
+        GameContext, GoudError, GoudGame, GoudResult, RenderBackendKind, SceneId, SceneManager,
+        WindowBackendKind,
     };
 
     // Components - explicitly list to avoid shadowing

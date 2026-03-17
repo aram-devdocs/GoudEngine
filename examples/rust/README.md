@@ -8,6 +8,9 @@ Rust examples are standalone Cargo packages in the workspace.
 | `sandbox/` | Interactive parity sandbox using the shared sandbox asset pack | `cargo run -p sandbox` |
 | `feature_lab/` | Headless Rust SDK smoke example for scenes, ECS, animation, input, and headless fallbacks | `cargo run -p feature-lab` |
 
+Windowed examples default to `winit + wgpu`.
+Set `GOUD_NATIVE_BACKEND=legacy` to request the explicit `glfw + OpenGL` fallback path.
+
 ## Debugger Attach Reference
 
 Rust examples follow the same shared debugger contract as every other desktop SDK.

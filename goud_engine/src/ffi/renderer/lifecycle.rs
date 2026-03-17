@@ -76,12 +76,8 @@ pub extern "C" fn goud_renderer_begin(context_id: GoudContextId) -> bool {
             return false;
         }
 
-        // Set viewport to framebuffer size (handles HiDPI/Retina displays)
         let (fb_width, fb_height) = state.get_framebuffer_size();
-        // SAFETY: gl::Viewport is always safe to call with valid integer dimensions.
-        unsafe {
-            gl::Viewport(0, 0, fb_width as i32, fb_height as i32);
-        }
+        state.backend_mut().set_viewport(0, 0, fb_width, fb_height);
 
         true
     })

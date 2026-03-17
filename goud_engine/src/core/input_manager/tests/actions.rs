@@ -1,4 +1,4 @@
-use glfw::{Key, MouseButton};
+use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 
 use crate::core::input_manager::{InputBinding, InputManager};
 

@@ -57,6 +57,7 @@ pub struct WgpuBackend {
 
     depth_texture: wgpu::Texture,
     depth_view: wgpu::TextureView,
+    last_frame_readback: Option<(u32, u32, Vec<u8>)>,
 
     clear_color: wgpu::Color,
     needs_clear: bool,

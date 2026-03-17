@@ -83,6 +83,10 @@ impl WgpuBackend {
 
     /// Writes bytes into the staging buffer of the currently bound shader.
     pub(super) fn write_uniform(&mut self, location: i32, data: &[u8]) {
+        if location < 0 {
+            return;
+        }
+
         let offset = (location as usize) * 4;
         if let Some(shader_handle) = self.bound_shader {
             if let Some(meta) = self.shaders.get_mut(&shader_handle) {

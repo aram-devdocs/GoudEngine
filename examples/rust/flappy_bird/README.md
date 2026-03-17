@@ -8,6 +8,12 @@ A complete Flappy Bird clone using GoudEngine's Rust SDK. Game constants and beh
 cargo run -p flappy-bird
 ```
 
+To force the legacy native path instead of the default `winit + wgpu` stack:
+
+```bash
+GOUD_NATIVE_BACKEND=legacy cargo run -p flappy-bird
+```
+
 The example must be run from the repository root so that asset paths resolve correctly.
 
 ## Controls

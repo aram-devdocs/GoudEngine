@@ -1,9 +1,7 @@
 //! Gamepad input methods: buttons, analog axes, connection status, and vibration.
 
-#[cfg(feature = "native")]
-use glfw::GamepadAxis;
-
 use crate::core::math::Vec2;
+use crate::core::providers::input_types::GamepadAxis;
 
 use super::manager::InputManager;
 use super::types::{GamepadState, InputBinding};

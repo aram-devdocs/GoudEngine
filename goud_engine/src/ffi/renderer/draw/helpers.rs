@@ -49,7 +49,7 @@ fn extract_state(context_id: GoudContextId) -> Option<ImmediateStateData> {
                 s.shader,
                 s.vertex_buffer,
                 s.index_buffer,
-                s.vao,
+                s.vertex_layout.clone(),
                 s.u_projection,
                 s.u_model,
                 s.u_color,

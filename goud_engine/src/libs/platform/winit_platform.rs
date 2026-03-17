@@ -6,18 +6,17 @@
 //!
 //! # Requirements
 //!
-//! This module requires both `wgpu-backend` and `native` features because the
-//! [`InputManager`] currently depends on `glfw::Key` and `glfw::MouseButton`
-//! types. Key mapping from winit to GLFW types is handled internally.
+//! This module requires both `wgpu-backend` and `native` features. Key mapping
+//! from winit is translated into the engine's platform-neutral input enums.
 //!
 //! [`pump_app_events`]: winit::platform::pump_events::EventLoopExtPumpEvents
 
 use crate::core::input_manager::InputManager;
 use crate::core::math::Vec2;
+use crate::core::providers::input_types::{KeyCode as EngineKey, MouseButton as EngineMouseButton};
 use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::platform::{PlatformBackend, WindowConfig};
 
-use glfw::{Key, MouseButton};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use winit::application::ApplicationHandler;
@@ -141,13 +140,30 @@ impl PlatformBackend for WinitPlatform {
         (self.state.width, self.state.height)
     }
 
+    fn request_size(&mut self, width: u32, height: u32) -> bool {
+        let Some(window) = self.state.window.as_ref() else {
+            return false;
+        };
+
+        self.state.width = width;
+        self.state.height = height;
+        let _ = window.request_inner_size(LogicalSize::new(width as f64, height as f64));
+        true
+    }
+
     fn get_framebuffer_size(&self) -> (u32, u32) {
         self.state
             .window
             .as_ref()
             .map(|w| {
                 let size = w.inner_size();
-                (size.width, size.height)
+                let scale = w.scale_factor().max(1.0);
+                let expected_width = (self.state.width as f64 * scale).round() as u32;
+                let expected_height = (self.state.height as f64 * scale).round() as u32;
+                (
+                    size.width.max(expected_width.max(1)),
+                    size.height.max(expected_height.max(1)),
+                )
             })
             .unwrap_or((self.state.width, self.state.height))
     }
@@ -193,8 +209,14 @@ impl ApplicationHandler for WinitEventHandler<'_> {
                 self.state.should_close = true;
             }
             WindowEvent::Resized(size) => {
-                self.state.width = size.width;
-                self.state.height = size.height;
+                if let Some(window) = self.state.window.as_ref() {
+                    let logical = size.to_logical::<f64>(window.scale_factor());
+                    self.state.width = logical.width.round().max(1.0) as u32;
+                    self.state.height = logical.height.round().max(1.0) as u32;
+                } else {
+                    self.state.width = size.width;
+                    self.state.height = size.height;
+                }
             }
             WindowEvent::KeyboardInput { event, .. } => {
                 if let PhysicalKey::Code(keycode) = event.physical_key {
@@ -231,126 +253,101 @@ impl ApplicationHandler for WinitEventHandler<'_> {
 }
 
 // =============================================================================
-// Key and mouse button mapping: winit → GLFW
+// Key and mouse button mapping: winit → engine-neutral input types
 // =============================================================================
 
-fn map_mouse_button(button: winit::event::MouseButton) -> Option<MouseButton> {
+fn map_mouse_button(button: winit::event::MouseButton) -> Option<EngineMouseButton> {
     match button {
-        winit::event::MouseButton::Left => Some(MouseButton::Button1),
-        winit::event::MouseButton::Right => Some(MouseButton::Button2),
-        winit::event::MouseButton::Middle => Some(MouseButton::Button3),
-        winit::event::MouseButton::Back => Some(MouseButton::Button4),
-        winit::event::MouseButton::Forward => Some(MouseButton::Button5),
+        winit::event::MouseButton::Left => Some(EngineMouseButton::Left),
+        winit::event::MouseButton::Right => Some(EngineMouseButton::Right),
+        winit::event::MouseButton::Middle => Some(EngineMouseButton::Middle),
+        winit::event::MouseButton::Back => Some(EngineMouseButton::Button4),
+        winit::event::MouseButton::Forward => Some(EngineMouseButton::Button5),
         _ => None,
     }
 }
 
-fn map_keycode(key: KeyCode) -> Option<Key> {
+fn map_keycode(key: KeyCode) -> Option<EngineKey> {
     Some(match key {
-        KeyCode::Space => Key::Space,
-        KeyCode::Quote => Key::Apostrophe,
-        KeyCode::Comma => Key::Comma,
-        KeyCode::Minus => Key::Minus,
-        KeyCode::Period => Key::Period,
-        KeyCode::Slash => Key::Slash,
-        KeyCode::Digit0 => Key::Num0,
-        KeyCode::Digit1 => Key::Num1,
-        KeyCode::Digit2 => Key::Num2,
-        KeyCode::Digit3 => Key::Num3,
-        KeyCode::Digit4 => Key::Num4,
-        KeyCode::Digit5 => Key::Num5,
-        KeyCode::Digit6 => Key::Num6,
-        KeyCode::Digit7 => Key::Num7,
-        KeyCode::Digit8 => Key::Num8,
-        KeyCode::Digit9 => Key::Num9,
-        KeyCode::Semicolon => Key::Semicolon,
-        KeyCode::Equal => Key::Equal,
-        KeyCode::KeyA => Key::A,
-        KeyCode::KeyB => Key::B,
-        KeyCode::KeyC => Key::C,
-        KeyCode::KeyD => Key::D,
-        KeyCode::KeyE => Key::E,
-        KeyCode::KeyF => Key::F,
-        KeyCode::KeyG => Key::G,
-        KeyCode::KeyH => Key::H,
-        KeyCode::KeyI => Key::I,
-        KeyCode::KeyJ => Key::J,
-        KeyCode::KeyK => Key::K,
-        KeyCode::KeyL => Key::L,
-        KeyCode::KeyM => Key::M,
-        KeyCode::KeyN => Key::N,
-        KeyCode::KeyO => Key::O,
-        KeyCode::KeyP => Key::P,
-        KeyCode::KeyQ => Key::Q,
-        KeyCode::KeyR => Key::R,
-        KeyCode::KeyS => Key::S,
-        KeyCode::KeyT => Key::T,
-        KeyCode::KeyU => Key::U,
-        KeyCode::KeyV => Key::V,
-        KeyCode::KeyW => Key::W,
-        KeyCode::KeyX => Key::X,
-        KeyCode::KeyY => Key::Y,
-        KeyCode::KeyZ => Key::Z,
-        KeyCode::BracketLeft => Key::LeftBracket,
-        KeyCode::Backslash => Key::Backslash,
-        KeyCode::BracketRight => Key::RightBracket,
-        KeyCode::Backquote => Key::GraveAccent,
-        KeyCode::Escape => Key::Escape,
-        KeyCode::Enter => Key::Enter,
-        KeyCode::Tab => Key::Tab,
-        KeyCode::Backspace => Key::Backspace,
-        KeyCode::Insert => Key::Insert,
-        KeyCode::Delete => Key::Delete,
-        KeyCode::ArrowRight => Key::Right,
-        KeyCode::ArrowLeft => Key::Left,
-        KeyCode::ArrowDown => Key::Down,
-        KeyCode::ArrowUp => Key::Up,
-        KeyCode::PageUp => Key::PageUp,
-        KeyCode::PageDown => Key::PageDown,
-        KeyCode::Home => Key::Home,
-        KeyCode::End => Key::End,
-        KeyCode::CapsLock => Key::CapsLock,
-        KeyCode::ScrollLock => Key::ScrollLock,
-        KeyCode::NumLock => Key::NumLock,
-        KeyCode::PrintScreen => Key::PrintScreen,
-        KeyCode::Pause => Key::Pause,
-        KeyCode::F1 => Key::F1,
-        KeyCode::F2 => Key::F2,
-        KeyCode::F3 => Key::F3,
-        KeyCode::F4 => Key::F4,
-        KeyCode::F5 => Key::F5,
-        KeyCode::F6 => Key::F6,
-        KeyCode::F7 => Key::F7,
-        KeyCode::F8 => Key::F8,
-        KeyCode::F9 => Key::F9,
-        KeyCode::F10 => Key::F10,
-        KeyCode::F11 => Key::F11,
-        KeyCode::F12 => Key::F12,
-        KeyCode::Numpad0 => Key::Kp0,
-        KeyCode::Numpad1 => Key::Kp1,
-        KeyCode::Numpad2 => Key::Kp2,
-        KeyCode::Numpad3 => Key::Kp3,
-        KeyCode::Numpad4 => Key::Kp4,
-        KeyCode::Numpad5 => Key::Kp5,
-        KeyCode::Numpad6 => Key::Kp6,
-        KeyCode::Numpad7 => Key::Kp7,
-        KeyCode::Numpad8 => Key::Kp8,
-        KeyCode::Numpad9 => Key::Kp9,
-        KeyCode::NumpadDecimal => Key::KpDecimal,
-        KeyCode::NumpadDivide => Key::KpDivide,
-        KeyCode::NumpadMultiply => Key::KpMultiply,
-        KeyCode::NumpadSubtract => Key::KpSubtract,
-        KeyCode::NumpadAdd => Key::KpAdd,
-        KeyCode::NumpadEnter => Key::KpEnter,
-        KeyCode::NumpadEqual => Key::KpEqual,
-        KeyCode::ShiftLeft => Key::LeftShift,
-        KeyCode::ControlLeft => Key::LeftControl,
-        KeyCode::AltLeft => Key::LeftAlt,
-        KeyCode::SuperLeft => Key::LeftSuper,
-        KeyCode::ShiftRight => Key::RightShift,
-        KeyCode::ControlRight => Key::RightControl,
-        KeyCode::AltRight => Key::RightAlt,
-        KeyCode::SuperRight => Key::RightSuper,
+        KeyCode::Space => EngineKey::Space,
+        KeyCode::Quote => EngineKey::Apostrophe,
+        KeyCode::Comma => EngineKey::Comma,
+        KeyCode::Minus => EngineKey::Minus,
+        KeyCode::Period => EngineKey::Period,
+        KeyCode::Slash => EngineKey::Slash,
+        KeyCode::Digit0 => EngineKey::Num0,
+        KeyCode::Digit1 => EngineKey::Num1,
+        KeyCode::Digit2 => EngineKey::Num2,
+        KeyCode::Digit3 => EngineKey::Num3,
+        KeyCode::Digit4 => EngineKey::Num4,
+        KeyCode::Digit5 => EngineKey::Num5,
+        KeyCode::Digit6 => EngineKey::Num6,
+        KeyCode::Digit7 => EngineKey::Num7,
+        KeyCode::Digit8 => EngineKey::Num8,
+        KeyCode::Digit9 => EngineKey::Num9,
+        KeyCode::Semicolon => EngineKey::Semicolon,
+        KeyCode::Equal => EngineKey::Equal,
+        KeyCode::KeyA => EngineKey::A,
+        KeyCode::KeyB => EngineKey::B,
+        KeyCode::KeyC => EngineKey::C,
+        KeyCode::KeyD => EngineKey::D,
+        KeyCode::KeyE => EngineKey::E,
+        KeyCode::KeyF => EngineKey::F,
+        KeyCode::KeyG => EngineKey::G,
+        KeyCode::KeyH => EngineKey::H,
+        KeyCode::KeyI => EngineKey::I,
+        KeyCode::KeyJ => EngineKey::J,
+        KeyCode::KeyK => EngineKey::K,
+        KeyCode::KeyL => EngineKey::L,
+        KeyCode::KeyM => EngineKey::M,
+        KeyCode::KeyN => EngineKey::N,
+        KeyCode::KeyO => EngineKey::O,
+        KeyCode::KeyP => EngineKey::P,
+        KeyCode::KeyQ => EngineKey::Q,
+        KeyCode::KeyR => EngineKey::R,
+        KeyCode::KeyS => EngineKey::S,
+        KeyCode::KeyT => EngineKey::T,
+        KeyCode::KeyU => EngineKey::U,
+        KeyCode::KeyV => EngineKey::V,
+        KeyCode::KeyW => EngineKey::W,
+        KeyCode::KeyX => EngineKey::X,
+        KeyCode::KeyY => EngineKey::Y,
+        KeyCode::KeyZ => EngineKey::Z,
+        KeyCode::Escape => EngineKey::Escape,
+        KeyCode::Enter => EngineKey::Enter,
+        KeyCode::NumpadEnter => EngineKey::KpEnter,
+        KeyCode::Tab => EngineKey::Tab,
+        KeyCode::Backspace => EngineKey::Backspace,
+        KeyCode::Insert => EngineKey::Insert,
+        KeyCode::Delete => EngineKey::Delete,
+        KeyCode::ArrowRight => EngineKey::Right,
+        KeyCode::ArrowLeft => EngineKey::Left,
+        KeyCode::ArrowDown => EngineKey::Down,
+        KeyCode::ArrowUp => EngineKey::Up,
+        KeyCode::PageUp => EngineKey::PageUp,
+        KeyCode::PageDown => EngineKey::PageDown,
+        KeyCode::Home => EngineKey::Home,
+        KeyCode::End => EngineKey::End,
+        KeyCode::F1 => EngineKey::F1,
+        KeyCode::F2 => EngineKey::F2,
+        KeyCode::F3 => EngineKey::F3,
+        KeyCode::F4 => EngineKey::F4,
+        KeyCode::F5 => EngineKey::F5,
+        KeyCode::F6 => EngineKey::F6,
+        KeyCode::F7 => EngineKey::F7,
+        KeyCode::F8 => EngineKey::F8,
+        KeyCode::F9 => EngineKey::F9,
+        KeyCode::F10 => EngineKey::F10,
+        KeyCode::F11 => EngineKey::F11,
+        KeyCode::F12 => EngineKey::F12,
+        KeyCode::ShiftLeft => EngineKey::LeftShift,
+        KeyCode::ControlLeft => EngineKey::LeftControl,
+        KeyCode::AltLeft => EngineKey::LeftAlt,
+        KeyCode::SuperLeft => EngineKey::LeftSuper,
+        KeyCode::ShiftRight => EngineKey::RightShift,
+        KeyCode::ControlRight => EngineKey::RightControl,
+        KeyCode::AltRight => EngineKey::RightAlt,
+        KeyCode::SuperRight => EngineKey::RightSuper,
         _ => return None,
     })
 }

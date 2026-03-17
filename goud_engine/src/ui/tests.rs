@@ -1,10 +1,10 @@
 use crate::core::math::{Rect, Vec2};
+use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 use crate::ecs::InputManager;
 use crate::ui::{
     UiAlign, UiAnchor, UiButton, UiComponent, UiEdges, UiEvent, UiFlexDirection, UiFlexLayout,
     UiJustify, UiLayout, UiManager,
 };
-use glfw::{Key, MouseButton};
 
 mod input;
 mod layout;

@@ -1,12 +1,10 @@
 use crate::core::error::GoudError;
 use crate::ffi::window::WindowState;
 use crate::libs::graphics::backend::{
-    BlendFactor, BufferOps, DrawOps, ShaderOps, StateOps, TextureOps,
+    BlendFactor, BufferOps, DrawOps, RenderBackend, ShaderOps, StateOps, TextureOps,
 };
 
-use super::super::immediate::{
-    configure_immediate_vertex_layout, model_matrix, ortho_matrix, ImmediateStateData,
-};
+use super::super::immediate::{model_matrix, ortho_matrix, ImmediateStateData};
 use super::super::texture::GoudTextureHandle;
 
 /// Internal function to draw a sprite (delegates to `draw_sprite_rect_internal` with full UV).
@@ -69,7 +67,7 @@ pub(crate) fn draw_sprite_rect_internal(
         shader,
         vertex_buffer,
         index_buffer,
-        vao,
+        vertex_layout,
         u_projection,
         u_model,
         u_color,
@@ -82,12 +80,8 @@ pub(crate) fn draw_sprite_rect_internal(
     let (fb_width, fb_height) = window_state.get_framebuffer_size();
     let (win_width, win_height) = window_state.get_size();
 
-    // SAFETY: gl::Viewport is always safe to call with valid dimensions.
-    unsafe {
-        gl::Viewport(0, 0, fb_width as i32, fb_height as i32);
-    }
-
     let backend = window_state.backend_mut();
+    backend.set_viewport(0, 0, fb_width, fb_height);
     let projection = ortho_matrix(0.0, win_width as f32, win_height as f32, 0.0);
     let model = model_matrix(x, y, width, height, rotation);
 
@@ -97,15 +91,10 @@ pub(crate) fn draw_sprite_rect_internal(
 
     backend.enable_blending();
     backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-    // SAFETY: vao was created by ensure_immediate_state and is valid for this context.
-    unsafe {
-        gl::BindVertexArray(vao);
-    }
-    // Element array buffer binding is VAO state in OpenGL core profiles.
-    // Bind the VAO first so VBO/IBO attachments land on the correct VAO.
+    backend.bind_default_vertex_array();
     backend.bind_buffer(vertex_buffer)?;
     backend.bind_buffer(index_buffer)?;
-    configure_immediate_vertex_layout();
+    backend.set_vertex_attributes(&vertex_layout);
 
     backend.bind_shader(shader)?;
     backend.set_uniform_mat4(u_projection, &projection);
@@ -169,7 +158,7 @@ pub(crate) fn draw_quad_rotated_internal(
         shader,
         vertex_buffer,
         index_buffer,
-        vao,
+        vertex_layout,
         u_projection,
         u_model,
         u_color,
@@ -182,26 +171,17 @@ pub(crate) fn draw_quad_rotated_internal(
     let (fb_width, fb_height) = window_state.get_framebuffer_size();
     let (win_width, win_height) = window_state.get_size();
 
-    // SAFETY: gl::Viewport is always safe to call with valid dimensions.
-    unsafe {
-        gl::Viewport(0, 0, fb_width as i32, fb_height as i32);
-    }
-
     let backend = window_state.backend_mut();
+    backend.set_viewport(0, 0, fb_width, fb_height);
     let projection = ortho_matrix(0.0, win_width as f32, win_height as f32, 0.0);
     let model = model_matrix(x, y, width, height, rotation);
 
     backend.enable_blending();
     backend.set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
-    // SAFETY: vao was created by ensure_immediate_state and is valid for this context.
-    unsafe {
-        gl::BindVertexArray(vao);
-    }
-    // Element array buffer binding is VAO state in OpenGL core profiles.
-    // Bind the VAO first so VBO/IBO attachments land on the correct VAO.
+    backend.bind_default_vertex_array();
     backend.bind_buffer(vertex_buffer)?;
     backend.bind_buffer(index_buffer)?;
-    configure_immediate_vertex_layout();
+    backend.set_vertex_attributes(&vertex_layout);
 
     backend.bind_shader(shader)?;
     backend.set_uniform_mat4(u_projection, &projection);

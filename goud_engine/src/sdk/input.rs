@@ -8,13 +8,13 @@
 //!
 //! # Availability
 //!
-//! This module requires the `native` feature (desktop platform with GLFW).
+//! This module requires the `native` feature.
 //!
 //! # Example
 //!
 //! ```rust,ignore
 //! use goud_engine::sdk::GoudGame;
-//! use glfw::Key;
+//! use goud_engine::sdk::input::Key;
 //!
 //! let mut game = GoudGame::new(Default::default()).unwrap();
 //!
@@ -35,8 +35,8 @@ use crate::ecs::InputManager;
 
 // Re-export input types for SDK users so callers do not need to depend
 // on `glfw` or reach into `ecs::` directly.
+pub use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 pub use crate::ecs::InputBinding;
-pub use glfw::{Key, MouseButton};
 
 // =============================================================================
 // Input API (annotated for FFI generation)

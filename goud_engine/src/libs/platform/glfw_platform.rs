@@ -11,6 +11,7 @@
 
 use crate::core::input_manager::InputManager;
 use crate::core::math::Vec2;
+use crate::core::providers::input_types::{KeyCode, MouseButton as EngineMouseButton};
 use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::platform::{PlatformBackend, WindowConfig};
 
@@ -144,13 +145,29 @@ impl PlatformBackend for GlfwPlatform {
         for (_, event) in glfw::flush_messages(&self.events) {
             match event {
                 WindowEvent::Key(key, _scancode, action, _mods) => match action {
-                    Action::Press => input.press_key(key),
-                    Action::Release => input.release_key(key),
+                    Action::Press => {
+                        if let Some(key) = KeyCode::from_u32(key as i32 as u32) {
+                            input.press_key(key);
+                        }
+                    }
+                    Action::Release => {
+                        if let Some(key) = KeyCode::from_u32(key as i32 as u32) {
+                            input.release_key(key);
+                        }
+                    }
                     Action::Repeat => {}
                 },
                 WindowEvent::MouseButton(button, action, _mods) => match action {
-                    Action::Press => input.press_mouse_button(button),
-                    Action::Release => input.release_mouse_button(button),
+                    Action::Press => {
+                        if let Some(button) = EngineMouseButton::from_u32(button as u32) {
+                            input.press_mouse_button(button);
+                        }
+                    }
+                    Action::Release => {
+                        if let Some(button) = EngineMouseButton::from_u32(button as u32) {
+                            input.release_mouse_button(button);
+                        }
+                    }
                     Action::Repeat => {}
                 },
                 WindowEvent::CursorPos(x, y) => {
@@ -179,6 +196,13 @@ impl PlatformBackend for GlfwPlatform {
 
     fn get_size(&self) -> (u32, u32) {
         (self.width, self.height)
+    }
+
+    fn request_size(&mut self, width: u32, height: u32) -> bool {
+        self.width = width;
+        self.height = height;
+        self.window.set_size(width as i32, height as i32);
+        true
     }
 
     fn get_framebuffer_size(&self) -> (u32, u32) {

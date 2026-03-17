@@ -6,7 +6,7 @@ use std::sync::{Arc, Condvar, Mutex};
 #[cfg(feature = "native")]
 use crate::core::debugger;
 #[cfg(feature = "native")]
-use crate::libs::graphics::backend::opengl::OpenGLBackend;
+use crate::libs::graphics::backend::RenderBackend;
 
 use super::GoudGame;
 
@@ -42,7 +42,11 @@ impl GoudGame {
             return;
         }
         let (w, h) = self.get_framebuffer_size();
-        let result = OpenGLBackend::read_framebuffer_standalone(w, h)
+        let result = self
+            .render_backend
+            .clone()
+            .ok_or_else(|| "render backend not initialized".to_string())
+            .and_then(|mut backend| backend.read_default_framebuffer_rgba8(w, h))
             .map(|rgba8| debugger::RawFramebufferReadbackV1 {
                 width: w,
                 height: h,

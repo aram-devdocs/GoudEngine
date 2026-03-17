@@ -1,7 +1,6 @@
-use glfw::{Key, MouseButton};
-
 use crate::core::input_manager::{InputBinding, InputManager};
 use crate::core::math::Vec2;
+use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 
 #[test]
 fn test_new_input_manager() {

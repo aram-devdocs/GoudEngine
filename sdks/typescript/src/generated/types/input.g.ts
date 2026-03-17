@@ -166,6 +166,18 @@ export enum PhysicsBackend2D {
   Simple = 2,
 }
 
+/** Native render backend selection */
+export enum RenderBackendKind {
+  Wgpu = 0,
+  OpenGlLegacy = 1,
+}
+
+/** Native window backend selection */
+export enum WindowBackendKind {
+  Winit = 0,
+  GlfwLegacy = 1,
+}
+
 /** Easing function for tweens */
 export enum EasingType {
   Linear = 0,

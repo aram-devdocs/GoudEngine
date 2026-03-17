@@ -1,27 +1,23 @@
 //! # Window State
 //!
-//! Defines [`WindowState`], which composes a
-//! [`GlfwPlatform`](crate::libs::platform::glfw_platform::GlfwPlatform) and an
-//! [`OpenGLBackend`] into a single per-context object, and the thread-local
+//! Defines [`WindowState`], which composes the selected native platform and
+//! render backend into a single per-context object, and the thread-local
 //! storage helpers used to access it from FFI functions.
 
 use crate::core::debugger::{self, RuntimeRouteId};
 use crate::core::error::GoudError;
 use crate::core::math::Vec2;
+use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 use crate::ecs::InputManager;
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
-use crate::libs::graphics::backend::opengl::OpenGLBackend;
-use crate::libs::graphics::backend::{RenderBackend, StateOps};
-use crate::libs::platform::glfw_platform::GlfwPlatform;
+use crate::libs::graphics::backend::native_backend::SharedNativeRenderBackend;
+use crate::libs::graphics::backend::RenderBackend;
 use crate::libs::platform::PlatformBackend;
 use crate::sdk::debug_overlay::DebugOverlay;
 use crate::sdk::network_debug_overlay::NetworkOverlayState;
 use std::cell::RefCell;
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::Instant;
-
-#[cfg(feature = "native")]
-use glfw::{Key, MouseButton};
 
 // ============================================================================
 // Deferred Capture
@@ -30,8 +26,8 @@ use glfw::{Key, MouseButton};
 /// Shared state for deferred framebuffer capture (FFI path).
 ///
 /// The IPC handler thread sets `requested = true` and waits on the condvar.
-/// The main thread (in `swap_buffers`) checks `requested`, does the GL readback,
-/// stores the result, and notifies the condvar.
+/// The main thread (in `swap_buffers`) checks `requested`, performs the native
+/// framebuffer readback, stores the result, and notifies the condvar.
 pub(crate) struct DeferredCaptureState {
     requested: bool,
     result: Option<Result<debugger::RawFramebufferReadbackV1, String>>,
@@ -45,15 +41,14 @@ type DeferredCapture = Arc<(Mutex<DeferredCaptureState>, Condvar)>;
 
 /// Window state attached to a context.
 ///
-/// Composes a [`GlfwPlatform`](crate::libs::platform::glfw_platform::GlfwPlatform)
-/// (windowing + input) with an [`OpenGLBackend`]
-/// (rendering). The platform backend owns the window handle and event loop;
-/// the render backend is stored alongside it.
+/// Composes a platform backend (windowing + input) with a native render
+/// backend (presentation + GPU resources). The platform backend owns the
+/// window handle and event loop; the render backend is stored alongside it.
 pub struct WindowState {
-    pub(crate) platform: GlfwPlatform,
+    pub(crate) platform: Box<dyn PlatformBackend>,
 
-    /// OpenGL rendering backend
-    pub(crate) backend: OpenGLBackend,
+    /// Active native rendering backend
+    pub(crate) backend: SharedNativeRenderBackend,
 
     /// Whether the physics debug overlay should render for this context.
     pub(crate) physics_debug_enabled: bool,
@@ -73,15 +68,15 @@ pub struct WindowState {
     /// Route registered with the debugger runtime for this window, if enabled.
     pub(crate) debugger_route: Option<RuntimeRouteId>,
 
-    /// Deferred capture coordination between IPC thread and main GL thread.
+    /// Deferred capture coordination between the IPC thread and the main thread.
     pub(crate) deferred_capture: Option<DeferredCapture>,
 }
 
 impl WindowState {
     /// Creates a new [`WindowState`] from the given platform and backend.
     pub(crate) fn new(
-        platform: GlfwPlatform,
-        backend: OpenGLBackend,
+        platform: Box<dyn PlatformBackend>,
+        backend: SharedNativeRenderBackend,
         physics_debug_enabled: bool,
         debugger_route: Option<RuntimeRouteId>,
         deferred_capture: Option<DeferredCapture>,
@@ -111,15 +106,12 @@ impl WindowState {
 
     /// Polls events, updates input state, and syncs the viewport on resize.
     pub fn poll_events(&mut self, context_id: GoudContextId, input: &mut InputManager) -> f32 {
-        let old_size = self.platform.get_size();
         let started_at = Instant::now();
         let raw_delta = self.platform.poll_events(input);
         debugger::record_phase_duration("window_events", started_at.elapsed().as_micros() as u64);
-        let new_size = self.platform.get_size();
-
-        if old_size != new_size {
-            self.backend.set_viewport(0, 0, new_size.0, new_size.1);
-        }
+        let framebuffer_size = self.platform.get_framebuffer_size();
+        self.backend
+            .resize_surface(framebuffer_size.0, framebuffer_size.1);
 
         if let Some(route_id) = self.debugger_route.as_ref() {
             let frame_control =
@@ -154,8 +146,8 @@ impl WindowState {
         self.delta_time
     }
 
-    /// Services a pending deferred capture request by performing the GL
-    /// readback on the current (main) thread, then notifying the waiting IPC thread.
+    /// Services a pending deferred capture request by performing framebuffer
+    /// readback on the current main thread, then notifying the waiting IPC thread.
     fn service_deferred_capture(&mut self) {
         let Some(ref deferred) = self.deferred_capture else {
             return;
@@ -204,7 +196,7 @@ impl WindowState {
     }
 
     /// Gets a mutable reference to the backend.
-    pub fn backend_mut(&mut self) -> &mut OpenGLBackend {
+    pub fn backend_mut(&mut self) -> &mut SharedNativeRenderBackend {
         &mut self.backend
     }
 
@@ -280,9 +272,9 @@ fn parse_key(key: &str) -> Option<Key> {
 #[cfg(feature = "native")]
 fn parse_mouse_button(button: &str) -> Option<MouseButton> {
     match button.to_ascii_lowercase().as_str() {
-        "left" => Some(MouseButton::Button1),
-        "right" => Some(MouseButton::Button2),
-        "middle" => Some(MouseButton::Button3),
+        "left" => Some(MouseButton::Left),
+        "right" => Some(MouseButton::Right),
+        "middle" => Some(MouseButton::Middle),
         _ => None,
     }
 }

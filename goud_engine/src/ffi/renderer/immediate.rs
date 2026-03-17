@@ -6,6 +6,7 @@
 use crate::core::error::GoudError;
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
+use crate::libs::graphics::backend::types::{VertexAttribute, VertexAttributeType, VertexLayout};
 use crate::libs::graphics::backend::{BufferOps, ShaderOps};
 
 // ============================================================================
@@ -27,8 +28,8 @@ pub(super) struct ImmediateRenderState {
     pub vertex_buffer: crate::libs::graphics::backend::types::BufferHandle,
     /// Index buffer for quad rendering (shared)
     pub index_buffer: crate::libs::graphics::backend::types::BufferHandle,
-    /// Vertex Array Object (required for macOS Core Profile)
-    pub vao: u32,
+    /// Vertex layout for the immediate quad buffer.
+    pub vertex_layout: VertexLayout,
     /// Uniform locations (cached)
     pub u_projection: i32,
     pub u_model: i32,
@@ -57,7 +58,7 @@ pub(super) type ImmediateStateData = (
     crate::libs::graphics::backend::types::ShaderHandle,
     crate::libs::graphics::backend::types::BufferHandle,
     crate::libs::graphics::backend::types::BufferHandle,
-    u32, // VAO
+    VertexLayout,
     i32, // u_projection
     i32, // u_model
     i32, // u_color
@@ -114,18 +115,21 @@ void main() {
 }
 "#;
 
-/// Reinstalls the immediate-mode vertex attribute layout on the currently bound VAO/VBO.
-pub(super) fn configure_immediate_vertex_layout() {
-    // SAFETY: The caller guarantees that the immediate-mode VAO and vertex buffer are
-    // bound, and the attribute layout matches `QuadVertex`.
-    unsafe {
-        gl::EnableVertexAttribArray(0);
-        gl::VertexAttribPointer(0, 2, gl::FLOAT, gl::FALSE, 16, std::ptr::null());
-        gl::EnableVertexAttribArray(1);
-        gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, 16, 8 as *const std::ffi::c_void);
-        gl::DisableVertexAttribArray(2);
-        gl::VertexAttrib4f(2, 1.0, 1.0, 1.0, 1.0);
-    }
+/// Returns the backend-neutral vertex layout for `QuadVertex`.
+pub(super) fn immediate_vertex_layout() -> VertexLayout {
+    VertexLayout::new(std::mem::size_of::<QuadVertex>() as u32)
+        .with_attribute(VertexAttribute::new(
+            0,
+            VertexAttributeType::Float2,
+            0,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            1,
+            VertexAttributeType::Float2,
+            8,
+            false,
+        ))
 }
 
 // ============================================================================
@@ -180,15 +184,6 @@ pub(super) fn ensure_immediate_state(context_id: GoudContextId) -> Result<(), Go
                 .get_uniform_location(shader, "u_uv_scale")
                 .unwrap_or(-1);
 
-            // Create VAO (required for macOS Core Profile)
-            let mut vao: u32 = 0;
-            // SAFETY: gl::GenVertexArrays writes to a valid stack variable; BindVertexArray
-            // takes the returned VAO name which is guaranteed valid by OpenGL.
-            unsafe {
-                gl::GenVertexArrays(1, &mut vao);
-                gl::BindVertexArray(vao);
-            }
-
             // Create quad vertices (unit quad centered at origin)
             // Position: -0.5 to 0.5, UV: 0 to 1
             let vertices: [QuadVertex; 4] = [
@@ -216,15 +211,6 @@ pub(super) fn ensure_immediate_state(context_id: GoudContextId) -> Result<(), Go
                 bytemuck::cast_slice(&vertices),
             )?;
 
-            // Bind vertex buffer and set up vertex attributes while VAO is bound
-            backend.bind_buffer(vertex_buffer)?;
-
-            // Set up vertex attributes (position at location 0, texcoord at location 1)
-            // Stride is 16 bytes (2 floats for position + 2 floats for texcoord)
-            // SAFETY: VAO is bound above, vertex buffer is bound, and attribute locations
-            // 0 and 1 are valid for the shader created in this function.
-            configure_immediate_vertex_layout();
-
             // Create index buffer (two triangles)
             let indices: [u32; 6] = [0, 1, 2, 2, 3, 0];
             let index_buffer = backend.create_buffer(
@@ -233,21 +219,11 @@ pub(super) fn ensure_immediate_state(context_id: GoudContextId) -> Result<(), Go
                 bytemuck::cast_slice(&indices),
             )?;
 
-            // Bind index buffer to VAO
-            backend.bind_buffer(index_buffer)?;
-
-            // Unbind VAO (will be bound during draw)
-            // SAFETY: Passing 0 to gl::BindVertexArray unbinds the current VAO, which is
-            // always valid per the OpenGL specification.
-            unsafe {
-                gl::BindVertexArray(0);
-            }
-
             Ok(ImmediateRenderState {
                 shader,
                 vertex_buffer,
                 index_buffer,
-                vao,
+                vertex_layout: immediate_vertex_layout(),
                 u_projection,
                 u_model,
                 u_color,

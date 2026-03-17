@@ -10,6 +10,7 @@ use crate::core::error::{set_last_error, GoudError};
 use crate::core::providers::types::PhysicsBackend2D;
 use crate::ffi::context::GoudDebuggerConfig;
 use crate::sdk::engine_config::EngineConfig;
+use crate::sdk::game_config::{RenderBackendKind, WindowBackendKind};
 
 #[cfg(feature = "native")]
 use crate::core::debugger::{self, ContextConfig, RuntimeSurfaceKind};
@@ -250,6 +251,78 @@ pub unsafe extern "C" fn goud_engine_config_set_physics_backend_2d(
     true
 }
 
+/// Sets the native render backend used when creating windowed engines.
+///
+/// Backend values:
+/// - 0: wgpu
+/// - 1: legacy OpenGL
+///
+/// # Safety
+/// `handle` must be a valid `EngineConfig` handle.
+#[no_mangle]
+pub unsafe extern "C" fn goud_engine_config_set_render_backend(
+    handle: EngineConfigHandle,
+    backend: u32,
+) -> bool {
+    if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
+        return false;
+    }
+
+    let backend = match RenderBackendKind::from_u32(backend) {
+        Some(backend) => backend,
+        None => {
+            set_last_error(GoudError::InvalidState(
+                "invalid render backend".to_string(),
+            ));
+            return false;
+        }
+    };
+
+    // SAFETY: Caller guarantees handle points to a valid EngineConfig.
+    let config = &mut *(handle as *mut EngineConfig);
+    config.game_config_mut().render_backend = backend;
+    true
+}
+
+/// Sets the native window backend used when creating windowed engines.
+///
+/// Backend values:
+/// - 0: winit
+/// - 1: legacy GLFW
+///
+/// # Safety
+/// `handle` must be a valid `EngineConfig` handle.
+#[no_mangle]
+pub unsafe extern "C" fn goud_engine_config_set_window_backend(
+    handle: EngineConfigHandle,
+    backend: u32,
+) -> bool {
+    if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
+        return false;
+    }
+
+    let backend = match WindowBackendKind::from_u32(backend) {
+        Some(backend) => backend,
+        None => {
+            set_last_error(GoudError::InvalidState(
+                "invalid window backend".to_string(),
+            ));
+            return false;
+        }
+    };
+
+    // SAFETY: Caller guarantees handle points to a valid EngineConfig.
+    let config = &mut *(handle as *mut EngineConfig);
+    config.game_config_mut().window_backend = backend;
+    true
+}
+
 /// Configures debugger runtime startup for engines built from this `EngineConfig`.
 ///
 /// # Safety
@@ -326,9 +399,7 @@ pub unsafe extern "C" fn goud_engine_create(
     use crate::ecs::InputManager;
     use crate::ffi::context::{get_context_registry, GoudContextId, GOUD_INVALID_CONTEXT_ID};
     use crate::ffi::window::{set_window_state, WindowState};
-    use crate::libs::graphics::backend::opengl::OpenGLBackend;
-    use crate::libs::graphics::backend::StateOps;
-    use crate::libs::platform::glfw_platform::GlfwPlatform;
+    use crate::libs::platform::native_runtime::create_native_runtime;
     use crate::libs::platform::WindowConfig;
 
     if handle.is_null() {
@@ -350,23 +421,17 @@ pub unsafe extern "C" fn goud_engine_create(
         resizable: game_config.resizable,
     };
 
-    let platform = match GlfwPlatform::new(&window_config) {
-        Ok(p) => p,
+    let native_runtime = match create_native_runtime(
+        &window_config,
+        game_config.window_backend,
+        game_config.render_backend,
+    ) {
+        Ok(runtime) => runtime,
         Err(e) => {
             set_last_error(e);
             return GOUD_INVALID_CONTEXT_ID;
         }
     };
-
-    let mut backend = match OpenGLBackend::new() {
-        Ok(b) => b,
-        Err(e) => {
-            set_last_error(e);
-            return GOUD_INVALID_CONTEXT_ID;
-        }
-    };
-
-    backend.set_viewport(0, 0, game_config.width, game_config.height);
 
     let context_id: GoudContextId = {
         let mut registry = match get_context_registry().lock() {
@@ -427,8 +492,8 @@ pub unsafe extern "C" fn goud_engine_create(
     // Physics debug overlay uses providers created from EngineConfig / ProviderRegistry.
     // It does not read worlds created with standalone FFI `goud_physics_*_create` calls.
     let window_state = WindowState::new(
-        platform,
-        backend,
+        native_runtime.platform,
+        native_runtime.render_backend,
         game_config.physics_debug.enabled,
         debugger::route_for_context(context_id),
         None,
@@ -443,4 +508,68 @@ pub unsafe extern "C" fn goud_engine_create(
     }
 
     context_id
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::error::last_error_message;
+
+    #[test]
+    fn test_set_render_backend_rejects_unknown_code() {
+        let handle = goud_engine_config_create();
+        assert!(!handle.is_null());
+
+        // SAFETY: `handle` was returned by `goud_engine_config_create` above.
+        let ok = unsafe { goud_engine_config_set_render_backend(handle, 99) };
+        assert!(!ok);
+        assert!(last_error_message()
+            .expect("expected error message")
+            .contains("invalid render backend"),);
+
+        // SAFETY: `handle` was allocated by `goud_engine_config_create` above.
+        unsafe { goud_engine_config_destroy(handle) };
+    }
+
+    #[test]
+    fn test_set_window_backend_rejects_unknown_code() {
+        let handle = goud_engine_config_create();
+        assert!(!handle.is_null());
+
+        // SAFETY: `handle` was returned by `goud_engine_config_create` above.
+        let ok = unsafe { goud_engine_config_set_window_backend(handle, 99) };
+        assert!(!ok);
+        assert!(last_error_message()
+            .expect("expected error message")
+            .contains("invalid window backend"),);
+
+        // SAFETY: `handle` was allocated by `goud_engine_config_create` above.
+        unsafe { goud_engine_config_destroy(handle) };
+    }
+
+    #[cfg(feature = "native")]
+    #[test]
+    fn test_engine_create_rejects_mixed_native_backend_pair() {
+        let handle = goud_engine_config_create();
+        assert!(!handle.is_null());
+
+        // SAFETY: `handle` is valid for all setter calls below.
+        unsafe {
+            assert!(goud_engine_config_set_window_backend(
+                handle,
+                WindowBackendKind::Winit as u32,
+            ));
+            assert!(goud_engine_config_set_render_backend(
+                handle,
+                RenderBackendKind::OpenGlLegacy as u32,
+            ));
+        }
+
+        // SAFETY: `handle` is consumed by `goud_engine_create`.
+        let context_id = unsafe { goud_engine_create(handle) };
+        assert_eq!(context_id, crate::ffi::context::GOUD_INVALID_CONTEXT_ID);
+        assert!(last_error_message()
+            .expect("expected error message")
+            .contains("invalid native backend pair"),);
+    }
 }

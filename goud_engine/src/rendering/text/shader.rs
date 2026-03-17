@@ -33,6 +33,34 @@ void main() {
 }
 "#;
 
+const TEXT_VERTEX_SHADER_WGSL: &str = r#"
+struct VertexInput {
+    @location(0) position: vec2<f32>,
+    @location(1) tex_coord: vec2<f32>,
+    @location(2) color: vec4<f32>,
+};
+
+struct VertexOutput {
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) color: vec4<f32>,
+};
+
+@vertex
+fn main(input: VertexInput) -> VertexOutput {
+    var output: VertexOutput;
+    output.clip_position = vec4<f32>(input.position, 0.0, 1.0);
+    output.color = input.color;
+    return output;
+}
+"#;
+
+const TEXT_FRAGMENT_SHADER_WGSL: &str = r#"
+@fragment
+fn main(@location(0) color: vec4<f32>) -> @location(0) vec4<f32> {
+    return color;
+}
+"#;
+
 pub(crate) fn ensure_shader(
     shader_slot: &mut Option<ShaderHandle>,
     backend: &mut dyn RenderBackend,
@@ -44,8 +72,15 @@ pub(crate) fn ensure_shader(
         *shader_slot = None;
     }
 
+    let use_wgpu_shaders = backend.info().name == "wgpu";
+    let (vertex_shader, fragment_shader) = if use_wgpu_shaders {
+        (TEXT_VERTEX_SHADER_WGSL, TEXT_FRAGMENT_SHADER_WGSL)
+    } else {
+        (TEXT_VERTEX_SHADER, TEXT_FRAGMENT_SHADER)
+    };
+
     let shader = backend
-        .create_shader(TEXT_VERTEX_SHADER, TEXT_FRAGMENT_SHADER)
+        .create_shader(vertex_shader, fragment_shader)
         .map_err(|e| format!("text shader creation failed: {e}"))?;
     *shader_slot = Some(shader);
     Ok(shader)

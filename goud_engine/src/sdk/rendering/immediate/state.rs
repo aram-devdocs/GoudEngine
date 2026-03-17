@@ -1,5 +1,6 @@
 use crate::core::error::GoudResult;
-use crate::libs::graphics::backend::{BufferOps, ShaderOps};
+use crate::libs::graphics::backend::types::{VertexAttribute, VertexAttributeType, VertexLayout};
+use crate::libs::graphics::backend::RenderBackend;
 
 /// GPU resources for immediate-mode sprite and quad rendering.
 ///
@@ -13,8 +14,8 @@ pub struct ImmediateRenderState {
     pub(crate) vertex_buffer: crate::libs::graphics::backend::types::BufferHandle,
     /// Index buffer for quad rendering.
     pub(crate) index_buffer: crate::libs::graphics::backend::types::BufferHandle,
-    /// Vertex Array Object (required for macOS Core Profile)
-    pub(crate) vao: u32,
+    /// Vertex layout used for immediate quad draws.
+    pub(crate) vertex_layout: VertexLayout,
     /// Cached uniform locations
     pub(crate) u_projection: i32,
     pub(crate) u_model: i32,
@@ -37,11 +38,18 @@ unsafe impl bytemuck::Pod for ImmediateQuadVertex {}
 unsafe impl bytemuck::Zeroable for ImmediateQuadVertex {}
 
 pub(crate) fn create_immediate_render_state(
-    backend: &mut crate::libs::graphics::backend::opengl::OpenGLBackend,
+    backend: &mut dyn RenderBackend,
 ) -> GoudResult<ImmediateRenderState> {
     use crate::libs::graphics::backend::types::{BufferType, BufferUsage};
 
-    let shader = backend.create_shader(SPRITE_VERTEX_SHADER, SPRITE_FRAGMENT_SHADER)?;
+    let use_wgpu_shaders = backend.info().name == "wgpu";
+    let (vertex_shader, fragment_shader) = if use_wgpu_shaders {
+        (SPRITE_VERTEX_SHADER_WGSL, SPRITE_FRAGMENT_SHADER_WGSL)
+    } else {
+        (SPRITE_VERTEX_SHADER, SPRITE_FRAGMENT_SHADER)
+    };
+
+    let shader = backend.create_shader(vertex_shader, fragment_shader)?;
 
     let u_projection = backend
         .get_uniform_location(shader, "u_projection")
@@ -64,14 +72,6 @@ pub(crate) fn create_immediate_render_state(
     let u_uv_scale = backend
         .get_uniform_location(shader, "u_uv_scale")
         .unwrap_or(-1);
-
-    let mut vao = 0u32;
-    // SAFETY: An OpenGL context is current for the backend lifetime. The stack
-    // variable is valid output storage and the generated VAO is immediately bound.
-    unsafe {
-        gl::GenVertexArrays(1, &mut vao);
-        gl::BindVertexArray(vao);
-    }
 
     let vertices: [ImmediateQuadVertex; 4] = [
         ImmediateQuadVertex {
@@ -96,28 +96,19 @@ pub(crate) fn create_immediate_render_state(
         BufferUsage::Static,
         bytemuck::cast_slice(&vertices),
     )?;
-    backend.bind_buffer(vertex_buffer)?;
-
-    configure_immediate_vertex_layout();
-
     let indices: [u32; 6] = [0, 1, 2, 2, 3, 0];
     let index_buffer = backend.create_buffer(
         BufferType::Index,
         BufferUsage::Static,
         bytemuck::cast_slice(&indices),
     )?;
-    backend.bind_buffer(index_buffer)?;
-
-    // SAFETY: Binding VAO 0 unbinds the current vertex array in OpenGL.
-    unsafe {
-        gl::BindVertexArray(0);
-    }
+    let vertex_layout = immediate_vertex_layout();
 
     Ok(ImmediateRenderState {
         shader,
         vertex_buffer,
         index_buffer,
-        vao,
+        vertex_layout,
         u_projection,
         u_model,
         u_color,
@@ -128,17 +119,20 @@ pub(crate) fn create_immediate_render_state(
     })
 }
 
-pub(crate) fn configure_immediate_vertex_layout() {
-    // SAFETY: The immediate-mode VAO and vertex buffer are already bound by the caller,
-    // and this layout matches `ImmediateQuadVertex`.
-    unsafe {
-        gl::EnableVertexAttribArray(0);
-        gl::VertexAttribPointer(0, 2, gl::FLOAT, gl::FALSE, 16, std::ptr::null());
-        gl::EnableVertexAttribArray(1);
-        gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, 16, 8 as *const std::ffi::c_void);
-        gl::DisableVertexAttribArray(2);
-        gl::VertexAttrib4f(2, 1.0, 1.0, 1.0, 1.0);
-    }
+pub(crate) fn immediate_vertex_layout() -> VertexLayout {
+    VertexLayout::new(std::mem::size_of::<ImmediateQuadVertex>() as u32)
+        .with_attribute(VertexAttribute::new(
+            0,
+            VertexAttributeType::Float2,
+            0,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            1,
+            VertexAttributeType::Float2,
+            8,
+            false,
+        ))
 }
 
 const SPRITE_VERTEX_SHADER: &str = r#"
@@ -177,5 +171,32 @@ void main() {
     } else {
         FragColor = u_color;
     }
+}
+"#;
+
+const SPRITE_VERTEX_SHADER_WGSL: &str = r#"
+struct VertexInput {
+    @location(0) position: vec2<f32>,
+    @location(1) tex_coord: vec2<f32>,
+};
+
+struct VertexOutput {
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) tex_coord: vec2<f32>,
+};
+
+@vertex
+fn main(input: VertexInput) -> VertexOutput {
+    var output: VertexOutput;
+    output.clip_position = vec4<f32>(input.position, 0.0, 1.0);
+    output.tex_coord = input.tex_coord;
+    return output;
+}
+"#;
+
+const SPRITE_FRAGMENT_SHADER_WGSL: &str = r#"
+@fragment
+fn main(@location(0) tex_coord: vec2<f32>) -> @location(0) vec4<f32> {
+    return vec4<f32>(tex_coord, 1.0, 1.0);
 }
 "#;

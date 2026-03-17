@@ -103,6 +103,10 @@ class GoudGame:
         """Signals the window to close"""
         self._lib.goud_window_set_should_close(self._ctx, True)
 
+    def set_window_size(self, width, height):
+        """Requests a logical resize on the active native window"""
+        return self._lib.goud_window_set_size(self._ctx, width, height)
+
     def destroy(self):
         """Releases all engine resources"""
         if hasattr(self, '_ctx'):
@@ -1813,6 +1817,20 @@ class EngineConfig:
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
         self._lib.goud_engine_config_set_physics_backend_2d(self._handle, int(backend))
+        return self
+
+    def set_render_backend(self, backend):
+        """Selects the native render backend used by the built game"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
+        self._lib.goud_engine_config_set_render_backend(self._handle, int(backend))
+        return self
+
+    def set_window_backend(self, backend):
+        """Selects the native window backend used by the built game"""
+        if not self._handle:
+            raise RuntimeError('EngineConfig already consumed or destroyed')
+        self._lib.goud_engine_config_set_window_backend(self._handle, int(backend))
         return self
 
     def set_debugger(self, debugger):

@@ -68,19 +68,25 @@ impl WgpuBackend {
                 None
             };
 
-            let depth_stencil = if key.depth_test {
+            let depth_stencil = Some(if key.depth_test {
                 // SAFETY: key.depth_func is stored as u8 cast from DepthFunc (repr(u8)).
                 let func = unsafe { std::mem::transmute::<u8, DepthFunc>(key.depth_func) };
-                Some(wgpu::DepthStencilState {
+                wgpu::DepthStencilState {
                     format: wgpu::TextureFormat::Depth32Float,
                     depth_write_enabled: key.depth_write,
                     depth_compare: convert::map_depth_func(func),
                     stencil: wgpu::StencilState::default(),
                     bias: wgpu::DepthBiasState::default(),
-                })
+                }
             } else {
-                None
-            };
+                wgpu::DepthStencilState {
+                    format: wgpu::TextureFormat::Depth32Float,
+                    depth_write_enabled: false,
+                    depth_compare: wgpu::CompareFunction::Always,
+                    stencil: wgpu::StencilState::default(),
+                    bias: wgpu::DepthBiasState::default(),
+                }
+            });
 
             let cull_mode = if key.cull_enabled {
                 // SAFETY: key.cull_face is stored as u8 cast from CullFace (repr(u8)).
