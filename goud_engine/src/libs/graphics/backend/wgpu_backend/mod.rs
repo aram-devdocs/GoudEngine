@@ -27,6 +27,7 @@ mod convert;
 mod frame;
 mod init;
 mod pipeline;
+mod readback;
 mod resources;
 mod shader;
 mod texture;
