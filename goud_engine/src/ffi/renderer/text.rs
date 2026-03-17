@@ -316,6 +316,7 @@ pub unsafe extern "C" fn goud_renderer_draw_text(
 /// # Safety
 ///
 /// `text` must be a valid null-terminated UTF-8 C string.
+#[deprecated(note = "Use goud_renderer_draw_text instead.")]
 #[no_mangle]
 pub unsafe extern "C" fn goud_draw_text(
     context_id: GoudContextId,

@@ -57,6 +57,7 @@ pub use draw::{
     goud_renderer_draw_quad, goud_renderer_draw_sprite, goud_renderer_draw_sprite_rect,
 };
 
+#[allow(deprecated)]
 pub use text::{
     goud_draw_text, goud_font_destroy, goud_font_load, goud_renderer_draw_text, GoudFontHandle,
     GOUD_INVALID_FONT,

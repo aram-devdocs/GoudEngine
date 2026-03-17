@@ -2,4 +2,5 @@
 include goud_engine/*.so
 include goud_engine/*.dylib
 include goud_engine/*.dll
+include goud_engine/include/*.h
 include README.md

@@ -281,6 +281,7 @@ pub extern "C" fn goud_provider_hot_swap_render(
 }
 
 /// Stub for release builds -- hot-swap is not available.
+/// cbindgen:ignore
 #[cfg(not(debug_assertions))]
 #[no_mangle]
 pub extern "C" fn goud_provider_hot_swap_render(
@@ -316,6 +317,7 @@ pub extern "C" fn goud_provider_check_hot_swap_shortcut(context_id: GoudContextI
 
 /// Stub for release builds -- hot-swap shortcut is not available.
 /// Always returns 0.
+/// cbindgen:ignore
 #[cfg(not(debug_assertions))]
 #[no_mangle]
 pub extern "C" fn goud_provider_check_hot_swap_shortcut(_context_id: GoudContextId) -> i32 {

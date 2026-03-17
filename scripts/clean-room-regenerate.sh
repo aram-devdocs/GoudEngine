@@ -22,6 +22,7 @@ delete_path() {
 
 generated_outputs=(
   "codegen/ffi_manifest.json"
+  "codegen/generated/goud_engine.h"
   "docs/src/generated/snippets"
   "docs/src/guides/showcase.md"
   "examples/README.md"

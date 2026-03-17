@@ -1,0 +1,35 @@
+language = "C"
+cpp_compat = true
+documentation = true
+documentation_style = "doxy"
+documentation_length = "short"
+line_length = 100
+tab_width = 4
+sort_by = "None"
+usize_is_size_t = true
+
+[parse]
+parse_deps = false
+clean = false
+
+[export]
+include = ["GoudFFIResult"]
+exclude = ["KeyCode", "MouseButton", "GamepadAxis"]
+item_types = [
+  "constants",
+  "globals",
+  "enums",
+  "structs",
+  "unions",
+  "typedefs",
+  "opaque",
+  "functions",
+]
+
+[export.rename]
+"GoudFFIResult" = "GoudResult"
+
+[fn]
+args = "horizontal"
+deprecated = "GOUD_DEPRECATED"
+deprecated_with_note = "GOUD_DEPRECATED_MSG({})"

@@ -462,7 +462,7 @@ ALPHA-001: GoudEngine Alpha Release (master)
 | Track | Issues | Dependencies |
 |-------|--------|-------------|
 | Existing SDK fixes | F13-01 through F13-09 | Phase 2 features |
-| C/C++ SDK | F14-01 through F14-08 | cbindgen header exists |
+| C/C++ SDK | F14-01 through F14-08 | cbindgen header packaging lands in F14-01 |
 | Lua SDK | F15-01 through F15-08 | Engine API stable |
 | Swift SDK | F16-01 through F16-06 | C header (F14-01) |
 | Kotlin SDK | F17-01 through F17-07 | JNI boundary |
@@ -1035,7 +1035,7 @@ Custom providers (user-injected) are only available through the Rust SDK, where 
 
 #### C/C++ SDK (F14) — Native Header
 
-**FFI Mechanism**: Direct C ABI — no wrapper layer. cbindgen already generates `goud_engine.h`.
+**FFI Mechanism**: Direct C ABI — no wrapper layer. F14-01 makes `cargo build` generate and package `goud_engine.h`.
 
 **Approach**:
 1. Clean up cbindgen output (group functions, add doc comments, sort by subsystem)
@@ -1048,7 +1048,7 @@ Custom providers (user-injected) are only available through the Rust SDK, where 
 4. CMakeLists.txt for find_package() integration
 5. vcpkg port and Conan recipe
 
-**Build**: `cargo build --release` produces `libgoud_engine.a` + `goud_engine.h`
+**Build**: `cargo build --release` produces the native library for the target plus `codegen/generated/goud_engine.h`
 
 **Codegen**: Extend `codegen/gen_cpp.py` to generate C++ wrapper from schema (similar to gen_csharp.py but emitting C++ classes).
 
