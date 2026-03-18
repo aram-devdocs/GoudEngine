@@ -213,7 +213,7 @@ impl AssetServer {
         self.storage.get_mut(handle)
     }
 
-    fn load_embedded_assets(&mut self, embedded_assets: &[EmbeddedAsset]) {
+    pub(super) fn load_embedded_assets(&mut self, embedded_assets: &[EmbeddedAsset]) {
         for embedded in embedded_assets {
             let _ = self.load_embedded_asset_by_extension(&embedded.path, &embedded.bytes);
         }

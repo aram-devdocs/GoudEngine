@@ -129,7 +129,7 @@ fn test_fxaa_filter_softens_high_contrast_edge() {
     ];
     let output = apply_fxaa_like_filter(3, 3, &input);
 
-    let center = ((1 * 3 + 1) * 4) as usize;
+    let center = 16usize;
     assert!(output[center] > 0);
     assert!(output[center] < 255);
 }
