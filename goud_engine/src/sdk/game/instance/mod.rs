@@ -103,6 +103,7 @@ pub struct GoudGame {
     pub(crate) window_resized_events: Events<WindowResized>,
 
     #[cfg(feature = "lua")]
+    // Held for Drop: keeps the embedded Lua VM alive until GoudGame drops.
     #[allow(dead_code)]
     lua_runtime: LuaRuntime,
 
@@ -205,9 +206,7 @@ impl GoudGame {
         let debugger_route =
             Self::register_debugger_route(&config, RuntimeSurfaceKind::HeadlessContext);
         #[cfg(feature = "lua")]
-        let lua_runtime = LuaRuntime::new();
-        #[cfg(feature = "lua")]
-        debug_assert!(lua_runtime.is_ready());
+        let lua_runtime = LuaRuntime::new()?;
         Ok(Self {
             scene_manager: SceneManager::new(),
             config,
@@ -321,9 +320,7 @@ impl GoudGame {
         let debugger_route =
             Self::register_debugger_route(&config, RuntimeSurfaceKind::WindowedGame);
         #[cfg(feature = "lua")]
-        let lua_runtime = LuaRuntime::new();
-        #[cfg(feature = "lua")]
-        debug_assert!(lua_runtime.is_ready());
+        let lua_runtime = LuaRuntime::new()?;
 
         // Register deferred capture hook for framebuffer readback if debugger
         // is enabled. The hook is invoked from the IPC thread, so it signals

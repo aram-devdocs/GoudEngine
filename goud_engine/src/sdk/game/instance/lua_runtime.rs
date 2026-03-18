@@ -1,3 +1,5 @@
+use crate::core::error::{GoudError, GoudResult};
+
 #[cfg(test)]
 use std::sync::atomic::{AtomicUsize, Ordering};
 #[cfg(test)]
@@ -10,19 +12,27 @@ pub(super) struct LuaRuntime {
 }
 
 impl LuaRuntime {
-    pub(super) fn new() -> Self {
+    pub(super) fn new() -> GoudResult<Self> {
         let runtime = Self {
             lua: mlua::Lua::new(),
             #[cfg(test)]
             drop_probe: None,
         };
-        let _ = runtime.lua.globals();
         runtime
+            .lua
+            .load("return true")
+            .eval::<bool>()
+            .map_err(|error| {
+                GoudError::InitializationFailed(format!(
+                    "embedded Lua VM bootstrap failed: {error}"
+                ))
+            })?;
+        Ok(runtime)
     }
 
+    #[cfg(test)]
     pub(super) fn is_ready(&self) -> bool {
-        let _ = self.lua.globals();
-        true
+        self.lua.load("return true").eval::<bool>().is_ok()
     }
 
     #[cfg(test)]
