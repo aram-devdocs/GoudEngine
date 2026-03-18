@@ -4,7 +4,7 @@
 //! and uniform setters. Pipeline building lives in `pipeline.rs`.
 
 use super::{
-    super::types::{BufferUsage, TextureFilter, TextureFormat, TextureWrap},
+    super::types::{BufferUsage, TextureFilter, TextureFormat, TextureWrap, VertexBufferBinding},
     BlendFactor, BufferHandle, BufferOps, BufferType, CullFace, DepthFunc, DrawOps, DrawType,
     FrameOps, FrameState, FrontFace, PipelineKey, PrimitiveTopology, ShaderHandle, ShaderOps,
     StateOps, TextureHandle, TextureOps, VertexLayout, WgpuBackend,
@@ -110,12 +110,13 @@ impl FrameOps for WgpuBackend {
                 let Some(pipeline) = self.pipeline_cache.get(key) else {
                     continue;
                 };
-                let Some(vb_meta) = self.buffers.get(&cmd.vertex_buffer) else {
-                    continue;
-                };
-
                 pass.set_pipeline(pipeline);
-                pass.set_vertex_buffer(0, vb_meta.buffer.slice(..));
+                for (slot, binding) in cmd.vertex_bindings.iter().enumerate() {
+                    let Some(vb_meta) = self.buffers.get(&binding.buffer) else {
+                        continue;
+                    };
+                    pass.set_vertex_buffer(slot as u32, vb_meta.buffer.slice(..));
+                }
 
                 if let Some(shader_meta) = self.shaders.get(&cmd.shader) {
                     pass.set_bind_group(0, &shader_meta.uniform_bind_group, &[]);
@@ -256,6 +257,9 @@ impl StateOps for WgpuBackend {
     }
     fn set_depth_mask(&mut self, enabled: bool) {
         self.depth_write_enabled = enabled;
+    }
+    fn set_multisampling_enabled(&mut self, _enabled: bool) {
+        // Sample count is configured when pipelines and render targets are created.
     }
     fn set_line_width(&mut self, _width: f32) {
         // wgpu does not support variable line width (WebGPU spec limitation)
@@ -429,6 +433,11 @@ impl ShaderOps for WgpuBackend {
 impl DrawOps for WgpuBackend {
     fn set_vertex_attributes(&mut self, layout: &VertexLayout) {
         self.set_vertex_attributes_impl(layout);
+    }
+
+    fn set_vertex_bindings(&mut self, bindings: &[VertexBufferBinding]) -> GoudResult<()> {
+        self.current_vertex_bindings = bindings.to_vec();
+        Ok(())
     }
 
     fn draw_arrays(

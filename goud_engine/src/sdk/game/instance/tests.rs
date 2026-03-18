@@ -75,6 +75,7 @@ fn test_with_platform_default_native_stack_initializes_renderers_and_readback() 
     assert!(asset_server.has_loader_for_type::<crate::assets::loaders::TextureAsset>());
     assert!(asset_server.has_loader_for_type::<crate::assets::loaders::ShaderAsset>());
     assert!(asset_server.has_loader_for_type::<crate::assets::loaders::MaterialAsset>());
+    assert!(asset_server.has_loader_for_type::<crate::assets::loaders::MeshAsset>());
     let sprite_batch = game
         .sprite_batch
         .as_ref()

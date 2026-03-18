@@ -10,7 +10,7 @@ use super::{
     conversions, gl_check_debug,
 };
 use crate::libs::error::GoudResult;
-use crate::libs::graphics::backend::types::{DepthFunc, FrontFace};
+use crate::libs::graphics::backend::types::{DepthFunc, FrontFace, VertexBufferBinding};
 
 mod readback;
 #[cfg(test)]
@@ -229,6 +229,18 @@ impl StateOps for OpenGLBackend {
         }
     }
 
+    fn set_multisampling_enabled(&mut self, enabled: bool) {
+        // SAFETY: MULTISAMPLE is a valid OpenGL capability enum.
+        unsafe {
+            if enabled {
+                gl::Enable(gl::MULTISAMPLE);
+            } else {
+                gl::Disable(gl::MULTISAMPLE);
+            }
+        }
+        gl_check_debug!("set_multisampling_enabled");
+    }
+
     fn set_line_width(&mut self, width: f32) {
         let Some(width) = clamp_line_width(width, self.line_width_range) else {
             return;
@@ -435,6 +447,10 @@ impl DrawOps for OpenGLBackend {
         layout: &crate::libs::graphics::backend::types::VertexLayout,
     ) {
         super::draw_calls::set_vertex_attributes(layout)
+    }
+
+    fn set_vertex_bindings(&mut self, bindings: &[VertexBufferBinding]) -> GoudResult<()> {
+        super::draw_calls::set_vertex_bindings(self, bindings)
     }
 
     fn draw_arrays(

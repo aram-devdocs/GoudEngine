@@ -4,6 +4,7 @@
 //! for per-frame runtime state passed to update callbacks.
 
 use crate::core::debugger::DebuggerConfig;
+use crate::libs::graphics::renderer3d::AntiAliasingMode;
 pub use crate::libs::platform::{RenderBackendKind, WindowBackendKind};
 
 // =============================================================================
@@ -55,6 +56,12 @@ pub struct GameConfig {
     /// Enable window resizing.
     pub resizable: bool,
 
+    /// Runtime anti-aliasing mode for 3D rendering.
+    pub anti_aliasing_mode: AntiAliasingMode,
+
+    /// Requested MSAA sample count (1, 2, 4, or 8).
+    pub msaa_samples: u32,
+
     /// Native render backend selection.
     pub render_backend: RenderBackendKind,
 
@@ -92,6 +99,8 @@ impl Default for GameConfig {
             vsync: true,
             fullscreen: false,
             resizable: true,
+            anti_aliasing_mode: AntiAliasingMode::Off,
+            msaa_samples: 1,
             render_backend: RenderBackendKind::Wgpu,
             window_backend: WindowBackendKind::Winit,
             target_fps: 60,
@@ -149,6 +158,18 @@ impl GameConfig {
         self
     }
 
+    /// Sets the 3D anti-aliasing mode.
+    pub fn with_anti_aliasing_mode(mut self, mode: AntiAliasingMode) -> Self {
+        self.anti_aliasing_mode = mode;
+        self
+    }
+
+    /// Sets the requested MSAA sample count.
+    pub fn with_msaa_samples(mut self, samples: u32) -> Self {
+        self.msaa_samples = sanitize_msaa_samples(samples);
+        self
+    }
+
     /// Selects the native render backend.
     pub fn with_render_backend(mut self, backend: RenderBackendKind) -> Self {
         self.render_backend = backend;
@@ -195,6 +216,13 @@ impl GameConfig {
     pub fn with_debugger(mut self, debugger: DebuggerConfig) -> Self {
         self.debugger = debugger;
         self
+    }
+}
+
+fn sanitize_msaa_samples(samples: u32) -> u32 {
+    match samples {
+        2 | 4 | 8 => samples,
+        _ => 1,
     }
 }
 
@@ -340,6 +368,7 @@ impl GameContext {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::libs::graphics::renderer3d::AntiAliasingMode;
 
     // =========================================================================
     // GameConfig Tests
@@ -353,6 +382,8 @@ mod tests {
         assert_eq!(config.height, 600);
         assert!(config.vsync);
         assert!(!config.fullscreen);
+        assert_eq!(config.anti_aliasing_mode, AntiAliasingMode::Off);
+        assert_eq!(config.msaa_samples, 1);
         assert_eq!(config.render_backend, RenderBackendKind::Wgpu);
         assert_eq!(config.window_backend, WindowBackendKind::Winit);
     }
@@ -372,6 +403,8 @@ mod tests {
             .with_size(640, 480)
             .with_vsync(false)
             .with_fullscreen(true)
+            .with_anti_aliasing_mode(AntiAliasingMode::MsaaFxaa)
+            .with_msaa_samples(8)
             .with_render_backend(RenderBackendKind::OpenGlLegacy)
             .with_window_backend(WindowBackendKind::GlfwLegacy)
             .with_target_fps(144);
@@ -381,9 +414,17 @@ mod tests {
         assert_eq!(config.height, 480);
         assert!(!config.vsync);
         assert!(config.fullscreen);
+        assert_eq!(config.anti_aliasing_mode, AntiAliasingMode::MsaaFxaa);
+        assert_eq!(config.msaa_samples, 8);
         assert_eq!(config.render_backend, RenderBackendKind::OpenGlLegacy);
         assert_eq!(config.window_backend, WindowBackendKind::GlfwLegacy);
         assert_eq!(config.target_fps, 144);
+    }
+
+    #[test]
+    fn test_game_config_msaa_samples_are_sanitized() {
+        let config = GameConfig::default().with_msaa_samples(3);
+        assert_eq!(config.msaa_samples, 1);
     }
 
     #[test]

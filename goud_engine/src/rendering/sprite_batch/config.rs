@@ -20,6 +20,9 @@ pub struct SpriteBatchConfig {
     /// Enable automatic batching by texture (disable for debugging).
     pub enable_batching: bool,
 
+    /// Skip sprites whose world-space bounds fall outside the active viewport.
+    pub enable_frustum_culling: bool,
+
     /// Optional shader asset used by the batch renderer.
     pub shader_asset: AssetHandle<ShaderAsset>,
 
@@ -34,6 +37,7 @@ impl Default for SpriteBatchConfig {
             max_batch_size: 10000,  // Flush after 10K sprites
             enable_z_sorting: true, // Sort by Z-layer by default
             enable_batching: true,  // Batch by texture by default
+            enable_frustum_culling: true,
             shader_asset: AssetHandle::INVALID,
             material_asset: AssetHandle::INVALID,
         }

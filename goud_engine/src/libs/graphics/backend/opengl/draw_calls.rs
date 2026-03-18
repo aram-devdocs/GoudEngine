@@ -2,7 +2,9 @@
 
 use super::{backend::OpenGLBackend, conversions, gl_check_debug};
 use crate::libs::error::{GoudError, GoudResult};
-use crate::libs::graphics::backend::types::{PrimitiveTopology, VertexLayout};
+use crate::libs::graphics::backend::types::{
+    PrimitiveTopology, VertexBufferBinding, VertexLayout, VertexStepMode,
+};
 
 /// Sets up vertex attribute pointers for the currently bound vertex buffer.
 pub(super) fn set_vertex_attributes(layout: &VertexLayout) {
@@ -45,6 +47,75 @@ pub(super) fn set_vertex_attributes(layout: &VertexLayout) {
         }
     }
     gl_check_debug!("set_vertex_attributes");
+}
+
+/// Sets up vertex attributes across one or more vertex buffers.
+pub(super) fn set_vertex_bindings(
+    backend: &OpenGLBackend,
+    bindings: &[VertexBufferBinding],
+) -> GoudResult<()> {
+    let mut max_vertex_attribs = 0i32;
+    // SAFETY: Querying OpenGL limits is read-only and valid with an active context.
+    unsafe {
+        gl::GetIntegerv(gl::MAX_VERTEX_ATTRIBS, &mut max_vertex_attribs);
+    }
+    let max_vertex_attribs = max_vertex_attribs.max(0) as u32;
+    let mut enabled_locations = vec![false; max_vertex_attribs as usize];
+
+    for binding in bindings {
+        let metadata = backend
+            .buffers
+            .get(&binding.buffer)
+            .ok_or(GoudError::InvalidHandle)?;
+        if metadata.buffer_type != crate::libs::graphics::backend::types::BufferType::Vertex {
+            return Err(GoudError::InvalidState(
+                "set_vertex_bindings requires vertex buffers".to_string(),
+            ));
+        }
+
+        // SAFETY: `metadata.gl_id` is a valid GL vertex buffer owned by the backend.
+        unsafe {
+            gl::BindBuffer(gl::ARRAY_BUFFER, metadata.gl_id);
+        }
+
+        for attr in &binding.layout.attributes {
+            // SAFETY: Attribute descriptions come from engine-owned validated layouts.
+            unsafe {
+                gl::EnableVertexAttribArray(attr.location);
+                gl::VertexAttribPointer(
+                    attr.location,
+                    attr.attribute_type.component_count() as i32,
+                    conversions::attribute_type_to_gl_type(attr.attribute_type),
+                    if attr.normalized { gl::TRUE } else { gl::FALSE },
+                    binding.layout.stride as i32,
+                    attr.offset as *const _,
+                );
+                gl::VertexAttribDivisor(
+                    attr.location,
+                    match binding.step_mode {
+                        VertexStepMode::Vertex => 0,
+                        VertexStepMode::Instance => 1,
+                    },
+                );
+            }
+            if (attr.location as usize) < enabled_locations.len() {
+                enabled_locations[attr.location as usize] = true;
+            }
+        }
+    }
+
+    // SAFETY: Disabling stale locations and resetting divisors is valid on the current VAO.
+    unsafe {
+        for location in 0..max_vertex_attribs {
+            if !enabled_locations[location as usize] {
+                gl::DisableVertexAttribArray(location);
+                gl::VertexAttribDivisor(location, 0);
+            }
+        }
+    }
+
+    gl_check_debug!("set_vertex_bindings");
+    Ok(())
 }
 
 /// Draws primitives using array-based vertex data.

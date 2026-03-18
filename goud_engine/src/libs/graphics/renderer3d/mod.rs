@@ -13,15 +13,21 @@
 mod core;
 mod debug_draw;
 mod mesh;
+mod postprocess;
 mod render;
 mod shaders;
+mod shadow;
 mod texture;
 mod types;
+
+#[cfg(test)]
+mod tests;
 
 // Public API re-exports — the external interface is unchanged.
 pub use core::Renderer3D;
 pub use texture::TextureManagerTrait;
 pub use types::{
-    Camera3D, FogConfig, GridConfig, GridRenderMode, Light, LightType, PrimitiveCreateInfo,
-    PrimitiveType, SkyboxConfig, MAX_LIGHTS,
+    AntiAliasingMode, Camera3D, FogConfig, GridConfig, GridRenderMode, InstanceTransform, Light,
+    LightType, ParticleEmitterConfig, PrimitiveCreateInfo, PrimitiveType, Renderer3DStats,
+    SkyboxConfig, MAX_LIGHTS,
 };

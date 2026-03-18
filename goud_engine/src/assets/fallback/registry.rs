@@ -1,6 +1,7 @@
 //! [`FallbackRegistry`]: stores default asset values for load-failure substitution.
 
 use crate::assets::loaders::audio::AudioData;
+use crate::assets::loaders::mesh::MeshBounds;
 use crate::assets::loaders::{
     AudioAsset, AudioFormat, MeshAsset, MeshVertex, SubMesh, TextureAsset, TextureFormat,
 };
@@ -132,31 +133,42 @@ impl FallbackRegistry {
         ));
 
         // Unit triangle mesh -- a minimal visible placeholder.
+        let vertices = vec![
+            MeshVertex {
+                position: [0.0, 0.5, 0.0],
+                normal: [0.0, 0.0, 1.0],
+                uv: [0.5, 1.0],
+            },
+            MeshVertex {
+                position: [-0.5, -0.5, 0.0],
+                normal: [0.0, 0.0, 1.0],
+                uv: [0.0, 0.0],
+            },
+            MeshVertex {
+                position: [0.5, -0.5, 0.0],
+                normal: [0.0, 0.0, 1.0],
+                uv: [1.0, 0.0],
+            },
+        ];
+        let bounds = MeshBounds::from_positions(
+            &vertices
+                .iter()
+                .map(|vertex| vertex.position)
+                .collect::<Vec<_>>(),
+        );
+
         self.register(MeshAsset {
-            vertices: vec![
-                MeshVertex {
-                    position: [0.0, 0.5, 0.0],
-                    normal: [0.0, 0.0, 1.0],
-                    uv: [0.5, 1.0],
-                },
-                MeshVertex {
-                    position: [-0.5, -0.5, 0.0],
-                    normal: [0.0, 0.0, 1.0],
-                    uv: [0.0, 0.0],
-                },
-                MeshVertex {
-                    position: [0.5, -0.5, 0.0],
-                    normal: [0.0, 0.0, 1.0],
-                    uv: [1.0, 0.0],
-                },
-            ],
+            vertices,
             indices: vec![0, 1, 2],
             sub_meshes: vec![SubMesh {
                 name: "default".into(),
                 start_index: 0,
                 index_count: 3,
                 material_index: None,
+                material: None,
+                bounds,
             }],
+            bounds,
         });
     }
 }

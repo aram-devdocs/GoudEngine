@@ -202,6 +202,15 @@ impl StateOps for NativeRenderBackend {
         }
     }
 
+    fn set_multisampling_enabled(&mut self, enabled: bool) {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(backend) => backend.set_multisampling_enabled(enabled),
+            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            Self::Wgpu(backend) => backend.set_multisampling_enabled(enabled),
+        }
+    }
+
     fn set_line_width(&mut self, width: f32) {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]

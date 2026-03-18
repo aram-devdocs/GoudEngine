@@ -4,90 +4,86 @@
 //! files into [`MeshAsset`] data using the `gltf` crate.
 
 #[cfg(feature = "native")]
-use super::asset::{MeshAsset, MeshVertex, SubMesh};
+use super::asset::{MeshAsset, MeshBounds, MeshMaterial, MeshVertex, SubMesh};
 #[cfg(feature = "native")]
-use crate::assets::AssetLoadError;
+use crate::assets::loaders::gltf_utils::decode_data_uri;
+#[cfg(feature = "native")]
+use crate::assets::{AssetLoadError, AssetPath, LoadContext};
+#[cfg(feature = "native")]
+use cgmath::{InnerSpace, Matrix, Matrix4, SquareMatrix, Vector3, Vector4};
+#[cfg(feature = "native")]
+use std::path::Path;
 
 /// Parses a GLTF or GLB file from raw bytes into a [`MeshAsset`].
 ///
-/// All meshes and their primitives are merged into a single vertex/index
-/// buffer. Each primitive becomes a [`SubMesh`] entry.
-///
-/// # Errors
-///
-/// Returns [`AssetLoadError::DecodeFailed`] if the bytes cannot be parsed
-/// as valid GLTF/GLB or if the file contains no mesh data.
+/// All primitives referenced by the active scene are flattened into a single
+/// vertex/index buffer. Each primitive becomes a [`SubMesh`] entry.
 #[cfg(feature = "native")]
-pub(super) fn parse_gltf(bytes: &[u8]) -> Result<MeshAsset, AssetLoadError> {
+pub(super) fn parse_gltf(
+    bytes: &[u8],
+    context: &mut LoadContext,
+) -> Result<MeshAsset, AssetLoadError> {
     let gltf::Gltf { document, mut blob } = gltf::Gltf::from_slice(bytes)
         .map_err(|e| AssetLoadError::decode_failed(format!("GLTF parse error: {e}")))?;
 
-    // Collect buffer data. For GLB the first buffer is in `blob`.
-    let buffers = collect_buffer_data(&document, &mut blob)?;
+    let buffers = collect_buffer_data(&document, &mut blob, context)?;
+    let image_paths = collect_image_assets(&document, &buffers, context)?;
 
     let mut vertices: Vec<MeshVertex> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
     let mut sub_meshes: Vec<SubMesh> = Vec::new();
+    let mut mesh_bounds = MeshBounds::default();
+    let mut has_mesh_bounds = false;
+    let mut flattened_any = false;
 
-    for mesh in document.meshes() {
-        for primitive in mesh.primitives() {
-            let reader =
-                primitive.reader(|buffer| buffers.get(buffer.index()).map(|d| d.as_slice()));
-
-            let base_vertex = vertices.len() as u32;
-            let start_index = indices.len() as u32;
-
-            // Positions (required)
-            let positions: Vec<[f32; 3]> = reader
-                .read_positions()
-                .ok_or_else(|| {
-                    AssetLoadError::decode_failed("GLTF primitive missing POSITION attribute")
-                })?
-                .collect();
-
-            // Normals (optional -- default to [0, 0, 1])
-            let normals: Vec<[f32; 3]> = reader
-                .read_normals()
-                .map(|n| n.collect())
-                .unwrap_or_else(|| vec![[0.0, 0.0, 1.0]; positions.len()]);
-
-            // Tex coords (optional -- default to [0, 0])
-            let uvs: Vec<[f32; 2]> = reader
-                .read_tex_coords(0)
-                .map(|tc| tc.into_f32().collect())
-                .unwrap_or_else(|| vec![[0.0, 0.0]; positions.len()]);
-
-            for i in 0..positions.len() {
-                vertices.push(MeshVertex {
-                    position: positions[i],
-                    normal: normals[i],
-                    uv: uvs[i],
-                });
+    if let Some(scene) = document.default_scene() {
+        for node in scene.nodes() {
+            flatten_node(
+                node,
+                Matrix4::identity(),
+                &buffers,
+                &image_paths,
+                &mut vertices,
+                &mut indices,
+                &mut sub_meshes,
+                &mut mesh_bounds,
+                &mut has_mesh_bounds,
+                &mut flattened_any,
+            )?;
+        }
+    } else {
+        for scene in document.scenes() {
+            for node in scene.nodes() {
+                flatten_node(
+                    node,
+                    Matrix4::identity(),
+                    &buffers,
+                    &image_paths,
+                    &mut vertices,
+                    &mut indices,
+                    &mut sub_meshes,
+                    &mut mesh_bounds,
+                    &mut has_mesh_bounds,
+                    &mut flattened_any,
+                )?;
             }
+        }
+    }
 
-            // Indices (optional -- generate sequential if missing)
-            if let Some(idx_reader) = reader.read_indices() {
-                for idx in idx_reader.into_u32() {
-                    indices.push(base_vertex + idx);
-                }
-            } else {
-                for i in 0..positions.len() as u32 {
-                    indices.push(base_vertex + i);
-                }
-            }
-
-            let index_count = indices.len() as u32 - start_index;
-            let name = mesh
-                .name()
-                .map(|n| n.to_string())
-                .unwrap_or_else(|| format!("mesh_{}", mesh.index()));
-
-            sub_meshes.push(SubMesh {
-                name,
-                start_index,
-                index_count,
-                material_index: primitive.material().index().map(|i| i as u32),
-            });
+    if !flattened_any {
+        for mesh in document.meshes() {
+            append_mesh_primitives(
+                None,
+                mesh,
+                Matrix4::identity(),
+                &buffers,
+                &image_paths,
+                &mut vertices,
+                &mut indices,
+                &mut sub_meshes,
+                &mut mesh_bounds,
+                &mut has_mesh_bounds,
+            )?;
         }
     }
 
@@ -101,20 +97,149 @@ pub(super) fn parse_gltf(bytes: &[u8]) -> Result<MeshAsset, AssetLoadError> {
         vertices,
         indices,
         sub_meshes,
+        bounds: mesh_bounds,
     })
 }
 
-/// Collects buffer data from GLTF document.
-///
-/// For GLB files the first buffer comes from `blob`. For plain GLTF
-/// with external buffers, only embedded (data-URI) buffers are supported.
+#[cfg(feature = "native")]
+#[allow(clippy::too_many_arguments)]
+fn flatten_node(
+    node: gltf::Node,
+    parent_transform: Matrix4<f32>,
+    buffers: &[Vec<u8>],
+    image_paths: &[Option<String>],
+    vertices: &mut Vec<MeshVertex>,
+    indices: &mut Vec<u32>,
+    sub_meshes: &mut Vec<SubMesh>,
+    mesh_bounds: &mut MeshBounds,
+    has_mesh_bounds: &mut bool,
+    flattened_any: &mut bool,
+) -> Result<(), AssetLoadError> {
+    let world_transform = parent_transform * node_transform_matrix(node.transform().matrix());
+
+    if let Some(mesh) = node.mesh() {
+        append_mesh_primitives(
+            Some(node.clone()),
+            mesh,
+            world_transform,
+            buffers,
+            image_paths,
+            vertices,
+            indices,
+            sub_meshes,
+            mesh_bounds,
+            has_mesh_bounds,
+        )?;
+        *flattened_any = true;
+    }
+
+    for child in node.children() {
+        flatten_node(
+            child,
+            world_transform,
+            buffers,
+            image_paths,
+            vertices,
+            indices,
+            sub_meshes,
+            mesh_bounds,
+            has_mesh_bounds,
+            flattened_any,
+        )?;
+    }
+
+    Ok(())
+}
+
+#[cfg(feature = "native")]
+#[allow(clippy::too_many_arguments)]
+fn append_mesh_primitives(
+    node: Option<gltf::Node>,
+    mesh: gltf::Mesh,
+    transform: Matrix4<f32>,
+    buffers: &[Vec<u8>],
+    image_paths: &[Option<String>],
+    vertices: &mut Vec<MeshVertex>,
+    indices: &mut Vec<u32>,
+    sub_meshes: &mut Vec<SubMesh>,
+    mesh_bounds: &mut MeshBounds,
+    has_mesh_bounds: &mut bool,
+) -> Result<(), AssetLoadError> {
+    for primitive in mesh.primitives() {
+        let reader = primitive.reader(|buffer| buffers.get(buffer.index()).map(|d| d.as_slice()));
+
+        let base_vertex = vertices.len() as u32;
+        let start_index = indices.len() as u32;
+
+        let positions: Vec<[f32; 3]> = reader
+            .read_positions()
+            .ok_or_else(|| {
+                AssetLoadError::decode_failed("GLTF primitive missing POSITION attribute")
+            })?
+            .map(|position| transform_position(transform, position))
+            .collect();
+
+        let default_normal = transform_normal(transform, [0.0, 0.0, 1.0]);
+        let normals: Vec<[f32; 3]> = reader
+            .read_normals()
+            .map(|normals| {
+                normals
+                    .map(|normal| transform_normal(transform, normal))
+                    .collect()
+            })
+            .unwrap_or_else(|| vec![default_normal; positions.len()]);
+
+        let uvs: Vec<[f32; 2]> = reader
+            .read_tex_coords(0)
+            .map(|coords| coords.into_f32().collect())
+            .unwrap_or_else(|| vec![[0.0, 0.0]; positions.len()]);
+
+        for i in 0..positions.len() {
+            vertices.push(MeshVertex {
+                position: positions[i],
+                normal: normals[i],
+                uv: uvs[i],
+            });
+        }
+
+        if let Some(idx_reader) = reader.read_indices() {
+            for idx in idx_reader.into_u32() {
+                indices.push(base_vertex + idx);
+            }
+        } else {
+            for i in 0..positions.len() as u32 {
+                indices.push(base_vertex + i);
+            }
+        }
+
+        let bounds = MeshBounds::from_positions(&positions);
+        if *has_mesh_bounds {
+            *mesh_bounds = mesh_bounds.union(bounds);
+        } else {
+            *mesh_bounds = bounds;
+            *has_mesh_bounds = true;
+        }
+
+        let index_count = indices.len() as u32 - start_index;
+        sub_meshes.push(SubMesh {
+            name: primitive_name(node.as_ref(), &mesh, &primitive),
+            start_index,
+            index_count,
+            material_index: primitive.material().index().map(|i| i as u32),
+            material: extract_material(primitive.material(), image_paths),
+            bounds,
+        });
+    }
+
+    Ok(())
+}
+
 #[cfg(feature = "native")]
 fn collect_buffer_data(
     document: &gltf::Document,
     blob: &mut Option<Vec<u8>>,
+    context: &mut LoadContext,
 ) -> Result<Vec<Vec<u8>>, AssetLoadError> {
-    use crate::assets::loaders::gltf_utils::decode_data_uri;
-
     let mut buffers = Vec::new();
     for buffer in document.buffers() {
         match buffer.source() {
@@ -128,12 +253,264 @@ fn collect_buffer_data(
                 if uri.starts_with("data:") {
                     buffers.push(decode_data_uri(uri)?);
                 } else {
-                    return Err(AssetLoadError::decode_failed(format!(
-                        "External GLTF buffer URIs are not supported: {uri}"
-                    )));
+                    let path = resolve_relative_asset_path(context.path(), uri);
+                    context.add_dependency(path.clone());
+                    buffers.push(context.read_asset_bytes(&path)?);
                 }
             }
         }
     }
     Ok(buffers)
+}
+
+#[cfg(feature = "native")]
+fn collect_image_assets(
+    document: &gltf::Document,
+    buffers: &[Vec<u8>],
+    context: &mut LoadContext,
+) -> Result<Vec<Option<String>>, AssetLoadError> {
+    let mut image_paths = vec![None; document.images().len()];
+
+    for image in document.images() {
+        let path = match image.source() {
+            gltf::image::Source::Uri { uri, mime_type } => {
+                if uri.starts_with("data:") {
+                    let extension =
+                        extension_for_image_source(mime_type, Some(uri)).ok_or_else(|| {
+                            AssetLoadError::decode_failed(format!(
+                                "Unsupported embedded GLTF image source for image {}",
+                                image.index()
+                            ))
+                        })?;
+                    let path = embedded_image_path(context.path(), image.index(), extension);
+                    context.add_embedded_asset(path.clone(), decode_data_uri(uri)?);
+                    path
+                } else {
+                    let path = resolve_relative_asset_path(context.path(), uri);
+                    context.add_dependency(path.clone());
+                    path
+                }
+            }
+            gltf::image::Source::View { view, mime_type } => {
+                let buffer = buffers.get(view.buffer().index()).ok_or_else(|| {
+                    AssetLoadError::decode_failed(format!(
+                        "GLTF image buffer {} missing",
+                        view.buffer().index()
+                    ))
+                })?;
+                let start = view.offset();
+                let end = start + view.length();
+                let bytes = buffer.get(start..end).ok_or_else(|| {
+                    AssetLoadError::decode_failed(format!(
+                        "GLTF image view {} out of bounds",
+                        image.index()
+                    ))
+                })?;
+                let extension =
+                    extension_for_image_source(Some(mime_type), None).ok_or_else(|| {
+                        AssetLoadError::decode_failed(format!(
+                            "Unsupported GLTF image MIME type '{mime_type}'"
+                        ))
+                    })?;
+                let path = embedded_image_path(context.path(), image.index(), extension);
+                context.add_embedded_asset(path.clone(), bytes.to_vec());
+                path
+            }
+        };
+        image_paths[image.index()] = Some(path);
+    }
+
+    Ok(image_paths)
+}
+
+#[cfg(feature = "native")]
+fn extract_material(
+    material: gltf::Material,
+    image_paths: &[Option<String>],
+) -> Option<MeshMaterial> {
+    let pbr = material.pbr_metallic_roughness();
+    let base_color_texture = pbr
+        .base_color_texture()
+        .and_then(|info| texture_asset_path(info.texture(), image_paths));
+    let normal_texture = material
+        .normal_texture()
+        .and_then(|info| texture_asset_path(info.texture(), image_paths));
+    let metallic_roughness_texture = pbr
+        .metallic_roughness_texture()
+        .and_then(|info| texture_asset_path(info.texture(), image_paths));
+    let emissive_texture = material
+        .emissive_texture()
+        .and_then(|info| texture_asset_path(info.texture(), image_paths));
+    let alpha_cutoff = match material.alpha_mode() {
+        gltf::material::AlphaMode::Mask => Some(material.alpha_cutoff().unwrap_or(0.5)),
+        _ => None,
+    };
+
+    let imported = material.index().is_some()
+        || base_color_texture.is_some()
+        || normal_texture.is_some()
+        || metallic_roughness_texture.is_some()
+        || emissive_texture.is_some()
+        || material.double_sided()
+        || alpha_cutoff.is_some()
+        || pbr.base_color_factor() != [1.0, 1.0, 1.0, 1.0]
+        || material.emissive_factor() != [0.0, 0.0, 0.0]
+        || (pbr.metallic_factor() - 1.0).abs() > f32::EPSILON
+        || (pbr.roughness_factor() - 1.0).abs() > f32::EPSILON;
+
+    imported.then(|| MeshMaterial {
+        name: material.name().map(ToOwned::to_owned),
+        base_color_factor: pbr.base_color_factor(),
+        base_color_texture_path: base_color_texture,
+        normal_texture_path: normal_texture,
+        metallic_roughness_texture_path: metallic_roughness_texture,
+        emissive_texture_path: emissive_texture,
+        emissive_factor: material.emissive_factor(),
+        metallic_factor: pbr.metallic_factor(),
+        roughness_factor: pbr.roughness_factor(),
+        alpha_cutoff,
+        double_sided: material.double_sided(),
+    })
+}
+
+#[cfg(feature = "native")]
+fn texture_asset_path(texture: gltf::Texture, image_paths: &[Option<String>]) -> Option<String> {
+    image_paths
+        .get(texture.source().index())
+        .and_then(|path| path.clone())
+}
+
+#[cfg(feature = "native")]
+fn primitive_name(
+    node: Option<&gltf::Node>,
+    mesh: &gltf::Mesh,
+    primitive: &gltf::Primitive,
+) -> String {
+    let node_name = node
+        .and_then(|node| node.name().map(ToOwned::to_owned))
+        .unwrap_or_else(|| format!("node_{}", node.map_or(0, |node| node.index())));
+    let mesh_name = mesh
+        .name()
+        .map(ToOwned::to_owned)
+        .unwrap_or_else(|| format!("mesh_{}", mesh.index()));
+    format!("{node_name}.{mesh_name}.primitive_{}", primitive.index())
+}
+
+#[cfg(feature = "native")]
+fn resolve_relative_asset_path(base: &AssetPath<'_>, uri: &str) -> String {
+    let uri = uri.split('#').next().unwrap_or(uri);
+    let path = if let Some(directory) = base.directory() {
+        Path::new(directory).join(uri)
+    } else {
+        Path::new(uri).to_path_buf()
+    };
+    AssetPath::from_path(&path).into_owned().to_string()
+}
+
+#[cfg(feature = "native")]
+fn embedded_image_path(base: &AssetPath<'_>, image_index: usize, extension: &str) -> String {
+    let stem = base.stem().unwrap_or("mesh");
+    let file_name = format!("{stem}__embedded_image_{image_index}.{extension}");
+    if let Some(directory) = base.directory() {
+        AssetPath::new(directory).join(&file_name).to_string()
+    } else {
+        file_name
+    }
+}
+
+#[cfg(feature = "native")]
+fn extension_for_image_source(mime_type: Option<&str>, uri: Option<&str>) -> Option<&'static str> {
+    mime_type
+        .and_then(extension_for_mime_type)
+        .or_else(|| uri.and_then(extension_for_uri))
+}
+
+#[cfg(feature = "native")]
+fn extension_for_mime_type(mime_type: &str) -> Option<&'static str> {
+    match mime_type {
+        "image/png" => Some("png"),
+        "image/jpeg" | "image/jpg" => Some("jpg"),
+        "image/webp" => Some("webp"),
+        "image/bmp" => Some("bmp"),
+        "image/gif" => Some("gif"),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "native")]
+fn extension_for_uri(uri: &str) -> Option<&'static str> {
+    if let Some(data_uri_extension) = extension_for_data_uri(uri) {
+        return Some(data_uri_extension);
+    }
+
+    let path = uri
+        .split('#')
+        .next()
+        .unwrap_or(uri)
+        .split('?')
+        .next()
+        .unwrap_or(uri);
+    match Path::new(path).extension().and_then(|ext| ext.to_str()) {
+        Some("png") => Some("png"),
+        Some("jpg") | Some("jpeg") => Some("jpg"),
+        Some("webp") => Some("webp"),
+        Some("bmp") => Some("bmp"),
+        Some("gif") => Some("gif"),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "native")]
+fn extension_for_data_uri(uri: &str) -> Option<&'static str> {
+    let prefix = "data:";
+    if !uri.starts_with(prefix) {
+        return None;
+    }
+
+    let mime_end = uri.find(';').or_else(|| uri.find(','))?;
+    extension_for_mime_type(&uri[prefix.len()..mime_end])
+}
+
+#[cfg(feature = "native")]
+fn node_transform_matrix(matrix: [[f32; 4]; 4]) -> Matrix4<f32> {
+    Matrix4::new(
+        matrix[0][0],
+        matrix[0][1],
+        matrix[0][2],
+        matrix[0][3],
+        matrix[1][0],
+        matrix[1][1],
+        matrix[1][2],
+        matrix[1][3],
+        matrix[2][0],
+        matrix[2][1],
+        matrix[2][2],
+        matrix[2][3],
+        matrix[3][0],
+        matrix[3][1],
+        matrix[3][2],
+        matrix[3][3],
+    )
+}
+
+#[cfg(feature = "native")]
+fn transform_position(transform: Matrix4<f32>, position: [f32; 3]) -> [f32; 3] {
+    let transformed = transform * Vector4::new(position[0], position[1], position[2], 1.0);
+    [transformed.x, transformed.y, transformed.z]
+}
+
+#[cfg(feature = "native")]
+fn transform_normal(transform: Matrix4<f32>, normal: [f32; 3]) -> [f32; 3] {
+    let basis = transform
+        .invert()
+        .unwrap_or_else(Matrix4::identity)
+        .transpose();
+    let transformed = basis * Vector4::new(normal[0], normal[1], normal[2], 0.0);
+    let normalized = Vector3::new(transformed.x, transformed.y, transformed.z);
+    if normalized.magnitude2() > 0.0 {
+        let normalized = normalized.normalize();
+        [normalized.x, normalized.y, normalized.z]
+    } else {
+        [0.0, 0.0, 1.0]
+    }
 }

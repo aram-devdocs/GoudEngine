@@ -83,6 +83,11 @@ impl GlfwPlatform {
         glfw.window_hint(glfw::WindowHint::OpenGlProfile(
             glfw::OpenGlProfileHint::Core,
         ));
+        glfw.window_hint(glfw::WindowHint::Samples(if config.msaa_samples > 1 {
+            Some(config.msaa_samples)
+        } else {
+            None
+        }));
         #[cfg(target_os = "macos")]
         glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
 

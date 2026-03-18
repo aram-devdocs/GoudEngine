@@ -1,7 +1,9 @@
 //! Asset loading and access operations for `AssetServer`.
 
 use super::core::AssetServer;
-use crate::assets::{Asset, AssetHandle, AssetLoadError, AssetPath, AssetState, LoadContext};
+use crate::assets::{
+    loader::EmbeddedAsset, Asset, AssetHandle, AssetLoadError, AssetPath, AssetState, LoadContext,
+};
 #[cfg(feature = "native")]
 use crate::assets::{HotReloadConfig, HotReloadWatcher};
 use std::path::Path;
@@ -24,8 +26,9 @@ impl AssetServer {
 
         // Load the asset synchronously
         match self.load_asset_sync::<A>(&asset_path) {
-            Ok((asset, dependencies)) => {
+            Ok((asset, dependencies, embedded_assets)) => {
                 self.storage.set_loaded(&handle, asset);
+                self.load_embedded_assets(&embedded_assets);
                 // Record dependencies in the graph
                 let asset_str = asset_path.as_str().to_string();
                 for dep in &dependencies {
@@ -58,7 +61,7 @@ impl AssetServer {
         &self,
         path: &AssetPath,
         bytes: &[u8],
-    ) -> Result<(A, Vec<String>), AssetLoadError> {
+    ) -> Result<(A, Vec<String>, Vec<EmbeddedAsset>), AssetLoadError> {
         let extension = path
             .extension()
             .ok_or_else(|| AssetLoadError::unsupported_format(""))?;
@@ -68,24 +71,25 @@ impl AssetServer {
             .find_loader_for_path(path, extension)
             .ok_or_else(|| AssetLoadError::unsupported_format(extension))?;
 
-        let mut context = LoadContext::new(path.clone().into_owned());
+        let reader = |dependency_path: &str| self.vfs.read(dependency_path);
+        let mut context = LoadContext::with_reader(path.clone().into_owned(), &reader);
         let boxed = loader.load_erased(bytes, &mut context)?;
 
-        let dependencies = context.into_dependencies();
+        let (dependencies, embedded_assets) = context.into_parts();
 
         let asset = boxed
             .downcast::<A>()
             .map(|boxed| *boxed)
             .map_err(|_| AssetLoadError::custom("Type mismatch after loading"))?;
 
-        Ok((asset, dependencies))
+        Ok((asset, dependencies, embedded_assets))
     }
 
     /// Reads a file via the virtual filesystem and parses it into an asset.
     fn load_asset_sync<A: Asset>(
         &self,
         path: &AssetPath,
-    ) -> Result<(A, Vec<String>), AssetLoadError> {
+    ) -> Result<(A, Vec<String>, Vec<EmbeddedAsset>), AssetLoadError> {
         let bytes = self.vfs.read(path.as_str())?;
         self.parse_bytes::<A>(path, &bytes)
     }
@@ -147,8 +151,9 @@ impl AssetServer {
         let handle = self.storage.reserve_with_path::<A>(asset_path.clone());
 
         match self.parse_bytes::<A>(&asset_path, bytes) {
-            Ok((asset, dependencies)) => {
+            Ok((asset, dependencies, embedded_assets)) => {
                 self.storage.set_loaded(&handle, asset);
+                self.load_embedded_assets(&embedded_assets);
                 // Record dependencies in the graph
                 let asset_str = asset_path.as_str().to_string();
                 for dep in &dependencies {
@@ -207,6 +212,42 @@ impl AssetServer {
     #[inline]
     pub fn get_mut<A: Asset>(&mut self, handle: &AssetHandle<A>) -> Option<&mut A> {
         self.storage.get_mut(handle)
+    }
+
+    fn load_embedded_assets(&mut self, embedded_assets: &[EmbeddedAsset]) {
+        for embedded in embedded_assets {
+            let _ = self.load_embedded_asset_by_extension(&embedded.path, &embedded.bytes);
+        }
+    }
+
+    fn load_embedded_asset_by_extension(&mut self, path: &str, bytes: &[u8]) -> bool {
+        let extension = Path::new(path)
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase();
+
+        match extension.as_str() {
+            "png" | "jpg" | "jpeg" | "bmp" | "tga" | "gif" | "webp" | "ico" | "tiff" => {
+                let _ = self.load_from_bytes::<crate::assets::loaders::TextureAsset>(path, bytes);
+                true
+            }
+            "mat.json" => {
+                let _ = self.load_from_bytes::<crate::assets::loaders::MaterialAsset>(path, bytes);
+                true
+            }
+            "shader" | "glsl" | "wgsl" | "vert" | "frag" | "comp" => {
+                let _ = self.load_from_bytes::<crate::assets::loaders::ShaderAsset>(path, bytes);
+                true
+            }
+            _ => {
+                log::warn!(
+                    "Skipping embedded asset '{}' with unsupported extension",
+                    path
+                );
+                false
+            }
+        }
     }
 
     /// Returns true if the handle points to a valid, loaded asset.
@@ -321,7 +362,8 @@ impl AssetServer {
                 self.storage.replace_erased(path, boxed_asset);
 
                 // Update dependency graph with new dependencies from reload
-                let new_deps = context.into_dependencies();
+                let (new_deps, embedded_assets) = context.into_parts();
+                self.load_embedded_assets(&embedded_assets);
                 let path_str = path.to_string();
                 self.dependency_graph.remove_asset(&path_str);
                 for dep in &new_deps {

@@ -54,6 +54,9 @@ pub trait StateOps {
     /// Enables or disables writing to the depth buffer.
     fn set_depth_mask(&mut self, enabled: bool);
 
+    /// Enables or disables hardware multisampling when the backend supports it.
+    fn set_multisampling_enabled(&mut self, _enabled: bool) {}
+
     /// Sets the line width for line primitives.
     fn set_line_width(&mut self, width: f32);
 }

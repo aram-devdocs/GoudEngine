@@ -14,7 +14,8 @@
 use super::{
     types::{
         BufferHandle, BufferMarker, BufferType, DepthFunc, FrontFace, PrimitiveTopology,
-        ShaderHandle, ShaderMarker, TextureHandle, TextureMarker, VertexLayout,
+        ShaderHandle, ShaderMarker, TextureHandle, TextureMarker, VertexBufferBinding,
+        VertexLayout,
     },
     BackendCapabilities, BackendInfo, BlendFactor, BufferOps, ClearOps, CullFace, DrawOps,
     FrameOps, RenderBackend, ShaderOps, StateOps, TextureOps,
@@ -94,6 +95,7 @@ pub struct WgpuBackend {
     bound_shader: Option<ShaderHandle>,
     bound_textures: Vec<Option<TextureHandle>>,
     current_layout: Option<VertexLayout>,
+    current_vertex_bindings: Vec<VertexBufferBinding>,
 
     // Pipeline cache
     pipeline_cache: HashMap<PipelineKey, wgpu::RenderPipeline>,

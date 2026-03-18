@@ -14,6 +14,7 @@ use crate::ecs::{Entity, World};
 use crate::libs::graphics::backend::types::{BufferHandle, ShaderHandle};
 use crate::libs::graphics::backend::RenderBackend;
 use crate::rendering::RenderViewport;
+use cgmath::{ortho, Vector4};
 use std::collections::HashMap;
 
 /// High-performance sprite batch renderer.
@@ -55,6 +56,8 @@ pub struct SpriteBatch<B: RenderBackend> {
     pub viewport: RenderViewport,
     /// Signature of the currently compiled shader/material state.
     pub shader_signature: Option<u64>,
+    /// Number of sprites rejected by frustum culling this frame.
+    pub culled_count: usize,
 }
 
 impl<B: RenderBackend> SpriteBatch<B> {
@@ -78,6 +81,7 @@ impl<B: RenderBackend> SpriteBatch<B> {
             frame_count: 0,
             viewport: RenderViewport::default(),
             shader_signature: None,
+            culled_count: 0,
         })
     }
 
@@ -88,6 +92,7 @@ impl<B: RenderBackend> SpriteBatch<B> {
         self.sprites.clear();
         self.vertices.clear();
         self.batches.clear();
+        self.culled_count = 0;
         self.frame_count += 1;
     }
 
@@ -137,6 +142,8 @@ impl<B: RenderBackend> SpriteBatch<B> {
         asset_server: &mut AssetServer,
     ) -> GoudResult<()> {
         self.sprites.clear();
+        self.culled_count = 0;
+        let frustum = SpriteFrustum2D::from_viewport(self.viewport);
 
         let query: Query<(Entity, &Sprite, &Transform2D)> = Query::new(world);
 
@@ -165,10 +172,41 @@ impl<B: RenderBackend> SpriteBatch<B> {
                 sprite.flip_x,
                 sprite.flip_y,
             );
-            self.sprites.push(instance);
+            if !self.config.enable_frustum_culling || self.is_sprite_visible(&instance, &frustum) {
+                self.sprites.push(instance);
+            } else {
+                self.culled_count += 1;
+            }
         }
 
         Ok(())
+    }
+
+    fn is_sprite_visible(&self, sprite: &SpriteInstance, frustum: &SpriteFrustum2D) -> bool {
+        frustum.intersects_rect(&self.sprite_bounds(sprite))
+    }
+
+    fn sprite_bounds(&self, sprite: &SpriteInstance) -> Rect {
+        let half_size = sprite.size * 0.5;
+        let local_corners = [
+            Vec2::new(-half_size.x, -half_size.y),
+            Vec2::new(half_size.x, -half_size.y),
+            Vec2::new(half_size.x, half_size.y),
+            Vec2::new(-half_size.x, half_size.y),
+        ];
+
+        let mut min = Vec2::new(f32::INFINITY, f32::INFINITY);
+        let mut max = Vec2::new(f32::NEG_INFINITY, f32::NEG_INFINITY);
+
+        for corner in local_corners {
+            let world = sprite.transform.transform_point(corner);
+            min.x = min.x.min(world.x);
+            min.y = min.y.min(world.y);
+            max.x = max.x.max(world.x);
+            max.y = max.y.max(world.y);
+        }
+
+        Rect::from_min_max(min, max)
     }
 
     fn resolve_sprite_source(
@@ -396,6 +434,11 @@ impl<B: RenderBackend> SpriteBatch<B> {
         self.frame_count
     }
 
+    /// Returns how many sprites were rejected by frustum culling this frame.
+    pub fn culled_count(&self) -> usize {
+        self.culled_count
+    }
+
     /// Sets the active viewport used by this batch.
     pub fn set_viewport(&mut self, viewport: RenderViewport) {
         self.viewport = viewport;
@@ -437,6 +480,95 @@ impl<B: RenderBackend> crate::core::providers::diagnostics::DiagnosticsSource fo
             "sprite_count": sprites,
             "batch_count": batches,
             "batch_ratio": ratio,
+            "culled_count": self.culled_count(),
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct FrustumPlane2D {
+    a: f32,
+    b: f32,
+    d: f32,
+}
+
+impl FrustumPlane2D {
+    fn from_clip_coefficients(coefficients: Vector4<f32>) -> Self {
+        let length = (coefficients.x * coefficients.x + coefficients.y * coefficients.y).sqrt();
+        if length <= f32::EPSILON {
+            return Self {
+                a: 0.0,
+                b: 0.0,
+                d: 0.0,
+            };
+        }
+
+        Self {
+            a: coefficients.x / length,
+            b: coefficients.y / length,
+            d: coefficients.w / length,
+        }
+    }
+
+    fn signed_distance(self, point: Vec2) -> f32 {
+        self.a * point.x + self.b * point.y + self.d
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct SpriteFrustum2D {
+    planes: [FrustumPlane2D; 4],
+}
+
+impl SpriteFrustum2D {
+    fn from_viewport(viewport: RenderViewport) -> Self {
+        let projection = ortho(
+            0.0,
+            viewport.logical_width.max(1) as f32,
+            viewport.logical_height.max(1) as f32,
+            0.0,
+            -1.0,
+            1.0,
+        );
+        let row0 = Vector4::new(
+            projection.x.x,
+            projection.y.x,
+            projection.z.x,
+            projection.w.x,
+        );
+        let row1 = Vector4::new(
+            projection.x.y,
+            projection.y.y,
+            projection.z.y,
+            projection.w.y,
+        );
+        let row3 = Vector4::new(
+            projection.x.w,
+            projection.y.w,
+            projection.z.w,
+            projection.w.w,
+        );
+
+        Self {
+            planes: [
+                FrustumPlane2D::from_clip_coefficients(row3 + row0),
+                FrustumPlane2D::from_clip_coefficients(row3 - row0),
+                FrustumPlane2D::from_clip_coefficients(row3 + row1),
+                FrustumPlane2D::from_clip_coefficients(row3 - row1),
+            ],
+        }
+    }
+
+    fn intersects_rect(self, rect: &Rect) -> bool {
+        let min = rect.min();
+        let max = rect.max();
+
+        self.planes.iter().all(|plane| {
+            let positive = Vec2::new(
+                if plane.a >= 0.0 { max.x } else { min.x },
+                if plane.b >= 0.0 { max.y } else { min.y },
+            );
+            plane.signed_distance(positive) >= 0.0
         })
     }
 }

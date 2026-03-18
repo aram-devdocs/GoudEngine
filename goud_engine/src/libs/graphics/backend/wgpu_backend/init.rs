@@ -173,6 +173,7 @@ impl WgpuBackend {
             bound_shader: None,
             bound_textures: vec![None; MAX_TEXTURE_UNITS],
             current_layout: None,
+            current_vertex_bindings: Vec::new(),
             pipeline_cache: HashMap::new(),
             uniform_bind_group_layout,
             texture_bind_group_layout,

@@ -1,6 +1,6 @@
 //! Tests for the mesh asset loader.
 
-use crate::assets::loaders::mesh::asset::{MeshAsset, MeshVertex, SubMesh};
+use crate::assets::loaders::mesh::asset::{MeshAsset, MeshBounds, MeshVertex, SubMesh};
 use crate::assets::loaders::mesh::loader::{MeshFormat, MeshLoader};
 use crate::assets::{Asset, AssetLoader, AssetPath, AssetType, LoadContext};
 
@@ -44,6 +44,7 @@ fn test_mesh_asset_counts() {
         ],
         indices: vec![0, 1, 2],
         sub_meshes: vec![],
+        bounds: MeshBounds::from_positions(&[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]),
     };
 
     assert_eq!(asset.vertex_count(), 3);
@@ -58,6 +59,7 @@ fn test_mesh_asset_empty() {
         vertices: vec![],
         indices: vec![],
         sub_meshes: vec![],
+        bounds: MeshBounds::default(),
     };
     assert!(asset.is_empty());
     assert_eq!(asset.triangle_count(), 0);
@@ -73,6 +75,7 @@ fn test_mesh_asset_to_interleaved_floats() {
         }],
         indices: vec![0],
         sub_meshes: vec![],
+        bounds: MeshBounds::from_positions(&[[1.0, 2.0, 3.0]]),
     };
 
     let floats = asset.to_interleaved_floats();
@@ -99,6 +102,8 @@ fn test_sub_mesh_serde_roundtrip() {
         start_index: 10,
         index_count: 36,
         material_index: Some(2),
+        material: None,
+        bounds: MeshBounds::from_positions(&[[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
     };
     let json = serde_json::to_string(&sub).unwrap();
     let deserialized: SubMesh = serde_json::from_str(&json).unwrap();
@@ -271,6 +276,10 @@ f 1 2 3
 #[cfg(feature = "native")]
 mod gltf_tests {
     use super::*;
+    use crate::assets::loaders::{ensure_3d_asset_loaders, TextureAsset};
+    use crate::assets::AssetServer;
+    use image::{ImageBuffer, ImageFormat, Rgba};
+    use std::fs;
 
     /// Builds a minimal valid GLB containing a single triangle.
     ///
@@ -278,6 +287,28 @@ mod gltf_tests {
     ///   Header (12 bytes): magic + version + total_length
     ///   Chunk 0 (JSON): length + type + data
     ///   Chunk 1 (BIN):  length + type + data
+    fn triangle_bin() -> Vec<u8> {
+        let mut bin = Vec::new();
+
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&1.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&1.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+
+        bin.extend_from_slice(&0u16.to_le_bytes());
+        bin.extend_from_slice(&1u16.to_le_bytes());
+        bin.extend_from_slice(&2u16.to_le_bytes());
+        bin.extend_from_slice(&[0u8; 2]);
+
+        assert_eq!(bin.len(), 44);
+        bin
+    }
+
     fn build_triangle_glb() -> Vec<u8> {
         // Triangle: 3 vertices (position only), 3 indices (u16)
         //
@@ -286,30 +317,7 @@ mod gltf_tests {
         // Total BIN = 44 bytes
 
         // -- BIN chunk data --
-        let mut bin = Vec::new();
-
-        // Positions (accessor 1, buffer view 0, offset 0, count 3)
-        // v0 = (0, 0, 0)
-        bin.extend_from_slice(&0.0f32.to_le_bytes());
-        bin.extend_from_slice(&0.0f32.to_le_bytes());
-        bin.extend_from_slice(&0.0f32.to_le_bytes());
-        // v1 = (1, 0, 0)
-        bin.extend_from_slice(&1.0f32.to_le_bytes());
-        bin.extend_from_slice(&0.0f32.to_le_bytes());
-        bin.extend_from_slice(&0.0f32.to_le_bytes());
-        // v2 = (0, 1, 0)
-        bin.extend_from_slice(&0.0f32.to_le_bytes());
-        bin.extend_from_slice(&1.0f32.to_le_bytes());
-        bin.extend_from_slice(&0.0f32.to_le_bytes());
-
-        // Indices (accessor 0, buffer view 1, offset 36, count 3)
-        bin.extend_from_slice(&0u16.to_le_bytes());
-        bin.extend_from_slice(&1u16.to_le_bytes());
-        bin.extend_from_slice(&2u16.to_le_bytes());
-        // Pad to 4-byte alignment
-        bin.extend_from_slice(&[0u8; 2]);
-
-        assert_eq!(bin.len(), 44);
+        let bin = triangle_bin();
 
         // -- JSON chunk --
         let json_str = serde_json::json!({
@@ -391,6 +399,141 @@ mod gltf_tests {
         glb
     }
 
+    fn create_test_png(width: u32, height: u32) -> Vec<u8> {
+        let image: ImageBuffer<Rgba<u8>, Vec<u8>> =
+            ImageBuffer::from_pixel(width, height, Rgba([255, 255, 255, 255]));
+        let mut bytes = Vec::new();
+        image::DynamicImage::ImageRgba8(image)
+            .write_to(&mut std::io::Cursor::new(&mut bytes), ImageFormat::Png)
+            .expect("test png encoding should succeed");
+        bytes
+    }
+
+    fn pad_to_4(bytes: &mut Vec<u8>, value: u8) {
+        while !bytes.len().is_multiple_of(4) {
+            bytes.push(value);
+        }
+    }
+
+    fn build_glb_with_json_and_bin(json: serde_json::Value, mut bin: Vec<u8>) -> Vec<u8> {
+        let mut json_bytes = json.to_string().into_bytes();
+        pad_to_4(&mut json_bytes, b' ');
+        pad_to_4(&mut bin, 0);
+
+        let json_chunk_len = json_bytes.len() as u32;
+        let bin_chunk_len = bin.len() as u32;
+        let total_len = 12 + 8 + json_chunk_len + 8 + bin_chunk_len;
+
+        let mut glb = Vec::with_capacity(total_len as usize);
+        glb.extend_from_slice(b"glTF");
+        glb.extend_from_slice(&2u32.to_le_bytes());
+        glb.extend_from_slice(&total_len.to_le_bytes());
+        glb.extend_from_slice(&json_chunk_len.to_le_bytes());
+        glb.extend_from_slice(b"JSON");
+        glb.extend_from_slice(&json_bytes);
+        glb.extend_from_slice(&bin_chunk_len.to_le_bytes());
+        glb.extend_from_slice(&[0x42, 0x49, 0x4E, 0x00]);
+        glb.extend_from_slice(&bin);
+        glb
+    }
+
+    fn build_multi_node_triangle_glb() -> Vec<u8> {
+        let mut bin = Vec::new();
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&1.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&1.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0u16.to_le_bytes());
+        bin.extend_from_slice(&1u16.to_le_bytes());
+        bin.extend_from_slice(&2u16.to_le_bytes());
+        pad_to_4(&mut bin, 0);
+
+        let json = serde_json::json!({
+            "asset": { "version": "2.0" },
+            "buffers": [{ "byteLength": bin.len() }],
+            "bufferViews": [
+                { "buffer": 0, "byteOffset": 0, "byteLength": 36, "target": 34962 },
+                { "buffer": 0, "byteOffset": 36, "byteLength": 6, "target": 34963 }
+            ],
+            "accessors": [
+                { "bufferView": 1, "componentType": 5123, "count": 3, "type": "SCALAR", "max": [2], "min": [0] },
+                { "bufferView": 0, "componentType": 5126, "count": 3, "type": "VEC3", "max": [1.0, 1.0, 0.0], "min": [0.0, 0.0, 0.0] }
+            ],
+            "meshes": [{
+                "name": "Triangle",
+                "primitives": [{ "attributes": { "POSITION": 1 }, "indices": 0 }]
+            }],
+            "nodes": [
+                { "name": "left", "mesh": 0 },
+                { "name": "right", "mesh": 0, "translation": [2.0, 0.0, 0.0] }
+            ],
+            "scenes": [{ "nodes": [0, 1] }],
+            "scene": 0
+        });
+
+        build_glb_with_json_and_bin(json, bin)
+    }
+
+    fn build_textured_triangle_glb() -> Vec<u8> {
+        let png = create_test_png(2, 2);
+        let image_offset = 44usize;
+
+        let mut bin = Vec::new();
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&1.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&1.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0u16.to_le_bytes());
+        bin.extend_from_slice(&1u16.to_le_bytes());
+        bin.extend_from_slice(&2u16.to_le_bytes());
+        pad_to_4(&mut bin, 0);
+        assert_eq!(bin.len(), image_offset);
+        bin.extend_from_slice(&png);
+        pad_to_4(&mut bin, 0);
+
+        let json = serde_json::json!({
+            "asset": { "version": "2.0" },
+            "buffers": [{ "byteLength": bin.len() }],
+            "bufferViews": [
+                { "buffer": 0, "byteOffset": 0, "byteLength": 36, "target": 34962 },
+                { "buffer": 0, "byteOffset": 36, "byteLength": 6, "target": 34963 },
+                { "buffer": 0, "byteOffset": image_offset, "byteLength": png.len() }
+            ],
+            "accessors": [
+                { "bufferView": 1, "componentType": 5123, "count": 3, "type": "SCALAR", "max": [2], "min": [0] },
+                { "bufferView": 0, "componentType": 5126, "count": 3, "type": "VEC3", "max": [1.0, 1.0, 0.0], "min": [0.0, 0.0, 0.0] }
+            ],
+            "images": [
+                { "bufferView": 2, "mimeType": "image/png" }
+            ],
+            "textures": [
+                { "source": 0 }
+            ],
+            "materials": [
+                { "name": "lit", "pbrMetallicRoughness": { "baseColorTexture": { "index": 0 } } }
+            ],
+            "meshes": [{
+                "name": "Triangle",
+                "primitives": [{ "attributes": { "POSITION": 1 }, "indices": 0, "material": 0 }]
+            }],
+            "nodes": [{ "mesh": 0 }],
+            "scenes": [{ "nodes": [0] }],
+            "scene": 0
+        });
+
+        build_glb_with_json_and_bin(json, bin)
+    }
+
     #[test]
     fn test_gltf_parse_triangle_glb() {
         let glb = build_triangle_glb();
@@ -424,10 +567,343 @@ mod gltf_tests {
         let asset = loader.load(&glb, &(), &mut ctx).unwrap();
 
         assert_eq!(asset.sub_meshes.len(), 1);
-        assert_eq!(asset.sub_meshes[0].name, "Triangle");
+        assert_eq!(asset.sub_meshes[0].name, "node_0.Triangle.primitive_0");
         assert_eq!(asset.sub_meshes[0].start_index, 0);
         assert_eq!(asset.sub_meshes[0].index_count, 3);
         assert_eq!(asset.sub_meshes[0].material_index, None);
+    }
+
+    #[test]
+    fn test_gltf_external_buffer_uri_is_loaded() {
+        let gltf = serde_json::json!({
+            "asset": { "version": "2.0" },
+            "buffers": [{ "uri": "triangle.bin", "byteLength": 44 }],
+            "bufferViews": [
+                {
+                    "buffer": 0,
+                    "byteOffset": 0,
+                    "byteLength": 36,
+                    "target": 34962
+                },
+                {
+                    "buffer": 0,
+                    "byteOffset": 36,
+                    "byteLength": 6,
+                    "target": 34963
+                }
+            ],
+            "accessors": [
+                {
+                    "bufferView": 1,
+                    "componentType": 5123,
+                    "count": 3,
+                    "type": "SCALAR",
+                    "max": [2],
+                    "min": [0]
+                },
+                {
+                    "bufferView": 0,
+                    "componentType": 5126,
+                    "count": 3,
+                    "type": "VEC3",
+                    "max": [1.0, 1.0, 0.0],
+                    "min": [0.0, 0.0, 0.0]
+                }
+            ],
+            "meshes": [{
+                "name": "Triangle",
+                "primitives": [{
+                    "attributes": { "POSITION": 1 },
+                    "indices": 0
+                }]
+            }],
+            "nodes": [{ "mesh": 0 }],
+            "scenes": [{ "nodes": [0] }],
+            "scene": 0
+        })
+        .to_string();
+        let triangle_bin = triangle_bin();
+        let loader = MeshLoader::new();
+        let path = AssetPath::from_string("models/triangle.gltf".to_string());
+        let reader = |asset_path: &str| -> Result<Vec<u8>, crate::assets::AssetLoadError> {
+            if asset_path == "models/triangle.bin" {
+                Ok(triangle_bin.clone())
+            } else {
+                Err(crate::assets::AssetLoadError::custom(format!(
+                    "unexpected path {asset_path}"
+                )))
+            }
+        };
+        let mut ctx = LoadContext::with_reader(path, &reader);
+        let asset = loader.load(gltf.as_bytes(), &(), &mut ctx).unwrap();
+
+        assert_eq!(asset.vertex_count(), 3);
+        assert_eq!(asset.index_count(), 3);
+        assert_eq!(ctx.dependencies(), &["models/triangle.bin".to_string()]);
+    }
+
+    #[test]
+    fn test_gltf_multi_node_scene_flattens_meshes() {
+        let gltf = serde_json::json!({
+            "asset": { "version": "2.0" },
+            "buffers": [{ "uri": "triangle.bin", "byteLength": 44 }],
+            "bufferViews": [
+                {
+                    "buffer": 0,
+                    "byteOffset": 0,
+                    "byteLength": 36,
+                    "target": 34962
+                },
+                {
+                    "buffer": 0,
+                    "byteOffset": 36,
+                    "byteLength": 6,
+                    "target": 34963
+                }
+            ],
+            "accessors": [
+                {
+                    "bufferView": 1,
+                    "componentType": 5123,
+                    "count": 3,
+                    "type": "SCALAR",
+                    "max": [2],
+                    "min": [0]
+                },
+                {
+                    "bufferView": 0,
+                    "componentType": 5126,
+                    "count": 3,
+                    "type": "VEC3",
+                    "max": [1.0, 1.0, 0.0],
+                    "min": [0.0, 0.0, 0.0]
+                }
+            ],
+            "meshes": [{
+                "name": "Triangle",
+                "primitives": [{
+                    "attributes": { "POSITION": 1 },
+                    "indices": 0
+                }]
+            }],
+            "nodes": [
+                { "mesh": 0, "translation": [0.0, 0.0, 0.0], "name": "left" },
+                { "mesh": 0, "translation": [2.0, 0.0, 0.0], "name": "right" }
+            ],
+            "scenes": [{ "nodes": [0, 1] }],
+            "scene": 0
+        })
+        .to_string();
+        let triangle_bin = triangle_bin();
+        let loader = MeshLoader::new();
+        let path = AssetPath::from_string("models/triangle.gltf".to_string());
+        let reader = |asset_path: &str| -> Result<Vec<u8>, crate::assets::AssetLoadError> {
+            if asset_path == "models/triangle.bin" {
+                Ok(triangle_bin.clone())
+            } else {
+                Err(crate::assets::AssetLoadError::custom(format!(
+                    "unexpected path {asset_path}"
+                )))
+            }
+        };
+        let mut ctx = LoadContext::with_reader(path, &reader);
+        let asset = loader.load(gltf.as_bytes(), &(), &mut ctx).unwrap();
+
+        assert_eq!(asset.vertex_count(), 6);
+        assert_eq!(asset.sub_meshes.len(), 2);
+        assert_eq!(asset.sub_meshes[0].name, "left.Triangle.primitive_0");
+        assert_eq!(asset.sub_meshes[1].name, "right.Triangle.primitive_0");
+        assert_eq!(asset.vertices[3].position, [2.0, 0.0, 0.0]);
+    }
+
+    #[test]
+    fn test_gltf_embedded_image_emits_texture_asset() {
+        let gltf = serde_json::json!({
+            "asset": { "version": "2.0" },
+            "buffers": [{ "uri": "triangle.bin", "byteLength": 44 }],
+            "bufferViews": [
+                {
+                    "buffer": 0,
+                    "byteOffset": 0,
+                    "byteLength": 36,
+                    "target": 34962
+                },
+                {
+                    "buffer": 0,
+                    "byteOffset": 36,
+                    "byteLength": 6,
+                    "target": 34963
+                }
+            ],
+            "accessors": [
+                {
+                    "bufferView": 1,
+                    "componentType": 5123,
+                    "count": 3,
+                    "type": "SCALAR",
+                    "max": [2],
+                    "min": [0]
+                },
+                {
+                    "bufferView": 0,
+                    "componentType": 5126,
+                    "count": 3,
+                    "type": "VEC3",
+                    "max": [1.0, 1.0, 0.0],
+                    "min": [0.0, 0.0, 0.0]
+                }
+            ],
+            "images": [{
+                "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+mvS0AAAAASUVORK5CYII="
+            }],
+            "textures": [{ "source": 0 }],
+            "materials": [{
+                "name": "embedded",
+                "pbrMetallicRoughness": {
+                    "baseColorTexture": { "index": 0 }
+                }
+            }],
+            "meshes": [{
+                "name": "Triangle",
+                "primitives": [{
+                    "attributes": { "POSITION": 1 },
+                    "indices": 0,
+                    "material": 0
+                }]
+            }],
+            "nodes": [{ "mesh": 0 }],
+            "scenes": [{ "nodes": [0] }],
+            "scene": 0
+        })
+        .to_string();
+        let triangle_bin = triangle_bin();
+        let loader = MeshLoader::new();
+        let path = AssetPath::from_string("models/triangle.gltf".to_string());
+        let reader = |asset_path: &str| -> Result<Vec<u8>, crate::assets::AssetLoadError> {
+            if asset_path == "models/triangle.bin" {
+                Ok(triangle_bin.clone())
+            } else {
+                Err(crate::assets::AssetLoadError::custom(format!(
+                    "unexpected path {asset_path}"
+                )))
+            }
+        };
+        let mut ctx = LoadContext::with_reader(path, &reader);
+        let asset = loader.load(gltf.as_bytes(), &(), &mut ctx).unwrap();
+
+        assert_eq!(ctx.embedded_assets().len(), 1);
+        assert!(ctx.embedded_assets()[0]
+            .path
+            .ends_with("triangle__embedded_image_0.png"));
+        assert_eq!(
+            asset.sub_meshes[0]
+                .material
+                .as_ref()
+                .and_then(|material| material.base_color_texture_path.as_deref()),
+            Some("models/triangle__embedded_image_0.png")
+        );
+    }
+
+    #[test]
+    fn test_gltf_flattens_multiple_nodes() {
+        let glb = build_multi_node_triangle_glb();
+        let loader = MeshLoader::new();
+        let path = AssetPath::from_string("multi.glb".to_string());
+        let mut ctx = LoadContext::new(path);
+        let asset = loader.load(&glb, &(), &mut ctx).unwrap();
+
+        assert_eq!(asset.vertex_count(), 6);
+        assert_eq!(asset.sub_meshes.len(), 2);
+        assert!(
+            asset
+                .vertices
+                .iter()
+                .any(|vertex| vertex.position == [2.0, 0.0, 0.0]),
+            "flattened node translation should be applied to duplicated mesh vertices"
+        );
+    }
+
+    #[test]
+    fn test_gltf_loads_external_buffer_via_asset_server() {
+        let dir = tempfile::tempdir().expect("tempdir should succeed");
+        let mut bin = Vec::new();
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&1.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&1.0f32.to_le_bytes());
+        bin.extend_from_slice(&0.0f32.to_le_bytes());
+        bin.extend_from_slice(&0u16.to_le_bytes());
+        bin.extend_from_slice(&1u16.to_le_bytes());
+        bin.extend_from_slice(&2u16.to_le_bytes());
+        pad_to_4(&mut bin, 0);
+
+        fs::write(dir.path().join("triangle.bin"), &bin).expect("buffer write should succeed");
+        fs::write(
+            dir.path().join("triangle.gltf"),
+            serde_json::json!({
+                "asset": { "version": "2.0" },
+                "buffers": [{ "uri": "triangle.bin", "byteLength": bin.len() }],
+                "bufferViews": [
+                    { "buffer": 0, "byteOffset": 0, "byteLength": 36, "target": 34962 },
+                    { "buffer": 0, "byteOffset": 36, "byteLength": 6, "target": 34963 }
+                ],
+                "accessors": [
+                    { "bufferView": 1, "componentType": 5123, "count": 3, "type": "SCALAR", "max": [2], "min": [0] },
+                    { "bufferView": 0, "componentType": 5126, "count": 3, "type": "VEC3", "max": [1.0, 1.0, 0.0], "min": [0.0, 0.0, 0.0] }
+                ],
+                "meshes": [{
+                    "name": "Triangle",
+                    "primitives": [{ "attributes": { "POSITION": 1 }, "indices": 0 }]
+                }],
+                "nodes": [{ "mesh": 0 }],
+                "scenes": [{ "nodes": [0] }],
+                "scene": 0
+            }).to_string(),
+        )
+        .expect("gltf write should succeed");
+
+        let mut asset_server = AssetServer::with_root(dir.path());
+        ensure_3d_asset_loaders(&mut asset_server);
+        let handle = asset_server.load::<MeshAsset>("triangle.gltf");
+        let asset = asset_server
+            .get(&handle)
+            .expect("mesh with external buffer should load");
+
+        assert_eq!(asset.vertex_count(), 3);
+        assert_eq!(asset.index_count(), 3);
+    }
+
+    #[test]
+    fn test_gltf_embedded_texture_materializes_texture_asset() {
+        let mut asset_server = AssetServer::new();
+        ensure_3d_asset_loaders(&mut asset_server);
+
+        let handle = asset_server
+            .load_from_bytes::<MeshAsset>("textured.glb", &build_textured_triangle_glb());
+        let asset = asset_server
+            .get(&handle)
+            .expect("textured glb should load as mesh");
+        let material = asset.sub_meshes[0]
+            .material
+            .as_ref()
+            .expect("submesh should carry imported material");
+        let texture_path = material
+            .base_color_texture_path
+            .as_ref()
+            .expect("material should reference embedded base color texture");
+        let texture_path = texture_path.clone();
+
+        let texture_handle = asset_server.load::<TextureAsset>(&texture_path);
+        let texture = asset_server
+            .get(&texture_handle)
+            .expect("embedded GLTF texture should be materialized");
+
+        assert_eq!(texture.width, 2);
+        assert_eq!(texture.height, 2);
     }
 
     #[test]

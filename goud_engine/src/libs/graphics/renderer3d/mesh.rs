@@ -8,6 +8,8 @@ use crate::libs::graphics::backend::{types::BufferType, types::BufferUsage, Buff
 use crate::libs::graphics::backend::{
     RenderBackend, VertexAttribute, VertexAttributeType, VertexLayout,
 };
+use crate::libs::graphics::renderer3d::types::InstanceTransform;
+use cgmath::Matrix4;
 
 // ============================================================================
 // Vertex layouts
@@ -53,6 +55,58 @@ pub(super) fn grid_vertex_layout() -> VertexLayout {
         ))
 }
 
+/// Build the per-instance layout: model matrix (4 vec4 columns) + color (vec4).
+pub(super) fn instance_vertex_layout() -> VertexLayout {
+    VertexLayout::new(80)
+        .with_attribute(VertexAttribute::new(
+            3,
+            VertexAttributeType::Float4,
+            0,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            4,
+            VertexAttributeType::Float4,
+            16,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            5,
+            VertexAttributeType::Float4,
+            32,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            6,
+            VertexAttributeType::Float4,
+            48,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            7,
+            VertexAttributeType::Float4,
+            64,
+            false,
+        ))
+}
+
+/// Build the fullscreen post-process layout: clip pos (2f) + uv (2f).
+pub(super) fn postprocess_vertex_layout() -> VertexLayout {
+    VertexLayout::new(16)
+        .with_attribute(VertexAttribute::new(
+            0,
+            VertexAttributeType::Float2,
+            0,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            1,
+            VertexAttributeType::Float2,
+            8,
+            false,
+        ))
+}
+
 // ============================================================================
 // Buffer upload helpers
 // ============================================================================
@@ -69,6 +123,32 @@ pub(super) fn upload_buffer(
             bytemuck::cast_slice(vertices),
         )
         .map_err(|e| format!("Buffer creation failed: {e}"))
+}
+
+/// Upload a slice of instance data to the GPU and return a buffer handle.
+pub(super) fn upload_instance_buffer(
+    backend: &mut dyn RenderBackend,
+    instances: &[InstanceTransform],
+) -> Result<BufferHandle, String> {
+    backend
+        .create_buffer(
+            BufferType::Vertex,
+            BufferUsage::Dynamic,
+            bytemuck::cast_slice(pack_instance_data(instances).as_slice()),
+        )
+        .map_err(|e| format!("Instance buffer creation failed: {e}"))
+}
+
+/// Updates an existing GPU instance buffer with the provided transforms.
+pub(super) fn update_instance_buffer(
+    backend: &mut dyn RenderBackend,
+    buffer: BufferHandle,
+    instances: &[InstanceTransform],
+) -> Result<(), String> {
+    let packed = pack_instance_data(instances);
+    backend
+        .update_buffer(buffer, 0, bytemuck::cast_slice(packed.as_slice()))
+        .map_err(|e| format!("Instance buffer update failed: {e}"))
 }
 
 /// Generate and upload the grid mesh, returning `(handle, vertex_count)`.
@@ -92,6 +172,13 @@ pub(super) fn create_axis_mesh(
     let count = (vertices.len() / 6) as i32;
     let handle = upload_buffer(backend, &vertices)?;
     Ok((handle, count))
+}
+
+pub(super) fn create_postprocess_quad() -> Vec<f32> {
+    vec![
+        -1.0, -1.0, 0.0, 0.0, 1.0, -1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, 0.0, 0.0, 1.0,
+        1.0, 1.0, 1.0, -1.0, 1.0, 0.0, 1.0,
+    ]
 }
 
 // ============================================================================
@@ -150,6 +237,37 @@ pub(super) fn generate_grid_vertices(size: f32, divisions: u32) -> Vec<f32> {
     }
 
     vertices
+}
+
+pub(super) fn pack_instance_data(instances: &[InstanceTransform]) -> Vec<f32> {
+    let mut packed = Vec::with_capacity(instances.len() * 20);
+    for instance in instances {
+        let model = super::core::Renderer3D::create_model_matrix(
+            instance.position,
+            instance.rotation,
+            instance.scale,
+        );
+        let cols = matrix_to_columns(&model);
+        for column in cols {
+            packed.extend_from_slice(&column);
+        }
+        packed.extend_from_slice(&[
+            instance.color.x,
+            instance.color.y,
+            instance.color.z,
+            instance.color.w,
+        ]);
+    }
+    packed
+}
+
+fn matrix_to_columns(matrix: &Matrix4<f32>) -> [[f32; 4]; 4] {
+    [
+        [matrix.x.x, matrix.x.y, matrix.x.z, matrix.x.w],
+        [matrix.y.x, matrix.y.y, matrix.y.z, matrix.y.w],
+        [matrix.z.x, matrix.z.y, matrix.z.z, matrix.z.w],
+        [matrix.w.x, matrix.w.y, matrix.w.z, matrix.w.w],
+    ]
 }
 
 #[rustfmt::skip]
