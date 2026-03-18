@@ -417,6 +417,15 @@ def schema_type_closure(initial: Iterable[str]) -> list[str]:
     return sorted(seen)
 
 
+def supports_jni_bridge(method_def: dict[str, object]) -> bool:
+    if base_type(method_def.get("returns", "void")) == "ptr":
+        return False
+    for param in method_def.get("params", []):
+        if base_type(param["type"]) == "ptr":
+            return False
+    return True
+
+
 def used_carrier_types() -> list[str]:
     used: set[str] = set()
     for tool_name, tool in SCHEMA["tools"].items():
@@ -768,6 +777,8 @@ def collect_generated_methods() -> list[GeneratedMethod]:
             mapping = ffi_tool.get("methods", {}).get(method["name"])
             if mapping is None:
                 continue
+            if not supports_jni_bridge(method):
+                continue
             methods.append(
                 GeneratedMethod(
                     owner_name=tool_name,
@@ -860,54 +871,38 @@ def build_struct_writer(type_name: str) -> list[str]:
         sig = field_sig(schema_field["type"])
         field_type = base_type(schema_field["type"])
         if field_type == "string":
-            lines += [
-                f"    let field_{field_name} = env.new_string(&value.{ffi_field}).map_err(|_| ())?;",
-                f"    let field_{field_name}_obj = jni::objects::JObject::from(field_{field_name});",
-                f'    env.set_field(obj, "{field_name}", "{sig}", jni::objects::JValue::Object(&field_{field_name}_obj)).map_err(|_| ())?;',
-            ]
+            lines.append(f'    crate::jni::helpers::set_string_field(env, obj, "{field_name}", &value.{ffi_field})?;')
         elif field_type in {"bytes", "u8[]"}:
-            lines += [
-                f"    let field_{field_name} = env.byte_array_from_slice(&value.{ffi_field}).map_err(|_| ())?;",
-                f"    let field_{field_name}_obj = jni::objects::JObject::from(field_{field_name});",
-                f'    env.set_field(obj, "{field_name}", "{sig}", jni::objects::JValue::Object(&field_{field_name}_obj)).map_err(|_| ())?;',
-            ]
+            lines.append(f'    crate::jni::helpers::set_byte_array_field(env, obj, "{field_name}", &value.{ffi_field})?;')
         elif field_type == "f32[9]":
-            lines += [
-                "    {",
-                "        let array = env.new_float_array(9).map_err(|_| ())?;",
-                f"        env.set_float_array_region(&array, 0, &value.{ffi_field}).map_err(|_| ())?;",
-                "        let array_obj = jni::objects::JObject::from(array);",
-                f'        env.set_field(obj, "{field_name}", "{sig}", jni::objects::JValue::Object(&array_obj)).map_err(|_| ())?;',
-                "    }",
-            ]
+            lines.append(f'    crate::jni::helpers::set_float_array_field(env, obj, "{field_name}", &value.{ffi_field})?;')
         elif field_type in SCHEMA.get("types", {}):
             nested_value = f"value.{ffi_field}"
             if type_name == "UiStyle" and field_type == "Color":
                 nested_value = f"value.{ffi_field}.into()"
             lines += [
                 f"    let field_{field_name}_obj = new_{field_type}(env, {nested_value})?;",
-                f'    env.set_field(obj, "{field_name}", "{sig}", jni::objects::JValue::Object(&field_{field_name}_obj)).map_err(|_| ())?;',
+                f'    crate::jni::helpers::set_object_field(env, obj, "{field_name}", "{sig}", &field_{field_name}_obj)?;',
             ]
         elif field_type in SCHEMA.get("enums", {}):
-            lines.append(f'    env.set_field(obj, "{field_name}", "{sig}", jni::objects::JValue::Int(value.{ffi_field} as i32)).map_err(|_| ())?;')
+            lines.append(f'    crate::jni::helpers::set_int_field(env, obj, "{field_name}", value.{ffi_field} as i32)?;')
         elif field_type == "bool":
-            lines.append(f'    env.set_field(obj, "{field_name}", "{sig}", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.{ffi_field}))).map_err(|_| ())?;')
+            lines.append(f'    crate::jni::helpers::set_boolean_field(env, obj, "{field_name}", value.{ffi_field})?;')
         elif field_type in {"u64", "i64", "usize", "ptr", "Entity"}:
             cast_expr = f"value.{ffi_field} as i64"
             if field_type == "ptr":
                 cast_expr = f"value.{ffi_field} as usize as i64"
-            lines.append(f'    env.set_field(obj, "{field_name}", "{sig}", jni::objects::JValue::Long({cast_expr})).map_err(|_| ())?;')
+            lines.append(f'    crate::jni::helpers::set_long_field(env, obj, "{field_name}", {cast_expr})?;')
         elif field_type in {"u32", "u16", "u8", "i32"}:
-            lines.append(f'    env.set_field(obj, "{field_name}", "{sig}", jni::objects::JValue::Int(value.{ffi_field} as i32)).map_err(|_| ())?;')
+            lines.append(f'    crate::jni::helpers::set_int_field(env, obj, "{field_name}", value.{ffi_field} as i32)?;')
         elif field_type == "f32":
-            lines.append(f'    env.set_field(obj, "{field_name}", "{sig}", jni::objects::JValue::Float(value.{ffi_field})).map_err(|_| ())?;')
+            lines.append(f'    crate::jni::helpers::set_float_field(env, obj, "{field_name}", value.{ffi_field})?;')
         elif field_type == "f64":
-            lines.append(f'    env.set_field(obj, "{field_name}", "{sig}", jni::objects::JValue::Double(value.{ffi_field})).map_err(|_| ())?;')
+            lines.append(f'    crate::jni::helpers::set_double_field(env, obj, "{field_name}", value.{ffi_field})?;')
     lines += ["    Ok(())", "}", ""]
     lines += [
         f"pub(crate) fn new_{type_name}<'local>(env: &mut jni::JNIEnv<'local>, value: {raw_type}) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {{",
-        f'    let class = env.find_class("com/goudengine/internal/{type_name}").map_err(|_| ())?;',
-        '    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;',
+        f'    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/{type_name}")?;',
         f"    set_{type_name}_fields(env, &obj, value)?;",
         "    Ok(obj)",
         "}",
@@ -936,22 +931,35 @@ def build_struct_reader(type_name: str) -> list[str]:
         sig = field_sig(schema_field["type"])
         field_type = base_type(schema_field["type"])
         if field_type == "f32[9]":
-            lines += [
-                f'    let field_{field_name}_obj = env.get_field(&obj, "{field_name}", "{sig}").map_err(|_| ())?.l().map_err(|_| ())?;',
-                f"    let field_{field_name} = jni::objects::JFloatArray::from(field_{field_name}_obj);",
-                f"    let mut field_{field_name}_values = [0.0f32; 9];",
-                f"    env.get_float_array_region(&field_{field_name}, 0, &mut field_{field_name}_values).map_err(|_| ())?;",
-                f"    let field_{field_name} = field_{field_name}_values;",
-            ]
+            lines.append(f'    let field_{field_name} = crate::jni::helpers::get_float_array_field::<9>(env, obj, "{field_name}")?;')
             continue
         if field_type in SCHEMA.get("types", {}):
             lines += [
-                f'    let field_{field_name}_obj = env.get_field(obj, "{field_name}", "{sig}").map_err(|_| ())?.l().map_err(|_| ())?;',
+                f'    let field_{field_name}_obj = crate::jni::helpers::get_object_field(env, obj, "{field_name}", "{sig}")?;',
                 f'    let field_{field_name} = read_{field_type}(env, &field_{field_name}_obj, "{type_name}.{field_name}")?;',
             ]
             continue
-        accessor = java_field_access_method(field_type)
-        value_call = f'env.get_field(obj, "{field_name}", "{sig}").map_err(|_| ())?.{accessor}().map_err(|_| ())?'
+        if field_type == "string":
+            lines.append(f'    let field_{field_name} = crate::jni::helpers::get_string_field(env, obj, "{field_name}")?;')
+            continue
+        if field_type in {"bytes", "u8[]"}:
+            lines += [
+                f'    let field_{field_name}_obj = crate::jni::helpers::get_object_field(env, obj, "{field_name}", "{sig}")?;',
+                f'    let field_{field_name} = crate::jni::helpers::require_bytes(env, jni::objects::JByteArray::from(field_{field_name}_obj), "{type_name}.{field_name}")?;',
+            ]
+            continue
+        if field_type == "bool":
+            value_call = f'crate::jni::helpers::get_boolean_field(env, obj, "{field_name}")?'
+        elif field_type in {"u64", "i64", "usize", "ptr", "Entity"}:
+            value_call = f'crate::jni::helpers::get_long_field(env, obj, "{field_name}")?'
+        elif field_type in {"u32", "u16", "u8", "i32"} or field_type in SCHEMA.get("enums", {}):
+            value_call = f'crate::jni::helpers::get_int_field(env, obj, "{field_name}")?'
+        elif field_type == "f32":
+            value_call = f'crate::jni::helpers::get_float_field(env, obj, "{field_name}")?'
+        elif field_type == "f64":
+            value_call = f'crate::jni::helpers::get_double_field(env, obj, "{field_name}")?'
+        else:
+            raise RuntimeError(f"unhandled JNI reader field type {field_type} for {type_name}.{field_name}")
         if field_type == "bool":
             lines.append(f"    let field_{field_name} = {value_call};")
         elif field_type in {"u64", "i64", "usize", "Entity"}:
@@ -1140,12 +1148,9 @@ def build_type_helpers() -> list[str]:
         "    peer_id: u64,",
         "    data: &[u8],",
         ") -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {",
-        "    let class = env.find_class(\"com/goudengine/internal/NetworkPacket\").map_err(|_| ())?;",
-        "    let obj = env.new_object(class, \"()V\", &[]).map_err(|_| ())?;",
-        "    env.set_field(&obj, \"peerId\", \"J\", jni::objects::JValue::Long(peer_id as i64)).map_err(|_| ())?;",
-        "    let data_array = env.byte_array_from_slice(data).map_err(|_| ())?;",
-        "    let data_obj = jni::objects::JObject::from(data_array);",
-        "    env.set_field(&obj, \"data\", \"[B\", jni::objects::JValue::Object(&data_obj)).map_err(|_| ())?;",
+        "    let obj = crate::jni::helpers::new_object(env, \"com/goudengine/internal/NetworkPacket\")?;",
+        "    crate::jni::helpers::set_long_field(env, &obj, \"peerId\", peer_id as i64)?;",
+        "    crate::jni::helpers::set_byte_array_field(env, &obj, \"data\", data)?;",
         "    Ok(obj)",
         "}",
         "",
@@ -1159,19 +1164,14 @@ def build_type_helpers() -> list[str]:
         "    payload_float: f32,",
         "    payload_string: &str,",
         ") -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {",
-        "    let class = env.find_class(\"com/goudengine/internal/AnimationEventData\").map_err(|_| ())?;",
-        "    let obj = env.new_object(class, \"()V\", &[]).map_err(|_| ())?;",
-        "    env.set_field(&obj, \"entity\", \"J\", jni::objects::JValue::Long(entity as i64)).map_err(|_| ())?;",
-        "    let name_value = env.new_string(name).map_err(|_| ())?;",
-        "    let name_obj = jni::objects::JObject::from(name_value);",
-        "    env.set_field(&obj, \"name\", \"Ljava/lang/String;\", jni::objects::JValue::Object(&name_obj)).map_err(|_| ())?;",
-        "    env.set_field(&obj, \"frameIndex\", \"I\", jni::objects::JValue::Int(frame_index as i32)).map_err(|_| ())?;",
-        "    env.set_field(&obj, \"payloadType\", \"I\", jni::objects::JValue::Int(payload_type as i32)).map_err(|_| ())?;",
-        "    env.set_field(&obj, \"payloadInt\", \"I\", jni::objects::JValue::Int(payload_int)).map_err(|_| ())?;",
-        "    env.set_field(&obj, \"payloadFloat\", \"F\", jni::objects::JValue::Float(payload_float)).map_err(|_| ())?;",
-        "    let payload_value = env.new_string(payload_string).map_err(|_| ())?;",
-        "    let payload_obj = jni::objects::JObject::from(payload_value);",
-        "    env.set_field(&obj, \"payloadString\", \"Ljava/lang/String;\", jni::objects::JValue::Object(&payload_obj)).map_err(|_| ())?;",
+        "    let obj = crate::jni::helpers::new_object(env, \"com/goudengine/internal/AnimationEventData\")?;",
+        "    crate::jni::helpers::set_long_field(env, &obj, \"entity\", entity as i64)?;",
+        "    crate::jni::helpers::set_string_field(env, &obj, \"name\", name)?;",
+        "    crate::jni::helpers::set_int_field(env, &obj, \"frameIndex\", frame_index as i32)?;",
+        "    crate::jni::helpers::set_int_field(env, &obj, \"payloadType\", payload_type as i32)?;",
+        "    crate::jni::helpers::set_int_field(env, &obj, \"payloadInt\", payload_int)?;",
+        "    crate::jni::helpers::set_float_field(env, &obj, \"payloadFloat\", payload_float)?;",
+        "    crate::jni::helpers::set_string_field(env, &obj, \"payloadString\", payload_string)?;",
         "    Ok(obj)",
         "}",
         "",
@@ -1181,22 +1181,17 @@ def build_type_helpers() -> list[str]:
         "    json_text: &str,",
         ") -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {",
         "    let value = parse_json_document(env, function_name, json_text)?;",
-        "    let class = env.find_class(\"com/goudengine/internal/DebuggerCapture\").map_err(|_| ())?;",
-        "    let obj = env.new_object(class, \"()V\", &[]).map_err(|_| ())?;",
+        "    let obj = crate::jni::helpers::new_object(env, \"com/goudengine/internal/DebuggerCapture\")?;",
         "    let image_png = parse_json_bytes_field(env, function_name, &value, \"imagePng\")?;",
-        "    let image_array = env.byte_array_from_slice(&image_png).map_err(|_| ())?;",
-        "    let image_obj = jni::objects::JObject::from(image_array);",
-        "    env.set_field(&obj, \"imagePng\", \"[B\", jni::objects::JValue::Object(&image_obj)).map_err(|_| ())?;",
+        "    crate::jni::helpers::set_byte_array_field(env, &obj, \"imagePng\", &image_png)?;",
         "    for field in [\"metadataJson\", \"snapshotJson\", \"metricsTraceJson\"] {",
         "        let field_text = parse_json_string_field(env, function_name, &value, field)?;",
-        "        let value = env.new_string(field_text).map_err(|_| ())?;",
-        "        let value_obj = jni::objects::JObject::from(value);",
         "        let java_field = match field {",
         "            \"metadataJson\" => \"metadataJson\",",
         "            \"snapshotJson\" => \"snapshotJson\",",
         "            _ => \"metricsTraceJson\",",
         "        };",
-        "        env.set_field(&obj, java_field, \"Ljava/lang/String;\", jni::objects::JValue::Object(&value_obj)).map_err(|_| ())?;",
+        "        crate::jni::helpers::set_string_field(env, &obj, java_field, &field_text)?;",
         "    }",
         "    Ok(obj)",
         "}",
@@ -1207,35 +1202,22 @@ def build_type_helpers() -> list[str]:
         "    json_text: &str,",
         ") -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {",
         "    let value = parse_json_document(env, function_name, json_text)?;",
-        "    let class = env.find_class(\"com/goudengine/internal/DebuggerReplayArtifact\").map_err(|_| ())?;",
-        "    let obj = env.new_object(class, \"()V\", &[]).map_err(|_| ())?;",
+        "    let obj = crate::jni::helpers::new_object(env, \"com/goudengine/internal/DebuggerReplayArtifact\")?;",
         "    let manifest_text = parse_json_string_field(env, function_name, &value, \"manifestJson\")?;",
-        "    let manifest = env.new_string(manifest_text).map_err(|_| ())?;",
-        "    let manifest_obj = jni::objects::JObject::from(manifest);",
-        "    env.set_field(&obj, \"manifestJson\", \"Ljava/lang/String;\", jni::objects::JValue::Object(&manifest_obj)).map_err(|_| ())?;",
+        "    crate::jni::helpers::set_string_field(env, &obj, \"manifestJson\", &manifest_text)?;",
         "    let data = parse_json_bytes_field(env, function_name, &value, \"data\")?;",
-        "    let data_array = env.byte_array_from_slice(&data).map_err(|_| ())?;",
-        "    let data_obj = jni::objects::JObject::from(data_array);",
-        "    env.set_field(&obj, \"data\", \"[B\", jni::objects::JValue::Object(&data_obj)).map_err(|_| ())?;",
+        "    crate::jni::helpers::set_byte_array_field(env, &obj, \"data\", &data)?;",
         "    Ok(obj)",
         "}",
         "",
         "pub(crate) fn require_entity_array(env: &mut jni::JNIEnv<'_>, array: jni::objects::JLongArray<'_>, param_name: &str) -> crate::jni::helpers::JniCallResult<Vec<u64>> {",
-        "    if array.is_null() {",
-        "        crate::jni::helpers::throw_null_pointer(env, format!(\"{param_name} is null\"))?;",
-        "        return Err(());",
-        "    }",
-        "    let len = env.get_array_length(&array).map_err(|_| ())? as usize;",
-        "    let mut values = vec![0_i64; len];",
-        "    env.get_long_array_region(&array, 0, &mut values).map_err(|_| ())?;",
+        "    let values = crate::jni::helpers::require_long_array(env, array.into_raw(), param_name)?;",
         "    Ok(values.into_iter().map(|value| value as u64).collect())",
         "}",
         "",
         "pub(crate) fn new_entity_array(env: &mut jni::JNIEnv<'_>, values: &[u64]) -> crate::jni::helpers::JniCallResult<jni::sys::jlongArray> {",
-        "    let array = env.new_long_array(values.len() as i32).map_err(|_| ())?;",
         "    let longs: Vec<i64> = values.iter().map(|value| *value as i64).collect();",
-        "    env.set_long_array_region(&array, 0, &longs).map_err(|_| ())?;",
-        "    Ok(array.into_raw())",
+        "    crate::jni::helpers::new_long_array(env, &longs)",
         "}",
         "",
         "pub(crate) fn marshal_debugger_config<'local>(",
@@ -1243,9 +1225,9 @@ def build_type_helpers() -> list[str]:
         "    obj: jni::objects::JObject<'local>,",
         ") -> crate::jni::helpers::JniCallResult<(crate::ffi::context::GoudDebuggerConfig, Option<std::ffi::CString>)> {",
         "    let obj = crate::jni::helpers::require_object(env, obj, \"debuggerConfig\")?;",
-        "    let enabled = env.get_field(&obj, \"enabled\", \"Z\").map_err(|_| ())?.z().map_err(|_| ())?;",
-        "    let publish = env.get_field(&obj, \"publishLocalAttach\", \"Z\").map_err(|_| ())?.z().map_err(|_| ())?;",
-        "    let route = env.get_field(&obj, \"routeLabel\", \"Ljava/lang/String;\").map_err(|_| ())?.l().map_err(|_| ())?;",
+        "    let enabled = crate::jni::helpers::get_boolean_field(env, &obj, \"enabled\")?;",
+        "    let publish = crate::jni::helpers::get_boolean_field(env, &obj, \"publishLocalAttach\")?;",
+        "    let route = crate::jni::helpers::get_object_field(env, &obj, \"routeLabel\", \"Ljava/lang/String;\")?;",
         "    let route_cstr = if route.is_null() {",
         "        None",
         "    } else {",
@@ -1264,7 +1246,7 @@ def build_type_helpers() -> list[str]:
         "    obj: jni::objects::JObject<'local>,",
         ") -> crate::jni::helpers::JniCallResult<(crate::ffi::context::GoudContextConfig, Option<std::ffi::CString>)> {",
         "    let obj = crate::jni::helpers::require_object(env, obj, \"contextConfig\")?;",
-        "    let debugger = env.get_field(&obj, \"debugger\", \"Lcom/goudengine/internal/DebuggerConfig;\").map_err(|_| ())?.l().map_err(|_| ())?;",
+        "    let debugger = crate::jni::helpers::get_object_field(env, &obj, \"debugger\", \"Lcom/goudengine/internal/DebuggerConfig;\")?;",
         "    let (debugger, route) = marshal_debugger_config(env, debugger)?;",
         "    Ok((crate::ffi::context::GoudContextConfig { debugger }, route))",
         "}",
@@ -1631,7 +1613,7 @@ def render_batch_in(method: GeneratedMethod) -> list[str]:
             '        crate::jni::helpers::throw_null_pointer(&mut env, "outResults is null")?;',
             "        return Err(());",
             "    }",
-            "    let results_len = env.get_array_length(&outResults).map_err(|_| ())? as usize;",
+            "    let results_len = crate::jni::helpers::byte_array_length(&mut env, &outResults)?;",
             "    if results_len < entities_values.len() {",
             '        crate::jni::helpers::throw_illegal_argument(&mut env, "outResults is smaller than entities")?;',
             "        return Err(());",
@@ -1644,7 +1626,7 @@ def render_batch_in(method: GeneratedMethod) -> list[str]:
         lines.append(
             f'    let written_len = crate::jni::helpers::checked_output_length(&mut env, "{ffi_name}", "outResults", written as usize, result_bytes.len())?;'
         )
-        lines.append("    env.set_byte_array_region(&outResults, 0, &result_bytes[..written_len].iter().map(|value| *value as i8).collect::<Vec<i8>>()).map_err(|_| ())?;")
+        lines.append("    crate::jni::helpers::write_byte_array(&mut env, &outResults, &result_bytes[..written_len])?;")
         lines.append("    Ok(written_len as i32)")
         return lines
     lines.append(f"    let written = unsafe {{ // SAFETY: the entity buffer remains valid for the duration of the FFI call.\n        {ffi_path}({', '.join(args)})\n    }};")
@@ -1744,38 +1726,19 @@ def render_out_params(method: GeneratedMethod) -> list[str]:
         elif len(out_locals) == 1 and actual_return in {"i32", "u8", "u16", "u32", "i64", "u64", "usize", "ptr", "Entity", "GoudGame", "GoudResult"}:
             lines.append(f"    Ok({out_locals[0]} as _)")
         elif actual_return == "object":
-            lines += [
-                '    let map_class = env.find_class("java/util/HashMap").map_err(|_| ())?;',
-                '    let map = env.new_object(map_class, "()V", &[]).map_err(|_| ())?;',
-            ]
+            lines.append('    let map = crate::jni::helpers::new_hash_map(&mut env)?;')
             for field, local in zip(out_params, out_locals):
                 java_name = to_camel(field["name"])
                 field_type = base_type(field["type"])
-                lines += [
-                    f'    let key_{java_name} = env.new_string("{java_name}").map_err(|_| ())?;',
-                    f"    let key_{java_name}_obj = jni::objects::JObject::from(key_{java_name});",
-                ]
                 if field_type in {"u64", "usize", "Entity", "i64"}:
-                    lines += [
-                        '    let boxed_class = env.find_class("java/lang/Long").map_err(|_| ())?;',
-                        f'    let value_{java_name} = env.new_object(boxed_class, "(J)V", &[jni::objects::JValue::Long({local} as i64)]).map_err(|_| ())?;',
-                    ]
+                    lines.append(f'    let value_{java_name} = crate::jni::helpers::new_boxed_long(&mut env, {local} as i64)?;')
                 elif field_type == "f32":
-                    lines += [
-                        '    let boxed_class = env.find_class("java/lang/Float").map_err(|_| ())?;',
-                        f'    let value_{java_name} = env.new_object(boxed_class, "(F)V", &[jni::objects::JValue::Float({local})]).map_err(|_| ())?;',
-                    ]
+                    lines.append(f'    let value_{java_name} = crate::jni::helpers::new_boxed_float(&mut env, {local})?;')
                 elif field_type == "f64":
-                    lines += [
-                        '    let boxed_class = env.find_class("java/lang/Double").map_err(|_| ())?;',
-                        f'    let value_{java_name} = env.new_object(boxed_class, "(D)V", &[jni::objects::JValue::Double({local})]).map_err(|_| ())?;',
-                    ]
+                    lines.append(f'    let value_{java_name} = crate::jni::helpers::new_boxed_double(&mut env, {local})?;')
                 else:
-                    lines += [
-                        '    let boxed_class = env.find_class("java/lang/Integer").map_err(|_| ())?;',
-                        f'    let value_{java_name} = env.new_object(boxed_class, "(I)V", &[jni::objects::JValue::Int({local} as i32)]).map_err(|_| ())?;',
-                    ]
-                lines.append(f'    env.call_method(&map, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", &[jni::objects::JValue::Object(&key_{java_name}_obj), jni::objects::JValue::Object(&value_{java_name})]).map_err(|_| ())?;')
+                    lines.append(f'    let value_{java_name} = crate::jni::helpers::new_boxed_int(&mut env, {local} as i32)?;')
+                lines.append(f'    crate::jni::helpers::put_hash_map_value(&mut env, &map, "{java_name}", &value_{java_name})?;')
             lines.append("    Ok(map.into_raw())")
         elif ffi_ret == "i32":
             lines.append("    Ok(status as i32)")
@@ -1784,24 +1747,21 @@ def render_out_params(method: GeneratedMethod) -> list[str]:
         return lines
     ffi_type = MAPPING["ffi_types"].get(struct_name)
     if ffi_type is None:
-        lines += [
-            f'    let class = env.find_class("com/goudengine/internal/{struct_name}").map_err(|_| ())?;',
-            '    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;',
-        ]
+        lines.append(f'    let obj = crate::jni::helpers::new_object(&mut env, "com/goudengine/internal/{struct_name}")?;')
         for field, local in zip(SCHEMA["types"][struct_name]["fields"], out_locals):
             java_name = to_camel(field["name"])
             sig = field_sig(field["type"])
             field_type = base_type(field["type"])
             if field_type == "bool":
-                lines.append(f'    env.set_field(&obj, "{java_name}", "{sig}", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean({local}))).map_err(|_| ())?;')
+                lines.append(f'    crate::jni::helpers::set_boolean_field(&mut env, &obj, "{java_name}", {local})?;')
             elif field_type in {"f32"}:
-                lines.append(f'    env.set_field(&obj, "{java_name}", "{sig}", jni::objects::JValue::Float({local})).map_err(|_| ())?;')
+                lines.append(f'    crate::jni::helpers::set_float_field(&mut env, &obj, "{java_name}", {local})?;')
             elif field_type in {"f64"}:
-                lines.append(f'    env.set_field(&obj, "{java_name}", "{sig}", jni::objects::JValue::Double({local})).map_err(|_| ())?;')
+                lines.append(f'    crate::jni::helpers::set_double_field(&mut env, &obj, "{java_name}", {local})?;')
             elif field_type in {"i64", "u64", "usize", "ptr", "Entity"}:
-                lines.append(f'    env.set_field(&obj, "{java_name}", "{sig}", jni::objects::JValue::Long({local} as i64)).map_err(|_| ())?;')
+                lines.append(f'    crate::jni::helpers::set_long_field(&mut env, &obj, "{java_name}", {local} as i64)?;')
             else:
-                lines.append(f'    env.set_field(&obj, "{java_name}", "{sig}", jni::objects::JValue::Int({local} as i32)).map_err(|_| ())?;')
+                lines.append(f'    crate::jni::helpers::set_int_field(&mut env, &obj, "{java_name}", {local} as i32)?;')
         lines.append("    Ok(obj.into_raw())")
         return lines
     if len(out_params) == 1 and ffi_type and out_params[0]["type"] in {ffi_type["ffi_name"], struct_name}:

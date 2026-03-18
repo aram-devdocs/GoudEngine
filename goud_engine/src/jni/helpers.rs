@@ -3,9 +3,9 @@
 use std::any::Any;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
-use jni::objects::{JByteArray, JClass, JLongArray, JObject, JString, JValue};
+use jni::objects::{JByteArray, JClass, JFloatArray, JLongArray, JObject, JString, JValue};
 use jni::sys::{
-    jboolean, jbyteArray, jint, jlong, jlongArray, jobject, jstring, JNI_FALSE, JNI_TRUE,
+    jboolean, jbyteArray, jdouble, jint, jlong, jlongArray, jobject, jstring, JNI_FALSE, JNI_TRUE,
 };
 use jni::JNIEnv;
 
@@ -221,6 +221,24 @@ pub(crate) fn require_bytes(
     env.convert_byte_array(array).map_err(|_| ())
 }
 
+pub(crate) fn byte_array_length(
+    env: &mut JNIEnv<'_>,
+    array: &JByteArray<'_>,
+) -> JniCallResult<usize> {
+    env.get_array_length(array)
+        .map(|length| length as usize)
+        .map_err(|_| ())
+}
+
+pub(crate) fn write_byte_array(
+    env: &mut JNIEnv<'_>,
+    array: &JByteArray<'_>,
+    bytes: &[u8],
+) -> JniCallResult<()> {
+    let values: Vec<i8> = bytes.iter().map(|value| *value as i8).collect();
+    env.set_byte_array_region(array, 0, &values).map_err(|_| ())
+}
+
 pub(crate) fn require_long_array(
     env: &mut JNIEnv<'_>,
     array: jlongArray,
@@ -282,6 +300,64 @@ pub(crate) fn new_object<'local>(
 ) -> JniCallResult<JObject<'local>> {
     let class = find_class(env, class_name)?;
     env.new_object(class, "()V", &[]).map_err(|_| ())
+}
+
+pub(crate) fn new_hash_map<'local>(env: &mut JNIEnv<'local>) -> JniCallResult<JObject<'local>> {
+    new_object(env, "java/util/HashMap")
+}
+
+pub(crate) fn put_hash_map_value(
+    env: &mut JNIEnv<'_>,
+    map: &JObject<'_>,
+    key: &str,
+    value: &JObject<'_>,
+) -> JniCallResult<()> {
+    let key = env.new_string(key).map_err(|_| ())?;
+    let key_obj = JObject::from(key);
+    env.call_method(
+        map,
+        "put",
+        "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+        &[JValue::Object(&key_obj), JValue::Object(value)],
+    )
+    .map_err(|_| ())?;
+    Ok(())
+}
+
+pub(crate) fn new_boxed_long<'local>(
+    env: &mut JNIEnv<'local>,
+    value: jlong,
+) -> JniCallResult<JObject<'local>> {
+    let class = find_class(env, "java/lang/Long")?;
+    env.new_object(class, "(J)V", &[JValue::Long(value)])
+        .map_err(|_| ())
+}
+
+pub(crate) fn new_boxed_int<'local>(
+    env: &mut JNIEnv<'local>,
+    value: jint,
+) -> JniCallResult<JObject<'local>> {
+    let class = find_class(env, "java/lang/Integer")?;
+    env.new_object(class, "(I)V", &[JValue::Int(value)])
+        .map_err(|_| ())
+}
+
+pub(crate) fn new_boxed_float<'local>(
+    env: &mut JNIEnv<'local>,
+    value: f32,
+) -> JniCallResult<JObject<'local>> {
+    let class = find_class(env, "java/lang/Float")?;
+    env.new_object(class, "(F)V", &[JValue::Float(value)])
+        .map_err(|_| ())
+}
+
+pub(crate) fn new_boxed_double<'local>(
+    env: &mut JNIEnv<'local>,
+    value: jdouble,
+) -> JniCallResult<JObject<'local>> {
+    let class = find_class(env, "java/lang/Double")?;
+    env.new_object(class, "(D)V", &[JValue::Double(value)])
+        .map_err(|_| ())
 }
 
 pub(crate) fn get_boolean_field(
@@ -364,6 +440,26 @@ pub(crate) fn set_float_field(
         .map_err(|_| ())
 }
 
+pub(crate) fn get_double_field(
+    env: &mut JNIEnv<'_>,
+    object: &JObject<'_>,
+    field_name: &str,
+) -> JniCallResult<jdouble> {
+    env.get_field(object, field_name, "D")
+        .and_then(|value| value.d())
+        .map_err(|_| ())
+}
+
+pub(crate) fn set_double_field(
+    env: &mut JNIEnv<'_>,
+    object: &JObject<'_>,
+    field_name: &str,
+    value: jdouble,
+) -> JniCallResult<()> {
+    env.set_field(object, field_name, "D", JValue::Double(value))
+        .map_err(|_| ())
+}
+
 pub(crate) fn get_string_field(
     env: &mut JNIEnv<'_>,
     object: &JObject<'_>,
@@ -413,4 +509,41 @@ pub(crate) fn set_object_field(
 ) -> JniCallResult<()> {
     env.set_field(object, field_name, signature, JValue::Object(value))
         .map_err(|_| ())
+}
+
+pub(crate) fn set_byte_array_field(
+    env: &mut JNIEnv<'_>,
+    object: &JObject<'_>,
+    field_name: &str,
+    bytes: &[u8],
+) -> JniCallResult<()> {
+    let array = env.byte_array_from_slice(bytes).map_err(|_| ())?;
+    let array_obj = JObject::from(array);
+    set_object_field(env, object, field_name, "[B", &array_obj)
+}
+
+pub(crate) fn set_float_array_field(
+    env: &mut JNIEnv<'_>,
+    object: &JObject<'_>,
+    field_name: &str,
+    values: &[f32],
+) -> JniCallResult<()> {
+    let array = env.new_float_array(values.len() as i32).map_err(|_| ())?;
+    env.set_float_array_region(&array, 0, values)
+        .map_err(|_| ())?;
+    let array_obj = JObject::from(array);
+    set_object_field(env, object, field_name, "[F", &array_obj)
+}
+
+pub(crate) fn get_float_array_field<'local, const N: usize>(
+    env: &mut JNIEnv<'local>,
+    object: &JObject<'local>,
+    field_name: &str,
+) -> JniCallResult<[f32; N]> {
+    let field_obj = get_object_field(env, object, field_name, "[F")?;
+    let array = JFloatArray::from(field_obj);
+    let mut values = [0.0f32; N];
+    env.get_float_array_region(&array, 0, &mut values)
+        .map_err(|_| ())?;
+    Ok(values)
 }

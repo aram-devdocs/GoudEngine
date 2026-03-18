@@ -67,12 +67,8 @@ public final class GoudContextNative {
     public static native boolean hasName(long contextId, long entity);
     public static native boolean removeName(long contextId, long entity);
     public static native boolean componentRegisterType(long typeIdHash, String name, long size, long align);
-    public static native boolean componentAdd(long contextId, long entity, long typeIdHash, long dataPtr, long dataSize);
     public static native boolean componentRemove(long contextId, long entity, long typeIdHash);
     public static native boolean componentHas(long contextId, long entity, long typeIdHash);
-    public static native long componentGet(long contextId, long entity, long typeIdHash);
-    public static native long componentGetMut(long contextId, long entity, long typeIdHash);
-    public static native int componentAddBatch(long contextId, long[] entities, long typeIdHash, long dataPtr, long componentSize);
     public static native int componentRemoveBatch(long contextId, long[] entities, long typeIdHash);
     public static native int componentHasBatch(long contextId, long[] entities, long typeIdHash, byte[] outResults);
     public static native int sceneCreate(long contextId, String name);

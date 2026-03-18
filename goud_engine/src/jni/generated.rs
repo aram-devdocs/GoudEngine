@@ -36,14 +36,13 @@ struct FfiPhysicsRaycastHit2D {
 
 pub(crate) fn set_AudioCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::AudioCapabilities) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "supportsSpatial", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.supports_spatial))).map_err(|_| ())?;
-    env.set_field(obj, "maxChannels", "I", jni::objects::JValue::Int(value.max_channels as i32)).map_err(|_| ())?;
+    crate::jni::helpers::set_boolean_field(env, obj, "supportsSpatial", value.supports_spatial)?;
+    crate::jni::helpers::set_int_field(env, obj, "maxChannels", value.max_channels as i32)?;
     Ok(())
 }
 
 pub(crate) fn new_AudioCapabilities<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::providers::types::AudioCapabilities) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/AudioCapabilities").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/AudioCapabilities")?;
     set_AudioCapabilities_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -53,8 +52,8 @@ pub(crate) fn read_AudioCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj:
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_supportsSpatial = env.get_field(obj, "supportsSpatial", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_maxChannels = env.get_field(obj, "maxChannels", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
+    let field_supportsSpatial = crate::jni::helpers::get_boolean_field(env, obj, "supportsSpatial")?;
+    let field_maxChannels = crate::jni::helpers::get_int_field(env, obj, "maxChannels")? as _;
     Ok(crate::core::providers::types::AudioCapabilities {
         supports_spatial: field_supportsSpatial,
         max_channels: field_maxChannels,
@@ -67,16 +66,15 @@ pub(crate) fn write_back_AudioCapabilities<'local>(env: &mut jni::JNIEnv<'local>
 
 pub(crate) fn set_Color_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::FfiColor) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "r", "F", jni::objects::JValue::Float(value.r)).map_err(|_| ())?;
-    env.set_field(obj, "g", "F", jni::objects::JValue::Float(value.g)).map_err(|_| ())?;
-    env.set_field(obj, "b", "F", jni::objects::JValue::Float(value.b)).map_err(|_| ())?;
-    env.set_field(obj, "a", "F", jni::objects::JValue::Float(value.a)).map_err(|_| ())?;
+    crate::jni::helpers::set_float_field(env, obj, "r", value.r)?;
+    crate::jni::helpers::set_float_field(env, obj, "g", value.g)?;
+    crate::jni::helpers::set_float_field(env, obj, "b", value.b)?;
+    crate::jni::helpers::set_float_field(env, obj, "a", value.a)?;
     Ok(())
 }
 
 pub(crate) fn new_Color<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::FfiColor) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/Color").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/Color")?;
     set_Color_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -86,10 +84,10 @@ pub(crate) fn read_Color<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objec
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_r = env.get_field(obj, "r", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_g = env.get_field(obj, "g", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_b = env.get_field(obj, "b", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_a = env.get_field(obj, "a", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
+    let field_r = crate::jni::helpers::get_float_field(env, obj, "r")? as _;
+    let field_g = crate::jni::helpers::get_float_field(env, obj, "g")? as _;
+    let field_b = crate::jni::helpers::get_float_field(env, obj, "b")? as _;
+    let field_a = crate::jni::helpers::get_float_field(env, obj, "a")? as _;
     Ok(crate::ffi::FfiColor {
         r: field_r,
         g: field_g,
@@ -104,17 +102,16 @@ pub(crate) fn write_back_Color<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni:
 
 pub(crate) fn set_Contact_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::types::GoudContact) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "pointX", "F", jni::objects::JValue::Float(value.point_x)).map_err(|_| ())?;
-    env.set_field(obj, "pointY", "F", jni::objects::JValue::Float(value.point_y)).map_err(|_| ())?;
-    env.set_field(obj, "normalX", "F", jni::objects::JValue::Float(value.normal_x)).map_err(|_| ())?;
-    env.set_field(obj, "normalY", "F", jni::objects::JValue::Float(value.normal_y)).map_err(|_| ())?;
-    env.set_field(obj, "penetration", "F", jni::objects::JValue::Float(value.penetration)).map_err(|_| ())?;
+    crate::jni::helpers::set_float_field(env, obj, "pointX", value.point_x)?;
+    crate::jni::helpers::set_float_field(env, obj, "pointY", value.point_y)?;
+    crate::jni::helpers::set_float_field(env, obj, "normalX", value.normal_x)?;
+    crate::jni::helpers::set_float_field(env, obj, "normalY", value.normal_y)?;
+    crate::jni::helpers::set_float_field(env, obj, "penetration", value.penetration)?;
     Ok(())
 }
 
 pub(crate) fn new_Contact<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::types::GoudContact) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/Contact").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/Contact")?;
     set_Contact_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -124,11 +121,11 @@ pub(crate) fn read_Contact<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::obj
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_pointX = env.get_field(obj, "pointX", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_pointY = env.get_field(obj, "pointY", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_normalX = env.get_field(obj, "normalX", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_normalY = env.get_field(obj, "normalY", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_penetration = env.get_field(obj, "penetration", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
+    let field_pointX = crate::jni::helpers::get_float_field(env, obj, "pointX")? as _;
+    let field_pointY = crate::jni::helpers::get_float_field(env, obj, "pointY")? as _;
+    let field_normalX = crate::jni::helpers::get_float_field(env, obj, "normalX")? as _;
+    let field_normalY = crate::jni::helpers::get_float_field(env, obj, "normalY")? as _;
+    let field_penetration = crate::jni::helpers::get_float_field(env, obj, "penetration")? as _;
     Ok(crate::core::types::GoudContact {
         point_x: field_pointX,
         point_y: field_pointY,
@@ -144,17 +141,16 @@ pub(crate) fn write_back_Contact<'local>(env: &mut jni::JNIEnv<'local>, obj: &jn
 
 pub(crate) fn set_FpsStats_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::sdk::debug_overlay::FpsStats) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "currentFps", "F", jni::objects::JValue::Float(value.current_fps)).map_err(|_| ())?;
-    env.set_field(obj, "minFps", "F", jni::objects::JValue::Float(value.min_fps)).map_err(|_| ())?;
-    env.set_field(obj, "maxFps", "F", jni::objects::JValue::Float(value.max_fps)).map_err(|_| ())?;
-    env.set_field(obj, "avgFps", "F", jni::objects::JValue::Float(value.avg_fps)).map_err(|_| ())?;
-    env.set_field(obj, "frameTimeMs", "F", jni::objects::JValue::Float(value.frame_time_ms)).map_err(|_| ())?;
+    crate::jni::helpers::set_float_field(env, obj, "currentFps", value.current_fps)?;
+    crate::jni::helpers::set_float_field(env, obj, "minFps", value.min_fps)?;
+    crate::jni::helpers::set_float_field(env, obj, "maxFps", value.max_fps)?;
+    crate::jni::helpers::set_float_field(env, obj, "avgFps", value.avg_fps)?;
+    crate::jni::helpers::set_float_field(env, obj, "frameTimeMs", value.frame_time_ms)?;
     Ok(())
 }
 
 pub(crate) fn new_FpsStats<'local>(env: &mut jni::JNIEnv<'local>, value: crate::sdk::debug_overlay::FpsStats) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/FpsStats").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/FpsStats")?;
     set_FpsStats_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -164,11 +160,11 @@ pub(crate) fn read_FpsStats<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::ob
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_currentFps = env.get_field(obj, "currentFps", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_minFps = env.get_field(obj, "minFps", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_maxFps = env.get_field(obj, "maxFps", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_avgFps = env.get_field(obj, "avgFps", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_frameTimeMs = env.get_field(obj, "frameTimeMs", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
+    let field_currentFps = crate::jni::helpers::get_float_field(env, obj, "currentFps")? as _;
+    let field_minFps = crate::jni::helpers::get_float_field(env, obj, "minFps")? as _;
+    let field_maxFps = crate::jni::helpers::get_float_field(env, obj, "maxFps")? as _;
+    let field_avgFps = crate::jni::helpers::get_float_field(env, obj, "avgFps")? as _;
+    let field_frameTimeMs = crate::jni::helpers::get_float_field(env, obj, "frameTimeMs")? as _;
     Ok(crate::sdk::debug_overlay::FpsStats {
         current_fps: field_currentFps,
         min_fps: field_minFps,
@@ -184,15 +180,14 @@ pub(crate) fn write_back_FpsStats<'local>(env: &mut jni::JNIEnv<'local>, obj: &j
 
 pub(crate) fn set_InputCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::input_types::InputCapabilities) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "supportsGamepad", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.supports_gamepad))).map_err(|_| ())?;
-    env.set_field(obj, "supportsTouch", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.supports_touch))).map_err(|_| ())?;
-    env.set_field(obj, "maxGamepads", "I", jni::objects::JValue::Int(value.max_gamepads as i32)).map_err(|_| ())?;
+    crate::jni::helpers::set_boolean_field(env, obj, "supportsGamepad", value.supports_gamepad)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "supportsTouch", value.supports_touch)?;
+    crate::jni::helpers::set_int_field(env, obj, "maxGamepads", value.max_gamepads as i32)?;
     Ok(())
 }
 
 pub(crate) fn new_InputCapabilities<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::providers::input_types::InputCapabilities) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/InputCapabilities").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/InputCapabilities")?;
     set_InputCapabilities_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -202,9 +197,9 @@ pub(crate) fn read_InputCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj:
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_supportsGamepad = env.get_field(obj, "supportsGamepad", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_supportsTouch = env.get_field(obj, "supportsTouch", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_maxGamepads = env.get_field(obj, "maxGamepads", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
+    let field_supportsGamepad = crate::jni::helpers::get_boolean_field(env, obj, "supportsGamepad")?;
+    let field_supportsTouch = crate::jni::helpers::get_boolean_field(env, obj, "supportsTouch")?;
+    let field_maxGamepads = crate::jni::helpers::get_int_field(env, obj, "maxGamepads")? as _;
     Ok(crate::core::providers::input_types::InputCapabilities {
         supports_gamepad: field_supportsGamepad,
         supports_touch: field_supportsTouch,
@@ -218,18 +213,12 @@ pub(crate) fn write_back_InputCapabilities<'local>(env: &mut jni::JNIEnv<'local>
 
 pub(crate) fn set_Mat3x3_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::FfiMat3x3) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    {
-        let array = env.new_float_array(9).map_err(|_| ())?;
-        env.set_float_array_region(&array, 0, &value.m).map_err(|_| ())?;
-        let array_obj = jni::objects::JObject::from(array);
-        env.set_field(obj, "m", "[F", jni::objects::JValue::Object(&array_obj)).map_err(|_| ())?;
-    }
+    crate::jni::helpers::set_float_array_field(env, obj, "m", &value.m)?;
     Ok(())
 }
 
 pub(crate) fn new_Mat3x3<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::FfiMat3x3) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/Mat3x3").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/Mat3x3")?;
     set_Mat3x3_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -239,11 +228,7 @@ pub(crate) fn read_Mat3x3<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::obje
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_m_obj = env.get_field(&obj, "m", "[F").map_err(|_| ())?.l().map_err(|_| ())?;
-    let field_m = jni::objects::JFloatArray::from(field_m_obj);
-    let mut field_m_values = [0.0f32; 9];
-    env.get_float_array_region(&field_m, 0, &mut field_m_values).map_err(|_| ())?;
-    let field_m = field_m_values;
+    let field_m = crate::jni::helpers::get_float_array_field::<9>(env, obj, "m")?;
     Ok(crate::ffi::FfiMat3x3 {
         m: field_m,
     })
@@ -255,14 +240,13 @@ pub(crate) fn write_back_Mat3x3<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni
 
 pub(crate) fn set_MemoryCategoryStats_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::debug::GoudMemoryCategoryStats) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "currentBytes", "J", jni::objects::JValue::Long(value.current_bytes as i64)).map_err(|_| ())?;
-    env.set_field(obj, "peakBytes", "J", jni::objects::JValue::Long(value.peak_bytes as i64)).map_err(|_| ())?;
+    crate::jni::helpers::set_long_field(env, obj, "currentBytes", value.current_bytes as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "peakBytes", value.peak_bytes as i64)?;
     Ok(())
 }
 
 pub(crate) fn new_MemoryCategoryStats<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::debug::GoudMemoryCategoryStats) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/MemoryCategoryStats").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/MemoryCategoryStats")?;
     set_MemoryCategoryStats_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -272,8 +256,8 @@ pub(crate) fn read_MemoryCategoryStats<'local>(env: &mut jni::JNIEnv<'local>, ob
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_currentBytes = env.get_field(obj, "currentBytes", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_peakBytes = env.get_field(obj, "peakBytes", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
+    let field_currentBytes = crate::jni::helpers::get_long_field(env, obj, "currentBytes")? as u64;
+    let field_peakBytes = crate::jni::helpers::get_long_field(env, obj, "peakBytes")? as u64;
     Ok(crate::ffi::debug::GoudMemoryCategoryStats {
         current_bytes: field_currentBytes,
         peak_bytes: field_peakBytes,
@@ -287,29 +271,28 @@ pub(crate) fn write_back_MemoryCategoryStats<'local>(env: &mut jni::JNIEnv<'loca
 pub(crate) fn set_MemorySummary_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::debug::GoudMemorySummary) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     let field_rendering_obj = new_MemoryCategoryStats(env, value.rendering)?;
-    env.set_field(obj, "rendering", "Lcom/goudengine/internal/MemoryCategoryStats;", jni::objects::JValue::Object(&field_rendering_obj)).map_err(|_| ())?;
+    crate::jni::helpers::set_object_field(env, obj, "rendering", "Lcom/goudengine/internal/MemoryCategoryStats;", &field_rendering_obj)?;
     let field_assets_obj = new_MemoryCategoryStats(env, value.assets)?;
-    env.set_field(obj, "assets", "Lcom/goudengine/internal/MemoryCategoryStats;", jni::objects::JValue::Object(&field_assets_obj)).map_err(|_| ())?;
+    crate::jni::helpers::set_object_field(env, obj, "assets", "Lcom/goudengine/internal/MemoryCategoryStats;", &field_assets_obj)?;
     let field_ecs_obj = new_MemoryCategoryStats(env, value.ecs)?;
-    env.set_field(obj, "ecs", "Lcom/goudengine/internal/MemoryCategoryStats;", jni::objects::JValue::Object(&field_ecs_obj)).map_err(|_| ())?;
+    crate::jni::helpers::set_object_field(env, obj, "ecs", "Lcom/goudengine/internal/MemoryCategoryStats;", &field_ecs_obj)?;
     let field_ui_obj = new_MemoryCategoryStats(env, value.ui)?;
-    env.set_field(obj, "ui", "Lcom/goudengine/internal/MemoryCategoryStats;", jni::objects::JValue::Object(&field_ui_obj)).map_err(|_| ())?;
+    crate::jni::helpers::set_object_field(env, obj, "ui", "Lcom/goudengine/internal/MemoryCategoryStats;", &field_ui_obj)?;
     let field_audio_obj = new_MemoryCategoryStats(env, value.audio)?;
-    env.set_field(obj, "audio", "Lcom/goudengine/internal/MemoryCategoryStats;", jni::objects::JValue::Object(&field_audio_obj)).map_err(|_| ())?;
+    crate::jni::helpers::set_object_field(env, obj, "audio", "Lcom/goudengine/internal/MemoryCategoryStats;", &field_audio_obj)?;
     let field_network_obj = new_MemoryCategoryStats(env, value.network)?;
-    env.set_field(obj, "network", "Lcom/goudengine/internal/MemoryCategoryStats;", jni::objects::JValue::Object(&field_network_obj)).map_err(|_| ())?;
+    crate::jni::helpers::set_object_field(env, obj, "network", "Lcom/goudengine/internal/MemoryCategoryStats;", &field_network_obj)?;
     let field_debugger_obj = new_MemoryCategoryStats(env, value.debugger)?;
-    env.set_field(obj, "debugger", "Lcom/goudengine/internal/MemoryCategoryStats;", jni::objects::JValue::Object(&field_debugger_obj)).map_err(|_| ())?;
+    crate::jni::helpers::set_object_field(env, obj, "debugger", "Lcom/goudengine/internal/MemoryCategoryStats;", &field_debugger_obj)?;
     let field_other_obj = new_MemoryCategoryStats(env, value.other)?;
-    env.set_field(obj, "other", "Lcom/goudengine/internal/MemoryCategoryStats;", jni::objects::JValue::Object(&field_other_obj)).map_err(|_| ())?;
-    env.set_field(obj, "totalCurrentBytes", "J", jni::objects::JValue::Long(value.total_current_bytes as i64)).map_err(|_| ())?;
-    env.set_field(obj, "totalPeakBytes", "J", jni::objects::JValue::Long(value.total_peak_bytes as i64)).map_err(|_| ())?;
+    crate::jni::helpers::set_object_field(env, obj, "other", "Lcom/goudengine/internal/MemoryCategoryStats;", &field_other_obj)?;
+    crate::jni::helpers::set_long_field(env, obj, "totalCurrentBytes", value.total_current_bytes as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "totalPeakBytes", value.total_peak_bytes as i64)?;
     Ok(())
 }
 
 pub(crate) fn new_MemorySummary<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::debug::GoudMemorySummary) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/MemorySummary").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/MemorySummary")?;
     set_MemorySummary_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -319,24 +302,24 @@ pub(crate) fn read_MemorySummary<'local>(env: &mut jni::JNIEnv<'local>, obj: &jn
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_rendering_obj = env.get_field(obj, "rendering", "Lcom/goudengine/internal/MemoryCategoryStats;").map_err(|_| ())?.l().map_err(|_| ())?;
+    let field_rendering_obj = crate::jni::helpers::get_object_field(env, obj, "rendering", "Lcom/goudengine/internal/MemoryCategoryStats;")?;
     let field_rendering = read_MemoryCategoryStats(env, &field_rendering_obj, "MemorySummary.rendering")?;
-    let field_assets_obj = env.get_field(obj, "assets", "Lcom/goudengine/internal/MemoryCategoryStats;").map_err(|_| ())?.l().map_err(|_| ())?;
+    let field_assets_obj = crate::jni::helpers::get_object_field(env, obj, "assets", "Lcom/goudengine/internal/MemoryCategoryStats;")?;
     let field_assets = read_MemoryCategoryStats(env, &field_assets_obj, "MemorySummary.assets")?;
-    let field_ecs_obj = env.get_field(obj, "ecs", "Lcom/goudengine/internal/MemoryCategoryStats;").map_err(|_| ())?.l().map_err(|_| ())?;
+    let field_ecs_obj = crate::jni::helpers::get_object_field(env, obj, "ecs", "Lcom/goudengine/internal/MemoryCategoryStats;")?;
     let field_ecs = read_MemoryCategoryStats(env, &field_ecs_obj, "MemorySummary.ecs")?;
-    let field_ui_obj = env.get_field(obj, "ui", "Lcom/goudengine/internal/MemoryCategoryStats;").map_err(|_| ())?.l().map_err(|_| ())?;
+    let field_ui_obj = crate::jni::helpers::get_object_field(env, obj, "ui", "Lcom/goudengine/internal/MemoryCategoryStats;")?;
     let field_ui = read_MemoryCategoryStats(env, &field_ui_obj, "MemorySummary.ui")?;
-    let field_audio_obj = env.get_field(obj, "audio", "Lcom/goudengine/internal/MemoryCategoryStats;").map_err(|_| ())?.l().map_err(|_| ())?;
+    let field_audio_obj = crate::jni::helpers::get_object_field(env, obj, "audio", "Lcom/goudengine/internal/MemoryCategoryStats;")?;
     let field_audio = read_MemoryCategoryStats(env, &field_audio_obj, "MemorySummary.audio")?;
-    let field_network_obj = env.get_field(obj, "network", "Lcom/goudengine/internal/MemoryCategoryStats;").map_err(|_| ())?.l().map_err(|_| ())?;
+    let field_network_obj = crate::jni::helpers::get_object_field(env, obj, "network", "Lcom/goudengine/internal/MemoryCategoryStats;")?;
     let field_network = read_MemoryCategoryStats(env, &field_network_obj, "MemorySummary.network")?;
-    let field_debugger_obj = env.get_field(obj, "debugger", "Lcom/goudengine/internal/MemoryCategoryStats;").map_err(|_| ())?.l().map_err(|_| ())?;
+    let field_debugger_obj = crate::jni::helpers::get_object_field(env, obj, "debugger", "Lcom/goudengine/internal/MemoryCategoryStats;")?;
     let field_debugger = read_MemoryCategoryStats(env, &field_debugger_obj, "MemorySummary.debugger")?;
-    let field_other_obj = env.get_field(obj, "other", "Lcom/goudengine/internal/MemoryCategoryStats;").map_err(|_| ())?.l().map_err(|_| ())?;
+    let field_other_obj = crate::jni::helpers::get_object_field(env, obj, "other", "Lcom/goudengine/internal/MemoryCategoryStats;")?;
     let field_other = read_MemoryCategoryStats(env, &field_other_obj, "MemorySummary.other")?;
-    let field_totalCurrentBytes = env.get_field(obj, "totalCurrentBytes", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_totalPeakBytes = env.get_field(obj, "totalPeakBytes", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
+    let field_totalCurrentBytes = crate::jni::helpers::get_long_field(env, obj, "totalCurrentBytes")? as u64;
+    let field_totalPeakBytes = crate::jni::helpers::get_long_field(env, obj, "totalPeakBytes")? as u64;
     Ok(crate::ffi::debug::GoudMemorySummary {
         rendering: field_rendering,
         assets: field_assets,
@@ -357,16 +340,15 @@ pub(crate) fn write_back_MemorySummary<'local>(env: &mut jni::JNIEnv<'local>, ob
 
 pub(crate) fn set_NetworkCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::network_types::NetworkCapabilities) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "supportsHosting", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.supports_hosting))).map_err(|_| ())?;
-    env.set_field(obj, "maxConnections", "I", jni::objects::JValue::Int(value.max_connections as i32)).map_err(|_| ())?;
-    env.set_field(obj, "maxChannels", "I", jni::objects::JValue::Int(value.max_channels as i32)).map_err(|_| ())?;
-    env.set_field(obj, "maxMessageSize", "I", jni::objects::JValue::Int(value.max_message_size as i32)).map_err(|_| ())?;
+    crate::jni::helpers::set_boolean_field(env, obj, "supportsHosting", value.supports_hosting)?;
+    crate::jni::helpers::set_int_field(env, obj, "maxConnections", value.max_connections as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "maxChannels", value.max_channels as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "maxMessageSize", value.max_message_size as i32)?;
     Ok(())
 }
 
 pub(crate) fn new_NetworkCapabilities<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::providers::network_types::NetworkCapabilities) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/NetworkCapabilities").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/NetworkCapabilities")?;
     set_NetworkCapabilities_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -376,10 +358,10 @@ pub(crate) fn read_NetworkCapabilities<'local>(env: &mut jni::JNIEnv<'local>, ob
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_supportsHosting = env.get_field(obj, "supportsHosting", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_maxConnections = env.get_field(obj, "maxConnections", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
-    let field_maxChannels = env.get_field(obj, "maxChannels", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
-    let field_maxMessageSize = env.get_field(obj, "maxMessageSize", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
+    let field_supportsHosting = crate::jni::helpers::get_boolean_field(env, obj, "supportsHosting")?;
+    let field_maxConnections = crate::jni::helpers::get_int_field(env, obj, "maxConnections")? as _;
+    let field_maxChannels = crate::jni::helpers::get_int_field(env, obj, "maxChannels")? as _;
+    let field_maxMessageSize = crate::jni::helpers::get_int_field(env, obj, "maxMessageSize")? as _;
     Ok(crate::core::providers::network_types::NetworkCapabilities {
         supports_hosting: field_supportsHosting,
         max_connections: field_maxConnections,
@@ -394,15 +376,14 @@ pub(crate) fn write_back_NetworkCapabilities<'local>(env: &mut jni::JNIEnv<'loca
 
 pub(crate) fn set_NetworkSimulationConfig_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::network_types::NetworkSimulationConfig) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "oneWayLatencyMs", "I", jni::objects::JValue::Int(value.one_way_latency_ms as i32)).map_err(|_| ())?;
-    env.set_field(obj, "jitterMs", "I", jni::objects::JValue::Int(value.jitter_ms as i32)).map_err(|_| ())?;
-    env.set_field(obj, "packetLossPercent", "F", jni::objects::JValue::Float(value.packet_loss_percent)).map_err(|_| ())?;
+    crate::jni::helpers::set_int_field(env, obj, "oneWayLatencyMs", value.one_way_latency_ms as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "jitterMs", value.jitter_ms as i32)?;
+    crate::jni::helpers::set_float_field(env, obj, "packetLossPercent", value.packet_loss_percent)?;
     Ok(())
 }
 
 pub(crate) fn new_NetworkSimulationConfig<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::providers::network_types::NetworkSimulationConfig) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/NetworkSimulationConfig").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/NetworkSimulationConfig")?;
     set_NetworkSimulationConfig_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -412,9 +393,9 @@ pub(crate) fn read_NetworkSimulationConfig<'local>(env: &mut jni::JNIEnv<'local>
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_oneWayLatencyMs = env.get_field(obj, "oneWayLatencyMs", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
-    let field_jitterMs = env.get_field(obj, "jitterMs", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
-    let field_packetLossPercent = env.get_field(obj, "packetLossPercent", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
+    let field_oneWayLatencyMs = crate::jni::helpers::get_int_field(env, obj, "oneWayLatencyMs")? as _;
+    let field_jitterMs = crate::jni::helpers::get_int_field(env, obj, "jitterMs")? as _;
+    let field_packetLossPercent = crate::jni::helpers::get_float_field(env, obj, "packetLossPercent")? as _;
     Ok(crate::core::providers::network_types::NetworkSimulationConfig {
         one_way_latency_ms: field_oneWayLatencyMs,
         jitter_ms: field_jitterMs,
@@ -428,22 +409,21 @@ pub(crate) fn write_back_NetworkSimulationConfig<'local>(env: &mut jni::JNIEnv<'
 
 pub(crate) fn set_NetworkStats_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::network::FfiNetworkStats) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "bytesSent", "J", jni::objects::JValue::Long(value.bytes_sent as i64)).map_err(|_| ())?;
-    env.set_field(obj, "bytesReceived", "J", jni::objects::JValue::Long(value.bytes_received as i64)).map_err(|_| ())?;
-    env.set_field(obj, "packetsSent", "J", jni::objects::JValue::Long(value.packets_sent as i64)).map_err(|_| ())?;
-    env.set_field(obj, "packetsReceived", "J", jni::objects::JValue::Long(value.packets_received as i64)).map_err(|_| ())?;
-    env.set_field(obj, "packetsLost", "J", jni::objects::JValue::Long(value.packets_lost as i64)).map_err(|_| ())?;
-    env.set_field(obj, "rttMs", "F", jni::objects::JValue::Float(value.rtt_ms)).map_err(|_| ())?;
-    env.set_field(obj, "sendBandwidthBytesPerSec", "F", jni::objects::JValue::Float(value.send_bandwidth_bytes_per_sec)).map_err(|_| ())?;
-    env.set_field(obj, "receiveBandwidthBytesPerSec", "F", jni::objects::JValue::Float(value.receive_bandwidth_bytes_per_sec)).map_err(|_| ())?;
-    env.set_field(obj, "packetLossPercent", "F", jni::objects::JValue::Float(value.packet_loss_percent)).map_err(|_| ())?;
-    env.set_field(obj, "jitterMs", "F", jni::objects::JValue::Float(value.jitter_ms)).map_err(|_| ())?;
+    crate::jni::helpers::set_long_field(env, obj, "bytesSent", value.bytes_sent as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "bytesReceived", value.bytes_received as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "packetsSent", value.packets_sent as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "packetsReceived", value.packets_received as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "packetsLost", value.packets_lost as i64)?;
+    crate::jni::helpers::set_float_field(env, obj, "rttMs", value.rtt_ms)?;
+    crate::jni::helpers::set_float_field(env, obj, "sendBandwidthBytesPerSec", value.send_bandwidth_bytes_per_sec)?;
+    crate::jni::helpers::set_float_field(env, obj, "receiveBandwidthBytesPerSec", value.receive_bandwidth_bytes_per_sec)?;
+    crate::jni::helpers::set_float_field(env, obj, "packetLossPercent", value.packet_loss_percent)?;
+    crate::jni::helpers::set_float_field(env, obj, "jitterMs", value.jitter_ms)?;
     Ok(())
 }
 
 pub(crate) fn new_NetworkStats<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::network::FfiNetworkStats) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/NetworkStats").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/NetworkStats")?;
     set_NetworkStats_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -453,16 +433,16 @@ pub(crate) fn read_NetworkStats<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_bytesSent = env.get_field(obj, "bytesSent", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_bytesReceived = env.get_field(obj, "bytesReceived", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_packetsSent = env.get_field(obj, "packetsSent", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_packetsReceived = env.get_field(obj, "packetsReceived", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_packetsLost = env.get_field(obj, "packetsLost", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_rttMs = env.get_field(obj, "rttMs", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_sendBandwidthBytesPerSec = env.get_field(obj, "sendBandwidthBytesPerSec", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_receiveBandwidthBytesPerSec = env.get_field(obj, "receiveBandwidthBytesPerSec", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_packetLossPercent = env.get_field(obj, "packetLossPercent", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_jitterMs = env.get_field(obj, "jitterMs", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
+    let field_bytesSent = crate::jni::helpers::get_long_field(env, obj, "bytesSent")? as u64;
+    let field_bytesReceived = crate::jni::helpers::get_long_field(env, obj, "bytesReceived")? as u64;
+    let field_packetsSent = crate::jni::helpers::get_long_field(env, obj, "packetsSent")? as u64;
+    let field_packetsReceived = crate::jni::helpers::get_long_field(env, obj, "packetsReceived")? as u64;
+    let field_packetsLost = crate::jni::helpers::get_long_field(env, obj, "packetsLost")? as u64;
+    let field_rttMs = crate::jni::helpers::get_float_field(env, obj, "rttMs")? as _;
+    let field_sendBandwidthBytesPerSec = crate::jni::helpers::get_float_field(env, obj, "sendBandwidthBytesPerSec")? as _;
+    let field_receiveBandwidthBytesPerSec = crate::jni::helpers::get_float_field(env, obj, "receiveBandwidthBytesPerSec")? as _;
+    let field_packetLossPercent = crate::jni::helpers::get_float_field(env, obj, "packetLossPercent")? as _;
+    let field_jitterMs = crate::jni::helpers::get_float_field(env, obj, "jitterMs")? as _;
     Ok(crate::ffi::network::FfiNetworkStats {
         bytes_sent: field_bytesSent,
         bytes_received: field_bytesReceived,
@@ -483,15 +463,14 @@ pub(crate) fn write_back_NetworkStats<'local>(env: &mut jni::JNIEnv<'local>, obj
 
 pub(crate) fn set_PhysicsCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::PhysicsCapabilities) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "supportsContinuousCollision", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.supports_continuous_collision))).map_err(|_| ())?;
-    env.set_field(obj, "supportsJoints", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.supports_joints))).map_err(|_| ())?;
-    env.set_field(obj, "maxBodies", "I", jni::objects::JValue::Int(value.max_bodies as i32)).map_err(|_| ())?;
+    crate::jni::helpers::set_boolean_field(env, obj, "supportsContinuousCollision", value.supports_continuous_collision)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "supportsJoints", value.supports_joints)?;
+    crate::jni::helpers::set_int_field(env, obj, "maxBodies", value.max_bodies as i32)?;
     Ok(())
 }
 
 pub(crate) fn new_PhysicsCapabilities<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::providers::types::PhysicsCapabilities) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/PhysicsCapabilities").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/PhysicsCapabilities")?;
     set_PhysicsCapabilities_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -501,9 +480,9 @@ pub(crate) fn read_PhysicsCapabilities<'local>(env: &mut jni::JNIEnv<'local>, ob
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_supportsContinuousCollision = env.get_field(obj, "supportsContinuousCollision", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_supportsJoints = env.get_field(obj, "supportsJoints", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_maxBodies = env.get_field(obj, "maxBodies", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
+    let field_supportsContinuousCollision = crate::jni::helpers::get_boolean_field(env, obj, "supportsContinuousCollision")?;
+    let field_supportsJoints = crate::jni::helpers::get_boolean_field(env, obj, "supportsJoints")?;
+    let field_maxBodies = crate::jni::helpers::get_int_field(env, obj, "maxBodies")? as _;
     Ok(crate::core::providers::types::PhysicsCapabilities {
         supports_continuous_collision: field_supportsContinuousCollision,
         supports_joints: field_supportsJoints,
@@ -517,15 +496,14 @@ pub(crate) fn write_back_PhysicsCapabilities<'local>(env: &mut jni::JNIEnv<'loca
 
 pub(crate) fn set_PhysicsCollisionEvent2D_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: FfiPhysicsCollisionEvent2D) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "bodyA", "J", jni::objects::JValue::Long(value.body_a as i64)).map_err(|_| ())?;
-    env.set_field(obj, "bodyB", "J", jni::objects::JValue::Long(value.body_b as i64)).map_err(|_| ())?;
-    env.set_field(obj, "kind", "I", jni::objects::JValue::Int(value.kind as i32)).map_err(|_| ())?;
+    crate::jni::helpers::set_long_field(env, obj, "bodyA", value.body_a as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "bodyB", value.body_b as i64)?;
+    crate::jni::helpers::set_int_field(env, obj, "kind", value.kind as i32)?;
     Ok(())
 }
 
 pub(crate) fn new_PhysicsCollisionEvent2D<'local>(env: &mut jni::JNIEnv<'local>, value: FfiPhysicsCollisionEvent2D) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/PhysicsCollisionEvent2D").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/PhysicsCollisionEvent2D")?;
     set_PhysicsCollisionEvent2D_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -535,9 +513,9 @@ pub(crate) fn read_PhysicsCollisionEvent2D<'local>(env: &mut jni::JNIEnv<'local>
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_bodyA = env.get_field(obj, "bodyA", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_bodyB = env.get_field(obj, "bodyB", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_kind = env.get_field(obj, "kind", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
+    let field_bodyA = crate::jni::helpers::get_long_field(env, obj, "bodyA")? as u64;
+    let field_bodyB = crate::jni::helpers::get_long_field(env, obj, "bodyB")? as u64;
+    let field_kind = crate::jni::helpers::get_int_field(env, obj, "kind")? as _;
     Ok(FfiPhysicsCollisionEvent2D {
         body_a: field_bodyA,
         body_b: field_bodyB,
@@ -551,19 +529,18 @@ pub(crate) fn write_back_PhysicsCollisionEvent2D<'local>(env: &mut jni::JNIEnv<'
 
 pub(crate) fn set_PhysicsRaycastHit2D_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: FfiPhysicsRaycastHit2D) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "bodyHandle", "J", jni::objects::JValue::Long(value.body_handle as i64)).map_err(|_| ())?;
-    env.set_field(obj, "colliderHandle", "J", jni::objects::JValue::Long(value.collider_handle as i64)).map_err(|_| ())?;
-    env.set_field(obj, "pointX", "F", jni::objects::JValue::Float(value.point_x)).map_err(|_| ())?;
-    env.set_field(obj, "pointY", "F", jni::objects::JValue::Float(value.point_y)).map_err(|_| ())?;
-    env.set_field(obj, "normalX", "F", jni::objects::JValue::Float(value.normal_x)).map_err(|_| ())?;
-    env.set_field(obj, "normalY", "F", jni::objects::JValue::Float(value.normal_y)).map_err(|_| ())?;
-    env.set_field(obj, "distance", "F", jni::objects::JValue::Float(value.distance)).map_err(|_| ())?;
+    crate::jni::helpers::set_long_field(env, obj, "bodyHandle", value.body_handle as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "colliderHandle", value.collider_handle as i64)?;
+    crate::jni::helpers::set_float_field(env, obj, "pointX", value.point_x)?;
+    crate::jni::helpers::set_float_field(env, obj, "pointY", value.point_y)?;
+    crate::jni::helpers::set_float_field(env, obj, "normalX", value.normal_x)?;
+    crate::jni::helpers::set_float_field(env, obj, "normalY", value.normal_y)?;
+    crate::jni::helpers::set_float_field(env, obj, "distance", value.distance)?;
     Ok(())
 }
 
 pub(crate) fn new_PhysicsRaycastHit2D<'local>(env: &mut jni::JNIEnv<'local>, value: FfiPhysicsRaycastHit2D) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/PhysicsRaycastHit2D").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/PhysicsRaycastHit2D")?;
     set_PhysicsRaycastHit2D_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -573,13 +550,13 @@ pub(crate) fn read_PhysicsRaycastHit2D<'local>(env: &mut jni::JNIEnv<'local>, ob
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_bodyHandle = env.get_field(obj, "bodyHandle", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_colliderHandle = env.get_field(obj, "colliderHandle", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_pointX = env.get_field(obj, "pointX", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_pointY = env.get_field(obj, "pointY", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_normalX = env.get_field(obj, "normalX", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_normalY = env.get_field(obj, "normalY", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_distance = env.get_field(obj, "distance", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
+    let field_bodyHandle = crate::jni::helpers::get_long_field(env, obj, "bodyHandle")? as u64;
+    let field_colliderHandle = crate::jni::helpers::get_long_field(env, obj, "colliderHandle")? as u64;
+    let field_pointX = crate::jni::helpers::get_float_field(env, obj, "pointX")? as _;
+    let field_pointY = crate::jni::helpers::get_float_field(env, obj, "pointY")? as _;
+    let field_normalX = crate::jni::helpers::get_float_field(env, obj, "normalX")? as _;
+    let field_normalY = crate::jni::helpers::get_float_field(env, obj, "normalY")? as _;
+    let field_distance = crate::jni::helpers::get_float_field(env, obj, "distance")? as _;
     Ok(FfiPhysicsRaycastHit2D {
         body_handle: field_bodyHandle,
         collider_handle: field_colliderHandle,
@@ -597,16 +574,15 @@ pub(crate) fn write_back_PhysicsRaycastHit2D<'local>(env: &mut jni::JNIEnv<'loca
 
 pub(crate) fn set_Rect_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::FfiRect) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "x", "F", jni::objects::JValue::Float(value.x)).map_err(|_| ())?;
-    env.set_field(obj, "y", "F", jni::objects::JValue::Float(value.y)).map_err(|_| ())?;
-    env.set_field(obj, "width", "F", jni::objects::JValue::Float(value.width)).map_err(|_| ())?;
-    env.set_field(obj, "height", "F", jni::objects::JValue::Float(value.height)).map_err(|_| ())?;
+    crate::jni::helpers::set_float_field(env, obj, "x", value.x)?;
+    crate::jni::helpers::set_float_field(env, obj, "y", value.y)?;
+    crate::jni::helpers::set_float_field(env, obj, "width", value.width)?;
+    crate::jni::helpers::set_float_field(env, obj, "height", value.height)?;
     Ok(())
 }
 
 pub(crate) fn new_Rect<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::FfiRect) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/Rect").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/Rect")?;
     set_Rect_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -616,10 +592,10 @@ pub(crate) fn read_Rect<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::object
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_x = env.get_field(obj, "x", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_y = env.get_field(obj, "y", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_width = env.get_field(obj, "width", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_height = env.get_field(obj, "height", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
+    let field_x = crate::jni::helpers::get_float_field(env, obj, "x")? as _;
+    let field_y = crate::jni::helpers::get_float_field(env, obj, "y")? as _;
+    let field_width = crate::jni::helpers::get_float_field(env, obj, "width")? as _;
+    let field_height = crate::jni::helpers::get_float_field(env, obj, "height")? as _;
     Ok(crate::ffi::FfiRect {
         x: field_x,
         y: field_y,
@@ -634,17 +610,16 @@ pub(crate) fn write_back_Rect<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::
 
 pub(crate) fn set_RenderCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::RenderCapabilities) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "maxTextureUnits", "I", jni::objects::JValue::Int(value.max_texture_units as i32)).map_err(|_| ())?;
-    env.set_field(obj, "maxTextureSize", "I", jni::objects::JValue::Int(value.max_texture_size as i32)).map_err(|_| ())?;
-    env.set_field(obj, "supportsInstancing", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.supports_instancing))).map_err(|_| ())?;
-    env.set_field(obj, "supportsCompute", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.supports_compute))).map_err(|_| ())?;
-    env.set_field(obj, "supportsMsaa", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.supports_msaa))).map_err(|_| ())?;
+    crate::jni::helpers::set_int_field(env, obj, "maxTextureUnits", value.max_texture_units as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "maxTextureSize", value.max_texture_size as i32)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "supportsInstancing", value.supports_instancing)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "supportsCompute", value.supports_compute)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "supportsMsaa", value.supports_msaa)?;
     Ok(())
 }
 
 pub(crate) fn new_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::providers::types::RenderCapabilities) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/RenderCapabilities").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/RenderCapabilities")?;
     set_RenderCapabilities_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -654,11 +629,11 @@ pub(crate) fn read_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_maxTextureUnits = env.get_field(obj, "maxTextureUnits", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
-    let field_maxTextureSize = env.get_field(obj, "maxTextureSize", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
-    let field_supportsInstancing = env.get_field(obj, "supportsInstancing", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_supportsCompute = env.get_field(obj, "supportsCompute", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_supportsMsaa = env.get_field(obj, "supportsMsaa", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
+    let field_maxTextureUnits = crate::jni::helpers::get_int_field(env, obj, "maxTextureUnits")? as _;
+    let field_maxTextureSize = crate::jni::helpers::get_int_field(env, obj, "maxTextureSize")? as _;
+    let field_supportsInstancing = crate::jni::helpers::get_boolean_field(env, obj, "supportsInstancing")?;
+    let field_supportsCompute = crate::jni::helpers::get_boolean_field(env, obj, "supportsCompute")?;
+    let field_supportsMsaa = crate::jni::helpers::get_boolean_field(env, obj, "supportsMsaa")?;
     Ok(crate::core::providers::types::RenderCapabilities {
         max_texture_units: field_maxTextureUnits,
         max_texture_size: field_maxTextureSize,
@@ -674,16 +649,15 @@ pub(crate) fn write_back_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local
 
 pub(crate) fn set_RenderStats_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::renderer::GoudRenderStats) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "drawCalls", "I", jni::objects::JValue::Int(value.draw_calls as i32)).map_err(|_| ())?;
-    env.set_field(obj, "triangles", "I", jni::objects::JValue::Int(value.triangles as i32)).map_err(|_| ())?;
-    env.set_field(obj, "textureBinds", "I", jni::objects::JValue::Int(value.texture_binds as i32)).map_err(|_| ())?;
-    env.set_field(obj, "shaderBinds", "I", jni::objects::JValue::Int(value.shader_binds as i32)).map_err(|_| ())?;
+    crate::jni::helpers::set_int_field(env, obj, "drawCalls", value.draw_calls as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "triangles", value.triangles as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "textureBinds", value.texture_binds as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "shaderBinds", value.shader_binds as i32)?;
     Ok(())
 }
 
 pub(crate) fn new_RenderStats<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::renderer::GoudRenderStats) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/RenderStats").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/RenderStats")?;
     set_RenderStats_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -693,10 +667,10 @@ pub(crate) fn read_RenderStats<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni:
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_drawCalls = env.get_field(obj, "drawCalls", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
-    let field_triangles = env.get_field(obj, "triangles", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
-    let field_textureBinds = env.get_field(obj, "textureBinds", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
-    let field_shaderBinds = env.get_field(obj, "shaderBinds", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
+    let field_drawCalls = crate::jni::helpers::get_int_field(env, obj, "drawCalls")? as _;
+    let field_triangles = crate::jni::helpers::get_int_field(env, obj, "triangles")? as _;
+    let field_textureBinds = crate::jni::helpers::get_int_field(env, obj, "textureBinds")? as _;
+    let field_shaderBinds = crate::jni::helpers::get_int_field(env, obj, "shaderBinds")? as _;
     Ok(crate::ffi::renderer::GoudRenderStats {
         draw_calls: field_drawCalls,
         triangles: field_triangles,
@@ -711,30 +685,29 @@ pub(crate) fn write_back_RenderStats<'local>(env: &mut jni::JNIEnv<'local>, obj:
 
 pub(crate) fn set_Sprite_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::FfiSprite) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "textureHandle", "J", jni::objects::JValue::Long(value.texture_handle as i64)).map_err(|_| ())?;
-    env.set_field(obj, "colorR", "F", jni::objects::JValue::Float(value.color_r)).map_err(|_| ())?;
-    env.set_field(obj, "colorG", "F", jni::objects::JValue::Float(value.color_g)).map_err(|_| ())?;
-    env.set_field(obj, "colorB", "F", jni::objects::JValue::Float(value.color_b)).map_err(|_| ())?;
-    env.set_field(obj, "colorA", "F", jni::objects::JValue::Float(value.color_a)).map_err(|_| ())?;
-    env.set_field(obj, "sourceRectX", "F", jni::objects::JValue::Float(value.source_rect_x)).map_err(|_| ())?;
-    env.set_field(obj, "sourceRectY", "F", jni::objects::JValue::Float(value.source_rect_y)).map_err(|_| ())?;
-    env.set_field(obj, "sourceRectWidth", "F", jni::objects::JValue::Float(value.source_rect_width)).map_err(|_| ())?;
-    env.set_field(obj, "sourceRectHeight", "F", jni::objects::JValue::Float(value.source_rect_height)).map_err(|_| ())?;
-    env.set_field(obj, "hasSourceRect", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.has_source_rect))).map_err(|_| ())?;
-    env.set_field(obj, "flipX", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.flip_x))).map_err(|_| ())?;
-    env.set_field(obj, "flipY", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.flip_y))).map_err(|_| ())?;
-    env.set_field(obj, "zLayer", "I", jni::objects::JValue::Int(value.z_layer as i32)).map_err(|_| ())?;
-    env.set_field(obj, "anchorX", "F", jni::objects::JValue::Float(value.anchor_x)).map_err(|_| ())?;
-    env.set_field(obj, "anchorY", "F", jni::objects::JValue::Float(value.anchor_y)).map_err(|_| ())?;
-    env.set_field(obj, "customSizeX", "F", jni::objects::JValue::Float(value.custom_size_x)).map_err(|_| ())?;
-    env.set_field(obj, "customSizeY", "F", jni::objects::JValue::Float(value.custom_size_y)).map_err(|_| ())?;
-    env.set_field(obj, "hasCustomSize", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.has_custom_size))).map_err(|_| ())?;
+    crate::jni::helpers::set_long_field(env, obj, "textureHandle", value.texture_handle as i64)?;
+    crate::jni::helpers::set_float_field(env, obj, "colorR", value.color_r)?;
+    crate::jni::helpers::set_float_field(env, obj, "colorG", value.color_g)?;
+    crate::jni::helpers::set_float_field(env, obj, "colorB", value.color_b)?;
+    crate::jni::helpers::set_float_field(env, obj, "colorA", value.color_a)?;
+    crate::jni::helpers::set_float_field(env, obj, "sourceRectX", value.source_rect_x)?;
+    crate::jni::helpers::set_float_field(env, obj, "sourceRectY", value.source_rect_y)?;
+    crate::jni::helpers::set_float_field(env, obj, "sourceRectWidth", value.source_rect_width)?;
+    crate::jni::helpers::set_float_field(env, obj, "sourceRectHeight", value.source_rect_height)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "hasSourceRect", value.has_source_rect)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "flipX", value.flip_x)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "flipY", value.flip_y)?;
+    crate::jni::helpers::set_int_field(env, obj, "zLayer", value.z_layer as i32)?;
+    crate::jni::helpers::set_float_field(env, obj, "anchorX", value.anchor_x)?;
+    crate::jni::helpers::set_float_field(env, obj, "anchorY", value.anchor_y)?;
+    crate::jni::helpers::set_float_field(env, obj, "customSizeX", value.custom_size_x)?;
+    crate::jni::helpers::set_float_field(env, obj, "customSizeY", value.custom_size_y)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "hasCustomSize", value.has_custom_size)?;
     Ok(())
 }
 
 pub(crate) fn new_Sprite<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::FfiSprite) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/Sprite").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/Sprite")?;
     set_Sprite_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -744,24 +717,24 @@ pub(crate) fn read_Sprite<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::obje
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_textureHandle = env.get_field(obj, "textureHandle", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_colorR = env.get_field(obj, "colorR", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_colorG = env.get_field(obj, "colorG", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_colorB = env.get_field(obj, "colorB", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_colorA = env.get_field(obj, "colorA", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_sourceRectX = env.get_field(obj, "sourceRectX", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_sourceRectY = env.get_field(obj, "sourceRectY", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_sourceRectWidth = env.get_field(obj, "sourceRectWidth", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_sourceRectHeight = env.get_field(obj, "sourceRectHeight", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_hasSourceRect = env.get_field(obj, "hasSourceRect", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_flipX = env.get_field(obj, "flipX", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_flipY = env.get_field(obj, "flipY", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_zLayer = env.get_field(obj, "zLayer", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
-    let field_anchorX = env.get_field(obj, "anchorX", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_anchorY = env.get_field(obj, "anchorY", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_customSizeX = env.get_field(obj, "customSizeX", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_customSizeY = env.get_field(obj, "customSizeY", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_hasCustomSize = env.get_field(obj, "hasCustomSize", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
+    let field_textureHandle = crate::jni::helpers::get_long_field(env, obj, "textureHandle")? as u64;
+    let field_colorR = crate::jni::helpers::get_float_field(env, obj, "colorR")? as _;
+    let field_colorG = crate::jni::helpers::get_float_field(env, obj, "colorG")? as _;
+    let field_colorB = crate::jni::helpers::get_float_field(env, obj, "colorB")? as _;
+    let field_colorA = crate::jni::helpers::get_float_field(env, obj, "colorA")? as _;
+    let field_sourceRectX = crate::jni::helpers::get_float_field(env, obj, "sourceRectX")? as _;
+    let field_sourceRectY = crate::jni::helpers::get_float_field(env, obj, "sourceRectY")? as _;
+    let field_sourceRectWidth = crate::jni::helpers::get_float_field(env, obj, "sourceRectWidth")? as _;
+    let field_sourceRectHeight = crate::jni::helpers::get_float_field(env, obj, "sourceRectHeight")? as _;
+    let field_hasSourceRect = crate::jni::helpers::get_boolean_field(env, obj, "hasSourceRect")?;
+    let field_flipX = crate::jni::helpers::get_boolean_field(env, obj, "flipX")?;
+    let field_flipY = crate::jni::helpers::get_boolean_field(env, obj, "flipY")?;
+    let field_zLayer = crate::jni::helpers::get_int_field(env, obj, "zLayer")? as _;
+    let field_anchorX = crate::jni::helpers::get_float_field(env, obj, "anchorX")? as _;
+    let field_anchorY = crate::jni::helpers::get_float_field(env, obj, "anchorY")? as _;
+    let field_customSizeX = crate::jni::helpers::get_float_field(env, obj, "customSizeX")? as _;
+    let field_customSizeY = crate::jni::helpers::get_float_field(env, obj, "customSizeY")? as _;
+    let field_hasCustomSize = crate::jni::helpers::get_boolean_field(env, obj, "hasCustomSize")?;
     Ok(crate::ffi::FfiSprite {
         texture_handle: field_textureHandle,
         color_r: field_colorR,
@@ -790,19 +763,18 @@ pub(crate) fn write_back_Sprite<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni
 
 pub(crate) fn set_SpriteAnimator_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::FfiSpriteAnimator) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "currentFrame", "I", jni::objects::JValue::Int(value.current_frame as i32)).map_err(|_| ())?;
-    env.set_field(obj, "elapsed", "F", jni::objects::JValue::Float(value.elapsed)).map_err(|_| ())?;
-    env.set_field(obj, "playing", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.playing))).map_err(|_| ())?;
-    env.set_field(obj, "finished", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.finished))).map_err(|_| ())?;
-    env.set_field(obj, "frameDuration", "F", jni::objects::JValue::Float(value.frame_duration)).map_err(|_| ())?;
-    env.set_field(obj, "mode", "I", jni::objects::JValue::Int(value.mode as i32)).map_err(|_| ())?;
-    env.set_field(obj, "frameCount", "I", jni::objects::JValue::Int(value.frame_count as i32)).map_err(|_| ())?;
+    crate::jni::helpers::set_int_field(env, obj, "currentFrame", value.current_frame as i32)?;
+    crate::jni::helpers::set_float_field(env, obj, "elapsed", value.elapsed)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "playing", value.playing)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "finished", value.finished)?;
+    crate::jni::helpers::set_float_field(env, obj, "frameDuration", value.frame_duration)?;
+    crate::jni::helpers::set_int_field(env, obj, "mode", value.mode as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "frameCount", value.frame_count as i32)?;
     Ok(())
 }
 
 pub(crate) fn new_SpriteAnimator<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::FfiSpriteAnimator) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/SpriteAnimator").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/SpriteAnimator")?;
     set_SpriteAnimator_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -812,12 +784,12 @@ pub(crate) fn read_SpriteAnimator<'local>(env: &mut jni::JNIEnv<'local>, obj: &j
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_currentFrame = env.get_field(obj, "currentFrame", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
-    let field_elapsed = env.get_field(obj, "elapsed", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_playing = env.get_field(obj, "playing", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_finished = env.get_field(obj, "finished", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_frameDuration = env.get_field(obj, "frameDuration", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_mode_discriminant = env.get_field(obj, "mode", "I").map_err(|_| ())?.i().map_err(|_| ())? as i32;
+    let field_currentFrame = crate::jni::helpers::get_int_field(env, obj, "currentFrame")? as _;
+    let field_elapsed = crate::jni::helpers::get_float_field(env, obj, "elapsed")? as _;
+    let field_playing = crate::jni::helpers::get_boolean_field(env, obj, "playing")?;
+    let field_finished = crate::jni::helpers::get_boolean_field(env, obj, "finished")?;
+    let field_frameDuration = crate::jni::helpers::get_float_field(env, obj, "frameDuration")? as _;
+    let field_mode_discriminant = crate::jni::helpers::get_int_field(env, obj, "mode")? as i32;
     let field_mode = match field_mode_discriminant {
         0 | 1 => unsafe { // SAFETY: the discriminant was validated against the schema enum values above.
             std::mem::transmute::<i32, _>(field_mode_discriminant)
@@ -827,7 +799,7 @@ pub(crate) fn read_SpriteAnimator<'local>(env: &mut jni::JNIEnv<'local>, obj: &j
             return Err(());
         }
     };
-    let field_frameCount = env.get_field(obj, "frameCount", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
+    let field_frameCount = crate::jni::helpers::get_int_field(env, obj, "frameCount")? as _;
     Ok(crate::ffi::FfiSpriteAnimator {
         current_frame: field_currentFrame,
         elapsed: field_elapsed,
@@ -845,22 +817,21 @@ pub(crate) fn write_back_SpriteAnimator<'local>(env: &mut jni::JNIEnv<'local>, o
 
 pub(crate) fn set_Text_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::FfiText) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "fontHandle", "J", jni::objects::JValue::Long(value.font_handle as i64)).map_err(|_| ())?;
-    env.set_field(obj, "fontSize", "F", jni::objects::JValue::Float(value.font_size)).map_err(|_| ())?;
-    env.set_field(obj, "colorR", "F", jni::objects::JValue::Float(value.color_r)).map_err(|_| ())?;
-    env.set_field(obj, "colorG", "F", jni::objects::JValue::Float(value.color_g)).map_err(|_| ())?;
-    env.set_field(obj, "colorB", "F", jni::objects::JValue::Float(value.color_b)).map_err(|_| ())?;
-    env.set_field(obj, "colorA", "F", jni::objects::JValue::Float(value.color_a)).map_err(|_| ())?;
-    env.set_field(obj, "alignment", "I", jni::objects::JValue::Int(value.alignment as i32)).map_err(|_| ())?;
-    env.set_field(obj, "maxWidth", "F", jni::objects::JValue::Float(value.max_width)).map_err(|_| ())?;
-    env.set_field(obj, "hasMaxWidth", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.has_max_width))).map_err(|_| ())?;
-    env.set_field(obj, "lineSpacing", "F", jni::objects::JValue::Float(value.line_spacing)).map_err(|_| ())?;
+    crate::jni::helpers::set_long_field(env, obj, "fontHandle", value.font_handle as i64)?;
+    crate::jni::helpers::set_float_field(env, obj, "fontSize", value.font_size)?;
+    crate::jni::helpers::set_float_field(env, obj, "colorR", value.color_r)?;
+    crate::jni::helpers::set_float_field(env, obj, "colorG", value.color_g)?;
+    crate::jni::helpers::set_float_field(env, obj, "colorB", value.color_b)?;
+    crate::jni::helpers::set_float_field(env, obj, "colorA", value.color_a)?;
+    crate::jni::helpers::set_int_field(env, obj, "alignment", value.alignment as i32)?;
+    crate::jni::helpers::set_float_field(env, obj, "maxWidth", value.max_width)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "hasMaxWidth", value.has_max_width)?;
+    crate::jni::helpers::set_float_field(env, obj, "lineSpacing", value.line_spacing)?;
     Ok(())
 }
 
 pub(crate) fn new_Text<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::FfiText) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/Text").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/Text")?;
     set_Text_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -870,16 +841,16 @@ pub(crate) fn read_Text<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::object
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_fontHandle = env.get_field(obj, "fontHandle", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_fontSize = env.get_field(obj, "fontSize", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_colorR = env.get_field(obj, "colorR", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_colorG = env.get_field(obj, "colorG", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_colorB = env.get_field(obj, "colorB", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_colorA = env.get_field(obj, "colorA", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_alignment = env.get_field(obj, "alignment", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
-    let field_maxWidth = env.get_field(obj, "maxWidth", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_hasMaxWidth = env.get_field(obj, "hasMaxWidth", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_lineSpacing = env.get_field(obj, "lineSpacing", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
+    let field_fontHandle = crate::jni::helpers::get_long_field(env, obj, "fontHandle")? as u64;
+    let field_fontSize = crate::jni::helpers::get_float_field(env, obj, "fontSize")? as _;
+    let field_colorR = crate::jni::helpers::get_float_field(env, obj, "colorR")? as _;
+    let field_colorG = crate::jni::helpers::get_float_field(env, obj, "colorG")? as _;
+    let field_colorB = crate::jni::helpers::get_float_field(env, obj, "colorB")? as _;
+    let field_colorA = crate::jni::helpers::get_float_field(env, obj, "colorA")? as _;
+    let field_alignment = crate::jni::helpers::get_int_field(env, obj, "alignment")? as _;
+    let field_maxWidth = crate::jni::helpers::get_float_field(env, obj, "maxWidth")? as _;
+    let field_hasMaxWidth = crate::jni::helpers::get_boolean_field(env, obj, "hasMaxWidth")?;
+    let field_lineSpacing = crate::jni::helpers::get_float_field(env, obj, "lineSpacing")? as _;
     Ok(crate::ffi::FfiText {
         font_handle: field_fontHandle,
         font_size: field_fontSize,
@@ -900,17 +871,16 @@ pub(crate) fn write_back_Text<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::
 
 pub(crate) fn set_Transform2D_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::FfiTransform2D) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "positionX", "F", jni::objects::JValue::Float(value.position_x)).map_err(|_| ())?;
-    env.set_field(obj, "positionY", "F", jni::objects::JValue::Float(value.position_y)).map_err(|_| ())?;
-    env.set_field(obj, "rotation", "F", jni::objects::JValue::Float(value.rotation)).map_err(|_| ())?;
-    env.set_field(obj, "scaleX", "F", jni::objects::JValue::Float(value.scale_x)).map_err(|_| ())?;
-    env.set_field(obj, "scaleY", "F", jni::objects::JValue::Float(value.scale_y)).map_err(|_| ())?;
+    crate::jni::helpers::set_float_field(env, obj, "positionX", value.position_x)?;
+    crate::jni::helpers::set_float_field(env, obj, "positionY", value.position_y)?;
+    crate::jni::helpers::set_float_field(env, obj, "rotation", value.rotation)?;
+    crate::jni::helpers::set_float_field(env, obj, "scaleX", value.scale_x)?;
+    crate::jni::helpers::set_float_field(env, obj, "scaleY", value.scale_y)?;
     Ok(())
 }
 
 pub(crate) fn new_Transform2D<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::FfiTransform2D) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/Transform2D").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/Transform2D")?;
     set_Transform2D_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -920,11 +890,11 @@ pub(crate) fn read_Transform2D<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni:
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_positionX = env.get_field(obj, "positionX", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_positionY = env.get_field(obj, "positionY", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_rotation = env.get_field(obj, "rotation", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_scaleX = env.get_field(obj, "scaleX", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_scaleY = env.get_field(obj, "scaleY", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
+    let field_positionX = crate::jni::helpers::get_float_field(env, obj, "positionX")? as _;
+    let field_positionY = crate::jni::helpers::get_float_field(env, obj, "positionY")? as _;
+    let field_rotation = crate::jni::helpers::get_float_field(env, obj, "rotation")? as _;
+    let field_scaleX = crate::jni::helpers::get_float_field(env, obj, "scaleX")? as _;
+    let field_scaleY = crate::jni::helpers::get_float_field(env, obj, "scaleY")? as _;
     Ok(crate::ffi::FfiTransform2D {
         position_x: field_positionX,
         position_y: field_positionY,
@@ -940,16 +910,15 @@ pub(crate) fn write_back_Transform2D<'local>(env: &mut jni::JNIEnv<'local>, obj:
 
 pub(crate) fn set_UiEvent_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::ui::FfiUiEvent) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "eventKind", "I", jni::objects::JValue::Int(value.event_kind as i32)).map_err(|_| ())?;
-    env.set_field(obj, "nodeId", "J", jni::objects::JValue::Long(value.node_id as i64)).map_err(|_| ())?;
-    env.set_field(obj, "previousNodeId", "J", jni::objects::JValue::Long(value.previous_node_id as i64)).map_err(|_| ())?;
-    env.set_field(obj, "currentNodeId", "J", jni::objects::JValue::Long(value.current_node_id as i64)).map_err(|_| ())?;
+    crate::jni::helpers::set_int_field(env, obj, "eventKind", value.event_kind as i32)?;
+    crate::jni::helpers::set_long_field(env, obj, "nodeId", value.node_id as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "previousNodeId", value.previous_node_id as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "currentNodeId", value.current_node_id as i64)?;
     Ok(())
 }
 
 pub(crate) fn new_UiEvent<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::ui::FfiUiEvent) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/UiEvent").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/UiEvent")?;
     set_UiEvent_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -959,10 +928,10 @@ pub(crate) fn read_UiEvent<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::obj
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_eventKind = env.get_field(obj, "eventKind", "I").map_err(|_| ())?.i().map_err(|_| ())? as _;
-    let field_nodeId = env.get_field(obj, "nodeId", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_previousNodeId = env.get_field(obj, "previousNodeId", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
-    let field_currentNodeId = env.get_field(obj, "currentNodeId", "J").map_err(|_| ())?.j().map_err(|_| ())? as u64;
+    let field_eventKind = crate::jni::helpers::get_int_field(env, obj, "eventKind")? as _;
+    let field_nodeId = crate::jni::helpers::get_long_field(env, obj, "nodeId")? as u64;
+    let field_previousNodeId = crate::jni::helpers::get_long_field(env, obj, "previousNodeId")? as u64;
+    let field_currentNodeId = crate::jni::helpers::get_long_field(env, obj, "currentNodeId")? as u64;
     Ok(crate::ffi::ui::FfiUiEvent {
         event_kind: field_eventKind,
         node_id: field_nodeId,
@@ -977,33 +946,32 @@ pub(crate) fn write_back_UiEvent<'local>(env: &mut jni::JNIEnv<'local>, obj: &jn
 
 pub(crate) fn set_UiStyle_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::ui::FfiUiStyle) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "hasBackgroundColor", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.has_background_color))).map_err(|_| ())?;
+    crate::jni::helpers::set_boolean_field(env, obj, "hasBackgroundColor", value.has_background_color)?;
     let field_backgroundColor_obj = new_Color(env, value.background_color.into())?;
-    env.set_field(obj, "backgroundColor", "Lcom/goudengine/internal/Color;", jni::objects::JValue::Object(&field_backgroundColor_obj)).map_err(|_| ())?;
-    env.set_field(obj, "hasForegroundColor", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.has_foreground_color))).map_err(|_| ())?;
+    crate::jni::helpers::set_object_field(env, obj, "backgroundColor", "Lcom/goudengine/internal/Color;", &field_backgroundColor_obj)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "hasForegroundColor", value.has_foreground_color)?;
     let field_foregroundColor_obj = new_Color(env, value.foreground_color.into())?;
-    env.set_field(obj, "foregroundColor", "Lcom/goudengine/internal/Color;", jni::objects::JValue::Object(&field_foregroundColor_obj)).map_err(|_| ())?;
-    env.set_field(obj, "hasBorderColor", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.has_border_color))).map_err(|_| ())?;
+    crate::jni::helpers::set_object_field(env, obj, "foregroundColor", "Lcom/goudengine/internal/Color;", &field_foregroundColor_obj)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "hasBorderColor", value.has_border_color)?;
     let field_borderColor_obj = new_Color(env, value.border_color.into())?;
-    env.set_field(obj, "borderColor", "Lcom/goudengine/internal/Color;", jni::objects::JValue::Object(&field_borderColor_obj)).map_err(|_| ())?;
-    env.set_field(obj, "hasBorderWidth", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.has_border_width))).map_err(|_| ())?;
-    env.set_field(obj, "borderWidth", "F", jni::objects::JValue::Float(value.border_width)).map_err(|_| ())?;
-    env.set_field(obj, "hasFontFamily", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.has_font_family))).map_err(|_| ())?;
-    env.set_field(obj, "fontFamilyPtr", "J", jni::objects::JValue::Long(value.font_family_ptr as usize as i64)).map_err(|_| ())?;
-    env.set_field(obj, "fontFamilyLen", "J", jni::objects::JValue::Long(value.font_family_len as i64)).map_err(|_| ())?;
-    env.set_field(obj, "hasFontSize", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.has_font_size))).map_err(|_| ())?;
-    env.set_field(obj, "fontSize", "F", jni::objects::JValue::Float(value.font_size)).map_err(|_| ())?;
-    env.set_field(obj, "hasTexturePath", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.has_texture_path))).map_err(|_| ())?;
-    env.set_field(obj, "texturePathPtr", "J", jni::objects::JValue::Long(value.texture_path_ptr as usize as i64)).map_err(|_| ())?;
-    env.set_field(obj, "texturePathLen", "J", jni::objects::JValue::Long(value.texture_path_len as i64)).map_err(|_| ())?;
-    env.set_field(obj, "hasWidgetSpacing", "Z", jni::objects::JValue::Bool(crate::jni::helpers::to_jboolean(value.has_widget_spacing))).map_err(|_| ())?;
-    env.set_field(obj, "widgetSpacing", "F", jni::objects::JValue::Float(value.widget_spacing)).map_err(|_| ())?;
+    crate::jni::helpers::set_object_field(env, obj, "borderColor", "Lcom/goudengine/internal/Color;", &field_borderColor_obj)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "hasBorderWidth", value.has_border_width)?;
+    crate::jni::helpers::set_float_field(env, obj, "borderWidth", value.border_width)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "hasFontFamily", value.has_font_family)?;
+    crate::jni::helpers::set_long_field(env, obj, "fontFamilyPtr", value.font_family_ptr as usize as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "fontFamilyLen", value.font_family_len as i64)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "hasFontSize", value.has_font_size)?;
+    crate::jni::helpers::set_float_field(env, obj, "fontSize", value.font_size)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "hasTexturePath", value.has_texture_path)?;
+    crate::jni::helpers::set_long_field(env, obj, "texturePathPtr", value.texture_path_ptr as usize as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "texturePathLen", value.texture_path_len as i64)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "hasWidgetSpacing", value.has_widget_spacing)?;
+    crate::jni::helpers::set_float_field(env, obj, "widgetSpacing", value.widget_spacing)?;
     Ok(())
 }
 
 pub(crate) fn new_UiStyle<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::ui::FfiUiStyle) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/UiStyle").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/UiStyle")?;
     set_UiStyle_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -1013,27 +981,27 @@ pub(crate) fn read_UiStyle<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::obj
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_hasBackgroundColor = env.get_field(obj, "hasBackgroundColor", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_backgroundColor_obj = env.get_field(obj, "backgroundColor", "Lcom/goudengine/internal/Color;").map_err(|_| ())?.l().map_err(|_| ())?;
+    let field_hasBackgroundColor = crate::jni::helpers::get_boolean_field(env, obj, "hasBackgroundColor")?;
+    let field_backgroundColor_obj = crate::jni::helpers::get_object_field(env, obj, "backgroundColor", "Lcom/goudengine/internal/Color;")?;
     let field_backgroundColor = read_Color(env, &field_backgroundColor_obj, "UiStyle.backgroundColor")?;
-    let field_hasForegroundColor = env.get_field(obj, "hasForegroundColor", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_foregroundColor_obj = env.get_field(obj, "foregroundColor", "Lcom/goudengine/internal/Color;").map_err(|_| ())?.l().map_err(|_| ())?;
+    let field_hasForegroundColor = crate::jni::helpers::get_boolean_field(env, obj, "hasForegroundColor")?;
+    let field_foregroundColor_obj = crate::jni::helpers::get_object_field(env, obj, "foregroundColor", "Lcom/goudengine/internal/Color;")?;
     let field_foregroundColor = read_Color(env, &field_foregroundColor_obj, "UiStyle.foregroundColor")?;
-    let field_hasBorderColor = env.get_field(obj, "hasBorderColor", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_borderColor_obj = env.get_field(obj, "borderColor", "Lcom/goudengine/internal/Color;").map_err(|_| ())?.l().map_err(|_| ())?;
+    let field_hasBorderColor = crate::jni::helpers::get_boolean_field(env, obj, "hasBorderColor")?;
+    let field_borderColor_obj = crate::jni::helpers::get_object_field(env, obj, "borderColor", "Lcom/goudengine/internal/Color;")?;
     let field_borderColor = read_Color(env, &field_borderColor_obj, "UiStyle.borderColor")?;
-    let field_hasBorderWidth = env.get_field(obj, "hasBorderWidth", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_borderWidth = env.get_field(obj, "borderWidth", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_hasFontFamily = env.get_field(obj, "hasFontFamily", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_fontFamilyPtr = env.get_field(obj, "fontFamilyPtr", "J").map_err(|_| ())?.j().map_err(|_| ())? as usize as _;
-    let field_fontFamilyLen = env.get_field(obj, "fontFamilyLen", "J").map_err(|_| ())?.j().map_err(|_| ())? as usize;
-    let field_hasFontSize = env.get_field(obj, "hasFontSize", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_fontSize = env.get_field(obj, "fontSize", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_hasTexturePath = env.get_field(obj, "hasTexturePath", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_texturePathPtr = env.get_field(obj, "texturePathPtr", "J").map_err(|_| ())?.j().map_err(|_| ())? as usize as _;
-    let field_texturePathLen = env.get_field(obj, "texturePathLen", "J").map_err(|_| ())?.j().map_err(|_| ())? as usize;
-    let field_hasWidgetSpacing = env.get_field(obj, "hasWidgetSpacing", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let field_widgetSpacing = env.get_field(obj, "widgetSpacing", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
+    let field_hasBorderWidth = crate::jni::helpers::get_boolean_field(env, obj, "hasBorderWidth")?;
+    let field_borderWidth = crate::jni::helpers::get_float_field(env, obj, "borderWidth")? as _;
+    let field_hasFontFamily = crate::jni::helpers::get_boolean_field(env, obj, "hasFontFamily")?;
+    let field_fontFamilyPtr = crate::jni::helpers::get_long_field(env, obj, "fontFamilyPtr")? as usize as _;
+    let field_fontFamilyLen = crate::jni::helpers::get_long_field(env, obj, "fontFamilyLen")? as usize;
+    let field_hasFontSize = crate::jni::helpers::get_boolean_field(env, obj, "hasFontSize")?;
+    let field_fontSize = crate::jni::helpers::get_float_field(env, obj, "fontSize")? as _;
+    let field_hasTexturePath = crate::jni::helpers::get_boolean_field(env, obj, "hasTexturePath")?;
+    let field_texturePathPtr = crate::jni::helpers::get_long_field(env, obj, "texturePathPtr")? as usize as _;
+    let field_texturePathLen = crate::jni::helpers::get_long_field(env, obj, "texturePathLen")? as usize;
+    let field_hasWidgetSpacing = crate::jni::helpers::get_boolean_field(env, obj, "hasWidgetSpacing")?;
+    let field_widgetSpacing = crate::jni::helpers::get_float_field(env, obj, "widgetSpacing")? as _;
     Ok(crate::ffi::ui::FfiUiStyle {
         has_background_color: field_hasBackgroundColor,
         background_color: field_backgroundColor.into(),
@@ -1062,14 +1030,13 @@ pub(crate) fn write_back_UiStyle<'local>(env: &mut jni::JNIEnv<'local>, obj: &jn
 
 pub(crate) fn set_Vec2_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::FfiVec2) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "x", "F", jni::objects::JValue::Float(value.x)).map_err(|_| ())?;
-    env.set_field(obj, "y", "F", jni::objects::JValue::Float(value.y)).map_err(|_| ())?;
+    crate::jni::helpers::set_float_field(env, obj, "x", value.x)?;
+    crate::jni::helpers::set_float_field(env, obj, "y", value.y)?;
     Ok(())
 }
 
 pub(crate) fn new_Vec2<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::FfiVec2) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/Vec2").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/Vec2")?;
     set_Vec2_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -1079,8 +1046,8 @@ pub(crate) fn read_Vec2<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::object
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_x = env.get_field(obj, "x", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_y = env.get_field(obj, "y", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
+    let field_x = crate::jni::helpers::get_float_field(env, obj, "x")? as _;
+    let field_y = crate::jni::helpers::get_float_field(env, obj, "y")? as _;
     Ok(crate::ffi::FfiVec2 {
         x: field_x,
         y: field_y,
@@ -1093,15 +1060,14 @@ pub(crate) fn write_back_Vec2<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::
 
 pub(crate) fn set_Vec3_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::math::Vec3) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
-    env.set_field(obj, "x", "F", jni::objects::JValue::Float(value.x)).map_err(|_| ())?;
-    env.set_field(obj, "y", "F", jni::objects::JValue::Float(value.y)).map_err(|_| ())?;
-    env.set_field(obj, "z", "F", jni::objects::JValue::Float(value.z)).map_err(|_| ())?;
+    crate::jni::helpers::set_float_field(env, obj, "x", value.x)?;
+    crate::jni::helpers::set_float_field(env, obj, "y", value.y)?;
+    crate::jni::helpers::set_float_field(env, obj, "z", value.z)?;
     Ok(())
 }
 
 pub(crate) fn new_Vec3<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::math::Vec3) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/Vec3").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/Vec3")?;
     set_Vec3_fields(env, &obj, value)?;
     Ok(obj)
 }
@@ -1111,9 +1077,9 @@ pub(crate) fn read_Vec3<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::object
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
-    let field_x = env.get_field(obj, "x", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_y = env.get_field(obj, "y", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
-    let field_z = env.get_field(obj, "z", "F").map_err(|_| ())?.f().map_err(|_| ())? as _;
+    let field_x = crate::jni::helpers::get_float_field(env, obj, "x")? as _;
+    let field_y = crate::jni::helpers::get_float_field(env, obj, "y")? as _;
+    let field_z = crate::jni::helpers::get_float_field(env, obj, "z")? as _;
     Ok(crate::core::math::Vec3 {
         x: field_x,
         y: field_y,
@@ -1247,12 +1213,9 @@ pub(crate) fn new_NetworkPacket<'local>(
     peer_id: u64,
     data: &[u8],
 ) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/NetworkPacket").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
-    env.set_field(&obj, "peerId", "J", jni::objects::JValue::Long(peer_id as i64)).map_err(|_| ())?;
-    let data_array = env.byte_array_from_slice(data).map_err(|_| ())?;
-    let data_obj = jni::objects::JObject::from(data_array);
-    env.set_field(&obj, "data", "[B", jni::objects::JValue::Object(&data_obj)).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/NetworkPacket")?;
+    crate::jni::helpers::set_long_field(env, &obj, "peerId", peer_id as i64)?;
+    crate::jni::helpers::set_byte_array_field(env, &obj, "data", data)?;
     Ok(obj)
 }
 
@@ -1266,19 +1229,14 @@ pub(crate) fn new_AnimationEventData<'local>(
     payload_float: f32,
     payload_string: &str,
 ) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let class = env.find_class("com/goudengine/internal/AnimationEventData").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
-    env.set_field(&obj, "entity", "J", jni::objects::JValue::Long(entity as i64)).map_err(|_| ())?;
-    let name_value = env.new_string(name).map_err(|_| ())?;
-    let name_obj = jni::objects::JObject::from(name_value);
-    env.set_field(&obj, "name", "Ljava/lang/String;", jni::objects::JValue::Object(&name_obj)).map_err(|_| ())?;
-    env.set_field(&obj, "frameIndex", "I", jni::objects::JValue::Int(frame_index as i32)).map_err(|_| ())?;
-    env.set_field(&obj, "payloadType", "I", jni::objects::JValue::Int(payload_type as i32)).map_err(|_| ())?;
-    env.set_field(&obj, "payloadInt", "I", jni::objects::JValue::Int(payload_int)).map_err(|_| ())?;
-    env.set_field(&obj, "payloadFloat", "F", jni::objects::JValue::Float(payload_float)).map_err(|_| ())?;
-    let payload_value = env.new_string(payload_string).map_err(|_| ())?;
-    let payload_obj = jni::objects::JObject::from(payload_value);
-    env.set_field(&obj, "payloadString", "Ljava/lang/String;", jni::objects::JValue::Object(&payload_obj)).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/AnimationEventData")?;
+    crate::jni::helpers::set_long_field(env, &obj, "entity", entity as i64)?;
+    crate::jni::helpers::set_string_field(env, &obj, "name", name)?;
+    crate::jni::helpers::set_int_field(env, &obj, "frameIndex", frame_index as i32)?;
+    crate::jni::helpers::set_int_field(env, &obj, "payloadType", payload_type as i32)?;
+    crate::jni::helpers::set_int_field(env, &obj, "payloadInt", payload_int)?;
+    crate::jni::helpers::set_float_field(env, &obj, "payloadFloat", payload_float)?;
+    crate::jni::helpers::set_string_field(env, &obj, "payloadString", payload_string)?;
     Ok(obj)
 }
 
@@ -1288,22 +1246,17 @@ pub(crate) fn new_DebuggerCapture<'local>(
     json_text: &str,
 ) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
     let value = parse_json_document(env, function_name, json_text)?;
-    let class = env.find_class("com/goudengine/internal/DebuggerCapture").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/DebuggerCapture")?;
     let image_png = parse_json_bytes_field(env, function_name, &value, "imagePng")?;
-    let image_array = env.byte_array_from_slice(&image_png).map_err(|_| ())?;
-    let image_obj = jni::objects::JObject::from(image_array);
-    env.set_field(&obj, "imagePng", "[B", jni::objects::JValue::Object(&image_obj)).map_err(|_| ())?;
+    crate::jni::helpers::set_byte_array_field(env, &obj, "imagePng", &image_png)?;
     for field in ["metadataJson", "snapshotJson", "metricsTraceJson"] {
         let field_text = parse_json_string_field(env, function_name, &value, field)?;
-        let value = env.new_string(field_text).map_err(|_| ())?;
-        let value_obj = jni::objects::JObject::from(value);
         let java_field = match field {
             "metadataJson" => "metadataJson",
             "snapshotJson" => "snapshotJson",
             _ => "metricsTraceJson",
         };
-        env.set_field(&obj, java_field, "Ljava/lang/String;", jni::objects::JValue::Object(&value_obj)).map_err(|_| ())?;
+        crate::jni::helpers::set_string_field(env, &obj, java_field, &field_text)?;
     }
     Ok(obj)
 }
@@ -1314,35 +1267,22 @@ pub(crate) fn new_DebuggerReplayArtifact<'local>(
     json_text: &str,
 ) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
     let value = parse_json_document(env, function_name, json_text)?;
-    let class = env.find_class("com/goudengine/internal/DebuggerReplayArtifact").map_err(|_| ())?;
-    let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/DebuggerReplayArtifact")?;
     let manifest_text = parse_json_string_field(env, function_name, &value, "manifestJson")?;
-    let manifest = env.new_string(manifest_text).map_err(|_| ())?;
-    let manifest_obj = jni::objects::JObject::from(manifest);
-    env.set_field(&obj, "manifestJson", "Ljava/lang/String;", jni::objects::JValue::Object(&manifest_obj)).map_err(|_| ())?;
+    crate::jni::helpers::set_string_field(env, &obj, "manifestJson", &manifest_text)?;
     let data = parse_json_bytes_field(env, function_name, &value, "data")?;
-    let data_array = env.byte_array_from_slice(&data).map_err(|_| ())?;
-    let data_obj = jni::objects::JObject::from(data_array);
-    env.set_field(&obj, "data", "[B", jni::objects::JValue::Object(&data_obj)).map_err(|_| ())?;
+    crate::jni::helpers::set_byte_array_field(env, &obj, "data", &data)?;
     Ok(obj)
 }
 
 pub(crate) fn require_entity_array(env: &mut jni::JNIEnv<'_>, array: jni::objects::JLongArray<'_>, param_name: &str) -> crate::jni::helpers::JniCallResult<Vec<u64>> {
-    if array.is_null() {
-        crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
-        return Err(());
-    }
-    let len = env.get_array_length(&array).map_err(|_| ())? as usize;
-    let mut values = vec![0_i64; len];
-    env.get_long_array_region(&array, 0, &mut values).map_err(|_| ())?;
+    let values = crate::jni::helpers::require_long_array(env, array.into_raw(), param_name)?;
     Ok(values.into_iter().map(|value| value as u64).collect())
 }
 
 pub(crate) fn new_entity_array(env: &mut jni::JNIEnv<'_>, values: &[u64]) -> crate::jni::helpers::JniCallResult<jni::sys::jlongArray> {
-    let array = env.new_long_array(values.len() as i32).map_err(|_| ())?;
     let longs: Vec<i64> = values.iter().map(|value| *value as i64).collect();
-    env.set_long_array_region(&array, 0, &longs).map_err(|_| ())?;
-    Ok(array.into_raw())
+    crate::jni::helpers::new_long_array(env, &longs)
 }
 
 pub(crate) fn marshal_debugger_config<'local>(
@@ -1350,9 +1290,9 @@ pub(crate) fn marshal_debugger_config<'local>(
     obj: jni::objects::JObject<'local>,
 ) -> crate::jni::helpers::JniCallResult<(crate::ffi::context::GoudDebuggerConfig, Option<std::ffi::CString>)> {
     let obj = crate::jni::helpers::require_object(env, obj, "debuggerConfig")?;
-    let enabled = env.get_field(&obj, "enabled", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let publish = env.get_field(&obj, "publishLocalAttach", "Z").map_err(|_| ())?.z().map_err(|_| ())?;
-    let route = env.get_field(&obj, "routeLabel", "Ljava/lang/String;").map_err(|_| ())?.l().map_err(|_| ())?;
+    let enabled = crate::jni::helpers::get_boolean_field(env, &obj, "enabled")?;
+    let publish = crate::jni::helpers::get_boolean_field(env, &obj, "publishLocalAttach")?;
+    let route = crate::jni::helpers::get_object_field(env, &obj, "routeLabel", "Ljava/lang/String;")?;
     let route_cstr = if route.is_null() {
         None
     } else {
@@ -1371,7 +1311,7 @@ pub(crate) fn marshal_context_config<'local>(
     obj: jni::objects::JObject<'local>,
 ) -> crate::jni::helpers::JniCallResult<(crate::ffi::context::GoudContextConfig, Option<std::ffi::CString>)> {
     let obj = crate::jni::helpers::require_object(env, obj, "contextConfig")?;
-    let debugger = env.get_field(&obj, "debugger", "Lcom/goudengine/internal/DebuggerConfig;").map_err(|_| ())?.l().map_err(|_| ())?;
+    let debugger = crate::jni::helpers::get_object_field(env, &obj, "debugger", "Lcom/goudengine/internal/DebuggerConfig;")?;
     let (debugger, route) = marshal_debugger_config(env, debugger)?;
     Ok((crate::ffi::context::GoudContextConfig { debugger }, route))
 }
@@ -2045,7 +1985,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_isAliveBatch<
                 crate::jni::helpers::throw_null_pointer(env, "outResults is null")?;
                 return Err(());
             }
-            let results_len = env.get_array_length(&outResults).map_err(|_| ())? as usize;
+            let results_len = crate::jni::helpers::byte_array_length(env, &outResults)?;
             if results_len < entities_values.len() {
                 crate::jni::helpers::throw_illegal_argument(env, "outResults is smaller than entities")?;
                 return Err(());
@@ -2059,7 +1999,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_isAliveBatch<
                 return Err(());
             }
             let written_len = crate::jni::helpers::checked_output_length(env, "goud_entity_is_alive_batch", "outResults", written as usize, result_bytes.len())?;
-            env.set_byte_array_region(&outResults, 0, &result_bytes[..written_len].iter().map(|value| *value as i8).collect::<Vec<i8>>()).map_err(|_| ())?;
+            crate::jni::helpers::write_byte_array(env, &outResults, &result_bytes[..written_len])?;
             Ok(written_len as i32)
     })
 }
@@ -4316,42 +4256,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_physicsCollis
     crate::jni::helpers::null_object()
 }
 
-#[cfg(feature = "rapier2d")]
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_physicsSetCollisionCallback<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    callbackPtr: jni::sys::jlong,
-    userData: jni::sys::jlong,
-) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_physicsSetCollisionCallback", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::physics::physics2d_events::goud_physics_set_collision_callback(goud_context_id_from_jlong(contextId), callbackPtr as _, userData as _);
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_physics_set_collision_callback", Some(result as i64));
-                return Err(());
-            }
-            Ok(result as i32)
-    })
-}
-
-#[cfg(not(feature = "rapier2d"))]
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_physicsSetCollisionCallback<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    callbackPtr: jni::sys::jlong,
-    userData: jni::sys::jlong,
-) -> jni::sys::jint {
-    let _ = env.throw_new("java/lang/IllegalStateException", "This JNI export requires the `rapier2d` feature.");
-    0
-}
-
 #[allow(non_snake_case)]
 #[no_mangle]
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentRegisterType<'local>(
@@ -4374,31 +4278,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentRegi
                 return Err(());
             }
             Ok(crate::jni::helpers::to_jboolean(result))
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentAdd<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entity: jni::sys::jlong,
-    typeIdHash: jni::sys::jlong,
-    dataPtr: jni::sys::jlong,
-    dataSize: jni::sys::jlong,
-) -> jni::sys::jboolean {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_componentAdd", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::component::goud_component_add(goud_context_id_from_jlong(contextId), goud_entity_id_from_jlong(entity), typeIdHash as _, dataPtr as _, dataSize as _)
-    };
-            if !result.success {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_add", Some(result.code as i64));
-                return Err(());
-            }
-            Ok(jni::sys::JNI_TRUE)
     })
 }
 
@@ -4446,74 +4325,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentHas<
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentGet<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entity: jni::sys::jlong,
-    typeIdHash: jni::sys::jlong,
-) -> jni::sys::jlong {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_componentGet", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jlong> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::component::goud_component_get(goud_context_id_from_jlong(contextId), goud_entity_id_from_jlong(entity), typeIdHash as _);
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_get", None);
-                return Err(());
-            }
-            Ok(result as i64)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentGetMut<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entity: jni::sys::jlong,
-    typeIdHash: jni::sys::jlong,
-) -> jni::sys::jlong {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_componentGetMut", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jlong> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::component::goud_component_get_mut(goud_context_id_from_jlong(contextId), goud_entity_id_from_jlong(entity), typeIdHash as _);
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_get_mut", None);
-                return Err(());
-            }
-            Ok(result as i64)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentAddBatch<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entities: jni::objects::JLongArray<'local>,
-    typeIdHash: jni::sys::jlong,
-    dataPtr: jni::sys::jlong,
-    componentSize: jni::sys::jlong,
-) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_componentAddBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let entities_values = require_entity_array(env, entities, "entities")?;
-            let written = unsafe { // SAFETY: the entity buffer remains valid for the duration of the FFI call.
-        crate::ffi::component::goud_component_add_batch(goud_context_id_from_jlong(contextId), if entities_values.is_empty() { std::ptr::null() } else { entities_values.as_ptr() } as _, entities_values.len() as u32, typeIdHash as u64, dataPtr as usize as *const u8, componentSize as usize)
-    };
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_add_batch", Some(written as i64));
-                return Err(());
-            }
-            Ok(written as i32)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentRemoveBatch<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
@@ -4554,7 +4365,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentHasB
                 crate::jni::helpers::throw_null_pointer(env, "outResults is null")?;
                 return Err(());
             }
-            let results_len = env.get_array_length(&outResults).map_err(|_| ())? as usize;
+            let results_len = crate::jni::helpers::byte_array_length(env, &outResults)?;
             if results_len < entities_values.len() {
                 crate::jni::helpers::throw_illegal_argument(env, "outResults is smaller than entities")?;
                 return Err(());
@@ -4568,7 +4379,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentHasB
                 return Err(());
             }
             let written_len = crate::jni::helpers::checked_output_length(env, "goud_component_has_batch", "outResults", written as usize, result_bytes.len())?;
-            env.set_byte_array_region(&outResults, 0, &result_bytes[..written_len].iter().map(|value| *value as i8).collect::<Vec<i8>>()).map_err(|_| ())?;
+            crate::jni::helpers::write_byte_array(env, &outResults, &result_bytes[..written_len])?;
             Ok(written_len as i32)
     })
 }
@@ -4762,10 +4573,9 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_networkConnec
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_network_connect_with_peer", Some(status as i64));
                 return Err(());
             }
-            let class = env.find_class("com/goudengine/internal/NetworkConnectResult").map_err(|_| ())?;
-            let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
-            env.set_field(&obj, "handle", "J", jni::objects::JValue::Long(out_handle as i64)).map_err(|_| ())?;
-            env.set_field(&obj, "peerId", "J", jni::objects::JValue::Long(out_peerId as i64)).map_err(|_| ())?;
+            let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/NetworkConnectResult")?;
+            crate::jni::helpers::set_long_field(env, &obj, "handle", out_handle as i64)?;
+            crate::jni::helpers::set_long_field(env, &obj, "peerId", out_peerId as i64)?;
             Ok(obj.into_raw())
     })
 }
@@ -6085,10 +5895,9 @@ pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_networkCon
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_network_connect_with_peer", Some(status as i64));
                 return Err(());
             }
-            let class = env.find_class("com/goudengine/internal/NetworkConnectResult").map_err(|_| ())?;
-            let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
-            env.set_field(&obj, "handle", "J", jni::objects::JValue::Long(out_handle as i64)).map_err(|_| ())?;
-            env.set_field(&obj, "peerId", "J", jni::objects::JValue::Long(out_peerId as i64)).map_err(|_| ())?;
+            let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/NetworkConnectResult")?;
+            crate::jni::helpers::set_long_field(env, &obj, "handle", out_handle as i64)?;
+            crate::jni::helpers::set_long_field(env, &obj, "peerId", out_peerId as i64)?;
             Ok(obj.into_raw())
     })
 }
@@ -6969,7 +6778,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_isAliveBat
                 crate::jni::helpers::throw_null_pointer(env, "outResults is null")?;
                 return Err(());
             }
-            let results_len = env.get_array_length(&outResults).map_err(|_| ())? as usize;
+            let results_len = crate::jni::helpers::byte_array_length(env, &outResults)?;
             if results_len < entities_values.len() {
                 crate::jni::helpers::throw_illegal_argument(env, "outResults is smaller than entities")?;
                 return Err(());
@@ -6983,7 +6792,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_isAliveBat
                 return Err(());
             }
             let written_len = crate::jni::helpers::checked_output_length(env, "goud_entity_is_alive_batch", "outResults", written as usize, result_bytes.len())?;
-            env.set_byte_array_region(&outResults, 0, &result_bytes[..written_len].iter().map(|value| *value as i8).collect::<Vec<i8>>()).map_err(|_| ())?;
+            crate::jni::helpers::write_byte_array(env, &outResults, &result_bytes[..written_len])?;
             Ok(written_len as i32)
     })
 }
@@ -7509,31 +7318,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_componentR
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_componentAdd<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entity: jni::sys::jlong,
-    typeIdHash: jni::sys::jlong,
-    dataPtr: jni::sys::jlong,
-    dataSize: jni::sys::jlong,
-) -> jni::sys::jboolean {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudContextNative_componentAdd", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::component::goud_component_add(goud_context_id_from_jlong(contextId), goud_entity_id_from_jlong(entity), typeIdHash as _, dataPtr as _, dataSize as _)
-    };
-            if !result.success {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_add", Some(result.code as i64));
-                return Err(());
-            }
-            Ok(jni::sys::JNI_TRUE)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
 pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_componentRemove<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
@@ -7571,74 +7355,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_componentH
                 return Err(());
             }
             Ok(crate::jni::helpers::to_jboolean(result))
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_componentGet<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entity: jni::sys::jlong,
-    typeIdHash: jni::sys::jlong,
-) -> jni::sys::jlong {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudContextNative_componentGet", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jlong> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::component::goud_component_get(goud_context_id_from_jlong(contextId), goud_entity_id_from_jlong(entity), typeIdHash as _);
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_get", None);
-                return Err(());
-            }
-            Ok(result as i64)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_componentGetMut<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entity: jni::sys::jlong,
-    typeIdHash: jni::sys::jlong,
-) -> jni::sys::jlong {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudContextNative_componentGetMut", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jlong> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::component::goud_component_get_mut(goud_context_id_from_jlong(contextId), goud_entity_id_from_jlong(entity), typeIdHash as _);
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_get_mut", None);
-                return Err(());
-            }
-            Ok(result as i64)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_componentAddBatch<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entities: jni::objects::JLongArray<'local>,
-    typeIdHash: jni::sys::jlong,
-    dataPtr: jni::sys::jlong,
-    componentSize: jni::sys::jlong,
-) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudContextNative_componentAddBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let entities_values = require_entity_array(env, entities, "entities")?;
-            let written = unsafe { // SAFETY: the entity buffer remains valid for the duration of the FFI call.
-        crate::ffi::component::goud_component_add_batch(goud_context_id_from_jlong(contextId), if entities_values.is_empty() { std::ptr::null() } else { entities_values.as_ptr() } as _, entities_values.len() as u32, typeIdHash as u64, dataPtr as usize as *const u8, componentSize as usize)
-    };
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_add_batch", Some(written as i64));
-                return Err(());
-            }
-            Ok(written as i32)
     })
 }
 
@@ -7684,7 +7400,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_componentH
                 crate::jni::helpers::throw_null_pointer(env, "outResults is null")?;
                 return Err(());
             }
-            let results_len = env.get_array_length(&outResults).map_err(|_| ())? as usize;
+            let results_len = crate::jni::helpers::byte_array_length(env, &outResults)?;
             if results_len < entities_values.len() {
                 crate::jni::helpers::throw_illegal_argument(env, "outResults is smaller than entities")?;
                 return Err(());
@@ -7698,7 +7414,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_componentH
                 return Err(());
             }
             let written_len = crate::jni::helpers::checked_output_length(env, "goud_component_has_batch", "outResults", written as usize, result_bytes.len())?;
-            env.set_byte_array_region(&outResults, 0, &result_bytes[..written_len].iter().map(|value| *value as i8).collect::<Vec<i8>>()).map_err(|_| ())?;
+            crate::jni::helpers::write_byte_array(env, &outResults, &result_bytes[..written_len])?;
             Ok(written_len as i32)
     })
 }
@@ -8964,42 +8680,6 @@ pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld2DNative_collisi
 ) -> jni::sys::jobject {
     let _ = env.throw_new("java/lang/IllegalStateException", "This JNI export requires the `rapier2d` feature.");
     crate::jni::helpers::null_object()
-}
-
-#[cfg(feature = "rapier2d")]
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld2DNative_setCollisionCallback<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    callbackPtr: jni::sys::jlong,
-    userData: jni::sys::jlong,
-) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_PhysicsWorld2DNative_setCollisionCallback", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::physics::physics2d_events::goud_physics_set_collision_callback(goud_context_id_from_jlong(contextId), callbackPtr as _, userData as _);
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_physics_set_collision_callback", Some(result as i64));
-                return Err(());
-            }
-            Ok(result as i32)
-    })
-}
-
-#[cfg(not(feature = "rapier2d"))]
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld2DNative_setCollisionCallback<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    callbackPtr: jni::sys::jlong,
-    userData: jni::sys::jlong,
-) -> jni::sys::jint {
-    let _ = env.throw_new("java/lang/IllegalStateException", "This JNI export requires the `rapier2d` feature.");
-    0
 }
 
 #[cfg(feature = "rapier2d")]
@@ -11009,28 +10689,15 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_getStats<'loca
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_network_get_stats", None);
                 return Err(());
             }
-            let map_class = env.find_class("java/util/HashMap").map_err(|_| ())?;
-            let map = env.new_object(map_class, "()V", &[]).map_err(|_| ())?;
-            let key_bytes_sent = env.new_string("bytes_sent").map_err(|_| ())?;
-            let key_bytes_sent_obj = jni::objects::JObject::from(key_bytes_sent);
-            let boxed_class = env.find_class("java/lang/Long").map_err(|_| ())?;
-            let value_bytes_sent = env.new_object(boxed_class, "(J)V", &[jni::objects::JValue::Long(out_bytes_sent as i64)]).map_err(|_| ())?;
-            env.call_method(&map, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", &[jni::objects::JValue::Object(&key_bytes_sent_obj), jni::objects::JValue::Object(&value_bytes_sent)]).map_err(|_| ())?;
-            let key_bytes_recv = env.new_string("bytes_recv").map_err(|_| ())?;
-            let key_bytes_recv_obj = jni::objects::JObject::from(key_bytes_recv);
-            let boxed_class = env.find_class("java/lang/Long").map_err(|_| ())?;
-            let value_bytes_recv = env.new_object(boxed_class, "(J)V", &[jni::objects::JValue::Long(out_bytes_recv as i64)]).map_err(|_| ())?;
-            env.call_method(&map, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", &[jni::objects::JValue::Object(&key_bytes_recv_obj), jni::objects::JValue::Object(&value_bytes_recv)]).map_err(|_| ())?;
-            let key_packets_sent = env.new_string("packets_sent").map_err(|_| ())?;
-            let key_packets_sent_obj = jni::objects::JObject::from(key_packets_sent);
-            let boxed_class = env.find_class("java/lang/Long").map_err(|_| ())?;
-            let value_packets_sent = env.new_object(boxed_class, "(J)V", &[jni::objects::JValue::Long(out_packets_sent as i64)]).map_err(|_| ())?;
-            env.call_method(&map, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", &[jni::objects::JValue::Object(&key_packets_sent_obj), jni::objects::JValue::Object(&value_packets_sent)]).map_err(|_| ())?;
-            let key_packets_recv = env.new_string("packets_recv").map_err(|_| ())?;
-            let key_packets_recv_obj = jni::objects::JObject::from(key_packets_recv);
-            let boxed_class = env.find_class("java/lang/Long").map_err(|_| ())?;
-            let value_packets_recv = env.new_object(boxed_class, "(J)V", &[jni::objects::JValue::Long(out_packets_recv as i64)]).map_err(|_| ())?;
-            env.call_method(&map, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", &[jni::objects::JValue::Object(&key_packets_recv_obj), jni::objects::JValue::Object(&value_packets_recv)]).map_err(|_| ())?;
+            let map = crate::jni::helpers::new_hash_map(env)?;
+            let value_bytes_sent = crate::jni::helpers::new_boxed_long(env, out_bytes_sent as i64)?;
+            crate::jni::helpers::put_hash_map_value(env, &map, "bytes_sent", &value_bytes_sent)?;
+            let value_bytes_recv = crate::jni::helpers::new_boxed_long(env, out_bytes_recv as i64)?;
+            crate::jni::helpers::put_hash_map_value(env, &map, "bytes_recv", &value_bytes_recv)?;
+            let value_packets_sent = crate::jni::helpers::new_boxed_long(env, out_packets_sent as i64)?;
+            crate::jni::helpers::put_hash_map_value(env, &map, "packets_sent", &value_packets_sent)?;
+            let value_packets_recv = crate::jni::helpers::new_boxed_long(env, out_packets_recv as i64)?;
+            crate::jni::helpers::put_hash_map_value(env, &map, "packets_recv", &value_packets_recv)?;
             Ok(map.into_raw())
     })
 }

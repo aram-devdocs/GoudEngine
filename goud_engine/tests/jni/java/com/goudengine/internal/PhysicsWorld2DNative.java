@@ -27,7 +27,6 @@ public final class PhysicsWorld2DNative {
     public static native PhysicsCollisionEvent2D collisionEventsRead(long contextId, int index);
     public static native int collisionEventCount(long contextId);
     public static native PhysicsCollisionEvent2D collisionEventRead(long contextId, int index);
-    public static native int setCollisionCallback(long contextId, long callbackPtr, long userData);
     public static native Vec2 getGravity(long contextId);
     public static native int setBodyGravityScale(long contextId, long handle, float scale);
     public static native float getBodyGravityScale(long contextId, long handle);

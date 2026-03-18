@@ -8,6 +8,11 @@ use jni::{InitArgsBuilder, JavaVM};
 use super::{generated, helpers};
 
 static JVM: OnceLock<JavaVM> = OnceLock::new();
+const GENERATED_JNI_RS: &str = include_str!("generated.rs");
+const GOUD_GAME_NATIVE_JAVA: &str =
+    include_str!("../../tests/jni/java/com/goudengine/internal/GoudGameNative.java");
+const GOUD_CONTEXT_NATIVE_JAVA: &str =
+    include_str!("../../tests/jni/java/com/goudengine/internal/GoudContextNative.java");
 
 fn compile_java_fixtures() -> PathBuf {
     static CLASSES_DIR: OnceLock<PathBuf> = OnceLock::new();
@@ -334,4 +339,40 @@ fn new_debugger_capture_rejects_missing_required_string_field() {
     let message = take_exception_message(&mut env, "java/lang/IllegalArgumentException");
     assert!(message.contains("jni_debugger_capture"));
     assert!(message.contains("metricsTraceJson"));
+}
+
+#[test]
+fn generated_jni_excludes_raw_pointer_component_methods() {
+    for symbol in [
+        "Java_com_goudengine_internal_GoudGameNative_componentAdd",
+        "Java_com_goudengine_internal_GoudGameNative_componentGet",
+        "Java_com_goudengine_internal_GoudGameNative_componentGetMut",
+        "Java_com_goudengine_internal_GoudGameNative_componentAddBatch",
+        "Java_com_goudengine_internal_GoudContextNative_componentAdd",
+        "Java_com_goudengine_internal_GoudContextNative_componentGet",
+        "Java_com_goudengine_internal_GoudContextNative_componentGetMut",
+        "Java_com_goudengine_internal_GoudContextNative_componentAddBatch",
+    ] {
+        assert!(
+            !GENERATED_JNI_RS.contains(symbol),
+            "generated JNI bridge unexpectedly emitted raw pointer symbol {symbol}"
+        );
+    }
+
+    for (class_name, source) in [
+        ("GoudGameNative", GOUD_GAME_NATIVE_JAVA),
+        ("GoudContextNative", GOUD_CONTEXT_NATIVE_JAVA),
+    ] {
+        for method_name in [
+            "componentAdd(",
+            "componentGet(",
+            "componentGetMut(",
+            "componentAddBatch(",
+        ] {
+            assert!(
+                !source.contains(method_name),
+                "{class_name} unexpectedly exposes raw pointer JNI method {method_name}"
+            );
+        }
+    }
 }

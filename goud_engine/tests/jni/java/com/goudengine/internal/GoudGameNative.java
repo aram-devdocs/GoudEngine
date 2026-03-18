@@ -120,14 +120,9 @@ public final class GoudGameNative {
     public static native PhysicsRaycastHit2D physicsRaycastEx(long contextId, float originX, float originY, float dirX, float dirY, float maxDist, int layerMask);
     public static native int physicsCollisionEventsCount(long contextId);
     public static native PhysicsCollisionEvent2D physicsCollisionEventsRead(long contextId, int index);
-    public static native int physicsSetCollisionCallback(long contextId, long callbackPtr, long userData);
     public static native boolean componentRegisterType(long typeIdHash, String name, long size, long align);
-    public static native boolean componentAdd(long contextId, long entity, long typeIdHash, long dataPtr, long dataSize);
     public static native boolean componentRemove(long contextId, long entity, long typeIdHash);
     public static native boolean componentHas(long contextId, long entity, long typeIdHash);
-    public static native long componentGet(long contextId, long entity, long typeIdHash);
-    public static native long componentGetMut(long contextId, long entity, long typeIdHash);
-    public static native int componentAddBatch(long contextId, long[] entities, long typeIdHash, long dataPtr, long componentSize);
     public static native int componentRemoveBatch(long contextId, long[] entities, long typeIdHash);
     public static native int componentHasBatch(long contextId, long[] entities, long typeIdHash, byte[] outResults);
     public static native RenderCapabilities getRenderCapabilities(long contextId);
