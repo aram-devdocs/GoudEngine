@@ -9,6 +9,10 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
 HEADER = ROOT / "codegen" / "generated" / "goud_engine.h"
+C_SDK_INCLUDE = ROOT / "sdks" / "c" / "include"
+CPP_SDK_INCLUDE = ROOT / "sdks" / "cpp" / "include"
+C_SMOKE_EXAMPLE = ROOT / "examples" / "c" / "smoke" / "main.c"
+CPP_SMOKE_EXAMPLE = ROOT / "examples" / "cpp" / "smoke" / "main.cpp"
 
 REQUIRED_MARKERS = [
     "#ifndef GOUD_ENGINE_H",
@@ -50,6 +54,47 @@ def run_syntax_check(command: list[str], source: str) -> None:
         fail(f"Header syntax check failed for {' '.join(command)}: {stderr}")
 
 
+def run_link_check(command: list[str]) -> None:
+    completed = subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        stderr = completed.stderr.strip() or completed.stdout.strip() or "unknown linker error"
+        fail(f"Example link check failed for {' '.join(command)}: {stderr}")
+
+
+def native_library_name() -> str:
+    if sys.platform == "darwin":
+        return "libgoud_engine.dylib"
+    if sys.platform.startswith("linux"):
+        return "libgoud_engine.so"
+    if sys.platform in {"win32", "cygwin"}:
+        return "goud_engine.dll"
+    fail(f"Unsupported platform for native SDK validation: {sys.platform}")
+
+
+def find_native_library() -> Path:
+    library_name = native_library_name()
+    candidates = [
+        ROOT / "target" / profile / library_name for profile in ("debug", "release")
+    ]
+    existing = [candidate for candidate in candidates if candidate.exists()]
+    if not existing:
+        fail(
+            "Missing native library for SDK validation. "
+            f"Looked for: {', '.join(str(candidate) for candidate in candidates)}"
+        )
+    return max(existing, key=lambda candidate: candidate.stat().st_mtime)
+
+
+def require_path(path: Path) -> None:
+    if not path.exists():
+        fail(f"Missing required path: {path}")
+
+
 def find_between(text: str, start_marker: str) -> str:
     start = text.find(start_marker)
     if start == -1:
@@ -62,8 +107,14 @@ def find_between(text: str, start_marker: str) -> str:
 
 
 def main() -> None:
-    if not HEADER.exists():
-        fail(f"Missing generated header: {HEADER}")
+    require_path(HEADER)
+    require_path(C_SDK_INCLUDE / "goud_engine.h")
+    require_path(C_SDK_INCLUDE / "goud" / "goud.h")
+    require_path(CPP_SDK_INCLUDE / "goud_engine.h")
+    require_path(CPP_SDK_INCLUDE / "goud" / "goud.h")
+    require_path(CPP_SDK_INCLUDE / "goud" / "goud.hpp")
+    require_path(C_SMOKE_EXAMPLE)
+    require_path(CPP_SMOKE_EXAMPLE)
 
     text = HEADER.read_text()
 
@@ -104,13 +155,67 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         c_path = Path(tmp) / "header_smoke.c"
         cpp_path = Path(tmp) / "header_smoke.cpp"
+        c_sdk_path = Path(tmp) / "c_sdk_smoke.c"
+        cpp_sdk_path = Path(tmp) / "cpp_sdk_smoke.cpp"
+        c_example_bin = Path(tmp) / "c_smoke"
+        cpp_example_bin = Path(tmp) / "cpp_smoke"
         c_path.write_text('#include "goud_engine.h"\n')
         cpp_path.write_text('#include "goud_engine.h"\n')
+        c_sdk_path.write_text('#include <goud/goud.h>\n')
+        cpp_sdk_path.write_text('#include <goud/goud.hpp>\n')
         include_dir = str(HEADER.parent)
+        c_sdk_include = str(C_SDK_INCLUDE)
+        cpp_sdk_include = str(CPP_SDK_INCLUDE)
         run_syntax_check([c_compiler, "-std=c11", "-fsyntax-only", "-I", include_dir], str(c_path))
         run_syntax_check([cpp_compiler, "-std=c++17", "-fsyntax-only", "-I", include_dir], str(cpp_path))
+        run_syntax_check(
+            [c_compiler, "-std=c11", "-fsyntax-only", "-I", c_sdk_include],
+            str(c_sdk_path),
+        )
+        run_syntax_check(
+            [
+                cpp_compiler,
+                "-std=c++17",
+                "-fsyntax-only",
+                "-I",
+                cpp_sdk_include,
+            ],
+            str(cpp_sdk_path),
+        )
 
-    print("C header validation passed.")
+        library_path = find_native_library()
+        library_dir = str(library_path.parent)
+
+        run_link_check(
+            [
+                c_compiler,
+                "-std=c11",
+                "-I",
+                c_sdk_include,
+                str(C_SMOKE_EXAMPLE),
+                "-L",
+                library_dir,
+                "-lgoud_engine",
+                "-o",
+                str(c_example_bin),
+            ]
+        )
+        run_link_check(
+            [
+                cpp_compiler,
+                "-std=c++17",
+                "-I",
+                cpp_sdk_include,
+                str(CPP_SMOKE_EXAMPLE),
+                "-L",
+                library_dir,
+                "-lgoud_engine",
+                "-o",
+                str(cpp_example_bin),
+            ]
+        )
+
+    print("C and C++ header validation passed.")
 
 
 if __name__ == "__main__":

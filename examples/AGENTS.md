@@ -6,6 +6,8 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 
 ## Structure
 
+- `c/` — C smoke examples for the native wrapper layer
+- `cpp/` — C++ smoke examples for the RAII wrapper layer
 - `csharp/` — C# example games (flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox)
 - `python/` — Python example games (main.py demo, flappy_bird.py, sandbox.py)
 - `typescript/` — TypeScript example games (flappy_bird, feature_lab, sandbox — desktop + web targets)
@@ -45,6 +47,7 @@ npm run web              # Start local server on port 8765
 - Each example MUST be a standalone project with its own project file
 - Examples MUST work with the latest SDK version
 - Examples demonstrate engine features — keep code readable and well-commented
+- C and C++ smoke examples stay small; full native example games belong in later issues
 - Python Flappy Bird mirrors C# flappy_goud for SDK parity testing
 - TypeScript Flappy Bird mirrors C# and Python versions with shared game logic across desktop/web
 - Sandbox is the public parity app across all supported targets
