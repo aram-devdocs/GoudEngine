@@ -82,6 +82,7 @@ pub struct WgpuBackend {
     // Resource management
     buffer_allocator: HandleAllocator<BufferMarker>,
     buffers: HashMap<BufferHandle, WgpuBufferMeta>,
+    pending_destroy_buffers: Vec<BufferHandle>,
 
     texture_allocator: HandleAllocator<TextureMarker>,
     textures: HashMap<TextureHandle, WgpuTextureMeta>,

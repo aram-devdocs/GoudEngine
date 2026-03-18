@@ -164,6 +164,7 @@ impl WgpuBackend {
             front_face_state: FrontFace::Ccw,
             buffer_allocator: HandleAllocator::new(),
             buffers: HashMap::new(),
+            pending_destroy_buffers: Vec::new(),
             texture_allocator: HandleAllocator::new(),
             textures: HashMap::new(),
             shader_allocator: HandleAllocator::new(),

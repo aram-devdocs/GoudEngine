@@ -203,6 +203,7 @@ impl FrameOps for WgpuBackend {
         }
         frame.surface_texture.present();
         self.draw_commands.clear();
+        self.flush_pending_buffer_destroys();
         Ok(())
     }
 }
