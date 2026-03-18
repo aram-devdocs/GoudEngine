@@ -26,7 +26,7 @@ use crate::core::providers::render::RenderProvider;
 use crate::core::providers::types::PhysicsBackend2D;
 use crate::core::providers::ProviderRegistry;
 use crate::core::providers::ProviderRegistryBuilder;
-use crate::libs::graphics::renderer3d::AntiAliasingMode;
+use crate::libs::graphics::AntiAliasingMode;
 #[cfg(feature = "rapier2d")]
 use crate::libs::providers::impls::Rapier2DPhysicsProvider;
 use crate::libs::providers::impls::SimplePhysicsProvider;
@@ -221,7 +221,7 @@ mod tests {
     use crate::core::providers::impls::{
         NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullRenderProvider,
     };
-    use crate::libs::graphics::renderer3d::AntiAliasingMode;
+    use crate::libs::graphics::AntiAliasingMode;
 
     #[test]
     fn test_engine_config_default() {

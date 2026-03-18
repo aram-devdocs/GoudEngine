@@ -4,7 +4,6 @@ use super::core::AssetServer;
 use crate::assets::{
     loader::EmbeddedAsset, Asset, AssetHandle, AssetLoadError, AssetPath, AssetState, LoadContext,
 };
-#[cfg(feature = "native")]
 use std::path::Path;
 
 impl AssetServer {

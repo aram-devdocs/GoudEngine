@@ -4,7 +4,7 @@
 //! for per-frame runtime state passed to update callbacks.
 
 use crate::core::debugger::DebuggerConfig;
-use crate::libs::graphics::renderer3d::AntiAliasingMode;
+use crate::libs::graphics::AntiAliasingMode;
 pub use crate::libs::platform::{RenderBackendKind, WindowBackendKind};
 
 // =============================================================================
@@ -368,7 +368,7 @@ impl GameContext {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::libs::graphics::renderer3d::AntiAliasingMode;
+    use crate::libs::graphics::AntiAliasingMode;
 
     // =========================================================================
     // GameConfig Tests
