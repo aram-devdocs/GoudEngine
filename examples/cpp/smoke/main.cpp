@@ -13,16 +13,16 @@ int main() {
         return status;
     }
 
-    auto context = goud::Context::create(&status);
-    if (status != SUCCESS || !context.valid()) {
+    auto engine = goud::Engine::create(std::move(*config), &status);
+    if (status != SUCCESS || !engine.valid()) {
         return status;
     }
 
     std::uint64_t entity = GOUD_INVALID_ENTITY_ID;
-    status = context.spawnEntity(entity);
+    status = engine.context().spawnEntity(entity);
     if (status != SUCCESS) {
         return status;
     }
 
-    return context.reset();
+    return engine.context().reset();
 }

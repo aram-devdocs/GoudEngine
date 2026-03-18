@@ -405,6 +405,9 @@ static inline int goud_audio_play_memory(
 }
 
 static inline int goud_audio_stop_checked(goud_context context, goud_audio_player player_id) {
+    if (player_id < 0) {
+        return ERR_INVALID_STATE;
+    }
     int status = goud_audio_stop(context, (uint64_t)player_id);
     return status >= 0 ? status : goud_status_last_error_or(ERR_INTERNAL_ERROR);
 }
