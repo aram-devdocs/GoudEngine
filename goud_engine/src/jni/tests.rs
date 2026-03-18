@@ -293,3 +293,45 @@ fn read_fixed_buffer_string_rejects_oversized_lengths() {
     assert!(message.contains("jni_test_fixed_buffer"));
     assert!(message.contains("buffer"));
 }
+
+#[test]
+fn new_debugger_capture_rejects_invalid_json_with_exception() {
+    let mut env = jvm()
+        .attach_current_thread()
+        .expect("failed to attach JNI test thread");
+
+    assert!(generated::new_DebuggerCapture(&mut env, "jni_debugger_capture", "{").is_err());
+
+    let message = take_exception_message(&mut env, "java/lang/IllegalArgumentException");
+    assert!(message.contains("jni_debugger_capture"));
+    assert!(message.contains("invalid JSON"));
+}
+
+#[test]
+fn new_debugger_replay_artifact_rejects_out_of_range_bytes() {
+    let mut env = jvm()
+        .attach_current_thread()
+        .expect("failed to attach JNI test thread");
+    let json = r#"{"manifestJson":"{}","data":[256]}"#;
+
+    assert!(generated::new_DebuggerReplayArtifact(&mut env, "jni_debugger_replay", json).is_err());
+
+    let message = take_exception_message(&mut env, "java/lang/IllegalArgumentException");
+    assert!(message.contains("jni_debugger_replay"));
+    assert!(message.contains("data[0]"));
+    assert!(message.contains("byte range"));
+}
+
+#[test]
+fn new_debugger_capture_rejects_missing_required_string_field() {
+    let mut env = jvm()
+        .attach_current_thread()
+        .expect("failed to attach JNI test thread");
+    let json = r#"{"imagePng":[],"metadataJson":"{}","snapshotJson":"{}"}"#;
+
+    assert!(generated::new_DebuggerCapture(&mut env, "jni_debugger_capture", json).is_err());
+
+    let message = take_exception_message(&mut env, "java/lang/IllegalArgumentException");
+    assert!(message.contains("jni_debugger_capture"));
+    assert!(message.contains("metricsTraceJson"));
+}

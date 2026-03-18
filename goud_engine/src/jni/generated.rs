@@ -1151,22 +1151,38 @@ fn goud_entity_id_from_jlong(value: jni::sys::jlong) -> crate::ffi::GoudEntityId
     crate::ffi::GoudEntityId::new(value as u64)
 }
 
-pub(crate) fn parse_json_bytes_field(value: &serde_json::Value, field: &str) -> crate::jni::helpers::JniCallResult<Vec<u8>> {
+pub(crate) fn parse_json_document(env: &mut jni::JNIEnv<'_>, function_name: &str, json_text: &str) -> crate::jni::helpers::JniCallResult<serde_json::Value> {
+    serde_json::from_str(json_text).map_err(|error| {
+        let _ = crate::jni::helpers::throw_illegal_argument(env, format!("{function_name} returned invalid JSON: {error}"));
+    })
+}
+
+pub(crate) fn parse_json_bytes_field(env: &mut jni::JNIEnv<'_>, function_name: &str, value: &serde_json::Value, field: &str) -> crate::jni::helpers::JniCallResult<Vec<u8>> {
     let Some(array) = value.get(field).and_then(serde_json::Value::as_array) else {
-        return Ok(Vec::new());
+        crate::jni::helpers::throw_illegal_argument(env, format!("{function_name} missing byte array field {field}"))?;
+        return Err(());
     };
     let mut bytes = Vec::with_capacity(array.len());
-    for item in array {
+    for (index, item) in array.iter().enumerate() {
         let Some(number) = item.as_u64() else {
+            crate::jni::helpers::throw_illegal_argument(env, format!("{function_name} field {field}[{index}] must be an unsigned byte"))?;
             return Err(());
         };
-        bytes.push(number as u8);
+        let Ok(byte) = u8::try_from(number) else {
+            crate::jni::helpers::throw_illegal_argument(env, format!("{function_name} field {field}[{index}] exceeds byte range: {number}"))?;
+            return Err(());
+        };
+        bytes.push(byte);
     }
     Ok(bytes)
 }
 
-pub(crate) fn parse_json_string_field(value: &serde_json::Value, field: &str) -> String {
-    value.get(field).and_then(serde_json::Value::as_str).unwrap_or_default().to_string()
+pub(crate) fn parse_json_string_field(env: &mut jni::JNIEnv<'_>, function_name: &str, value: &serde_json::Value, field: &str) -> crate::jni::helpers::JniCallResult<String> {
+    let Some(text) = value.get(field).and_then(serde_json::Value::as_str) else {
+        crate::jni::helpers::throw_illegal_argument(env, format!("{function_name} missing string field {field}"))?;
+        return Err(());
+    };
+    Ok(text.to_string())
 }
 
 pub(crate) fn read_buffer_protocol_string<F>(env: &mut jni::JNIEnv<'_>, function_name: &str, mut call: F) -> crate::jni::helpers::JniCallResult<String>
@@ -1268,17 +1284,19 @@ pub(crate) fn new_AnimationEventData<'local>(
 
 pub(crate) fn new_DebuggerCapture<'local>(
     env: &mut jni::JNIEnv<'local>,
+    function_name: &str,
     json_text: &str,
 ) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let value: serde_json::Value = serde_json::from_str(json_text).map_err(|_| ())?;
+    let value = parse_json_document(env, function_name, json_text)?;
     let class = env.find_class("com/goudengine/internal/DebuggerCapture").map_err(|_| ())?;
     let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
-    let image_png = parse_json_bytes_field(&value, "imagePng")?;
+    let image_png = parse_json_bytes_field(env, function_name, &value, "imagePng")?;
     let image_array = env.byte_array_from_slice(&image_png).map_err(|_| ())?;
     let image_obj = jni::objects::JObject::from(image_array);
     env.set_field(&obj, "imagePng", "[B", jni::objects::JValue::Object(&image_obj)).map_err(|_| ())?;
     for field in ["metadataJson", "snapshotJson", "metricsTraceJson"] {
-        let value = env.new_string(parse_json_string_field(&value, field)).map_err(|_| ())?;
+        let field_text = parse_json_string_field(env, function_name, &value, field)?;
+        let value = env.new_string(field_text).map_err(|_| ())?;
         let value_obj = jni::objects::JObject::from(value);
         let java_field = match field {
             "metadataJson" => "metadataJson",
@@ -1292,15 +1310,17 @@ pub(crate) fn new_DebuggerCapture<'local>(
 
 pub(crate) fn new_DebuggerReplayArtifact<'local>(
     env: &mut jni::JNIEnv<'local>,
+    function_name: &str,
     json_text: &str,
 ) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
-    let value: serde_json::Value = serde_json::from_str(json_text).map_err(|_| ())?;
+    let value = parse_json_document(env, function_name, json_text)?;
     let class = env.find_class("com/goudengine/internal/DebuggerReplayArtifact").map_err(|_| ())?;
     let obj = env.new_object(class, "()V", &[]).map_err(|_| ())?;
-    let manifest = env.new_string(parse_json_string_field(&value, "manifestJson")).map_err(|_| ())?;
+    let manifest_text = parse_json_string_field(env, function_name, &value, "manifestJson")?;
+    let manifest = env.new_string(manifest_text).map_err(|_| ())?;
     let manifest_obj = jni::objects::JObject::from(manifest);
     env.set_field(&obj, "manifestJson", "Ljava/lang/String;", jni::objects::JValue::Object(&manifest_obj)).map_err(|_| ())?;
-    let data = parse_json_bytes_field(&value, "data")?;
+    let data = parse_json_bytes_field(env, function_name, &value, "data")?;
     let data_array = env.byte_array_from_slice(&data).map_err(|_| ())?;
     let data_obj = jni::objects::JObject::from(data_array);
     env.set_field(&obj, "data", "[B", jni::objects::JValue::Object(&data_obj)).map_err(|_| ())?;
@@ -3681,7 +3701,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_captureDebugg
             let value = read_buffer_protocol_string(env, "goud_debugger_capture_frame_json", |buf, len| unsafe { // SAFETY: the caller-provided buffer is valid for the duration of each FFI call.
         crate::ffi::debug::goud_debugger_capture_frame_json(goud_context_id_from_jlong(contextId), buf, len)
     })?;
-            Ok(new_DebuggerCapture(env, &value)?.into_raw())
+            Ok(new_DebuggerCapture(env, "goud_debugger_capture_frame_json", &value)?.into_raw())
     })
 }
 
@@ -3717,7 +3737,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_stopDebuggerR
             let value = read_buffer_protocol_string(env, "goud_debugger_stop_recording_json", |buf, len| unsafe { // SAFETY: the caller-provided buffer is valid for the duration of each FFI call.
         crate::ffi::debug::goud_debugger_stop_recording_json(goud_context_id_from_jlong(contextId), buf, len)
     })?;
-            Ok(new_DebuggerReplayArtifact(env, &value)?.into_raw())
+            Ok(new_DebuggerReplayArtifact(env, "goud_debugger_stop_recording_json", &value)?.into_raw())
     })
 }
 
@@ -6668,7 +6688,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_captureDeb
             let value = read_buffer_protocol_string(env, "goud_debugger_capture_frame_json", |buf, len| unsafe { // SAFETY: the caller-provided buffer is valid for the duration of each FFI call.
         crate::ffi::debug::goud_debugger_capture_frame_json(goud_context_id_from_jlong(contextId), buf, len)
     })?;
-            Ok(new_DebuggerCapture(env, &value)?.into_raw())
+            Ok(new_DebuggerCapture(env, "goud_debugger_capture_frame_json", &value)?.into_raw())
     })
 }
 
@@ -6704,7 +6724,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_stopDebugg
             let value = read_buffer_protocol_string(env, "goud_debugger_stop_recording_json", |buf, len| unsafe { // SAFETY: the caller-provided buffer is valid for the duration of each FFI call.
         crate::ffi::debug::goud_debugger_stop_recording_json(goud_context_id_from_jlong(contextId), buf, len)
     })?;
-            Ok(new_DebuggerReplayArtifact(env, &value)?.into_raw())
+            Ok(new_DebuggerReplayArtifact(env, "goud_debugger_stop_recording_json", &value)?.into_raw())
     })
 }
 

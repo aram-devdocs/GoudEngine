@@ -87,6 +87,37 @@ class GeneratedMethod:
     kind: str = "tool"
 
 
+def scanned_path_preference(path: str) -> tuple[int, int, str]:
+    lowered = path.lower()
+    return (
+        1 if "wasm" in lowered else 0,
+        1 if "test" in lowered else 0,
+        path,
+    )
+
+
+def record_scanned_path(paths: dict[str, str], name: str, path: str) -> None:
+    existing = paths.get(name)
+    if existing is None:
+        paths[name] = path
+        return
+    if existing == path:
+        return
+    if scanned_path_preference(path) < scanned_path_preference(existing):
+        paths[name] = path
+        return
+    if scanned_path_preference(path) == scanned_path_preference(existing):
+        raise RuntimeError(f"duplicate symbol resolution for {name}: {existing} vs {path}")
+
+
+def is_test_source(path: Path, root: Path) -> bool:
+    rel = path.relative_to(root)
+    if any(part == "tests" for part in rel.parts):
+        return True
+    stem = path.stem
+    return stem.startswith("test_") or stem.endswith("_tests")
+
+
 def scan_rust_type_paths() -> dict[str, str]:
     root = ROOT / "goud_engine" / "src"
     pattern = re.compile(r"\bpub\s+(?:struct|enum|type)\s+([A-Za-z_][A-Za-z0-9_]*)\b")
@@ -94,8 +125,10 @@ def scan_rust_type_paths() -> dict[str, str]:
         "c_char": "std::os::raw::c_char",
         "c_void": "std::ffi::c_void",
     }
-    for path in root.rglob("*.rs"):
+    for path in sorted(root.rglob("*.rs")):
         if path.match("jni/generated.rs") or path.match("jni/generated.g.rs"):
+            continue
+        if is_test_source(path, root):
             continue
         text = path.read_text()
         rel = path.relative_to(root)
@@ -108,7 +141,7 @@ def scan_rust_type_paths() -> dict[str, str]:
         if parts and parts != ["lib"]:
             module += "::" + "::".join(parts)
         for name in pattern.findall(text):
-            paths.setdefault(name, f"{module}::{name}")
+            record_scanned_path(paths, name, f"{module}::{name}")
     return paths
 
 
@@ -119,7 +152,9 @@ def scan_ffi_function_paths() -> dict[str, str]:
     root = ROOT / "goud_engine" / "src" / "ffi"
     pattern = re.compile(r'\bpub\s+(?:unsafe\s+)?extern\s+"C"\s+fn\s+([A-Za-z_][A-Za-z0-9_]*)\b')
     paths: dict[str, str] = {}
-    for path in root.rglob("*.rs"):
+    for path in sorted(root.rglob("*.rs")):
+        if is_test_source(path, root):
+            continue
         text = path.read_text()
         rel = path.relative_to(root)
         parts = list(rel.parts)
@@ -131,7 +166,7 @@ def scan_ffi_function_paths() -> dict[str, str]:
         if parts:
             module += "::" + "::".join(parts)
         for name in pattern.findall(text):
-            paths.setdefault(name, f"{module}::{name}")
+            record_scanned_path(paths, name, f"{module}::{name}")
     return paths
 
 
@@ -172,8 +207,10 @@ def scan_rust_function_paths() -> dict[str, str]:
     root = ROOT / "goud_engine" / "src"
     pattern = re.compile(r"\bpub\s+(?:unsafe\s+)?extern\s+\"C\"\s+fn\s+([A-Za-z_][A-Za-z0-9_]*)\b")
     paths: dict[str, str] = {}
-    for path in root.rglob("*.rs"):
+    for path in sorted(root.rglob("*.rs")):
         if path.match("jni/generated.rs") or path.match("jni/generated.g.rs"):
+            continue
+        if is_test_source(path, root):
             continue
         text = path.read_text()
         rel = path.relative_to(root)
@@ -186,7 +223,7 @@ def scan_rust_function_paths() -> dict[str, str]:
         if parts and parts != ["lib"]:
             module += "::" + "::".join(parts)
         for name in pattern.findall(text):
-            paths.setdefault(name, f"{module}::{name}")
+            record_scanned_path(paths, name, f"{module}::{name}")
     return paths
 
 
@@ -1007,22 +1044,38 @@ def build_type_helpers() -> list[str]:
         "    crate::ffi::GoudEntityId::new(value as u64)",
         "}",
         "",
-        "pub(crate) fn parse_json_bytes_field(value: &serde_json::Value, field: &str) -> crate::jni::helpers::JniCallResult<Vec<u8>> {",
+        "pub(crate) fn parse_json_document(env: &mut jni::JNIEnv<'_>, function_name: &str, json_text: &str) -> crate::jni::helpers::JniCallResult<serde_json::Value> {",
+        "    serde_json::from_str(json_text).map_err(|error| {",
+        "        let _ = crate::jni::helpers::throw_illegal_argument(env, format!(\"{function_name} returned invalid JSON: {error}\"));",
+        "    })",
+        "}",
+        "",
+        "pub(crate) fn parse_json_bytes_field(env: &mut jni::JNIEnv<'_>, function_name: &str, value: &serde_json::Value, field: &str) -> crate::jni::helpers::JniCallResult<Vec<u8>> {",
         "    let Some(array) = value.get(field).and_then(serde_json::Value::as_array) else {",
-        "        return Ok(Vec::new());",
+        "        crate::jni::helpers::throw_illegal_argument(env, format!(\"{function_name} missing byte array field {field}\"))?;",
+        "        return Err(());",
         "    };",
         "    let mut bytes = Vec::with_capacity(array.len());",
-        "    for item in array {",
+        "    for (index, item) in array.iter().enumerate() {",
         "        let Some(number) = item.as_u64() else {",
+        "            crate::jni::helpers::throw_illegal_argument(env, format!(\"{function_name} field {field}[{index}] must be an unsigned byte\"))?;",
+            "            return Err(());",
+        "        };",
+        "        let Ok(byte) = u8::try_from(number) else {",
+        "            crate::jni::helpers::throw_illegal_argument(env, format!(\"{function_name} field {field}[{index}] exceeds byte range: {number}\"))?;",
         "            return Err(());",
         "        };",
-        "        bytes.push(number as u8);",
+        "        bytes.push(byte);",
         "    }",
         "    Ok(bytes)",
         "}",
         "",
-        "pub(crate) fn parse_json_string_field(value: &serde_json::Value, field: &str) -> String {",
-        "    value.get(field).and_then(serde_json::Value::as_str).unwrap_or_default().to_string()",
+        "pub(crate) fn parse_json_string_field(env: &mut jni::JNIEnv<'_>, function_name: &str, value: &serde_json::Value, field: &str) -> crate::jni::helpers::JniCallResult<String> {",
+        "    let Some(text) = value.get(field).and_then(serde_json::Value::as_str) else {",
+        "        crate::jni::helpers::throw_illegal_argument(env, format!(\"{function_name} missing string field {field}\"))?;",
+        "        return Err(());",
+        "    };",
+        "    Ok(text.to_string())",
         "}",
         "",
         "pub(crate) fn read_buffer_protocol_string<F>(env: &mut jni::JNIEnv<'_>, function_name: &str, mut call: F) -> crate::jni::helpers::JniCallResult<String>",
@@ -1124,17 +1177,19 @@ def build_type_helpers() -> list[str]:
         "",
         "pub(crate) fn new_DebuggerCapture<'local>(",
         "    env: &mut jni::JNIEnv<'local>,",
+        "    function_name: &str,",
         "    json_text: &str,",
         ") -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {",
-        "    let value: serde_json::Value = serde_json::from_str(json_text).map_err(|_| ())?;",
+        "    let value = parse_json_document(env, function_name, json_text)?;",
         "    let class = env.find_class(\"com/goudengine/internal/DebuggerCapture\").map_err(|_| ())?;",
         "    let obj = env.new_object(class, \"()V\", &[]).map_err(|_| ())?;",
-        "    let image_png = parse_json_bytes_field(&value, \"imagePng\")?;",
+        "    let image_png = parse_json_bytes_field(env, function_name, &value, \"imagePng\")?;",
         "    let image_array = env.byte_array_from_slice(&image_png).map_err(|_| ())?;",
         "    let image_obj = jni::objects::JObject::from(image_array);",
         "    env.set_field(&obj, \"imagePng\", \"[B\", jni::objects::JValue::Object(&image_obj)).map_err(|_| ())?;",
         "    for field in [\"metadataJson\", \"snapshotJson\", \"metricsTraceJson\"] {",
-        "        let value = env.new_string(parse_json_string_field(&value, field)).map_err(|_| ())?;",
+        "        let field_text = parse_json_string_field(env, function_name, &value, field)?;",
+        "        let value = env.new_string(field_text).map_err(|_| ())?;",
         "        let value_obj = jni::objects::JObject::from(value);",
         "        let java_field = match field {",
         "            \"metadataJson\" => \"metadataJson\",",
@@ -1148,15 +1203,17 @@ def build_type_helpers() -> list[str]:
         "",
         "pub(crate) fn new_DebuggerReplayArtifact<'local>(",
         "    env: &mut jni::JNIEnv<'local>,",
+        "    function_name: &str,",
         "    json_text: &str,",
         ") -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {",
-        "    let value: serde_json::Value = serde_json::from_str(json_text).map_err(|_| ())?;",
+        "    let value = parse_json_document(env, function_name, json_text)?;",
         "    let class = env.find_class(\"com/goudengine/internal/DebuggerReplayArtifact\").map_err(|_| ())?;",
         "    let obj = env.new_object(class, \"()V\", &[]).map_err(|_| ())?;",
-        "    let manifest = env.new_string(parse_json_string_field(&value, \"manifestJson\")).map_err(|_| ())?;",
+        "    let manifest_text = parse_json_string_field(env, function_name, &value, \"manifestJson\")?;",
+        "    let manifest = env.new_string(manifest_text).map_err(|_| ())?;",
         "    let manifest_obj = jni::objects::JObject::from(manifest);",
         "    env.set_field(&obj, \"manifestJson\", \"Ljava/lang/String;\", jni::objects::JValue::Object(&manifest_obj)).map_err(|_| ())?;",
-        "    let data = parse_json_bytes_field(&value, \"data\")?;",
+        "    let data = parse_json_bytes_field(env, function_name, &value, \"data\")?;",
         "    let data_array = env.byte_array_from_slice(&data).map_err(|_| ())?;",
         "    let data_obj = jni::objects::JObject::from(data_array);",
         "    env.set_field(&obj, \"data\", \"[B\", jni::objects::JValue::Object(&data_obj)).map_err(|_| ())?;",
@@ -1870,9 +1927,12 @@ def render_json_buffer_struct(method: GeneratedMethod) -> list[str]:
     struct_name = method.mapping["json_buffer_struct"]
     call_args = ", ".join(args)
     lines = setup
+    constructor_args = '&mut env, &value'
+    if struct_name in {"DebuggerCapture", "DebuggerReplayArtifact"}:
+        constructor_args = f'&mut env, "{ffi_name}", &value'
     lines += [
         f'    let value = read_buffer_protocol_string(&mut env, "{ffi_name}", |buf, len| unsafe {{ // SAFETY: the caller-provided buffer is valid for the duration of each FFI call.\n        {ffi_path}({call_args}{", " if call_args else ""}buf, len)\n    }})?;',
-        f"    Ok(new_{struct_name}(&mut env, &value)?.into_raw())",
+        f"    Ok(new_{struct_name}({constructor_args})?.into_raw())",
     ]
     return lines
 
