@@ -53,6 +53,19 @@ stage_header_copy() {
     echo "  staged header: $destination_dir/goud_engine.h"
 }
 
+stage_file_copy() {
+    local source_path="$1"
+    local destination_path="$2"
+    if [ ! -f "$source_path" ]; then
+        echo "Warning: expected file not found at $source_path"
+        return 1
+    fi
+
+    mkdir -p "$(dirname "$destination_path")"
+    cp "$source_path" "$destination_path"
+    echo "  staged file: $destination_path"
+}
+
 if [[ "$BUILD_MODE" == "release" ]]; then
     echo "Building the project in release mode..."
     if [[ "$BUILD_SCOPE" == "core" ]]; then
@@ -79,8 +92,11 @@ echo "Build complete."
 
 echo "Staging generated C header..."
 stage_header_copy "$TARGET_DIR/include"
+stage_header_copy "sdks/c/include"
+stage_header_copy "sdks/cpp/include"
 stage_header_copy "sdks/csharp/include"
 stage_header_copy "sdks/python/goud_engine/include"
+stage_file_copy "sdks/c/include/goud/goud.h" "sdks/cpp/include/goud/goud.h"
 
 # Copy native library based on platform
 if [[ "$OSTYPE" == "darwin"* ]]; then
