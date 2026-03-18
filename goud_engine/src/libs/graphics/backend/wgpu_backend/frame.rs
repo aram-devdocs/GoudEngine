@@ -1,8 +1,4 @@
-//! Sub-trait and RenderBackend implementations for WgpuBackend.
-//!
-//! Covers frame lifecycle, render state management, draw call dispatch,
-//! and uniform setters. Pipeline building lives in `pipeline.rs`.
-
+//! Sub-trait and RenderBackend implementations for `WgpuBackend`.
 use super::{
     super::types::{BufferUsage, TextureFilter, TextureFormat, TextureWrap, VertexBufferBinding},
     BlendFactor, BufferHandle, BufferOps, BufferType, CullFace, DepthFunc, DrawOps, DrawType,
@@ -10,10 +6,6 @@ use super::{
     StateOps, TextureHandle, TextureOps, VertexLayout, WgpuBackend,
 };
 use crate::libs::error::{GoudError, GoudResult};
-
-// ========================================================================
-// FrameOps
-// ========================================================================
 
 impl FrameOps for WgpuBackend {
     fn begin_frame(&mut self) -> GoudResult<()> {

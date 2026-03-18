@@ -1,20 +1,14 @@
 //! Frame rendering logic for [`Renderer3D`].
-//!
-//! This module contains the `render` method and the model-matrix helper.
-//! It is a separate file to keep `core.rs` under 500 lines.
-
-use cgmath::{perspective, Deg, Matrix, Matrix4};
-
-use crate::libs::graphics::backend::{
-    types::{TextureFilter, TextureFormat, TextureHandle, TextureWrap},
-    BlendFactor, CullFace, DepthFunc, FrontFace, PrimitiveTopology, VertexBufferBinding,
-};
-
 use super::core::Renderer3D;
 use super::postprocess::apply_fxaa_like_filter;
 use super::shadow::build_directional_shadow_map;
 use super::texture::TextureManagerTrait;
 use super::types::MAX_LIGHTS;
+use crate::libs::graphics::backend::{
+    types::{TextureFilter, TextureFormat, TextureHandle, TextureWrap},
+    BlendFactor, CullFace, DepthFunc, FrontFace, PrimitiveTopology, VertexBufferBinding,
+};
+use cgmath::{perspective, Deg, Matrix, Matrix4};
 
 impl Renderer3D {
     /// Render the scene — grid, objects, and overlays — using the current camera and light state.
@@ -57,9 +51,6 @@ impl Renderer3D {
             self.update_shadow_texture(&map.rgba8, map.size, map.size);
         }
 
-        // ----------------------------------------------------------------
-        // Grid pass
-        // ----------------------------------------------------------------
         if self.grid_config.enabled {
             let _ = self.backend.bind_shader(self.grid_shader_handle);
 
@@ -118,9 +109,6 @@ impl Renderer3D {
             self.backend.unbind_shader();
         }
 
-        // ----------------------------------------------------------------
-        // Main objects pass
-        // ----------------------------------------------------------------
         let _ = self.backend.bind_shader(self.shader_handle);
         let uniforms = self.uniforms.clone();
         self.apply_main_uniforms(

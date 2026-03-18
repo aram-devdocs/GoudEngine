@@ -1,6 +1,4 @@
-//! OpenGL render state management: frame control, clear, viewport, depth, blending, culling.
-//! Also wires up sub-trait implementations that forward to submodule helpers.
-
+//! OpenGL render state management and sub-trait forwarding helpers.
 use super::{
     super::{
         BackendInfo, BlendFactor, BufferOps, ClearOps, CullFace, DrawOps, FrameOps, RenderBackend,
@@ -32,8 +30,6 @@ impl OpenGLBackend {
         readback::read_default_framebuffer_rgba8_standalone(width, height)
     }
 }
-
-// RenderBackend (supertrait -- lifecycle & info only)
 
 impl RenderBackend for OpenGLBackend {
     fn info(&self) -> &BackendInfo {

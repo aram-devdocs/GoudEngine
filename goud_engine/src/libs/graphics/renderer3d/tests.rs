@@ -1,4 +1,4 @@
-use super::core::build_particle_instances;
+use super::core_particles::build_particle_instances;
 use super::postprocess::apply_fxaa_like_filter;
 use super::shadow::{build_shadow_map_from_meshes, sample_shadow_factor, ShadowMesh};
 use super::{
