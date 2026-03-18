@@ -2,6 +2,10 @@ use super::types::{Light, LightType, Object3D};
 use cgmath::{EuclideanSpace, InnerSpace, Matrix4, Point3, Vector3, Vector4};
 use std::collections::HashMap;
 
+/// CPU-built directional shadow map used as a compatibility fallback.
+///
+/// This path rasterizes shadow depth on the CPU, so it is intentionally scoped to moderate scene
+/// sizes and serves as a bridge until the renderer grows a dedicated GPU shadow pass.
 pub(super) struct SoftwareShadowMap {
     pub(super) size: u32,
     pub(super) light_space_matrix: Matrix4<f32>,

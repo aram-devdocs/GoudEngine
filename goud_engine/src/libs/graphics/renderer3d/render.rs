@@ -8,7 +8,7 @@ use crate::libs::graphics::backend::{
     types::{TextureFilter, TextureFormat, TextureHandle, TextureWrap},
     BlendFactor, CullFace, DepthFunc, FrontFace, PrimitiveTopology, VertexBufferBinding,
 };
-use cgmath::{perspective, Deg, Matrix, Matrix4};
+use cgmath::{perspective, Deg, Matrix4};
 
 impl Renderer3D {
     /// Render the scene — grid, objects, and overlays — using the current camera and light state.
@@ -481,12 +481,10 @@ impl Renderer3D {
 ///
 /// cgmath matrices are already column-major, which matches the backend expectation.
 pub(super) fn mat4_to_array(m: &Matrix4<f32>) -> [f32; 16] {
-    let ptr = m.as_ptr();
-    let mut arr = [0.0f32; 16];
-    // SAFETY: Matrix4<f32> is 16 contiguous f32 values in column-major order.
-    // The source and destination are non-overlapping and properly sized.
-    unsafe {
-        std::ptr::copy_nonoverlapping(ptr, arr.as_mut_ptr(), 16);
-    }
-    arr
+    let cols: &[[f32; 4]; 4] = m.as_ref();
+    [
+        cols[0][0], cols[0][1], cols[0][2], cols[0][3], cols[1][0], cols[1][1], cols[1][2],
+        cols[1][3], cols[2][0], cols[2][1], cols[2][2], cols[2][3], cols[3][0], cols[3][1],
+        cols[3][2], cols[3][3],
+    ]
 }

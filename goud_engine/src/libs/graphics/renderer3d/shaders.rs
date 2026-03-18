@@ -53,11 +53,25 @@ pub(super) struct GridUniforms {
     pub(super) alpha: i32,
 }
 
+fn uniform_location_or_inactive(
+    backend: &dyn RenderBackend,
+    shader: ShaderHandle,
+    name: &str,
+) -> i32 {
+    match backend.get_uniform_location(shader, name) {
+        Some(location) => location,
+        None => {
+            log::debug!("Renderer3D expected uniform '{name}' was optimized out or missing");
+            -1
+        }
+    }
+}
+
 pub(super) fn resolve_main_uniforms(
     backend: &dyn RenderBackend,
     shader: ShaderHandle,
 ) -> MainUniforms {
-    let loc = |name: &str| -> i32 { backend.get_uniform_location(shader, name).unwrap_or(-1) };
+    let loc = |name: &str| -> i32 { uniform_location_or_inactive(backend, shader, name) };
 
     let mut lights = Vec::with_capacity(MAX_LIGHTS);
     for i in 0..MAX_LIGHTS {
@@ -97,7 +111,7 @@ pub(super) fn resolve_grid_uniforms(
     backend: &dyn RenderBackend,
     shader: ShaderHandle,
 ) -> GridUniforms {
-    let loc = |name: &str| -> i32 { backend.get_uniform_location(shader, name).unwrap_or(-1) };
+    let loc = |name: &str| -> i32 { uniform_location_or_inactive(backend, shader, name) };
 
     GridUniforms {
         view: loc("view"),
