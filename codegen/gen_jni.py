@@ -646,10 +646,27 @@ def java_carrier_source(type_name: str) -> str:
         JAVA_HEADER,
         "package com.goudengine.internal;",
         "",
-        f"public final class {type_name} {{",
     ]
+    if type_name == "UiStyle":
+        lines += [
+            "/**",
+            " * Internal carrier for UI style data passed through the JNI bridge.",
+            " *",
+            " * <p>The {@code fontFamilyPtr} and {@code texturePathPtr} fields mirror raw native pointer",
+            " * values from {@code FfiUiStyle}. They are only valid during the JNI call frame that",
+            " * populated them and must not be cached or reused across calls.",
+            " */",
+        ]
+    lines.append(f"public final class {type_name} {{")
     for field in type_def.get("fields", []):
-        lines.append(f"    public {java_type(field['type'])} {to_camel(field['name'])};")
+        java_name = to_camel(field["name"])
+        if type_name == "UiStyle" and java_name in {"fontFamilyPtr", "texturePathPtr"}:
+            lines += [
+                "    /**",
+                "     * Raw native pointer borrowed for a single JNI call frame. Do not retain or reuse it.",
+                "     */",
+            ]
+        lines.append(f"    public {java_type(field['type'])} {java_name};")
     lines += [
         "",
         f"    public {type_name}() {{}}",
@@ -1921,7 +1938,14 @@ def render_direct_call(method: GeneratedMethod) -> list[str]:
         ]
         return lines
     if ffi_meta.get("unsafe"):
-        lines.append(f"    let result = unsafe {{ // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.\n        {call_expr}\n    }};")
+        safety_comment = "JNI inputs are validated and temporary buffers stay alive across the FFI call."
+        if ffi_name == "goud_ui_set_style":
+            safety_comment = (
+                "JNI inputs are validated, and any raw pointer fields borrowed through `style_raw` "
+                "remain valid only for this call frame. The FFI consumes them synchronously and does "
+                "not retain those pointers after returning."
+            )
+        lines.append(f"    let result = unsafe {{ // SAFETY: {safety_comment}\n        {call_expr}\n    }};")
     else:
         lines.append(f"    let result = {call_expr};")
     if method.mapping.get("returns_bool_from_i32"):

@@ -7,6 +7,8 @@ use jni::{InitArgsBuilder, JavaVM};
 
 use super::{generated, helpers};
 
+// The process can only host one JVM. Each test reuses it and clears any stale
+// pending exception on attach so a failed prior test does not poison later ones.
 static JVM: OnceLock<JavaVM> = OnceLock::new();
 const GENERATED_JNI_RS: &str = include_str!("generated.rs");
 const GOUD_GAME_NATIVE_JAVA: &str =
@@ -59,6 +61,20 @@ fn jvm() -> &'static JavaVM {
     })
 }
 
+fn attach_env() -> jni::AttachGuard<'static> {
+    let mut env = jvm()
+        .attach_current_thread()
+        .expect("failed to attach JNI test thread");
+    if env
+        .exception_check()
+        .expect("failed to check pending JVM exception")
+    {
+        env.exception_clear()
+            .expect("failed to clear stale JVM exception");
+    }
+    env
+}
+
 fn take_exception_message(env: &mut jni::JNIEnv<'_>, expected_class: &str) -> String {
     assert!(
         env.exception_check()
@@ -99,9 +115,7 @@ fn assert_color_eq(actual: crate::ffi::FfiColor, expected: crate::ffi::FfiColor)
 
 #[test]
 fn require_string_bytes_round_trips_utf8() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
     let value = env
         .new_string("jni-hello")
         .expect("failed to allocate Java string");
@@ -112,9 +126,7 @@ fn require_string_bytes_round_trips_utf8() {
 
 #[test]
 fn require_c_string_round_trips_utf8() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
     let value = env
         .new_string("jni-bridge")
         .expect("failed to allocate Java string");
@@ -128,9 +140,7 @@ fn require_c_string_round_trips_utf8() {
 
 #[test]
 fn require_string_bytes_rejects_null_reference() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
     let value = JString::from(JObject::null());
 
     assert!(helpers::require_string_bytes(&mut env, value, "value").is_err());
@@ -141,9 +151,7 @@ fn require_string_bytes_rejects_null_reference() {
 
 #[test]
 fn ensure_no_pending_exception_short_circuits() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
     env.throw_new("java/lang/IllegalStateException", "pending failure")
         .expect("failed to throw test exception");
 
@@ -155,9 +163,7 @@ fn ensure_no_pending_exception_short_circuits() {
 
 #[test]
 fn prepare_call_short_circuits_before_clearing_last_error() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
     crate::core::error::set_last_error(crate::core::error::GoudError::InvalidContext);
     env.throw_new("java/lang/IllegalStateException", "pending prepare failure")
         .expect("failed to throw test exception");
@@ -172,9 +178,7 @@ fn prepare_call_short_circuits_before_clearing_last_error() {
 
 #[test]
 fn throw_engine_error_uses_thread_local_error_text() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
     helpers::clear_last_error();
     crate::core::error::set_last_error(crate::core::error::GoudError::InvalidState(
         "network bridge failed".to_string(),
@@ -190,9 +194,7 @@ fn throw_engine_error_uses_thread_local_error_text() {
 
 #[test]
 fn checked_output_length_rejects_oversized_writes() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
 
     assert!(helpers::checked_output_length(&mut env, "jni_test", "outResults", 5, 4).is_err());
 
@@ -204,9 +206,7 @@ fn checked_output_length_rejects_oversized_writes() {
 
 #[test]
 fn catch_jni_panic_turns_panics_into_java_exceptions() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
 
     let result = helpers::catch_jni_panic(
         &mut env,
@@ -226,9 +226,7 @@ fn catch_jni_panic_turns_panics_into_java_exceptions() {
 
 #[test]
 fn generated_color_carrier_round_trips_and_writes_back() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
     let initial = crate::ffi::FfiColor {
         r: 0.25,
         g: 0.5,
@@ -261,9 +259,7 @@ fn generated_color_carrier_round_trips_and_writes_back() {
 
 #[test]
 fn generated_sprite_animator_rejects_invalid_enum_discriminant() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
     let class = env
         .find_class("com/goudengine/internal/SpriteAnimator")
         .expect("failed to find SpriteAnimator fixture class");
@@ -282,9 +278,7 @@ fn generated_sprite_animator_rejects_invalid_enum_discriminant() {
 
 #[test]
 fn read_fixed_buffer_string_rejects_oversized_lengths() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
 
     let result = generated::read_fixed_buffer_string(
         &mut env,
@@ -301,9 +295,7 @@ fn read_fixed_buffer_string_rejects_oversized_lengths() {
 
 #[test]
 fn new_debugger_capture_rejects_invalid_json_with_exception() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
 
     assert!(generated::new_DebuggerCapture(&mut env, "jni_debugger_capture", "{").is_err());
 
@@ -314,9 +306,7 @@ fn new_debugger_capture_rejects_invalid_json_with_exception() {
 
 #[test]
 fn new_debugger_replay_artifact_rejects_out_of_range_bytes() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
     let json = r#"{"manifestJson":"{}","data":[256]}"#;
 
     assert!(generated::new_DebuggerReplayArtifact(&mut env, "jni_debugger_replay", json).is_err());
@@ -329,9 +319,7 @@ fn new_debugger_replay_artifact_rejects_out_of_range_bytes() {
 
 #[test]
 fn new_debugger_capture_rejects_missing_required_string_field() {
-    let mut env = jvm()
-        .attach_current_thread()
-        .expect("failed to attach JNI test thread");
+    let mut env = attach_env();
     let json = r#"{"imagePng":[],"metadataJson":"{}","snapshotJson":"{}"}"#;
 
     assert!(generated::new_DebuggerCapture(&mut env, "jni_debugger_capture", json).is_err());

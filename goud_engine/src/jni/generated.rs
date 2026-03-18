@@ -11059,7 +11059,7 @@ pub extern "system" fn Java_com_goudengine_internal_UiManagerNative_setStyle<'lo
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
             let mut style_raw = read_UiStyle(env, &style, "style")?;
-            let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
+            let result = unsafe { // SAFETY: JNI inputs are validated, and any raw pointer fields borrowed through `style_raw` remain valid only for this call frame. The FFI consumes them synchronously and does not retain those pointers after returning.
         crate::ffi::ui::widget::goud_ui_set_style(managerHandle as usize as *mut crate::ui::UiManager, nodeId as _, &style_raw as _)
     };
             if crate::jni::helpers::last_error_code() != 0 {
