@@ -292,6 +292,33 @@ def rust_type(raw_type: str) -> str:
     return TYPE_PATHS.get(raw, raw)
 
 
+def render_checked_enum_conversion(
+    target_name: str,
+    enum_name: str,
+    raw_expr: str,
+    source_name: str,
+    *,
+    env_expr: str,
+) -> list[str]:
+    enum_info = SCHEMA["enums"][enum_name]
+    underlying = rust_type(enum_info.get("underlying", "i32"))
+    allowed_values = sorted(set(enum_info["values"].values()))
+    allowed_match = " | ".join(str(value) for value in allowed_values)
+    discriminant_name = f"{target_name}_discriminant"
+    return [
+        f"    let {discriminant_name} = {raw_expr} as {underlying};",
+        f"    let {target_name} = match {discriminant_name} {{",
+        f"        {allowed_match} => unsafe {{ // SAFETY: the discriminant was validated against the schema enum values above.",
+        f"            std::mem::transmute::<{underlying}, _>({discriminant_name})",
+        "        },",
+        "        invalid => {",
+        f'            crate::jni::helpers::throw_illegal_argument({env_expr}, format!("{source_name} has invalid {enum_name} discriminant: {{}}", invalid))?;',
+        "            return Err(());",
+        "        }",
+        "    };",
+    ]
+
+
 def rust_struct_type(schema_type: str) -> str:
     ffi_info = MAPPING["ffi_types"][schema_type]
     ffi_name = ffi_info["ffi_name"]
@@ -896,9 +923,14 @@ def build_struct_reader(type_name: str) -> list[str]:
         elif field_type == "ptr":
             lines.append(f"    let field_{field_name} = {value_call} as usize as _;")
         elif field_type in SCHEMA.get("enums", {}):
-            underlying = SCHEMA["enums"][field_type].get("underlying", "i32")
-            lines.append(
-                f"    let field_{field_name} = unsafe {{ // SAFETY: Java passes the raw enum discriminant used by the internal bridge.\n        std::mem::transmute::<{rust_type(underlying)}, _>({value_call} as {rust_type(underlying)})\n    }};"
+            lines.extend(
+                render_checked_enum_conversion(
+                    f"field_{field_name}",
+                    field_type,
+                    value_call,
+                    f"{type_name}.{field_name}",
+                    env_expr="env",
+                )
             )
         else:
             lines.append(f"    let field_{field_name} = {value_call} as _;")
@@ -993,12 +1025,15 @@ def build_type_helpers() -> list[str]:
         "    value.get(field).and_then(serde_json::Value::as_str).unwrap_or_default().to_string()",
         "}",
         "",
-        "pub(crate) fn read_buffer_protocol_string<F>(mut call: F) -> crate::jni::helpers::JniCallResult<String>",
+        "pub(crate) fn read_buffer_protocol_string<F>(env: &mut jni::JNIEnv<'_>, function_name: &str, mut call: F) -> crate::jni::helpers::JniCallResult<String>",
         "where",
         "    F: FnMut(*mut u8, usize) -> i32,",
         "{",
         "    let required = call(std::ptr::null_mut(), 0);",
         "    if required == -1 {",
+        "        if crate::jni::helpers::last_error_code() != 0 {",
+        "            let _ = crate::jni::helpers::throw_engine_error(env, function_name, None);",
+        "        }",
         "        return Err(());",
         "    }",
         "    if required == 0 {",
@@ -1009,26 +1044,42 @@ def build_type_helpers() -> list[str]:
         "        let mut buffer = vec![0u8; size];",
         "        let written = call(buffer.as_mut_ptr(), buffer.len());",
         "        if written == -1 {",
+        "            if crate::jni::helpers::last_error_code() != 0 {",
+        "                let _ = crate::jni::helpers::throw_engine_error(env, function_name, None);",
+        "            }",
         "            return Err(());",
         "        }",
         "        if written < 0 {",
-        "            size = (-written) as usize;",
-        "            continue;",
+            "            size = (-written) as usize;",
+            "            continue;",
         "        }",
-        "        return Ok(String::from_utf8_lossy(&buffer[..written as usize]).into_owned());",
+        "        let written_len = crate::jni::helpers::checked_output_length(env, function_name, \"buffer\", written as usize, buffer.len())?;",
+        "        if crate::jni::helpers::last_error_code() != 0 {",
+        "            let _ = crate::jni::helpers::throw_engine_error(env, function_name, Some(written as i64));",
+        "            return Err(());",
+        "        }",
+        "        return Ok(String::from_utf8_lossy(&buffer[..written_len]).into_owned());",
         "    }",
         "}",
         "",
-        "pub(crate) fn read_fixed_buffer_string<F>(mut call: F, size: usize) -> crate::jni::helpers::JniCallResult<String>",
+        "pub(crate) fn read_fixed_buffer_string<F>(env: &mut jni::JNIEnv<'_>, function_name: &str, mut call: F, size: usize) -> crate::jni::helpers::JniCallResult<String>",
         "where",
         "    F: FnMut(*mut u8, i32) -> i32,",
         "{",
         "    let mut buffer = vec![0u8; size];",
         "    let written = call(buffer.as_mut_ptr(), buffer.len() as i32);",
         "    if written < 0 {",
+        "        if crate::jni::helpers::last_error_code() != 0 {",
+        "            let _ = crate::jni::helpers::throw_engine_error(env, function_name, Some(written as i64));",
+        "        }",
         "        return Err(());",
         "    }",
-        "    Ok(String::from_utf8_lossy(&buffer[..written as usize]).into_owned())",
+        "    let written_len = crate::jni::helpers::checked_output_length(env, function_name, \"buffer\", written as usize, buffer.len())?;",
+        "    if crate::jni::helpers::last_error_code() != 0 {",
+        "        let _ = crate::jni::helpers::throw_engine_error(env, function_name, Some(written as i64));",
+        "        return Err(());",
+        "    }",
+        "    Ok(String::from_utf8_lossy(&buffer[..written_len]).into_owned())",
         "}",
         "",
         "pub(crate) fn new_NetworkPacket<'local>(",
@@ -1296,9 +1347,14 @@ def build_ffi_args(method: GeneratedMethod, *, with_out_params: bool = False, sk
             continue
         if name in enum_params or schema_ty in SCHEMA.get("enums", {}):
             if expected.startswith("Ffi") or expected.startswith("Goud"):
-                underlying = SCHEMA["enums"][schema_ty].get("underlying", "i32")
-                setup.append(
-                    f"    let {name}_raw = unsafe {{ // SAFETY: Java passes the raw enum discriminant used by the internal bridge.\n        std::mem::transmute::<{rust_type(underlying)}, _>({name} as {rust_type(underlying)})\n    }};"
+                setup.extend(
+                    render_checked_enum_conversion(
+                        f"{name}_raw",
+                        schema_ty,
+                        name,
+                        name,
+                        env_expr="&mut env",
+                    )
                 )
                 args.append(f"{name}_raw")
             else:
@@ -1480,14 +1536,19 @@ def render_batch_out(method: GeneratedMethod) -> list[str]:
     handle_name = handle_arg_name(method.handle_type)
     ffi_name = method.mapping["ffi"]
     ffi_path = ffi_function_path(ffi_name)
-    return [
+    lines = [
         "    crate::jni::helpers::clear_last_error();",
         "    let count_value = count.max(0) as usize;",
         "    let mut entities = vec![0u64; count_value];",
         f"    let written = unsafe {{ // SAFETY: the output buffer is sized for `count` entities and remains valid for the duration of the FFI call.\n        {ffi_path}({handle_value_expr(method.handle_type, handle_name)}, count as u32, entities.as_mut_ptr())\n    }};",
-        "    entities.truncate(written as usize);",
+    ]
+    lines.extend(render_engine_error_check(ffi_name, "written"))
+    lines += [
+        f'    let written_len = crate::jni::helpers::checked_output_length(&mut env, "{ffi_name}", "entities", written as usize, entities.len())?;',
+        "    entities.truncate(written_len);",
         "    new_entity_array(&mut env, &entities)",
     ]
+    return lines
 
 
 def render_batch_in(method: GeneratedMethod) -> list[str]:
@@ -1522,10 +1583,15 @@ def render_batch_in(method: GeneratedMethod) -> list[str]:
         ]
         args.append("result_bytes.as_mut_ptr()")
         lines.append(f"    let written = unsafe {{ // SAFETY: the entity and output buffers remain valid for the duration of the FFI call.\n        {ffi_path}({', '.join(args)})\n    }};")
-        lines.append("    env.set_byte_array_region(&outResults, 0, &result_bytes[..written as usize].iter().map(|value| *value as i8).collect::<Vec<i8>>()).map_err(|_| ())?;")
-        lines.append("    Ok(written as i32)")
+        lines.extend(render_engine_error_check(ffi_name, "written"))
+        lines.append(
+            f'    let written_len = crate::jni::helpers::checked_output_length(&mut env, "{ffi_name}", "outResults", written as usize, result_bytes.len())?;'
+        )
+        lines.append("    env.set_byte_array_region(&outResults, 0, &result_bytes[..written_len].iter().map(|value| *value as i8).collect::<Vec<i8>>()).map_err(|_| ())?;")
+        lines.append("    Ok(written_len as i32)")
         return lines
     lines.append(f"    let written = unsafe {{ // SAFETY: the entity buffer remains valid for the duration of the FFI call.\n        {ffi_path}({', '.join(args)})\n    }};")
+    lines.extend(render_engine_error_check(ffi_name, "written"))
     lines.append("    Ok(written as i32)")
     return lines
 
@@ -1716,12 +1782,16 @@ def render_out_buffer(method: GeneratedMethod) -> list[str]:
         "        return Err(());",
         "    }",
     ]
+    lines.extend(render_engine_error_check(ffi_name, "written"))
+    lines += [
+        f'    let written_len = crate::jni::helpers::checked_output_length(&mut env, "{ffi_name}", "buffer", written as usize, buffer.len())?;',
+    ]
     if method.mapping.get("returns_struct") and method.mapping.get("status_nullable_struct"):
         lines += [
             "    if written == 0 {",
             "        return Ok(crate::jni::helpers::null_object());",
             "    }",
-            "    buffer.truncate(written as usize);",
+            "    buffer.truncate(written_len);",
             "    Ok(new_NetworkPacket(&mut env, peer_id, &buffer)?.into_raw())",
         ]
     elif method.mapping.get("returns_struct"):
@@ -1729,7 +1799,7 @@ def render_out_buffer(method: GeneratedMethod) -> list[str]:
             "    if written == 0 {",
             "        return Ok(crate::jni::helpers::null_object());",
             "    }",
-            "    buffer.truncate(written as usize);",
+            "    buffer.truncate(written_len);",
             "    Ok(new_NetworkPacket(&mut env, peer_id, &buffer)?.into_raw())",
         ]
     else:
@@ -1737,7 +1807,7 @@ def render_out_buffer(method: GeneratedMethod) -> list[str]:
             "    if written == 0 {",
             "        return Ok(crate::jni::helpers::null_byte_array());",
             "    }",
-            "    crate::jni::helpers::new_byte_array(&mut env, &buffer[..written as usize])",
+            "    crate::jni::helpers::new_byte_array(&mut env, &buffer[..written_len])",
         ]
     return lines
 
@@ -1774,7 +1844,7 @@ def render_out_string(method: GeneratedMethod) -> list[str]:
     ffi_meta = method_ffi_def(method.mapping)
     ffi_ret = ffi_return_type(ffi_meta)
     lines += [
-        f'    let result = read_fixed_buffer_string(|buf, len| unsafe {{ // SAFETY: the temporary output buffer is valid for the duration of the FFI call.\n        {ffi_path}({", ".join(args)}, buf, {"len as u32" if ffi_ret == "i32" and ffi_name == "goud_plugin_list" else "len"})\n    }}, 65536)?;',
+        f'    let result = read_fixed_buffer_string(&mut env, "{ffi_name}", |buf, len| unsafe {{ // SAFETY: the temporary output buffer is valid for the duration of the FFI call.\n        {ffi_path}({", ".join(args)}, buf, {"len as u32" if ffi_ret == "i32" and ffi_name == "goud_plugin_list" else "len"})\n    }}, 65536)?;',
         "    crate::jni::helpers::new_java_string(&mut env, &result)",
     ]
     return lines
@@ -1787,7 +1857,7 @@ def render_buffer_protocol(method: GeneratedMethod) -> list[str]:
     lines = setup
     call_args = ", ".join(args)
     lines += [
-        f'    let value = read_buffer_protocol_string(|buf, len| unsafe {{ // SAFETY: the caller-provided buffer is valid for the duration of each FFI call.\n        {ffi_path}({call_args}{", " if call_args else ""}buf, len)\n    }})?;',
+        f'    let value = read_buffer_protocol_string(&mut env, "{ffi_name}", |buf, len| unsafe {{ // SAFETY: the caller-provided buffer is valid for the duration of each FFI call.\n        {ffi_path}({call_args}{", " if call_args else ""}buf, len)\n    }})?;',
         "    crate::jni::helpers::new_java_string(&mut env, &value)",
     ]
     return lines
@@ -1801,7 +1871,7 @@ def render_json_buffer_struct(method: GeneratedMethod) -> list[str]:
     call_args = ", ".join(args)
     lines = setup
     lines += [
-        f'    let value = read_buffer_protocol_string(|buf, len| unsafe {{ // SAFETY: the caller-provided buffer is valid for the duration of each FFI call.\n        {ffi_path}({call_args}{", " if call_args else ""}buf, len)\n    }})?;',
+        f'    let value = read_buffer_protocol_string(&mut env, "{ffi_name}", |buf, len| unsafe {{ // SAFETY: the caller-provided buffer is valid for the duration of each FFI call.\n        {ffi_path}({call_args}{", " if call_args else ""}buf, len)\n    }})?;',
         f"    Ok(new_{struct_name}(&mut env, &value)?.into_raw())",
     ]
     return lines
@@ -1956,7 +2026,8 @@ def rust_method_source(method: GeneratedMethod) -> list[str]:
         line_join([f"{arg}," for arg in rust_method_signature(method)], 4),
         f") -> {rust_return_type(method.returns)} {{",
     ]
-    body = render_method_body(method)
+    body = ["    crate::jni::helpers::prepare_call(&mut env)?;"]
+    body.extend(render_method_body(method))
     if base_type(method.returns) == "void":
         lines += [
             "    let _ = (|| -> crate::jni::helpers::JniCallResult<()> {",

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::sync::OnceLock;
 
-use jni::objects::{JObject, JString};
+use jni::objects::{JObject, JString, JValue};
 use jni::{InitArgsBuilder, JavaVM};
 
 use super::{generated, helpers};
@@ -149,6 +149,23 @@ fn ensure_no_pending_exception_short_circuits() {
 }
 
 #[test]
+fn prepare_call_short_circuits_before_clearing_last_error() {
+    let mut env = jvm()
+        .attach_current_thread()
+        .expect("failed to attach JNI test thread");
+    crate::core::error::set_last_error(crate::core::error::GoudError::InvalidContext);
+    env.throw_new("java/lang/IllegalStateException", "pending prepare failure")
+        .expect("failed to throw test exception");
+
+    assert!(helpers::prepare_call(&mut env).is_err());
+    assert_ne!(helpers::last_error_code(), 0);
+
+    let message = take_exception_message(&mut env, "java/lang/IllegalStateException");
+    assert_eq!(message, "pending prepare failure");
+    helpers::clear_last_error();
+}
+
+#[test]
 fn throw_engine_error_uses_thread_local_error_text() {
     let mut env = jvm()
         .attach_current_thread()
@@ -164,6 +181,20 @@ fn throw_engine_error_uses_thread_local_error_text() {
     let message = take_exception_message(&mut env, "java/lang/IllegalStateException");
     assert!(message.contains("goud_network_send"));
     assert!(message.contains("network bridge failed"));
+}
+
+#[test]
+fn checked_output_length_rejects_oversized_writes() {
+    let mut env = jvm()
+        .attach_current_thread()
+        .expect("failed to attach JNI test thread");
+
+    assert!(helpers::checked_output_length(&mut env, "jni_test", "outResults", 5, 4).is_err());
+
+    let message = take_exception_message(&mut env, "java/lang/IllegalStateException");
+    assert!(message.contains("jni_test"));
+    assert!(message.contains("outResults"));
+    assert!(message.contains("exceeds buffer capacity"));
 }
 
 #[test]
@@ -199,4 +230,44 @@ fn generated_color_carrier_round_trips_and_writes_back() {
             .expect("failed to read written Color carrier from Java"),
         updated,
     );
+}
+
+#[test]
+fn generated_sprite_animator_rejects_invalid_enum_discriminant() {
+    let mut env = jvm()
+        .attach_current_thread()
+        .expect("failed to attach JNI test thread");
+    let class = env
+        .find_class("com/goudengine/internal/SpriteAnimator")
+        .expect("failed to find SpriteAnimator fixture class");
+    let sprite_animator = env
+        .new_object(class, "()V", &[])
+        .expect("failed to create SpriteAnimator fixture");
+    env.set_field(&sprite_animator, "mode", "I", JValue::Int(99))
+        .expect("failed to inject invalid enum discriminant");
+
+    assert!(generated::read_SpriteAnimator(&mut env, &sprite_animator, "spriteAnimator").is_err());
+
+    let message = take_exception_message(&mut env, "java/lang/IllegalArgumentException");
+    assert!(message.contains("SpriteAnimator.mode"));
+    assert!(message.contains("invalid"));
+}
+
+#[test]
+fn read_fixed_buffer_string_rejects_oversized_lengths() {
+    let mut env = jvm()
+        .attach_current_thread()
+        .expect("failed to attach JNI test thread");
+
+    let result = generated::read_fixed_buffer_string(
+        &mut env,
+        "jni_test_fixed_buffer",
+        |_buf, len| len + 1,
+        4,
+    );
+    assert!(result.is_err());
+
+    let message = take_exception_message(&mut env, "java/lang/IllegalStateException");
+    assert!(message.contains("jni_test_fixed_buffer"));
+    assert!(message.contains("buffer"));
 }

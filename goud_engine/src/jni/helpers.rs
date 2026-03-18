@@ -14,6 +14,12 @@ pub(crate) fn clear_last_error() {
     goud_clear_last_error();
 }
 
+pub(crate) fn prepare_call(env: &mut JNIEnv<'_>) -> JniCallResult<()> {
+    ensure_no_pending_exception(env)?;
+    clear_last_error();
+    Ok(())
+}
+
 pub(crate) fn to_jboolean(value: bool) -> jboolean {
     if value {
         JNI_TRUE
@@ -98,6 +104,24 @@ pub(crate) fn throw_java_error(
     message: impl AsRef<str>,
 ) -> JniCallResult<()> {
     throw_illegal_state(env, format!("{function_name}: {}", message.as_ref()))
+}
+
+pub(crate) fn checked_output_length(
+    env: &mut JNIEnv<'_>,
+    function_name: &str,
+    target_name: &str,
+    written: usize,
+    capacity: usize,
+) -> JniCallResult<usize> {
+    if written > capacity {
+        throw_java_error(
+            env,
+            function_name,
+            format!("{target_name} length {written} exceeds buffer capacity {capacity}"),
+        )?;
+        return Err(());
+    }
+    Ok(written)
 }
 
 pub(crate) fn ensure_no_pending_exception(env: &mut JNIEnv<'_>) -> JniCallResult<()> {
