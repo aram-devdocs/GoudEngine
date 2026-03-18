@@ -3,6 +3,8 @@
 mod capture;
 mod debugger_frame;
 mod ecs_scene;
+#[cfg(feature = "lua")]
+mod lua_runtime;
 #[cfg(test)]
 mod tests;
 
@@ -24,6 +26,8 @@ use crate::rendering::{compute_render_viewport, RenderViewport, ViewportScaleMod
 use crate::sdk::debug_overlay::DebugOverlay;
 use crate::sdk::game_config::{GameConfig, GameContext};
 use crate::ui::UiManager;
+#[cfg(feature = "lua")]
+use lua_runtime::LuaRuntime;
 
 #[cfg(feature = "native")]
 use crate::ecs::InputManager;
@@ -97,6 +101,11 @@ pub struct GoudGame {
 
     /// Window resize events emitted through the runtime path.
     pub(crate) window_resized_events: Events<WindowResized>,
+
+    #[cfg(feature = "lua")]
+    // Held for Drop: keeps the embedded Lua VM alive until GoudGame drops.
+    #[allow(dead_code)]
+    lua_runtime: LuaRuntime,
 
     // =========================================================================
     // Native-only fields (require a desktop windowing and render backend)
@@ -196,6 +205,8 @@ impl GoudGame {
         debug_overlay.set_enabled(config.show_fps_overlay);
         let debugger_route =
             Self::register_debugger_route(&config, RuntimeSurfaceKind::HeadlessContext);
+        #[cfg(feature = "lua")]
+        let lua_runtime = LuaRuntime::new()?;
         Ok(Self {
             scene_manager: SceneManager::new(),
             config,
@@ -209,6 +220,8 @@ impl GoudGame {
             last_transition_complete: None,
             ui_manager: UiManager::new(),
             window_resized_events: Events::new(),
+            #[cfg(feature = "lua")]
+            lua_runtime,
             #[cfg(feature = "native")]
             platform: None,
             #[cfg(feature = "native")]
@@ -306,6 +319,8 @@ impl GoudGame {
         let audio_manager = crate::assets::AudioManager::new().ok();
         let debugger_route =
             Self::register_debugger_route(&config, RuntimeSurfaceKind::WindowedGame);
+        #[cfg(feature = "lua")]
+        let lua_runtime = LuaRuntime::new()?;
 
         // Register deferred capture hook for framebuffer readback if debugger
         // is enabled. The hook is invoked from the IPC thread, so it signals
@@ -335,6 +350,8 @@ impl GoudGame {
             last_transition_complete: None,
             ui_manager: UiManager::new(),
             window_resized_events: Events::new(),
+            #[cfg(feature = "lua")]
+            lua_runtime,
             platform: Some(native_runtime.platform),
             render_backend: Some(render_backend),
             input_manager: InputManager::default(),

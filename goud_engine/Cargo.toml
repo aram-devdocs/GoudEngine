@@ -14,6 +14,7 @@ categories = ["game-engines", "graphics", "rendering"]
 default = ["native"]
 native = ["wgpu-backend", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj", "net-udp", "net-tcp", "net-ws"]
 legacy-glfw-opengl = ["dep:gl", "dep:glfw"]
+lua = ["dep:mlua"]
 net-udp = []
 net-tcp = []
 net-ws = ["dep:tungstenite", "dep:rustls"]
@@ -33,6 +34,7 @@ env_logger = { version = "0.11.6", optional = true }
 gl = { version = "0.14.0", optional = true }
 glfw = { version = "0.59.0", optional = true }
 log = "0.4.17"
+mlua = { version = "0.11", optional = true, default-features = false, features = ["lua54", "vendored"] }
 thiserror = "2.0.12"
 image = "0.25"
 fontdue = "0.9"
