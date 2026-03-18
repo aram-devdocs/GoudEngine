@@ -152,7 +152,8 @@ impl FrameOps for WgpuBackend {
                         pass.draw(first..first + count, 0..1);
                     }
                     DrawType::Indexed { count, .. } | DrawType::IndexedU16 { count, .. } => {
-                        pass.draw_indexed(0..count, 0, 0..1);
+                        let first = cmd.draw_type.first_index();
+                        pass.draw_indexed(first..first + count, 0, 0..1);
                     }
                     DrawType::ArraysInstanced {
                         first,
@@ -164,7 +165,8 @@ impl FrameOps for WgpuBackend {
                     DrawType::IndexedInstanced {
                         count, instances, ..
                     } => {
-                        pass.draw_indexed(0..count, 0, 0..instances);
+                        let first = cmd.draw_type.first_index();
+                        pass.draw_indexed(first..first + count, 0, 0..instances);
                     }
                 }
             }
@@ -447,10 +449,7 @@ impl DrawOps for WgpuBackend {
         count: u32,
         offset: usize,
     ) -> GoudResult<()> {
-        self.record_draw(DrawType::Indexed {
-            count,
-            _offset: offset,
-        })
+        self.record_draw(DrawType::Indexed { count, offset })
     }
 
     fn draw_indexed_u16(
@@ -459,10 +458,7 @@ impl DrawOps for WgpuBackend {
         count: u32,
         offset: usize,
     ) -> GoudResult<()> {
-        self.record_draw(DrawType::IndexedU16 {
-            count,
-            _offset: offset,
-        })
+        self.record_draw(DrawType::IndexedU16 { count, offset })
     }
 
     fn draw_arrays_instanced(
@@ -488,7 +484,7 @@ impl DrawOps for WgpuBackend {
     ) -> GoudResult<()> {
         self.record_draw(DrawType::IndexedInstanced {
             count,
-            _offset: offset,
+            offset,
             instances: instance_count,
         })
     }

@@ -74,11 +74,11 @@ pub(super) enum DrawType {
     },
     Indexed {
         count: u32,
-        _offset: usize,
+        offset: usize,
     },
     IndexedU16 {
         count: u32,
-        _offset: usize,
+        offset: usize,
     },
     ArraysInstanced {
         first: u32,
@@ -87,9 +87,21 @@ pub(super) enum DrawType {
     },
     IndexedInstanced {
         count: u32,
-        _offset: usize,
+        offset: usize,
         instances: u32,
     },
+}
+
+impl DrawType {
+    pub(super) fn first_index(&self) -> u32 {
+        match self {
+            Self::Indexed { offset, .. } | Self::IndexedInstanced { offset, .. } => {
+                (offset / std::mem::size_of::<u32>()) as u32
+            }
+            Self::IndexedU16 { offset, .. } => (offset / std::mem::size_of::<u16>()) as u32,
+            _ => 0,
+        }
+    }
 }
 
 // =============================================================================
