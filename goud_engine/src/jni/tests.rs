@@ -198,6 +198,28 @@ fn checked_output_length_rejects_oversized_writes() {
 }
 
 #[test]
+fn catch_jni_panic_turns_panics_into_java_exceptions() {
+    let mut env = jvm()
+        .attach_current_thread()
+        .expect("failed to attach JNI test thread");
+
+    let result = helpers::catch_jni_panic(
+        &mut env,
+        "jni_test_panic",
+        -7_i32,
+        |_env| -> helpers::JniCallResult<i32> {
+            panic!("panic boundary reached");
+        },
+    );
+
+    assert_eq!(result, -7);
+
+    let message = take_exception_message(&mut env, "java/lang/IllegalStateException");
+    assert!(message.contains("jni_test_panic"));
+    assert!(message.contains("panic boundary reached"));
+}
+
+#[test]
 fn generated_color_carrier_round_trips_and_writes_back() {
     let mut env = jvm()
         .attach_current_thread()

@@ -2028,20 +2028,18 @@ def rust_method_source(method: GeneratedMethod) -> list[str]:
     ]
     body = ["    crate::jni::helpers::prepare_call(&mut env)?;"]
     body.extend(render_method_body(method))
+    export_body = [line.replace("&mut env", "env") for line in body]
     if base_type(method.returns) == "void":
         lines += [
-            "    let _ = (|| -> crate::jni::helpers::JniCallResult<()> {",
-            line_join(body, 8),
-            "    })();",
+            f'    crate::jni::helpers::catch_jni_panic(&mut env, "{rust_export_name(method)}", (), |env| -> crate::jni::helpers::JniCallResult<()> {{',
+            line_join(export_body, 8),
+            "    });",
         ]
     else:
         lines += [
-            f"    match (|| -> crate::jni::helpers::JniCallResult<{rust_return_type(method.returns)}> {{",
-            line_join(body, 8),
-            "    })() {",
-            "        Ok(value) => value,",
-            f"        Err(()) => {rust_default_return(method.returns)},",
-            "    }",
+            f'    crate::jni::helpers::catch_jni_panic(&mut env, "{rust_export_name(method)}", {rust_default_return(method.returns)}, |env| -> crate::jni::helpers::JniCallResult<{rust_return_type(method.returns)}> {{',
+            line_join(export_body, 8),
+            "    })",
         ]
     lines += ["}", ""]
     if feature is not None:

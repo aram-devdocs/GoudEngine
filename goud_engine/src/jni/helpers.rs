@@ -1,5 +1,8 @@
 #![allow(dead_code)]
 
+use std::any::Any;
+use std::panic::{catch_unwind, AssertUnwindSafe};
+
 use jni::objects::{JByteArray, JClass, JLongArray, JObject, JString, JValue};
 use jni::sys::{
     jboolean, jbyteArray, jint, jlong, jlongArray, jobject, jstring, JNI_FALSE, JNI_TRUE,
@@ -122,6 +125,43 @@ pub(crate) fn checked_output_length(
         return Err(());
     }
     Ok(written)
+}
+
+pub(crate) fn throw_panic(
+    env: &mut JNIEnv<'_>,
+    function_name: &str,
+    payload: Box<dyn Any + Send>,
+) -> JniCallResult<()> {
+    if env.exception_check().unwrap_or(false) {
+        return Err(());
+    }
+    let message = match payload.downcast::<String>() {
+        Ok(message) => *message,
+        Err(payload) => match payload.downcast::<&'static str>() {
+            Ok(message) => (*message).to_string(),
+            Err(_) => "unknown panic payload".to_string(),
+        },
+    };
+    throw_illegal_state(env, format!("{function_name} panicked: {message}"))
+}
+
+pub(crate) fn catch_jni_panic<'local, T, F>(
+    env: &mut JNIEnv<'local>,
+    function_name: &str,
+    default: T,
+    body: F,
+) -> T
+where
+    F: FnOnce(&mut JNIEnv<'local>) -> JniCallResult<T>,
+{
+    match catch_unwind(AssertUnwindSafe(|| body(env))) {
+        Ok(Ok(value)) => value,
+        Ok(Err(())) => default,
+        Err(payload) => {
+            let _ = throw_panic(env, function_name, payload);
+            default
+        }
+    }
 }
 
 pub(crate) fn ensure_no_pending_exception(env: &mut JNIEnv<'_>) -> JniCallResult<()> {
