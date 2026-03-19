@@ -1,5 +1,7 @@
 mod integration;
 
+use super::framing::decode_frame;
+use super::stun::{build_stun_binding_request, parse_stun_response};
 use super::*;
 use crate::core::providers::network::NetworkProvider;
 use crate::core::providers::network_types::{

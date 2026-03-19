@@ -26,7 +26,7 @@ pub(super) fn encode_frame(channel: Channel, data: &[u8]) -> Vec<u8> {
     frame
 }
 
-pub(super) fn decode_frame(data: &[u8]) -> Option<(Channel, Vec<u8>)> {
+pub(crate) fn decode_frame(data: &[u8]) -> Option<(Channel, Vec<u8>)> {
     if data.len() < 5 {
         return None;
     }

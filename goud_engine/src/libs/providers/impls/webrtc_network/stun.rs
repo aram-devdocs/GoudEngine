@@ -13,7 +13,7 @@ pub(super) const STUN_MAGIC_COOKIE: u32 = 0x2112A442;
 /// Minimal STUN binding request. Returns a 20-byte STUN header with a random
 /// transaction ID. This is enough to discover our public-facing address from
 /// a STUN server.
-pub(super) fn build_stun_binding_request() -> ([u8; 20], [u8; 12]) {
+pub(crate) fn build_stun_binding_request() -> ([u8; 20], [u8; 12]) {
     let mut msg = [0u8; 20];
     // Type: Binding Request (0x0001)
     msg[0] = (STUN_BINDING_REQUEST >> 8) as u8;
@@ -42,7 +42,7 @@ pub(super) fn build_stun_binding_request() -> ([u8; 20], [u8; 12]) {
 
 /// Parse a STUN binding response to extract the XOR-MAPPED-ADDRESS.
 /// Returns `Some(SocketAddr)` if a valid address was found.
-pub(super) fn parse_stun_response(data: &[u8], tid: &[u8; 12]) -> Option<SocketAddr> {
+pub(crate) fn parse_stun_response(data: &[u8], tid: &[u8; 12]) -> Option<SocketAddr> {
     if data.len() < 20 {
         return None;
     }
