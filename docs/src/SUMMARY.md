@@ -8,6 +8,7 @@
 - [Python SDK](getting-started/python.md)
 - [Rust SDK](getting-started/rust.md)
 - [TypeScript SDK](getting-started/typescript.md)
+- [C/C++ SDK](getting-started/c-cpp.md)
 
 # Development
 

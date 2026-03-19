@@ -1,0 +1,8 @@
+{
+  "name": "goud-engine",
+  "version": "0.0.832",
+  "description": "GoudEngine C/C++ SDK — cross-platform game engine",
+  "homepage": "https://github.com/aram-devdocs/GoudEngine",
+  "license": "MIT",
+  "supports": "x64 & (linux | osx | windows)"
+}

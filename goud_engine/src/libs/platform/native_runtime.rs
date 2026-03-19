@@ -24,6 +24,31 @@ fn invalid_pair_error(
     ))
 }
 
+/// Detects the best available backend pair at runtime based on compiled features.
+///
+/// Tries wgpu (Winit + Wgpu) first, then falls back to OpenGL (GLFW + OpenGL).
+#[allow(unreachable_code)]
+pub fn detect_best_backend() -> (WindowBackendKind, RenderBackendKind) {
+    #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+    {
+        return (WindowBackendKind::Winit, RenderBackendKind::Wgpu);
+    }
+    #[cfg(feature = "legacy-glfw-opengl")]
+    {
+        return (
+            WindowBackendKind::GlfwLegacy,
+            RenderBackendKind::OpenGlLegacy,
+        );
+    }
+    (WindowBackendKind::Winit, RenderBackendKind::Wgpu)
+}
+
+/// Creates a native runtime using auto-detection for the best available backend.
+pub fn create_native_runtime_auto(window_config: &WindowConfig) -> GoudResult<NativeRuntime> {
+    let (window_backend, render_backend) = detect_best_backend();
+    create_native_runtime(window_config, window_backend, render_backend)
+}
+
 /// Rejects unsupported mixed native backend pairs.
 pub fn validate_native_backend_pair(
     window_backend: WindowBackendKind,
@@ -32,6 +57,7 @@ pub fn validate_native_backend_pair(
     match (window_backend, render_backend) {
         (WindowBackendKind::Winit, RenderBackendKind::Wgpu) => Ok(()),
         (WindowBackendKind::GlfwLegacy, RenderBackendKind::OpenGlLegacy) => Ok(()),
+        (_, RenderBackendKind::Auto) => Ok(()), // Auto is resolved before validation
         _ => Err(invalid_pair_error(window_backend, render_backend)),
     }
 }
@@ -42,6 +68,11 @@ pub fn create_native_runtime(
     window_backend: WindowBackendKind,
     render_backend: RenderBackendKind,
 ) -> GoudResult<NativeRuntime> {
+    // Auto-detect resolves to the best available pair.
+    if render_backend == RenderBackendKind::Auto {
+        return create_native_runtime_auto(window_config);
+    }
+
     validate_native_backend_pair(window_backend, render_backend)?;
 
     match (window_backend, render_backend) {
@@ -121,5 +152,18 @@ mod tests {
             RenderBackendKind::OpenGlLegacy,
         )
         .is_ok());
+    }
+
+    #[test]
+    fn detect_best_backend_returns_valid_pair() {
+        let (window, render) = detect_best_backend();
+        assert!(validate_native_backend_pair(window, render).is_ok());
+    }
+
+    #[test]
+    fn auto_backend_passes_validation() {
+        assert!(
+            validate_native_backend_pair(WindowBackendKind::Winit, RenderBackendKind::Auto).is_ok()
+        );
     }
 }

@@ -60,7 +60,9 @@ pub use state::{
 // module path for any internal callers.
 pub use lifecycle::{goud_window_create, goud_window_destroy};
 pub use properties::{
-    goud_window_clear, goud_window_get_delta_time, goud_window_get_size, goud_window_poll_events,
-    goud_window_set_should_close, goud_window_set_size, goud_window_should_close,
-    goud_window_swap_buffers,
+    goud_window_clear, goud_window_get_delta_time, goud_window_get_framebuffer_size,
+    goud_window_get_fullscreen, goud_window_get_size, goud_window_poll_events,
+    goud_window_set_aspect_ratio_lock, goud_window_set_fullscreen, goud_window_set_should_close,
+    goud_window_set_size, goud_window_should_close, goud_window_swap_buffers,
+    goud_window_toggle_fullscreen,
 };

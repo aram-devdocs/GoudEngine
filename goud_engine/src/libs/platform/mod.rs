@@ -40,6 +40,31 @@ pub mod winit_platform;
 #[cfg(feature = "native")]
 use crate::core::input_manager::InputManager;
 
+/// Fullscreen mode for the native window.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+#[repr(u32)]
+pub enum FullscreenMode {
+    /// Standard windowed mode.
+    #[default]
+    Windowed = 0,
+    /// Borderless fullscreen (covers the whole screen without exclusive access).
+    Borderless = 1,
+    /// Exclusive fullscreen (takes over the monitor with a video mode change).
+    Exclusive = 2,
+}
+
+impl FullscreenMode {
+    /// Converts an FFI/backend code into a fullscreen mode.
+    pub fn from_u32(value: u32) -> Option<Self> {
+        match value {
+            0 => Some(Self::Windowed),
+            1 => Some(Self::Borderless),
+            2 => Some(Self::Exclusive),
+            _ => None,
+        }
+    }
+}
+
 /// Native rendering backend selection.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 #[repr(u32)]
@@ -49,6 +74,8 @@ pub enum RenderBackendKind {
     Wgpu = 0,
     /// Legacy OpenGL backend.
     OpenGlLegacy = 1,
+    /// Auto-detect the best available backend at runtime.
+    Auto = 2,
 }
 
 impl RenderBackendKind {
@@ -57,6 +84,7 @@ impl RenderBackendKind {
         match value {
             0 => Some(Self::Wgpu),
             1 => Some(Self::OpenGlLegacy),
+            2 => Some(Self::Auto),
             _ => None,
         }
     }
@@ -104,6 +132,9 @@ pub struct WindowConfig {
 
     /// Requested MSAA sample count for native window creation.
     pub msaa_samples: u32,
+
+    /// Requested fullscreen mode for window creation.
+    pub fullscreen_mode: FullscreenMode,
 }
 
 impl Default for WindowConfig {
@@ -115,6 +146,7 @@ impl Default for WindowConfig {
             vsync: true,
             resizable: true,
             msaa_samples: 1,
+            fullscreen_mode: FullscreenMode::Windowed,
         }
     }
 }
@@ -168,6 +200,18 @@ pub trait PlatformBackend {
     /// HiDPI/Retina displays where the framebuffer resolution is higher
     /// than the logical window size.
     fn get_framebuffer_size(&self) -> (u32, u32);
+
+    /// Sets the fullscreen mode on the window.
+    ///
+    /// Returns `true` if the mode was applied, `false` if unsupported.
+    fn set_fullscreen(&mut self, _mode: FullscreenMode) -> bool {
+        false
+    }
+
+    /// Returns the current fullscreen mode.
+    fn get_fullscreen(&self) -> FullscreenMode {
+        FullscreenMode::Windowed
+    }
 }
 
 #[cfg(test)]
@@ -183,6 +227,7 @@ mod tests {
         assert!(config.vsync);
         assert!(config.resizable);
         assert_eq!(config.msaa_samples, 1);
+        assert_eq!(config.fullscreen_mode, FullscreenMode::Windowed);
     }
 
     #[test]
@@ -194,6 +239,7 @@ mod tests {
             vsync: false,
             resizable: false,
             msaa_samples: 4,
+            fullscreen_mode: FullscreenMode::Borderless,
         };
         let cloned = config.clone();
         assert_eq!(config.width, cloned.width);
@@ -202,5 +248,31 @@ mod tests {
         assert_eq!(config.vsync, cloned.vsync);
         assert_eq!(config.resizable, cloned.resizable);
         assert_eq!(config.msaa_samples, cloned.msaa_samples);
+        assert_eq!(config.fullscreen_mode, cloned.fullscreen_mode);
+    }
+
+    #[test]
+    fn fullscreen_mode_from_u32_round_trips() {
+        assert_eq!(FullscreenMode::from_u32(0), Some(FullscreenMode::Windowed));
+        assert_eq!(
+            FullscreenMode::from_u32(1),
+            Some(FullscreenMode::Borderless)
+        );
+        assert_eq!(FullscreenMode::from_u32(2), Some(FullscreenMode::Exclusive));
+        assert_eq!(FullscreenMode::from_u32(3), None);
+        assert_eq!(FullscreenMode::from_u32(99), None);
+    }
+
+    #[test]
+    fn fullscreen_mode_default_is_windowed() {
+        assert_eq!(FullscreenMode::default(), FullscreenMode::Windowed);
+    }
+
+    #[test]
+    fn render_backend_kind_auto_variant() {
+        assert_eq!(
+            RenderBackendKind::from_u32(2),
+            Some(RenderBackendKind::Auto)
+        );
     }
 }

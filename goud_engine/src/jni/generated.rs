@@ -5539,7 +5539,7 @@ pub extern "system" fn Java_com_goudengine_internal_EngineConfigNative_setFullsc
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::engine_config::goud_engine_config_set_fullscreen(configHandle as usize as *mut std::ffi::c_void, enabled != 0)
+        crate::ffi::engine_config::goud_engine_config_set_fullscreen(configHandle as usize as *mut std::ffi::c_void, if enabled != 0 { 1u32 } else { 0u32 })
     };
             if !result && crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_engine_config_set_fullscreen", None);

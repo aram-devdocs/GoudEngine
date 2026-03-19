@@ -1,5 +1,47 @@
 //! Viewport sizing policy for 2D and 3D rendering.
 
+/// Locks the viewport to a specific aspect ratio.
+///
+/// When active, the viewport will use [`ViewportScaleMode::Letterbox`]
+/// behaviour with the locked ratio, adding bars as needed to preserve the
+/// target aspect ratio regardless of the actual window dimensions.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[repr(u32)]
+pub enum AspectRatioLock {
+    /// No aspect ratio lock — the viewport follows the framebuffer dimensions.
+    #[default]
+    Free = 0,
+    /// Lock to 4:3 (1.333...).
+    Ratio4x3 = 1,
+    /// Lock to 16:9 (1.777...).
+    Ratio16x9 = 2,
+    /// Lock to 16:10 (1.6).
+    Ratio16x10 = 3,
+}
+
+impl AspectRatioLock {
+    /// Converts an FFI/backend code into an aspect ratio lock.
+    pub fn from_u32(value: u32) -> Option<Self> {
+        match value {
+            0 => Some(Self::Free),
+            1 => Some(Self::Ratio4x3),
+            2 => Some(Self::Ratio16x9),
+            3 => Some(Self::Ratio16x10),
+            _ => None,
+        }
+    }
+
+    /// Returns the aspect ratio as a float, or `None` for [`Free`](Self::Free).
+    pub fn ratio(&self) -> Option<f32> {
+        match self {
+            Self::Free => None,
+            Self::Ratio4x3 => Some(4.0 / 3.0),
+            Self::Ratio16x9 => Some(16.0 / 9.0),
+            Self::Ratio16x10 => Some(16.0 / 10.0),
+        }
+    }
+}
+
 /// How logical content maps to the physical framebuffer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ViewportScaleMode {
@@ -101,9 +143,39 @@ pub fn compute_render_viewport(
     }
 }
 
+/// Resolves the viewport rectangle, applying an aspect ratio lock if active.
+///
+/// When a lock is active, this forces [`ViewportScaleMode::Letterbox`] with a
+/// logical size derived from the locked ratio. When the lock is
+/// [`AspectRatioLock::Free`], this delegates to [`compute_render_viewport`].
+#[must_use]
+pub fn compute_render_viewport_with_aspect_lock(
+    framebuffer_size: (u32, u32),
+    logical_size: (u32, u32),
+    mode: ViewportScaleMode,
+    lock: AspectRatioLock,
+) -> RenderViewport {
+    match lock.ratio() {
+        Some(target_aspect) => {
+            let logical_height = logical_size.1.max(1);
+            let locked_width = (logical_height as f32 * target_aspect).round() as u32;
+            let locked_logical = (locked_width.max(1), logical_height);
+            compute_render_viewport(
+                framebuffer_size,
+                locked_logical,
+                ViewportScaleMode::Letterbox,
+            )
+        }
+        None => compute_render_viewport(framebuffer_size, logical_size, mode),
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{compute_render_viewport, RenderViewport, ViewportScaleMode};
+    use super::{
+        compute_render_viewport, compute_render_viewport_with_aspect_lock, AspectRatioLock,
+        RenderViewport, ViewportScaleMode,
+    };
 
     #[test]
     fn fullscreen_viewport_matches_framebuffer() {
@@ -150,5 +222,72 @@ mod tests {
         assert_eq!(viewport.height, 506);
         assert_eq!(viewport.x, 0);
         assert_eq!(viewport.y, 547);
+    }
+
+    // =========================================================================
+    // AspectRatioLock tests
+    // =========================================================================
+
+    #[test]
+    fn aspect_ratio_lock_from_u32_round_trips() {
+        assert_eq!(AspectRatioLock::from_u32(0), Some(AspectRatioLock::Free));
+        assert_eq!(
+            AspectRatioLock::from_u32(1),
+            Some(AspectRatioLock::Ratio4x3)
+        );
+        assert_eq!(
+            AspectRatioLock::from_u32(2),
+            Some(AspectRatioLock::Ratio16x9)
+        );
+        assert_eq!(
+            AspectRatioLock::from_u32(3),
+            Some(AspectRatioLock::Ratio16x10)
+        );
+        assert_eq!(AspectRatioLock::from_u32(4), None);
+    }
+
+    #[test]
+    fn aspect_ratio_lock_free_delegates_to_normal() {
+        let normal = compute_render_viewport((1920, 1080), (800, 600), ViewportScaleMode::Stretch);
+        let locked = compute_render_viewport_with_aspect_lock(
+            (1920, 1080),
+            (800, 600),
+            ViewportScaleMode::Stretch,
+            AspectRatioLock::Free,
+        );
+        assert_eq!(normal, locked);
+    }
+
+    #[test]
+    fn aspect_ratio_lock_4x3_on_16x9_framebuffer() {
+        // 16:9 framebuffer with 4:3 lock should produce pillarboxing.
+        let viewport = compute_render_viewport_with_aspect_lock(
+            (1920, 1080),
+            (800, 600),
+            ViewportScaleMode::Stretch,
+            AspectRatioLock::Ratio4x3,
+        );
+        // 4:3 on a 16:9 frame => pillarbox (bars on left and right).
+        let expected_aspect = 4.0_f32 / 3.0;
+        let actual_aspect = viewport.width as f32 / viewport.height as f32;
+        assert!((actual_aspect - expected_aspect).abs() < 0.02);
+        assert!(viewport.x > 0, "pillarbox should offset X");
+        assert_eq!(viewport.height, 1080);
+    }
+
+    #[test]
+    fn aspect_ratio_lock_16x9_on_4x3_framebuffer() {
+        // 4:3 framebuffer with 16:9 lock should produce letterboxing.
+        let viewport = compute_render_viewport_with_aspect_lock(
+            (1024, 768),
+            (800, 600),
+            ViewportScaleMode::Stretch,
+            AspectRatioLock::Ratio16x9,
+        );
+        let expected_aspect = 16.0_f32 / 9.0;
+        let actual_aspect = viewport.width as f32 / viewport.height as f32;
+        assert!((actual_aspect - expected_aspect).abs() < 0.02);
+        assert!(viewport.y > 0, "letterbox should offset Y");
+        assert_eq!(viewport.width, 1024);
     }
 }

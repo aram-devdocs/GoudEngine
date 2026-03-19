@@ -5,7 +5,8 @@
 
 use crate::core::debugger::DebuggerConfig;
 use crate::libs::graphics::AntiAliasingMode;
-pub use crate::libs::platform::{RenderBackendKind, WindowBackendKind};
+pub use crate::libs::platform::{FullscreenMode, RenderBackendKind, WindowBackendKind};
+use crate::rendering::AspectRatioLock;
 
 // =============================================================================
 // Game Configuration
@@ -50,8 +51,8 @@ pub struct GameConfig {
     /// Enable vertical sync to prevent screen tearing.
     pub vsync: bool,
 
-    /// Enable fullscreen mode.
-    pub fullscreen: bool,
+    /// Fullscreen mode for the window.
+    pub fullscreen_mode: FullscreenMode,
 
     /// Enable window resizing.
     pub resizable: bool,
@@ -93,6 +94,9 @@ pub struct GameConfig {
     ///
     /// Defaults to `true` in debug builds and `false` in release builds.
     pub lua_hot_reload: bool,
+
+    /// Viewport aspect ratio lock.
+    pub aspect_ratio_lock: AspectRatioLock,
 }
 
 impl Default for GameConfig {
@@ -102,7 +106,7 @@ impl Default for GameConfig {
             width: 800,
             height: 600,
             vsync: true,
-            fullscreen: false,
+            fullscreen_mode: FullscreenMode::Windowed,
             resizable: true,
             anti_aliasing_mode: AntiAliasingMode::Off,
             msaa_samples: 1,
@@ -116,6 +120,7 @@ impl Default for GameConfig {
             diagnostic_mode: false,
             debugger: DebuggerConfig::default(),
             lua_hot_reload: cfg!(debug_assertions),
+            aspect_ratio_lock: AspectRatioLock::Free,
         }
     }
 }
@@ -158,9 +163,28 @@ impl GameConfig {
         self
     }
 
-    /// Enables or disables fullscreen mode.
+    /// Enables or disables borderless fullscreen mode (compatibility helper).
+    ///
+    /// `true` maps to [`FullscreenMode::Borderless`], `false` to
+    /// [`FullscreenMode::Windowed`].
     pub fn with_fullscreen(mut self, enabled: bool) -> Self {
-        self.fullscreen = enabled;
+        self.fullscreen_mode = if enabled {
+            FullscreenMode::Borderless
+        } else {
+            FullscreenMode::Windowed
+        };
+        self
+    }
+
+    /// Sets the fullscreen mode explicitly.
+    pub fn with_fullscreen_mode(mut self, mode: FullscreenMode) -> Self {
+        self.fullscreen_mode = mode;
+        self
+    }
+
+    /// Sets the viewport aspect ratio lock.
+    pub fn with_aspect_ratio_lock(mut self, lock: AspectRatioLock) -> Self {
+        self.aspect_ratio_lock = lock;
         self
     }
 
@@ -378,121 +402,5 @@ impl GameContext {
 // =============================================================================
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::libs::graphics::AntiAliasingMode;
-
-    // =========================================================================
-    // GameConfig Tests
-    // =========================================================================
-
-    #[test]
-    fn test_game_config_default() {
-        let config = GameConfig::default();
-        assert_eq!(config.title, "GoudEngine Game");
-        assert_eq!(config.width, 800);
-        assert_eq!(config.height, 600);
-        assert!(config.vsync);
-        assert!(!config.fullscreen);
-        assert_eq!(config.anti_aliasing_mode, AntiAliasingMode::Off);
-        assert_eq!(config.msaa_samples, 1);
-        assert_eq!(config.render_backend, RenderBackendKind::Wgpu);
-        assert_eq!(config.window_backend, WindowBackendKind::Winit);
-    }
-
-    #[test]
-    fn test_game_config_new() {
-        let config = GameConfig::new("Test Game", 1920, 1080);
-        assert_eq!(config.title, "Test Game");
-        assert_eq!(config.width, 1920);
-        assert_eq!(config.height, 1080);
-    }
-
-    #[test]
-    fn test_game_config_builder() {
-        let config = GameConfig::default()
-            .with_title("Builder Game")
-            .with_size(640, 480)
-            .with_vsync(false)
-            .with_fullscreen(true)
-            .with_anti_aliasing_mode(AntiAliasingMode::MsaaFxaa)
-            .with_msaa_samples(8)
-            .with_render_backend(RenderBackendKind::OpenGlLegacy)
-            .with_window_backend(WindowBackendKind::GlfwLegacy)
-            .with_target_fps(144);
-
-        assert_eq!(config.title, "Builder Game");
-        assert_eq!(config.width, 640);
-        assert_eq!(config.height, 480);
-        assert!(!config.vsync);
-        assert!(config.fullscreen);
-        assert_eq!(config.anti_aliasing_mode, AntiAliasingMode::MsaaFxaa);
-        assert_eq!(config.msaa_samples, 8);
-        assert_eq!(config.render_backend, RenderBackendKind::OpenGlLegacy);
-        assert_eq!(config.window_backend, WindowBackendKind::GlfwLegacy);
-        assert_eq!(config.target_fps, 144);
-    }
-
-    #[test]
-    fn test_game_config_msaa_samples_are_sanitized() {
-        let config = GameConfig::default().with_msaa_samples(3);
-        assert_eq!(config.msaa_samples, 1);
-    }
-
-    #[test]
-    fn test_backend_kind_from_u32() {
-        assert_eq!(
-            RenderBackendKind::from_u32(0),
-            Some(RenderBackendKind::Wgpu)
-        );
-        assert_eq!(
-            RenderBackendKind::from_u32(1),
-            Some(RenderBackendKind::OpenGlLegacy)
-        );
-        assert_eq!(RenderBackendKind::from_u32(99), None);
-
-        assert_eq!(
-            WindowBackendKind::from_u32(0),
-            Some(WindowBackendKind::Winit)
-        );
-        assert_eq!(
-            WindowBackendKind::from_u32(1),
-            Some(WindowBackendKind::GlfwLegacy)
-        );
-        assert_eq!(WindowBackendKind::from_u32(99), None);
-    }
-
-    // =========================================================================
-    // GameContext Tests
-    // =========================================================================
-
-    #[test]
-    fn test_game_context_new() {
-        let ctx = GameContext::new((800, 600));
-        assert_eq!(ctx.delta_time(), 0.0);
-        assert_eq!(ctx.total_time(), 0.0);
-        assert_eq!(ctx.frame_count(), 0);
-        assert_eq!(ctx.window_size(), (800, 600));
-        assert!(ctx.is_running());
-    }
-
-    #[test]
-    fn test_game_context_update() {
-        let mut ctx = GameContext::new((800, 600));
-        ctx.update(0.016); // ~60 FPS
-
-        assert!((ctx.delta_time() - 0.016).abs() < 0.001);
-        assert!((ctx.total_time() - 0.016).abs() < 0.001);
-        assert_eq!(ctx.frame_count(), 1);
-        assert!((ctx.fps() - 62.5).abs() < 1.0);
-    }
-
-    #[test]
-    fn test_game_context_quit() {
-        let mut ctx = GameContext::new((800, 600));
-        assert!(ctx.is_running());
-
-        ctx.quit();
-        assert!(!ctx.is_running());
-    }
-}
+#[path = "game_config_tests.rs"]
+mod tests;
