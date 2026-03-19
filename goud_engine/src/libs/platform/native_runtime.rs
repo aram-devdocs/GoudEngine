@@ -27,6 +27,7 @@ fn invalid_pair_error(
 /// Detects the best available backend pair at runtime based on compiled features.
 ///
 /// Tries wgpu (Winit + Wgpu) first, then falls back to OpenGL (GLFW + OpenGL).
+#[allow(unreachable_code)]
 pub fn detect_best_backend() -> (WindowBackendKind, RenderBackendKind) {
     #[cfg(all(feature = "native", feature = "wgpu-backend"))]
     {
@@ -39,10 +40,7 @@ pub fn detect_best_backend() -> (WindowBackendKind, RenderBackendKind) {
             RenderBackendKind::OpenGlLegacy,
         );
     }
-    #[allow(unreachable_code)]
-    {
-        (WindowBackendKind::Winit, RenderBackendKind::Wgpu)
-    }
+    (WindowBackendKind::Winit, RenderBackendKind::Wgpu)
 }
 
 /// Creates a native runtime using auto-detection for the best available backend.
