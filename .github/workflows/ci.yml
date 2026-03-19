@@ -876,8 +876,9 @@ jobs:
 
     - name: Stage native library
       run: |
-        mkdir -p target/release
+        mkdir -p target/release target/release/deps
         cp native-release/* target/release/
+        cp native-release/* target/release/deps/
       shell: bash
 
     - name: Install system dependencies (Ubuntu)

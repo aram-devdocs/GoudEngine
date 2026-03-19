@@ -14,7 +14,7 @@ public class PhysicsAndUiRuntimeTests
             .SetTitle("Coverage")
             .SetSize(320, 240)
             .SetVsync(true)
-            .SetFullscreen(false)
+            .SetFullscreen(0)
             .SetTargetFps(60)
             .SetFpsOverlay(true)
             .SetPhysicsDebug(false)

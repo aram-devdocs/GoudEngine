@@ -125,7 +125,7 @@ def _new_fake_generated_package(package_name, fake_lib):
             ("current_node_id", ctypes.c_uint64),
         ]
 
-    class FfiRenderCapabilities(ctypes.Structure):
+    class RenderCapabilities(ctypes.Structure):
         _fields_ = [
             ("max_texture_units", ctypes.c_uint32),
             ("max_texture_size", ctypes.c_uint32),
@@ -134,24 +134,24 @@ def _new_fake_generated_package(package_name, fake_lib):
             ("supports_msaa", ctypes.c_bool),
         ]
 
-    class FfiPhysicsCapabilities(ctypes.Structure):
+    class PhysicsCapabilities(ctypes.Structure):
         _fields_ = [
             ("supports_continuous_collision", ctypes.c_bool),
             ("supports_joints", ctypes.c_bool),
             ("max_bodies", ctypes.c_uint32),
         ]
 
-    class FfiAudioCapabilities(ctypes.Structure):
+    class AudioCapabilities(ctypes.Structure):
         _fields_ = [("supports_spatial", ctypes.c_bool), ("max_channels", ctypes.c_uint32)]
 
-    class FfiInputCapabilities(ctypes.Structure):
+    class InputCapabilities(ctypes.Structure):
         _fields_ = [
             ("supports_gamepad", ctypes.c_bool),
             ("supports_touch", ctypes.c_bool),
             ("max_gamepads", ctypes.c_uint32),
         ]
 
-    class FfiNetworkCapabilities(ctypes.Structure):
+    class NetworkCapabilities(ctypes.Structure):
         _fields_ = [
             ("supports_hosting", ctypes.c_bool),
             ("max_connections", ctypes.c_uint32),
@@ -173,7 +173,7 @@ def _new_fake_generated_package(package_name, fake_lib):
             ("jitter_ms", ctypes.c_float),
         ]
 
-    class FfiNetworkSimulationConfig(ctypes.Structure):
+    class NetworkSimulationConfig(ctypes.Structure):
         _fields_ = [
             ("one_way_latency_ms", ctypes.c_uint32),
             ("jitter_ms", ctypes.c_uint32),
@@ -230,6 +230,14 @@ def _new_fake_generated_package(package_name, fake_lib):
             ("penetration", ctypes.c_float),
         ]
 
+    class FpsStats(ctypes.Structure):
+        _fields_ = [
+            ("current", ctypes.c_float),
+            ("average", ctypes.c_float),
+            ("min", ctypes.c_float),
+            ("max", ctypes.c_float),
+        ]
+
     ffi_mod.GoudContextId = GoudContextId
     ffi_mod.FfiColor = FfiColor
     ffi_mod.FfiVec2 = FfiVec2
@@ -240,13 +248,13 @@ def _new_fake_generated_package(package_name, fake_lib):
     ffi_mod.FfiText = FfiText
     ffi_mod.FfiUiStyle = FfiUiStyle
     ffi_mod.FfiUiEvent = FfiUiEvent
-    ffi_mod.FfiRenderCapabilities = FfiRenderCapabilities
-    ffi_mod.FfiPhysicsCapabilities = FfiPhysicsCapabilities
-    ffi_mod.FfiAudioCapabilities = FfiAudioCapabilities
-    ffi_mod.FfiInputCapabilities = FfiInputCapabilities
-    ffi_mod.FfiNetworkCapabilities = FfiNetworkCapabilities
+    ffi_mod.RenderCapabilities = RenderCapabilities
+    ffi_mod.PhysicsCapabilities = PhysicsCapabilities
+    ffi_mod.AudioCapabilities = AudioCapabilities
+    ffi_mod.InputCapabilities = InputCapabilities
+    ffi_mod.NetworkCapabilities = NetworkCapabilities
     ffi_mod.FfiNetworkStats = FfiNetworkStats
-    ffi_mod.FfiNetworkSimulationConfig = FfiNetworkSimulationConfig
+    ffi_mod.NetworkSimulationConfig = NetworkSimulationConfig
     ffi_mod.GoudDebuggerConfig = GoudDebuggerConfig
     ffi_mod.GoudContextConfig = GoudContextConfig
     ffi_mod.GoudMemoryCategoryStats = GoudMemoryCategoryStats
@@ -254,6 +262,7 @@ def _new_fake_generated_package(package_name, fake_lib):
     ffi_mod.FfiMat3x3 = FfiMat3x3
     ffi_mod.GoudRenderStats = GoudRenderStats
     ffi_mod.GoudContact = GoudContact
+    ffi_mod.FpsStats = FpsStats
     ffi_mod.get_lib = lambda: fake_lib
     sys.modules[f"{package_name}._ffi"] = ffi_mod
 

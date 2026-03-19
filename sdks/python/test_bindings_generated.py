@@ -170,7 +170,7 @@ def test_generated_network_wrapper_api_names():
     assert "_status = self._lib.goud_network_get_stats_v2(self._ctx, handle, ctypes.byref(_stats))" in game_src
     assert "self._raise_network_error_or_runtime(f'goud_network_get_stats_v2 failed with status {_status}')" in game_src
     assert "return NetworkStats(" in game_src
-    assert "_config_ffi = _ffi_module.FfiNetworkSimulationConfig()" in game_src
+    assert "_config_ffi = _ffi_module.NetworkSimulationConfig()" in game_src
     assert "return self._lib.goud_network_set_simulation(self._ctx, handle, _config_ffi)" in game_src
     assert "def _raise_network_error_or_runtime(self, message):" in game_src
     assert "from ._errors import GoudError" in game_src
@@ -187,7 +187,7 @@ def test_generated_network_wrapper_api_names():
     assert "_lib.goud_network_connect_with_peer.argtypes = [GoudContextId, ctypes.c_int32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_uint16, ctypes.POINTER(ctypes.c_int64), ctypes.POINTER(ctypes.c_uint64)]" in ffi_src
     assert "_lib.goud_network_set_overlay_handle.argtypes = [GoudContextId, ctypes.c_int64]" in ffi_src
     assert "_lib.goud_network_clear_overlay_handle.argtypes = [GoudContextId]" in ffi_src
-    assert "_lib.goud_network_set_simulation.argtypes = [GoudContextId, ctypes.c_int64, FfiNetworkSimulationConfig]" in ffi_src
+    assert "_lib.goud_network_set_simulation.argtypes = [GoudContextId, ctypes.c_int64, NetworkSimulationConfig]" in ffi_src
     assert "_lib.goud_network_clear_simulation.argtypes = [GoudContextId, ctypes.c_int64]" in ffi_src
 
     print("  Network wrapper API name tests passed")
@@ -201,11 +201,11 @@ def test_generated_provider_capability_imports():
     game_src = (_GENERATED_DIR / "_game.py").read_text()
 
     expected_ffi_symbols = [
-        "FfiRenderCapabilities",
-        "FfiPhysicsCapabilities",
-        "FfiAudioCapabilities",
-        "FfiInputCapabilities",
-        "FfiNetworkCapabilities",
+        "RenderCapabilities",
+        "PhysicsCapabilities",
+        "AudioCapabilities",
+        "InputCapabilities",
+        "NetworkCapabilities",
     ]
     for symbol in expected_ffi_symbols:
         assert symbol in game_src, f"missing capability FFI import or usage for {symbol}"
@@ -468,7 +468,7 @@ def test_generated_game_runtime_with_fake_lib():
             _write(y_ptr, ctypes.c_float, -1.0)
 
         def goud_provider_render_capabilities(self, ctx, ptr):
-            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.FfiRenderCapabilities)).contents
+            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.RenderCapabilities)).contents
             out.max_texture_units = 16
             out.max_texture_size = 4096
             out.supports_instancing = True
@@ -476,24 +476,24 @@ def test_generated_game_runtime_with_fake_lib():
             out.supports_msaa = True
 
         def goud_provider_physics_capabilities(self, ctx, ptr):
-            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.FfiPhysicsCapabilities)).contents
+            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.PhysicsCapabilities)).contents
             out.supports_continuous_collision = True
             out.supports_joints = True
             out.max_bodies = 512
 
         def goud_provider_audio_capabilities(self, ctx, ptr):
-            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.FfiAudioCapabilities)).contents
+            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.AudioCapabilities)).contents
             out.supports_spatial = True
             out.max_channels = 32
 
         def goud_provider_input_capabilities(self, ctx, ptr):
-            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.FfiInputCapabilities)).contents
+            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.InputCapabilities)).contents
             out.supports_gamepad = True
             out.supports_touch = False
             out.max_gamepads = 4
 
         def goud_provider_network_capabilities(self, ctx, ptr):
-            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.FfiNetworkCapabilities)).contents
+            out = ctypes.cast(ptr, ctypes.POINTER(self.ffi.NetworkCapabilities)).contents
             out.supports_hosting = True
             out.max_connections = 8
             out.max_channels = 4
