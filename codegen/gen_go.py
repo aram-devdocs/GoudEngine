@@ -79,6 +79,7 @@ _PTR_MAP = {
     "*const u8": "*C.uint8_t",
     "*mut u8": "*C.uint8_t",
     "*const u64": "*C.uint64_t",
+    "*const f32": "*C.float",
     "*mut f32": "*C.float",
     "*mut i32": "*C.int32_t",
     "*mut i64": "*C.int64_t",
@@ -127,6 +128,9 @@ def _go_param_type(t: str) -> str:
             return "*C.char"
         if inner.startswith("*"):
             return "unsafe.Pointer"
+        c_inner = _R2C.get(inner)
+        if c_inner:
+            return f"*{c_inner}"
         return f"*C.{inner}"
     return f"C.{t}"
 
@@ -146,8 +150,9 @@ def _go_ret_type(t: str) -> str:
             return "unsafe.Pointer"
         if inner == "c_char":
             return "*C.char"
-        if inner == "u8":
-            return "*C.uint8_t"
+        c_inner = _R2C.get(inner)
+        if c_inner:
+            return f"*{c_inner}"
         return f"*C.{inner}"
     return f"C.{t}"
 

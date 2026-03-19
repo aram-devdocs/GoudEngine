@@ -1663,7 +1663,7 @@ func GoudRenderer3dCreatePlane(context_id C.GoudContextId, texture_id uint32, wi
 }
 
 // GoudRenderer3dCreateSkinnedMesh wraps goud_renderer3d_create_skinned_mesh.
-func GoudRenderer3dCreateSkinnedMesh(context_id C.GoudContextId, vertices_ptr *C.f32, vertex_count uint32) uint32 {
+func GoudRenderer3dCreateSkinnedMesh(context_id C.GoudContextId, vertices_ptr *C.float, vertex_count uint32) uint32 {
 	if vertices_ptr == nil {
 		return 0
 	}
@@ -1761,7 +1761,7 @@ func GoudRenderer3dSetObjectScale(context_id C.GoudContextId, object_id uint32, 
 }
 
 // GoudRenderer3dSetSkinnedMeshBones wraps goud_renderer3d_set_skinned_mesh_bones.
-func GoudRenderer3dSetSkinnedMeshBones(context_id C.GoudContextId, mesh_id uint32, matrices_ptr *C.f32, bone_count uint32) bool {
+func GoudRenderer3dSetSkinnedMeshBones(context_id C.GoudContextId, mesh_id uint32, matrices_ptr *C.float, bone_count uint32) bool {
 	if matrices_ptr == nil {
 		return false
 	}
