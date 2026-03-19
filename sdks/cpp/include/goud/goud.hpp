@@ -265,6 +265,42 @@ public:
         return ::goud_input_mouse_position(handle_, &out_position);
     }
 
+    bool shouldClose() const noexcept {
+        return ::goud_window_should_close_checked(handle_);
+    }
+
+    float pollEvents() const noexcept {
+        return ::goud_window_poll_events_checked(handle_);
+    }
+
+    void swapBuffers() const noexcept {
+        ::goud_window_swap_buffers_checked(handle_);
+    }
+
+    void enableBlending() const noexcept {
+        ::goud_renderer_enable_blending_checked(handle_);
+    }
+
+    float deltaTime() const noexcept {
+        return ::goud_window_delta_time(handle_);
+    }
+
+    bool mouseDown(::goud_mouse_button button) const noexcept {
+        return ::goud_input_mouse_down(handle_, button);
+    }
+
+    bool keyJustPressed(::goud_key key) const noexcept {
+        return ::goud_input_key_pressed_once(handle_, key);
+    }
+
+    int drawQuad(float x, float y, float width, float height, ::goud_color color) const noexcept {
+        return ::goud_renderer_draw_quad_color(handle_, x, y, width, height, color);
+    }
+
+    int loadFont(const char *path, ::goud_font &out_font) const noexcept {
+        return ::goud_font_load_path(handle_, path, &out_font);
+    }
+
     int activateAudio() const noexcept {
         return ::goud_audio_activate_checked(handle_);
     }
@@ -322,6 +358,26 @@ public:
 
     ::goud_context raw() const noexcept {
         return context_.raw();
+    }
+
+    bool shouldClose() const noexcept {
+        return context_.shouldClose();
+    }
+
+    float pollEvents() noexcept {
+        return context_.pollEvents();
+    }
+
+    void swapBuffers() noexcept {
+        context_.swapBuffers();
+    }
+
+    void enableBlending() noexcept {
+        context_.enableBlending();
+    }
+
+    float deltaTime() const noexcept {
+        return context_.deltaTime();
     }
 
 private:
