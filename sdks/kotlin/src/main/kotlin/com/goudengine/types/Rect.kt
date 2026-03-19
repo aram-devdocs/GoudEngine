@@ -3,6 +3,7 @@ package com.goudengine.types
 
 import com.goudengine.internal.Rect as JavaRect
 
+/** Axis-aligned rectangle */
 data class Rect(val x: Float, val y: Float, val width: Float, val height: Float) {
 
     fun contains(p: Vec2): Boolean = p.x >= x && p.x <= x + width && p.y >= y && p.y <= y + height

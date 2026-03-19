@@ -138,7 +138,7 @@ while [[ "$#" -gt 0 ]]; do
         echo ""
         echo "Options:"
         echo "  --game <name>    Game to run (default: flappy_goud)"
-        echo "  --sdk <type>     SDK type: csharp, cpp, go, lua, python, rust, swift, typescript (default: csharp)"
+        echo "  --sdk <type>     SDK type: csharp, cpp, go, kotlin, lua, python, rust, swift, typescript (default: csharp)"
         echo "  --local          Use local feed when needed; direct-project C# examples use a fast local path"
         echo "  --skipBuild      Skip build step"
         echo "  --next           Run version increment and rebuild"
@@ -169,6 +169,7 @@ while [[ "$#" -gt 0 ]]; do
         echo "  ./dev.sh --sdk python --game sandbox             # Python Sandbox desktop"
         echo "  ./dev.sh --sdk typescript --game sandbox         # TS Sandbox desktop"
         echo "  ./dev.sh --sdk typescript --game sandbox_web     # TS Sandbox web"
+        echo "  ./dev.sh --sdk kotlin --game flappy_bird        # Kotlin Flappy Bird"
         exit 0
         ;;
     *)
@@ -182,10 +183,10 @@ done
 
 # Validate SDK type
 case $SDK_TYPE in
-"csharp" | "cpp" | "go" | "lua" | "python" | "rust" | "swift" | "typescript")
+"csharp" | "cpp" | "go" | "kotlin" | "lua" | "python" | "rust" | "swift" | "typescript")
     ;;
 *)
-    echo "Error: Invalid SDK type. Choose from: csharp, cpp, go, lua, python, rust, swift, typescript"
+    echo "Error: Invalid SDK type. Choose from: csharp, cpp, go, kotlin, lua, python, rust, swift, typescript"
     exit 1
     ;;
 esac
@@ -263,6 +264,18 @@ case $SDK_TYPE in
     *)
         echo "Error: Invalid TypeScript example selection."
         echo "Choose from: flappy_bird (desktop), flappy_bird_web (web), feature_lab (desktop), feature_lab_web (web), sandbox (desktop), sandbox_web (web)"
+        exit 1
+        ;;
+    esac
+    ;;
+"kotlin")
+    case $GAME in
+    "flappy_bird")
+        echo "Building and running Kotlin example: $GAME..."
+        ;;
+    *)
+        echo "Error: Invalid Kotlin example selection."
+        echo "Choose from: flappy_bird"
         exit 1
         ;;
     esac
@@ -362,6 +375,8 @@ if [ "$SKIP_BUILD" = false ]; then
 
         ensure_example_node_modules "$SCRIPT_DIR/examples/typescript/$TS_EXAMPLE_DIR"
         cd "$SCRIPT_DIR"
+    elif [ "$SDK_TYPE" = "kotlin" ]; then
+        echo "Kotlin SDK build is handled by Gradle."
     elif [ "$SDK_TYPE" = "go" ]; then
         echo "Building native library for Go SDK..."
         cargo build --release
@@ -584,6 +599,11 @@ case $SDK_TYPE in
         python3 -m http.server "$WEB_PORT" --bind 127.0.0.1
         ;;
     esac
+    ;;
+
+"kotlin")
+    echo "Running Kotlin example: $GAME..."
+    cd "$SCRIPT_DIR/examples/kotlin/$GAME" && ./gradlew run --no-daemon
     ;;
 
 "swift")

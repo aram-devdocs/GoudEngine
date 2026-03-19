@@ -4,6 +4,8 @@ package com.goudengine.components
 import com.goudengine.internal.SpriteAnimatorBuilderNative
 import com.goudengine.internal.SpriteAnimator as JavaSpriteAnimator
 
+import com.goudengine.animation.PlaybackMode
+
 class SpriteAnimatorBuilder private constructor(private var handle: Long) : AutoCloseable {
 
     fun addFrame(x: Float, y: Float, w: Float, h: Float): SpriteAnimatorBuilder {
@@ -25,7 +27,7 @@ class SpriteAnimatorBuilder private constructor(private var handle: Long) : Auto
 
     companion object {
         fun new(frameDuration: Float, mode: PlaybackMode): SpriteAnimatorBuilder =
-            SpriteAnimatorBuilder(SpriteAnimatorBuilderNative.create(frameDuration, mode))
+            SpriteAnimatorBuilder(SpriteAnimatorBuilderNative.create(frameDuration, mode.value))
 
     }
 }

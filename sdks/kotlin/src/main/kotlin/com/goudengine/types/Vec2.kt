@@ -3,6 +3,7 @@ package com.goudengine.types
 
 import com.goudengine.internal.Vec2 as JavaVec2
 
+/** 2D floating-point vector */
 data class Vec2(val x: Float, val y: Float) {
 
     fun add(other: Vec2): Vec2 = Vec2(x + other.x, y + other.y)
