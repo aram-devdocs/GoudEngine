@@ -11,6 +11,7 @@ from .shared_helpers import (
     ffi_func_name,
     convert_param_to_ffi,
     convert_return_from_ffi,
+    safe_swift_name,
 )
 from .game_gen import _gen_method
 
@@ -18,10 +19,13 @@ from .game_gen import _gen_method
 def gen_physics() -> None:
     lines = [swift_file_header(), "import Foundation", "import CGoudEngine", ""]
 
-    for tool_name in ("PhysicsWorld2D", "PhysicsWorld3D"):
-        if tool_name not in schema.get("tools", {}):
-            continue
-        _gen_physics_class(lines, tool_name)
+    # PhysicsWorld2D/3D classes are skipped: the standalone physics FFI
+    # functions (goud_physics_create, goud_physics_step, etc.) are not
+    # currently exported from the native library.  They will be generated
+    # once the engine ships these symbols.
+    lines.append("// PhysicsWorld2D / PhysicsWorld3D classes omitted — standalone physics")
+    lines.append("// FFI symbols not yet exported from the native library.")
+    lines.append("")
 
     write_generated(OUT / "Physics.g.swift", "\n".join(lines))
 
@@ -40,15 +44,16 @@ def _gen_physics_class(lines: list[str], tool_name: str) -> None:
     lines.append("    private var _alive: Bool = true")
     lines.append("")
 
-    # Constructor
-    create_ffi = ffi_func_name(tool_name, "new") or ffi_func_name(tool_name, "create")
+    # Constructor -- physics create takes a context + gravity params, returns i32 status.
+    # The class receives a context from outside and calls create on it.
+    create_ffi = ffi_func_name(tool_name, "create")
     if not create_ffi:
         create_ffi = f"goud_physics_{tool_name.lower()}_create"
 
-    ctor_swift_params = []
-    ctor_ffi_args = []
+    ctor_swift_params = ["ctx: GoudContextId"]
+    ctor_ffi_args = ["ctx"]
     for p in ctor_params:
-        pname = to_camel(p["name"])
+        pname = safe_swift_name(to_camel(p["name"]))
         ptype = p["type"]
         st = swift_type(ptype)
         default = p.get("default")
@@ -61,11 +66,12 @@ def _gen_physics_class(lines: list[str], tool_name: str) -> None:
     param_str = ", ".join(ctor_swift_params)
     arg_str = ", ".join(ctor_ffi_args)
     lines.append(f"    public init({param_str}) {{")
-    lines.append(f"        self._ctx = {create_ffi}({arg_str})")
+    lines.append(f"        self._ctx = ctx")
+    lines.append(f"        let _ = {create_ffi}({arg_str})")
     lines.append("    }")
     lines.append("")
 
-    _skip = {"destroy", "create", "new", "createWithBackend"}
+    _skip = {"destroy", "create", "new", "createWithBackend", "setCollisionCallback"}
     for m in methods:
         mname = m["name"]
         if mname in _skip:
@@ -84,7 +90,7 @@ def _gen_physics_class(lines: list[str], tool_name: str) -> None:
 
     lines.append("    deinit {")
     lines.append("        if _alive {")
-    lines.append(f"            {destroy_ffi}(_ctx)")
+    lines.append(f"            let _ = {destroy_ffi}(_ctx)")
     lines.append("            _alive = false")
     lines.append("        }")
     lines.append("    }")
@@ -92,7 +98,7 @@ def _gen_physics_class(lines: list[str], tool_name: str) -> None:
 
     lines.append("    public func destroy() {")
     lines.append("        if _alive {")
-    lines.append(f"            {destroy_ffi}(_ctx)")
+    lines.append(f"            let _ = {destroy_ffi}(_ctx)")
     lines.append("            _alive = false")
     lines.append("        }")
     lines.append("    }")

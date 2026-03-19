@@ -1,12 +1,13 @@
 """Generator for EngineConfig.g.swift."""
 
-from .context import OUT, schema, write_generated
+from .context import OUT, schema, mapping, write_generated
 from .shared_helpers import (
     swift_file_header,
     swift_type,
     swift_literal,
     to_camel,
     is_enum,
+    is_value_type,
     method_exists_in_ffi,
     ffi_func_name,
     convert_param_to_ffi,
@@ -66,6 +67,7 @@ def gen_engine_config() -> None:
         param_parts = []
         call_parts = ["_handle!"]
         string_params = []
+        value_type_params = []
         for p in params:
             pname = to_camel(p["name"])
             ptype = p["type"]
@@ -78,7 +80,17 @@ def gen_engine_config() -> None:
                     param_parts.append(f"{pname}: {st} = {swift_literal(default, ptype)}")
             else:
                 param_parts.append(f"{pname}: {st}")
-            call_parts.append(convert_param_to_ffi(pname, ptype))
+
+            if is_value_type(ptype.rstrip("?")):
+                ffi_info = mapping.get("ffi_types", {}).get(ptype.rstrip("?"), {})
+                if ffi_info.get("ffi_name"):
+                    # Pass value types via pointer
+                    value_type_params.append((pname, ffi_info["ffi_name"]))
+                    call_parts.append(f"&_{pname}Ffi")
+                else:
+                    call_parts.append(convert_param_to_ffi(pname, ptype))
+            else:
+                call_parts.append(convert_param_to_ffi(pname, ptype))
             if ptype == "string":
                 string_params.append(p)
         param_str = ", ".join(param_parts)
@@ -86,6 +98,8 @@ def gen_engine_config() -> None:
 
         lines.append(f"    @discardableResult")
         lines.append(f"    public func {to_camel(mname)}({param_str}) -> EngineConfig {{")
+        for vname, vffi_name in value_type_params:
+            lines.append(f"        var _{vname}Ffi = {vname}.toFFI()")
         if string_params:
             _emit_unsafe_wrapping(lines, string_params, [], [], f"        {ffi_name}({call_str})", "        ")
         else:
