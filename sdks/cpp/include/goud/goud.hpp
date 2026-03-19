@@ -4,8 +4,9 @@
 /** @file goud.hpp
  *  @brief C++17 RAII wrapper for GoudEngine.
  *
- *  Provides move-only, exception-free wrappers around the C SDK handles.
- *  All methods are noexcept and return integer status codes (0 = success).
+ *  Provides move-only wrappers around the C SDK handles.
+ *  Most methods are noexcept and return integer status codes (0 = success).
+ *  Methods that allocate (Error::last, createUnique, createShared) may throw.
  */
 
 #include <goud/goud.h>

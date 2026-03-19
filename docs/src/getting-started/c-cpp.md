@@ -28,7 +28,7 @@ target_link_libraries(my_game PRIVATE GoudEngine::GoudEngine)
 ### Conan
 
 ```bash
-conan install --requires=goud-engine/0.0.832
+conan install --requires=goud-engine/<VERSION>
 ```
 
 Then in your `CMakeLists.txt`:
