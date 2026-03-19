@@ -902,6 +902,22 @@ export class GoudGame implements IGoudGame {
   configureFog(_enabled: boolean, _r: number, _g: number, _b: number, _density: number): boolean { return false; }
   setFogEnabled(_enabled: boolean): boolean { return false; }
   render3D(): boolean { return false; }
+  createMaterial(_materialType: number, _r: number, _g: number, _b: number, _a: number, _shininess: number, _metallic: number, _roughness: number, _ao: number): number { return 0; }
+  updateMaterial(_materialId: number, _materialType: number, _r: number, _g: number, _b: number, _a: number, _shininess: number, _metallic: number, _roughness: number, _ao: number): boolean { return false; }
+  removeMaterial(_materialId: number): boolean { return false; }
+  setObjectMaterial(_objectId: number, _materialId: number): boolean { return false; }
+  getObjectMaterial(_objectId: number): number { return 0; }
+  createSkinnedMesh(_verticesPtr: number, _vertexCount: number): number { return 0; }
+  removeSkinnedMesh(_meshId: number): boolean { return false; }
+  setSkinnedMeshPosition(_meshId: number, _x: number, _y: number, _z: number): boolean { return false; }
+  setSkinnedMeshRotation(_meshId: number, _x: number, _y: number, _z: number): boolean { return false; }
+  setSkinnedMeshScale(_meshId: number, _x: number, _y: number, _z: number): boolean { return false; }
+  setSkinnedMeshBones(_meshId: number, _matricesPtr: number, _boneCount: number): boolean { return false; }
+  addBloomPass(_threshold: number, _intensity: number): number { return 0; }
+  addBlurPass(_radius: number): number { return 0; }
+  addColorGradePass(_exposure: number, _contrast: number, _saturation: number): number { return 0; }
+  removePostprocessPass(_index: number): boolean { return false; }
+  postprocessPassCount(): number { return 0; }
 
   setViewport(_x: number, _y: number, _width: number, _height: number): void {}
   enableDepthTest(): void {}
