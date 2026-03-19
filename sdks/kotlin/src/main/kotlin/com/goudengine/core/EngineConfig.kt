@@ -62,11 +62,6 @@ class EngineConfig private constructor(private var handle: Long) : AutoCloseable
         return this
     }
 
-    fun setDebugger(debugger: DebuggerConfig): EngineConfig {
-        EngineConfigNative.setDebugger(handle, debugger)
-        return this
-    }
-
     fun build(): GoudGame {
         val ctx = EngineConfigNative.build(handle)
         handle = 0L

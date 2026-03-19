@@ -11,7 +11,4 @@ class AnimationEvents(private val contextId: Long) {
     fun count(): Int =
         AnimationEventsNative.count(contextId)
 
-    fun read(index: Int): AnimationEventData =
-        AnimationEventsNative.read(contextId, index)
-
 }

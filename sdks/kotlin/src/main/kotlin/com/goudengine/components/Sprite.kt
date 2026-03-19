@@ -3,13 +3,14 @@ package com.goudengine.components
 
 import com.goudengine.internal.Color
 import com.goudengine.internal.Rect
-import com.goudengine.internal.Sprite
+import com.goudengine.internal.Sprite as JavaSprite
 import com.goudengine.internal.SpriteNative
 import com.goudengine.internal.Vec2
 import com.goudengine.types.Vec2 as KtVec2
 import com.goudengine.types.Color as KtColor
 
-class Sprite(internal var native: com.goudengine.internal.Sprite) {
+/** Sprite rendering component */
+class Sprite(internal var native: JavaSprite) {
 
     var textureHandle: Long
         get() = native.textureHandle
@@ -121,7 +122,7 @@ class Sprite(internal var native: com.goudengine.internal.Sprite) {
     }
 
     fun withColor(r: Float, g: Float, b: Float, a: Float): Sprite {
-        return SpriteNative.withColor(native, r, g, b, a)
+        return Sprite(SpriteNative.withColor(native, r, g, b, a))
     }
 
     fun setAlpha(alpha: Float) {
@@ -201,66 +202,8 @@ class Sprite(internal var native: com.goudengine.internal.Sprite) {
         return SpriteNative.getSourceRect(native)
     }
 
-    fun hasSourceRect(): Boolean {
-        return SpriteNative.hasSourceRect(native)
-    }
-
     fun withSourceRect(x: Float, y: Float, width: Float, height: Float): Sprite {
-        return SpriteNative.withSourceRect(native, x, y, width, height)
-    }
-
-    fun setFlipX(flip: Boolean) {
-        SpriteNative.setFlipX(native, flip)
-        val n = native
-        this.textureHandle = n.textureHandle
-        this.colorR = n.colorR
-        this.colorG = n.colorG
-        this.colorB = n.colorB
-        this.colorA = n.colorA
-        this.sourceRectX = n.sourceRectX
-        this.sourceRectY = n.sourceRectY
-        this.sourceRectWidth = n.sourceRectWidth
-        this.sourceRectHeight = n.sourceRectHeight
-        this.hasSourceRect = n.hasSourceRect
-        this.flipX = n.flipX
-        this.flipY = n.flipY
-        this.zLayer = n.zLayer
-        this.anchorX = n.anchorX
-        this.anchorY = n.anchorY
-        this.customSizeX = n.customSizeX
-        this.customSizeY = n.customSizeY
-        this.hasCustomSize = n.hasCustomSize
-    }
-
-    fun getFlipX(): Boolean {
-        return SpriteNative.getFlipX(native)
-    }
-
-    fun setFlipY(flip: Boolean) {
-        SpriteNative.setFlipY(native, flip)
-        val n = native
-        this.textureHandle = n.textureHandle
-        this.colorR = n.colorR
-        this.colorG = n.colorG
-        this.colorB = n.colorB
-        this.colorA = n.colorA
-        this.sourceRectX = n.sourceRectX
-        this.sourceRectY = n.sourceRectY
-        this.sourceRectWidth = n.sourceRectWidth
-        this.sourceRectHeight = n.sourceRectHeight
-        this.hasSourceRect = n.hasSourceRect
-        this.flipX = n.flipX
-        this.flipY = n.flipY
-        this.zLayer = n.zLayer
-        this.anchorX = n.anchorX
-        this.anchorY = n.anchorY
-        this.customSizeX = n.customSizeX
-        this.customSizeY = n.customSizeY
-        this.hasCustomSize = n.hasCustomSize
-    }
-
-    fun getFlipY(): Boolean {
-        return SpriteNative.getFlipY(native)
+        return Sprite(SpriteNative.withSourceRect(native, x, y, width, height))
     }
 
     fun setFlip(flipX: Boolean, flipY: Boolean) {
@@ -287,50 +230,23 @@ class Sprite(internal var native: com.goudengine.internal.Sprite) {
     }
 
     fun withFlipX(flip: Boolean): Sprite {
-        return SpriteNative.withFlipX(native, flip)
+        return Sprite(SpriteNative.withFlipX(native, flip))
     }
 
     fun withFlipY(flip: Boolean): Sprite {
-        return SpriteNative.withFlipY(native, flip)
+        return Sprite(SpriteNative.withFlipY(native, flip))
     }
 
     fun withFlip(flipX: Boolean, flipY: Boolean): Sprite {
-        return SpriteNative.withFlip(native, flipX, flipY)
+        return Sprite(SpriteNative.withFlip(native, flipX, flipY))
     }
 
     fun isFlipped(): Boolean {
         return SpriteNative.isFlipped(native)
     }
 
-    fun setZLayer(zLayer: Int) {
-        SpriteNative.setZLayer(native, zLayer)
-        val n = native
-        this.textureHandle = n.textureHandle
-        this.colorR = n.colorR
-        this.colorG = n.colorG
-        this.colorB = n.colorB
-        this.colorA = n.colorA
-        this.sourceRectX = n.sourceRectX
-        this.sourceRectY = n.sourceRectY
-        this.sourceRectWidth = n.sourceRectWidth
-        this.sourceRectHeight = n.sourceRectHeight
-        this.hasSourceRect = n.hasSourceRect
-        this.flipX = n.flipX
-        this.flipY = n.flipY
-        this.zLayer = n.zLayer
-        this.anchorX = n.anchorX
-        this.anchorY = n.anchorY
-        this.customSizeX = n.customSizeX
-        this.customSizeY = n.customSizeY
-        this.hasCustomSize = n.hasCustomSize
-    }
-
-    fun getZLayer(): Int {
-        return SpriteNative.getZLayer(native)
-    }
-
     fun withZLayer(zLayer: Int): Sprite {
-        return SpriteNative.withZLayer(native, zLayer)
+        return Sprite(SpriteNative.withZLayer(native, zLayer))
     }
 
     fun setAnchor(x: Float, y: Float) {
@@ -362,7 +278,7 @@ class Sprite(internal var native: com.goudengine.internal.Sprite) {
     }
 
     fun withAnchor(x: Float, y: Float): Sprite {
-        return SpriteNative.withAnchor(native, x, y)
+        return Sprite(SpriteNative.withAnchor(native, x, y))
     }
 
     fun setCustomSize(width: Float, height: Float) {
@@ -416,12 +332,8 @@ class Sprite(internal var native: com.goudengine.internal.Sprite) {
         return KtVec2(r.x, r.y)
     }
 
-    fun hasCustomSize(): Boolean {
-        return SpriteNative.hasCustomSize(native)
-    }
-
     fun withCustomSize(width: Float, height: Float): Sprite {
-        return SpriteNative.withCustomSize(native, width, height)
+        return Sprite(SpriteNative.withCustomSize(native, width, height))
     }
 
     fun setTexture(handle: Long) {

@@ -64,6 +64,7 @@ jobs:
         python codegen/gen_python.py
         python codegen/gen_ts_node.py
         python codegen/gen_ts_web.py
+        python codegen/gen_kotlin.py
 
     - name: Upload shared codegen artifact
       uses: actions/upload-artifact@v4
@@ -851,6 +852,32 @@ jobs:
           sdks/typescript/wasm/*.d.ts
         retention-days: 7
 
+  # Kotlin SDK tests (pure data-class tests, no JNI required)
+  kotlin-sdk-test:
+    name: Kotlin SDK Tests
+    runs-on: ubuntu-latest
+    needs: [preflight]
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Set up Python (for codegen)
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: temurin
+
+    - name: Generate Kotlin SDK
+      run: python codegen/gen_kotlin.py
+
+    - name: Run Kotlin SDK tests
+      working-directory: sdks/kotlin
+      run: ./gradlew test --no-daemon
+
   # C++ SDK tests (non-GL only, headless CI safe)
   # Windows C++ CI is excluded: MSVC support is scaffolded in FindGoudEngine.cmake
   # but not yet validated in CI. Add windows-latest when a Windows native-release
@@ -1043,7 +1070,7 @@ jobs:
   ci-success:
     name: CI Success
     if: always()
-    needs: [preflight, rust-check, cargo-deny, codegen-drift-check, native-release, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm, cpp-tests, sandbox-parity, clean-room-regeneration]
+    needs: [preflight, rust-check, cargo-deny, codegen-drift-check, native-release, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm, cpp-tests, kotlin-sdk-test, sandbox-parity, clean-room-regeneration]
     runs-on: ubuntu-latest
     steps:
     - name: Check all jobs
@@ -1090,6 +1117,7 @@ jobs:
         check_job "typescript-sdk-native" "${{ needs.typescript-sdk-native.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "typescript-sdk-wasm" "${{ needs.typescript-sdk-wasm.result }}" "$ALLOW_PUSH_SKIPPED" || FAIL=1
         check_job "cpp-tests" "${{ needs.cpp-tests.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "kotlin-sdk-test" "${{ needs.kotlin-sdk-test.result }}" "false" || FAIL=1
         check_job "sandbox-parity" "${{ needs.sandbox-parity.result }}" "false" || FAIL=1
         check_job "clean-room-regeneration" "${{ needs.clean-room-regeneration.result }}" "false" || FAIL=1
 

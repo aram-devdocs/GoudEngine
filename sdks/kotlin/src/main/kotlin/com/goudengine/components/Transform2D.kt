@@ -2,13 +2,14 @@
 package com.goudengine.components
 
 import com.goudengine.internal.Mat3x3
-import com.goudengine.internal.Transform2D
+import com.goudengine.internal.Transform2D as JavaTransform2D
 import com.goudengine.internal.Transform2DNative
 import com.goudengine.internal.Vec2
 import com.goudengine.types.Vec2 as KtVec2
 import com.goudengine.types.Color as KtColor
 
-class Transform2D(internal var native: com.goudengine.internal.Transform2D) {
+/** 2D transform: position, rotation (radians), and scale */
+class Transform2D(internal var native: JavaTransform2D) {
 
     var positionX: Float
         get() = native.positionX
@@ -115,16 +116,6 @@ class Transform2D(internal var native: com.goudengine.internal.Transform2D) {
         this.scaleY = n.scaleY
     }
 
-    fun setRotation(rotation: Float) {
-        Transform2DNative.setRotation(native, rotation)
-        val n = native
-        this.positionX = n.positionX
-        this.positionY = n.positionY
-        this.rotation = n.rotation
-        this.scaleX = n.scaleX
-        this.scaleY = n.scaleY
-    }
-
     fun setRotationDegrees(degrees: Float) {
         Transform2DNative.setRotationDegrees(native, degrees)
         val n = native
@@ -133,10 +124,6 @@ class Transform2D(internal var native: com.goudengine.internal.Transform2D) {
         this.rotation = n.rotation
         this.scaleX = n.scaleX
         this.scaleY = n.scaleY
-    }
-
-    fun getRotation(): Float {
-        return Transform2DNative.getRotation(native)
     }
 
     fun getRotationDegrees(): Float {

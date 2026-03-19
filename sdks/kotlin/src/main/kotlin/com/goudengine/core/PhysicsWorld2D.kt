@@ -76,23 +76,11 @@ class PhysicsWorld2D private constructor(private val contextId: Long) : AutoClos
         return com.goudengine.types.Vec2.fromNative(r)
     }
 
-    fun raycastEx(originX: Float, originY: Float, dirX: Float, dirY: Float, maxDist: Float, layerMask: Int): PhysicsRaycastHit2D =
-        PhysicsWorld2DNative.raycastEx(contextId, originX, originY, dirX, dirY, maxDist, layerMask)
-
     fun collisionEventsCount(): Int =
         PhysicsWorld2DNative.collisionEventsCount(contextId)
 
-    fun collisionEventsRead(index: Int): PhysicsCollisionEvent2D =
-        PhysicsWorld2DNative.collisionEventsRead(contextId, index)
-
     fun collisionEventCount(): Int =
         PhysicsWorld2DNative.collisionEventCount(contextId)
-
-    fun collisionEventRead(index: Int): PhysicsCollisionEvent2D =
-        PhysicsWorld2DNative.collisionEventRead(contextId, index)
-
-    fun setCollisionCallback(callbackPtr: Long, userData: Long): Int =
-        PhysicsWorld2DNative.setCollisionCallback(contextId, callbackPtr, userData)
 
     fun getGravity(): com.goudengine.types.Vec2 {
         val r = PhysicsWorld2DNative.getGravity(contextId)

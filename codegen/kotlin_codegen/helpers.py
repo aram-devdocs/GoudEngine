@@ -136,5 +136,19 @@ def kt_default_value(kt_ty: str) -> str:
     return "TODO()"
 
 
+def kdoc(doc: str | None, indent: str = "") -> list[str]:
+    """Generate KDoc comment lines from a doc string."""
+    if not doc:
+        return []
+    lines = doc.strip().split("\n")
+    if len(lines) == 1:
+        return [f"{indent}/** {lines[0]} */"]
+    result = [f"{indent}/**"]
+    for line in lines:
+        result.append(f"{indent} * {line}")
+    result.append(f"{indent} */")
+    return result
+
+
 def write_kotlin(path: Path, content: str):
     write_generated(path, content)

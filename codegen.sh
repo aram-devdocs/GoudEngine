@@ -82,18 +82,20 @@ python3 codegen/gen_ts_node.py
 echo "║ [11/14] Generating TypeScript Web SDK..."
 python3 codegen/gen_ts_web.py
 
-echo "║ [11b/14] Generating Swift SDK..."
+echo "║ [11b/15] Generating Swift SDK..."
 stage_header_copy "sdks/swift/Sources/CGoudEngine/include"
 python3 codegen/gen_swift.py
 
+echo "║ [12/15] Generating Kotlin SDK..."
+python3 codegen/gen_kotlin.py
 
-echo "║ [12/14] Formatting generated Rust sources..."
+echo "║ [13/15] Formatting generated Rust sources..."
 cargo fmt -p goud-engine-node
 
-echo "║ [13/14] Validating schema consistency..."
+echo "║ [14/15] Validating schema consistency..."
 python3 codegen/validate.py || { echo "║ ✗ Schema mismatch — fix goud_sdk.schema.json"; exit 1; }
 
-echo "║ [14/14] Generating docs snippets from validated sources..."
+echo "║ [15/15] Generating docs snippets from validated sources..."
 python3 scripts/generate-doc-snippets.py
 
 echo "╠══════════════════════════════════════════════════════════╣"

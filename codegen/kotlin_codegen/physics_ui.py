@@ -12,7 +12,7 @@ from .helpers import (
     java_native_class,
     write_kotlin,
 )
-from .tools import _init_enum_names, _kt_param_type, _kt_return_type, _param_convert, _return_convert, _needs_return_wrap
+from .tools import _init_enum_names, _kt_param_type, _kt_return_type, _param_convert, _return_convert, _needs_return_wrap, _UNSUPPORTED_TYPES
 
 
 # Sub-tools that delegate to a parent context
@@ -51,6 +51,12 @@ def _gen_sub_tool(tool_name: str):
         mn = method["name"]
         params = method.get("params", [])
         ret = method.get("returns", "void")
+
+        # Skip methods that use unsupported types
+        _all_types = [ret.replace("[]", "").rstrip("?")] + [p["type"].replace("[]", "").rstrip("?") for p in params]
+        if any(t in _UNSUPPORTED_TYPES for t in _all_types):
+            continue
+
         kt_ret = _kt_return_type(ret)
         kt_mn = to_camel(mn)
 
@@ -137,6 +143,12 @@ def _gen_physics_tool(tool_name: str):
 
         params = method.get("params", [])
         ret = method.get("returns", "void")
+
+        # Skip methods that use unsupported types
+        _all_types = [ret.replace("[]", "").rstrip("?")] + [p["type"].replace("[]", "").rstrip("?") for p in params]
+        if any(t in _UNSUPPORTED_TYPES for t in _all_types):
+            continue
+
         kt_ret = _kt_return_type(ret)
         kt_mn = to_camel(mn)
 
@@ -214,6 +226,12 @@ def _gen_engine_config():
         mn = method["name"]
         params = method.get("params", [])
         ret = method.get("returns", "void")
+
+        # Skip methods that use unsupported types
+        _all_types = [ret.replace("[]", "").rstrip("?")] + [p["type"].replace("[]", "").rstrip("?") for p in params]
+        if any(t in _UNSUPPORTED_TYPES for t in _all_types):
+            continue
+
         kt_mn = to_camel(mn)
 
         from .helpers import java_method_name
@@ -291,6 +309,12 @@ def _gen_ui_manager():
         mn = method["name"]
         params = method.get("params", [])
         ret = method.get("returns", "void")
+
+        # Skip methods that use unsupported types
+        _all_types = [ret.replace("[]", "").rstrip("?")] + [p["type"].replace("[]", "").rstrip("?") for p in params]
+        if any(t in _UNSUPPORTED_TYPES for t in _all_types):
+            continue
+
         kt_ret = _kt_return_type(ret)
         kt_mn = to_camel(mn)
 
@@ -317,11 +341,21 @@ def _gen_ui_manager():
             lines.append(f"        {native_cls}.{java_mn}({call_args})")
         lines.append("")
 
-    lines.append("    fun destroy() {")
-    lines.append(f"        if (handle != 0L) {{ {native_cls}.destroy(handle); handle = 0L }}")
-    lines.append("    }")
-    lines.append("")
-    lines.append("    override fun close() = destroy()")
+    # Only emit destroy/close if the native class has a destroy method
+    import re
+    from .helpers import JAVA_DST
+    ui_java = JAVA_DST / f"{native_cls}.java"
+    has_destroy = False
+    if ui_java.exists():
+        has_destroy = bool(re.search(r'\bdestroy\b', ui_java.read_text()))
+    if has_destroy:
+        lines.append("    fun destroy() {")
+        lines.append(f"        if (handle != 0L) {{ {native_cls}.destroy(handle); handle = 0L }}")
+        lines.append("    }")
+        lines.append("")
+        lines.append("    override fun close() = destroy()")
+    else:
+        lines.append("    override fun close() {}")
     lines.append("}")
     lines.append("")
 

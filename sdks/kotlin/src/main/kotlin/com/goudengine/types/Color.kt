@@ -3,6 +3,7 @@ package com.goudengine.types
 
 import com.goudengine.internal.Color as JavaColor
 
+/** RGBA color with float components in 0.0-1.0 range */
 data class Color(val r: Float, val g: Float, val b: Float, val a: Float) {
 
     fun withAlpha(a: Float): Color = Color(r, g, b, a)

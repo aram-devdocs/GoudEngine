@@ -5,7 +5,7 @@ GAME="flappy_goud"
 LOCAL=false
 SKIP_BUILD=false
 NEXT=false
-SDK_TYPE="csharp"  # csharp, python, rust, typescript
+SDK_TYPE="csharp"  # csharp, cpp, python, rust, swift, typescript
 
 # Script directory for absolute paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -138,7 +138,7 @@ while [[ "$#" -gt 0 ]]; do
         echo ""
         echo "Options:"
         echo "  --game <name>    Game to run (default: flappy_goud)"
-        echo "  --sdk <type>     SDK type: csharp, cpp, python, rust, typescript (default: csharp)"
+        echo "  --sdk <type>     SDK type: csharp, cpp, kotlin, python, rust, typescript (default: csharp)"
         echo "  --local          Use local feed when needed; direct-project C# examples use a fast local path"
         echo "  --skipBuild      Skip build step"
         echo "  --next           Run version increment and rebuild"
@@ -147,6 +147,7 @@ while [[ "$#" -gt 0 ]]; do
         echo "C# Games:       flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox"
         echo "Python Demos:   python_demo, flappy_bird, sandbox (use --sdk python)"
         echo "Rust SDK:       rust_demo (use --sdk rust)"
+        echo "Swift:          flappy_bird (use --sdk swift)"
         echo "TypeScript:     flappy_bird (desktop), flappy_bird_web (web), feature_lab (desktop), feature_lab_web (web), sandbox (desktop), sandbox_web (web) (use --sdk typescript)"
         echo ""
         echo "Examples:"
@@ -156,6 +157,7 @@ while [[ "$#" -gt 0 ]]; do
         echo "  ./dev.sh --sdk cpp --game flappy_bird      # Run C++ Flappy Bird"
         echo "  ./dev.sh --sdk cpp --game cmake_example    # Run C++ CMake example"
         echo "  ./dev.sh --sdk rust                    # Run Rust SDK tests"
+        echo "  ./dev.sh --sdk swift --game flappy_bird  # Swift Flappy Bird"
         echo "  ./dev.sh --sdk typescript --game flappy_bird      # TS desktop"
         echo "  ./dev.sh --sdk typescript --game flappy_bird_web  # TS web (browser)"
         echo "  ./dev.sh --sdk typescript --game feature_lab      # TS Feature Lab desktop"
@@ -178,10 +180,10 @@ done
 
 # Validate SDK type
 case $SDK_TYPE in
-"csharp" | "cpp" | "python" | "rust" | "typescript")
+"csharp" | "cpp" | "kotlin" | "python" | "rust" | "swift" | "typescript")
     ;;
 *)
-    echo "Error: Invalid SDK type. Choose from: csharp, cpp, python, rust, typescript"
+    echo "Error: Invalid SDK type. Choose from: csharp, cpp, kotlin, python, rust, swift, typescript"
     exit 1
     ;;
 esac
@@ -212,6 +214,18 @@ case $SDK_TYPE in
         ;;
     esac
     ;;
+"kotlin")
+    case $GAME in
+    "flappy_bird")
+        echo "Building and running Kotlin example: $GAME..."
+        ;;
+    *)
+        echo "Error: Invalid Kotlin example selection."
+        echo "Choose from: flappy_bird"
+        exit 1
+        ;;
+    esac
+    ;;
 "python")
     case $GAME in
     "python_demo" | "flappy_bird" | "sandbox")
@@ -226,6 +240,18 @@ case $SDK_TYPE in
     ;;
 "rust")
     echo "Running Rust SDK..."
+    ;;
+"swift")
+    case $GAME in
+    "flappy_bird")
+        echo "Building and running Swift example: $GAME..."
+        ;;
+    *)
+        echo "Error: Invalid Swift example selection."
+        echo "Choose from: flappy_bird"
+        exit 1
+        ;;
+    esac
     ;;
 "typescript")
     case $GAME in
@@ -274,6 +300,9 @@ if [ "$SKIP_BUILD" = false ]; then
         else
             bash "$SCRIPT_DIR/package.sh" --local
         fi
+    elif [ "$SDK_TYPE" = "kotlin" ]; then
+        # Kotlin examples use Gradle which handles the native build via buildNative task
+        echo "Kotlin SDK build is handled by Gradle."
     elif [ "$SDK_TYPE" = "cpp" ]; then
         # Build native library for C++ examples
         if python_release_artifact_fresh; then
@@ -413,6 +442,32 @@ case $SDK_TYPE in
         python3 sandbox.py
         ;;
     esac
+    ;;
+
+"kotlin")
+    cd "$SCRIPT_DIR/examples/kotlin/$GAME"
+    echo "Running Kotlin example: $GAME..."
+    ./gradlew run --no-daemon
+    ;;
+
+"swift")
+    SWIFT_EXAMPLE_DIR="$SCRIPT_DIR/examples/swift/$GAME"
+    echo "Building Swift example: $GAME..."
+
+    # Set library search path so swift build can find libgoud_engine
+    export GOUD_ENGINE_LIB_DIR="$SCRIPT_DIR/target/release"
+
+    cd "$SWIFT_EXAMPLE_DIR"
+    swift build -c release 2>&1
+
+    echo "Running Swift example: $GAME..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        export DYLD_LIBRARY_PATH="$SCRIPT_DIR/target/release:$DYLD_LIBRARY_PATH"
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        export LD_LIBRARY_PATH="$SCRIPT_DIR/target/release:$LD_LIBRARY_PATH"
+    fi
+
+    swift run -c release --skip-build
     ;;
 
 "rust")

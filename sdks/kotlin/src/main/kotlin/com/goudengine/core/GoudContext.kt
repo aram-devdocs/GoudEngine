@@ -3,7 +3,7 @@ package com.goudengine.core
 
 import com.goudengine.internal.GoudContextNative
 
-class GoudContext private constructor(internal val contextId: Long) : AutoCloseable {
+class GoudContext internal constructor(internal val contextId: Long) : AutoCloseable {
 
     companion object {
         fun create(): GoudContext {
@@ -16,41 +16,20 @@ class GoudContext private constructor(internal val contextId: Long) : AutoClosea
     fun isValid(): Boolean =
         GoudContextNative.isValid(contextId)
 
-    fun getNetworkCapabilities(): NetworkCapabilities =
-        GoudContextNative.getNetworkCapabilities(contextId)
-
     fun networkHost(protocol: Int, port: Int): Long =
         GoudContextNative.networkHost(contextId, protocol, port)
 
     fun networkConnect(protocol: Int, address: String, port: Int): Long =
         GoudContextNative.networkConnect(contextId, protocol, address, port)
 
-    fun networkConnectWithPeer(protocol: Int, address: String, port: Int): NetworkConnectResult =
-        GoudContextNative.networkConnectWithPeer(contextId, protocol, address, port)
-
     fun networkDisconnect(handle: Long): Int =
         GoudContextNative.networkDisconnect(contextId, handle)
-
-    fun networkSend(handle: Long, peerId: Long, data: ByteArray, channel: Int): Int =
-        GoudContextNative.networkSend(contextId, handle, peerId, data, channel)
-
-    fun networkReceive(handle: Long): ByteArray =
-        GoudContextNative.networkReceive(contextId, handle)
-
-    fun networkReceivePacket(handle: Long): NetworkPacket? =
-        GoudContextNative.networkReceivePacket(contextId, handle)
 
     fun networkPoll(handle: Long): Int =
         GoudContextNative.networkPoll(contextId, handle)
 
-    fun getNetworkStats(handle: Long): NetworkStats =
-        GoudContextNative.getNetworkStats(contextId, handle)
-
     fun networkPeerCount(handle: Long): Int =
         GoudContextNative.networkPeerCount(contextId, handle)
-
-    fun setNetworkSimulation(handle: Long, config: NetworkSimulationConfig): Int =
-        GoudContextNative.setNetworkSimulation(contextId, handle, config)
 
     fun clearNetworkSimulation(handle: Long): Int =
         GoudContextNative.clearNetworkSimulation(contextId, handle)
@@ -60,12 +39,6 @@ class GoudContext private constructor(internal val contextId: Long) : AutoClosea
 
     fun clearNetworkOverlayHandle(): Int =
         GoudContextNative.clearNetworkOverlayHandle(contextId)
-
-    fun getDebuggerSnapshotJson(): String =
-        GoudContextNative.getDebuggerSnapshotJson(contextId)
-
-    fun getDebuggerManifestJson(): String =
-        GoudContextNative.getDebuggerManifestJson(contextId)
 
     fun setDebuggerPaused(paused: Boolean) {
         GoudContextNative.setDebuggerPaused(contextId, paused)
@@ -111,48 +84,21 @@ class GoudContext private constructor(internal val contextId: Long) : AutoClosea
         GoudContextNative.clearDebuggerSelectedEntity(contextId)
     }
 
-    fun getMemorySummary(): MemorySummary =
-        GoudContextNative.getMemorySummary(contextId)
-
-    fun captureDebuggerFrame(): DebuggerCapture =
-        GoudContextNative.captureDebuggerFrame(contextId)
-
     fun startDebuggerRecording() {
         GoudContextNative.startDebuggerRecording(contextId)
-    }
-
-    fun stopDebuggerRecording(): DebuggerReplayArtifact =
-        GoudContextNative.stopDebuggerRecording(contextId)
-
-    fun startDebuggerReplay(recording: ByteArray) {
-        GoudContextNative.startDebuggerReplay(contextId, recording)
     }
 
     fun stopDebuggerReplay() {
         GoudContextNative.stopDebuggerReplay(contextId)
     }
 
-    fun getDebuggerReplayStatusJson(): String =
-        GoudContextNative.getDebuggerReplayStatusJson(contextId)
-
-    fun getDebuggerMetricsTraceJson(): String =
-        GoudContextNative.getDebuggerMetricsTraceJson(contextId)
-
     fun spawnEmpty(): com.goudengine.core.EntityHandle {
         val r = GoudContextNative.spawnEmpty(contextId)
         return com.goudengine.core.EntityHandle(r)
     }
 
-    fun spawnBatch(count: Int): Array<com.goudengine.core.EntityHandle> {
-        val r = GoudContextNative.spawnBatch(contextId, count)
-        return com.goudengine.core.EntityHandle(r)
-    }
-
     fun despawn(entity: com.goudengine.core.EntityHandle): Boolean =
         GoudContextNative.despawn(contextId, entity.id)
-
-    fun despawnBatch(entities: Entity[]): Int =
-        GoudContextNative.despawnBatch(contextId, entities)
 
     fun cloneEntity(entity: com.goudengine.core.EntityHandle): com.goudengine.core.EntityHandle {
         val r = GoudContextNative.cloneEntity(contextId, entity.id)
@@ -166,9 +112,6 @@ class GoudContext private constructor(internal val contextId: Long) : AutoClosea
 
     fun isAlive(entity: com.goudengine.core.EntityHandle): Boolean =
         GoudContextNative.isAlive(contextId, entity.id)
-
-    fun isAliveBatch(entities: Entity[], outResults: U8[]): Int =
-        GoudContextNative.isAliveBatch(contextId, entities, outResults)
 
     fun entityCount(): Int =
         GoudContextNative.entityCount(contextId)
@@ -225,10 +168,7 @@ class GoudContext private constructor(internal val contextId: Long) : AutoClosea
         GoudContextNative.removeName(contextId, entity.id)
 
     fun componentRegisterType(typeIdHash: Long, name: String, size: Long, align: Long): Boolean =
-        GoudContextNative.componentRegisterType(contextId, typeIdHash, name, size, align)
-
-    fun componentAdd(entity: com.goudengine.core.EntityHandle, typeIdHash: Long, dataPtr: Long, dataSize: Long): Boolean =
-        GoudContextNative.componentAdd(contextId, entity.id, typeIdHash, dataPtr, dataSize)
+        GoudContextNative.componentRegisterType(typeIdHash, name, size, align)
 
     fun componentRemove(entity: com.goudengine.core.EntityHandle, typeIdHash: Long): Boolean =
         GoudContextNative.componentRemove(contextId, entity.id, typeIdHash)
@@ -236,26 +176,8 @@ class GoudContext private constructor(internal val contextId: Long) : AutoClosea
     fun componentHas(entity: com.goudengine.core.EntityHandle, typeIdHash: Long): Boolean =
         GoudContextNative.componentHas(contextId, entity.id, typeIdHash)
 
-    fun componentGet(entity: com.goudengine.core.EntityHandle, typeIdHash: Long): Long =
-        GoudContextNative.componentGet(contextId, entity.id, typeIdHash)
-
-    fun componentGetMut(entity: com.goudengine.core.EntityHandle, typeIdHash: Long): Long =
-        GoudContextNative.componentGetMut(contextId, entity.id, typeIdHash)
-
-    fun componentAddBatch(entities: Entity[], typeIdHash: Long, dataPtr: Long, componentSize: Long): Int =
-        GoudContextNative.componentAddBatch(contextId, entities, typeIdHash, dataPtr, componentSize)
-
-    fun componentRemoveBatch(entities: Entity[], typeIdHash: Long): Int =
-        GoudContextNative.componentRemoveBatch(contextId, entities, typeIdHash)
-
-    fun componentHasBatch(entities: Entity[], typeIdHash: Long, outResults: U8[]): Int =
-        GoudContextNative.componentHasBatch(contextId, entities, typeIdHash, outResults)
-
     fun sceneCreate(name: String): Int =
         GoudContextNative.sceneCreate(contextId, name)
-
-    fun sceneDestroy(sceneId: Int): GoudResult =
-        GoudContextNative.sceneDestroy(contextId, sceneId)
 
     fun sceneGetByName(name: String): Int =
         GoudContextNative.sceneGetByName(contextId, name)
@@ -263,38 +185,20 @@ class GoudContext private constructor(internal val contextId: Long) : AutoClosea
     fun loadScene(name: String, json: String): Int =
         GoudContextNative.loadScene(contextId, name, json)
 
-    fun unloadScene(name: String): GoudResult =
-        GoudContextNative.unloadScene(contextId, name)
-
-    fun setActiveScene(sceneId: Int, active: Boolean): GoudResult =
-        GoudContextNative.setActiveScene(contextId, sceneId, active)
-
-    fun sceneSetActive(sceneId: Int, active: Boolean): GoudResult =
-        GoudContextNative.sceneSetActive(contextId, sceneId, active)
-
     fun sceneIsActive(sceneId: Int): Boolean =
         GoudContextNative.sceneIsActive(contextId, sceneId)
 
     fun sceneCount(): Int =
         GoudContextNative.sceneCount(contextId)
 
-    fun sceneSetCurrent(sceneId: Int): GoudResult =
-        GoudContextNative.sceneSetCurrent(contextId, sceneId)
-
     fun sceneGetCurrent(): Int =
         GoudContextNative.sceneGetCurrent(contextId)
-
-    fun sceneTransitionTo(fromScene: Int, toScene: Int, transitionType: com.goudengine.animation.TransitionType, durationSecs: Float): GoudResult =
-        GoudContextNative.sceneTransitionTo(contextId, fromScene, toScene, transitionType.value, durationSecs)
 
     fun sceneTransitionProgress(): Float =
         GoudContextNative.sceneTransitionProgress(contextId)
 
     fun sceneTransitionIsActive(): Boolean =
         GoudContextNative.sceneTransitionIsActive(contextId)
-
-    fun sceneTransitionTick(deltaTime: Float): GoudResult =
-        GoudContextNative.sceneTransitionTick(contextId, deltaTime)
 
     fun destroy() {
         GoudContextNative.destroy(contextId)

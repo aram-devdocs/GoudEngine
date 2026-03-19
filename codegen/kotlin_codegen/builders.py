@@ -1,6 +1,6 @@
 """Builder class generation for Kotlin SDK."""
 from __future__ import annotations
-from .helpers import HEADER_COMMENT, KOTLIN_OUT, schema, to_pascal, to_camel, kt_type, java_builder_native_class, write_kotlin
+from .helpers import HEADER_COMMENT, KOTLIN_OUT, ENUM_SUBDIRS, schema, to_pascal, to_camel, kt_type, java_builder_native_class, write_kotlin
 
 def gen_builders():
     type_methods = schema.get("ffi_type_methods", {})
@@ -16,9 +16,21 @@ def gen_builders():
             continue
         native_cls = java_builder_native_class(type_name)
         builder_name = f"{type_name}Builder"
+        # Collect enum imports for builder method params
+        enum_names = set(schema.get("enums", {}).keys())
+        enum_imports = set()
+        for bm in builder_def.get("methods", []):
+            for p in bm.get("params", []):
+                if p["type"] in enum_names:
+                    subdir = ENUM_SUBDIRS.get(p["type"], "core")
+                    enum_imports.add(f"import com.goudengine.{subdir}.{to_pascal(p['type'])}")
+
         lines = [f"// {HEADER_COMMENT}", "package com.goudengine.components", "",
                  f"import com.goudengine.internal.{native_cls}",
-                 f"import com.goudengine.internal.{type_name} as Java{type_name}", "",
+                 f"import com.goudengine.internal.{type_name} as Java{type_name}"]
+        for imp in sorted(enum_imports):
+            lines.append(imp)
+        lines += ["",
                  f"class {builder_name} private constructor(private var handle: Long) : AutoCloseable {{", ""]
         schema_builder_methods = {m["name"]: m for m in builder_def.get("methods", [])}
         for bm_name, bm_info in builder_map.items():
@@ -28,8 +40,13 @@ def gen_builders():
             kt_params_list, call_args_list = [], []
             for p in bm_params:
                 pname = "value" if p["name"] == "handle" else p["name"]
-                kt_params_list.append(f"{pname}: {kt_type(p['type'])}")
-                call_args_list.append(pname)
+                ptype = p["type"]
+                if ptype in enum_names:
+                    kt_params_list.append(f"{pname}: {to_pascal(ptype)}")
+                    call_args_list.append(f"{pname}.value")
+                else:
+                    kt_params_list.append(f"{pname}: {kt_type(ptype)}")
+                    call_args_list.append(pname)
             kt_params = ", ".join(kt_params_list)
             call_args = ", ".join(call_args_list)
             if bm_name in ("new", "default", "atPosition"):
@@ -53,8 +70,13 @@ def gen_builders():
             kt_params_list, call_args_list = [], []
             for p in bm_params:
                 pname = "value" if p["name"] == "handle" else p["name"]
-                kt_params_list.append(f"{pname}: {kt_type(p['type'])}")
-                call_args_list.append(pname)
+                ptype = p["type"]
+                if ptype in enum_names:
+                    kt_params_list.append(f"{pname}: {to_pascal(ptype)}")
+                    call_args_list.append(f"{pname}.value")
+                else:
+                    kt_params_list.append(f"{pname}: {kt_type(ptype)}")
+                    call_args_list.append(pname)
             kt_params = ", ".join(kt_params_list)
             call_args = ", ".join(call_args_list)
             lines += [f"        fun {to_camel(bm_name)}({kt_params}): {builder_name} =",
