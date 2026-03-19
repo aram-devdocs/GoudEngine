@@ -852,6 +852,9 @@ jobs:
         retention-days: 7
 
   # C++ SDK tests (non-GL only, headless CI safe)
+  # Windows C++ CI is excluded: MSVC support is scaffolded in FindGoudEngine.cmake
+  # but not yet validated in CI. Add windows-latest when a Windows native-release
+  # artifact is reliably available on PRs.
   cpp-tests:
     name: C++ SDK Tests on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}

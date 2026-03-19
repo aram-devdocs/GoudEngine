@@ -383,22 +383,37 @@ static inline int goud_input_scroll_delta(goud_context context, goud_vec2 *out_d
 /* === Window / Game Loop === */
 
 static inline bool goud_window_should_close_checked(goud_context context) {
+    if (!goud_context_valid(context)) {
+        return true;
+    }
     return goud_window_should_close(context);
 }
 
 static inline float goud_window_poll_events_checked(goud_context context) {
+    if (!goud_context_valid(context)) {
+        return 0.0f;
+    }
     return goud_window_poll_events(context);
 }
 
 static inline void goud_window_swap_buffers_checked(goud_context context) {
+    if (!goud_context_valid(context)) {
+        return;
+    }
     goud_window_swap_buffers(context);
 }
 
 static inline void goud_renderer_enable_blending_checked(goud_context context) {
+    if (!goud_context_valid(context)) {
+        return;
+    }
     goud_renderer_enable_blending(context);
 }
 
 static inline float goud_window_delta_time(goud_context context) {
+    if (!goud_context_valid(context)) {
+        return 0.0f;
+    }
     return goud_window_get_delta_time(context);
 }
 

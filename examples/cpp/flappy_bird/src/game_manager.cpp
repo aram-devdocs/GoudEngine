@@ -5,6 +5,8 @@
 namespace flappy {
 
 // Relative path from the build directory to the shared sprite assets.
+// Expected working directory: examples/cpp/flappy_bird/build/
+// (run the binary from the build/ subdirectory created by cmake)
 static const std::string ASSET_BASE = "../../../csharp/flappy_goud/assets/sprites/";
 
 static goud_texture loadTex(goud::Context& ctx, const std::string& file) {
