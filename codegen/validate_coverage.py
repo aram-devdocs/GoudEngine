@@ -238,6 +238,62 @@ def main() -> None:
             print(w)
         print()
 
+    # ── Lua binding drift check ─────────────────────────────────────────
+    lua_bindings_dir = (
+        CODEGEN_DIR.parent
+        / "goud_engine"
+        / "src"
+        / "sdk"
+        / "game"
+        / "instance"
+        / "lua_bindings"
+    )
+    lua_g_files = sorted(lua_bindings_dir.glob("*.g.rs")) if lua_bindings_dir.exists() else []
+    if lua_g_files:
+        import re as _re
+
+        lua_ffi_refs: set[str] = set()
+        for g_file in lua_g_files:
+            content = g_file.read_text()
+            for m in _re.finditer(r"\bfn\s+(goud_\w+)\s*\(", content):
+                lua_ffi_refs.add(m.group(1))
+
+        if lua_ffi_refs:
+            lua_missing = sorted(lua_ffi_refs - manifest_functions)
+            if lua_missing:
+                print(f"Lua binding drift ({len(lua_missing)} stale FFI refs in .g.rs):")
+                for fn_name in lua_missing:
+                    print(f"  - {fn_name}")
+                print()
+                has_failures = True
+            else:
+                print(f"Lua bindings: {len(lua_ffi_refs)} FFI refs — all valid.")
+        print()
+
+    # ── Lua binding drift check ─────────────────────────────────────
+    lua_dir = (
+        CODEGEN_DIR.parent / "goud_engine" / "src" / "sdk"
+        / "game" / "instance" / "lua_bindings"
+    )
+    lua_g = sorted(lua_dir.glob("*.g.rs")) if lua_dir.exists() else []
+    if lua_g:
+        import re as _re
+        lua_refs: set[str] = set()
+        for gf in lua_g:
+            for m in _re.finditer(r"\bfn\s+(goud_\w+)\s*\(", gf.read_text()):
+                lua_refs.add(m.group(1))
+        if lua_refs:
+            stale = sorted(lua_refs - manifest_functions)
+            if stale:
+                print(f"Lua binding drift ({len(stale)} stale FFI refs):")
+                for s in stale:
+                    print(f"  - {s}")
+                print()
+                has_failures = True
+            else:
+                print(f"Lua bindings: {len(lua_refs)} FFI refs — all valid.")
+            print()
+
     if not has_failures:
         print("Full coverage — all FFI functions are mapped.")
         sys.exit(0)

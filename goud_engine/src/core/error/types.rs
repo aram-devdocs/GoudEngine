@@ -18,6 +18,7 @@
 /// - **Input**: Input handling errors (codes 400-499)
 /// - **System**: Platform and system errors (codes 500-599)
 /// - **Provider**: Provider subsystem errors (codes 600-699)
+/// - **Script**: Scripting engine errors (codes 800-899)
 /// - **Internal**: Unexpected internal errors (codes 900-999)
 ///
 /// # FFI Compatibility
@@ -396,6 +397,20 @@ pub enum GoudError {
         /// Details about the failure.
         message: String,
     },
+
+    // -------------------------------------------------------------------------
+    // Script Errors (codes 800-899)
+    // -------------------------------------------------------------------------
+    /// Script execution error.
+    ///
+    /// This error occurs when an embedded script (e.g. Lua) encounters
+    /// a syntax error, runtime error, or other execution failure.
+    /// The string contains the script engine error message.
+    ///
+    /// # Recovery
+    ///
+    /// Check the error message for script-specific details (line numbers, etc.).
+    ScriptError(String),
 
     // -------------------------------------------------------------------------
     // Internal Errors (codes 900-999)

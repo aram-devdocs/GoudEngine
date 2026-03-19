@@ -4,6 +4,8 @@ mod capture;
 mod debugger_frame;
 mod ecs_scene;
 #[cfg(feature = "lua")]
+mod lua_bindings;
+#[cfg(feature = "lua")]
 mod lua_runtime;
 #[cfg(test)]
 mod tests;
@@ -103,8 +105,7 @@ pub struct GoudGame {
     pub(crate) window_resized_events: Events<WindowResized>,
 
     #[cfg(feature = "lua")]
-    // Held for Drop: keeps the embedded Lua VM alive until GoudGame drops.
-    #[allow(dead_code)]
+    // Kept alive for Drop: the embedded Lua VM lives as long as GoudGame.
     lua_runtime: LuaRuntime,
 
     // =========================================================================
@@ -206,7 +207,7 @@ impl GoudGame {
         let debugger_route =
             Self::register_debugger_route(&config, RuntimeSurfaceKind::HeadlessContext);
         #[cfg(feature = "lua")]
-        let lua_runtime = LuaRuntime::new()?;
+        let lua_runtime = LuaRuntime::new(0)?;
         Ok(Self {
             scene_manager: SceneManager::new(),
             config,
@@ -326,8 +327,9 @@ impl GoudGame {
         let audio_manager = crate::assets::AudioManager::new().ok();
         let debugger_route =
             Self::register_debugger_route(&config, RuntimeSurfaceKind::WindowedGame);
+        // TODO: pass actual context ID once context registry supports it
         #[cfg(feature = "lua")]
-        let lua_runtime = LuaRuntime::new()?;
+        let lua_runtime = LuaRuntime::new(0)?;
 
         // Register deferred capture hook for framebuffer readback if debugger
         // is enabled. The hook is invoked from the IPC thread, so it signals
@@ -426,6 +428,16 @@ impl GoudGame {
             renderer.resize(viewport.width, viewport.height);
             renderer.set_viewport(viewport.x, viewport.y, viewport.width, viewport.height);
         }
+    }
+
+    /// Executes a Lua script in the embedded runtime.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `GoudError` if the script has syntax or runtime errors.
+    #[cfg(feature = "lua")]
+    pub fn execute_lua(&self, source: &str, name: &str) -> GoudResult<()> {
+        self.lua_runtime.execute_script(source, name)
     }
 }
 

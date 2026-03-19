@@ -15,10 +15,15 @@ pub mod material;
 pub mod mesh;
 #[cfg(feature = "native")]
 mod rodio_integration;
+#[cfg(feature = "lua")]
+pub mod script;
 pub mod shader;
 pub mod sprite_sheet;
 pub mod texture;
 pub mod tiled_map;
+
+#[cfg(feature = "lua")]
+pub use script::{ScriptAsset, ScriptLoader};
 
 pub use texture::{
     TextureAsset, TextureColorSpace, TextureFormat, TextureLoader, TextureSettings, TextureWrapMode,
