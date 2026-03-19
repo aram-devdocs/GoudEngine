@@ -11,14 +11,20 @@
 //! enabling backend-agnostic rendering (OpenGL, wgpu, etc.).
 
 mod core;
+mod core_materials;
 mod core_particles;
 mod core_primitives;
+mod core_skinned;
 mod debug_draw;
+mod material;
 mod mesh;
 mod postprocess;
 mod render;
+mod render_helpers;
+mod render_pass;
 mod shaders;
 mod shadow;
+mod skinned_mesh;
 mod texture;
 mod types;
 
@@ -29,7 +35,9 @@ mod tests;
 pub use core::Renderer3D;
 pub use texture::TextureManagerTrait;
 pub use types::{
-    AntiAliasingMode, Camera3D, FogConfig, GridConfig, GridRenderMode, InstanceTransform, Light,
-    LightType, ParticleEmitterConfig, PrimitiveCreateInfo, PrimitiveType, Renderer3DStats,
-    SkyboxConfig, MAX_LIGHTS,
+    AntiAliasingMode, BloomPass, Bone3D, Camera3D, ColorGradePass, FogConfig, GaussianBlurPass,
+    GridConfig, GridRenderMode, InstanceTransform, Light, LightType, Material3D, MaterialType,
+    ParticleEmitterConfig, PbrProperties, PostProcessPipeline, PrimitiveCreateInfo, PrimitiveType,
+    RenderPass, Renderer3DStats, Skeleton3D, SkinnedMesh3D, SkyboxConfig, MAX_BONES,
+    MAX_BONE_INFLUENCES, MAX_LIGHTS,
 };

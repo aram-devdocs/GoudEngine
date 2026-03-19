@@ -181,5 +181,42 @@ pub(super) fn create_postprocess_quad() -> Vec<f32> {
     ]
 }
 
+/// Build the vertex layout for skinned meshes:
+/// pos (3f) + normal (3f) + texcoord (2f) + bone_ids (4f) + bone_weights (4f) = 64 bytes
+#[allow(dead_code)]
+pub(super) fn skinned_vertex_layout() -> VertexLayout {
+    VertexLayout::new(64)
+        .with_attribute(VertexAttribute::new(
+            0,
+            VertexAttributeType::Float3,
+            0,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            1,
+            VertexAttributeType::Float3,
+            12,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            2,
+            VertexAttributeType::Float2,
+            24,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            3,
+            VertexAttributeType::Float4,
+            32,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            4,
+            VertexAttributeType::Float4,
+            48,
+            false,
+        ))
+}
+
 // Vertex generation lives in an included file to keep this module focused on layouts and uploads.
 include!("mesh_geometry.in");

@@ -426,6 +426,84 @@ class GoudGame:
         """Renders all 3D objects"""
         return self._lib.goud_renderer3d_render(self._ctx)
 
+    # ====================================================================
+    # Material System
+    # ====================================================================
+
+    def create_material(self, material_type, r, g, b, a, shininess, metallic=0.0, roughness=0.5, ao=1.0):
+        """Creates a 3D material"""
+        return self._lib.goud_renderer3d_create_material(self._ctx, material_type, r, g, b, a, shininess, metallic, roughness, ao)
+
+    def update_material(self, material_id, material_type, r, g, b, a, shininess, metallic=0.0, roughness=0.5, ao=1.0):
+        """Updates a 3D material"""
+        return self._lib.goud_renderer3d_update_material(self._ctx, material_id, material_type, r, g, b, a, shininess, metallic, roughness, ao)
+
+    def remove_material(self, material_id):
+        """Removes a 3D material"""
+        return self._lib.goud_renderer3d_remove_material(self._ctx, material_id)
+
+    def set_object_material(self, object_id, material_id):
+        """Binds a material to an object"""
+        return self._lib.goud_renderer3d_set_object_material(self._ctx, object_id, material_id)
+
+    def get_object_material(self, object_id):
+        """Gets the material ID bound to an object"""
+        return self._lib.goud_renderer3d_get_object_material(self._ctx, object_id)
+
+    # ====================================================================
+    # Skinned Mesh
+    # ====================================================================
+
+    def create_skinned_mesh(self, vertices):
+        """Creates a skinned mesh from raw vertex data"""
+        arr = (ctypes.c_float * len(vertices))(*vertices)
+        return self._lib.goud_renderer3d_create_skinned_mesh(self._ctx, arr, len(vertices))
+
+    def remove_skinned_mesh(self, mesh_id):
+        """Removes a skinned mesh"""
+        return self._lib.goud_renderer3d_remove_skinned_mesh(self._ctx, mesh_id)
+
+    def set_skinned_mesh_position(self, mesh_id, x, y, z):
+        """Sets the position of a skinned mesh"""
+        return self._lib.goud_renderer3d_set_skinned_mesh_position(self._ctx, mesh_id, x, y, z)
+
+    def set_skinned_mesh_rotation(self, mesh_id, x, y, z):
+        """Sets the rotation of a skinned mesh"""
+        return self._lib.goud_renderer3d_set_skinned_mesh_rotation(self._ctx, mesh_id, x, y, z)
+
+    def set_skinned_mesh_scale(self, mesh_id, x, y, z):
+        """Sets the scale of a skinned mesh"""
+        return self._lib.goud_renderer3d_set_skinned_mesh_scale(self._ctx, mesh_id, x, y, z)
+
+    def set_skinned_mesh_bones(self, mesh_id, matrices, bone_count):
+        """Updates bone matrices for a skinned mesh"""
+        arr = (ctypes.c_float * len(matrices))(*matrices)
+        return self._lib.goud_renderer3d_set_skinned_mesh_bones(self._ctx, mesh_id, arr, bone_count)
+
+    # ====================================================================
+    # Post-Processing Pipeline
+    # ====================================================================
+
+    def add_bloom_pass(self, threshold=0.8, intensity=1.0):
+        """Adds a bloom pass to the post-processing pipeline"""
+        return self._lib.goud_renderer3d_add_bloom_pass(self._ctx, threshold, intensity)
+
+    def add_blur_pass(self, radius=2):
+        """Adds a Gaussian blur pass"""
+        return self._lib.goud_renderer3d_add_blur_pass(self._ctx, radius)
+
+    def add_color_grade_pass(self, exposure=1.0, contrast=1.0, saturation=1.0):
+        """Adds a color grading pass"""
+        return self._lib.goud_renderer3d_add_color_grade_pass(self._ctx, exposure, contrast, saturation)
+
+    def remove_postprocess_pass(self, index):
+        """Removes a post-processing pass by index"""
+        return self._lib.goud_renderer3d_remove_postprocess_pass(self._ctx, index)
+
+    def postprocess_pass_count(self):
+        """Returns the number of post-processing passes"""
+        return self._lib.goud_renderer3d_postprocess_pass_count(self._ctx)
+
     def draw_sprite_rect(self, texture, x, y, width, height, rotation, src_x, src_y, src_w, src_h, color = None):
         """Draws a sprite with source rectangle for sprite sheets"""
         _color_ffi = _ffi_module.FfiColor()
