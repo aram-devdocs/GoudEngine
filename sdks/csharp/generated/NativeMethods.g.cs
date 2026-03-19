@@ -471,7 +471,7 @@ namespace GoudEngine
 
         // debug
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_debug_get_fps_stats(GoudContextId context_id, IntPtr out_stats);
+        public static extern int goud_debug_get_fps_stats(GoudContextId context_id, ref FpsStats out_stats);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_debug_set_fps_overlay_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
@@ -1593,19 +1593,19 @@ namespace GoudEngine
 
         // providers
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_provider_render_capabilities(GoudContextId context_id, IntPtr @out);
+        public static extern int goud_provider_render_capabilities(GoudContextId context_id, ref RenderCapabilities @out);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_provider_physics_capabilities(GoudContextId context_id, IntPtr @out);
+        public static extern int goud_provider_physics_capabilities(GoudContextId context_id, ref PhysicsCapabilities @out);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_provider_audio_capabilities(GoudContextId context_id, IntPtr @out);
+        public static extern int goud_provider_audio_capabilities(GoudContextId context_id, ref AudioCapabilities @out);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_provider_input_capabilities(GoudContextId context_id, IntPtr @out);
+        public static extern int goud_provider_input_capabilities(GoudContextId context_id, ref InputCapabilities @out);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_provider_network_capabilities(GoudContextId context_id, IntPtr @out);
+        public static extern int goud_provider_network_capabilities(GoudContextId context_id, ref NetworkCapabilities @out);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_provider_hot_swap_render(GoudContextId _context_id, int _provider_type);

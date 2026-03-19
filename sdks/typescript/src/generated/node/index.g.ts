@@ -1685,9 +1685,9 @@ export class EngineConfig implements IEngineConfig {
     return this;
   }
 
-  /** Enables or disables fullscreen mode */
-  setFullscreen(enabled: boolean): EngineConfig {
-    this.native.setFullscreen(enabled);
+  /** Sets the fullscreen mode (0=Windowed, 1=Borderless, 2=Exclusive) */
+  setFullscreen(mode: number): EngineConfig {
+    this.native.setFullscreen(mode);
     return this;
   }
 

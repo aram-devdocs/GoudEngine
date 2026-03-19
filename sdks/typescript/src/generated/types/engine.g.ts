@@ -586,8 +586,8 @@ export interface IEngineConfig {
   setSize(width: number, height: number): IEngineConfig;
   /** Enables or disables vertical sync */
   setVsync(enabled: boolean): IEngineConfig;
-  /** Enables or disables fullscreen mode */
-  setFullscreen(enabled: boolean): IEngineConfig;
+  /** Sets the fullscreen mode (0=Windowed, 1=Borderless, 2=Exclusive) */
+  setFullscreen(mode: number): IEngineConfig;
   /** Sets the target frames per second */
   setTargetFps(fps: number): IEngineConfig;
   /** Enables or disables the FPS debug overlay */

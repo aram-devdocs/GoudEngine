@@ -126,7 +126,7 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
             "                return _networkReceiveBufferSize.Value;",
             "            }",
             "",
-            "            FfiNetworkCapabilities _caps = default;",
+            "            NetworkCapabilities _caps = default;",
             "            NativeMethods.goud_provider_network_capabilities(_ctx, ref _caps);",
             "            _networkReceiveBufferSize = _caps.MaxMessageSize switch",
             "            {",

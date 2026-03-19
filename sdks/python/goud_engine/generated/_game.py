@@ -1848,11 +1848,11 @@ class EngineConfig:
         self._lib.goud_engine_config_set_vsync(self._handle, enabled)
         return self
 
-    def set_fullscreen(self, enabled):
-        """Enables or disables fullscreen mode"""
+    def set_fullscreen(self, mode):
+        """Sets the fullscreen mode (0=Windowed, 1=Borderless, 2=Exclusive)"""
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
-        self._lib.goud_engine_config_set_fullscreen(self._handle, enabled)
+        self._lib.goud_engine_config_set_fullscreen(self._handle, mode)
         return self
 
     def set_target_fps(self, fps):

@@ -34,10 +34,10 @@ public final class EngineConfig {
         return self
     }
 
-    /// Enables or disables fullscreen mode
+    /// Sets the fullscreen mode (0=Windowed, 1=Borderless, 2=Exclusive)
     @discardableResult
-    public func setFullscreen(enabled: Bool) -> EngineConfig {
-        goud_engine_config_set_fullscreen(_handle!, enabled)
+    public func setFullscreen(mode: UInt32) -> EngineConfig {
+        goud_engine_config_set_fullscreen(_handle!, mode)
         return self
     }
 

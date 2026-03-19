@@ -142,10 +142,16 @@ def _cs_ffi_param_type(raw: str) -> str:
             return "IntPtr"
     if raw.startswith("*mut ") or raw.startswith("*const "):
         qualifier, inner = raw.split(" ", 1)
-        ffi_inner = _ffi_struct_name(inner.strip())
+        inner = inner.strip()
+        ffi_inner = _ffi_struct_name(inner)
         if ffi_inner.startswith("Ffi"):
             return f"ref {ffi_inner}"
         if ffi_inner.startswith("Goud") and ffi_inner not in ("GoudTextureHandle", "GoudFontHandle"):
+            return f"ref {ffi_inner}"
+        # Value types whose ffi_name matches the SDK type name are emitted
+        # as standalone structs — use ref for pointer parameters.
+        sdk_type = schema.get("types", {}).get(inner, {})
+        if sdk_type.get("kind") == "value" and ffi_inner == inner:
             return f"ref {ffi_inner}"
         if ffi_inner == "c_char" and qualifier == "*const":
             return "string"

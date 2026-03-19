@@ -41,11 +41,11 @@ namespace GoudEngine
             return this;
         }
 
-        /// <summary>Enables or disables fullscreen mode</summary>
-        public EngineConfig SetFullscreen(bool enabled)
+        /// <summary>Sets the fullscreen mode (0=Windowed, 1=Borderless, 2=Exclusive)</summary>
+        public EngineConfig SetFullscreen(uint mode)
         {
             if (_handle == IntPtr.Zero) throw new ObjectDisposedException("EngineConfig");
-            NativeMethods.goud_engine_config_set_fullscreen(_handle, enabled);
+            NativeMethods.goud_engine_config_set_fullscreen(_handle, mode);
             return this;
         }
 

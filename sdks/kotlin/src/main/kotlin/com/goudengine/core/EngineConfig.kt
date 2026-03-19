@@ -27,8 +27,8 @@ class EngineConfig private constructor(private var handle: Long) : AutoCloseable
         return this
     }
 
-    fun setFullscreen(enabled: Boolean): EngineConfig {
-        EngineConfigNative.setFullscreen(handle, enabled)
+    fun setFullscreen(mode: Int): EngineConfig {
+        EngineConfigNative.setFullscreen(handle, mode)
         return this
     }
 

@@ -43,7 +43,7 @@ namespace GoudEngine
                 return _networkReceiveBufferSize.Value;
             }
 
-            FfiNetworkCapabilities _caps = default;
+            NetworkCapabilities _caps = default;
             NativeMethods.goud_provider_network_capabilities(_ctx, ref _caps);
             _networkReceiveBufferSize = _caps.MaxMessageSize switch
             {
