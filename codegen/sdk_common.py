@@ -322,7 +322,7 @@ CTYPES_MAP = {
     "*mut *const u8": "ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8))",
     "*mut GoudContact": "ctypes.POINTER(GoudContact)",
     "*mut GoudRenderStats": "ctypes.POINTER(GoudRenderStats)",
-    "*mut FpsStats": "ctypes.POINTER(GoudFpsStats)",
+    "*mut FpsStats": "ctypes.POINTER(FpsStats)",
     "*mut FfiTransform2D": "ctypes.POINTER(FfiTransform2D)",
     "*const FfiTransform2D": "ctypes.POINTER(FfiTransform2D)",
     "*mut FfiSprite": "ctypes.POINTER(FfiSprite)",
@@ -341,7 +341,7 @@ CTYPES_MAP = {
     "*mut FfiText": "ctypes.POINTER(FfiText)",
     "*const FfiText": "ctypes.POINTER(FfiText)",
     "FfiMat3x3": "FfiMat3x3",
-    "NetworkSimulationConfig": "FfiNetworkSimulationConfig",
+    "NetworkSimulationConfig": "NetworkSimulationConfig",
     "GoudContextId": "GoudContextId",
     "GoudResult": "GoudResult",
 }

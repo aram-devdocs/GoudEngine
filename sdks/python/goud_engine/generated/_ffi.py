@@ -132,6 +132,15 @@ class GoudRenderStats(ctypes.Structure):
         ("shader_binds", ctypes.c_uint32)
     ]
 
+class FpsStats(ctypes.Structure):
+    _fields_ = [
+        ("current_fps", ctypes.c_float),
+        ("min_fps", ctypes.c_float),
+        ("max_fps", ctypes.c_float),
+        ("avg_fps", ctypes.c_float),
+        ("frame_time_ms", ctypes.c_float)
+    ]
+
 class GoudDebuggerConfig(ctypes.Structure):
     _fields_ = [
         ("enabled", ctypes.c_bool),
@@ -173,6 +182,43 @@ class GoudContact(ctypes.Structure):
         ("penetration", ctypes.c_float)
     ]
 
+class RenderCapabilities(ctypes.Structure):
+    _fields_ = [
+        ("max_texture_units", ctypes.c_uint32),
+        ("max_texture_size", ctypes.c_uint32),
+        ("supports_instancing", ctypes.c_bool),
+        ("supports_compute", ctypes.c_bool),
+        ("supports_msaa", ctypes.c_bool)
+    ]
+
+class PhysicsCapabilities(ctypes.Structure):
+    _fields_ = [
+        ("supports_continuous_collision", ctypes.c_bool),
+        ("supports_joints", ctypes.c_bool),
+        ("max_bodies", ctypes.c_uint32)
+    ]
+
+class AudioCapabilities(ctypes.Structure):
+    _fields_ = [
+        ("supports_spatial", ctypes.c_bool),
+        ("max_channels", ctypes.c_uint32)
+    ]
+
+class InputCapabilities(ctypes.Structure):
+    _fields_ = [
+        ("supports_gamepad", ctypes.c_bool),
+        ("supports_touch", ctypes.c_bool),
+        ("max_gamepads", ctypes.c_uint32)
+    ]
+
+class NetworkCapabilities(ctypes.Structure):
+    _fields_ = [
+        ("supports_hosting", ctypes.c_bool),
+        ("max_connections", ctypes.c_uint32),
+        ("max_channels", ctypes.c_uint8),
+        ("max_message_size", ctypes.c_uint32)
+    ]
+
 class FfiNetworkStats(ctypes.Structure):
     _fields_ = [
         ("bytes_sent", ctypes.c_uint64),
@@ -185,6 +231,13 @@ class FfiNetworkStats(ctypes.Structure):
         ("receive_bandwidth_bytes_per_sec", ctypes.c_float),
         ("packet_loss_percent", ctypes.c_float),
         ("jitter_ms", ctypes.c_float)
+    ]
+
+class NetworkSimulationConfig(ctypes.Structure):
+    _fields_ = [
+        ("one_way_latency_ms", ctypes.c_uint32),
+        ("jitter_ms", ctypes.c_uint32),
+        ("packet_loss_percent", ctypes.c_float)
     ]
 
 class FfiMat3x3(ctypes.Structure):
@@ -393,7 +446,7 @@ def _setup():
     _lib.goud_renderer_get_stats.restype = ctypes.c_bool
 
     # debug
-    _lib.goud_debug_get_fps_stats.argtypes = [GoudContextId, ctypes.POINTER(GoudFpsStats)]
+    _lib.goud_debug_get_fps_stats.argtypes = [GoudContextId, ctypes.POINTER(FpsStats)]
     _lib.goud_debug_get_fps_stats.restype = ctypes.c_int32
     _lib.goud_debug_set_fps_overlay_enabled.argtypes = [GoudContextId, ctypes.c_bool]
     _lib.goud_debug_set_fps_overlay_enabled.restype = ctypes.c_int32
@@ -1134,7 +1187,7 @@ def _setup():
         _lib.goud_network_set_overlay_handle.restype = ctypes.c_int32
         _lib.goud_network_clear_overlay_handle.argtypes = [GoudContextId]
         _lib.goud_network_clear_overlay_handle.restype = ctypes.c_int32
-        _lib.goud_network_set_simulation.argtypes = [GoudContextId, ctypes.c_int64, FfiNetworkSimulationConfig]
+        _lib.goud_network_set_simulation.argtypes = [GoudContextId, ctypes.c_int64, NetworkSimulationConfig]
         _lib.goud_network_set_simulation.restype = ctypes.c_int32
         _lib.goud_network_clear_simulation.argtypes = [GoudContextId, ctypes.c_int64]
         _lib.goud_network_clear_simulation.restype = ctypes.c_int32

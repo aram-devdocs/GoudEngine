@@ -105,10 +105,6 @@ def gen_ffi() -> None:
         sdk_type = schema["types"].get(type_name)
         if not sdk_type or "fields" not in sdk_type:
             continue
-        # Skip value types that share their SDK name — they have no
-        # distinct FFI struct and are handled as plain Python classes.
-        if sdk_type.get("kind") == "value" and ffi_name == type_name:
-            continue
         lines.append(f"class {ffi_name}(ctypes.Structure):")
         fields_list = []
         for f in sdk_type["fields"]:
