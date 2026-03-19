@@ -8,9 +8,11 @@ def gen_errors():
     if not categories:
         return
     lines = [f"// {HEADER_COMMENT}", "package com.goudengine.core", "",
+             "/** Recovery classification for engine errors. */",
              "enum class RecoveryClass(val value: Int) {", "    Recoverable(0),", "    Fatal(1),", "    Degraded(2);", "",
              "    companion object {", "        fun fromValue(value: Int): RecoveryClass =",
              "            entries.firstOrNull { it.value == value } ?: Recoverable", "    }", "}", "",
+             "/** Base exception for all GoudEngine errors. */",
              "open class GoudException(", "    val errorCode: Int,", "    override val message: String,",
              "    val category: String,", "    val subsystem: String,", "    val operation: String,",
              "    val recovery: RecoveryClass,", "    val recoveryHint: String,", ") : Exception(message)", ""]

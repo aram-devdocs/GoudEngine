@@ -3,6 +3,7 @@ package com.goudengine.types
 
 import com.goudengine.internal.Vec3 as JavaVec3
 
+/** 3D floating-point vector */
 data class Vec3(val x: Float, val y: Float, val z: Float) {
 
     fun toNative(): JavaVec3 = JavaVec3(x, y, z)

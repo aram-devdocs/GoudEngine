@@ -86,8 +86,8 @@ class Vec2Test {
     fun testFactories() {
         assertEquals(Vec2(0f, 0f), Vec2.zero())
         assertEquals(Vec2(1f, 1f), Vec2.one())
-        assertEquals(Vec2(0f, 1f), Vec2.up())
-        assertEquals(Vec2(0f, -1f), Vec2.down())
+        assertEquals(Vec2(0f, -1f), Vec2.up())
+        assertEquals(Vec2(0f, 1f), Vec2.down())
         assertEquals(Vec2(-1f, 0f), Vec2.left())
         assertEquals(Vec2(1f, 0f), Vec2.right())
     }

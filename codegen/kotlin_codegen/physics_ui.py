@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import re
+
 from .helpers import (
     HEADER_COMMENT,
     KOTLIN_OUT,
+    JAVA_DST,
     schema,
     to_pascal,
     to_camel,
@@ -12,7 +15,31 @@ from .helpers import (
     java_native_class,
     write_kotlin,
 )
-from .tools import _init_enum_names, _kt_param_type, _kt_return_type, _param_convert, _return_convert, _needs_return_wrap
+from .tools import _init_enum_names, _kt_param_type, _kt_return_type, _param_convert, _return_convert, _needs_return_wrap, _UNSUPPORTED_TYPES
+
+
+def _uses_unsupported(method: dict) -> bool:
+    """Return True if the method references any unsupported type."""
+    ret = method.get("returns", "void")
+    all_types = [ret] + [p["type"] for p in method.get("params", [])]
+    for t in all_types:
+        base = t.rstrip("?").rstrip("[]")
+        if base in _UNSUPPORTED_TYPES:
+            return True
+        if "[]" in t:
+            return True
+        if "callback" in t.lower():
+            return True
+    return False
+
+
+def _read_java_native_methods(native_cls: str) -> set:
+    """Read the Java native class file and extract declared method names."""
+    java_file = JAVA_DST / f"{native_cls}.java"
+    if not java_file.exists():
+        return set()
+    content = java_file.read_text()
+    return set(re.findall(r'public static native \S+ (\w+)\(', content))
 
 
 # Sub-tools that delegate to a parent context
@@ -37,6 +64,9 @@ def _gen_sub_tool(tool_name: str):
     ffi_methods = ffi_tools.get("methods", {})
     native_cls = java_native_class(tool_name)
 
+    # Read Java native methods
+    java_methods = _read_java_native_methods(native_cls)
+
     lines = [
         f"// {HEADER_COMMENT}",
         "package com.goudengine.core",
@@ -49,6 +79,19 @@ def _gen_sub_tool(tool_name: str):
 
     for method in tool.get("methods", []):
         mn = method["name"]
+
+        # Skip unsupported methods
+        if _uses_unsupported(method):
+            continue
+
+        ffi_entry = ffi_methods.get(mn, {})
+        if ffi_entry.get("batch_in") or ffi_entry.get("batch_out_results") or ffi_entry.get("buffer_protocol"):
+            continue
+
+        # Skip methods not in ffi_methods mapping
+        if mn not in ffi_methods:
+            continue
+
         params = method.get("params", [])
         ret = method.get("returns", "void")
         kt_ret = _kt_return_type(ret)
@@ -56,6 +99,10 @@ def _gen_sub_tool(tool_name: str):
 
         from .helpers import java_method_name
         java_mn = java_method_name(mn)
+
+        # Verify Java native method exists
+        if java_methods and java_mn not in java_methods:
+            continue
 
         kt_params_list = []
         call_args_list = ["contextId"]
@@ -97,6 +144,9 @@ def _gen_physics_tool(tool_name: str):
     ffi_methods = ffi_tools.get("methods", {})
     native_cls = java_native_class(tool_name)
 
+    # Read Java native methods
+    java_methods = _read_java_native_methods(native_cls)
+
     ctor_params = tool.get("constructor", {}).get("params", [])
     kt_ctor_params = ", ".join(
         f"{p['name']}: {kt_type(p['type'])}" for p in ctor_params
@@ -135,6 +185,17 @@ def _gen_physics_tool(tool_name: str):
         if mn in _PHYSICS_SKIP_METHODS:
             continue
 
+        # Skip unsupported methods
+        if _uses_unsupported(method):
+            continue
+
+        ffi_entry = ffi_methods.get(mn, {})
+        if ffi_entry.get("batch_in") or ffi_entry.get("batch_out_results") or ffi_entry.get("buffer_protocol"):
+            continue
+
+        if mn not in ffi_methods and mn != "destroy":
+            continue
+
         params = method.get("params", [])
         ret = method.get("returns", "void")
         kt_ret = _kt_return_type(ret)
@@ -142,6 +203,10 @@ def _gen_physics_tool(tool_name: str):
 
         from .helpers import java_method_name
         java_mn = java_method_name(mn)
+
+        # Verify Java native method exists
+        if java_methods and java_mn not in java_methods and mn != "destroy":
+            continue
 
         if mn == "destroy":
             lines.append(f"    fun destroy(): {kt_ret} {{")
@@ -193,6 +258,9 @@ def _gen_engine_config():
     ffi_methods = ffi_tools.get("methods", {})
     native_cls = java_native_class("EngineConfig")
 
+    # Read Java native methods
+    java_methods = _read_java_native_methods(native_cls)
+
     lines = [
         f"// {HEADER_COMMENT}",
         "package com.goudengine.core",
@@ -216,8 +284,16 @@ def _gen_engine_config():
         ret = method.get("returns", "void")
         kt_mn = to_camel(mn)
 
+        # Skip unsupported methods
+        if _uses_unsupported(method):
+            continue
+
         from .helpers import java_method_name
         java_mn = java_method_name(mn)
+
+        # Verify Java native method exists
+        if java_methods and java_mn not in java_methods and mn not in ("build", "destroy"):
+            continue
 
         if mn == "build":
             lines.append("    fun build(): GoudGame {")
@@ -269,6 +345,9 @@ def _gen_ui_manager():
     ffi_methods = ffi_tools.get("methods", {})
     native_cls = java_native_class("UiManager")
 
+    # Read Java native methods
+    java_methods = _read_java_native_methods(native_cls)
+
     lines = [
         f"// {HEADER_COMMENT}",
         "package com.goudengine.core",
@@ -294,8 +373,20 @@ def _gen_ui_manager():
         kt_ret = _kt_return_type(ret)
         kt_mn = to_camel(mn)
 
+        # Skip unsupported methods
+        if _uses_unsupported(method):
+            continue
+
+        # Skip destroy - handled below
+        if mn == "destroy":
+            continue
+
         from .helpers import java_method_name
         java_mn = java_method_name(mn)
+
+        # Verify Java native method exists
+        if java_methods and java_mn not in java_methods:
+            continue
 
         kt_params_list = []
         call_args_list = ["handle"]
@@ -317,10 +408,16 @@ def _gen_ui_manager():
             lines.append(f"        {native_cls}.{java_mn}({call_args})")
         lines.append("")
 
+    # Emit destroy - either calling native or as a no-op
+    has_destroy = not java_methods or "destroy" in java_methods
     lines.append("    fun destroy() {")
-    lines.append(f"        if (handle != 0L) {{ {native_cls}.destroy(handle); handle = 0L }}")
+    if has_destroy:
+        lines.append(f"        if (handle != 0L) {{ {native_cls}.destroy(handle); handle = 0L }}")
+    else:
+        lines.append("        handle = 0L")
     lines.append("    }")
     lines.append("")
+
     lines.append("    override fun close() = destroy()")
     lines.append("}")
     lines.append("")

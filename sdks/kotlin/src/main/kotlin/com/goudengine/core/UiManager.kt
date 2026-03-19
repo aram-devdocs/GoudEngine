@@ -45,9 +45,6 @@ class UiManager private constructor(private var handle: Long) : AutoCloseable {
     fun setWidget(nodeId: Long, widgetKind: Int): Int =
         UiManagerNative.setWidget(handle, nodeId, widgetKind)
 
-    fun setStyle(nodeId: Long, style: UiStyle): Int =
-        UiManagerNative.setStyle(handle, nodeId, style)
-
     fun setLabelText(nodeId: Long, text: String): Int =
         UiManagerNative.setLabelText(handle, nodeId, text)
 
@@ -63,11 +60,8 @@ class UiManager private constructor(private var handle: Long) : AutoCloseable {
     fun eventCount(): Int =
         UiManagerNative.eventCount(handle)
 
-    fun eventRead(index: Int): UiEvent? =
-        UiManagerNative.eventRead(handle, index)
-
     fun destroy() {
-        if (handle != 0L) { UiManagerNative.destroy(handle); handle = 0L }
+        handle = 0L
     }
 
     override fun close() = destroy()

@@ -1,6 +1,6 @@
 """Value type generation for Kotlin SDK."""
 from __future__ import annotations
-from .helpers import HEADER_COMMENT, KOTLIN_OUT, schema, to_pascal, to_camel, kt_type, write_kotlin
+from .helpers import HEADER_COMMENT, KOTLIN_OUT, schema, to_pascal, to_camel, kt_type, write_kotlin, kdoc
 
 _VEC2_METHODS = {
     "add": "fun add(other: Vec2): Vec2 = Vec2(x + other.x, y + other.y)",
@@ -55,6 +55,8 @@ def gen_value_types():
         lines = [f"// {HEADER_COMMENT}", "package com.goudengine.types", ""]
         if is_carrier:
             lines += [f"import com.goudengine.internal.{type_name} as Java{type_name}", ""]
+        doc = type_def.get("doc")
+        lines.extend(kdoc(doc))
         field_params = ", ".join(f"val {to_camel(f['name'])}: {kt_type(f['type'])}" for f in fields)
         lines.append(f"data class {type_name}({field_params}) {{")
         methods = type_def.get("methods", [])

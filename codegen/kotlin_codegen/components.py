@@ -1,10 +1,10 @@
 """Component wrapper generation for Kotlin SDK."""
 from __future__ import annotations
-from .helpers import HEADER_COMMENT, KOTLIN_OUT, schema, mapping, to_pascal, to_camel, kt_type, java_type_native_class, write_kotlin
+from .helpers import HEADER_COMMENT, KOTLIN_OUT, ENUM_SUBDIRS, schema, mapping, to_pascal, to_camel, kt_type, java_type_native_class, write_kotlin, kdoc
 
 def _collect_java_imports(type_name, type_def):
     imports = set()
-    imports.add(f"import com.goudengine.internal.{type_name}")
+    imports.add(f"import com.goudengine.internal.{type_name} as Java{type_name}")
     native_cls = java_type_native_class(type_name)
     imports.add(f"import com.goudengine.internal.{native_cls}")
     for meth in type_def.get("methods", []):
@@ -13,15 +13,45 @@ def _collect_java_imports(type_name, type_def):
             imports.add(f"import com.goudengine.internal.{ret}")
         for p in meth.get("params", []):
             if p["type"] in ("Transform2D", "Sprite"):
-                imports.add(f"import com.goudengine.internal.{p['type']}")
+                imports.add(f"import com.goudengine.internal.{p['type']} as Java{p['type']}")
     return sorted(imports)
+
+
+def _collect_enum_imports(type_def):
+    """Collect imports for enum types used in fields and methods."""
+    imports = set()
+    _enum_names = set(schema.get("enums", {}).keys())
+    for f in type_def.get("fields", []):
+        base = f["type"].rstrip("?")
+        if base in _enum_names:
+            subdir = ENUM_SUBDIRS.get(base, "core")
+            imports.add(f"import com.goudengine.{subdir}.{to_pascal(base)}")
+    for meth in type_def.get("methods", []):
+        for p in meth.get("params", []):
+            base = p["type"].rstrip("?")
+            if base in _enum_names:
+                subdir = ENUM_SUBDIRS.get(base, "core")
+                imports.add(f"import com.goudengine.{subdir}.{to_pascal(base)}")
+        ret = meth.get("returns", "void").rstrip("?")
+        if ret in _enum_names:
+            subdir = ENUM_SUBDIRS.get(ret, "core")
+            imports.add(f"import com.goudengine.{subdir}.{to_pascal(ret)}")
+    return sorted(imports)
+
 
 def _java_method(name):
     from .helpers import java_method_name
     return java_method_name(name)
 
+
+def _is_enum(t):
+    return t.rstrip("?") in set(schema.get("enums", {}).keys())
+
+
 def gen_components():
     type_methods = schema.get("ffi_type_methods", {})
+    _enum_names = set(schema.get("enums", {}).keys())
+
     for type_name, type_def in schema["types"].items():
         if type_def.get("kind") != "component":
             continue
@@ -31,12 +61,40 @@ def gen_components():
         lines = [f"// {HEADER_COMMENT}", "package com.goudengine.components", ""]
         for imp in _collect_java_imports(type_name, type_def):
             lines.append(imp)
+        for imp in _collect_enum_imports(type_def):
+            lines.append(imp)
         lines += ["import com.goudengine.types.Vec2 as KtVec2", "import com.goudengine.types.Color as KtColor", ""]
-        lines += [f"class {type_name}(internal var native: com.goudengine.internal.{type_name}) {{", ""]
+
+        doc = type_def.get("doc")
+        lines.extend(kdoc(doc))
+
+        lines += [f"class {type_name}(internal var native: Java{type_name}) {{", ""]
+
+        # Track property JVM signatures to avoid getter/setter clashes
+        property_jvm_sigs = set()
+
         for f in fields:
             fn = to_camel(f["name"])
-            ft = kt_type(f["type"])
-            lines += [f"    var {fn}: {ft}", f"        get() = native.{fn}", f"        set(value) {{ native.{fn} = value }}", ""]
+            ft_raw = f["type"]
+            is_enum_field = _is_enum(ft_raw)
+            ft = kt_type(ft_raw)
+
+            if is_enum_field:
+                enum_pascal = to_pascal(ft_raw.rstrip("?"))
+                # Property with enum conversion
+                lines += [
+                    f"    var {fn}: {enum_pascal}",
+                    f"        get() = {enum_pascal}.fromValue(native.{fn})!!",
+                    f"        set(value) {{ native.{fn} = value.value }}",
+                    "",
+                ]
+            else:
+                lines += [f"    var {fn}: {ft}", f"        get() = native.{fn}", f"        set(value) {{ native.{fn} = value }}", ""]
+
+            # Record JVM getter/setter signatures for clash detection
+            property_jvm_sigs.add(f"get{fn[0].upper()}{fn[1:]}")
+            property_jvm_sigs.add(f"set{fn[0].upper()}{fn[1:]}")
+
         factories_map = tm.get("factories", {})
         schema_factories = {fac["name"]: fac for fac in type_def.get("factories", [])}
         if factories_map:
@@ -58,6 +116,12 @@ def gen_components():
             params = schema_meth.get("params", [])
             ret = schema_meth.get("returns", "void")
             is_static = ffi_info.get("static", False)
+
+            # Skip getter/setter methods that clash with property JVM signatures
+            camel_name = to_camel(mname)
+            if camel_name in property_jvm_sigs:
+                continue
+
             kt_ret = kt_type(ret) if ret != "void" else "Unit"
             kt_params_list = []
             call_args_list = ["native"] if not is_static else []
@@ -81,7 +145,7 @@ def gen_components():
                 lines += [f"    fun {to_camel(mname)}({kt_params}): KtColor {{", f"        val r = {native_cls}.{java_mn}({call_args})", "        return KtColor(r.r, r.g, r.b, r.a)", "    }"]
             elif ret == "Mat3x3":
                 lines += [f"    fun {to_camel(mname)}({kt_params}): com.goudengine.internal.Mat3x3 {{", f"        return {native_cls}.{java_mn}({call_args})", "    }"]
-            elif ret == "Transform2D":
+            elif ret == "Transform2D" or ret == type_name:
                 lines += [f"    fun {to_camel(mname)}({kt_params}): {type_name} {{", f"        return {type_name}({native_cls}.{java_mn}({call_args}))", "    }"]
             else:
                 lines += [f"    fun {to_camel(mname)}({kt_params}): {kt_ret} {{", f"        return {native_cls}.{java_mn}({call_args})", "    }"]

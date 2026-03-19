@@ -14,17 +14,8 @@ class Network(private val contextId: Long) {
     fun disconnect(handle: Long): Int =
         NetworkNative.disconnect(contextId, handle)
 
-    fun send(handle: Long, peerId: Long, data: ByteArray, channel: Int): Int =
-        NetworkNative.send(contextId, handle, peerId, data, channel)
-
-    fun receive(handle: Long): ByteArray =
-        NetworkNative.receive(contextId, handle)
-
     fun poll(handle: Long): Int =
         NetworkNative.poll(contextId, handle)
-
-    fun getStats(handle: Long): Object =
-        NetworkNative.getStats(contextId, handle)
 
     fun peerCount(handle: Long): Int =
         NetworkNative.peerCount(contextId, handle)

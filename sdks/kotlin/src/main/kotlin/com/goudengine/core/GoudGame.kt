@@ -3,7 +3,8 @@ package com.goudengine.core
 
 import com.goudengine.internal.GoudGameNative
 
-class GoudGame private constructor(internal val contextId: Long) : AutoCloseable {
+/** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
+class GoudGame internal constructor(internal val contextId: Long) : AutoCloseable {
 
     companion object {
         fun create(width: Int = 800, height: Int = 600, title: String = "GoudEngine"): GoudGame {
@@ -22,18 +23,6 @@ class GoudGame private constructor(internal val contextId: Long) : AutoCloseable
 
     fun setWindowSize(width: Int, height: Int): Boolean =
         GoudGameNative.setWindowSize(contextId, width, height)
-
-    fun beginFrame(r: Float, g: Float, b: Float, a: Float) {
-        GoudGameNative.beginFrame(contextId, r, g, b, a)
-    }
-
-    fun endFrame() {
-        GoudGameNative.endFrame(contextId)
-    }
-
-    fun run(update: Callback(f32)) {
-        GoudGameNative.run(contextId, update)
-    }
 
     fun loadTexture(path: String): Long =
         GoudGameNative.loadTexture(contextId, path)
@@ -116,9 +105,6 @@ class GoudGame private constructor(internal val contextId: Long) : AutoCloseable
     fun isAlive(entity: com.goudengine.core.EntityHandle): Boolean =
         GoudGameNative.isAlive(contextId, entity.id)
 
-    fun isAliveBatch(entities: Entity[], outResults: U8[]): Int =
-        GoudGameNative.isAliveBatch(contextId, entities, outResults)
-
     fun addTransform2d(entity: com.goudengine.core.EntityHandle, transform: com.goudengine.components.Transform2D) {
         GoudGameNative.addTransform2d(contextId, entity.id, transform.native)
     }
@@ -169,14 +155,6 @@ class GoudGame private constructor(internal val contextId: Long) : AutoCloseable
 
     fun removeSprite(entity: com.goudengine.core.EntityHandle): Boolean =
         GoudGameNative.removeSprite(contextId, entity.id)
-
-    fun spawnBatch(count: Int): Array<com.goudengine.core.EntityHandle> {
-        val r = GoudGameNative.spawnBatch(contextId, count)
-        return com.goudengine.core.EntityHandle(r)
-    }
-
-    fun despawnBatch(entities: Entity[]): Int =
-        GoudGameNative.despawnBatch(contextId, entities)
 
     fun play(entity: com.goudengine.core.EntityHandle): Int =
         GoudGameNative.play(contextId, entity.id)
@@ -273,12 +251,6 @@ class GoudGame private constructor(internal val contextId: Long) : AutoCloseable
         GoudGameNative.disableBlending(contextId)
     }
 
-    fun getRenderStats(): RenderStats =
-        GoudGameNative.getRenderStats(contextId)
-
-    fun getFpsStats(): FpsStats =
-        GoudGameNative.getFpsStats(contextId)
-
     fun setFpsOverlayEnabled(enabled: Boolean) {
         GoudGameNative.setFpsOverlayEnabled(contextId, enabled)
     }
@@ -290,12 +262,6 @@ class GoudGame private constructor(internal val contextId: Long) : AutoCloseable
     fun setFpsOverlayCorner(corner: com.goudengine.core.OverlayCorner) {
         GoudGameNative.setFpsOverlayCorner(contextId, corner.value)
     }
-
-    fun getDebuggerSnapshotJson(): String =
-        GoudGameNative.getDebuggerSnapshotJson(contextId)
-
-    fun getDebuggerManifestJson(): String =
-        GoudGameNative.getDebuggerManifestJson(contextId)
 
     fun setDebuggerPaused(paused: Boolean) {
         GoudGameNative.setDebuggerPaused(contextId, paused)
@@ -341,32 +307,13 @@ class GoudGame private constructor(internal val contextId: Long) : AutoCloseable
         GoudGameNative.clearDebuggerSelectedEntity(contextId)
     }
 
-    fun getMemorySummary(): MemorySummary =
-        GoudGameNative.getMemorySummary(contextId)
-
-    fun captureDebuggerFrame(): DebuggerCapture =
-        GoudGameNative.captureDebuggerFrame(contextId)
-
     fun startDebuggerRecording() {
         GoudGameNative.startDebuggerRecording(contextId)
-    }
-
-    fun stopDebuggerRecording(): DebuggerReplayArtifact =
-        GoudGameNative.stopDebuggerRecording(contextId)
-
-    fun startDebuggerReplay(recording: ByteArray) {
-        GoudGameNative.startDebuggerReplay(contextId, recording)
     }
 
     fun stopDebuggerReplay() {
         GoudGameNative.stopDebuggerReplay(contextId)
     }
-
-    fun getDebuggerReplayStatusJson(): String =
-        GoudGameNative.getDebuggerReplayStatusJson(contextId)
-
-    fun getDebuggerMetricsTraceJson(): String =
-        GoudGameNative.getDebuggerMetricsTraceJson(contextId)
 
     fun mapActionKey(action: String, key: com.goudengine.input.Key): Boolean =
         GoudGameNative.mapActionKey(contextId, action, key.value)
@@ -380,50 +327,29 @@ class GoudGame private constructor(internal val contextId: Long) : AutoCloseable
     fun isActionJustReleased(action: String): Boolean =
         GoudGameNative.isActionJustReleased(contextId, action)
 
-    fun collisionAabbAabb(centerAx: Float, centerAy: Float, halfWa: Float, halfHa: Float, centerBx: Float, centerBy: Float, halfWb: Float, halfHb: Float): Contact? =
-        GoudGameNative.collisionAabbAabb(contextId, centerAx, centerAy, halfWa, halfHa, centerBx, centerBy, halfWb, halfHb)
-
-    fun collisionCircleCircle(centerAx: Float, centerAy: Float, radiusA: Float, centerBx: Float, centerBy: Float, radiusB: Float): Contact? =
-        GoudGameNative.collisionCircleCircle(contextId, centerAx, centerAy, radiusA, centerBx, centerBy, radiusB)
-
-    fun collisionCircleAabb(circleX: Float, circleY: Float, circleRadius: Float, boxX: Float, boxY: Float, boxHw: Float, boxHh: Float): Contact? =
-        GoudGameNative.collisionCircleAabb(contextId, circleX, circleY, circleRadius, boxX, boxY, boxHw, boxHh)
-
     fun pointInRect(px: Float, py: Float, rx: Float, ry: Float, rw: Float, rh: Float): Boolean =
-        GoudGameNative.pointInRect(contextId, px, py, rx, ry, rw, rh)
+        GoudGameNative.pointInRect(px, py, rx, ry, rw, rh)
 
     fun pointInCircle(px: Float, py: Float, cx: Float, cy: Float, radius: Float): Boolean =
-        GoudGameNative.pointInCircle(contextId, px, py, cx, cy, radius)
+        GoudGameNative.pointInCircle(px, py, cx, cy, radius)
 
     fun aabbOverlap(minAx: Float, minAy: Float, maxAx: Float, maxAy: Float, minBx: Float, minBy: Float, maxBx: Float, maxBy: Float): Boolean =
-        GoudGameNative.aabbOverlap(contextId, minAx, minAy, maxAx, maxAy, minBx, minBy, maxBx, maxBy)
+        GoudGameNative.aabbOverlap(minAx, minAy, maxAx, maxAy, minBx, minBy, maxBx, maxBy)
 
     fun circleOverlap(x1: Float, y1: Float, r1: Float, x2: Float, y2: Float, r2: Float): Boolean =
-        GoudGameNative.circleOverlap(contextId, x1, y1, r1, x2, y2, r2)
+        GoudGameNative.circleOverlap(x1, y1, r1, x2, y2, r2)
 
     fun distance(x1: Float, y1: Float, x2: Float, y2: Float): Float =
-        GoudGameNative.distance(contextId, x1, y1, x2, y2)
+        GoudGameNative.distance(x1, y1, x2, y2)
 
     fun distanceSquared(x1: Float, y1: Float, x2: Float, y2: Float): Float =
-        GoudGameNative.distanceSquared(contextId, x1, y1, x2, y2)
-
-    fun physicsRaycastEx(originX: Float, originY: Float, dirX: Float, dirY: Float, maxDist: Float, layerMask: Int): PhysicsRaycastHit2D? =
-        GoudGameNative.physicsRaycastEx(contextId, originX, originY, dirX, dirY, maxDist, layerMask)
+        GoudGameNative.distanceSquared(x1, y1, x2, y2)
 
     fun physicsCollisionEventsCount(): Int =
         GoudGameNative.physicsCollisionEventsCount(contextId)
 
-    fun physicsCollisionEventsRead(index: Int): PhysicsCollisionEvent2D? =
-        GoudGameNative.physicsCollisionEventsRead(contextId, index)
-
-    fun physicsSetCollisionCallback(callbackPtr: Long, userData: Long): Int =
-        GoudGameNative.physicsSetCollisionCallback(contextId, callbackPtr, userData)
-
     fun componentRegisterType(typeIdHash: Long, name: String, size: Long, align: Long): Boolean =
-        GoudGameNative.componentRegisterType(contextId, typeIdHash, name, size, align)
-
-    fun componentAdd(entity: com.goudengine.core.EntityHandle, typeIdHash: Long, dataPtr: Long, dataSize: Long): Boolean =
-        GoudGameNative.componentAdd(contextId, entity.id, typeIdHash, dataPtr, dataSize)
+        GoudGameNative.componentRegisterType(typeIdHash, name, size, align)
 
     fun componentRemove(entity: com.goudengine.core.EntityHandle, typeIdHash: Long): Boolean =
         GoudGameNative.componentRemove(contextId, entity.id, typeIdHash)
@@ -431,68 +357,20 @@ class GoudGame private constructor(internal val contextId: Long) : AutoCloseable
     fun componentHas(entity: com.goudengine.core.EntityHandle, typeIdHash: Long): Boolean =
         GoudGameNative.componentHas(contextId, entity.id, typeIdHash)
 
-    fun componentGet(entity: com.goudengine.core.EntityHandle, typeIdHash: Long): Long =
-        GoudGameNative.componentGet(contextId, entity.id, typeIdHash)
-
-    fun componentGetMut(entity: com.goudengine.core.EntityHandle, typeIdHash: Long): Long =
-        GoudGameNative.componentGetMut(contextId, entity.id, typeIdHash)
-
-    fun componentAddBatch(entities: Entity[], typeIdHash: Long, dataPtr: Long, componentSize: Long): Int =
-        GoudGameNative.componentAddBatch(contextId, entities, typeIdHash, dataPtr, componentSize)
-
-    fun componentRemoveBatch(entities: Entity[], typeIdHash: Long): Int =
-        GoudGameNative.componentRemoveBatch(contextId, entities, typeIdHash)
-
-    fun componentHasBatch(entities: Entity[], typeIdHash: Long, outResults: U8[]): Int =
-        GoudGameNative.componentHasBatch(contextId, entities, typeIdHash, outResults)
-
-    fun getRenderCapabilities(): RenderCapabilities =
-        GoudGameNative.getRenderCapabilities(contextId)
-
-    fun getPhysicsCapabilities(): PhysicsCapabilities =
-        GoudGameNative.getPhysicsCapabilities(contextId)
-
-    fun getAudioCapabilities(): AudioCapabilities =
-        GoudGameNative.getAudioCapabilities(contextId)
-
-    fun getInputCapabilities(): InputCapabilities =
-        GoudGameNative.getInputCapabilities(contextId)
-
-    fun getNetworkCapabilities(): NetworkCapabilities =
-        GoudGameNative.getNetworkCapabilities(contextId)
-
     fun networkHost(protocol: Int, port: Int): Long =
         GoudGameNative.networkHost(contextId, protocol, port)
 
     fun networkConnect(protocol: Int, address: String, port: Int): Long =
         GoudGameNative.networkConnect(contextId, protocol, address, port)
 
-    fun networkConnectWithPeer(protocol: Int, address: String, port: Int): NetworkConnectResult =
-        GoudGameNative.networkConnectWithPeer(contextId, protocol, address, port)
-
     fun networkDisconnect(handle: Long): Int =
         GoudGameNative.networkDisconnect(contextId, handle)
-
-    fun networkSend(handle: Long, peerId: Long, data: ByteArray, channel: Int): Int =
-        GoudGameNative.networkSend(contextId, handle, peerId, data, channel)
-
-    fun networkReceive(handle: Long): ByteArray =
-        GoudGameNative.networkReceive(contextId, handle)
-
-    fun networkReceivePacket(handle: Long): NetworkPacket? =
-        GoudGameNative.networkReceivePacket(contextId, handle)
 
     fun networkPoll(handle: Long): Int =
         GoudGameNative.networkPoll(contextId, handle)
 
-    fun getNetworkStats(handle: Long): NetworkStats =
-        GoudGameNative.getNetworkStats(contextId, handle)
-
     fun networkPeerCount(handle: Long): Int =
         GoudGameNative.networkPeerCount(contextId, handle)
-
-    fun setNetworkSimulation(handle: Long, config: NetworkSimulationConfig): Int =
-        GoudGameNative.setNetworkSimulation(contextId, handle, config)
 
     fun clearNetworkSimulation(handle: Long): Int =
         GoudGameNative.clearNetworkSimulation(contextId, handle)
@@ -502,15 +380,6 @@ class GoudGame private constructor(internal val contextId: Long) : AutoCloseable
 
     fun clearNetworkOverlayHandle(): Int =
         GoudGameNative.clearNetworkOverlayHandle(contextId)
-
-    fun audioPlay(data: ByteArray): Long =
-        GoudGameNative.audioPlay(contextId, data)
-
-    fun audioPlayOnChannel(data: ByteArray, channel: Int): Long =
-        GoudGameNative.audioPlayOnChannel(contextId, data, channel)
-
-    fun audioPlayWithSettings(data: ByteArray, volume: Float, speed: Float, looping: Boolean, channel: Int): Long =
-        GoudGameNative.audioPlayWithSettings(contextId, data, volume, speed, looping, channel)
 
     fun audioStop(playerId: Long): Int =
         GoudGameNative.audioStop(contextId, playerId)
@@ -545,9 +414,6 @@ class GoudGame private constructor(internal val contextId: Long) : AutoCloseable
     fun audioCleanupFinished(): Int =
         GoudGameNative.audioCleanupFinished(contextId)
 
-    fun audioPlaySpatial3d(data: ByteArray, sourceX: Float, sourceY: Float, sourceZ: Float, listenerX: Float, listenerY: Float, listenerZ: Float, maxDistance: Float, rolloff: Float): Long =
-        GoudGameNative.audioPlaySpatial3d(contextId, data, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff)
-
     fun audioUpdateSpatial3d(playerId: Long, sourceX: Float, sourceY: Float, sourceZ: Float, listenerX: Float, listenerY: Float, listenerZ: Float, maxDistance: Float, rolloff: Float): Int =
         GoudGameNative.audioUpdateSpatial3d(contextId, playerId, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff)
 
@@ -565,12 +431,6 @@ class GoudGame private constructor(internal val contextId: Long) : AutoCloseable
 
     fun audioCrossfade(fromPlayerId: Long, toPlayerId: Long, mix: Float): Int =
         GoudGameNative.audioCrossfade(contextId, fromPlayerId, toPlayerId, mix)
-
-    fun audioCrossfadeTo(fromPlayerId: Long, data: ByteArray, durationSec: Float, channel: Int): Long =
-        GoudGameNative.audioCrossfadeTo(contextId, fromPlayerId, data, durationSec, channel)
-
-    fun audioMixWith(primaryPlayerId: Long, data: ByteArray, secondaryVolume: Float, secondaryChannel: Int): Long =
-        GoudGameNative.audioMixWith(contextId, primaryPlayerId, data, secondaryVolume, secondaryChannel)
 
     fun audioUpdateCrossfades(deltaSec: Float): Int =
         GoudGameNative.audioUpdateCrossfades(contextId, deltaSec)

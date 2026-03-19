@@ -48,16 +48,20 @@ def _copy_java_carriers():
 def _write_gradle_build():
     """Write build.gradle.kts for the Kotlin SDK module."""
     kotlin_root = SDKS_DIR / "kotlin"
+    version = schema.get('version', '0.0.1')
 
     build_gradle = kotlin_root / "build.gradle.kts"
     content = f"""\
 // {HEADER_COMMENT}
 plugins {{
     kotlin("jvm") version "1.9.22"
+    `maven-publish`
+    signing
+    id("org.jetbrains.dokka") version "1.9.10"
 }}
 
 group = "com.goudengine"
-version = "{schema.get('version', '0.0.1')}"
+version = "{version}"
 
 repositories {{
     mavenCentral()
@@ -66,6 +70,7 @@ repositories {{
 dependencies {{
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     testImplementation(kotlin("test"))
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }}
 
 kotlin {{
@@ -80,10 +85,89 @@ sourceSets {{
     main {{
         java.srcDirs("src/main/java")
         kotlin.srcDirs("src/main/kotlin")
+        resources.srcDir("build/native")
     }}
     test {{
         kotlin.srcDirs("src/test/kotlin")
     }}
+}}
+
+val buildNative by tasks.registering(Exec::class) {{
+    group = "build"
+    description = "Build the native Rust library"
+    workingDir = rootDir.resolve("../../")
+    commandLine("cargo", "build", "--release", "-p", "goud-engine-core")
+    doLast {{
+        val nativeDir = layout.buildDirectory.dir("native").get().asFile
+        nativeDir.mkdirs()
+        val osName = System.getProperty("os.name").lowercase()
+        val libName = when {{
+            "mac" in osName || "darwin" in osName -> "libgoud_engine.dylib"
+            "win" in osName -> "goud_engine.dll"
+            else -> "libgoud_engine.so"
+        }}
+        val src = rootDir.resolve("../../target/release/$libName")
+        if (src.exists()) {{
+            src.copyTo(nativeDir.resolve(libName), overwrite = true)
+        }}
+    }}
+}}
+
+tasks.named("processResources") {{
+    dependsOn(buildNative)
+}}
+
+tasks.jar {{
+    from("build/native") {{
+        into("native/")
+    }}
+}}
+
+java {{
+    withSourcesJar()
+    withJavadocJar()
+}}
+
+publishing {{
+    publications {{
+        create<MavenPublication>("mavenKotlin") {{
+            groupId = "com.goudengine"
+            artifactId = "goud-engine-kotlin"
+            from(components["java"])
+            pom {{
+                name.set("GoudEngine Kotlin SDK")
+                description.set("Kotlin bindings for the GoudEngine game engine")
+                url.set("https://github.com/aram-devdocs/GoudEngine")
+                licenses {{
+                    license {{
+                        name.set("MIT")
+                        url.set("https://opensource.org/licenses/MIT")
+                    }}
+                }}
+                scm {{
+                    connection.set("scm:git:git://github.com/aram-devdocs/GoudEngine.git")
+                    developerConnection.set("scm:git:ssh://github.com/aram-devdocs/GoudEngine.git")
+                    url.set("https://github.com/aram-devdocs/GoudEngine")
+                }}
+            }}
+        }}
+    }}
+    repositories {{
+        maven {{
+            name = "OSSRH"
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            credentials {{
+                username = System.getenv("MAVEN_USERNAME") ?: ""
+                password = System.getenv("MAVEN_PASSWORD") ?: ""
+            }}
+        }}
+    }}
+}}
+
+signing {{
+    useGpgCmd()
+    isRequired = System.getenv("MAVEN_USERNAME") != null
+    sign(publishing.publications["mavenKotlin"])
 }}
 """
     build_gradle.parent.mkdir(parents=True, exist_ok=True)
@@ -101,6 +185,7 @@ rootProject.name = "goud-engine-kotlin"
     gradle_props = kotlin_root / "gradle.properties"
     gradle_props_content = """\
 kotlin.code.style=official
+org.gradle.jvmargs=-Xmx1g
 """
     gradle_props.write_text(gradle_props_content)
     print(f"  Generated: {gradle_props.relative_to(ROOT_DIR)}")
