@@ -27,7 +27,7 @@ class GameManager(game: GoudGame) {
 
         when (state) {
             State.MENU -> {
-                if (game.isKeyJustPressed(Key.Space.value)) {
+                if (game.isKeyJustPressed(Key.Space)) {
                     state = State.PLAYING
                 }
             }
@@ -40,7 +40,7 @@ class GameManager(game: GoudGame) {
                 }
             }
             State.GAME_OVER -> {
-                if (game.isKeyJustPressed(Key.Space.value)) {
+                if (game.isKeyJustPressed(Key.Space)) {
                     reset(game)
                 }
             }

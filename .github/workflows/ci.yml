@@ -923,7 +923,7 @@ jobs:
 
     - name: Run Kotlin SDK tests
       working-directory: sdks/kotlin
-      run: ./gradlew test --no-daemon
+      run: ./gradlew test --no-daemon -x buildNative
 
   sandbox-parity:
     name: Sandbox Recovery Smoke

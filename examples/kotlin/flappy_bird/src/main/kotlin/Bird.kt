@@ -16,7 +16,7 @@ class Bird(game: GoudGame) {
         jumpCooldown -= dt
         val scaledDt = dt * GameConstants.TARGET_FPS
 
-        if (game.isKeyJustPressed(Key.Space.value) && jumpCooldown <= 0f) {
+        if (game.isKeyJustPressed(Key.Space) && jumpCooldown <= 0f) {
             velocity = GameConstants.JUMP_STRENGTH * GameConstants.TARGET_FPS
             jumpCooldown = GameConstants.JUMP_COOLDOWN
         }

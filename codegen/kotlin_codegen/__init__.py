@@ -149,6 +149,12 @@ publishing {{
                     developerConnection.set("scm:git:ssh://github.com/aram-devdocs/GoudEngine.git")
                     url.set("https://github.com/aram-devdocs/GoudEngine")
                 }}
+                developers {{
+                    developer {{
+                        name.set("GoudEngine Contributors")
+                        url.set("https://github.com/aram-devdocs/GoudEngine/graphs/contributors")
+                    }}
+                }}
             }}
         }}
     }}

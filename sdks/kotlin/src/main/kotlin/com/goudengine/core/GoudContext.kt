@@ -123,6 +123,7 @@ class GoudContext internal constructor(internal val contextId: Long) : AutoClose
 
     fun getTransform2d(entity: com.goudengine.core.EntityHandle): com.goudengine.components.Transform2D? {
         val r = GoudContextNative.getTransform2d(contextId, entity.id)
+        if (r == null) return null
         return com.goudengine.components.Transform2D(r)
     }
 
@@ -142,6 +143,7 @@ class GoudContext internal constructor(internal val contextId: Long) : AutoClose
 
     fun getSprite(entity: com.goudengine.core.EntityHandle): com.goudengine.components.Sprite? {
         val r = GoudContextNative.getSprite(contextId, entity.id)
+        if (r == null) return null
         return com.goudengine.components.Sprite(r)
     }
 

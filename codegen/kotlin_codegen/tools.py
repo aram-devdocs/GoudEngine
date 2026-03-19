@@ -307,6 +307,9 @@ def _gen_tool_class(tool_name: str, is_windowed: bool = False):
         elif _needs_return_wrap(ret):
             lines.append(f"    fun {kt_mn}({kt_params}): {kt_ret} {{")
             lines.append(f"        val r = {native_cls}.{java_mn}({call_args})")
+            # Handle nullable return types
+            if ret.endswith("?"):
+                lines.append(f"        if (r == null) return null")
             lines.append(f"        return {_return_convert(ret, 'r')}")
             lines.append("    }")
         else:
