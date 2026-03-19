@@ -179,7 +179,10 @@ def _nil_return_val(go_ret: str, ffi_ret: str) -> str:
     # C struct types need a struct literal zero value
     if ffi_ret in _C_STRUCT_TYPES:
         return f"C.{ffi_ret}{{}}"
-    # All scalar C typedefs and Go numeric types use 0
+    # Signed integer returns use -1 sentinel (FFI convention: negative = error)
+    if go_ret in ("int8", "int16", "int32", "int64"):
+        return "-1"
+    # Unsigned and other numeric types use 0
     return "0"
 
 

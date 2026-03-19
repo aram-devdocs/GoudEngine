@@ -8,10 +8,10 @@ import "C"
 // GoudAnimationClipAddEvent wraps goud_animation_clip_add_event.
 func GoudAnimationClipAddEvent(context_id C.GoudContextId, entity_id uint64, clip_event_frame uint32, name_ptr *C.uint8_t, name_len uint32, payload_type uint32, payload_int int32, payload_float float32, payload_str_ptr *C.uint8_t, payload_str_len uint32) int32 {
 	if name_ptr == nil {
-		return 0
+		return -1
 	}
 	if payload_str_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_animation_clip_add_event(context_id, C.uint64_t(entity_id), C.uint32_t(clip_event_frame), name_ptr, C.uint32_t(name_len), C.uint32_t(payload_type), C.int32_t(payload_int), C.float(payload_float), payload_str_ptr, C.uint32_t(payload_str_len)))
 }
@@ -40,7 +40,7 @@ func GoudAnimationClipBuilderNew(frame_duration float32, mode uint32) *C.FfiAnim
 // GoudAnimationControllerAddState wraps goud_animation_controller_add_state.
 func GoudAnimationControllerAddState(context_id C.GoudContextId, entity_id uint64, state_name_ptr *C.uint8_t, state_name_len int32, clip_index int32) int32 {
 	if state_name_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_animation_controller_add_state(context_id, C.uint64_t(entity_id), state_name_ptr, C.int32_t(state_name_len), C.int32_t(clip_index)))
 }
@@ -48,13 +48,13 @@ func GoudAnimationControllerAddState(context_id C.GoudContextId, entity_id uint6
 // GoudAnimationControllerAddTransition wraps goud_animation_controller_add_transition.
 func GoudAnimationControllerAddTransition(context_id C.GoudContextId, entity_id uint64, from_ptr *C.uint8_t, from_len int32, to_ptr *C.uint8_t, to_len int32, trigger_ptr *C.uint8_t, trigger_len int32) int32 {
 	if from_ptr == nil {
-		return 0
+		return -1
 	}
 	if to_ptr == nil {
-		return 0
+		return -1
 	}
 	if trigger_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_animation_controller_add_transition(context_id, C.uint64_t(entity_id), from_ptr, C.int32_t(from_len), to_ptr, C.int32_t(to_len), trigger_ptr, C.int32_t(trigger_len)))
 }
@@ -67,7 +67,7 @@ func GoudAnimationControllerCreate(context_id C.GoudContextId, entity_id uint64)
 // GoudAnimationControllerGetState wraps goud_animation_controller_get_state.
 func GoudAnimationControllerGetState(context_id C.GoudContextId, entity_id uint64, out_buf *C.uint8_t, buf_len int32) int32 {
 	if out_buf == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_animation_controller_get_state(context_id, C.uint64_t(entity_id), out_buf, C.int32_t(buf_len)))
 }
@@ -75,7 +75,7 @@ func GoudAnimationControllerGetState(context_id C.GoudContextId, entity_id uint6
 // GoudAnimationControllerSetState wraps goud_animation_controller_set_state.
 func GoudAnimationControllerSetState(context_id C.GoudContextId, entity_id uint64, state_ptr *C.uint8_t, state_len int32) int32 {
 	if state_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_animation_controller_set_state(context_id, C.uint64_t(entity_id), state_ptr, C.int32_t(state_len)))
 }
@@ -93,31 +93,31 @@ func GoudAnimationEventsCount(context_id C.GoudContextId) int32 {
 // GoudAnimationEventsRead wraps goud_animation_events_read.
 func GoudAnimationEventsRead(context_id C.GoudContextId, index uint32, out_entity *C.uint64_t, out_name_ptr **C.uint8_t, out_name_len *C.uint32_t, out_frame *C.uint32_t, out_payload_type *C.uint32_t, out_payload_int *C.int32_t, out_payload_float *C.float, out_payload_str_ptr **C.uint8_t, out_payload_str_len *C.uint32_t) int32 {
 	if out_entity == nil {
-		return 0
+		return -1
 	}
 	if out_name_ptr == nil {
-		return 0
+		return -1
 	}
 	if out_name_len == nil {
-		return 0
+		return -1
 	}
 	if out_frame == nil {
-		return 0
+		return -1
 	}
 	if out_payload_type == nil {
-		return 0
+		return -1
 	}
 	if out_payload_int == nil {
-		return 0
+		return -1
 	}
 	if out_payload_float == nil {
-		return 0
+		return -1
 	}
 	if out_payload_str_ptr == nil {
-		return 0
+		return -1
 	}
 	if out_payload_str_len == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_animation_events_read(context_id, C.uint32_t(index), out_entity, out_name_ptr, out_name_len, out_frame, out_payload_type, out_payload_int, out_payload_float, out_payload_str_ptr, out_payload_str_len))
 }
@@ -125,7 +125,7 @@ func GoudAnimationEventsRead(context_id C.GoudContextId, index uint32, out_entit
 // GoudAnimationLayerAdd wraps goud_animation_layer_add.
 func GoudAnimationLayerAdd(context_id C.GoudContextId, entity_id uint64, name_ptr *C.uint8_t, name_len uint32, blend_mode uint32) int32 {
 	if name_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_animation_layer_add(context_id, C.uint64_t(entity_id), name_ptr, C.uint32_t(name_len), C.uint32_t(blend_mode)))
 }
@@ -168,7 +168,7 @@ func GoudAnimationPlay(context_id C.GoudContextId, entity_id uint64) int32 {
 // GoudAnimationSetParameterBool wraps goud_animation_set_parameter_bool.
 func GoudAnimationSetParameterBool(context_id C.GoudContextId, entity_id uint64, name_ptr *C.uint8_t, name_len int32, value bool) int32 {
 	if name_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_animation_set_parameter_bool(context_id, C.uint64_t(entity_id), name_ptr, C.int32_t(name_len), C._Bool(value)))
 }
@@ -176,7 +176,7 @@ func GoudAnimationSetParameterBool(context_id C.GoudContextId, entity_id uint64,
 // GoudAnimationSetParameterFloat wraps goud_animation_set_parameter_float.
 func GoudAnimationSetParameterFloat(context_id C.GoudContextId, entity_id uint64, name_ptr *C.uint8_t, name_len int32, value float32) int32 {
 	if name_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_animation_set_parameter_float(context_id, C.uint64_t(entity_id), name_ptr, C.int32_t(name_len), C.float(value)))
 }
@@ -184,7 +184,7 @@ func GoudAnimationSetParameterFloat(context_id C.GoudContextId, entity_id uint64
 // GoudAnimationSetState wraps goud_animation_set_state.
 func GoudAnimationSetState(context_id C.GoudContextId, entity_id uint64, state_ptr *C.uint8_t, state_len int32) int32 {
 	if state_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_animation_set_state(context_id, C.uint64_t(entity_id), state_ptr, C.int32_t(state_len)))
 }
@@ -222,7 +222,7 @@ func GoudAudioCrossfade(context_id C.GoudContextId, from_player_id uint64, to_pl
 // GoudAudioCrossfadeTo wraps goud_audio_crossfade_to.
 func GoudAudioCrossfadeTo(context_id C.GoudContextId, from_player_id uint64, asset_data *C.uint8_t, asset_len uint, duration_sec float32, channel uint8) int64 {
 	if asset_data == nil {
-		return 0
+		return -1
 	}
 	return int64(C.goud_audio_crossfade_to(context_id, C.uint64_t(from_player_id), asset_data, C.size_t(asset_len), C.float(duration_sec), C.uint8_t(channel)))
 }
@@ -245,7 +245,7 @@ func GoudAudioIsPlaying(context_id C.GoudContextId, player_id uint64) int32 {
 // GoudAudioMixWith wraps goud_audio_mix_with.
 func GoudAudioMixWith(context_id C.GoudContextId, primary_player_id uint64, asset_data *C.uint8_t, asset_len uint, secondary_volume float32, secondary_channel uint8) int64 {
 	if asset_data == nil {
-		return 0
+		return -1
 	}
 	return int64(C.goud_audio_mix_with(context_id, C.uint64_t(primary_player_id), asset_data, C.size_t(asset_len), C.float(secondary_volume), C.uint8_t(secondary_channel)))
 }
@@ -258,7 +258,7 @@ func GoudAudioPause(context_id C.GoudContextId, player_id uint64) int32 {
 // GoudAudioPlay wraps goud_audio_play.
 func GoudAudioPlay(context_id C.GoudContextId, asset_data *C.uint8_t, asset_len uint) int64 {
 	if asset_data == nil {
-		return 0
+		return -1
 	}
 	return int64(C.goud_audio_play(context_id, asset_data, C.size_t(asset_len)))
 }
@@ -266,7 +266,7 @@ func GoudAudioPlay(context_id C.GoudContextId, asset_data *C.uint8_t, asset_len 
 // GoudAudioPlayOnChannel wraps goud_audio_play_on_channel.
 func GoudAudioPlayOnChannel(context_id C.GoudContextId, asset_data *C.uint8_t, asset_len uint, channel uint8) int64 {
 	if asset_data == nil {
-		return 0
+		return -1
 	}
 	return int64(C.goud_audio_play_on_channel(context_id, asset_data, C.size_t(asset_len), C.uint8_t(channel)))
 }
@@ -274,7 +274,7 @@ func GoudAudioPlayOnChannel(context_id C.GoudContextId, asset_data *C.uint8_t, a
 // GoudAudioPlaySpatial wraps goud_audio_play_spatial.
 func GoudAudioPlaySpatial(context_id C.GoudContextId, asset_data *C.uint8_t, asset_len uint, source_x float32, source_y float32, listener_x float32, listener_y float32, max_distance float32, rolloff float32) int64 {
 	if asset_data == nil {
-		return 0
+		return -1
 	}
 	return int64(C.goud_audio_play_spatial(context_id, asset_data, C.size_t(asset_len), C.float(source_x), C.float(source_y), C.float(listener_x), C.float(listener_y), C.float(max_distance), C.float(rolloff)))
 }
@@ -282,7 +282,7 @@ func GoudAudioPlaySpatial(context_id C.GoudContextId, asset_data *C.uint8_t, ass
 // GoudAudioPlaySpatial3d wraps goud_audio_play_spatial_3d.
 func GoudAudioPlaySpatial3d(context_id C.GoudContextId, asset_data *C.uint8_t, asset_len uint, source_x float32, source_y float32, source_z float32, listener_x float32, listener_y float32, listener_z float32, max_distance float32, rolloff float32) int64 {
 	if asset_data == nil {
-		return 0
+		return -1
 	}
 	return int64(C.goud_audio_play_spatial_3d(context_id, asset_data, C.size_t(asset_len), C.float(source_x), C.float(source_y), C.float(source_z), C.float(listener_x), C.float(listener_y), C.float(listener_z), C.float(max_distance), C.float(rolloff)))
 }
@@ -290,7 +290,7 @@ func GoudAudioPlaySpatial3d(context_id C.GoudContextId, asset_data *C.uint8_t, a
 // GoudAudioPlayWithSettings wraps goud_audio_play_with_settings.
 func GoudAudioPlayWithSettings(context_id C.GoudContextId, asset_data *C.uint8_t, asset_len uint, volume float32, speed float32, looping bool, channel uint8) int64 {
 	if asset_data == nil {
-		return 0
+		return -1
 	}
 	return int64(C.goud_audio_play_with_settings(context_id, asset_data, C.size_t(asset_len), C.float(volume), C.float(speed), C._Bool(looping), C.uint8_t(channel)))
 }
@@ -581,7 +581,7 @@ func GoudContextIsValid(context_id C.GoudContextId) bool {
 // GoudDebugGetFpsStats wraps goud_debug_get_fps_stats.
 func GoudDebugGetFpsStats(context_id C.GoudContextId, out_stats *C.FpsStats) int32 {
 	if out_stats == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_debug_get_fps_stats(context_id, out_stats))
 }
@@ -604,7 +604,7 @@ func GoudDebugSetFpsUpdateInterval(context_id C.GoudContextId, interval float32)
 // GoudDebuggerCaptureFrameJson wraps goud_debugger_capture_frame_json.
 func GoudDebuggerCaptureFrameJson(context_id C.GoudContextId, buf *C.uint8_t, buf_len uint) int32 {
 	if buf == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_debugger_capture_frame_json(context_id, buf, C.size_t(buf_len)))
 }
@@ -617,7 +617,7 @@ func GoudDebuggerClearSelectedEntity(context_id C.GoudContextId) int32 {
 // GoudDebuggerGetManifestJson wraps goud_debugger_get_manifest_json.
 func GoudDebuggerGetManifestJson(buf *C.uint8_t, buf_len uint) int32 {
 	if buf == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_debugger_get_manifest_json(buf, C.size_t(buf_len)))
 }
@@ -625,7 +625,7 @@ func GoudDebuggerGetManifestJson(buf *C.uint8_t, buf_len uint) int32 {
 // GoudDebuggerGetMemorySummary wraps goud_debugger_get_memory_summary.
 func GoudDebuggerGetMemorySummary(context_id C.GoudContextId, out_summary *C.GoudMemorySummary) int32 {
 	if out_summary == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_debugger_get_memory_summary(context_id, out_summary))
 }
@@ -633,7 +633,7 @@ func GoudDebuggerGetMemorySummary(context_id C.GoudContextId, out_summary *C.Gou
 // GoudDebuggerGetMetricsTraceJson wraps goud_debugger_get_metrics_trace_json.
 func GoudDebuggerGetMetricsTraceJson(context_id C.GoudContextId, buf *C.uint8_t, buf_len uint) int32 {
 	if buf == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_debugger_get_metrics_trace_json(context_id, buf, C.size_t(buf_len)))
 }
@@ -641,7 +641,7 @@ func GoudDebuggerGetMetricsTraceJson(context_id C.GoudContextId, buf *C.uint8_t,
 // GoudDebuggerGetReplayStatusJson wraps goud_debugger_get_replay_status_json.
 func GoudDebuggerGetReplayStatusJson(context_id C.GoudContextId, buf *C.uint8_t, buf_len uint) int32 {
 	if buf == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_debugger_get_replay_status_json(context_id, buf, C.size_t(buf_len)))
 }
@@ -649,7 +649,7 @@ func GoudDebuggerGetReplayStatusJson(context_id C.GoudContextId, buf *C.uint8_t,
 // GoudDebuggerGetSnapshotJson wraps goud_debugger_get_snapshot_json.
 func GoudDebuggerGetSnapshotJson(context_id C.GoudContextId, buf *C.uint8_t, buf_len uint) int32 {
 	if buf == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_debugger_get_snapshot_json(context_id, buf, C.size_t(buf_len)))
 }
@@ -707,7 +707,7 @@ func GoudDebuggerStartRecording(context_id C.GoudContextId) int32 {
 // GoudDebuggerStartReplay wraps goud_debugger_start_replay.
 func GoudDebuggerStartReplay(context_id C.GoudContextId, data_ptr *C.uint8_t, data_len uint) int32 {
 	if data_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_debugger_start_replay(context_id, data_ptr, C.size_t(data_len)))
 }
@@ -720,7 +720,7 @@ func GoudDebuggerStep(context_id C.GoudContextId, kind uint32, count uint32) int
 // GoudDebuggerStopRecordingJson wraps goud_debugger_stop_recording_json.
 func GoudDebuggerStopRecordingJson(context_id C.GoudContextId, buf *C.uint8_t, buf_len uint) int32 {
 	if buf == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_debugger_stop_recording_json(context_id, buf, C.size_t(buf_len)))
 }
@@ -738,7 +738,7 @@ func GoudDiagnosticIsEnabled() bool {
 // GoudDiagnosticLastBacktrace wraps goud_diagnostic_last_backtrace.
 func GoudDiagnosticLastBacktrace(buf *C.uint8_t, buf_len uint) int32 {
 	if buf == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_diagnostic_last_backtrace(buf, C.size_t(buf_len)))
 }
@@ -897,7 +897,7 @@ func GoudErrorRecoveryClass(code C.GoudErrorCode) int32 {
 // GoudErrorRecoveryHint wraps goud_error_recovery_hint.
 func GoudErrorRecoveryHint(code C.GoudErrorCode, buf *C.uint8_t, buf_len uint) int32 {
 	if buf == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_error_recovery_hint(code, buf, C.size_t(buf_len)))
 }
@@ -1018,7 +1018,7 @@ func GoudLastErrorCode() C.GoudErrorCode {
 // GoudLastErrorMessage wraps goud_last_error_message.
 func GoudLastErrorMessage(buf *C.uint8_t, buf_len uint) int32 {
 	if buf == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_last_error_message(buf, C.size_t(buf_len)))
 }
@@ -1026,7 +1026,7 @@ func GoudLastErrorMessage(buf *C.uint8_t, buf_len uint) int32 {
 // GoudLastErrorOperation wraps goud_last_error_operation.
 func GoudLastErrorOperation(buf *C.uint8_t, buf_len uint) int32 {
 	if buf == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_last_error_operation(buf, C.size_t(buf_len)))
 }
@@ -1034,7 +1034,7 @@ func GoudLastErrorOperation(buf *C.uint8_t, buf_len uint) int32 {
 // GoudLastErrorSubsystem wraps goud_last_error_subsystem.
 func GoudLastErrorSubsystem(buf *C.uint8_t, buf_len uint) int32 {
 	if buf == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_last_error_subsystem(buf, C.size_t(buf_len)))
 }
@@ -1052,7 +1052,7 @@ func GoudNetworkClearSimulation(_context_id C.GoudContextId, handle int64) int32
 // GoudNetworkConnect wraps goud_network_connect.
 func GoudNetworkConnect(context_id C.GoudContextId, protocol int32, addr_ptr *C.uint8_t, addr_len int32, port uint16) int64 {
 	if addr_ptr == nil {
-		return 0
+		return -1
 	}
 	return int64(C.goud_network_connect(context_id, C.int32_t(protocol), addr_ptr, C.int32_t(addr_len), C.uint16_t(port)))
 }
@@ -1060,13 +1060,13 @@ func GoudNetworkConnect(context_id C.GoudContextId, protocol int32, addr_ptr *C.
 // GoudNetworkConnectWithPeer wraps goud_network_connect_with_peer.
 func GoudNetworkConnectWithPeer(context_id C.GoudContextId, protocol int32, addr_ptr *C.uint8_t, addr_len int32, port uint16, out_handle *C.int64_t, out_peer_id *C.uint64_t) int32 {
 	if addr_ptr == nil {
-		return 0
+		return -1
 	}
 	if out_handle == nil {
-		return 0
+		return -1
 	}
 	if out_peer_id == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_network_connect_with_peer(context_id, C.int32_t(protocol), addr_ptr, C.int32_t(addr_len), C.uint16_t(port), out_handle, out_peer_id))
 }
@@ -1079,16 +1079,16 @@ func GoudNetworkDisconnect(_context_id C.GoudContextId, handle int64) int32 {
 // GoudNetworkGetStats wraps goud_network_get_stats.
 func GoudNetworkGetStats(_context_id C.GoudContextId, handle int64, out_bytes_sent *C.uint64_t, out_bytes_recv *C.uint64_t, out_packets_sent *C.uint64_t, out_packets_recv *C.uint64_t) int32 {
 	if out_bytes_sent == nil {
-		return 0
+		return -1
 	}
 	if out_bytes_recv == nil {
-		return 0
+		return -1
 	}
 	if out_packets_sent == nil {
-		return 0
+		return -1
 	}
 	if out_packets_recv == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_network_get_stats(_context_id, C.int64_t(handle), out_bytes_sent, out_bytes_recv, out_packets_sent, out_packets_recv))
 }
@@ -1096,7 +1096,7 @@ func GoudNetworkGetStats(_context_id C.GoudContextId, handle int64, out_bytes_se
 // GoudNetworkGetStatsV2 wraps goud_network_get_stats_v2.
 func GoudNetworkGetStatsV2(_context_id C.GoudContextId, handle int64, out_stats *C.FfiNetworkStats) int32 {
 	if out_stats == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_network_get_stats_v2(_context_id, C.int64_t(handle), out_stats))
 }
@@ -1119,10 +1119,10 @@ func GoudNetworkPoll(_context_id C.GoudContextId, handle int64) int32 {
 // GoudNetworkReceive wraps goud_network_receive.
 func GoudNetworkReceive(_context_id C.GoudContextId, handle int64, out_buf *C.uint8_t, buf_len int32, out_peer_id *C.uint64_t) int32 {
 	if out_buf == nil {
-		return 0
+		return -1
 	}
 	if out_peer_id == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_network_receive(_context_id, C.int64_t(handle), out_buf, C.int32_t(buf_len), out_peer_id))
 }
@@ -1130,7 +1130,7 @@ func GoudNetworkReceive(_context_id C.GoudContextId, handle int64, out_buf *C.ui
 // GoudNetworkSend wraps goud_network_send.
 func GoudNetworkSend(_context_id C.GoudContextId, handle int64, peer_id uint64, data_ptr *C.uint8_t, data_len int32, channel uint8) int32 {
 	if data_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_network_send(_context_id, C.int64_t(handle), C.uint64_t(peer_id), data_ptr, C.int32_t(data_len), C.uint8_t(channel)))
 }
@@ -1188,7 +1188,7 @@ func GoudPhysics3dDestroy(ctx C.GoudContextId) int32 {
 // GoudPhysics3dGetBodyGravityScale wraps goud_physics3d_get_body_gravity_scale.
 func GoudPhysics3dGetBodyGravityScale(ctx C.GoudContextId, handle uint64, out_scale *C.float) int32 {
 	if out_scale == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics3d_get_body_gravity_scale(ctx, C.uint64_t(handle), out_scale))
 }
@@ -1196,7 +1196,7 @@ func GoudPhysics3dGetBodyGravityScale(ctx C.GoudContextId, handle uint64, out_sc
 // GoudPhysics3dGetColliderFriction wraps goud_physics3d_get_collider_friction.
 func GoudPhysics3dGetColliderFriction(ctx C.GoudContextId, handle uint64, out_friction *C.float) int32 {
 	if out_friction == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics3d_get_collider_friction(ctx, C.uint64_t(handle), out_friction))
 }
@@ -1204,7 +1204,7 @@ func GoudPhysics3dGetColliderFriction(ctx C.GoudContextId, handle uint64, out_fr
 // GoudPhysics3dGetColliderRestitution wraps goud_physics3d_get_collider_restitution.
 func GoudPhysics3dGetColliderRestitution(ctx C.GoudContextId, handle uint64, out_restitution *C.float) int32 {
 	if out_restitution == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics3d_get_collider_restitution(ctx, C.uint64_t(handle), out_restitution))
 }
@@ -1212,13 +1212,13 @@ func GoudPhysics3dGetColliderRestitution(ctx C.GoudContextId, handle uint64, out
 // GoudPhysics3dGetGravity wraps goud_physics3d_get_gravity.
 func GoudPhysics3dGetGravity(ctx C.GoudContextId, out_x *C.float, out_y *C.float, out_z *C.float) int32 {
 	if out_x == nil {
-		return 0
+		return -1
 	}
 	if out_y == nil {
-		return 0
+		return -1
 	}
 	if out_z == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics3d_get_gravity(ctx, out_x, out_y, out_z))
 }
@@ -1226,13 +1226,13 @@ func GoudPhysics3dGetGravity(ctx C.GoudContextId, out_x *C.float, out_y *C.float
 // GoudPhysics3dGetPosition wraps goud_physics3d_get_position.
 func GoudPhysics3dGetPosition(ctx C.GoudContextId, handle uint64, out_x *C.float, out_y *C.float, out_z *C.float) int32 {
 	if out_x == nil {
-		return 0
+		return -1
 	}
 	if out_y == nil {
-		return 0
+		return -1
 	}
 	if out_z == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics3d_get_position(ctx, C.uint64_t(handle), out_x, out_y, out_z))
 }
@@ -1240,7 +1240,7 @@ func GoudPhysics3dGetPosition(ctx C.GoudContextId, handle uint64, out_x *C.float
 // GoudPhysics3dGetTimestep wraps goud_physics3d_get_timestep.
 func GoudPhysics3dGetTimestep(ctx C.GoudContextId, out_dt *C.float) int32 {
 	if out_dt == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics3d_get_timestep(ctx, out_dt))
 }
@@ -1328,13 +1328,13 @@ func GoudPhysicsCollisionEventCount(ctx C.GoudContextId) int32 {
 // GoudPhysicsCollisionEventRead wraps goud_physics_collision_event_read.
 func GoudPhysicsCollisionEventRead(ctx C.GoudContextId, index uint32, out_body_a *C.uint64_t, out_body_b *C.uint64_t, out_kind *C.uint32_t) int32 {
 	if out_body_a == nil {
-		return 0
+		return -1
 	}
 	if out_body_b == nil {
-		return 0
+		return -1
 	}
 	if out_kind == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics_collision_event_read(ctx, C.uint32_t(index), out_body_a, out_body_b, out_kind))
 }
@@ -1347,13 +1347,13 @@ func GoudPhysicsCollisionEventsCount(ctx C.GoudContextId) int32 {
 // GoudPhysicsCollisionEventsRead wraps goud_physics_collision_events_read.
 func GoudPhysicsCollisionEventsRead(ctx C.GoudContextId, index uint32, out_body_a *C.uint64_t, out_body_b *C.uint64_t, out_kind *C.uint32_t) int32 {
 	if out_body_a == nil {
-		return 0
+		return -1
 	}
 	if out_body_b == nil {
-		return 0
+		return -1
 	}
 	if out_kind == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics_collision_events_read(ctx, C.uint32_t(index), out_body_a, out_body_b, out_kind))
 }
@@ -1381,7 +1381,7 @@ func GoudPhysicsDestroy(ctx C.GoudContextId) int32 {
 // GoudPhysicsGetBodyGravityScale wraps goud_physics_get_body_gravity_scale.
 func GoudPhysicsGetBodyGravityScale(ctx C.GoudContextId, handle uint64, out_scale *C.float) int32 {
 	if out_scale == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics_get_body_gravity_scale(ctx, C.uint64_t(handle), out_scale))
 }
@@ -1389,7 +1389,7 @@ func GoudPhysicsGetBodyGravityScale(ctx C.GoudContextId, handle uint64, out_scal
 // GoudPhysicsGetColliderFriction wraps goud_physics_get_collider_friction.
 func GoudPhysicsGetColliderFriction(ctx C.GoudContextId, handle uint64, out_friction *C.float) int32 {
 	if out_friction == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics_get_collider_friction(ctx, C.uint64_t(handle), out_friction))
 }
@@ -1397,7 +1397,7 @@ func GoudPhysicsGetColliderFriction(ctx C.GoudContextId, handle uint64, out_fric
 // GoudPhysicsGetColliderRestitution wraps goud_physics_get_collider_restitution.
 func GoudPhysicsGetColliderRestitution(ctx C.GoudContextId, handle uint64, out_restitution *C.float) int32 {
 	if out_restitution == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics_get_collider_restitution(ctx, C.uint64_t(handle), out_restitution))
 }
@@ -1405,10 +1405,10 @@ func GoudPhysicsGetColliderRestitution(ctx C.GoudContextId, handle uint64, out_r
 // GoudPhysicsGetGravity wraps goud_physics_get_gravity.
 func GoudPhysicsGetGravity(ctx C.GoudContextId, out_x *C.float, out_y *C.float) int32 {
 	if out_x == nil {
-		return 0
+		return -1
 	}
 	if out_y == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics_get_gravity(ctx, out_x, out_y))
 }
@@ -1416,10 +1416,10 @@ func GoudPhysicsGetGravity(ctx C.GoudContextId, out_x *C.float, out_y *C.float) 
 // GoudPhysicsGetPosition wraps goud_physics_get_position.
 func GoudPhysicsGetPosition(ctx C.GoudContextId, handle uint64, out_x *C.float, out_y *C.float) int32 {
 	if out_x == nil {
-		return 0
+		return -1
 	}
 	if out_y == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics_get_position(ctx, C.uint64_t(handle), out_x, out_y))
 }
@@ -1427,7 +1427,7 @@ func GoudPhysicsGetPosition(ctx C.GoudContextId, handle uint64, out_x *C.float, 
 // GoudPhysicsGetTimestep wraps goud_physics_get_timestep.
 func GoudPhysicsGetTimestep(ctx C.GoudContextId, out_dt *C.float) int32 {
 	if out_dt == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics_get_timestep(ctx, out_dt))
 }
@@ -1435,10 +1435,10 @@ func GoudPhysicsGetTimestep(ctx C.GoudContextId, out_dt *C.float) int32 {
 // GoudPhysicsGetVelocity wraps goud_physics_get_velocity.
 func GoudPhysicsGetVelocity(ctx C.GoudContextId, handle uint64, out_x *C.float, out_y *C.float) int32 {
 	if out_x == nil {
-		return 0
+		return -1
 	}
 	if out_y == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics_get_velocity(ctx, C.uint64_t(handle), out_x, out_y))
 }
@@ -1446,10 +1446,10 @@ func GoudPhysicsGetVelocity(ctx C.GoudContextId, handle uint64, out_x *C.float, 
 // GoudPhysicsRaycast wraps goud_physics_raycast.
 func GoudPhysicsRaycast(ctx C.GoudContextId, ox float32, oy float32, dx float32, dy float32, max_dist float32, out_hit_x *C.float, out_hit_y *C.float) int32 {
 	if out_hit_x == nil {
-		return 0
+		return -1
 	}
 	if out_hit_y == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics_raycast(ctx, C.float(ox), C.float(oy), C.float(dx), C.float(dy), C.float(max_dist), out_hit_x, out_hit_y))
 }
@@ -1457,25 +1457,25 @@ func GoudPhysicsRaycast(ctx C.GoudContextId, ox float32, oy float32, dx float32,
 // GoudPhysicsRaycastEx wraps goud_physics_raycast_ex.
 func GoudPhysicsRaycastEx(ctx C.GoudContextId, ox float32, oy float32, dx float32, dy float32, max_dist float32, layer_mask uint32, out_body_handle *C.uint64_t, out_collider_handle *C.uint64_t, out_hit_x *C.float, out_hit_y *C.float, out_normal_x *C.float, out_normal_y *C.float, out_distance *C.float) int32 {
 	if out_body_handle == nil {
-		return 0
+		return -1
 	}
 	if out_collider_handle == nil {
-		return 0
+		return -1
 	}
 	if out_hit_x == nil {
-		return 0
+		return -1
 	}
 	if out_hit_y == nil {
-		return 0
+		return -1
 	}
 	if out_normal_x == nil {
-		return 0
+		return -1
 	}
 	if out_normal_y == nil {
-		return 0
+		return -1
 	}
 	if out_distance == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_physics_raycast_ex(ctx, C.float(ox), C.float(oy), C.float(dx), C.float(dy), C.float(max_dist), C.uint32_t(layer_mask), out_body_handle, out_collider_handle, out_hit_x, out_hit_y, out_normal_x, out_normal_y, out_distance))
 }
@@ -1528,7 +1528,7 @@ func GoudPhysicsStep(ctx C.GoudContextId, dt float32) int32 {
 // GoudPluginIsRegistered wraps goud_plugin_is_registered.
 func GoudPluginIsRegistered(context_id C.GoudContextId, plugin_id_ptr *C.uint8_t, plugin_id_len uint32) int32 {
 	if plugin_id_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_plugin_is_registered(context_id, plugin_id_ptr, C.uint32_t(plugin_id_len)))
 }
@@ -1536,7 +1536,7 @@ func GoudPluginIsRegistered(context_id C.GoudContextId, plugin_id_ptr *C.uint8_t
 // GoudPluginList wraps goud_plugin_list.
 func GoudPluginList(context_id C.GoudContextId, out_buf *C.uint8_t, buf_len uint32) int32 {
 	if out_buf == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_plugin_list(context_id, out_buf, C.uint32_t(buf_len)))
 }
@@ -1544,7 +1544,7 @@ func GoudPluginList(context_id C.GoudContextId, out_buf *C.uint8_t, buf_len uint
 // GoudPluginRegister wraps goud_plugin_register.
 func GoudPluginRegister(context_id C.GoudContextId, plugin_id_ptr *C.uint8_t, plugin_id_len uint32) int32 {
 	if plugin_id_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_plugin_register(context_id, plugin_id_ptr, C.uint32_t(plugin_id_len)))
 }
@@ -1552,7 +1552,7 @@ func GoudPluginRegister(context_id C.GoudContextId, plugin_id_ptr *C.uint8_t, pl
 // GoudPluginUnregister wraps goud_plugin_unregister.
 func GoudPluginUnregister(context_id C.GoudContextId, plugin_id_ptr *C.uint8_t, plugin_id_len uint32) int32 {
 	if plugin_id_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_plugin_unregister(context_id, plugin_id_ptr, C.uint32_t(plugin_id_len)))
 }
@@ -1560,7 +1560,7 @@ func GoudPluginUnregister(context_id C.GoudContextId, plugin_id_ptr *C.uint8_t, 
 // GoudProviderAudioCapabilities wraps goud_provider_audio_capabilities.
 func GoudProviderAudioCapabilities(context_id C.GoudContextId, out *C.AudioCapabilities) int32 {
 	if out == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_provider_audio_capabilities(context_id, out))
 }
@@ -1578,7 +1578,7 @@ func GoudProviderHotSwapRender(_context_id C.GoudContextId, _provider_type int32
 // GoudProviderInputCapabilities wraps goud_provider_input_capabilities.
 func GoudProviderInputCapabilities(context_id C.GoudContextId, out *C.InputCapabilities) int32 {
 	if out == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_provider_input_capabilities(context_id, out))
 }
@@ -1586,7 +1586,7 @@ func GoudProviderInputCapabilities(context_id C.GoudContextId, out *C.InputCapab
 // GoudProviderNetworkCapabilities wraps goud_provider_network_capabilities.
 func GoudProviderNetworkCapabilities(context_id C.GoudContextId, out *C.NetworkCapabilities) int32 {
 	if out == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_provider_network_capabilities(context_id, out))
 }
@@ -1594,7 +1594,7 @@ func GoudProviderNetworkCapabilities(context_id C.GoudContextId, out *C.NetworkC
 // GoudProviderPhysicsCapabilities wraps goud_provider_physics_capabilities.
 func GoudProviderPhysicsCapabilities(context_id C.GoudContextId, out *C.PhysicsCapabilities) int32 {
 	if out == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_provider_physics_capabilities(context_id, out))
 }
@@ -1602,7 +1602,7 @@ func GoudProviderPhysicsCapabilities(context_id C.GoudContextId, out *C.PhysicsC
 // GoudProviderRenderCapabilities wraps goud_provider_render_capabilities.
 func GoudProviderRenderCapabilities(context_id C.GoudContextId, out *C.RenderCapabilities) int32 {
 	if out == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_provider_render_capabilities(context_id, out))
 }
@@ -1866,7 +1866,7 @@ func GoudSceneUnload(context_id C.GoudContextId, name_ptr *C.uint8_t, name_len u
 // GoudSkeletonAddBone wraps goud_skeleton_add_bone.
 func GoudSkeletonAddBone(context_id C.GoudContextId, entity_id uint64, bone_name_ptr *C.uint8_t, bone_name_len int32, parent_index int32, x float32, y float32, rotation float32) int32 {
 	if bone_name_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_skeleton_add_bone(context_id, C.uint64_t(entity_id), bone_name_ptr, C.int32_t(bone_name_len), C.int32_t(parent_index), C.float(x), C.float(y), C.float(rotation)))
 }
@@ -1879,7 +1879,7 @@ func GoudSkeletonCreate(context_id C.GoudContextId, entity_id uint64) int32 {
 // GoudSkeletonPlayClip wraps goud_skeleton_play_clip.
 func GoudSkeletonPlayClip(context_id C.GoudContextId, entity_id uint64, clip_name_ptr *C.uint8_t, clip_name_len int32, looping bool) int32 {
 	if clip_name_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_skeleton_play_clip(context_id, C.uint64_t(entity_id), clip_name_ptr, C.int32_t(clip_name_len), C._Bool(looping)))
 }
@@ -2121,7 +2121,7 @@ func GoudSpriteGetTexture(sprite *C.FfiSprite) uint64 {
 // GoudSpriteGetZLayer wraps goud_sprite_get_z_layer.
 func GoudSpriteGetZLayer(sprite *C.FfiSprite) int32 {
 	if sprite == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_sprite_get_z_layer(sprite))
 }
@@ -2807,7 +2807,7 @@ func GoudTweenUpdate(_context_id C.GoudContextId, handle int64, dt float32) int3
 // GoudTweenValue wraps goud_tween_value.
 func GoudTweenValue(_context_id C.GoudContextId, handle int64, out_value *C.float) int32 {
 	if out_value == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_tween_value(_context_id, C.int64_t(handle), out_value))
 }
@@ -2831,10 +2831,10 @@ func GoudUiEventCount(mgr *C.UiManager) uint32 {
 // GoudUiEventRead wraps goud_ui_event_read.
 func GoudUiEventRead(mgr *C.UiManager, index uint32, out_event *C.FfiUiEvent) int32 {
 	if mgr == nil {
-		return 0
+		return -1
 	}
 	if out_event == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_ui_event_read(mgr, C.uint32_t(index), out_event))
 }
@@ -2850,10 +2850,10 @@ func GoudUiEventsCount(mgr *C.UiManager) uint32 {
 // GoudUiEventsRead wraps goud_ui_events_read.
 func GoudUiEventsRead(mgr *C.UiManager, index uint32, out_event *C.FfiUiEvent) int32 {
 	if mgr == nil {
-		return 0
+		return -1
 	}
 	if out_event == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_ui_events_read(mgr, C.uint32_t(index), out_event))
 }
@@ -2922,7 +2922,7 @@ func GoudUiManagerUpdate(ptr *C.UiManager) {
 // GoudUiRemoveNode wraps goud_ui_remove_node.
 func GoudUiRemoveNode(mgr *C.UiManager, node_id uint64) int32 {
 	if mgr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_ui_remove_node(mgr, C.uint64_t(node_id)))
 }
@@ -2930,7 +2930,7 @@ func GoudUiRemoveNode(mgr *C.UiManager, node_id uint64) int32 {
 // GoudUiSetButtonEnabled wraps goud_ui_set_button_enabled.
 func GoudUiSetButtonEnabled(mgr *C.UiManager, node_id uint64, enabled bool) int32 {
 	if mgr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_ui_set_button_enabled(mgr, C.uint64_t(node_id), C._Bool(enabled)))
 }
@@ -2938,10 +2938,10 @@ func GoudUiSetButtonEnabled(mgr *C.UiManager, node_id uint64, enabled bool) int3
 // GoudUiSetImageTexturePath wraps goud_ui_set_image_texture_path.
 func GoudUiSetImageTexturePath(mgr *C.UiManager, node_id uint64, path_ptr *C.uint8_t, path_len uint) int32 {
 	if mgr == nil {
-		return 0
+		return -1
 	}
 	if path_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_ui_set_image_texture_path(mgr, C.uint64_t(node_id), path_ptr, C.size_t(path_len)))
 }
@@ -2949,10 +2949,10 @@ func GoudUiSetImageTexturePath(mgr *C.UiManager, node_id uint64, path_ptr *C.uin
 // GoudUiSetLabelText wraps goud_ui_set_label_text.
 func GoudUiSetLabelText(mgr *C.UiManager, node_id uint64, text_ptr *C.uint8_t, text_len uint) int32 {
 	if mgr == nil {
-		return 0
+		return -1
 	}
 	if text_ptr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_ui_set_label_text(mgr, C.uint64_t(node_id), text_ptr, C.size_t(text_len)))
 }
@@ -2960,7 +2960,7 @@ func GoudUiSetLabelText(mgr *C.UiManager, node_id uint64, text_ptr *C.uint8_t, t
 // GoudUiSetParent wraps goud_ui_set_parent.
 func GoudUiSetParent(mgr *C.UiManager, child_id uint64, parent_id uint64) int32 {
 	if mgr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_ui_set_parent(mgr, C.uint64_t(child_id), C.uint64_t(parent_id)))
 }
@@ -2968,7 +2968,7 @@ func GoudUiSetParent(mgr *C.UiManager, child_id uint64, parent_id uint64) int32 
 // GoudUiSetSlider wraps goud_ui_set_slider.
 func GoudUiSetSlider(mgr *C.UiManager, node_id uint64, min float32, max float32, value float32, enabled bool) int32 {
 	if mgr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_ui_set_slider(mgr, C.uint64_t(node_id), C.float(min), C.float(max), C.float(value), C._Bool(enabled)))
 }
@@ -2976,10 +2976,10 @@ func GoudUiSetSlider(mgr *C.UiManager, node_id uint64, min float32, max float32,
 // GoudUiSetStyle wraps goud_ui_set_style.
 func GoudUiSetStyle(mgr *C.UiManager, node_id uint64, style *C.FfiUiStyle) int32 {
 	if mgr == nil {
-		return 0
+		return -1
 	}
 	if style == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_ui_set_style(mgr, C.uint64_t(node_id), style))
 }
@@ -2987,7 +2987,7 @@ func GoudUiSetStyle(mgr *C.UiManager, node_id uint64, style *C.FfiUiStyle) int32
 // GoudUiSetWidget wraps goud_ui_set_widget.
 func GoudUiSetWidget(mgr *C.UiManager, node_id uint64, widget_kind int32) int32 {
 	if mgr == nil {
-		return 0
+		return -1
 	}
 	return int32(C.goud_ui_set_widget(mgr, C.uint64_t(node_id), C.int32_t(widget_kind)))
 }
