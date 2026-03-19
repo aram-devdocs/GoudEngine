@@ -135,16 +135,15 @@ def generate(schema: dict, ffi_mapping: dict) -> str:
         lines.append("")
 
     # Factory registration
-    lines.append("pub(crate) fn register_type_factories(lua: &Lua) {")
+    lines.append("pub(crate) fn register_type_factories(lua: &Lua) -> LuaResult<()> {")
     lines.append("    let globals = lua.globals();")
     for type_name, type_def, ffi_info in gen_types:
         ffi_name = ffi_info["ffi_name"]
         ffi_fields = ffi_info["fields"]
         ftm = _schema_ftm(type_def)
-        snake = sdk_common.to_snake(type_name)
 
         lines.append(f"    // {type_name} constructor")
-        lines.append(f"    let {snake}_ctor = lua.create_function(|_, tbl: LuaTable| {{")
+        lines.append(f"    let ctor = lua.create_function(|_, tbl: LuaTable| {{")
         # Use zeroed initialization via unsafe to avoid needing Default
         lines.append(f"        // SAFETY: {ffi_name} is repr(C) with only primitive fields;")
         lines.append(f"        // zeroed memory is valid for all its field types.")
@@ -153,8 +152,9 @@ def generate(schema: dict, ffi_mapping: dict) -> str:
             rt = _field_rust_type(fname, ftm)
             lines.append(_ctor_extract(fname, rt))
         lines.append(f"        Ok(Lua{type_name}(v))")
-        lines.append(f"    }}).unwrap();")
-        lines.append(f'    globals.set("{snake}", {snake}_ctor).unwrap();')
+        lines.append(f"    }})?;")
+        lines.append(f'    globals.set("{type_name}", ctor)?;')
+    lines.append("    Ok(())")
     lines.append("}")
     lines.append("")
 

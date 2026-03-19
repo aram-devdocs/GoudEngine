@@ -148,1161 +148,1172 @@ extern "C" {
     fn goud_window_should_close(context_id: u64) -> bool;
 }
 
-pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) {
+pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
     let globals = lua.globals();
-    let tbl = globals.get::<LuaTable>("goud_game").unwrap_or_else(|_| lua.create_table().unwrap());
+    let tbl = globals.get::<LuaTable>("goud_game").or_else(|_| lua.create_table())?;
     // GoudGame.shouldClose
     let f_should_close = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_window_should_close(ctx_id) })
-    }).unwrap();
-    tbl.set("should_close", f_should_close).unwrap();
+    })?;
+    tbl.set("should_close", f_should_close)?;
     // GoudGame.setWindowSize
     let f_set_window_size = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_window_set_size(ctx_id, arg0 as u32, arg1 as u32) })
-    }).unwrap();
-    tbl.set("set_window_size", f_set_window_size).unwrap();
+    })?;
+    tbl.set("set_window_size", f_set_window_size)?;
     // GoudGame.destroy
     let f_destroy = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_window_destroy(ctx_id) })
-    }).unwrap();
-    tbl.set("destroy", f_destroy).unwrap();
+    })?;
+    tbl.set("destroy", f_destroy)?;
     // GoudGame.spawnEmpty
     let f_spawn_empty = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_entity_spawn_empty(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("spawn_empty", f_spawn_empty).unwrap();
+    })?;
+    tbl.set("spawn_empty", f_spawn_empty)?;
     // GoudGame.despawn
     let f_despawn = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         let r = unsafe { goud_entity_despawn(ctx_id, arg0 as u64) };
         Ok(r.code as i64)
-    }).unwrap();
-    tbl.set("despawn", f_despawn).unwrap();
+    })?;
+    tbl.set("despawn", f_despawn)?;
     // GoudGame.cloneEntity
     let f_clone_entity = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_entity_clone(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("clone_entity", f_clone_entity).unwrap();
+    })?;
+    tbl.set("clone_entity", f_clone_entity)?;
     // GoudGame.cloneEntityRecursive
     let f_clone_entity_recursive = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_entity_clone_recursive(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("clone_entity_recursive", f_clone_entity_recursive).unwrap();
+    })?;
+    tbl.set("clone_entity_recursive", f_clone_entity_recursive)?;
     // GoudGame.entityCount
     let f_entity_count = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_entity_count(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("entity_count", f_entity_count).unwrap();
+    })?;
+    tbl.set("entity_count", f_entity_count)?;
     // GoudGame.isAlive
     let f_is_alive = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_entity_is_alive(ctx_id, arg0 as u64) })
-    }).unwrap();
-    tbl.set("is_alive", f_is_alive).unwrap();
+    })?;
+    tbl.set("is_alive", f_is_alive)?;
     // GoudGame.play
     let f_play = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_animation_play(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("play", f_play).unwrap();
+    })?;
+    tbl.set("play", f_play)?;
     // GoudGame.stop
     let f_stop = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_animation_stop(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("stop", f_stop).unwrap();
+    })?;
+    tbl.set("stop", f_stop)?;
     // GoudGame.createCube
     let f_create_cube = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_create_cube(ctx_id, arg0 as u32, arg1 as f32, arg2 as f32, arg3 as f32) } as i64)
-    }).unwrap();
-    tbl.set("create_cube", f_create_cube).unwrap();
+    })?;
+    tbl.set("create_cube", f_create_cube)?;
     // GoudGame.createPlane
     let f_create_plane = lua.create_function(move |_, (arg0, arg1, arg2): (i64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_create_plane(ctx_id, arg0 as u32, arg1 as f32, arg2 as f32) } as i64)
-    }).unwrap();
-    tbl.set("create_plane", f_create_plane).unwrap();
+    })?;
+    tbl.set("create_plane", f_create_plane)?;
     // GoudGame.createSphere
     let f_create_sphere = lua.create_function(move |_, (arg0, arg1, arg2): (i64, f64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_create_sphere(ctx_id, arg0 as u32, arg1 as f32, arg2 as u32) } as i64)
-    }).unwrap();
-    tbl.set("create_sphere", f_create_sphere).unwrap();
+    })?;
+    tbl.set("create_sphere", f_create_sphere)?;
     // GoudGame.createCylinder
     let f_create_cylinder = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, f64, f64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_create_cylinder(ctx_id, arg0 as u32, arg1 as f32, arg2 as f32, arg3 as u32) } as i64)
-    }).unwrap();
-    tbl.set("create_cylinder", f_create_cylinder).unwrap();
+    })?;
+    tbl.set("create_cylinder", f_create_cylinder)?;
     // GoudGame.setObjectPosition
     let f_set_object_position = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_set_object_position(ctx_id, arg0 as u32, arg1 as f32, arg2 as f32, arg3 as f32) })
-    }).unwrap();
-    tbl.set("set_object_position", f_set_object_position).unwrap();
+    })?;
+    tbl.set("set_object_position", f_set_object_position)?;
     // GoudGame.setObjectRotation
     let f_set_object_rotation = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_set_object_rotation(ctx_id, arg0 as u32, arg1 as f32, arg2 as f32, arg3 as f32) })
-    }).unwrap();
-    tbl.set("set_object_rotation", f_set_object_rotation).unwrap();
+    })?;
+    tbl.set("set_object_rotation", f_set_object_rotation)?;
     // GoudGame.setObjectScale
     let f_set_object_scale = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_set_object_scale(ctx_id, arg0 as u32, arg1 as f32, arg2 as f32, arg3 as f32) })
-    }).unwrap();
-    tbl.set("set_object_scale", f_set_object_scale).unwrap();
+    })?;
+    tbl.set("set_object_scale", f_set_object_scale)?;
     // GoudGame.destroyObject
     let f_destroy_object = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_destroy_object(ctx_id, arg0 as u32) })
-    }).unwrap();
-    tbl.set("destroy_object", f_destroy_object).unwrap();
+    })?;
+    tbl.set("destroy_object", f_destroy_object)?;
     // GoudGame.removeLight
     let f_remove_light = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_remove_light(ctx_id, arg0 as u32) })
-    }).unwrap();
-    tbl.set("remove_light", f_remove_light).unwrap();
+    })?;
+    tbl.set("remove_light", f_remove_light)?;
     // GoudGame.setCameraPosition3D
     let f_set_camera_position3_d = lua.create_function(move |_, (arg0, arg1, arg2): (f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_set_camera_position(ctx_id, arg0 as f32, arg1 as f32, arg2 as f32) })
-    }).unwrap();
-    tbl.set("set_camera_position3_d", f_set_camera_position3_d).unwrap();
+    })?;
+    tbl.set("set_camera_position3_d", f_set_camera_position3_d)?;
     // GoudGame.setCameraRotation3D
     let f_set_camera_rotation3_d = lua.create_function(move |_, (arg0, arg1, arg2): (f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_set_camera_rotation(ctx_id, arg0 as f32, arg1 as f32, arg2 as f32) })
-    }).unwrap();
-    tbl.set("set_camera_rotation3_d", f_set_camera_rotation3_d).unwrap();
+    })?;
+    tbl.set("set_camera_rotation3_d", f_set_camera_rotation3_d)?;
     // GoudGame.configureGrid
     let f_configure_grid = lua.create_function(move |_, (arg0, arg1, arg2): (bool, f64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_configure_grid(ctx_id, arg0, arg1 as f32, arg2 as u32) })
-    }).unwrap();
-    tbl.set("configure_grid", f_configure_grid).unwrap();
+    })?;
+    tbl.set("configure_grid", f_configure_grid)?;
     // GoudGame.setGridEnabled
     let f_set_grid_enabled = lua.create_function(move |_, arg0: bool| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_set_grid_enabled(ctx_id, arg0) })
-    }).unwrap();
-    tbl.set("set_grid_enabled", f_set_grid_enabled).unwrap();
+    })?;
+    tbl.set("set_grid_enabled", f_set_grid_enabled)?;
     // GoudGame.configureSkybox
     let f_configure_skybox = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4): (bool, f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_configure_skybox(ctx_id, arg0, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32) })
-    }).unwrap();
-    tbl.set("configure_skybox", f_configure_skybox).unwrap();
+    })?;
+    tbl.set("configure_skybox", f_configure_skybox)?;
     // GoudGame.configureFog
     let f_configure_fog = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4): (bool, f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_configure_fog(ctx_id, arg0, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32) })
-    }).unwrap();
-    tbl.set("configure_fog", f_configure_fog).unwrap();
+    })?;
+    tbl.set("configure_fog", f_configure_fog)?;
     // GoudGame.setFogEnabled
     let f_set_fog_enabled = lua.create_function(move |_, arg0: bool| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_set_fog_enabled(ctx_id, arg0) })
-    }).unwrap();
-    tbl.set("set_fog_enabled", f_set_fog_enabled).unwrap();
+    })?;
+    tbl.set("set_fog_enabled", f_set_fog_enabled)?;
     // GoudGame.render3D
     let f_render3_d = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_renderer3d_render(ctx_id) })
-    }).unwrap();
-    tbl.set("render3_d", f_render3_d).unwrap();
+    })?;
+    tbl.set("render3_d", f_render3_d)?;
     // GoudGame.setViewport
     let f_set_viewport = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, i64, i64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         unsafe { goud_renderer_set_viewport(ctx_id, arg0 as i32, arg1 as i32, arg2 as u32, arg3 as u32) };
         Ok(())
-    }).unwrap();
-    tbl.set("set_viewport", f_set_viewport).unwrap();
+    })?;
+    tbl.set("set_viewport", f_set_viewport)?;
     // GoudGame.enableDepthTest
     let f_enable_depth_test = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         unsafe { goud_renderer_enable_depth_test(ctx_id) };
         Ok(())
-    }).unwrap();
-    tbl.set("enable_depth_test", f_enable_depth_test).unwrap();
+    })?;
+    tbl.set("enable_depth_test", f_enable_depth_test)?;
     // GoudGame.disableDepthTest
     let f_disable_depth_test = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         unsafe { goud_renderer_disable_depth_test(ctx_id) };
         Ok(())
-    }).unwrap();
-    tbl.set("disable_depth_test", f_disable_depth_test).unwrap();
+    })?;
+    tbl.set("disable_depth_test", f_disable_depth_test)?;
     // GoudGame.clearDepth
     let f_clear_depth = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         unsafe { goud_renderer_clear_depth(ctx_id) };
         Ok(())
-    }).unwrap();
-    tbl.set("clear_depth", f_clear_depth).unwrap();
+    })?;
+    tbl.set("clear_depth", f_clear_depth)?;
     // GoudGame.disableBlending
     let f_disable_blending = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         unsafe { goud_renderer_disable_blending(ctx_id) };
         Ok(())
-    }).unwrap();
-    tbl.set("disable_blending", f_disable_blending).unwrap();
+    })?;
+    tbl.set("disable_blending", f_disable_blending)?;
     // GoudGame.setFpsOverlayEnabled
     let f_set_fps_overlay_enabled = lua.create_function(move |_, arg0: bool| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debug_set_fps_overlay_enabled(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("set_fps_overlay_enabled", f_set_fps_overlay_enabled).unwrap();
+    })?;
+    tbl.set("set_fps_overlay_enabled", f_set_fps_overlay_enabled)?;
     // GoudGame.setFpsUpdateInterval
     let f_set_fps_update_interval = lua.create_function(move |_, arg0: f64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debug_set_fps_update_interval(ctx_id, arg0 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_fps_update_interval", f_set_fps_update_interval).unwrap();
+    })?;
+    tbl.set("set_fps_update_interval", f_set_fps_update_interval)?;
     // GoudGame.setFpsOverlayCorner
     let f_set_fps_overlay_corner = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debug_set_fps_overlay_corner(ctx_id, arg0 as i32) } as i64)
-    }).unwrap();
-    tbl.set("set_fps_overlay_corner", f_set_fps_overlay_corner).unwrap();
+    })?;
+    tbl.set("set_fps_overlay_corner", f_set_fps_overlay_corner)?;
     // GoudGame.setDebuggerPaused
     let f_set_debugger_paused = lua.create_function(move |_, arg0: bool| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_set_paused(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("set_debugger_paused", f_set_debugger_paused).unwrap();
+    })?;
+    tbl.set("set_debugger_paused", f_set_debugger_paused)?;
     // GoudGame.setDebuggerTimeScale
     let f_set_debugger_time_scale = lua.create_function(move |_, arg0: f64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_set_time_scale(ctx_id, arg0 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_debugger_time_scale", f_set_debugger_time_scale).unwrap();
+    })?;
+    tbl.set("set_debugger_time_scale", f_set_debugger_time_scale)?;
     // GoudGame.setDebuggerDebugDrawEnabled
     let f_set_debugger_debug_draw_enabled = lua.create_function(move |_, arg0: bool| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_set_debug_draw_enabled(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("set_debugger_debug_draw_enabled", f_set_debugger_debug_draw_enabled).unwrap();
+    })?;
+    tbl.set("set_debugger_debug_draw_enabled", f_set_debugger_debug_draw_enabled)?;
     // GoudGame.setDebuggerProfilingEnabled
     let f_set_debugger_profiling_enabled = lua.create_function(move |_, arg0: bool| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_set_profiling_enabled(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("set_debugger_profiling_enabled", f_set_debugger_profiling_enabled).unwrap();
+    })?;
+    tbl.set("set_debugger_profiling_enabled", f_set_debugger_profiling_enabled)?;
     // GoudGame.setDebuggerSelectedEntity
     let f_set_debugger_selected_entity = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_set_selected_entity(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("set_debugger_selected_entity", f_set_debugger_selected_entity).unwrap();
+    })?;
+    tbl.set("set_debugger_selected_entity", f_set_debugger_selected_entity)?;
     // GoudGame.clearDebuggerSelectedEntity
     let f_clear_debugger_selected_entity = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_clear_selected_entity(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("clear_debugger_selected_entity", f_clear_debugger_selected_entity).unwrap();
+    })?;
+    tbl.set("clear_debugger_selected_entity", f_clear_debugger_selected_entity)?;
     // GoudGame.startDebuggerRecording
     let f_start_debugger_recording = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_start_recording(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("start_debugger_recording", f_start_debugger_recording).unwrap();
+    })?;
+    tbl.set("start_debugger_recording", f_start_debugger_recording)?;
     // GoudGame.stopDebuggerReplay
     let f_stop_debugger_replay = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_stop_replay(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("stop_debugger_replay", f_stop_debugger_replay).unwrap();
+    })?;
+    tbl.set("stop_debugger_replay", f_stop_debugger_replay)?;
     // GoudGame.physicsCollisionEventsCount
     let f_physics_collision_events_count = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_collision_events_count(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("physics_collision_events_count", f_physics_collision_events_count).unwrap();
+    })?;
+    tbl.set("physics_collision_events_count", f_physics_collision_events_count)?;
     // GoudGame.pointInRect
     let f_point_in_rect = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4, arg5): (f64, f64, f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_collision_point_in_rect(arg0 as f32, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32, arg5 as f32) })
-    }).unwrap();
-    tbl.set("point_in_rect", f_point_in_rect).unwrap();
+    })?;
+    tbl.set("point_in_rect", f_point_in_rect)?;
     // GoudGame.pointInCircle
     let f_point_in_circle = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4): (f64, f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_collision_point_in_circle(arg0 as f32, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32) })
-    }).unwrap();
-    tbl.set("point_in_circle", f_point_in_circle).unwrap();
+    })?;
+    tbl.set("point_in_circle", f_point_in_circle)?;
     // GoudGame.aabbOverlap
     let f_aabb_overlap = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7): (f64, f64, f64, f64, f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_collision_aabb_overlap(arg0 as f32, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32, arg5 as f32, arg6 as f32, arg7 as f32) })
-    }).unwrap();
-    tbl.set("aabb_overlap", f_aabb_overlap).unwrap();
+    })?;
+    tbl.set("aabb_overlap", f_aabb_overlap)?;
     // GoudGame.circleOverlap
     let f_circle_overlap = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4, arg5): (f64, f64, f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_collision_circle_overlap(arg0 as f32, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32, arg5 as f32) })
-    }).unwrap();
-    tbl.set("circle_overlap", f_circle_overlap).unwrap();
+    })?;
+    tbl.set("circle_overlap", f_circle_overlap)?;
     // GoudGame.distance
     let f_distance = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_collision_distance(arg0 as f32, arg1 as f32, arg2 as f32, arg3 as f32) } as f64)
-    }).unwrap();
-    tbl.set("distance", f_distance).unwrap();
+    })?;
+    tbl.set("distance", f_distance)?;
     // GoudGame.distanceSquared
     let f_distance_squared = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_collision_distance_squared(arg0 as f32, arg1 as f32, arg2 as f32, arg3 as f32) } as f64)
-    }).unwrap();
-    tbl.set("distance_squared", f_distance_squared).unwrap();
+    })?;
+    tbl.set("distance_squared", f_distance_squared)?;
     // GoudGame.networkHost
     let f_network_host = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_host(ctx_id, arg0 as i32, arg1 as u16) } as i64)
-    }).unwrap();
-    tbl.set("network_host", f_network_host).unwrap();
+    })?;
+    tbl.set("network_host", f_network_host)?;
     // GoudGame.networkDisconnect
     let f_network_disconnect = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_disconnect(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("network_disconnect", f_network_disconnect).unwrap();
+    })?;
+    tbl.set("network_disconnect", f_network_disconnect)?;
     // GoudGame.networkPoll
     let f_network_poll = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_poll(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("network_poll", f_network_poll).unwrap();
+    })?;
+    tbl.set("network_poll", f_network_poll)?;
     // GoudGame.networkPeerCount
     let f_network_peer_count = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_peer_count(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("network_peer_count", f_network_peer_count).unwrap();
+    })?;
+    tbl.set("network_peer_count", f_network_peer_count)?;
     // GoudGame.clearNetworkSimulation
     let f_clear_network_simulation = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_clear_simulation(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("clear_network_simulation", f_clear_network_simulation).unwrap();
+    })?;
+    tbl.set("clear_network_simulation", f_clear_network_simulation)?;
     // GoudGame.setNetworkOverlayHandle
     let f_set_network_overlay_handle = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_set_overlay_handle(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("set_network_overlay_handle", f_set_network_overlay_handle).unwrap();
+    })?;
+    tbl.set("set_network_overlay_handle", f_set_network_overlay_handle)?;
     // GoudGame.clearNetworkOverlayHandle
     let f_clear_network_overlay_handle = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_clear_overlay_handle(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("clear_network_overlay_handle", f_clear_network_overlay_handle).unwrap();
+    })?;
+    tbl.set("clear_network_overlay_handle", f_clear_network_overlay_handle)?;
     // GoudGame.audioStop
     let f_audio_stop = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_stop(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("audio_stop", f_audio_stop).unwrap();
+    })?;
+    tbl.set("audio_stop", f_audio_stop)?;
     // GoudGame.audioPause
     let f_audio_pause = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_pause(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("audio_pause", f_audio_pause).unwrap();
+    })?;
+    tbl.set("audio_pause", f_audio_pause)?;
     // GoudGame.audioResume
     let f_audio_resume = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_resume(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("audio_resume", f_audio_resume).unwrap();
+    })?;
+    tbl.set("audio_resume", f_audio_resume)?;
     // GoudGame.audioStopAll
     let f_audio_stop_all = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_stop_all(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("audio_stop_all", f_audio_stop_all).unwrap();
+    })?;
+    tbl.set("audio_stop_all", f_audio_stop_all)?;
     // GoudGame.audioSetGlobalVolume
     let f_audio_set_global_volume = lua.create_function(move |_, arg0: f64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_set_global_volume(ctx_id, arg0 as f32) } as i64)
-    }).unwrap();
-    tbl.set("audio_set_global_volume", f_audio_set_global_volume).unwrap();
+    })?;
+    tbl.set("audio_set_global_volume", f_audio_set_global_volume)?;
     // GoudGame.audioGetGlobalVolume
     let f_audio_get_global_volume = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_get_global_volume(ctx_id) } as f64)
-    }).unwrap();
-    tbl.set("audio_get_global_volume", f_audio_get_global_volume).unwrap();
+    })?;
+    tbl.set("audio_get_global_volume", f_audio_get_global_volume)?;
     // GoudGame.audioSetChannelVolume
     let f_audio_set_channel_volume = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_set_channel_volume(ctx_id, arg0 as u8, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("audio_set_channel_volume", f_audio_set_channel_volume).unwrap();
+    })?;
+    tbl.set("audio_set_channel_volume", f_audio_set_channel_volume)?;
     // GoudGame.audioGetChannelVolume
     let f_audio_get_channel_volume = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_get_channel_volume(ctx_id, arg0 as u8) } as f64)
-    }).unwrap();
-    tbl.set("audio_get_channel_volume", f_audio_get_channel_volume).unwrap();
+    })?;
+    tbl.set("audio_get_channel_volume", f_audio_get_channel_volume)?;
     // GoudGame.audioIsPlaying
     let f_audio_is_playing = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_is_playing(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("audio_is_playing", f_audio_is_playing).unwrap();
+    })?;
+    tbl.set("audio_is_playing", f_audio_is_playing)?;
     // GoudGame.audioActiveCount
     let f_audio_active_count = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_active_count(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("audio_active_count", f_audio_active_count).unwrap();
+    })?;
+    tbl.set("audio_active_count", f_audio_active_count)?;
     // GoudGame.audioCleanupFinished
     let f_audio_cleanup_finished = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_cleanup_finished(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("audio_cleanup_finished", f_audio_cleanup_finished).unwrap();
+    })?;
+    tbl.set("audio_cleanup_finished", f_audio_cleanup_finished)?;
     // GoudGame.audioUpdateSpatial3d
     let f_audio_update_spatial3d = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8): (i64, f64, f64, f64, f64, f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_update_spatial_volume_3d(ctx_id, arg0 as u64, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32, arg5 as f32, arg6 as f32, arg7 as f32, arg8 as f32) } as i64)
-    }).unwrap();
-    tbl.set("audio_update_spatial3d", f_audio_update_spatial3d).unwrap();
+    })?;
+    tbl.set("audio_update_spatial3d", f_audio_update_spatial3d)?;
     // GoudGame.audioSetListenerPosition3d
     let f_audio_set_listener_position3d = lua.create_function(move |_, (arg0, arg1, arg2): (f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_set_listener_position_3d(ctx_id, arg0 as f32, arg1 as f32, arg2 as f32) } as i64)
-    }).unwrap();
-    tbl.set("audio_set_listener_position3d", f_audio_set_listener_position3d).unwrap();
+    })?;
+    tbl.set("audio_set_listener_position3d", f_audio_set_listener_position3d)?;
     // GoudGame.audioSetSourcePosition3d
     let f_audio_set_source_position3d = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4, arg5): (i64, f64, f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_set_source_position_3d(ctx_id, arg0 as u64, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32, arg5 as f32) } as i64)
-    }).unwrap();
-    tbl.set("audio_set_source_position3d", f_audio_set_source_position3d).unwrap();
+    })?;
+    tbl.set("audio_set_source_position3d", f_audio_set_source_position3d)?;
     // GoudGame.audioSetPlayerVolume
     let f_audio_set_player_volume = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_set_player_volume(ctx_id, arg0 as u64, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("audio_set_player_volume", f_audio_set_player_volume).unwrap();
+    })?;
+    tbl.set("audio_set_player_volume", f_audio_set_player_volume)?;
     // GoudGame.audioSetPlayerSpeed
     let f_audio_set_player_speed = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_set_player_speed(ctx_id, arg0 as u64, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("audio_set_player_speed", f_audio_set_player_speed).unwrap();
+    })?;
+    tbl.set("audio_set_player_speed", f_audio_set_player_speed)?;
     // GoudGame.audioCrossfade
     let f_audio_crossfade = lua.create_function(move |_, (arg0, arg1, arg2): (i64, i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_crossfade(ctx_id, arg0 as u64, arg1 as u64, arg2 as f32) } as i64)
-    }).unwrap();
-    tbl.set("audio_crossfade", f_audio_crossfade).unwrap();
+    })?;
+    tbl.set("audio_crossfade", f_audio_crossfade)?;
     // GoudGame.audioUpdateCrossfades
     let f_audio_update_crossfades = lua.create_function(move |_, arg0: f64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_update_crossfades(ctx_id, arg0 as f32) } as i64)
-    }).unwrap();
-    tbl.set("audio_update_crossfades", f_audio_update_crossfades).unwrap();
+    })?;
+    tbl.set("audio_update_crossfades", f_audio_update_crossfades)?;
     // GoudGame.audioActiveCrossfadeCount
     let f_audio_active_crossfade_count = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_active_crossfade_count(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("audio_active_crossfade_count", f_audio_active_crossfade_count).unwrap();
+    })?;
+    tbl.set("audio_active_crossfade_count", f_audio_active_crossfade_count)?;
     // GoudGame.audioActivate
     let f_audio_activate = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_activate(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("audio_activate", f_audio_activate).unwrap();
+    })?;
+    tbl.set("audio_activate", f_audio_activate)?;
     // GoudGame.checkHotSwapShortcut
     let f_check_hot_swap_shortcut = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_provider_check_hot_swap_shortcut(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("check_hot_swap_shortcut", f_check_hot_swap_shortcut).unwrap();
-    globals.set("goud_game", tbl).unwrap();
+    })?;
+    tbl.set("check_hot_swap_shortcut", f_check_hot_swap_shortcut)?;
+    globals.set("goud_game", tbl)?;
+    Ok(())
 }
 
-pub(crate) fn register_goud_context_tools(lua: &Lua, ctx_id: u64) {
+pub(crate) fn register_goud_context_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
     let globals = lua.globals();
-    let tbl = globals.get::<LuaTable>("goud_context").unwrap_or_else(|_| lua.create_table().unwrap());
+    let tbl = globals.get::<LuaTable>("goud_context").or_else(|_| lua.create_table())?;
     // GoudContext.destroy
     let f_destroy = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_context_destroy(ctx_id) })
-    }).unwrap();
-    tbl.set("destroy", f_destroy).unwrap();
+    })?;
+    tbl.set("destroy", f_destroy)?;
     // GoudContext.isValid
     let f_is_valid = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_context_is_valid(ctx_id) })
-    }).unwrap();
-    tbl.set("is_valid", f_is_valid).unwrap();
+    })?;
+    tbl.set("is_valid", f_is_valid)?;
     // GoudContext.networkHost
     let f_network_host = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_host(ctx_id, arg0 as i32, arg1 as u16) } as i64)
-    }).unwrap();
-    tbl.set("network_host", f_network_host).unwrap();
+    })?;
+    tbl.set("network_host", f_network_host)?;
     // GoudContext.networkDisconnect
     let f_network_disconnect = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_disconnect(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("network_disconnect", f_network_disconnect).unwrap();
+    })?;
+    tbl.set("network_disconnect", f_network_disconnect)?;
     // GoudContext.networkPoll
     let f_network_poll = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_poll(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("network_poll", f_network_poll).unwrap();
+    })?;
+    tbl.set("network_poll", f_network_poll)?;
     // GoudContext.networkPeerCount
     let f_network_peer_count = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_peer_count(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("network_peer_count", f_network_peer_count).unwrap();
+    })?;
+    tbl.set("network_peer_count", f_network_peer_count)?;
     // GoudContext.clearNetworkSimulation
     let f_clear_network_simulation = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_clear_simulation(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("clear_network_simulation", f_clear_network_simulation).unwrap();
+    })?;
+    tbl.set("clear_network_simulation", f_clear_network_simulation)?;
     // GoudContext.setNetworkOverlayHandle
     let f_set_network_overlay_handle = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_set_overlay_handle(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("set_network_overlay_handle", f_set_network_overlay_handle).unwrap();
+    })?;
+    tbl.set("set_network_overlay_handle", f_set_network_overlay_handle)?;
     // GoudContext.clearNetworkOverlayHandle
     let f_clear_network_overlay_handle = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_clear_overlay_handle(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("clear_network_overlay_handle", f_clear_network_overlay_handle).unwrap();
+    })?;
+    tbl.set("clear_network_overlay_handle", f_clear_network_overlay_handle)?;
     // GoudContext.setDebuggerPaused
     let f_set_debugger_paused = lua.create_function(move |_, arg0: bool| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_set_paused(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("set_debugger_paused", f_set_debugger_paused).unwrap();
+    })?;
+    tbl.set("set_debugger_paused", f_set_debugger_paused)?;
     // GoudContext.setDebuggerTimeScale
     let f_set_debugger_time_scale = lua.create_function(move |_, arg0: f64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_set_time_scale(ctx_id, arg0 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_debugger_time_scale", f_set_debugger_time_scale).unwrap();
+    })?;
+    tbl.set("set_debugger_time_scale", f_set_debugger_time_scale)?;
     // GoudContext.setDebuggerDebugDrawEnabled
     let f_set_debugger_debug_draw_enabled = lua.create_function(move |_, arg0: bool| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_set_debug_draw_enabled(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("set_debugger_debug_draw_enabled", f_set_debugger_debug_draw_enabled).unwrap();
+    })?;
+    tbl.set("set_debugger_debug_draw_enabled", f_set_debugger_debug_draw_enabled)?;
     // GoudContext.setDebuggerProfilingEnabled
     let f_set_debugger_profiling_enabled = lua.create_function(move |_, arg0: bool| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_set_profiling_enabled(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("set_debugger_profiling_enabled", f_set_debugger_profiling_enabled).unwrap();
+    })?;
+    tbl.set("set_debugger_profiling_enabled", f_set_debugger_profiling_enabled)?;
     // GoudContext.setDebuggerSelectedEntity
     let f_set_debugger_selected_entity = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_set_selected_entity(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("set_debugger_selected_entity", f_set_debugger_selected_entity).unwrap();
+    })?;
+    tbl.set("set_debugger_selected_entity", f_set_debugger_selected_entity)?;
     // GoudContext.clearDebuggerSelectedEntity
     let f_clear_debugger_selected_entity = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_clear_selected_entity(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("clear_debugger_selected_entity", f_clear_debugger_selected_entity).unwrap();
+    })?;
+    tbl.set("clear_debugger_selected_entity", f_clear_debugger_selected_entity)?;
     // GoudContext.startDebuggerRecording
     let f_start_debugger_recording = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_start_recording(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("start_debugger_recording", f_start_debugger_recording).unwrap();
+    })?;
+    tbl.set("start_debugger_recording", f_start_debugger_recording)?;
     // GoudContext.stopDebuggerReplay
     let f_stop_debugger_replay = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_debugger_stop_replay(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("stop_debugger_replay", f_stop_debugger_replay).unwrap();
+    })?;
+    tbl.set("stop_debugger_replay", f_stop_debugger_replay)?;
     // GoudContext.spawnEmpty
     let f_spawn_empty = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_entity_spawn_empty(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("spawn_empty", f_spawn_empty).unwrap();
+    })?;
+    tbl.set("spawn_empty", f_spawn_empty)?;
     // GoudContext.despawn
     let f_despawn = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         let r = unsafe { goud_entity_despawn(ctx_id, arg0 as u64) };
         Ok(r.code as i64)
-    }).unwrap();
-    tbl.set("despawn", f_despawn).unwrap();
+    })?;
+    tbl.set("despawn", f_despawn)?;
     // GoudContext.cloneEntity
     let f_clone_entity = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_entity_clone(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("clone_entity", f_clone_entity).unwrap();
+    })?;
+    tbl.set("clone_entity", f_clone_entity)?;
     // GoudContext.cloneEntityRecursive
     let f_clone_entity_recursive = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_entity_clone_recursive(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("clone_entity_recursive", f_clone_entity_recursive).unwrap();
+    })?;
+    tbl.set("clone_entity_recursive", f_clone_entity_recursive)?;
     // GoudContext.isAlive
     let f_is_alive = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_entity_is_alive(ctx_id, arg0 as u64) })
-    }).unwrap();
-    tbl.set("is_alive", f_is_alive).unwrap();
+    })?;
+    tbl.set("is_alive", f_is_alive)?;
     // GoudContext.entityCount
     let f_entity_count = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_entity_count(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("entity_count", f_entity_count).unwrap();
+    })?;
+    tbl.set("entity_count", f_entity_count)?;
     // GoudContext.sceneDestroy
     let f_scene_destroy = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         let r = unsafe { goud_scene_destroy(ctx_id, arg0 as u32) };
         Ok(r.code as i64)
-    }).unwrap();
-    tbl.set("scene_destroy", f_scene_destroy).unwrap();
+    })?;
+    tbl.set("scene_destroy", f_scene_destroy)?;
     // GoudContext.setActiveScene
     let f_set_active_scene = lua.create_function(move |_, (arg0, arg1): (i64, bool)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         let r = unsafe { goud_scene_set_active(ctx_id, arg0 as u32, arg1) };
         Ok(r.code as i64)
-    }).unwrap();
-    tbl.set("set_active_scene", f_set_active_scene).unwrap();
+    })?;
+    tbl.set("set_active_scene", f_set_active_scene)?;
     // GoudContext.sceneSetActive
     let f_scene_set_active = lua.create_function(move |_, (arg0, arg1): (i64, bool)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         let r = unsafe { goud_scene_set_active(ctx_id, arg0 as u32, arg1) };
         Ok(r.code as i64)
-    }).unwrap();
-    tbl.set("scene_set_active", f_scene_set_active).unwrap();
+    })?;
+    tbl.set("scene_set_active", f_scene_set_active)?;
     // GoudContext.sceneIsActive
     let f_scene_is_active = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_scene_is_active(ctx_id, arg0 as u32) })
-    }).unwrap();
-    tbl.set("scene_is_active", f_scene_is_active).unwrap();
+    })?;
+    tbl.set("scene_is_active", f_scene_is_active)?;
     // GoudContext.sceneCount
     let f_scene_count = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_scene_count(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("scene_count", f_scene_count).unwrap();
+    })?;
+    tbl.set("scene_count", f_scene_count)?;
     // GoudContext.sceneSetCurrent
     let f_scene_set_current = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         let r = unsafe { goud_scene_set_current(ctx_id, arg0 as u32) };
         Ok(r.code as i64)
-    }).unwrap();
-    tbl.set("scene_set_current", f_scene_set_current).unwrap();
+    })?;
+    tbl.set("scene_set_current", f_scene_set_current)?;
     // GoudContext.sceneGetCurrent
     let f_scene_get_current = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_scene_get_current(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("scene_get_current", f_scene_get_current).unwrap();
+    })?;
+    tbl.set("scene_get_current", f_scene_get_current)?;
     // GoudContext.sceneTransitionTo
     let f_scene_transition_to = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, i64, i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         let r = unsafe { goud_scene_transition_to(ctx_id, arg0 as u32, arg1 as u32, arg2 as u8, arg3 as f32) };
         Ok(r.code as i64)
-    }).unwrap();
-    tbl.set("scene_transition_to", f_scene_transition_to).unwrap();
+    })?;
+    tbl.set("scene_transition_to", f_scene_transition_to)?;
     // GoudContext.sceneTransitionProgress
     let f_scene_transition_progress = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_scene_transition_progress(ctx_id) } as f64)
-    }).unwrap();
-    tbl.set("scene_transition_progress", f_scene_transition_progress).unwrap();
+    })?;
+    tbl.set("scene_transition_progress", f_scene_transition_progress)?;
     // GoudContext.sceneTransitionIsActive
     let f_scene_transition_is_active = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_scene_transition_is_active(ctx_id) })
-    }).unwrap();
-    tbl.set("scene_transition_is_active", f_scene_transition_is_active).unwrap();
+    })?;
+    tbl.set("scene_transition_is_active", f_scene_transition_is_active)?;
     // GoudContext.sceneTransitionTick
     let f_scene_transition_tick = lua.create_function(move |_, arg0: f64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         let r = unsafe { goud_scene_transition_tick(ctx_id, arg0 as f32) };
         Ok(r.code as i64)
-    }).unwrap();
-    tbl.set("scene_transition_tick", f_scene_transition_tick).unwrap();
-    globals.set("goud_context", tbl).unwrap();
+    })?;
+    tbl.set("scene_transition_tick", f_scene_transition_tick)?;
+    globals.set("goud_context", tbl)?;
+    Ok(())
 }
 
-pub(crate) fn register_physics_world2_d_tools(lua: &Lua, ctx_id: u64) {
+pub(crate) fn register_physics_world2_d_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
     let globals = lua.globals();
-    let tbl = globals.get::<LuaTable>("physics_world2_d").unwrap_or_else(|_| lua.create_table().unwrap());
+    let tbl = globals.get::<LuaTable>("physics_world2_d").or_else(|_| lua.create_table())?;
     // PhysicsWorld2D.create
     let f_create = lua.create_function(move |_, (arg0, arg1): (f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_create(ctx_id, arg0 as f32, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("create", f_create).unwrap();
+    })?;
+    tbl.set("create", f_create)?;
     // PhysicsWorld2D.createWithBackend
     let f_create_with_backend = lua.create_function(move |_, (arg0, arg1, arg2): (f64, f64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_create_with_backend(ctx_id, arg0 as f32, arg1 as f32, arg2 as u32) } as i64)
-    }).unwrap();
-    tbl.set("create_with_backend", f_create_with_backend).unwrap();
+    })?;
+    tbl.set("create_with_backend", f_create_with_backend)?;
     // PhysicsWorld2D.destroy
     let f_destroy = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_destroy(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("destroy", f_destroy).unwrap();
+    })?;
+    tbl.set("destroy", f_destroy)?;
     // PhysicsWorld2D.setGravity
     let f_set_gravity = lua.create_function(move |_, (arg0, arg1): (f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_set_gravity(ctx_id, arg0 as f32, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_gravity", f_set_gravity).unwrap();
+    })?;
+    tbl.set("set_gravity", f_set_gravity)?;
     // PhysicsWorld2D.addRigidBody
     let f_add_rigid_body = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_add_rigid_body(ctx_id, arg0 as u32, arg1 as f32, arg2 as f32, arg3 as f32) } as i64)
-    }).unwrap();
-    tbl.set("add_rigid_body", f_add_rigid_body).unwrap();
+    })?;
+    tbl.set("add_rigid_body", f_add_rigid_body)?;
     // PhysicsWorld2D.addRigidBodyEx
     let f_add_rigid_body_ex = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4): (i64, f64, f64, f64, bool)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_add_rigid_body_ex(ctx_id, arg0 as u32, arg1 as f32, arg2 as f32, arg3 as f32, arg4) } as i64)
-    }).unwrap();
-    tbl.set("add_rigid_body_ex", f_add_rigid_body_ex).unwrap();
+    })?;
+    tbl.set("add_rigid_body_ex", f_add_rigid_body_ex)?;
     // PhysicsWorld2D.addCollider
     let f_add_collider = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4, arg5, arg6): (i64, i64, f64, f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_add_collider(ctx_id, arg0 as u64, arg1 as u32, arg2 as f32, arg3 as f32, arg4 as f32, arg5 as f32, arg6 as f32) } as i64)
-    }).unwrap();
-    tbl.set("add_collider", f_add_collider).unwrap();
+    })?;
+    tbl.set("add_collider", f_add_collider)?;
     // PhysicsWorld2D.addColliderEx
     let f_add_collider_ex = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9): (i64, i64, f64, f64, f64, f64, f64, bool, i64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_add_collider_ex(ctx_id, arg0 as u64, arg1 as u32, arg2 as f32, arg3 as f32, arg4 as f32, arg5 as f32, arg6 as f32, arg7, arg8 as u32, arg9 as u32) } as i64)
-    }).unwrap();
-    tbl.set("add_collider_ex", f_add_collider_ex).unwrap();
+    })?;
+    tbl.set("add_collider_ex", f_add_collider_ex)?;
     // PhysicsWorld2D.removeBody
     let f_remove_body = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_remove_body(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("remove_body", f_remove_body).unwrap();
+    })?;
+    tbl.set("remove_body", f_remove_body)?;
     // PhysicsWorld2D.removeJoint
     let f_remove_joint = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_remove_joint(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("remove_joint", f_remove_joint).unwrap();
+    })?;
+    tbl.set("remove_joint", f_remove_joint)?;
     // PhysicsWorld2D.step
     let f_step = lua.create_function(move |_, arg0: f64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_step(ctx_id, arg0 as f32) } as i64)
-    }).unwrap();
-    tbl.set("step", f_step).unwrap();
+    })?;
+    tbl.set("step", f_step)?;
     // PhysicsWorld2D.setVelocity
     let f_set_velocity = lua.create_function(move |_, (arg0, arg1, arg2): (i64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_set_velocity(ctx_id, arg0 as u64, arg1 as f32, arg2 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_velocity", f_set_velocity).unwrap();
+    })?;
+    tbl.set("set_velocity", f_set_velocity)?;
     // PhysicsWorld2D.applyForce
     let f_apply_force = lua.create_function(move |_, (arg0, arg1, arg2): (i64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_apply_force(ctx_id, arg0 as u64, arg1 as f32, arg2 as f32) } as i64)
-    }).unwrap();
-    tbl.set("apply_force", f_apply_force).unwrap();
+    })?;
+    tbl.set("apply_force", f_apply_force)?;
     // PhysicsWorld2D.applyImpulse
     let f_apply_impulse = lua.create_function(move |_, (arg0, arg1, arg2): (i64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_apply_impulse(ctx_id, arg0 as u64, arg1 as f32, arg2 as f32) } as i64)
-    }).unwrap();
-    tbl.set("apply_impulse", f_apply_impulse).unwrap();
+    })?;
+    tbl.set("apply_impulse", f_apply_impulse)?;
     // PhysicsWorld2D.collisionEventsCount
     let f_collision_events_count = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_collision_events_count(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("collision_events_count", f_collision_events_count).unwrap();
+    })?;
+    tbl.set("collision_events_count", f_collision_events_count)?;
     // PhysicsWorld2D.collisionEventCount
     let f_collision_event_count = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_collision_event_count(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("collision_event_count", f_collision_event_count).unwrap();
+    })?;
+    tbl.set("collision_event_count", f_collision_event_count)?;
     // PhysicsWorld2D.setBodyGravityScale
     let f_set_body_gravity_scale = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_set_body_gravity_scale(ctx_id, arg0 as u64, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_body_gravity_scale", f_set_body_gravity_scale).unwrap();
+    })?;
+    tbl.set("set_body_gravity_scale", f_set_body_gravity_scale)?;
     // PhysicsWorld2D.setColliderFriction
     let f_set_collider_friction = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_set_collider_friction(ctx_id, arg0 as u64, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_collider_friction", f_set_collider_friction).unwrap();
+    })?;
+    tbl.set("set_collider_friction", f_set_collider_friction)?;
     // PhysicsWorld2D.setColliderRestitution
     let f_set_collider_restitution = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_set_collider_restitution(ctx_id, arg0 as u64, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_collider_restitution", f_set_collider_restitution).unwrap();
+    })?;
+    tbl.set("set_collider_restitution", f_set_collider_restitution)?;
     // PhysicsWorld2D.setTimestep
     let f_set_timestep = lua.create_function(move |_, arg0: f64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics_set_timestep(ctx_id, arg0 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_timestep", f_set_timestep).unwrap();
-    globals.set("physics_world2_d", tbl).unwrap();
+    })?;
+    tbl.set("set_timestep", f_set_timestep)?;
+    globals.set("physics_world2_d", tbl)?;
+    Ok(())
 }
 
-pub(crate) fn register_physics_world3_d_tools(lua: &Lua, ctx_id: u64) {
+pub(crate) fn register_physics_world3_d_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
     let globals = lua.globals();
-    let tbl = globals.get::<LuaTable>("physics_world3_d").unwrap_or_else(|_| lua.create_table().unwrap());
+    let tbl = globals.get::<LuaTable>("physics_world3_d").or_else(|_| lua.create_table())?;
     // PhysicsWorld3D.create
     let f_create = lua.create_function(move |_, (arg0, arg1, arg2): (f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_create(ctx_id, arg0 as f32, arg1 as f32, arg2 as f32) } as i64)
-    }).unwrap();
-    tbl.set("create", f_create).unwrap();
+    })?;
+    tbl.set("create", f_create)?;
     // PhysicsWorld3D.destroy
     let f_destroy = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_destroy(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("destroy", f_destroy).unwrap();
+    })?;
+    tbl.set("destroy", f_destroy)?;
     // PhysicsWorld3D.setGravity
     let f_set_gravity = lua.create_function(move |_, (arg0, arg1, arg2): (f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_set_gravity(ctx_id, arg0 as f32, arg1 as f32, arg2 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_gravity", f_set_gravity).unwrap();
+    })?;
+    tbl.set("set_gravity", f_set_gravity)?;
     // PhysicsWorld3D.addRigidBody
     let f_add_rigid_body = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4): (i64, f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_add_rigid_body(ctx_id, arg0 as u32, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32) } as i64)
-    }).unwrap();
-    tbl.set("add_rigid_body", f_add_rigid_body).unwrap();
+    })?;
+    tbl.set("add_rigid_body", f_add_rigid_body)?;
     // PhysicsWorld3D.addRigidBodyEx
     let f_add_rigid_body_ex = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4, arg5): (i64, f64, f64, f64, f64, bool)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_add_rigid_body_ex(ctx_id, arg0 as u32, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32, arg5) } as i64)
-    }).unwrap();
-    tbl.set("add_rigid_body_ex", f_add_rigid_body_ex).unwrap();
+    })?;
+    tbl.set("add_rigid_body_ex", f_add_rigid_body_ex)?;
     // PhysicsWorld3D.addCollider
     let f_add_collider = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7): (i64, i64, f64, f64, f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_add_collider(ctx_id, arg0 as u64, arg1 as u32, arg2 as f32, arg3 as f32, arg4 as f32, arg5 as f32, arg6 as f32, arg7 as f32) } as i64)
-    }).unwrap();
-    tbl.set("add_collider", f_add_collider).unwrap();
+    })?;
+    tbl.set("add_collider", f_add_collider)?;
     // PhysicsWorld3D.removeBody
     let f_remove_body = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_remove_body(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("remove_body", f_remove_body).unwrap();
+    })?;
+    tbl.set("remove_body", f_remove_body)?;
     // PhysicsWorld3D.removeJoint
     let f_remove_joint = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_remove_joint(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("remove_joint", f_remove_joint).unwrap();
+    })?;
+    tbl.set("remove_joint", f_remove_joint)?;
     // PhysicsWorld3D.step
     let f_step = lua.create_function(move |_, arg0: f64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_step(ctx_id, arg0 as f32) } as i64)
-    }).unwrap();
-    tbl.set("step", f_step).unwrap();
+    })?;
+    tbl.set("step", f_step)?;
     // PhysicsWorld3D.setVelocity
     let f_set_velocity = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_set_velocity(ctx_id, arg0 as u64, arg1 as f32, arg2 as f32, arg3 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_velocity", f_set_velocity).unwrap();
+    })?;
+    tbl.set("set_velocity", f_set_velocity)?;
     // PhysicsWorld3D.applyForce
     let f_apply_force = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_apply_force(ctx_id, arg0 as u64, arg1 as f32, arg2 as f32, arg3 as f32) } as i64)
-    }).unwrap();
-    tbl.set("apply_force", f_apply_force).unwrap();
+    })?;
+    tbl.set("apply_force", f_apply_force)?;
     // PhysicsWorld3D.applyImpulse
     let f_apply_impulse = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_apply_impulse(ctx_id, arg0 as u64, arg1 as f32, arg2 as f32, arg3 as f32) } as i64)
-    }).unwrap();
-    tbl.set("apply_impulse", f_apply_impulse).unwrap();
+    })?;
+    tbl.set("apply_impulse", f_apply_impulse)?;
     // PhysicsWorld3D.setBodyGravityScale
     let f_set_body_gravity_scale = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_set_body_gravity_scale(ctx_id, arg0 as u64, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_body_gravity_scale", f_set_body_gravity_scale).unwrap();
+    })?;
+    tbl.set("set_body_gravity_scale", f_set_body_gravity_scale)?;
     // PhysicsWorld3D.setColliderFriction
     let f_set_collider_friction = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_set_collider_friction(ctx_id, arg0 as u64, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_collider_friction", f_set_collider_friction).unwrap();
+    })?;
+    tbl.set("set_collider_friction", f_set_collider_friction)?;
     // PhysicsWorld3D.setColliderRestitution
     let f_set_collider_restitution = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_set_collider_restitution(ctx_id, arg0 as u64, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_collider_restitution", f_set_collider_restitution).unwrap();
+    })?;
+    tbl.set("set_collider_restitution", f_set_collider_restitution)?;
     // PhysicsWorld3D.setTimestep
     let f_set_timestep = lua.create_function(move |_, arg0: f64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_physics3d_set_timestep(ctx_id, arg0 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_timestep", f_set_timestep).unwrap();
-    globals.set("physics_world3_d", tbl).unwrap();
+    })?;
+    tbl.set("set_timestep", f_set_timestep)?;
+    globals.set("physics_world3_d", tbl)?;
+    Ok(())
 }
 
-pub(crate) fn register_animation_controller_tools(lua: &Lua, ctx_id: u64) {
+pub(crate) fn register_animation_controller_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
     let globals = lua.globals();
-    let tbl = globals.get::<LuaTable>("animation_controller").unwrap_or_else(|_| lua.create_table().unwrap());
+    let tbl = globals.get::<LuaTable>("animation_controller").or_else(|_| lua.create_table())?;
     // AnimationController.create
     let f_create = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_animation_controller_create(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("create", f_create).unwrap();
+    })?;
+    tbl.set("create", f_create)?;
     // AnimationController.update
     let f_update = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_animation_controller_update(ctx_id, arg0 as u64, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("update", f_update).unwrap();
-    globals.set("animation_controller", tbl).unwrap();
+    })?;
+    tbl.set("update", f_update)?;
+    globals.set("animation_controller", tbl)?;
+    Ok(())
 }
 
-pub(crate) fn register_animation_events_tools(lua: &Lua, ctx_id: u64) {
+pub(crate) fn register_animation_events_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
     let globals = lua.globals();
-    let tbl = globals.get::<LuaTable>("animation_events").unwrap_or_else(|_| lua.create_table().unwrap());
+    let tbl = globals.get::<LuaTable>("animation_events").or_else(|_| lua.create_table())?;
     // AnimationEvents.count
     let f_count = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_animation_events_count(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("count", f_count).unwrap();
-    globals.set("animation_events", tbl).unwrap();
+    })?;
+    tbl.set("count", f_count)?;
+    globals.set("animation_events", tbl)?;
+    Ok(())
 }
 
-pub(crate) fn register_tween_tools(lua: &Lua, ctx_id: u64) {
+pub(crate) fn register_tween_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
     let globals = lua.globals();
-    let tbl = globals.get::<LuaTable>("tween").unwrap_or_else(|_| lua.create_table().unwrap());
+    let tbl = globals.get::<LuaTable>("tween").or_else(|_| lua.create_table())?;
     // Tween.create
     let f_create = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (f64, f64, f64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_tween_create(ctx_id, arg0 as f32, arg1 as f32, arg2 as f32, arg3 as i32) } as i64)
-    }).unwrap();
-    tbl.set("create", f_create).unwrap();
+    })?;
+    tbl.set("create", f_create)?;
     // Tween.update
     let f_update = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_tween_update(ctx_id, arg0, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("update", f_update).unwrap();
+    })?;
+    tbl.set("update", f_update)?;
     // Tween.isComplete
     let f_is_complete = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_tween_is_complete(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("is_complete", f_is_complete).unwrap();
+    })?;
+    tbl.set("is_complete", f_is_complete)?;
     // Tween.reset
     let f_reset = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_tween_reset(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("reset", f_reset).unwrap();
+    })?;
+    tbl.set("reset", f_reset)?;
     // Tween.destroy
     let f_destroy = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_tween_destroy(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("destroy", f_destroy).unwrap();
-    globals.set("tween", tbl).unwrap();
+    })?;
+    tbl.set("destroy", f_destroy)?;
+    globals.set("tween", tbl)?;
+    Ok(())
 }
 
-pub(crate) fn register_skeleton_tools(lua: &Lua, ctx_id: u64) {
+pub(crate) fn register_skeleton_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
     let globals = lua.globals();
-    let tbl = globals.get::<LuaTable>("skeleton").unwrap_or_else(|_| lua.create_table().unwrap());
+    let tbl = globals.get::<LuaTable>("skeleton").or_else(|_| lua.create_table())?;
     // Skeleton.create
     let f_create = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_skeleton_create(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("create", f_create).unwrap();
+    })?;
+    tbl.set("create", f_create)?;
     // Skeleton.setBoneTransform
     let f_set_bone_transform = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4): (i64, i64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_skeleton_set_bone_transform(ctx_id, arg0 as u64, arg1 as i32, arg2 as f32, arg3 as f32, arg4 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_bone_transform", f_set_bone_transform).unwrap();
-    globals.set("skeleton", tbl).unwrap();
+    })?;
+    tbl.set("set_bone_transform", f_set_bone_transform)?;
+    globals.set("skeleton", tbl)?;
+    Ok(())
 }
 
-pub(crate) fn register_animation_layer_stack_tools(lua: &Lua, ctx_id: u64) {
+pub(crate) fn register_animation_layer_stack_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
     let globals = lua.globals();
-    let tbl = globals.get::<LuaTable>("animation_layer_stack").unwrap_or_else(|_| lua.create_table().unwrap());
+    let tbl = globals.get::<LuaTable>("animation_layer_stack").or_else(|_| lua.create_table())?;
     // AnimationLayerStack.create
     let f_create = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_animation_layer_stack_create(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("create", f_create).unwrap();
+    })?;
+    tbl.set("create", f_create)?;
     // AnimationLayerStack.setLayerWeight
     let f_set_layer_weight = lua.create_function(move |_, (arg0, arg1, arg2): (i64, i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_animation_layer_set_weight(ctx_id, arg0 as u64, arg1 as u32, arg2 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_layer_weight", f_set_layer_weight).unwrap();
+    })?;
+    tbl.set("set_layer_weight", f_set_layer_weight)?;
     // AnimationLayerStack.play
     let f_play = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_animation_layer_play(ctx_id, arg0 as u64, arg1 as u32) } as i64)
-    }).unwrap();
-    tbl.set("play", f_play).unwrap();
+    })?;
+    tbl.set("play", f_play)?;
     // AnimationLayerStack.setClip
     let f_set_clip = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4): (i64, i64, i64, f64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_animation_layer_set_clip(ctx_id, arg0 as u64, arg1 as u32, arg2 as u32, arg3 as f32, arg4 as u32) } as i64)
-    }).unwrap();
-    tbl.set("set_clip", f_set_clip).unwrap();
+    })?;
+    tbl.set("set_clip", f_set_clip)?;
     // AnimationLayerStack.addFrame
     let f_add_frame = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4, arg5): (i64, i64, f64, f64, f64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_animation_layer_add_frame(ctx_id, arg0 as u64, arg1 as u32, arg2 as f32, arg3 as f32, arg4 as f32, arg5 as f32) } as i64)
-    }).unwrap();
-    tbl.set("add_frame", f_add_frame).unwrap();
+    })?;
+    tbl.set("add_frame", f_add_frame)?;
     // AnimationLayerStack.resetLayer
     let f_reset_layer = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_animation_layer_reset(ctx_id, arg0 as u64, arg1 as u32) } as i64)
-    }).unwrap();
-    tbl.set("reset_layer", f_reset_layer).unwrap();
-    globals.set("animation_layer_stack", tbl).unwrap();
+    })?;
+    tbl.set("reset_layer", f_reset_layer)?;
+    globals.set("animation_layer_stack", tbl)?;
+    Ok(())
 }
 
-pub(crate) fn register_network_tools(lua: &Lua, ctx_id: u64) {
+pub(crate) fn register_network_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
     let globals = lua.globals();
-    let tbl = globals.get::<LuaTable>("network").unwrap_or_else(|_| lua.create_table().unwrap());
+    let tbl = globals.get::<LuaTable>("network").or_else(|_| lua.create_table())?;
     // Network.host
     let f_host = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_host(ctx_id, arg0 as i32, arg1 as u16) } as i64)
-    }).unwrap();
-    tbl.set("host", f_host).unwrap();
+    })?;
+    tbl.set("host", f_host)?;
     // Network.disconnect
     let f_disconnect = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_disconnect(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("disconnect", f_disconnect).unwrap();
+    })?;
+    tbl.set("disconnect", f_disconnect)?;
     // Network.poll
     let f_poll = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_poll(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("poll", f_poll).unwrap();
+    })?;
+    tbl.set("poll", f_poll)?;
     // Network.peerCount
     let f_peer_count = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_network_peer_count(ctx_id, arg0) } as i64)
-    }).unwrap();
-    tbl.set("peer_count", f_peer_count).unwrap();
-    globals.set("network", tbl).unwrap();
+    })?;
+    tbl.set("peer_count", f_peer_count)?;
+    globals.set("network", tbl)?;
+    Ok(())
 }
 
-pub(crate) fn register_audio_tools(lua: &Lua, ctx_id: u64) {
+pub(crate) fn register_audio_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
     let globals = lua.globals();
-    let tbl = globals.get::<LuaTable>("audio").unwrap_or_else(|_| lua.create_table().unwrap());
+    let tbl = globals.get::<LuaTable>("audio").or_else(|_| lua.create_table())?;
     // Audio.stop
     let f_stop = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_stop(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("stop", f_stop).unwrap();
+    })?;
+    tbl.set("stop", f_stop)?;
     // Audio.pause
     let f_pause = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_pause(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("pause", f_pause).unwrap();
+    })?;
+    tbl.set("pause", f_pause)?;
     // Audio.resume
     let f_resume = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_resume(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("resume", f_resume).unwrap();
+    })?;
+    tbl.set("resume", f_resume)?;
     // Audio.stopAll
     let f_stop_all = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_stop_all(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("stop_all", f_stop_all).unwrap();
+    })?;
+    tbl.set("stop_all", f_stop_all)?;
     // Audio.setGlobalVolume
     let f_set_global_volume = lua.create_function(move |_, arg0: f64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_set_global_volume(ctx_id, arg0 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_global_volume", f_set_global_volume).unwrap();
+    })?;
+    tbl.set("set_global_volume", f_set_global_volume)?;
     // Audio.getGlobalVolume
     let f_get_global_volume = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_get_global_volume(ctx_id) } as f64)
-    }).unwrap();
-    tbl.set("get_global_volume", f_get_global_volume).unwrap();
+    })?;
+    tbl.set("get_global_volume", f_get_global_volume)?;
     // Audio.setChannelVolume
     let f_set_channel_volume = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_set_channel_volume(ctx_id, arg0 as u8, arg1 as f32) } as i64)
-    }).unwrap();
-    tbl.set("set_channel_volume", f_set_channel_volume).unwrap();
+    })?;
+    tbl.set("set_channel_volume", f_set_channel_volume)?;
     // Audio.getChannelVolume
     let f_get_channel_volume = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_get_channel_volume(ctx_id, arg0 as u8) } as f64)
-    }).unwrap();
-    tbl.set("get_channel_volume", f_get_channel_volume).unwrap();
+    })?;
+    tbl.set("get_channel_volume", f_get_channel_volume)?;
     // Audio.isPlaying
     let f_is_playing = lua.create_function(move |_, arg0: i64| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_is_playing(ctx_id, arg0 as u64) } as i64)
-    }).unwrap();
-    tbl.set("is_playing", f_is_playing).unwrap();
+    })?;
+    tbl.set("is_playing", f_is_playing)?;
     // Audio.activeCount
     let f_active_count = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_active_count(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("active_count", f_active_count).unwrap();
+    })?;
+    tbl.set("active_count", f_active_count)?;
     // Audio.cleanupFinished
     let f_cleanup_finished = lua.create_function(move |_, _: ()| {
         // SAFETY: FFI call with validated primitive parameters from Lua.
         Ok(unsafe { goud_audio_cleanup_finished(ctx_id) } as i64)
-    }).unwrap();
-    tbl.set("cleanup_finished", f_cleanup_finished).unwrap();
-    globals.set("audio", tbl).unwrap();
+    })?;
+    tbl.set("cleanup_finished", f_cleanup_finished)?;
+    globals.set("audio", tbl)?;
+    Ok(())
 }

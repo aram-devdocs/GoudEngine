@@ -3,7 +3,8 @@
 use mlua::prelude::*;
 
 /// Registers all Lua bindings (types, enums, tools) on the given Lua state.
-pub(crate) fn register_lua_bindings(lua: &Lua, _ctx_id: u64) {
-    super::types::register_type_factories(lua);
-    super::enums::register_enum_constants(lua);
+pub(crate) fn register_lua_bindings(lua: &Lua, _ctx_id: u64) -> LuaResult<()> {
+    super::types::register_type_factories(lua)?;
+    super::enums::register_enum_constants(lua)?;
+    Ok(())
 }

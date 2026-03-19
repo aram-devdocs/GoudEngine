@@ -14,22 +14,22 @@ pub(super) struct LuaRuntime {
 impl LuaRuntime {
     pub(super) fn new(ctx_id: u64) -> GoudResult<Self> {
         let lua = mlua::Lua::new();
-        super::lua_bindings::register_lua_bindings(&lua, ctx_id);
-        let runtime = Self {
+
+        // Bootstrap: verify the VM works.
+        lua.load("return true").eval::<bool>().map_err(|error| {
+            GoudError::InitializationFailed(format!("embedded Lua VM bootstrap failed: {error}"))
+        })?;
+
+        // Register generated type/enum/tool bindings.
+        super::lua_bindings::register_lua_bindings(&lua, ctx_id).map_err(|error| {
+            GoudError::InitializationFailed(format!("Lua binding registration failed: {error}"))
+        })?;
+
+        Ok(Self {
             lua,
             #[cfg(test)]
             drop_probe: None,
-        };
-        runtime
-            .lua
-            .load("return true")
-            .eval::<bool>()
-            .map_err(|error| {
-                GoudError::InitializationFailed(format!(
-                    "embedded Lua VM bootstrap failed: {error}"
-                ))
-            })?;
-        Ok(runtime)
+        })
     }
 
     /// Executes a Lua script in this runtime.

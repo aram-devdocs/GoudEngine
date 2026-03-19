@@ -36,7 +36,12 @@ def run():
     tools_path = LUA_BINDINGS_DIR / "tools.g.rs"
     sdk_common.write_generated(tools_path, tools_content)
 
-    # Tools are generated but not wired up yet; registration is deferred.
+    # Tools are generated but use `extern "C"` declarations to call FFI
+    # functions. These extern declarations cause linker errors in test/lib
+    # builds because the FFI symbols are only reliably available in the cdylib
+    # target. Until tools.g.rs is refactored to call FFI functions via
+    # crate-internal paths (e.g. `crate::ffi::...`), tool registration is
+    # deferred.
     has_tools = False
     tool_names_with_methods = []
 

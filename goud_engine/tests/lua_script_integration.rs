@@ -35,4 +35,17 @@ mod lua_tests {
             "error should contain the message, got: {err_msg}"
         );
     }
+
+    #[test]
+    fn test_lua_type_factories_accessible() {
+        let game = GoudGame::new(GameConfig::default()).expect("headless game should init");
+        let result = game.execute_lua(
+            "local c = Color({ r = 1.0, g = 0.0, b = 0.0, a = 1.0 })\nassert(c.r == 1.0)",
+            "test_factories.lua",
+        );
+        assert!(
+            result.is_ok(),
+            "Color factory should be accessible: {result:?}"
+        );
+    }
 }

@@ -144,10 +144,10 @@ impl LuaUserData for LuaText {
     }
 }
 
-pub(crate) fn register_type_factories(lua: &Lua) {
+pub(crate) fn register_type_factories(lua: &Lua) -> LuaResult<()> {
     let globals = lua.globals();
     // Color constructor
-    let color_ctor = lua.create_function(|_, tbl: LuaTable| {
+    let ctor = lua.create_function(|_, tbl: LuaTable| {
         // SAFETY: FfiColor is repr(C) with only primitive fields;
         // zeroed memory is valid for all its field types.
         let mut v: FfiColor = unsafe { std::mem::zeroed() };
@@ -156,20 +156,20 @@ pub(crate) fn register_type_factories(lua: &Lua) {
         if let Ok(val) = tbl.get::<f64>("b") { v.b = val as f32; }
         if let Ok(val) = tbl.get::<f64>("a") { v.a = val as f32; }
         Ok(LuaColor(v))
-    }).unwrap();
-    globals.set("color", color_ctor).unwrap();
+    })?;
+    globals.set("Color", ctor)?;
     // Vec2 constructor
-    let vec2_ctor = lua.create_function(|_, tbl: LuaTable| {
+    let ctor = lua.create_function(|_, tbl: LuaTable| {
         // SAFETY: FfiVec2 is repr(C) with only primitive fields;
         // zeroed memory is valid for all its field types.
         let mut v: FfiVec2 = unsafe { std::mem::zeroed() };
         if let Ok(val) = tbl.get::<f64>("x") { v.x = val as f32; }
         if let Ok(val) = tbl.get::<f64>("y") { v.y = val as f32; }
         Ok(LuaVec2(v))
-    }).unwrap();
-    globals.set("vec2", vec2_ctor).unwrap();
+    })?;
+    globals.set("Vec2", ctor)?;
     // Rect constructor
-    let rect_ctor = lua.create_function(|_, tbl: LuaTable| {
+    let ctor = lua.create_function(|_, tbl: LuaTable| {
         // SAFETY: FfiRect is repr(C) with only primitive fields;
         // zeroed memory is valid for all its field types.
         let mut v: FfiRect = unsafe { std::mem::zeroed() };
@@ -178,10 +178,10 @@ pub(crate) fn register_type_factories(lua: &Lua) {
         if let Ok(val) = tbl.get::<f64>("width") { v.width = val as f32; }
         if let Ok(val) = tbl.get::<f64>("height") { v.height = val as f32; }
         Ok(LuaRect(v))
-    }).unwrap();
-    globals.set("rect", rect_ctor).unwrap();
+    })?;
+    globals.set("Rect", ctor)?;
     // Transform2D constructor
-    let transform2_d_ctor = lua.create_function(|_, tbl: LuaTable| {
+    let ctor = lua.create_function(|_, tbl: LuaTable| {
         // SAFETY: FfiTransform2D is repr(C) with only primitive fields;
         // zeroed memory is valid for all its field types.
         let mut v: FfiTransform2D = unsafe { std::mem::zeroed() };
@@ -191,10 +191,10 @@ pub(crate) fn register_type_factories(lua: &Lua) {
         if let Ok(val) = tbl.get::<f64>("scale_x") { v.scale_x = val as f32; }
         if let Ok(val) = tbl.get::<f64>("scale_y") { v.scale_y = val as f32; }
         Ok(LuaTransform2D(v))
-    }).unwrap();
-    globals.set("transform2_d", transform2_d_ctor).unwrap();
+    })?;
+    globals.set("Transform2D", ctor)?;
     // Sprite constructor
-    let sprite_ctor = lua.create_function(|_, tbl: LuaTable| {
+    let ctor = lua.create_function(|_, tbl: LuaTable| {
         // SAFETY: FfiSprite is repr(C) with only primitive fields;
         // zeroed memory is valid for all its field types.
         let mut v: FfiSprite = unsafe { std::mem::zeroed() };
@@ -217,10 +217,10 @@ pub(crate) fn register_type_factories(lua: &Lua) {
         if let Ok(val) = tbl.get::<f64>("custom_size_y") { v.custom_size_y = val as f32; }
         if let Ok(val) = tbl.get::<bool>("has_custom_size") { v.has_custom_size = val; }
         Ok(LuaSprite(v))
-    }).unwrap();
-    globals.set("sprite", sprite_ctor).unwrap();
+    })?;
+    globals.set("Sprite", ctor)?;
     // Text constructor
-    let text_ctor = lua.create_function(|_, tbl: LuaTable| {
+    let ctor = lua.create_function(|_, tbl: LuaTable| {
         // SAFETY: FfiText is repr(C) with only primitive fields;
         // zeroed memory is valid for all its field types.
         let mut v: FfiText = unsafe { std::mem::zeroed() };
@@ -235,6 +235,7 @@ pub(crate) fn register_type_factories(lua: &Lua) {
         if let Ok(val) = tbl.get::<bool>("has_max_width") { v.has_max_width = val; }
         if let Ok(val) = tbl.get::<f64>("line_spacing") { v.line_spacing = val as f32; }
         Ok(LuaText(v))
-    }).unwrap();
-    globals.set("text", text_ctor).unwrap();
+    })?;
+    globals.set("Text", ctor)?;
+    Ok(())
 }

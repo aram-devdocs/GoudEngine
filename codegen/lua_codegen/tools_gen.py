@@ -100,6 +100,24 @@ def _lua_arg_type(ptype):
     return "i64"
 
 
+def generated_tool_names(schema, ffi_manifest):
+    """Return (has_tools, tool_names) for the tools that would be generated."""
+    ffi_tools = schema.get("ffi_tools", {})
+    tools_methods = {}
+    for tool_name, tool_def in ffi_tools.items():
+        methods = tool_def.get("methods", {})
+        for method_name, method_def in methods.items():
+            ffi_fn = method_def.get("ffi")
+            if not ffi_fn:
+                continue
+            manifest_entry = ffi_manifest.get(ffi_fn)
+            if _should_skip_method(method_def, manifest_entry):
+                continue
+            tools_methods.setdefault(tool_name, []).append(method_name)
+    tool_names = list(tools_methods.keys())
+    return (bool(tool_names), tool_names)
+
+
 def generate(schema, ffi_manifest):
     lines = [HEADER]
     lines.append("use mlua::prelude::*;")
@@ -158,9 +176,9 @@ def generate(schema, ffi_manifest):
 
     for tool_name, methods in tools_methods.items():
         snake_tool = sdk_common.to_snake(tool_name)
-        lines.append(f"pub(crate) fn register_{snake_tool}_tools(lua: &Lua, ctx_id: u64) {{")
+        lines.append(f"pub(crate) fn register_{snake_tool}_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {{")
         lines.append(f"    let globals = lua.globals();")
-        lines.append(f'    let tbl = globals.get::<LuaTable>("{snake_tool}").unwrap_or_else(|_| lua.create_table().unwrap());')
+        lines.append(f'    let tbl = globals.get::<LuaTable>("{snake_tool}").or_else(|_| lua.create_table())?;')
 
         for method_name, ffi_fn, manifest_entry, method_def in methods:
             snake_method = sdk_common.to_snake(method_name)
@@ -226,10 +244,11 @@ def generate(schema, ffi_manifest):
             else:
                 lines.append(f"        Ok(unsafe {{ {call} }} as i64)")
 
-            lines.append(f"    }}).unwrap();")
-            lines.append(f'    tbl.set("{snake_method}", f_{snake_method}).unwrap();')
+            lines.append(f"    }})?;")
+            lines.append(f'    tbl.set("{snake_method}", f_{snake_method})?;')
 
-        lines.append(f'    globals.set("{snake_tool}", tbl).unwrap();')
+        lines.append(f'    globals.set("{snake_tool}", tbl)?;')
+        lines.append(f"    Ok(())")
         lines.append(f"}}")
         lines.append("")
 

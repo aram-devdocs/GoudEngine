@@ -327,6 +327,7 @@ impl GoudGame {
         let audio_manager = crate::assets::AudioManager::new().ok();
         let debugger_route =
             Self::register_debugger_route(&config, RuntimeSurfaceKind::WindowedGame);
+        // TODO: pass actual context ID once context registry supports it
         #[cfg(feature = "lua")]
         let lua_runtime = LuaRuntime::new(0)?;
 
@@ -433,7 +434,7 @@ impl GoudGame {
     ///
     /// # Errors
     ///
-    /// Returns `GoudError::ScriptError` if the script has syntax or runtime errors.
+    /// Returns a `GoudError` if the script has syntax or runtime errors.
     #[cfg(feature = "lua")]
     pub fn execute_lua(&self, source: &str, name: &str) -> GoudResult<()> {
         self.lua_runtime.execute_script(source, name)
