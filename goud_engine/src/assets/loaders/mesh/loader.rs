@@ -73,7 +73,9 @@ impl AssetLoader for MeshLoader {
 
         match format {
             #[cfg(feature = "native")]
-            Some(MeshFormat::Gltf | MeshFormat::Glb) => super::gltf_parser::parse_gltf(bytes),
+            Some(MeshFormat::Gltf | MeshFormat::Glb) => {
+                super::gltf_parser::parse_gltf(bytes, context)
+            }
             #[cfg(feature = "native")]
             Some(MeshFormat::Obj) => super::obj_parser::parse_obj(bytes),
             #[cfg(not(feature = "native"))]

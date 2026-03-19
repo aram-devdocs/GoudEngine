@@ -130,5 +130,6 @@ impl WgpuBackend {
 
     pub(super) fn set_vertex_attributes_impl(&mut self, layout: &VertexLayout) {
         self.current_layout = Some(layout.clone());
+        self.current_vertex_bindings.clear();
     }
 }

@@ -2,11 +2,15 @@ use crate::libs::error::GoudResult;
 
 use super::SharedNativeRenderBackend;
 use crate::libs::graphics::backend::render_backend::DrawOps;
-use crate::libs::graphics::backend::types::{PrimitiveTopology, VertexLayout};
+use crate::libs::graphics::backend::types::{PrimitiveTopology, VertexBufferBinding, VertexLayout};
 
 impl DrawOps for SharedNativeRenderBackend {
     fn set_vertex_attributes(&mut self, layout: &VertexLayout) {
         self.lock().set_vertex_attributes(layout);
+    }
+
+    fn set_vertex_bindings(&mut self, bindings: &[VertexBufferBinding]) -> GoudResult<()> {
+        self.lock().set_vertex_bindings(bindings)
     }
 
     fn draw_arrays(

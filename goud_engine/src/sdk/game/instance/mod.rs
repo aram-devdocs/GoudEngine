@@ -3,6 +3,8 @@
 mod capture;
 mod debugger_frame;
 mod ecs_scene;
+#[cfg(feature = "lua")]
+mod lua_runtime;
 #[cfg(test)]
 mod tests;
 
@@ -24,6 +26,8 @@ use crate::rendering::{compute_render_viewport, RenderViewport, ViewportScaleMod
 use crate::sdk::debug_overlay::DebugOverlay;
 use crate::sdk::game_config::{GameConfig, GameContext};
 use crate::ui::UiManager;
+#[cfg(feature = "lua")]
+use lua_runtime::LuaRuntime;
 
 #[cfg(feature = "native")]
 use crate::ecs::InputManager;
@@ -97,6 +101,11 @@ pub struct GoudGame {
 
     /// Window resize events emitted through the runtime path.
     pub(crate) window_resized_events: Events<WindowResized>,
+
+    #[cfg(feature = "lua")]
+    // Held for Drop: keeps the embedded Lua VM alive until GoudGame drops.
+    #[allow(dead_code)]
+    lua_runtime: LuaRuntime,
 
     // =========================================================================
     // Native-only fields (require a desktop windowing and render backend)
@@ -196,6 +205,8 @@ impl GoudGame {
         debug_overlay.set_enabled(config.show_fps_overlay);
         let debugger_route =
             Self::register_debugger_route(&config, RuntimeSurfaceKind::HeadlessContext);
+        #[cfg(feature = "lua")]
+        let lua_runtime = LuaRuntime::new()?;
         Ok(Self {
             scene_manager: SceneManager::new(),
             config,
@@ -209,6 +220,8 @@ impl GoudGame {
             last_transition_complete: None,
             ui_manager: UiManager::new(),
             window_resized_events: Events::new(),
+            #[cfg(feature = "lua")]
+            lua_runtime,
             #[cfg(feature = "native")]
             platform: None,
             #[cfg(feature = "native")]
@@ -261,6 +274,7 @@ impl GoudGame {
     /// Returns an error if native runtime initialization fails.
     #[cfg(feature = "native")]
     pub fn with_platform(config: GameConfig) -> GoudResult<Self> {
+        use crate::assets::loaders::ensure_3d_asset_loaders;
         use crate::assets::AssetServer;
         use crate::libs::platform::native_runtime::create_native_runtime;
         use crate::rendering::sprite_batch::{
@@ -275,6 +289,7 @@ impl GoudGame {
             title: config.title.clone(),
             vsync: config.vsync,
             resizable: config.resizable,
+            msaa_samples: config.msaa_samples,
         };
 
         let native_runtime =
@@ -283,14 +298,19 @@ impl GoudGame {
         let mut debug_overlay = DebugOverlay::new(config.fps_update_interval);
         debug_overlay.set_enabled(config.show_fps_overlay);
         let render_backend = native_runtime.render_backend;
-        let renderer_3d = Renderer3D::new(
+        let mut renderer_3d = Renderer3D::new(
             Box::new(render_backend.clone()),
             config.width,
             config.height,
         )
         .map_err(crate::core::error::GoudError::InitializationFailed)?;
+        renderer_3d.set_msaa_samples(config.msaa_samples);
+        renderer_3d
+            .set_anti_aliasing_mode(config.anti_aliasing_mode)
+            .map_err(crate::core::error::GoudError::InitializationFailed)?;
         let mut asset_server = AssetServer::with_root(".");
         ensure_sprite_asset_loaders(&mut asset_server);
+        ensure_3d_asset_loaders(&mut asset_server);
         let sprite_shader = ensure_default_sprite_shader_loaded(&mut asset_server);
         let sprite_batch = SpriteBatch::new(
             render_backend.clone(),
@@ -306,6 +326,8 @@ impl GoudGame {
         let audio_manager = crate::assets::AudioManager::new().ok();
         let debugger_route =
             Self::register_debugger_route(&config, RuntimeSurfaceKind::WindowedGame);
+        #[cfg(feature = "lua")]
+        let lua_runtime = LuaRuntime::new()?;
 
         // Register deferred capture hook for framebuffer readback if debugger
         // is enabled. The hook is invoked from the IPC thread, so it signals
@@ -335,6 +357,8 @@ impl GoudGame {
             last_transition_complete: None,
             ui_manager: UiManager::new(),
             window_resized_events: Events::new(),
+            #[cfg(feature = "lua")]
+            lua_runtime,
             platform: Some(native_runtime.platform),
             render_backend: Some(render_backend),
             input_manager: InputManager::default(),

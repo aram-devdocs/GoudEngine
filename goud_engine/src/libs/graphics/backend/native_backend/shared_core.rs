@@ -102,6 +102,10 @@ impl StateOps for SharedNativeRenderBackend {
         self.lock().set_depth_mask(enabled);
     }
 
+    fn set_multisampling_enabled(&mut self, enabled: bool) {
+        self.lock().set_multisampling_enabled(enabled);
+    }
+
     fn set_line_width(&mut self, width: f32) {
         self.lock().set_line_width(width);
     }

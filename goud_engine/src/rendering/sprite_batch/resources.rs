@@ -278,7 +278,7 @@ impl<B: RenderBackend> SpriteBatch<B> {
             self.backend.draw_indexed(
                 PrimitiveTopology::Triangles,
                 index_count as u32,
-                index_start,
+                index_start * std::mem::size_of::<u32>(),
             )?;
         }
 

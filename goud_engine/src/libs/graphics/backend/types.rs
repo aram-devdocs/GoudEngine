@@ -302,6 +302,48 @@ impl VertexLayout {
     }
 }
 
+/// How a vertex buffer advances during drawing.
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum VertexStepMode {
+    /// Advance once per vertex.
+    #[default]
+    Vertex = 0,
+    /// Advance once per instance.
+    Instance = 1,
+}
+
+/// One bound vertex buffer plus its layout and step mode.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VertexBufferBinding {
+    /// Source GPU buffer.
+    pub buffer: BufferHandle,
+    /// Vertex attribute layout interpreted from the source buffer.
+    pub layout: VertexLayout,
+    /// Whether the layout advances per vertex or per instance.
+    pub step_mode: VertexStepMode,
+}
+
+impl VertexBufferBinding {
+    /// Creates a per-vertex binding from a buffer and layout.
+    pub fn per_vertex(buffer: BufferHandle, layout: VertexLayout) -> Self {
+        Self {
+            buffer,
+            layout,
+            step_mode: VertexStepMode::Vertex,
+        }
+    }
+
+    /// Creates a per-instance binding from a buffer and layout.
+    pub fn per_instance(buffer: BufferHandle, layout: VertexLayout) -> Self {
+        Self {
+            buffer,
+            layout,
+            step_mode: VertexStepMode::Instance,
+        }
+    }
+}
+
 // ============================================================================
 // Draw Command Types
 // ============================================================================

@@ -37,6 +37,7 @@
 
 pub mod batch;
 pub mod config;
+mod culling;
 pub mod resources;
 pub mod types;
 

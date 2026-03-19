@@ -4,6 +4,22 @@ use super::{super::types::BufferUsage, BufferHandle, BufferType, WgpuBackend, Wg
 use crate::libs::error::{GoudError, GoudResult};
 
 impl WgpuBackend {
+    fn destroy_buffer_now(&mut self, handle: BufferHandle) -> bool {
+        if self.buffers.remove(&handle).is_some() {
+            self.buffer_allocator.deallocate(handle);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub(super) fn flush_pending_buffer_destroys(&mut self) {
+        let pending = std::mem::take(&mut self.pending_destroy_buffers);
+        for handle in pending {
+            let _ = self.destroy_buffer_now(handle);
+        }
+    }
+
     pub(super) fn create_buffer_impl(
         &mut self,
         buffer_type: BufferType,
@@ -68,11 +84,26 @@ impl WgpuBackend {
     }
 
     pub(super) fn destroy_buffer_impl(&mut self, handle: BufferHandle) -> bool {
-        if self.buffers.remove(&handle).is_some() {
-            self.buffer_allocator.deallocate(handle);
-            true
-        } else {
+        if !self.buffers.contains_key(&handle) {
             false
+        } else {
+            if self.bound_vertex_buffer == Some(handle) {
+                self.bound_vertex_buffer = None;
+            }
+            if self.bound_index_buffer == Some(handle) {
+                self.bound_index_buffer = None;
+            }
+            self.current_vertex_bindings
+                .retain(|binding| binding.buffer != handle);
+
+            if self.current_frame.is_some() {
+                if !self.pending_destroy_buffers.contains(&handle) {
+                    self.pending_destroy_buffers.push(handle);
+                }
+                true
+            } else {
+                self.destroy_buffer_now(handle)
+            }
         }
     }
 

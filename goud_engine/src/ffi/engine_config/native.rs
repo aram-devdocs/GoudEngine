@@ -40,6 +40,7 @@ pub unsafe extern "C" fn goud_engine_create(handle: EngineConfigHandle) -> GoudC
         title: game_config.title.clone(),
         vsync: game_config.vsync,
         resizable: game_config.resizable,
+        msaa_samples: game_config.msaa_samples,
     };
 
     let native_runtime = match create_native_runtime(

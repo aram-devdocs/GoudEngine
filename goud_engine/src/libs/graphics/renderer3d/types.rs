@@ -1,6 +1,7 @@
 //! Types for the 3D renderer: enums, config structs, camera, and scene objects.
 
 use crate::libs::graphics::backend::BufferHandle;
+pub use crate::libs::graphics::AntiAliasingMode;
 use cgmath::{Deg, Matrix4, Rad, Vector3, Vector4};
 
 // ============================================================================
@@ -76,15 +77,124 @@ pub struct PrimitiveCreateInfo {
     pub texture_id: u32,
 }
 
+/// Per-instance transform and color for instanced drawing.
+#[derive(Debug, Clone)]
+pub struct InstanceTransform {
+    /// Instance position in world space.
+    pub position: Vector3<f32>,
+    /// Instance rotation (pitch, yaw, roll) in degrees.
+    pub rotation: Vector3<f32>,
+    /// Instance scale.
+    pub scale: Vector3<f32>,
+    /// Instance tint color.
+    pub color: Vector4<f32>,
+}
+
+impl Default for InstanceTransform {
+    fn default() -> Self {
+        Self {
+            position: Vector3::new(0.0, 0.0, 0.0),
+            rotation: Vector3::new(0.0, 0.0, 0.0),
+            scale: Vector3::new(1.0, 1.0, 1.0),
+            color: Vector4::new(1.0, 1.0, 1.0, 1.0),
+        }
+    }
+}
+
+/// CPU-driven particle emitter configuration.
+#[derive(Debug, Clone)]
+pub struct ParticleEmitterConfig {
+    /// Particles emitted per second.
+    pub emission_rate: f32,
+    /// Maximum live particles tracked by the emitter.
+    pub max_particles: usize,
+    /// Lifetime of each particle in seconds.
+    pub lifetime: f32,
+    /// Minimum launch velocity.
+    pub velocity_min: Vector3<f32>,
+    /// Maximum launch velocity.
+    pub velocity_max: Vector3<f32>,
+    /// Starting particle color.
+    pub start_color: Vector4<f32>,
+    /// Ending particle color.
+    pub end_color: Vector4<f32>,
+    /// Starting particle size.
+    pub start_size: f32,
+    /// Ending particle size.
+    pub end_size: f32,
+    /// Optional particle texture.
+    pub texture_id: u32,
+}
+
+impl Default for ParticleEmitterConfig {
+    fn default() -> Self {
+        Self {
+            emission_rate: 16.0,
+            max_particles: 256,
+            lifetime: 1.0,
+            velocity_min: Vector3::new(-0.25, 1.0, -0.25),
+            velocity_max: Vector3::new(0.25, 2.0, 0.25),
+            start_color: Vector4::new(1.0, 0.6, 0.2, 1.0),
+            end_color: Vector4::new(0.8, 0.1, 0.0, 0.0),
+            start_size: 0.35,
+            end_size: 0.05,
+            texture_id: 0,
+        }
+    }
+}
+
+/// Last-frame renderer statistics exposed for tests and debugging.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Renderer3DStats {
+    /// Total draw calls recorded by the renderer this frame.
+    pub draw_calls: u32,
+    /// Instanced draw calls recorded this frame.
+    pub instanced_draw_calls: u32,
+    /// Particle instanced draw calls recorded this frame.
+    pub particle_draw_calls: u32,
+    /// Number of instance records submitted this frame.
+    pub active_instances: u32,
+    /// Number of live particles submitted this frame.
+    pub active_particles: u32,
+}
+
 /// A 3D object in the scene
 #[derive(Debug)]
 pub(super) struct Object3D {
     pub(super) buffer: BufferHandle,
     pub(super) vertex_count: i32,
+    pub(super) vertices: Vec<f32>,
     pub(super) position: Vector3<f32>,
     pub(super) rotation: Vector3<f32>,
     pub(super) scale: Vector3<f32>,
     pub(super) texture_id: u32,
+}
+
+#[derive(Debug)]
+pub(super) struct InstancedMesh {
+    pub(super) mesh_buffer: BufferHandle,
+    pub(super) vertex_count: u32,
+    pub(super) instance_buffer: BufferHandle,
+    pub(super) instances: Vec<InstanceTransform>,
+    pub(super) texture_id: u32,
+}
+
+#[derive(Debug, Clone)]
+pub(super) struct Particle {
+    pub(super) position: Vector3<f32>,
+    pub(super) velocity: Vector3<f32>,
+    pub(super) age: f32,
+    pub(super) lifetime: f32,
+}
+
+#[derive(Debug)]
+pub(super) struct ParticleEmitter {
+    pub(super) position: Vector3<f32>,
+    pub(super) config: ParticleEmitterConfig,
+    pub(super) particles: Vec<Particle>,
+    pub(super) instance_buffer: BufferHandle,
+    pub(super) spawn_accumulator: f32,
+    pub(super) spawn_counter: u32,
 }
 
 /// A light in the scene

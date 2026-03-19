@@ -23,5 +23,5 @@ mod obj_parser;
 #[cfg(test)]
 mod tests;
 
-pub use asset::{MeshAsset, MeshVertex, SubMesh};
+pub use asset::{MeshAsset, MeshBounds, MeshMaterial, MeshVertex, SubMesh};
 pub use loader::{MeshFormat, MeshLoader};

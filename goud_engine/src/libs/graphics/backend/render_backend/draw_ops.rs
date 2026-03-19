@@ -1,7 +1,7 @@
 //! Draw call and vertex array sub-trait for `RenderBackend`.
 
 use crate::libs::error::GoudResult;
-use crate::libs::graphics::backend::types::{PrimitiveTopology, VertexLayout};
+use crate::libs::graphics::backend::types::{PrimitiveTopology, VertexBufferBinding, VertexLayout};
 
 /// Draw call and vertex attribute operations.
 ///
@@ -18,6 +18,17 @@ pub trait DrawOps {
     /// - This configures how the GPU interprets the vertex data
     /// - Enables all attributes in the layout
     fn set_vertex_attributes(&mut self, layout: &VertexLayout);
+
+    /// Sets up one or more vertex buffer bindings for the next draw call.
+    ///
+    /// This is the multi-buffer path used for advanced draws such as GPU
+    /// instancing where per-vertex and per-instance attributes live in
+    /// different buffers.
+    fn set_vertex_bindings(&mut self, _bindings: &[VertexBufferBinding]) -> GoudResult<()> {
+        Err(crate::libs::error::GoudError::BackendNotSupported(
+            "multi-buffer vertex bindings are not supported by this backend".to_string(),
+        ))
+    }
 
     /// Draws primitives using array-based vertex data.
     ///

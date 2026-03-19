@@ -12,7 +12,8 @@ use super::GoudGame;
 #[cfg(feature = "native")]
 use crate::libs::graphics::backend::native_backend::SharedNativeRenderBackend;
 use crate::libs::graphics::renderer3d::{
-    FogConfig, GridConfig, Light, LightType, PrimitiveCreateInfo, PrimitiveType, SkyboxConfig,
+    AntiAliasingMode, FogConfig, GridConfig, InstanceTransform, Light, LightType,
+    ParticleEmitterConfig, PrimitiveCreateInfo, PrimitiveType, Renderer3DStats, SkyboxConfig,
     TextureManagerTrait,
 };
 use cgmath::{Vector3, Vector4};
@@ -99,6 +100,84 @@ impl GoudGame {
             segments,
             texture_id,
         })
+    }
+
+    /// Creates an instanced 3D primitive and returns its object ID.
+    pub fn create_instanced_primitive(
+        &mut self,
+        info: PrimitiveCreateInfo,
+        instances: &[InstanceTransform],
+    ) -> u32 {
+        match &mut self.renderer_3d {
+            Some(renderer) => renderer.create_instanced_primitive(info, instances),
+            None => INVALID_OBJECT,
+        }
+    }
+
+    /// Creates an instanced cube and returns its object ID.
+    pub fn create_instanced_cube(
+        &mut self,
+        texture_id: u32,
+        width: f32,
+        height: f32,
+        depth: f32,
+        instances: &[InstanceTransform],
+    ) -> u32 {
+        self.create_instanced_primitive(
+            PrimitiveCreateInfo {
+                primitive_type: PrimitiveType::Cube,
+                width,
+                height,
+                depth,
+                segments: 1,
+                texture_id,
+            },
+            instances,
+        )
+    }
+
+    /// Replaces the instances stored by an instanced primitive.
+    pub fn set_instanced_mesh_instances(
+        &mut self,
+        id: u32,
+        instances: &[InstanceTransform],
+    ) -> bool {
+        match &mut self.renderer_3d {
+            Some(renderer) => renderer.set_instanced_mesh_instances(id, instances),
+            None => false,
+        }
+    }
+
+    /// Removes an instanced primitive from the scene.
+    pub fn destroy_instanced_mesh(&mut self, id: u32) -> bool {
+        match &mut self.renderer_3d {
+            Some(renderer) => renderer.remove_instanced_mesh(id),
+            None => false,
+        }
+    }
+
+    /// Creates a particle emitter and returns its ID.
+    pub fn create_particle_emitter(&mut self, config: ParticleEmitterConfig) -> u32 {
+        match &mut self.renderer_3d {
+            Some(renderer) => renderer.create_particle_emitter(config),
+            None => INVALID_OBJECT,
+        }
+    }
+
+    /// Sets particle emitter origin.
+    pub fn set_particle_emitter_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
+        match &mut self.renderer_3d {
+            Some(renderer) => renderer.set_particle_emitter_position(id, x, y, z),
+            None => false,
+        }
+    }
+
+    /// Removes a particle emitter.
+    pub fn destroy_particle_emitter(&mut self, id: u32) -> bool {
+        match &mut self.renderer_3d {
+            Some(renderer) => renderer.remove_particle_emitter(id),
+            None => false,
+        }
     }
 
     /// Sets the position of a 3D object.
@@ -318,6 +397,7 @@ impl GoudGame {
                 let texture_bridge = BackendTextureBridge {
                     backend: backend.clone(),
                 };
+                renderer.update(self.context.delta_time());
                 renderer.set_viewport(viewport.x, viewport.y, viewport.width, viewport.height);
                 renderer.render(Some(&texture_bridge));
                 true
@@ -336,89 +416,62 @@ impl GoudGame {
     pub fn has_3d_renderer(&self) -> bool {
         self.renderer_3d.is_some()
     }
-}
 
-// =============================================================================
-// Tests
-// =============================================================================
+    /// Returns last-frame 3D renderer stats when available.
+    pub fn renderer_3d_stats(&self) -> Option<Renderer3DStats> {
+        self.renderer_3d.as_ref().map(|renderer| renderer.stats())
+    }
+
+    /// Returns the active 3D anti-aliasing mode when a renderer exists.
+    pub fn anti_aliasing_mode(&self) -> Option<AntiAliasingMode> {
+        self.renderer_3d
+            .as_ref()
+            .map(|renderer| renderer.anti_aliasing_mode())
+    }
+
+    /// Updates the 3D anti-aliasing mode at runtime.
+    pub fn set_anti_aliasing_mode(&mut self, mode: AntiAliasingMode) -> bool {
+        self.config.anti_aliasing_mode = mode;
+        match &mut self.renderer_3d {
+            Some(renderer) => renderer.set_anti_aliasing_mode(mode).is_ok(),
+            None => false,
+        }
+    }
+
+    /// Returns the configured MSAA sample count.
+    pub fn msaa_samples(&self) -> u32 {
+        self.config.msaa_samples
+    }
+
+    /// Updates the stored MSAA sample count.
+    pub fn set_msaa_samples(&mut self, samples: u32) {
+        self.config.msaa_samples = match samples {
+            2 | 4 | 8 => samples,
+            _ => 1,
+        };
+        if let Some(renderer) = self.renderer_3d.as_mut() {
+            renderer.set_msaa_samples(self.config.msaa_samples);
+        }
+    }
+
+    /// Updates the shadow bias used for directional-light shadows.
+    pub fn set_shadow_bias(&mut self, bias: f32) -> bool {
+        match self.renderer_3d.as_mut() {
+            Some(renderer) => {
+                renderer.set_shadow_bias(bias);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// Returns the current directional shadow bias when available.
+    pub fn shadow_bias(&self) -> Option<f32> {
+        self.renderer_3d
+            .as_ref()
+            .map(|renderer| renderer.shadow_bias())
+    }
+}
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::sdk::GameConfig;
-
-    #[test]
-    fn test_create_cube_headless() {
-        let mut game = GoudGame::new(GameConfig::default()).unwrap();
-        assert_eq!(game.create_cube(0, 1.0, 1.0, 1.0), u32::MAX);
-    }
-
-    #[test]
-    fn test_set_object_position_headless() {
-        let mut game = GoudGame::new(GameConfig::default()).unwrap();
-        assert!(!game.set_object_position(0, 1.0, 2.0, 3.0));
-    }
-
-    #[test]
-    fn test_set_camera_position_headless() {
-        let mut game = GoudGame::new(GameConfig::default()).unwrap();
-        assert!(!game.set_camera_position(0.0, 5.0, -10.0));
-    }
-
-    #[test]
-    fn test_render_3d_headless() {
-        let mut game = GoudGame::new(GameConfig::default()).unwrap();
-        assert!(!game.render());
-    }
-
-    #[test]
-    fn test_has_3d_renderer_headless() {
-        let game = GoudGame::new(GameConfig::default()).unwrap();
-        assert!(!game.has_3d_renderer());
-    }
-
-    #[test]
-    fn test_add_light_headless() {
-        let mut game = GoudGame::new(GameConfig::default()).unwrap();
-        let id = game.add_light(
-            0, 0.0, 5.0, 0.0, 0.0, -1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 10.0, 0.0,
-        );
-        assert_eq!(id, u32::MAX);
-    }
-
-    #[test]
-    fn test_render_all_headless() {
-        let mut game = GoudGame::new(GameConfig::default()).unwrap();
-        assert!(!game.render_all());
-    }
-
-    #[test]
-    fn test_configure_grid_headless() {
-        let mut game = GoudGame::new(GameConfig::default()).unwrap();
-        assert!(!game.configure_grid(true, 10.0, 10));
-    }
-
-    #[test]
-    fn test_configure_skybox_headless() {
-        let mut game = GoudGame::new(GameConfig::default()).unwrap();
-        assert!(!game.configure_skybox(true, 0.5, 0.5, 0.8, 1.0));
-    }
-
-    #[test]
-    fn test_configure_fog_headless() {
-        let mut game = GoudGame::new(GameConfig::default()).unwrap();
-        assert!(!game.configure_fog(true, 0.5, 0.5, 0.5, 0.01));
-    }
-
-    #[test]
-    fn test_set_fog_enabled_headless() {
-        let mut game = GoudGame::new(GameConfig::default()).unwrap();
-        assert!(!game.set_fog_enabled(true));
-    }
-
-    #[test]
-    fn test_destroy_object_headless() {
-        let mut game = GoudGame::new(GameConfig::default()).unwrap();
-        assert!(!game.destroy_object(0));
-    }
-}
+mod tests;

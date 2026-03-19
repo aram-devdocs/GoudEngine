@@ -36,6 +36,9 @@ docs/src/generated/media/
 !docs/src/generated/snippets/**
 sdks/include/goud_engine.h
 sdks/csharp/include/
+sdks/c/include/goud_engine.h
+sdks/cpp/include/goud_engine.h
+sdks/cpp/include/goud/goud.h
 sdks/python/goud_engine/include/
 sdks/python/goud_engine/ffi_metadata.json
 # GoudEngine/libgoud_engine.dylib

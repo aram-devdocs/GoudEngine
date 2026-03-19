@@ -1,5 +1,12 @@
+#[cfg(any(feature = "lua", all(feature = "native", not(target_os = "macos"))))]
+use super::*;
+
 #[cfg(all(feature = "native", not(target_os = "macos")))]
 use std::path::PathBuf;
+#[cfg(feature = "lua")]
+use std::sync::atomic::{AtomicUsize, Ordering};
+#[cfg(feature = "lua")]
+use std::sync::Arc;
 #[cfg(all(feature = "native", not(target_os = "macos")))]
 use std::thread;
 #[cfg(all(feature = "native", not(target_os = "macos")))]
@@ -7,9 +14,6 @@ use std::time::Duration;
 
 #[cfg(all(feature = "native", not(target_os = "macos")))]
 use crate::sdk::{RenderBackendKind, WindowBackendKind};
-
-#[cfg(all(feature = "native", not(target_os = "macos")))]
-use super::*;
 
 #[cfg(all(feature = "native", not(target_os = "macos")))]
 fn should_skip_native_runtime_test() -> bool {
@@ -49,6 +53,45 @@ fn assert_readback_or_unsupported(
     }
 }
 
+#[cfg(feature = "lua")]
+#[test]
+fn test_new_bootstraps_embedded_lua_runtime() {
+    let game = GoudGame::new(GameConfig::default()).expect("headless game should initialize");
+
+    assert!(game.lua_runtime.is_ready());
+}
+
+#[cfg(feature = "lua")]
+#[test]
+fn test_embedded_lua_runtime_drops_with_game() {
+    let drop_probe = Arc::new(AtomicUsize::new(0));
+
+    {
+        let mut game =
+            GoudGame::new(GameConfig::default()).expect("headless game should initialize");
+        game.lua_runtime.set_drop_probe(drop_probe.clone());
+    }
+
+    assert_eq!(drop_probe.load(Ordering::SeqCst), 1);
+}
+
+#[cfg(all(feature = "lua", feature = "native", not(target_os = "macos")))]
+#[test]
+fn test_with_platform_bootstraps_embedded_lua_runtime() {
+    if should_skip_native_runtime_test() {
+        eprintln!("skipping native runtime lua test: no display available");
+        return;
+    }
+
+    let game = GoudGame::with_platform(
+        GameConfig::default().with_title("native-lua-bootstrap-instance-test"),
+    )
+    .expect("native game should initialize with lua enabled");
+
+    assert!(game.has_platform());
+    assert!(game.lua_runtime.is_ready());
+}
+
 // winit requires the macOS main thread, which the unit-test harness does not provide.
 #[cfg(all(feature = "native", not(target_os = "macos")))]
 #[test]
@@ -75,6 +118,7 @@ fn test_with_platform_default_native_stack_initializes_renderers_and_readback() 
     assert!(asset_server.has_loader_for_type::<crate::assets::loaders::TextureAsset>());
     assert!(asset_server.has_loader_for_type::<crate::assets::loaders::ShaderAsset>());
     assert!(asset_server.has_loader_for_type::<crate::assets::loaders::MaterialAsset>());
+    assert!(asset_server.has_loader_for_type::<crate::assets::loaders::MeshAsset>());
     let sprite_batch = game
         .sprite_batch
         .as_ref()

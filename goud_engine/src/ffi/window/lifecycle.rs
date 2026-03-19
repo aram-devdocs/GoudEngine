@@ -63,6 +63,7 @@ pub unsafe extern "C" fn goud_window_create(
         title: title_str.to_string(),
         vsync: true,
         resizable: true,
+        msaa_samples: 1,
     };
 
     let native_runtime =

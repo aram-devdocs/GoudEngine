@@ -5,6 +5,30 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
+HEADER_SOURCE="codegen/generated/goud_engine.h"
+
+stage_header_copy() {
+  local destination_dir="$1"
+  if [ ! -f "$HEADER_SOURCE" ]; then
+    echo "Missing generated header at $HEADER_SOURCE"
+    return 1
+  fi
+
+  mkdir -p "$destination_dir"
+  cp "$HEADER_SOURCE" "$destination_dir/goud_engine.h"
+}
+
+stage_file_copy() {
+  local source_path="$1"
+  local destination_path="$2"
+  if [ ! -f "$source_path" ]; then
+    echo "Missing staged source file at $source_path"
+    return 1
+  fi
+
+  mkdir -p "$(dirname "$destination_path")"
+  cp "$source_path" "$destination_path"
+}
 
 echo "╔══════════════════════════════════════════════════════════╗"
 echo "║         GoudEngine SDK Code Generation                   ║"
@@ -25,6 +49,11 @@ grep -v "^$" "$build_log" | head -5 || true
 rm -f "$build_log"
 
 echo "║ [3/13] Validating generated C header..."
+stage_header_copy "sdks/c/include"
+stage_header_copy "sdks/cpp/include"
+stage_header_copy "sdks/csharp/include"
+stage_header_copy "sdks/python/goud_engine/include"
+stage_file_copy "sdks/c/include/goud/goud.h" "sdks/cpp/include/goud/goud.h"
 python3 scripts/validate_c_header.py
 
 echo "║ [4/13] Bootstrapping TypeScript Node SDK sources..."

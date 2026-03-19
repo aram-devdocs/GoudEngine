@@ -5,6 +5,7 @@ use super::{
     TextureHandle, WgpuBackend,
 };
 use crate::libs::error::{GoudError, GoudResult};
+use crate::libs::graphics::backend::{VertexBufferBinding, VertexStepMode};
 
 impl WgpuBackend {
     /// Snapshots currently bound textures as `(unit, handle)` pairs.
@@ -30,12 +31,21 @@ impl WgpuBackend {
             cull_enabled: cmd.cull_enabled,
             cull_face: cmd.cull_face as u8,
             front_face: cmd.front_face as u8,
-            vertex_stride: cmd.vertex_layout.stride,
-            vertex_attrs: cmd
-                .vertex_layout
-                .attributes
+            vertex_buffers: cmd
+                .vertex_bindings
                 .iter()
-                .map(|a| (a.location, a.attribute_type as u8, a.offset, a.normalized))
+                .map(|binding| {
+                    (
+                        binding.layout.stride,
+                        binding.step_mode as u8,
+                        binding
+                            .layout
+                            .attributes
+                            .iter()
+                            .map(|a| (a.location, a.attribute_type as u8, a.offset, a.normalized))
+                            .collect(),
+                    )
+                })
                 .collect(),
         }
     }
@@ -45,13 +55,20 @@ impl WgpuBackend {
         let shader = self
             .bound_shader
             .ok_or(GoudError::InvalidState("No shader bound".into()))?;
-        let vb = self
-            .bound_vertex_buffer
-            .ok_or(GoudError::InvalidState("No vertex buffer bound".into()))?;
-        let layout = self
-            .current_layout
-            .clone()
-            .ok_or(GoudError::InvalidState("No vertex layout set".into()))?;
+        let vertex_bindings = if !self.current_vertex_bindings.is_empty() {
+            self.current_vertex_bindings.clone()
+        } else {
+            vec![VertexBufferBinding {
+                buffer: self
+                    .bound_vertex_buffer
+                    .ok_or(GoudError::InvalidState("No vertex buffer bound".into()))?,
+                layout: self
+                    .current_layout
+                    .clone()
+                    .ok_or(GoudError::InvalidState("No vertex layout set".into()))?,
+                step_mode: VertexStepMode::Vertex,
+            }]
+        };
 
         let uniform_snapshot = self
             .shaders
@@ -61,9 +78,8 @@ impl WgpuBackend {
 
         self.draw_commands.push(DrawCommand {
             shader,
-            vertex_buffer: vb,
             index_buffer: self.bound_index_buffer,
-            vertex_layout: layout,
+            vertex_bindings,
             bound_textures: self.snapshot_textures(),
             topology: PrimitiveTopology::Triangles,
             depth_test: self.depth_test_enabled,

@@ -153,6 +153,11 @@ fn test_draw_calls_do_not_panic() {
     backend
         .draw_indexed_instanced(PrimitiveTopology::Triangles, 6, 0, 50)
         .expect("draw_indexed_instanced should succeed");
+
+    assert_eq!(backend.draw_arrays_calls(), 1);
+    assert_eq!(backend.draw_indexed_calls(), 2);
+    assert_eq!(backend.draw_arrays_instanced_calls(), 1);
+    assert_eq!(backend.draw_indexed_instanced_calls(), 1);
 }
 
 #[test]

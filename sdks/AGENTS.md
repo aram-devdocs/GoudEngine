@@ -11,6 +11,8 @@ If you find logic in an SDK that should be in Rust, move it.
 
 ## Structure
 
+- `c/` — C SDK (header-only convenience layer over `goud_engine.h`)
+- `cpp/` — C++17 SDK (RAII layer over the C SDK)
 - `csharp/` — C# SDK (.NET 8.0, NuGet package)
 - `csharp.tests/` — C# SDK test suite (xUnit)
 - `python/` — Python SDK (ctypes-based FFI bindings)
@@ -19,13 +21,17 @@ If you find logic in an SDK that should be in Rust, move it.
 
 ## Feature Parity
 
-Every FFI export MUST have wrappers in ALL SDK languages — C#, Python, and TypeScript:
+Every FFI export MUST have wrappers in ALL generated SDK languages — C#, Python, and TypeScript:
 1. Check `goud_engine/src/ffi/` for all `#[no_mangle] extern "C"` functions
 2. Verify matching `DllImport` in C# `NativeMethods.g.cs`
 3. Verify matching ctypes declaration in `python/goud_engine/generated/_ffi.py`
 4. Verify matching napi-rs bindings in `typescript/native/src/` (Node) and WASM exports (Web)
 5. Verify SDK wrapper classes expose the functionality in all languages
 6. The Rust SDK (`rust/`) re-exports `goud_engine::sdk::*` directly — no FFI involved
+
+The C and C++ SDKs are different. They sit directly on top of the canonical
+generated header and add hand-written convenience wrappers. They do not
+participate in schema/codegen parity checks.
 
 ## After Adding FFI Functions
 

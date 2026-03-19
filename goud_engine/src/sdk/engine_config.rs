@@ -26,6 +26,7 @@ use crate::core::providers::render::RenderProvider;
 use crate::core::providers::types::PhysicsBackend2D;
 use crate::core::providers::ProviderRegistry;
 use crate::core::providers::ProviderRegistryBuilder;
+use crate::libs::graphics::AntiAliasingMode;
 #[cfg(feature = "rapier2d")]
 use crate::libs::providers::impls::Rapier2DPhysicsProvider;
 use crate::libs::providers::impls::SimplePhysicsProvider;
@@ -75,6 +76,18 @@ impl EngineConfig {
     /// Enables or disables fullscreen mode.
     pub fn with_fullscreen(mut self, enabled: bool) -> Self {
         self.game_config = self.game_config.with_fullscreen(enabled);
+        self
+    }
+
+    /// Sets the 3D anti-aliasing mode.
+    pub fn with_anti_aliasing_mode(mut self, mode: AntiAliasingMode) -> Self {
+        self.game_config = self.game_config.with_anti_aliasing_mode(mode);
+        self
+    }
+
+    /// Sets the requested MSAA sample count.
+    pub fn with_msaa_samples(mut self, samples: u32) -> Self {
+        self.game_config = self.game_config.with_msaa_samples(samples);
         self
     }
 
@@ -208,6 +221,7 @@ mod tests {
     use crate::core::providers::impls::{
         NullAudioProvider, NullInputProvider, NullPhysicsProvider, NullRenderProvider,
     };
+    use crate::libs::graphics::AntiAliasingMode;
 
     #[test]
     fn test_engine_config_default() {
@@ -259,6 +273,8 @@ mod tests {
             .with_size(1920, 1080)
             .with_vsync(false)
             .with_fullscreen(true)
+            .with_anti_aliasing_mode(AntiAliasingMode::Fxaa)
+            .with_msaa_samples(4)
             .with_render_backend(RenderBackendKind::OpenGlLegacy)
             .with_window_backend(WindowBackendKind::GlfwLegacy)
             .with_target_fps(144)
@@ -270,6 +286,8 @@ mod tests {
         assert_eq!(gc.height, 1080);
         assert!(!gc.vsync);
         assert!(gc.fullscreen);
+        assert_eq!(gc.anti_aliasing_mode, AntiAliasingMode::Fxaa);
+        assert_eq!(gc.msaa_samples, 4);
         assert_eq!(gc.render_backend, RenderBackendKind::OpenGlLegacy);
         assert_eq!(gc.window_backend, WindowBackendKind::GlfwLegacy);
         assert_eq!(gc.target_fps, 144);

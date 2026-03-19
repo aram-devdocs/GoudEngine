@@ -3,6 +3,66 @@
 use crate::assets::{Asset, AssetType};
 use serde::{Deserialize, Serialize};
 
+/// Axis-aligned bounds in object space.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub struct MeshBounds {
+    /// Minimum corner.
+    pub min: [f32; 3],
+    /// Maximum corner.
+    pub max: [f32; 3],
+}
+
+impl Default for MeshBounds {
+    fn default() -> Self {
+        Self {
+            min: [0.0, 0.0, 0.0],
+            max: [0.0, 0.0, 0.0],
+        }
+    }
+}
+
+impl MeshBounds {
+    /// Builds bounds from a non-empty position slice.
+    pub fn from_positions(positions: &[[f32; 3]]) -> Self {
+        let mut bounds = Self {
+            min: [f32::INFINITY; 3],
+            max: [f32::NEG_INFINITY; 3],
+        };
+        for position in positions {
+            bounds.include(*position);
+        }
+        if positions.is_empty() {
+            Self::default()
+        } else {
+            bounds
+        }
+    }
+
+    /// Expands the bounds to include a point.
+    pub fn include(&mut self, position: [f32; 3]) {
+        for (axis, value) in position.into_iter().enumerate() {
+            self.min[axis] = self.min[axis].min(value);
+            self.max[axis] = self.max[axis].max(value);
+        }
+    }
+
+    /// Returns a bounds value that contains both bounds.
+    pub fn union(self, other: Self) -> Self {
+        Self {
+            min: [
+                self.min[0].min(other.min[0]),
+                self.min[1].min(other.min[1]),
+                self.min[2].min(other.min[2]),
+            ],
+            max: [
+                self.max[0].max(other.max[0]),
+                self.max[1].max(other.max[1]),
+                self.max[2].max(other.max[2]),
+            ],
+        }
+    }
+}
+
 /// A single vertex in a mesh.
 ///
 /// Matches the 3D renderer vertex layout: position (3f) + normal (3f) + uv (2f).
@@ -23,6 +83,55 @@ pub struct MeshVertex {
 /// parts (e.g., different materials or body parts) without splitting
 /// the vertex/index buffers.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct MeshMaterial {
+    /// Optional source material name.
+    pub name: Option<String>,
+    /// Base color multiplier.
+    pub base_color_factor: [f32; 4],
+    /// Base color texture path, if any.
+    pub base_color_texture_path: Option<String>,
+    /// Normal map texture path, if any.
+    pub normal_texture_path: Option<String>,
+    /// Metallic-roughness texture path, if any.
+    pub metallic_roughness_texture_path: Option<String>,
+    /// Emissive texture path, if any.
+    pub emissive_texture_path: Option<String>,
+    /// Emissive color multiplier.
+    pub emissive_factor: [f32; 3],
+    /// Metallic factor from the source material.
+    pub metallic_factor: f32,
+    /// Roughness factor from the source material.
+    pub roughness_factor: f32,
+    /// Alpha cutoff for masked materials.
+    pub alpha_cutoff: Option<f32>,
+    /// Whether the source material disables back-face culling.
+    pub double_sided: bool,
+}
+
+impl Default for MeshMaterial {
+    fn default() -> Self {
+        Self {
+            name: None,
+            base_color_factor: [1.0, 1.0, 1.0, 1.0],
+            base_color_texture_path: None,
+            normal_texture_path: None,
+            metallic_roughness_texture_path: None,
+            emissive_texture_path: None,
+            emissive_factor: [0.0, 0.0, 0.0],
+            metallic_factor: 1.0,
+            roughness_factor: 1.0,
+            alpha_cutoff: None,
+            double_sided: false,
+        }
+    }
+}
+
+/// A named sub-range of indices within a mesh.
+///
+/// Sub-meshes allow a single `MeshAsset` to contain multiple logical
+/// parts (e.g., different materials or body parts) without splitting
+/// the vertex/index buffers.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SubMesh {
     /// Human-readable name (e.g., from the source file).
     pub name: String,
@@ -32,6 +141,10 @@ pub struct SubMesh {
     pub index_count: u32,
     /// Optional index into an external material list.
     pub material_index: Option<u32>,
+    /// Imported material metadata for this sub-mesh.
+    pub material: Option<MeshMaterial>,
+    /// Object-space bounds for this sub-mesh.
+    pub bounds: MeshBounds,
 }
 
 /// A loaded mesh asset containing CPU-side geometry data.
@@ -43,7 +156,7 @@ pub struct SubMesh {
 /// # Example
 ///
 /// ```
-/// use goud_engine::assets::loaders::mesh::{MeshAsset, MeshVertex, SubMesh};
+/// use goud_engine::assets::loaders::mesh::{MeshAsset, MeshBounds, MeshVertex, SubMesh};
 ///
 /// let asset = MeshAsset {
 ///     vertices: vec![
@@ -55,7 +168,10 @@ pub struct SubMesh {
 ///         start_index: 0,
 ///         index_count: 1,
 ///         material_index: None,
+///         material: None,
+///         bounds: MeshBounds::default(),
 ///     }],
+///     bounds: MeshBounds::default(),
 /// };
 ///
 /// assert_eq!(asset.vertex_count(), 1);
@@ -69,6 +185,8 @@ pub struct MeshAsset {
     pub indices: Vec<u32>,
     /// Sub-mesh ranges within the index buffer.
     pub sub_meshes: Vec<SubMesh>,
+    /// Object-space bounds for the full mesh.
+    pub bounds: MeshBounds,
 }
 
 impl MeshAsset {
@@ -106,6 +224,12 @@ impl MeshAsset {
             out.extend_from_slice(&v.uv);
         }
         out
+    }
+
+    /// Returns the object-space bounds.
+    #[inline]
+    pub fn local_bounds(&self) -> MeshBounds {
+        self.bounds
     }
 }
 

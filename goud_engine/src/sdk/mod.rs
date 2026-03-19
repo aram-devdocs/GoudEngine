@@ -98,6 +98,7 @@ pub use crate::ecs::{Component, Entity, EntityAllocator, SparseSet, World};
 
 // Re-export SDK types from sub-modules so public API paths are preserved
 pub use crate::core::debugger::DebuggerConfig;
+pub use crate::libs::graphics::AntiAliasingMode;
 pub use context::{Context, ContextConfig};
 pub use engine_config::EngineConfig;
 pub use entity_builder::EntityBuilder;
