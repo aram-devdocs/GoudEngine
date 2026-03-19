@@ -3563,13 +3563,13 @@ impl NativeEngineConfig {
     }
 
     #[napi]
-    pub fn set_fullscreen(&self, enabled: bool) -> bool {
+    pub fn set_fullscreen(&self, mode: u32) -> bool {
         if self.handle.is_null() {
             return false;
         }
         // SAFETY: handle is valid.
         unsafe {
-            goud_engine::ffi::engine_config::goud_engine_config_set_fullscreen(self.handle, enabled)
+            goud_engine::ffi::engine_config::goud_engine_config_set_fullscreen(self.handle, mode)
         }
     }
 
