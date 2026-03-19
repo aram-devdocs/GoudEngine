@@ -12,9 +12,11 @@ pub(super) struct LuaRuntime {
 }
 
 impl LuaRuntime {
-    pub(super) fn new() -> GoudResult<Self> {
+    pub(super) fn new(ctx_id: u64) -> GoudResult<Self> {
+        let lua = mlua::Lua::new();
+        super::lua_bindings::register_lua_bindings(&lua, ctx_id);
         let runtime = Self {
-            lua: mlua::Lua::new(),
+            lua,
             #[cfg(test)]
             drop_probe: None,
         };
@@ -28,6 +30,15 @@ impl LuaRuntime {
                 ))
             })?;
         Ok(runtime)
+    }
+
+    /// Executes a Lua script in this runtime.
+    pub(super) fn execute_script(&self, source: &str, name: &str) -> GoudResult<()> {
+        self.lua
+            .load(source)
+            .set_name(name)
+            .exec()
+            .map_err(|e| GoudError::ScriptError(format!("{e}")))
     }
 
     #[cfg(test)]

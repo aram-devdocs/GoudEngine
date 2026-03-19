@@ -132,6 +132,11 @@ name = "jni_smoke"
 path = "tests/jni_smoke.rs"
 required-features = ["native"]
 
+[[test]]
+name = "lua_script_integration"
+path = "tests/lua_script_integration.rs"
+required-features = ["lua"]
+
 # [[bench]]
 # name = "physics_benchmarks"
 # harness = false

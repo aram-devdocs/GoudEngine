@@ -15,6 +15,7 @@
 //! | 400-499   | Input      | Input handling errors                |
 //! | 500-599   | System     | Platform and system errors           |
 //! | 600-699   | Provider   | Provider subsystem errors            |
+//! | 800-899   | Script     | Scripting engine errors              |
 //! | 900-999   | Internal   | Unexpected internal errors           |
 
 /// FFI-compatible error code type.
@@ -218,6 +219,18 @@ pub const ERR_PROVIDER_OPERATION_FAILED: GoudErrorCode = 602;
 // 700-709: Reserved for future use (network provider uses generic ProviderError)
 
 // -----------------------------------------------------------------------------
+// Script Errors (800-899): Scripting engine errors
+// -----------------------------------------------------------------------------
+
+/// Base code for scripting engine errors.
+#[allow(dead_code)]
+pub const SCRIPT_ERROR_BASE: GoudErrorCode = 800;
+
+/// Script execution error (syntax, runtime, etc.).
+/// Recovery: check the error message for script-engine-specific details.
+pub const ERR_SCRIPT_ERROR: GoudErrorCode = 800;
+
+// -----------------------------------------------------------------------------
 // Internal Errors (900-999): Unexpected internal errors
 // -----------------------------------------------------------------------------
 
@@ -261,6 +274,7 @@ pub const fn error_category(code: GoudErrorCode) -> &'static str {
         400..=499 => "Input",
         500..=599 => "System",
         600..=699 => "Provider",
+        800..=899 => "Script",
         900..=999 => "Internal",
         _ => "Unknown",
     }
