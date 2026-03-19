@@ -69,6 +69,9 @@ impl GoudError {
             // Provider errors (600-699)
             GoudError::ProviderError { .. } => ERR_PROVIDER_OPERATION_FAILED,
 
+            // Script errors (800-899)
+            GoudError::ScriptError(_) => ERR_SCRIPT_ERROR,
+
             // Internal errors (900-999)
             GoudError::InternalError(_) => ERR_INTERNAL_ERROR,
             GoudError::NotImplemented(_) => ERR_NOT_IMPLEMENTED,
@@ -154,6 +157,9 @@ impl GoudError {
 
             // Provider errors
             GoudError::ProviderError { message, .. } => message,
+
+            // Script errors
+            GoudError::ScriptError(msg) => msg,
 
             // Internal errors
             GoudError::InternalError(msg) => msg,

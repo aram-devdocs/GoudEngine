@@ -20,7 +20,10 @@
 mod camera;
 mod environment;
 mod lighting;
+mod materials;
+mod postprocess;
 mod primitives;
+mod skinned;
 mod state;
 
 // Re-export constants so external callers see the same public surface.
@@ -41,9 +44,26 @@ pub use environment::{
 pub use lighting::{
     goud_renderer3d_add_light, goud_renderer3d_remove_light, goud_renderer3d_update_light,
 };
+pub use materials::{
+    goud_renderer3d_create_material, goud_renderer3d_get_object_material,
+    goud_renderer3d_remove_material, goud_renderer3d_set_object_material,
+    goud_renderer3d_update_material, GOUD_INVALID_MATERIAL, GOUD_MATERIAL_TYPE_PBR,
+    GOUD_MATERIAL_TYPE_PHONG, GOUD_MATERIAL_TYPE_UNLIT,
+};
+pub use postprocess::{
+    goud_renderer3d_add_bloom_pass, goud_renderer3d_add_blur_pass,
+    goud_renderer3d_add_color_grade_pass, goud_renderer3d_postprocess_pass_count,
+    goud_renderer3d_remove_postprocess_pass,
+};
 pub use primitives::{
     goud_renderer3d_create_cube, goud_renderer3d_create_cylinder, goud_renderer3d_create_plane,
     goud_renderer3d_create_sphere, goud_renderer3d_destroy_object,
     goud_renderer3d_set_object_position, goud_renderer3d_set_object_rotation,
     goud_renderer3d_set_object_scale,
+};
+pub use skinned::{
+    goud_renderer3d_create_skinned_mesh, goud_renderer3d_remove_skinned_mesh,
+    goud_renderer3d_set_skinned_mesh_bones, goud_renderer3d_set_skinned_mesh_position,
+    goud_renderer3d_set_skinned_mesh_rotation, goud_renderer3d_set_skinned_mesh_scale,
+    GOUD_INVALID_SKINNED_MESH,
 };

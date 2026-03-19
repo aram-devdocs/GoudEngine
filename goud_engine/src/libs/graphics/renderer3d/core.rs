@@ -23,8 +23,8 @@ use super::shaders::{
     VERTEX_SHADER_3D, VERTEX_SHADER_3D_WGSL,
 };
 use super::types::{
-    AntiAliasingMode, Camera3D, FogConfig, GridConfig, InstancedMesh, Light, Object3D,
-    ParticleEmitter, Renderer3DStats, SkyboxConfig,
+    AntiAliasingMode, Camera3D, FogConfig, GridConfig, InstancedMesh, Light, Material3D, Object3D,
+    ParticleEmitter, PostProcessPipeline, Renderer3DStats, SkinnedMesh3D, SkyboxConfig,
 };
 
 use crate::libs::graphics::backend::ShaderHandle;
@@ -81,6 +81,12 @@ pub struct Renderer3D {
     pub(super) shadow_texture: Option<crate::libs::graphics::backend::TextureHandle>,
     pub(super) shadow_map_size: u32,
     pub(super) shadow_bias: f32,
+    pub(super) materials: HashMap<u32, Material3D>,
+    pub(super) object_materials: HashMap<u32, u32>,
+    pub(super) next_material_id: u32,
+    pub(super) skinned_meshes: HashMap<u32, SkinnedMesh3D>,
+    pub(super) next_skinned_mesh_id: u32,
+    pub(super) postprocess_pipeline: PostProcessPipeline,
     pub(super) stats: Renderer3DStats,
     pub(super) anti_aliasing_mode: AntiAliasingMode,
     pub(super) msaa_samples: u32,
@@ -195,6 +201,12 @@ impl Renderer3D {
             shadow_texture: None,
             shadow_map_size: 256,
             shadow_bias: 0.005,
+            materials: HashMap::new(),
+            object_materials: HashMap::new(),
+            next_material_id: 1,
+            skinned_meshes: HashMap::new(),
+            next_skinned_mesh_id: 1,
+            postprocess_pipeline: PostProcessPipeline::new(),
             stats: Renderer3DStats::default(),
             anti_aliasing_mode: AntiAliasingMode::Off,
             msaa_samples: 1,
@@ -439,6 +451,9 @@ impl Drop for Renderer3D {
         }
         for emitter in self.particle_emitters.values() {
             self.backend.destroy_buffer(emitter.instance_buffer);
+        }
+        for mesh in self.skinned_meshes.values() {
+            self.backend.destroy_buffer(mesh.buffer);
         }
         self.backend.destroy_buffer(self.grid_buffer);
         self.backend.destroy_buffer(self.axis_buffer);

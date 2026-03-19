@@ -851,6 +851,53 @@ jobs:
           sdks/typescript/wasm/*.d.ts
         retention-days: 7
 
+  # C++ SDK tests (non-GL only, headless CI safe)
+  # Windows C++ CI is excluded: MSVC support is scaffolded in FindGoudEngine.cmake
+  # but not yet validated in CI. Add windows-latest when a Windows native-release
+  # artifact is reliably available on PRs.
+  cpp-tests:
+    name: C++ SDK Tests on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    needs: [preflight, native-release]
+    strategy:
+      fail-fast: ${{ github.event_name == 'pull_request' }}
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Download native release artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: native-release-${{ matrix.os }}
+        path: native-release
+
+    - name: Stage native library
+      run: |
+        mkdir -p target/release
+        cp native-release/* target/release/
+      shell: bash
+
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake
+
+    - name: Configure C++ tests
+      run: |
+        cmake -B sdks/cpp/build \
+          -DGOUD_BUILD_TESTS=ON \
+          -DCMAKE_BUILD_TYPE=Release \
+          sdks/cpp
+
+    - name: Build C++ tests
+      run: cmake --build sdks/cpp/build --config Release
+
+    - name: Run non-GL C++ tests
+      run: sdks/cpp/build/tests/goud_cpp_tests "~[gl_required]"
+
   sandbox-parity:
     name: Sandbox Recovery Smoke
     runs-on: ubuntu-latest
@@ -996,7 +1043,7 @@ jobs:
   ci-success:
     name: CI Success
     if: always()
-    needs: [preflight, rust-check, cargo-deny, codegen-drift-check, native-release, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm, sandbox-parity, clean-room-regeneration]
+    needs: [preflight, rust-check, cargo-deny, codegen-drift-check, native-release, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm, cpp-tests, sandbox-parity, clean-room-regeneration]
     runs-on: ubuntu-latest
     steps:
     - name: Check all jobs
@@ -1042,6 +1089,7 @@ jobs:
         check_job "integration-build" "${{ needs.integration-build.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "typescript-sdk-native" "${{ needs.typescript-sdk-native.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "typescript-sdk-wasm" "${{ needs.typescript-sdk-wasm.result }}" "$ALLOW_PUSH_SKIPPED" || FAIL=1
+        check_job "cpp-tests" "${{ needs.cpp-tests.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "sandbox-parity" "${{ needs.sandbox-parity.result }}" "false" || FAIL=1
         check_job "clean-room-regeneration" "${{ needs.clean-room-regeneration.result }}" "false" || FAIL=1
 

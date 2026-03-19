@@ -276,6 +276,26 @@ TYPESCRIPT_TYPES = {
     "u8[]": "Uint8Array", "bytes": "Uint8Array",
 }
 
+SWIFT_TYPES = {
+    "f32": "Float", "f64": "Double",
+    "u8": "UInt8", "u16": "UInt16", "u32": "UInt32", "u64": "UInt64",
+    "i8": "Int8", "i16": "Int16", "i32": "Int32", "i64": "Int64",
+    "usize": "Int", "ptr": "UnsafeMutableRawPointer",
+    "bool": "Bool", "string": "String", "bytes": "Data", "void": "Void",
+}
+
+SWIFT_FFI_TYPES = {
+    "f32": "Float", "f64": "Double",
+    "u8": "UInt8", "u32": "UInt32", "u64": "UInt64",
+    "i32": "Int32", "i64": "Int64",
+    "bool": "CBool",
+    "*const c_char": "UnsafePointer<CChar>?",
+    "*mut c_void": "UnsafeMutableRawPointer",
+    "GoudContextId": "GoudContextId",
+    "GoudResult": "GoudResult",
+    "void": "Void",
+}
+
 CTYPES_MAP = {
     "f32": "ctypes.c_float", "f64": "ctypes.c_double",
     "u8": "ctypes.c_uint8", "u16": "ctypes.c_uint16",
@@ -389,6 +409,41 @@ CSHARP_FFI_TYPES = {
 }
 
 
+def resolve_swift_ffi_type(
+    ffi_type: str,
+    enums: dict | None = None,
+    default: str = "UInt64",
+) -> str:
+    """Resolve an FFI type string into a Swift type string."""
+    ffi_type = normalize_ffi_type(ffi_type)
+    if ffi_type == "void":
+        return "Void"
+    direct = SWIFT_FFI_TYPES.get(ffi_type)
+    if direct:
+        return direct
+    if enums and ffi_type.startswith("Ffi"):
+        enum_name = ffi_type[3:]
+        if enum_name in enums:
+            underlying = enums[enum_name].get("underlying", "i32")
+            return SWIFT_TYPES.get(underlying, "Int32")
+    if ffi_type.startswith("Option<") and ffi_type.endswith(">"):
+        inner = ffi_type[7:-1]
+        if "Callback" in inner:
+            return "UnsafeMutableRawPointer?"
+        inner_direct = SWIFT_FFI_TYPES.get(inner)
+        if inner_direct:
+            return f"{inner_direct}?"
+    if ffi_type.startswith("*const ") or ffi_type.startswith("*mut "):
+        qualifier, inner = ffi_type.split(" ", 1)
+        inner = inner.strip()
+        if inner == "c_void":
+            return "UnsafeMutableRawPointer?" if qualifier == "*mut" else "UnsafeRawPointer?"
+        if inner == "c_char" and qualifier == "*const":
+            return "UnsafePointer<CChar>?"
+        return f"UnsafeMutablePointer<{SWIFT_FFI_TYPES.get(inner, inner)}>?"
+    return default
+
+
 def map_type(schema_type: str, lang_map: dict) -> str:
     """Map a schema type to language-specific type, handling nullable."""
     nullable = schema_type.endswith("?")
@@ -397,6 +452,8 @@ def map_type(schema_type: str, lang_map: dict) -> str:
     if nullable and lang_map is TYPESCRIPT_TYPES:
         return f"{mapped} | null"
     if nullable and lang_map is CSHARP_TYPES:
+        return f"{mapped}?"
+    if nullable and lang_map is SWIFT_TYPES:
         return f"{mapped}?"
     return mapped
 

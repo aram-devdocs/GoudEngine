@@ -8,21 +8,21 @@
 //! `goud_physics3d_create` before calling other physics functions.
 
 #[cfg(feature = "rapier2d")]
-mod physics2d;
+pub mod physics2d;
 #[cfg(feature = "rapier2d")]
-mod physics2d_common;
+pub mod physics2d_common;
 #[cfg(feature = "rapier2d")]
-mod physics2d_events;
+pub mod physics2d_events;
 #[cfg(feature = "rapier2d")]
-mod physics2d_ex;
+pub mod physics2d_ex;
 #[cfg(feature = "rapier2d")]
-mod physics2d_material;
+pub mod physics2d_material;
 #[cfg(feature = "rapier2d")]
-mod physics2d_state;
+pub mod physics2d_state;
 #[cfg(feature = "rapier3d")]
-mod physics3d;
+pub mod physics3d;
 #[cfg(feature = "rapier3d")]
-mod physics3d_material;
+pub mod physics3d_material;
 
 #[cfg(feature = "rapier2d")]
 pub use physics2d::{

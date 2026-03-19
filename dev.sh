@@ -138,7 +138,7 @@ while [[ "$#" -gt 0 ]]; do
         echo ""
         echo "Options:"
         echo "  --game <name>    Game to run (default: flappy_goud)"
-        echo "  --sdk <type>     SDK type: csharp, python, rust, typescript (default: csharp)"
+        echo "  --sdk <type>     SDK type: csharp, cpp, python, rust, typescript (default: csharp)"
         echo "  --local          Use local feed when needed; direct-project C# examples use a fast local path"
         echo "  --skipBuild      Skip build step"
         echo "  --next           Run version increment and rebuild"
@@ -153,6 +153,8 @@ while [[ "$#" -gt 0 ]]; do
         echo "  ./dev.sh --game flappy_goud            # Run C# Flappy Goud"
         echo "  ./dev.sh --sdk python --game python_demo  # Run Python demo"
         echo "  ./dev.sh --sdk python --game flappy_bird  # Run Python Flappy Bird"
+        echo "  ./dev.sh --sdk cpp --game flappy_bird      # Run C++ Flappy Bird"
+        echo "  ./dev.sh --sdk cpp --game cmake_example    # Run C++ CMake example"
         echo "  ./dev.sh --sdk rust                    # Run Rust SDK tests"
         echo "  ./dev.sh --sdk typescript --game flappy_bird      # TS desktop"
         echo "  ./dev.sh --sdk typescript --game flappy_bird_web  # TS web (browser)"
@@ -176,10 +178,10 @@ done
 
 # Validate SDK type
 case $SDK_TYPE in
-"csharp" | "python" | "rust" | "typescript")
+"csharp" | "cpp" | "python" | "rust" | "typescript")
     ;;
 *)
-    echo "Error: Invalid SDK type. Choose from: csharp, python, rust, typescript"
+    echo "Error: Invalid SDK type. Choose from: csharp, cpp, python, rust, typescript"
     exit 1
     ;;
 esac
@@ -194,6 +196,18 @@ case $SDK_TYPE in
     *)
         echo "Error: Invalid C# game selection."
         echo "Choose from: flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox"
+        exit 1
+        ;;
+    esac
+    ;;
+"cpp")
+    case $GAME in
+    "smoke" | "cmake_example" | "flappy_bird")
+        echo "Building and running C++ example: $GAME..."
+        ;;
+    *)
+        echo "Error: Invalid C++ example selection."
+        echo "Choose from: smoke, cmake_example, flappy_bird"
         exit 1
         ;;
     esac
@@ -259,6 +273,14 @@ if [ "$SKIP_BUILD" = false ]; then
             bash "$SCRIPT_DIR/package.sh" --prod
         else
             bash "$SCRIPT_DIR/package.sh" --local
+        fi
+    elif [ "$SDK_TYPE" = "cpp" ]; then
+        # Build native library for C++ examples
+        if python_release_artifact_fresh; then
+            echo "Skipping native rebuild; release artifact is fresh."
+        else
+            echo "Building native library..."
+            cargo build --release
         fi
     elif [ "$SDK_TYPE" = "typescript" ]; then
         if [ "$GAME" = "flappy_bird_web" ] || [ "$GAME" = "feature_lab_web" ] || [ "$GAME" = "sandbox_web" ]; then
@@ -342,6 +364,24 @@ case $SDK_TYPE in
         "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" build --no-restore --nologo
     fi
     "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" run --no-build --nologo
+    ;;
+
+"cpp")
+    CPP_EXAMPLE_DIR="$SCRIPT_DIR/examples/cpp/$GAME"
+    CPP_BUILD_DIR="$CPP_EXAMPLE_DIR/build"
+
+    echo "Configuring C++ example: $GAME..."
+    cmake -B "$CPP_BUILD_DIR" \
+        -DGOUD_ENGINE_ROOT="$SCRIPT_DIR" \
+        -DCMAKE_BUILD_TYPE=Release \
+        "$CPP_EXAMPLE_DIR"
+
+    echo "Building C++ example: $GAME..."
+    cmake --build "$CPP_BUILD_DIR" --config Release
+
+    echo "Running C++ example: $GAME..."
+    cd "$CPP_EXAMPLE_DIR"
+    "$CPP_BUILD_DIR/$GAME"
     ;;
 
 "python")

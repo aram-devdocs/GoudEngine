@@ -1189,6 +1189,16 @@ typedef struct GoudResult {
 #define ERR_PROVIDER_OPERATION_FAILED 602
 
 /**
+ * Base code for scripting engine errors.
+ */
+#define SCRIPT_ERROR_BASE 800
+
+/**
+ * Script execution error (syntax, runtime, etc.).
+ */
+#define ERR_SCRIPT_ERROR 800
+
+/**
  * Base code for internal/unexpected errors.
  */
 #define INTERNAL_ERROR_BASE 900

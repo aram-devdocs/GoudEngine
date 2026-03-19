@@ -4,6 +4,13 @@ use crate::libs::graphics::backend::BufferHandle;
 pub use crate::libs::graphics::AntiAliasingMode;
 use cgmath::{Deg, Matrix4, Rad, Vector3, Vector4};
 
+// Re-export types that were split into sibling modules.
+pub use super::material::{Material3D, MaterialType, PbrProperties};
+pub use super::render_pass::{
+    BloomPass, ColorGradePass, GaussianBlurPass, PostProcessPipeline, RenderPass,
+};
+pub use super::skinned_mesh::{Bone3D, Skeleton3D, SkinnedMesh3D, MAX_BONES, MAX_BONE_INFLUENCES};
+
 // ============================================================================
 // Constants
 // ============================================================================
@@ -160,41 +167,41 @@ pub struct Renderer3DStats {
 
 /// A 3D object in the scene
 #[derive(Debug)]
-pub(super) struct Object3D {
-    pub(super) buffer: BufferHandle,
-    pub(super) vertex_count: i32,
-    pub(super) vertices: Vec<f32>,
-    pub(super) position: Vector3<f32>,
-    pub(super) rotation: Vector3<f32>,
-    pub(super) scale: Vector3<f32>,
-    pub(super) texture_id: u32,
+pub(in crate::libs::graphics::renderer3d) struct Object3D {
+    pub(in crate::libs::graphics::renderer3d) buffer: BufferHandle,
+    pub(in crate::libs::graphics::renderer3d) vertex_count: i32,
+    pub(in crate::libs::graphics::renderer3d) vertices: Vec<f32>,
+    pub(in crate::libs::graphics::renderer3d) position: Vector3<f32>,
+    pub(in crate::libs::graphics::renderer3d) rotation: Vector3<f32>,
+    pub(in crate::libs::graphics::renderer3d) scale: Vector3<f32>,
+    pub(in crate::libs::graphics::renderer3d) texture_id: u32,
 }
 
 #[derive(Debug)]
-pub(super) struct InstancedMesh {
-    pub(super) mesh_buffer: BufferHandle,
-    pub(super) vertex_count: u32,
-    pub(super) instance_buffer: BufferHandle,
-    pub(super) instances: Vec<InstanceTransform>,
-    pub(super) texture_id: u32,
+pub(in crate::libs::graphics::renderer3d) struct InstancedMesh {
+    pub(in crate::libs::graphics::renderer3d) mesh_buffer: BufferHandle,
+    pub(in crate::libs::graphics::renderer3d) vertex_count: u32,
+    pub(in crate::libs::graphics::renderer3d) instance_buffer: BufferHandle,
+    pub(in crate::libs::graphics::renderer3d) instances: Vec<InstanceTransform>,
+    pub(in crate::libs::graphics::renderer3d) texture_id: u32,
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct Particle {
-    pub(super) position: Vector3<f32>,
-    pub(super) velocity: Vector3<f32>,
-    pub(super) age: f32,
-    pub(super) lifetime: f32,
+pub(in crate::libs::graphics::renderer3d) struct Particle {
+    pub(in crate::libs::graphics::renderer3d) position: Vector3<f32>,
+    pub(in crate::libs::graphics::renderer3d) velocity: Vector3<f32>,
+    pub(in crate::libs::graphics::renderer3d) age: f32,
+    pub(in crate::libs::graphics::renderer3d) lifetime: f32,
 }
 
 #[derive(Debug)]
-pub(super) struct ParticleEmitter {
-    pub(super) position: Vector3<f32>,
-    pub(super) config: ParticleEmitterConfig,
-    pub(super) particles: Vec<Particle>,
-    pub(super) instance_buffer: BufferHandle,
-    pub(super) spawn_accumulator: f32,
-    pub(super) spawn_counter: u32,
+pub(in crate::libs::graphics::renderer3d) struct ParticleEmitter {
+    pub(in crate::libs::graphics::renderer3d) position: Vector3<f32>,
+    pub(in crate::libs::graphics::renderer3d) config: ParticleEmitterConfig,
+    pub(in crate::libs::graphics::renderer3d) particles: Vec<Particle>,
+    pub(in crate::libs::graphics::renderer3d) instance_buffer: BufferHandle,
+    pub(in crate::libs::graphics::renderer3d) spawn_accumulator: f32,
+    pub(in crate::libs::graphics::renderer3d) spawn_counter: u32,
 }
 
 /// A light in the scene
