@@ -4,10 +4,17 @@ use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::{self, JoinHandle};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
-#[path = "tcp_network_io.rs"]
+mod reconnect;
+#[path = "../tcp_network_io.rs"]
 mod tcp_network_io;
+mod types;
+
+pub use reconnect::ReconnectConfig;
+#[cfg(test)]
+use reconnect::{DEFAULT_RECONNECT_DELAY, MAX_RECONNECT_ATTEMPTS};
+pub(crate) use types::{InternalTcpEvent, TcpConnection};
 
 use self::tcp_network_io::{configure_stream, spawn_io_thread};
 use crate::core::providers::diagnostics::NetworkDiagnosticsV1;
@@ -20,8 +27,6 @@ use crate::core::providers::{Provider, ProviderLifecycle};
 use crate::libs::error::{GoudError, GoudResult};
 
 const MAX_MESSAGE_SIZE: usize = 16_777_215;
-const DEFAULT_RECONNECT_DELAY: Duration = Duration::from_secs(1);
-const MAX_RECONNECT_ATTEMPTS: u32 = 5;
 
 fn net_err(msg: impl Into<String>) -> GoudError {
     GoudError::ProviderError {
@@ -30,70 +35,20 @@ fn net_err(msg: impl Into<String>) -> GoudError {
     }
 }
 
-enum InternalTcpEvent {
-    /// A connection was established. Carries the IO generation.
-    Connected(ConnectionId, u64),
-    /// A connection was closed. Carries the IO generation.
-    Disconnected(ConnectionId, DisconnectReason, u64),
-    /// Data received (no generation needed; stale data is harmless).
-    Received(ConnectionId, Channel, Vec<u8>),
-    /// Error on a connection.
-    Error(ConnectionId, String),
-    /// The write channel for a connection is ready. Carries the IO generation.
-    WriteTxReady(ConnectionId, mpsc::Sender<Vec<u8>>, u64),
-}
-
-/// Configuration for automatic reconnection behavior.
-#[derive(Debug, Clone)]
-pub struct ReconnectConfig {
-    /// Whether reconnection is enabled for this connection.
-    pub enabled: bool,
-    /// Maximum number of reconnection attempts before giving up.
-    pub max_attempts: u32,
-    /// Delay between reconnection attempts.
-    pub delay: Duration,
-}
-
-impl Default for ReconnectConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            max_attempts: MAX_RECONNECT_ATTEMPTS,
-            delay: DEFAULT_RECONNECT_DELAY,
-        }
-    }
-}
-
-struct TcpConnection {
-    id: ConnectionId,
-    state: ConnectionState,
-    stats: NetworkStatsTracker,
-    /// The remote address this connection was established to (client-side only).
-    remote_addr: Option<String>,
-    /// Reconnect tracking state.
-    reconnect: ReconnectConfig,
-    /// Number of reconnect attempts made so far.
-    reconnect_attempts: u32,
-    /// When the last reconnect attempt was started.
-    last_reconnect_at: Option<Instant>,
-    /// Generation counter to disambiguate events from old vs. new IO threads.
-    generation: u64,
-}
-
 /// TCP transport provider using length-prefixed framed messages.
 pub struct TcpNetProvider {
     capabilities: NetworkCapabilities,
-    connections: HashMap<u64, TcpConnection>,
-    event_tx: mpsc::Sender<InternalTcpEvent>,
+    pub(crate) connections: HashMap<u64, TcpConnection>,
+    pub(crate) event_tx: mpsc::Sender<InternalTcpEvent>,
     event_rx: Mutex<Option<mpsc::Receiver<InternalTcpEvent>>>,
     events: Vec<NetworkEvent>,
-    send_txs: HashMap<u64, mpsc::Sender<Vec<u8>>>,
+    pub(crate) send_txs: HashMap<u64, mpsc::Sender<Vec<u8>>>,
     stats: NetworkStatsTracker,
-    next_id: Arc<AtomicU64>,
-    next_generation: Arc<AtomicU64>,
-    conn_count: Arc<AtomicU32>,
-    threads: Mutex<Vec<JoinHandle<()>>>,
-    running: Arc<AtomicBool>,
+    pub(crate) next_id: Arc<AtomicU64>,
+    pub(crate) next_generation: Arc<AtomicU64>,
+    pub(crate) conn_count: Arc<AtomicU32>,
+    pub(crate) threads: Mutex<Vec<JoinHandle<()>>>,
+    pub(crate) running: Arc<AtomicBool>,
     is_hosting: bool,
     local_addr: Option<SocketAddr>,
 }
@@ -158,89 +113,6 @@ impl TcpNetProvider {
     fn decrement_conn_count_if_needed(&self, removed: bool) {
         if removed && self.conn_count.load(Ordering::Relaxed) > 0 {
             self.conn_count.fetch_sub(1, Ordering::Relaxed);
-        }
-    }
-
-    /// Enable automatic reconnection for a connection.
-    ///
-    /// When reconnect is enabled and the connection drops unexpectedly
-    /// (remote close, timeout, or error), the provider will automatically
-    /// attempt to re-establish the connection up to `config.max_attempts`
-    /// times with `config.delay` between attempts. Only applicable to
-    /// client-initiated connections that have a stored remote address.
-    pub fn set_reconnect(&mut self, conn: ConnectionId, config: ReconnectConfig) -> GoudResult<()> {
-        let connection = self
-            .connections
-            .get_mut(&conn.0)
-            .ok_or_else(|| net_err(format!("Unknown connection {:?}", conn)))?;
-        if connection.remote_addr.is_none() {
-            return Err(net_err(
-                "Reconnect is only supported for client-initiated connections",
-            ));
-        }
-        connection.reconnect = config;
-        connection.reconnect_attempts = 0;
-        connection.last_reconnect_at = None;
-        Ok(())
-    }
-
-    /// Attempt reconnection for connections that have been disconnected
-    /// and have reconnect enabled. Called from `update()`.
-    fn process_reconnects(&mut self) {
-        let now = Instant::now();
-        let mut to_reconnect: Vec<(ConnectionId, String, u64)> = Vec::new();
-
-        for conn in self.connections.values_mut() {
-            if !conn.reconnect.enabled {
-                continue;
-            }
-            if conn.state != ConnectionState::Disconnected && conn.state != ConnectionState::Error {
-                continue;
-            }
-            if conn.reconnect_attempts >= conn.reconnect.max_attempts {
-                continue;
-            }
-            let Some(ref addr) = conn.remote_addr else {
-                continue;
-            };
-            if let Some(last) = conn.last_reconnect_at {
-                if now.duration_since(last) < conn.reconnect.delay {
-                    continue;
-                }
-            }
-            conn.reconnect_attempts += 1;
-            conn.last_reconnect_at = Some(now);
-            conn.state = ConnectionState::Connecting;
-            // Bump generation so stale events from the old IO thread are ignored.
-            let gen = self.next_generation.fetch_add(1, Ordering::Relaxed);
-            conn.generation = gen;
-            to_reconnect.push((conn.id, addr.clone(), gen));
-        }
-
-        for (id, address, gen) in to_reconnect {
-            let event_tx = self.event_tx.clone();
-            let running = self.running.clone();
-
-            let handle = thread::spawn(move || match TcpStream::connect(&address) {
-                Ok(stream) => {
-                    configure_stream(&stream);
-                    let write_tx = spawn_io_thread(id, gen, stream, event_tx.clone(), running);
-                    let _ = event_tx.send(InternalTcpEvent::WriteTxReady(id, write_tx, gen));
-                    let _ = event_tx.send(InternalTcpEvent::Connected(id, gen));
-                }
-                Err(e) => {
-                    let _ = event_tx.send(InternalTcpEvent::Error(id, format!("reconnect: {e}")));
-                    let _ = event_tx.send(InternalTcpEvent::Disconnected(
-                        id,
-                        DisconnectReason::Error(e.to_string()),
-                        gen,
-                    ));
-                }
-            });
-
-            if let Ok(mut guard) = self.threads.lock() {
-                guard.push(handle);
-            }
         }
     }
 }
@@ -603,5 +475,5 @@ impl std::fmt::Debug for TcpNetProvider {
 }
 
 #[cfg(test)]
-#[path = "tcp_network_tests.rs"]
+#[path = "../tcp_network_tests.rs"]
 mod tests;

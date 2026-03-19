@@ -88,7 +88,4 @@ pub mod p2p_mesh;
 pub use p2p_mesh::P2pMesh;
 
 #[cfg(test)]
-mod p2p_mesh_tests;
-
-#[cfg(test)]
 mod network_contract_tests;
