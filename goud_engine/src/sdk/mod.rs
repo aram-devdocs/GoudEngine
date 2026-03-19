@@ -80,6 +80,8 @@ pub mod game;
 pub mod game_config;
 #[cfg(feature = "native")]
 pub mod input;
+#[cfg(all(feature = "lua", feature = "native"))]
+pub mod lua_runner;
 pub mod network_debug_overlay;
 #[cfg(feature = "native")]
 pub mod rendering;

@@ -89,6 +89,8 @@ echo "║ [11b/14] Generating Swift SDK..."
 stage_header_copy "sdks/swift/Sources/CGoudEngine/include"
 python3 codegen/gen_swift.py
 
+echo "║ [11c/14] Generating Lua SDK..."
+python3 codegen/gen_lua.py
 
 echo "║ [12/14] Formatting generated Rust sources..."
 cargo fmt -p goud-engine-node

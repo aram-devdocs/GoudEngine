@@ -3,7 +3,7 @@
 //! Contains [`GoudGame`], the primary entry point managing the ECS world,
 //! game loop, and convenient methods for entity and component operations.
 
-mod instance;
+pub(crate) mod instance;
 mod instance_runtime;
 mod instance_transitions;
 mod providers;
