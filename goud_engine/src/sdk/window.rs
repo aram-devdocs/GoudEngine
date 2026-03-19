@@ -305,6 +305,52 @@ impl GoudGame {
         }
     }
 
+    /// Sets the fullscreen mode on the active native window.
+    pub fn set_fullscreen(
+        &mut self,
+        mode: crate::libs::platform::FullscreenMode,
+    ) -> GoudResult<()> {
+        match &mut self.platform {
+            Some(platform) => {
+                if platform.set_fullscreen(mode) {
+                    self.config.fullscreen_mode = mode;
+                    Ok(())
+                } else {
+                    Err(GoudError::InvalidState(
+                        "fullscreen mode change was rejected".to_string(),
+                    ))
+                }
+            }
+            None => Err(GoudError::NotInitialized),
+        }
+    }
+
+    /// Returns the current fullscreen mode.
+    #[inline]
+    pub fn get_fullscreen(&self) -> crate::libs::platform::FullscreenMode {
+        match &self.platform {
+            Some(platform) => platform.get_fullscreen(),
+            None => crate::libs::platform::FullscreenMode::Windowed,
+        }
+    }
+
+    /// Toggles between windowed and borderless fullscreen.
+    pub fn toggle_fullscreen(&mut self) -> GoudResult<()> {
+        let current = self.get_fullscreen();
+        let next = if current == crate::libs::platform::FullscreenMode::Windowed {
+            crate::libs::platform::FullscreenMode::Borderless
+        } else {
+            crate::libs::platform::FullscreenMode::Windowed
+        };
+        self.set_fullscreen(next)
+    }
+
+    /// Sets the viewport aspect ratio lock.
+    #[cfg(feature = "native")]
+    pub fn set_aspect_ratio_lock(&mut self, lock: crate::rendering::AspectRatioLock) {
+        self.config.aspect_ratio_lock = lock;
+    }
+
     /// Reads the current default framebuffer as RGBA8 bytes.
     pub fn read_default_framebuffer_rgba8(&mut self) -> GoudResult<Vec<u8>> {
         let (width, height) = self.get_framebuffer_size();

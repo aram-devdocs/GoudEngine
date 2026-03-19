@@ -100,3 +100,9 @@ pub trait RenderBackend:
         &self.info().capabilities
     }
 }
+
+/// Marker trait bridging the "render provider" naming to the existing
+/// [`RenderBackend`] trait. Any type implementing `RenderBackend` is
+/// automatically a `RenderProvider`.
+pub trait RenderProvider: RenderBackend {}
+impl<T: RenderBackend> RenderProvider for T {}

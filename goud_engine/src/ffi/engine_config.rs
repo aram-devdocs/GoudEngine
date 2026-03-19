@@ -135,14 +135,19 @@ pub unsafe extern "C" fn goud_engine_config_set_vsync(
     true
 }
 
-/// Enables or disables fullscreen on an `EngineConfig`.
+/// Sets the fullscreen mode on an `EngineConfig`.
+///
+/// Mode values:
+/// - 0: Windowed
+/// - 1: Borderless
+/// - 2: Exclusive
 ///
 /// # Safety
 /// `handle` must be a valid `EngineConfig` handle.
 #[no_mangle]
 pub unsafe extern "C" fn goud_engine_config_set_fullscreen(
     handle: EngineConfigHandle,
-    enabled: bool,
+    mode: u32,
 ) -> bool {
     if handle.is_null() {
         set_last_error(GoudError::InvalidState(
@@ -150,9 +155,58 @@ pub unsafe extern "C" fn goud_engine_config_set_fullscreen(
         ));
         return false;
     }
+
+    let fullscreen_mode = match crate::libs::platform::FullscreenMode::from_u32(mode) {
+        Some(m) => m,
+        None => {
+            set_last_error(GoudError::InvalidState(
+                "invalid fullscreen mode".to_string(),
+            ));
+            return false;
+        }
+    };
+
     // SAFETY: Caller guarantees handle points to a valid EngineConfig.
     let config = &mut *(handle as *mut EngineConfig);
-    config.game_config_mut().fullscreen = enabled;
+    config.game_config_mut().fullscreen_mode = fullscreen_mode;
+    true
+}
+
+/// Sets the aspect ratio lock on an `EngineConfig`.
+///
+/// Lock values:
+/// - 0: Free (no lock)
+/// - 1: 4:3
+/// - 2: 16:9
+/// - 3: 16:10
+///
+/// # Safety
+/// `handle` must be a valid `EngineConfig` handle.
+#[no_mangle]
+pub unsafe extern "C" fn goud_engine_config_set_aspect_ratio_lock(
+    handle: EngineConfigHandle,
+    lock: u32,
+) -> bool {
+    if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
+        return false;
+    }
+
+    let aspect_lock = match crate::rendering::AspectRatioLock::from_u32(lock) {
+        Some(l) => l,
+        None => {
+            set_last_error(GoudError::InvalidState(
+                "invalid aspect ratio lock".to_string(),
+            ));
+            return false;
+        }
+    };
+
+    // SAFETY: Caller guarantees handle points to a valid EngineConfig.
+    let config = &mut *(handle as *mut EngineConfig);
+    config.game_config_mut().aspect_ratio_lock = aspect_lock;
     true
 }
 

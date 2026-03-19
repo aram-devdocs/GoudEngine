@@ -48,4 +48,6 @@ mod window;
 
 pub use app::{AppExiting, AppStarted, ExitReason};
 pub use frame::{FrameEnded, FrameStarted};
-pub use window::{WindowCloseRequested, WindowFocused, WindowMoved, WindowResized};
+pub use window::{
+    FullscreenChanged, WindowCloseRequested, WindowFocused, WindowMoved, WindowResized,
+};
