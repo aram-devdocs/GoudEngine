@@ -111,9 +111,10 @@ impl LuaGameRunner {
             let dt = goud_window_poll_events(ctx);
 
             goud_renderer_begin(ctx);
-            goud_window_clear(ctx, 0.4, 0.7, 0.9, 1.0);
 
             self.lua.call_update(dt)?;
+            // on_draw is responsible for calling goud_game.window_clear()
+            // with its own clear color before drawing.
             self.lua.call_global("on_draw")?;
 
             goud_renderer_end(ctx);

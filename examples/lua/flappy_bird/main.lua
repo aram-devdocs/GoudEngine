@@ -188,6 +188,7 @@ function on_update(dt)
 end
 
 function on_draw()
+    goud_game.window_clear(0.4, 0.7, 0.9, 1.0)
     goud_game.draw_sprite(tex_bg,
         BACKGROUND_WIDTH / 2, BACKGROUND_HEIGHT / 2,
         BACKGROUND_WIDTH, BACKGROUND_HEIGHT,
