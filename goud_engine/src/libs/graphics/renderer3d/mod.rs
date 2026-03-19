@@ -14,11 +14,14 @@ mod core;
 mod core_particles;
 mod core_primitives;
 mod debug_draw;
+mod material;
 mod mesh;
 mod postprocess;
 mod render;
+mod render_pass;
 mod shaders;
 mod shadow;
+mod skinned_mesh;
 mod texture;
 mod types;
 
