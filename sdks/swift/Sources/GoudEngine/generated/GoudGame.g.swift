@@ -150,17 +150,28 @@ public final class GoudGame {
 
     /// Checks if multiple entities are alive, writing results to an output array
     public func isAliveBatch(entities: [Entity], outResults: Data) -> UInt32 {
-        return goud_entity_is_alive_batch(_ctx, entities, outResults)
+        outResults.withUnsafeBytes { outResultsRawBuf in
+            let outResultsBasePtr = outResultsRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            let entitiesBits = entities.map { $0.bits }
+            entitiesBits.withUnsafeBufferPointer { entitiesBuf in
+                let entitiesBasePtr = entitiesBuf.baseAddress!
+                return goud_entity_is_alive_batch(_ctx, entitiesBasePtr, outResultsBasePtr)
+            }
+        }
     }
 
     /// Spawns multiple empty entities at once
     public func spawnBatch(count: UInt32) -> [Entity] {
-        return goud_entity_spawn_batch(_ctx, count)
+        return goud_entity_spawn_batch(_ctx, count) /* TODO: array return needs manual FFI bridge */
     }
 
     /// Despawns multiple entities at once
     public func despawnBatch(entities: [Entity]) -> UInt32 {
-        return goud_entity_despawn_batch(_ctx, entities)
+        let entitiesBits = entities.map { $0.bits }
+        entitiesBits.withUnsafeBufferPointer { entitiesBuf in
+            let entitiesBasePtr = entitiesBuf.baseAddress!
+            return goud_entity_despawn_batch(_ctx, entitiesBasePtr)
+        }
     }
 
     /// Starts animation playback for an entity
@@ -346,12 +357,12 @@ public final class GoudGame {
 
     /// Returns the latest debugger snapshot JSON for this route.
     public func getDebuggerSnapshotJson() -> String {
-        return goud_debugger_get_snapshot_json(_ctx)
+        return String(cString: goud_debugger_get_snapshot_json(_ctx))
     }
 
     /// Returns the current process-wide debugger manifest JSON.
     public func getDebuggerManifestJson() -> String {
-        return goud_debugger_get_manifest_json(_ctx)
+        return String(cString: goud_debugger_get_manifest_json(_ctx))
     }
 
     /// Pauses or resumes the route-scoped debugger runtime.
@@ -431,7 +442,10 @@ public final class GoudGame {
 
     /// Starts debugger-owned replay using previously exported recording bytes.
     public func startDebuggerReplay(recording: Data) {
-        goud_debugger_start_replay(_ctx, recording)
+        recording.withUnsafeBytes { recordingRawBuf in
+            let recordingBasePtr = recordingRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            goud_debugger_start_replay(_ctx, recordingBasePtr)
+        }
     }
 
     /// Stops any active debugger-owned replay session for this route.
@@ -441,12 +455,12 @@ public final class GoudGame {
 
     /// Returns the current debugger replay status JSON for this route.
     public func getDebuggerReplayStatusJson() -> String {
-        return goud_debugger_get_replay_status_json(_ctx)
+        return String(cString: goud_debugger_get_replay_status_json(_ctx))
     }
 
     /// Returns the current debugger metrics-trace JSON for this route.
     public func getDebuggerMetricsTraceJson() -> String {
-        return goud_debugger_get_metrics_trace_json(_ctx)
+        return String(cString: goud_debugger_get_metrics_trace_json(_ctx))
     }
 
     /// Maps an action name to a key
@@ -576,17 +590,32 @@ public final class GoudGame {
 
     /// Adds a generic component to multiple entities
     public func componentAddBatch(entities: [Entity], typeIdHash: UInt64, dataPtr: UnsafeMutableRawPointer, componentSize: Int) -> UInt32 {
-        return goud_component_add_batch(_ctx, entities, typeIdHash, dataPtr, componentSize)
+        let entitiesBits = entities.map { $0.bits }
+        entitiesBits.withUnsafeBufferPointer { entitiesBuf in
+            let entitiesBasePtr = entitiesBuf.baseAddress!
+            return goud_component_add_batch(_ctx, entitiesBasePtr, typeIdHash, dataPtr, componentSize)
+        }
     }
 
     /// Removes a generic component from multiple entities
     public func componentRemoveBatch(entities: [Entity], typeIdHash: UInt64) -> UInt32 {
-        return goud_component_remove_batch(_ctx, entities, typeIdHash)
+        let entitiesBits = entities.map { $0.bits }
+        entitiesBits.withUnsafeBufferPointer { entitiesBuf in
+            let entitiesBasePtr = entitiesBuf.baseAddress!
+            return goud_component_remove_batch(_ctx, entitiesBasePtr, typeIdHash)
+        }
     }
 
     /// Checks if multiple entities have a generic component
     public func componentHasBatch(entities: [Entity], typeIdHash: UInt64, outResults: Data) -> UInt32 {
-        return goud_component_has_batch(_ctx, entities, typeIdHash, outResults)
+        outResults.withUnsafeBytes { outResultsRawBuf in
+            let outResultsBasePtr = outResultsRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            let entitiesBits = entities.map { $0.bits }
+            entitiesBits.withUnsafeBufferPointer { entitiesBuf in
+                let entitiesBasePtr = entitiesBuf.baseAddress!
+                return goud_component_has_batch(_ctx, entitiesBasePtr, typeIdHash, outResultsBasePtr)
+            }
+        }
     }
 
     /// Queries the render provider's capabilities
@@ -640,7 +669,10 @@ public final class GoudGame {
 
     /// Sends raw bytes to the given peer over a network handle and channel.
     public func networkSend(handle: Int64, peerId: UInt64, data: Data, channel: UInt8) -> Int32 {
-        return goud_network_send(_ctx, handle, peerId, data, channel)
+        data.withUnsafeBytes { dataRawBuf in
+            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            return goud_network_send(_ctx, handle, peerId, dataBasePtr, channel)
+        }
     }
 
     /// Receives the next buffered payload produced by networkPoll.
@@ -690,17 +722,26 @@ public final class GoudGame {
 
     /// Plays audio from raw bytes on the default channel
     public func audioPlay(data: Data) -> Int64 {
-        return goud_audio_play(_ctx, data)
+        data.withUnsafeBytes { dataRawBuf in
+            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            return goud_audio_play(_ctx, dataBasePtr)
+        }
     }
 
     /// Plays audio from raw bytes on the given channel
     public func audioPlayOnChannel(data: Data, channel: UInt8) -> Int64 {
-        return goud_audio_play_on_channel(_ctx, data, channel)
+        data.withUnsafeBytes { dataRawBuf in
+            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            return goud_audio_play_on_channel(_ctx, dataBasePtr, channel)
+        }
     }
 
     /// Plays audio with explicit volume, speed, looping, and channel settings
     public func audioPlayWithSettings(data: Data, volume: Float, speed: Float, looping: Bool, channel: UInt8) -> Int64 {
-        return goud_audio_play_with_settings(_ctx, data, volume, speed, looping, channel)
+        data.withUnsafeBytes { dataRawBuf in
+            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            return goud_audio_play_with_settings(_ctx, dataBasePtr, volume, speed, looping, channel)
+        }
     }
 
     /// Stops a playing audio player
@@ -760,7 +801,10 @@ public final class GoudGame {
 
     /// Plays audio with 3D spatial attenuation
     public func audioPlaySpatial3d(data: Data, sourceX: Float, sourceY: Float, sourceZ: Float, listenerX: Float, listenerY: Float, listenerZ: Float, maxDistance: Float, rolloff: Float) -> Int64 {
-        return goud_audio_play_spatial_3d(_ctx, data, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff)
+        data.withUnsafeBytes { dataRawBuf in
+            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            return goud_audio_play_spatial_3d(_ctx, dataBasePtr, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff)
+        }
     }
 
     /// Updates 3D spatial attenuation for an active player
@@ -795,12 +839,18 @@ public final class GoudGame {
 
     /// Starts a timed crossfade from one player to a new audio asset
     public func audioCrossfadeTo(fromPlayerId: UInt64, data: Data, durationSec: Float, channel: UInt8) -> Int64 {
-        return goud_audio_crossfade_to(_ctx, fromPlayerId, data, durationSec, channel)
+        data.withUnsafeBytes { dataRawBuf in
+            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            return goud_audio_crossfade_to(_ctx, fromPlayerId, dataBasePtr, durationSec, channel)
+        }
     }
 
     /// Mixes a secondary audio asset with a primary player
     public func audioMixWith(primaryPlayerId: UInt64, data: Data, secondaryVolume: Float, secondaryChannel: UInt8) -> Int64 {
-        return goud_audio_mix_with(_ctx, primaryPlayerId, data, secondaryVolume, secondaryChannel)
+        data.withUnsafeBytes { dataRawBuf in
+            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            return goud_audio_mix_with(_ctx, primaryPlayerId, dataBasePtr, secondaryVolume, secondaryChannel)
+        }
     }
 
     /// Advances all active timed crossfades

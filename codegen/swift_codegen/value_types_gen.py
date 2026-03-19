@@ -40,7 +40,7 @@ _FACTORY_OVERRIDES: dict[tuple[str, str], str] = {
 
 
 def gen_value_types() -> None:
-    lines = [swift_file_header(), "import Foundation", "import CGoudEngine", ""]
+    lines = [swift_file_header(), "import Foundation", "import CGoudEngine", "", "// Simple math helpers (Vec2, Color, Rect) are the one intentional local-logic exception", "// per CLAUDE.md. All other game logic lives in Rust and is called via FFI.", ""]
 
     for type_name, type_def in schema.get("types", {}).items():
         kind = type_def.get("kind")

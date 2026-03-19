@@ -42,7 +42,7 @@ public final class AnimationController {
 
     /// Gets the current animation state name
     public func getState(entity: UInt64) -> String {
-        return goud_animation_controller_get_state(_ctx, entity)
+        return String(cString: goud_animation_controller_get_state(_ctx, entity))
     }
 
     /// Updates the animation controller
@@ -224,7 +224,10 @@ public final class Network {
 
     /// Sends data to a peer
     public func send(handle: Int64, peerId: UInt64, data: Data, channel: UInt8) -> Int32 {
-        return goud_network_send(_ctx, handle, peerId, data, channel)
+        data.withUnsafeBytes { dataRawBuf in
+            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            return goud_network_send(_ctx, handle, peerId, dataBasePtr, channel)
+        }
     }
 
     /// Receives data from a peer
@@ -280,7 +283,7 @@ public final class Plugin {
 
     /// Lists all registered plugins
     public func list() -> String {
-        return goud_plugin_list(_ctx)
+        return String(cString: goud_plugin_list(_ctx))
     }
 
 }
@@ -295,17 +298,26 @@ public final class Audio {
 
     /// Plays audio from raw bytes on the default SFX channel
     public func play(data: Data) -> Int64 {
-        return goud_audio_play(_ctx, data)
+        data.withUnsafeBytes { dataRawBuf in
+            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            return goud_audio_play(_ctx, dataBasePtr)
+        }
     }
 
     /// Plays audio on a specific channel
     public func playOnChannel(data: Data, channel: UInt8) -> Int64 {
-        return goud_audio_play_on_channel(_ctx, data, channel)
+        data.withUnsafeBytes { dataRawBuf in
+            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            return goud_audio_play_on_channel(_ctx, dataBasePtr, channel)
+        }
     }
 
     /// Plays audio with full control over volume, speed, looping, and channel
     public func playWithSettings(data: Data, volume: Float, speed: Float, looping: Bool, channel: UInt8) -> Int64 {
-        return goud_audio_play_with_settings(_ctx, data, volume, speed, looping, channel)
+        data.withUnsafeBytes { dataRawBuf in
+            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            return goud_audio_play_with_settings(_ctx, dataBasePtr, volume, speed, looping, channel)
+        }
     }
 
     /// Stops playback for a player

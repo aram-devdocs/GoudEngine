@@ -135,8 +135,13 @@ def convert_param_to_ffi(pname: str, ptype: str) -> str:
     if base == "Entity":
         return f"{pname}.bits"
     if base == "string":
-        # String params handled with withCString at the call site
         return f"{pname}Ptr"
+    if base in ("bytes", "u8[]", "Data"):
+        return f"{pname}BasePtr"
+    if base == "Entity[]":
+        return f"{pname}BasePtr"
+    if base.endswith("[]"):
+        return f"{pname}BasePtr"
     if is_enum(base):
         enum_def = schema.get("enums", {}).get(base, {})
         underlying = enum_def.get("underlying", "i32")
@@ -157,6 +162,10 @@ def convert_return_from_ffi(expr: str, ret_type: str) -> str:
         return f"Entity(bits: {expr})"
     if base == "bool":
         return f"({expr} != 0)" if "CBool" not in expr else expr
+    if base == "string":
+        return f"String(cString: {expr})"
+    if base.endswith("[]"):
+        return f"{expr} /* TODO: array return needs manual FFI bridge */"
     if is_enum(base):
         return f"{base}(rawValue: Int({expr}))!"
     if is_value_type(base):

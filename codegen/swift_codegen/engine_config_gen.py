@@ -11,7 +11,7 @@ from .shared_helpers import (
     ffi_func_name,
     convert_param_to_ffi,
 )
-from .game_gen import _emit_string_wrapping
+from .game_gen import _emit_unsafe_wrapping
 
 
 def gen_engine_config() -> None:
@@ -87,7 +87,7 @@ def gen_engine_config() -> None:
         lines.append(f"    @discardableResult")
         lines.append(f"    public func {to_camel(mname)}({param_str}) -> EngineConfig {{")
         if string_params:
-            _emit_string_wrapping(lines, string_params, f"        {ffi_name}({call_str})", "        ")
+            _emit_unsafe_wrapping(lines, string_params, [], [], f"        {ffi_name}({call_str})", "        ")
         else:
             lines.append(f"        {ffi_name}({call_str})")
         lines.append("        return self")

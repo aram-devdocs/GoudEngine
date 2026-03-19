@@ -2,6 +2,9 @@
 import Foundation
 import CGoudEngine
 
+// Simple math helpers (Vec2, Color, Rect) are the one intentional local-logic exception
+// per CLAUDE.md. All other game logic lives in Rust and is called via FFI.
+
 /// RGBA color with float components in 0.0-1.0 range
 public struct Color: Equatable {
     public var r: Float

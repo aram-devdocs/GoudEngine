@@ -169,9 +169,11 @@ def _gen_method(tool_name: str, m: dict, ffi_name: str, handle_var: str) -> list
     base_ret = ret_type.rstrip("?")
     swift_ret = swift_type(ret_type) if ret_type != "void" else None
 
-    # Check for string params
+    # Classify params needing unsafe wrapping
     string_params = [p for p in params if p["type"] == "string"]
-    has_strings = len(string_params) > 0
+    data_params = [p for p in params if p["type"] in ("bytes", "u8[]", "Data")]
+    array_params = [p for p in params if p["type"].endswith("[]") and p["type"] not in ("u8[]",) and p not in data_params]
+    needs_wrapping = string_params or data_params or array_params
 
     # Build call args
     call_args = [handle_var]
@@ -187,17 +189,18 @@ def _gen_method(tool_name: str, m: dict, ffi_name: str, handle_var: str) -> list
 
     if ret_type == "void":
         lines.append(f"    public func {swift_name}({param_str}) {{")
-        if has_strings:
-            _emit_string_wrapping(lines, string_params, f"        {ffi_name}({call_str})", "        ")
+        inner = f"{ffi_name}({call_str})"
+        if needs_wrapping:
+            _emit_unsafe_wrapping(lines, string_params, data_params, array_params, f"        {inner}", "        ")
         else:
-            lines.append(f"        {ffi_name}({call_str})")
+            lines.append(f"        {inner}")
         lines.append("    }")
     else:
         lines.append(f"    public func {swift_name}({param_str}) -> {swift_ret} {{")
         raw_call = f"{ffi_name}({call_str})"
         result_expr = convert_return_from_ffi(raw_call, ret_type) if base_ret != "void" else raw_call
-        if has_strings:
-            _emit_string_wrapping(lines, string_params, f"        return {result_expr}", "        ")
+        if needs_wrapping:
+            _emit_unsafe_wrapping(lines, string_params, data_params, array_params, f"        return {result_expr}", "        ")
         else:
             lines.append(f"        return {result_expr}")
         lines.append("    }")
@@ -206,14 +209,43 @@ def _gen_method(tool_name: str, m: dict, ffi_name: str, handle_var: str) -> list
     return lines
 
 
-def _emit_string_wrapping(lines: list[str], string_params: list[dict], inner_line: str, base_indent: str) -> None:
-    """Wrap string params with withCString closures."""
+def _emit_unsafe_wrapping(
+    lines: list[str],
+    string_params: list[dict],
+    data_params: list[dict],
+    array_params: list[dict],
+    inner_line: str,
+    base_indent: str,
+) -> None:
+    """Wrap string, Data, and array params with appropriate unsafe closures."""
     indent = base_indent
     for sp in string_params:
         spname = to_camel(sp["name"])
         lines.append(f"{indent}{spname}.withCString {{ {spname}Ptr in")
         indent += "    "
+    for dp in data_params:
+        dpname = to_camel(dp["name"])
+        lines.append(f"{indent}{dpname}.withUnsafeBytes {{ {dpname}RawBuf in")
+        lines.append(f"{indent}    let {dpname}BasePtr = {dpname}RawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)")
+        indent += "    "
+    for ap in array_params:
+        apname = to_camel(ap["name"])
+        elem = ap["type"][:-2]
+        if elem == "Entity":
+            lines.append(f"{indent}let {apname}Bits = {apname}.map {{ $0.bits }}")
+            lines.append(f"{indent}{apname}Bits.withUnsafeBufferPointer {{ {apname}Buf in")
+            lines.append(f"{indent}    let {apname}BasePtr = {apname}Buf.baseAddress!")
+        else:
+            lines.append(f"{indent}{apname}.withUnsafeBufferPointer {{ {apname}Buf in")
+            lines.append(f"{indent}    let {apname}BasePtr = {apname}Buf.baseAddress!")
+        indent += "    "
     lines.append(f"{indent}{inner_line.strip()}")
+    for _ in array_params:
+        indent = indent[:-4]
+        lines.append(f"{indent}}}")
+    for _ in data_params:
+        indent = indent[:-4]
+        lines.append(f"{indent}}}")
     for _ in string_params:
         indent = indent[:-4]
         lines.append(f"{indent}}}")

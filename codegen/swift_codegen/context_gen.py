@@ -12,7 +12,7 @@ from .shared_helpers import (
     convert_param_to_ffi,
     convert_return_from_ffi,
 )
-from .game_gen import _gen_method, _emit_string_wrapping
+from .game_gen import _gen_method
 
 
 def gen_context() -> None:

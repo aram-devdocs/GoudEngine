@@ -8,6 +8,28 @@ public enum RecoveryClass: Int {
     case degraded = 2
 }
 
+import CGoudEngine
+
+func readStringBuffer(_ call: (UnsafeMutablePointer<UInt8>?, Int32) -> Int32) -> String {
+    let bufLen: Int32 = 256
+    var buf = [UInt8](repeating: 0, count: Int(bufLen))
+    let written = call(&buf, bufLen)
+    guard written > 0 else { return "" }
+    return String(bytes: buf[..<Int(written)], encoding: .utf8) ?? ""
+}
+
+private func categoryFromCode(_ code: Int32) -> String {
+    if code >= 900 { return "Internal" }
+    if code >= 600 { return "Provider" }
+    if code >= 500 { return "System" }
+    if code >= 400 { return "Input" }
+    if code >= 300 { return "Entity" }
+    if code >= 200 { return "Graphics" }
+    if code >= 100 { return "Resource" }
+    if code >= 1 { return "Context" }
+    return "Unknown"
+}
+
 /// Base error type for all GoudEngine errors.
 public class GoudError: Error, CustomStringConvertible {
     public let errorCode: Int32
@@ -38,6 +60,24 @@ public class GoudError: Error, CustomStringConvertible {
 
     public var description: String {
         "\(category)(\(errorCode)): \(message) [\(subsystem)/\(operation)] recovery=\(recovery)"
+    }
+
+    /// Query FFI error state and build a GoudError.
+    /// Returns nil if no error is set (code == 0).
+    public static func fromLastError() -> GoudError? {
+        let code = goud_last_error_code()
+        guard code != 0 else { return nil }
+        let message = readStringBuffer { buf, len in goud_last_error_message(buf, len) }
+        let subsystem = readStringBuffer { buf, len in goud_last_error_subsystem(buf, len) }
+        let operation = readStringBuffer { buf, len in goud_last_error_operation(buf, len) }
+        let recovery = RecoveryClass(rawValue: Int(goud_error_recovery_class(code))) ?? .fatal
+        let hint = readStringBuffer { buf, len in goud_error_recovery_hint(code, buf, len) }
+        let category = categoryFromCode(code)
+        return GoudError(
+            errorCode: code, message: message, category: category,
+            subsystem: subsystem, operation: operation,
+            recovery: recovery, recoveryHint: hint
+        )
     }
 }
 
