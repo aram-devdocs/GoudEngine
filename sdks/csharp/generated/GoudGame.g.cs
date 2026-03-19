@@ -647,6 +647,126 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_render(_ctx);
         }
 
+        // ====================================================================
+        // Material System
+        // ====================================================================
+
+        /// <summary>Creates a 3D material</summary>
+        public uint CreateMaterial(int materialType, float r, float g, float b, float a, float shininess, float metallic = 0f, float roughness = 0.5f, float ao = 1f)
+        {
+            return NativeMethods.goud_renderer3d_create_material(_ctx, materialType, r, g, b, a, shininess, metallic, roughness, ao);
+        }
+
+        /// <summary>Updates a 3D material</summary>
+        public bool UpdateMaterial(uint materialId, int materialType, float r, float g, float b, float a, float shininess, float metallic = 0f, float roughness = 0.5f, float ao = 1f)
+        {
+            return NativeMethods.goud_renderer3d_update_material(_ctx, materialId, materialType, r, g, b, a, shininess, metallic, roughness, ao);
+        }
+
+        /// <summary>Removes a 3D material</summary>
+        public bool RemoveMaterial(uint materialId)
+        {
+            return NativeMethods.goud_renderer3d_remove_material(_ctx, materialId);
+        }
+
+        /// <summary>Binds a material to an object</summary>
+        public bool SetObjectMaterial(uint objectId, uint materialId)
+        {
+            return NativeMethods.goud_renderer3d_set_object_material(_ctx, objectId, materialId);
+        }
+
+        /// <summary>Gets the material ID bound to an object</summary>
+        public uint GetObjectMaterial(uint objectId)
+        {
+            return NativeMethods.goud_renderer3d_get_object_material(_ctx, objectId);
+        }
+
+        // ====================================================================
+        // Skinned Mesh
+        // ====================================================================
+
+        /// <summary>Creates a skinned mesh from raw vertex data</summary>
+        public uint CreateSkinnedMesh(float[] vertices)
+        {
+            unsafe
+            {
+                fixed (float* ptr = vertices)
+                {
+                    return NativeMethods.goud_renderer3d_create_skinned_mesh(_ctx, (IntPtr)ptr, (uint)vertices.Length);
+                }
+            }
+        }
+
+        /// <summary>Removes a skinned mesh</summary>
+        public bool RemoveSkinnedMesh(uint meshId)
+        {
+            return NativeMethods.goud_renderer3d_remove_skinned_mesh(_ctx, meshId);
+        }
+
+        /// <summary>Sets the position of a skinned mesh</summary>
+        public bool SetSkinnedMeshPosition(uint meshId, float x, float y, float z)
+        {
+            return NativeMethods.goud_renderer3d_set_skinned_mesh_position(_ctx, meshId, x, y, z);
+        }
+
+        /// <summary>Sets the rotation of a skinned mesh</summary>
+        public bool SetSkinnedMeshRotation(uint meshId, float x, float y, float z)
+        {
+            return NativeMethods.goud_renderer3d_set_skinned_mesh_rotation(_ctx, meshId, x, y, z);
+        }
+
+        /// <summary>Sets the scale of a skinned mesh</summary>
+        public bool SetSkinnedMeshScale(uint meshId, float x, float y, float z)
+        {
+            return NativeMethods.goud_renderer3d_set_skinned_mesh_scale(_ctx, meshId, x, y, z);
+        }
+
+        /// <summary>Updates bone matrices for a skinned mesh</summary>
+        public bool SetSkinnedMeshBones(uint meshId, float[] matrices, uint boneCount)
+        {
+            unsafe
+            {
+                fixed (float* ptr = matrices)
+                {
+                    return NativeMethods.goud_renderer3d_set_skinned_mesh_bones(_ctx, meshId, (IntPtr)ptr, boneCount);
+                }
+            }
+        }
+
+        // ====================================================================
+        // Post-Processing Pipeline
+        // ====================================================================
+
+        /// <summary>Adds a bloom pass to the post-processing pipeline</summary>
+        public int AddBloomPass(float threshold = 0.8f, float intensity = 1.0f)
+        {
+            return NativeMethods.goud_renderer3d_add_bloom_pass(_ctx, threshold, intensity);
+        }
+
+        /// <summary>Adds a Gaussian blur pass</summary>
+        public int AddBlurPass(uint radius = 2)
+        {
+            return NativeMethods.goud_renderer3d_add_blur_pass(_ctx, radius);
+        }
+
+        /// <summary>Adds a color grading pass</summary>
+        public int AddColorGradePass(float exposure = 1.0f, float contrast = 1.0f, float saturation = 1.0f)
+        {
+            return NativeMethods.goud_renderer3d_add_color_grade_pass(_ctx, exposure, contrast, saturation);
+        }
+
+        /// <summary>Removes a post-processing pass by index</summary>
+        public bool RemovePostprocessPass(uint index)
+        {
+            return NativeMethods.goud_renderer3d_remove_postprocess_pass(_ctx, index);
+        }
+
+        /// <summary>Returns the number of post-processing passes</summary>
+        public uint PostprocessPassCount()
+        {
+            return NativeMethods.goud_renderer3d_postprocess_pass_count(_ctx);
+        }
+
         /// <summary>Draws a sprite with source rectangle for sprite sheets</summary>
         public bool DrawSpriteRect(ulong texture, float x, float y, float width, float height, float rotation, float srcX, float srcY, float srcW, float srcH, Color? color = null)
         {

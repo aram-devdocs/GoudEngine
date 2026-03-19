@@ -133,3 +133,145 @@ fn test_fxaa_filter_softens_high_contrast_edge() {
     assert!(output[center] > 0);
     assert!(output[center] < 255);
 }
+
+// ============================================================================
+// Material System Tests
+// ============================================================================
+
+#[test]
+fn test_material_create_and_retrieve() {
+    use super::types::{Material3D, MaterialType};
+    let mut renderer = make_renderer();
+    let mat = Material3D {
+        material_type: MaterialType::Pbr,
+        ..Default::default()
+    };
+    let id = renderer.create_material(mat);
+    assert_ne!(id, 0);
+    let retrieved = renderer.get_material(id).expect("material should exist");
+    assert_eq!(retrieved.material_type, MaterialType::Pbr);
+}
+
+#[test]
+fn test_material_update_and_remove() {
+    use super::types::{Material3D, MaterialType};
+    let mut renderer = make_renderer();
+    let id = renderer.create_material(Material3D::default());
+    let updated = Material3D {
+        material_type: MaterialType::Unlit,
+        shininess: 64.0,
+        ..Default::default()
+    };
+    assert!(renderer.update_material(id, updated));
+    assert!(!renderer.update_material(9999, Material3D::default()));
+    assert!(renderer.remove_material(id));
+    assert!(!renderer.remove_material(id));
+}
+
+#[test]
+fn test_object_material_binding() {
+    use super::types::Material3D;
+    let mut renderer = make_renderer();
+    let obj_id = renderer.create_primitive(PrimitiveCreateInfo {
+        primitive_type: PrimitiveType::Cube,
+        width: 1.0,
+        height: 1.0,
+        depth: 1.0,
+        segments: 1,
+        texture_id: 0,
+    });
+    let mat_id = renderer.create_material(Material3D::default());
+    assert!(renderer.set_object_material(obj_id, mat_id));
+    assert_eq!(renderer.get_object_material(obj_id), Some(mat_id));
+    assert!(!renderer.set_object_material(9999, mat_id));
+}
+
+// ============================================================================
+// PBR Properties Tests
+// ============================================================================
+
+#[test]
+fn test_pbr_properties_defaults() {
+    use super::types::PbrProperties;
+    let pbr = PbrProperties::default();
+    assert!((pbr.metallic - 0.0).abs() < f32::EPSILON);
+    assert!((pbr.roughness - 0.5).abs() < f32::EPSILON);
+    assert!((pbr.ao - 1.0).abs() < f32::EPSILON);
+}
+
+// ============================================================================
+// Skeletal Mesh Tests
+// ============================================================================
+
+#[test]
+fn test_skinned_mesh_create_and_remove() {
+    use super::types::Skeleton3D;
+    let mut renderer = make_renderer();
+    // 16 floats per vertex, 1 vertex
+    let vertices = vec![0.0f32; 16];
+    let skeleton = Skeleton3D::new();
+    let id = renderer.create_skinned_mesh(vertices, skeleton);
+    assert_ne!(id, 0);
+    assert!(renderer.remove_skinned_mesh(id));
+    assert!(!renderer.remove_skinned_mesh(id));
+}
+
+#[test]
+fn test_skinned_mesh_transform() {
+    use super::types::Skeleton3D;
+    let mut renderer = make_renderer();
+    let vertices = vec![0.0f32; 16];
+    let id = renderer.create_skinned_mesh(vertices, Skeleton3D::new());
+    assert!(renderer.set_skinned_mesh_position(id, 1.0, 2.0, 3.0));
+    assert!(renderer.set_skinned_mesh_rotation(id, 45.0, 90.0, 0.0));
+    assert!(renderer.set_skinned_mesh_scale(id, 2.0, 2.0, 2.0));
+    assert!(!renderer.set_skinned_mesh_position(9999, 0.0, 0.0, 0.0));
+}
+
+#[test]
+fn test_skeleton_bone_count() {
+    use super::types::{Bone3D, Skeleton3D};
+    let mut skel = Skeleton3D::new();
+    assert_eq!(skel.bone_count(), 0);
+    skel.bones.push(Bone3D {
+        name: "root".to_string(),
+        parent_index: -1,
+        inverse_bind_matrix: [
+            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        ],
+    });
+    assert_eq!(skel.bone_count(), 1);
+}
+
+// ============================================================================
+// Post-Processing Pipeline Tests
+// ============================================================================
+
+#[test]
+fn test_postprocess_pipeline_add_and_remove() {
+    use super::types::{BloomPass, PostProcessPipeline};
+    let mut pipeline = PostProcessPipeline::new();
+    assert_eq!(pipeline.pass_count(), 0);
+    pipeline.add_pass(Box::new(BloomPass::default()));
+    assert_eq!(pipeline.pass_count(), 1);
+    assert!(pipeline.remove_pass(0));
+    assert_eq!(pipeline.pass_count(), 0);
+    assert!(!pipeline.remove_pass(0));
+}
+
+#[test]
+fn test_postprocess_pipeline_processes_data() {
+    use super::types::{ColorGradePass, PostProcessPipeline};
+    let mut pipeline = PostProcessPipeline::new();
+    pipeline.add_pass(Box::new(ColorGradePass {
+        exposure: 2.0,
+        contrast: 1.0,
+        saturation: 1.0,
+        enabled: true,
+    }));
+    // 2x2 image, gray pixels
+    let mut data = vec![128u8; 16];
+    pipeline.run(2, 2, &mut data);
+    // Exposure of 2.0 should brighten the pixels
+    assert!(data[0] > 128);
+}

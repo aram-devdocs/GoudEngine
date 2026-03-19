@@ -11,7 +11,8 @@ use crate::libs::graphics::backend::{
 use cgmath::{perspective, Deg, Matrix4};
 
 impl Renderer3D {
-    /// Render the scene — grid, objects, and overlays — using the current camera and light state.
+    /// Render the scene -- grid, objects, skinned meshes, and overlays --
+    /// using the current camera and light state.
     pub fn render(&mut self, texture_manager: Option<&dyn TextureManagerTrait>) {
         self.stats = Default::default();
         self.backend.set_viewport(
@@ -53,7 +54,6 @@ impl Renderer3D {
 
         if self.grid_config.enabled {
             let _ = self.backend.bind_shader(self.grid_shader_handle);
-
             self.backend
                 .set_uniform_mat4(self.grid_uniforms.view, &view_arr);
             self.backend
@@ -78,12 +78,10 @@ impl Renderer3D {
             );
             self.backend
                 .set_uniform_float(self.grid_uniforms.fog_density, self.fog_config.density);
-
             self.backend.enable_blending();
             self.backend
                 .set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
             self.backend.set_depth_mask(false);
-
             let _ = self.backend.bind_buffer(self.grid_buffer);
             self.backend.set_vertex_attributes(&self.grid_layout);
             let _ = self.backend.draw_arrays(
@@ -91,7 +89,6 @@ impl Renderer3D {
                 0,
                 self.grid_vertex_count as u32,
             );
-
             self.backend.set_line_width(3.0);
             let _ = self.backend.bind_buffer(self.axis_buffer);
             self.backend.set_vertex_attributes(&self.grid_layout);
@@ -103,11 +100,54 @@ impl Renderer3D {
                 self.axis_vertex_count as u32,
             );
             self.backend.set_line_width(1.0);
-
             self.backend.set_depth_mask(true);
             self.backend.disable_blending();
             self.backend.unbind_shader();
         }
+
+        // Material-aware object rendering: snapshot to avoid borrow conflicts.
+        let obj_snapshots: Vec<(
+            crate::libs::graphics::backend::BufferHandle,
+            i32,
+            cgmath::Vector3<f32>,
+            cgmath::Vector3<f32>,
+            cgmath::Vector3<f32>,
+            [f32; 4],
+            u32,
+        )> = self
+            .objects
+            .iter()
+            .map(|(&id, obj)| {
+                if let Some(&mat_id) = self.object_materials.get(&id) {
+                    if let Some(mat) = self.materials.get(&mat_id) {
+                        let c = &mat.color;
+                        return (
+                            obj.buffer,
+                            obj.vertex_count,
+                            obj.position,
+                            obj.rotation,
+                            obj.scale,
+                            [c.x, c.y, c.z, c.w],
+                            obj.texture_id,
+                        );
+                    }
+                }
+                let bc = if obj.texture_id > 0 {
+                    [1.0, 1.0, 1.0, 1.0]
+                } else {
+                    [0.8, 0.8, 0.8, 1.0]
+                };
+                (
+                    obj.buffer,
+                    obj.vertex_count,
+                    obj.position,
+                    obj.rotation,
+                    obj.scale,
+                    bc,
+                    obj.texture_id,
+                )
+            })
+            .collect();
 
         let _ = self.backend.bind_shader(self.shader_handle);
         let uniforms = self.uniforms.clone();
@@ -119,34 +159,69 @@ impl Renderer3D {
             &uniforms,
         );
 
-        for obj in self.objects.values() {
-            let model = Self::create_model_matrix(obj.position, obj.rotation, obj.scale);
+        for (buffer, vc, pos, rot, scl, bc, tid) in &obj_snapshots {
+            let model = Self::create_model_matrix(*pos, *rot, *scl);
             let model_arr = mat4_to_array(&model);
             self.backend
                 .set_uniform_mat4(self.uniforms.model, &model_arr);
-
-            if obj.texture_id > 0 {
+            if *tid > 0 {
                 if let Some(tm) = texture_manager {
-                    tm.bind_texture(obj.texture_id, 0);
+                    tm.bind_texture(*tid, 0);
                 } else {
-                    let texture_handle = TextureHandle::new(obj.texture_id, 1);
+                    let texture_handle = TextureHandle::new(*tid, 1);
                     let _ = self.backend.bind_texture(texture_handle, 0);
                 }
                 self.backend.set_uniform_int(self.uniforms.use_texture, 1);
-                self.backend
-                    .set_uniform_vec4(self.uniforms.object_color, 1.0, 1.0, 1.0, 1.0);
             } else {
+                self.backend.set_uniform_int(self.uniforms.use_texture, 0);
+            }
+            self.backend
+                .set_uniform_vec4(self.uniforms.object_color, bc[0], bc[1], bc[2], bc[3]);
+            let _ = self.backend.bind_buffer(*buffer);
+            self.backend.set_vertex_attributes(&self.object_layout);
+            let _ = self
+                .backend
+                .draw_arrays(PrimitiveTopology::Triangles, 0, *vc as u32);
+            self.stats.draw_calls += 1;
+        }
+
+        // Skinned mesh rendering pass.
+        if !self.skinned_meshes.is_empty() {
+            let skinned_snaps: Vec<(
+                crate::libs::graphics::backend::BufferHandle,
+                i32,
+                cgmath::Vector3<f32>,
+                cgmath::Vector3<f32>,
+                cgmath::Vector3<f32>,
+            )> = self
+                .skinned_meshes
+                .values()
+                .map(|sm| {
+                    (
+                        sm.buffer,
+                        sm.vertex_count,
+                        sm.position,
+                        sm.rotation,
+                        sm.scale,
+                    )
+                })
+                .collect();
+
+            for (buffer, vc, pos, rot, scl) in &skinned_snaps {
+                let model = Self::create_model_matrix(*pos, *rot, *scl);
+                let model_arr = mat4_to_array(&model);
+                self.backend
+                    .set_uniform_mat4(self.uniforms.model, &model_arr);
                 self.backend.set_uniform_int(self.uniforms.use_texture, 0);
                 self.backend
                     .set_uniform_vec4(self.uniforms.object_color, 0.8, 0.8, 0.8, 1.0);
+                let _ = self.backend.bind_buffer(*buffer);
+                self.backend.set_vertex_attributes(&self.object_layout);
+                let _ = self
+                    .backend
+                    .draw_arrays(PrimitiveTopology::Triangles, 0, *vc as u32);
+                self.stats.draw_calls += 1;
             }
-
-            let _ = self.backend.bind_buffer(obj.buffer);
-            self.backend.set_vertex_attributes(&self.object_layout);
-            let _ =
-                self.backend
-                    .draw_arrays(PrimitiveTopology::Triangles, 0, obj.vertex_count as u32);
-            self.stats.draw_calls += 1;
         }
 
         self.backend.unbind_shader();
@@ -161,7 +236,6 @@ impl Renderer3D {
                 shadow_map.is_some(),
                 &instanced_uniforms,
             );
-
             for mesh in self.instanced_meshes.values() {
                 if mesh.texture_id > 0 {
                     if let Some(tm) = texture_manager {
@@ -201,7 +275,6 @@ impl Renderer3D {
                 self.stats.instanced_draw_calls += 1;
                 self.stats.active_instances += mesh.instances.len() as u32;
             }
-
             if !self.particle_emitters.is_empty() {
                 self.backend.enable_blending();
                 self.backend
@@ -259,13 +332,17 @@ impl Renderer3D {
             self.backend.unbind_shader();
         }
 
+        // Post-processing pipeline.
+        if self.postprocess_pipeline.pass_count() > 0 {
+            self.apply_postprocess_pipeline();
+        }
+
         if self.anti_aliasing_mode.uses_fxaa() {
             self.apply_fxaa_pass();
         }
 
         if self.debug_draw_vertex_count > 0 {
             let _ = self.backend.bind_shader(self.grid_shader_handle);
-
             self.backend
                 .set_uniform_mat4(self.grid_uniforms.view, &view_arr);
             self.backend
@@ -290,12 +367,10 @@ impl Renderer3D {
             );
             self.backend
                 .set_uniform_float(self.grid_uniforms.fog_density, self.fog_config.density);
-
             self.backend.enable_blending();
             self.backend
                 .set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
             self.backend.set_depth_mask(false);
-
             let _ = self.backend.bind_buffer(self.debug_draw_buffer);
             self.backend.set_vertex_attributes(&self.grid_layout);
             let _ = self.backend.draw_arrays(
@@ -303,7 +378,6 @@ impl Renderer3D {
                 0,
                 self.debug_draw_vertex_count as u32,
             );
-
             self.backend.set_depth_mask(true);
             self.backend.disable_blending();
             self.backend.unbind_shader();
@@ -355,7 +429,6 @@ impl Renderer3D {
         );
         self.backend
             .set_uniform_float(uniforms.fog_density, self.fog_config.density);
-
         let light_count = self.lights.len().min(MAX_LIGHTS) as i32;
         self.backend
             .set_uniform_int(uniforms.num_lights, light_count);
@@ -426,7 +499,6 @@ impl Renderer3D {
             return;
         };
         let filtered = apply_fxaa_like_filter(width, height, &frame);
-
         if self.postprocess_texture.is_none() || self.postprocess_texture_size != (width, height) {
             if let Some(texture) = self.postprocess_texture.take() {
                 self.backend.destroy_texture(texture);
@@ -448,11 +520,47 @@ impl Renderer3D {
                 .backend
                 .update_texture(texture, 0, 0, width, height, &filtered);
         }
-
         let Some(texture) = self.postprocess_texture else {
             return;
         };
+        self.blit_fullscreen_texture(texture);
+    }
 
+    fn apply_postprocess_pipeline(&mut self) {
+        let width = self.viewport.2.max(1);
+        let height = self.viewport.3.max(1);
+        let Ok(mut frame) = self.backend.read_default_framebuffer_rgba8(width, height) else {
+            return;
+        };
+        self.postprocess_pipeline.run(width, height, &mut frame);
+        if self.postprocess_texture.is_none() || self.postprocess_texture_size != (width, height) {
+            if let Some(texture) = self.postprocess_texture.take() {
+                self.backend.destroy_texture(texture);
+            }
+            self.postprocess_texture = self
+                .backend
+                .create_texture(
+                    width,
+                    height,
+                    TextureFormat::RGBA8,
+                    TextureFilter::Linear,
+                    TextureWrap::ClampToEdge,
+                    &frame,
+                )
+                .ok();
+            self.postprocess_texture_size = (width, height);
+        } else if let Some(texture) = self.postprocess_texture {
+            let _ = self
+                .backend
+                .update_texture(texture, 0, 0, width, height, &frame);
+        }
+        let Some(texture) = self.postprocess_texture else {
+            return;
+        };
+        self.blit_fullscreen_texture(texture);
+    }
+
+    fn blit_fullscreen_texture(&mut self, texture: TextureHandle) {
         self.backend.disable_depth_test();
         self.backend.disable_culling();
         self.backend.set_depth_mask(false);

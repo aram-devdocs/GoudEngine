@@ -23,8 +23,8 @@ use super::shaders::{
     VERTEX_SHADER_3D, VERTEX_SHADER_3D_WGSL,
 };
 use super::types::{
-    AntiAliasingMode, Camera3D, FogConfig, GridConfig, InstancedMesh, Light, Object3D,
-    ParticleEmitter, Renderer3DStats, SkyboxConfig,
+    AntiAliasingMode, Camera3D, FogConfig, GridConfig, InstancedMesh, Light, Material3D, Object3D,
+    ParticleEmitter, PostProcessPipeline, Renderer3DStats, SkinnedMesh3D, SkyboxConfig,
 };
 
 use crate::libs::graphics::backend::ShaderHandle;
@@ -81,6 +81,12 @@ pub struct Renderer3D {
     pub(super) shadow_texture: Option<crate::libs::graphics::backend::TextureHandle>,
     pub(super) shadow_map_size: u32,
     pub(super) shadow_bias: f32,
+    pub(super) materials: HashMap<u32, Material3D>,
+    pub(super) object_materials: HashMap<u32, u32>,
+    pub(super) next_material_id: u32,
+    pub(super) skinned_meshes: HashMap<u32, SkinnedMesh3D>,
+    pub(super) next_skinned_mesh_id: u32,
+    pub(super) postprocess_pipeline: PostProcessPipeline,
     pub(super) stats: Renderer3DStats,
     pub(super) anti_aliasing_mode: AntiAliasingMode,
     pub(super) msaa_samples: u32,
@@ -195,6 +201,12 @@ impl Renderer3D {
             shadow_texture: None,
             shadow_map_size: 256,
             shadow_bias: 0.005,
+            materials: HashMap::new(),
+            object_materials: HashMap::new(),
+            next_material_id: 1,
+            skinned_meshes: HashMap::new(),
+            next_skinned_mesh_id: 1,
+            postprocess_pipeline: PostProcessPipeline::new(),
             stats: Renderer3DStats::default(),
             anti_aliasing_mode: AntiAliasingMode::Off,
             msaa_samples: 1,
@@ -426,6 +438,158 @@ impl Renderer3D {
 
         self.debug_draw_vertex_count = (vertices.len() / 6) as i32;
     }
+
+    // ========================================================================
+    // Material System
+    // ========================================================================
+
+    /// Create a material and return its ID.
+    pub fn create_material(&mut self, material: Material3D) -> u32 {
+        let id = self.next_material_id;
+        self.next_material_id += 1;
+        self.materials.insert(id, material);
+        id
+    }
+
+    /// Update an existing material. Returns `true` if the material existed.
+    pub fn update_material(&mut self, id: u32, material: Material3D) -> bool {
+        use std::collections::hash_map::Entry;
+        if let Entry::Occupied(mut e) = self.materials.entry(id) {
+            e.insert(material);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Remove a material by ID. Returns `true` if it existed.
+    pub fn remove_material(&mut self, id: u32) -> bool {
+        self.materials.remove(&id).is_some()
+    }
+
+    /// Bind a material to an object. Returns `true` if the object exists.
+    pub fn set_object_material(&mut self, object_id: u32, material_id: u32) -> bool {
+        if self.objects.contains_key(&object_id) {
+            self.object_materials.insert(object_id, material_id);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Get the material ID bound to an object, if any.
+    pub fn get_object_material(&self, object_id: u32) -> Option<u32> {
+        self.object_materials.get(&object_id).copied()
+    }
+
+    /// Get a reference to a material by ID.
+    pub fn get_material(&self, id: u32) -> Option<&Material3D> {
+        self.materials.get(&id)
+    }
+
+    // ========================================================================
+    // Skinned Mesh
+    // ========================================================================
+
+    /// Create a skinned mesh and return its ID.
+    pub fn create_skinned_mesh(
+        &mut self,
+        vertices: Vec<f32>,
+        skeleton: super::types::Skeleton3D,
+    ) -> u32 {
+        use super::mesh::upload_buffer;
+        let buffer = match upload_buffer(self.backend.as_mut(), &vertices) {
+            Ok(h) => h,
+            Err(e) => {
+                log::error!("Failed to create skinned mesh buffer: {e}");
+                return 0;
+            }
+        };
+        // Skinned vertex layout: pos(3) + normal(3) + uv(2) + bone_ids(4) + bone_weights(4) = 16 floats
+        let vertex_count = (vertices.len() / 16) as i32;
+        let bone_count = skeleton.bone_count();
+        let identity: [f32; 16] = [
+            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        ];
+        let bone_matrices = vec![identity; bone_count];
+
+        let id = self.next_skinned_mesh_id;
+        self.next_skinned_mesh_id += 1;
+        self.skinned_meshes.insert(
+            id,
+            SkinnedMesh3D {
+                vertices,
+                skeleton,
+                bone_matrices,
+                buffer,
+                vertex_count,
+                position: cgmath::Vector3::new(0.0, 0.0, 0.0),
+                rotation: cgmath::Vector3::new(0.0, 0.0, 0.0),
+                scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
+            },
+        );
+        id
+    }
+
+    /// Remove a skinned mesh by ID. Returns `true` if it existed.
+    pub fn remove_skinned_mesh(&mut self, id: u32) -> bool {
+        if let Some(mesh) = self.skinned_meshes.remove(&id) {
+            self.backend.destroy_buffer(mesh.buffer);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Set the position of a skinned mesh. Returns `true` if found.
+    pub fn set_skinned_mesh_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
+        if let Some(mesh) = self.skinned_meshes.get_mut(&id) {
+            mesh.position = cgmath::Vector3::new(x, y, z);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Set the rotation of a skinned mesh. Returns `true` if found.
+    pub fn set_skinned_mesh_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
+        if let Some(mesh) = self.skinned_meshes.get_mut(&id) {
+            mesh.rotation = cgmath::Vector3::new(x, y, z);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Set the scale of a skinned mesh. Returns `true` if found.
+    pub fn set_skinned_mesh_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
+        if let Some(mesh) = self.skinned_meshes.get_mut(&id) {
+            mesh.scale = cgmath::Vector3::new(x, y, z);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Update bone matrices for a skinned mesh. Returns `true` if found.
+    pub fn set_skinned_mesh_bone_matrices(&mut self, id: u32, matrices: Vec<[f32; 16]>) -> bool {
+        if let Some(mesh) = self.skinned_meshes.get_mut(&id) {
+            mesh.bone_matrices = matrices;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Get a reference to the post-processing pipeline.
+    pub fn postprocess_pipeline(&self) -> &PostProcessPipeline {
+        &self.postprocess_pipeline
+    }
+
+    /// Get a mutable reference to the post-processing pipeline.
+    pub fn postprocess_pipeline_mut(&mut self) -> &mut PostProcessPipeline {
+        &mut self.postprocess_pipeline
+    }
 }
 
 impl Drop for Renderer3D {
@@ -439,6 +603,9 @@ impl Drop for Renderer3D {
         }
         for emitter in self.particle_emitters.values() {
             self.backend.destroy_buffer(emitter.instance_buffer);
+        }
+        for mesh in self.skinned_meshes.values() {
+            self.backend.destroy_buffer(mesh.buffer);
         }
         self.backend.destroy_buffer(self.grid_buffer);
         self.backend.destroy_buffer(self.axis_buffer);
