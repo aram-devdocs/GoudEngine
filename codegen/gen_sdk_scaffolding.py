@@ -430,11 +430,52 @@ def gen_typescript_scaffolding() -> None:
     write_generated_json(typescript_dir / "wasm" / "package.json", wasm_package)
 
 
+def gen_swift_scaffolding() -> None:
+    swift_dir = SDKS_DIR / "swift"
+
+    package_swift = "\n".join([
+        "// swift-tools-version: 5.9",
+        f"// {HEADER_COMMENT}",
+        "",
+        "import PackageDescription",
+        "",
+        "let package = Package(",
+        '    name: "GoudEngine",',
+        "    platforms: [",
+        "        .macOS(.v13),",
+        "        .iOS(.v16),",
+        "    ],",
+        "    products: [",
+        '        .library(name: "GoudEngine", targets: ["GoudEngine"]),',
+        "    ],",
+        "    targets: [",
+        "        .systemLibrary(",
+        '            name: "CGoudEngine",',
+        '            path: "Sources/CGoudEngine"',
+        "        ),",
+        "        .target(",
+        '            name: "GoudEngine",',
+        '            dependencies: ["CGoudEngine"],',
+        '            path: "Sources/GoudEngine"',
+        "        ),",
+        "        .testTarget(",
+        '            name: "GoudEngineTests",',
+        '            dependencies: ["GoudEngine"],',
+        '            path: "Tests/GoudEngineTests"',
+        "        ),",
+        "    ]",
+        ")",
+        "",
+    ])
+    write_generated(swift_dir / "Package.swift", package_swift)
+
+
 def main() -> None:
     print("Generating SDK package/build scaffolding...")
     gen_csharp_scaffolding()
     gen_python_scaffolding()
     gen_typescript_scaffolding()
+    gen_swift_scaffolding()
     print("SDK package/build scaffolding generation complete.")
 
 
