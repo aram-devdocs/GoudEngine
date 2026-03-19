@@ -766,6 +766,11 @@ func GoudEngineConfigDestroy(handle C.EngineConfigHandle) {
 	C.goud_engine_config_destroy(handle)
 }
 
+// GoudEngineConfigSetAspectRatioLock wraps goud_engine_config_set_aspect_ratio_lock.
+func GoudEngineConfigSetAspectRatioLock(handle C.EngineConfigHandle, lock uint32) bool {
+	return bool(C.goud_engine_config_set_aspect_ratio_lock(handle, C.uint32_t(lock)))
+}
+
 // GoudEngineConfigSetDebugger wraps goud_engine_config_set_debugger.
 func GoudEngineConfigSetDebugger(handle C.EngineConfigHandle, debugger *C.GoudDebuggerConfig) bool {
 	if debugger == nil {
@@ -780,8 +785,8 @@ func GoudEngineConfigSetFpsOverlay(handle C.EngineConfigHandle, enabled bool) bo
 }
 
 // GoudEngineConfigSetFullscreen wraps goud_engine_config_set_fullscreen.
-func GoudEngineConfigSetFullscreen(handle C.EngineConfigHandle, enabled bool) bool {
-	return bool(C.goud_engine_config_set_fullscreen(handle, C._Bool(enabled)))
+func GoudEngineConfigSetFullscreen(handle C.EngineConfigHandle, mode uint32) bool {
+	return bool(C.goud_engine_config_set_fullscreen(handle, C.uint32_t(mode)))
 }
 
 // GoudEngineConfigSetPhysicsBackend2d wraps goud_engine_config_set_physics_backend_2d.
@@ -3101,6 +3106,22 @@ func GoudWindowGetDeltaTime(context_id C.GoudContextId) float32 {
 	return float32(C.goud_window_get_delta_time(context_id))
 }
 
+// GoudWindowGetFramebufferSize wraps goud_window_get_framebuffer_size.
+func GoudWindowGetFramebufferSize(context_id C.GoudContextId, out_width *C.uint32_t, out_height *C.uint32_t) bool {
+	if out_width == nil {
+		return false
+	}
+	if out_height == nil {
+		return false
+	}
+	return bool(C.goud_window_get_framebuffer_size(context_id, out_width, out_height))
+}
+
+// GoudWindowGetFullscreen wraps goud_window_get_fullscreen.
+func GoudWindowGetFullscreen(context_id C.GoudContextId) uint32 {
+	return uint32(C.goud_window_get_fullscreen(context_id))
+}
+
 // GoudWindowGetSize wraps goud_window_get_size.
 func GoudWindowGetSize(context_id C.GoudContextId, out_width *C.uint32_t, out_height *C.uint32_t) bool {
 	if out_width == nil {
@@ -3115,6 +3136,16 @@ func GoudWindowGetSize(context_id C.GoudContextId, out_width *C.uint32_t, out_he
 // GoudWindowPollEvents wraps goud_window_poll_events.
 func GoudWindowPollEvents(context_id C.GoudContextId) float32 {
 	return float32(C.goud_window_poll_events(context_id))
+}
+
+// GoudWindowSetAspectRatioLock wraps goud_window_set_aspect_ratio_lock.
+func GoudWindowSetAspectRatioLock(context_id C.GoudContextId, lock uint32) int32 {
+	return int32(C.goud_window_set_aspect_ratio_lock(context_id, C.uint32_t(lock)))
+}
+
+// GoudWindowSetFullscreen wraps goud_window_set_fullscreen.
+func GoudWindowSetFullscreen(context_id C.GoudContextId, mode uint32) int32 {
+	return int32(C.goud_window_set_fullscreen(context_id, C.uint32_t(mode)))
 }
 
 // GoudWindowSetShouldClose wraps goud_window_set_should_close.
@@ -3135,4 +3166,9 @@ func GoudWindowShouldClose(context_id C.GoudContextId) bool {
 // GoudWindowSwapBuffers wraps goud_window_swap_buffers.
 func GoudWindowSwapBuffers(context_id C.GoudContextId) {
 	C.goud_window_swap_buffers(context_id)
+}
+
+// GoudWindowToggleFullscreen wraps goud_window_toggle_fullscreen.
+func GoudWindowToggleFullscreen(context_id C.GoudContextId) int32 {
+	return int32(C.goud_window_toggle_fullscreen(context_id))
 }

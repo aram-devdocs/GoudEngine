@@ -341,8 +341,6 @@ def _setup():
     _lib.goud_engine_config_set_vsync.restype = ctypes.c_bool
     _lib.goud_engine_config_set_fullscreen.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
     _lib.goud_engine_config_set_fullscreen.restype = ctypes.c_bool
-    _lib.goud_engine_config_set_aspect_ratio_lock.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
-    _lib.goud_engine_config_set_aspect_ratio_lock.restype = ctypes.c_bool
     _lib.goud_engine_config_set_target_fps.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
     _lib.goud_engine_config_set_target_fps.restype = ctypes.c_bool
     _lib.goud_engine_config_set_fps_overlay.argtypes = [ctypes.c_void_p, ctypes.c_bool]
@@ -357,6 +355,8 @@ def _setup():
     _lib.goud_engine_config_set_window_backend.restype = ctypes.c_bool
     _lib.goud_engine_config_set_debugger.argtypes = [ctypes.c_void_p, ctypes.POINTER(GoudDebuggerConfig)]
     _lib.goud_engine_config_set_debugger.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_aspect_ratio_lock.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_aspect_ratio_lock.restype = ctypes.c_bool
     _lib.goud_engine_create.argtypes = [ctypes.c_void_p]
     _lib.goud_engine_create.restype = GoudContextId
 

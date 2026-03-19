@@ -353,7 +353,7 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
-        public static extern bool goud_engine_config_set_fullscreen(IntPtr handle, [MarshalAs(UnmanagedType.U1)] bool enabled);
+        public static extern bool goud_engine_config_set_fullscreen(IntPtr handle, uint mode);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
@@ -382,6 +382,10 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_engine_config_set_debugger(IntPtr handle, ref GoudDebuggerConfig debugger);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_aspect_ratio_lock(IntPtr handle, uint @lock);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern GoudContextId goud_engine_create(IntPtr handle);
@@ -480,6 +484,22 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_window_set_size(GoudContextId context_id, uint width, uint height);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_window_get_framebuffer_size(GoudContextId context_id, ref uint out_width, ref uint out_height);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_window_set_fullscreen(GoudContextId context_id, uint mode);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_window_get_fullscreen(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_window_toggle_fullscreen(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_window_set_aspect_ratio_lock(GoudContextId context_id, uint @lock);
 
         // renderer
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
