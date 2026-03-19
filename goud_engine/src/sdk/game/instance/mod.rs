@@ -24,7 +24,10 @@ use crate::core::event::Events;
 use crate::core::events::WindowResized;
 use crate::core::providers::types::DebugShape;
 use crate::core::providers::ProviderRegistry;
-use crate::rendering::{compute_render_viewport, RenderViewport, ViewportScaleMode};
+use crate::rendering::{
+    compute_render_viewport, compute_render_viewport_with_aspect_lock, RenderViewport,
+    ViewportScaleMode,
+};
 use crate::sdk::debug_overlay::DebugOverlay;
 use crate::sdk::game_config::{GameConfig, GameContext};
 use crate::ui::UiManager;
@@ -291,6 +294,7 @@ impl GoudGame {
             vsync: config.vsync,
             resizable: config.resizable,
             msaa_samples: config.msaa_samples,
+            fullscreen_mode: config.fullscreen_mode,
         };
 
         let native_runtime =
@@ -405,10 +409,11 @@ impl GoudGame {
         logical_size: (u32, u32),
         framebuffer_size: (u32, u32),
     ) {
-        self.render_viewport = compute_render_viewport(
+        self.render_viewport = compute_render_viewport_with_aspect_lock(
             framebuffer_size,
             self.design_resolution,
             self.viewport_scale_mode,
+            self.config.aspect_ratio_lock,
         );
         self.context.set_window_size(logical_size);
         self.apply_render_viewport();

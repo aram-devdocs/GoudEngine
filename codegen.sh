@@ -76,6 +76,9 @@ python3 codegen/gen_python.py
 echo "║ [9/15] Generating Go SDK cgo bindings..."
 python3 codegen/gen_go.py
 
+echo "║ [9b/15] Generating Go SDK wrapper package..."
+python3 codegen/gen_go_sdk.py
+
 echo "║ [10/15] Regenerating TypeScript Node SDK..."
 python3 codegen/gen_ts_node.py
 

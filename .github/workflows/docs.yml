@@ -150,6 +150,19 @@ jobs:
           docfx build docfx.json
           cp -r _site ../../docs/book/api/csharp
 
+      # ── C/C++ API docs (Doxygen) ─────────────────────────────────
+      - name: Install Doxygen and Graphviz
+        run: sudo apt-get install -y doxygen graphviz
+
+      - name: Build C/C++ API docs
+        working-directory: sdks
+        run: doxygen Doxyfile
+
+      - name: Copy C/C++ docs
+        run: |
+          mkdir -p docs/book/api/c-cpp
+          cp -r sdks/doxygen_output/html/* docs/book/api/c-cpp/
+
       - name: Validate generated docs artifacts
         run: bash scripts/check-generated-artifacts.sh --docs
 

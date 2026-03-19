@@ -64,6 +64,7 @@ pub unsafe extern "C" fn goud_window_create(
         vsync: true,
         resizable: true,
         msaa_samples: 1,
+        ..Default::default()
     };
 
     let native_runtime =

@@ -3580,6 +3580,31 @@ void goud_window_set_should_close(struct GoudContextId context_id, bool should_c
 float goud_window_get_delta_time(struct GoudContextId context_id);
 
 /**
+ * Gets the framebuffer size.
+ */
+bool goud_window_get_framebuffer_size(struct GoudContextId context_id, uint32_t *out_width, uint32_t *out_height);
+
+/**
+ * Sets the fullscreen mode on the window.
+ */
+int32_t goud_window_set_fullscreen(struct GoudContextId context_id, uint32_t mode);
+
+/**
+ * Gets the current fullscreen mode.
+ */
+uint32_t goud_window_get_fullscreen(struct GoudContextId context_id);
+
+/**
+ * Toggles between windowed and borderless fullscreen.
+ */
+int32_t goud_window_toggle_fullscreen(struct GoudContextId context_id);
+
+/**
+ * Sets the viewport aspect ratio lock.
+ */
+int32_t goud_window_set_aspect_ratio_lock(struct GoudContextId context_id, uint32_t lock);
+
+/**
  * Clears the window with the specified color.
  */
 void goud_window_clear(struct GoudContextId context_id, float r, float g, float b, float a);
@@ -3612,9 +3637,14 @@ bool goud_engine_config_set_size(EngineConfigHandle handle, uint32_t width, uint
 bool goud_engine_config_set_vsync(EngineConfigHandle handle, bool enabled);
 
 /**
- * Enables or disables fullscreen on an `EngineConfig`.
+ * Sets the fullscreen mode on an `EngineConfig`.
  */
-bool goud_engine_config_set_fullscreen(EngineConfigHandle handle, bool enabled);
+bool goud_engine_config_set_fullscreen(EngineConfigHandle handle, uint32_t mode);
+
+/**
+ * Sets the aspect ratio lock on an `EngineConfig`.
+ */
+bool goud_engine_config_set_aspect_ratio_lock(EngineConfigHandle handle, uint32_t lock);
 
 /**
  * Sets the target FPS on an `EngineConfig`.

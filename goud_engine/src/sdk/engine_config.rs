@@ -30,6 +30,8 @@ use crate::libs::graphics::AntiAliasingMode;
 #[cfg(feature = "rapier2d")]
 use crate::libs::providers::impls::Rapier2DPhysicsProvider;
 use crate::libs::providers::impls::SimplePhysicsProvider;
+#[cfg(test)]
+use crate::sdk::game_config::FullscreenMode;
 use crate::sdk::game_config::{GameConfig, RenderBackendKind, WindowBackendKind};
 
 /// Unified engine configuration combining window settings and provider selection.
@@ -285,7 +287,7 @@ mod tests {
         assert_eq!(gc.width, 1920);
         assert_eq!(gc.height, 1080);
         assert!(!gc.vsync);
-        assert!(gc.fullscreen);
+        assert_eq!(gc.fullscreen_mode, FullscreenMode::Borderless);
         assert_eq!(gc.anti_aliasing_mode, AntiAliasingMode::Fxaa);
         assert_eq!(gc.msaa_samples, 4);
         assert_eq!(gc.render_backend, RenderBackendKind::OpenGlLegacy);
@@ -306,7 +308,7 @@ mod tests {
         assert_eq!(game_config.width, 640);
         assert_eq!(game_config.height, 480);
         assert!(!game_config.vsync);
-        assert!(game_config.fullscreen);
+        assert_eq!(game_config.fullscreen_mode, FullscreenMode::Borderless);
     }
 
     #[test]
