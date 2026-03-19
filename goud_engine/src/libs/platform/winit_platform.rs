@@ -38,6 +38,7 @@ struct WinitState {
     title: String,
     _vsync: bool,
     resizable: bool,
+    fullscreen_mode: super::FullscreenMode,
 }
 
 /// winit-based platform backend for desktop (and future web) windowing.
@@ -75,6 +76,7 @@ impl WinitPlatform {
             title: config.title.clone(),
             _vsync: config.vsync,
             resizable: config.resizable,
+            fullscreen_mode: config.fullscreen_mode,
         };
 
         {
@@ -92,7 +94,14 @@ impl WinitPlatform {
             ));
         }
 
-        Ok(Self { event_loop, state })
+        let mut platform = Self { event_loop, state };
+
+        // Apply initial fullscreen mode from config.
+        if config.fullscreen_mode != super::FullscreenMode::Windowed {
+            platform.set_fullscreen(config.fullscreen_mode);
+        }
+
+        Ok(platform)
     }
 
     /// Returns the winit window handle for wgpu surface creation.
@@ -166,6 +175,34 @@ impl PlatformBackend for WinitPlatform {
                 )
             })
             .unwrap_or((self.state.width, self.state.height))
+    }
+
+    fn set_fullscreen(&mut self, mode: super::FullscreenMode) -> bool {
+        let Some(window) = self.state.window.as_ref() else {
+            return false;
+        };
+        let winit_mode = match mode {
+            super::FullscreenMode::Windowed => None,
+            super::FullscreenMode::Borderless => Some(winit::window::Fullscreen::Borderless(None)),
+            super::FullscreenMode::Exclusive => {
+                let monitor = match window.current_monitor() {
+                    Some(m) => m,
+                    None => return false,
+                };
+                let video_mode = match monitor.video_modes().next() {
+                    Some(v) => v,
+                    None => return false,
+                };
+                Some(winit::window::Fullscreen::Exclusive(video_mode))
+            }
+        };
+        window.set_fullscreen(winit_mode);
+        self.state.fullscreen_mode = mode;
+        true
+    }
+
+    fn get_fullscreen(&self) -> super::FullscreenMode {
+        self.state.fullscreen_mode
     }
 }
 

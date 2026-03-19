@@ -269,6 +269,204 @@ pub extern "C" fn goud_window_get_delta_time(context_id: GoudContextId) -> f32 {
     })
 }
 
+/// Gets the framebuffer size.
+///
+/// # Safety
+///
+/// `out_width` and `out_height` must be valid pointers.
+#[no_mangle]
+pub unsafe extern "C" fn goud_window_get_framebuffer_size(
+    context_id: GoudContextId,
+    out_width: *mut u32,
+    out_height: *mut u32,
+) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+    if out_width.is_null() || out_height.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
+        return false;
+    }
+
+    WINDOW_STATES.with(|cell| {
+        let states = cell.borrow();
+        let index = context_id.index() as usize;
+        if let Some(Some(state)) = states.get(index) {
+            let (w, h) = state.get_framebuffer_size();
+            // SAFETY: Caller guarantees pointers are valid.
+            *out_width = w;
+            *out_height = h;
+            true
+        } else {
+            false
+        }
+    })
+}
+
+/// Sets the fullscreen mode on the window.
+///
+/// Mode values:
+/// - 0: Windowed
+/// - 1: Borderless
+/// - 2: Exclusive
+///
+/// # Returns
+///
+/// 0 on success, negative error code on failure.
+#[no_mangle]
+pub extern "C" fn goud_window_set_fullscreen(context_id: GoudContextId, mode: u32) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    let fullscreen_mode = match crate::libs::platform::FullscreenMode::from_u32(mode) {
+        Some(m) => m,
+        None => {
+            set_last_error(GoudError::InvalidState(
+                "invalid fullscreen mode".to_string(),
+            ));
+            return -2;
+        }
+    };
+
+    WINDOW_STATES.with(|cell| {
+        let mut states = cell.borrow_mut();
+        let index = context_id.index() as usize;
+        match states.get_mut(index).and_then(|opt| opt.as_mut()) {
+            Some(state) => {
+                if state.platform.set_fullscreen(fullscreen_mode) {
+                    0
+                } else {
+                    set_last_error(GoudError::InvalidState(
+                        "fullscreen mode change was rejected".to_string(),
+                    ));
+                    -3
+                }
+            }
+            None => {
+                set_last_error(GoudError::InvalidContext);
+                -1
+            }
+        }
+    })
+}
+
+/// Gets the current fullscreen mode.
+///
+/// # Returns
+///
+/// The fullscreen mode as a u32 (0=Windowed, 1=Borderless, 2=Exclusive).
+#[no_mangle]
+pub extern "C" fn goud_window_get_fullscreen(context_id: GoudContextId) -> u32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return 0;
+    }
+
+    WINDOW_STATES.with(|cell| {
+        let states = cell.borrow();
+        let index = context_id.index() as usize;
+        states
+            .get(index)
+            .and_then(|opt| opt.as_ref())
+            .map(|state| state.platform.get_fullscreen() as u32)
+            .unwrap_or(0)
+    })
+}
+
+/// Toggles between windowed and borderless fullscreen.
+///
+/// # Returns
+///
+/// 0 on success, negative error code on failure.
+#[no_mangle]
+pub extern "C" fn goud_window_toggle_fullscreen(context_id: GoudContextId) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    WINDOW_STATES.with(|cell| {
+        let mut states = cell.borrow_mut();
+        let index = context_id.index() as usize;
+        match states.get_mut(index).and_then(|opt| opt.as_mut()) {
+            Some(state) => {
+                let current = state.platform.get_fullscreen();
+                let next = if current == crate::libs::platform::FullscreenMode::Windowed {
+                    crate::libs::platform::FullscreenMode::Borderless
+                } else {
+                    crate::libs::platform::FullscreenMode::Windowed
+                };
+                if state.platform.set_fullscreen(next) {
+                    0
+                } else {
+                    set_last_error(GoudError::InvalidState(
+                        "fullscreen toggle was rejected".to_string(),
+                    ));
+                    -3
+                }
+            }
+            None => {
+                set_last_error(GoudError::InvalidContext);
+                -1
+            }
+        }
+    })
+}
+
+/// Sets the viewport aspect ratio lock.
+///
+/// This function is only effective for contexts created via
+/// [`goud_engine_create`](super::super::engine_config::goud_engine_create),
+/// which use the full `GoudGame` pipeline with viewport sync.
+/// For contexts created via `goud_window_create`, use
+/// `goud_engine_config_set_aspect_ratio_lock` before engine creation.
+///
+/// Lock values:
+/// - 0: Free (no lock)
+/// - 1: 4:3
+/// - 2: 16:9
+/// - 3: 16:10
+///
+/// # Returns
+///
+/// 0 on success, negative error code on failure.
+#[no_mangle]
+pub extern "C" fn goud_window_set_aspect_ratio_lock(context_id: GoudContextId, lock: u32) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    let aspect_lock = match crate::rendering::AspectRatioLock::from_u32(lock) {
+        Some(l) => l,
+        None => {
+            set_last_error(GoudError::InvalidState(
+                "invalid aspect ratio lock".to_string(),
+            ));
+            return -2;
+        }
+    };
+
+    // The aspect ratio lock is applied during viewport sync which is managed
+    // by GoudGame. The FFI window path (goud_window_create) does not use
+    // GoudGame, so runtime changes are not supported there. Use
+    // goud_engine_config_set_aspect_ratio_lock before goud_engine_create.
+    //
+    // For engine contexts created via goud_engine_create, the lock is stored
+    // in GameConfig and takes effect on the next poll_events viewport sync.
+    // We cannot reach GameConfig from here, so we report this limitation.
+    let _ = aspect_lock;
+    set_last_error(GoudError::InvalidState(
+        "aspect ratio lock can only be set via goud_engine_config_set_aspect_ratio_lock before engine creation".to_string(),
+    ));
+    -3
+}
+
 /// Clears the window with the specified color.
 ///
 /// # Arguments

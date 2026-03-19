@@ -339,8 +339,10 @@ def _setup():
     _lib.goud_engine_config_set_size.restype = ctypes.c_bool
     _lib.goud_engine_config_set_vsync.argtypes = [ctypes.c_void_p, ctypes.c_bool]
     _lib.goud_engine_config_set_vsync.restype = ctypes.c_bool
-    _lib.goud_engine_config_set_fullscreen.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+    _lib.goud_engine_config_set_fullscreen.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
     _lib.goud_engine_config_set_fullscreen.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_aspect_ratio_lock.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_aspect_ratio_lock.restype = ctypes.c_bool
     _lib.goud_engine_config_set_target_fps.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
     _lib.goud_engine_config_set_target_fps.restype = ctypes.c_bool
     _lib.goud_engine_config_set_fps_overlay.argtypes = [ctypes.c_void_p, ctypes.c_bool]
@@ -419,6 +421,16 @@ def _setup():
     _lib.goud_window_get_size.restype = ctypes.c_bool
     _lib.goud_window_set_size.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_uint32]
     _lib.goud_window_set_size.restype = ctypes.c_bool
+    _lib.goud_window_get_framebuffer_size.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint32), ctypes.POINTER(ctypes.c_uint32)]
+    _lib.goud_window_get_framebuffer_size.restype = ctypes.c_bool
+    _lib.goud_window_set_fullscreen.argtypes = [GoudContextId, ctypes.c_uint32]
+    _lib.goud_window_set_fullscreen.restype = ctypes.c_int32
+    _lib.goud_window_get_fullscreen.argtypes = [GoudContextId]
+    _lib.goud_window_get_fullscreen.restype = ctypes.c_uint32
+    _lib.goud_window_toggle_fullscreen.argtypes = [GoudContextId]
+    _lib.goud_window_toggle_fullscreen.restype = ctypes.c_int32
+    _lib.goud_window_set_aspect_ratio_lock.argtypes = [GoudContextId, ctypes.c_uint32]
+    _lib.goud_window_set_aspect_ratio_lock.restype = ctypes.c_int32
 
     # renderer
     _lib.goud_renderer_begin.argtypes = [GoudContextId]

@@ -9,6 +9,7 @@
 - [Rust SDK](getting-started/rust.md)
 - [Swift SDK](getting-started/swift.md)
 - [TypeScript SDK](getting-started/typescript.md)
+- [C/C++ SDK](getting-started/c-cpp.md)
 
 # Development
 

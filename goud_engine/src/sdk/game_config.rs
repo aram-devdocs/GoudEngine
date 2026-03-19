@@ -5,7 +5,8 @@
 
 use crate::core::debugger::DebuggerConfig;
 use crate::libs::graphics::AntiAliasingMode;
-pub use crate::libs::platform::{RenderBackendKind, WindowBackendKind};
+pub use crate::libs::platform::{FullscreenMode, RenderBackendKind, WindowBackendKind};
+use crate::rendering::AspectRatioLock;
 
 // =============================================================================
 // Game Configuration
@@ -50,8 +51,8 @@ pub struct GameConfig {
     /// Enable vertical sync to prevent screen tearing.
     pub vsync: bool,
 
-    /// Enable fullscreen mode.
-    pub fullscreen: bool,
+    /// Fullscreen mode for the window.
+    pub fullscreen_mode: FullscreenMode,
 
     /// Enable window resizing.
     pub resizable: bool,
@@ -88,6 +89,9 @@ pub struct GameConfig {
 
     /// Debugger runtime configuration.
     pub debugger: DebuggerConfig,
+
+    /// Viewport aspect ratio lock.
+    pub aspect_ratio_lock: AspectRatioLock,
 }
 
 impl Default for GameConfig {
@@ -97,7 +101,7 @@ impl Default for GameConfig {
             width: 800,
             height: 600,
             vsync: true,
-            fullscreen: false,
+            fullscreen_mode: FullscreenMode::Windowed,
             resizable: true,
             anti_aliasing_mode: AntiAliasingMode::Off,
             msaa_samples: 1,
@@ -110,6 +114,7 @@ impl Default for GameConfig {
             fps_update_interval: 0.5,
             diagnostic_mode: false,
             debugger: DebuggerConfig::default(),
+            aspect_ratio_lock: AspectRatioLock::Free,
         }
     }
 }
@@ -152,9 +157,28 @@ impl GameConfig {
         self
     }
 
-    /// Enables or disables fullscreen mode.
+    /// Enables or disables borderless fullscreen mode (compatibility helper).
+    ///
+    /// `true` maps to [`FullscreenMode::Borderless`], `false` to
+    /// [`FullscreenMode::Windowed`].
     pub fn with_fullscreen(mut self, enabled: bool) -> Self {
-        self.fullscreen = enabled;
+        self.fullscreen_mode = if enabled {
+            FullscreenMode::Borderless
+        } else {
+            FullscreenMode::Windowed
+        };
+        self
+    }
+
+    /// Sets the fullscreen mode explicitly.
+    pub fn with_fullscreen_mode(mut self, mode: FullscreenMode) -> Self {
+        self.fullscreen_mode = mode;
+        self
+    }
+
+    /// Sets the viewport aspect ratio lock.
+    pub fn with_aspect_ratio_lock(mut self, lock: AspectRatioLock) -> Self {
+        self.aspect_ratio_lock = lock;
         self
     }
 

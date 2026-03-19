@@ -25,7 +25,9 @@
         { "type": "generic", "path": "sdks/csharp/GoudEngine.csproj" },
         { "type": "generic", "path": "sdks/python/pyproject.toml" },
         "sdks/typescript/package.json",
-        "codegen/goud_sdk.schema.json"
+        "codegen/goud_sdk.schema.json",
+        "ports/vcpkg/vcpkg.json",
+        { "type": "generic", "path": "sdks/Doxyfile" }
       ]
     }
   }

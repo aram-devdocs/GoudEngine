@@ -12,7 +12,7 @@ fn test_game_config_default() {
     assert_eq!(config.width, 800);
     assert_eq!(config.height, 600);
     assert!(config.vsync);
-    assert!(!config.fullscreen);
+    assert_eq!(config.fullscreen_mode, FullscreenMode::Windowed);
     assert_eq!(config.anti_aliasing_mode, AntiAliasingMode::Off);
     assert_eq!(config.msaa_samples, 1);
     assert_eq!(config.render_backend, RenderBackendKind::Wgpu);
@@ -44,7 +44,7 @@ fn test_game_config_builder() {
     assert_eq!(config.width, 640);
     assert_eq!(config.height, 480);
     assert!(!config.vsync);
-    assert!(config.fullscreen);
+    assert_eq!(config.fullscreen_mode, FullscreenMode::Borderless);
     assert_eq!(config.anti_aliasing_mode, AntiAliasingMode::MsaaFxaa);
     assert_eq!(config.msaa_samples, 8);
     assert_eq!(config.render_backend, RenderBackendKind::OpenGlLegacy);

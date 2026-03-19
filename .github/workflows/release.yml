@@ -126,6 +126,62 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
+  # ── Step 2a+: Publish native tarballs to GitHub Release ──
+  publish-native-tarballs:
+    name: Native Tarballs
+    needs: [build-native-libs, release-please]
+    if: needs.release-please.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: linux-x64
+            lib: libgoud_engine.so
+          - rid: osx-x64
+            lib: libgoud_engine.dylib
+          - rid: osx-arm64
+            lib: libgoud_engine.dylib
+          - rid: win-x64
+            lib: goud_engine.dll
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download native artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: native-${{ matrix.rid }}
+          path: artifacts/native-${{ matrix.rid }}
+
+      - name: Create tarball
+        env:
+          VERSION: ${{ needs.release-please.outputs.version }}
+          RID: ${{ matrix.rid }}
+          LIB: ${{ matrix.lib }}
+        run: |
+          STAGING="goud-engine-v${VERSION}-${RID}"
+          mkdir -p "${STAGING}/lib"
+          mkdir -p "${STAGING}/include"
+          mkdir -p "${STAGING}/cmake"
+
+          cp "artifacts/native-${RID}/${LIB}" "${STAGING}/lib/"
+          cp "artifacts/native-${RID}/include/goud_engine.h" "${STAGING}/include/"
+          cp -r sdks/c/include/goud "${STAGING}/include/"
+          cp -r sdks/cpp/include/goud/* "${STAGING}/include/goud/"
+          cp sdks/cpp/cmake/FindGoudEngine.cmake "${STAGING}/cmake/"
+          cp sdks/cpp/cmake/GoudEngineConfig.cmake "${STAGING}/cmake/"
+
+          tar -czf "${STAGING}.tar.gz" "${STAGING}"
+
+      - name: Upload tarball to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.release-please.outputs.version }}
+          RID: ${{ matrix.rid }}
+        run: |
+          TARBALL="goud-engine-v${VERSION}-${RID}.tar.gz"
+          gh release upload "v${VERSION}" "${TARBALL}" --clobber
+
   # ── Step 2b: Build napi-rs addons for Node.js ──
   build-napi:
     name: Napi (${{ matrix.name }})
@@ -452,7 +508,55 @@ jobs:
         with:
           packages-dir: sdks/python/dist/
 
-  # ── Step 7: Publish to crates.io ──
+  # ── Step 7: Publish to Maven Central ──
+  publish-kotlin:
+    name: Publish Maven Central
+    needs: [build-native-libs, codegen-verify]
+    runs-on: ubuntu-latest
+    environment: maven
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Download all native libs
+        uses: actions/download-artifact@v8
+        with:
+          pattern: native-*
+          path: artifacts/
+
+      - name: Stage native libs into SDK resources
+        run: |
+          mkdir -p sdks/kotlin/src/main/resources/native/linux-x64
+          mkdir -p sdks/kotlin/src/main/resources/native/osx-x64
+          mkdir -p sdks/kotlin/src/main/resources/native/osx-arm64
+          mkdir -p sdks/kotlin/src/main/resources/native/win-x64
+
+          cp artifacts/native-linux-x64/libgoud_engine.so    sdks/kotlin/src/main/resources/native/linux-x64/
+          cp artifacts/native-osx-x64/libgoud_engine.dylib   sdks/kotlin/src/main/resources/native/osx-x64/
+          cp artifacts/native-osx-arm64/libgoud_engine.dylib  sdks/kotlin/src/main/resources/native/osx-arm64/
+          cp artifacts/native-win-x64/goud_engine.dll         sdks/kotlin/src/main/resources/native/win-x64/
+
+      - name: Generate Kotlin SDK
+        run: python3 codegen/gen_kotlin.py
+
+      - name: Publish to Maven Central
+        working-directory: sdks/kotlin
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: ./gradlew publish --no-daemon
+
+  # ── Step 8: Publish to crates.io ──
   publish-crates:
     name: Publish crates.io
     needs: codegen-verify
@@ -489,7 +593,7 @@ jobs:
   # ── Summary ──
   release-summary:
     name: Release Summary
-    needs: [release-please, publish-npm, publish-nuget, publish-pypi, publish-crates]
+    needs: [release-please, publish-npm, publish-nuget, publish-pypi, publish-kotlin, publish-crates, publish-native-tarballs]
     if: always() && needs.release-please.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -504,5 +608,7 @@ jobs:
           | npm | \`goudengine\` | ${{ needs.publish-npm.result }} |
           | NuGet | \`GoudEngine\` | ${{ needs.publish-nuget.result }} |
           | PyPI | \`goudengine\` | ${{ needs.publish-pypi.result }} |
+          | Maven Central | \`goud-engine-kotlin\` | ${{ needs.publish-kotlin.result }} |
           | crates.io | \`goud-engine\` | ${{ needs.publish-crates.result }} |
+          | GitHub Release | C/C++ tarballs | ${{ needs.publish-native-tarballs.result }} |
           EOF

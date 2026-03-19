@@ -1246,6 +1246,15 @@
       "return_type": "()",
       "is_unsafe": true
     },
+    "goud_engine_config_set_aspect_ratio_lock": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "lock: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
     "goud_engine_config_set_debugger": {
       "source_file": "ffi/engine_config.rs",
       "params": [
@@ -1268,7 +1277,7 @@
       "source_file": "ffi/engine_config.rs",
       "params": [
         "handle: EngineConfigHandle",
-        "enabled: bool"
+        "mode: u32"
       ],
       "return_type": "bool",
       "is_unsafe": true
@@ -4642,6 +4651,24 @@
       "return_type": "f32",
       "is_unsafe": false
     },
+    "goud_window_get_framebuffer_size": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out_width: *mut u32",
+        "out_height: *mut u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_window_get_fullscreen": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
     "goud_window_get_size": {
       "source_file": "ffi/window/properties.rs",
       "params": [
@@ -4658,6 +4685,24 @@
         "context_id: GoudContextId"
       ],
       "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_window_set_aspect_ratio_lock": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "lock: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_window_set_fullscreen": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "mode: u32"
+      ],
+      "return_type": "i32",
       "is_unsafe": false
     },
     "goud_window_set_should_close": {
@@ -4694,7 +4739,15 @@
       ],
       "return_type": "()",
       "is_unsafe": false
+    },
+    "goud_window_toggle_fullscreen": {
+      "source_file": "ffi/window/properties.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
     }
   },
-  "total_count": 470
+  "total_count": 476
 }

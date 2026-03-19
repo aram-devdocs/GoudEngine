@@ -76,6 +76,9 @@ python3 codegen/gen_python.py
 echo "║ [9/14] Generating Go SDK cgo bindings..."
 python3 codegen/gen_go.py
 
+echo "║ [9b/14] Generating Go SDK wrapper package..."
+python3 codegen/gen_go_sdk.py
+
 echo "║ [10/14] Regenerating TypeScript Node SDK..."
 python3 codegen/gen_ts_node.py
 
@@ -86,6 +89,8 @@ echo "║ [11b/14] Generating Swift SDK..."
 stage_header_copy "sdks/swift/Sources/CGoudEngine/include"
 python3 codegen/gen_swift.py
 
+echo "║ [11d/14] Generating Kotlin SDK..."
+python3 codegen/gen_kotlin.py
 
 echo "║ [12/14] Formatting generated Rust sources..."
 cargo fmt -p goud-engine-node
