@@ -1,0 +1,5 @@
+[wrap-file]
+directory = ..
+
+[provide]
+dependency_names = goud_engine_dep

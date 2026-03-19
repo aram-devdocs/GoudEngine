@@ -380,6 +380,28 @@ static inline int goud_input_scroll_delta(goud_context context, goud_vec2 *out_d
     return goud_status_from_bool(goud_input_get_scroll_delta(context, &out_delta->x, &out_delta->y));
 }
 
+/* === Window / Game Loop === */
+
+static inline bool goud_window_should_close_checked(goud_context context) {
+    return goud_window_should_close(context);
+}
+
+static inline float goud_window_poll_events_checked(goud_context context) {
+    return goud_window_poll_events(context);
+}
+
+static inline void goud_window_swap_buffers_checked(goud_context context) {
+    goud_window_swap_buffers(context);
+}
+
+static inline void goud_renderer_enable_blending_checked(goud_context context) {
+    goud_renderer_enable_blending(context);
+}
+
+static inline float goud_window_delta_time(goud_context context) {
+    return goud_window_get_delta_time(context);
+}
+
 /* === Audio === */
 
 static inline int goud_audio_activate_checked(goud_context context) {

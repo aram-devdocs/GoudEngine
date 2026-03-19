@@ -7,7 +7,7 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 ## Structure
 
 - `c/` — C smoke examples for the native wrapper layer
-- `cpp/` — C++ smoke examples for the RAII wrapper layer
+- `cpp/` — C++ examples: smoke test, CMake integration demo, Flappy Bird game
 - `csharp/` — C# example games (flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox)
 - `python/` — Python example games (main.py demo, flappy_bird.py, sandbox.py)
 - `typescript/` — TypeScript example games (flappy_bird, feature_lab, sandbox — desktop + web targets)
@@ -29,6 +29,8 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 ./dev.sh --sdk typescript --game flappy_bird  # TypeScript Flappy Bird (desktop)
 ./dev.sh --sdk typescript --game feature_lab  # TypeScript Feature Lab (desktop)
 ./dev.sh --sdk typescript --game sandbox      # TypeScript Sandbox (desktop)
+./dev.sh --sdk cpp --game flappy_bird          # C++ Flappy Bird
+./dev.sh --sdk cpp --game cmake_example       # C++ CMake integration demo
 cargo run -p flappy-bird                      # Rust Flappy Bird
 cargo run -p sandbox                          # Rust Sandbox
 ```
@@ -47,7 +49,7 @@ npm run web              # Start local server on port 8765
 - Each example MUST be a standalone project with its own project file
 - Examples MUST work with the latest SDK version
 - Examples demonstrate engine features — keep code readable and well-commented
-- C and C++ smoke examples stay small; full native example games belong in later issues
+- C smoke examples stay small; C++ has a full Flappy Bird parity game
 - Python Flappy Bird mirrors C# flappy_goud for SDK parity testing
 - TypeScript Flappy Bird mirrors C# and Python versions with shared game logic across desktop/web
 - Sandbox is the public parity app across all supported targets
