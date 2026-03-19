@@ -320,7 +320,7 @@ fn test_benchmark_resimulation_under_1ms() {
 
     impl GameState for HeavierState {
         fn advance(&mut self, inputs: &HashMap<PlayerId, Vec<u8>>) {
-            for (_, data) in inputs {
+            for data in inputs.values() {
                 let delta = if data.is_empty() {
                     0i64
                 } else {
