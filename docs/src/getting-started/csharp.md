@@ -26,7 +26,7 @@ Open `MyGame.csproj` and add `<AllowUnsafeBlocks>true</AllowUnsafeBlocks>`. The 
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="GoudEngine" Version="0.0.815" />
+    <PackageReference Include="GoudEngine" Version="0.0.832" />
   </ItemGroup>
 </Project>
 ```
@@ -141,4 +141,4 @@ To use a locally built version of the engine instead of the published NuGet pack
 - [FAQ and Troubleshooting](../guides/faq.md) — common runtime and build issues
 - [SDK-first architecture](../architecture/sdk-first.md) — how the engine layers fit together
 - [Development guide](../development/guide.md) — building from source, version management, git hooks
-- Other getting started guides: [Python](python.md) · [TypeScript](typescript.md) · [Rust](rust.md)
+- Other getting started guides: [Python](python.md) · [TypeScript](typescript.md) · [Rust](rust.md) · [Go](go.md) · [Kotlin](kotlin.md) · [Lua](lua.md)

@@ -33,6 +33,32 @@ fn main() {
         Err(err) => panic!("failed to generate cbindgen header: {err}"),
     };
 
+    // Auto-copy the generated C header to SDK include directories that consume it.
+    let root_dir = Path::new(&manifest_dir).join("..");
+    let canonical_header = codegen_dir.join("generated").join("goud_engine.h");
+    let sdk_header_targets = [
+        root_dir.join("sdks/swift/Sources/CGoudEngine/include/goud_engine.h"),
+        root_dir.join("sdks/c/include/goud_engine.h"),
+        root_dir.join("sdks/cpp/include/goud_engine.h"),
+        root_dir.join("sdks/go/include/goud_engine.h"),
+    ];
+
+    if canonical_header.exists() {
+        for target in &sdk_header_targets {
+            if let Some(parent) = target.parent() {
+                if parent.exists() {
+                    if let Err(err) = std::fs::copy(&canonical_header, target) {
+                        println!(
+                            "cargo:warning=  Header copy failed: {} -> {}: {err}",
+                            canonical_header.display(),
+                            target.display()
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     println!("cargo:warning=");
     println!("cargo:warning=GoudEngine Build");
     println!(

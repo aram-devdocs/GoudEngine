@@ -8,6 +8,10 @@ tab_width = 4
 sort_by = "None"
 usize_is_size_t = true
 
+# Swift compatibility: use stdint types (uint32_t etc.) which Swift imports
+# cleanly via the ClangImporter. Avoid platform-dependent typedefs.
+style = "both"
+
 [parse]
 parse_deps = false
 clean = false

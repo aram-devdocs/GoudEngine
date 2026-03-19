@@ -4,7 +4,7 @@ use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 #[path = "tcp_network_io.rs"]
 mod tcp_network_io;
@@ -20,6 +20,8 @@ use crate::core::providers::{Provider, ProviderLifecycle};
 use crate::libs::error::{GoudError, GoudResult};
 
 const MAX_MESSAGE_SIZE: usize = 16_777_215;
+const DEFAULT_RECONNECT_DELAY: Duration = Duration::from_secs(1);
+const MAX_RECONNECT_ATTEMPTS: u32 = 5;
 
 fn net_err(msg: impl Into<String>) -> GoudError {
     GoudError::ProviderError {
@@ -29,17 +31,53 @@ fn net_err(msg: impl Into<String>) -> GoudError {
 }
 
 enum InternalTcpEvent {
-    Connected(ConnectionId),
-    Disconnected(ConnectionId, DisconnectReason),
+    /// A connection was established. Carries the IO generation.
+    Connected(ConnectionId, u64),
+    /// A connection was closed. Carries the IO generation.
+    Disconnected(ConnectionId, DisconnectReason, u64),
+    /// Data received (no generation needed; stale data is harmless).
     Received(ConnectionId, Channel, Vec<u8>),
+    /// Error on a connection.
     Error(ConnectionId, String),
-    WriteTxReady(ConnectionId, mpsc::Sender<Vec<u8>>),
+    /// The write channel for a connection is ready. Carries the IO generation.
+    WriteTxReady(ConnectionId, mpsc::Sender<Vec<u8>>, u64),
+}
+
+/// Configuration for automatic reconnection behavior.
+#[derive(Debug, Clone)]
+pub struct ReconnectConfig {
+    /// Whether reconnection is enabled for this connection.
+    pub enabled: bool,
+    /// Maximum number of reconnection attempts before giving up.
+    pub max_attempts: u32,
+    /// Delay between reconnection attempts.
+    pub delay: Duration,
+}
+
+impl Default for ReconnectConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            max_attempts: MAX_RECONNECT_ATTEMPTS,
+            delay: DEFAULT_RECONNECT_DELAY,
+        }
+    }
 }
 
 struct TcpConnection {
     id: ConnectionId,
     state: ConnectionState,
     stats: NetworkStatsTracker,
+    /// The remote address this connection was established to (client-side only).
+    remote_addr: Option<String>,
+    /// Reconnect tracking state.
+    reconnect: ReconnectConfig,
+    /// Number of reconnect attempts made so far.
+    reconnect_attempts: u32,
+    /// When the last reconnect attempt was started.
+    last_reconnect_at: Option<Instant>,
+    /// Generation counter to disambiguate events from old vs. new IO threads.
+    generation: u64,
 }
 
 /// TCP transport provider using length-prefixed framed messages.
@@ -52,6 +90,7 @@ pub struct TcpNetProvider {
     send_txs: HashMap<u64, mpsc::Sender<Vec<u8>>>,
     stats: NetworkStatsTracker,
     next_id: Arc<AtomicU64>,
+    next_generation: Arc<AtomicU64>,
     conn_count: Arc<AtomicU32>,
     threads: Mutex<Vec<JoinHandle<()>>>,
     running: Arc<AtomicBool>,
@@ -81,6 +120,7 @@ impl TcpNetProvider {
             send_txs: HashMap::new(),
             stats: NetworkStatsTracker::new(),
             next_id: Arc::new(AtomicU64::new(1)),
+            next_generation: Arc::new(AtomicU64::new(1)),
             conn_count: Arc::new(AtomicU32::new(0)),
             threads: Mutex::new(Vec::new()),
             running: Arc::new(AtomicBool::new(true)),
@@ -96,6 +136,10 @@ impl TcpNetProvider {
 
     fn allocate_id(&self) -> ConnectionId {
         ConnectionId(self.next_id.fetch_add(1, Ordering::Relaxed))
+    }
+
+    fn allocate_generation(&self) -> u64 {
+        self.next_generation.fetch_add(1, Ordering::Relaxed)
     }
 
     fn encode_frame(channel: Channel, data: &[u8]) -> GoudResult<Vec<u8>> {
@@ -114,6 +158,89 @@ impl TcpNetProvider {
     fn decrement_conn_count_if_needed(&self, removed: bool) {
         if removed && self.conn_count.load(Ordering::Relaxed) > 0 {
             self.conn_count.fetch_sub(1, Ordering::Relaxed);
+        }
+    }
+
+    /// Enable automatic reconnection for a connection.
+    ///
+    /// When reconnect is enabled and the connection drops unexpectedly
+    /// (remote close, timeout, or error), the provider will automatically
+    /// attempt to re-establish the connection up to `config.max_attempts`
+    /// times with `config.delay` between attempts. Only applicable to
+    /// client-initiated connections that have a stored remote address.
+    pub fn set_reconnect(&mut self, conn: ConnectionId, config: ReconnectConfig) -> GoudResult<()> {
+        let connection = self
+            .connections
+            .get_mut(&conn.0)
+            .ok_or_else(|| net_err(format!("Unknown connection {:?}", conn)))?;
+        if connection.remote_addr.is_none() {
+            return Err(net_err(
+                "Reconnect is only supported for client-initiated connections",
+            ));
+        }
+        connection.reconnect = config;
+        connection.reconnect_attempts = 0;
+        connection.last_reconnect_at = None;
+        Ok(())
+    }
+
+    /// Attempt reconnection for connections that have been disconnected
+    /// and have reconnect enabled. Called from `update()`.
+    fn process_reconnects(&mut self) {
+        let now = Instant::now();
+        let mut to_reconnect: Vec<(ConnectionId, String, u64)> = Vec::new();
+
+        for conn in self.connections.values_mut() {
+            if !conn.reconnect.enabled {
+                continue;
+            }
+            if conn.state != ConnectionState::Disconnected && conn.state != ConnectionState::Error {
+                continue;
+            }
+            if conn.reconnect_attempts >= conn.reconnect.max_attempts {
+                continue;
+            }
+            let Some(ref addr) = conn.remote_addr else {
+                continue;
+            };
+            if let Some(last) = conn.last_reconnect_at {
+                if now.duration_since(last) < conn.reconnect.delay {
+                    continue;
+                }
+            }
+            conn.reconnect_attempts += 1;
+            conn.last_reconnect_at = Some(now);
+            conn.state = ConnectionState::Connecting;
+            // Bump generation so stale events from the old IO thread are ignored.
+            let gen = self.next_generation.fetch_add(1, Ordering::Relaxed);
+            conn.generation = gen;
+            to_reconnect.push((conn.id, addr.clone(), gen));
+        }
+
+        for (id, address, gen) in to_reconnect {
+            let event_tx = self.event_tx.clone();
+            let running = self.running.clone();
+
+            let handle = thread::spawn(move || match TcpStream::connect(&address) {
+                Ok(stream) => {
+                    configure_stream(&stream);
+                    let write_tx = spawn_io_thread(id, gen, stream, event_tx.clone(), running);
+                    let _ = event_tx.send(InternalTcpEvent::WriteTxReady(id, write_tx, gen));
+                    let _ = event_tx.send(InternalTcpEvent::Connected(id, gen));
+                }
+                Err(e) => {
+                    let _ = event_tx.send(InternalTcpEvent::Error(id, format!("reconnect: {e}")));
+                    let _ = event_tx.send(InternalTcpEvent::Disconnected(
+                        id,
+                        DisconnectReason::Error(e.to_string()),
+                        gen,
+                    ));
+                }
+            });
+
+            if let Ok(mut guard) = self.threads.lock() {
+                guard.push(handle);
+            }
         }
     }
 }
@@ -148,16 +275,53 @@ impl ProviderLifecycle for TcpNetProvider {
         if let Some(ref rx) = *guard {
             while let Ok(evt) = rx.try_recv() {
                 match evt {
-                    InternalTcpEvent::Connected(id) => {
+                    InternalTcpEvent::Connected(id, gen) => {
                         if let Some(conn) = self.connections.get_mut(&id.0) {
+                            // Ignore stale events from old IO threads.
+                            if gen < conn.generation {
+                                continue;
+                            }
                             conn.state = ConnectionState::Connected;
+                            // Reset reconnect attempts on successful connection.
+                            conn.reconnect_attempts = 0;
+                            conn.last_reconnect_at = None;
                         }
                         self.events.push(NetworkEvent::Connected { conn: id });
                     }
-                    InternalTcpEvent::Disconnected(id, reason) => {
-                        let removed = self.connections.remove(&id.0).is_some()
-                            | self.send_txs.remove(&id.0).is_some();
-                        self.decrement_conn_count_if_needed(removed);
+                    InternalTcpEvent::Disconnected(id, reason, gen) => {
+                        // Ignore stale disconnect events from old IO threads.
+                        let is_stale = self
+                            .connections
+                            .get(&id.0)
+                            .map(|c| gen < c.generation)
+                            .unwrap_or(false);
+                        if is_stale {
+                            continue;
+                        }
+
+                        // Check if reconnect is enabled before removing.
+                        let should_reconnect = self
+                            .connections
+                            .get(&id.0)
+                            .map(|c| {
+                                c.reconnect.enabled
+                                    && c.reconnect_attempts < c.reconnect.max_attempts
+                                    && c.remote_addr.is_some()
+                            })
+                            .unwrap_or(false);
+
+                        if should_reconnect {
+                            // Keep the connection entry for reconnect but remove
+                            // the write channel (the old stream is dead).
+                            self.send_txs.remove(&id.0);
+                            if let Some(conn) = self.connections.get_mut(&id.0) {
+                                conn.state = ConnectionState::Disconnected;
+                            }
+                        } else {
+                            let removed = self.connections.remove(&id.0).is_some()
+                                | self.send_txs.remove(&id.0).is_some();
+                            self.decrement_conn_count_if_needed(removed);
+                        }
                         self.events
                             .push(NetworkEvent::Disconnected { conn: id, reason });
                     }
@@ -178,20 +342,35 @@ impl ProviderLifecycle for TcpNetProvider {
                         }
                         self.events.push(NetworkEvent::Error { conn: id, message });
                     }
-                    InternalTcpEvent::WriteTxReady(id, write_tx) => {
-                        self.send_txs.insert(id.0, write_tx);
+                    InternalTcpEvent::WriteTxReady(id, write_tx, gen) => {
+                        // Only accept the write channel if it matches the
+                        // current generation.
+                        let is_current = self
+                            .connections
+                            .get(&id.0)
+                            .map(|c| gen >= c.generation)
+                            .unwrap_or(true);
+                        if is_current {
+                            self.send_txs.insert(id.0, write_tx);
+                        }
                         self.connections
                             .entry(id.0)
                             .or_insert_with(|| TcpConnection {
                                 id,
                                 state: ConnectionState::Connecting,
                                 stats: NetworkStatsTracker::new(),
+                                remote_addr: None,
+                                reconnect: ReconnectConfig::default(),
+                                reconnect_attempts: 0,
+                                last_reconnect_at: None,
+                                generation: gen,
                             });
                     }
                 }
             }
         }
         drop(guard);
+        self.process_reconnects();
         Ok(())
     }
 
@@ -228,6 +407,7 @@ impl NetworkProvider for TcpNetProvider {
         let running = self.running.clone();
         let event_tx = self.event_tx.clone();
         let next_id = self.next_id.clone();
+        let next_gen = self.next_generation.clone();
         let max_conns = config.max_connections;
         let conn_count = self.conn_count.clone();
 
@@ -240,11 +420,12 @@ impl NetworkProvider for TcpNetProvider {
                         }
                         configure_stream(&stream);
                         let id = ConnectionId(next_id.fetch_add(1, Ordering::Relaxed));
+                        let gen = next_gen.fetch_add(1, Ordering::Relaxed);
                         conn_count.fetch_add(1, Ordering::Relaxed);
                         let write_tx =
-                            spawn_io_thread(id, stream, event_tx.clone(), running.clone());
-                        let _ = event_tx.send(InternalTcpEvent::WriteTxReady(id, write_tx));
-                        let _ = event_tx.send(InternalTcpEvent::Connected(id));
+                            spawn_io_thread(id, gen, stream, event_tx.clone(), running.clone());
+                        let _ = event_tx.send(InternalTcpEvent::WriteTxReady(id, write_tx, gen));
+                        let _ = event_tx.send(InternalTcpEvent::Connected(id, gen));
                     }
                     Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                         thread::sleep(Duration::from_millis(5));
@@ -262,12 +443,18 @@ impl NetworkProvider for TcpNetProvider {
 
     fn connect(&mut self, addr: &str) -> GoudResult<ConnectionId> {
         let id = self.allocate_id();
+        let gen = self.allocate_generation();
         self.connections.insert(
             id.0,
             TcpConnection {
                 id,
                 state: ConnectionState::Connecting,
                 stats: NetworkStatsTracker::new(),
+                remote_addr: Some(addr.to_string()),
+                reconnect: ReconnectConfig::default(),
+                reconnect_attempts: 0,
+                last_reconnect_at: None,
+                generation: gen,
             },
         );
 
@@ -278,15 +465,16 @@ impl NetworkProvider for TcpNetProvider {
         let handle = thread::spawn(move || match TcpStream::connect(&address) {
             Ok(stream) => {
                 configure_stream(&stream);
-                let write_tx = spawn_io_thread(id, stream, event_tx.clone(), running);
-                let _ = event_tx.send(InternalTcpEvent::WriteTxReady(id, write_tx));
-                let _ = event_tx.send(InternalTcpEvent::Connected(id));
+                let write_tx = spawn_io_thread(id, gen, stream, event_tx.clone(), running);
+                let _ = event_tx.send(InternalTcpEvent::WriteTxReady(id, write_tx, gen));
+                let _ = event_tx.send(InternalTcpEvent::Connected(id, gen));
             }
             Err(e) => {
                 let _ = event_tx.send(InternalTcpEvent::Error(id, format!("connect: {e}")));
                 let _ = event_tx.send(InternalTcpEvent::Disconnected(
                     id,
                     DisconnectReason::Error(e.to_string()),
+                    gen,
                 ));
             }
         });

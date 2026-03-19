@@ -1096,6 +1096,116 @@ export class GoudGame implements IGoudGame {
     return this.native.checkHotSwapShortcut();
   }
 
+  /** Creates a P2P mesh host on the given port using the specified transport. */
+  p2pCreateMesh(protocol: number, port: number, config: P2pMeshConfig): number {
+    return (this.native as any).p2pCreateMesh(protocol, port, config);
+  }
+
+  /** Joins an existing P2P mesh at the given address. */
+  p2pJoinMesh(protocol: number, address: string, port: number, config: P2pMeshConfig): number {
+    return (this.native as any).p2pJoinMesh(protocol, address, port, config);
+  }
+
+  /** Leaves the P2P mesh and destroys the network instance. */
+  p2pLeaveMesh(handle: number): number {
+    return (this.native as any).p2pLeaveMesh(handle);
+  }
+
+  /** Returns the number of connected peers in the mesh. */
+  p2pGetPeers(handle: number): number {
+    return (this.native as any).p2pGetPeers(handle);
+  }
+
+  /** Returns the host peer's ID, or 0 on error. */
+  p2pGetHost(handle: number): number {
+    return (this.native as any).p2pGetHost(handle);
+  }
+
+  /** Creates a new rollback netcode session. Returns a positive handle on success. */
+  rollbackCreate(config: RollbackConfig, localPlayer: number, playerIds: Uint8Array, statePtr: number, advanceFn: number, hashFn: number, cloneFn: number, freeFn: number): number {
+    return (this.native as any).rollbackCreate(config, localPlayer, playerIds, statePtr, advanceFn, hashFn, cloneFn, freeFn);
+  }
+
+  /** Destroys a rollback session and frees all associated resources. */
+  rollbackDestroy(handle: number): number {
+    return (this.native as any).rollbackDestroy(handle);
+  }
+
+  /** Advances the rollback simulation by one frame with the given local input. */
+  rollbackAdvanceFrame(handle: number, input: Uint8Array): number {
+    return (this.native as any).rollbackAdvanceFrame(handle, input);
+  }
+
+  /** Receives a confirmed remote input for a specific player and frame. */
+  rollbackReceiveRemoteInput(handle: number, playerId: number, frame: number, input: Uint8Array): number {
+    return (this.native as any).rollbackReceiveRemoteInput(handle, playerId, frame, input);
+  }
+
+  /** Returns 1 if a rollback is pending, 0 otherwise. */
+  rollbackShouldRollback(handle: number): number {
+    return (this.native as any).rollbackShouldRollback(handle);
+  }
+
+  /** Performs rollback and resimulation. Returns the number of frames resimulated. */
+  rollbackResimulate(handle: number): number {
+    return (this.native as any).rollbackResimulate(handle);
+  }
+
+  /** Returns the latest confirmed frame. */
+  rollbackConfirmedFrame(handle: number): number {
+    return (this.native as any).rollbackConfirmedFrame(handle);
+  }
+
+  /** Returns the current simulation frame. */
+  rollbackCurrentFrame(handle: number): number {
+    return (this.native as any).rollbackCurrentFrame(handle);
+  }
+
+  /** Checks for desync at the given frame. Returns 0=in sync, 1=desync, 2=frame not available. */
+  rollbackCheckDesync(handle: number, remoteHash: number, frame: number): number {
+    return (this.native as any).rollbackCheckDesync(handle, remoteHash, frame);
+  }
+
+  /** Creates an RPC framework instance. */
+  rpcCreate(timeoutMs: number, maxPayload: number): number {
+    return (this.native as any).rpcCreate(timeoutMs, maxPayload);
+  }
+
+  /** Destroys an RPC framework instance. */
+  rpcDestroy(handle: number): number {
+    return (this.native as any).rpcDestroy(handle);
+  }
+
+  /** Registers an RPC handler with the given direction constraint. */
+  rpcRegister(handle: number, rpcId: number, name: string, direction: number): number {
+    return (this.native as any).rpcRegister(handle, rpcId, name, direction);
+  }
+
+  /** Initiates an RPC call to a peer. Returns the call ID via out parameter. */
+  rpcCall(handle: number, peerId: number, rpcId: number, payload: Uint8Array): number {
+    return (this.native as any).rpcCall(handle, peerId, rpcId, payload);
+  }
+
+  /** Advances the RPC framework: checks timeouts and processes pending calls. */
+  rpcPoll(handle: number, deltaSecs: number): number {
+    return (this.native as any).rpcPoll(handle, deltaSecs);
+  }
+
+  /** Feeds raw incoming data to the RPC framework for processing. */
+  rpcProcessIncoming(handle: number, peerId: number, data: Uint8Array): number {
+    return (this.native as any).rpcProcessIncoming(handle, peerId, data);
+  }
+
+  /** Attempts to retrieve the response for a pending RPC call. */
+  rpcReceiveResponse(handle: number, callId: number): Uint8Array {
+    return (this.native as any).rpcReceiveResponse(handle, callId);
+  }
+
+  /** Drains outbound RPC messages and copies the next one into the caller's buffer. */
+  rpcDrainOne(handle: number): Uint8Array {
+    return (this.native as any).rpcDrainOne(handle);
+  }
+
   async preload(assets: PreloadAssetInput[], options: IPreloadOptions = {}): Promise<Record<string, number>> {
     if (this.preloadInFlight) {
       throw new Error('game.preload(...) is already in progress.');

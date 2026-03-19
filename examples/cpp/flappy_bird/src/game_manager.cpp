@@ -21,9 +21,9 @@ void GameManager::init(goud::Context& ctx) {
     baseTex_       = loadTex(ctx, "base.png");
     pipeTex_       = loadTex(ctx, "pipe-green.png");
 
-    birdFrames_[0] = loadTex(ctx, "yellowbird-downflap.png");
-    birdFrames_[1] = loadTex(ctx, "yellowbird-midflap.png");
-    birdFrames_[2] = loadTex(ctx, "yellowbird-upflap.png");
+    birdFrames_[0] = loadTex(ctx, "bluebird-downflap.png");
+    birdFrames_[1] = loadTex(ctx, "bluebird-midflap.png");
+    birdFrames_[2] = loadTex(ctx, "bluebird-upflap.png");
 
     for (int i = 0; i < 10; ++i) {
         digitTex_[i] = loadTex(ctx, std::to_string(i) + ".png");

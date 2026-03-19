@@ -1639,3 +1639,23 @@ class UiEvent:
 
     def __repr__(self):
         return f"UiEvent(event_kind={self.event_kind}, node_id={self.node_id}, previous_node_id={self.previous_node_id}, current_node_id={self.current_node_id})"
+
+class P2pMeshConfig:
+    """Configuration for P2P mesh networking"""
+    def __init__(self, max_peers: int = 0, host_migration: bool = False, topology: int = 0):
+        self.max_peers = max_peers
+        self.host_migration = host_migration
+        self.topology = topology
+
+    def __repr__(self):
+        return f"P2pMeshConfig(max_peers={self.max_peers}, host_migration={self.host_migration}, topology={self.topology})"
+
+class RollbackConfig:
+    """Configuration for rollback netcode session"""
+    def __init__(self, max_rollback_frames: int = 0, input_delay_frames: int = 0, desync_detection: int = 0):
+        self.max_rollback_frames = max_rollback_frames
+        self.input_delay_frames = input_delay_frames
+        self.desync_detection = desync_detection
+
+    def __repr__(self):
+        return f"RollbackConfig(max_rollback_frames={self.max_rollback_frames}, input_delay_frames={self.input_delay_frames}, desync_detection={self.desync_detection})"

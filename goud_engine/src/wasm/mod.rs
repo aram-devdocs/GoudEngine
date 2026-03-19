@@ -34,13 +34,16 @@ pub use texture_loader::{fetch_bytes, load_texture_from_url};
 pub use types::{WasmRenderStats, WasmSprite, WasmTransform2D};
 pub use ui::{WasmUiEvent, WasmUiManager};
 
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 
 use crate::core::debugger::{self, DebuggerConfig, RuntimeRouteId, RuntimeSurfaceKind};
 use crate::ecs::World;
 
 use lifecycle::{WasmFontEntry, WgpuRenderState};
+use sprite_renderer::TextureEntry;
 
 // ---------------------------------------------------------------------------
 // Main game handle exposed to JavaScript
@@ -101,6 +104,24 @@ pub struct WasmGame {
 
     /// Route registered with the debugger runtime, if enabled.
     debugger_route: Option<RuntimeRouteId>,
+
+    /// Pending textures uploaded by async callbacks.
+    ///
+    /// Async texture loads (e.g. from `fetch`) push decoded `TextureEntry`
+    /// values into this shared queue. The entries are drained into
+    /// `render_state.textures` at the start of `begin_frame`, avoiding
+    /// recursive `RefCell` borrows that would occur if the async callback
+    /// tried to mutate `WasmGame` directly while a frame is in progress.
+    pending_textures: Rc<RefCell<Vec<PendingTexture>>>,
+}
+
+/// A texture that has been decoded and uploaded to the GPU but not yet
+/// registered in the render state's texture list.
+pub(crate) struct PendingTexture {
+    /// The fully-prepared GPU texture entry.
+    pub entry: TextureEntry,
+    /// The 1-based handle assigned at enqueue time.
+    pub handle: u32,
 }
 
 #[wasm_bindgen]
@@ -145,6 +166,7 @@ impl WasmGame {
             audio_state: audio::WasmAudioState::new(),
             network_state: network::WasmNetworkState::new(),
             debugger_route: None,
+            pending_textures: Rc::new(RefCell::new(Vec::new())),
         }
     }
 
@@ -156,6 +178,21 @@ impl WasmGame {
     ///
     /// Call this at the start of each `requestAnimationFrame` callback.
     pub fn begin_frame(&mut self, delta_time: f32) {
+        // Drain any textures that were decoded asynchronously since the last
+        // frame.  The pending queue lives behind an `Rc<RefCell<>>` so that
+        // async callbacks can push into it without borrowing `WasmGame`.
+        if let Some(rs) = &mut self.render_state {
+            let mut pending = self.pending_textures.borrow_mut();
+            for pt in pending.drain(..) {
+                let idx = (pt.handle - 1) as usize;
+                // Grow the textures vec if needed so the slot exists.
+                if idx >= rs.textures.len() {
+                    rs.textures.resize_with(idx + 1, || None);
+                }
+                rs.textures[idx] = Some(pt.entry);
+            }
+        }
+
         self.frame_keys_just_pressed = std::mem::take(&mut self.keys_pressed_buffer);
         self.frame_keys_just_released = std::mem::take(&mut self.keys_released_buffer);
         self.frame_mouse_just_pressed = std::mem::take(&mut self.mouse_pressed_buffer);
@@ -287,6 +324,30 @@ impl WasmGame {
     /// construction time).
     pub fn has_renderer(&self) -> bool {
         self.render_state.is_some()
+    }
+
+    /// Reserves the next texture handle without actually registering a
+    /// texture entry.  The returned handle can be passed to an async
+    /// callback that later pushes a [`PendingTexture`] into the shared
+    /// queue.  The texture becomes usable after the next `begin_frame`
+    /// drains the queue.
+    pub fn reserve_texture_handle(&mut self) -> u32 {
+        if let Some(rs) = &mut self.render_state {
+            let idx = rs.textures.len();
+            rs.textures.push(None); // placeholder
+            (idx + 1) as u32
+        } else {
+            0
+        }
+    }
+
+    /// Returns a cloned reference to the pending-texture queue.
+    ///
+    /// Async callbacks can push `PendingTexture` entries into this queue
+    /// without borrowing `WasmGame`.  The entries are drained in
+    /// `begin_frame`.
+    pub fn pending_texture_queue(&self) -> Rc<RefCell<Vec<PendingTexture>>> {
+        Rc::clone(&self.pending_textures)
     }
 
     // ======================================================================

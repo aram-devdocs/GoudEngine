@@ -35,7 +35,7 @@ _UNSUPPORTED_TYPES = {
     "PhysicsCapabilities", "AudioCapabilities", "InputCapabilities",
     "RenderStats", "FpsStats", "Contact", "PhysicsRaycastHit2D",
     "PhysicsCollisionEvent2D", "MemoryCategoryStats",
-    "bytes", "object", "ptr",
+    "object", "ptr",
 }
 
 

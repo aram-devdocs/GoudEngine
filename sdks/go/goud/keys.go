@@ -283,3 +283,13 @@ const (
 	EventPayloadTypeFloat EventPayloadType = 2
 	EventPayloadTypeString EventPayloadType = 3
 )
+
+// RpcDirection Direction constraint for an RPC handler
+type RpcDirection int32
+
+// RpcDirection constants.
+const (
+	RpcDirectionServerToClient RpcDirection = 0
+	RpcDirectionClientToServer RpcDirection = 1
+	RpcDirectionBidirectional RpcDirection = 2
+)

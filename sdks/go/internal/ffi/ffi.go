@@ -1150,6 +1150,34 @@ func GoudNetworkSetSimulation(_context_id C.GoudContextId, handle int64, config 
 	return int32(C.goud_network_set_simulation(_context_id, C.int64_t(handle), config))
 }
 
+// GoudP2pCreateMesh wraps goud_p2p_create_mesh.
+func GoudP2pCreateMesh(context_id C.GoudContextId, protocol int32, port uint16, config C.FfiP2pMeshConfig) int64 {
+	return int64(C.goud_p2p_create_mesh(context_id, C.int32_t(protocol), C.uint16_t(port), config))
+}
+
+// GoudP2pGetHost wraps goud_p2p_get_host.
+func GoudP2pGetHost(_context_id C.GoudContextId, handle int64) uint64 {
+	return uint64(C.goud_p2p_get_host(_context_id, C.int64_t(handle)))
+}
+
+// GoudP2pGetPeers wraps goud_p2p_get_peers.
+func GoudP2pGetPeers(_context_id C.GoudContextId, handle int64) int32 {
+	return int32(C.goud_p2p_get_peers(_context_id, C.int64_t(handle)))
+}
+
+// GoudP2pJoinMesh wraps goud_p2p_join_mesh.
+func GoudP2pJoinMesh(context_id C.GoudContextId, protocol int32, addr_ptr *C.uint8_t, addr_len int32, port uint16, config C.FfiP2pMeshConfig) int64 {
+	if addr_ptr == nil {
+		return -1
+	}
+	return int64(C.goud_p2p_join_mesh(context_id, C.int32_t(protocol), addr_ptr, C.int32_t(addr_len), C.uint16_t(port), config))
+}
+
+// GoudP2pLeaveMesh wraps goud_p2p_leave_mesh.
+func GoudP2pLeaveMesh(_context_id C.GoudContextId, handle int64) int32 {
+	return int32(C.goud_p2p_leave_mesh(_context_id, C.int64_t(handle)))
+}
+
 // GoudPhysics3dAddCollider wraps goud_physics3d_add_collider.
 func GoudPhysics3dAddCollider(ctx C.GoudContextId, body_handle uint64, shape_type uint32, hx float32, hy float32, hz float32, radius float32, friction float32, restitution float32) int64 {
 	return int64(C.goud_physics3d_add_collider(ctx, C.uint64_t(body_handle), C.uint32_t(shape_type), C.float(hx), C.float(hy), C.float(hz), C.float(radius), C.float(friction), C.float(restitution)))
@@ -1867,6 +1895,127 @@ func GoudRendererGetStats(context_id C.GoudContextId, out_stats *C.GoudRenderSta
 // GoudRendererSetViewport wraps goud_renderer_set_viewport.
 func GoudRendererSetViewport(context_id C.GoudContextId, x int32, y int32, width uint32, height uint32) {
 	C.goud_renderer_set_viewport(context_id, C.int32_t(x), C.int32_t(y), C.uint32_t(width), C.uint32_t(height))
+}
+
+// GoudRollbackAdvanceFrame wraps goud_rollback_advance_frame.
+func GoudRollbackAdvanceFrame(handle int64, input_ptr *C.uint8_t, input_len uint32) int32 {
+	if input_ptr == nil {
+		return -1
+	}
+	return int32(C.goud_rollback_advance_frame(C.int64_t(handle), input_ptr, C.uint32_t(input_len)))
+}
+
+// GoudRollbackCheckDesync wraps goud_rollback_check_desync.
+func GoudRollbackCheckDesync(handle int64, remote_hash uint64, frame uint64) int32 {
+	return int32(C.goud_rollback_check_desync(C.int64_t(handle), C.uint64_t(remote_hash), C.uint64_t(frame)))
+}
+
+// GoudRollbackConfirmedFrame wraps goud_rollback_confirmed_frame.
+func GoudRollbackConfirmedFrame(handle int64) int64 {
+	return int64(C.goud_rollback_confirmed_frame(C.int64_t(handle)))
+}
+
+// GoudRollbackCreate wraps goud_rollback_create.
+func GoudRollbackCreate(config C.FfiRollbackConfig, local_player uint8, player_ids_ptr *C.uint8_t, num_players uint32, state_ptr *C.uint8_t, advance_fn C.FfiAdvanceFn, hash_fn C.FfiHashFn, clone_fn C.FfiCloneFn, free_fn C.FfiFreeFn) int64 {
+	if player_ids_ptr == nil {
+		return -1
+	}
+	if state_ptr == nil {
+		return -1
+	}
+	return int64(C.goud_rollback_create(config, C.uint8_t(local_player), player_ids_ptr, C.uint32_t(num_players), state_ptr, advance_fn, hash_fn, clone_fn, free_fn))
+}
+
+// GoudRollbackCurrentFrame wraps goud_rollback_current_frame.
+func GoudRollbackCurrentFrame(handle int64) int64 {
+	return int64(C.goud_rollback_current_frame(C.int64_t(handle)))
+}
+
+// GoudRollbackDestroy wraps goud_rollback_destroy.
+func GoudRollbackDestroy(handle int64) int32 {
+	return int32(C.goud_rollback_destroy(C.int64_t(handle)))
+}
+
+// GoudRollbackReceiveRemoteInput wraps goud_rollback_receive_remote_input.
+func GoudRollbackReceiveRemoteInput(handle int64, player_id uint8, frame uint64, input_ptr *C.uint8_t, input_len uint32) int32 {
+	if input_ptr == nil {
+		return -1
+	}
+	return int32(C.goud_rollback_receive_remote_input(C.int64_t(handle), C.uint8_t(player_id), C.uint64_t(frame), input_ptr, C.uint32_t(input_len)))
+}
+
+// GoudRollbackResimulate wraps goud_rollback_resimulate.
+func GoudRollbackResimulate(handle int64) int32 {
+	return int32(C.goud_rollback_resimulate(C.int64_t(handle)))
+}
+
+// GoudRollbackShouldRollback wraps goud_rollback_should_rollback.
+func GoudRollbackShouldRollback(handle int64) int32 {
+	return int32(C.goud_rollback_should_rollback(C.int64_t(handle)))
+}
+
+// GoudRpcCall wraps goud_rpc_call.
+func GoudRpcCall(handle int64, peer_id uint64, rpc_id uint16, payload_ptr *C.uint8_t, payload_len int32, call_id_out *C.uint64_t) int32 {
+	if payload_ptr == nil {
+		return -1
+	}
+	if call_id_out == nil {
+		return -1
+	}
+	return int32(C.goud_rpc_call(C.int64_t(handle), C.uint64_t(peer_id), C.uint16_t(rpc_id), payload_ptr, C.int32_t(payload_len), call_id_out))
+}
+
+// GoudRpcCreate wraps goud_rpc_create.
+func GoudRpcCreate(timeout_ms uint64, max_payload uint32) int64 {
+	return int64(C.goud_rpc_create(C.uint64_t(timeout_ms), C.uint32_t(max_payload)))
+}
+
+// GoudRpcDestroy wraps goud_rpc_destroy.
+func GoudRpcDestroy(handle int64) int32 {
+	return int32(C.goud_rpc_destroy(C.int64_t(handle)))
+}
+
+// GoudRpcDrainOne wraps goud_rpc_drain_one.
+func GoudRpcDrainOne(handle int64, out_buf *C.uint8_t, buf_len int32, out_peer_id *C.uint64_t) int32 {
+	if out_buf == nil {
+		return -1
+	}
+	if out_peer_id == nil {
+		return -1
+	}
+	return int32(C.goud_rpc_drain_one(C.int64_t(handle), out_buf, C.int32_t(buf_len), out_peer_id))
+}
+
+// GoudRpcPoll wraps goud_rpc_poll.
+func GoudRpcPoll(handle int64, delta_secs float32) int32 {
+	return int32(C.goud_rpc_poll(C.int64_t(handle), C.float(delta_secs)))
+}
+
+// GoudRpcProcessIncoming wraps goud_rpc_process_incoming.
+func GoudRpcProcessIncoming(handle int64, peer_id uint64, data_ptr *C.uint8_t, data_len int32) int32 {
+	if data_ptr == nil {
+		return -1
+	}
+	return int32(C.goud_rpc_process_incoming(C.int64_t(handle), C.uint64_t(peer_id), data_ptr, C.int32_t(data_len)))
+}
+
+// GoudRpcReceiveResponse wraps goud_rpc_receive_response.
+func GoudRpcReceiveResponse(handle int64, call_id uint64, out_ptr *C.uint8_t, out_len int32, out_written *C.int32_t) int32 {
+	if out_ptr == nil {
+		return -1
+	}
+	if out_written == nil {
+		return -1
+	}
+	return int32(C.goud_rpc_receive_response(C.int64_t(handle), C.uint64_t(call_id), out_ptr, C.int32_t(out_len), out_written))
+}
+
+// GoudRpcRegister wraps goud_rpc_register.
+func GoudRpcRegister(handle int64, rpc_id uint16, name_ptr *C.uint8_t, name_len int32, direction int32) int32 {
+	if name_ptr == nil {
+		return -1
+	}
+	return int32(C.goud_rpc_register(C.int64_t(handle), C.uint16_t(rpc_id), name_ptr, C.int32_t(name_len), C.int32_t(direction)))
 }
 
 // GoudSceneCount wraps goud_scene_count.

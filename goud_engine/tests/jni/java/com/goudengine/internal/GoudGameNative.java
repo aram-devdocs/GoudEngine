@@ -185,4 +185,26 @@ public final class GoudGameNative {
     public static native int audioActiveCrossfadeCount(long contextId);
     public static native int audioActivate(long contextId);
     public static native boolean checkHotSwapShortcut(long contextId);
+    public static native long p2pCreateMesh(long contextId, int protocol, int port, P2pMeshConfig config);
+    public static native long p2pJoinMesh(long contextId, int protocol, String address, int port, P2pMeshConfig config);
+    public static native int p2pLeaveMesh(long contextId, long handle);
+    public static native int p2pGetPeers(long contextId, long handle);
+    public static native long p2pGetHost(long contextId, long handle);
+    public static native long rollbackCreate(long contextId, RollbackConfig config, int localPlayer, byte[] playerIds, long statePtr, long advanceFn, long hashFn, long cloneFn, long freeFn);
+    public static native int rollbackDestroy(long contextId, long handle);
+    public static native int rollbackAdvanceFrame(long contextId, long handle, byte[] input);
+    public static native int rollbackReceiveRemoteInput(long contextId, long handle, int playerId, long frame, byte[] input);
+    public static native int rollbackShouldRollback(long contextId, long handle);
+    public static native int rollbackResimulate(long contextId, long handle);
+    public static native long rollbackConfirmedFrame(long contextId, long handle);
+    public static native long rollbackCurrentFrame(long contextId, long handle);
+    public static native int rollbackCheckDesync(long contextId, long handle, long remoteHash, long frame);
+    public static native long rpcCreate(long contextId, long timeoutMs, int maxPayload);
+    public static native int rpcDestroy(long contextId, long handle);
+    public static native int rpcRegister(long contextId, long handle, int rpcId, String name, int direction);
+    public static native long rpcCall(long contextId, long handle, long peerId, int rpcId, byte[] payload);
+    public static native int rpcPoll(long contextId, long handle, float deltaSecs);
+    public static native int rpcProcessIncoming(long contextId, long handle, long peerId, byte[] data);
+    public static native byte[] rpcReceiveResponse(long contextId, long handle, long callId);
+    public static native byte[] rpcDrainOne(long contextId, long handle);
 }

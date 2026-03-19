@@ -146,6 +146,11 @@ extern "C" {
 #define MAX_LIGHTS 8
 
 /**
+ * Size of the RPC wire header: rpc_id(2) + call_id(8) + msg_type(1).
+ */
+#define RPC_HEADER_SIZE ((2 + 8) + 1)
+
+/**
  * Connection request from client to host.
  */
 #define PACKET_CONNECT 1
@@ -690,6 +695,62 @@ typedef struct NetworkSimulationConfig {
      */
     float packet_loss_percent;
 } NetworkSimulationConfig;
+
+/**
+ * FFI-safe P2P mesh configuration.
+ */
+typedef struct FfiP2pMeshConfig {
+    /**
+     * Maximum number of peers (including self).
+     */
+    uint32_t max_peers;
+    /**
+     * Whether host migration is enabled.
+     */
+    bool host_migration;
+    /**
+     * Mesh topology: 0 = FullMesh, 1 = Star.
+     */
+    int32_t topology;
+} FfiP2pMeshConfig;
+
+/**
+ * FFI-safe rollback configuration.
+ */
+typedef struct FfiRollbackConfig {
+    /**
+     * Maximum number of rollback frames.
+     */
+    uint32_t max_rollback_frames;
+    /**
+     * Input delay frames.
+     */
+    uint32_t input_delay_frames;
+    /**
+     * Whether desync detection is enabled (0 = false, nonzero = true).
+     */
+    uint8_t desync_detection;
+} FfiRollbackConfig;
+
+/**
+ * Function pointer type: advance the game state by one frame.
+ */
+typedef void (*FfiAdvanceFn)(uint8_t *state_ptr, const uint8_t *player_ids, const uint8_t *const *input_ptrs, const uint32_t *input_lens, uint32_t num_players);
+
+/**
+ * Function pointer type: compute a hash of the game state.
+ */
+typedef uint64_t (*FfiHashFn)(uint8_t *state_ptr);
+
+/**
+ * Function pointer type: clone the game state.
+ */
+typedef uint8_t *(*FfiCloneFn)(uint8_t *state_ptr);
+
+/**
+ * Function pointer type: free a cloned game state.
+ */
+typedef void (*FfiFreeFn)(uint8_t *state_ptr);
 
 /**
  * FFI-safe aggregate network statistics for a provider handle.
@@ -3874,6 +3935,116 @@ int32_t goud_last_error_subsystem(uint8_t *buf, size_t buf_len);
  * Writes the last error's operation into a caller-provided buffer.
  */
 int32_t goud_last_error_operation(uint8_t *buf, size_t buf_len);
+
+/**
+ * Creates a P2P mesh host on the given port using the specified transport.
+ */
+int64_t goud_p2p_create_mesh(struct GoudContextId context_id, int32_t protocol, uint16_t port, struct FfiP2pMeshConfig config);
+
+/**
+ * Joins an existing P2P mesh at the given address.
+ */
+int64_t goud_p2p_join_mesh(struct GoudContextId context_id, int32_t protocol, const uint8_t *addr_ptr, int32_t addr_len, uint16_t port, struct FfiP2pMeshConfig config);
+
+/**
+ * Leaves the P2P mesh and destroys the network instance.
+ */
+int32_t goud_p2p_leave_mesh(struct GoudContextId _context_id, int64_t handle);
+
+/**
+ * Returns the number of connected peers in the mesh, or a negative error code.
+ */
+int32_t goud_p2p_get_peers(struct GoudContextId _context_id, int64_t handle);
+
+/**
+ * Returns the host peer's ID, or 0 on error.
+ */
+uint64_t goud_p2p_get_host(struct GoudContextId _context_id, int64_t handle);
+
+/**
+ * Creates a new rollback netcode session.
+ */
+int64_t goud_rollback_create(struct FfiRollbackConfig config, uint8_t local_player, const uint8_t *player_ids_ptr, uint32_t num_players, uint8_t *state_ptr, FfiAdvanceFn advance_fn, FfiHashFn hash_fn, FfiCloneFn clone_fn, FfiFreeFn free_fn);
+
+/**
+ * Advances the rollback simulation by one frame with the given local input.
+ */
+int32_t goud_rollback_advance_frame(int64_t handle, const uint8_t *input_ptr, uint32_t input_len);
+
+/**
+ * Receives a confirmed remote input for a specific player and frame.
+ */
+int32_t goud_rollback_receive_remote_input(int64_t handle, uint8_t player_id, uint64_t frame, const uint8_t *input_ptr, uint32_t input_len);
+
+/**
+ * Returns 1 if a rollback is pending, 0 otherwise, or a negative error code.
+ */
+int32_t goud_rollback_should_rollback(int64_t handle);
+
+/**
+ * Performs rollback and resimulation. Returns the number of frames
+ */
+int32_t goud_rollback_resimulate(int64_t handle);
+
+/**
+ * Returns the latest confirmed frame, or a negative error code on failure.
+ */
+int64_t goud_rollback_confirmed_frame(int64_t handle);
+
+/**
+ * Returns the current simulation frame, or a negative error code on failure.
+ */
+int64_t goud_rollback_current_frame(int64_t handle);
+
+/**
+ * Checks for desync at the given frame by comparing with a remote hash.
+ */
+int32_t goud_rollback_check_desync(int64_t handle, uint64_t remote_hash, uint64_t frame);
+
+/**
+ * Destroys a rollback session and frees all associated resources.
+ */
+int32_t goud_rollback_destroy(int64_t handle);
+
+/**
+ * Creates an RPC framework instance.
+ */
+int64_t goud_rpc_create(uint64_t timeout_ms, uint32_t max_payload);
+
+/**
+ * Destroys an RPC framework instance.
+ */
+int32_t goud_rpc_destroy(int64_t handle);
+
+/**
+ * Registers an RPC handler that echoes back the call payload.
+ */
+int32_t goud_rpc_register(int64_t handle, uint16_t rpc_id, const uint8_t *name_ptr, int32_t name_len, int32_t direction);
+
+/**
+ * Initiates an RPC call to a peer.
+ */
+int32_t goud_rpc_call(int64_t handle, uint64_t peer_id, uint16_t rpc_id, const uint8_t *payload_ptr, int32_t payload_len, uint64_t *call_id_out);
+
+/**
+ * Advances the RPC framework: checks timeouts and processes pending calls.
+ */
+int32_t goud_rpc_poll(int64_t handle, float delta_secs);
+
+/**
+ * Attempts to retrieve the response for a pending RPC call.
+ */
+int32_t goud_rpc_receive_response(int64_t handle, uint64_t call_id, uint8_t *out_ptr, int32_t out_len, int32_t *out_written);
+
+/**
+ * Feeds raw incoming data to the RPC framework for processing.
+ */
+int32_t goud_rpc_process_incoming(int64_t handle, uint64_t peer_id, const uint8_t *data_ptr, int32_t data_len);
+
+/**
+ * Drains outbound RPC messages and copies the next one into the caller's buffer.
+ */
+int32_t goud_rpc_drain_one(int64_t handle, uint8_t *out_buf, int32_t buf_len, uint64_t *out_peer_id);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -1,0 +1,190 @@
+# GoudEngine Swift SDK
+
+> **Alpha** -- This SDK is under active development. APIs change frequently. [Report issues](https://github.com/aram-devdocs/GoudEngine/issues)
+
+Swift bindings for GoudEngine using the C FFI through Swift Package Manager. Targets macOS 13+ and iOS 16+.
+
+## Architecture
+
+```
+sdks/swift/
+  Package.swift                     # SwiftPM manifest
+  Sources/
+    CGoudEngine/                    # System library target (C header bridge)
+      include/
+        goud_engine.h              # Auto-copied C header from cbindgen
+        module.modulemap           # Clang module map
+      shim.c                       # C shim for bridging
+    GoudEngine/
+      generated/                   # All .g.swift files (codegen output)
+        GoudGame.g.swift           # Game window and loop
+        GoudContext.g.swift        # Headless context
+        EngineConfig.g.swift       # Builder for game configuration
+        ValueTypes.g.swift         # Vec2, Vec3, Color, Rect, Mat3x3
+        Enums.g.swift              # Key, MouseButton, RendererType, etc.
+        Errors.g.swift             # Error types (from schema)
+        Physics.g.swift            # Physics simulation wrappers
+        SubTools.g.swift           # Audio, animation, text, networking
+        UiManager.g.swift          # UI component system
+  Tests/
+    GoudEngineTests/
+      EnumTests.swift              # Enum raw value parity tests
+      ErrorTests.swift             # Error type tests
+      ValueTypeTests.swift         # Vec2, Vec3, Color math tests
+      WrapperTests.swift           # Wrapper class tests
+```
+
+## How It Works
+
+The Swift SDK communicates with the Rust engine through C FFI:
+
+1. **C header** -- `cbindgen` generates `goud_engine.h` from the Rust FFI exports.
+2. **System library target** -- `CGoudEngine` imports the C header through a Clang module map.
+3. **Swift wrapper target** -- `GoudEngine` provides idiomatic Swift APIs on top of the raw C functions.
+4. **Memory safety** -- Wrapper classes use `deinit` with an `_alive` guard to prevent double-free. String parameters are passed through `withCString`.
+
+## Prerequisites
+
+- Swift 5.9+ (ships with Xcode 15+, or install via [swift.org](https://www.swift.org/install/))
+- macOS 13+ (Ventura) or iOS 16+
+- [Rust toolchain](https://rustup.rs/) -- needed to build the native engine library
+
+## Building the Native Library
+
+```bash
+cargo build --release
+```
+
+This produces `target/release/libgoud_engine.dylib` (macOS) which the Swift package links against.
+
+## Installation via SwiftPM
+
+Add GoudEngine as a local package dependency. In your project's `Package.swift`:
+
+```swift
+// swift-tools-version: 5.9
+
+import Foundation
+import PackageDescription
+
+let libSearchPath: String = ProcessInfo.processInfo.environment["GOUD_ENGINE_LIB_DIR"]
+    ?? "../../target/release"
+
+let package = Package(
+    name: "MyGame",
+    platforms: [
+        .macOS(.v13),
+    ],
+    dependencies: [
+        .package(path: "../../sdks/swift"),  // adjust relative path
+    ],
+    targets: [
+        .executableTarget(
+            name: "MyGame",
+            dependencies: [
+                .product(name: "GoudEngine", package: "swift"),
+            ],
+            path: "Sources/MyGame",
+            linkerSettings: [
+                .unsafeFlags(["-L", libSearchPath]),
+            ]
+        ),
+    ]
+)
+```
+
+Set `GOUD_ENGINE_LIB_DIR` to override the library search path (defaults to `../../target/release` relative to the SDK `Package.swift`).
+
+## Quick Start
+
+```swift
+import GoudEngine
+
+let config = EngineConfig()
+config
+    .setSize(width: 800, height: 600)
+    .setTitle(title: "Hello GoudEngine")
+
+let game = config.build()
+
+let texture = game.loadTexture(path: "assets/player.png")
+
+while !game.shouldClose() {
+    game.beginFrame(r: 0.2, g: 0.2, b: 0.2, a: 1.0)
+
+    if game.isKeyPressed(key: .ESCAPE) {
+        game.requestClose()
+    }
+
+    game.drawSprite(
+        textureId: texture,
+        x: 400, y: 300,
+        width: 64, height: 64,
+        rotation: 0,
+        color: Color.white()
+    )
+
+    game.endFrame()
+}
+```
+
+## Features
+
+- 2D and 3D rendering with runtime renderer selection
+- Entity Component System (ECS) with Transform2D, Sprite, Text
+- Physics simulation (Rapier 2D/3D)
+- Audio playback with per-channel volume and spatial audio
+- Text rendering with TrueType fonts
+- Sprite animation with state machine controller
+- Scene management with transitions
+- UI component system
+- Networking (UDP, TCP, WebSocket)
+- Input handling (keyboard, mouse)
+- Debugger runtime (snapshots, capture, replay, metrics)
+
+## Build Commands
+
+```bash
+# Build the SDK
+cd sdks/swift && swift build
+
+# Run tests
+cd sdks/swift && swift test
+
+# Run the Flappy Bird example
+./dev.sh --sdk swift --game flappy_bird
+```
+
+## Code Generation
+
+All `.g.swift` files under `Sources/GoudEngine/generated/` are auto-generated by `codegen/gen_swift.py` from the unified schema (`codegen/goud_sdk.schema.json`). Do not hand-edit generated files.
+
+Regenerate:
+
+```bash
+python3 codegen/gen_swift.py
+```
+
+## Testing
+
+```bash
+cd sdks/swift && swift test
+```
+
+Tests cover value types (Vec2, Vec3, Color), enum raw value parity with the C header, error types, and wrapper class construction. Tests that require a live engine context (windowing, rendering) are excluded.
+
+## Platform Support
+
+| Platform | Library | Status |
+|----------|---------|--------|
+| macOS x64 | libgoud_engine.dylib | Supported |
+| macOS ARM64 | libgoud_engine.dylib | Supported |
+| iOS | libgoud_engine.a | Planned |
+| Linux | libgoud_engine.so | Experimental |
+
+## FFI Conventions
+
+- Enum raw values use `SCREAMING_SNAKE_CASE` to match the C header.
+- `GoudContextId` fields are accessed via `._0` (C struct import convention).
+- String parameters pass through `withCString { ptr in ... }`.
+- Wrapper classes use `deinit` with an `_alive` guard to prevent double-free.

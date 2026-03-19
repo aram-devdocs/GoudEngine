@@ -209,3 +209,9 @@ class EventPayloadType:
     INT = 1
     FLOAT = 2
     STRING = 3
+
+class RpcDirection:
+    """Direction constraint for an RPC handler"""
+    SERVER_TO_CLIENT = 0
+    CLIENT_TO_SERVER = 1
+    BIDIRECTIONAL = 2

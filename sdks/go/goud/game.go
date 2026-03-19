@@ -1040,6 +1040,116 @@ func (g *Game) CheckHotSwapShortcut() bool {
 	return false
 }
 
+// P2pCreateMesh Creates a P2P mesh host on the given port using the specified transport.
+func (g *Game) P2pCreateMesh(protocol int32, port uint16, config P2pMeshConfig) int64 {
+	return 0
+}
+
+// P2pJoinMesh Joins an existing P2P mesh at the given address.
+func (g *Game) P2pJoinMesh(protocol int32, address string, port uint16, config P2pMeshConfig) int64 {
+	return 0
+}
+
+// P2pLeaveMesh Leaves the P2P mesh and destroys the network instance.
+func (g *Game) P2pLeaveMesh(handle int64) int32 {
+	return 0
+}
+
+// P2pGetPeers Returns the number of connected peers in the mesh.
+func (g *Game) P2pGetPeers(handle int64) int32 {
+	return 0
+}
+
+// P2pGetHost Returns the host peer's ID, or 0 on error.
+func (g *Game) P2pGetHost(handle int64) uint64 {
+	return 0
+}
+
+// RollbackCreate Creates a new rollback netcode session. Returns a positive handle on success.
+func (g *Game) RollbackCreate(config RollbackConfig, localPlayer uint8, playerIds []byte, statePtr uint64, advanceFn uint64, hashFn uint64, cloneFn uint64, freeFn uint64) int64 {
+	return 0
+}
+
+// RollbackDestroy Destroys a rollback session and frees all associated resources.
+func (g *Game) RollbackDestroy(handle int64) int32 {
+	return 0
+}
+
+// RollbackAdvanceFrame Advances the rollback simulation by one frame with the given local input.
+func (g *Game) RollbackAdvanceFrame(handle int64, input []byte) int32 {
+	return 0
+}
+
+// RollbackReceiveRemoteInput Receives a confirmed remote input for a specific player and frame.
+func (g *Game) RollbackReceiveRemoteInput(handle int64, playerId uint8, frame uint64, input []byte) int32 {
+	return 0
+}
+
+// RollbackShouldRollback Returns 1 if a rollback is pending, 0 otherwise.
+func (g *Game) RollbackShouldRollback(handle int64) int32 {
+	return 0
+}
+
+// RollbackResimulate Performs rollback and resimulation. Returns the number of frames resimulated.
+func (g *Game) RollbackResimulate(handle int64) int32 {
+	return 0
+}
+
+// RollbackConfirmedFrame Returns the latest confirmed frame.
+func (g *Game) RollbackConfirmedFrame(handle int64) int64 {
+	return 0
+}
+
+// RollbackCurrentFrame Returns the current simulation frame.
+func (g *Game) RollbackCurrentFrame(handle int64) int64 {
+	return 0
+}
+
+// RollbackCheckDesync Checks for desync at the given frame. Returns 0=in sync, 1=desync, 2=frame not available.
+func (g *Game) RollbackCheckDesync(handle int64, remoteHash uint64, frame uint64) int32 {
+	return 0
+}
+
+// RpcCreate Creates an RPC framework instance.
+func (g *Game) RpcCreate(timeoutMs uint64, maxPayload uint32) int64 {
+	return 0
+}
+
+// RpcDestroy Destroys an RPC framework instance.
+func (g *Game) RpcDestroy(handle int64) int32 {
+	return 0
+}
+
+// RpcRegister Registers an RPC handler with the given direction constraint.
+func (g *Game) RpcRegister(handle int64, rpcId uint16, name string, direction int32) int32 {
+	return 0
+}
+
+// RpcCall Initiates an RPC call to a peer. Returns the call ID via out parameter.
+func (g *Game) RpcCall(handle int64, peerId uint64, rpcId uint16, payload []byte) uint64 {
+	return 0
+}
+
+// RpcPoll Advances the RPC framework: checks timeouts and processes pending calls.
+func (g *Game) RpcPoll(handle int64, deltaSecs float32) int32 {
+	return 0
+}
+
+// RpcProcessIncoming Feeds raw incoming data to the RPC framework for processing.
+func (g *Game) RpcProcessIncoming(handle int64, peerId uint64, data []byte) int32 {
+	return 0
+}
+
+// RpcReceiveResponse Attempts to retrieve the response for a pending RPC call.
+func (g *Game) RpcReceiveResponse(handle int64, callId uint64) []byte {
+	return nil
+}
+
+// RpcDrainOne Drains outbound RPC messages and copies the next one into the caller's buffer.
+func (g *Game) RpcDrainOne(handle int64) []byte {
+	return nil
+}
+
 // lastError queries FFI error state and returns a Go error, or nil.
 func (g *Game) lastError() error {
 	code := ffi.LastErrorCode()

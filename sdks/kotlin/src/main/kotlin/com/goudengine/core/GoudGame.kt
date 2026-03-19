@@ -355,6 +355,10 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
         GoudGameNative.startDebuggerRecording(contextId)
     }
 
+    fun startDebuggerReplay(recording: ByteArray) {
+        GoudGameNative.startDebuggerReplay(contextId, recording)
+    }
+
     fun stopDebuggerReplay() {
         GoudGameNative.stopDebuggerReplay(contextId)
     }
@@ -410,6 +414,12 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun networkDisconnect(handle: Long): Int =
         GoudGameNative.networkDisconnect(contextId, handle)
 
+    fun networkSend(handle: Long, peerId: Long, data: ByteArray, channel: Int): Int =
+        GoudGameNative.networkSend(contextId, handle, peerId, data, channel)
+
+    fun networkReceive(handle: Long): ByteArray =
+        GoudGameNative.networkReceive(contextId, handle)
+
     fun networkPoll(handle: Long): Int =
         GoudGameNative.networkPoll(contextId, handle)
 
@@ -424,6 +434,15 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
 
     fun clearNetworkOverlayHandle(): Int =
         GoudGameNative.clearNetworkOverlayHandle(contextId)
+
+    fun audioPlay(data: ByteArray): Long =
+        GoudGameNative.audioPlay(contextId, data)
+
+    fun audioPlayOnChannel(data: ByteArray, channel: Int): Long =
+        GoudGameNative.audioPlayOnChannel(contextId, data, channel)
+
+    fun audioPlayWithSettings(data: ByteArray, volume: Float, speed: Float, looping: Boolean, channel: Int): Long =
+        GoudGameNative.audioPlayWithSettings(contextId, data, volume, speed, looping, channel)
 
     fun audioStop(playerId: Long): Int =
         GoudGameNative.audioStop(contextId, playerId)
@@ -458,6 +477,9 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun audioCleanupFinished(): Int =
         GoudGameNative.audioCleanupFinished(contextId)
 
+    fun audioPlaySpatial3d(data: ByteArray, sourceX: Float, sourceY: Float, sourceZ: Float, listenerX: Float, listenerY: Float, listenerZ: Float, maxDistance: Float, rolloff: Float): Long =
+        GoudGameNative.audioPlaySpatial3d(contextId, data, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff)
+
     fun audioUpdateSpatial3d(playerId: Long, sourceX: Float, sourceY: Float, sourceZ: Float, listenerX: Float, listenerY: Float, listenerZ: Float, maxDistance: Float, rolloff: Float): Int =
         GoudGameNative.audioUpdateSpatial3d(contextId, playerId, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff)
 
@@ -476,6 +498,12 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun audioCrossfade(fromPlayerId: Long, toPlayerId: Long, mix: Float): Int =
         GoudGameNative.audioCrossfade(contextId, fromPlayerId, toPlayerId, mix)
 
+    fun audioCrossfadeTo(fromPlayerId: Long, data: ByteArray, durationSec: Float, channel: Int): Long =
+        GoudGameNative.audioCrossfadeTo(contextId, fromPlayerId, data, durationSec, channel)
+
+    fun audioMixWith(primaryPlayerId: Long, data: ByteArray, secondaryVolume: Float, secondaryChannel: Int): Long =
+        GoudGameNative.audioMixWith(contextId, primaryPlayerId, data, secondaryVolume, secondaryChannel)
+
     fun audioUpdateCrossfades(deltaSec: Float): Int =
         GoudGameNative.audioUpdateCrossfades(contextId, deltaSec)
 
@@ -487,6 +515,72 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
 
     fun checkHotSwapShortcut(): Boolean =
         GoudGameNative.checkHotSwapShortcut(contextId)
+
+    fun p2pCreateMesh(protocol: Int, port: Int, config: P2pMeshConfig): Long =
+        GoudGameNative.p2pCreateMesh(contextId, protocol, port, config)
+
+    fun p2pJoinMesh(protocol: Int, address: String, port: Int, config: P2pMeshConfig): Long =
+        GoudGameNative.p2pJoinMesh(contextId, protocol, address, port, config)
+
+    fun p2pLeaveMesh(handle: Long): Int =
+        GoudGameNative.p2pLeaveMesh(contextId, handle)
+
+    fun p2pGetPeers(handle: Long): Int =
+        GoudGameNative.p2pGetPeers(contextId, handle)
+
+    fun p2pGetHost(handle: Long): Long =
+        GoudGameNative.p2pGetHost(contextId, handle)
+
+    fun rollbackCreate(config: RollbackConfig, localPlayer: Int, playerIds: ByteArray, statePtr: Long, advanceFn: Long, hashFn: Long, cloneFn: Long, freeFn: Long): Long =
+        GoudGameNative.rollbackCreate(contextId, config, localPlayer, playerIds, statePtr, advanceFn, hashFn, cloneFn, freeFn)
+
+    fun rollbackDestroy(handle: Long): Int =
+        GoudGameNative.rollbackDestroy(contextId, handle)
+
+    fun rollbackAdvanceFrame(handle: Long, input: ByteArray): Int =
+        GoudGameNative.rollbackAdvanceFrame(contextId, handle, input)
+
+    fun rollbackReceiveRemoteInput(handle: Long, playerId: Int, frame: Long, input: ByteArray): Int =
+        GoudGameNative.rollbackReceiveRemoteInput(contextId, handle, playerId, frame, input)
+
+    fun rollbackShouldRollback(handle: Long): Int =
+        GoudGameNative.rollbackShouldRollback(contextId, handle)
+
+    fun rollbackResimulate(handle: Long): Int =
+        GoudGameNative.rollbackResimulate(contextId, handle)
+
+    fun rollbackConfirmedFrame(handle: Long): Long =
+        GoudGameNative.rollbackConfirmedFrame(contextId, handle)
+
+    fun rollbackCurrentFrame(handle: Long): Long =
+        GoudGameNative.rollbackCurrentFrame(contextId, handle)
+
+    fun rollbackCheckDesync(handle: Long, remoteHash: Long, frame: Long): Int =
+        GoudGameNative.rollbackCheckDesync(contextId, handle, remoteHash, frame)
+
+    fun rpcCreate(timeoutMs: Long, maxPayload: Int): Long =
+        GoudGameNative.rpcCreate(contextId, timeoutMs, maxPayload)
+
+    fun rpcDestroy(handle: Long): Int =
+        GoudGameNative.rpcDestroy(contextId, handle)
+
+    fun rpcRegister(handle: Long, rpcId: Int, name: String, direction: Int): Int =
+        GoudGameNative.rpcRegister(contextId, handle, rpcId, name, direction)
+
+    fun rpcCall(handle: Long, peerId: Long, rpcId: Int, payload: ByteArray): Long =
+        GoudGameNative.rpcCall(contextId, handle, peerId, rpcId, payload)
+
+    fun rpcPoll(handle: Long, deltaSecs: Float): Int =
+        GoudGameNative.rpcPoll(contextId, handle, deltaSecs)
+
+    fun rpcProcessIncoming(handle: Long, peerId: Long, data: ByteArray): Int =
+        GoudGameNative.rpcProcessIncoming(contextId, handle, peerId, data)
+
+    fun rpcReceiveResponse(handle: Long, callId: Long): ByteArray =
+        GoudGameNative.rpcReceiveResponse(contextId, handle, callId)
+
+    fun rpcDrainOne(handle: Long): ByteArray =
+        GoudGameNative.rpcDrainOne(contextId, handle)
 
     fun destroy() {
         GoudGameNative.destroy(contextId)

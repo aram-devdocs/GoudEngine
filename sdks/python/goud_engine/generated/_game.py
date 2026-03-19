@@ -1022,6 +1022,127 @@ class GoudGame:
         """Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred."""
         return self._lib.goud_provider_check_hot_swap_shortcut(self._ctx) != 0
 
+    def p2p_create_mesh(self, protocol, port, config):
+        """Creates a P2P mesh host on the given port using the specified transport."""
+        _config_ffi = _ffi_module.FfiP2pMeshConfig()
+        _config_ffi.max_peers = config.max_peers
+        _config_ffi.host_migration = config.host_migration
+        _config_ffi.topology = config.topology
+        return self._lib.goud_p2p_create_mesh(self._ctx, protocol, port, _config_ffi)
+
+    def p2p_join_mesh(self, protocol, address, port, config):
+        """Joins an existing P2P mesh at the given address."""
+        _address_bytes = address.encode('utf-8')
+        _address_buf = ctypes.create_string_buffer(_address_bytes, len(_address_bytes))
+        return self._lib.goud_p2p_join_mesh(self._ctx, protocol, ctypes.cast(_address_buf, ctypes.POINTER(ctypes.c_uint8)), len(_address_bytes), port, config)
+
+    def p2p_leave_mesh(self, handle):
+        """Leaves the P2P mesh and destroys the network instance."""
+        return self._lib.goud_p2p_leave_mesh(self._ctx, handle)
+
+    def p2p_get_peers(self, handle):
+        """Returns the number of connected peers in the mesh."""
+        return self._lib.goud_p2p_get_peers(self._ctx, handle)
+
+    def p2p_get_host(self, handle):
+        """Returns the host peer's ID, or 0 on error."""
+        return self._lib.goud_p2p_get_host(self._ctx, handle)
+
+    def rollback_create(self, config, local_player, player_ids, state_ptr, advance_fn, hash_fn, clone_fn, free_fn):
+        """Creates a new rollback netcode session. Returns a positive handle on success."""
+        _player_ids_buf = (ctypes.c_uint8 * len(player_ids)).from_buffer_copy(player_ids)
+        return self._lib.goud_rollback_create(self._ctx, config, local_player, ctypes.cast(_player_ids_buf, ctypes.POINTER(ctypes.c_uint8)), len(player_ids), state_ptr, advance_fn, hash_fn, clone_fn, free_fn)
+
+    def rollback_destroy(self, handle):
+        """Destroys a rollback session and frees all associated resources."""
+        return self._lib.goud_rollback_destroy(self._ctx, handle)
+
+    def rollback_advance_frame(self, handle, input):
+        """Advances the rollback simulation by one frame with the given local input."""
+        _input_buf = (ctypes.c_uint8 * len(input)).from_buffer_copy(input)
+        return self._lib.goud_rollback_advance_frame(self._ctx, handle, ctypes.cast(_input_buf, ctypes.POINTER(ctypes.c_uint8)), len(input))
+
+    def rollback_receive_remote_input(self, handle, player_id, frame, input):
+        """Receives a confirmed remote input for a specific player and frame."""
+        _input_buf = (ctypes.c_uint8 * len(input)).from_buffer_copy(input)
+        return self._lib.goud_rollback_receive_remote_input(self._ctx, handle, player_id, frame, ctypes.cast(_input_buf, ctypes.POINTER(ctypes.c_uint8)), len(input))
+
+    def rollback_should_rollback(self, handle):
+        """Returns 1 if a rollback is pending, 0 otherwise."""
+        return self._lib.goud_rollback_should_rollback(self._ctx, handle)
+
+    def rollback_resimulate(self, handle):
+        """Performs rollback and resimulation. Returns the number of frames resimulated."""
+        return self._lib.goud_rollback_resimulate(self._ctx, handle)
+
+    def rollback_confirmed_frame(self, handle):
+        """Returns the latest confirmed frame."""
+        return self._lib.goud_rollback_confirmed_frame(self._ctx, handle)
+
+    def rollback_current_frame(self, handle):
+        """Returns the current simulation frame."""
+        return self._lib.goud_rollback_current_frame(self._ctx, handle)
+
+    def rollback_check_desync(self, handle, remote_hash, frame):
+        """Checks for desync at the given frame. Returns 0=in sync, 1=desync, 2=frame not available."""
+        return self._lib.goud_rollback_check_desync(self._ctx, handle, remote_hash, frame)
+
+    def rpc_create(self, timeout_ms, max_payload):
+        """Creates an RPC framework instance."""
+        return self._lib.goud_rpc_create(self._ctx, timeout_ms, max_payload)
+
+    def rpc_destroy(self, handle):
+        """Destroys an RPC framework instance."""
+        return self._lib.goud_rpc_destroy(self._ctx, handle)
+
+    def rpc_register(self, handle, rpc_id, name, direction):
+        """Registers an RPC handler with the given direction constraint."""
+        _name_bytes = name.encode('utf-8')
+        _name_buf = ctypes.create_string_buffer(_name_bytes, len(_name_bytes))
+        return self._lib.goud_rpc_register(self._ctx, handle, rpc_id, ctypes.cast(_name_buf, ctypes.POINTER(ctypes.c_uint8)), len(_name_bytes), direction)
+
+    def rpc_call(self, handle, peer_id, rpc_id, payload):
+        """Initiates an RPC call to a peer. Returns the call ID via out parameter."""
+        _payload_buf = (ctypes.c_uint8 * len(payload)).from_buffer_copy(payload)
+        return self._lib.goud_rpc_call(self._ctx, handle, peer_id, rpc_id, ctypes.cast(_payload_buf, ctypes.POINTER(ctypes.c_uint8)), len(payload))
+
+    def rpc_poll(self, handle, delta_secs):
+        """Advances the RPC framework: checks timeouts and processes pending calls."""
+        return self._lib.goud_rpc_poll(self._ctx, handle, delta_secs)
+
+    def rpc_process_incoming(self, handle, peer_id, data):
+        """Feeds raw incoming data to the RPC framework for processing."""
+        _data_buf = (ctypes.c_uint8 * len(data)).from_buffer_copy(data)
+        return self._lib.goud_rpc_process_incoming(self._ctx, handle, peer_id, ctypes.cast(_data_buf, ctypes.POINTER(ctypes.c_uint8)), len(data))
+
+    def rpc_receive_response(self, handle, call_id):
+        """Attempts to retrieve the response for a pending RPC call."""
+        _caps = _ffi_module.NetworkCapabilities()
+        self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_caps))
+        _buf_len = int(_caps.max_message_size) if _caps.max_message_size else 65536
+        _out_buf = (ctypes.c_uint8 * _buf_len)()
+        _out_peer_id = ctypes.c_uint64()
+        _status = self._lib.goud_rpc_receive_response(self._ctx, handle, call_id, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
+        if _status < 0:
+            raise RuntimeError(f'goud_rpc_receive_response failed with status {_status}')
+        if _status == 0:
+            return b''
+        return bytes(_out_buf[:_status])
+
+    def rpc_drain_one(self, handle):
+        """Drains outbound RPC messages and copies the next one into the caller's buffer."""
+        _caps = _ffi_module.NetworkCapabilities()
+        self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_caps))
+        _buf_len = int(_caps.max_message_size) if _caps.max_message_size else 65536
+        _out_buf = (ctypes.c_uint8 * _buf_len)()
+        _out_peer_id = ctypes.c_uint64()
+        _status = self._lib.goud_rpc_drain_one(self._ctx, handle, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
+        if _status < 0:
+            raise RuntimeError(f'goud_rpc_drain_one failed with status {_status}')
+        if _status == 0:
+            return b''
+        return bytes(_out_buf[:_status])
+
 
 class GoudContext:
     """Headless engine context for CI tests and non-windowed entity management."""
