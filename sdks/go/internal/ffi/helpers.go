@@ -402,6 +402,9 @@ func ComponentAdd(bits ContextBits, entityID uint64, typeIDHash uint64, data []b
 }
 
 // ComponentGet returns a pointer to component data, or nil.
+// SAFETY: The returned pointer is valid only until the next engine mutation on
+// this context (entity despawn, component removal, scene transition). Do not
+// store it beyond the immediate call frame.
 func ComponentGet(bits ContextBits, entityID uint64, typeIDHash uint64) unsafe.Pointer {
 	ptr := C.goud_component_get(ctxFromBits(bits), C.GoudEntityId(entityID), C.uint64_t(typeIDHash))
 	if ptr == nil {
@@ -411,6 +414,8 @@ func ComponentGet(bits ContextBits, entityID uint64, typeIDHash uint64) unsafe.P
 }
 
 // ComponentGetMut returns a mutable pointer to component data, or nil.
+// SAFETY: The returned pointer is valid only until the next engine mutation on
+// this context. Do not store it beyond the immediate call frame.
 func ComponentGetMut(bits ContextBits, entityID uint64, typeIDHash uint64) unsafe.Pointer {
 	ptr := C.goud_component_get_mut(ctxFromBits(bits), C.GoudEntityId(entityID), C.uint64_t(typeIDHash))
 	if ptr == nil {
