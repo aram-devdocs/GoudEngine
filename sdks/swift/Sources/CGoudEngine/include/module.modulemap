@@ -1,0 +1,5 @@
+module CGoudEngine {
+    header "goud_engine.h"
+    link "goud_engine"
+    export *
+}
